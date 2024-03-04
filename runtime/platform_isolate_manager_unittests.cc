@@ -134,7 +134,8 @@ class PlatformIsolateManagerTest : public FixtureTest {
 TEST_F(PlatformIsolateManagerTest, OrdinaryFlow) {
   TestWithRootIsolate([this]() {
     PlatformIsolateManager mgr;
-    EXPECT_FALSE(mgr.IsShutdown());
+    EXPECT_FALSE(mgr.HasShutdown());
+    EXPECT_FALSE(mgr.HasShutdownMaybeFalseNegative());
 
     Dart_Isolate isolateA = CreateAndRegisterIsolate(&mgr);
     ASSERT_TRUE(isolateA);
@@ -149,7 +150,8 @@ TEST_F(PlatformIsolateManagerTest, OrdinaryFlow) {
     EXPECT_TRUE(mgr.IsRegisteredForTestingOnly(isolateB));
 
     mgr.ShutdownPlatformIsolates();
-    EXPECT_TRUE(mgr.IsShutdown());
+    EXPECT_TRUE(mgr.HasShutdown());
+    EXPECT_TRUE(mgr.HasShutdownMaybeFalseNegative());
 
     EXPECT_TRUE(IsolateIsShutdown(isolateA));
     EXPECT_FALSE(IsolateIsRegistered(isolateA));
@@ -163,7 +165,7 @@ TEST_F(PlatformIsolateManagerTest, OrdinaryFlow) {
 TEST_F(PlatformIsolateManagerTest, EarlyShutdown) {
   TestWithRootIsolate([this]() {
     PlatformIsolateManager mgr;
-    EXPECT_FALSE(mgr.IsShutdown());
+    EXPECT_FALSE(mgr.HasShutdown());
 
     Dart_Isolate isolateA = CreateAndRegisterIsolate(&mgr);
     ASSERT_TRUE(isolateA);
@@ -190,7 +192,7 @@ TEST_F(PlatformIsolateManagerTest, EarlyShutdown) {
     EXPECT_FALSE(mgr.IsRegisteredForTestingOnly(isolateB));
 
     mgr.ShutdownPlatformIsolates();
-    EXPECT_TRUE(mgr.IsShutdown());
+    EXPECT_TRUE(mgr.HasShutdown());
 
     EXPECT_TRUE(IsolateIsShutdown(isolateA));
     EXPECT_FALSE(IsolateIsRegistered(isolateA));
@@ -204,7 +206,7 @@ TEST_F(PlatformIsolateManagerTest, EarlyShutdown) {
 TEST_F(PlatformIsolateManagerTest, RegistrationAfterShutdown) {
   TestWithRootIsolate([this]() {
     PlatformIsolateManager mgr;
-    EXPECT_FALSE(mgr.IsShutdown());
+    EXPECT_FALSE(mgr.HasShutdown());
 
     Dart_Isolate isolateA = CreateAndRegisterIsolate(&mgr);
     ASSERT_TRUE(isolateA);
@@ -213,7 +215,7 @@ TEST_F(PlatformIsolateManagerTest, RegistrationAfterShutdown) {
     EXPECT_TRUE(mgr.IsRegisteredForTestingOnly(isolateA));
 
     mgr.ShutdownPlatformIsolates();
-    EXPECT_TRUE(mgr.IsShutdown());
+    EXPECT_TRUE(mgr.HasShutdown());
 
     EXPECT_TRUE(IsolateIsShutdown(isolateA));
     EXPECT_FALSE(IsolateIsRegistered(isolateA));
@@ -238,7 +240,7 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
   // while shutting down the manager.
   TestWithRootIsolate([this]() {
     PlatformIsolateManager mgr;
-    EXPECT_FALSE(mgr.IsShutdown());
+    EXPECT_FALSE(mgr.HasShutdown());
 
     std::atomic<bool> test_finished = false;
     std::vector<std::thread> threads;
@@ -263,7 +265,7 @@ TEST_F(PlatformIsolateManagerTest, MultithreadedCreation) {
     }
 
     mgr.ShutdownPlatformIsolates();
-    EXPECT_TRUE(mgr.IsShutdown());
+    EXPECT_TRUE(mgr.HasShutdown());
 
     test_finished = true;
     for (auto& thread : threads) {

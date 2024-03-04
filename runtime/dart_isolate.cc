@@ -291,7 +291,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
       platform_config->client()->GetPlatformIsolateManager();
   std::weak_ptr<PlatformIsolateManager> weak_platform_isolate_manager =
       platform_isolate_manager;
-  if (platform_isolate_manager->IsShutdown()) {
+  if (platform_isolate_manager->HasShutdownMaybeFalseNegative()) {
     // Don't set the error string. We want to silently ignore this error,
     // because the engine is shutting down.
     FML_LOG(INFO) << "CreatePlatformIsolate called after shutdown";
@@ -335,7 +335,7 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
       std::shared_ptr<PlatformIsolateManager> platform_isolate_manager =
           weak_platform_isolate_manager.lock();
       if (platform_isolate_manager == nullptr ||
-          platform_isolate_manager->IsShutdown()) {
+          platform_isolate_manager->HasShutdown()) {
         // Shutdown happened in between this task being posted, and it running.
         // platform_isolate has already been shut down. Do nothing.
         FML_LOG(INFO) << "Shutdown before platform isolate task observer added";
@@ -384,31 +384,29 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     // isolate. This means that we're shutting down the engine. We need to
     // shutdown the platform isolate.
     FML_LOG(INFO) << "Shutdown during platform isolate creation";
-    Dart_ExitIsolate();  // Exit parent_isolate.
-    Dart_EnterIsolate(platform_isolate);
+    tonic::DartIsolateScope isolate_scope(platform_isolate);
     Dart_ShutdownIsolate();
-    Dart_EnterIsolate(parent_isolate);
     return nullptr;
   }
 
-  Dart_EnterScope();
+  tonic::DartApiScope api_scope;
   Dart_PersistentHandle entry_point_handle =
       Dart_NewPersistentHandle(entry_point);
-  Dart_ExitScope();
 
   platform_task_runner->PostTask([entry_point_handle, platform_isolate,
                                   weak_platform_isolate_manager]() {
     std::shared_ptr<PlatformIsolateManager> platform_isolate_manager =
         weak_platform_isolate_manager.lock();
     if (platform_isolate_manager == nullptr ||
-        platform_isolate_manager->IsShutdown()) {
+        platform_isolate_manager->HasShutdown()) {
       // Shutdown happened in between this task being posted, and it running.
       // platform_isolate has already been shut down. Do nothing.
       FML_LOG(INFO) << "Shutdown before platform isolate entry point";
       return;
     }
-    Dart_EnterIsolate(platform_isolate);
-    Dart_EnterScope();
+
+    tonic::DartIsolateScope isolate_scope(platform_isolate);
+    tonic::DartApiScope api_scope;
     Dart_Handle entry_point = Dart_HandleFromPersistent(entry_point_handle);
     Dart_DeletePersistentHandle(entry_point_handle);
 
@@ -423,9 +421,6 @@ Dart_Isolate DartIsolate::CreatePlatformIsolate(Dart_Handle entry_point,
     FML_CHECK(!tonic::CheckAndHandleError(result));
 
     tonic::DartInvokeVoid(entry_point);
-
-    Dart_ExitScope();
-    Dart_ExitIsolate();  // Exit platform_isolate.
   });
 
   return platform_isolate;

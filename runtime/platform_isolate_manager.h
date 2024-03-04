@@ -18,10 +18,14 @@ namespace flutter {
 class PlatformIsolateManager {
  public:
   /// Returns whether the PlatformIsolateManager is shutdown. New isolates
+  /// cannot be registered after the manager is shutdown. Must be called on the
+  /// platform thread.
+  bool HasShutdown();
+
+  /// Returns whether the PlatformIsolateManager is shutdown. New isolates
   /// cannot be registered after the manager is shutdown. Callable from any
-  /// thread. The result may be obsolete immediately after the call, except when
-  /// called on the platform thread.
-  bool IsShutdown();
+  /// thread. The result may be obsolete immediately after the call.
+  bool HasShutdownMaybeFalseNegative();
 
   /// Register an isolate in the list of platform isolates. Callable from any
   /// thread.
@@ -40,6 +44,8 @@ class PlatformIsolateManager {
   bool IsRegisteredForTestingOnly(Dart_Isolate isolate);
 
  private:
+  // This lock must be recursive because ShutdownPlatformIsolates indirectly
+  // calls RemovePlatformIsolate.
   std::recursive_mutex lock_;
   std::unordered_set<Dart_Isolate> platform_isolates_;
   bool is_shutdown_ = false;

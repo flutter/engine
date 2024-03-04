@@ -8,7 +8,13 @@
 
 namespace flutter {
 
-bool PlatformIsolateManager::IsShutdown() {
+bool PlatformIsolateManager::HasShutdown() {
+  // TODO(flutter/flutter#136314): Assert that we're on the platform thread.
+  std::scoped_lock lock(lock_);
+  return is_shutdown_;
+}
+
+bool PlatformIsolateManager::HasShutdownMaybeFalseNegative() {
   std::scoped_lock lock(lock_);
   return is_shutdown_;
 }
@@ -35,6 +41,7 @@ void PlatformIsolateManager::RemovePlatformIsolate(Dart_Isolate isolate) {
   if (is_shutdown_) {
     // Removal during ShutdownPlatformIsolates. Ignore, to avoid modifying
     // platform_isolates_ during iteration.
+    FML_DCHECK(platform_isolates_.empty());
     return;
   }
   FML_DCHECK(platform_isolates_.find(isolate) != platform_isolates_.end());
@@ -47,11 +54,12 @@ void PlatformIsolateManager::ShutdownPlatformIsolates() {
   // work.
   std::scoped_lock lock(lock_);
   is_shutdown_ = true;
-  for (Dart_Isolate isolate : platform_isolates_) {
+  std::unordered_set<Dart_Isolate> platform_isolates;
+  std::swap(platform_isolates_, platform_isolates);
+  for (Dart_Isolate isolate : platform_isolates) {
     Dart_EnterIsolate(isolate);
     Dart_ShutdownIsolate();
   }
-  platform_isolates_.clear();
 }
 
 bool PlatformIsolateManager::IsRegisteredForTestingOnly(Dart_Isolate isolate) {

@@ -136,4 +136,52 @@ void main() {
   test('PlatformIsolate runOnPlatformThread, exit disabled', () async {
     await runOnPlatformThread(() => expect(() => Isolate.exit(), throws));
   });
+
+  test('PlatformIsolate runOnPlatformThread, unsendable object', () async {
+    bool throws = false;
+    try {
+      await runOnPlatformThread(() => ReceivePort());
+    } catch (error) {
+      throws = true;
+    }
+    expect(throws, true);
+  });
+
+  test('PlatformIsolate runOnPlatformThread, unsendable object async',
+      () async {
+    bool throws = false;
+    try {
+      await runOnPlatformThread(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        return ReceivePort();
+      });
+    } catch (error) {
+      throws = true;
+    }
+    expect(throws, true);
+  });
+
+  test('PlatformIsolate runOnPlatformThread, throws unsendable', () async {
+    bool throws = false;
+    try {
+      await runOnPlatformThread(() => throw ReceivePort());
+    } catch (error) {
+      throws = true;
+    }
+    expect(throws, true);
+  });
+
+  test('PlatformIsolate runOnPlatformThread, throws unsendable async',
+      () async {
+    bool throws = false;
+    try {
+      await runOnPlatformThread(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        throw ReceivePort();
+      });
+    } catch (error) {
+      throws = true;
+    }
+    expect(throws, true);
+  });
 }

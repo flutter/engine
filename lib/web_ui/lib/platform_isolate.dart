@@ -6,11 +6,11 @@ part of ui;
 
 /// Runs [computation] on the platform thread and returns the result.
 ///
-/// Internally this creates an isolate on the platform thread that will be
+/// This may run the computation on a separate isolate. That isolate will be
 /// reused for subsequent [runOnPlatformThread] calls. This means that global
 /// state is maintained in that isolate between calls.
 ///
-/// The [computation] and any state it captures will be sent to that isolate.
+/// The [computation] and any state it captures may be sent to that isolate.
 /// See [SendPort.send] for information about what types can be sent.
 ///
 /// If [computation] is asynchronous (returns a `Future<R>`) then
@@ -25,6 +25,8 @@ part of ui;
 /// files and sockets (see [SendPort.send] for details).
 ///
 /// This method can only be invoked from the main isolate.
+///
+/// This API is currently experimental.
 Future<R> runOnPlatformThread<R>(FutureOr<R> Function() computation) =>
     Future<R>(computation);
 
