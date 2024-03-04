@@ -8,6 +8,7 @@
 #include <string>
 
 #include "flutter/fml/string_conversion.h"
+#include "flutter/fml/build_config.h"
 
 namespace flutter {
 
@@ -79,8 +80,12 @@ void TextInputModel::UpdateComposingText(const std::u16string& text,
       composing_range_.collapsed() ? selection_ : composing_range_;
   text_.replace(rangeToDelete.start(), rangeToDelete.length(), text);
   composing_range_.set_end(composing_range_.start() + text.length());
+#if FML_OS_WIN
+  selection_ = TextRange(composing_range_.end());
+#else   // FML_OS_WIN
   selection_ = TextRange(selection.start() + composing_range_.start(),
                          selection.extent() + composing_range_.start());
+#endif  // FML_OS_WIN
 }
 
 void TextInputModel::UpdateComposingText(const std::u16string& text) {
