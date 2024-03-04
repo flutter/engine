@@ -4483,44 +4483,63 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
   ASSERT_TRUE(shell);
 
+  fml::AutoResetWaitableEvent init_latch;
+  AddNativeCallback(
+      "NotifyNative",
+      CREATE_NATIVE_ENTRY([&init_latch](auto args) { init_latch.Signal(); }));
+
   bool hasImplicitView;
   std::vector<int64_t> viewIds;
-  fml::AutoResetWaitableEvent reportLatch;
-  auto nativeViewIdsCallback = [&reportLatch, &hasImplicitView,
+  auto nativeViewIdsCallback = [&hasImplicitView,
                                 &viewIds](Dart_NativeArguments args) {
     ParseViewIdsCallback(args, &hasImplicitView, &viewIds);
-    reportLatch.Signal();
   };
   AddNativeCallback("NativeReportViewIdsCallback",
                     CREATE_NATIVE_ENTRY(nativeViewIdsCallback));
+
+  bool last_successful;
+  fml::AutoResetWaitableEvent callback_latch;
+  // Generate a callback for AddView and RemoveView to record the operation
+  // result.
+  auto add_remove_callback = [&last_successful, &callback_latch]() {
+    return [&last_successful, &callback_latch](bool successful) {
+      last_successful = successful;
+      callback_latch.Signal();
+    };
+  };
 
   PlatformViewNotifyCreated(shell.get());
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("testReportViewIds");
   RunEngine(shell.get(), std::move(configuration));
 
-  reportLatch.Wait();
+  init_latch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(2, ViewportMetrics{}); });
-  reportLatch.Wait();
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&] {
+    shell->AddView(2, ViewportMetrics{}, add_remove_callback());
+  });
+  callback_latch.Wait();
+  ASSERT_EQ(last_successful, true);
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
   ASSERT_EQ(viewIds[1], 2ll);
 
   PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->RemoveView(2); });
-  reportLatch.Wait();
+           [&] { shell->RemoveView(2, add_remove_callback()); });
+  callback_latch.Wait();
+  ASSERT_EQ(last_successful, true);
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(4, ViewportMetrics{}); });
-  reportLatch.Wait();
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&] {
+    shell->AddView(4, ViewportMetrics{}, add_remove_callback());
+  });
+  callback_latch.Wait();
+  ASSERT_EQ(last_successful, true);
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
   ASSERT_EQ(viewIds[1], 4ll);
@@ -4569,7 +4588,10 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     // The construtor for ViewportMetrics{_, width, _, _, _} (only the 2nd
     // argument matters in this test).
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 10, 1, 0, 0});
-    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0});
+    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0}, [](bool successful) {
+      // This test doesn't wait for the callback, since it relies on the
+      // PlatformDispatcher reporting the viewport metrics.
+    });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
   });
 

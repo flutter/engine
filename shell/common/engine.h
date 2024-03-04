@@ -715,26 +715,31 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Notify the Flutter application that a new view is available.
   ///
   ///             A view must be added before other methods can refer to it,
-  ///             including the implicit view. Adding a view that already exists
-  ///             triggers an assertion.
+  ///             including the implicit view.
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  /// @return     Whether the view addition is successful. If true, the ID
+  ///             becomes available for view-specific operations. The addition
+  ///             can fail if the view ID already exists.
+  ///
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the Flutter application that a view is no
   ///             longer available.
-  ///
-  ///             Removing a view that does not exist triggers an assertion.
   ///
   ///             The implicit view (kFlutterImplicitViewId) should never be
   ///             removed. Doing so triggers an assertion.
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view removal is successful. If true, the ID
+  ///             is no longer available for view-specific operations. The
+  ///             removal can fail if the view ID doesn't exist.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for a view. The viewport metrics

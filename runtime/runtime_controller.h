@@ -173,23 +173,26 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Notify the isolate that a new view is available.
   ///
   ///             A view must be added before other methods can refer to it,
-  ///             including the implicit view. Adding a view that already exists
-  ///             triggers an assertion.
+  ///             including the implicit view.
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  /// @return     Whether the view addition is successful. It can fail if the
+  ///             view ID already exists.
   ///
   bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the isolate that a view is no longer available.
   ///
-  ///             Removing a view that does not exist triggers an assertion.
-  ///
   ///             The implicit view (kFlutterImplicitViewId) should never be
   ///             removed. Doing so triggers an assertion.
   ///
   /// @param[in]  view_id  The ID of the view.
+  ///
+  /// @return     Whether the view removal is successful. It can fail if the
+  ///             view ID doesn't exist.
   ///
   bool RemoveView(int64_t view_id);
 

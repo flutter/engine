@@ -134,6 +134,13 @@ class Shell final : public PlatformView::Delegate,
       impeller::RuntimeStageBackend runtime_stage_type)>
       EngineCreateCallback;
 
+  // The signature for the callback to be called after the attempt to add a
+  // view, reporting whether the view was successfully added.
+  using AddViewCallback = std::function<void(bool successful)>;
+  // The signature for the callback to be called after the attempt to remove a
+  // view, reporting whether the view was successfully removed.
+  using RemoveViewCallback = std::function<void(bool successful)>;
+
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
   ///             callbacks to create the various shell subcomponents will be
@@ -304,34 +311,43 @@ class Shell final : public PlatformView::Delegate,
 
   /// @brief  Allocates resources for a new non-implicit view.
   ///
-  ///         This method returns immediately and does not wait for the task on
-  ///         the UI thread to finish. This is safe because operations are
-  ///         either initiated from the UI thread (such as rendering), or are
-  ///         sent as posted tasks that are queued. In either case, it's ok for
-  ///         the engine to have views that the Dart VM doesn't.
+  ///         This call is asynchronous, returning immediately without waiting
+  ///         for the tasks posted to other threads to finish.
+  ///
+  ///         When the tasks are finished, `callback` will be called to report
+  ///         the result. The callback will be called on a different thread from
+  ///         the platform thread. The result is considered successful if the
+  ///         view didn't exist before and is added through this operation.
   ///
   ///         The implicit view should never be added with this function.
-  ///         Instead, it is added internally on Shell initialization. Trying to
-  ///         add `kFlutterImplicitViewId` triggers an assertion.
+  ///         Instead, it is added internally on Shell initialization. Adding
+  ///         `kFlutterImplicitViewId` is always unsuccessful.
   ///
   /// @param[in]  view_id           The view ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  /// @param[in]  callback          Called after the operation is finished.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
+  void AddView(int64_t view_id,
+               const ViewportMetrics& viewport_metrics,
+               AddViewCallback callback);
 
   /// @brief  Deallocates resources for a non-implicit view.
   ///
-  ///         This method returns immediately and does not wait for the task on
-  ///         the UI thread to finish. This means that the Dart VM might still
-  ///         send messages regarding this view ID for a short while, even
-  ///         though this view ID is already invalid.
+  ///         This call is asynchronous, returning immediately without waiting
+  ///         for the tasks posted to other threads to finish.
   ///
-  ///         The implicit view should never be removed. Trying to remove
-  ///         `kFlutterImplicitViewId` triggers an assertion.
+  ///         When the tasks are finished, `callback` will be called to report
+  ///         the result. The callback will be called on a different thread from
+  ///         the platform thread. The result is considered successful if the
+  ///         view existed before and is removed through this operation.
+  ///
+  ///         The implicit view should never be removed. Removing
+  ///         `kFlutterImplicitViewId` is always unsuccessful.
   ///
   /// @param[in]  view_id     The view ID of the view to be removed.
+  /// @param[in]  callback    Called after the operation is finished.
   ///
-  void RemoveView(int64_t view_id);
+  void RemoveView(int64_t view_id, RemoveViewCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data

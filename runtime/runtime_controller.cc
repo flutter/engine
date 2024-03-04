@@ -133,24 +133,32 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
 
 bool RuntimeController::AddView(int64_t view_id,
                                 const ViewportMetrics& view_metrics) {
-  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id, view_metrics);
-
-    return true;
+  bool insertion_happened = platform_data_.viewport_metrics_for_views
+                                .try_emplace(view_id, view_metrics)
+                                .second;
+  if (!insertion_happened) {
+    return false;
   }
 
-  return false;
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->AddView(view_id, view_metrics);
+  }
+
+  return true;
 }
 
 bool RuntimeController::RemoveView(int64_t view_id) {
-  platform_data_.viewport_metrics_for_views.erase(view_id);
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->RemoveView(view_id);
-    return true;
+  size_t erased_count =
+      platform_data_.viewport_metrics_for_views.erase(view_id);
+  if (erased_count == 0) {
+    return false;
   }
 
-  return false;
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->RemoveView(view_id);
+  }
+
+  return true;
 }
 
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
