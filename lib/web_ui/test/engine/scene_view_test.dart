@@ -53,6 +53,52 @@ class StubPictureRenderer implements PictureRenderer {
   Map<ScenePicture, ui.Rect> clipRequests = <ScenePicture, ui.Rect>{};
 }
 
+class StubFlutterView implements ui.FlutterView {
+  @override
+  double get devicePixelRatio => throw UnimplementedError();
+
+  @override
+  ui.Display get display => throw UnimplementedError();
+
+  @override
+  List<ui.DisplayFeature> get displayFeatures => throw UnimplementedError();
+
+  @override
+  ui.GestureSettings get gestureSettings => throw UnimplementedError();
+
+  @override
+  ui.ViewPadding get padding => throw UnimplementedError();
+
+  @override
+  ui.ViewConstraints get physicalConstraints => throw UnimplementedError();
+
+  @override
+  ui.Size get physicalSize => const ui.Size(1000, 1000);
+
+  @override
+  ui.PlatformDispatcher get platformDispatcher => throw UnimplementedError();
+
+  @override
+  void render(ui.Scene scene, {ui.Size? size}) {
+  }
+
+  @override
+  ui.ViewPadding get systemGestureInsets => throw UnimplementedError();
+
+  @override
+  void updateSemantics(ui.SemanticsUpdate update) {
+  }
+
+  @override
+  int get viewId => throw UnimplementedError();
+
+  @override
+  ui.ViewPadding get viewInsets => throw UnimplementedError();
+
+  @override
+  ui.ViewPadding get viewPadding => throw UnimplementedError();
+}
+
 void testMain() {
   late EngineSceneView sceneView;
   late StubPictureRenderer stubPictureRenderer;
@@ -63,7 +109,7 @@ void testMain() {
 
   setUp(() {
     stubPictureRenderer = StubPictureRenderer();
-    sceneView = EngineSceneView(stubPictureRenderer);
+    sceneView = EngineSceneView(stubPictureRenderer, StubFlutterView());
   });
 
   test('SceneView places canvas according to device-pixel ratio', () async {
