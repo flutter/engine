@@ -758,7 +758,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       result.setParent(rootAccessibilityView, semanticsNode.parent.id);
     } else {
       if (BuildConfig.DEBUG && semanticsNode.id != ROOT_NODE_ID) {
-        Log.e(TAG, "Sema_ntics node id does not equal ROOT_NODE_ID.");
+        Log.e(TAG, "Semantics node id does not equal ROOT_NODE_ID.");
       }
       result.setParent(rootAccessibilityView);
     }
