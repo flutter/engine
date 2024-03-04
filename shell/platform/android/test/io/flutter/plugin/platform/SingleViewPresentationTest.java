@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(P)
+@TargetApi(28)
 public class SingleViewPresentationTest {
   @Test
   @Config(minSdk = 21, maxSdk = 30)
