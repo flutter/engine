@@ -5,15 +5,12 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_
 
-#include "flutter/fml/macros.h"
-#include "flutter/fml/memory/ref_ptr.h"
 #include "impeller/core/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
-#include <array>
 #include <cstdint>
 #include <memory>
 
@@ -36,6 +33,7 @@ class AllocatorVK final : public Allocator {
   bool supports_memoryless_textures_ = false;
   // TODO(jonahwilliams): figure out why CI can't create these buffer pools.
   bool created_buffer_pool_ = true;
+  vk::PhysicalDeviceMemoryProperties memory_properties_;
 
   AllocatorVK(std::weak_ptr<Context> context,
               uint32_t vulkan_api_version,
@@ -57,6 +55,9 @@ class AllocatorVK final : public Allocator {
 
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
+
+  // |Allocator|
+  void DebugTraceMemoryStatistics() const override;
 
   AllocatorVK(const AllocatorVK&) = delete;
 

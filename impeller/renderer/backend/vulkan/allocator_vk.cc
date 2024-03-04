@@ -6,13 +6,13 @@
 
 #include <memory>
 
-#include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/fml/trace_event.h"
+#include "flutter_vma/flutter_vma.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
 
@@ -101,6 +101,7 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
   auto limits = physical_device.getProperties().limits;
   max_texture_size_.width = max_texture_size_.height =
       limits.maxImageDimension2D;
+  physical_device.getMemoryProperties(&memory_properties_);
 
   VmaVulkanFunctions proc_table = {};
 
@@ -149,11 +150,25 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     VALIDATION_LOG << "Could not create memory allocator";
     return;
   }
+
+  {
+    // Query texture support.
+    // TODO(jonahwilliams):
+    // https://github.com/flutter/flutter/issues/129784
+    physical_device.getMemoryProperties(&memory_properties_);
+
+    for (auto i = 0u; i < memory_properties_.memoryTypeCount; i++) {
+      if (memory_properties_.memoryTypes[i].propertyFlags &
+          vk::MemoryPropertyFlagBits::eLazilyAllocated) {
+        supports_memoryless_textures_ = true;
+      }
+    }
+  }
+
   staging_buffer_pool_.reset(CreateBufferPool(allocator));
   created_buffer_pool_ &= staging_buffer_pool_.is_valid();
   allocator_.reset(allocator);
-  supports_memoryless_textures_ =
-      capabilities.SupportsDeviceTransientTextures();
+  supports_memoryless_textures_ = false;
   is_valid_ = true;
 }
 
@@ -192,8 +207,8 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
+      vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
     }
-    vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
   }
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
@@ -480,6 +495,11 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
                                              &buffer_allocation_info  //
                                              )};
 
+  bool is_host_coherent_buffer =
+      !!(memory_properties_.memoryTypes[buffer_allocation_info.memoryType]
+             .propertyFlags &
+         vk::MemoryPropertyFlagBits::eHostCoherent);
+
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Unable to allocate a device buffer: "
                    << vk::to_string(result);
@@ -492,8 +512,28 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
       UniqueBufferVMA{BufferVMA{allocator_.get(),      //
                                 buffer_allocation,     //
                                 vk::Buffer{buffer}}},  //
-      buffer_allocation_info                           //
+      buffer_allocation_info,                          //
+      is_host_coherent_buffer                          //
   );
+}
+
+void AllocatorVK::DebugTraceMemoryStatistics() const {
+#ifdef IMPELLER_DEBUG
+  auto count = memory_properties_.memoryHeapCount;
+  std::vector<VmaBudget> budgets(count);
+  vmaGetHeapBudgets(allocator_.get(), budgets.data());
+  size_t total_usage = 0;
+  for (auto i = 0u; i < count; i++) {
+    const VmaBudget& budget = budgets[i];
+    total_usage += budget.usage;
+  }
+  // Convert bytes to MB.
+  total_usage *= 1e-6;
+  FML_LOG(ERROR) << total_usage;
+  FML_TRACE_COUNTER("flutter", "AllocatorVK",
+                    reinterpret_cast<int64_t>(this),  // Trace Counter ID
+                    "MemoryBudgetUsageMB", total_usage);
+#endif  // IMPELLER_DEBUG
 }
 
 }  // namespace impeller
