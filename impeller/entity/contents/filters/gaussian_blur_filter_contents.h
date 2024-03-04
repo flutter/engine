@@ -40,8 +40,8 @@ class GaussianBlurFilterContents final : public FilterContents {
       Scalar sigma_x,
       Scalar sigma_y,
       Entity::TileMode tile_mode,
-      BlurStyle blur_style,
-      const std::shared_ptr<Geometry>& geometry);
+      BlurStyle mask_blur_style,
+      const std::shared_ptr<Geometry>& mask_geometry);
 
   Scalar GetSigmaX() const { return sigma_x_; }
   Scalar GetSigmaY() const { return sigma_y_; }
@@ -98,8 +98,8 @@ class GaussianBlurFilterContents final : public FilterContents {
   const Scalar sigma_x_ = 0.0;
   const Scalar sigma_y_ = 0.0;
   const Entity::TileMode tile_mode_;
-  const BlurStyle blur_style_;
-  std::shared_ptr<Geometry> geometry_;
+  const BlurStyle mask_blur_style_;
+  std::shared_ptr<Geometry> mask_geometry_;
 };
 
 }  // namespace impeller

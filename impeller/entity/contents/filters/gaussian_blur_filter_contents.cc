@@ -264,15 +264,15 @@ GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_x,
     Scalar sigma_y,
     Entity::TileMode tile_mode,
-    BlurStyle blur_style,
-    const std::shared_ptr<Geometry>& geometry)
+    BlurStyle mask_blur_style,
+    const std::shared_ptr<Geometry>& mask_geometry)
     : sigma_x_(sigma_x),
       sigma_y_(sigma_y),
       tile_mode_(tile_mode),
-      blur_style_(blur_style),
-      geometry_(geometry) {
+      mask_blur_style_(mask_blur_style),
+      mask_geometry_(mask_geometry) {
   // This is supposed to be enforced at a higher level.
-  FML_DCHECK(blur_style == BlurStyle::kNormal || geometry);
+  FML_DCHECK(mask_blur_style == BlurStyle::kNormal || mask_geometry);
 }
 
 // This value was extracted from Skia, see:
@@ -512,8 +512,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  return ApplyBlurStyle(blur_style_, entity, inputs[0], input_snapshot.value(),
-                        std::move(blur_output_entity.value()), geometry_);
+  return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
+                        input_snapshot.value(),
+                        std::move(blur_output_entity.value()), mask_geometry_);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
