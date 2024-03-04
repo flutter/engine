@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <string>
 
-#include "flutter/fml/string_conversion.h"
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/string_conversion.h"
 
 namespace flutter {
 
