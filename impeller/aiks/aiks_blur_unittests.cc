@@ -835,7 +835,22 @@ TEST_P(AiksTest, GaussianBlurStyleSolid) {
   Paint red;
   red.color = Color::Red();
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+}
 
+TEST_P(AiksTest, GaussianBlurStyleInnerTexture) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  paint.color = Color::Green();
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma(30),
+  };
+  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+  canvas.DrawImage(std::make_shared<Image>(boston), {200, 200}, paint);
+  Paint red;
+  red.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

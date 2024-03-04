@@ -122,6 +122,24 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
+    std::shared_ptr<TextureContents> texture_contents,
+    const std::shared_ptr<ColorFilter>& color_filter) const {
+  auto mask = std::make_shared<SolidColorContents>();
+  mask->SetColor(Color::White());
+  std::optional<Rect> coverage = texture_contents->GetCoverage({});
+  std::shared_ptr<Geometry> geometry = Geometry::MakeRect(coverage.value());
+  mask->SetGeometry(geometry);
+  std::shared_ptr<FilterContents> blurred_mask =
+      FilterContents::MakeGaussianBlur(FilterInput::Make(mask), sigma, sigma,
+                                       Entity::TileMode::kDecal, style,
+                                       geometry);
+
+  return ColorFilterContents::MakeBlend(
+      BlendMode::kSourceIn,
+      {FilterInput::Make(blurred_mask), FilterInput::Make(texture_contents)});
+}
+
+std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     std::shared_ptr<ColorSourceContents> color_source_contents,
     const std::shared_ptr<ColorFilter>& color_filter) const {
   // If it's a solid color and there is no color filter, then we can just get
