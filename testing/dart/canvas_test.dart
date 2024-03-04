@@ -1203,7 +1203,7 @@ void main() async {
       ..imageFilter = ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0);
 
     // Make a copy, and change every field of the copy.
-    final Paint paintCopy = Paint.from(paint)
+    Paint.from(paint)
       ..color = const Color(0xFF00FF00)
       ..strokeWidth = 20.0
       ..strokeCap = StrokeCap.butt
