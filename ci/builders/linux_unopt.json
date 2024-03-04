@@ -37,14 +37,30 @@
             },
             "tests": [
                 {
-                    "name": "test:format_and_dart_test",
-                    "script": "flutter/ci/format.sh"
+                    "name": "test: Check formatting",
+                    "script": "flutter/bin/et",
+                    "parameters": [
+                        "format",
+                        "--dry-run",
+                        "--all"
+                    ]
+                },
+                {
+                    "name": "ban GeneratedPluginRegistrant.java",
+                    "script": "flutter/ci/ban_generated_plugin_registrant_java.sh"
+                },
+                {
+                    "name": "ban_test GeneratedPluginRegistrant.java",
+                    "script": "flutter/ci/test/ban_generated_plugin_registrant_java_test.sh"
                 },
                 {
                     "language": "python3",
                     "name": "test: Host_Tests_for_host_debug_unopt",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
+                        "--quiet",
+                        "--logs-dir",
+                        "${FLUTTER_LOGS_DIR}",
                         "--variant",
                         "host_debug_unopt",
                         "--type",

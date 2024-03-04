@@ -3,11 +3,15 @@
 // found in the LICENSE file.
 
 import 'package:args/command_runner.dart';
-
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../environment.dart';
+import 'build_command.dart';
+import 'format_command.dart';
 import 'query_command.dart';
+import 'run_command.dart';
+
+const int _usageLineLength = 80;
 
 /// The root command runner.
 final class ToolCommandRunner extends CommandRunner<int> {
@@ -16,11 +20,16 @@ final class ToolCommandRunner extends CommandRunner<int> {
   ToolCommandRunner({
     required this.environment,
     required this.configs,
-  }) : super(toolName, toolDescription) {
-    addCommand(QueryCommand(
-      environment: environment,
-      configs: configs,
-    ));
+  }) : super(toolName, toolDescription, usageLineLength: _usageLineLength) {
+    final List<Command<int>> commands = <Command<int>>[
+      FormatCommand(
+        environment: environment,
+      ),
+      QueryCommand(environment: environment, configs: configs),
+      BuildCommand(environment: environment, configs: configs),
+      RunCommand(environment: environment, configs: configs),
+    ];
+    commands.forEach(addCommand);
   }
 
   /// The name of the tool as reported in the tool's usage and help
@@ -30,17 +39,17 @@ final class ToolCommandRunner extends CommandRunner<int> {
   /// The description of the tool reported in the tool's usage and help
   /// messages.
   static const String toolDescription = 'A command line tool for working on '
-                                        'the Flutter Engine.';
+      'the Flutter Engine.';
 
   /// The host system environment.
   final Environment environment;
 
   /// Build configurations loaded from the engine from under ci/builders.
-  final Map<String, BuildConfig> configs;
+  final Map<String, BuilderConfig> configs;
 
   @override
   Future<int> run(Iterable<String> args) async {
-    try{
+    try {
       return await runCommand(parse(args)) ?? 0;
     } on FormatException catch (e) {
       environment.logger.error(e);

@@ -7,18 +7,24 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "debug",
                 "--prebuilt-dart-sdk",
                 "--no-lto",
-                "--force-mac-arm64"
+                "--force-mac-arm64",
+                "--target-dir",
+                "host_debug_clang_tidy",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
-            "name": "host_debug",
+            "name": "host_debug_clang_tidy",
             "ninja": {
-                "config": "host_debug"
+                "config": "host_debug_clang_tidy"
             }
         },
         {
@@ -28,7 +34,8 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--ios",
@@ -36,11 +43,16 @@
                 "debug",
                 "--simulator",
                 "--no-lto",
-                "--force-mac-arm64"
+                "--force-mac-arm64",
+                "--target-dir",
+                "ios_debug_sim_clang_tidy",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
-            "name": "ios_debug_sim",
+            "name": "ios_debug_sim_clang_tidy",
             "ninja": {
-                "config": "ios_debug_sim"
+                "config": "ios_debug_sim_clang_tidy"
             }
         }
     ],
@@ -54,23 +66,41 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
             ],
             "tasks": [
                 {
+                    "name": "gn for host_debug",
+                    "langauge": "python",
+                    "script": "flutter/tools/gn",
+                    "parameters": [
+                        "--runtime-mode",
+                        "debug",
+                        "--prebuilt-dart-sdk",
+                        "--no-lto",
+                        "--force-mac-arm64",
+                        "--target-dir",
+                        "host_debug_clang_tidy",
+                        "--rbe",
+                        "--no-goma",
+                        "--xcode-symlinks"
+                    ]
+                },
+                {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -86,25 +116,43 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
             ],
             "tasks": [
                 {
+                    "name": "gn for host_debug",
+                    "langauge": "python",
+                    "script": "flutter/tools/gn",
+                    "parameters": [
+                        "--runtime-mode",
+                        "debug",
+                        "--prebuilt-dart-sdk",
+                        "--no-lto",
+                        "--force-mac-arm64",
+                        "--target-dir",
+                        "host_debug_clang_tidy",
+                        "--rbe",
+                        "--no-goma",
+                        "--xcode-symlinks"
+                    ]
+                },
+                {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=1",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -118,25 +166,43 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
             ],
             "tasks": [
                 {
+                    "name": "gn for host_debug",
+                    "langauge": "python",
+                    "script": "flutter/tools/gn",
+                    "parameters": [
+                        "--runtime-mode",
+                        "debug",
+                        "--prebuilt-dart-sdk",
+                        "--no-lto",
+                        "--force-mac-arm64",
+                        "--target-dir",
+                        "host_debug_clang_tidy",
+                        "--rbe",
+                        "--no-goma",
+                        "--xcode-symlinks"
+                    ]
+                },
+                {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=2",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -150,25 +216,43 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "dependencies": [
-                "host_debug"
+                "host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
             ],
             "tasks": [
                 {
+                    "name": "gn for host_debug",
+                    "langauge": "python",
+                    "script": "flutter/tools/gn",
+                    "parameters": [
+                        "--runtime-mode",
+                        "debug",
+                        "--prebuilt-dart-sdk",
+                        "--no-lto",
+                        "--force-mac-arm64",
+                        "--target-dir",
+                        "host_debug_clang_tidy",
+                        "--rbe",
+                        "--no-goma",
+                        "--xcode-symlinks"
+                    ]
+                },
+                {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=3",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -182,24 +266,60 @@
                 "cpu=arm64"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "dependencies": [
-                "host_debug",
-                "ios_debug_sim"
+                "host_debug_clang_tidy",
+                "ios_debug_sim_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
             ],
             "tasks": [
                 {
+                    "name": "gn for host_debug",
+                    "langauge": "python",
+                    "script": "flutter/tools/gn",
+                    "parameters": [
+                        "--runtime-mode",
+                        "debug",
+                        "--prebuilt-dart-sdk",
+                        "--no-lto",
+                        "--force-mac-arm64",
+                        "--target-dir",
+                        "host_debug_clang_tidy",
+                        "--rbe",
+                        "--no-goma",
+                        "--xcode-symlinks"
+                    ]
+                },
+                {
+                    "name": "gn for ios_debug_sim",
+                    "langauge": "python",
+                    "script": "flutter/tools/gn",
+                    "parameters": [
+                        "--ios",
+                        "--runtime-mode",
+                        "debug",
+                        "--simulator",
+                        "--no-lto",
+                        "--force-mac-arm64",
+                        "--target-dir",
+                        "ios_debug_sim_clang_tidy",
+                        "--rbe",
+                        "--no-goma",
+                        "--xcode-symlinks"
+                    ]
+                },
+                {
                     "name": "test: lint ios_debug_sim",
                     "parameters": [
                         "--variant",
-                        "ios_debug_sim",
+                        "ios_debug_sim_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug"
+                        "--shard-variants=host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"

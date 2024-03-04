@@ -8,6 +8,7 @@
 #include <optional>
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/geometry/geometry.h"
 
 namespace impeller {
 
@@ -21,6 +22,11 @@ struct BlurParameters {
 KernelPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     BlurParameters parameters);
 
+/// This will shrink the size of a kernel by roughly half by sampling between
+/// samples and relying on linear interpolation between the samples.
+KernelPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
+    KernelPipeline::FragmentShader::KernelSamples samples);
+
 /// Performs a bidirectional Gaussian blur.
 ///
 /// This is accomplished by rendering multiple passes in multiple directions.
@@ -30,9 +36,12 @@ class GaussianBlurFilterContents final : public FilterContents {
   static std::string_view kNoMipsError;
   static const int32_t kBlurFilterRequiredMipCount;
 
-  explicit GaussianBlurFilterContents(Scalar sigma_x,
-                                      Scalar sigma_y,
-                                      Entity::TileMode tile_mode);
+  explicit GaussianBlurFilterContents(
+      Scalar sigma_x,
+      Scalar sigma_y,
+      Entity::TileMode tile_mode,
+      BlurStyle mask_blur_style,
+      const std::shared_ptr<Geometry>& mask_geometry);
 
   Scalar GetSigmaX() const { return sigma_x_; }
   Scalar GetSigmaY() const { return sigma_y_; }
@@ -89,6 +98,8 @@ class GaussianBlurFilterContents final : public FilterContents {
   const Scalar sigma_x_ = 0.0;
   const Scalar sigma_y_ = 0.0;
   const Entity::TileMode tile_mode_;
+  const BlurStyle mask_blur_style_;
+  std::shared_ptr<Geometry> mask_geometry_;
 };
 
 }  // namespace impeller

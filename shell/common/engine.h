@@ -838,6 +838,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
+  void EndWarmUpFrame() override;
+
+  // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
 
   // |RuntimeDelegate|
@@ -957,6 +960,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   }
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Shuts down all registered platform isolates. Must be called
+  ///             from the platform thread.
+  ///
+  void ShutdownPlatformIsolates();
 
  private:
   // |RuntimeDelegate|

@@ -223,7 +223,6 @@ void testMain() {
           expect(metrics, hasLength(1));
       }
     });
-
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/71520
   }, skip: isSafari || isFirefox);
 }

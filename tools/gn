@@ -62,11 +62,11 @@ def get_out_dir(args):
   if args.macos_enable_metal:
     target_dir.append('metal')
 
-  if args.target_dir != '':
-    target_dir = [args.target_dir]
-
   if args.darwin_extension_safe:
     target_dir.append('extension_safe')
+
+  if args.target_dir != '':
+    target_dir = [args.target_dir]
 
   return os.path.join(args.out_dir, 'out', '_'.join(target_dir))
 
@@ -314,6 +314,36 @@ def setup_goma(args):
   return goma_gn_args
 
 
+# Find the locations of the macOS and iOS SDKs under flutter/prebuilts.
+def setup_apple_sdks():
+  sdks_gn_args = {}
+
+  # These are needed on a macOS host regardless of target.
+  # This value should agree with the 'mac_sdk_min' value in the DEPS file.
+  sdks_gn_args['mac_sdk_min'] = '10.14'
+
+  # The MACOSX_DEPLOYMENT_TARGET variable used when compiling.
+  # Must be of the form x.x.x for Info.plist files.
+  sdks_gn_args['mac_deployment_target'] = '10.14.0'
+
+  running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
+  if running_on_luci:
+    return sdks_gn_args
+
+  prefixes = [
+      ('MacOSX', 'mac_sdk_path'),
+      ('iPhoneOS', 'ios_device_sdk_path'),
+      ('iPhoneSimulator', 'ios_simulator_sdk_path'),
+  ]
+  sdks_path = os.path.join(SRC_ROOT, 'flutter', 'prebuilts', 'SDKs')
+  sdk_entries = os.listdir(sdks_path)
+  for (prefix, arg) in prefixes:
+    for entry in sdk_entries:
+      if entry.startswith(prefix):
+        sdks_gn_args[arg] = os.path.join(sdks_path, entry)
+  return sdks_gn_args
+
+
 def to_gn_args(args):
   if args.simulator:
     if args.target_os != 'ios':
@@ -429,16 +459,12 @@ def to_gn_args(args):
   if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
-  if is_host_build(args) and gn_args['host_os'] == 'mac':
-    # macOS unit tests include Vulkan headers which reference Metal types
-    # introduced in macOS 10.14.
-    gn_args['mac_sdk_min'] = '10.14'
-    gn_args['mac_deployment_target'] = '10.14.0'
-
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
+    gn_args.update(setup_apple_sdks())
   elif get_host_os() == 'mac':
     gn_args['use_ios_simulator'] = False
+    gn_args.update(setup_apple_sdks())
 
   if args.dart_debug:
     gn_args['dart_debug'] = True
@@ -618,6 +644,8 @@ def to_gn_args(args):
   if args.target_os in ['android'] and gn_args['target_cpu'] in ['x64', 'arm64']:
     gn_args['dart_use_compressed_pointers'] = True
 
+  if args.target_os == 'fuchsia':
+    gn_args['gn_configs_path'] = '//flutter/build/config/fuchsia/gn_configs.gni'
   if args.fuchsia_target_api_level is not None:
     gn_args['fuchsia_target_api_level'] = args.fuchsia_target_api_level
   elif args.target_os == 'fuchsia':
@@ -690,9 +718,9 @@ def to_gn_args(args):
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
     gn_args['angle_enable_vulkan_validation_layers'] = False
-    gn_args['angle_vulkan_headers_dir'] = '//third_party/vulkan-deps/vulkan-headers/src'
-    gn_args['angle_vulkan_loader_dir'] = '//third_party/vulkan-deps/vulkan-loader/src'
-    gn_args['angle_vulkan_tools_dir'] = '//third_party/vulkan-deps/vulkan-tools/src'
+    gn_args['angle_vulkan_headers_dir'] = '//flutter/third_party/vulkan-deps/vulkan-headers/src'
+    gn_args['angle_vulkan_loader_dir'] = '//flutter/third_party/vulkan-deps/vulkan-loader/src'
+    gn_args['angle_vulkan_tools_dir'] = '//flutter/third_party/vulkan-deps/vulkan-tools/src'
 
   if args.darwin_extension_safe:
     gn_args['darwin_extension_safe'] = True

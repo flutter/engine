@@ -4,6 +4,7 @@
 
 #include "impeller/entity/entity_pass.h"
 
+#include <limits>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -291,9 +292,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
 
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(
+    target = renderer.GetRenderTargetCache()->CreateOffscreenMSAA(
         /*context=*/*context,
-        /*allocator=*/*renderer.GetRenderTargetCache(),
         /*size=*/size,
         /*mip_count=*/mip_count,
         /*label=*/"EntityPass",
@@ -307,10 +307,9 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
         /*stencil_attachment_config=*/
         kDefaultStencilConfig);
   } else {
-    target = RenderTarget::CreateOffscreen(
-        *context,                          // context
-        *renderer.GetRenderTargetCache(),  // allocator
-        size,                              // size
+    target = renderer.GetRenderTargetCache()->CreateOffscreen(
+        *context,  // context
+        size,      // size
         /*mip_count=*/mip_count,
         "EntityPass",  // label
         RenderTarget::AttachmentConfig{
@@ -460,31 +459,13 @@ bool EntityPass::Render(ContentContext& renderer,
   // this method.
   auto color0 = root_render_target.GetColorAttachments().find(0u)->second;
 
-  // If a root stencil was provided by the caller, then verify that it has a
-  // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
   auto depth_attachment = root_render_target.GetDepthAttachment();
-  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
-    auto stencil_texture = stencil_attachment->texture;
-    if (!stencil_texture) {
-      VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
-      return false;
-    }
-
-    auto stencil_storage_mode =
-        stencil_texture->GetTextureDescriptor().storage_mode;
-    if (reads_from_onscreen_backdrop &&
-        stencil_storage_mode == StorageMode::kDeviceTransient) {
-      VALIDATION_LOG << "The given root RenderTarget stencil needs to be read, "
-                        "but it's marked as transient.";
-      return false;
-    }
-  }
-  // Setup a new root stencil with an optimal configuration if one wasn't
-  // provided by the caller.
-  else {
+  if (!stencil_attachment.has_value() || !depth_attachment.has_value()) {
+    // Setup a new root stencil with an optimal configuration if one wasn't
+    // provided by the caller.
     root_render_target.SetupDepthStencilAttachments(
-        *renderer.GetContext(), *renderer.GetRenderTargetCache(),
+        *renderer.GetContext(), *renderer.GetContext()->GetResourceAllocator(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
         "ImpellerOnscreen", kDefaultStencilConfig);
@@ -765,6 +746,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
+    msaa_backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
@@ -836,6 +818,11 @@ bool EntityPass::RenderElement(Entity& element_entity,
         restore_coverage = restore_coverage->Shift(-global_pass_position);
       }
       clip_coverage_stack.resize(restoration_index + 1);
+
+      if constexpr (ContentContext::kEnableStencilThenCover) {
+        // Skip all clip restores when stencil-then-cover is enabled.
+        return true;
+      }
 
       if (!clip_coverage_stack.back().coverage.has_value()) {
         // Running this restore op won't make anything renderable, so skip it.
@@ -923,6 +910,7 @@ bool EntityPass::OnRender(
     backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetClipDepth(clip_depth_floor);
+    backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
 
     RenderElement(backdrop_entity, clip_depth_floor, pass_context, pass_depth,
                   renderer, clip_coverage_stack, global_pass_position);

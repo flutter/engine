@@ -5,14 +5,11 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import 'command.dart';
+import 'flags.dart';
 
-const String _allFlag = 'all';
-const String _builderFlag = 'builder';
-const String _verboseFlag = 'verbose';
-
-/// The root 'query' command.
+// ignore: public_member_api_docs
 final class QueryCommand extends CommandBase {
-  /// Constructs the 'query' command.
+  // ignore: public_member_api_docs
   QueryCommand({
     required super.environment,
     required this.configs,
@@ -20,76 +17,75 @@ final class QueryCommand extends CommandBase {
     // Add options here that are common to all queries.
     argParser
       ..addFlag(
-        _allFlag,
+        allFlag,
         abbr: 'a',
         help: 'List all results, even when not relevant on this platform',
         negatable: false,
       )
       ..addOption(
-        _builderFlag,
+        builderFlag,
         abbr: 'b',
         help: 'Restrict the query to a single builder.',
         allowed: <String>[
-          for (final MapEntry<String, BuildConfig> entry in configs.entries)
-            if (entry.value.canRunOn(environment.platform))
-              entry.key,
+          for (final MapEntry<String, BuilderConfig> entry in configs.entries)
+            if (entry.value.canRunOn(environment.platform)) entry.key,
         ],
         allowedHelp: <String, String>{
           // TODO(zanderso): Add human readable descriptions to the json files.
-          for (final MapEntry<String, BuildConfig> entry in configs.entries)
+          for (final MapEntry<String, BuilderConfig> entry in configs.entries)
             if (entry.value.canRunOn(environment.platform))
               entry.key: entry.value.path,
         },
       )
       ..addFlag(
-        _verboseFlag,
+        verboseFlag,
         abbr: 'v',
         help: 'Respond to queries with extra information',
         negatable: false,
       );
 
-    addSubcommand(QueryBuildsCommand(
+    addSubcommand(QueryBuildersCommand(
       environment: environment,
       configs: configs,
     ));
   }
 
   /// Build configurations loaded from the engine from under ci/builders.
-  final Map<String, BuildConfig> configs;
+  final Map<String, BuilderConfig> configs;
 
   @override
   String get name => 'query';
 
   @override
   String get description => 'Provides information about build configurations '
-                            'and tests.';
+      'and tests.';
 }
 
 /// The 'query builds' command.
-final class QueryBuildsCommand extends CommandBase {
+final class QueryBuildersCommand extends CommandBase {
   /// Constructs the 'query build' command.
-  QueryBuildsCommand({
+  QueryBuildersCommand({
     required super.environment,
     required this.configs,
   });
 
   /// Build configurations loaded from the engine from under ci/builders.
-  final Map<String, BuildConfig> configs;
+  final Map<String, BuilderConfig> configs;
 
   @override
-  String get name => 'builds';
+  String get name => 'builders';
 
   @override
-  String get description => 'Provides information about CI build '
-                            'configurations';
+  String get description => 'Provides information about CI builder '
+      'configurations';
 
   @override
   Future<int> run() async {
     // Loop through all configs, and log those that are compatible with the
     // current platform.
-    final bool all = parent!.argResults![_allFlag]! as bool;
-    final String? builderName = parent!.argResults![_builderFlag] as String?;
-    final bool verbose = parent!.argResults![_verboseFlag] as bool;
+    final bool all = parent!.argResults![allFlag]! as bool;
+    final String? builderName = parent!.argResults![builderFlag] as String?;
+    final bool verbose = parent!.argResults![verboseFlag] as bool;
     if (!verbose) {
       environment.logger.status(
         'Add --verbose to see detailed information about each builder',
@@ -101,13 +97,13 @@ final class QueryBuildsCommand extends CommandBase {
         continue;
       }
 
-      final BuildConfig config = configs[key]!;
+      final BuilderConfig config = configs[key]!;
       if (!config.canRunOn(environment.platform) && !all) {
         continue;
       }
 
       environment.logger.status('"$key" builder:');
-      for (final GlobalBuild build in config.builds) {
+      for (final Build build in config.builds) {
         if (!build.canRunOn(environment.platform) && !all) {
           continue;
         }

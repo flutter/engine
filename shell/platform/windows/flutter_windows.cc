@@ -110,6 +110,12 @@ void FlutterDesktopViewControllerDestroy(FlutterDesktopViewControllerRef ref) {
   delete controller;
 }
 
+FlutterDesktopViewId FlutterDesktopViewControllerGetViewId(
+    FlutterDesktopViewControllerRef ref) {
+  auto controller = ViewControllerFromHandle(ref);
+  return static_cast<FlutterDesktopViewId>(controller->view()->view_id());
+}
+
 FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
     FlutterDesktopViewControllerRef ref) {
   auto controller = ViewControllerFromHandle(ref);
@@ -243,6 +249,14 @@ bool FlutterDesktopEngineProcessExternalWindowMessage(
     *result = lresult.value();
   }
   return lresult.has_value();
+}
+
+void FlutterDesktopEngineRegisterPlatformViewType(
+    FlutterDesktopEngineRef engine,
+    const char* view_type_name,
+    FlutterPlatformViewTypeEntry view_type) {
+  // TODO(schectman): forward to platform view manager.
+  // https://github.com/flutter/flutter/issues/143375
 }
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(

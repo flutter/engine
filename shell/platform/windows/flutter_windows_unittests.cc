@@ -116,10 +116,8 @@ TEST_F(WindowsTest, LaunchCustomEntrypointInEngineRunInvocation) {
 TEST_F(WindowsTest, LaunchHeadlessEngine) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
-  EnginePtr engine{builder.InitializeEngine()};
+  EnginePtr engine{builder.RunHeadless()};
   ASSERT_NE(engine, nullptr);
-
-  ASSERT_TRUE(FlutterDesktopEngineRun(engine.get(), nullptr));
 }
 
 // Verify that accessibility features are initialized when a view is created.
@@ -307,6 +305,18 @@ TEST_F(WindowsTest, NextFrameCallback) {
   });
 
   captures.frame_drawn_latch.Wait();
+}
+
+// Implicit view has the implicit view ID.
+TEST_F(WindowsTest, GetViewId) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+  FlutterDesktopViewId view_id =
+      FlutterDesktopViewControllerGetViewId(controller.get());
+
+  ASSERT_EQ(view_id, static_cast<FlutterDesktopViewId>(kImplicitViewId));
 }
 
 TEST_F(WindowsTest, GetGraphicsAdapter) {

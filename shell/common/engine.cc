@@ -146,6 +146,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*image_generator_registry=*/result->GetImageGeneratorRegistry(),
       /*snapshot_delegate=*/std::move(snapshot_delegate));
   result->initial_route_ = initial_route;
+  result->asset_manager_ = asset_manager_;
   return result;
 }
 
@@ -174,7 +175,8 @@ fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
 
 bool Engine::UpdateAssetManager(
     const std::shared_ptr<AssetManager>& new_asset_manager) {
-  if (asset_manager_ == new_asset_manager) {
+  if (asset_manager_ && new_asset_manager &&
+      *asset_manager_ == *new_asset_manager) {
     return false;
   }
 
@@ -462,6 +464,10 @@ void Engine::ScheduleFrame(bool regenerate_layer_trees) {
   animator_->RequestFrame(regenerate_layer_trees);
 }
 
+void Engine::EndWarmUpFrame() {
+  animator_->EndWarmUpFrame();
+}
+
 void Engine::Render(std::unique_ptr<flutter::LayerTree> layer_tree,
                     float device_pixel_ratio) {
   if (!layer_tree) {
@@ -607,6 +613,10 @@ const std::weak_ptr<VsyncWaiter> Engine::GetVsyncWaiter() const {
 void Engine::SetDisplays(const std::vector<DisplayData>& displays) {
   runtime_controller_->SetDisplays(displays);
   ScheduleFrame();
+}
+
+void Engine::ShutdownPlatformIsolates() {
+  runtime_controller_->ShutdownPlatformIsolates();
 }
 
 }  // namespace flutter
