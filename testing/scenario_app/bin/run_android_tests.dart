@@ -409,8 +409,11 @@ Future<void> _run({
         } else {
           prefix.write('skia_');
         }
-        if (impellerBackend != null) {
-          prefix.write(impellerBackend.name);
+        if (enableImpeller) {
+          prefix.write(impellerBackend!.name);
+        }
+        if (forceSurfaceProducerSurfaceTexture) {
+          prefix.write('_force-st');
         }
         prefix.write('.');
       }
