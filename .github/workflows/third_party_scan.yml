@@ -31,7 +31,7 @@ jobs:
       - name: "extract deps, find commit hash, pass to osv-scanner"
         run: python ci/scan_deps.py --output osv-lockfile-${{github.sha}}.json
       - name: "upload osv-scanner deps"
-        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3
         with:
           # use github.ref in name to avoid duplicated artifacts
           name: osv-lockfile-${{github.sha}}
@@ -41,7 +41,7 @@ jobs:
     name: Vulnerability scanning
     needs:
       extract-deps
-    uses: "google/osv-scanner/.github/workflows/osv-scanner-reusable.yml@main"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.6.2-beta1"
     with:
       # Download the artifact uploaded in extract-deps step
       download-artifact: osv-lockfile-${{github.sha}}

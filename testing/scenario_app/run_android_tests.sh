@@ -9,6 +9,12 @@
 
 set -e
 
+# Check number of args.
+if [ $# -lt 1 ]; then
+  echo "Usage: $0 <variant> [flags*]"
+  exit 1
+fi
+
 # Needed because if it is set, cd may print the path it changed to.
 unset CDPATH
 
@@ -33,8 +39,25 @@ function follow_links() (
 )
 
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
-SRC_DIR="$(cd "$SCRIPT_DIR/../../.."; pwd -P)"
+SRC_DIR="$(
+  cd "$SCRIPT_DIR/../../.."
+  pwd -P
+)"
 OUT_DIR="$SRC_DIR/out/$BUILD_VARIANT"
+CONTENTS_GOLDEN="$SRC_DIR/flutter/testing/scenario_app_android_output.txt"
+
+# TODO(matanlurey): If the test runner was purely in Dart, this would not have
+# been necesesary to repeat. However my best guess is the Dart script was seen
+# as potentially crashing, so it was wrapped in a shell script. If we can change
+# this, we should.
+#
+# Define a logs directory for ADB and screenshots.
+# By default, it should be the environment variable FLUTTER_LOGS_DIR, but if
+# it's not set, use the output directory and append "scenario_app/logs".
+LOGS_DIR=${FLUTTER_LOGS_DIR:-"$OUT_DIR/scenario_app/logs"}
+
+# Create the logs directory if it doesn't exist.
+mkdir -p "$LOGS_DIR"
 
 # Dump the logcat and symbolize stack traces before exiting.
 function dumpLogcat {
@@ -45,18 +68,25 @@ function dumpLogcat {
     ndkstack="linux-x86_64"
   fi
 
+  # Get the expected location of logcat.txt.
+  logcat_file="$LOGS_DIR/logcat.txt"
+
   echo "-> Symbolize stack traces"
   "$SRC_DIR"/third_party/android_tools/ndk/prebuilt/"$ndkstack"/bin/ndk-stack \
     -sym "$OUT_DIR" \
-    -dump "$OUT_DIR"/scenario_app/logcat.txt
+    -dump "$logcat_file"
   echo "<- Done"
 
   echo "-> Dump full logcat"
-  cat "$OUT_DIR"/scenario_app/logcat.txt
+  cat "$logcat_file"
   echo "<- Done"
+
+  # Output the directory for the logs.
+  echo "TIP: Full logs are in $LOGS_DIR"
 }
 
-trap dumpLogcat EXIT
+# On error, dump the logcat and symbolize stack traces.
+trap dumpLogcat ERR
 
 cd $SCRIPT_DIR
 
@@ -64,5 +94,7 @@ cd $SCRIPT_DIR
 
 "$SRC_DIR"/third_party/dart/tools/sdks/dart-sdk/bin/dart run \
   "$SCRIPT_DIR"/bin/android_integration_tests.dart \
-  --adb="$SRC_DIR"/third_party/android_tools/sdk/platform-tools/adb \
-  --out-dir="$OUT_DIR"
+  --out-dir="$OUT_DIR" \
+  --logs-dir="$LOGS_DIR" \
+  --output-contents-golden="$CONTENTS_GOLDEN" \
+  "$@"
