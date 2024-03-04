@@ -405,12 +405,12 @@ Future<void> _run({
         final int rerunNumber = _getAndIncrementRerunNumber(finalLogsDir.path);
         prefix.write('run_$rerunNumber.');
         if (enableImpeller) {
-          prefix.write('impeller_');
+          prefix.write('impeller');
         } else {
-          prefix.write('skia_');
+          prefix.write('skia');
         }
         if (enableImpeller) {
-          prefix.write(impellerBackend!.name);
+          prefix.write('_${impellerBackend!.name}');
         }
         if (forceSurfaceProducerSurfaceTexture) {
           prefix.write('_force-st');
