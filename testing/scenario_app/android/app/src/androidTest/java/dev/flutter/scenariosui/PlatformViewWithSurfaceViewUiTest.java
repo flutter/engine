@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import androidx.annotation.NonNull;
 import androidx.test.filters.LargeTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 import dev.flutter.scenarios.PlatformViewsActivity;
@@ -35,6 +36,7 @@ public class PlatformViewWithSurfaceViewUiTest {
 
   @Before
   public void setUp() {
+    instrumentation = InstrumentationRegistry.getInstrumentation();
     intent = new Intent(Intent.ACTION_MAIN);
     // Render a texture.
     intent.putExtra("use_android_view", false);
