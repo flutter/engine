@@ -5,9 +5,14 @@ End-to-end tests and test infrastructure for the Flutter engine on Android.
 > [!IMPORTANT]
 > There are several **known issues** with this test suite:
 >
-> - TODO: 1.
-> - TODO: 2.
-> - TODO: 3.
+> - [#144407](https://github.com/flutter/flutter/issues/144407): "Newer Android"
+>   tests are missing expected cropping and rotation.
+> - [#144365](https://github.com/flutter/flutter/issues/144365): Tests that use
+>   `ExternalTextureFlutterActivity` sometimes do not render.
+> - [#144232](https://github.com/flutter/flutter/issues/144232): Impeller Vulkan
+>   sometimes hangs on emulators.
+> - [#144352](https://github.com/flutter/flutter/issues/144352): Skia Gold
+>   sometimes is missing expected diffs.
 
 ---
 
@@ -301,12 +306,59 @@ engine's test suite.
 
 ### Anatomy of a Test
 
-### Adding a New Test
+A "test" in practice is a combination of roughly 3 components:
 
-### Maintainer's Guide
+1. An Android _JUnit test_ that configures and launches an Android activity.
+2. An Android _activity_, which simulates the Android side of a plugin or
+   platform view.
+3. A Dart _scenario_, which simulates the Flutter side of an application.
+
+See also:
+
+- [`DrawSolidBlueScreenTest.java`](./app/src/androidTest/java/dev/flutter/scenariosui/DrawSolidBlueScreenTest.java), an example of a JUnit test.
+- [`ExternalTextureTests.java`](./app/src/androidTest/java/dev/flutter/scenariosui/ExternalTextureTests.java), an example of an activity.
+- [`solid_blue.dart`](../lib/src/solid_blue.dart), an example of a scenario.
+
+While every test suite has exactly one JUnit-instrumented class, each test can
+have many activities and scenarios, each with their own configuration, setup,
+and assertions. Not all of this is desirable, but it is the current state of
+the test suite.
+
+A test might also take a screenshot. See the _Skia Gold_ links in
+[CI Configuration](#ci-configuration) for examples.
 
 ## Troubleshooting
 
-<!-- TODO: Common Issues -->
+If you encounter any issues, please [file a bug](#getting-help).
+
+### My test is failing on CI
+
+If a test is failing on CI, it's likely that the test is failing locally as
+well. Try the steps in [running the Tests](#running-the-tests) to reproduce the
+failure locally, and then debug the failure as you would any other test. If this
+is your first time working on the engine, you may need to setup a development
+environment first (see [prerequisites](#prerequisites)).
+
+The test runner makes extensive use of logging and screenshots to help debug
+failures. If you're not sure where to start, try looking at the logs and
+screenshots to see if they provide any clues (you'll need them to file a bug
+anyway).
+
+`test: Android Scenario App Integration Tests (Impeller/Vulkan)`
+on [LUCI](https://ci.chromium.org/ui/p/flutter/builders/try/Linux%20Engine%20Drone/2079486/overview) produces these logs:
+
+![Screenshot of Logs](https://github.com/flutter/flutter/assets/168174/fed8fae6-bcd2-4e6e-a074-c2c37f34a770)
+
+The files include a screenshot of each test, and a _full_ logcat log from the
+device (you might find it easier trying the `stdout` of the test first, which
+uses rudimentary log filtering). In the case of multiple runs, the logs are
+prefixed with the test configuration and run attempt.
 
 ## Getting Help
+
+To suggest changes, or highlight problems, please [file an issue](https://github.com/flutter/flutter/issues/new?labels=e:%20scenario-app,engine,platform-android,fyi-android,team-engine).
+
+If you're not sure where to start, or need help debugging or contributing, you
+can also reach out to [`hackers-android`](https://discord.com/channels/608014603317936148/846507907876257822) on Discord, or the Flutter engine team internally. There is
+no full-time maintainer of this package, so be prepared to do some of the
+legwork yourself.
