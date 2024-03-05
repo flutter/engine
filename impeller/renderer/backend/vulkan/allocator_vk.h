@@ -21,6 +21,27 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ~AllocatorVK() override;
 
+  // visible for testing.
+  static vk::Flags<vk::MemoryPropertyFlagBits> ToVKBufferMemoryPropertyFlags(
+      StorageMode mode);
+
+  // visible for testing.
+  static VmaAllocationCreateFlags ToVmaAllocationBufferCreateFlags(
+      StorageMode mode,
+      bool readback);
+
+  // visible for testing.
+  static vk::ImageUsageFlags ToVKImageUsageFlags(
+      PixelFormat format,
+      TextureUsageMask usage,
+      StorageMode mode,
+      bool supports_memoryless_textures);
+
+  // visible for testing.
+  static vk::Flags<vk::MemoryPropertyFlagBits> ToVKTextureMemoryPropertyFlags(
+      StorageMode mode,
+      bool supports_memoryless_textures);
+
  private:
   friend class ContextVK;
 
