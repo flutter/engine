@@ -84,7 +84,8 @@ class RenderTarget final {
       bool msaa,
       const std::string& label = "Offscreen",
       RenderTarget::AttachmentConfig stencil_attachment_config =
-          RenderTarget::kDefaultStencilAttachmentConfig);
+          RenderTarget::kDefaultStencilAttachmentConfig,
+      const std::shared_ptr<Texture>& depth_stencil_texture = nullptr);
 
   SampleCount GetSampleCount() const;
 
@@ -176,15 +177,6 @@ class RenderTargetAllocator {
   virtual void End();
 
  private:
-  void SetupDepthStencilAttachments(
-      Allocator& allocator,
-      const Context& context,
-      ISize size,
-      bool msaa,
-      const std::string& label = "Offscreen",
-      RenderTarget::AttachmentConfig stencil_attachment_config =
-          RenderTarget::kDefaultStencilAttachmentConfig);
-
   std::shared_ptr<Allocator> allocator_;
 };
 
