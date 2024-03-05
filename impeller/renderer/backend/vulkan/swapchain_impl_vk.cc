@@ -6,6 +6,7 @@
 
 #include "fml/synchronization/semaphore.h"
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -240,22 +241,24 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
 
   TextureDescriptor depth_stencil_desc;
   depth_stencil_desc.storage_mode = StorageMode::kDeviceTransient;
-  depth_stencil_desc.type = TextureType::kTexture2DMultisample;
-  depth_stencil_desc.sample_count = SampleCount::kCount4;
+  if (enable_msaa) {
+    depth_stencil_desc.type = TextureType::kTexture2DMultisample;
+    depth_stencil_desc.sample_count = SampleCount::kCount4;
+  } else {
+    depth_stencil_desc.type = TextureType::kTexture2D;
+    depth_stencil_desc.sample_count = SampleCount::kCount1;
+  }
   depth_stencil_desc.format =
       context->GetCapabilities()->GetDefaultDepthStencilFormat();
   depth_stencil_desc.size = texture_desc.size;
   depth_stencil_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
-  std::shared_ptr<Texture> msaa_texture =
-      context->GetResourceAllocator()->CreateTexture(msaa_desc);
+  std::shared_ptr<Texture> msaa_texture;
+  if (enable_msaa) {
+    context->GetResourceAllocator()->CreateTexture(msaa_desc);
+  }
   std::shared_ptr<Texture> depth_stencil_texture =
       context->GetResourceAllocator()->CreateTexture(depth_stencil_desc);
-  if (!msaa_texture || !depth_stencil_texture) {
-    VALIDATION_LOG
-        << "Failed to allocate onscreen MSAA or depth+stencil texture.";
-    return;
-  }
 
   std::vector<std::shared_ptr<SwapchainImageVK>> swapchain_images;
   for (const auto& image : images) {
