@@ -871,6 +871,14 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   return [UIMenu menuWithChildren:suggestedActions];
 }
 
+- (void)editMenuInteraction:(UIEditMenuInteraction*)interaction
+    willDismissMenuForConfiguration:(UIEditMenuConfiguration*)configuration
+                           animator:(id<UIEditMenuInteractionAnimating>)animator
+    API_AVAILABLE(ios(16.0)) {
+  [self.textInputDelegate flutterTextInputView:self
+        willDismissEditMenuWithTextInputClient:_textInputClient];
+}
+
 - (CGRect)editMenuInteraction:(UIEditMenuInteraction*)interaction
     targetRectForConfiguration:(UIEditMenuConfiguration*)configuration API_AVAILABLE(ios(16.0)) {
   return _editMenuTargetRect;
