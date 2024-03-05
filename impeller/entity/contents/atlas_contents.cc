@@ -6,23 +6,17 @@
 #include <unordered_map>
 #include <utility>
 
-#include "flutter/fml/macros.h"
-
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -223,7 +217,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
     VertexBufferBuilder<VS::PerVertexData> vtx_builder;
     vtx_builder.Reserve(texture_coords_.size() * 6);
     const auto texture_size = texture_->GetSize();
-    auto& host_buffer = pass.GetTransientsBuffer();
+    auto& host_buffer = renderer.GetTransientsBuffer();
 
     for (size_t i = 0; i < texture_coords_.size(); i++) {
       auto sample_rect = texture_coords_[i];
@@ -241,25 +235,28 @@ bool AtlasContents::Render(const ContentContext& renderer,
       }
     }
 
-    Command cmd;
-    DEBUG_COMMAND_INFO(
-        cmd, SPrintF("DrawAtlas Blend (%s)", BlendModeToString(blend_mode_)));
-    cmd.BindVertices(vtx_builder.CreateVertexBuffer(host_buffer));
-    cmd.stencil_reference = entity.GetClipDepth();
-    auto options = OptionsFromPass(pass);
-    cmd.pipeline = renderer.GetPorterDuffBlendPipeline(options);
+#ifdef IMPELLER_DEBUG
+    pass.SetCommandLabel(
+        SPrintF("DrawAtlas Blend (%s)", BlendModeToString(blend_mode_)));
+#endif  // IMPELLER_DEBUG
+    pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
+    pass.SetStencilReference(entity.GetClipDepth());
+    pass.SetPipeline(
+        renderer.GetPorterDuffBlendPipeline(OptionsFromPass(pass)));
 
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
+    frame_info.depth = entity.GetShaderClipDepth();
 
     auto dst_sampler_descriptor = sampler_descriptor_;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
       dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
       dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
     }
-    auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-        dst_sampler_descriptor);
-    FS::BindTextureSamplerDst(cmd, texture_, dst_sampler);
+    const std::unique_ptr<const Sampler>& dst_sampler =
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            dst_sampler_descriptor);
+    FS::BindTextureSamplerDst(pass, texture_, dst_sampler);
     frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
     frag_info.output_alpha = alpha_;
@@ -275,15 +272,14 @@ bool AtlasContents::Render(const ContentContext& renderer,
     frag_info.dst_coeff_src_alpha = blend_coefficients[3];
     frag_info.dst_coeff_src_color = blend_coefficients[4];
 
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+    FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-    frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     entity.GetTransform();
+    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
-    VS::BindFrameInfo(cmd, uniform_view);
+    VS::BindFrameInfo(pass, uniform_view);
 
-    return pass.AddCommand(std::move(cmd));
+    return pass.Draw().ok();
   }
 
   // Advanced blends.
@@ -309,6 +305,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
                                  std::nullopt,          // coverage_limit
                                  std::nullopt,          // sampler_descriptor
                                  true,                  // msaa_enabled
+                                 /*mip_count=*/1,
                                  "AtlasContents Snapshot");  // label
   if (!snapshot.has_value()) {
     return false;
@@ -403,26 +400,25 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "AtlasTexture");
+  pass.SetCommandLabel("AtlasTexture");
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
+  frame_info.depth = entity.GetShaderClipDepth();
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
   frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frame_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
-  cmd.pipeline = renderer.GetTexturePipeline(options);
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindTextureSampler(cmd, texture,
+  pass.SetPipeline(renderer.GetTexturePipeline(options));
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+  FS::BindTextureSampler(pass, texture,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              parent_.GetSamplerDescriptor()));
-  return pass.AddCommand(std::move(cmd));
+  return pass.Draw().ok();
 }
 
 // AtlasColorContents
@@ -491,26 +487,25 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "AtlasColors");
+  pass.SetCommandLabel("AtlasColors");
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform();
+  frame_info.depth = entity.GetShaderClipDepth();
+  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
 
   FS::FragInfo frag_info;
   frag_info.alpha = alpha_;
 
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.blend_mode = BlendMode::kSourceOver;
-  cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  return pass.AddCommand(std::move(cmd));
+  pass.SetPipeline(renderer.GetGeometryColorPipeline(opts));
+  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+  FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+  return pass.Draw().ok();
 }
 
 }  // namespace impeller

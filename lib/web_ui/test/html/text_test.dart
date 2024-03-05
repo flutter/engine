@@ -22,7 +22,7 @@ void main() {
 Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
-  setUpUnitTests();
+  setUpUnitTests(withImplicitView: true);
 
   late String fallback;
   setUp(() {
@@ -200,12 +200,7 @@ Future<void> testMain() async {
     expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
   }, skip: domIntl.v8BreakIterator == null); // Intended: Intl.v8breakiterator is needed for correctly breaking grapheme clusters.
 
-  test('Can disable rounding hack', () {
-    if (!ParagraphBuilder.shouldDisableRoundingHack) {
-      ParagraphBuilder.setDisableRoundingHack(true);
-      addTearDown(() => ParagraphBuilder.setDisableRoundingHack(false));
-    }
-    assert(ParagraphBuilder.shouldDisableRoundingHack);
+  test('disable rounding hack', () {
     const double fontSize = 1;
     const String text = '12345';
     const double letterSpacing = 0.25;

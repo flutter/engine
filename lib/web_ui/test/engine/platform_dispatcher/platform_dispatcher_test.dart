@@ -10,14 +10,28 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  ensureFlutterViewEmbedderInitialized();
+  setUpAll(() async {
+    await bootstrapAndRunApp(withImplicitView: true);
+  });
 
   group('PlatformDispatcher', () {
+    late EnginePlatformDispatcher dispatcher;
+
+    setUp(() {
+      dispatcher = EnginePlatformDispatcher();
+    });
+
+    tearDown(() {
+      dispatcher.dispose();
+    });
+
     test('reports at least one display', () {
       expect(ui.PlatformDispatcher.instance.displays.length, greaterThan(0));
     });
@@ -26,15 +40,105 @@ void testMain() {
       final MockHighContrastSupport mockHighContrast =
           MockHighContrastSupport();
       HighContrastSupport.instance = mockHighContrast;
-      final EnginePlatformDispatcher engineDispatcher =
+
+      final EnginePlatformDispatcher dispatcher =
           EnginePlatformDispatcher();
 
-      expect(engineDispatcher.accessibilityFeatures.highContrast, isTrue);
+      expect(dispatcher.accessibilityFeatures.highContrast, isTrue);
       mockHighContrast.isEnabled = false;
       mockHighContrast.invokeListeners(mockHighContrast.isEnabled);
-      expect(engineDispatcher.accessibilityFeatures.highContrast, isFalse);
+      expect(dispatcher.accessibilityFeatures.highContrast, isFalse);
 
-      engineDispatcher.dispose();
+      dispatcher.dispose();
+    });
+
+    test('AppLifecycleState transitions through all states', () {
+      final List<ui.AppLifecycleState> states = <ui.AppLifecycleState>[];
+      void listener(ui.AppLifecycleState state) {
+        states.add(state);
+      }
+
+      final MockAppLifecycleState mockAppLifecycleState =
+          MockAppLifecycleState();
+
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.resumed);
+
+      mockAppLifecycleState.addListener(listener);
+      expect(mockAppLifecycleState.activeCallCount, 1);
+
+      expect(
+          states, equals(<ui.AppLifecycleState>[ui.AppLifecycleState.resumed]));
+
+      mockAppLifecycleState.inactive();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.inactive);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive
+          ]));
+
+      // consecutive same states are skipped
+      mockAppLifecycleState.inactive();
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive
+          ]));
+
+      mockAppLifecycleState.hidden();
+      expect(
+          mockAppLifecycleState.appLifecycleState, ui.AppLifecycleState.hidden);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden
+          ]));
+
+      mockAppLifecycleState.resume();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.resumed);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed
+          ]));
+
+      mockAppLifecycleState.detach();
+      expect(mockAppLifecycleState.appLifecycleState,
+          ui.AppLifecycleState.detached);
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.detached
+          ]));
+
+      mockAppLifecycleState.removeListener(listener);
+      expect(mockAppLifecycleState.deactivateCallCount, 1);
+
+      // No more states should be recorded after the listener is removed.
+      mockAppLifecycleState.resume();
+      expect(
+          states,
+          equals(<ui.AppLifecycleState>[
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.inactive,
+            ui.AppLifecycleState.hidden,
+            ui.AppLifecycleState.resumed,
+            ui.AppLifecycleState.detached
+          ]));
     });
 
     test('responds to flutter/skia Skia.setResourceCacheMaxBytes', () async {
@@ -202,7 +306,6 @@ void testMain() {
     });
 
     test('disposes all its views', () {
-      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
       final EngineFlutterView view1 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
       final EngineFlutterView view2 =
@@ -223,6 +326,113 @@ void testMain() {
       expect(view1.isDisposed, isTrue);
       expect(view2.isDisposed, isTrue);
       expect(view3.isDisposed, isTrue);
+    });
+
+    test('connects view disposal to metrics changed event', () {
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+      final EngineFlutterView view2 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager
+        ..registerView(view1)
+        ..registerView(view2);
+
+      expect(view1.isDisposed, isFalse);
+      expect(view2.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      expect(onMetricsChangedCalled, isFalse);
+
+      dispatcher.viewManager.disposeAndUnregisterView(view2.viewId);
+
+      expect(onMetricsChangedCalled, isTrue, reason: 'onMetricsChanged should have been called.');
+
+      dispatcher.dispose();
+    });
+
+    test('disconnects view disposal event on dispose', () {
+      final EngineFlutterView view1 =
+          EngineFlutterView(dispatcher, createDomHTMLDivElement());
+
+      dispatcher.viewManager.registerView(view1);
+
+      expect(view1.isDisposed, isFalse);
+
+      bool onMetricsChangedCalled = false;
+      dispatcher.onMetricsChanged = () {
+        onMetricsChangedCalled = true;
+      };
+
+      dispatcher.dispose();
+
+      expect(onMetricsChangedCalled, isFalse);
+      expect(view1.isDisposed, isTrue);
+    });
+
+    test('invokeOnViewFocusChange calls onViewFocusChange', () {
+      final List<ui.ViewFocusEvent> dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
+      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+        viewId: 0,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+
+      dispatcher.onViewFocusChange = dispatchedViewFocusEvents.add;
+      dispatcher.invokeOnViewFocusChange(viewFocusEvent);
+
+      expect(dispatchedViewFocusEvents, hasLength(1));
+      expect(dispatchedViewFocusEvents.single, viewFocusEvent);
+    });
+
+    test('invokeOnViewFocusChange preserves the zone', () {
+      final Zone zone1 = Zone.current.fork();
+      final Zone zone2 = Zone.current.fork();
+      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+        viewId: 0,
+        state: ui.ViewFocusState.focused,
+        direction: ui.ViewFocusDirection.undefined,
+      );
+
+      zone1.runGuarded(() {
+        dispatcher.onViewFocusChange = (_) {
+          expect(Zone.current, zone1);
+        };
+      });
+
+      zone2.runGuarded(() {
+        dispatcher.invokeOnViewFocusChange(viewFocusEvent);
+      });
+    });
+
+    test('appends an accesibility placeholder', () {
+      expect(dispatcher.accessibilityPlaceholder.isConnected, isTrue);
+    });
+
+    test('removes the accesibility placeholder', () {
+      dispatcher.dispose();
+      expect(dispatcher.accessibilityPlaceholder.isConnected, isFalse);
+    });
+
+    test('scheduleWarmupFrame should call both callbacks', () async {
+      bool beginFrameCalled = false;
+      final Completer<void> drawFrameCalled = Completer<void>();
+      dispatcher.scheduleWarmUpFrame(beginFrame: () {
+        expect(drawFrameCalled.isCompleted, false);
+        expect(beginFrameCalled, false);
+        beginFrameCalled = true;
+      }, drawFrame: () {
+        expect(beginFrameCalled, true);
+        expect(drawFrameCalled.isCompleted, false);
+        drawFrameCalled.complete();
+      });
+      await drawFrameCalled.future;
+      expect(beginFrameCalled, true);
+      expect(drawFrameCalled.isCompleted, true);
     });
   });
 }
@@ -249,5 +459,36 @@ class MockHighContrastSupport implements HighContrastSupport {
   @override
   void removeListener(HighContrastListener listener) {
     _listeners.remove(listener);
+  }
+}
+
+class MockAppLifecycleState extends AppLifecycleState {
+  int activeCallCount = 0;
+  int deactivateCallCount = 0;
+
+  void detach() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.detached);
+  }
+
+  void resume() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.resumed);
+  }
+
+  void inactive() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.inactive);
+  }
+
+  void hidden() {
+    onAppLifecycleStateChange(ui.AppLifecycleState.hidden);
+  }
+
+  @override
+  void activate() {
+    activeCallCount++;
+  }
+
+  @override
+  void deactivate() {
+    deactivateCallCount++;
   }
 }

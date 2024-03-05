@@ -4,30 +4,35 @@
 
 #define FML_USED_ON_EMBEDDER
 
-#include "flutter/shell/platform/android/flutter_main.h"
-
 #include <android/log.h>
-
 #include <optional>
 #include <vector>
 
+#include "common/settings.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/file.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/android/jni_util.h"
+#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/fml/platform/android/paths_android.h"
 #include "flutter/fml/size.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
+#include "flutter/shell/platform/android/flutter_main.h"
+#include "impeller/base/validation.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "txt/platform.h"
 
 namespace flutter {
+
+constexpr int kMinimumAndroidApiLevelForVulkan = 29;
 
 extern "C" {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
@@ -38,21 +43,6 @@ extern const intptr_t kPlatformStrongDillSize;
 }
 
 namespace {
-
-// This is only available on API 23+, so dynamically look it up.
-// This method is only called once at shell creation.
-// Do this in C++ because the API is available at level 23 here, but only 29+ in
-// Java.
-bool IsATraceEnabled() {
-  auto libandroid = fml::NativeLibrary::Create("libandroid.so");
-  FML_CHECK(libandroid);
-  auto atrace_fn =
-      libandroid->ResolveFunction<bool (*)(void)>("ATrace_isEnabled");
-  if (atrace_fn) {
-    return atrace_fn.value()();
-  }
-  return false;
-}
 
 fml::jni::ScopedJavaGlobalRef<jclass>* g_flutter_jni_class = nullptr;
 
@@ -95,7 +85,7 @@ void FlutterMain::Init(JNIEnv* env,
   // Turn systracing on if ATrace_isEnabled is true and the user did not already
   // request systracing
   if (!settings.trace_systrace) {
-    settings.trace_systrace = IsATraceEnabled();
+    settings.trace_systrace = NDKHelpers::ATrace_isEnabled();
     if (settings.trace_systrace) {
       __android_log_print(
           ANDROID_LOG_INFO, "Flutter",
@@ -103,6 +93,18 @@ void FlutterMain::Init(JNIEnv* env,
           "tracing will be forwarded to systrace and will not show up in "
           "Dart DevTools.");
     }
+  }
+
+  settings.android_rendering_api = SelectedRenderingAPI(settings);
+  switch (settings.android_rendering_api) {
+    case AndroidRenderingAPI::kSoftware:
+    case AndroidRenderingAPI::kSkiaOpenGLES:
+      settings.enable_impeller = false;
+      break;
+    case AndroidRenderingAPI::kImpellerOpenGLES:
+    case AndroidRenderingAPI::kImpellerVulkan:
+      settings.enable_impeller = true;
+      break;
   }
 
 #if FLUTTER_RELEASE
@@ -223,6 +225,58 @@ bool FlutterMain::Register(JNIEnv* env) {
   }
 
   return env->RegisterNatives(clazz, methods, fml::size(methods)) == 0;
+}
+
+// static
+AndroidRenderingAPI FlutterMain::SelectedRenderingAPI(
+    const flutter::Settings& settings) {
+  if (settings.enable_software_rendering) {
+    FML_CHECK(!settings.enable_impeller)
+        << "Impeller does not support software rendering. Either disable "
+           "software rendering or disable impeller.";
+    return AndroidRenderingAPI::kSoftware;
+  }
+  constexpr AndroidRenderingAPI kVulkanUnsupportedFallback =
+      AndroidRenderingAPI::kSkiaOpenGLES;
+
+  // Debug/Profile only functionality for testing a specific
+  // backend configuration.
+#ifndef FLUTTER_RELEASE
+  if (settings.requested_rendering_backend == "opengles" &
+      settings.enable_impeller) {
+    return AndroidRenderingAPI::kImpellerOpenGLES;
+  }
+  if (settings.requested_rendering_backend == "vulkan" &&
+      settings.enable_impeller) {
+    return AndroidRenderingAPI::kImpellerVulkan;
+  }
+#endif
+
+  if (settings.enable_impeller) {
+    // Vulkan must only be used on API level 29+, as older API levels do not
+    // have requisite features to support platform views.
+    //
+    // Even if this check returns true, Impeller may determine it cannot use
+    // Vulkan for some other reason, such as a missing required extension or
+    // feature.
+    int api_level = android_get_device_api_level();
+    if (api_level < kMinimumAndroidApiLevelForVulkan) {
+      return kVulkanUnsupportedFallback;
+    }
+    // Determine if Vulkan is supported by creating a Vulkan context and
+    // checking if it is valid.
+    impeller::ScopedValidationDisable disable_validation;
+    auto vulkan_backend = std::make_unique<AndroidContextVulkanImpeller>(
+        /*enable_vulkan_validation=*/false,
+        /*enable_vulkan_gpu_tracing=*/false,
+        /*quiet=*/true);
+    if (!vulkan_backend->IsValid()) {
+      return kVulkanUnsupportedFallback;
+    }
+    return AndroidRenderingAPI::kImpellerVulkan;
+  }
+
+  return AndroidRenderingAPI::kSkiaOpenGLES;
 }
 
 }  // namespace flutter

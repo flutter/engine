@@ -308,20 +308,71 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
-  // The [FlutterView]s for which [FlutterView.render] has already been called
-  // during the current [onBeginFrame]/[onDrawFrame] callback sequence.
-  //
-  // It is null outside the scope of those callbacks indicating that calls to
-  // [FlutterView.render] must be ignored. Furthermore, if a given [FlutterView]
-  // is already present in this set when its [FlutterView.render] is called
-  // again, that call must be ignored as a duplicate.
-  //
-  // Between [onBeginFrame] and [onDrawFrame] the properties value is
-  // temporarily stored in `_renderedViewsBetweenCallbacks` so that it survives
-  // the gap between the two callbacks.
-  Set<FlutterView>? _renderedViews;
-  // The `_renderedViews` value between `_beginFrame` and `_drawFrame`.
-  Set<FlutterView>? _renderedViewsBetweenCallbacks;
+  /// A callback invoked immediately after the focus is transitioned across [FlutterView]s.
+  ///
+  /// When the platform moves the focus from one [FlutterView] to another, this
+  /// callback is invoked indicating the new view that has focus and the direction
+  /// in which focus was received. For example, if focus is moved to the [FlutterView]
+  /// with ID 2 in the forward direction (could be the result of pressing tab)
+  /// the callback receives a [ViewFocusEvent] with [ViewFocusState.focused] and
+  /// [ViewFocusDirection.forward].
+  ///
+  /// Typically, receivers of this event respond by moving the focus to the first
+  /// focusable widget inside the [FlutterView] with ID 2. If a view receives
+  /// focus in the backward direction (could be the result of pressing shift + tab),
+  /// typically the last focusable widget inside that view is focused.
+  ///
+  /// The platform may remove focus from a [FlutterView]. For example, on the web,
+  /// the browser can move focus to another element, or to the browser's built-in UI.
+  /// On desktop, the operating system can switch to another window (e.g. using Alt + Tab on Windows).
+  /// In scenarios like these, [onViewFocusChange] will be invoked with [ViewFocusState.unfocused] and
+  /// [ViewFocusDirection.undefined].
+  ///
+  /// Receivers typically respond to this event by removing all focus indications
+  /// from the app.
+  ///
+  /// Apps can also programmatically request to move the focus to a desired
+  /// [FlutterView] by calling [requestViewFocusChange].
+  ///
+  /// The callback is invoked in the same zone in which the callback was set.
+  ///
+  /// See also:
+  ///
+  ///   * [requestViewFocusChange] to programmatically instruct the platform to move focus to a different [FlutterView].
+  ///   * [ViewFocusState] for a list of allowed focus transitions.
+  ///   * [ViewFocusDirection] for a list of allowed focus directions.
+  ///   * [ViewFocusEvent], which is the event object provided to the callback.
+  ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
+  ViewFocusChangeCallback? _onViewFocusChange;
+  // ignore: unused_field, field will be used when platforms other than web use these focus APIs.
+  Zone _onViewFocusChangeZone = Zone.root;
+  set onViewFocusChange(ViewFocusChangeCallback? callback) {
+    _onViewFocusChange = callback;
+    _onViewFocusChangeZone = Zone.current;
+  }
+
+  /// Requests a focus change of the [FlutterView] with ID [viewId].
+  ///
+  /// If an app would like to request the engine to move focus, in forward direction,
+  /// to the [FlutterView] with ID 1 it should call this method with [ViewFocusState.focused]
+  /// and [ViewFocusDirection.forward].
+  ///
+  /// There is no need to call this method if the view in question already has
+  /// focus as it won't have any effect.
+  ///
+  /// A call to this method will lead to the engine calling [onViewFocusChange]
+  /// if the request is successfully fulfilled.
+  ///
+  /// See also:
+  ///
+  ///  * [onViewFocusChange], a callback to subscribe to view focus change events.
+  void requestViewFocusChange({
+    required int viewId,
+    required ViewFocusState state,
+    required ViewFocusDirection direction,
+  }) {
+    // TODO(tugorez): implement this method. At the moment will be a no op call.
+  }
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -343,20 +394,11 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _beginFrame(int microseconds) {
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks == null);
-    _renderedViews = <FlutterView>{};
-
     _invoke1<Duration>(
       onBeginFrame,
       _onBeginFrameZone,
       Duration(microseconds: microseconds),
     );
-
-    assert(_renderedViews != null);
-    assert(_renderedViewsBetweenCallbacks == null);
-    _renderedViewsBetweenCallbacks = _renderedViews;
-    _renderedViews = null;
   }
 
   /// A callback that is invoked for each frame after [onBeginFrame] has
@@ -374,16 +416,7 @@ class PlatformDispatcher {
 
   // Called from the engine, via hooks.dart
   void _drawFrame() {
-    assert(_renderedViews == null);
-    assert(_renderedViewsBetweenCallbacks != null);
-    _renderedViews = _renderedViewsBetweenCallbacks;
-    _renderedViewsBetweenCallbacks = null;
-
     _invoke(onDrawFrame, _onDrawFrameZone);
-
-    assert(_renderedViews != null);
-    assert(_renderedViewsBetweenCallbacks == null);
-    _renderedViews = null;
   }
 
   /// A callback that is invoked when pointer data is available.
@@ -768,10 +801,46 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
+  ///  * [scheduleWarmUpFrame], which should only be used to schedule warm up
+  ///    frames.
   void scheduleFrame() => _scheduleFrame();
 
   @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
+
+  /// Schedule a frame to run as soon as possible, rather than waiting for the
+  /// engine to request a frame in response to a system "Vsync" signal.
+  ///
+  /// The application can call this method as soon as it starts up so that the
+  /// first frame (which is likely to be quite expensive) can start a few extra
+  /// milliseconds earlier. Using it in other situations might lead to
+  /// unintended results, such as screen tearing. Depending on platforms and
+  /// situations, the warm up frame might or might not be actually rendered onto
+  /// the screen.
+  ///
+  /// For more introduction to the warm up frame, see
+  /// [SchedulerBinding.scheduleWarmUpFrame].
+  ///
+  /// This method uses the provided callbacks as the begin frame callback and
+  /// the draw frame callback instead of [onBeginFrame] and [onDrawFrame].
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method, and
+  ///    introduces the warm up frame in more details.
+  ///  * [scheduleFrame], which schedules the frame at the next appropriate
+  ///    opportunity and should be used to render regular frames.
+  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame}) {
+    // We use timers here to ensure that microtasks flush in between.
+    Timer.run(beginFrame);
+    Timer.run(() {
+      drawFrame();
+      _endWarmUpFrame();
+    });
+  }
+
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::EndWarmUpFrame')
+  external static void _endWarmUpFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;
@@ -1812,13 +1881,13 @@ enum AppLifecycleState {
   /// any host views.
   ///
   /// The application defaults to this state before it initializes, and can be
-  /// in this state (on Android and iOS only) after all views have been
+  /// in this state (applicable on Android, iOS, and web) after all views have been
   /// detached.
   ///
   /// When the application is in this state, the engine is running without a
   /// view.
   ///
-  /// This state is only entered on iOS and Android, although on all platforms
+  /// This state is only entered on iOS, Android, and web, although on all platforms
   /// it is the default state before the application begins running.
   detached,
 
@@ -2584,4 +2653,81 @@ class SemanticsActionEvent {
       arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
     );
   }
+}
+
+/// Signature for [PlatformDispatcher.onViewFocusChange].
+typedef ViewFocusChangeCallback = void Function(ViewFocusEvent viewFocusEvent);
+
+/// An event for the engine to communicate view focus changes to the app.
+///
+/// This value will be typically passed to the [PlatformDispatcher.onViewFocusChange]
+/// callback.
+final class ViewFocusEvent {
+  /// Creates a [ViewFocusChange].
+  const ViewFocusEvent({
+    required this.viewId,
+    required this.state,
+    required this.direction,
+  });
+
+  /// The ID of the [FlutterView] that experienced a focus change.
+  final int viewId;
+
+  /// The state focus changed to.
+  final ViewFocusState state;
+
+  /// The direction focus changed to.
+  final ViewFocusDirection direction;
+
+  @override
+  String toString() {
+    return 'ViewFocusEvent(viewId: $viewId, state: $state, direction: $direction)';
+  }
+}
+
+/// Represents the focus state of a given [FlutterView].
+///
+/// When focus is lost, the view's focus state changes to [ViewFocusState.unfocused].
+///
+/// When focus is gained, the view's focus state changes to [ViewFocusState.focused].
+///
+/// Valid transitions within a view are:
+///
+/// - [ViewFocusState.focused] to [ViewFocusState.unfocused].
+/// - [ViewFocusState.unfocused] to [ViewFocusState.focused].
+///
+/// See also:
+///
+///   * [ViewFocusDirection], that specifies the focus direction.
+///   * [ViewFocusEvent], that conveys information about a [FlutterView] focus change.
+enum ViewFocusState {
+  /// Specifies that a view does not have platform focus.
+  unfocused,
+
+  /// Specifies that a view has platform focus.
+  focused,
+}
+
+/// Represents the direction in which the focus transitioned across [FlutterView]s.
+///
+/// See also:
+///
+///   * [ViewFocusState], that specifies the current focus state of a [FlutterView].
+///   * [ViewFocusEvent], that conveys information about a [FlutterView] focus change.
+enum ViewFocusDirection {
+  /// Indicates the focus transition did not have a direction.
+  ///
+  /// This is typically associated with focus being programmatically requested or
+  /// when focus is lost.
+  undefined,
+
+  /// Indicates the focus transition was performed in a forward direction.
+  ///
+  /// This is typically result of the user pressing tab.
+  forward,
+
+  /// Indicates the focus transition was performed in a backward direction.
+  ///
+  /// This is typically result of the user pressing shift + tab.
+  backward,
 }

@@ -63,7 +63,7 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
       std::move(image_decoder),       std::move(image_generator_registry),
       std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
       context_.volatile_path_tracker, context_.concurrent_task_runner,
-      context_.enable_impeller};
+      context_.enable_impeller,       context_.runtime_stage_backend};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -341,6 +341,11 @@ void RuntimeController::ScheduleFrame() {
 }
 
 // |PlatformConfigurationClient|
+void RuntimeController::EndWarmUpFrame() {
+  client_.EndWarmUpFrame();
+}
+
+// |PlatformConfigurationClient|
 void RuntimeController::Render(Scene* scene, double width, double height) {
   // TODO(dkwingsmt): Currently only supports a single window.
   int64_t view_id = kFlutterImplicitViewId;
@@ -552,6 +557,10 @@ bool RuntimeController::SetDisplays(const std::vector<DisplayData>& displays) {
 double RuntimeController::GetScaledFontSize(double unscaled_font_size,
                                             int configuration_id) const {
   return client_.GetScaledFontSize(unscaled_font_size, configuration_id);
+}
+
+void RuntimeController::ShutdownPlatformIsolates() {
+  platform_isolate_manager_->ShutdownPlatformIsolates();
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,

@@ -8,7 +8,6 @@
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "fml/thread.h"
@@ -21,6 +20,7 @@
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 namespace impeller {
@@ -36,6 +36,7 @@ class ResourceManagerVK;
 class SurfaceContextVK;
 class GPUTracerVK;
 class DescriptorPoolRecyclerVK;
+class CommandQueueVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -46,11 +47,17 @@ class ContextVK final : public Context,
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
     bool enable_validation = false;
+    bool enable_gpu_tracing = false;
 
     Settings() = default;
 
     Settings(Settings&&) = default;
   };
+
+  /// Choose the number of worker threads the context_vk will create.
+  ///
+  /// Visible for testing.
+  static size_t ChooseThreadCountForWorkers(size_t hardware_concurrency);
 
   static std::shared_ptr<ContextVK> Create(Settings settings);
 
@@ -86,13 +93,11 @@ class ContextVK final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  const std::shared_ptr<YUVConversionLibraryVK>& GetYUVConversionLibrary()
+      const;
+
   // |Context|
   void Shutdown() override;
-
-  // |Context|
-  void SetSyncPresentation(bool value) override { sync_presentation_ = value; }
-
-  bool GetSyncPresentation() const { return sync_presentation_; }
 
   void SetOffscreenFormat(PixelFormat pixel_format);
 
@@ -136,18 +141,6 @@ class ContextVK final : public Context,
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
 
-  /// @brief A single-threaded task runner that should only be used for
-  ///        submitKHR.
-  ///
-  /// SubmitKHR will block until all previously submitted command buffers have
-  /// been scheduled. If there are no platform views in the scene (excluding
-  /// texture backed platform views). Then it is safe for SwapchainImpl::Present
-  /// to return before submit has completed. To do so, we offload the submit
-  /// command to a specialized single threaded task runner. The single thread
-  /// ensures that we do not queue up too much work and that the submissions
-  /// proceed in order.
-  const fml::RefPtr<fml::TaskRunner> GetQueueSubmitRunner() const;
-
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
   const std::shared_ptr<QueueVK>& GetGraphicsQueue() const;
@@ -160,13 +153,15 @@ class ContextVK final : public Context,
 
   std::shared_ptr<CommandPoolRecyclerVK> GetCommandPoolRecycler() const;
 
-  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const {
-    return descriptor_pool_recycler_;
-  }
+  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const;
+
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
 
   std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
 
   void RecordFrameEndTime() const;
+
+  void InitializeCommonlyUsedShadersIfNeeded() const override;
 
  private:
   struct DeviceHolderImpl : public DeviceHolder {
@@ -188,6 +183,7 @@ class ContextVK final : public Context,
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  std::shared_ptr<YUVConversionLibraryVK> yuv_conversion_library_;
   QueuesVK queues_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
@@ -195,11 +191,10 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
-  std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
+  std::shared_ptr<CommandQueue> command_queue_vk_;
 
-  bool sync_presentation_ = false;
   const uint64_t hash_;
 
   bool is_valid_ = false;

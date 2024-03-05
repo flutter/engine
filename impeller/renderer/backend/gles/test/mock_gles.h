@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEST_MOCK_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEST_MOCK_GLES_H_
+
 #include <memory>
 #include <optional>
 #include "fml/macros.h"
@@ -9,6 +12,8 @@
 
 namespace impeller {
 namespace testing {
+
+extern const ProcTableGLES::Resolver kMockResolverGLES;
 
 /// @brief      Provides a mocked version of the |ProcTableGLES| class.
 ///
@@ -27,7 +32,9 @@ class MockGLES final {
   /// called once per test.
   static std::shared_ptr<MockGLES> Init(
       const std::optional<std::vector<const unsigned char*>>& extensions =
-          std::nullopt);
+          std::nullopt,
+      const char* version_string = "OpenGL ES 3.0",
+      ProcTableGLES::Resolver resolver = kMockResolverGLES);
 
   /// @brief      Returns a configured |ProcTableGLES| instance.
   const ProcTableGLES& GetProcTable() const { return proc_table_; }
@@ -46,11 +53,11 @@ class MockGLES final {
  private:
   friend void RecordGLCall(const char* name);
 
-  MockGLES();
+  explicit MockGLES(ProcTableGLES::Resolver resolver = kMockResolverGLES);
 
   void RecordCall(const char* name) { captured_calls_.emplace_back(name); }
 
-  const ProcTableGLES proc_table_;
+  ProcTableGLES proc_table_;
   std::vector<std::string> captured_calls_;
 
   MockGLES(const MockGLES&) = delete;
@@ -60,3 +67,5 @@ class MockGLES final {
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEST_MOCK_GLES_H_

@@ -11,7 +11,6 @@
 #include "fml/closure.h"
 #include "fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/device_buffer_gles.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
@@ -21,7 +20,7 @@
 
 namespace impeller {
 
-RenderPassGLES::RenderPassGLES(std::weak_ptr<const Context> context,
+RenderPassGLES::RenderPassGLES(std::shared_ptr<const Context> context,
                                const RenderTarget& target,
                                ReactorGLES::Ref reactor)
     : RenderPass(std::move(context), target),
@@ -152,10 +151,6 @@ struct RenderPassData {
     const std::shared_ptr<GPUTracerGLES>& tracer) {
   TRACE_EVENT0("impeller", "RenderPassGLES::EncodeCommandsInReactor");
 
-  if (commands.empty()) {
-    return true;
-  }
-
   const auto& gl = reactor.GetProcTable();
 #ifdef IMPELLER_DEBUG
   tracer->MarkFrameStart(gl);
@@ -187,20 +182,20 @@ struct RenderPassData {
 
     if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
       if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kColor0)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
         return false;
       }
     }
 
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
       if (!depth->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kDepth)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kDepth)) {
         return false;
       }
     }
     if (auto stencil = TextureGLES::Cast(pass_data.stencil_attachment.get())) {
       if (!stencil->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentPoint::kStencil)) {
+              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kStencil)) {
         return false;
       }
     }
@@ -219,12 +214,11 @@ struct RenderPassData {
                 pass_data.clear_color.alpha   // alpha
   );
   if (pass_data.depth_attachment) {
-    // TODO(bdero): Desktop GL for Apple requires glClearDepth. glClearDepthf
-    //              throws GL_INVALID_OPERATION.
-    //              https://github.com/flutter/flutter/issues/136322
-#if !FML_OS_MACOSX
-    gl.ClearDepthf(pass_data.clear_depth);
-#endif
+    if (gl.DepthRangef.IsAvailable()) {
+      gl.ClearDepthf(pass_data.clear_depth);
+    } else {
+      gl.ClearDepth(pass_data.clear_depth);
+    }
   }
   if (pass_data.stencil_attachment) {
     gl.ClearStencil(pass_data.clear_stencil);
@@ -247,6 +241,9 @@ struct RenderPassData {
   gl.Disable(GL_CULL_FACE);
   gl.Disable(GL_BLEND);
   gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+  gl.DepthMask(GL_TRUE);
+  gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
+  gl.StencilMaskSeparate(GL_BACK, 0xFFFFFFFF);
 
   gl.Clear(clear_bits);
 
@@ -320,12 +317,11 @@ struct RenderPassData {
                 viewport.rect.GetHeight()       // height
     );
     if (pass_data.depth_attachment) {
-      // TODO(bdero): Desktop GL for Apple requires glDepthRange. glDepthRangef
-      //              throws GL_INVALID_OPERATION.
-      //              https://github.com/flutter/flutter/issues/136322
-#if !FML_OS_MACOSX
-      gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
-#endif
+      if (gl.DepthRangef.IsAvailable()) {
+        gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
+      } else {
+        gl.DepthRange(viewport.depth_range.z_near, viewport.depth_range.z_far);
+      }
     }
 
     //--------------------------------------------------------------------------
@@ -387,8 +383,7 @@ struct RenderPassData {
       return false;
     }
 
-    auto vertex_buffer =
-        vertex_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+    auto vertex_buffer = vertex_buffer_view.buffer;
 
     if (!vertex_buffer) {
       return false;
@@ -447,8 +442,7 @@ struct RenderPassData {
     } else {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.vertex_buffer.index_buffer;
-      auto index_buffer =
-          index_buffer_view.buffer->GetDeviceBuffer(*transients_allocator);
+      auto index_buffer = index_buffer_view.buffer;
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
       if (!index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
@@ -480,23 +474,21 @@ struct RenderPassData {
   if (gl.DiscardFramebufferEXT.IsAvailable()) {
     std::vector<GLenum> attachments;
 
+    // TODO(jonahwilliams): discarding stencil or depth on the default fbo
+    // causes Angle to discard the entire render target. Until we know the
+    // reason, default to storing.
+    bool angle_safe = gl.GetCapabilities()->IsANGLE() ? !is_default_fbo : true;
+
     if (pass_data.discard_color_attachment) {
       attachments.push_back(is_default_fbo ? GL_COLOR_EXT
                                            : GL_COLOR_ATTACHMENT0);
     }
-    if (pass_data.discard_depth_attachment) {
+    if (pass_data.discard_depth_attachment && angle_safe) {
       attachments.push_back(is_default_fbo ? GL_DEPTH_EXT
                                            : GL_DEPTH_ATTACHMENT);
     }
 
-// TODO(jonahwilliams): discarding the stencil on the default fbo when running
-// on Windows causes Angle to discard the entire render target. Until we know
-// the reason, default to storing.
-#ifdef FML_OS_WIN
-    if (pass_data.discard_stencil_attachment && !is_default_fbo) {
-#else
-    if (pass_data.discard_stencil_attachment) {
-#endif
+    if (pass_data.discard_stencil_attachment && angle_safe) {
       attachments.push_back(is_default_fbo ? GL_STENCIL_EXT
                                            : GL_STENCIL_ATTACHMENT);
     }
@@ -519,9 +511,6 @@ struct RenderPassData {
 bool RenderPassGLES::OnEncodeCommands(const Context& context) const {
   if (!IsValid()) {
     return false;
-  }
-  if (commands_.empty()) {
-    return true;
   }
   const auto& render_target = GetRenderTarget();
   if (!render_target.HasColorAttachment(0u)) {

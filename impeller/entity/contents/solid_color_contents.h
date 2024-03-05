@@ -5,14 +5,10 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_SOLID_COLOR_CONTENTS_H_
 
-#include <functional>
 #include <memory>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -28,7 +24,8 @@ class SolidColorContents final : public ColorSourceContents {
 
   ~SolidColorContents() override;
 
-  static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
+  static std::unique_ptr<SolidColorContents> Make(const Path& path,
+                                                  Color color);
 
   void SetColor(Color color);
 

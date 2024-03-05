@@ -375,7 +375,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
 std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
-    std::shared_ptr<GlyphAtlasContext> atlas_context,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const FontGlyphMap& font_glyph_map) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!IsValid()) {
@@ -516,11 +516,12 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   PixelFormat format;
   switch (type) {
     case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
+      format = context.GetCapabilities()->GetDefaultGlyphAtlasFormat();
       break;
     case GlyphAtlas::Type::kColorBitmap:
-      format = DISABLE_COLOR_FONT_SUPPORT ? PixelFormat::kA8UNormInt
-                                          : PixelFormat::kR8G8B8A8UNormInt;
+      format = DISABLE_COLOR_FONT_SUPPORT
+                   ? context.GetCapabilities()->GetDefaultGlyphAtlasFormat()
+                   : PixelFormat::kR8G8B8A8UNormInt;
       break;
   }
   auto texture = UploadGlyphTextureAtlas(context.GetResourceAllocator(), bitmap,

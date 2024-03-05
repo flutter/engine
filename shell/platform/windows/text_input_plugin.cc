@@ -197,9 +197,7 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   std::string text_before_change = active_model_->GetText();
   TextRange composing_before_change = active_model_->composing_range();
   active_model_->AddText(text);
-  cursor_pos += active_model_->composing_range().start();
-  active_model_->UpdateComposingText(text);
-  active_model_->SetSelection(TextRange(cursor_pos, cursor_pos));
+  active_model_->UpdateComposingText(text, TextRange(cursor_pos, cursor_pos));
   std::string text_after_change = active_model_->GetText();
   if (enable_delta_model) {
     TextEditingDelta delta = TextEditingDelta(
@@ -218,7 +216,9 @@ void TextInputPlugin::HandleMethodCall(
   if (method.compare(kShowMethod) == 0 || method.compare(kHideMethod) == 0) {
     // These methods are no-ops.
   } else if (method.compare(kClearClientMethod) == 0) {
-    FlutterWindowsView* view = engine_->view();
+    // TODO(loicsharma): Remove implicit view assumption.
+    // https://github.com/flutter/flutter/issues/142845
+    FlutterWindowsView* view = engine_->view(kImplicitViewId);
     if (view == nullptr) {
       result->Error(kInternalConsistencyError,
                     "Text input is not available in Windows headless mode");
@@ -328,7 +328,9 @@ void TextInputPlugin::HandleMethodCall(
           TextRange(composing_base, composing_extent), cursor_offset);
     }
   } else if (method.compare(kSetMarkedTextRect) == 0) {
-    FlutterWindowsView* view = engine_->view();
+    // TODO(loicsharma): Remove implicit view assumption.
+    // https://github.com/flutter/flutter/issues/142845
+    FlutterWindowsView* view = engine_->view(kImplicitViewId);
     if (view == nullptr) {
       result->Error(kInternalConsistencyError,
                     "Text input is not available in Windows headless mode");
@@ -357,7 +359,9 @@ void TextInputPlugin::HandleMethodCall(
     Rect transformed_rect = GetCursorRect();
     view->OnCursorRectUpdated(transformed_rect);
   } else if (method.compare(kSetEditableSizeAndTransform) == 0) {
-    FlutterWindowsView* view = engine_->view();
+    // TODO(loicsharma): Remove implicit view assumption.
+    // https://github.com/flutter/flutter/issues/142845
+    FlutterWindowsView* view = engine_->view(kImplicitViewId);
     if (view == nullptr) {
       result->Error(kInternalConsistencyError,
                     "Text input is not available in Windows headless mode");

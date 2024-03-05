@@ -71,10 +71,14 @@ class EntityPass {
 
   size_t GetSubpassesDepth() const;
 
-  std::unique_ptr<EntityPass> Clone() const;
-
   /// @brief Add an entity to the current entity pass.
   void AddEntity(Entity entity);
+
+  void PushClip(Entity entity);
+
+  void PopClips(size_t num_clips, uint64_t depth);
+
+  void PopAllClips(uint64_t depth);
 
   void SetElements(std::vector<Element> elements);
 
@@ -100,6 +104,9 @@ class EntityPass {
   ///         order is depth-first. Whenever a subpass elements is encountered,
   ///         it's included in the stream before its children.
   void IterateAllElements(const std::function<bool(Element&)>& iterator);
+
+  void IterateAllElements(
+      const std::function<bool(const Element&)>& iterator) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Iterate all entities in this pass, recursively including entities
@@ -132,7 +139,11 @@ class EntityPass {
 
   void SetClipDepth(size_t clip_depth);
 
-  size_t GetClipDepth();
+  size_t GetClipDepth() const;
+
+  void SetNewClipDepth(size_t clip_depth);
+
+  uint32_t GetNewClipDepth() const;
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -147,6 +158,12 @@ class EntityPass {
   void SetBackdropFilter(BackdropFilterProc proc);
 
   void SetEnableOffscreenCheckerboard(bool enabled);
+
+  int32_t GetRequiredMipCount() const { return required_mip_count_; }
+
+  void SetRequiredMipCount(int32_t mip_count) {
+    required_mip_count_ = mip_count;
+  }
 
   //----------------------------------------------------------------------------
   /// @brief  Computes the coverage of a given subpass. This is used to
@@ -288,15 +305,23 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
+  /// The stack of currently active clips (during Aiks recording time). Each
+  /// entry is an index into the `elements_` list. The depth value of a clip is
+  /// the max of all the entities it affects, so assignment of the depth value
+  /// is deferred until clip restore or end of the EntityPass.
+  std::vector<size_t> active_clips_;
+
   EntityPass* superpass_ = nullptr;
   Matrix transform_;
   size_t clip_depth_ = 0u;
+  uint32_t new_clip_depth_ = 1u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
   std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
       std::make_unique<EntityPassClipRecorder>();
+  int32_t required_mip_count_ = 1;
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in

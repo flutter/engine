@@ -3334,6 +3334,27 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
     }());
     return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
   }
+
+  @override
+  String toString() {
+    String? result;
+    assert(() {
+      if (_disposed && _needsLayout) {
+        result = 'Paragraph(DISPOSED while dirty)';
+      }
+      if (_disposed && !_needsLayout) {
+        result = 'Paragraph(DISPOSED)';
+      }
+      return true;
+    }());
+    if (result != null) {
+      return result!;
+    }
+    if (_needsLayout) {
+      return 'Paragraph(dirty)';
+    }
+    return 'Paragraph()';
+  }
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
@@ -3354,23 +3375,6 @@ abstract class ParagraphBuilder {
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   factory ParagraphBuilder(ParagraphStyle style) = _NativeParagraphBuilder;
-
-  /// Whether the rounding hack enabled by default in SkParagraph and TextPainter
-  /// is disabled.
-  ///
-  /// Do not rely on this getter as it exists for migration purposes only and
-  /// will soon be removed.
-  @Deprecated('''
-    The shouldDisableRoundingHack flag is for internal migration purposes only and should not be used.
-  ''')
-  static bool get shouldDisableRoundingHack => _shouldDisableRoundingHack;
-  static bool _shouldDisableRoundingHack = true;
-  /// Do not call this method as it is for migration purposes only and will soon
-  /// be removed.
-  // ignore: use_setters_to_change_properties
-  static void setDisableRoundingHack(bool disableRoundingHack) {
-    _shouldDisableRoundingHack = disableRoundingHack;
-  }
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount;
@@ -3489,11 +3493,10 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
         style._height ?? 0,
         style._ellipsis ?? '',
         _encodeLocale(style._locale),
-        !ParagraphBuilder.shouldDisableRoundingHack,
       );
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle, Bool)>(symbol: 'ParagraphBuilder::Create')
+  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>(symbol: 'ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
@@ -3503,7 +3506,7 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       double height,
       String ellipsis,
       String locale,
-      bool applyRoundingHack);
+  );
 
   @override
   int get placeholderCount => _placeholderCount;
@@ -3657,6 +3660,9 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
 
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'ParagraphBuilder::build')
   external void _build(_NativeParagraph outParagraph);
+
+  @override
+  String toString() => 'ParagraphBuilder';
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.

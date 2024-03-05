@@ -8,18 +8,16 @@
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/capture.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/capabilities.h"
-#include "impeller/renderer/pool.h"
+#include "impeller/renderer/command_queue.h"
+#include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
 
 class ShaderLibrary;
-class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 
@@ -164,26 +162,14 @@ class Context {
   ///
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
+  /// @brief Return the graphics queue for submitting command buffers.
+  virtual std::shared_ptr<CommandQueue> GetCommandQueue() const = 0;
+
   //----------------------------------------------------------------------------
   /// @brief      Force all pending asynchronous work to finish. This is
   ///             achieved by deleting all owned concurrent message loops.
   ///
   virtual void Shutdown() = 0;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Force the Vulkan presentation (submitKHR) to be performed on
-  ///             the raster task runner.
-  ///
-  ///             This is required for correct rendering on Android when using
-  ///             the hybrid composition mode. This has no effect on other
-  ///             backends. This is analogous to the check for isMainThread in
-  ///             surface_mtl.mm to block presentation on scheduling of all
-  ///             pending work.
-  virtual void SetSyncPresentation(bool value) {}
-
-  //----------------------------------------------------------------------------
-  /// @brief Accessor for a pool of HostBuffers.
-  Pool<HostBuffer>& GetHostBufferPool() const { return host_buffer_pool_; }
 
   CaptureContext capture;
 
@@ -200,12 +186,20 @@ class Context {
     FML_CHECK(false && "not supported in this context");
   }
 
+  /// Run backend specific additional setup and create common shader variants.
+  ///
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
+  virtual void InitializeCommonlyUsedShadersIfNeeded() const {}
+
  protected:
   Context();
 
- private:
-  mutable Pool<HostBuffer> host_buffer_pool_ = Pool<HostBuffer>(1'000'000);
+  std::vector<std::function<void()>> per_frame_task_;
 
+ private:
   Context(const Context&) = delete;
 
   Context& operator=(const Context&) = delete;

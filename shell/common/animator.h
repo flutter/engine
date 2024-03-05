@@ -54,12 +54,27 @@ class Animator final {
   void RequestFrame(bool regenerate_layer_trees = true);
 
   //--------------------------------------------------------------------------
+  /// @brief    Tells the Animator that a warm up frame has ended.
+  ///
+  ///           In a warm up frame, `Animator::Render` is called out of vsync
+  ///           tasks, and Animator requires an explicit end-of-frame call to
+  ///           know when to send the layer trees to the pipeline.
+  ///
+  ///           This is different from regular frames, where Animator::Render is
+  ///           always called within a vsync task, and Animator can send
+  ///           the views at the end of the vsync task.
+  ///
+  ///           For more about warm up frames, see
+  ///           `PlatformDispatcher.scheduleWarmUpFrame`.
+  ///
+  void EndWarmUpFrame();
+
+  //--------------------------------------------------------------------------
   /// @brief    Tells the Animator that this frame needs to render another view.
   ///
   ///           This method must be called during a vsync callback, or
   ///           technically, between Animator::BeginFrame and Animator::EndFrame
-  ///           (both private methods). Otherwise, an assertion will be
-  ///           triggered.
+  ///           (both private methods). Otherwise, this call will be ignored.
   ///
   void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio);

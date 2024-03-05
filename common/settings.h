@@ -22,6 +22,14 @@
 
 namespace flutter {
 
+// The combination of targeted graphics API and Impeller support.
+enum class AndroidRenderingAPI {
+  kSoftware,
+  kImpellerOpenGLES,
+  kImpellerVulkan,
+  kSkiaOpenGLES
+};
+
 class FrameTiming {
  public:
   enum Phase {
@@ -221,8 +229,12 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
-  // Requests a particular backend to be used (ex "opengles" or "vulkan")
-  std::optional<std::string> impeller_backend;
+  // The selected Android rendering API.
+  AndroidRenderingAPI android_rendering_api =
+      AndroidRenderingAPI::kSkiaOpenGLES;
+
+  // Requests a specific rendering backend.
+  std::optional<std::string> requested_rendering_backend;
 
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
@@ -231,6 +243,9 @@ struct Settings {
   // Enable GPU tracing in GLES backends.
   // Some devices claim to support the required APIs but crash on their usage.
   bool enable_opengl_gpu_tracing = false;
+
+  // Enable GPU tracing in Vulkan backends.
+  bool enable_vulkan_gpu_tracing = false;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;

@@ -339,6 +339,10 @@ extension DomHTMLDocumentExtension on DomHTMLDocument {
   @JS('getElementById')
   external DomElement? _getElementById(JSString id);
   DomElement? getElementById(String id) => _getElementById(id.toJS);
+
+  @JS('visibilityState')
+  external JSString get _visibilityState;
+  String get visibilityState => _visibilityState.toDart;
 }
 
 @JS('document')
@@ -603,6 +607,14 @@ extension DomElementExtension on DomElement {
   @JS('querySelector')
   external DomElement? _querySelector(JSString selectors);
   DomElement? querySelector(String selectors) => _querySelector(selectors.toJS);
+
+  @JS('closest')
+  external DomElement? _closest(JSString selectors);
+  DomElement? closest(String selectors) => _closest(selectors.toJS);
+
+  @JS('matches')
+  external JSBoolean _matches(JSString selectors);
+  bool matches(String selectors) => _matches(selectors.toJS).toDart;
 
   @JS('querySelectorAll')
   external _DomList _querySelectorAll(JSString selectors);
@@ -1475,7 +1487,7 @@ class DomCanvasRenderingContextBitmapRenderer {}
 
 extension DomCanvasRenderingContextBitmapRendererExtension
     on DomCanvasRenderingContextBitmapRenderer {
-  external void transferFromImageBitmap(DomImageBitmap bitmap);
+  external void transferFromImageBitmap(DomImageBitmap? bitmap);
 }
 
 @JS('ImageData')
@@ -2463,18 +2475,26 @@ DomPath2D createDomPath2D([Object? path]) {
   }
 }
 
-@JS('MouseEvent')
-@staticInterop
-class DomMouseEvent extends DomUIEvent {
-  external factory DomMouseEvent.arg1(JSString type);
-  external factory DomMouseEvent.arg2(JSString type, JSAny initDict);
-}
-
 @JS('InputEvent')
 @staticInterop
 class DomInputEvent extends DomUIEvent {
   external factory DomInputEvent.arg1(JSString type);
   external factory DomInputEvent.arg2(JSString type, JSAny initDict);
+}
+
+@JS('FocusEvent')
+@staticInterop
+class DomFocusEvent extends DomUIEvent {}
+
+extension DomFocusEventExtension on DomFocusEvent {
+  external DomEventTarget? get relatedTarget;
+}
+
+@JS('MouseEvent')
+@staticInterop
+class DomMouseEvent extends DomUIEvent {
+  external factory DomMouseEvent.arg1(JSString type);
+  external factory DomMouseEvent.arg2(JSString type, JSAny initDict);
 }
 
 extension DomMouseEventExtension on DomMouseEvent {
@@ -2927,6 +2947,11 @@ DomFileReader createDomFileReader() => DomFileReader();
 class DomDocumentFragment extends DomNode {}
 
 extension DomDocumentFragmentExtension on DomDocumentFragment {
+  external DomElement? get firstElementChild;
+  external DomElement? get lastElementChild;
+
+  external JSVoid prepend(DomNode node);
+
   @JS('querySelector')
   external DomElement? _querySelector(JSString selectors);
   DomElement? querySelector(String selectors) => _querySelector(selectors.toJS);
@@ -3024,8 +3049,7 @@ extension DomScreenOrientationExtension on DomScreenOrientation {
 
 // A helper class for managing a subscription. On construction it will add an
 // event listener of the requested type to the target. Calling [cancel] will
-// remove the listener. Caller is still responsible for calling [allowInterop]
-// on the listener before creating the subscription.
+// remove the listener.
 class DomSubscription {
   DomSubscription(
       this.target, String typeString, DartDomEventListener dartListener)
@@ -3251,9 +3275,6 @@ abstract class DomTrustedTypePolicyOptions {
   ///
   /// `createScriptURL` is a callback function that contains code to run when
   /// creating a TrustedScriptURL object.
-  ///
-  /// The following properties need to be manually wrapped in [allowInterop]
-  /// before being passed to this constructor: [createScriptURL].
   external factory DomTrustedTypePolicyOptions({
     JSFunction? createScriptURL,
   });

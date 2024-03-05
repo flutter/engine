@@ -142,7 +142,20 @@ public class FlutterJNI {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
 
-    System.loadLibrary("flutter");
+    try {
+      System.loadLibrary("flutter");
+    } catch (UnsatisfiedLinkError e) {
+      // Sniff if this because libflutter.so couldn't be found.
+      if (e.toString().contains("couldn't find \"libflutter.so\"")) {
+        throw new UnsupportedOperationException(
+            "Could not load libflutter.so this is likely because the application"
+                + " is running on an architecture that Flutter Android does not support (e.g. x86)"
+                + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
+                + " for more detail.",
+            e);
+      }
+      throw e;
+    }
     FlutterJNI.loadLibraryCalled = true;
   }
 
@@ -742,13 +755,6 @@ public class FlutterJNI {
       int[] displayFeaturesType,
       int[] displayFeaturesState);
 
-  @UiThread
-  public void SetIsRenderingToImageView(boolean value) {
-    nativeSetIsRenderingToImageView(nativeShellHolderId, value);
-  }
-
-  private native void nativeSetIsRenderingToImageView(long nativeShellHolderId, boolean value);
-
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
@@ -950,6 +956,16 @@ public class FlutterJNI {
   }
 
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
+
+  /** Schedule the engine to draw a frame but does not invalidate the layout tree. */
+  @UiThread
+  public void scheduleFrame() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeScheduleFrame(nativeShellHolderId);
+  }
+
+  private native void nativeScheduleFrame(long nativeShellHolderId);
 
   /**
    * Unregisters a texture that was registered with {@link #registerTexture(long,
@@ -1281,22 +1297,17 @@ public class FlutterJNI {
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
       // Convert to Locales via LocaleBuilder if available (API 21+) to include scriptCode.
-      if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-        Locale.Builder localeBuilder = new Locale.Builder();
-        if (!languageCode.isEmpty()) {
-          localeBuilder.setLanguage(languageCode);
-        }
-        if (!countryCode.isEmpty()) {
-          localeBuilder.setRegion(countryCode);
-        }
-        if (!scriptCode.isEmpty()) {
-          localeBuilder.setScript(scriptCode);
-        }
-        supportedLocales.add(localeBuilder.build());
-      } else {
-        // Pre-API 21, we fall back on scriptCode-less locales.
-        supportedLocales.add(new Locale(languageCode, countryCode));
+      Locale.Builder localeBuilder = new Locale.Builder();
+      if (!languageCode.isEmpty()) {
+        localeBuilder.setLanguage(languageCode);
       }
+      if (!countryCode.isEmpty()) {
+        localeBuilder.setRegion(countryCode);
+      }
+      if (!scriptCode.isEmpty()) {
+        localeBuilder.setScript(scriptCode);
+      }
+      supportedLocales.add(localeBuilder.build());
     }
 
     Locale result = localizationPlugin.resolveNativeLocale(supportedLocales);
@@ -1307,11 +1318,7 @@ public class FlutterJNI {
     String[] output = new String[localeDataLength];
     output[0] = result.getLanguage();
     output[1] = result.getCountry();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-      output[2] = result.getScript();
-    } else {
-      output[2] = "";
-    }
+    output[2] = result.getScript();
     return output;
   }
 

@@ -31,13 +31,9 @@ class HtmlRenderer implements Renderer {
       // to make the unpacking happen while we are waiting for network requests.
       lineLookup;
     });
-    registerHotRestartListener(clearFragmentProgramCache);
 
     _instance = this;
   }
-
-  @override
-  void reset(FlutterViewEmbedder embedder) {}
 
   @override
   ui.Paint createPaint() => SurfacePaint();
@@ -259,6 +255,7 @@ class HtmlRenderer implements Renderer {
     letterSpacing: letterSpacing,
     wordSpacing: wordSpacing,
     height: height,
+    leadingDistribution: leadingDistribution,
     locale: locale,
     background: background,
     foreground: foreground,
@@ -326,8 +323,11 @@ class HtmlRenderer implements Renderer {
   @override
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
     final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
-    implicitView.dom.setScene((scene as SurfaceScene).webOnlyRootElement!);
-    frameTimingsOnRasterFinish();
+    scene as SurfaceScene;
+    implicitView.dom.setScene(scene.webOnlyRootElement!);
+    final FrameTimingRecorder? recorder = scene.timingRecorder;
+    recorder?.recordRasterFinish();
+    recorder?.submitTimings();
   }
 
   @override

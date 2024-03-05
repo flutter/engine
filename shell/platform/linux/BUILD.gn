@@ -90,14 +90,12 @@ source_set("flutter_linux_sources") {
              "fl_method_channel_private.h",
              "fl_method_codec_private.h",
              "fl_plugin_registrar_private.h",
-             "fl_standard_message_codec_private.h",
              "key_mapping.h",
            ]
 
   configs += [ "//flutter/shell/platform/linux/config:gtk" ]
 
   sources = [
-    "fl_accessibility_plugin.cc",
     "fl_accessible_node.cc",
     "fl_accessible_text_field.cc",
     "fl_backing_store_provider.cc",
@@ -107,7 +105,6 @@ source_set("flutter_linux_sources") {
     "fl_dart_project.cc",
     "fl_engine.cc",
     "fl_event_channel.cc",
-    "fl_gl_area.cc",
     "fl_gnome_settings.cc",
     "fl_json_message_codec.cc",
     "fl_json_method_codec.cc",
@@ -128,7 +125,7 @@ source_set("flutter_linux_sources") {
     "fl_plugin_registrar.cc",
     "fl_plugin_registry.cc",
     "fl_renderer.cc",
-    "fl_renderer_gl.cc",
+    "fl_renderer_gdk.cc",
     "fl_renderer_headless.cc",
     "fl_scrolling_manager.cc",
     "fl_scrolling_view_delegate.cc",
@@ -248,7 +245,10 @@ executable("flutter_linux_unittests") {
 
   public_configs = [ "//flutter:config" ]
 
-  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  configs += [
+    "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:epoxy",
+  ]
 
   defines = [
     "FLUTTER_ENGINE_NO_PROTOTYPES",
@@ -289,7 +289,7 @@ zip_bundle("flutter_gtk") {
   deps = [
     ":flutter_linux_gtk",
     ":publish_headers_linux",
-    "//third_party/dart/runtime/bin:gen_snapshot",
+    "$dart_src/runtime/bin:gen_snapshot",
   ]
   sources = get_target_outputs(":publish_headers_linux")
   tmp_files = []

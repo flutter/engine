@@ -14,15 +14,17 @@ impeller_component("vulkan_unittests") {
     "context_vk_unittests.cc",
     "descriptor_pool_vk_unittests.cc",
     "fence_waiter_vk_unittests.cc",
-    "pass_bindings_cache_unittests.cc",
+    "render_pass_cache_unittests.cc",
     "resource_manager_vk_unittests.cc",
     "test/gpu_tracer_unittests.cc",
     "test/mock_vulkan.cc",
     "test/mock_vulkan.h",
     "test/mock_vulkan_unittests.cc",
+    "test/swapchain_unittests.cc",
   ]
   deps = [
     ":vulkan",
+    "../../../playground:playground_test",
     "//flutter/testing:testing_lib",
   ]
 }
@@ -35,8 +37,6 @@ impeller_component("vulkan") {
     "android_hardware_buffer_texture_source_vk.h",
     "barrier_vk.cc",
     "barrier_vk.h",
-    "binding_helpers_vk.cc",
-    "binding_helpers_vk.h",
     "blit_command_vk.cc",
     "blit_command_vk.h",
     "blit_pass_vk.cc",
@@ -49,6 +49,8 @@ impeller_component("vulkan") {
     "command_encoder_vk.h",
     "command_pool_vk.cc",
     "command_pool_vk.h",
+    "command_queue_vk.cc",
+    "command_queue_vk.h",
     "compute_pass_vk.cc",
     "compute_pass_vk.h",
     "compute_pipeline_vk.cc",
@@ -68,8 +70,6 @@ impeller_component("vulkan") {
     "gpu_tracer_vk.cc",
     "gpu_tracer_vk.h",
     "limits_vk.h",
-    "pass_bindings_cache.cc",
-    "pass_bindings_cache.h",
     "pipeline_cache_vk.cc",
     "pipeline_cache_vk.h",
     "pipeline_library_vk.cc",
@@ -78,6 +78,8 @@ impeller_component("vulkan") {
     "pipeline_vk.h",
     "queue_vk.cc",
     "queue_vk.h",
+    "render_pass_builder_vk.cc",
+    "render_pass_builder_vk.h",
     "render_pass_vk.cc",
     "render_pass_vk.h",
     "resource_manager_vk.cc",
@@ -106,11 +108,17 @@ impeller_component("vulkan") {
     "texture_source_vk.h",
     "texture_vk.cc",
     "texture_vk.h",
+    "tracked_objects_vk.cc",
+    "tracked_objects_vk.h",
     "vertex_descriptor_vk.cc",
     "vertex_descriptor_vk.h",
     "vk.h",
     "vma.cc",
     "vma.h",
+    "yuv_conversion_library_vk.cc",
+    "yuv_conversion_library_vk.h",
+    "yuv_conversion_vk.cc",
+    "yuv_conversion_vk.h",
   ]
 
   public_deps = [
@@ -118,11 +126,7 @@ impeller_component("vulkan") {
     "../../../shader_archive",
     "//flutter/flutter_vma",
     "//flutter/fml",
-    "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
+    "//flutter/third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]
-
-  if (impeller_enable_vulkan_validation_layers) {
-    defines = [ "IMPELLER_ENABLE_VULKAN_VALIDATION_LAYERS" ]
-  }
 }

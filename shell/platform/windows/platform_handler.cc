@@ -248,7 +248,9 @@ PlatformHandler::~PlatformHandler() = default;
 void PlatformHandler::GetPlainText(
     std::unique_ptr<MethodResult<rapidjson::Document>> result,
     std::string_view key) {
-  const FlutterWindowsView* view = engine_->view();
+  // TODO(loicsharma): Remove implicit view assumption.
+  // https://github.com/flutter/flutter/issues/142845
+  const FlutterWindowsView* view = engine_->view(kImplicitViewId);
   if (view == nullptr) {
     result->Error(kClipboardError,
                   "Clipboard is not available in Windows headless mode");
@@ -258,7 +260,7 @@ void PlatformHandler::GetPlainText(
   std::unique_ptr<ScopedClipboardInterface> clipboard =
       scoped_clipboard_provider_();
 
-  int open_result = clipboard->Open(std::get<HWND>(*view->GetRenderTarget()));
+  int open_result = clipboard->Open(view->GetWindowHandle());
   if (open_result != kErrorSuccess) {
     rapidjson::Document error_code;
     error_code.SetInt(open_result);
@@ -291,7 +293,9 @@ void PlatformHandler::GetPlainText(
 
 void PlatformHandler::GetHasStrings(
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  const FlutterWindowsView* view = engine_->view();
+  // TODO(loicsharma): Remove implicit view assumption.
+  // https://github.com/flutter/flutter/issues/142845
+  const FlutterWindowsView* view = engine_->view(kImplicitViewId);
   if (view == nullptr) {
     result->Error(kClipboardError,
                   "Clipboard is not available in Windows headless mode");
@@ -302,7 +306,7 @@ void PlatformHandler::GetHasStrings(
       scoped_clipboard_provider_();
 
   bool hasStrings;
-  int open_result = clipboard->Open(std::get<HWND>(*view->GetRenderTarget()));
+  int open_result = clipboard->Open(view->GetWindowHandle());
   if (open_result != kErrorSuccess) {
     // Swallow errors of type ERROR_ACCESS_DENIED. These happen when the app is
     // not in the foreground and GetHasStrings is irrelevant.
@@ -329,7 +333,9 @@ void PlatformHandler::GetHasStrings(
 void PlatformHandler::SetPlainText(
     const std::string& text,
     std::unique_ptr<MethodResult<rapidjson::Document>> result) {
-  const FlutterWindowsView* view = engine_->view();
+  // TODO(loicsharma): Remove implicit view assumption.
+  // https://github.com/flutter/flutter/issues/142845
+  const FlutterWindowsView* view = engine_->view(kImplicitViewId);
   if (view == nullptr) {
     result->Error(kClipboardError,
                   "Clipboard is not available in Windows headless mode");
@@ -339,7 +345,7 @@ void PlatformHandler::SetPlainText(
   std::unique_ptr<ScopedClipboardInterface> clipboard =
       scoped_clipboard_provider_();
 
-  int open_result = clipboard->Open(std::get<HWND>(*view->GetRenderTarget()));
+  int open_result = clipboard->Open(view->GetWindowHandle());
   if (open_result != kErrorSuccess) {
     rapidjson::Document error_code;
     error_code.SetInt(open_result);

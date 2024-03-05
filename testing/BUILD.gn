@@ -40,8 +40,8 @@ source_set("testing_lib") {
   public_deps = [
     "//flutter/display_list",
     "//flutter/fml",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "//flutter/third_party/googletest:gmock",
+    "//flutter/third_party/googletest:gtest",
   ]
   public_configs = [ "//flutter:config" ]
 }
@@ -51,7 +51,7 @@ source_set("testing") {
 
   sources = [ "run_all_unittests.cc" ]
 
-  if (is_linux) {
+  if (enable_unittests && is_linux) {
     # So that we can call gtk_init in main().
     configs += [ "//flutter/shell/platform/linux/config:gtk" ]
   }
@@ -74,12 +74,12 @@ source_set("dart") {
 
   public_deps = [
     ":testing_lib",
+    "$dart_src/runtime/bin:elf_loader",
     "//flutter/common",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/skia",
     "//flutter/third_party/tonic",
-    "//third_party/dart/runtime/bin:elf_loader",
   ]
 }
 
@@ -139,7 +139,7 @@ if (is_mac || is_ios) {
 
     deps = [
       "//flutter/fml",
-      "//third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest",
     ]
   }
 }

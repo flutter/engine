@@ -6,6 +6,7 @@
 
 #include "flutter/lib/gpu/formats.h"
 #include "flutter/lib/gpu/render_pipeline.h"
+#include "flutter/lib/gpu/shader.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -14,7 +15,6 @@
 #include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/pipeline_library.h"
-#include "impeller/renderer/sampler_library.h"
 #include "tonic/converter/dart_converter.h"
 
 namespace flutter {
@@ -28,7 +28,7 @@ RenderPass::RenderPass()
 
 RenderPass::~RenderPass() = default;
 
-const std::weak_ptr<const impeller::Context>& RenderPass::GetContext() const {
+const std::shared_ptr<const impeller::Context>& RenderPass::GetContext() const {
   return render_pass_->GetContext();
 }
 
@@ -115,7 +115,7 @@ RenderPass::GetOrCreatePipeline() {
     }
   }
 
-  auto& context = *GetContext().lock();
+  auto& context = *GetContext();
 
   render_pipeline_->BindToPipelineDescriptor(*context.GetShaderLibrary(),
                                              pipeline_desc);
@@ -137,7 +137,44 @@ impeller::Command RenderPass::ProvisionRasterCommand() {
 
 bool RenderPass::Draw() {
   impeller::Command result = ProvisionRasterCommand();
-  return render_pass_->AddCommand(std::move(result));
+#ifdef IMPELLER_DEBUG
+  render_pass_->SetCommandLabel(result.label);
+#endif  // IMPELLER_DEBUG
+  render_pass_->SetPipeline(result.pipeline);
+  render_pass_->SetStencilReference(result.stencil_reference);
+  render_pass_->SetBaseVertex(result.base_vertex);
+  if (result.viewport.has_value()) {
+    render_pass_->SetViewport(result.viewport.value());
+  }
+  if (result.scissor.has_value()) {
+    render_pass_->SetScissor(result.scissor.value());
+  }
+  render_pass_->SetVertexBuffer(result.vertex_buffer);
+  for (const auto& buffer : result.vertex_bindings.buffers) {
+    render_pass_->BindResource(impeller::ShaderStage::kVertex,
+                               impeller::DescriptorType::kUniformBuffer,
+                               buffer.slot, *buffer.view.GetMetadata(),
+                               buffer.view.resource);
+  }
+  for (const auto& texture : result.vertex_bindings.sampled_images) {
+    render_pass_->BindResource(impeller::ShaderStage::kVertex,
+                               impeller::DescriptorType::kSampledImage,
+                               texture.slot, *texture.texture.GetMetadata(),
+                               texture.texture.resource, texture.sampler);
+  }
+  for (const auto& buffer : result.fragment_bindings.buffers) {
+    render_pass_->BindResource(impeller::ShaderStage::kFragment,
+                               impeller::DescriptorType::kUniformBuffer,
+                               buffer.slot, *buffer.view.GetMetadata(),
+                               buffer.view.resource);
+  }
+  for (const auto& texture : result.fragment_bindings.sampled_images) {
+    render_pass_->BindResource(impeller::ShaderStage::kFragment,
+                               impeller::DescriptorType::kSampledImage,
+                               texture.slot, *texture.texture.GetMetadata(),
+                               texture.texture.resource, texture.sampler);
+  }
+  return render_pass_->Draw().ok();
 }
 
 }  // namespace gpu
@@ -230,13 +267,13 @@ void InternalFlutterGpu_RenderPass_BindPipeline(
 
 template <typename TBuffer>
 static void BindVertexBuffer(flutter::gpu::RenderPass* wrapper,
-                             TBuffer* buffer,
+                             TBuffer buffer,
                              int offset_in_bytes,
                              int length_in_bytes,
                              int vertex_count) {
   auto& vertex_buffer = wrapper->GetVertexBuffer();
   vertex_buffer.vertex_buffer = impeller::BufferView{
-      .buffer = buffer->GetBuffer(),
+      .buffer = buffer,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
   // If the index type is set, then the `vertex_count` becomes the index
@@ -258,8 +295,8 @@ void InternalFlutterGpu_RenderPass_BindVertexBufferDevice(
     int offset_in_bytes,
     int length_in_bytes,
     int vertex_count) {
-  BindVertexBuffer(wrapper, device_buffer, offset_in_bytes, length_in_bytes,
-                   vertex_count);
+  BindVertexBuffer(wrapper, device_buffer->GetBuffer(), offset_in_bytes,
+                   length_in_bytes, vertex_count);
 }
 
 void InternalFlutterGpu_RenderPass_BindVertexBufferHost(
@@ -268,20 +305,28 @@ void InternalFlutterGpu_RenderPass_BindVertexBufferHost(
     int offset_in_bytes,
     int length_in_bytes,
     int vertex_count) {
-  BindVertexBuffer(wrapper, host_buffer, offset_in_bytes, length_in_bytes,
-                   vertex_count);
+  std::optional<impeller::BufferView> view =
+      host_buffer->GetBufferViewForOffset(offset_in_bytes);
+  if (!view.has_value()) {
+    FML_LOG(ERROR)
+        << "Failed to bind vertex buffer due to invalid HostBuffer offset: "
+        << offset_in_bytes;
+    return;
+  }
+  BindVertexBuffer(wrapper, view->buffer, view->range.offset,
+                   view->range.length, vertex_count);
 }
 
 template <typename TBuffer>
 static void BindIndexBuffer(flutter::gpu::RenderPass* wrapper,
-                            TBuffer* buffer,
+                            TBuffer buffer,
                             int offset_in_bytes,
                             int length_in_bytes,
                             int index_type,
                             int index_count) {
   auto& vertex_buffer = wrapper->GetVertexBuffer();
   vertex_buffer.index_buffer = impeller::BufferView{
-      .buffer = buffer->GetBuffer(),
+      .buffer = buffer,
       .range = impeller::Range(offset_in_bytes, length_in_bytes),
   };
   vertex_buffer.index_type = flutter::gpu::ToImpellerIndexType(index_type);
@@ -295,8 +340,8 @@ void InternalFlutterGpu_RenderPass_BindIndexBufferDevice(
     int length_in_bytes,
     int index_type,
     int index_count) {
-  BindIndexBuffer(wrapper, device_buffer, offset_in_bytes, length_in_bytes,
-                  index_type, index_count);
+  BindIndexBuffer(wrapper, device_buffer->GetBuffer(), offset_in_bytes,
+                  length_in_bytes, index_type, index_count);
 }
 
 void InternalFlutterGpu_RenderPass_BindIndexBufferHost(
@@ -306,61 +351,78 @@ void InternalFlutterGpu_RenderPass_BindIndexBufferHost(
     int length_in_bytes,
     int index_type,
     int index_count) {
-  BindIndexBuffer(wrapper, host_buffer, offset_in_bytes, length_in_bytes,
+  auto view = host_buffer->GetBufferViewForOffset(offset_in_bytes);
+  if (!view.has_value()) {
+    FML_LOG(ERROR)
+        << "Failed to bind index buffer due to invalid HostBuffer offset: "
+        << offset_in_bytes;
+    return;
+  }
+  BindIndexBuffer(wrapper, view->buffer, view->range.offset, view->range.length,
                   index_type, index_count);
 }
 
 template <typename TBuffer>
 static bool BindUniform(flutter::gpu::RenderPass* wrapper,
-                        int stage,
-                        int slot_id,
-                        TBuffer* buffer,
+                        flutter::gpu::Shader* shader,
+                        Dart_Handle uniform_name_handle,
+                        TBuffer buffer,
                         int offset_in_bytes,
                         int length_in_bytes) {
-  // TODO(113715): Populate this metadata once GLES is able to handle
-  //               non-struct uniform names.
-  std::shared_ptr<impeller::ShaderMetadata> metadata =
-      std::make_shared<impeller::ShaderMetadata>();
-
   auto& command = wrapper->GetCommand();
-  impeller::ShaderUniformSlot slot;
-  // Don't populate the slot name... we don't have it here and Impeller doesn't
-  // even use it for anything.
-  slot.ext_res_0 = slot_id;
+
+  auto uniform_name = tonic::StdStringFromDart(uniform_name_handle);
+  const flutter::gpu::Shader::UniformBinding* uniform_struct =
+      shader->GetUniformStruct(uniform_name);
+  // TODO(bdero): Return an error string stating that no uniform struct with
+  //              this name exists and throw an exception.
+  if (!uniform_struct) {
+    return false;
+  }
+
   return command.BindResource(
-      flutter::gpu::ToImpellerShaderStage(stage), slot, metadata,
+      shader->GetShaderStage(), impeller::DescriptorType::kUniformBuffer,
+      uniform_struct->slot, uniform_struct->metadata,
       impeller::BufferView{
-          .buffer = buffer->GetBuffer(),
+          .buffer = buffer,
           .range = impeller::Range(offset_in_bytes, length_in_bytes),
       });
 }
 
 bool InternalFlutterGpu_RenderPass_BindUniformDevice(
     flutter::gpu::RenderPass* wrapper,
-    int stage,
-    int slot_id,
+    flutter::gpu::Shader* shader,
+    Dart_Handle uniform_name_handle,
     flutter::gpu::DeviceBuffer* device_buffer,
     int offset_in_bytes,
     int length_in_bytes) {
-  return BindUniform(wrapper, stage, slot_id, device_buffer, offset_in_bytes,
+  return BindUniform(wrapper, shader, uniform_name_handle,
+                     device_buffer->GetBuffer(), offset_in_bytes,
                      length_in_bytes);
 }
 
 bool InternalFlutterGpu_RenderPass_BindUniformHost(
     flutter::gpu::RenderPass* wrapper,
-    int stage,
-    int slot_id,
+    flutter::gpu::Shader* shader,
+    Dart_Handle uniform_name_handle,
     flutter::gpu::HostBuffer* host_buffer,
     int offset_in_bytes,
     int length_in_bytes) {
-  return BindUniform(wrapper, stage, slot_id, host_buffer, offset_in_bytes,
-                     length_in_bytes);
+  auto view = host_buffer->GetBufferViewForOffset(offset_in_bytes);
+  if (!view.has_value()) {
+    FML_LOG(ERROR)
+        << "Failed to bind index buffer due to invalid HostBuffer offset: "
+        << offset_in_bytes;
+    return false;
+  }
+  return BindUniform(wrapper, shader, uniform_name_handle, view->buffer,
+                     view->range.offset, view->range.length);
 }
 
 bool InternalFlutterGpu_RenderPass_BindTexture(
     flutter::gpu::RenderPass* wrapper,
-    int stage,
-    int slot_id,
+    flutter::gpu::Shader* shader,
+    Dart_Handle uniform_name_handle,
     flutter::gpu::Texture* texture,
     int min_filter,
     int mag_filter,
@@ -369,9 +431,14 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
     int height_address_mode) {
   auto& command = wrapper->GetCommand();
 
-  // TODO(113715): Populate this metadata once GLES is able to handle
-  //               non-struct uniform names.
-  impeller::ShaderMetadata metadata;
+  auto uniform_name = tonic::StdStringFromDart(uniform_name_handle);
+  const impeller::SampledImageSlot* image_slot =
+      shader->GetUniformTexture(uniform_name);
+  // TODO(bdero): Return an error string stating that no uniform texture with
+  //              this name exists and throw an exception.
+  if (!image_slot) {
+    return false;
+  }
 
   impeller::SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = flutter::gpu::ToImpellerMinMagFilter(min_filter);
@@ -381,14 +448,12 @@ bool InternalFlutterGpu_RenderPass_BindTexture(
       flutter::gpu::ToImpellerSamplerAddressMode(width_address_mode);
   sampler_desc.height_address_mode =
       flutter::gpu::ToImpellerSamplerAddressMode(height_address_mode);
-  auto sampler = wrapper->GetContext().lock()->GetSamplerLibrary()->GetSampler(
-      sampler_desc);
+  const std::unique_ptr<const impeller::Sampler>& sampler =
+      wrapper->GetContext()->GetSamplerLibrary()->GetSampler(sampler_desc);
 
-  impeller::SampledImageSlot image_slot;
-  image_slot.texture_index = slot_id;
-  return command.BindResource(flutter::gpu::ToImpellerShaderStage(stage),
-                              image_slot, metadata, texture->GetTexture(),
-                              sampler);
+  return command.BindResource(
+      shader->GetShaderStage(), impeller::DescriptorType::kSampledImage,
+      *image_slot, impeller::ShaderMetadata{}, texture->GetTexture(), sampler);
 }
 
 void InternalFlutterGpu_RenderPass_ClearBindings(

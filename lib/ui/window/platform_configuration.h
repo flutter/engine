@@ -25,6 +25,7 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class PlatformMessageHandler;
+class PlatformIsolateManager;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -64,6 +65,13 @@ class PlatformConfigurationClient {
   ///             frame be scheduled for rendering.
   ///
   virtual void ScheduleFrame() = 0;
+
+  //--------------------------------------------------------------------------
+  /// @brief    Called when a warm up frame has ended.
+  ///
+  ///           For more introduction, see `Animator::EndWarmUpFrame`.
+  ///
+  virtual void EndWarmUpFrame() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
@@ -239,6 +247,9 @@ class PlatformConfigurationClient {
   ///
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const = 0;
+
+  virtual std::shared_ptr<PlatformIsolateManager>
+  GetPlatformIsolateManager() = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();
@@ -557,7 +568,12 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
-  static void Render(Scene* scene, double width, double height);
+  static void EndWarmUpFrame();
+
+  static void Render(int64_t view_id,
+                     Scene* scene,
+                     double width,
+                     double height);
 
   static void UpdateSemantics(SemanticsUpdate* update);
 

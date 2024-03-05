@@ -76,6 +76,7 @@ impeller_component("context_spy") {
     "testing/context_spy.h",
   ]
   deps = [
+    "//flutter/impeller/entity:entity_test_helpers",
     "//flutter/impeller/renderer",
     "//flutter/testing:testing_lib",
   ]
@@ -84,7 +85,9 @@ impeller_component("context_spy") {
 template("aiks_unittests_component") {
   target_name = invoker.target_name
   predefined_sources = [
+    "aiks_blur_unittests.cc",
     "aiks_gradient_unittests.cc",
+    "aiks_path_unittests.cc",
     "aiks_unittests.cc",
     "aiks_unittests.h",
   ]
@@ -96,7 +99,11 @@ template("aiks_unittests_component") {
     testonly = true
     if (defined(invoker.defines)) {
       defines = invoker.defines
+    } else {
+      defines = []
     }
+    defines += [ "_USE_MATH_DEFINES" ]
+
     sources = predefined_sources + additional_sources
     deps = [
       ":aiks",

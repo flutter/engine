@@ -20,16 +20,13 @@ void main() {
 }
 
 Future<void> testMain() async {
-  await bootstrapAndRunApp();
+  await bootstrapAndRunApp(withImplicitView: true);
 
   test('EngineSemantics is enabled via a placeholder click', () async {
     expect(semantics().semanticsEnabled, isFalse);
 
     // Synthesize a click on the placeholder.
-    final DomShadowRoot renderingHost =
-        EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost;
-    final DomElement placeholder =
-        renderingHost.querySelector('flt-semantics-placeholder')!;
+    final DomElement placeholder = domDocument.querySelector('flt-semantics-placeholder')!;
 
     expect(placeholder.isConnected, isTrue);
 

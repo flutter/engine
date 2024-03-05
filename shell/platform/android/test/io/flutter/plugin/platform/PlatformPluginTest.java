@@ -11,6 +11,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.doThrow;
@@ -68,23 +69,6 @@ public class PlatformPluginTest {
     clipboardManager = spy(ctx.getSystemService(ClipboardManager.class));
     when(mockActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
     clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
-  }
-
-  @Config(sdk = Build.VERSION_CODES.KITKAT)
-  @Test
-  public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
-    View fakeDecorView = mock(View.class);
-    Window fakeWindow = mock(Window.class);
-    Activity mockActivity = mock(Activity.class);
-    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
-    when(mockActivity.getWindow()).thenReturn(fakeWindow);
-    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
-
-    // HEAVY_IMPACT haptic response is only available on "M" (23) and later.
-    platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.HEAVY_IMPACT);
-
-    // SELECTION_CLICK haptic response is only available on "LOLLIPOP" (21) and later.
-    platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
   @Test
@@ -611,6 +595,20 @@ public class PlatformPluginTest {
     platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBack(true);
 
     verify(mockPlatformPluginDelegate, times(1)).setFrameworkHandlesBack(true);
+  }
+
+  @Test
+  public void testPlatformPluginDelegateNull() throws Exception {
+    Activity mockActivity = mock(Activity.class);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockActivity, mockPlatformChannel, null /*platformPluginDelegate*/);
+
+    try {
+      platformPlugin.mPlatformMessageHandler.setFrameworkHandlesBack(true);
+    } catch (NullPointerException e) {
+      // Not expected
+      fail("NullPointerException was thrown");
+    }
   }
 
   @Test

@@ -30,6 +30,11 @@ final Set<String> skippedPaths = <String>{
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
   r'flutter/third_party/benchmark', // only used by tests
+  r'flutter/third_party/boringssl/src/crypto/err/err_data_generate.go',
+  r'flutter/third_party/boringssl/src/fuzz', // testing tools, not shipped
+  r'flutter/third_party/boringssl/src/rust', // rust-related code is not shipped
+  r'flutter/third_party/boringssl/src/util', // code generators, not shipped
+  r'flutter/third_party/depot_tools', // only used for the Windows build system.
   r'flutter/third_party/expat/expat/doc',
   r'flutter/third_party/expat/expat/win32/expat.iss',
   r'flutter/third_party/flatbuffers/android',
@@ -41,14 +46,32 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/flatbuffers/python',
   r'flutter/third_party/flatbuffers/rust',
   r'flutter/third_party/flatbuffers/ts',
+  r'flutter/third_party/freetype2/builds',
+  r'flutter/third_party/freetype2/src/tools',
   r'flutter/third_party/glfw/deps', // Only used by examples and tests; not linked in build.
   r'flutter/third_party/glfw/docs',
   r'flutter/third_party/gn',
+  r'flutter/third_party/harfbuzz/docs',
+  r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
+  r'flutter/third_party/icu/filters',
+  r'flutter/third_party/icu/fuzzers',
+  r'flutter/third_party/icu/scripts',
+  r'flutter/third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
+  r'flutter/third_party/icu/source/config',
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/burmesedict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
+  r'flutter/third_party/icu/source/data/dtd',
   r'flutter/third_party/imgui',
   r'flutter/third_party/inja/doc', // documentation
   r'flutter/third_party/inja/third_party/amalgamate', // only used at build time
   r'flutter/third_party/inja/third_party/include/doctest', // seems to be a unit test library
   r'flutter/third_party/json/docs',
+  r'flutter/third_party/libpng/contrib', // not linked in
+  r'flutter/third_party/libpng/mips', // not linked in
+  r'flutter/third_party/libpng/powerpc', // not linked in
+  r'flutter/third_party/libpng/projects', // not linked in
+  r'flutter/third_party/libpng/scripts', // not linked in
   r'flutter/third_party/libtess2/Contrib/nanosvg.c', // only used by the ../Example
   r'flutter/third_party/libtess2/Contrib/nanosvg.h', // only used by the ../Example
   r'flutter/third_party/libtess2/Example',
@@ -67,6 +90,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/pkg/process',
   r'flutter/third_party/pkg/process_runner',
   r'flutter/third_party/pkg/vector_math',
+  r'flutter/third_party/protobuf', // build-time dependency only
   r'flutter/third_party/pyyaml', // build-time dependency only
   r'flutter/third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable
   r'flutter/third_party/rapidjson/doc', // documentation
@@ -96,6 +120,29 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/test_shaders', // for tests only
   r'flutter/third_party/tinygltf',
   r'flutter/third_party/txt/third_party/fonts',
+  r'flutter/third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
+  r'flutter/third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files
+  r'flutter/third_party/vulkan-deps/glslang/src/glslang/OSDependent/Web', // we only use glslang in impellerc, not in web apps
+  r'flutter/third_party/vulkan-deps/glslang/src/kokoro', // only build files
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/LICENSES', // directory with license templates
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-hlsl', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-hlsl-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-msl', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-msl-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-other', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-reflection', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-ue4', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-cross/src/shaders-ue4-no-opt', // used by regression tests
+  r'flutter/third_party/vulkan-deps/spirv-headers', // only used on hosts for tests
+  r'flutter/third_party/vulkan-deps/spirv-tools', // only used on hosts for tests
+  r'flutter/third_party/vulkan-deps/vulkan-headers/src/LICENSE.md', // redundant with licenses inside files
+  r'flutter/third_party/vulkan-deps/vulkan-headers/src/registry',
+  r'flutter/third_party/vulkan-deps/vulkan-loader', // on hosts for tests
+  r'flutter/third_party/vulkan-deps/vulkan-tools', // on hosts for tests
+  r'flutter/third_party/vulkan-deps/vulkan-utility-libraries/src/LICENSE.md', // redundant with licenses inside files
+  r'flutter/third_party/vulkan-deps/vulkan-validation-layers/src/docs',
   r'flutter/third_party/wuffs/docs',
   r'flutter/third_party/wuffs/script',
   r'flutter/third_party/yapf', // only used for code formatting
@@ -124,10 +171,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/angle/third_party', // Unused by Flutter: BUILD files with forwarding targets (but no code).
   r'third_party/angle/tools', // These are build-time tools, and aren't shipped.
   r'third_party/angle/util',
-  r'third_party/boringssl/src/crypto/err/err_data_generate.go',
-  r'third_party/boringssl/src/fuzz', // testing tools, not shipped
-  r'third_party/boringssl/src/rust', // rust-related code is not shipped
-  r'third_party/boringssl/src/util', // code generators, not shipped
   r'third_party/dart/benchmarks', // not shipped in binary
   r'third_party/dart/build', // not shipped in binary
   r'third_party/dart/docs', // not shipped in binary
@@ -136,6 +179,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/runtime/docs',
   r'third_party/dart/runtime/vm/service',
   r'third_party/dart/sdk/lib/html/doc',
+  r'third_party/dart/sdk/lib/svg/dart2js', // generated from other sources
   r'third_party/dart/third_party/binary_size', // not linked in
   r'third_party/dart/third_party/binaryen', // not linked in
   r'third_party/dart/third_party/d3', // Siva says "that is the charting library used by the binary size tool"
@@ -149,31 +193,13 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/third_party/requirejs', // only used by DDC
   r'third_party/dart/tools', // not shipped in binary
   r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
-  r'third_party/freetype2/builds',
-  r'third_party/freetype2/src/tools',
   r'third_party/gradle',
-  r'third_party/harfbuzz/docs',
-  r'third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
-  r'third_party/icu/filters',
-  r'third_party/icu/fuzzers',
-  r'third_party/icu/scripts',
-  r'third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
-  r'third_party/icu/source/config',
-  r'third_party/icu/source/data/brkitr/dictionaries/burmesedict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/brkitr/dictionaries/cjdict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/brkitr/dictionaries/laodict.txt', // explicitly handled by ICU license
-  r'third_party/icu/source/data/dtd',
   r'third_party/java', // only used for Android builds
   r'third_party/libcxx/benchmarks',
   r'third_party/libcxx/docs',
   r'third_party/libcxx/src/support/solaris',
   r'third_party/libcxx/utils',
   r'third_party/libcxxabi/www',
-  r'third_party/libpng/contrib', // not linked in
-  r'third_party/libpng/mips', // not linked in
-  r'third_party/libpng/powerpc', // not linked in
-  r'third_party/libpng/projects', // not linked in
-  r'third_party/libpng/scripts', // not linked in
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
@@ -185,28 +211,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
-  r'third_party/protobuf', // build-time dependency only
-  r'third_party/vulkan-deps/glslang/LICENSE', // excluded to make sure we don't accidentally apply it as a default license
-  r'third_party/vulkan-deps/glslang/src/LICENSE.txt', // redundant with licenses inside files
-  r'third_party/vulkan-deps/glslang/src/glslang/OSDependent/Web', // we only use glslang in impellerc, not in web apps
-  r'third_party/vulkan-deps/glslang/src/kokoro', // only build files
-  r'third_party/vulkan-deps/spirv-cross/src/LICENSES', // directory with license templates
-  r'third_party/vulkan-deps/spirv-cross/src/shaders', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-hlsl', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-hlsl-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-msl', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-msl-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-other', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-reflection', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-ue4', // used by regression tests
-  r'third_party/vulkan-deps/spirv-cross/src/shaders-ue4-no-opt', // used by regression tests
-  r'third_party/vulkan-deps/spirv-headers', // only used on hosts for tests
-  r'third_party/vulkan-deps/spirv-tools', // only used on hosts for tests
-  r'third_party/vulkan-deps/vulkan-headers/src/registry',
-  r'third_party/vulkan-deps/vulkan-loader', // on hosts for tests
-  r'third_party/vulkan-deps/vulkan-tools', // on hosts for tests
-  r'third_party/vulkan-deps/vulkan-validation-layers/src/docs',
   r'third_party/vulkan_memory_allocator/bin',
   r'third_party/vulkan_memory_allocator/docs',
   r'third_party/vulkan_memory_allocator/media',
@@ -455,12 +459,12 @@ final List<Pattern> skippedFilePatterns = <Pattern>[
   RegExp(r'^flutter/(?:.+/)*[^/]+_unittests?\.[^/]+$'),
   RegExp(r'^flutter/lib/web_ui/lib/assets/ahem\.ttf$', expectNoMatch: true), // this gitignored file exists only for testing purposes
   RegExp(r'^flutter/sky/packages/sky_engine/LICENSE$'), // that is the output of this script
+  RegExp(r'^flutter/third_party/boringssl/(?:.+/)*[^/]+_test\.[^/]+$'),
+  RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/bn/[^/]+.go$'),
+  RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/ec/[^/]+.go$'),
+  RegExp(r'^flutter/third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
   RegExp(r'^third_party/abseil-cpp/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^third_party/angle/(?:.+/)*[^/]+_unittest\.[^/]+$'),
-  RegExp(r'^third_party/boringssl/(?:.+/)*[^/]+_test\.[^/]+$'),
-  RegExp(r'^third_party/boringssl/src/crypto/fipsmodule/bn/[^/]+.go$'),
-  RegExp(r'^third_party/boringssl/src/crypto/fipsmodule/ec/[^/]+.go$'),
   RegExp(r'^third_party/dart/(?:.+/)*[^/]+_test\.[^/]+$'),
-  RegExp(r'^third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
   RegExp(r'^third_party/zlib/(?:.+/)*[^/]+_unittest\.[^/]+$'),
 ];

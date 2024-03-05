@@ -19,7 +19,7 @@ import java.util.Map;
 
 /** Sends touch information from Android to Flutter in a format that Flutter understands. */
 public class AndroidTouchProcessor {
-
+  private static final String TAG = "AndroidTouchProcessor";
   // Must match the PointerChange enum in pointer.dart.
   @IntDef({
     PointerChange.CANCEL,
@@ -204,9 +204,7 @@ public class AndroidTouchProcessor {
   public boolean onGenericMotionEvent(@NonNull MotionEvent event, @NonNull Context context) {
     // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
     // Mouse hover support is not implemented for API < 18.
-    boolean isPointerEvent =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
-            && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
+    boolean isPointerEvent = event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
     boolean isMovementEvent =
         (event.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE
             || event.getActionMasked() == MotionEvent.ACTION_SCROLL);

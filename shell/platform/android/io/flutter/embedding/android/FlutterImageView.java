@@ -39,7 +39,6 @@ import java.util.Locale;
  * an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in {@code
  * onDraw}.
  */
-@TargetApi(19)
 public class FlutterImageView extends View implements RenderSurface {
   private static final String TAG = "FlutterImageView";
 
@@ -99,7 +98,6 @@ public class FlutterImageView extends View implements RenderSurface {
     Log.w(TAG, String.format(Locale.US, format, args));
   }
 
-  @TargetApi(19)
   @SuppressLint("WrongConstant") // RGBA_8888 is a valid constant.
   @NonNull
   private static ImageReader createImageReader(int width, int height) {
@@ -143,7 +141,6 @@ public class FlutterImageView extends View implements RenderSurface {
     switch (kind) {
       case background:
         flutterRenderer.swapSurface(imageReader.getSurface());
-        flutterRenderer.SetRenderingToImageView(true);
         break;
       case overlay:
         // Do nothing since the attachment is done by the handler of
@@ -174,12 +171,6 @@ public class FlutterImageView extends View implements RenderSurface {
     closeCurrentImage();
     invalidate();
     isAttachedToFlutterRenderer = false;
-    if (kind == SurfaceKind.background) {
-      // The overlay FlutterImageViews seem to be constructed per frame and not
-      // always used; An overlay FlutterImageView always seems to imply
-      // a background FlutterImageView.
-      flutterRenderer.SetRenderingToImageView(false);
-    }
   }
 
   public void pause() {
@@ -194,7 +185,6 @@ public class FlutterImageView extends View implements RenderSurface {
    * Acquires the next image to be drawn to the {@link android.graphics.Canvas}. Returns true if
    * there's an image available in the queue.
    */
-  @TargetApi(19)
   public boolean acquireLatestImage() {
     if (!isAttachedToFlutterRenderer) {
       return false;

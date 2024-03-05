@@ -459,7 +459,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     if (command_line.GetOptionValue(FlagForSwitch(Switch::ImpellerBackend),
                                     &impeller_backend_value)) {
       if (!impeller_backend_value.empty()) {
-        settings.impeller_backend = impeller_backend_value;
+        settings.requested_rendering_backend = impeller_backend_value;
       }
     }
   }
@@ -468,6 +468,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       command_line.HasOption(FlagForSwitch(Switch::EnableVulkanValidation));
   settings.enable_opengl_gpu_tracing =
       command_line.HasOption(FlagForSwitch(Switch::EnableOpenGLGPUTracing));
+  settings.enable_vulkan_gpu_tracing =
+      command_line.HasOption(FlagForSwitch(Switch::EnableVulkanGPUTracing));
 
   settings.enable_embedder_api =
       command_line.HasOption(FlagForSwitch(Switch::EnableEmbedderAPI));

@@ -22,16 +22,14 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:skia_gold_client/skia_gold_client.dart';
 import 'package:stream_channel/stream_channel.dart';
 
-import 'package:test_api/src/backend/runtime.dart';
-import 'package:test_api/src/backend/suite_platform.dart';
-import 'package:test_core/src/runner/configuration.dart';
-import 'package:test_core/src/runner/environment.dart';
-import 'package:test_core/src/runner/platform.dart';
-import 'package:test_core/src/runner/plugin/platform_helpers.dart';
-import 'package:test_core/src/runner/runner_suite.dart';
-import 'package:test_core/src/runner/suite.dart';
-import 'package:test_core/src/util/io.dart';
-import 'package:test_core/src/util/stack_trace_mapper.dart';
+import 'package:test_core/backend.dart' hide Compiler;
+// TODO(ditman): Fix ignores when https://github.com/flutter/flutter/issues/143599 is resolved.
+import 'package:test_core/src/runner/environment.dart'; // ignore: implementation_imports
+import 'package:test_core/src/runner/platform.dart'; // ignore: implementation_imports
+import 'package:test_core/src/runner/plugin/platform_helpers.dart'; // ignore: implementation_imports
+import 'package:test_core/src/runner/runner_suite.dart'; // ignore: implementation_imports
+import 'package:test_core/src/util/io.dart'; // ignore: implementation_imports
+import 'package:test_core/src/util/stack_trace_mapper.dart'; // ignore: implementation_imports
 
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_test_utils/image_compare.dart';
@@ -155,8 +153,9 @@ class BrowserPlatform extends PlatformPlugin {
   /// The URL for this server.
   Uri get url => server.url.resolve('/');
 
-  bool get isWasm => suite.testBundle.compileConfig.compiler == Compiler.dart2wasm;
-  bool get needsCrossOriginIsolated => isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
+  bool get needsCrossOriginIsolated => suite.testBundle.compileConfigs.any(
+    (CompileConfiguration config) => config.renderer == Renderer.skwasm
+  );
 
   /// A [OneOffHandler] for servicing WebSocket connections for
   /// [BrowserManager]s.
@@ -526,47 +525,58 @@ class BrowserPlatform extends PlatformPlugin {
     }
   }
 
+  String _makeBuildConfigString(String scriptBase, CompileConfiguration config) {
+    return config.compiler == Compiler.dart2wasm ? '''
+      {
+        compileTarget: "${config.compiler.name}",
+        renderer: "${config.renderer.name}",
+        mainWasmPath: "$scriptBase.browser_test.dart.wasm",
+        jsSupportRuntimePath: "$scriptBase.browser_test.dart.mjs",
+      }
+''' : '''
+      {
+        compileTarget: "${config.compiler.name}",
+        renderer: "${config.renderer.name}",
+        mainJsPath: "$scriptBase.browser_test.dart.js",
+      }
+''';
+  }
+
   /// Serves the HTML file that bootstraps the test.
   shelf.Response _testBootstrapHandler(shelf.Request request) {
     final String path = p.fromUri(request.url);
 
     if (path.endsWith('.html')) {
       final String test = '${p.withoutExtension(path)}.dart';
-
-      final bool linkSkwasm = suite.testBundle.compileConfig.renderer == Renderer.skwasm;
-      // Link to the Dart wrapper.
       final String scriptBase = htmlEscape.convert(p.basename(test));
-      final String link = '<link rel="x-dart-test" href="$scriptBase"${linkSkwasm ? " skwasm" : ""}>';
 
-      final String bootstrapScript = isWasm ? '''
-<script>
-  window.flutterConfiguration = {
-    canvasKitBaseUrl: "/canvaskit/",
-    // Some of our tests rely on color emoji
-    useColorEmoji: true,
-    canvasKitVariant: "${getCanvasKitVariant()}",
-  };
-</script>
-<script src="/test_dart2wasm.js"></script>
-      ''' : '''
+      final String buildConfigsString = suite.testBundle.compileConfigs.map(
+        (CompileConfiguration config) => _makeBuildConfigString(scriptBase, config)
+      ).join(',\n');
+      final String bootstrapScript = '''
 <script src="/flutter_js/flutter.js"></script>
-<script type="module">
-  import { runTest } from "/test_dart2js.js";
-
-  runTest({
-    canvasKitBaseUrl: "/canvaskit/",
-    // Some of our tests rely on color emoji
-    useColorEmoji: true,
-    canvasKitVariant: "${getCanvasKitVariant()}",
+<script>
+  _flutter.buildConfig = {
+    builds: [
+      $buildConfigsString
+    ]
+  };
+  _flutter.loader.load({
+    config: {
+      canvasKitBaseUrl: "/canvaskit/",
+      // Some of our tests rely on color emoji
+      useColorEmoji: true,
+      canvasKitVariant: "${getCanvasKitVariant()}",
+    },
   });
 </script>
 ''';
+
       return shelf.Response.ok('''
         <!DOCTYPE html>
         <html>
         <head>
           <meta name="assetBase" content="/">
-          $link
           $bootstrapScript
         </head>
         </html>
@@ -643,13 +653,16 @@ class BrowserPlatform extends PlatformPlugin {
           'debug': isDebug.toString()
         });
 
+    final bool hasSourceMaps = suite.testBundle.compileConfigs.any(
+      (CompileConfiguration config) => config.compiler == Compiler.dart2js
+    );
     final Future<BrowserManager?> future = BrowserManager.start(
       browserEnvironment: browserEnvironment,
       url: hostUrl,
       future: completer.future,
       packageConfig: packageConfig,
       debug: isDebug,
-      sourceMapDirectory: isWasm ? null : getBundleBuildDirectory(suite.testBundle),
+      sourceMapDirectory: hasSourceMaps ? getBundleBuildDirectory(suite.testBundle) : null,
     );
 
     // Store null values for browsers that error out so we know not to load them
@@ -1132,5 +1145,3 @@ class _BrowserEnvironment implements Environment {
   @override
   CancelableOperation<void> displayPause() => _manager._displayPause();
 }
-
-bool get isCirrus => Platform.environment['CIRRUS_CI'] == 'true';

@@ -4,10 +4,10 @@
             "archives": [
                 {
                     "name": "host_debug",
-                    "base_path": "out/host_debug/zip_archives/",
+                    "base_path": "out/host_debug_desktop/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/host_debug/zip_archives/linux-x64-debug/linux-x64-flutter-gtk.zip"
+                        "out/host_debug_desktop/zip_archives/linux-x64-debug/linux-x64-flutter-gtk.zip"
                     ],
                     "realm": "production"
                 }
@@ -17,17 +17,22 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "debug",
                 "--enable-fontconfig",
-                "--prebuilt-dart-sdk"
+                "--prebuilt-dart-sdk",
+                "--rbe",
+                "--no-goma",
+                "--target-dir",
+                "host_debug_desktop"
             ],
-            "name": "host_debug",
+            "name": "host_debug_desktop",
             "ninja": {
-                "config": "host_debug",
+                "config": "host_debug_desktop",
                 "targets": [
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
@@ -37,10 +42,10 @@
             "archives": [
                 {
                     "name": "host_profile",
-                    "base_path": "out/host_profile/zip_archives/",
+                    "base_path": "out/host_profile_desktop/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/host_profile/zip_archives/linux-x64-profile/linux-x64-flutter-gtk.zip"
+                        "out/host_profile_desktop/zip_archives/linux-x64-profile/linux-x64-flutter-gtk.zip"
                     ],
                     "realm": "production"
                 }
@@ -50,18 +55,23 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "profile",
                 "--no-lto",
                 "--enable-fontconfig",
-                "--prebuilt-dart-sdk"
+                "--prebuilt-dart-sdk",
+                "--rbe",
+                "--no-goma",
+                "--target-dir",
+                "host_profile_desktop"
             ],
-            "name": "host_profile",
+            "name": "host_profile_desktop",
             "ninja": {
-                "config": "host_profile",
+                "config": "host_profile_desktop",
                 "targets": [
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
@@ -71,10 +81,10 @@
             "archives": [
                 {
                     "name": "host_release",
-                    "base_path": "out/host_release/zip_archives/",
+                    "base_path": "out/host_release_desktop/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/host_release/zip_archives/linux-x64-release/linux-x64-flutter-gtk.zip"
+                        "out/host_release_desktop/zip_archives/linux-x64-release/linux-x64-flutter-gtk.zip"
                     ],
                     "realm": "production"
                 }
@@ -84,17 +94,22 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--runtime-mode",
                 "release",
                 "--enable-fontconfig",
-                "--prebuilt-dart-sdk"
+                "--prebuilt-dart-sdk",
+                "--rbe",
+                "--no-goma",
+                "--target-dir",
+                "host_release_desktop"
             ],
-            "name": "host_release",
+            "name": "host_release_desktop",
             "ninja": {
-                "config": "host_release",
+                "config": "host_release_desktop",
                 "targets": [
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]

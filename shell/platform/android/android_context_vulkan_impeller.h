@@ -7,14 +7,16 @@
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/native_library.h"
 #include "flutter/shell/platform/android/context/android_context.h"
-#include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace flutter {
 
 class AndroidContextVulkanImpeller : public AndroidContext {
  public:
-  explicit AndroidContextVulkanImpeller(bool enable_validation);
+  AndroidContextVulkanImpeller(bool enable_validation,
+                               bool enable_gpu_tracing,
+                               bool quiet = false);
 
   ~AndroidContextVulkanImpeller();
 
@@ -22,7 +24,7 @@ class AndroidContextVulkanImpeller : public AndroidContext {
   bool IsValid() const override;
 
  private:
-  fml::RefPtr<vulkan::VulkanProcTable> proc_table_;
+  fml::RefPtr<fml::NativeLibrary> vulkan_dylib_;
   bool is_valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextVulkanImpeller);

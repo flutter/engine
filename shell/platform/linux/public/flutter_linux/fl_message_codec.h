@@ -38,6 +38,7 @@ typedef enum {
   // NOLINTEND(readability-identifier-naming)
 } FlMessageCodecError;
 
+G_MODULE_EXPORT
 GQuark fl_message_codec_error_quark(void) G_GNUC_CONST;
 
 G_MODULE_EXPORT
@@ -63,7 +64,7 @@ struct _FlMessageCodecClass {
 
   /**
    * FlMessageCodec::encode_message:
-   * @codec: A #FlMessageCodec.
+   * @codec: an #FlMessageCodec.
    * @message: message to encode or %NULL to encode the null value.
    * @error: (allow-none): #GError location to store the error occurring, or
    * %NULL.

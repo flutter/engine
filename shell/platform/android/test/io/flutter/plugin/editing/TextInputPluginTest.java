@@ -1,6 +1,7 @@
 package io.flutter.plugin.editing;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
@@ -1129,6 +1130,41 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void clearTextInputClient_alwaysRestartsImm() {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(ctx);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null));
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    // A restart is always forced when calling clearTextInputClient().
+    textInputPlugin.clearTextInputClient();
+    assertEquals(2, testImm.getRestartCount(testView));
+  }
+
+  @Test
   public void destroy_clearTextInputMethodHandler() {
     View testView = new View(ctx);
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -1141,8 +1177,8 @@ public class TextInputPluginTest {
 
   @SuppressWarnings("deprecation")
   // DartExecutor.send is deprecated.
-  @Test
-  public void inputConnection_createsActionFromEnter() throws JSONException {
+  private void verifyInputConnection(TextInputChannel.TextInputType textInputType)
+      throws JSONException {
     TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     View testView = new View(ctx);
@@ -1159,7 +1195,7 @@ public class TextInputPluginTest {
             true,
             false,
             TextInputChannel.TextCapitalization.NONE,
-            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            new TextInputChannel.InputType(textInputType, false, false),
             null,
             null,
             null,
@@ -1197,12 +1233,19 @@ public class TextInputPluginTest {
         new String[] {"0", "TextInputAction.done"});
   }
 
+  @Test
+  public void inputConnection_createsActionFromEnter() throws JSONException {
+    verifyInputConnection(TextInputChannel.TextInputType.TEXT);
+  }
+
+  @Test
+  public void inputConnection_respondsToKeyEvents_textInputTypeNone() throws JSONException {
+    verifyInputConnection(TextInputChannel.TextInputType.NONE);
+  }
+
   @SuppressWarnings("deprecation") // InputMethodSubtype
   @Test
   public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
     ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
@@ -1275,7 +1318,7 @@ public class TextInputPluginTest {
     InputConnection connection =
         textInputPlugin.createInputConnection(
             testView, mock(KeyboardManager.class), new EditorInfo());
-    assertEquals(connection, null);
+    assertNotNull(connection);
   }
 
   @Test
@@ -2330,19 +2373,6 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-  }
-
-  @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
-  public void onConnectionClosed_imeInvisible() {
-    View testView = new View(ctx);
-    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
-    TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
-    imeSyncCallback.getImeVisibleListener().onImeVisibleChanged(false);
-    verify(textInputChannel, times(1)).onConnectionClosed(anyInt());
   }
 
   interface EventHandler {

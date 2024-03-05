@@ -13,6 +13,7 @@
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/sigma.h"
 
@@ -20,6 +21,8 @@ namespace impeller {
 
 class FilterContents : public Contents {
  public:
+  static const int32_t kBlurFilterRequiredMipCount;
+
   enum class BlurStyle {
     /// Blurred inside and outside.
     kNormal,
@@ -33,25 +36,15 @@ class FilterContents : public Contents {
 
   enum class MorphType { kDilate, kErode };
 
-  /// Creates a gaussian blur that operates in one direction.
-  /// See also: `MakeGaussianBlur`
-  static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
-      FilterInput::Ref input,
-      Sigma sigma,
-      Vector2 direction,
-      BlurStyle blur_style = BlurStyle::kNormal,
-      Entity::TileMode tile_mode = Entity::TileMode::kDecal,
-      bool is_second_pass = false,
-      Sigma secondary_sigma = {});
-
   /// Creates a gaussian blur that operates in 2 dimensions.
   /// See also: `MakeDirectionalGaussianBlur`
   static std::shared_ptr<FilterContents> MakeGaussianBlur(
       const FilterInput::Ref& input,
       Sigma sigma_x,
       Sigma sigma_y,
-      BlurStyle blur_style = BlurStyle::kNormal,
-      Entity::TileMode tile_mode = Entity::TileMode::kDecal);
+      Entity::TileMode tile_mode = Entity::TileMode::kDecal,
+      BlurStyle mask_blur_style = BlurStyle::kNormal,
+      const std::shared_ptr<Geometry>& mask_geometry = nullptr);
 
   static std::shared_ptr<FilterContents> MakeBorderMaskBlur(
       FilterInput::Ref input,
@@ -129,6 +122,7 @@ class FilterContents : public Contents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Filter Snapshot") const override;
 
   // |Contents|

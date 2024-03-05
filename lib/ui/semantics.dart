@@ -818,8 +818,8 @@ abstract class SemanticsUpdateBuilder {
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    String? tooltip,
-    TextDirection? textDirection,
+    required String tooltip,
+    required TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
@@ -888,8 +888,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    String? tooltip,
-    TextDirection? textDirection,
+    required String tooltip,
+    required TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
@@ -927,7 +927,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       decreasedValueAttributes,
       hint,
       hintAttributes,
-      tooltip ?? '',
+      tooltip,
       textDirection != null ? textDirection.index + 1 : 0,
       transform,
       childrenInTraversalOrder,
@@ -1027,6 +1027,9 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
   }
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SemanticsUpdateBuilder::build')
   external void _build(_NativeSemanticsUpdate outSemanticsUpdate);
+
+  @override
+  String toString() => 'SemanticsUpdateBuilder';
 }
 
 /// An opaque object representing a batch of semantics updates.
@@ -1056,4 +1059,7 @@ base class _NativeSemanticsUpdate extends NativeFieldWrapperClass1 implements Se
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'SemanticsUpdate::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'SemanticsUpdate';
 }

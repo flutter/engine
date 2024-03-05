@@ -1,7 +1,6 @@
 package io.flutter.plugin.platform;
 
 import android.annotation.TargetApi;
-import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.hardware.HardwareBuffer;
 import android.media.Image;
@@ -55,15 +54,11 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
     // Allow for double buffering.
     builder.setMaxImages(MAX_IMAGES);
     // Use PRIVATE image format so that we can support video decoding.
-    // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our
-    // ability to read back texture data. If we don't always want to use it, how do
-    // we
-    // decide when to use it or not? Perhaps PlatformViews can indicate if they may
-    // contain
-    // DRM'd content.
-    // I need to investigate how PRIVATE impacts our ability to take screenshots or
-    // capture
-    // the output of Flutter application.
+    // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our ability to read
+    // back texture data. If we don't always want to use it, how do we decide when to use it or not?
+    // Perhaps PlatformViews can indicate if they may contain DRM'd content. I need to investigate
+    // how PRIVATE impacts our ability to take screenshots or capture the output of Flutter
+    // application.
     builder.setImageFormat(ImageFormat.PRIVATE);
     // Hint that consumed images will only be read by GPU.
     builder.setUsage(HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
@@ -120,14 +115,6 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
 
   public int getHeight() {
     return this.bufferHeight;
-  }
-
-  public Canvas lockHardwareCanvas() {
-    return getSurface().lockHardwareCanvas();
-  }
-
-  public void unlockCanvasAndPost(Canvas canvas) {
-    getSurface().unlockCanvasAndPost(canvas);
   }
 
   public long getId() {

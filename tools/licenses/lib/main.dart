@@ -990,22 +990,22 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
   static final RegExp _licenseNamePattern = RegExp(r'^(?!.*\.py$)(?!.*(?:no|update)-copyright)(?!.*mh-bsd-gcc).*\b_*(?:license(?!\.html)|copying|copyright|notice|l?gpl|GPLv2|bsd|mit|mpl?|ftl|Apache)_*\b', caseSensitive: false);
 
   static const Map<String, _Constructor> _specialCaseFiles = <String, _Constructor>{
+    '/flutter/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
+    '/flutter/third_party/freetype2/LICENSE.TXT': _RepositoryFreetypeLicenseFile.new,
+    '/flutter/third_party/icu/LICENSE': _RepositoryIcuLicenseFile.new,
     '/flutter/third_party/inja/third_party/include/nlohmann/json.hpp': _RepositoryInjaJsonFile.new,
     '/flutter/third_party/libjpeg-turbo/src/LICENSE': _RepositoryLibJpegTurboLicenseFile.new,
     '/flutter/third_party/libjpeg-turbo/src/README.ijg': _RepositoryReadmeIjgFile.new,
+    '/flutter/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
     '/flutter/third_party/rapidjson/LICENSE': _RepositoryOpaqueLicenseFile.new,
     '/flutter/third_party/rapidjson/license.txt': _RepositoryOpaqueLicenseFile.new,
+    '/flutter/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
     '/fuchsia/sdk/linux/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
     '/fuchsia/sdk/mac/LICENSE.vulkan': _RepositoryFuchsiaSdkLinuxLicenseFile.new,
-    '/third_party/boringssl/src/LICENSE': _RepositoryOpenSSLLicenseFile.new,
     '/third_party/dart/LICENSE': _RepositoryDartLicenseFile.new,
-    '/third_party/freetype2/LICENSE.TXT': _RepositoryFreetypeLicenseFile.new,
-    '/third_party/icu/LICENSE': _RepositoryIcuLicenseFile.new,
     '/third_party/khronos/LICENSE': _RepositoryKhronosLicenseFile.new,
     '/third_party/libcxx/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
     '/third_party/libcxxabi/LICENSE.TXT': _RepositoryCxxStlDualLicenseFile.new,
-    '/third_party/libpng/LICENSE': _RepositoryLibPngLicenseFile.new,
-    '/third_party/vulkan-deps/vulkan-validation-layers/src/LICENSE.txt': _RepositoryVulkanApacheLicenseFile.new,
   };
 
   _RepositoryFile createFile(fs.IoNode entry) {
@@ -1440,20 +1440,8 @@ class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'boringssl') {
-      return _RepositoryBoringSSLDirectory(this, entry);
-    }
-    if (entry.name == 'expat') {
-      return _RepositoryExpatDirectory(this, entry);
-    }
-    if (entry.name == 'freetype2') {
-      return _RepositoryFreetypeDirectory(this, entry);
-    }
     if (entry.name == 'icu') {
       return _RepositoryIcuDirectory(this, entry);
-    }
-    if (entry.name == 'vulkan-deps') {
-      return _RepositoryGenericThirdPartyDirectory(this, entry);
     }
     if (entry.name == 'zlib') {
       return _RepositoryZLibDirectory(this, entry);
@@ -1762,8 +1750,17 @@ class _RepositoryFlutterThirdPartyDirectory extends _RepositoryGenericThirdParty
 
   @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
+    if (entry.name == 'boringssl') {
+      return _RepositoryBoringSSLDirectory(this, entry);
+    }
     if (entry.name == 'expat') {
       return _RepositoryExpatDirectory(this, entry);
+    }
+    if (entry.name == 'freetype2') {
+      return _RepositoryFreetypeDirectory(this, entry);
+    }
+    if (entry.name == 'vulkan-deps') {
+      return _RepositoryGenericThirdPartyDirectory(this, entry);
     }
     return super.createSubdirectory(entry);
   }
