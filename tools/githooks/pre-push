@@ -1,4 +1,4 @@
-#!/usr/bin/env vpython3
+#!/usr/bin/env python3
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -34,7 +34,7 @@ def Main(argv):
     os.path.join(FLUTTER_DIR, 'tools', 'githooks', 'bin', 'main.dart'),
   ] + githook_args + [
     'pre-push',
-  ], cwd=SRC_ROOT)
+  ] + argv[1:], cwd=SRC_ROOT)
   return result.returncode
 
 
