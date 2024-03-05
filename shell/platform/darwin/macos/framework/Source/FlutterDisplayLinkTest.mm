@@ -154,8 +154,8 @@ TEST(FlutterDisplayLinkTest, CVDisplayLinkInterval) {
   CVDisplayLinkRef link;
   CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &link);
   __block CFTimeInterval last = 0;
-  __block auto intervals = std::make_unique<std::vector<CFTimeInterval>>();
-  __block auto event = std::make_unique<fml::AutoResetWaitableEvent>();
+  auto intervals = std::make_shared<std::vector<CFTimeInterval>>();
+  auto event = std::make_shared<fml::AutoResetWaitableEvent>();
   CVDisplayLinkSetOutputHandler(
       link, ^(CVDisplayLinkRef displayLink, const CVTimeStamp* inNow,
               const CVTimeStamp* inOutputTime, CVOptionFlags flagsIn, CVOptionFlags* flagsOut) {
