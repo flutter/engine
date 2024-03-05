@@ -262,20 +262,18 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       Entity snapshot_entity = Entity::FromSnapshot(
           input_snapshot, entity.GetBlendMode(), entity.GetClipDepth());
       Entity result;
+      std::optional<Rect> coverage = blurred.GetCoverage();
       result.SetContents(Contents::MakeAnonymous(
-          fml::MakeCopyable([blurred = blurred.Clone(),
+          fml::MakeCopyable([blurred = std::move(blurred),
                              snapshot_entity = std::move(snapshot_entity)](
                                 const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) mutable {
-            bool did_render = true;
-            did_render = blurred.Render(renderer, pass) && did_render;
-            did_render = snapshot_entity.Render(renderer, pass) && did_render;
-            return did_render;
+            return blurred.Render(renderer, pass) &&
+                   snapshot_entity.Render(renderer, pass);
           }),
-          fml::MakeCopyable([blurred = blurred.Clone()](const Entity& entity) {
-            return blurred.GetCoverage();
-          })));
+          fml::MakeCopyable(
+              [coverage](const Entity& entity) { return coverage; })));
       return result;
     }
   }
