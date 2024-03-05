@@ -12,6 +12,8 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/geometry/geometry.h"
 
+extern float fudge;
+
 namespace impeller {
 
 /// A color matrix which inverts colors.
@@ -124,9 +126,14 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     std::shared_ptr<TextureContents> texture_contents,
     const std::shared_ptr<ColorFilter>& color_filter) const {
+  texture_contents->SetSourceRect(
+      texture_contents->GetSourceRect().Expand(fudge, fudge));
   auto mask = std::make_shared<SolidColorContents>();
   mask->SetColor(Color::White());
   std::optional<Rect> coverage = texture_contents->GetCoverage({});
+  texture_contents->SetDestinationRect(coverage.value().Expand(fudge, fudge));
+  auto descriptor = texture_contents->GetSamplerDescriptor();
+  texture_contents->SetSamplerDescriptor(descriptor);
   std::shared_ptr<Geometry> geometry = Geometry::MakeRect(coverage.value());
   mask->SetGeometry(geometry);
   std::shared_ptr<FilterContents> blurred_mask =

@@ -17,6 +17,8 @@
 // blurs.
 ////////////////////////////////////////////////////////////////////////////////
 
+float fudge = 100;
+
 namespace impeller {
 namespace testing {
 
@@ -838,20 +840,30 @@ TEST_P(AiksTest, GaussianBlurStyleSolid) {
 }
 
 TEST_P(AiksTest, GaussianBlurStyleInnerTexture) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  Paint paint;
-  paint.color = Color::Green();
-  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-      .style = FilterContents::BlurStyle::kNormal,
-      .sigma = Sigma(30),
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    static Scalar sigma = 30;
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 500);
+      ImGui::SliderFloat("Fudge", &fudge, 0, 100);
+      ImGui::End();
+    }
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    Paint paint;
+    paint.color = Color::Green();
+    paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+        .style = FilterContents::BlurStyle::kNormal,
+        .sigma = Sigma(sigma),
+    };
+    std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+    canvas.DrawImage(std::make_shared<Image>(boston), {200, 200}, paint);
+    Paint red;
+    red.color = Color::Red();
+    canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+    return canvas.EndRecordingAsPicture();
   };
-  std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
-  canvas.DrawImage(std::make_shared<Image>(boston), {200, 200}, paint);
-  Paint red;
-  red.color = Color::Red();
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
