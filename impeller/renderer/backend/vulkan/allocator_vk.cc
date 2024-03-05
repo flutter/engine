@@ -233,12 +233,11 @@ AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
     // Query texture support.
     // TODO(jonahwilliams):
     // https://github.com/flutter/flutter/issues/129784
-    physical_device.getMemoryProperties(&memory_properties_);
-
     for (auto i = 0u; i < memory_properties_.memoryTypeCount; i++) {
       if (memory_properties_.memoryTypes[i].propertyFlags &
           vk::MemoryPropertyFlagBits::eLazilyAllocated) {
         supports_memoryless_textures_ = true;
+        break;
       }
     }
   }
