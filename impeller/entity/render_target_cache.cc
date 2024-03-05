@@ -52,9 +52,10 @@ RenderTarget RenderTargetCache::CreateOffscreen(
                         .find(0u)
                         ->second;
       auto depth = render_target_data.render_target.GetDepthAttachment();
+      std::shared_ptr<Texture> depth_tex = depth ? depth->texture : nullptr;
       return RenderTargetAllocator::CreateOffscreen(
           context, size, mip_count, label, color_attachment_config,
-          stencil_attachment_config, color0.texture, depth->texture);
+          stencil_attachment_config, color0.texture, depth_tex);
     }
   }
   RenderTarget created_target = RenderTargetAllocator::CreateOffscreen(
@@ -97,10 +98,11 @@ RenderTarget RenderTargetCache::CreateOffscreenMSAA(
                         .find(0u)
                         ->second;
       auto depth = render_target_data.render_target.GetDepthAttachment();
+      std::shared_ptr<Texture> depth_tex = depth ? depth->texture : nullptr;
       return RenderTargetAllocator::CreateOffscreenMSAA(
           context, size, mip_count, label, color_attachment_config,
           stencil_attachment_config, color0.texture, color0.resolve_texture,
-          depth->texture);
+          depth_tex);
     }
   }
   RenderTarget created_target = RenderTargetAllocator::CreateOffscreenMSAA(
