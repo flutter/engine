@@ -529,7 +529,6 @@ void AllocatorVK::DebugTraceMemoryStatistics() const {
   }
   // Convert bytes to MB.
   total_usage *= 1e-6;
-  FML_LOG(ERROR) << total_usage;
   FML_TRACE_COUNTER("flutter", "AllocatorVK",
                     reinterpret_cast<int64_t>(this),  // Trace Counter ID
                     "MemoryBudgetUsageMB", total_usage);
