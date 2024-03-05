@@ -398,7 +398,8 @@ void RenderTarget::SetupDepthStencilAttachments(
     ISize size,
     bool msaa,
     const std::string& label,
-    RenderTarget::AttachmentConfig stencil_attachment_config) {
+    RenderTarget::AttachmentConfig stencil_attachment_config,
+    const std::shared_ptr<Texture>& depth_stencil_texture) {
   TextureDescriptor depth_stencil_texture_desc;
   depth_stencil_texture_desc.storage_mode =
       stencil_attachment_config.storage_mode;
@@ -412,8 +413,13 @@ void RenderTarget::SetupDepthStencilAttachments(
   depth_stencil_texture_desc.usage =
       static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
 
-  auto depth_stencil_texture =
-      allocator.CreateTexture(depth_stencil_texture_desc);
+  std::shared_ptr<Texture> new_depth_stencil_texture =
+      depth_stencil_texture == nullptr
+          ? allocator.CreateTexture(depth_stencil_texture_desc)
+          : depth_stencil_texture;
+  FML_DCHECK(depth_stencil_texture == nullptr ||
+             depth_stencil_texture->GetTextureDescriptor() ==
+                 depth_stencil_texture_desc);
   if (!depth_stencil_texture) {
     return;  // Error messages are handled by `Allocator::CreateTexture`.
   }
@@ -422,13 +428,13 @@ void RenderTarget::SetupDepthStencilAttachments(
   depth0.load_action = stencil_attachment_config.load_action;
   depth0.store_action = stencil_attachment_config.store_action;
   depth0.clear_depth = 0u;
-  depth0.texture = depth_stencil_texture;
+  depth0.texture = new_depth_stencil_texture;
 
   StencilAttachment stencil0;
   stencil0.load_action = stencil_attachment_config.load_action;
   stencil0.store_action = stencil_attachment_config.store_action;
   stencil0.clear_stencil = 0u;
-  stencil0.texture = std::move(depth_stencil_texture);
+  stencil0.texture = std::move(new_depth_stencil_texture);
 
   stencil0.texture->SetLabel(
       SPrintF("%s Depth+Stencil Texture", label.c_str()));

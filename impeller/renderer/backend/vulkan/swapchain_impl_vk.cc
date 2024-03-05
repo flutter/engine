@@ -228,6 +228,35 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   texture_desc.size = ISize::MakeWH(swapchain_info.imageExtent.width,
                                     swapchain_info.imageExtent.height);
 
+  // Allocate a single onscreen MSAA texture and Depth+Stencil Texture to
+  // be shared by all swapchain images.
+  TextureDescriptor msaa_desc;
+  msaa_desc.storage_mode = StorageMode::kDeviceTransient;
+  msaa_desc.type = TextureType::kTexture2DMultisample;
+  msaa_desc.sample_count = SampleCount::kCount4;
+  msaa_desc.format = texture_desc.format;
+  msaa_desc.size = texture_desc.size;
+  msaa_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+
+  TextureDescriptor depth_stencil_desc;
+  depth_stencil_desc.storage_mode = StorageMode::kDeviceTransient;
+  depth_stencil_desc.type = TextureType::kTexture2DMultisample;
+  depth_stencil_desc.sample_count = SampleCount::kCount4;
+  depth_stencil_desc.format =
+      context->GetCapabilities()->GetDefaultDepthStencilFormat();
+  depth_stencil_desc.size = texture_desc.size;
+  depth_stencil_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+
+  std::shared_ptr<Texture> msaa_texture =
+      context->GetResourceAllocator()->CreateTexture(msaa_desc);
+  std::shared_ptr<Texture> depth_stencil_texture =
+      context->GetResourceAllocator()->CreateTexture(depth_stencil_desc);
+  if (!msaa_texture || !depth_stencil_texture) {
+    VALIDATION_LOG
+        << "Failed to allocate onscreen MSAA or depth+stencil texture.";
+    return;
+  }
+
   std::vector<std::shared_ptr<SwapchainImageVK>> swapchain_images;
   for (const auto& image : images) {
     auto swapchain_image =
@@ -239,6 +268,8 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
       VALIDATION_LOG << "Could not create swapchain image.";
       return;
     }
+    swapchain_image->SetMSAATexture(msaa_texture);
+    swapchain_image->SetDepthStencilTexture(depth_stencil_texture);
 
     ContextVK::SetDebugName(
         vk_context.GetDevice(), swapchain_image->GetImage(),
