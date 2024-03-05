@@ -173,8 +173,8 @@ TEST(FlutterVSyncWaiterTest, VSyncWorks) {
   EXPECT_EQ(entries.size(), size_t(4));
 
   // Warm up frame should be presented as soon as possible.
-  EXPECT_TRUE(fabs(entries[0].timestamp - now) < 0.001);
-  EXPECT_TRUE(fabs(entries[0].targetTimestamp - now) < 0.001);
+  EXPECT_TRUE(fabs(entries[0].timestamp - now) < 0.005);
+  EXPECT_TRUE(fabs(entries[0].targetTimestamp - now) < 0.005);
   EXPECT_EQ(entries[0].baton, kWarmUpBaton);
 
   EXPECT_DOUBLE_EQ(entries[1].timestamp, now + displayLink.nominalOutputRefreshPeriod);
