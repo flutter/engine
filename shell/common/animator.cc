@@ -119,7 +119,12 @@ void Animator::BeginFrame(
 }
 
 void Animator::EndFrame() {
-  FML_DCHECK(frame_timings_recorder_ != nullptr);
+  if (frame_timings_recorder_ == nullptr) {
+    // `EndFrame` has been called in this frame. This happens if the engine has
+    // called `OnAllViewsRendered` and then the end of the vsync task calls
+    // `EndFrame` again.
+    return;
+  }
   if (!layer_trees_tasks_.empty()) {
     // The build is completed in OnAnimatorBeginFrame.
     frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
@@ -274,7 +279,7 @@ void Animator::AwaitVSync() {
   }
 }
 
-void Animator::EndWarmUpFrame() {
+void Animator::OnAllViewsRendered() {
   if (!layer_trees_tasks_.empty()) {
     EndFrame();
   }

@@ -226,6 +226,7 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
 
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
                                    uint64_t frame_number) {
+  MarkAsFrameBorder();
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     platform_configuration->BeginFrame(frame_time, frame_number);
     return true;
@@ -341,7 +342,7 @@ void RuntimeController::ScheduleFrame() {
 }
 
 void RuntimeController::EndWarmUpFrame() {
-  client_.EndWarmUpFrame();
+  client_.OnAllViewsRendered();
 }
 
 // |PlatformConfigurationClient|
@@ -356,6 +357,21 @@ void RuntimeController::Render(int64_t view_id,
   }
   client_.Render(view_id, scene->takeLayerTree(width, height),
                  view_metrics->device_pixel_ratio);
+  rendered_views_during_frame_.insert(view_id);
+  CheckIfAllViewsRendered();
+}
+
+void RuntimeController::MarkAsFrameBorder() {
+  rendered_views_during_frame_.clear();
+}
+
+void RuntimeController::CheckIfAllViewsRendered() {
+  if (rendered_views_during_frame_.size() != 0 &&
+      rendered_views_during_frame_.size() ==
+          platform_data_.viewport_metrics_for_views.size()) {
+    client_.OnAllViewsRendered();
+    MarkAsFrameBorder();
+  }
 }
 
 // |PlatformConfigurationClient|

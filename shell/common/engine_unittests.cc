@@ -120,7 +120,7 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD(std::string, DefaultRouteName, (), (override));
   MOCK_METHOD(void, ScheduleFrame, (bool), (override));
-  MOCK_METHOD(void, EndWarmUpFrame, (), (override));
+  MOCK_METHOD(void, OnAllViewsRendered, (), (override));
   MOCK_METHOD(void,
               Render,
               (int64_t, std::unique_ptr<flutter::LayerTree>, float),
@@ -677,6 +677,64 @@ TEST_F(EngineTest, AnimatorAcceptsMultipleRenders) {
   engine_context->EngineTaskSync(
       [](Engine& engine) { engine.ScheduleFrame(); });
   draw_latch.Wait();
+}
+
+TEST_F(EngineTest, AnimatorSubmitsSingleViewBeforeDrawFrameEnds) {
+  MockAnimatorDelegate animator_delegate;
+  std::unique_ptr<EngineContext> engine_context;
+
+  std::shared_ptr<PlatformMessageHandler> platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  EXPECT_CALL(delegate_, GetPlatformMessageHandler)
+      .WillOnce(ReturnRef(platform_message_handler));
+
+  static bool rasterization_started = false;
+  EXPECT_CALL(animator_delegate, OnAnimatorDraw)
+      .WillOnce(Invoke([](const std::shared_ptr<FramePipeline>& pipeline) {
+        rasterization_started = true;
+        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+          EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
+          EXPECT_EQ(item->layer_tree_tasks[0]->view_id, kFlutterImplicitViewId);
+        });
+        EXPECT_EQ(status, PipelineConsumeResult::Done);
+      }));
+  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
+      .WillRepeatedly(Invoke([&engine_context](fml::TimePoint frame_target_time,
+                                               uint64_t frame_number) {
+        engine_context->EngineTaskSync([&](Engine& engine) {
+          engine.BeginFrame(frame_target_time, frame_number);
+        });
+      }));
+
+  std::unique_ptr<Animator> animator;
+  PostSync(task_runners_.GetUITaskRunner(),
+           [&animator, &animator_delegate, &task_runners = task_runners_] {
+             animator = std::make_unique<Animator>(
+                 animator_delegate, task_runners,
+                 static_cast<std::unique_ptr<VsyncWaiter>>(
+                     std::make_unique<testing::ConstantFiringVsyncWaiter>(
+                         task_runners)));
+           });
+
+  native_latch.Reset();
+  // The native_latch is signaled at the end of handleDrawFrame.
+  AddNativeCallback("NotifyNative", [](auto args) {
+    EXPECT_EQ(rasterization_started, true);
+    native_latch.Signal();
+  });
+
+  engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
+                                         std::move(animator));
+
+  engine_context->EngineTaskSync([](Engine& engine) {
+    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1.0, 10, 10, 1, 0});
+  });
+
+  auto configuration = RunConfiguration::InferFromSettings(settings_);
+  configuration.SetEntrypoint("renderSingleViewAndCallAfterOnDrawFrame");
+  engine_context->Run(std::move(configuration));
+
+  native_latch.Wait();
 }
 
 // The animator should submit to the pipeline the implicit view rendered in a

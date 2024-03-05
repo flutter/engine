@@ -464,8 +464,8 @@ void Engine::ScheduleFrame(bool regenerate_layer_trees) {
   animator_->RequestFrame(regenerate_layer_trees);
 }
 
-void Engine::EndWarmUpFrame() {
-  animator_->EndWarmUpFrame();
+void Engine::OnAllViewsRendered() {
+  animator_->OnAllViewsRendered();
 }
 
 void Engine::Render(int64_t view_id,

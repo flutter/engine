@@ -660,6 +660,24 @@ class RuntimeController : public PlatformConfigurationClient {
       std::shared_ptr<PlatformIsolateManager>(new PlatformIsolateManager());
   bool has_flushed_runtime_state_ = false;
 
+  // Tracks the views that have been called `Render` during a frame.
+  //
+  // If all registered views (through `AddView`) have been rendered, then the
+  // end of frame will be called immediately, submitting the views to the
+  // pipeline a bit earlier than having to wait for the end of the vsync.
+  //
+  // This mechanism fixes https://github.com/flutter/flutter/issues/144584 with
+  // option 2 and
+  // https://github.com/flutter/engine/pull/51186#issuecomment-1977820525 with
+  // option a in most cases, except if there are multiple views and only part of
+  // them are rendered.
+  // TODO(dkwingsmt): Fix these problems for all cases.
+  std::unordered_set<uint64_t> rendered_views_during_frame_;
+
+  void MarkAsFrameBorder();
+
+  void CheckIfAllViewsRendered();
+
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();

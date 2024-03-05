@@ -143,6 +143,10 @@ external void sayHiFromFixturesAreFunctionalMain();
 external void notifyNative();
 
 @pragma('vm:entry-point')
+@pragma('vm:external-name', 'NotifyNative2')
+external void notifyNative2();
+
+@pragma('vm:entry-point')
 void thousandCallsToNative() {
   for (int i = 0; i < 1000; i++) {
     notifyNative();
@@ -551,6 +555,26 @@ void onDrawFrameRenderAllViews() {
     }
   };
   notifyNative();
+}
+
+@pragma('vm:entry-point')
+void renderSingleViewAndCallAfterOnDrawFrame() {
+  PlatformDispatcher.instance.onDrawFrame = () {
+    final SceneBuilder builder = SceneBuilder();
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(Offset.zero, picture);
+
+    final Scene scene = builder.build();
+    PlatformDispatcher.instance.implicitView!.render(scene);
+    notifyNative();
+
+    scene.dispose();
+    picture.dispose();
+  };
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
