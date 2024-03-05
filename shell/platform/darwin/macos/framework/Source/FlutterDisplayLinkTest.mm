@@ -5,6 +5,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDisplayLink.h"
 
 #import <AppKit/AppKit.h>
+#include <numeric>
 
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/testing/testing.h"
@@ -147,4 +148,33 @@ TEST(FlutterDisplayLinkTest, WorkaroundForFB13482573) {
   event->Wait();
 
   [displayLink invalidate];
+}
+
+TEST(FlutterDisplayLinkTest, CVDisplayLinkInterval) {
+  CVDisplayLinkRef link;
+  CVDisplayLinkCreateWithCGDisplay(CGMainDisplayID(), &link);
+  __block CFTimeInterval last = 0;
+  __block auto intervals = std::make_unique<std::vector<CFTimeInterval>>();
+  __block auto event = std::make_unique<fml::AutoResetWaitableEvent>();
+  CVDisplayLinkSetOutputHandler(
+      link, ^(CVDisplayLinkRef displayLink, const CVTimeStamp* inNow,
+              const CVTimeStamp* inOutputTime, CVOptionFlags flagsIn, CVOptionFlags* flagsOut) {
+        if (last != 0) {
+          intervals->push_back(CACurrentMediaTime() - last);
+        }
+        last = CACurrentMediaTime();
+        if (intervals->size() == 10) {
+          event->Signal();
+        }
+        return 0;
+      });
+
+  CVDisplayLinkStart(link);
+  event->Wait();
+  CVDisplayLinkStop(link);
+  CVDisplayLinkRelease(link);
+  CFTimeInterval average = std::reduce(intervals->begin(), intervals->end()) / intervals->size();
+  CFTimeInterval max = *std::max_element(intervals->begin(), intervals->end());
+  CFTimeInterval min = *std::min_element(intervals->begin(), intervals->end());
+  NSLog(@"CVDisplayLink Interval: Average: %fs, Max: %fs, Min: %fs", average, max, min);
 }
