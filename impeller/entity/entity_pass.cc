@@ -459,29 +459,11 @@ bool EntityPass::Render(ContentContext& renderer,
   // this method.
   auto color0 = root_render_target.GetColorAttachments().find(0u)->second;
 
-  // If a root stencil was provided by the caller, then verify that it has a
-  // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
   auto depth_attachment = root_render_target.GetDepthAttachment();
-  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
-    auto stencil_texture = stencil_attachment->texture;
-    if (!stencil_texture) {
-      VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
-      return false;
-    }
-
-    auto stencil_storage_mode =
-        stencil_texture->GetTextureDescriptor().storage_mode;
-    if (reads_from_onscreen_backdrop &&
-        stencil_storage_mode == StorageMode::kDeviceTransient) {
-      VALIDATION_LOG << "The given root RenderTarget stencil needs to be read, "
-                        "but it's marked as transient.";
-      return false;
-    }
-  }
-  // Setup a new root stencil with an optimal configuration if one wasn't
-  // provided by the caller.
-  else {
+  if (!stencil_attachment.has_value() || !depth_attachment.has_value()) {
+    // Setup a new root stencil with an optimal configuration if one wasn't
+    // provided by the caller.
     root_render_target.SetupDepthStencilAttachments(
         *renderer.GetContext(), *renderer.GetContext()->GetResourceAllocator(),
         color0.texture->GetSize(),
@@ -739,12 +721,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     return false;
   }
 
-  // If the pass context returns a backdrop texture, we need to draw it to the
-  // current pass. We do this because it's faster and takes significantly less
-  // memory than storing/loading large MSAA textures. Also, it's not possible to
-  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
-  // (let alone a transient one).
-  if (result.backdrop_texture) {
+  if (result.just_created) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
     auto& replay_entities = clip_replay_->GetReplayEntities();
@@ -753,7 +730,14 @@ bool EntityPass::RenderElement(Entity& element_entity,
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
     }
+  }
 
+  // If the pass context returns a backdrop texture, we need to draw it to the
+  // current pass. We do this because it's faster and takes significantly less
+  // memory than storing/loading large MSAA textures. Also, it's not possible to
+  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
+  // (let alone a transient one).
+  if (result.backdrop_texture) {
     auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
     auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
     msaa_backdrop_contents->SetStencilEnabled(false);
@@ -764,7 +748,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
-    msaa_backdrop_entity.SetNewClipDepth(1000);  // Just set a big number.
+    msaa_backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
