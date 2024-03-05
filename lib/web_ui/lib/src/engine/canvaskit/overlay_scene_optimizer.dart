@@ -40,8 +40,12 @@ class Rendering {
     return true;
   }
 
+  /// A list of just the canvases in the rendering.
   List<RenderingRenderCanvas> get canvases =>
       entities.whereType<RenderingRenderCanvas>().toList();
+
+  @override
+  String toString() => entities.toString();
 }
 
 /// An element of a [Rendering]. Either a render canvas or a platform view.
