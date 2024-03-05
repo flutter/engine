@@ -231,6 +231,7 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
 
   auto shared_blur_entity = std::make_shared<Entity>(std::move(blur_entity));
   shared_blur_entity->SetNewClipDepth(entity.GetNewClipDepth());
+  shared_blur_entity->SetClipDepth(entity.GetClipDepth() + 1);
   auto clipper = std::make_unique<ClipContents>();
   clipper->SetClipOperation(clip_operation);
   clipper->SetGeometry(geometry);
