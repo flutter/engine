@@ -350,7 +350,6 @@ class CanvasKitRenderer implements Renderer {
         strutStyle: strutStyle,
         ellipsis: ellipsis,
         locale: locale,
-        applyRoundingHack: !ui.ParagraphBuilder.shouldDisableRoundingHack,
       );
 
   @override
@@ -388,17 +387,20 @@ class CanvasKitRenderer implements Renderer {
         "Unable to render to a view which hasn't been registered");
     final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;
     final RenderQueue renderQueue = rasterizer.queue;
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    final FrameTimingRecorder? recorder =
+        FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     if (renderQueue.current != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
       renderQueue.next?.completer.complete();
       final Completer<void> completer = Completer<void>();
-      renderQueue.next = (scene: scene, completer: completer, recorder: recorder);
+      renderQueue.next =
+          (scene: scene, completer: completer, recorder: recorder);
       return completer.future;
     }
     final Completer<void> completer = Completer<void>();
-    renderQueue.current = (scene: scene, completer: completer, recorder: recorder);
+    renderQueue.current =
+        (scene: scene, completer: completer, recorder: recorder);
     unawaited(_kickRenderLoop(rasterizer));
     return completer.future;
   }
@@ -421,7 +423,8 @@ class CanvasKitRenderer implements Renderer {
     }
   }
 
-  Future<void> _renderScene(ui.Scene scene, ViewRasterizer rasterizer, FrameTimingRecorder? recorder) async {
+  Future<void> _renderScene(ui.Scene scene, ViewRasterizer rasterizer,
+      FrameTimingRecorder? recorder) async {
     // "Build finish" and "raster start" happen back-to-back because we
     // render on the same thread, so there's no overhead from hopping to
     // another thread.
