@@ -5,6 +5,7 @@
 package io.flutter.plugin.platform;
 
 import static android.view.View.OnFocusChangeListener;
+import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -147,7 +148,7 @@ class VirtualDisplayController {
       getView().postDelayed(onNewSizeFrameAvailable, 0);
       return;
     }
-    if (Build.VERSION.SDK_INT >= 31) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_31) {
       resize31(getView(), width, height, onNewSizeFrameAvailable);
       return;
     }

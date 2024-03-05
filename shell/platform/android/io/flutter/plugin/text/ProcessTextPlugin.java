@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.text;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Intent;
@@ -70,7 +72,7 @@ public class ProcessTextPlugin
       return;
     }
 
-    if (Build.VERSION.SDK_INT < 23) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_23) {
       result.error("error", "Android version not supported", null);
       return;
     }
@@ -105,14 +107,14 @@ public class ProcessTextPlugin
   private void cacheResolveInfos() {
     resolveInfosById = new HashMap<String, ResolveInfo>();
 
-    if (Build.VERSION.SDK_INT < 23) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_23) {
       return;
     }
 
     Intent intent = new Intent().setAction(Intent.ACTION_PROCESS_TEXT).setType("text/plain");
 
     List<ResolveInfo> infos;
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       infos = packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0));
     } else {
       infos = packageManager.queryIntentActivities(intent, 0);

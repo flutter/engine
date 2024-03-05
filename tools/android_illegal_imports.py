@@ -63,8 +63,8 @@ def main():
                                 FLUTTER_LOG_CLASS) or CheckBadFiles(
                                     bad_trace_files, 'android[x].tracing.Trace', FLUTTER_TRACE_CLASS
                                 ) or CheckBadFiles(
-                                    bad_version_codes_files, 'android.build.VERSION_CODES',
-                                    '<use the explicit integer instead>'
+                                    bad_version_codes_files, 'android.os.Build.VERSION_CODES',
+                                    'io.flutter.Build.API_LEVELS'
                                 )
 
   if has_bad_files:

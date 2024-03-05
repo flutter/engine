@@ -484,7 +484,7 @@ public class FlutterActivityTest {
   }
 
   @Test
-  @Config(minSdk = 21, maxSdk = 28)
+  @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_28)
   public void fullyDrawn_beforeAndroidQ() {
     Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
     ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
@@ -498,7 +498,7 @@ public class FlutterActivityTest {
   }
 
   @Test
-  @Config(minSdk = 29)
+  @Config(minSdk = API_LEVELS.API_29)
   public void fullyDrawn_fromAndroidQ() {
     Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
     ActivityController<FlutterActivityWithReportFullyDrawn> activityController =

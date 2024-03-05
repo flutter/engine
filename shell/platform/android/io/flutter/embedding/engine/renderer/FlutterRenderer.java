@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine.renderer;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
@@ -185,7 +187,7 @@ public class FlutterRenderer implements TextureRegistry {
     // version that is
     // running Vulkan, so we don't have to worry about it not being supported.
     final SurfaceProducer entry;
-    if (!debugForceSurfaceProducerGlTextures && Build.VERSION.SDK_INT >= 29) {
+    if (!debugForceSurfaceProducerGlTextures && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final long id = nextTextureId.getAndIncrement();
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
@@ -694,7 +696,7 @@ public class FlutterRenderer implements TextureRegistry {
       if (ignoringFence) {
         return;
       }
-      if (Build.VERSION.SDK_INT >= 33) {
+      if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
         // The fence API is only available on Android >= 33.
         waitOnFence(image);
         return;
@@ -841,9 +843,9 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     private ImageReader createImageReader() {
-      if (Build.VERSION.SDK_INT >= 33) {
+      if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
         return createImageReader33();
-      } else if (Build.VERSION.SDK_INT >= 29) {
+      } else if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
         return createImageReader29();
       }
       throw new UnsupportedOperationException(
@@ -944,7 +946,7 @@ public class FlutterRenderer implements TextureRegistry {
       if (ignoringFence) {
         return;
       }
-      if (Build.VERSION.SDK_INT >= 33) {
+      if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
         // The fence API is only available on Android >= 33.
         waitOnFence(image);
         return;

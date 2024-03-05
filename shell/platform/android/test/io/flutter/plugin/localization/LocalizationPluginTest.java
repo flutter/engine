@@ -141,7 +141,7 @@ public class LocalizationPluginTest {
 
   // This test should be synced with the version for API 26.
   @Test
-  @Config(minSdk = 24)
+  @Config(minSdk = API_LEVELS.API_24)
   public void computePlatformResolvedLocale_fromAndroidN() {
     // --- Test Setup ---
     FlutterJNI flutterJNI = new FlutterJNI();
@@ -236,7 +236,7 @@ public class LocalizationPluginTest {
 
   // Tests the legacy pre API 24 algorithm.
   @Test
-  @Config(minSdk = 21, maxSdk = 23, qualifiers = "es-rMX")
+  @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_23, qualifiers = "es-rMX")
   public void computePlatformResolvedLocale_emptySupportedLocales_beforeAndroidN() {
     FlutterJNI flutterJNI = new FlutterJNI();
     DartExecutor dartExecutor = mock(DartExecutor.class);
@@ -248,7 +248,7 @@ public class LocalizationPluginTest {
   }
 
   @Test
-  @Config(minSdk = 21, maxSdk = 23, qualifiers = "")
+  @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_23, qualifiers = "")
   public void computePlatformResolvedLocale_selectFirstLocaleWhenNoUserSetting_beforeAndroidN() {
     FlutterJNI flutterJNI = new FlutterJNI();
     DartExecutor dartExecutor = mock(DartExecutor.class);
@@ -268,7 +268,7 @@ public class LocalizationPluginTest {
   }
 
   @Test
-  @Config(minSdk = 21, maxSdk = 23, qualifiers = "fr-rCH")
+  @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_23, qualifiers = "fr-rCH")
   public void computePlatformResolvedLocale_selectFirstLocaleWhenNoExactMatch_beforeAndroidN() {
     FlutterJNI flutterJNI = new FlutterJNI();
     DartExecutor dartExecutor = mock(DartExecutor.class);
@@ -291,7 +291,7 @@ public class LocalizationPluginTest {
   }
 
   @Test
-  @Config(minSdk = 21, maxSdk = 23, qualifiers = "it-rIT")
+  @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_23, qualifiers = "it-rIT")
   public void computePlatformResolvedLocale_selectExactMatchLocale_beforeAndroidN() {
     FlutterJNI flutterJNI = new FlutterJNI();
     DartExecutor dartExecutor = mock(DartExecutor.class);
@@ -314,7 +314,7 @@ public class LocalizationPluginTest {
   }
 
   @Test
-  @Config(minSdk = 21, maxSdk = 23, qualifiers = "fr-rCH")
+  @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_23, qualifiers = "fr-rCH")
   public void computePlatformResolvedLocale_selectOnlyLanguageLocale_beforeAndroidN() {
     FlutterJNI flutterJNI = new FlutterJNI();
     DartExecutor dartExecutor = mock(DartExecutor.class);

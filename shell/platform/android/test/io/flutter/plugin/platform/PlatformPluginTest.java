@@ -6,6 +6,7 @@ package io.flutter.plugin.platform;
 
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -250,7 +251,7 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       // Empty clipboard
       clipboardManager.clearPrimaryClip();
       assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
@@ -271,7 +272,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       // Default style test
       SystemChromeStyle style =
           new SystemChromeStyle(
@@ -345,7 +346,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 30) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
       WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
@@ -392,7 +393,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 30) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
       WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
@@ -439,7 +440,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.LEAN_BACK);
       verify(fakeDecorView)
@@ -473,7 +474,7 @@ public class PlatformPluginTest {
                   | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
-    if (Build.VERSION.SDK_INT >= 29) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
       verify(fakeDecorView)

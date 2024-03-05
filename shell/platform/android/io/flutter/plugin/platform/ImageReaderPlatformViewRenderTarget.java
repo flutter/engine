@@ -1,5 +1,7 @@
 package io.flutter.plugin.platform;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.graphics.ImageFormat;
 import android.hardware.HardwareBuffer;
@@ -81,9 +83,9 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
   }
 
   protected ImageReader createImageReader() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       return createImageReader33();
-    } else if (Build.VERSION.SDK_INT >= 29) {
+    } else if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       return createImageReader29();
     }
     throw new UnsupportedOperationException(
@@ -91,7 +93,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
   }
 
   public ImageReaderPlatformViewRenderTarget(ImageTextureEntry textureEntry) {
-    if (Build.VERSION.SDK_INT < 29) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_29) {
       throw new UnsupportedOperationException(
           "ImageReaderPlatformViewRenderTarget requires API version 29+");
     }

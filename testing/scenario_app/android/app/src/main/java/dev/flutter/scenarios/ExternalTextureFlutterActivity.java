@@ -4,6 +4,8 @@
 
 package dev.flutter.scenarios;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
@@ -101,7 +103,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private SurfaceRenderer selectSurfaceRenderer(String surfaceRenderer, Bundle extras) {
     switch (surfaceRenderer) {
       case "image":
-        if (VERSION.SDK_INT >= 23) {
+        if (VERSION.SDK_INT >= API_LEVELS.API_23) {
           // CanvasSurfaceRenderer doesn't work correctly when used with ImageSurfaceRenderer.
           // Use MediaSurfaceRenderer for now.
           return new ImageSurfaceRenderer(
@@ -185,7 +187,9 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void repaint() {
       Canvas canvas =
-          VERSION.SDK_INT >= 23 ? surface.lockHardwareCanvas() : surface.lockCanvas(null);
+          VERSION.SDK_INT >= API_LEVELS.API_23
+              ? surface.lockHardwareCanvas()
+              : surface.lockCanvas(null);
       Paint paint = new Paint();
       paint.setShader(
           new LinearGradient(
@@ -357,7 +361,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
-      if (VERSION.SDK_INT >= 29) {
+      if (VERSION.SDK_INT >= API_LEVELS.API_29) {
         // On Android Q+, use PRIVATE image format.
         // Also let the frame producer know the images will
         // be sampled from by the GPU.

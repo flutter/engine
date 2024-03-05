@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -385,7 +387,7 @@ public class FlutterView extends FrameLayout
     // FlutterView needs to be focusable so that the InputMethodManager can interact with it.
     setFocusable(true);
     setFocusableInTouchMode(true);
-    if (Build.VERSION.SDK_INT >= 26) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_YES);
     }
   }
@@ -574,7 +576,7 @@ public class FlutterView extends FrameLayout
 
     // Data from the DisplayCutout bounds. Cutouts for cameras and other sensors are
     // populated here. DisplayCutout was introduced in API 28.
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       WindowInsets insets = getRootWindowInsets();
       if (insets != null) {
         DisplayCutout cutout = insets.getDisplayCutout();
@@ -619,7 +621,7 @@ public class FlutterView extends FrameLayout
         return ZeroSides.RIGHT;
       } else if (rotation == Surface.ROTATION_270) {
         // In android API >= 23, the nav bar always appears on the "bottom" (USB) side.
-        return Build.VERSION.SDK_INT >= 23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
+        return Build.VERSION.SDK_INT >= API_LEVELS.API_23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
       }
       // Ambiguous orientation due to landscape left/right default. Zero both sides.
       else if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
@@ -677,7 +679,7 @@ public class FlutterView extends FrameLayout
     WindowInsets newInsets = super.onApplyWindowInsets(insets);
 
     // getSystemGestureInsets() was introduced in API 29 and immediately deprecated in 30.
-    if (Build.VERSION.SDK_INT == 29) {
+    if (Build.VERSION.SDK_INT == API_LEVELS.API_29) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
       viewportMetrics.systemGestureInsetTop = systemGestureInsets.top;
       viewportMetrics.systemGestureInsetRight = systemGestureInsets.right;
@@ -689,7 +691,7 @@ public class FlutterView extends FrameLayout
     boolean navigationBarVisible =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
-    if (Build.VERSION.SDK_INT >= 30) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
       int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
@@ -956,7 +958,7 @@ public class FlutterView extends FrameLayout
   @SuppressLint("SoonBlockedPrivateApi")
   @Nullable
   public View findViewByAccessibilityIdTraversal(int accessibilityId) {
-    if (Build.VERSION.SDK_INT < 29) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_29) {
       return findViewByAccessibilityIdRootedAtCurrentView(accessibilityId, this);
     }
     // Android Q or later doesn't call this method.
@@ -1098,7 +1100,7 @@ public class FlutterView extends FrameLayout
 
     // Initialize various components that know how to process Android View I/O
     // in a way that Flutter understands.
-    if (Build.VERSION.SDK_INT >= 24) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
     textInputPlugin =
@@ -1412,7 +1414,7 @@ public class FlutterView extends FrameLayout
     boolean isNativeSpellCheckServiceDefined = false;
 
     if (textServicesManager != null) {
-      if (Build.VERSION.SDK_INT >= 31) {
+      if (Build.VERSION.SDK_INT >= API_LEVELS.API_31) {
         List<SpellCheckerInfo> enabledSpellCheckerInfos =
             textServicesManager.getEnabledSpellCheckerInfos();
         boolean gboardSpellCheckerEnabled =

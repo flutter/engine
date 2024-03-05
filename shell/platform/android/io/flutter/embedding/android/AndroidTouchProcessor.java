@@ -1,5 +1,7 @@
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Matrix;
@@ -427,7 +429,7 @@ public class AndroidTouchProcessor {
   }
 
   private float getHorizontalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= 26) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
     } else {
       // Vertical scroll factor is not a typo. This is what View.java does in android.
@@ -436,7 +438,7 @@ public class AndroidTouchProcessor {
   }
 
   private float getVerticalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= 26) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return getVerticalScrollFactorAbove26(context);
     } else {
       return getVerticalScrollFactorPre26(context);
