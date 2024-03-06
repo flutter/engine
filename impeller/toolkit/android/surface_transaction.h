@@ -64,7 +64,8 @@ class SurfaceTransaction {
   /// @param[in]  control  The control
   /// @param[in]  color    The color
   ///
-  /// @return     { description_of_the_return_value }
+  /// @return     `true` if the background control will be set when transaction
+  ///              is applied.
   ///
   [[nodiscard]] bool SetBackgroundColor(const SurfaceControl& control,
                                         const Color& color);
@@ -87,7 +88,20 @@ class SurfaceTransaction {
   ///             indicate the application was completed however. Only the
   ///             invocation of the callback denotes transaction completion.
   ///
-  [[nodiscard]] bool Apply(OnCompleteCallback callback);
+  [[nodiscard]] bool Apply(OnCompleteCallback callback = nullptr);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Set the new parent control of the given control. If the new
+  ///             parent is null, it is removed from the control hierarchy.
+  ///
+  /// @param[in]  control     The control
+  /// @param[in]  new_parent  The new parent
+  ///
+  /// @return     `true` if the control will be re-parented when the transaction
+  ///             is applied.
+  ///
+  [[nodiscard]] bool SetParent(const SurfaceControl& control,
+                               const SurfaceControl* new_parent = nullptr);
 
  private:
   struct UniqueASurfaceTransactionTraits {

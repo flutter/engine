@@ -78,6 +78,7 @@ HardwareBufferDescriptor HardwareBufferDescriptor::MakeForSwapchainImage(
     ISize size) {
   HardwareBufferDescriptor desc;
   desc.format = HardwareBufferFormat::kR8G8B8A8UNormInt;
+  // Zero sized hardware buffers cannot be allocated.
   desc.size = size.Max(ISize{1u, 1u});
   desc.usage =
       static_cast<HardwareBufferUsage>(

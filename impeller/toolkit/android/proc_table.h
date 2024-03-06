@@ -30,6 +30,7 @@ namespace impeller::android {
   INVOKE(ASurfaceTransaction_delete, 29)        \
   INVOKE(ASurfaceTransaction_apply, 29)         \
   INVOKE(ASurfaceTransaction_setOnComplete, 29) \
+  INVOKE(ASurfaceTransaction_reparent, 29)      \
   INVOKE(ASurfaceTransaction_setBuffer, 29)     \
   INVOKE(ASurfaceTransaction_setColor, 29)
 

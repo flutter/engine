@@ -80,4 +80,20 @@ bool SurfaceTransaction::SetBackgroundColor(const SurfaceControl& control,
   return true;
 }
 
+bool SurfaceTransaction::SetParent(const SurfaceControl& control,
+                                   const SurfaceControl* new_parent) {
+  if (!IsValid() || !control.IsValid()) {
+    return false;
+  }
+  if (new_parent && !new_parent->IsValid()) {
+    return false;
+  }
+  GetProcTable().ASurfaceTransaction_reparent(
+      transaction_.get(),                                        //
+      control.GetHandle(),                                       //
+      new_parent == nullptr ? nullptr : new_parent->GetHandle()  //
+  );
+  return true;
+}
+
 }  // namespace impeller::android

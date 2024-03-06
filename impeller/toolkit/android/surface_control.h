@@ -34,6 +34,12 @@ class SurfaceControl {
   explicit SurfaceControl(ANativeWindow* window,
                           const char* debug_name = nullptr);
 
+  //----------------------------------------------------------------------------
+  /// @brief      Removes the surface control from the presentation hierarchy
+  ///             managed by the system compositor and release the client side
+  ///             reference to the control. At this point, it may be collected
+  ///             when the compositor is also done using it.
+  ///
   ~SurfaceControl();
 
   SurfaceControl(const SurfaceControl&) = delete;
@@ -43,6 +49,15 @@ class SurfaceControl {
   bool IsValid() const;
 
   ASurfaceControl* GetHandle() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Remove the surface control from the hierarchy of nodes
+  ///             presented by the system compositor.
+  ///
+  /// @return     `true` If the control will be removed from the hierarchy of
+  ///             nodes presented by the system compositor.
+  ///
+  bool RemoveFromParent() const;
 
  private:
   struct UniqueASurfaceControlTraits {
