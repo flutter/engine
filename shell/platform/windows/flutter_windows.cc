@@ -110,6 +110,12 @@ void FlutterDesktopViewControllerDestroy(FlutterDesktopViewControllerRef ref) {
   delete controller;
 }
 
+FlutterDesktopViewId FlutterDesktopViewControllerGetViewId(
+    FlutterDesktopViewControllerRef ref) {
+  auto controller = ViewControllerFromHandle(ref);
+  return static_cast<FlutterDesktopViewId>(controller->view()->view_id());
+}
+
 FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
     FlutterDesktopViewControllerRef ref) {
   auto controller = ViewControllerFromHandle(ref);
@@ -255,10 +261,13 @@ void FlutterDesktopEngineRegisterPlatformViewType(
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
-  // TODO(loicsharma): Add |FlutterDesktopPluginRegistrarGetViewById| and
-  // deprecate this API as it makes single view assumptions.
-  // https://github.com/flutter/flutter/issues/143767
   return HandleForView(registrar->engine->view(flutter::kImplicitViewId));
+}
+
+FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetViewById(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopViewId view_id) {
+  return HandleForView(registrar->engine->view(view_id));
 }
 
 void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(

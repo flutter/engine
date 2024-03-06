@@ -80,7 +80,7 @@ void main() {
     final Logger logger = Logger.test();
     final (Environment env, _) = linuxEnv(logger);
     final List<Build> result = runnableBuilds(env, configs);
-    expect(result.length, equals(2));
+    expect(result.length, equals(6));
     expect(result[0].name, equals('build_name'));
   });
 
@@ -134,9 +134,10 @@ void main() {
     ]);
     expect(result, equals(0));
     expect(runHistory.length, greaterThanOrEqualTo(3));
-    expect(runHistory[2].length, greaterThanOrEqualTo(2));
-    expect(runHistory[2][0], contains('python3'));
-    expect(runHistory[2][1], contains('gen/script.py'));
+    expect(
+      runHistory[2],
+      containsStringsInOrder(<String>['python3', 'gen/script.py']),
+    );
   });
 
   test('build command does not invoke tests', () async {
