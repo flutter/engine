@@ -12,6 +12,9 @@
 #include "flutter/testing/fixture_test.h"
 #include "gmock/gmock.h"
 
+// CREATE_NATIVE_ENTRY is leaky by design
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
 namespace flutter {
 
 namespace {
@@ -36,6 +39,7 @@ void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
 std::vector<const LayerTreeTask*> Sorted(
     const std::vector<std::unique_ptr<LayerTreeTask>>& layer_tree_tasks) {
   std::vector<const LayerTreeTask*> result;
+  result.reserve(layer_tree_tasks.size());
   for (auto& task_ptr : layer_tree_tasks) {
     result.push_back(task_ptr.get());
   }
@@ -459,9 +463,10 @@ TEST_F(EngineAnimatorTest, AnimatorSubmitsImplicitViewBeforeDrawFrameEnds) {
   EXPECT_CALL(delegate_, GetPlatformMessageHandler)
       .WillOnce(ReturnRef(platform_message_handler));
 
-  static bool rasterization_started = false;
+  bool rasterization_started = false;
   EXPECT_CALL(animator_delegate, OnAnimatorDraw)
-      .WillOnce(Invoke([](const std::shared_ptr<FramePipeline>& pipeline) {
+      .WillOnce(Invoke([&rasterization_started](
+                           const std::shared_ptr<FramePipeline>& pipeline) {
         rasterization_started = true;
         auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
           EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
@@ -489,10 +494,11 @@ TEST_F(EngineAnimatorTest, AnimatorSubmitsImplicitViewBeforeDrawFrameEnds) {
 
   native_latch.Reset();
   // The native_latch is signaled at the end of handleDrawFrame.
-  AddNativeCallback("NotifyNative", [](auto args) {
-    EXPECT_EQ(rasterization_started, true);
-    native_latch.Signal();
-  });
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY([&rasterization_started](auto args) {
+                      EXPECT_EQ(rasterization_started, true);
+                      native_latch.Signal();
+                    }));
 
   engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
                                          std::move(animator));
