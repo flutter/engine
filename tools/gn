@@ -8,10 +8,13 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import subprocess
-import sys
+import ctypes
+import multiprocessing
 import os
 import platform
+import re
+import subprocess
+import sys
 
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -314,6 +317,137 @@ def setup_goma(args):
   return goma_gn_args
 
 
+# Find the locations of the macOS and iOS SDKs under flutter/prebuilts.
+def setup_apple_sdks():
+  sdks_gn_args = {}
+
+  # These are needed on a macOS host regardless of target.
+  # This value should agree with the 'mac_sdk_min' value in the DEPS file.
+  sdks_gn_args['mac_sdk_min'] = '10.14'
+
+  # The MACOSX_DEPLOYMENT_TARGET variable used when compiling.
+  # Must be of the form x.x.x for Info.plist files.
+  sdks_gn_args['mac_deployment_target'] = '10.14.0'
+
+  running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
+  if running_on_luci:
+    return sdks_gn_args
+
+  prefixes = [
+      ('MacOSX', 'mac_sdk_path'),
+      ('iPhoneOS', 'ios_device_sdk_path'),
+      ('iPhoneSimulator', 'ios_simulator_sdk_path'),
+  ]
+  sdks_path = os.path.join(SRC_ROOT, 'flutter', 'prebuilts', 'SDKs')
+  sdk_entries = os.listdir(sdks_path)
+  for (prefix, arg) in prefixes:
+    for entry in sdk_entries:
+      if entry.startswith(prefix):
+        sdks_gn_args[arg] = os.path.join(sdks_path, entry)
+  return sdks_gn_args
+
+
+def get_repository_version(repository):
+  'Returns the Git HEAD for the supplied repository path as a string.'
+  if not os.path.exists(repository):
+    raise IOError('path does not exist')
+
+  git = 'git'
+  if sys.platform.startswith(('cygwin', 'win')):
+    git = 'git.bat'
+  version = subprocess.check_output([
+      git,
+      '-C',
+      repository,
+      'rev-parse',
+      'HEAD',
+  ])
+
+  return str(version.strip(), 'utf-8')
+
+
+def setup_git_versions():
+  revision_args = {}
+
+  engine_path = os.path.join(SRC_ROOT, 'flutter')
+  revision_args['engine_version'] = get_repository_version(engine_path)
+
+  skia_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'skia')
+  revision_args['skia_version'] = get_repository_version(skia_path)
+
+  dart_path = os.path.join(SRC_ROOT, 'third_party', 'dart')
+  revision_args['dart_version'] = get_repository_version(dart_path)
+
+  return revision_args
+
+
+# pylint: disable=line-too-long
+# See https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-globalmemorystatusex
+# and https://docs.microsoft.com/en-us/windows/win32/api/sysinfoapi/ns-sysinfoapi-memorystatusex
+# pylint: enable=line-too-long
+class MEMORYSTATUSEX(ctypes.Structure):
+  _fields_ = [
+      ('dwLength', ctypes.c_ulong),
+      ('dwMemoryLoad', ctypes.c_ulong),
+      ('ullTotalPhys', ctypes.c_ulonglong),
+      ('ullAvailPhys', ctypes.c_ulonglong),
+      ('ullTotalPageFile', ctypes.c_ulonglong),
+      ('ullAvailPageFile', ctypes.c_ulonglong),
+      ('ullTotalVirtual', ctypes.c_ulonglong),
+      ('ullAvailVirtual', ctypes.c_ulonglong),
+      ('sullAvailExtendedVirtual', ctypes.c_ulonglong),
+  ]
+
+
+def get_total_memory():
+  if sys.platform in ('win32', 'cygwin'):
+    stat = MEMORYSTATUSEX(dwLength=ctypes.sizeof(MEMORYSTATUSEX))
+    success = ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat))
+    return stat.ullTotalPhys if success else 0
+  if sys.platform.startswith('linux'):
+    if os.path.exists('/proc/meminfo'):
+      with open('/proc/meminfo') as meminfo:
+        memtotal_re = re.compile(r'^MemTotal:\s*(\d*)\s*kB')
+        for line in meminfo:
+          match = memtotal_re.match(line)
+          if match:
+            return float(match.group(1)) * 2**10
+  if sys.platform == 'darwin':
+    try:
+      return int(subprocess.check_output(['sysctl', '-n', 'hw.memsize']))
+    except:  # pylint: disable=bare-except
+      return 0
+  return 0
+
+
+def parse_size(string):
+  units = {'B': 1, 'KB': 2**10, 'MB': 2**20, 'GB': 2**30, 'TB': 2**40}
+  i = next(i for (i, c) in enumerate(string) if not c.isdigit())
+  number = string[:i].strip()
+  unit = string[i:].strip()
+  return int(float(number) * units[unit])
+
+
+def get_concurrent_jobs(reserve_memory, memory_per_job):
+  # reserve_memory = 2**30
+  total_memory = get_total_memory()
+  # Ensure the total memory used in the calculation below is at least 0
+  mem_total_bytes = max(0, total_memory - parse_size(reserve_memory))
+  # Ensure the number of cpus used in the calculation below is at least 1
+  try:
+    cpu_cap = multiprocessing.cpu_count()
+  except:  # pylint: disable=bare-except
+    cpu_cap = 1
+
+  # Calculate the number of jobs that will fit in memory. Ensure the
+  # value is at least 1.
+  num_concurrent_jobs = int(max(1, mem_total_bytes / parse_size(memory_per_job)))
+  # Cap the number of jobs by the number of cpus available.
+  concurrent_jobs = min(num_concurrent_jobs, cpu_cap)
+
+  return concurrent_jobs
+
+
 def to_gn_args(args):
   if args.simulator:
     if args.target_os != 'ios':
@@ -324,6 +458,8 @@ def to_gn_args(args):
   gn_args = {}
 
   gn_args['is_debug'] = args.unoptimized
+
+  gn_args.update(setup_git_versions())
 
   gn_args.update(setup_goma(args))
 
@@ -429,16 +565,12 @@ def to_gn_args(args):
   if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
-  if is_host_build(args) and gn_args['host_os'] == 'mac':
-    # macOS unit tests include Vulkan headers which reference Metal types
-    # introduced in macOS 10.14.
-    gn_args['mac_sdk_min'] = '10.14'
-    gn_args['mac_deployment_target'] = '10.14.0'
-
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
+    gn_args.update(setup_apple_sdks())
   elif get_host_os() == 'mac':
     gn_args['use_ios_simulator'] = False
+    gn_args.update(setup_apple_sdks())
 
   if args.dart_debug:
     gn_args['dart_debug'] = True
@@ -466,6 +598,8 @@ def to_gn_args(args):
     gn_args['dart_runtime_mode'] = 'release'
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
+
+  gn_args['concurrent_dart_jobs'] = get_concurrent_jobs('1GB', '1GB')
 
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
@@ -650,12 +784,12 @@ def to_gn_args(args):
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
-  if args.malioc_path is not None:
-    gn_args['impeller_malioc_path'] = args.malioc_path
-  else:
+  malioc_path = args.malioc_path
+  if not malioc_path:
     malioc_path = os.environ.get('MALIOC_PATH')
-    if malioc_path:
-      gn_args['impeller_malioc_path'] = malioc_path
+  if malioc_path:
+    gn_args['impeller_malioc_path'] = malioc_path
+    gn_args['impeller_concurrent_malioc_jobs'] = get_concurrent_jobs('1GB', '100MB')
 
   if args.use_glfw_swiftshader:
     if get_host_os() == 'mac':
@@ -671,6 +805,8 @@ def to_gn_args(args):
   # for a host Windows build and make GN think we will be building ANGLE.
   # Angle is not used on Mac hosts as there are no tests for the OpenGL backend.
   if is_host_build(args) or (args.target_os == 'android' and get_host_os() == 'win'):
+    # Don't include git commit information.
+    gn_args['angle_enable_commit_id'] = False
     # Do not build unnecessary parts of the ANGLE tree.
     gn_args['angle_build_all'] = False
     gn_args['angle_has_astc_encoder'] = False

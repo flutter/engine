@@ -32,6 +32,9 @@ typedef struct FlutterDesktopView* FlutterDesktopViewRef;
 struct FlutterDesktopEngine;
 typedef struct FlutterDesktopEngine* FlutterDesktopEngineRef;
 
+// The unique identifier for a view.
+typedef int64_t FlutterDesktopViewId;
+
 // Properties for configuring a Flutter engine instance.
 typedef struct {
   // The path to the flutter_assets folder for the application to be run.
@@ -97,13 +100,17 @@ FlutterDesktopViewControllerCreate(int width,
 FLUTTER_EXPORT void FlutterDesktopViewControllerDestroy(
     FlutterDesktopViewControllerRef controller);
 
+// Returns the view controller's view ID.
+FLUTTER_EXPORT FlutterDesktopViewId FlutterDesktopViewControllerGetViewId(
+    FlutterDesktopViewControllerRef view_controller);
+
 // Returns the handle for the engine running in FlutterDesktopViewControllerRef.
 //
 // Its lifetime is the same as the |controller|'s.
 FLUTTER_EXPORT FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
     FlutterDesktopViewControllerRef controller);
-// Returns the view managed by the given controller.
 
+// Returns the view managed by the given controller.
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopViewControllerGetView(
     FlutterDesktopViewControllerRef controller);
 
@@ -205,7 +212,7 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
 
 // ========== View ==========
 
-// Return backing HWND for manipulation in host application.
+// Returns the backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
 
 // Returns the DXGI adapter used for rendering or nullptr in case of error.
@@ -242,9 +249,21 @@ typedef bool (*FlutterDesktopWindowProcCallback)(HWND /* hwnd */,
                                                  void* /* user data */,
                                                  LRESULT* result);
 
-// Returns the view associated with this registrar's engine instance.
+// Returns the implicit view associated with this registrar's engine instance,
+// or null if there is no implicit view.
+//
+// See:
+// https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html
+//
+// DEPRECATED: Use |FlutterDesktopPluginRegistrarGetViewById| instead.
 FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar);
+
+// Returns the view associated with the registrar's engine instance, or null if
+// the view does not exist.
+FLUTTER_EXPORT FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetViewById(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopViewId view_id);
 
 FLUTTER_EXPORT void
 FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(

@@ -5,7 +5,6 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
-import '../logger.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -17,7 +16,7 @@ final class BuildCommand extends CommandBase {
     required Map<String, BuilderConfig> configs,
   }) {
     builds = runnableBuilds(environment, configs);
-    // Add options here that are common to all queries.
+    debugCheckBuilds(builds);
     argParser.addOption(
       configFlag,
       abbr: 'c',
@@ -52,46 +51,8 @@ final class BuildCommand extends CommandBase {
       environment.logger.error('Could not find config $configName');
       return 1;
     }
-    final BuildRunner buildRunner = BuildRunner(
-      platform: environment.platform,
-      processRunner: environment.processRunner,
-      abi: environment.abi,
-      engineSrcDir: environment.engine.srcDir,
-      build: build,
-      runTests: false,
-    );
 
-    Spinner? spinner;
-    void handler(RunnerEvent event) {
-      switch (event) {
-        case RunnerStart():
-          environment.logger.status('$event     ', newline: false);
-          spinner = environment.logger.startSpinner();
-        case RunnerProgress(done: true):
-          spinner?.finish();
-          spinner = null;
-          environment.logger.clearLine();
-          environment.logger.status(event);
-        case RunnerProgress(done: false):
-          {
-            spinner?.finish();
-            spinner = null;
-            final String percent = '${event.percent.toStringAsFixed(1)}%';
-            final String fraction = '(${event.completed}/${event.total})';
-            final String prefix = '[${event.name}] $percent $fraction ';
-            final String what = event.what;
-            environment.logger.clearLine();
-            environment.logger
-                .status('$prefix$what', newline: false, fit: true);
-          }
-        default:
-          spinner?.finish();
-          spinner = null;
-          environment.logger.status(event);
-      }
-    }
-
-    final bool buildResult = await buildRunner.run(handler);
-    return buildResult ? 0 : 1;
+    // TODO(loic-sharma): Fetch dependencies if needed.
+    return runBuild(environment, build);
   }
 }

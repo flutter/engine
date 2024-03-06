@@ -307,6 +307,18 @@ TEST_F(WindowsTest, NextFrameCallback) {
   captures.frame_drawn_latch.Wait();
 }
 
+// Implicit view has the implicit view ID.
+TEST_F(WindowsTest, GetViewId) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+  FlutterDesktopViewId view_id =
+      FlutterDesktopViewControllerGetViewId(controller.get());
+
+  ASSERT_EQ(view_id, static_cast<FlutterDesktopViewId>(kImplicitViewId));
+}
+
 TEST_F(WindowsTest, GetGraphicsAdapter) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
@@ -319,6 +331,64 @@ TEST_F(WindowsTest, GetGraphicsAdapter) {
   ASSERT_NE(dxgi_adapter, nullptr);
   DXGI_ADAPTER_DESC desc{};
   ASSERT_TRUE(SUCCEEDED(dxgi_adapter->GetDesc(&desc)));
+}
+
+// Implicit view has the implicit view ID.
+TEST_F(WindowsTest, PluginRegistrarGetImplicitView) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  FlutterDesktopEngineRef engine =
+      FlutterDesktopViewControllerGetEngine(controller.get());
+  FlutterDesktopPluginRegistrarRef registrar =
+      FlutterDesktopEngineGetPluginRegistrar(engine, "foo_bar");
+  FlutterDesktopViewRef implicit_view =
+      FlutterDesktopPluginRegistrarGetView(registrar);
+
+  ASSERT_NE(implicit_view, nullptr);
+}
+
+TEST_F(WindowsTest, PluginRegistrarGetView) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  FlutterDesktopEngineRef engine =
+      FlutterDesktopViewControllerGetEngine(controller.get());
+  FlutterDesktopPluginRegistrarRef registrar =
+      FlutterDesktopEngineGetPluginRegistrar(engine, "foo_bar");
+
+  FlutterDesktopViewId view_id =
+      FlutterDesktopViewControllerGetViewId(controller.get());
+  FlutterDesktopViewRef view =
+      FlutterDesktopPluginRegistrarGetViewById(registrar, view_id);
+
+  FlutterDesktopViewRef view_123 = FlutterDesktopPluginRegistrarGetViewById(
+      registrar, static_cast<FlutterDesktopViewId>(123));
+
+  ASSERT_NE(view, nullptr);
+  ASSERT_EQ(view_123, nullptr);
+}
+
+TEST_F(WindowsTest, PluginRegistrarGetViewHeadless) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
+  FlutterDesktopPluginRegistrarRef registrar =
+      FlutterDesktopEngineGetPluginRegistrar(engine.get(), "foo_bar");
+
+  FlutterDesktopViewRef implicit_view =
+      FlutterDesktopPluginRegistrarGetView(registrar);
+  FlutterDesktopViewRef view_123 = FlutterDesktopPluginRegistrarGetViewById(
+      registrar, static_cast<FlutterDesktopViewId>(123));
+
+  ASSERT_EQ(implicit_view, nullptr);
+  ASSERT_EQ(view_123, nullptr);
 }
 
 // Verify the app does not crash if EGL initializes successfully but
