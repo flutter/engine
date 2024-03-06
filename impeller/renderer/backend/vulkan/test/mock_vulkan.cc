@@ -44,11 +44,9 @@ struct MockSwapchainKHR {
 
 struct MockSemaphore {};
 
-<<<<<<< HEAD
 struct MockFramebuffer {};
-=======
+
 struct MockBuffer {};
->>>>>>> 5bbac1a5c5762e93c130c08123e0e856efc73996
 
 static ISize currentImageSize = ISize{1, 1};
 
@@ -739,7 +737,6 @@ VkResult vkAcquireNextImageKHR(VkDevice device,
   return VK_SUCCESS;
 }
 
-<<<<<<< HEAD
 VkResult vkCreateFramebuffer(VkDevice device,
                              const VkFramebufferCreateInfo* pCreateInfo,
                              const VkAllocationCallbacks* pAllocator,
@@ -752,7 +749,8 @@ void vkDestroyFramebuffer(VkDevice device,
                           VkFramebuffer framebuffer,
                           const VkAllocationCallbacks* pAllocator) {
   delete reinterpret_cast<MockFramebuffer*>(framebuffer);
-=======
+}
+
 VkResult vkFlushMappedMemoryRanges(VkDevice device,
                                    uint32_t memoryRangeCount,
                                    const VkMappedMemoryRange* pMemoryRanges) {
@@ -770,7 +768,6 @@ VkResult vkMapMemory(VkDevice device,
   MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
   mock_device->AddCalledFunction("vkMapMemory");
   return VK_SUCCESS;
->>>>>>> 5bbac1a5c5762e93c130c08123e0e856efc73996
 }
 
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
@@ -909,19 +906,16 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkDestroySurfaceKHR;
   } else if (strcmp("vkAcquireNextImageKHR", pName) == 0) {
     return (PFN_vkVoidFunction)vkAcquireNextImageKHR;
-<<<<<<< HEAD
   } else if (strcmp("vkCreateFramebuffer", pName) == 0) {
     return (PFN_vkVoidFunction)vkCreateFramebuffer;
   } else if (strcmp("vkDestroyFramebuffer", pName) == 0) {
     return (PFN_vkVoidFunction)vkDestroyFramebuffer;
-=======
   } else if (strcmp("vkFlushMappedMemoryRanges", pName) == 0) {
     return (PFN_vkVoidFunction)vkFlushMappedMemoryRanges;
   } else if (strcmp("vkDestroyBuffer", pName) == 0) {
     return (PFN_vkVoidFunction)vkDestroyBuffer;
   } else if (strcmp("vkMapMemory", pName) == 0) {
     return (PFN_vkVoidFunction)vkMapMemory;
->>>>>>> 5bbac1a5c5762e93c130c08123e0e856efc73996
   }
   return noop;
 }
