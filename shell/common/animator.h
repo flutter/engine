@@ -136,7 +136,8 @@ class Animator final {
   std::shared_ptr<VsyncWaiter> waiter_;
 
   std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder_;
-  std::vector<std::unique_ptr<LayerTreeTask>> layer_trees_tasks_;
+  std::unordered_map<int64_t, std::unique_ptr<LayerTreeTask>>
+      layer_trees_tasks_;
   uint64_t frame_request_number_ = 1;
   fml::TimeDelta dart_frame_deadline_;
   std::shared_ptr<FramePipeline> layer_tree_pipeline_;

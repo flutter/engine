@@ -143,10 +143,6 @@ external void sayHiFromFixturesAreFunctionalMain();
 external void notifyNative();
 
 @pragma('vm:entry-point')
-@pragma('vm:external-name', 'NotifyNative2')
-external void notifyNative2();
-
-@pragma('vm:entry-point')
 void thousandCallsToNative() {
   for (int i = 0; i < 1000; i++) {
     notifyNative();

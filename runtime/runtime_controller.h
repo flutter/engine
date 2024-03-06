@@ -662,9 +662,11 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // Tracks the views that have been called `Render` during a frame.
   //
-  // If all registered views (through `AddView`) have been rendered, then the
-  // end of frame will be called immediately, submitting the views to the
-  // pipeline a bit earlier than having to wait for the end of the vsync.
+  // If all views that have been registered by `AddView` have been called
+  // `Render`, then the runtime controller notifies the client of the end of
+  // frame immediately, allowing the client to submit the views to the pipeline
+  // a bit earlier than having to wait for the end of `BeginFrame`. See also
+  // `Animator::OnAllViewsRendered`.
   //
   // This mechanism fixes https://github.com/flutter/flutter/issues/144584 with
   // option 2 and
