@@ -5,7 +5,6 @@
 package io.flutter.embedding.engine.plugins.shim;
 
 import androidx.annotation.NonNull;
-import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -17,10 +16,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- *
  * TODO: were the changes here right, should this be deleted, what does it do, etc
  *
- * A {@link PluginRegistry} that is shimmed to let old plugins use the new Android embedding and
+ * <p>A {@link PluginRegistry} that is shimmed to let old plugins use the new Android embedding and
  * plugin API behind the scenes.
  *
  * <p>The following is an example usage of {@code ShimPluginRegistry} within a {@code

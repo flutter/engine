@@ -13,7 +13,6 @@ import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
 /**
  * A collection of Android {@code Activity} methods that are relevant to the core operation of
  * Flutter applications.
- *
  */
 public interface FlutterActivityEvents
     extends ComponentCallbacks2, ActivityResultListener, RequestPermissionsResultListener {

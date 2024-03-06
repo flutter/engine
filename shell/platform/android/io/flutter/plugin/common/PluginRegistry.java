@@ -8,12 +8,9 @@ import android.app.Activity;
 import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 
-/**
- * Container class for Android API listeners used by {@link ActivityPluginBinding}.
- */
+/** Container class for Android API listeners used by {@link ActivityPluginBinding}. */
 public interface PluginRegistry {
   /**
    * Delegate interface for handling result of permissions requests on behalf of the main {@link

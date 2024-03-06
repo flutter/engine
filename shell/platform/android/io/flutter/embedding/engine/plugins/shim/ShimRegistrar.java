@@ -5,13 +5,11 @@
 package io.flutter.embedding.engine.plugins.shim;
 
 import androidx.annotation.NonNull;
-
 import io.flutter.Log;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.PluginRegistry;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
