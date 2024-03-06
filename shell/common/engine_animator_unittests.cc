@@ -30,6 +30,21 @@ void PostSync(const fml::RefPtr<fml::TaskRunner>& task_runner,
   latch.Wait();
 }
 
+// Sort the argument list of `LayerTreeTask` into a new list that is sorted by
+// their view IDs. `FrameItem::layer_tree_tasks` might not come sorted.
+std::vector<const LayerTreeTask*> Sorted(
+    const std::vector<std::unique_ptr<LayerTreeTask>>& layer_tree_tasks) {
+  std::vector<const LayerTreeTask*> result;
+  for (auto& task_ptr : layer_tree_tasks) {
+    result.push_back(task_ptr.get());
+  }
+  std::sort(result.begin(), result.end(),
+            [](const LayerTreeTask* a, const LayerTreeTask* b) {
+              return a->view_id < b->view_id;
+            });
+  return result;
+}
+
 class MockDelegate : public Engine::Delegate {
  public:
   MOCK_METHOD(void,
@@ -257,9 +272,71 @@ TEST_F(EngineAnimatorTest, AnimatorAcceptsMultipleRenders) {
           Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
             auto status =
                 pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-                  EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
-                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, 2);
-                  EXPECT_EQ(item->layer_tree_tasks[1]->view_id, 1);
+                  auto tasks = Sorted(item->layer_tree_tasks);
+                  EXPECT_EQ(tasks.size(), 2u);
+                  EXPECT_EQ(tasks[0]->view_id, 1);
+                  EXPECT_EQ(tasks[1]->view_id, 2);
+                });
+            EXPECT_EQ(status, PipelineConsumeResult::Done);
+            draw_latch.Signal();
+          }));
+  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
+      .WillOnce(Invoke([&engine_context](fml::TimePoint frame_target_time,
+                                         uint64_t frame_number) {
+        engine_context->EngineTaskSync([&](Engine& engine) {
+          engine.BeginFrame(frame_target_time, frame_number);
+        });
+      }));
+
+  native_latch.Reset();
+  AddNativeCallback("NotifyNative", [](auto args) { native_latch.Signal(); });
+
+  std::unique_ptr<Animator> animator;
+  PostSync(task_runners_.GetUITaskRunner(),
+           [&animator, &animator_delegate, &task_runners = task_runners_] {
+             animator = std::make_unique<Animator>(
+                 animator_delegate, task_runners,
+                 static_cast<std::unique_ptr<VsyncWaiter>>(
+                     std::make_unique<testing::ConstantFiringVsyncWaiter>(
+                         task_runners)));
+           });
+
+  engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
+                                         std::move(animator));
+  auto configuration = RunConfiguration::InferFromSettings(settings_);
+  configuration.SetEntrypoint("onDrawFrameRenderAllViews");
+  engine_context->Run(std::move(configuration));
+
+  engine_context->EngineTaskSync([](Engine& engine) {
+    engine.AddView(1, ViewportMetrics{1, 10, 10, 22, 0});
+    engine.AddView(2, ViewportMetrics{1, 10, 10, 22, 0});
+  });
+
+  native_latch.Wait();
+
+  engine_context->EngineTaskSync(
+      [](Engine& engine) { engine.ScheduleFrame(); });
+  draw_latch.Wait();
+}
+
+TEST_F(EngineAnimatorTest, AnimatorIgnoresDuplicateRenders) {
+  MockAnimatorDelegate animator_delegate;
+  std::unique_ptr<EngineContext> engine_context;
+
+  std::shared_ptr<PlatformMessageHandler> platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  EXPECT_CALL(delegate_, GetPlatformMessageHandler)
+      .WillOnce(ReturnRef(platform_message_handler));
+  fml::AutoResetWaitableEvent draw_latch;
+  EXPECT_CALL(animator_delegate, OnAnimatorDraw)
+      .WillOnce(
+          Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
+            auto status =
+                pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+                  auto tasks = Sorted(item->layer_tree_tasks);
+                  EXPECT_EQ(tasks.size(), 2u);
+                  EXPECT_EQ(tasks[0]->view_id, 1);
+                  EXPECT_EQ(tasks[1]->view_id, 2);
                 });
             EXPECT_EQ(status, PipelineConsumeResult::Done);
             draw_latch.Signal();
@@ -446,9 +523,10 @@ TEST_F(EngineAnimatorTest, AnimatorSubmitPartialViewsForWarmUp) {
           Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
             auto status =
                 pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-                  EXPECT_EQ(item->layer_tree_tasks.size(), 2u);
-                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, 2);
-                  EXPECT_EQ(item->layer_tree_tasks[1]->view_id, 1);
+                  auto tasks = Sorted(item->layer_tree_tasks);
+                  EXPECT_EQ(tasks.size(), 2u);
+                  EXPECT_EQ(tasks[0]->view_id, 1);
+                  EXPECT_EQ(tasks[1]->view_id, 2);
                 });
             EXPECT_EQ(status, PipelineConsumeResult::Done);
             draw_latch.Signal();
