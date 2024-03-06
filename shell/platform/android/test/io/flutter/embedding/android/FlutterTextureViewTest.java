@@ -15,7 +15,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(30)
+@TargetApi(API_LEVELS.API_30)
 public class FlutterTextureViewTest {
   @Test
   public void surfaceTextureListenerReleasesRenderer() {

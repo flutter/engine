@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(28)
+@TargetApi(API_LEVELS.API_28)
 public class SingleViewPresentationTest {
   @Test
   @Config(minSdk = API_LEVELS.API_21, maxSdk = API_LEVELS.API_30)

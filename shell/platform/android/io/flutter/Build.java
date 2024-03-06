@@ -6,7 +6,7 @@ package io.flutter;
 
 /** A replacement of utilities from android.os.Build. */
 public class Build {
-  /** For use in place of the Android VERSION CODES class. */
+  /** For use in place of the Android Build.VERSION_CODES class. */
   public static class API_LEVELS {
     public static final int API_21 = 21;
     public static final int API_22 = 22;

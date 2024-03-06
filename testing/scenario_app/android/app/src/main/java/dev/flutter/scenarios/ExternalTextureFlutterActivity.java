@@ -338,7 +338,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
    * Takes frames from the inner SurfaceRenderer and feeds it through an ImageReader and ImageWriter
    * pair.
    */
-  @RequiresApi(23)
+  @RequiresApi(API_LEVELS.API_23)
   private static class ImageSurfaceRenderer implements SurfaceRenderer {
     private final SurfaceRenderer inner;
     private final Rect crop;

@@ -81,7 +81,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 28)
-  @TargetApi(28)
+  @TargetApi(API_LEVELS.API_28)
   @Test
   public void itDescribesTextFieldsWithTextAndHint() {
     AccessibilityBridge accessibilityBridge = setUpBridge();
@@ -323,7 +323,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 24)
-  @TargetApi(24)
+  @TargetApi(API_LEVELS.API_24)
   @Test
   public void itSetsRootViewNotImportantForAccessibility() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -352,7 +352,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 24)
-  @TargetApi(24)
+  @TargetApi(API_LEVELS.API_24)
   @Test
   public void itSetsNodeImportantForAccessibilityIfItHasContent() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -383,7 +383,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 24)
-  @TargetApi(24)
+  @TargetApi(API_LEVELS.API_24)
   @Test
   public void itSetsNodeImportantForAccessibilityIfItHasActions() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -414,7 +414,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 24)
-  @TargetApi(24)
+  @TargetApi(API_LEVELS.API_24)
   @Test
   public void itSetsNodeUnImportantForAccessibilityIfItIsEmpty() {
     AccessibilityViewEmbedder mockViewEmbedder = mock(AccessibilityViewEmbedder.class);
@@ -456,7 +456,7 @@ public class AccessibilityBridgeTest {
   @SuppressWarnings("deprecation")
   // getSystemWindowInset* methods deprecated.
   @Config(sdk = 28)
-  @TargetApi(28)
+  @TargetApi(API_LEVELS.API_28)
   @Test
   public void itSetCutoutInsetBasedonLayoutModeNever() {
     int expectedInsetLeft = 5;
@@ -508,7 +508,7 @@ public class AccessibilityBridgeTest {
   @SuppressWarnings("deprecation")
   // getSystemWindowInset* methods deprecated.
   @Config(sdk = 28)
-  @TargetApi(28)
+  @TargetApi(API_LEVELS.API_28)
   @Test
   public void itSetCutoutInsetBasedonLayoutModeDefault() {
     int expectedInsetLeft = 5;
@@ -560,7 +560,7 @@ public class AccessibilityBridgeTest {
   @SuppressWarnings("deprecation")
   // getSystemWindowInset* methods deprecated.
   @Config(sdk = 28)
-  @TargetApi(28)
+  @TargetApi(API_LEVELS.API_28)
   @Test
   public void itSetCutoutInsetBasedonLayoutModeShortEdges() {
     int expectedInsetLeft = 5;
@@ -612,7 +612,7 @@ public class AccessibilityBridgeTest {
   // getSystemWindowInset* methods deprecated.
   // fluter#133074 tracks post deprecation work.
   @Config(sdk = 30)
-  @TargetApi(30)
+  @TargetApi(API_LEVELS.API_30)
   @Test
   public void itSetCutoutInsetBasedonLayoutModeAlways() {
     int expectedInsetLeft = 5;
@@ -1061,7 +1061,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 28)
-  @TargetApi(28)
+  @TargetApi(API_LEVELS.API_28)
   @Test
   public void itSetsTooltipCorrectly() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
@@ -1098,7 +1098,7 @@ public class AccessibilityBridgeTest {
     assertEquals(actual.toString(), root.tooltip);
   }
 
-  @TargetApi(28)
+  @TargetApi(API_LEVELS.API_28)
   @Test
   public void itSetsIdentifierCorrectly() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);
@@ -1319,7 +1319,7 @@ public class AccessibilityBridgeTest {
   }
 
   @Config(sdk = 31)
-  @TargetApi(31)
+  @TargetApi(API_LEVELS.API_31)
   @Test
   public void itSetsBoldTextFlagCorrectly() {
     AccessibilityChannel mockChannel = mock(AccessibilityChannel.class);

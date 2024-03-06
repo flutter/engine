@@ -21,7 +21,7 @@ import org.robolectric.annotation.Config;
 @RunWith(AndroidJUnit4.class)
 public class SettingsChannelTest {
   @Test
-  @TargetApi(33)
+  @TargetApi(API_LEVELS.API_33)
   @Config(sdk = 33)
   @SuppressWarnings("deprecation")
   // DartExecutor.send is deprecated.

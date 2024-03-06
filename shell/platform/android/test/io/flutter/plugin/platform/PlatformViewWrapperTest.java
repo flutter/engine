@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
-@TargetApi(31)
+@TargetApi(API_LEVELS.API_31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();

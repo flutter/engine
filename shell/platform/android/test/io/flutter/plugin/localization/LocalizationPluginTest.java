@@ -28,7 +28,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(24) // LocaleList and scriptCode are API 24+.
+@TargetApi(API_LEVELS.API_24) // LocaleList and scriptCode are API 24+.
 public class LocalizationPluginTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
 

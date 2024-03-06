@@ -232,7 +232,7 @@ class VirtualDisplayController {
   }
 
   // On Android versions 31+ resizing of a Virtual Display's Presentation is natively supported.
-  @TargetApi(31)
+  @TargetApi(API_LEVELS.API_31)
   private void resize31(
       View embeddedView, int width, int height, final Runnable onNewSizeFrameAvailable) {
     renderTarget.resize(width, height);

@@ -29,7 +29,7 @@ import org.robolectric.annotation.Config;
     minSdk = API_LEVELS.API_24,
     shadows = {})
 @RunWith(AndroidJUnit4.class)
-@TargetApi(24)
+@TargetApi(API_LEVELS.API_24)
 public class MouseCursorPluginTest {
 
   @SuppressWarnings("deprecation")

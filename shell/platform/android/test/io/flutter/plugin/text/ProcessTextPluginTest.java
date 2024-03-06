@@ -35,8 +35,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 @RunWith(AndroidJUnit4.class)
-@TargetApi(24)
-@RequiresApi(24)
+@TargetApi(API_LEVELS.API_24)
+@RequiresApi(API_LEVELS.API_24)
 public class ProcessTextPluginTest {
 
   private static void sendToBinaryMessageHandler(

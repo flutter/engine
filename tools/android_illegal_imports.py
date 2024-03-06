@@ -48,7 +48,8 @@ def main():
 
   for file in args.files:
     if (file.endswith(os.path.join('io', 'flutter', 'Log.java')) or
-        file.endswith(os.path.join('io', 'flutter', 'util', 'TraceSection.java'))):
+        file.endswith(os.path.join('io', 'flutter', 'util', 'TraceSection.java')) or
+        file.endswith(os.path.join('io', 'flutter', 'Build.java'))):
       continue
     with open(file) as f:
       contents = f.read()

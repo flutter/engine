@@ -445,7 +445,7 @@ public class AndroidTouchProcessor {
     }
   }
 
-  @TargetApi(26)
+  @TargetApi(API_LEVELS.API_26)
   private float getVerticalScrollFactorAbove26(@NonNull Context context) {
     return ViewConfiguration.get(context).getScaledVerticalScrollFactor();
   }

@@ -10,7 +10,7 @@ import android.view.Surface;
 import io.flutter.view.TextureRegistry;
 import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
 
-@TargetApi(26)
+@TargetApi(API_LEVELS.API_26)
 public class SurfaceTexturePlatformViewRenderTarget implements PlatformViewRenderTarget {
   private static final String TAG = "SurfaceTexturePlatformViewRenderTarget";
 

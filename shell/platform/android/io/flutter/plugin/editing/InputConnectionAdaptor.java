@@ -478,8 +478,8 @@ public class InputConnectionAdaptor extends BaseInputConnection
   }
 
   @Override
-  @TargetApi(25)
-  @RequiresApi(25)
+  @TargetApi(API_LEVELS.API_25)
+  @RequiresApi(API_LEVELS.API_25)
   public boolean commitContent(InputContentInfo inputContentInfo, int flags, Bundle opts) {
     // Ensure permission is granted.
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_25

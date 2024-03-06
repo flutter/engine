@@ -21,7 +21,7 @@ import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@TargetApi(31)
+@TargetApi(API_LEVELS.API_31)
 @RunWith(AndroidJUnit4.class)
 public class SurfaceTexturePlatformViewRenderTargetTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();

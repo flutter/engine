@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config;
     manifest = Config.NONE,
     shadows = {})
 @RunWith(RobolectricTestRunner.class)
-@TargetApi(24)
+@TargetApi(API_LEVELS.API_24)
 public class AccessibilityChannelTest {
   @Test
   public void repliesWhenNoAccessibilityHandler() throws JSONException {

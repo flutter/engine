@@ -24,7 +24,7 @@ import io.flutter.view.TextureRegistry.ImageTextureEntry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@TargetApi(29)
+@TargetApi(API_LEVELS.API_29)
 @RunWith(AndroidJUnit4.class)
 public class ImageReaderPlatformViewRenderTargetTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();

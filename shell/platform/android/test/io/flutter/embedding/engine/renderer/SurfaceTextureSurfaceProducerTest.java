@@ -17,7 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
-@TargetApi(26)
+@TargetApi(API_LEVELS.API_26)
 public final class SurfaceTextureSurfaceProducerTest {
   private final FlutterJNI fakeJNI = mock(FlutterJNI.class);
 

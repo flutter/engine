@@ -30,7 +30,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(28)
+@TargetApi(API_LEVELS.API_28)
 public class AndroidTouchProcessorTest {
   @Mock FlutterRenderer mockRenderer;
   AndroidTouchProcessor touchProcessor;

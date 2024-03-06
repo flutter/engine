@@ -13,7 +13,7 @@ import android.view.Surface;
 import io.flutter.Log;
 import io.flutter.view.TextureRegistry.ImageTextureEntry;
 
-@TargetApi(29)
+@TargetApi(API_LEVELS.API_29)
 public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTarget {
   private ImageTextureEntry textureEntry;
   private ImageReader reader;
@@ -50,7 +50,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
         }
       };
 
-  @TargetApi(33)
+  @TargetApi(API_LEVELS.API_33)
   protected ImageReader createImageReader33() {
     final ImageReader.Builder builder = new ImageReader.Builder(bufferWidth, bufferHeight);
     // Allow for double buffering.
@@ -69,7 +69,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
     return reader;
   }
 
-  @TargetApi(29)
+  @TargetApi(API_LEVELS.API_29)
   protected ImageReader createImageReader29() {
     final ImageReader reader =
         ImageReader.newInstance(

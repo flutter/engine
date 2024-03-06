@@ -24,7 +24,7 @@ import org.robolectric.annotation.Config;
     manifest = Config.NONE,
     shadows = {})
 @RunWith(AndroidJUnit4.class)
-@TargetApi(24)
+@TargetApi(API_LEVELS.API_24)
 public class RestorationChannelTest {
   @Test
   public void itDoesNotDoAnythingWhenRestorationDataIsSetBeforeFrameworkAsks()

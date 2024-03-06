@@ -136,8 +136,8 @@ public class ProcessTextPlugin
    * <p>When an activity does not return a value. the request is completed successfully and returns
    * null.
    */
-  @TargetApi(23)
-  @RequiresApi(23)
+  @TargetApi(API_LEVELS.API_23)
+  @RequiresApi(API_LEVELS.API_23)
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent intent) {
     // Return early if the result is not related to a request sent by this plugin.
     if (!requestsByCode.containsKey(requestCode)) {

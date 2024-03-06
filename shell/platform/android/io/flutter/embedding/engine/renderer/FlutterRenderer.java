@@ -403,7 +403,7 @@ public class FlutterRenderer implements TextureRegistry {
   // When we acquire the next image, close any ImageReaders that don't have any
   // more pending images.
   @Keep
-  @TargetApi(29)
+  @TargetApi(API_LEVELS.API_29)
   final class ImageReaderSurfaceProducer
       implements TextureRegistry.SurfaceProducer,
           TextureRegistry.ImageConsumer,
@@ -679,7 +679,7 @@ public class FlutterRenderer implements TextureRegistry {
       }
     }
 
-    @TargetApi(33)
+    @TargetApi(API_LEVELS.API_33)
     private void waitOnFence(Image image) {
       try {
         SyncFence fence = image.getFence();
@@ -772,7 +772,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
-    @TargetApi(29)
+    @TargetApi(API_LEVELS.API_29)
     public Image acquireLatestImage() {
       PerImage r = dequeueImage();
       if (r == null) {
@@ -812,7 +812,7 @@ public class FlutterRenderer implements TextureRegistry {
       }
     }
 
-    @TargetApi(33)
+    @TargetApi(API_LEVELS.API_33)
     private ImageReader createImageReader33() {
       final ImageReader.Builder builder = new ImageReader.Builder(requestedWidth, requestedHeight);
       // Allow for double buffering.
@@ -830,7 +830,7 @@ public class FlutterRenderer implements TextureRegistry {
       return reader;
     }
 
-    @TargetApi(29)
+    @TargetApi(API_LEVELS.API_29)
     private ImageReader createImageReader29() {
       final ImageReader reader =
           ImageReader.newInstance(
@@ -928,7 +928,7 @@ public class FlutterRenderer implements TextureRegistry {
       }
     }
 
-    @TargetApi(33)
+    @TargetApi(API_LEVELS.API_33)
     private void waitOnFence(Image image) {
       try {
         SyncFence fence = image.getFence();
@@ -938,7 +938,7 @@ public class FlutterRenderer implements TextureRegistry {
       }
     }
 
-    @TargetApi(29)
+    @TargetApi(API_LEVELS.API_29)
     private void maybeWaitOnFence(Image image) {
       if (image == null) {
         return;
@@ -957,7 +957,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
-    @TargetApi(29)
+    @TargetApi(API_LEVELS.API_29)
     public Image acquireLatestImage() {
       Image r;
       synchronized (this) {

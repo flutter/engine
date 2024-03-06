@@ -35,7 +35,7 @@ import org.robolectric.shadow.api.Shadow;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(24)
+@TargetApi(API_LEVELS.API_24)
 public class KeyEventChannelTest {
 
   KeyEvent keyEvent;

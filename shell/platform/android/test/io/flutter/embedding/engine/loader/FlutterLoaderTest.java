@@ -216,7 +216,7 @@ public class FlutterLoaderTest {
   }
 
   @Test
-  @TargetApi(23)
+  @TargetApi(API_LEVELS.API_23)
   @Config(sdk = 23)
   public void itReportsFpsToVsyncWaiterAndroidM() {
     FlutterJNI mockFlutterJNI = mock(FlutterJNI.class);

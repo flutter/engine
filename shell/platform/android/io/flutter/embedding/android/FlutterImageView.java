@@ -253,7 +253,7 @@ public class FlutterImageView extends View implements RenderSurface {
     }
   }
 
-  @TargetApi(29)
+  @TargetApi(API_LEVELS.API_29)
   private void updateCurrentBitmap() {
     if (android.os.Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final HardwareBuffer buffer = currentImage.getHardwareBuffer();

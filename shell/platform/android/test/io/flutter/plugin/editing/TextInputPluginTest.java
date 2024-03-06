@@ -2133,7 +2133,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
+  @TargetApi(API_LEVELS.API_30)
   @Config(sdk = 30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE.
@@ -2212,7 +2212,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
+  @TargetApi(API_LEVELS.API_30)
   @Config(sdk = 30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility
@@ -2293,7 +2293,7 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
+  @TargetApi(API_LEVELS.API_30)
   @Config(sdk = 30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE

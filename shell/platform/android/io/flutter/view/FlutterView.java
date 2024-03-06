@@ -791,8 +791,8 @@ public class FlutterView extends SurfaceView
   // -------- Start: Mouse -------
 
   @Override
-  @TargetApi(24)
-  @RequiresApi(24)
+  @TargetApi(API_LEVELS.API_24)
+  @RequiresApi(API_LEVELS.API_24)
   @NonNull
   public PointerIcon getSystemPointerIcon(int type) {
     return PointerIcon.getSystemIcon(getContext(), type);

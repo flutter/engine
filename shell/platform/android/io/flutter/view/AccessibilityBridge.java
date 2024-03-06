@@ -545,8 +545,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
-  @TargetApi(31)
-  @RequiresApi(31)
+  @TargetApi(API_LEVELS.API_31)
+  @RequiresApi(API_LEVELS.API_31)
   private void setBoldTextFlag() {
     if (rootAccessibilityView == null || rootAccessibilityView.getResources() == null) {
       return;
@@ -1923,8 +1923,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
   }
 
-  @TargetApi(28)
-  @RequiresApi(28)
+  @TargetApi(API_LEVELS.API_28)
+  @RequiresApi(API_LEVELS.API_28)
   private void setAccessibilityPaneTitle(String title) {
     rootAccessibilityView.setAccessibilityPaneTitle(title);
   }
@@ -1972,8 +1972,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    *
    * <p>The {@code layoutInDisplayCutoutMode} is added after API level 28.
    */
-  @TargetApi(28)
-  @RequiresApi(28)
+  @TargetApi(API_LEVELS.API_28)
+  @RequiresApi(API_LEVELS.API_28)
   private boolean doesLayoutInDisplayCutoutModeRequireLeftInset() {
     Context context = rootAccessibilityView.getContext();
     Activity activity = ViewUtils.getActivity(context);
