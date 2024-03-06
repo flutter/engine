@@ -121,7 +121,8 @@ TEST(FlTextureRegistrarTest, MarkTextureFrameAvailable) {
 // synchronization issues.
 // TODO(robert-ancell): Re-enable when no longer flaky
 // https://github.com/flutter/flutter/issues/138197
-TEST(FlTextureRegistrarTest, DISABLED_RegistrarRegisterTextureInMultipleThreads) {
+TEST(FlTextureRegistrarTest,
+     DISABLED_RegistrarRegisterTextureInMultipleThreads) {
   g_autoptr(FlEngine) engine = make_mock_engine();
   g_autoptr(FlTextureRegistrar) registrar = fl_texture_registrar_new(engine);
   pthread_t threads[kThreadCount];
