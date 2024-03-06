@@ -421,15 +421,14 @@ extern CFTimeInterval display_link_target;
 }
 
 + (BOOL)enabled {
-  static BOOL enabled = NO;
+  static BOOL enabled = YES;
   static BOOL didCheckInfoPlist = NO;
   if (!didCheckInfoPlist) {
     didCheckInfoPlist = YES;
     NSNumber* use_flutter_metal_layer =
         [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTUseFlutterMetalLayer"];
-    if (use_flutter_metal_layer != nil && [use_flutter_metal_layer boolValue]) {
-      enabled = YES;
-      FML_LOG(WARNING) << "Using FlutterMetalLayer. This is an experimental feature.";
+    if (use_flutter_metal_layer != nil) {
+      enabled = [use_flutter_metal_layer boolValue];
     }
   }
   return enabled;
