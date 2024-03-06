@@ -1201,6 +1201,9 @@ hooks = [
     'pattern': '.',
     'condition': 'run_fuchsia_emu',
     'action': [
+      'env',
+      'DOWNLOAD_FUCHSIA_SDK={download_fuchsia_sdk}',
+      'FUCHSIA_SDK_PATH={fuchsia_sdk_path}',
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
       'src/flutter/tools/fuchsia/test_scripts/update_product_bundles.py',
