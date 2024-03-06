@@ -566,6 +566,35 @@ void renderViewsInFrameAndOutOfFrame() {
   PlatformDispatcher.instance.scheduleFrame();
 }
 
+@pragma('vm:external-name', 'CaptureRootLayer')
+external _captureRootLayer(SceneBuilder sceneBuilder);
+
+@pragma('vm:entry-point')
+void renderTwiceForOneView() {
+  final SceneBuilder builder = SceneBuilder();
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+  final Picture picture = recorder.endRecording();
+  builder.addPicture(Offset.zero, picture);
+
+  PlatformDispatcher.instance.onBeginFrame = (_) {
+    // Tell engine the correct layer tree.
+    _captureRootLayer(builder);
+  };
+
+  PlatformDispatcher.instance.onDrawFrame = () {
+    final Scene scene = builder.build();
+    PlatformDispatcher.instance.implicitView!.render(scene);
+    scene.dispose();
+    picture.dispose();
+
+    // Render a second time. This duplicate render should be ignored.
+    renderDummyToView(PlatformDispatcher.instance.implicitView!);
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
 @pragma('vm:entry-point')
 void renderSingleViewAndCallAfterOnDrawFrame() {
   PlatformDispatcher.instance.onDrawFrame = () {

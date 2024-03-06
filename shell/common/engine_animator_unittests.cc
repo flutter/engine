@@ -7,6 +7,7 @@
 // #include <cstring>
 
 #include "flutter/common/constants.h"
+#include "flutter/lib/ui/compositing/scene_builder.h"
 #include "flutter/shell/common/shell_test.h"
 #include "flutter/testing/fixture_test.h"
 #include "gmock/gmock.h"
@@ -369,6 +370,81 @@ TEST_F(EngineAnimatorTest, IgnoresOutOfFrameRenders) {
 
   auto configuration = RunConfiguration::InferFromSettings(settings_);
   configuration.SetEntrypoint("renderViewsInFrameAndOutOfFrame");
+  engine_context->Run(std::move(configuration));
+
+  draw_latch.Wait();
+}
+
+TEST_F(EngineAnimatorTest, IgnoresDuplicateRenders) {
+  MockAnimatorDelegate animator_delegate;
+  std::unique_ptr<EngineContext> engine_context;
+
+  std::vector<std::shared_ptr<Layer>> benchmark_layers;
+  auto capture_root_layer = [&benchmark_layers](Dart_NativeArguments args) {
+    auto handle = Dart_GetNativeArgument(args, 0);
+    intptr_t peer = 0;
+    Dart_Handle result = Dart_GetNativeInstanceField(
+        handle, tonic::DartWrappable::kPeerIndex, &peer);
+    ASSERT_FALSE(Dart_IsError(result));
+    SceneBuilder* scene_builder = reinterpret_cast<SceneBuilder*>(peer);
+    ASSERT_TRUE(scene_builder);
+    std::shared_ptr<ContainerLayer> root_layer =
+        scene_builder->layer_stack()[0];
+    ASSERT_TRUE(root_layer);
+    benchmark_layers = root_layer->layers();
+  };
+
+  std::shared_ptr<PlatformMessageHandler> platform_message_handler =
+      std::make_shared<MockPlatformMessageHandler>();
+  EXPECT_CALL(delegate_, GetPlatformMessageHandler)
+      .WillOnce(ReturnRef(platform_message_handler));
+  fml::AutoResetWaitableEvent draw_latch;
+  EXPECT_CALL(animator_delegate, OnAnimatorDraw)
+      .WillOnce(Invoke([&draw_latch, &benchmark_layers](
+                           const std::shared_ptr<FramePipeline>& pipeline) {
+        auto status = pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
+          EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
+          EXPECT_EQ(item->layer_tree_tasks[0]->view_id, kFlutterImplicitViewId);
+          ContainerLayer* root_layer = reinterpret_cast<ContainerLayer*>(
+              item->layer_tree_tasks[0]->layer_tree->root_layer());
+          std::vector<std::shared_ptr<Layer>> result_layers =
+              root_layer->layers();
+          EXPECT_EQ(result_layers.size(), benchmark_layers.size());
+          EXPECT_EQ(result_layers[0], benchmark_layers[0]);
+        });
+        EXPECT_EQ(status, PipelineConsumeResult::Done);
+        draw_latch.Signal();
+      }));
+  EXPECT_CALL(animator_delegate, OnAnimatorBeginFrame)
+      .WillOnce(Invoke([&engine_context](fml::TimePoint frame_target_time,
+                                         uint64_t frame_number) {
+        engine_context->EngineTaskSync([&](Engine& engine) {
+          engine.BeginFrame(frame_target_time, frame_number);
+        });
+      }));
+
+  AddNativeCallback("CaptureRootLayer",
+                    CREATE_NATIVE_ENTRY(capture_root_layer));
+
+  std::unique_ptr<Animator> animator;
+  PostSync(task_runners_.GetUITaskRunner(),
+           [&animator, &animator_delegate, &task_runners = task_runners_] {
+             animator = std::make_unique<Animator>(
+                 animator_delegate, task_runners,
+                 static_cast<std::unique_ptr<VsyncWaiter>>(
+                     std::make_unique<testing::ConstantFiringVsyncWaiter>(
+                         task_runners)));
+           });
+
+  engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
+                                         std::move(animator));
+
+  engine_context->EngineTaskSync([](Engine& engine) {
+    engine.AddView(kFlutterImplicitViewId, ViewportMetrics{1, 10, 10, 22, 0});
+  });
+
+  auto configuration = RunConfiguration::InferFromSettings(settings_);
+  configuration.SetEntrypoint("renderTwiceForOneView");
   engine_context->Run(std::move(configuration));
 
   draw_latch.Wait();
