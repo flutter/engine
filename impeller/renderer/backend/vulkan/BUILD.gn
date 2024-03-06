@@ -8,6 +8,7 @@ import("../../../tools/impeller.gni")
 impeller_component("vulkan_unittests") {
   testonly = true
   sources = [
+    "allocator_vk_unittests.cc",
     "blit_command_vk_unittests.cc",
     "command_encoder_vk_unittests.cc",
     "command_pool_vk_unittests.cc",
@@ -115,6 +116,10 @@ impeller_component("vulkan") {
     "vk.h",
     "vma.cc",
     "vma.h",
+    "yuv_conversion_library_vk.cc",
+    "yuv_conversion_library_vk.h",
+    "yuv_conversion_vk.cc",
+    "yuv_conversion_vk.h",
   ]
 
   public_deps = [

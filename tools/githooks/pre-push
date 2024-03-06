@@ -34,7 +34,7 @@ def Main(argv):
     os.path.join(FLUTTER_DIR, 'tools', 'githooks', 'bin', 'main.dart'),
   ] + githook_args + [
     'pre-push',
-  ], cwd=SRC_ROOT)
+  ] + argv[1:], cwd=SRC_ROOT)
   return result.returncode
 
 
