@@ -6,10 +6,7 @@
 
 #include <cstring>
 
-#include "flutter/common/constants.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
-#include "flutter/shell/common/shell.h"
-#include "flutter/shell/common/shell_test.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/testing/fixture_test.h"
 #include "flutter/testing/testing.h"
