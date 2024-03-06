@@ -9,10 +9,9 @@
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/geometry/geometry.h"
-
-extern float fudge;
 
 namespace impeller {
 
@@ -126,12 +125,15 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     std::shared_ptr<TextureContents> texture_contents,
     const std::shared_ptr<ColorFilter>& color_filter) const {
+  Scalar expand_amount = GaussianBlurFilterContents::CalculateBlurRadius(
+      GaussianBlurFilterContents::ScaleSigma(sigma.sigma));
   texture_contents->SetSourceRect(
-      texture_contents->GetSourceRect().Expand(fudge, fudge));
+      texture_contents->GetSourceRect().Expand(expand_amount, expand_amount));
   auto mask = std::make_shared<SolidColorContents>();
   mask->SetColor(Color::White());
   std::optional<Rect> coverage = texture_contents->GetCoverage({});
-  texture_contents->SetDestinationRect(coverage.value().Expand(fudge, fudge));
+  texture_contents->SetDestinationRect(
+      coverage.value().Expand(expand_amount, expand_amount));
   auto descriptor = texture_contents->GetSamplerDescriptor();
   texture_contents->SetSamplerDescriptor(descriptor);
   std::shared_ptr<Geometry> geometry = Geometry::MakeRect(coverage.value());

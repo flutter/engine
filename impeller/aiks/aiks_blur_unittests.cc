@@ -17,8 +17,6 @@
 // blurs.
 ////////////////////////////////////////////////////////////////////////////////
 
-float fudge = 100;
-
 namespace impeller {
 namespace testing {
 
@@ -840,12 +838,11 @@ TEST_P(AiksTest, GaussianBlurStyleSolid) {
 }
 
 TEST_P(AiksTest, GaussianBlurStyleInnerTexture) {
+  Scalar sigma = 30;
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    static Scalar sigma = 30;
     if (AiksTest::ImGuiBegin("Controls", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::SliderFloat("Sigma", &sigma, 0, 500);
-      ImGui::SliderFloat("Fudge", &fudge, 0, 100);
       ImGui::End();
     }
     Canvas canvas;
