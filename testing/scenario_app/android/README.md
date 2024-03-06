@@ -16,33 +16,11 @@ End-to-end tests and test infrastructure for the Flutter engine on Android.
 
 ---
 
-This test suite was [originally written in 2019](https://github.com/flutter/engine/pull/10007)
-with a goal of:
-
-> \[being\] suitable for embedders to do integration testing with - it has no
-> dependencies on the flutter_tools or framework, and so will not fail/flake
-> based on variances in those downstream.
-
-Unfortunately, the Android side of the test suite was never fully operational,
-and the tests, even if failing, were accidentally be reported as passing on CI.
-In 2024, as the team got closer to shipping our new graphics backend,
-[Impeller](https://docs.flutter.dev/perf/impeller) on Android, it was clear that
-we needed a reliable test suite for the engine on Android, particularly for
-visual tests around external textures and platform views.
-
-So, this package was revived and updated to be a (more) reliable test suite for
-the engine on Android. It's by no means complete
-([contributions welcome](#contributing)), but it did successfully catch at least
-one bug that would not have been detected automatically otherwise.
-
-_Go forth and test the engine on Android!_
-
----
-
 Top topics covered in this document include (but are not limited to):
 
 - [Running the Tests](#running-the-tests)
 - [Contributing](#contributing)
+- [Project History](#project-history)
 - [Troubleshooting](#troubleshooting)
 - [Getting Help](#getting-help)
 
@@ -77,7 +55,7 @@ In the following architecture diagram:
 ### Scope of Testing
 
 The tests in this package are end-to-end tests that _specifically_ exercise the
-engine and Android-specific embedding code. They are not unit tests for the
+engine and Android-specific embedding code. They are not [unit tests][1] for the
 engine or the framework, and are not designed to test the behavior of the
 framework or specific plugins, but rather to simulate the use of a framework
 or plugins downstream of the engine.
@@ -85,9 +63,7 @@ or plugins downstream of the engine.
 In other words, we test "does the engine work on Android?" without a dependency
 on either the Flutter framework, Flutter tooling, or any specific plugins.
 
-See also:
-
-- [Unit tests for the Android embedder](../../../shell/platform/android).
+[1]: ../../../shell/platform/android
 
 ### Golden Comparisons
 
@@ -106,6 +82,10 @@ For example, in [`ExternalTextureTests_testMediaSurface`](https://flutter-engine
 />
 
 _The top picture is the Flutter app, and the bottom picture is just Android._
+
+See also:
+
+- [`tools/compare_goldens`](../../../tools/compare_goldens).
 
 ## Prerequisites
 
@@ -186,7 +166,7 @@ dart ./testing/scenario_app/bin/run_android_tests.dart
 
 By default when run locally, the test runner:
 
-- Uses the engine-wide efault graphics backend for Android.
+- Uses the engine-wide default graphics backend for Android.
 - Uses the last built Android-specific engine artifacts (i.e. `$ENGINE/src/out/android_*/`).
 - Will not diff screenshots, but does save them to a logs directory.
 
@@ -214,7 +194,7 @@ A list of options can be found by running:
 dart ./testing/scenario_app/bin/run_android_tests.dart --help
 ```
 
-Frequency used options include:
+Frequently used options include:
 
 - `--out-dir`: Which engine artifacts to use (e.g.
   `--out-dir=../out/android_debug_unopt_arm64`).
@@ -308,16 +288,14 @@ engine's test suite.
 
 A "test" in practice is a combination of roughly 3 components:
 
-1. An Android _JUnit test_ that configures and launches an Android activity.
-2. An Android _activity_, which simulates the Android side of a plugin or
+1. An Android _[JUnit test][]_ that configures and launches an Android activity.
+2. An Android _[activity][]_, which simulates the Android side of a plugin or
    platform view.
-3. A Dart _scenario_, which simulates the Flutter side of an application.
+3. A Dart _[scenario][]_, which simulates the Flutter side of an application.
 
-See also:
-
-- [`DrawSolidBlueScreenTest.java`](./app/src/androidTest/java/dev/flutter/scenariosui/DrawSolidBlueScreenTest.java), an example of a JUnit test.
-- [`ExternalTextureTests.java`](./app/src/androidTest/java/dev/flutter/scenariosui/ExternalTextureTests.java), an example of an activity.
-- [`solid_blue.dart`](../lib/src/solid_blue.dart), an example of a scenario.
+[junit test]: ./app/src/androidTest/java/dev/flutter/scenariosui/DrawSolidBlueScreenTest.java
+[activity]: ./app/src/main/java/dev/flutter/scenarios/ExternalTextureFlutterActivity.java
+[scenario]: ../lib/src/solid_blue.dart
 
 While every test suite has exactly one JUnit-instrumented class, each test can
 have many activities and scenarios, each with their own configuration, setup,
@@ -326,6 +304,29 @@ the test suite.
 
 A test might also take a screenshot. See the _Skia Gold_ links in
 [CI Configuration](#ci-configuration) for examples.
+
+### Project History
+
+This test suite was [originally written in 2019](https://github.com/flutter/engine/pull/10007)
+with a goal of:
+
+> \[being\] suitable for embedders to do integration testing with - it has no
+> dependencies on the flutter_tools or framework, and so will not fail/flake
+> based on variances in those downstream.
+
+Unfortunately, the Android side of the test suite was never fully operational,
+and the tests, even if failing, were accidentally be reported as passing on CI.
+In 2024, as the team got closer to shipping our new graphics backend,
+[Impeller](https://docs.flutter.dev/perf/impeller) on Android, it was clear that
+we needed a reliable test suite for the engine on Android, particularly for
+visual tests around external textures and platform views.
+
+So, this package was revived and updated to be a (more) reliable test suite for
+the engine on Android. It's by no means complete
+([contributions welcome](#contributing)), but it did successfully catch at least
+one bug that would not have been detected automatically otherwise.
+
+_Go forth and test the engine on Android!_
 
 ## Troubleshooting
 
