@@ -255,7 +255,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
 
   std::shared_ptr<Texture> msaa_texture;
   if (enable_msaa) {
-    context->GetResourceAllocator()->CreateTexture(msaa_desc);
+    msaa_texture = context->GetResourceAllocator()->CreateTexture(msaa_desc);
   }
   std::shared_ptr<Texture> depth_stencil_texture =
       context->GetResourceAllocator()->CreateTexture(depth_stencil_desc);
