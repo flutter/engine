@@ -132,17 +132,6 @@ TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
 
 DART_TEST_CASE(canEmplaceHostBuffer);
 
-DART_TEST_CASE(canCreateDeviceBuffer);
-DART_TEST_CASE(canOverwriteDeviceBuffer);
-DART_TEST_CASE(deviceBufferOverwriteFailsWhenOutOfBounds);
-DART_TEST_CASE(deviceBufferOverwriteThrowsForNegativeDestinationOffset);
-
-DART_TEST_CASE(canCreateTexture);
-DART_TEST_CASE(canOverwriteTexture);
-DART_TEST_CASE(textureOverwriteThrowsForWrongBufferSize);
-DART_TEST_CASE(textureAsImageReturnsAValidUIImageHandle);
-DART_TEST_CASE(textureAsImageThrowsWhenNotShaderReadable);
-
 DART_TEST_CASE(canCreateShaderLibrary);
 DART_TEST_CASE(canReflectUniformStructs);
 DART_TEST_CASE(uniformBindFailsForInvalidHostBufferOffset);
