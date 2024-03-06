@@ -554,6 +554,30 @@ void onDrawFrameRenderAllViews() {
 }
 
 @pragma('vm:entry-point')
+void renderViewsInFrameAndOutOfFrame() {
+  void renderDummyToView(FlutterView view) {
+    final SceneBuilder builder = SceneBuilder();
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+    final Picture picture = recorder.endRecording();
+    builder.addPicture(Offset.zero, picture);
+
+    final Scene scene = builder.build();
+    view.render(scene);
+
+    scene.dispose();
+    picture.dispose();
+  }
+
+  renderDummyToView(PlatformDispatcher.instance.view(id: 1)!);
+  PlatformDispatcher.instance.onDrawFrame = () {
+    renderDummyToView(PlatformDispatcher.instance.view(id: 2)!);
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
 void renderSingleViewAndCallAfterOnDrawFrame() {
   PlatformDispatcher.instance.onDrawFrame = () {
     final SceneBuilder builder = SceneBuilder();

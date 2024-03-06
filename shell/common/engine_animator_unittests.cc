@@ -319,7 +319,7 @@ TEST_F(EngineAnimatorTest, AnimatorAcceptsMultipleRenders) {
   draw_latch.Wait();
 }
 
-TEST_F(EngineAnimatorTest, AnimatorIgnoresDuplicateRenders) {
+TEST_F(EngineAnimatorTest, IgnoresOutOfFrameRenders) {
   MockAnimatorDelegate animator_delegate;
   std::unique_ptr<EngineContext> engine_context;
 
@@ -333,10 +333,10 @@ TEST_F(EngineAnimatorTest, AnimatorIgnoresDuplicateRenders) {
           Invoke([&draw_latch](const std::shared_ptr<FramePipeline>& pipeline) {
             auto status =
                 pipeline->Consume([&](std::unique_ptr<FrameItem> item) {
-                  auto tasks = Sorted(item->layer_tree_tasks);
-                  EXPECT_EQ(tasks.size(), 2u);
-                  EXPECT_EQ(tasks[0]->view_id, 1);
-                  EXPECT_EQ(tasks[1]->view_id, 2);
+                  // View 1 is rendered before the frame, and is ignored.
+                  // View 2 is rendered within the frame, and is accepted.
+                  EXPECT_EQ(item->layer_tree_tasks.size(), 1u);
+                  EXPECT_EQ(item->layer_tree_tasks[0]->view_id, 2);
                 });
             EXPECT_EQ(status, PipelineConsumeResult::Done);
             draw_latch.Signal();
@@ -348,9 +348,6 @@ TEST_F(EngineAnimatorTest, AnimatorIgnoresDuplicateRenders) {
           engine.BeginFrame(frame_target_time, frame_number);
         });
       }));
-
-  native_latch.Reset();
-  AddNativeCallback("NotifyNative", [](auto args) { native_latch.Signal(); });
 
   std::unique_ptr<Animator> animator;
   PostSync(task_runners_.GetUITaskRunner(),
@@ -364,19 +361,16 @@ TEST_F(EngineAnimatorTest, AnimatorIgnoresDuplicateRenders) {
 
   engine_context = EngineContext::Create(delegate_, settings_, task_runners_,
                                          std::move(animator));
-  auto configuration = RunConfiguration::InferFromSettings(settings_);
-  configuration.SetEntrypoint("onDrawFrameRenderAllViews");
-  engine_context->Run(std::move(configuration));
 
   engine_context->EngineTaskSync([](Engine& engine) {
     engine.AddView(1, ViewportMetrics{1, 10, 10, 22, 0});
     engine.AddView(2, ViewportMetrics{1, 10, 10, 22, 0});
   });
 
-  native_latch.Wait();
+  auto configuration = RunConfiguration::InferFromSettings(settings_);
+  configuration.SetEntrypoint("renderViewsInFrameAndOutOfFrame");
+  engine_context->Run(std::move(configuration));
 
-  engine_context->EngineTaskSync(
-      [](Engine& engine) { engine.ScheduleFrame(); });
   draw_latch.Wait();
 }
 
