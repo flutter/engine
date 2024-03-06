@@ -202,7 +202,7 @@
                         "--type",
                         "impeller-golden"
                     ],
-                    "run_if": "main"
+                    "test_if": "main"
                 }
             ]
         },
