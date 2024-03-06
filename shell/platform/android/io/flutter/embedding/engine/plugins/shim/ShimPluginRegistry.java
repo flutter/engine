@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ *
+ * TODO: were the changes here right, should this be deleted, what does it do, etc
+ *
  * A {@link PluginRegistry} that is shimmed to let old plugins use the new Android embedding and
  * plugin API behind the scenes.
  *
@@ -46,30 +49,6 @@ public class ShimPluginRegistry implements PluginRegistry {
     this.flutterEngine = flutterEngine;
     this.shimRegistrarAggregate = new ShimRegistrarAggregate();
     this.flutterEngine.getPlugins().add(shimRegistrarAggregate);
-  }
-
-  @Override
-  @NonNull
-  public Registrar registrarFor(@NonNull String pluginKey) {
-    Log.v(TAG, "Creating plugin Registrar for '" + pluginKey + "'");
-    if (pluginMap.containsKey(pluginKey)) {
-      throw new IllegalStateException("Plugin key " + pluginKey + " is already in use");
-    }
-    pluginMap.put(pluginKey, null);
-    ShimRegistrar registrar = new ShimRegistrar(pluginKey, pluginMap);
-    shimRegistrarAggregate.addPlugin(registrar);
-    return registrar;
-  }
-
-  @Override
-  public boolean hasPlugin(@NonNull String pluginKey) {
-    return pluginMap.containsKey(pluginKey);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public <T> T valuePublishedByPlugin(@NonNull String pluginKey) {
-    return (T) pluginMap.get(pluginKey);
   }
 
   /**

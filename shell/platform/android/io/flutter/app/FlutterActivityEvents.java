@@ -14,10 +14,6 @@ import io.flutter.plugin.common.PluginRegistry.RequestPermissionsResultListener;
  * A collection of Android {@code Activity} methods that are relevant to the core operation of
  * Flutter applications.
  *
- * <p>Application authors that use an activity other than {@link FlutterActivity} should forward all
- * events herein from their activity to an instance of {@link FlutterActivityDelegate} in order to
- * wire the activity up to the Flutter framework. This forwarding is already provided in {@code
- * FlutterActivity}.
  */
 public interface FlutterActivityEvents
     extends ComponentCallbacks2, ActivityResultListener, RequestPermissionsResultListener {
