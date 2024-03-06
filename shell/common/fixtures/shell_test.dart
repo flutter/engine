@@ -532,22 +532,26 @@ void testReportViewWidths() {
   };
 }
 
+void renderDummyToView(FlutterView view) {
+  final SceneBuilder builder = SceneBuilder();
+  final PictureRecorder recorder = PictureRecorder();
+  final Canvas canvas = Canvas(recorder);
+  canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
+  final Picture picture = recorder.endRecording();
+  builder.addPicture(Offset.zero, picture);
+
+  final Scene scene = builder.build();
+  view.render(scene);
+
+  scene.dispose();
+  picture.dispose();
+}
+
 @pragma('vm:entry-point')
 void onDrawFrameRenderAllViews() {
   PlatformDispatcher.instance.onDrawFrame = () {
     for (final FlutterView view in PlatformDispatcher.instance.views) {
-      final SceneBuilder builder = SceneBuilder();
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder);
-      canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
-      final Picture picture = recorder.endRecording();
-      builder.addPicture(Offset.zero, picture);
-
-      final Scene scene = builder.build();
-      view.render(scene);
-
-      scene.dispose();
-      picture.dispose();
+      renderDummyToView(view);
     }
   };
   notifyNative();
@@ -555,21 +559,6 @@ void onDrawFrameRenderAllViews() {
 
 @pragma('vm:entry-point')
 void renderViewsInFrameAndOutOfFrame() {
-  void renderDummyToView(FlutterView view) {
-    final SceneBuilder builder = SceneBuilder();
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder);
-    canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
-    final Picture picture = recorder.endRecording();
-    builder.addPicture(Offset.zero, picture);
-
-    final Scene scene = builder.build();
-    view.render(scene);
-
-    scene.dispose();
-    picture.dispose();
-  }
-
   renderDummyToView(PlatformDispatcher.instance.view(id: 1)!);
   PlatformDispatcher.instance.onDrawFrame = () {
     renderDummyToView(PlatformDispatcher.instance.view(id: 2)!);
@@ -589,6 +578,8 @@ void renderSingleViewAndCallAfterOnDrawFrame() {
 
     final Scene scene = builder.build();
     PlatformDispatcher.instance.implicitView!.render(scene);
+    // Notify the engine after the render before the disposal.
+    // The view should have been submitted for rasterization at this moment.
     notifyNative();
 
     scene.dispose();
@@ -608,19 +599,7 @@ void renderWarmUpImplicitView() {
     },
     drawFrame: () {
       expect(beginFrameCalled, true);
-
-      final SceneBuilder builder = SceneBuilder();
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder);
-      canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
-      final Picture picture = recorder.endRecording();
-      builder.addPicture(Offset.zero, picture);
-
-      final Scene scene = builder.build();
-      PlatformDispatcher.instance.implicitView!.render(scene);
-
-      scene.dispose();
-      picture.dispose();
+      renderDummyToView(PlatformDispatcher.instance.implicitView!);
     },
   );
 }
@@ -638,20 +617,7 @@ void renderWarmUpView1and2() {
       expect(beginFrameCalled, true);
 
       for (final int viewId in <int>[1, 2]) {
-        final FlutterView view = PlatformDispatcher.instance.view(id: viewId)!;
-
-        final SceneBuilder builder = SceneBuilder();
-        final PictureRecorder recorder = PictureRecorder();
-        final Canvas canvas = Canvas(recorder);
-        canvas.drawPaint(Paint()..color = const Color(0xFFABCDEF));
-        final Picture picture = recorder.endRecording();
-        builder.addPicture(Offset.zero, picture);
-
-        final Scene scene = builder.build();
-        view.render(scene);
-
-        scene.dispose();
-        picture.dispose();
+        renderDummyToView(PlatformDispatcher.instance.view(id: viewId)!);
       }
     }
   );

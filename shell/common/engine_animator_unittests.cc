@@ -374,7 +374,7 @@ TEST_F(EngineAnimatorTest, IgnoresOutOfFrameRenders) {
   draw_latch.Wait();
 }
 
-TEST_F(EngineAnimatorTest, AnimatorSubmitsSingleViewBeforeDrawFrameEnds) {
+TEST_F(EngineAnimatorTest, AnimatorSubmitsImplicitViewBeforeDrawFrameEnds) {
   MockAnimatorDelegate animator_delegate;
   std::unique_ptr<EngineContext> engine_context;
 
