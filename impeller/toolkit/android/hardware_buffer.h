@@ -52,9 +52,7 @@ struct HardwareBufferDescriptor {
 ///
 ///             This wrapper creates and owns a handle to a managed hardware
 ///             buffer. That is, there is no ability to take a reference to an
-///             externally created hardware buffer. Partially because the
-///             ability to hold a strong reference to a hardware doesn't exist
-///             in Android API level 29.
+///             externally created hardware buffer.
 ///
 ///             This wrapper is only available on Android API 29 and above.
 ///
