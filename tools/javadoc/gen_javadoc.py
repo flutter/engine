@@ -70,7 +70,6 @@ def main():
       'io.flutter.embedding.engine.plugins.contentprovider',
       'io.flutter.embedding.engine.plugins.lifecycle',
       'io.flutter.embedding.engine.plugins.service',
-      'io.flutter.embedding.engine.plugins.shim',
       'io.flutter.embedding.engine.renderer',
       'io.flutter.embedding.engine.systemchannels',
       'io.flutter.plugin.common',
