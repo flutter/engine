@@ -1087,6 +1087,37 @@ void testMain() {
         _platformView,
         _overlay,
       ]);
+
+      // Scene 3: Paints a full-screen picture between each platform view. This
+      // is the worst case scenario. There should be an overlay between each
+      // platform view.
+      final LayerSceneBuilder sb3 = LayerSceneBuilder();
+      sb3.pushOffset(0, 0);
+      sb3.addPicture(
+          ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
+      sb3.addPlatformView(0,
+          offset: const ui.Offset(10, 10), width: 50, height: 50);
+      sb3.addPicture(
+          ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
+      sb3.addPlatformView(1,
+          offset: const ui.Offset(70, 10), width: 50, height: 50);
+      sb3.addPicture(
+          ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
+      sb3.addPlatformView(2,
+          offset: const ui.Offset(130, 10), width: 50, height: 50);
+      sb3.addPicture(
+          ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
+      final LayerScene scene3 = sb3.build();
+      await renderScene(scene3);
+      _expectSceneMatches(<_EmbeddedViewMarker>[
+        _overlay,
+        _platformView,
+        _overlay,
+        _platformView,
+        _overlay,
+        _platformView,
+        _overlay,
+      ]);
     });
   });
 }
