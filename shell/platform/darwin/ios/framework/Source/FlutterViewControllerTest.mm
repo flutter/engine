@@ -1365,6 +1365,20 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) != 0);
 }
 
+- (void)testAccessibilityPerformEscapePopsRoute {
+  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
+  id mockNavigationChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  OCMStub([mockEngine navigationChannel]).andReturn(mockNavigationChannel);
+
+  FlutterViewController* viewController =
+      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
+  [viewController accessibilityPerformEscape];
+
+  OCMVerify([mockNavigationChannel invokeMethod:@"popRoute" arguments:nil]);
+
+  [mockNavigationChannel stopMocking];
+}
+
 - (void)testPerformOrientationUpdateForcesOrientationChange {
   [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortrait
                           currentOrientation:UIInterfaceOrientationLandscapeLeft
