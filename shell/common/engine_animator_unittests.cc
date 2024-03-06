@@ -649,3 +649,5 @@ TEST_F(EngineAnimatorTest, AnimatorSubmitPartialViewsForWarmUp) {
 }
 
 }  // namespace flutter
+
+// NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
