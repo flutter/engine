@@ -36,7 +36,7 @@ class AHBSurfaceVK final : public Surface,
   std::weak_ptr<AHBSwapchainVK> weak_swapchain_;
   std::shared_ptr<AHBTextureSourceVK> swapchain_image_;
 
-  AHBSurfaceVK(RenderTarget render_target,
+  AHBSurfaceVK(const RenderTarget& render_target,
                std::weak_ptr<AHBSwapchainVK> weak_swapchain,
                std::shared_ptr<AHBTextureSourceVK> texture);
 };

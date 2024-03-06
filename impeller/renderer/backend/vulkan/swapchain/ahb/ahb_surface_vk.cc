@@ -42,10 +42,10 @@ std::shared_ptr<AHBSurfaceVK> AHBSurfaceVK::WrapSwapchainImage(
   color0.store_action = StoreAction::kMultisampleResolve;
 
   RenderTarget render_target;
-  render_target.SetColorAttachment(std::move(color0), 0u);
+  render_target.SetColorAttachment(color0, 0u);
 
   auto surface = std::shared_ptr<AHBSurfaceVK>(new AHBSurfaceVK(
-      std::move(render_target),   //
+      render_target,              //
       std::move(weak_swapchain),  //
       std::move(swapchain_image)  //
       ));
@@ -56,10 +56,10 @@ std::shared_ptr<AHBSurfaceVK> AHBSurfaceVK::WrapSwapchainImage(
   return surface;
 }
 
-AHBSurfaceVK::AHBSurfaceVK(RenderTarget render_target,
+AHBSurfaceVK::AHBSurfaceVK(const RenderTarget& render_target,
                            std::weak_ptr<AHBSwapchainVK> weak_swapchain,
                            std::shared_ptr<AHBTextureSourceVK> swapchain_image)
-    : Surface(std::move(render_target)),
+    : Surface(render_target),
       weak_swapchain_(std::move(weak_swapchain)),
       swapchain_image_(std::move(swapchain_image)) {}
 

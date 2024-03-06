@@ -76,11 +76,11 @@ class AHBSwapchainVK final
                  size_t max_drawable_count);
 
   void OnSurfaceDidCompleteBeingUsedByCompositor(
-      std::shared_ptr<AHBSurfaceVK> surface);
+      const std::shared_ptr<AHBSurfaceVK>& surface);
 
   std::shared_ptr<AHBSurfaceVK> CreateNewSurface() IPLR_REQUIRES(mutex_);
 
-  void PushRecyclable(std::shared_ptr<AHBSurfaceVK> surface)
+  void PushRecyclable(const std::shared_ptr<AHBSurfaceVK>& surface)
       IPLR_REQUIRES(mutex_);
 
   std::shared_ptr<AHBSurfaceVK> PopRecyclable() IPLR_REQUIRES(mutex_);

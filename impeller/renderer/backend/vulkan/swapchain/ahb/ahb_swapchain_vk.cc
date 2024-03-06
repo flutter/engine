@@ -100,7 +100,7 @@ void AHBSwapchainVK::UpdateSurfaceSize(const ISize& size) {
     return;
   }
 
-  desc_ = std::move(new_desc);
+  desc_ = new_desc;
 }
 
 std::shared_ptr<AHBSurfaceVK> AHBSwapchainVK::CreateNewSurface() {
@@ -121,8 +121,8 @@ std::shared_ptr<AHBSurfaceVK> AHBSwapchainVK::CreateNewSurface() {
     VALIDATION_LOG << "Could not wrap hardware buffer into a texture.";
     return nullptr;
   }
-  auto surface = AHBSurfaceVK::WrapSwapchainImage(
-      std::move(context), weak_from_this(), std::move(texture));
+  auto surface = AHBSurfaceVK::WrapSwapchainImage(context, weak_from_this(),
+                                                  std::move(texture));
   if (!surface->IsValid()) {
     VALIDATION_LOG << "Could not create surface with wrapped texture.";
     return nullptr;
@@ -190,7 +190,7 @@ bool AHBSwapchainVK::PresentSurface(
         if (!thiz) {
           return;
         }
-        thiz->OnSurfaceDidCompleteBeingUsedByCompositor(std::move(surface));
+        thiz->OnSurfaceDidCompleteBeingUsedByCompositor(surface);
       })) {
     VALIDATION_LOG << "Could not apply surface transaction.";
     return false;
@@ -203,15 +203,16 @@ bool AHBSwapchainVK::PresentSurface(
 }
 
 void AHBSwapchainVK::OnSurfaceDidCompleteBeingUsedByCompositor(
-    std::shared_ptr<AHBSurfaceVK> surface) {
+    const std::shared_ptr<AHBSurfaceVK>& surface) {
   {
     Lock lock(mutex_);
-    PushRecyclable(std::move(surface));
+    PushRecyclable(surface);
   }
   drawable_count_sema_.Signal();
 }
 
-void AHBSwapchainVK::PushRecyclable(std::shared_ptr<AHBSurfaceVK> surface) {
+void AHBSwapchainVK::PushRecyclable(
+    const std::shared_ptr<AHBSurfaceVK>& surface) {
   // recyclable_.push_back(Recyclable{std::move(surface)});
   // FML_LOG(IMPORTANT) << "There are " << recyclable_.size() << "
   // recyclables.";

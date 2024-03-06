@@ -60,7 +60,7 @@ struct HardwareBufferDescriptor {
 ///
 class HardwareBuffer {
  public:
-  HardwareBuffer(HardwareBufferDescriptor descriptor);
+  explicit HardwareBuffer(HardwareBufferDescriptor descriptor);
 
   ~HardwareBuffer();
 

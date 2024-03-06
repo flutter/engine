@@ -19,7 +19,7 @@ namespace impeller::android {
 ///
 class NativeWindow {
  public:
-  NativeWindow(ANativeWindow* window);
+  explicit NativeWindow(ANativeWindow* window);
 
   ~NativeWindow();
 

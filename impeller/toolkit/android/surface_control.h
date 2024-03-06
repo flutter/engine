@@ -31,7 +31,8 @@ class SurfaceControl {
   ///                         other control properties. If no debug name is
   ///                         specified, the value "Impeller Layer" is used.
   ///
-  SurfaceControl(ANativeWindow* window, const char* debug_name = nullptr);
+  explicit SurfaceControl(ANativeWindow* window,
+                          const char* debug_name = nullptr);
 
   ~SurfaceControl();
 

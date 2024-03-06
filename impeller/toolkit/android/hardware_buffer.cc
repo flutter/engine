@@ -45,7 +45,7 @@ bool HardwareBufferDescriptor::IsAllocatable() const {
 }
 
 HardwareBuffer::HardwareBuffer(HardwareBufferDescriptor descriptor)
-    : descriptor_(std::move(descriptor)),
+    : descriptor_(descriptor),
       android_descriptor_(ToAHardwareBufferDesc(descriptor_)) {
   if (!descriptor_.IsAllocatable()) {
     VALIDATION_LOG << "The hardware buffer descriptor is not allocatable.";
