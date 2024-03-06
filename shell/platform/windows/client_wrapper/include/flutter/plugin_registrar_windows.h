@@ -32,8 +32,11 @@ class PluginRegistrarWindows : public PluginRegistrar {
   explicit PluginRegistrarWindows(
       FlutterDesktopPluginRegistrarRef core_registrar)
       : PluginRegistrar(core_registrar) {
-    implicit_view_ = std::make_unique<FlutterView>(
-        FlutterDesktopPluginRegistrarGetView(core_registrar));
+    FlutterDesktopViewRef implicit_view =
+        FlutterDesktopPluginRegistrarGetView(core_registrar);
+    if (implicit_view) {
+      implicit_view_ = std::make_unique<FlutterView>(implicit_view);
+    }
   }
 
   virtual ~PluginRegistrarWindows() {
@@ -60,8 +63,13 @@ class PluginRegistrarWindows : public PluginRegistrar {
   // Destroying the shared pointer destroys the reference to the view; it does
   // not destroy the underlying view.
   std::shared_ptr<FlutterView> GetViewById(FlutterViewId view_id) const {
-    return std::make_shared<FlutterView>(
-        FlutterDesktopPluginRegistrarGetViewById(registrar(), view_id));
+    FlutterDesktopViewRef view =
+        FlutterDesktopPluginRegistrarGetViewById(registrar(), view_id);
+    if (!view) {
+      return nullptr;
+    }
+
+    return std::make_shared<FlutterView>(view);
   }
 
   // Registers |delegate| to receive WindowProc callbacks for the top-level
