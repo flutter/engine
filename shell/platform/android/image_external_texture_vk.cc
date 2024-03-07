@@ -57,6 +57,10 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   auto texture_source =
       std::make_shared<impeller::AndroidHardwareBufferTextureSourceVK>(
           impeller_context_, latest_hardware_buffer, hb_desc);
+  if (!texture_source->IsValid()) {
+    CloseHardwareBuffer(hardware_buffer);
+    return;
+  }
 
   auto texture =
       std::make_shared<impeller::TextureVK>(impeller_context_, texture_source);
