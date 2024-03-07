@@ -524,8 +524,8 @@ if (enable_unittests) {
              "tests/fakes",
              ":flutter_runner_fixtures",
              ":flutter_runner_sources",
-             "//build/fuchsia/pkg:async-testing",
-             "//build/fuchsia/pkg:sys_cpp_testing",
+             "${fuchsia_sdk}/pkg/async-testing",
+             "${fuchsia_sdk}/pkg/sys_cpp_testing",
              "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
              "//flutter/testing",
            ] + flutter_deps
