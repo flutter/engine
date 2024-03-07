@@ -823,6 +823,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
 
       if constexpr (ContentContext::kEnableStencilThenCover) {
         // Skip all clip restores when stencil-then-cover is enabled.
+        clip_replay_->RecordEntity(element_entity, clip_coverage.type);
         return true;
       }
 
