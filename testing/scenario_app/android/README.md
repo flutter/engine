@@ -73,9 +73,9 @@ or [platform views](https://docs.flutter.dev/platform-integration/android/platfo
 and as such, the tests in this package use golden screenshot file comparisons to
 verify the correctness of the engine's output.
 
-For example, in [`ExternalTextureTests_testMediaSurface`](https://flutter-engine-gold.skia.org/search?corpus=flutter-engine&include_ignored=false&left_filter=name%3DExternalTextureTests_testMediaSurface&max_rgba=0&min_rgba=0&negative=true&not_at_head=false&positive=true&reference_image_required=false&right_filter=&sort=descending&untriaged=true), a [video](app/src/main/assets/sample.mp4) is converted to an external texture and displayed in a Flutter app. The test takes a screenshot of the app and compares it to a golden file:
+For example, in [`ExternalTextureTests_testMediaSurface2`](https://flutter-engine-gold.skia.org/search?corpus=flutter-engine&include_ignored=false&left_filter=name%3DExternalTextureTests_testMediaSurface2&max_rgba=0&min_rgba=0&negative=true&not_at_head=false&positive=true&reference_image_required=false&right_filter=&sort=descending&untriaged=true), a [video](app/src/main/assets/sample.mp4) is converted to an external texture and displayed in a Flutter app. The test takes a screenshot of the app and compares it to a golden file:
 
-<img 
+<img
   alt="Two pictures, the top one Flutter and the bottom Android"
   src="https://github.com/flutter/flutter/assets/168174/e2c34b88-d03d-4732-87e4-a86c97d006c5"
   width="300"
