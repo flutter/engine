@@ -29,12 +29,12 @@ source_set("zircon") {
   ]
 
   deps = [
-    "$fuchsia_sdk/fidl:fuchsia.io",
-    "$fuchsia_sdk/pkg:async-cpp",
-    "$fuchsia_sdk/pkg:async-default",
-    "$fuchsia_sdk/pkg:async-loop-cpp",
-    "$fuchsia_sdk/pkg:fdio",
-    "$fuchsia_sdk/pkg:zx",
+    "${fuchsia_sdk}/fidl/fuchsia.io",
+    "${fuchsia_sdk}/pkg/async-cpp",
+    "${fuchsia_sdk}/pkg/async-default",
+    "${fuchsia_sdk}/pkg/async-loop-cpp",
+    "${fuchsia_sdk}/pkg/fdio",
+    "${fuchsia_sdk}/pkg/zx",
     "//flutter/fml",
     "//flutter/third_party/tonic",
   ]

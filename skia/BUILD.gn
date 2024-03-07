@@ -460,7 +460,7 @@ optional("gpu") {
     sources += skia_gpu_vk_private
     if (is_fuchsia) {
       if (using_fuchsia_sdk) {
-        public_deps += [ "$fuchsia_sdk/pkg:vulkan" ]
+        public_deps += [ "${fuchsia_sdk}/pkg/vulkan" ]
       } else {
         public_deps += [ "$_skia_root/src/graphics/lib/vulkan" ]
       }

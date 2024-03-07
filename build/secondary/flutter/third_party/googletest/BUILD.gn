@@ -34,8 +34,8 @@ static_library("gtest") {
   if (is_fuchsia) {
     if (using_fuchsia_sdk) {
       deps = [
-        "$fuchsia_sdk/pkg:fdio",
-        "$fuchsia_sdk/pkg:zx",
+        "${fuchsia_sdk}/pkg/fdio",
+        "${fuchsia_sdk}/pkg/zx",
       ]
     } else {
       deps = [
