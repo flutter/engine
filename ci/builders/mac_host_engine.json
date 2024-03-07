@@ -189,10 +189,6 @@
                         "--variant",
                         "host_release",
                         "--type",
-<<<<<<< HEAD
-                        "dart,dart-host,engine,impeller-golden"
-                    ]
-=======
                         "dart,dart-host,engine"
                     ]
                 },
@@ -207,7 +203,6 @@
                         "impeller-golden"
                     ],
                     "test_if": "main"
->>>>>>> 9e8ccaa384 (Skip impeller goldens on release (#51240))
                 }
             ]
         },
