@@ -1682,6 +1682,12 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
+  /// Specifies the view that the render target belongs to.
+  ///
+  /// If `FlutterCompositor.present_view_callback` is used to present this
+  /// backing store, then this ID must match the one in
+  /// `FlutterPresentViewInfo`.
+  FlutterViewId view_id;
 } FlutterBackingStoreConfig;
 
 typedef enum {
@@ -1752,12 +1758,31 @@ typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              void* user_data);
 
 typedef struct {
+  /// This size of this struct. Must be sizeof(FlutterPresentViewInfo).
+  size_t struct_size;
+
+  /// The |FlutterCompositor.user_data|.
+  void* user_data;
+
+  /// The identifier of the view to present to.
+  int64_t view_id;
+
+  /// The layers that should be composited onto the view.
+  const FlutterLayer** layers;
+
+  /// The number of layers to be composited.
+  size_t layers_count;
+} FlutterPresentViewInfo;
+
+typedef bool (*FlutterViewPresentCallback)(FlutterPresentViewInfo* info);
+
+typedef struct {
   /// This size of this struct. Must be sizeof(FlutterCompositor).
   size_t struct_size;
-  /// A baton that in not interpreted by the engine in any way. If it passed
+  /// A baton that in not interpreted by the engine in any way. It is passed
   /// back to the embedder in `FlutterCompositor.create_backing_store_callback`,
-  /// `FlutterCompositor.collect_backing_store_callback` and
-  /// `FlutterCompositor.present_layers_callback`
+  /// `FlutterCompositor.collect_backing_store_callback`,
+  /// `FlutterCompositor.present_layers_callback`.
   void* user_data;
   /// A callback invoked by the engine to obtain a backing store for a specific
   /// `FlutterLayer`.
@@ -1772,10 +1797,124 @@ typedef struct {
   FlutterBackingStoreCollectCallback collect_backing_store_callback;
   /// Callback invoked by the engine to composite the contents of each layer
   /// onto the screen.
+  ///
+  /// One and only one of `present_layers_callback` and `present_view_callback`
+  /// may be provided. Providing both or neither is an error and engine
+  /// initialization will terminate.
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
+  /// Callback invoked by the engine to composite the contents of each layer
+  /// of a view and present it to the view.
+  ///
+  /// The argument |FlutterLayersPresentInfo| will be deallocated once the
+  /// callback returns.
+  ///
+  /// One and only one of `present_layers_callback` and `present_view_callback`
+  /// may be provided. Providing both or neither is an error and engine
+  /// initialization will terminate.
+  FlutterViewPresentCallback present_view_callback;
 } FlutterCompositor;
+
+/// The parameter of |FlutterAddViewCallback|.
+typedef struct {
+  /// The size of this struct.
+  /// Must be sizeof(FlutterAddViewResult).
+  size_t struct_size;
+
+  /// The |FlutterAddViewInfo.user_data|.
+  void* user_data;
+
+  /// True if the view was legal to add and is available now.
+  bool success;
+} FlutterAddViewResult;
+
+/// The signature for |FlutterAddViewInfo.callback|.
+typedef void (*FlutterAddViewCallback)(const FlutterAddViewResult* result);
+
+/// The parameter of |FlutterEngineAddView|.
+typedef struct {
+  /// The size of this struct.
+  /// Must be sizeof(FlutterEngineAddViewInfo).
+  size_t struct_size;
+
+  /// A baton that is not interpreted by the engine in any way. It will be
+  /// given back to the embedder in |callback|. Embedder resources may
+  /// be associated with this baton.
+  void* user_data;
+
+  /// The identifier for the view to add. This must be unique.
+  FlutterViewId view_id;
+
+  /// The view's metrics.
+  ///
+  /// This field is required.
+  ///
+  /// If this field is provided, then field's |view_id| must match
+  /// FlutterAddViewInfo's |view_id|.
+  ///
+  /// If this field is absent, then the view is initialized as a zero size,
+  /// meaning it will not be rendered to until a
+  /// |FlutterEngineSendWindowMetricsEvent| provides a non-zero size.
+  FlutterWindowMetricsEvent* view_metrics;
+
+  /// Called once the engine has attempted to add the view.
+  ///
+  /// This field is required.
+  ///
+  /// The embedder/app must not use the view until the callback is invoked with
+  /// a successful status.
+  ///
+  /// This callback is invoked on an internal engine managed thread. Embedders
+  /// must re-thread if necessary.
+  FlutterAddViewCallback callback;
+} FlutterAddViewInfo;
+
+/// The parameter of |FlutterAddViewCallback|.
+typedef struct {
+  /// The size of this struct.
+  /// Must be sizeof(FlutterRemoveViewResult).
+  size_t struct_size;
+
+  /// The |FlutterRemoveViewInfo.user_data|.
+  void* user_data;
+
+  /// True if the view was legal to remove and is no longer available.
+  bool success;
+} FlutterRemoveViewResult;
+
+/// The signature for |FlutterRemoveViewInfo.callback|.
+typedef void (*FlutterRemoveViewCallback)(
+    const FlutterRemoveViewResult* result);
+
+/// The parameter of |FlutterEngineRemoveView|.
+typedef struct {
+  /// The size of this struct.
+  /// Must be sizeof(FlutterEngineRemoveViewInfo).
+  size_t struct_size;
+
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in |callback|. Embedder resources may be associated
+  /// with this baton.
+  void* user_data;
+
+  /// The identifier for the view to remove.
+  FlutterViewId view_id;
+
+  /// Called once the engine has attempted to remove the view.
+  ///
+  /// This callback is required.
+  ///
+  /// The embedder must not destroy the underlying surface until the callback is
+  /// invoked with a successful status.
+  ///
+  /// This callback is invoked on an internal engine managed thread. Embedders
+  /// must re-thread if necessary.
+  ///
+  /// The |FlutterRemoveViewResult| argument will be deallocated once the
+  /// callback returns.
+  FlutterRemoveViewCallback callback;
+} FlutterRemoveViewInfo;
 
 typedef struct {
   /// This size of this struct. Must be sizeof(FlutterLocale).
@@ -2415,6 +2554,16 @@ FlutterEngineResult FlutterEngineRunInitialized(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         FlutterAddViewInfo* config);
+
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            int64_t view_id);
+
+FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
@@ -2988,6 +3137,12 @@ typedef FlutterEngineResult (*FlutterEngineDeinitializeFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef FlutterEngineResult (*FlutterEngineRunInitializedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef FlutterEngineResult (*FlutterEngineAddViewFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterAddViewInfo* config);
+typedef FlutterEngineResult (*FlutterEngineRemoveViewFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    FlutterRemoveViewInfo* config);
 typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* event);
@@ -3097,6 +3252,8 @@ typedef struct {
   FlutterEngineInitializeFnPtr Initialize;
   FlutterEngineDeinitializeFnPtr Deinitialize;
   FlutterEngineRunInitializedFnPtr RunInitialized;
+  FlutterEngineAddViewFnPtr AddView;
+  FlutterEngineRemoveViewFnPtr RemoveView;
   FlutterEngineSendWindowMetricsEventFnPtr SendWindowMetricsEvent;
   FlutterEngineSendPointerEventFnPtr SendPointerEvent;
   FlutterEngineSendKeyEventFnPtr SendKeyEvent;

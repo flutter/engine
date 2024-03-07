@@ -133,24 +133,32 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
 
 bool RuntimeController::AddView(int64_t view_id,
                                 const ViewportMetrics& view_metrics) {
-  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id, view_metrics);
-
-    return true;
+  bool insertion_happened = platform_data_.viewport_metrics_for_views
+                                .try_emplace(view_id, view_metrics)
+                                .second;
+  if (!insertion_happened) {
+    return false;
   }
 
-  return false;
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->AddView(view_id, view_metrics);
+  }
+
+  return true;
 }
 
 bool RuntimeController::RemoveView(int64_t view_id) {
-  platform_data_.viewport_metrics_for_views.erase(view_id);
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->RemoveView(view_id);
-    return true;
+  size_t erased_count =
+      platform_data_.viewport_metrics_for_views.erase(view_id);
+  if (erased_count == 0) {
+    return false;
   }
 
-  return false;
+  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
+    platform_configuration->RemoveView(view_id);
+  }
+
+  return true;
 }
 
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
@@ -340,21 +348,21 @@ void RuntimeController::ScheduleFrame() {
   client_.ScheduleFrame();
 }
 
-// |PlatformConfigurationClient|
 void RuntimeController::EndWarmUpFrame() {
   client_.EndWarmUpFrame();
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(Scene* scene, double width, double height) {
-  // TODO(dkwingsmt): Currently only supports a single window.
-  int64_t view_id = kFlutterImplicitViewId;
+void RuntimeController::Render(int64_t view_id,
+                               Scene* scene,
+                               double width,
+                               double height) {
   const ViewportMetrics* view_metrics =
       UIDartState::Current()->platform_configuration()->GetMetrics(view_id);
   if (view_metrics == nullptr) {
     return;
   }
-  client_.Render(scene->takeLayerTree(width, height),
+  client_.Render(view_id, scene->takeLayerTree(width, height),
                  view_metrics->device_pixel_ratio);
 }
 
