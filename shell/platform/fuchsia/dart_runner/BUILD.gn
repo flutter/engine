@@ -4,12 +4,12 @@
 
 assert(is_fuchsia)
 
-import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 import("//flutter/common/fuchsia_config.gni")
 import("//flutter/testing/testing.gni")
 import("//flutter/tools/fuchsia/dart.gni")
 import("//flutter/tools/fuchsia/fuchsia_archive.gni")
 import("//flutter/tools/fuchsia/fuchsia_libs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 
 template("runner_sources") {
   assert(defined(invoker.product), "runner_sources must define product")

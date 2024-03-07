@@ -2,8 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 import("//flutter/shell/platform/config.gni")
+import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 
 group("platform") {
   if (is_mac || is_ios) {
