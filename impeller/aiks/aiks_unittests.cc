@@ -1614,6 +1614,143 @@ TEST_P(AiksTest, SolidColorCirclesOvalsRRectsMaskBlurCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest,
+       SolidColorCirclesOvalsRRectsMaskBlurCorrectlyBlurStyleVariations) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.Scale(Vector2{0.8f, 0.8f});
+  Paint paint;
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma{1},
+  };
+
+  canvas.DrawPaint({.color = Color::AntiqueWhite()});
+
+  struct MaskBlurTestConfig {
+    FilterContents::BlurStyle style = FilterContents::BlurStyle::kNormal;
+    Scalar sigma = 1.0f;
+    Scalar alpha = 1.0f;
+    std::shared_ptr<ImageFilter> image_filter;
+    bool invert_colors = false;
+    BlendMode blend_mode = BlendMode::kSourceOver;
+  };
+
+  std::vector<MaskBlurTestConfig> paint_variations = {
+      // 1. Normal style, translucent, zero sigma.
+      {.style = FilterContents::BlurStyle::kNormal,
+       .sigma = 0.0f,
+       .alpha = 0.5f},
+      // 2. Normal style, translucent.
+      {.style = FilterContents::BlurStyle::kNormal,
+       .sigma = 8.0f,
+       .alpha = 0.5f},
+      // 3. Solid style, translucent.
+      {.style = FilterContents::BlurStyle::kSolid,
+       .sigma = 8.0f,
+       .alpha = 0.5f},
+      // 4. Solid style, opaque.
+      {.style = FilterContents::BlurStyle::kSolid, .sigma = 8.0f},
+      // 5. Solid style, translucent, color & image filtered.
+      {.style = FilterContents::BlurStyle::kSolid,
+       .sigma = 8.0f,
+       .alpha = 0.5f,
+       .image_filter = ImageFilter::MakeBlur(Sigma{3}, Sigma{3},
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp),
+       .invert_colors = true},
+      // 6. Solid style, translucent, exclusion blended.
+      {.style = FilterContents::BlurStyle::kSolid,
+       .sigma = 8.0f,
+       .alpha = 0.5f,
+       .blend_mode = BlendMode::kExclusion},
+      // 7. Inner style, translucent.
+      {.style = FilterContents::BlurStyle::kInner,
+       .sigma = 8.0f,
+       .alpha = 0.5f},
+      // 8. Inner style, translucent, blurred.
+      {.style = FilterContents::BlurStyle::kInner,
+       .sigma = 8.0f,
+       .alpha = 0.5f,
+       .image_filter = ImageFilter::MakeBlur(Sigma{3}, Sigma{3},
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp)},
+      // 9. Outer style, translucent.
+      {.style = FilterContents::BlurStyle::kOuter,
+       .sigma = 8.0f,
+       .alpha = 0.5f},
+      // 10. Outer style, opaque, image filtered.
+      {.style = FilterContents::BlurStyle::kOuter,
+       .sigma = 8.0f,
+       .image_filter = ImageFilter::MakeBlur(Sigma{3}, Sigma{3},
+                                             FilterContents::BlurStyle::kNormal,
+                                             Entity::TileMode::kClamp)},
+  };
+
+  for (size_t i = 0; i < paint_variations.size(); i++) {
+    const MaskBlurTestConfig& config = paint_variations[i];
+    paint.mask_blur_descriptor->style = config.style;
+    paint.mask_blur_descriptor->sigma = Sigma{config.sigma};
+    paint.image_filter = config.image_filter;
+    paint.invert_colors = config.invert_colors;
+    paint.blend_mode = config.blend_mode;
+
+    const Scalar x = 50 + i * 80;
+    const Scalar radius = 20.0f;
+    const Scalar y_spacing = 100.0f;
+
+    Scalar y = 50;
+    paint.color = Color::Crimson().WithAlpha(config.alpha);
+    canvas.DrawRect(Rect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
+                                   radius, 60.0f - radius),
+                    paint);
+
+    y += y_spacing;
+    paint.color = Color::Blue().WithAlpha(config.alpha);
+    canvas.DrawCircle({x + 25, y + 25}, radius, paint);
+
+    y += y_spacing;
+    paint.color = Color::Green().WithAlpha(config.alpha);
+    canvas.DrawOval(Rect::MakeXYWH(x + 25 - radius / 2, y + radius / 2,  //
+                                   radius, 60.0f - radius),
+                    paint);
+
+    y += y_spacing;
+    paint.color = Color::Purple().WithAlpha(config.alpha);
+    canvas.DrawRRect(Rect::MakeXYWH(x, y, 60.0f, 60.0f),  //
+                     {radius, radius},                    //
+                     paint);
+
+    y += y_spacing;
+    paint.color = Color::Orange().WithAlpha(config.alpha);
+    canvas.DrawRRect(Rect::MakeXYWH(x, y, 60.0f, 60.0f),  //
+                     {radius, 5.0f}, paint);
+
+    y += y_spacing;
+    paint.color = Color::Maroon().WithAlpha(config.alpha);
+    canvas.DrawPath(PathBuilder{}
+                        .MoveTo({x + 0, y + 60})
+                        .LineTo({x + 30, y + 0})
+                        .LineTo({x + 60, y + 60})
+                        .Close()
+                        .TakePath(),
+                    paint);
+
+    y += y_spacing;
+    paint.color = Color::Maroon().WithAlpha(config.alpha);
+    canvas.DrawPath(PathBuilder{}
+                        .AddArc(Rect::MakeXYWH(x + 5, y, 50, 50),
+                                Radians{kPi / 2}, Radians{kPi})
+                        .AddArc(Rect::MakeXYWH(x + 25, y, 50, 50),
+                                Radians{kPi / 2}, Radians{kPi})
+                        .Close()
+                        .TakePath(),
+                    paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
