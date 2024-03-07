@@ -1208,6 +1208,10 @@ void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
 }
 
+const EntityPassClipRecorder& EntityPass::GetEntityPassClipRecorder() const {
+  return *clip_replay_;
+}
+
 EntityPassClipRecorder::EntityPassClipRecorder() {}
 
 void EntityPassClipRecorder::RecordEntity(const Entity& entity,
