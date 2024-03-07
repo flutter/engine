@@ -44,8 +44,6 @@ struct MockSwapchainKHR {
 
 struct MockSemaphore {};
 
-struct MockBuffer {};
-
 static ISize currentImageSize = ISize{1, 1};
 
 class MockDevice final {
@@ -325,16 +323,8 @@ VkResult vkCreateBuffer(VkDevice device,
                         const VkBufferCreateInfo* pCreateInfo,
                         const VkAllocationCallbacks* pAllocator,
                         VkBuffer* pBuffer) {
-  *pBuffer = reinterpret_cast<VkBuffer>(new MockBuffer());
+  *pBuffer = reinterpret_cast<VkBuffer>(0xDEADDEAD);
   return VK_SUCCESS;
-}
-
-void vkDestroyBuffer(VkDevice device,
-                     VkBuffer buffer,
-                     const VkAllocationCallbacks* pAllocator) {
-  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->AddCalledFunction("vkDestroyBuffer");
-  delete reinterpret_cast<MockBuffer*>(buffer);
 }
 
 void vkGetBufferMemoryRequirements2KHR(
@@ -735,25 +725,6 @@ VkResult vkAcquireNextImageKHR(VkDevice device,
   return VK_SUCCESS;
 }
 
-VkResult vkFlushMappedMemoryRanges(VkDevice device,
-                                   uint32_t memoryRangeCount,
-                                   const VkMappedMemoryRange* pMemoryRanges) {
-  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->AddCalledFunction("vkFlushMappedMemoryRanges");
-  return VK_SUCCESS;
-}
-
-VkResult vkMapMemory(VkDevice device,
-                     VkDeviceMemory memory,
-                     VkDeviceSize offset,
-                     VkDeviceSize size,
-                     VkMemoryMapFlags flags,
-                     void** ppData) {
-  MockDevice* mock_device = reinterpret_cast<MockDevice*>(device);
-  mock_device->AddCalledFunction("vkMapMemory");
-  return VK_SUCCESS;
-}
-
 PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
                                             const char* pName) {
   if (strcmp("vkEnumerateInstanceExtensionProperties", pName) == 0) {
@@ -890,12 +861,6 @@ PFN_vkVoidFunction GetMockVulkanProcAddress(VkInstance instance,
     return (PFN_vkVoidFunction)vkDestroySurfaceKHR;
   } else if (strcmp("vkAcquireNextImageKHR", pName) == 0) {
     return (PFN_vkVoidFunction)vkAcquireNextImageKHR;
-  } else if (strcmp("vkFlushMappedMemoryRanges", pName) == 0) {
-    return (PFN_vkVoidFunction)vkFlushMappedMemoryRanges;
-  } else if (strcmp("vkDestroyBuffer", pName) == 0) {
-    return (PFN_vkVoidFunction)vkDestroyBuffer;
-  } else if (strcmp("vkMapMemory", pName) == 0) {
-    return (PFN_vkVoidFunction)vkMapMemory;
   }
   return noop;
 }
