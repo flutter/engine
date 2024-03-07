@@ -132,12 +132,15 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   auto mask = std::make_shared<SolidColorContents>();
   mask->SetColor(Color::White());
   std::optional<Rect> coverage = texture_contents->GetCoverage({});
-  texture_contents->SetDestinationRect(
-      coverage.value().Expand(expand_amount, expand_amount));
+  std::shared_ptr<Geometry> geometry;
+  if (coverage) {
+    texture_contents->SetDestinationRect(
+        coverage.value().Expand(expand_amount, expand_amount));
+    geometry = Geometry::MakeRect(coverage.value());
+  }
+  mask->SetGeometry(geometry);
   auto descriptor = texture_contents->GetSamplerDescriptor();
   texture_contents->SetSamplerDescriptor(descriptor);
-  std::shared_ptr<Geometry> geometry = Geometry::MakeRect(coverage.value());
-  mask->SetGeometry(geometry);
   std::shared_ptr<FilterContents> blurred_mask =
       FilterContents::MakeGaussianBlur(FilterInput::Make(mask), sigma, sigma,
                                        Entity::TileMode::kDecal, style,
