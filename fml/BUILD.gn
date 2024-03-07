@@ -226,9 +226,12 @@ source_set("fml") {
       "platform/fuchsia/task_observers.h",
     ]
 
-    public_deps += [
+    deps += [
       "${fuchsia_sdk}/fidl/fuchsia.diagnostics",
       "${fuchsia_sdk}/fidl/fuchsia.logger",
+    ]
+
+    public_deps += [
       "${fuchsia_sdk}/pkg/async-cpp",
       "${fuchsia_sdk}/pkg/async-loop-cpp",
       "${fuchsia_sdk}/pkg/async-loop-default",
