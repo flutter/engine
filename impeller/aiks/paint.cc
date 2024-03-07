@@ -168,7 +168,7 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   /// 5. Composite the color source with the blurred mask.
 
   return ColorFilterContents::MakeBlend(
-      BlendMode::kDestination,
+      BlendMode::kSourceIn,
       {FilterInput::Make(blurred_mask), FilterInput::Make(color_contents)});
 }
 
