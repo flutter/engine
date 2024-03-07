@@ -19,8 +19,10 @@ const int _kReturnKeyCode = 13;
 
 const MethodCodec codec = JSONMethodCodec();
 
+EnginePlatformDispatcher get dispatcher => EnginePlatformDispatcher.instance;
+
 DomElement get defaultTextEditingRoot =>
-    EnginePlatformDispatcher.instance.implicitView!.dom.textEditingHost;
+    dispatcher.implicitView!.dom.textEditingHost;
 
 /// Add unit tests for [FirefoxTextEditingStrategy].
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/46891
@@ -124,6 +126,35 @@ Future<void> testMain() async {
       expect(domDocument.activeElement, domDocument.body);
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
           domDocument.body);
+    });
+
+    test('inserts element in the correct view', () {
+      final DomElement host = createDomElement('div');
+      domDocument.body!.append(host);
+      final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+      dispatcher.viewManager.registerView(view);
+      final DomElement textEditingHost = view.dom.textEditingHost;
+
+      expect(domDocument.getElementsByTagName('input'), hasLength(0));
+      expect(textEditingHost.getElementsByTagName('input'), hasLength(0));
+
+      final InputConfiguration config = InputConfiguration(viewId: view.viewId);
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      final DomElement input = editingStrategy!.domElement!;
+
+      // Input is appended to the right view.
+      expect(textEditingHost.contains(input), isTrue);
+
+      // Cleanup.
+      editingStrategy!.disable();
+      expect(textEditingHost.querySelectorAll('input'), hasLength(0));
+      dispatcher.viewManager.unregisterView(view.viewId);
+      view.dispose();
+      host.remove();
     });
 
     test('Respects read-only config', () {
@@ -372,10 +403,10 @@ Future<void> testMain() async {
     });
 
    test('handling keyboard event prevents triggering input action', () {
-      final ui.PlatformMessageCallback? savedCallback = ui.PlatformDispatcher.instance.onPlatformMessage;
+      final ui.PlatformMessageCallback? savedCallback = dispatcher.onPlatformMessage;
 
       bool markTextEventHandled = false;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
+      dispatcher.onPlatformMessage = (String channel, ByteData? data,
           ui.PlatformMessageResponseCallback? callback) {
         final ByteData response = const JSONMessageCodec()
             .encodeMessage(<String, dynamic>{'handled': markTextEventHandled})!;
@@ -413,7 +444,7 @@ Future<void> testMain() async {
       // Input action received.
       expect(lastInputAction, 'TextInputAction.done');
 
-      ui.PlatformDispatcher.instance.onPlatformMessage = savedCallback;
+      dispatcher.onPlatformMessage = savedCallback;
       RawKeyboard.instance?.dispose();
     });
 
@@ -535,16 +566,24 @@ Future<void> testMain() async {
     /// Returns the `clientId` used in the platform message.
     int showKeyboard({
       required String inputType,
+      int? viewId,
       String? inputAction,
       bool decimal = false,
       bool isMultiline = false,
+      bool autofillEnabled = true,
     }) {
       final MethodCall setClient = MethodCall(
         'TextInput.setClient',
         <dynamic>[
           ++clientId,
-          createFlutterConfig(inputType,
-              inputAction: inputAction, decimal: decimal, isMultiline: isMultiline),
+          createFlutterConfig(
+            inputType,
+            viewId: viewId,
+            inputAction: inputAction,
+            decimal: decimal,
+            isMultiline: isMultiline,
+            autofillEnabled: autofillEnabled,
+          ),
         ],
       );
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
@@ -2426,6 +2465,65 @@ Future<void> testMain() async {
       expect(event.defaultPrevented, isFalse);
     });
 
+    test('inserts element in the correct view', () {
+      final DomElement host = createDomElement('div');
+      domDocument.body!.append(host);
+      final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+      dispatcher.viewManager.registerView(view);
+
+      textEditing = HybridTextEditing();
+      showKeyboard(inputType: 'text', viewId: view.viewId);
+
+      final DomElement input = textEditing!.strategy.domElement!;
+
+      // Input is appended to the right view.
+      expect(view.dom.textEditingHost.contains(input), isTrue);
+
+      // Cleanup.
+      hideKeyboard();
+      dispatcher.viewManager.unregisterView(view.viewId);
+      view.dispose();
+      host.remove();
+    });
+
+    test('move element to correct view', () {
+      final DomElement host1 = createDomElement('div');
+      final DomElement host2 = createDomElement('div');
+      domDocument.body!.append(host1);
+      domDocument.body!.append(host2);
+      final EngineFlutterView view1 = EngineFlutterView(dispatcher, host1);
+      dispatcher.viewManager.registerView(view1);
+      final EngineFlutterView view2 = EngineFlutterView(dispatcher, host2);
+      dispatcher.viewManager.registerView(view2);
+
+      textEditing = HybridTextEditing();
+      showKeyboard(inputType: 'text', viewId: view1.viewId, autofillEnabled: false);
+
+      final DomElement input = textEditing!.strategy.domElement!;
+
+      // Input is appended to view1.
+      expect(view1.dom.textEditingHost.contains(input), isTrue);
+
+      sendFrameworkMessage(codec.encodeMethodCall(MethodCall(
+        'TextInput.updateConfig',
+        createFlutterConfig('text', viewId: view2.viewId, autofillEnabled: false),
+      )));
+
+      // The input element is the same (no new element was created), but it has
+      // moved to view2.
+      expect(textEditing!.strategy.domElement, input);
+      expect(view2.dom.textEditingHost.contains(input), isTrue);
+
+      // Cleanup.
+      hideKeyboard();
+      dispatcher.viewManager.unregisterView(view1.viewId);
+      view1.dispose();
+      dispatcher.viewManager.unregisterView(view2.viewId);
+      view2.dispose();
+      host1.remove();
+      host2.remove();
+    });
+
     tearDown(() {
       clearForms();
     });
@@ -3347,6 +3445,7 @@ void checkTextAreaEditingState(
 /// simplicity.
 Map<String, dynamic> createFlutterConfig(
   String inputType, {
+  int? viewId,
   bool readOnly = false,
   bool obscureText = false,
   bool autocorrect = true,
@@ -3366,6 +3465,7 @@ Map<String, dynamic> createFlutterConfig(
       if (decimal) 'decimal': true,
       if (isMultiline) 'isMultiline': true,
     },
+    if (viewId != null) 'viewId': viewId,
     'readOnly': readOnly,
     'obscureText': obscureText,
     'autocorrect': autocorrect,
