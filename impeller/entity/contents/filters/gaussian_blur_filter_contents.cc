@@ -17,9 +17,6 @@
 #include "impeller/renderer/texture_mipmap.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
-extern float fudgex;
-extern float fudgey;
-
 namespace impeller {
 
 using GaussianBlurVertexShader = KernelPipeline::VertexShader;
@@ -229,8 +226,7 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                             const ContentContext& renderer,
                             const Entity& entity, RenderPass& pass) mutable {
         bool result = true;
-        clipper.SetTransform(Matrix::MakeTranslation({fudgex, fudgey, 0}) *
-                             entity.GetTransform() * clipper.GetTransform());
+        clipper.SetTransform(entity.GetTransform() * clipper.GetTransform());
         result = clipper.Render(renderer, pass) && result;
         shared_blur_entity->SetTransform(entity.GetTransform() *
                                          shared_blur_entity->GetTransform());
