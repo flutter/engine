@@ -317,7 +317,7 @@ if (enable_unittests) {
 
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
-    libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
+    libs = [ "${fuchsia_arch_root}/libzircon.so" ]
 
     deps = [
       ":jit_runner_sources_for_test",

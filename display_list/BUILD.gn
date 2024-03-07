@@ -143,7 +143,7 @@ if (enable_unittests) {
     # symbols.
     if (is_fuchsia) {
       libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+          [ "${fuchsia_arch_root}/libzircon.so" ]
     }
   }
 
@@ -175,7 +175,7 @@ if (enable_unittests) {
     # symbols.
     if (is_fuchsia) {
       libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+          [ "${fuchsia_arch_root}/libzircon.so" ]
     }
   }
 
