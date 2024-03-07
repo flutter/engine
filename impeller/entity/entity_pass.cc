@@ -725,8 +725,19 @@ bool EntityPass::RenderElement(Entity& element_entity,
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
     auto& replay_entities = clip_replay_->GetReplayEntities();
-    for (const auto& entity : replay_entities) {
-      if (!entity.Render(renderer, *result.pass)) {
+
+    auto begin = replay_entities.begin();
+    auto end = replay_entities.end();
+    int direction = 1;
+    // We can reverse the draw order when replaying clips if StC is enabled to
+    // reduce unnecessary depth buffer churn.
+    if constexpr (ContentContext::kEnableStencilThenCover) {
+      begin = replay_entities.end() - 1;
+      end = replay_entities.begin() - 1;
+      direction = -1;
+    }
+    for (auto entity = begin; entity != end; entity += direction) {
+      if (!entity->Render(renderer, *result.pass)) {
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
     }
