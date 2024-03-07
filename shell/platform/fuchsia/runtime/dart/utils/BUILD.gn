@@ -94,7 +94,7 @@ executable("dart_utils_unittests") {
   libs = [
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
-    "${fuchsia_arch_root}/libzircon.so",
+    "${fuchsia_arch_root}/sysroot/lib/libzircon.so",
   ]
 
   deps = [

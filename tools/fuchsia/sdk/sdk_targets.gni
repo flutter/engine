@@ -3,8 +3,7 @@
 # found in the LICENSE file.
 
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
-import("//flutter/tools/fuchsia/fidl/fidl.gni")
-import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+import("//flutter/tools/fuchsia/gn-sdk/src/fidl_library.gni")
 
 template("_fuchsia_dart_library") {
   assert(defined(invoker.meta), "The meta file content must be specified.")
@@ -73,23 +72,6 @@ template("_fuchsia_dart_library") {
   }
 }
 
-template("_fuchsia_fidl_library") {
-  assert(defined(invoker.meta), "The meta file content must be specified.")
-  meta = invoker.meta
-  assert(meta.type == "fidl_library")
-
-  fidl(target_name) {
-    sources = []
-    foreach(source, meta.sources) {
-      sources += [ "$fuchsia_sdk/$source" ]
-    }
-    public_deps = []
-    foreach(dep, meta.deps) {
-      public_deps += [ ":$dep" ]
-    }
-  }
-}
-
 template("sdk_targets") {
   assert(defined(invoker.meta), "The meta.json file path must be specified.")
 
@@ -121,7 +103,7 @@ template("sdk_targets") {
             meta = part_meta_json
           }
         } else if (target_type == "fidl_library") {
-          _fuchsia_fidl_library(subtarget_name) {
+          fidl_library(subtarget_name) {
             meta = part_meta_json
           }
         }

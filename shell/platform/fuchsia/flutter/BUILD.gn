@@ -506,7 +506,7 @@ if (enable_unittests) {
 
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
-    libs = [ "${fuchsia_arch_root}/libzircon.so" ]
+    libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.
@@ -540,7 +540,7 @@ if (enable_unittests) {
 
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
-    libs = [ "${fuchsia_arch_root}/libzircon.so" ]
+    libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.
@@ -567,7 +567,7 @@ if (enable_unittests) {
 
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
-    libs = [ "${fuchsia_arch_root}/libzircon.so" ]
+    libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.

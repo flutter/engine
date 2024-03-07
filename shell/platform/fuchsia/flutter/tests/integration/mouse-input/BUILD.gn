@@ -20,7 +20,7 @@ executable("mouse-input-test-bin") {
 
   # This is needed for //flutter/third_party/googletest for linking zircon
   # symbols.
-  libs = [ "${fuchsia_arch_root}/libzircon.so" ]
+  libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
 
   deps = [
     "${fuchsia_sdk}/fidl/fuchsia.accessibility.semantics",

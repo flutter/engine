@@ -1237,15 +1237,6 @@ hooks = [
     ]
   },
   {
-    'name': 'Erase arch/ from fuchsia sdk',
-    'pattern': '.',
-    'action': [
-      'rm',
-      '-rf',
-      'src/fuchsia/sdk/linux/arch',
-    ],
-  },
-  {
     'name': 'Generate Fuchsia GN build rules',
     'pattern': '.',
     'action': [

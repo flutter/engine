@@ -6,8 +6,6 @@
 # https://crsrc.org/c/build/config/fuchsia/gn_configs.gni?q=gn_configs.gni
 # with some local modifications to match the flutter setup.
 
-assert(is_fuchsia)
-
 declare_args() {
   # Path to the fuchsia SDK. This is intended for use in other templates &
   # rules to reference the contents of the fuchsia SDK.
@@ -73,3 +71,6 @@ fuchsia_arch_root =
 
 # third_party/googletest is still using this condition.
 using_fuchsia_sdk = true
+
+# Override the default fuchsia_gn_sdk in dart.
+fuchsia_gn_sdk = "//flutter/fuchsia/tools/gn-sdk"
