@@ -340,10 +340,10 @@ if (enable_unittests) {
       sources += [ "shell_fuchsia_unittests.cc" ]
 
       deps += [
-        "$fuchsia_sdk_root/fidl:fuchsia.intl",
-        "$fuchsia_sdk_root/fidl:fuchsia.settings",
-        "$fuchsia_sdk_root/pkg:fidl_cpp",
-        "$fuchsia_sdk_root/pkg:sys_cpp",
+        "$fuchsia_sdk/fidl:fuchsia.intl",
+        "$fuchsia_sdk/fidl:fuchsia.settings",
+        "$fuchsia_sdk/pkg:fidl_cpp",
+        "$fuchsia_sdk/pkg:sys_cpp",
       ]
     } else if (shell_enable_gl) {
       # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot

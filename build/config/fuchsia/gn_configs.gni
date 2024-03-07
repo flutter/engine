@@ -70,3 +70,5 @@ if (current_cpu != "") {
 }
 fuchsia_arch_root =
     "${fuchsia_sdk}/obj/${fuchsia_arch_root}-api-${fuchsia_target_api_level}"
+
+use_fuchsia_sdk = true
