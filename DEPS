@@ -1024,7 +1024,6 @@ deps = {
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
-     'condition': 'run_fuchsia_emu',
      'dep_type': 'cipd',
    },
 
@@ -1236,5 +1235,23 @@ hooks = [
       '--as-gclient-hook',
       Var('mac_sdk_min')
     ]
-  }
+  },
+  {
+    'name': 'Erase arch/ from fuchsia sdk',
+    'pattern': '.',
+    'action': [
+      'rm',
+      '-rf',
+      'src/fuchsia/sdk/linux/arch',
+    ],
+  },
+  {
+    'name': 'Generate Fuchsia GN build rules',
+    'pattern': '.',
+    'action': [
+      'python3',
+      'src/flutter/tools/fuchsia/with_envs.py',
+      'src/flutter/tools/fuchsia/test_scripts/gen_build_defs.py',
+    ],
+  },
 ]
