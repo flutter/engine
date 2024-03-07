@@ -29,7 +29,9 @@ def Main():
 
   assert platform.system() == 'Linux', 'Unsupported OS ' + platform.system()
   os.environ['FUCHSIA_SDK_ROOT'] = os.path.join(os.environ['SRC_ROOT'], 'fuchsia/sdk/linux/')
-  os.environ['FUCHSIA_GN_SDK_ROOT'] = os.path.join(os.environ['SRC_ROOT'], 'flutter/tools/fuchsia/gn-sdk/src')
+  os.environ['FUCHSIA_GN_SDK_ROOT'] = os.path.join(
+      os.environ['SRC_ROOT'], 'flutter/tools/fuchsia/gn-sdk/src'
+  )
 
   with subprocess.Popen(sys.argv[1:]) as proc:
     try:
