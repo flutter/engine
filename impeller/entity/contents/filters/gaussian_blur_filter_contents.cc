@@ -17,6 +17,9 @@
 #include "impeller/renderer/texture_mipmap.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
+extern float fudgex;
+extern float fudgey;
+
 namespace impeller {
 
 using GaussianBlurVertexShader = KernelPipeline::VertexShader;
@@ -217,18 +220,21 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
   clipper->SetGeometry(geometry);
   auto restore = std::make_unique<ClipRestoreContents>();
   Entity result;
-  result.SetTransform(entity.GetTransform());
   result.SetContents(Contents::MakeAnonymous(
       fml::MakeCopyable([shared_blur_entity, clipper = std::move(clipper),
                          restore = std::move(restore)](
                             const ContentContext& renderer,
                             const Entity& entity, RenderPass& pass) mutable {
         bool result = true;
-        result = clipper->Render(renderer, entity, pass) && result;
+        // clipper->SetTransform(entity.GetTransform() *
+        //                       shared_blur_entity->GetTransform());
+        // result = clipper->Render(renderer, entity, pass) && result;
+        shared_blur_entity->SetTransform(entity.GetTransform() *
+                                         shared_blur_entity->GetTransform());
         result = shared_blur_entity->Render(renderer, pass) && result;
-        if constexpr (!ContentContext::kEnableStencilThenCover) {
-          result = restore->Render(renderer, entity, pass) && result;
-        }
+        // if constexpr (!ContentContext::kEnableStencilThenCover) {
+        //   result = restore->Render(renderer, entity, pass) && result;
+        // }
         return result;
       }),
       [shared_blur_entity](const Entity& entity) {
