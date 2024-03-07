@@ -215,9 +215,12 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                              const std::shared_ptr<Geometry>& geometry) {
   auto shared_blur_entity = std::make_shared<Entity>(std::move(blur_entity));
   shared_blur_entity->SetNewClipDepth(entity.GetNewClipDepth());
-  auto clipper = std::make_unique<ClipContents>();
-  clipper->SetClipOperation(clip_operation);
-  clipper->SetGeometry(geometry);
+  auto clip_contents = std::make_shared<ClipContents>();
+  clip_contents->SetClipOperation(clip_operation);
+  clip_contents->SetGeometry(geometry);
+  Entity clipper;
+  clipper.SetContents(clip_contents);
+  clipper.SetTransform(entity.GetTransform());
   auto restore = std::make_unique<ClipRestoreContents>();
   Entity result;
   result.SetContents(Contents::MakeAnonymous(
@@ -226,15 +229,15 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                             const ContentContext& renderer,
                             const Entity& entity, RenderPass& pass) mutable {
         bool result = true;
-        // clipper->SetTransform(entity.GetTransform() *
-        //                       shared_blur_entity->GetTransform());
-        // result = clipper->Render(renderer, entity, pass) && result;
+        clipper.SetTransform(Matrix::MakeTranslation({fudgex, fudgey, 0}) *
+                             entity.GetTransform() * clipper.GetTransform());
+        result = clipper.Render(renderer, pass) && result;
         shared_blur_entity->SetTransform(entity.GetTransform() *
                                          shared_blur_entity->GetTransform());
         result = shared_blur_entity->Render(renderer, pass) && result;
-        // if constexpr (!ContentContext::kEnableStencilThenCover) {
-        //   result = restore->Render(renderer, entity, pass) && result;
-        // }
+        if constexpr (!ContentContext::kEnableStencilThenCover) {
+          result = restore->Render(renderer, entity, pass) && result;
+        }
         return result;
       }),
       [shared_blur_entity](const Entity& entity) {

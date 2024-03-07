@@ -760,7 +760,6 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
 
 TEST_P(AiksTest, GaussianBlurStyleInnerGradient) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-
     if (AiksTest::ImGuiBegin("Controls", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::SliderFloat("fudgex", &fudgex, -300, 300);
