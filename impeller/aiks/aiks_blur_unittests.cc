@@ -837,7 +837,7 @@ TEST_P(AiksTest, GaussianBlurStyleSolid) {
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
 }
 
-TEST_P(AiksTest, GaussianBlurStyleInnerTexture) {
+TEST_P(AiksTest, MaskBlurTexture) {
   Scalar sigma = 30;
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     if (AiksTest::ImGuiBegin("Controls", nullptr,
