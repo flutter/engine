@@ -47,8 +47,8 @@ RuntimeController::RuntimeController(
 
 std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     RuntimeDelegate& p_client,
-    std::string advisory_script_uri,
-    std::string advisory_script_entrypoint,
+    const std::string& advisory_script_uri,
+    const std::string& advisory_script_entrypoint,
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
@@ -57,13 +57,18 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
-  UIDartState::Context spawned_context{
-      context_.task_runners,          std::move(snapshot_delegate),
-      std::move(io_manager),          context_.unref_queue,
-      std::move(image_decoder),       std::move(image_generator_registry),
-      std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
-      context_.volatile_path_tracker, context_.concurrent_task_runner,
-      context_.enable_impeller,       context_.runtime_stage_backend};
+  UIDartState::Context spawned_context{context_.task_runners,
+                                       std::move(snapshot_delegate),
+                                       std::move(io_manager),
+                                       context_.unref_queue,
+                                       std::move(image_decoder),
+                                       std::move(image_generator_registry),
+                                       advisory_script_uri,
+                                       advisory_script_entrypoint,
+                                       context_.volatile_path_tracker,
+                                       context_.concurrent_task_runner,
+                                       context_.enable_impeller,
+                                       context_.runtime_stage_backend};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //

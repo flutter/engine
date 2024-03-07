@@ -191,7 +191,7 @@ class EngineContext {
     // private constructor.
     EngineContext* raw_pointer =
         new EngineContext(delegate, settings, task_runners, std::move(animator),
-                          std::move(vm), isolate_snapshot);
+                          vm, isolate_snapshot);
     return std::unique_ptr<EngineContext>(raw_pointer);
   }
 
@@ -228,9 +228,9 @@ class EngineContext {
                 Settings settings,                   //
                 const TaskRunners& task_runners,     //
                 std::unique_ptr<Animator> animator,  //
-                DartVMRef vm,                        //
+                const DartVMRef& vm,                 //
                 fml::RefPtr<const DartSnapshot> isolate_snapshot)
-      : task_runners_(task_runners), vm_(std::move(vm)) {
+      : task_runners_(task_runners), vm_(vm) {
     PostSync(task_runners.GetUITaskRunner(), [this, &settings, &animator,
                                               &delegate, &isolate_snapshot] {
       auto dispatcher_maker =

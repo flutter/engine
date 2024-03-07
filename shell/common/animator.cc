@@ -134,6 +134,7 @@ void Animator::EndFrame() {
 
     // Commit the pending continuation.
     std::vector<std::unique_ptr<LayerTreeTask>> layer_tree_task_list;
+    layer_tree_task_list.reserve(layer_trees_tasks_.size());
     for (auto& [view_id, layer_tree_task] : layer_trees_tasks_) {
       layer_tree_task_list.push_back(std::move(layer_tree_task));
     }

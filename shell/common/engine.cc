@@ -40,11 +40,11 @@ fml::MallocMapping MakeMapping(const std::string& str) {
 Engine::Engine(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
-    std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+    const std::shared_ptr<fml::ConcurrentTaskRunner>& image_decoder_task_runner,
     const TaskRunners& task_runners,
     const Settings& settings,
     std::unique_ptr<Animator> animator,
-    fml::WeakPtr<IOManager> io_manager,
+    const fml::WeakPtr<IOManager>& io_manager,
     const std::shared_ptr<FontCollection>& font_collection,
     std::unique_ptr<RuntimeController> runtime_controller,
     const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch)
@@ -55,8 +55,8 @@ Engine::Engine(
       font_collection_(font_collection),
       image_decoder_(ImageDecoder::Make(settings_,
                                         task_runners,
-                                        std::move(image_decoder_task_runner),
-                                        std::move(io_manager),
+                                        image_decoder_task_runner,
+                                        io_manager,
                                         gpu_disabled_switch)),
       task_runners_(task_runners),
       weak_factory_(this) {
@@ -72,7 +72,7 @@ Engine::Engine(Delegate& delegate,
                const Settings& settings,
                std::unique_ptr<Animator> animator,
                fml::WeakPtr<IOManager> io_manager,
-               fml::RefPtr<SkiaUnrefQueue> unref_queue,
+               const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
                fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
                std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
                const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
@@ -100,7 +100,7 @@ Engine::Engine(Delegate& delegate,
           task_runners_,                           // task runners
           std::move(snapshot_delegate),            // snapshot delegate
           std::move(io_manager),                   // io manager
-          std::move(unref_queue),                  // Skia unref queue
+          unref_queue,                             // Skia unref queue
           image_decoder_->GetWeakPtr(),            // image decoder
           image_generator_registry_.GetWeakPtr(),  // image generator registry
           settings_.advisory_script_uri,           // advisory script uri
