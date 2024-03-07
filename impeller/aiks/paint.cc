@@ -123,8 +123,7 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
-    std::shared_ptr<TextureContents> texture_contents,
-    const std::shared_ptr<ColorFilter>& color_filter) const {
+    std::shared_ptr<TextureContents> texture_contents) const {
   Scalar expand_amount = GaussianBlurFilterContents::CalculateBlurRadius(
       GaussianBlurFilterContents::ScaleSigma(sigma.sigma));
   texture_contents->SetSourceRect(

@@ -737,20 +737,9 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   texture_contents->SetOpacity(paint.color.alpha);
   texture_contents->SetDeferApplyingOpacity(paint.HasColorFilter());
 
-  bool needs_color_filter = paint.HasColorFilter();
-  if (needs_color_filter) {
-    auto color_filter = paint.GetColorFilter();
-    if (texture_contents->ApplyColorFilter(
-            color_filter->GetCPUColorFilterProc())) {
-      needs_color_filter = false;
-    }
-  }
-
   std::shared_ptr<Contents> contents = texture_contents;
   if (paint.mask_blur_descriptor.has_value()) {
-    contents = paint.mask_blur_descriptor->CreateMaskBlur(
-        texture_contents,
-        needs_color_filter ? paint.GetColorFilter() : nullptr);
+    contents = paint.mask_blur_descriptor->CreateMaskBlur(texture_contents);
   }
 
   Entity entity;

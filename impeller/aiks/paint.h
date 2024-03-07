@@ -45,8 +45,7 @@ struct Paint {
         const std::shared_ptr<ColorFilter>& color_filter) const;
 
     std::shared_ptr<FilterContents> CreateMaskBlur(
-        std::shared_ptr<TextureContents> texture_contents,
-        const std::shared_ptr<ColorFilter>& color_filter) const;
+        std::shared_ptr<TextureContents> texture_contents) const;
 
     std::shared_ptr<FilterContents> CreateMaskBlur(
         const FilterInput::Ref& input,
