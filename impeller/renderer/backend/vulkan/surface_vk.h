@@ -17,6 +17,11 @@ class SurfaceVK final : public Surface {
  public:
   using SwapCallback = std::function<bool(void)>;
 
+  /// @brief Wrap the swapchain image in a Surface, which provides the
+  ///        additional configuration required for usage as on onscreen render
+  ///        target by Impeller.
+  ///
+  ///        This creates the associated MSAA and depth+stencil texture.
   static std::unique_ptr<SurfaceVK> WrapSwapchainImage(
       const std::shared_ptr<Context>& context,
       std::shared_ptr<SwapchainImageVK>& swapchain_image,

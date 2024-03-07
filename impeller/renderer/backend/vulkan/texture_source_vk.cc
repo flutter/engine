@@ -62,21 +62,21 @@ fml::Status TextureSourceVK::SetLayout(const BarrierVK& barrier) const {
   return {};
 }
 
-void TextureSourceVK::SetFramebuffer(
+void TextureSourceVK::SetCachedFramebuffer(
     const SharedHandleVK<vk::Framebuffer>& framebuffer) {
   framebuffer_ = framebuffer;
 }
 
-void TextureSourceVK::SetRenderPass(
+void TextureSourceVK::SetCachedRenderPass(
     const SharedHandleVK<vk::RenderPass>& render_pass) {
   render_pass_ = render_pass;
 }
 
-SharedHandleVK<vk::Framebuffer> TextureSourceVK::GetFramebuffer() const {
+SharedHandleVK<vk::Framebuffer> TextureSourceVK::GetCachedFramebuffer() const {
   return framebuffer_;
 }
 
-SharedHandleVK<vk::RenderPass> TextureSourceVK::GetRenderPass() const {
+SharedHandleVK<vk::RenderPass> TextureSourceVK::GetCachedRenderPass() const {
   return render_pass_;
 }
 

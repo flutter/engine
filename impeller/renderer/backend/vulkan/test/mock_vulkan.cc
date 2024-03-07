@@ -9,7 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "fml/macros.h"
 #include "impeller/base/thread_safety.h"
 #include "impeller/renderer/backend/vulkan/vk.h"  // IWYU pragma: keep.
 #include "third_party/swiftshader/include/vulkan/vulkan_core.h"
@@ -40,6 +39,7 @@ struct MockImage {};
 
 struct MockSwapchainKHR {
   std::array<MockImage, 3> images;
+  size_t current_image = 0;
 };
 
 struct MockSemaphore {};
@@ -717,7 +717,9 @@ VkResult vkAcquireNextImageKHR(VkDevice device,
                                VkSemaphore semaphore,
                                VkFence fence,
                                uint32_t* pImageIndex) {
-  *pImageIndex = 0;
+  auto current_index =
+      reinterpret_cast<MockSwapchainKHR*>(swapchain)->current_image++;
+  *pImageIndex = (current_index + 1) % 3u;
   return VK_SUCCESS;
 }
 

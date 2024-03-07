@@ -8,6 +8,7 @@
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 namespace testing {
@@ -62,32 +63,64 @@ TEST(SwapchainTest, CachesRenderPassOnSwapchainImage) {
 
   EXPECT_TRUE(swapchain->IsValid());
 
-  // We should create 3 swapchain images with the current mock setup. However,
-  // we will only ever return the first image, so the render pass and
-  // framebuffer will be cached after one call to AcquireNextDrawable.
-  auto drawable = swapchain->AcquireNextDrawable();
-  RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
-
-  auto texture = render_target.GetRenderTargetTexture();
-  auto& texture_vk = TextureVK::Cast(*texture);
-  EXPECT_EQ(texture_vk.GetFramebuffer(), nullptr);
-  EXPECT_EQ(texture_vk.GetRenderPass(), nullptr);
-
-  auto command_buffer = context->CreateCommandBuffer();
-  auto render_pass = command_buffer->CreateRenderPass(render_target);
-
-  render_pass->EncodeCommands();
-
-  EXPECT_NE(texture_vk.GetFramebuffer(), nullptr);
-  EXPECT_NE(texture_vk.GetRenderPass(), nullptr);
-
-  {
+  // The mock swapchain will always create 3 images, verify each one starts
+  // out with the same MSAA and depth+stencil texture, and no cached
+  // framebuffer.
+  std::vector<std::shared_ptr<Texture>> msaa_textures;
+  std::vector<std::shared_ptr<Texture>> depth_stencil_textures;
+  for (auto i = 0u; i < 3u; i++) {
     auto drawable = swapchain->AcquireNextDrawable();
+    RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
+
+    auto texture = render_target.GetRenderTargetTexture();
+    auto& texture_vk = TextureVK::Cast(*texture);
+    EXPECT_EQ(texture_vk.GetCachedFramebuffer(), nullptr);
+    EXPECT_EQ(texture_vk.GetCachedRenderPass(), nullptr);
+
+    auto command_buffer = context->CreateCommandBuffer();
+    auto render_pass = command_buffer->CreateRenderPass(render_target);
+    render_pass->EncodeCommands();
+
+    depth_stencil_textures.push_back(
+        render_target.GetDepthAttachment()->texture);
+    msaa_textures.push_back(
+        render_target.GetColorAttachments().find(0u)->second.texture);
+  }
+
+  for (auto i = 1; i < 3; i++) {
+    EXPECT_EQ(msaa_textures[i - 1], msaa_textures[i]);
+    EXPECT_EQ(depth_stencil_textures[i - 1], depth_stencil_textures[i]);
+  }
+
+  // After each images has been acquired once and the render pass presented,
+  // each should have a cached framebuffer and render pass.
+
+  std::vector<SharedHandleVK<vk::Framebuffer>> framebuffers;
+  std::vector<SharedHandleVK<vk::RenderPass>> render_passes;
+  for (auto i = 0u; i < 3u; i++) {
+    auto drawable = swapchain->AcquireNextDrawable();
+    RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
+
     auto texture = render_target.GetRenderTargetTexture();
     auto& texture_vk = TextureVK::Cast(*texture);
 
-    EXPECT_NE(texture_vk.GetFramebuffer(), nullptr);
-    EXPECT_NE(texture_vk.GetRenderPass(), nullptr);
+    EXPECT_NE(texture_vk.GetCachedFramebuffer(), nullptr);
+    EXPECT_NE(texture_vk.GetCachedRenderPass(), nullptr);
+    framebuffers.push_back(texture_vk.GetCachedFramebuffer());
+    render_passes.push_back(texture_vk.GetCachedRenderPass());
+  }
+
+  // Iterate through once more to verify render passes and framebuffers are
+  // unchanged.
+  for (auto i = 0u; i < 3u; i++) {
+    auto drawable = swapchain->AcquireNextDrawable();
+    RenderTarget render_target = drawable->GetTargetRenderPassDescriptor();
+
+    auto texture = render_target.GetRenderTargetTexture();
+    auto& texture_vk = TextureVK::Cast(*texture);
+
+    EXPECT_EQ(texture_vk.GetCachedFramebuffer(), framebuffers[i]);
+    EXPECT_EQ(texture_vk.GetCachedRenderPass(), render_passes[i]);
   }
 }
 

@@ -239,6 +239,9 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   msaa_desc.size = texture_desc.size;
   msaa_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
+  // The depth+stencil configuration matches the configuration used by
+  // RenderTarget::SetupDepthStencilAttachments and matching the swapchain
+  // image dimensions and sample count.
   TextureDescriptor depth_stencil_desc;
   depth_stencil_desc.storage_mode = StorageMode::kDeviceTransient;
   if (enable_msaa) {

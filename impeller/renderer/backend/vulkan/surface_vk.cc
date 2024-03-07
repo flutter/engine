@@ -77,9 +77,15 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   RenderTarget render_target_desc;
   render_target_desc.SetColorAttachment(color0, 0u);
   render_target_desc.SetupDepthStencilAttachments(
-      *context, *context->GetResourceAllocator(), swapchain_image->GetSize(),
-      enable_msaa, "Onscreen", RenderTarget::kDefaultStencilAttachmentConfig,
-      swapchain_image->GetDepthStencilTexture());
+      /*context=*/*context,                            //
+      /*allocator=*/*context->GetResourceAllocator(),  //
+      /*size=*/swapchain_image->GetSize(),             //
+      /*msaa=*/enable_msaa,                            //
+      /*label=*/"Onscreen",                            //
+      /*stencil_attachment_config=*/
+      RenderTarget::kDefaultStencilAttachmentConfig,                       //
+      /*depth_stencil_texture=*/swapchain_image->GetDepthStencilTexture()  //
+  );
 
   // The constructor is private. So make_unique may not be used.
   return std::unique_ptr<SurfaceVK>(
