@@ -6,8 +6,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager;
-import '../display.dart';
+import '../../engine.dart' show PlatformViewManager, kDebugMode;
 import '../vector_math.dart';
 import 'embedded_views.dart';
 import 'picture.dart';
@@ -102,6 +101,10 @@ class RenderingPlatformView extends RenderingEntity {
   String toString() {
     return '$RenderingPlatformView($viewId)';
   }
+
+  /// The bounds that were computed for this platform view when creating the
+  /// optimized rendering. This is only set in debug mode.
+  ui.Rect? debugComputedBounds;
 }
 
 // Computes the bounds of the platform view from its associated parameters.
@@ -109,14 +112,8 @@ class RenderingPlatformView extends RenderingEntity {
 ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
   ui.Rect currentClipBounds = ui.Rect.largest;
 
-  // The transforms are in logical pixels, but we want to compute physical
-  // pixel bounds, so transform by the device pixel ratio.
-  final double scale = EngineFlutterDisplay.instance.devicePixelRatio;
-  Matrix4 currentTransform = Matrix4.diagonal3Values(scale, scale, 1);
-  currentTransform = currentTransform.multiplied(params.offset == ui.Offset.zero
-      ? Matrix4.identity()
-      : Matrix4.translationValues(params.offset.dx, params.offset.dy, 0));
-  for (final Mutator mutator in params.mutators) {
+  Matrix4 currentTransform = Matrix4.identity();
+  for (final Mutator mutator in params.mutators.reversed) {
     switch (mutator.type) {
       case MutatorType.clipRect:
         final ui.Rect transformedClipBounds =
@@ -141,10 +138,10 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
   // The width and height are in physical pixels already, so apply the inverse
   // scale since the transform already applied the scaling.
   final ui.Rect rawBounds = ui.Rect.fromLTWH(
-    0,
-    0,
-    params.size.width / scale,
-    params.size.height / scale,
+    params.offset.dx,
+    params.offset.dy,
+    params.size.width,
+    params.size.height,
   );
   final ui.Rect transformedBounds =
       transformRectWithMatrix(currentTransform, rawBounds);
@@ -177,9 +174,14 @@ Rendering createOptimizedRendering(
     currentRenderCanvas.add(pictures[0]);
   }
   for (int i = 0; i < platformViews.length; i++) {
+    final RenderingPlatformView platformView =
+        RenderingPlatformView(platformViews[i]);
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
       final ui.Rect platformViewBounds =
           computePlatformViewBounds(paramsForViews[platformViews[i]]!);
+      if (kDebugMode) {
+        platformView.debugComputedBounds = platformViewBounds;
+      }
       bool intersectsWithCurrentPictures = false;
       for (final CkPicture picture in currentRenderCanvas.pictures) {
         if (picture.cullRect.overlaps(platformViewBounds)) {
@@ -192,7 +194,7 @@ Rendering createOptimizedRendering(
         currentRenderCanvas = RenderingRenderCanvas();
       }
     }
-    result.add(RenderingPlatformView(platformViews[i]));
+    result.add(platformView);
     if (!pictures[i + 1].cullRect.isEmpty) {
       currentRenderCanvas.add(pictures[i + 1]);
     }

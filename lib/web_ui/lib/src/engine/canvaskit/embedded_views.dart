@@ -15,6 +15,7 @@ import '../util.dart';
 import '../vector_math.dart';
 import 'canvas.dart';
 import 'overlay_scene_optimizer.dart';
+import 'painting.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'picture_recorder.dart';
@@ -382,6 +383,30 @@ class HtmlViewEmbedder {
         recorder.endRecording();
       }
     }
+
+    debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
+    CkPictureRecorder boundsRecorder = CkPictureRecorder();
+    CkCanvas boundsCanvas = boundsRecorder.beginRecording(
+        ui.Rect.fromLTWH(0, 0, _frameSize.width, _frameSize.height));
+    final CkPaint platformViewBoundsPaint = CkPaint()
+      ..color = const ui.Color.fromARGB(100, 0, 255, 0);
+    final CkPaint pictureBoundsPaint = CkPaint()
+      ..color = const ui.Color.fromARGB(100, 0, 0, 255);
+    for (final RenderingEntity entity in _activeRendering.entities) {
+      if (entity is RenderingPlatformView) {
+        if (entity.debugComputedBounds != null) {
+          boundsCanvas.drawRect(
+              entity.debugComputedBounds!, platformViewBoundsPaint);
+        }
+      } else if (entity is RenderingRenderCanvas) {
+        for (CkPicture picture in entity.pictures) {
+          boundsCanvas.drawRect(picture.cullRect, pictureBoundsPaint);
+        }
+      }
+    }
+    await rasterizer.rasterizeToCanvas(
+        debugBoundsCanvas!, <CkPicture>[boundsRecorder.endRecording()]);
+    sceneHost.append(debugBoundsCanvas!.hostElement);
     // Reset the context.
     _context = EmbedderFrameContext();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {
@@ -858,6 +883,9 @@ class MutatorsStack extends Iterable<Mutator> {
 
   @override
   Iterator<Mutator> get iterator => _mutators.reversed.iterator;
+
+  /// Iterate over the mutators in reverse.
+  Iterable<Mutator> get reversed => _mutators;
 }
 
 /// The state for the current frame.
