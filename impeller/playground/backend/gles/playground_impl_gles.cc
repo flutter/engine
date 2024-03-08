@@ -165,7 +165,7 @@ PlaygroundImpl::WindowHandle PlaygroundImplGLES::GetWindowHandle() const {
 }
 
 // |PlaygroundImpl|
-std::unique_ptr<Surface> PlaygroundImplGLES::AcquireSurfaceFrame(
+std::shared_ptr<Surface> PlaygroundImplGLES::AcquireSurfaceFrame(
     std::shared_ptr<Context> context) {
   auto window = reinterpret_cast<GLFWwindow*>(GetWindowHandle());
   int width = 0;

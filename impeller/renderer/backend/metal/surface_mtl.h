@@ -60,7 +60,7 @@ class SurfaceMTL final : public Surface {
   IRect coverage() const;
 
   // |Surface|
-  bool Present() const override;
+  bool Present() override;
 
  private:
   std::weak_ptr<Context> context_;

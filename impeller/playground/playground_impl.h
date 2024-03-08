@@ -28,7 +28,7 @@ class PlaygroundImpl {
 
   virtual std::shared_ptr<Context> GetContext() const = 0;
 
-  virtual std::unique_ptr<Surface> AcquireSurfaceFrame(
+  virtual std::shared_ptr<Surface> AcquireSurfaceFrame(
       std::shared_ptr<Context> context) = 0;
 
   Vector2 GetContentScale() const;

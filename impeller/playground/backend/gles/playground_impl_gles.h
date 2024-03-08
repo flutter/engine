@@ -36,7 +36,7 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
   WindowHandle GetWindowHandle() const override;
 
   // |PlaygroundImpl|
-  std::unique_ptr<Surface> AcquireSurfaceFrame(
+  std::shared_ptr<Surface> AcquireSurfaceFrame(
       std::shared_ptr<Context> context) override;
 
   PlaygroundImplGLES(const PlaygroundImplGLES&) = delete;

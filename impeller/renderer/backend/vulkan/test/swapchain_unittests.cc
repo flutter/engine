@@ -4,7 +4,7 @@
 
 #include "flutter/testing/testing.h"  // IWYU pragma: keep
 #include "gtest/gtest.h"
-#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 #include "vulkan/vulkan_enums.hpp"
 
@@ -28,7 +28,7 @@ TEST(SwapchainTest, CanCreateSwapchain) {
 
   auto surface = CreateSurface(*context);
   auto swapchain =
-      SwapchainVK::Create(context, std::move(surface), ISize{1, 1});
+      KHRSwapchainVK::Create(context, std::move(surface), ISize{1, 1});
 
   EXPECT_TRUE(swapchain->IsValid());
 }
@@ -38,8 +38,9 @@ TEST(SwapchainTest, RecreateSwapchainWhenSizeChanges) {
 
   auto surface = CreateSurface(*context);
   SetSwapchainImageSize(ISize{1, 1});
-  auto swapchain = SwapchainVK::Create(context, std::move(surface), ISize{1, 1},
-                                       /*enable_msaa=*/false);
+  auto swapchain =
+      KHRSwapchainVK::Create(context, std::move(surface), ISize{1, 1},
+                             /*enable_msaa=*/false);
   auto image = swapchain->AcquireNextDrawable();
   auto expected_size = ISize{1, 1};
   EXPECT_EQ(image->GetSize(), expected_size);
