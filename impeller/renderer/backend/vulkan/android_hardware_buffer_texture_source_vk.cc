@@ -6,6 +6,7 @@
 
 #include <cstdint>
 
+#include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 #include "impeller/renderer/backend/vulkan/yuv_conversion_library_vk.h"
@@ -92,34 +93,6 @@ static vk::UniqueImage CreateVKImageWrapperForAndroidHarwareBuffer(
   return std::move(image.value);
 }
 
-// Returns -1 if not found.
-static int FindMemoryTypeIndex(
-    const vk::AndroidHardwareBufferPropertiesANDROID& props,
-    vk::PhysicalDeviceMemoryProperties& memory_properties) {
-  int32_t type_index = -1;
-  uint32_t memory_type_bits_requirement = props.memoryTypeBits;
-  vk::MemoryPropertyFlagBits required_properties =
-      vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-  const uint32_t memory_count = memory_properties.memoryTypeCount;
-  for (uint32_t memory_index = 0; memory_index < memory_count; ++memory_index) {
-    const uint32_t memory_type_bits = (1 << memory_index);
-    const bool is_required_memory_type =
-        memory_type_bits_requirement & memory_type_bits;
-
-    const auto properties =
-        memory_properties.memoryTypes[memory_index].propertyFlags;
-    const bool has_required_properties =
-        (properties & required_properties) == required_properties;
-
-    if (is_required_memory_type && has_required_properties) {
-      return static_cast<int32_t>(memory_index);
-    }
-  }
-
-  return type_index;
-}
-
 static vk::UniqueDeviceMemory ImportVKDeviceMemoryFromAndroidHarwareBuffer(
     const vk::Device& device,
     const vk::PhysicalDevice& physical_device,
@@ -128,8 +101,8 @@ static vk::UniqueDeviceMemory ImportVKDeviceMemoryFromAndroidHarwareBuffer(
     const AHBProperties& ahb_props) {
   vk::PhysicalDeviceMemoryProperties memory_properties;
   physical_device.getMemoryProperties(&memory_properties);
-  int memory_type_index =
-      FindMemoryTypeIndex(ahb_props.get(), memory_properties);
+  int memory_type_index = AllocatorVK::FindMemoryTypeIndex(
+      ahb_props.get().memoryTypeBits, memory_properties);
   if (memory_type_index < 0) {
     VALIDATION_LOG << "Could not find memory type of external image.";
     return {};
