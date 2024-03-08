@@ -56,19 +56,6 @@ declare_args() {
   }
 }
 
-# Copy from third_party/fuchsia-gn-sdk/src/gn_configs.gni to avoid importing
-# files from //third_party/ in //build/.
-if (current_cpu != "") {
-  # According to
-  # https://gn.googlesource.com/gn/+/main/docs/cross_compiles.md#as-a-build_gn-author,
-  # current_cpu is preferred.
-  fuchsia_arch_root = current_cpu
-} else {
-  fuchsia_arch_root = target_cpu
-}
-fuchsia_arch_root =
-    "${fuchsia_sdk}/obj/${fuchsia_arch_root}-api-${fuchsia_target_api_level}"
-
 # third_party/googletest is still using this condition.
 using_fuchsia_sdk = true
 
