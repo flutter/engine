@@ -5,7 +5,8 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager, longestIncreasingSubsequence;
+import '../../engine.dart'
+    show PlatformViewManager, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
@@ -384,29 +385,34 @@ class HtmlViewEmbedder {
       }
     }
 
-    debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
-    CkPictureRecorder boundsRecorder = CkPictureRecorder();
-    CkCanvas boundsCanvas = boundsRecorder.beginRecording(
-        ui.Rect.fromLTWH(0, 0, _frameSize.width, _frameSize.height));
-    final CkPaint platformViewBoundsPaint = CkPaint()
-      ..color = const ui.Color.fromARGB(100, 0, 255, 0);
-    final CkPaint pictureBoundsPaint = CkPaint()
-      ..color = const ui.Color.fromARGB(100, 0, 0, 255);
-    for (final RenderingEntity entity in _activeRendering.entities) {
-      if (entity is RenderingPlatformView) {
-        if (entity.debugComputedBounds != null) {
-          boundsCanvas.drawRect(
-              entity.debugComputedBounds!, platformViewBoundsPaint);
-        }
-      } else if (entity is RenderingRenderCanvas) {
-        for (CkPicture picture in entity.pictures) {
-          boundsCanvas.drawRect(picture.cullRect, pictureBoundsPaint);
+    // Draw the computed bounds for pictures and platform views if overlay
+    // optimization debugging is enabled.
+    if (debugOverlayOptimizationBounds) {
+      debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
+      final CkPictureRecorder boundsRecorder = CkPictureRecorder();
+      final CkCanvas boundsCanvas = boundsRecorder.beginRecording(
+          ui.Rect.fromLTWH(0, 0, _frameSize.width, _frameSize.height));
+      final CkPaint platformViewBoundsPaint = CkPaint()
+        ..color = const ui.Color.fromARGB(100, 0, 255, 0);
+      final CkPaint pictureBoundsPaint = CkPaint()
+        ..color = const ui.Color.fromARGB(100, 0, 0, 255);
+      for (final RenderingEntity entity in _activeRendering.entities) {
+        if (entity is RenderingPlatformView) {
+          if (entity.debugComputedBounds != null) {
+            boundsCanvas.drawRect(
+                entity.debugComputedBounds!, platformViewBoundsPaint);
+          }
+        } else if (entity is RenderingRenderCanvas) {
+          for (CkPicture picture in entity.pictures) {
+            boundsCanvas.drawRect(picture.cullRect, pictureBoundsPaint);
+          }
         }
       }
+      await rasterizer.rasterizeToCanvas(
+          debugBoundsCanvas!, <CkPicture>[boundsRecorder.endRecording()]);
+      sceneHost.append(debugBoundsCanvas!.hostElement);
     }
-    await rasterizer.rasterizeToCanvas(
-        debugBoundsCanvas!, <CkPicture>[boundsRecorder.endRecording()]);
-    sceneHost.append(debugBoundsCanvas!.hostElement);
+
     // Reset the context.
     _context = EmbedderFrameContext();
     if (listEquals(_compositionOrder, _activeCompositionOrder)) {

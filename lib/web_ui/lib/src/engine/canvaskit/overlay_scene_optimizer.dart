@@ -6,11 +6,15 @@ import 'package:meta/meta.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager, kDebugMode;
+import '../../engine.dart' show PlatformViewManager;
 import '../vector_math.dart';
 import 'embedded_views.dart';
 import 'picture.dart';
 import 'rasterizer.dart';
+
+/// If `true`, draws the computed bounds for platform views and pictures to
+/// help debug issues with the overlay optimization.
+bool debugOverlayOptimizationBounds = false;
 
 /// A [Rendering] is a concrete description of how a Flutter scene will be
 /// rendered in a web browser.
@@ -179,7 +183,7 @@ Rendering createOptimizedRendering(
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
       final ui.Rect platformViewBounds =
           computePlatformViewBounds(paramsForViews[platformViews[i]]!);
-      if (kDebugMode) {
+      if (debugOverlayOptimizationBounds) {
         platformView.debugComputedBounds = platformViewBounds;
       }
       bool intersectsWithCurrentPictures = false;

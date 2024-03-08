@@ -1010,8 +1010,7 @@ void testMain() {
       }, returnsNormally);
     });
 
-    test(
-        'optimizes out overlays when pictures and platform views do not overlap',
+    test('optimizes overlays when pictures and platform views do not overlap',
         () async {
       ui_web.platformViewRegistry.registerViewFactory(
         'test-view',
@@ -1119,6 +1118,40 @@ void testMain() {
         _overlay,
       ]);
     });
+
+    test('optimized overlays correctly with transforms and clips', () async {
+      ui_web.platformViewRegistry.registerViewFactory(
+        'test-view',
+        (int viewId) => createDomHTMLDivElement()..className = 'platform-view',
+      );
+
+      CkPicture rectPicture(ui.Rect rect) {
+        return paintPicture(rect, (CkCanvas canvas) {
+          canvas.drawRect(
+              rect, CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0));
+        });
+      }
+
+      await createPlatformView(0, 'test-view');
+
+      expect(PlatformViewManager.instance.isVisible(0), isTrue);
+
+      // Test optimization correctly computes bounds with transforms and clips.
+      final LayerSceneBuilder sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      final Matrix4 scaleMatrix = Matrix4.identity()..scale(3, 3, 1);
+      sb.pushTransform(scaleMatrix.toFloat64());
+      sb.pushClipRect(const ui.Rect.fromLTWH(10, 10, 10, 10));
+      sb.addPicture(
+          ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 20, 20)));
+      sb.addPlatformView(0, width: 20, height: 20);
+      final LayerScene scene = sb.build();
+      await renderScene(scene);
+      _expectSceneMatches(<_EmbeddedViewMarker>[
+        _overlay,
+        _platformView,
+      ]);
+    });
   });
 }
 
@@ -1136,6 +1169,7 @@ const Map<String, _EmbeddedViewMarker> _tagToViewMarker =
     <String, _EmbeddedViewMarker>{
   'flt-canvas-container': _EmbeddedViewMarker.overlay,
   'flt-platform-view-slot': _EmbeddedViewMarker.platformView,
+  'flt-clip': _EmbeddedViewMarker.platformView,
 };
 
 void _expectSceneMatches(
