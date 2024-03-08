@@ -327,15 +327,13 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
 
-  Paint rrect_paint = paint;
+  Color rrect_color =
+      paint.HasColorFilter()
+          // Absorb the color filter, if any.
+          ? paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color)
+          : paint.color;
 
-  // Absorb the color filter, if any.
-  if (rrect_paint.HasColorFilter()) {
-    rrect_paint.color =
-        rrect_paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color);
-    rrect_paint.color_filter = nullptr;
-    rrect_paint.invert_colors = false;
-  }
+  Paint rrect_paint = {.mask_blur_descriptor = paint.mask_blur_descriptor};
 
   // In some cases, we need to render the mask blur to a separate layer.
   //
@@ -356,21 +354,21 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   //      don't need to worry about the blend mode or translucency (unlike with
   //      BlurStyle::kSolid).
   //
-  if ((rrect_paint.mask_blur_descriptor->style !=
+  if ((paint.mask_blur_descriptor->style !=
            FilterContents::BlurStyle::kNormal &&
-       rrect_paint.image_filter) ||
-      (rrect_paint.mask_blur_descriptor->style ==
-           FilterContents::BlurStyle::kSolid &&
-       (!rrect_paint.color.IsOpaque() ||
-        rrect_paint.blend_mode != BlendMode::kSourceOver))) {
+       paint.image_filter) ||
+      (paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kSolid &&
+       (!rrect_color.IsOpaque() ||
+        paint.blend_mode != BlendMode::kSourceOver))) {
     // Defer the alpha, blend mode, and image filter to a separate layer.
-    SaveLayer({.color = Color::White().WithAlpha(rrect_paint.color.alpha),
-               .blend_mode = rrect_paint.blend_mode,
-               .image_filter = rrect_paint.image_filter});
-    rrect_paint.color = rrect_paint.color.WithAlpha(1);
-    rrect_paint.blend_mode = BlendMode::kSourceOver;
-    rrect_paint.image_filter = nullptr;
+    SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
+               .blend_mode = paint.blend_mode,
+               .image_filter = paint.image_filter});
+    rrect_paint.color = rrect_color.WithAlpha(1);
   } else {
+    rrect_paint.color = rrect_color;
+    rrect_paint.blend_mode = paint.blend_mode;
+    rrect_paint.image_filter = paint.image_filter;
     Save();
   }
 
