@@ -64,6 +64,3 @@ declare_args() {
     fuchsia_sdk_readelf_exec = ""
   }
 }
-
-# Override the default fuchsia_gn_sdk in dart.
-fuchsia_gn_sdk = "//flutter/fuchsia/tools/gn-sdk"
