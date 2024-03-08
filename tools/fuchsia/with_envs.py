@@ -33,6 +33,13 @@ def Main():
       os.environ['SRC_ROOT'], 'flutter/tools/fuchsia/gn-sdk/src'
   )
 
+  if os.getenv('DOWNLOAD_FUCHSIA_SDK') == 'True':
+    sdk_path = os.environ['FUCHSIA_SDK_PATH']
+    assert sdk_path.endswith('/linux-amd64/core.tar.gz')
+    assert not sdk_path.startswith('/')
+    os.environ['FUCHSIA_SDK_OVERRIDE'
+              ] = 'gs://fuchsia-artifacts/' + sdk_path[:-len('/linux-amd64/core.tar.gz')]
+
   with subprocess.Popen(sys.argv[1:]) as proc:
     try:
       proc.wait()

@@ -7,7 +7,7 @@ import("//build/toolchain/toolchain.gni")
 
 # The ANGLE build requires this file to point to the location of third-party
 # dependencies.
-angle_root = "//third_party/angle"
+angle_root = "//flutter/third_party/angle"
 
 angle_vma_version = 30000001
 
@@ -31,7 +31,8 @@ angle_spirv_headers_dir = "//flutter/third_party/vulkan-deps/spirv-headers/src"
 angle_spirv_tools_dir = "//flutter/third_party/vulkan-deps/spirv-tools/src"
 angle_spirv_cross_dir = "//flutter/third_party/vulkan-deps/spirv-cross/src"
 angle_spirv_headers_dir = "//flutter/third_party/vulkan-deps/spirv-headers/src"
-angle_vulkan_memory_allocator_dir = "//third_party/vulkan_memory_allocator"
+angle_vulkan_memory_allocator_dir =
+    "//flutter/third_party/vulkan_memory_allocator"
 
 # This is a general Chromium flag, but in the Flutter build only ANGLE needs it
 # so it is defined here.

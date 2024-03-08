@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'bf3f9c5f0edb5e5b8de7046bdf9feff8e8374905',
+  'skia_revision': 'a4fb847f47d9a63a999e57b6ff2b623d4689da2d',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -257,7 +257,7 @@ vars = {
   # The version / instance id of the cipd:chromium/fuchsia/test-scripts which
   # will be used altogether with fuchsia-sdk to setup the build / test
   # environment.
-  'fuchsia_test_scripts_version': 'EAdD2YcYwVrhF2q_zR6xUvPkcKlPb1tJyM_6_oOc84kC',
+  'fuchsia_test_scripts_version': 'XtkBHdNTtIpWdxN_lUNf6VqnvPUhvGTYgPDqob1R65EC',
 
   # The version / instance id of the cipd:chromium/fuchsia/gn-sdk which will be
   # used altogether with fuchsia-sdk to generate gn based build rules.
@@ -677,10 +677,10 @@ deps = {
    'src/flutter/third_party/swiftshader':
    Var('swiftshader_git') + '/SwiftShader.git' + '@' + '2fa7e9b99ae4e70ea5ae2cc9c8d3afb43391384f',
 
-   'src/third_party/angle':
+   'src/flutter/third_party/angle':
    Var('chromium_git') + '/angle/angle.git' + '@' + '6a09e41ce6ea8c93524faae1a925eb01562f53b1',
 
-   'src/third_party/vulkan_memory_allocator':
+   'src/flutter/third_party/vulkan_memory_allocator':
    Var('chromium_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator' + '@' + '7de5cc00de50e71a3aab22dea52fbb7ff4efceb6',
 
    'src/flutter/third_party/abseil-cpp':
@@ -1010,7 +1010,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '5Ra_AjCji-uR1GaX7pj7vNaX9r0xN1zC1pFwSdDuegsC'
+        'version': 'lAV5jgp4796siOZgIDxa2NLJP7lcfcjMuVLO5FVgSjAC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
@@ -1204,6 +1204,9 @@ hooks = [
     'pattern': '.',
     'condition': 'run_fuchsia_emu',
     'action': [
+      'env',
+      'DOWNLOAD_FUCHSIA_SDK={download_fuchsia_sdk}',
+      'FUCHSIA_SDK_PATH={fuchsia_sdk_path}',
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
       'src/flutter/tools/fuchsia/test_scripts/update_product_bundles.py',
