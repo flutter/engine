@@ -43,14 +43,14 @@ template("runner_sources") {
     }
 
     public_deps = [
+                    "${fuchsia_sdk}/fidl/fuchsia.component.runner",
+                    "${fuchsia_sdk}/fidl/fuchsia.test",
                     "${fuchsia_sdk}/pkg/sys_cpp",
                     "//flutter/fml",
                   ] + dart_public_deps
 
     deps = [
-      "${fuchsia_sdk}/fidl/fuchsia.component.runner",
       "${fuchsia_sdk}/fidl/fuchsia.logger",
-      "${fuchsia_sdk}/fidl/fuchsia.test",
       "${fuchsia_sdk}/pkg/async",
       "${fuchsia_sdk}/pkg/async-cpp",
       "${fuchsia_sdk}/pkg/async-default",

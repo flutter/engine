@@ -139,6 +139,8 @@ template("runner_sources") {
     ]
 
     public_deps = [
+                    "${fuchsia_sdk}/fidl/fuchsia.component.runner",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.app",
                     "${fuchsia_sdk}/pkg/inspect",
                     "${fuchsia_sdk}/pkg/inspect_component_cpp",
                     "${fuchsia_sdk}/pkg/sys_cpp",
@@ -147,14 +149,12 @@ template("runner_sources") {
 
     deps = [
              "${fuchsia_sdk}/fidl/fuchsia.accessibility.semantics",
-             "${fuchsia_sdk}/fidl/fuchsia.component.runner",
              "${fuchsia_sdk}/fidl/fuchsia.fonts",
              "${fuchsia_sdk}/fidl/fuchsia.images",
              "${fuchsia_sdk}/fidl/fuchsia.intl",
              "${fuchsia_sdk}/fidl/fuchsia.io",
              "${fuchsia_sdk}/fidl/fuchsia.media",
              "${fuchsia_sdk}/fidl/fuchsia.memorypressure",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.app",
              "${fuchsia_sdk}/fidl/fuchsia.ui.composition",
              "${fuchsia_sdk}/fidl/fuchsia.ui.input",
              "${fuchsia_sdk}/fidl/fuchsia.ui.input3",
