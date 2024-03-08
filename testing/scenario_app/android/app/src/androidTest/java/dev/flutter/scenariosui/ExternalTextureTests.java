@@ -51,7 +51,7 @@ public class ExternalTextureTests {
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "media");
     ScreenshotUtil.capture(
-        activityRule.launchActivity(intent), "ExternalTextureTests_testMediaSurface2");
+        activityRule.launchActivity(intent), "ExternalTextureTests_testMediaSurface");
   }
 
   @Test
