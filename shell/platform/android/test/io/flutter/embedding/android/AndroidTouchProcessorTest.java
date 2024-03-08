@@ -399,7 +399,7 @@ public class AndroidTouchProcessorTest {
   }
 
   @Test
-  @Config(sdk = {25})
+  @Config(sdk = API_LEVELS.API_25)
   public void scrollWheelBelow26() {
     // Pointer id must be zero to match actionIndex in mocked event.
     final int pointerId = 0;

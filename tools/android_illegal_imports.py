@@ -60,6 +60,13 @@ def main():
       if ANDROID_BUILD_VERSION_CODE_CLASS in contents:
         bad_version_codes_files.append(file)
 
+  # Flutter's Log class allows additional configuration around verbosity.
+
+  # Flutter's tracing class makes sure we do not violate string lengths that
+  # cause crashes at runtime.
+
+  # Flutter's Build.API_LEVELS class is clearer to read about which API version
+  # is used.
   has_bad_files = CheckBadFiles(bad_log_files, ANDROID_LOG_CLASS,
                                 FLUTTER_LOG_CLASS) or CheckBadFiles(
                                     bad_trace_files, 'android[x].tracing.Trace', FLUTTER_TRACE_CLASS

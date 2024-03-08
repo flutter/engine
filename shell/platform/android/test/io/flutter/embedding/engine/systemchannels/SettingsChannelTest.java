@@ -23,7 +23,7 @@ import org.robolectric.annotation.Config;
 public class SettingsChannelTest {
   @Test
   @TargetApi(API_LEVELS.API_33)
-  @Config(sdk = 33)
+  @Config(sdk = API_LEVELS.API_33)
   @SuppressWarnings("deprecation")
   // DartExecutor.send is deprecated.
   public void setDisplayMetricsDoesNothingOnAPILevel33() {

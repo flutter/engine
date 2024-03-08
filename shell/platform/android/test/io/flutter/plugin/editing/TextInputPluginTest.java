@@ -2134,7 +2134,7 @@ public class TextInputPluginTest {
 
   @Test
   @TargetApi(API_LEVELS.API_30)
-  @Config(sdk = 30)
+  @Config(sdk = API_LEVELS.API_30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE.
   // flutter#133074 tracks migration work.
@@ -2213,7 +2213,7 @@ public class TextInputPluginTest {
 
   @Test
   @TargetApi(API_LEVELS.API_30)
-  @Config(sdk = 30)
+  @Config(sdk = API_LEVELS.API_30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility
   // flutter#133074 tracks migration work.
@@ -2294,7 +2294,7 @@ public class TextInputPluginTest {
 
   @Test
   @TargetApi(API_LEVELS.API_30)
-  @Config(sdk = 30)
+  @Config(sdk = API_LEVELS.API_30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE
   // flutter#133074 tracks migration work.

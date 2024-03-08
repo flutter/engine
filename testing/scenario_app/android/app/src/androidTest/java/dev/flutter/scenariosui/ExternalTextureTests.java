@@ -4,6 +4,8 @@
 
 package dev.flutter.scenariosui;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.Intent;
 import android.graphics.Rect;
 import androidx.annotation.NonNull;
@@ -81,7 +83,7 @@ public class ExternalTextureTests {
   }
 
   @Test
-  @SdkSuppress(minSdkVersion = 23)
+  @SdkSuppress(minSdkVersion = API_LEVELS.API_23)
   public void testCroppedMediaSurface_bottomLeft() throws Exception {
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "image");
@@ -92,7 +94,7 @@ public class ExternalTextureTests {
   }
 
   @Test
-  @SdkSuppress(minSdkVersion = 23)
+  @SdkSuppress(minSdkVersion = API_LEVELS.API_23)
   public void testCroppedMediaSurface_topRight() throws Exception {
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "image");
@@ -104,7 +106,7 @@ public class ExternalTextureTests {
   }
 
   @Test
-  @SdkSuppress(minSdkVersion = 23)
+  @SdkSuppress(minSdkVersion = API_LEVELS.API_23)
   public void testCroppedRotatedMediaSurface_bottomLeft_90() throws Exception {
     intent.putExtra("scenario_name", "display_texture");
     intent.putExtra("surface_renderer", "image");

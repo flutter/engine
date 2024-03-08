@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 public class HandlerCompatTest {
   @Test
-  @Config(sdk = 28)
+  @Config(sdk = API_LEVELS.API_28)
   public void createAsync_createsAnAsyncHandler() {
     Handler handler = Handler.createAsync(Looper.getMainLooper());
 
