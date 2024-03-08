@@ -183,26 +183,15 @@
             "tests": [
                 {
                     "language": "python3",
-                    "name": "Dart and engine tests for host_release",
+                    "name": "Impeller-golden, dart and engine tests for host_release",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
                         "host_release",
                         "--type",
-                        "dart,dart-host,engine"
-                    ]
-                },
-                {
-                    "language": "python3",
-                    "name": "Impeller-golden tests for host_release",
-                    "script": "flutter/testing/run_tests.py",
-                    "parameters": [
-                        "--variant",
-                        "host_release",
-                        "--type",
-                        "impeller-golden"
+                        "dart,dart-host,engine,impeller-golden"
                     ],
-                    "test_if": "main"
+                    "run_if": "main"
                 }
             ]
         },
