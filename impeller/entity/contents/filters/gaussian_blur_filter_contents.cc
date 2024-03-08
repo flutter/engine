@@ -218,12 +218,11 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
   clipper.SetTransform(entity.GetTransform());
   auto restore = std::make_unique<ClipRestoreContents>();
   Entity result;
-  result.SetContents(Contents::MakeAnonymous(
-      fml::MakeCopyable([blur_entity = blur_entity.Clone(),
-                         clipper = std::move(clipper),
-                         restore = std::move(restore)](
-                            const ContentContext& renderer,
-                            const Entity& entity, RenderPass& pass) mutable {
+  auto renderer = fml::MakeCopyable(
+      [blur_entity = blur_entity.Clone(), clipper = std::move(clipper),
+       restore = std::move(restore)](const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) mutable {
         bool result = true;
         clipper.SetTransform(entity.GetTransform() * clipper.GetTransform());
         result = clipper.Render(renderer, pass) && result;
@@ -235,13 +234,14 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
           result = restore->Render(renderer, entity, pass) && result;
         }
         return result;
-      }),
-      fml::MakeCopyable(
-          [blur_entity = std::move(blur_entity)](const Entity& entity) mutable {
-            blur_entity.SetTransform(entity.GetTransform() *
-                                     blur_entity.GetTransform());
-            return blur_entity.GetCoverage();
-          })));
+      });
+  auto coverage = fml::MakeCopyable(
+      [blur_entity = std::move(blur_entity)](const Entity& entity) mutable {
+        blur_entity.SetTransform(entity.GetTransform() *
+                                 blur_entity.GetTransform());
+        return blur_entity.GetCoverage();
+      });
+  result.SetContents(Contents::MakeAnonymous(renderer, coverage));
   return result;
 }
 
