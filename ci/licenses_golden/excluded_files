@@ -3308,7 +3308,6 @@
 ../../../third_party/perfetto/ui/src/plugins/dev.perfetto.AndroidPerf/OWNERS
 ../../../third_party/perfetto/ui/src/plugins/dev.perfetto.LargeScreensPerf/OWNERS
 ../../../third_party/perfetto/ui/src/test
-../../../third_party/web_dependencies/canvaskit
 ../../../third_party/zlib/.git
 ../../../third_party/zlib/CMakeLists.txt
 ../../../third_party/zlib/DIR_METADATA

@@ -217,7 +217,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
-  r'third_party/web_dependencies/canvaskit', // redundant; covered by Skia dependencies
   r'third_party/zlib/contrib/minizip/miniunz.c', // sample file
   r'third_party/zlib/contrib/minizip/minizip.c', // sample file
   r'tools', // not distributed in binary
