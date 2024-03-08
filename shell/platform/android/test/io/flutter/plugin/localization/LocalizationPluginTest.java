@@ -34,7 +34,7 @@ public class LocalizationPluginTest {
 
   // This test should be synced with the version for API 24.
   @Test
-  @Config(sdk = 26)
+  @Config(sdk = API_LEVELS.API_26)
   public void computePlatformResolvedLocaleAPI26() {
     // --- Test Setup ---
     FlutterJNI flutterJNI = new FlutterJNI();

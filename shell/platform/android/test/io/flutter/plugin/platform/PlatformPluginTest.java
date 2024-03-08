@@ -336,7 +336,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 30)
+  @Config(sdk = API_LEVELS.API_30)
   @Test
   public void setNavigationBarIconBrightness() {
     View fakeDecorView = mock(View.class);
@@ -383,7 +383,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = 30)
+  @Config(sdk = API_LEVELS.API_30)
   @Test
   public void setStatusBarIconBrightness() {
     View fakeDecorView = mock(View.class);
