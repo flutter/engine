@@ -210,7 +210,6 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                              const Snapshot& input_snapshot,
                              Entity blur_entity,
                              const std::shared_ptr<Geometry>& geometry) {
-  blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
   auto clip_contents = std::make_shared<ClipContents>();
   clip_contents->SetClipOperation(clip_operation);
   clip_contents->SetGeometry(geometry);
@@ -228,6 +227,7 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
         bool result = true;
         clipper.SetTransform(entity.GetTransform() * clipper.GetTransform());
         result = clipper.Render(renderer, pass) && result;
+        blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
         blur_entity.SetTransform(entity.GetTransform() *
                                  blur_entity.GetTransform());
         result = blur_entity.Render(renderer, pass) && result;
