@@ -1,4 +1,4 @@
-Signature: f9236da74d255617cc4d0baedd35f8d2
+Signature: 7bf5931b9d26515f1d100ceb509c287a
 
 ====================================================================================================
 LIBRARY: etc1
@@ -761,6 +761,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/shaders/SkShader.cpp + ../../../fl
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkCamera.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkParse.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkParseColor.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/utils/mac/SkCTFontCreateExactCopy.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/utils/mac/SkCTFontCreateExactCopy.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/xml/SkDOM.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/xml/SkDOM.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/xml/SkXMLParser.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -907,6 +909,8 @@ FILE: ../../../flutter/third_party/skia/src/shaders/SkShader.cpp
 FILE: ../../../flutter/third_party/skia/src/utils/SkCamera.cpp
 FILE: ../../../flutter/third_party/skia/src/utils/SkParse.cpp
 FILE: ../../../flutter/third_party/skia/src/utils/SkParseColor.cpp
+FILE: ../../../flutter/third_party/skia/src/utils/mac/SkCTFontCreateExactCopy.cpp
+FILE: ../../../flutter/third_party/skia/src/utils/mac/SkCTFontCreateExactCopy.h
 FILE: ../../../flutter/third_party/skia/src/xml/SkDOM.cpp
 FILE: ../../../flutter/third_party/skia/src/xml/SkDOM.h
 FILE: ../../../flutter/third_party/skia/src/xml/SkXMLParser.cpp
