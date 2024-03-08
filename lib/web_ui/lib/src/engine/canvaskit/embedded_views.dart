@@ -402,7 +402,7 @@ class HtmlViewEmbedder {
                 entity.debugComputedBounds!, platformViewBoundsPaint);
           }
         } else if (entity is RenderingRenderCanvas) {
-          for (CkPicture picture in entity.pictures) {
+          for (final CkPicture picture in entity.pictures) {
             boundsCanvas.drawRect(picture.cullRect, pictureBoundsPaint);
           }
         }
