@@ -1378,7 +1378,6 @@ def main(argv):
   command = [
       '%s/flutter/third_party/gn/gn%s' % (SRC_ROOT, exe),
       'gen',
-      '--check',
       '--export-compile-commands',
   ]
 
