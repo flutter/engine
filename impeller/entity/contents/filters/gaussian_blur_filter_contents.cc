@@ -215,33 +215,33 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
   clip_contents->SetGeometry(geometry);
   Entity clipper;
   clipper.SetContents(clip_contents);
-  clipper.SetTransform(entity.GetTransform());
   auto restore = std::make_unique<ClipRestoreContents>();
-  Entity result;
+  Matrix entity_transform = entity.GetTransform();
+  Matrix blur_transform = blur_entity.GetTransform();
   auto renderer = fml::MakeCopyable(
       [blur_entity = blur_entity.Clone(), clipper = std::move(clipper),
-       restore = std::move(restore)](const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) mutable {
+       restore = std::move(restore), entity_transform,
+       blur_transform](const ContentContext& renderer, const Entity& entity,
+                       RenderPass& pass) mutable {
         bool result = true;
         clipper.SetNewClipDepth(entity.GetNewClipDepth());
-        clipper.SetTransform(entity.GetTransform() * clipper.GetTransform());
+        clipper.SetTransform(entity.GetTransform() * entity_transform);
         result = clipper.Render(renderer, pass) && result;
         blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
-        blur_entity.SetTransform(entity.GetTransform() *
-                                 blur_entity.GetTransform());
+        blur_entity.SetTransform(entity.GetTransform() * blur_transform);
         result = blur_entity.Render(renderer, pass) && result;
         if constexpr (!ContentContext::kEnableStencilThenCover) {
           result = restore->Render(renderer, entity, pass) && result;
         }
         return result;
       });
-  auto coverage = fml::MakeCopyable(
-      [blur_entity = std::move(blur_entity)](const Entity& entity) mutable {
-        blur_entity.SetTransform(entity.GetTransform() *
-                                 blur_entity.GetTransform());
+  auto coverage =
+      fml::MakeCopyable([blur_entity = std::move(blur_entity),
+                         blur_transform](const Entity& entity) mutable {
+        blur_entity.SetTransform(entity.GetTransform() * blur_transform);
         return blur_entity.GetCoverage();
       });
+  Entity result;
   result.SetContents(Contents::MakeAnonymous(renderer, coverage));
   return result;
 }
