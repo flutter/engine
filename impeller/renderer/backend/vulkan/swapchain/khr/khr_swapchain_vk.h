@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_VK_H_
-#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_VK_H_
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_VK_H_
 
 #include <memory>
 
@@ -14,7 +14,7 @@
 
 namespace impeller {
 
-class SwapchainImplVK;
+class KHRSwapchainImplVK;
 
 //------------------------------------------------------------------------------
 /// @brief      A swapchain that adapts to the underlying surface going out of
@@ -22,15 +22,15 @@ class SwapchainImplVK;
 ///             to an unrecoverable error and the swapchain must be recreated
 ///             with a new surface.
 ///
-class SwapchainVK {
+class KHRSwapchainVK {
  public:
-  static std::shared_ptr<SwapchainVK> Create(
+  static std::shared_ptr<KHRSwapchainVK> Create(
       const std::shared_ptr<Context>& context,
       vk::UniqueSurfaceKHR surface,
       const ISize& size,
       bool enable_msaa = true);
 
-  ~SwapchainVK();
+  ~KHRSwapchainVK();
 
   bool IsValid() const;
 
@@ -43,19 +43,19 @@ class SwapchainVK {
   void UpdateSurfaceSize(const ISize& size);
 
  private:
-  std::shared_ptr<SwapchainImplVK> impl_;
+  std::shared_ptr<KHRSwapchainImplVK> impl_;
   ISize size_;
   const bool enable_msaa_;
 
-  SwapchainVK(std::shared_ptr<SwapchainImplVK> impl,
-              const ISize& size,
-              bool enable_msaa);
+  KHRSwapchainVK(std::shared_ptr<KHRSwapchainImplVK> impl,
+                 const ISize& size,
+                 bool enable_msaa);
 
-  SwapchainVK(const SwapchainVK&) = delete;
+  KHRSwapchainVK(const KHRSwapchainVK&) = delete;
 
-  SwapchainVK& operator=(const SwapchainVK&) = delete;
+  KHRSwapchainVK& operator=(const KHRSwapchainVK&) = delete;
 };
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_VK_H_
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_VK_H_

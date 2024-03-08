@@ -2,47 +2,47 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
 
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_impl_vk.h"
 
 namespace impeller {
 
-std::shared_ptr<SwapchainVK> SwapchainVK::Create(
+std::shared_ptr<KHRSwapchainVK> KHRSwapchainVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
     const ISize& size,
     bool enable_msaa) {
-  auto impl =
-      SwapchainImplVK::Create(context, std::move(surface), size, enable_msaa);
+  auto impl = KHRSwapchainImplVK::Create(context, std::move(surface), size,
+                                         enable_msaa);
   if (!impl || !impl->IsValid()) {
     VALIDATION_LOG << "Failed to create SwapchainVK implementation.";
     return nullptr;
   }
-  return std::shared_ptr<SwapchainVK>(
-      new SwapchainVK(std::move(impl), size, enable_msaa));
+  return std::shared_ptr<KHRSwapchainVK>(
+      new KHRSwapchainVK(std::move(impl), size, enable_msaa));
 }
 
-SwapchainVK::SwapchainVK(std::shared_ptr<SwapchainImplVK> impl,
-                         const ISize& size,
-                         bool enable_msaa)
+KHRSwapchainVK::KHRSwapchainVK(std::shared_ptr<KHRSwapchainImplVK> impl,
+                               const ISize& size,
+                               bool enable_msaa)
     : impl_(std::move(impl)), size_(size), enable_msaa_(enable_msaa) {}
 
-SwapchainVK::~SwapchainVK() = default;
+KHRSwapchainVK::~KHRSwapchainVK() = default;
 
-bool SwapchainVK::IsValid() const {
+bool KHRSwapchainVK::IsValid() const {
   return impl_ ? impl_->IsValid() : false;
 }
 
-void SwapchainVK::UpdateSurfaceSize(const ISize& size) {
+void KHRSwapchainVK::UpdateSurfaceSize(const ISize& size) {
   // Update the size of the swapchain. On the next acquired drawable,
   // the sizes may no longer match, forcing the swapchain to be recreated.
   size_ = size;
 }
 
-std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
+std::unique_ptr<Surface> KHRSwapchainVK::AcquireNextDrawable() {
   if (!IsValid()) {
     return nullptr;
   }
@@ -61,11 +61,11 @@ std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
   auto context = impl_->GetContext();
   auto [surface, old_swapchain] = impl_->DestroySwapchain();
 
-  auto new_impl = SwapchainImplVK::Create(context,             //
-                                          std::move(surface),  //
-                                          size_,               //
-                                          enable_msaa_,        //
-                                          *old_swapchain       //
+  auto new_impl = KHRSwapchainImplVK::Create(context,             //
+                                             std::move(surface),  //
+                                             size_,               //
+                                             enable_msaa_,        //
+                                             *old_swapchain       //
   );
   if (!new_impl || !new_impl->IsValid()) {
     VALIDATION_LOG << "Could not update swapchain.";
@@ -82,7 +82,7 @@ std::unique_ptr<Surface> SwapchainVK::AcquireNextDrawable() {
   return AcquireNextDrawable();
 }
 
-vk::Format SwapchainVK::GetSurfaceFormat() const {
+vk::Format KHRSwapchainVK::GetSurfaceFormat() const {
   return IsValid() ? impl_->GetSurfaceFormat() : vk::Format::eUndefined;
 }
 
