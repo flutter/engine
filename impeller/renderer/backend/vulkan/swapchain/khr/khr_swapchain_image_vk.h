@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMAGE_VK_H_
-#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMAGE_VK_H_
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_IMAGE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_IMAGE_VK_H_
 
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
@@ -13,14 +13,14 @@
 
 namespace impeller {
 
-class SwapchainImageVK final : public TextureSourceVK {
+class KHRSwapchainImageVK final : public TextureSourceVK {
  public:
-  SwapchainImageVK(TextureDescriptor desc,
-                   const vk::Device& device,
-                   vk::Image image);
+  KHRSwapchainImageVK(TextureDescriptor desc,
+                      const vk::Device& device,
+                      vk::Image image);
 
   // |TextureSourceVK|
-  ~SwapchainImageVK() override;
+  ~KHRSwapchainImageVK() override;
 
   bool IsValid() const;
 
@@ -33,28 +33,31 @@ class SwapchainImageVK final : public TextureSourceVK {
 
   std::shared_ptr<Texture> GetMSAATexture() const;
 
-  bool HasMSAATexture() const;
+  std::shared_ptr<Texture> GetDepthStencilTexture() const;
 
   // |TextureSourceVK|
   vk::ImageView GetImageView() const override;
 
   vk::ImageView GetRenderTargetView() const override;
 
-  void SetMSAATexture(std::shared_ptr<Texture> msaa_tex);
+  void SetMSAATexture(std::shared_ptr<Texture> texture);
+
+  void SetDepthStencilTexture(std::shared_ptr<Texture> texture);
 
   bool IsSwapchainImage() const override { return true; }
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;
   vk::UniqueImageView image_view_ = {};
-  std::shared_ptr<Texture> msaa_tex_;
+  std::shared_ptr<Texture> msaa_texture_;
+  std::shared_ptr<Texture> depth_stencil_texture_;
   bool is_valid_ = false;
 
-  SwapchainImageVK(const SwapchainImageVK&) = delete;
+  KHRSwapchainImageVK(const KHRSwapchainImageVK&) = delete;
 
-  SwapchainImageVK& operator=(const SwapchainImageVK&) = delete;
+  KHRSwapchainImageVK& operator=(const KHRSwapchainImageVK&) = delete;
 };
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMAGE_VK_H_
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_IMAGE_VK_H_
