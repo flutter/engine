@@ -1146,8 +1146,12 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
   if (action == @selector(paste:)) {
+    UIPasteboard* pasteboard = [UIPasteboard generalPasteboard];
+    if (@available(iOS 10, *)) {
+      return pasteboard.hasStrings;
+    }
     // Forbid pasting images, memojis, or other non-string content.
-    return [UIPasteboard generalPasteboard].string != nil;
+    return pasteboard.string != nil;
   }
 
   return [super canPerformAction:action withSender:sender];
