@@ -265,7 +265,7 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                                    input, input_snapshot,
                                    std::move(blur_entity), geometry);
     case FilterContents::BlurStyle::kSolid: {
-      Entity blurred = ApplyClippedBlurStyle(Entity::ClipOperation::kIntersect,
+      Entity blurred = ApplyClippedBlurStyle(Entity::ClipOperation::kDifference,
                                              entity, input, input_snapshot,
                                              std::move(blur_entity), geometry);
       Entity snapshot_entity = Entity::FromSnapshot(
@@ -278,8 +278,11 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                                 const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) mutable {
-            return blurred.Render(renderer, pass) &&
-                   snapshot_entity.Render(renderer, pass);
+            bool result = true;
+            result = result && blurred.Render(renderer, pass);
+            snapshot_entity.SetNewClipDepth(entity.GetNewClipDepth());
+            result = result && snapshot_entity.Render(renderer, pass);
+            return result;
           }),
           fml::MakeCopyable(
               [coverage](const Entity& entity) { return coverage; })));
