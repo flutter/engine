@@ -104,6 +104,15 @@ struct Paint {
       std::shared_ptr<Contents> input,
       ColorFilterContents::AbsorbOpacity absorb_opacity =
           ColorFilterContents::AbsorbOpacity::kNo) const;
+
+  /// @brief      Absorbs the color filter (if any) into the Paint's color.
+  ///             There are multiple paint attributes that can result in a
+  ///             filter being applied.
+  ///             This is only valid if the color source is set is a solid
+  ///             color.
+  void AbsorbColorFilterIntoColor();
+
+  friend class Canvas;
 };
 
 }  // namespace impeller

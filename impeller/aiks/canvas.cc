@@ -330,12 +330,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
   Paint rrect_paint = paint;
 
   // Absorb the color filter, if any.
-  if (rrect_paint.HasColorFilter()) {
-    rrect_paint.color =
-        rrect_paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color);
-    rrect_paint.color_filter = nullptr;
-    rrect_paint.invert_colors = false;
-  }
+  rrect_paint.AbsorbColorFilterIntoColor();
 
   // In some cases, we need to render the mask blur to a separate layer.
   //
