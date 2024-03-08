@@ -27,6 +27,13 @@ class AllocatorVK final : public Allocator {
   // Visible for testing
   size_t DebugGetHeapUsage() const;
 
+  // Visible for testing.
+  static vk::ImageUsageFlags ToVKImageUsageFlags(
+      PixelFormat format,
+      TextureUsageMask usage,
+      StorageMode mode,
+      bool supports_memoryless_textures);
+
  private:
   friend class ContextVK;
 

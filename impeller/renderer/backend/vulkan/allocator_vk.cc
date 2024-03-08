@@ -170,7 +170,7 @@ ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   return max_texture_size_;
 }
 
-static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
+vk::ImageUsageFlags AllocatorVK::ToVKImageUsageFlags(
     PixelFormat format,
     TextureUsageMask usage,
     StorageMode mode,
@@ -193,30 +193,16 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
       vk_usage |= vk::ImageUsageFlagBits::eColorAttachment;
+      vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
     }
-    vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
   }
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
     vk_usage |= vk::ImageUsageFlagBits::eSampled;
-    // Device transient images can only be used as attachments. The caller
-    // specified incorrect usage flags and is attempting to read a device
-    // transient image in a shader. Unset the transient attachment flag. See:
-    // https://github.com/flutter/flutter/issues/121633
-    if (mode == StorageMode::kDeviceTransient) {
-      vk_usage &= ~vk::ImageUsageFlagBits::eTransientAttachment;
-    }
   }
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
     vk_usage |= vk::ImageUsageFlagBits::eStorage;
-    // Device transient images can only be used as attachments. The caller
-    // specified incorrect usage flags and is attempting to read a device
-    // transient image in a shader. Unset the transient attachment flag. See:
-    // https://github.com/flutter/flutter/issues/121633
-    if (mode == StorageMode::kDeviceTransient) {
-      vk_usage &= ~vk::ImageUsageFlagBits::eTransientAttachment;
-    }
   }
 
   if (mode != StorageMode::kDeviceTransient) {
@@ -288,9 +274,9 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
     image_info.arrayLayers = ToArrayLayerCount(desc.type);
     image_info.tiling = vk::ImageTiling::eOptimal;
     image_info.initialLayout = vk::ImageLayout::eUndefined;
-    image_info.usage =
-        ToVKImageUsageFlags(desc.format, desc.usage, desc.storage_mode,
-                            supports_memoryless_textures);
+    image_info.usage = AllocatorVK::ToVKImageUsageFlags(
+        desc.format, desc.usage, desc.storage_mode,
+        supports_memoryless_textures);
     image_info.sharingMode = vk::SharingMode::eExclusive;
 
     VmaAllocationCreateInfo alloc_nfo = {};
