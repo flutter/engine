@@ -199,20 +199,4 @@ bool Paint::HasColorFilter() const {
   return !!color_filter || invert_colors;
 }
 
-void Paint::AbsorbColorFilterIntoColor() {
-  // This method should only ever be used when the caller knows that the color
-  // source is a solid color. This is not a valid way to apply the color filter
-  // for other color sources.
-  FML_DCHECK(color_source.GetType() == ColorSource::Type::kColor);
-
-  std::shared_ptr<ColorFilter> final_color_filter = GetColorFilter();
-  if (!final_color_filter) {
-    return;  // Nothing to absorb.
-  }
-
-  color = GetColorFilter()->GetCPUColorFilterProc()(color);
-  color_filter = nullptr;
-  invert_colors = false;
-}
-
 }  // namespace impeller
