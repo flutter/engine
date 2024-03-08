@@ -224,6 +224,7 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
                                      const Entity& entity,
                                      RenderPass& pass) mutable {
         bool result = true;
+        clipper.SetNewClipDepth(entity.GetNewClipDepth());
         clipper.SetTransform(entity.GetTransform() * clipper.GetTransform());
         result = clipper.Render(renderer, pass) && result;
         blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
