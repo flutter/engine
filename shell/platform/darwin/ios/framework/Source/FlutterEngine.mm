@@ -1082,6 +1082,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), @(start), @(end) ]];
 }
 
+- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+    willDismissEditMenuWithTextInputClient:(int)client {
+  [_platformChannel.get() invokeMethod:@"System.onDismissSystemContextMenu"
+                             arguments:@[ @(client) ]];
+}
+
 #pragma mark - FlutterViewEngineDelegate
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client {

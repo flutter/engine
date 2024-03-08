@@ -396,6 +396,9 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
 
   @override
+  bool get supportsShowingSystemContextMenu => platformDispatcher.supportsShowingSystemContextMenu;
+
+  @override
   bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
 
   @override

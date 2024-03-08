@@ -2125,7 +2125,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
     @"platformContrast" : [self contrastMode],
-    @"nativeSpellCheckServiceDefined" : @true
+    @"nativeSpellCheckServiceDefined" : @true,
+    @"supportsShowingSystemContextMenu" : @([self supportsShowingSystemContextMenu])
   }];
 }
 
@@ -2185,6 +2186,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return 1.0;
   }
 #endif
+}
+
+- (BOOL)supportsShowingSystemContextMenu {
+  if (@available(iOS 16.0, *)) {
+    return YES;
+  } else {
+    return NO;
+  }
 }
 
 - (BOOL)isAlwaysUse24HourFormat {

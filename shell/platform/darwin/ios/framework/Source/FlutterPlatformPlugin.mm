@@ -149,8 +149,28 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
   } else if ([method isEqualToString:@"Share.invoke"]) {
     [self showShareViewController:args];
     result(nil);
+  } else if ([method isEqualToString:@"ContextMenu.showSystemContextMenu"]) {
+    [self showSystemContextMenu:args];
+    result(nil);
+  } else if ([method isEqualToString:@"ContextMenu.hideSystemContextMenu"]) {
+    [self hideSystemContextMenu];
+    result(nil);
   } else {
     result(FlutterMethodNotImplemented);
+  }
+}
+
+- (void)showSystemContextMenu:(NSDictionary*)args {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* textInputPlugin = [_engine.get() textInputPlugin];
+    [textInputPlugin showEditMenu:args];
+  }
+}
+
+- (void)hideSystemContextMenu {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* textInputPlugin = [_engine.get() textInputPlugin];
+    [textInputPlugin hideEditMenu];
   }
 }
 
