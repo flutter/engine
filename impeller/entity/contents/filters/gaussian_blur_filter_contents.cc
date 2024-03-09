@@ -271,21 +271,28 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       Entity snapshot_entity = Entity::FromSnapshot(
           input_snapshot, entity.GetBlendMode(), entity.GetClipDepth());
       Entity result;
-      std::optional<Rect> coverage = blurred.GetCoverage();
+      Matrix blurred_transform = blurred.GetTransform();
+      Matrix snapshot_transform = snapshot_entity.GetTransform();
       result.SetContents(Contents::MakeAnonymous(
-          fml::MakeCopyable([blurred = std::move(blurred),
-                             snapshot_entity = std::move(snapshot_entity)](
-                                const ContentContext& renderer,
-                                const Entity& entity,
-                                RenderPass& pass) mutable {
-            bool result = true;
-            result = result && blurred.Render(renderer, pass);
-            snapshot_entity.SetNewClipDepth(entity.GetNewClipDepth());
-            result = result && snapshot_entity.Render(renderer, pass);
-            return result;
-          }),
           fml::MakeCopyable(
-              [coverage](const Entity& entity) { return coverage; })));
+              [blurred = blurred.Clone(), blurred_transform, snapshot_transform,
+               snapshot_entity = std::move(snapshot_entity)](
+                  const ContentContext& renderer, const Entity& entity,
+                  RenderPass& pass) mutable {
+                bool result = true;
+                blurred.SetTransform(entity.GetTransform() * blurred_transform);
+                result = result && blurred.Render(renderer, pass);
+                snapshot_entity.SetTransform(entity.GetTransform() *
+                                             snapshot_transform);
+                snapshot_entity.SetNewClipDepth(entity.GetNewClipDepth());
+                result = result && snapshot_entity.Render(renderer, pass);
+                return result;
+              }),
+          fml::MakeCopyable([blurred = blurred.Clone(),
+                             blurred_transform](const Entity& entity) mutable {
+            blurred.SetTransform(entity.GetTransform() * blurred_transform);
+            return blurred.GetCoverage();
+          })));
       return result;
     }
   }
