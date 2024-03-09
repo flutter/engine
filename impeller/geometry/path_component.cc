@@ -217,7 +217,7 @@ CubicPathComponent CubicPathComponent::Subsegment(Scalar t0, Scalar t1) const {
 
 void CubicPathComponent::ToLinearPathComponents(Scalar scale,
                                                 const PointProc& proc) const {
-  constexpr Scalar accuracy = 0.1;
+  constexpr Scalar accuracy = 1;
   // The maximum error, as a vector from the cubic to the best approximating
   // quadratic, is proportional to the third derivative, which is constant
   // across the segment. Thus, the error scales down as the third power of

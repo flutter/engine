@@ -24,7 +24,7 @@ namespace impeller {
 // curvy curves at scales close to 1.0. As the scale increases, this number
 // should be divided by Matrix::GetMaxBasisLength to avoid generating too few
 // points for the given scale.
-static constexpr Scalar kDefaultCurveTolerance = .1f;
+static constexpr Scalar kDefaultCurveTolerance = 1;
 
 struct LinearPathComponent {
   Point p1;
