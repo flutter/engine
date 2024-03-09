@@ -1239,5 +1239,20 @@ hooks = [
       '--as-gclient-hook',
       Var('mac_sdk_min')
     ]
-  }
+  },
+  # Track the hash of this DEPS file.
+  # Used by the engine tool to determine whether to sync again.
+  # Keep this step last.
+  {
+    'name': 'Update DEPS hash file',
+    'pattern': '.',
+    'action': [
+      'python3',
+      'src/flutter/build/sha256.py',
+      '--source',
+      'src/flutter/DEPS',
+      '--output',
+      'src/flutter/build/DEPS.sha256'
+    ]
+  },
 ]

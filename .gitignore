@@ -142,3 +142,6 @@ app.*.symbols
 
 # The gn-sdk from Chromium and managed by DEPS and gclient.
 /tools/fuchsia/gn-sdk
+
+# DEPS hash created by gclient runhooks
+build/DEPS.sha256

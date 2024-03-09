@@ -3,11 +3,39 @@
 // found in the LICENSE file.
 
 import 'dart:io' as io;
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
+import 'package:path/path.dart' as p;
 import 'package:process_runner/process_runner.dart';
 
 import 'environment.dart';
 import 'logger.dart';
+
+/// Check whether the DEPS file has been changed since the last gclient sync.
+bool dependenciesUpdated(Environment environment) {
+  try {
+    // The DEPS.sha256 file contains a SHA-256 hash of the DEPS file.
+    // It is created by gclient runhooks.
+    final String hashPath = p.join(
+      environment.engine.flutterDir.path, 'build', 'DEPS.sha256',
+    );
+    final io.File hashFile = io.File(hashPath);
+    final String previousHash = hashFile.readAsStringSync().toLowerCase();
+
+    // Find the DEPS file's latest hash.
+    final String depsPath = p.join(
+      environment.engine.flutterDir.path, 'DEPS',
+    );
+    final Uint8List depsBytes = io.File(depsPath).readAsBytesSync();
+    final crypto.Digest latestDigest = crypto.sha256.convert(depsBytes);
+    final String latestHash = latestDigest.toString().toLowerCase();
+
+    return latestHash == previousHash;
+  } catch (_) {
+    return false;
+  }
+}
 
 /// Update Flutter engine dependencies. Returns an exit code.
 Future<int> fetchDependencies(

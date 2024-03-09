@@ -5,6 +5,7 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
+import '../dependencies.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -52,7 +53,10 @@ final class BuildCommand extends CommandBase {
       return 1;
     }
 
-    // TODO(loic-sharma): Fetch dependencies if needed.
+    if (!dependenciesUpdated(environment)) {
+      await fetchDependencies(environment);
+    }
+
     return runBuild(environment, build);
   }
 }

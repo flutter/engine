@@ -155,4 +155,16 @@ void main() {
     expect(result, equals(0));
     expect(runHistory.length, lessThanOrEqualTo(3));
   });
+
+  test('build command fetches dependencies', () async {
+    // TODO: DEPS SHA-256 hex digest does not match DEPS.sha256 contents.
+  });
+
+  test('build command fetches dependencies if sync never ran', () async {
+    // TODO: No DEPS.sha256 file
+  });
+
+  test('build command does not fetch dependencies if updated', () async {
+    // TODO: DEPS SHA-256 hex digest matches DEPS.sha256 contents.
+  });
 }
