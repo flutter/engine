@@ -34,6 +34,18 @@ final class ViewFocusBinding {
     _onViewCreatedListener?.cancel();
   }
 
+  void changeViewFocus(int viewId, ui.ViewFocusState state) {
+    final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
+
+    if (state == ui.ViewFocusState.focused) {
+      if (viewId != _viewId(domDocument.activeElement)) {
+        viewElement?.focus();
+      }
+    } else {
+      viewElement?.blur();
+    }
+  }
+
   late final DomEventListener _handleFocusin = createDomEventListener((DomEvent event) {
     event as DomFocusEvent;
     _handleFocusChange(event.target as DomElement?);

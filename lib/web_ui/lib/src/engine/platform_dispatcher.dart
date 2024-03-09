@@ -257,12 +257,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     required ui.ViewFocusState state,
     required ui.ViewFocusDirection direction,
   }) {
-    final DomElement? viewElement = viewManager[viewId]?.dom.rootElement;
-    if (state == ui.ViewFocusState.focused) {
-      viewElement?.focus();
-    } else {
-      viewElement?.blur();
-    }
+    _viewFocusBinding.changeViewFocus(viewId, state);
   }
 
   /// A set of views which have rendered in the current `onBeginFrame` or
