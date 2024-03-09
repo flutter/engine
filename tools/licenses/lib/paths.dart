@@ -201,11 +201,11 @@ final Set<String> skippedPaths = <String>{
   r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/gradle',
   r'third_party/java', // only used for Android builds
-  r'third_party/libcxx/benchmarks',
-  r'third_party/libcxx/docs',
-  r'third_party/libcxx/src/support/solaris',
-  r'third_party/libcxx/utils',
-  r'third_party/libcxxabi/www',
+  r'flutter/third_party/libcxx/benchmarks',
+  r'flutter/third_party/libcxx/docs',
+  r'flutter/third_party/libcxx/src/support/solaris',
+  r'flutter/third_party/libcxx/utils',
+  r'flutter/third_party/libcxxabi/www',
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
   r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
