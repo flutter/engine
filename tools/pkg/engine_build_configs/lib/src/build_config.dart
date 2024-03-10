@@ -803,17 +803,20 @@ final class GlobalArchive extends BuildConfigBase {
 }
 
 bool _canRunOn(List<String> droneDimensions, Platform platform) {
-  String? os;
+  Iterable<String>? supported;
   for (final String dimension in droneDimensions) {
-    os ??= switch (dimension.split('=')) {
-      ['os', 'Linux'] => Platform.linux,
-      ['os', final String win] when win.startsWith('Windows') =>
-        Platform.windows,
-      ['os', final String mac] when mac.startsWith('Mac') => Platform.macOS,
-      _ => null,
-    };
+    if (!dimension.startsWith('os=')) {
+      continue;
+    }
+    supported ??= dimension.substring(3).split('|').map(
+      (String os) => switch(os) {
+        'Linux' => Platform.linux,
+        final String win when win.startsWith('Windows') => Platform.windows,
+        final String mac when mac.startsWith('Mac') => Platform.macOS,
+        _ => '',
+    }).where((String s) => s.isNotEmpty);
   }
-  return os == platform.operatingSystem;
+  return supported?.contains(platform.operatingSystem) ?? false;
 }
 
 void appendTypeError(

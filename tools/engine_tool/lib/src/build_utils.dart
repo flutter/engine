@@ -65,6 +65,37 @@ void debugCheckBuilds(List<Build> builds) {
   }
 }
 
+/// Transform the name of a build into the name presented and accepted by the
+/// CLI
+///
+/// If a name starts with '$OS/', it is a local development build, and the
+/// mangled name has the '$OS/' part stripped off.
+///
+/// If the name does not start with '$OS/', it is a CI build whose main purpose
+/// is to produce artifacts for consumption by the Flutter framework, and the
+/// mangled name has 'ci/' prepended onto `name`.
+String mangleConfigName(Environment environment, String name) {
+  final String os = '${environment.platform.operatingSystem}/';
+  if (name.startsWith(os)) {
+    return name.substring(os.length);
+  }
+  return 'ci/$name';
+}
+
+/// Transform the mangled name of a build into its true name in the build
+/// config json file.
+///
+/// This does the reverse of [mangleConfigName] taking the operating system
+/// name from `environment`.
+String demangleConfigName(Environment environment, String name) {
+  const String ci = 'ci/';
+  if (name.startsWith(ci)) {
+    return name.substring(ci.length);
+  }
+  final String os = environment.platform.operatingSystem;
+  return '$os/$name';
+}
+
 /// Build the build target in the environment.
 Future<int> runBuild(
   Environment environment,
