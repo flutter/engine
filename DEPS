@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '0da56a6c74464b774192330574b6d89998e9cfbc',
+  'skia_revision': 'e6b884229d2dcef8f81c411fc6862c5844524e15',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -283,7 +283,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'ef514ca5144ba0a4ce5e7075c325d24cd6da73a4',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e9df434539745202fa5f9b729fe5f82e5de3f025',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -1010,7 +1010,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'lAV5jgp4796siOZgIDxa2NLJP7lcfcjMuVLO5FVgSjAC'
+        'version': 'gJ4Wr2FSpnGmoN3kedXT7muXeW-UqaEtV0_l5QLsEvsC'
        }
      ],
      'condition': 'host_os == "linux" and not download_fuchsia_sdk',
