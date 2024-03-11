@@ -788,7 +788,6 @@ TEST_P(AiksTest, GaussianBlurStyleInnerGradient) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-/// TODO(gaaclarke): This still doesn't work with stencil and cover.
 TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
