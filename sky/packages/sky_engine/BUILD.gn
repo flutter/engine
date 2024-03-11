@@ -4,7 +4,6 @@
 
 import("//flutter/build/dart/rules.gni")
 import("//flutter/lib/ui/dart_ui.gni")
-import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 import("//flutter/web_sdk/web_sdk.gni")
 import("$dart_src/sdk/lib/_http/http_sources.gni")
 import("$dart_src/sdk/lib/_internal/js_runtime/interceptors_sources.gni")
@@ -28,7 +27,9 @@ import("$dart_src/sdk/lib/js_util/js_util_sources.gni")
 import("$dart_src/sdk/lib/math/math_sources.gni")
 import("$dart_src/sdk/lib/typed_data/typed_data_sources.gni")
 
-if (!is_fuchsia) {
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+} else {
   copy("copy_sky_engine_authors") {
     sources = [ "//AUTHORS" ]
 

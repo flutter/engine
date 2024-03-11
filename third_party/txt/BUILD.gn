@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 declare_args() {
   flutter_use_fontconfig = false
