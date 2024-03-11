@@ -10,6 +10,7 @@ import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/environment.dart';
 import 'package:engine_tool/src/logger.dart';
+import 'package:file/memory.dart';
 import 'package:litetest/litetest.dart';
 import 'package:platform/platform.dart';
 import 'package:process_fakes/process_fakes.dart';
@@ -31,6 +32,7 @@ void main() {
       Environment(
         abi: ffi.Abi.linuxX64,
         engine: engine,
+        fileSystem: MemoryFileSystem(),
         platform: FakePlatform(operatingSystem: Platform.linux),
         processRunner: ProcessRunner(
           processManager: FakeProcessManager(onStart: (List<String> command) {

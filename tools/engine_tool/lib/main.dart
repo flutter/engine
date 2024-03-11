@@ -7,6 +7,7 @@ import 'dart:io' as io show Directory, Platform, exitCode, stderr;
 
 import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
+import 'package:file/local.dart';
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:process_runner/process_runner.dart';
@@ -54,6 +55,7 @@ void main(List<String> args) async {
   final Environment environment = Environment(
     abi: ffi.Abi.current(),
     engine: engine,
+    fileSystem: const LocalFileSystem(),
     platform: const LocalPlatform(),
     processRunner: ProcessRunner(),
     logger: Logger(),

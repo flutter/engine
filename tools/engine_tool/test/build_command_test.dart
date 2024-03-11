@@ -12,7 +12,9 @@ import 'package:engine_tool/src/build_utils.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/environment.dart';
 import 'package:engine_tool/src/logger.dart';
+import 'package:file/memory.dart';
 import 'package:litetest/litetest.dart';
+import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:process_fakes/process_fakes.dart';
 import 'package:process_runner/process_runner.dart';
@@ -60,6 +62,7 @@ void main() {
       Environment(
         abi: ffi.Abi.linuxX64,
         engine: engine,
+        fileSystem: MemoryFileSystem(),
         platform: FakePlatform(operatingSystem: Platform.linux),
         processRunner: ProcessRunner(
           processManager: FakeProcessManager(onStart: (List<String> command) {
@@ -84,7 +87,7 @@ void main() {
     expect(result[0].name, equals('build_name'));
   });
 
-  test('build command invokes gn', () async {
+  test('build command invokes gclient', () async {
     final Logger logger = Logger.test();
     final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
     final ToolCommandRunner runner = ToolCommandRunner(
@@ -99,7 +102,26 @@ void main() {
     expect(result, equals(0));
     expect(runHistory.length, greaterThanOrEqualTo(1));
     expect(runHistory[0].length, greaterThanOrEqualTo(1));
-    expect(runHistory[0][0], contains('gn'));
+    expect(runHistory[0][0], contains('gclient'));
+  });
+
+
+  test('build command invokes gn', () async {
+    final Logger logger = Logger.test();
+    final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
+    final ToolCommandRunner runner = ToolCommandRunner(
+      environment: env,
+      configs: configs,
+    );
+    final int result = await runner.run(<String>[
+      'build',
+      '--config',
+      'build_name',
+    ]);
+    expect(result, equals(0));
+    expect(runHistory.length, greaterThanOrEqualTo(2));
+    expect(runHistory[1].length, greaterThanOrEqualTo(1));
+    expect(runHistory[1][0], contains('gn'));
   });
 
   test('build command invokes ninja', () async {
@@ -115,9 +137,9 @@ void main() {
       'build_name',
     ]);
     expect(result, equals(0));
-    expect(runHistory.length, greaterThanOrEqualTo(2));
-    expect(runHistory[1].length, greaterThanOrEqualTo(1));
-    expect(runHistory[1][0], contains('ninja'));
+    expect(runHistory.length, greaterThanOrEqualTo(3));
+    expect(runHistory[2].length, greaterThanOrEqualTo(1));
+    expect(runHistory[2][0], contains('ninja'));
   });
 
   test('build command invokes generator', () async {
@@ -133,9 +155,9 @@ void main() {
       'build_name',
     ]);
     expect(result, equals(0));
-    expect(runHistory.length, greaterThanOrEqualTo(3));
+    expect(runHistory.length, greaterThanOrEqualTo(4));
     expect(
-      runHistory[2],
+      runHistory[3],
       containsStringsInOrder(<String>['python3', 'gen/script.py']),
     );
   });
@@ -153,18 +175,75 @@ void main() {
       'build_name',
     ]);
     expect(result, equals(0));
-    expect(runHistory.length, lessThanOrEqualTo(3));
+    expect(runHistory.length, lessThanOrEqualTo(4));
   });
 
-  test('build command fetches dependencies', () async {
-    // TODO: DEPS SHA-256 hex digest does not match DEPS.sha256 contents.
+  test('build command does not update dependencies if up-to-date', () async {
+    final Logger logger = Logger.test();
+    final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
+
+    final String depsPath = p.join(env.engine.flutterDir.path, 'DEPS');
+    final String depsHashPath = p.join(
+      env.engine.flutterDir.path, 'build', 'DEPS.sha256',
+    );
+
+    env.fileSystem.file(depsPath).writeAsString('Hello world');
+    env.fileSystem.file(depsHashPath).writeAsStringSync(
+      '64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f3c'
+    );
+
+    final ToolCommandRunner runner = ToolCommandRunner(
+      environment: env,
+      configs: configs,
+    );
+    final int result = await runner.run(<String>[
+      'build',
+      '--config',
+      'build_name',
+    ]);
+
+    final int gclientCommands = runHistory
+      .map((List<String> command) => command.firstOrNull)
+      .where((String? command) => command?.contains('gclient') ?? false)
+      .length;
+
+    expect(result, equals(0));
+    expect(runHistory.length, greaterThanOrEqualTo(1));
+    expect(gclientCommands, equals(0));
   });
 
-  test('build command fetches dependencies if sync never ran', () async {
-    // TODO: No DEPS.sha256 file
-  });
+  test('build command fetches dependencies if hash is outdated', () async {
+    final Logger logger = Logger.test();
+    final (Environment env, List<List<String>> runHistory) = linuxEnv(logger);
 
-  test('build command does not fetch dependencies if updated', () async {
-    // TODO: DEPS SHA-256 hex digest matches DEPS.sha256 contents.
+    final String depsPath = p.join(env.engine.flutterDir.path, 'DEPS');
+    final String depsHashPath = p.join(
+      env.engine.flutterDir.path, 'build', 'DEPS.sha256',
+    );
+
+    // The deps hash below is the SHA-256 hash of 'Hello world'.
+    env.fileSystem.file(depsPath).writeAsString('Foo bar');
+    env.fileSystem.file(depsHashPath).writeAsStringSync(
+      '64ec88ca00b268e5ba1a35678a1b5316d212f4f366b2477232534a8aeca37f3c'
+    );
+
+    final ToolCommandRunner runner = ToolCommandRunner(
+      environment: env,
+      configs: configs,
+    );
+    final int result = await runner.run(<String>[
+      'build',
+      '--config',
+      'build_name',
+    ]);
+
+    final int gclientCommands = runHistory
+      .map((List<String> command) => command.firstOrNull)
+      .where((String? command) => command?.contains('gclient') ?? false)
+      .length;
+
+    expect(result, equals(0));
+    expect(runHistory.length, greaterThanOrEqualTo(1));
+    expect(gclientCommands, equals(1));
   });
 }

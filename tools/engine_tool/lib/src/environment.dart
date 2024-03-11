@@ -5,6 +5,7 @@
 import 'dart:ffi' as ffi show Abi;
 
 import 'package:engine_repo_tools/engine_repo_tools.dart';
+import 'package:file/file.dart';
 import 'package:platform/platform.dart';
 import 'package:process_runner/process_runner.dart';
 
@@ -21,6 +22,7 @@ final class Environment {
   Environment({
     required this.abi,
     required this.engine,
+    required this.fileSystem,
     required this.logger,
     required this.platform,
     required this.processRunner,
@@ -31,6 +33,9 @@ final class Environment {
 
   /// Information about paths in the engine repo.
   final Engine engine;
+
+  /// Facility for commands to access files.
+  final FileSystem fileSystem;
 
   /// Where log messages are written.
   final Logger logger;

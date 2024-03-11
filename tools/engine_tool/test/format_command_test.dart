@@ -11,6 +11,7 @@ import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/commands/flags.dart';
 import 'package:engine_tool/src/environment.dart';
 import 'package:engine_tool/src/logger.dart';
+import 'package:file/memory.dart';
 import 'package:litetest/litetest.dart';
 import 'package:logging/logging.dart' as log;
 import 'package:platform/platform.dart';
@@ -31,6 +32,7 @@ void main() {
     return Environment(
       abi: ffi.Abi.linuxX64,
       engine: engine,
+      fileSystem: MemoryFileSystem(),
       platform: FakePlatform(
         resolvedExecutable: '/dart',
         operatingSystem: Platform.linux,
