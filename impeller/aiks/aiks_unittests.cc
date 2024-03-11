@@ -2995,6 +2995,7 @@ TEST_P(AiksTest, SolidColorApplyColorFilter) {
 
 TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {
   Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
   // clang-format off
   canvas.Transform(Matrix(
        2.000000,       0.000000,   0.000000,  0.000000,
