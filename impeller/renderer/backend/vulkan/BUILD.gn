@@ -34,8 +34,6 @@ impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
     "allocator_vk.h",
-    "android_hardware_buffer_texture_source_vk.cc",
-    "android_hardware_buffer_texture_source_vk.h",
     "barrier_vk.cc",
     "barrier_vk.h",
     "blit_command_vk.cc",
@@ -64,6 +62,7 @@ impeller_component("vulkan") {
     "descriptor_pool_vk.h",
     "device_buffer_vk.cc",
     "device_buffer_vk.h",
+    "device_holder_vk.h",
     "fence_waiter_vk.cc",
     "fence_waiter_vk.h",
     "formats_vk.cc",
@@ -121,6 +120,13 @@ impeller_component("vulkan") {
     "yuv_conversion_vk.cc",
     "yuv_conversion_vk.h",
   ]
+
+  if (is_android) {
+    sources += [
+      "android/ahb_texture_source_vk.cc",
+      "android/ahb_texture_source_vk.h",
+    ]
+  }
 
   public_deps = [
     "../../:renderer",
