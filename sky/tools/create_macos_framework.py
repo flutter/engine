@@ -221,7 +221,6 @@ def zip_xcframework_archive(dst):
   filepath_with_entitlements = ''
   filepath_without_entitlements = (
       'FlutterMacOS.xcframework/macos-arm64_x86_64/FlutterMacOS.framework/Versions/A/FlutterMacOS'
-      'FlutterMacOS.framework/Versions/A/FlutterMacOS'
   )
   embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements)
 
