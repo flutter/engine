@@ -2,18 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/backend/vulkan/surface_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_surface_vk.h"
 
 #include "impeller/core/formats.h"
-#include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_image_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
 
-std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
+std::unique_ptr<KHRSurfaceVK> KHRSurfaceVK::WrapSwapchainImage(
     const std::shared_ptr<Context>& context,
-    std::shared_ptr<SwapchainImageVK>& swapchain_image,
+    std::shared_ptr<KHRSwapchainImageVK>& swapchain_image,
     SwapCallback swap_callback,
     bool enable_msaa) {
   if (!context || !swapchain_image || !swap_callback) {
@@ -88,16 +88,17 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   );
 
   // The constructor is private. So make_unique may not be used.
-  return std::unique_ptr<SurfaceVK>(
-      new SurfaceVK(render_target_desc, std::move(swap_callback)));
+  return std::unique_ptr<KHRSurfaceVK>(
+      new KHRSurfaceVK(render_target_desc, std::move(swap_callback)));
 }
 
-SurfaceVK::SurfaceVK(const RenderTarget& target, SwapCallback swap_callback)
+KHRSurfaceVK::KHRSurfaceVK(const RenderTarget& target,
+                           SwapCallback swap_callback)
     : Surface(target), swap_callback_(std::move(swap_callback)) {}
 
-SurfaceVK::~SurfaceVK() = default;
+KHRSurfaceVK::~KHRSurfaceVK() = default;
 
-bool SurfaceVK::Present() const {
+bool KHRSurfaceVK::Present() const {
   return swap_callback_ ? swap_callback_() : false;
 }
 
