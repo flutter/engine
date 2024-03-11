@@ -156,8 +156,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
       host_buffer.Emplace(points_.data(), points_.size() * sizeof(Point),
                           DefaultUniformAlignment());
 
-  BufferView geometry_buffer =
-      host_buffer.Emplace(nullptr, total * sizeof(Point), alignof(Point));
+  BufferView geometry_buffer = host_buffer.Emplace(
+      nullptr, total * sizeof(Point), DefaultUniformAlignment());
 
   BufferView output;
   {
@@ -185,8 +185,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   }
 
   if (texture_coverage.has_value() && effect_transform.has_value()) {
-    BufferView geometry_uv_buffer =
-        host_buffer.Emplace(nullptr, total * sizeof(Vector4), alignof(Vector4));
+    BufferView geometry_uv_buffer = host_buffer.Emplace(
+        nullptr, total * sizeof(Vector4), DefaultUniformAlignment());
 
     using UV = UvComputeShader;
 
