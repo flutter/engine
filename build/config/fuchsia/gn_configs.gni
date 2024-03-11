@@ -58,6 +58,3 @@ declare_args() {
 
 # third_party/googletest is still using this condition.
 using_fuchsia_sdk = true
-
-# Override the default fuchsia_gn_sdk in dart.
-fuchsia_gn_sdk = "//flutter/fuchsia/tools/gn-sdk"

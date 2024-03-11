@@ -25,8 +25,10 @@ executable("text-input-test-bin") {
   deps = [
     "${fuchsia_sdk}/fidl/fuchsia.accessibility.semantics",
     "${fuchsia_sdk}/fidl/fuchsia.component",
+    "${fuchsia_sdk}/fidl/fuchsia.feedback",
     "${fuchsia_sdk}/fidl/fuchsia.intl",
     "${fuchsia_sdk}/fidl/fuchsia.kernel",
+    "${fuchsia_sdk}/fidl/fuchsia.logger",
     "${fuchsia_sdk}/fidl/fuchsia.tracing.provider",
     "${fuchsia_sdk}/fidl/fuchsia.ui.app",
     "${fuchsia_sdk}/fidl/fuchsia.ui.display.singleton",
