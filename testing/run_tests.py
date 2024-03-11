@@ -1037,10 +1037,11 @@ def run_impeller_golden_tests(build_dir: str):
                                                          ).joinpath('golden_tests_harvester')
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
     run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir)
+    dart_bin = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
     script_path = os.path.join('tools', 'dir_contents_diff', 'bin', 'dir_contents_diff.dart')
     diff_result = subprocess.run(
-        f'dart run {script_path} {golden_path} {temp_dir}',
+        f'{dart_bin} run {script_path} {golden_path} {temp_dir}',
         check=False,
         shell=True,
         stdout=subprocess.PIPE,
@@ -1051,10 +1052,19 @@ def run_impeller_golden_tests(build_dir: str):
       print(diff_result.stdout.decode())
       raise RuntimeError('impeller_golden_tests diff failure')
 
+    # On release builds and local builds, we typically do not have GOLDCTL set,
+    # which on other words means that this invoking the SkiaGoldClient would
+    # throw. Skip this step in those cases and log a notice.
+    if 'GOLDCTL' not in os.environ:
+      print_divider('<')
+      print(
+          'Skipping the SkiaGoldClient invocation as the GOLDCTL environment variable is not set.'
+      )
+      return
+
     with DirectoryChange(harvester_path):
-      run_cmd(['dart', 'pub', 'get'])
       bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
-      run_cmd(['dart', 'run', str(bin_path), temp_dir])
+      run_cmd([dart_bin, 'run', str(bin_path), temp_dir])
 
 
 def main():
