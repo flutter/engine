@@ -227,7 +227,7 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
         clipper.SetNewClipDepth(entity.GetNewClipDepth());
         clipper.SetTransform(entity.GetTransform() * entity_transform);
         result = clipper.Render(renderer, pass) && result;
-        blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
+        blur_entity.SetClipDepth(clipper.GetClipDepth());
         blur_entity.SetTransform(entity.GetTransform() * blur_transform);
         result = blur_entity.Render(renderer, pass) && result;
         if constexpr (!ContentContext::kEnableStencilThenCover) {
@@ -284,6 +284,7 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                                              snapshot_transform);
                 snapshot_entity.SetNewClipDepth(entity.GetNewClipDepth());
                 result = result && snapshot_entity.Render(renderer, pass);
+                blurred.SetClipDepth(snapshot_entity.GetClipDepth());
                 blurred.SetTransform(entity.GetTransform() * blurred_transform);
                 result = result && blurred.Render(renderer, pass);
                 return result;
