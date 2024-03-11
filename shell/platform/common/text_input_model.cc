@@ -84,14 +84,14 @@ void TextInputModel::UpdateComposingText(const std::u16string& text,
   selection_ = TextRange(selection.start() + composing_range_.start(),
                          selection.extent() + composing_range_.start());
 
-  bool koreanIncluded = false;
+  bool korean_included = false;
   std::u16string composing_texts = text_.substr(composing_range_.start(), text.length());
   if (composing_texts.length() > 0) {
-    const std::regex _korRegexp("^[ㄱ-ㆎ|가-힣]+$");
+    const std::regex kor_regex("^[ㄱ-ㆎ|가-힣]+$");
     std::string u8string = fml::Utf16ToUtf8(composing_texts);
-    koreanIncluded = std::regex_match(u8string, _korRegexp);
+    korean_included = std::regex_match(u8string, kor_regex);
   }
-  if (koreanIncluded) {
+  if (korean_included) {
     selection_ = TextRange(selection.extent() + composing_range_.end());
   }
 }
