@@ -85,7 +85,8 @@ void TextInputModel::UpdateComposingText(const std::u16string& text,
                          selection.extent() + composing_range_.start());
 
   bool korean_included = false;
-  std::u16string composing_texts = text_.substr(composing_range_.start(), text.length());
+  std::u16string composing_texts =
+      text_.substr(composing_range_.start(), text.length());
   if (composing_texts.length() > 0) {
     const std::regex kor_regex("^[ㄱ-ㆎ|가-힣]+$");
     std::string u8string = fml::Utf16ToUtf8(composing_texts);
