@@ -741,6 +741,7 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
       SkRect output_bounds;
       EXPECT_EQ(filter.map_local_bounds(input_bounds, output_bounds),
                 &output_bounds);
+      EXPECT_EQ(input_bounds, output_bounds);
     }
     for (unsigned k = 0; k < bounds_matrices.size(); k++) {
       auto& bounds_matrix = bounds_matrices[k];
@@ -750,6 +751,7 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
         EXPECT_EQ(filter.map_device_bounds(input_bounds, bounds_matrix,
                                            output_bounds),
                   &output_bounds);
+        EXPECT_EQ(input_bounds, output_bounds);
       }
       {
         const auto output_bounds = SkIRect::MakeLTRB(20, 20, 80, 80);
@@ -757,6 +759,7 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
         EXPECT_EQ(filter.get_input_device_bounds(output_bounds, bounds_matrix,
                                                  input_bounds),
                   &input_bounds);
+        EXPECT_EQ(input_bounds, output_bounds);
       }
     }
   }
