@@ -280,12 +280,12 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                   const ContentContext& renderer, const Entity& entity,
                   RenderPass& pass) mutable {
                 bool result = true;
-                blurred.SetTransform(entity.GetTransform() * blurred_transform);
-                result = result && blurred.Render(renderer, pass);
                 snapshot_entity.SetTransform(entity.GetTransform() *
                                              snapshot_transform);
                 snapshot_entity.SetNewClipDepth(entity.GetNewClipDepth());
                 result = result && snapshot_entity.Render(renderer, pass);
+                blurred.SetTransform(entity.GetTransform() * blurred_transform);
+                result = result && blurred.Render(renderer, pass);
                 return result;
               }),
           fml::MakeCopyable([blurred = blurred.Clone(),

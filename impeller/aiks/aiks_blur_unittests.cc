@@ -789,38 +789,38 @@ TEST_P(AiksTest, GaussianBlurStyleInnerGradient) {
 }
 
 /// TODO(gaaclarke): This still doesn't work with stencil and cover.
-// TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
-//   Canvas canvas;
-//   canvas.Scale(GetContentScale());
+TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
 
-//   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
 
-//   std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
-//                                Color{0.7568, 0.2627, 0.2118, 1.0}};
-//   std::vector<Scalar> stops = {0.0, 1.0};
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.7568, 0.2627, 0.2118, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
 
-//   Paint paint;
-//   paint.color_source = ColorSource::MakeLinearGradient(
-//       {0, 0}, {200, 200}, std::move(colors), std::move(stops),
-//       Entity::TileMode::kMirror, {});
-//   paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-//       .style = FilterContents::BlurStyle::kSolid,
-//       .sigma = Sigma(30),
-//   };
-//   canvas.DrawPath(PathBuilder()
-//                       .MoveTo({200, 200})
-//                       .LineTo({300, 400})
-//                       .LineTo({100, 400})
-//                       .Close()
-//                       .TakePath(),
-//                   paint);
+  Paint paint;
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {200, 200}, std::move(colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kSolid,
+      .sigma = Sigma(30),
+  };
+  canvas.DrawPath(PathBuilder()
+                      .MoveTo({200, 200})
+                      .LineTo({300, 400})
+                      .LineTo({100, 400})
+                      .Close()
+                      .TakePath(),
+                  paint);
 
-//   // Draw another thing to make sure the clip area is reset.
-//   Paint red;
-//   red.color = Color::Red();
-//   canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
-//   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-// }
+  // Draw another thing to make sure the clip area is reset.
+  Paint red;
+  red.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
 
 TEST_P(AiksTest, GaussianBlurStyleOuterGradient) {
   Canvas canvas;
