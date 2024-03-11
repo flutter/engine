@@ -3471,7 +3471,7 @@ class GlobalTextEditingStrategySpy extends GloballyPositionedTextEditingStrategy
   GlobalTextEditingStrategySpy(super.owner);
 
   int placeElementCount = 0;
-  
+
   @override
   void placeElement() {
     placeElementCount++;
