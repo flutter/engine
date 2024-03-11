@@ -35,6 +35,7 @@ std::unique_ptr<PlaygroundImpl> PlaygroundImpl::Create(
 #endif  // IMPELLER_ENABLE_OPENGLES
 #if IMPELLER_ENABLE_VULKAN
     case PlaygroundBackend::kVulkan:
+      switches.enable_vulkan_validation = true;
       return std::make_unique<PlaygroundImplVK>(switches);
 #endif  // IMPELLER_ENABLE_VULKAN
     default:
