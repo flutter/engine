@@ -555,10 +555,12 @@ class BrowserPlatform extends PlatformPlugin {
       ).join(',\n');
       final String bootstrapScript = '''
 <script>
-  // Define this before flutter.js to test PR flutter/engine#51294
-  if (_flutter == null) {
-    _flutter = {};
+  // Define this before loading flutter.js to test PR flutter/engine#51294
+  if (!window._flutter) {
+    window._flutter = {};
   }
+</script>
+<script>
   _flutter.buildConfig = {
     builds: [
       $buildConfigsString
