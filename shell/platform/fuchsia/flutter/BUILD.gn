@@ -138,9 +138,26 @@ template("runner_sources") {
       "//flutter/vulkan/procs",
     ]
 
+    # TODO(zijiehe): Considering which deps should belong to the public_deps,
+    # multiple dependencies of this target use the following deps without
+    # explicitly claiming the dependencies.
     public_deps = [
+                    "${fuchsia_sdk}/fidl/fuchsia.accessibility.semantics",
                     "${fuchsia_sdk}/fidl/fuchsia.component.runner",
+                    "${fuchsia_sdk}/fidl/fuchsia.fonts",
+                    "${fuchsia_sdk}/fidl/fuchsia.images",
+                    "${fuchsia_sdk}/fidl/fuchsia.intl",
+                    "${fuchsia_sdk}/fidl/fuchsia.io",
+                    "${fuchsia_sdk}/fidl/fuchsia.media",
+                    "${fuchsia_sdk}/fidl/fuchsia.memorypressure",
                     "${fuchsia_sdk}/fidl/fuchsia.ui.app",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.composition",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.input",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.input3",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.pointer",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.pointerinjector",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.test.input",
+                    "${fuchsia_sdk}/fidl/fuchsia.ui.views",
                     "${fuchsia_sdk}/pkg/inspect",
                     "${fuchsia_sdk}/pkg/inspect_component_cpp",
                     "${fuchsia_sdk}/pkg/sys_cpp",
@@ -148,20 +165,6 @@ template("runner_sources") {
                   ] + flutter_public_deps
 
     deps = [
-             "${fuchsia_sdk}/fidl/fuchsia.accessibility.semantics",
-             "${fuchsia_sdk}/fidl/fuchsia.fonts",
-             "${fuchsia_sdk}/fidl/fuchsia.images",
-             "${fuchsia_sdk}/fidl/fuchsia.intl",
-             "${fuchsia_sdk}/fidl/fuchsia.io",
-             "${fuchsia_sdk}/fidl/fuchsia.media",
-             "${fuchsia_sdk}/fidl/fuchsia.memorypressure",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.composition",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.input",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.input3",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.pointer",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.pointerinjector",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.test.input",
-             "${fuchsia_sdk}/fidl/fuchsia.ui.views",
              "${fuchsia_sdk}/pkg/async-cpp",
              "${fuchsia_sdk}/pkg/async-default",
              "${fuchsia_sdk}/pkg/async-loop",
