@@ -41,7 +41,7 @@ CapabilitiesVK::CapabilitiesVK(bool enable_validations) {
   validations_enabled_ =
       enable_validations && HasLayer("VK_LAYER_KHRONOS_validation");
   if (enable_validations && !validations_enabled_) {
-    FML_LOG(ERROR)
+    FML_LOG(FATAL)
         << "Requested Impeller context creation with validations but the "
            "validation layers could not be found. Expect no Vulkan validation "
            "checks!";
