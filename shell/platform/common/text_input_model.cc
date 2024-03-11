@@ -5,9 +5,9 @@
 #include "flutter/shell/platform/common/text_input_model.h"
 
 #include <algorithm>
+#include <regex>
 #include <string>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/string_conversion.h"
 
 namespace flutter {
@@ -80,12 +80,20 @@ void TextInputModel::UpdateComposingText(const std::u16string& text,
       composing_range_.collapsed() ? selection_ : composing_range_;
   text_.replace(rangeToDelete.start(), rangeToDelete.length(), text);
   composing_range_.set_end(composing_range_.start() + text.length());
-#if FML_OS_WIN
-  selection_ = TextRange(composing_range_.end());
-#else   // FML_OS_WIN
+
   selection_ = TextRange(selection.start() + composing_range_.start(),
                          selection.extent() + composing_range_.start());
-#endif  // FML_OS_WIN
+
+  bool koreanIncluded = false;
+  std::u16string composing_texts = text_.substr(composing_range_.start(), text.length());
+  if (composing_texts.length() > 0) {
+    const std::regex _korRegexp("^[ㄱ-ㆎ|가-힣]+$");
+    std::string u8string = fml::Utf16ToUtf8(composing_texts);
+    koreanIncluded = std::regex_match(u8string, _korRegexp);
+  }
+  if (koreanIncluded) {
+    selection_ = TextRange(selection.extent() + composing_range_.end());
+  }
 }
 
 void TextInputModel::UpdateComposingText(const std::u16string& text) {
