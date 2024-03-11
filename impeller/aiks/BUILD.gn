@@ -116,6 +116,8 @@ template("aiks_unittests_component") {
       "//flutter/impeller/typographer/backends/stb:typographer_stb_backend",
       "//flutter/testing:testing_lib",
       "//flutter/third_party/txt",
+      "//third_party/vulkan_validation_layers",
+      "//third_party/vulkan_validation_layers:vulkan_gen_json_files",
     ]
     if (defined(invoker.public_configs)) {
       public_configs = invoker.public_configs
