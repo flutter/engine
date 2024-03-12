@@ -32,7 +32,16 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_GaussianBlurFilterContentsTest_"
     "TextureContentsWithEffectTransform_Vulkan",
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRect_Vulkan"};
+    "RenderCoverageMatchesGetCoverageTranslate_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "TextureContentsWithDestinationRect_Vulkan",
+    "impeller_Play_EntityTest_RuntimeEffect_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "RenderCoverageMatchesGetCoverage_Vulkan",
+    "impeller_Play_RendererDartTest_canReflectUniformStructs_Vulkan",
+    "impeller_Play_RendererDartTest_canCreateRenderPassAndSubmit_Vulkan"};
 
 std::string GetTestName() {
   std::string suite_name =

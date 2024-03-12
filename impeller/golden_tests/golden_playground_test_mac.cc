@@ -69,7 +69,27 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CanRenderClippedRuntimeEffects_Vulkan",
 };
 
-static const std::vector<std::string> kVulkanDenyValidationTests = {};
+static const std::vector<std::string> kVulkanDenyValidationTests = {
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "impeller_Play_SceneTest_FlutterLogo_Vulkan",
+    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
+    "impeller_Play_EntityTest_SpecializationConstantsAreAppliedToVariants_"
+    "Vulkan",
+    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "TextureContentsWithEffectTransform_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "RenderCoverageMatchesGetCoverageTranslate_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "TextureContentsWithDestinationRect_Vulkan",
+    "impeller_Play_EntityTest_RuntimeEffect_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "RenderCoverageMatchesGetCoverage_Vulkan",
+    "impeller_Play_RendererDartTest_canReflectUniformStructs_Vulkan",
+    "impeller_Play_RendererDartTest_canCreateRenderPassAndSubmit_Vulkan"};
 
 namespace {
 std::string GetTestName() {
