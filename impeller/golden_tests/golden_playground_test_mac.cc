@@ -70,32 +70,23 @@ static const std::vector<std::string> kSkipTests = {
 };
 
 static const std::vector<std::string> kVulkanDenyValidationTests = {
+    "impeller_Play_GaussianBlurFilterContentsTest_"    //
+    "RenderCoverageMatchesGetCoverageRotated_Vulkan",  //
+    "impeller_Play_SceneTest_FlutterLogo_Vulkan",      //
+    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",      //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverageRotated_Vulkan",
-    "impeller_Play_SceneTest_FlutterLogo_Vulkan",
-    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
-    "impeller_Play_EntityTest_SpecializationConstantsAreAppliedToVariants_"
-    "Vulkan",
-    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
+    "TextureContentsWithEffectTransform_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithEffectTransform_Vulkan",
+    "RenderCoverageMatchesGetCoverageTranslate_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverageTranslate_Vulkan",
+    "RenderCoverageMatchesGetCoverageRotated_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "TextureContentsWithDestinationRect_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRect_Vulkan",
-    "impeller_Play_EntityTest_RuntimeEffect_Vulkan",
+    "RenderCoverageMatchesGetCoverage_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverage_Vulkan",
-    "impeller_Play_RendererDartTest_canReflectUniformStructs_Vulkan",
-    "impeller_Play_RendererDartTest_canCreateRenderPassAndSubmit_Vulkan",
-    "impeller_Play_EntityTest_RuntimeEffectSetsRightSizeWhenUniformIsStruct_"
-    "Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRectScaled_Vulkan",
-    "impeller_Play_EntityTest_DecalSpecializationAppliedToMorphologyFilter_"
-    "Vulkan"};
+    "TextureContentsWithDestinationRectScaled_Vulkan"  //
+};
 
 namespace {
 std::string GetTestName() {
