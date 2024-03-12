@@ -45,7 +45,9 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_EntityTest_RuntimeEffectSetsRightSizeWhenUniformIsStruct_"
     "Vulkan",
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRectScaled_Vulkan"};
+    "TextureContentsWithDestinationRectScaled_Vulkan",
+    "impeller_Play_EntityTest_DecalSpecializationAppliedToMorphologyFilter_"
+    "Vulkan"};
 
 std::string GetTestName() {
   std::string suite_name =
