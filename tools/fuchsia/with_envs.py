@@ -27,7 +27,7 @@ def Main():
   # third_party/, so images root and sdk root need to be explicitly set.
   os.environ['FUCHSIA_IMAGES_ROOT'] = os.path.join(os.environ['SRC_ROOT'], 'fuchsia/images/')
 
-  assert platform.system() == 'Linux', 'Unsupported OS ' + platform.system()
+  assert platform.system() in ['Linux', 'Darwin'], 'Unsupported OS ' + platform.system()
   os.environ['FUCHSIA_SDK_ROOT'] = os.path.join(os.environ['SRC_ROOT'], 'fuchsia/sdk/linux/')
   os.environ['FUCHSIA_GN_SDK_ROOT'] = os.path.join(
       os.environ['SRC_ROOT'], 'flutter/tools/fuchsia/gn-sdk/src'
