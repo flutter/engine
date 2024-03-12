@@ -87,7 +87,7 @@ final class Digests {
 }
 
 /// A single entry in a `digests.json` file.
-/// 
+///
 /// Each entry is a test-run (or part of a test-run).
 final class DigestEntry {
   /// Creates a new instance of [DigestEntry].
