@@ -195,6 +195,7 @@ def metal_validation_env(build_dir):
     })
   return extra_env
 
+
 def build_engine_executable_command(
     build_dir, executable_name, flags=None, coverage=False, gtest=False
 ):
@@ -1039,27 +1040,8 @@ def run_impeller_golden_tests(build_dir: str):
   harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('tools'
                                                          ).joinpath('golden_tests_harvester')
 
-  extra_env = {
-      # pylint: disable=line-too-long
-      # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-      'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
-      'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-          '1',  # Validates accesses to device and constant memory.
-      'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY': '1',  # Validates accesses to threadgroup memory.
-      'MTL_SHADER_VALIDATION_TEXTURE_USAGE': '1',  # Validates that texture references are not nil.
-      # Note: built from //third_party/swiftshader
-      'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
-      # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
-      # and //third_party/vulkan_validation_layers.
-      'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
-      'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
-  }
-  if is_aarm64():
-    extra_env.update({
-        'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
-        'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
-    })
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
+    extra_env = metal_validation_env(build_dir)
     run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir, env=extra_env)
     dart_bin = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
