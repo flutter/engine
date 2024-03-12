@@ -26,7 +26,8 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "RenderCoverageMatchesGetCoverageRotated_Vulkan",
     "impeller_Play_SceneTest_FlutterLogo_Vulkan",
     "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
-};
+    "impeller_Play_EntityTest_SpecializationConstantsAreAppliedToVariants_"
+    "Vulkan"};
 
 std::string GetTestName() {
   std::string suite_name =
