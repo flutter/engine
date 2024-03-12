@@ -58,7 +58,10 @@ template("flutter_frontend_server") {
 
   snapshot_depfile = "$kernel_output.d"
 
-  common_vm_args = [ "--disable-dart-dev" ]
+  common_vm_args = [
+    "--disable-dart-dev",
+    "--sound_null_safety",
+  ]
 
   flutter_patched_sdk =
       rebase_path("$root_out_dir/flutter_patched_sdk", root_build_dir)
