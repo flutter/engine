@@ -21,26 +21,20 @@
 #endif  // IMPELLER_ENABLE_VULKAN
 
 namespace {
+// clang-format off
 static const std::vector<std::string> kVulkanDenyValidationTests = {
-    "impeller_Play_GaussianBlurFilterContentsTest_"    //
-    "RenderCoverageMatchesGetCoverageRotated_Vulkan",  //
-    "impeller_Play_SceneTest_FlutterLogo_Vulkan",      //
-    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",      //
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithEffectTransform_Vulkan",  //
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverageTranslate_Vulkan",  //
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverageRotated_Vulkan",  //
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRect_Vulkan",  //
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverage_Vulkan",  //
-    "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRectScaled_Vulkan"  //
-    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_"
-    "Vulkan",  //
+    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "impeller_Play_SceneTest_FlutterLogo_Vulkan",
+    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_TextureContentsWithEffectTransform_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverageTranslate_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_TextureContentsWithDestinationRect_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverage_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_TextureContentsWithDestinationRectScaled_Vulkan",
+    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
 };
+// clang-format on
 
 std::string GetTestName() {
   std::string suite_name =
