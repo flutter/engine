@@ -131,8 +131,8 @@ TEST(ContextVKTest, DeletePipelineLibraryAfterContext) {
 
 // TODO(jonahwilliams): figure it out.
 // TEST(ContextVKTest, CanCreateContextInAbsenceOfValidationLayers) {
-//   // The mocked methods don't report the presence of a validation layer but we
-//   // explicitly ask for validation. Context creation should continue anyway.
+// The mocked methods don't report the presence of a validation layer but we
+// explicitly ask for validation. Context creation should continue anyway.
 //   auto context = MockVulkanContextBuilder()
 //                      .SetSettingsCallback([](auto& settings) {
 //                        settings.enable_validation = true;
@@ -140,7 +140,8 @@ TEST(ContextVKTest, DeletePipelineLibraryAfterContext) {
 //                      .Build();
 //   ASSERT_NE(context, nullptr);
 //   const CapabilitiesVK* capabilites_vk =
-//       reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+//       reinterpret_cast<const
+//       CapabilitiesVK*>(context->GetCapabilities().get());
 //   ASSERT_FALSE(capabilites_vk->AreValidationsEnabled());
 // }
 
