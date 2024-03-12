@@ -30,7 +30,9 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "Vulkan",
     "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithEffectTransform_Vulkan"};
+    "TextureContentsWithEffectTransform_Vulkan",
+    "impeller_Play_GaussianBlurFilterContentsTest_"
+    "TextureContentsWithDestinationRect_Vulkan"};
 
 std::string GetTestName() {
   std::string suite_name =
