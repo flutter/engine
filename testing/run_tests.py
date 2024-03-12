@@ -1256,7 +1256,12 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       xvfb.start_virtual_x(build_name, build_dir)
       extra_env = vulkan_validation_env(build_dir)
       run_engine_executable(
-          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage, extra_env=extra_env
+          build_dir,
+          'impeller_unittests',
+          engine_filter,
+          shuffle_flags,
+          coverage=args.coverage,
+          extra_env=extra_env
       )
     finally:
       xvfb.stop_virtual_x(build_name)
