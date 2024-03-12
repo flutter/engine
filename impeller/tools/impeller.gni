@@ -54,6 +54,8 @@ declare_args() {
 }
 
 declare_args() {
+  impeller_enable_validation = impeller_debug
+
   # Wether to build and include the validation layers.
   impeller_enable_vulkan_validation_layers =
       impeller_enable_vulkan && flutter_runtime_mode == "debug" &&

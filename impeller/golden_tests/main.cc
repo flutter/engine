@@ -8,6 +8,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/logging.h"
+#include "flutter/impeller/base/validation.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/working_directory.h"
 #include "gtest/gtest.h"
@@ -23,6 +24,16 @@ void print_usage() {
             << std::endl;
 }
 }  // namespace
+
+namespace impeller {
+TEST(ValidationTest, IsFatal) {
+  EXPECT_TRUE(ImpellerValidationIsFatal());
+}
+
+TEST(ValidationTest, IsEnabled) {
+  EXPECT_TRUE(ImpellerValidationIsEnabled());
+}
+}  // namespace impeller
 
 int main(int argc, char** argv) {
   fml::InstallCrashHandler();
