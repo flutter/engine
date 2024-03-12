@@ -352,10 +352,7 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
-  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
-  // supports multiple views.
-  // https://github.com/flutter/flutter/issues/138179
-  event.view_id = flutter::kFlutterImplicitViewId;
+  event.view_id = view_id();
   engine_->SendWindowMetricsEvent(event);
 }
 
@@ -592,10 +589,7 @@ void FlutterWindowsView::SendPointerEventWithData(
   event.device_kind = state->device_kind;
   event.device = state->pointer_id;
   event.buttons = state->buttons;
-  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
-  // supports multiple views.
-  // https://github.com/flutter/flutter/issues/138179
-  event.view_id = flutter::kFlutterImplicitViewId;
+  event.view_id = view_id();
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);

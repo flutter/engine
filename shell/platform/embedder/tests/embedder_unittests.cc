@@ -2796,7 +2796,7 @@ TEST_F(EmbedderTest, WindowMetricsEventDefaultsToImplicitView) {
   event.width = 200;
   event.height = 300;
   event.pixel_ratio = 1.5;
-  // Don't assign event.view_id here to test the default behavior.
+  // Skip assigning event.view_id here to test the default behavior.
 
   FlutterEngineResult result =
       FlutterEngineSendWindowMetricsEvent(engine.get(), &event);
