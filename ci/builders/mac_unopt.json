@@ -125,17 +125,20 @@
                 "use_rbe": true
             },
             "gn": [
-               "--runtime-mode",
-               "debug",
-               "--unoptimized",
-               "--no-lto",
-               "--prebuilt-dart-sdk",
-               "--force-mac-arm64",
-               "--mac-cpu",
-               "arm64",
-               "--rbe",
-               "--no-goma",
-               "--xcode-symlinks"
+                "--runtime-mode",
+                "debug",
+                "--unoptimized",
+                "--no-lto",
+                "--prebuilt-dart-sdk",
+                "--force-mac-arm64",
+                "--enable-impeller-vulkan",
+                "--enable-impeller-opengles",
+                "--use-glfw-swiftshader",
+                "--mac-cpu",
+                "arm64",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "host_debug_unopt_arm64",
             "ninja": {
@@ -157,7 +160,7 @@
                         "--variant",
                         "host_debug_unopt_arm64",
                         "--type",
-                        "dart,dart-host,engine",
+                        "dart,dart-host,engine,impeller-golden",
                         "--engine-capture-core-dump"
                     ]
                 }
