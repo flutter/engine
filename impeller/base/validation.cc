@@ -11,7 +11,7 @@
 namespace impeller {
 
 static std::atomic_int32_t sValidationLogsDisabledCount = 0;
-static std::atomic_int32_t sValidationLogsAreFatal = 0;
+static std::atomic_int32_t sValidationLogsAreFatal = 1;
 
 void ImpellerValidationErrorsSetFatal(bool fatal) {
   sValidationLogsAreFatal = fatal;
@@ -59,4 +59,15 @@ void ImpellerValidationBreak(const char* message) {
 #endif  // IMPELLER_ENABLE_VALIDATION
 }
 
+bool ImpellerValidationIsFatal() {
+  return sValidationLogsAreFatal;
+}
+
+bool ImpellerValidationIsEnabled() {
+#ifdef IMPELLER_ENABLE_VALIDATION
+  return true;
+#else
+  return false;
+#endif
+}
 }  // namespace impeller

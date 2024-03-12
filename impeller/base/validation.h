@@ -39,6 +39,10 @@ void ImpellerValidationBreak(const char* message);
 
 void ImpellerValidationErrorsSetFatal(bool fatal);
 
+bool ImpellerValidationIsFatal();
+
+bool ImpellerValidationIsEnabled();
+
 struct ScopedValidationDisable {
   ScopedValidationDisable();
 
