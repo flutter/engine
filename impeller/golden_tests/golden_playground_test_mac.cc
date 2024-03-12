@@ -77,7 +77,11 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
     "impeller_Play_RuntimeEffectSetsRightSizeWhenUniformIsStruct_Vulkan",
     "impeller_Play_RuntimeEffectCanSuccessfullyRender_Vulkan",
-    "impeller_Play_RuntimeEffect_Vulkan"
+    "impeller_Play_RuntimeEffect_Vulkan",
+    "impeller_Play_EntityTest_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
+    "impeller_Play_EntityTest_RuntimeEffectSetsRightSizeWhenUniformIsStruct_Vulkan",
+    "impeller_Play_EntityTest_RuntimeEffectCanSuccessfullyRender_Vulkan",
+   "impeller_Play_EntityTest_RuntimeEffect_Vulkan",
 };
 // clang-format on
 
