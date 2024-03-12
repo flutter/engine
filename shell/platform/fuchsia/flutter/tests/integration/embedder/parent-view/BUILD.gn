@@ -10,7 +10,6 @@ import("//flutter/tools/fuchsia/gn-sdk/src/package.gni")
 dart_library("lib") {
   package_name = "parent-view"
   sources = [ "parent_view.dart" ]
-  null_safe = true
 
   deps = [
     "//flutter/shell/platform/fuchsia/dart:args",

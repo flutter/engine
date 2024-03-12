@@ -16,7 +16,6 @@ dart_library("lib") {
     "//flutter/shell/platform/fuchsia/dart:args",
     "//flutter/shell/platform/fuchsia/dart:vector_math",
   ]
-  null_safe = true
 }
 
 flutter_component("component") {

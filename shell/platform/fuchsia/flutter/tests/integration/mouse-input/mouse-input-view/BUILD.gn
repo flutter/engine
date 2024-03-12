@@ -13,7 +13,6 @@ dart_library("lib") {
   sources = [ "mouse-input-view.dart" ]
 
   deps = [ "//flutter/shell/platform/fuchsia/dart:args" ]
-  null_safe = true
 }
 
 flutter_component("component") {
