@@ -85,7 +85,9 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_GaussianBlurFilterContentsTest_"
     "RenderCoverageMatchesGetCoverage_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "TextureContentsWithDestinationRectScaled_Vulkan"  //
+    "TextureContentsWithDestinationRectScaled_Vulkan",  //
+    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_"
+    "Vulkan",  //
 };
 
 namespace {

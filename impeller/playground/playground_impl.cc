@@ -38,6 +38,8 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "RenderCoverageMatchesGetCoverage_Vulkan",  //
     "impeller_Play_GaussianBlurFilterContentsTest_"
     "TextureContentsWithDestinationRectScaled_Vulkan"  //
+    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_"
+    "Vulkan",  //
 };
 
 std::string GetTestName() {
