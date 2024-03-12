@@ -21,17 +21,6 @@
 #endif  // IMPELLER_ENABLE_VULKAN
 
 namespace {
-// clang-format off
-static const std::vector<std::string> kVulkanDenyValidationTests = {
-    "impeller_Play_SceneTest_FlutterLogo_Vulkan",
-    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
-    "impeller_Play_EntityTest_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
-    "impeller_Play_EntityTest_RuntimeEffectSetsRightSizeWhenUniformIsStruct_Vulkan",
-    "impeller_Play_EntityTest_RuntimeEffectCanSuccessfullyRender_Vulkan",
-    "impeller_Play_EntityTest_RuntimeEffect_Vulkan",
-    "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan"
-};
-// clang-format on
 
 std::string GetTestName() {
   std::string suite_name =
@@ -48,9 +37,9 @@ std::string GetTestName() {
 
 bool ShouldTestHaveVulkanValidations() {
   std::string test_name = GetTestName();
-  return std::find(kVulkanDenyValidationTests.begin(),
-                   kVulkanDenyValidationTests.end(),
-                   test_name) == kVulkanDenyValidationTests.end();
+  return std::find(impeller::kVulkanDenyValidationTests.begin(),
+                   impeller::kVulkanDenyValidationTests.end(),
+                   test_name) == impeller::kVulkanDenyValidationTests.end();
 }
 }  // namespace
 

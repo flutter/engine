@@ -129,21 +129,19 @@ TEST(ContextVKTest, DeletePipelineLibraryAfterContext) {
                         "vkDestroyDevice") != functions->end());
 }
 
-// TODO(jonahwilliams): figure it out.
-// TEST(ContextVKTest, CanCreateContextInAbsenceOfValidationLayers) {
-// The mocked methods don't report the presence of a validation layer but we
-// explicitly ask for validation. Context creation should continue anyway.
-//   auto context = MockVulkanContextBuilder()
-//                      .SetSettingsCallback([](auto& settings) {
-//                        settings.enable_validation = true;
-//                      })
-//                      .Build();
-//   ASSERT_NE(context, nullptr);
-//   const CapabilitiesVK* capabilites_vk =
-//       reinterpret_cast<const
-//       CapabilitiesVK*>(context->GetCapabilities().get());
-//   ASSERT_FALSE(capabilites_vk->AreValidationsEnabled());
-// }
+TEST(ContextVKTest, CanCreateContextInAbsenceOfValidationLayers) {
+  // The mocked methods don't report the presence of a validation layer but we
+  // explicitly ask for validation. Context creation should continue anyway.
+  auto context = MockVulkanContextBuilder()
+                     .SetSettingsCallback([](auto& settings) {
+                       settings.enable_validation = true;
+                     })
+                     .Build();
+  ASSERT_NE(context, nullptr);
+  const CapabilitiesVK* capabilites_vk =
+      reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+  ASSERT_FALSE(capabilites_vk->AreValidationsEnabled());
+}
 
 TEST(ContextVKTest, CanCreateContextWithValidationLayers) {
   auto context =

@@ -558,8 +558,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         shuffle_flags + [
             '--enable_vulkan_validation',
-            # TODO(https://github.com/flutter/flutter/issues/142642): Remove this.
-            # TODO EVEN MORE
+            # TODO(https://github.com/flutter/flutter/issues/145036)
             '--gtest_filter=*Metal',
         ],
         coverage=coverage,

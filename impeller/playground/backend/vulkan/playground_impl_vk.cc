@@ -60,9 +60,7 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
 
 PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     : PlaygroundImpl(switches), handle_(nullptr, &DestroyWindowHandle) {
-  if (!IsVulkanDriverPresent()) {
-    return;
-  }
+  FML_CHECK(IsVulkanDriverPresent());
 
   InitGlobalVulkanInstance();
 
