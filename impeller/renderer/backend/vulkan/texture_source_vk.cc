@@ -14,6 +14,10 @@ const TextureDescriptor& TextureSourceVK::GetTextureDescriptor() const {
   return desc_;
 }
 
+std::shared_ptr<YUVConversionVK> TextureSourceVK::GetYUVConversion() const {
+  return nullptr;
+}
+
 vk::ImageLayout TextureSourceVK::GetLayout() const {
   ReaderLock lock(layout_mutex_);
   return layout_;
@@ -56,6 +60,24 @@ fml::Status TextureSourceVK::SetLayout(const BarrierVK& barrier) const {
   );
 
   return {};
+}
+
+void TextureSourceVK::SetCachedFramebuffer(
+    const SharedHandleVK<vk::Framebuffer>& framebuffer) {
+  framebuffer_ = framebuffer;
+}
+
+void TextureSourceVK::SetCachedRenderPass(
+    const SharedHandleVK<vk::RenderPass>& render_pass) {
+  render_pass_ = render_pass;
+}
+
+SharedHandleVK<vk::Framebuffer> TextureSourceVK::GetCachedFramebuffer() const {
+  return framebuffer_;
+}
+
+SharedHandleVK<vk::RenderPass> TextureSourceVK::GetCachedRenderPass() const {
+  return render_pass_;
 }
 
 }  // namespace impeller

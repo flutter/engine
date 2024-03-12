@@ -6,7 +6,7 @@
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/core/texture_descriptor.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
-#include "flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h"
+#include "flutter/impeller/renderer/backend/vulkan/android/ahb_texture_source_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/texture_vk.h"
@@ -54,18 +54,8 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
     return;
   }
 
-  impeller::TextureDescriptor desc;
-  desc.storage_mode = impeller::StorageMode::kDevicePrivate;
-  desc.size = {static_cast<int>(bounds.width()),
-               static_cast<int>(bounds.height())};
-  // TODO(johnmccutchan): Use hb_desc to compute the correct format at runtime.
-  desc.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
-  desc.mip_count = 1;
-
-  auto texture_source =
-      std::make_shared<impeller::AndroidHardwareBufferTextureSourceVK>(
-          desc, impeller_context_->GetDevice(), latest_hardware_buffer,
-          hb_desc);
+  auto texture_source = std::make_shared<impeller::AHBTextureSourceVK>(
+      impeller_context_, latest_hardware_buffer, hb_desc);
 
   auto texture =
       std::make_shared<impeller::TextureVK>(impeller_context_, texture_source);

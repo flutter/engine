@@ -25,6 +25,7 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class PlatformMessageHandler;
+class PlatformIsolateManager;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -76,7 +77,10 @@ class PlatformConfigurationClient {
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
-  virtual void Render(Scene* scene, double width, double height) = 0;
+  virtual void Render(int64_t view_id,
+                      Scene* scene,
+                      double width,
+                      double height) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Receives an updated semantics tree from the Framework.
@@ -246,6 +250,9 @@ class PlatformConfigurationClient {
   ///
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const = 0;
+
+  virtual std::shared_ptr<PlatformIsolateManager>
+  GetPlatformIsolateManager() = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();

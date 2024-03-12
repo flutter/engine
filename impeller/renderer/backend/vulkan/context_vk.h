@@ -14,7 +14,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
@@ -93,6 +93,9 @@ class ContextVK final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  const std::shared_ptr<YUVConversionLibraryVK>& GetYUVConversionLibrary()
+      const;
+
   // |Context|
   void Shutdown() override;
 
@@ -127,7 +130,7 @@ class ContextVK final : public Context,
     return true;
   }
 
-  std::shared_ptr<DeviceHolder> GetDeviceHolder() const {
+  std::shared_ptr<DeviceHolderVK> GetDeviceHolder() const {
     return device_holder_;
   }
 
@@ -161,7 +164,7 @@ class ContextVK final : public Context,
   void InitializeCommonlyUsedShadersIfNeeded() const override;
 
  private:
-  struct DeviceHolderImpl : public DeviceHolder {
+  struct DeviceHolderImpl : public DeviceHolderVK {
     // |DeviceHolder|
     const vk::Device& GetDevice() const override { return device.get(); }
     // |DeviceHolder|
@@ -180,6 +183,7 @@ class ContextVK final : public Context,
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  std::shared_ptr<YUVConversionLibraryVK> yuv_conversion_library_;
   QueuesVK queues_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;

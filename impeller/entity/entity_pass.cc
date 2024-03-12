@@ -721,12 +721,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     return false;
   }
 
-  // If the pass context returns a backdrop texture, we need to draw it to the
-  // current pass. We do this because it's faster and takes significantly less
-  // memory than storing/loading large MSAA textures. Also, it's not possible to
-  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
-  // (let alone a transient one).
-  if (result.backdrop_texture) {
+  if (result.just_created) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
     auto& replay_entities = clip_replay_->GetReplayEntities();
@@ -735,7 +730,14 @@ bool EntityPass::RenderElement(Entity& element_entity,
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
     }
+  }
 
+  // If the pass context returns a backdrop texture, we need to draw it to the
+  // current pass. We do this because it's faster and takes significantly less
+  // memory than storing/loading large MSAA textures. Also, it's not possible to
+  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
+  // (let alone a transient one).
+  if (result.backdrop_texture) {
     auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
     auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
     msaa_backdrop_contents->SetStencilEnabled(false);
@@ -821,6 +823,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
 
       if constexpr (ContentContext::kEnableStencilThenCover) {
         // Skip all clip restores when stencil-then-cover is enabled.
+        clip_replay_->RecordEntity(element_entity, clip_coverage.type);
         return true;
       }
 
@@ -1203,6 +1206,10 @@ void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
 
 void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
+}
+
+const EntityPassClipRecorder& EntityPass::GetEntityPassClipRecorder() const {
+  return *clip_replay_;
 }
 
 EntityPassClipRecorder::EntityPassClipRecorder() {}
