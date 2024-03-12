@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '32f1cb50734a4a5dad0c54b4a06ad8bdce2e7be5',
+  'skia_revision': 'c123cce23f203fb0d6af2a0c107d9802eb2ecf21',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -333,7 +333,7 @@ deps = {
   'src/flutter/third_party/boringssl/src':
    'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('dart_boringssl_rev'),
 
-  'src/third_party/perfetto':
+  'src/flutter/third_party/perfetto':
    Var('flutter_git') + "/third_party/perfetto" + '@' + Var('dart_perfetto_rev'),
 
   'src/flutter/third_party/protobuf':
