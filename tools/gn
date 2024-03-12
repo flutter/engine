@@ -1262,6 +1262,13 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--enable-impeller-opengles',
+      default=True,
+      action='store_true',
+      help='Enable the Impeller OpenGL ES backend.'
+  )
+
+  parser.add_argument(
       '--enable-impeller-3d',
       default=False,
       action='store_true',
