@@ -37,7 +37,7 @@ final class BuildCommand extends CommandBase {
   late final List<Build> builds;
 
   @override
-  String get name => 'build';
+  String get name => 'build2';
 
   @override
   String get description => 'Builds the engine';
