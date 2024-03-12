@@ -171,6 +171,7 @@ def find_executable_path(path):
 
   raise Exception('Executable %s does not exist!' % path)
 
+
 def vulkan_validation_env(build_dir):
   extra_env = {
       # pylint: disable=line-too-long
