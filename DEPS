@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '32f1cb50734a4a5dad0c54b4a06ad8bdce2e7be5',
+  'skia_revision': 'c123cce23f203fb0d6af2a0c107d9802eb2ecf21',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -283,7 +283,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '34b081632dcc446d121d97a102f8fac7ee4cb751',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a22a4ea15e0b9cbba9200014f90fcea16ecb896a',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -333,7 +333,7 @@ deps = {
   'src/flutter/third_party/boringssl/src':
    'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('dart_boringssl_rev'),
 
-  'src/third_party/perfetto':
+  'src/flutter/third_party/perfetto':
    Var('flutter_git') + "/third_party/perfetto" + '@' + Var('dart_perfetto_rev'),
 
   'src/flutter/third_party/protobuf':
