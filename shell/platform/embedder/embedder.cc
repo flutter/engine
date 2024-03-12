@@ -2143,7 +2143,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
-  int64_t view_id =
+  FlutterViewId view_id =
       SAFE_ACCESS(flutter_metrics, view_id, kFlutterImplicitViewId);
 
   flutter::ViewportMetrics metrics;

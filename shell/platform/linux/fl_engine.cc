@@ -763,7 +763,7 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
   // supports multiple views.
   // https://github.com/flutter/flutter/issues/138178
-  fl_event.view_id = flutter::kFlutterImplicitViewId;
+  event.view_id = flutter::kFlutterImplicitViewId;
   self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 
