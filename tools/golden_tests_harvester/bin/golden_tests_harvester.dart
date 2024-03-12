@@ -17,7 +17,7 @@ final ArgParser _argParser = ArgParser()
   )
   ..addFlag(
     'dry-run',
-    negatable: false,
+    defaultsTo: SkiaGoldClient.isLuciEnv(environment: io.Platform.environment),
     help: 'Do not upload images to Skia Gold.',
   );
 
@@ -43,6 +43,7 @@ Future<void> main(List<String> args) async {
     io.stderr.writeln('=== DRY RUN. Results not submitted to Skia Gold. ===');
     addImg = _dryRunAddImg;
   } else {
+    // If GOLDCTL is not configured (i.e. on CI), this will throw.
     final SkiaGoldClient client = SkiaGoldClient(workDirectory);
     await client.auth();
     addImg = client.addImg;

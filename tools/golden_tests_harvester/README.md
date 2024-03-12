@@ -27,3 +27,5 @@ without actually uploading anything:
 ```sh
 dart ./tools/golden_tests_harvester/bin/golden_tests_harvester.dart --dry-run <path/to/digests>
 ```
+
+This flag is automatically set when running locally (i.e. outside of CI).
