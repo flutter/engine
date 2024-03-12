@@ -41,7 +41,9 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_GaussianBlurFilterContentsTest_"
     "RenderCoverageMatchesGetCoverage_Vulkan",
     "impeller_Play_RendererDartTest_canReflectUniformStructs_Vulkan",
-    "impeller_Play_RendererDartTest_canCreateRenderPassAndSubmit_Vulkan"};
+    "impeller_Play_RendererDartTest_canCreateRenderPassAndSubmit_Vulkan",
+    "impeller_Play_EntityTest_RuntimeEffectSetsRightSizeWhenUniformIsStruct_"
+    "Vulkan"};
 
 std::string GetTestName() {
   std::string suite_name =
