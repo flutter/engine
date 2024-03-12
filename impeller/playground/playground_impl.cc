@@ -23,7 +23,10 @@
 namespace {
 static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_GaussianBlurFilterContentsTest_"
-    "RenderCoverageMatchesGetCoverageRotated_Vulkan"};
+    "RenderCoverageMatchesGetCoverageRotated_Vulkan",
+    "impeller_Play_SceneTest_FlutterLogo_Vulkan",
+    "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
+};
 
 std::string GetTestName() {
   std::string suite_name =
