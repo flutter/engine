@@ -7,6 +7,7 @@ package io.flutter.embedding.android;
 import static android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -16,10 +17,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver.OnPreDrawListener;
+import android.window.BackEvent;
+import android.window.OnBackAnimationCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
+import io.flutter.Build.API_LEVELS;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
@@ -776,6 +781,93 @@ import java.util.List;
       flutterEngine.getNavigationChannel().popRoute();
     } else {
       Log.w(TAG, "Invoked onBackPressed() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackStarted(BackEvent)}.
+   *
+   * <p>This method should be called when the back gesture is initiated, as part of the
+   * implementation of {@link OnBackAnimationCallback}. It's responsible for handling the initial
+   * response to the start of a back gesture, such as initiating animations or preparing the UI for
+   * the back navigation process.
+   *
+   * @param backEvent The BackEvent object containing information about the touch.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void startBackGesture(@NonNull BackEvent backEvent) {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding startBackGesture() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().startBackGesture(backEvent);
+    } else {
+      Log.w(TAG, "Invoked startBackGesture() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackProgressed(BackEvent)}.
+   *
+   * <p>This method should be called in response to progress in a back gesture, as part of the
+   * implementation of {@link OnBackAnimationCallback}. It allows for updating the state of the
+   * application or UI elements based on the ongoing back gesture, such as progressing animations or
+   * interactive elements.
+   *
+   * @param backEvent An BackEvent object describing the progress event.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void updateBackGestureProgress(@NonNull BackEvent backEvent) {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding updateBackGestureProgress() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().updateBackGestureProgress(backEvent);
+    } else {
+      Log.w(
+          TAG,
+          "Invoked updateBackGestureProgress() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackInvoked()}.
+   *
+   * <p>This method signifies the completion of a back gesture and commits the navigation action
+   * initiated by the gesture. It should be called as a final step in the back gesture handling,
+   * indicating that the application is ready to proceed with the back navigation. This could
+   * involve finalizing animations, updating the UI to reflect the navigation, or performing cleanup
+   * tasks related to the gesture.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void commitBackGesture() {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding commitBackGesture() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().commitBackGesture();
+    } else {
+      Log.w(TAG, "Invoked commitBackGesture() before FlutterFragment was attached to an Activity.");
+    }
+  }
+
+  /**
+   * Invoke this from {@link OnBackAnimationCallback#onBackCancelled()}.
+   *
+   * <p>This method should be called when a back gesture is cancelled or back button pressed, as
+   * part of the implementation of {@link OnBackAnimationCallback}. It's responsible for handling
+   * the rollback of any changes or animations that were initiated in response to the back gesture.
+   * This includes resetting UI elements or state to their original form before the gesture started.
+   */
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  void cancelBackGesture() {
+    ensureAlive();
+    if (flutterEngine != null) {
+      Log.v(TAG, "Forwarding cancelBackGesture() to FlutterEngine.");
+      flutterEngine.getBackGestureChannel().cancelBackGesture();
+    } else {
+      Log.w(TAG, "Invoked cancelBackGesture() before FlutterFragment was attached to an Activity.");
     }
   }
 
