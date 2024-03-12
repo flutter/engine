@@ -1370,7 +1370,6 @@ void window_metrics_event_view_id() {
   signalNativeTest();
 }
 
-
 @pragma('vm:entry-point')
 Future<void> channel_listener_response() async {
   channelBuffers.setListener('test/listen',
