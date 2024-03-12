@@ -86,7 +86,7 @@ bool InternalFlutterGpu_Texture_Initialize(Dart_Handle wrapper,
   desc.storage_mode = flutter::gpu::ToImpellerStorageMode(storage_mode);
   desc.size = {width, height};
   desc.format = flutter::gpu::ToImpellerPixelFormat(format);
-  desc.usage = 0;
+  desc.usage = {};
   if (enable_render_target_usage) {
     desc.usage |= static_cast<impeller::TextureUsageMask>(
         impeller::TextureUsage::kRenderTarget);
