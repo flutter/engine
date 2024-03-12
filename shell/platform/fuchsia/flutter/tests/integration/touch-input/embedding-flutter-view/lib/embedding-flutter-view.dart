@@ -53,7 +53,7 @@ class TestApp {
   }
 
   void run() {
-    childView.create(focusable, (ByteData reply) {
+    childView.create(focusable, (ByteData? reply) {
         // Set up window callbacks.
         window.onPointerDataPacket = (PointerDataPacket packet) {
           this.pointerDataPacket(packet);
@@ -219,7 +219,7 @@ Future<int> _launchChildView() async {
   final message = Int8List.fromList([0x31]);
   final completer = new Completer<ByteData>();
   PlatformDispatcher.instance.sendPlatformMessage(
-      'fuchsia/child_view', ByteData.sublistView(message), (ByteData reply) {
+      'fuchsia/child_view', ByteData.sublistView(message), (ByteData? reply) {
     completer.complete(reply);
   });
 
