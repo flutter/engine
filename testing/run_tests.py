@@ -171,6 +171,18 @@ def find_executable_path(path):
 
   raise Exception('Executable %s does not exist!' % path)
 
+def vulkan_validation_env(build_dir):
+  extra_env = {
+      # pylint: disable=line-too-long
+      # Note: built from //third_party/swiftshader
+      'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+      # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
+      # and //third_party/vulkan_validation_layers.
+      'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
+      'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
+  }
+  return extra_env
+
 
 def metal_validation_env(build_dir):
   extra_env = {
@@ -1242,8 +1254,9 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
+      extra_env = vulkan_validation_env(build_dir)
       run_engine_executable(
-          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage
+          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage, extra_env=extra_env
       )
     finally:
       xvfb.stop_virtual_x(build_name)
