@@ -34,8 +34,6 @@ impeller_component("vulkan") {
   sources = [
     "allocator_vk.cc",
     "allocator_vk.h",
-    "android_hardware_buffer_texture_source_vk.cc",
-    "android_hardware_buffer_texture_source_vk.h",
     "barrier_vk.cc",
     "barrier_vk.h",
     "blit_command_vk.cc",
@@ -64,6 +62,7 @@ impeller_component("vulkan") {
     "descriptor_pool_vk.h",
     "device_buffer_vk.cc",
     "device_buffer_vk.h",
+    "device_holder_vk.h",
     "fence_waiter_vk.cc",
     "fence_waiter_vk.h",
     "formats_vk.cc",
@@ -97,14 +96,14 @@ impeller_component("vulkan") {
     "shared_object_vk.h",
     "surface_context_vk.cc",
     "surface_context_vk.h",
-    "surface_vk.cc",
-    "surface_vk.h",
-    "swapchain_image_vk.cc",
-    "swapchain_image_vk.h",
-    "swapchain_impl_vk.cc",
-    "swapchain_impl_vk.h",
-    "swapchain_vk.cc",
-    "swapchain_vk.h",
+    "swapchain/khr/khr_surface_vk.cc",
+    "swapchain/khr/khr_surface_vk.h",
+    "swapchain/khr/khr_swapchain_image_vk.cc",
+    "swapchain/khr/khr_swapchain_image_vk.h",
+    "swapchain/khr/khr_swapchain_impl_vk.cc",
+    "swapchain/khr/khr_swapchain_impl_vk.h",
+    "swapchain/khr/khr_swapchain_vk.cc",
+    "swapchain/khr/khr_swapchain_vk.h",
     "texture_source_vk.cc",
     "texture_source_vk.h",
     "texture_vk.cc",
@@ -122,12 +121,19 @@ impeller_component("vulkan") {
     "yuv_conversion_vk.h",
   ]
 
+  if (is_android) {
+    sources += [
+      "android/ahb_texture_source_vk.cc",
+      "android/ahb_texture_source_vk.h",
+    ]
+  }
+
   public_deps = [
     "../../:renderer",
     "../../../shader_archive",
     "//flutter/flutter_vma",
     "//flutter/fml",
     "//flutter/third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
-    "//third_party/vulkan_memory_allocator",
+    "//flutter/third_party/vulkan_memory_allocator",
   ]
 }
