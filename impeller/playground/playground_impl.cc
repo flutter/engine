@@ -48,7 +48,6 @@ std::string GetTestName() {
 
 bool ShouldTestHaveVulkanValidations() {
   std::string test_name = GetTestName();
-  FML_LOG(ERROR) << "Checking: " << test_name;
   return std::find(kVulkanDenyValidationTests.begin(),
                    kVulkanDenyValidationTests.end(),
                    test_name) == kVulkanDenyValidationTests.end();
