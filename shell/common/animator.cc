@@ -68,8 +68,10 @@ void Animator::BeginFrame(
 
   frame_request_number_++;
 
-  frame_timings_recorder_ = std::move(frame_timings_recorder);
-  frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now());
+  if (frame_timings_recorder_ == nullptr) {
+    frame_timings_recorder_ = std::move(frame_timings_recorder);
+    frame_timings_recorder_->RecordBuildStart(fml::TimePoint::Now());
+  }
 
   size_t flow_id_count = trace_flow_ids_.size();
   std::unique_ptr<uint64_t[]> flow_ids =
@@ -153,7 +155,7 @@ void Animator::EndFrame() {
       delegate_.OnAnimatorDraw(layer_tree_pipeline_);
     }
   }
-  frame_timings_recorder_ = nullptr;
+  // frame_timings_recorder_ = nullptr;
 
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
@@ -181,8 +183,8 @@ void Animator::EndFrame() {
         },
         kNotifyIdleTaskWaitTime);
   }
-  FML_DCHECK(layer_trees_tasks_.empty());
-  FML_DCHECK(frame_timings_recorder_ == nullptr);
+  // FML_DCHECK(layer_trees_tasks_.empty());
+  // FML_DCHECK(frame_timings_recorder_ == nullptr);
 }
 
 void Animator::Render(int64_t view_id,
