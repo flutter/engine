@@ -1024,6 +1024,7 @@ deps = {
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
+     'condition': 'run_fuchsia_emu',
      'dep_type': 'cipd',
    },
 
@@ -1242,6 +1243,7 @@ hooks = [
   {
     'name': 'Generate Fuchsia GN build rules',
     'pattern': '.',
+    'condition': 'run_fuchsia_emu',
     'action': [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
