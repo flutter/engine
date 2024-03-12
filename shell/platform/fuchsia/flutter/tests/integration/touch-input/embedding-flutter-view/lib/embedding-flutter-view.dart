@@ -161,7 +161,7 @@ class TestApp {
     window.scheduleFrame();
   }
 
-  void _reportTouchInput({double localX, double localY, int timeReceived}) {
+  void _reportTouchInput(double localX, double localY, int timeReceived) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
     final message = utf8.encode(json.encode({
       'method': 'TouchInputListener.ReportTouchInput',
