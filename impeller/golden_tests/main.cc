@@ -27,15 +27,12 @@ void print_usage() {
 
 namespace impeller {
 TEST(ValidationTest, IsFatal) {
-  EXPECT_TRUE(ImpellerValidationIsFatal());
-}
-
-TEST(ValidationTest, IsEnabled) {
-  EXPECT_TRUE(ImpellerValidationIsEnabled());
+  EXPECT_TRUE(ImpellerValidationErrorsAreFatal());
 }
 }  // namespace impeller
 
 int main(int argc, char** argv) {
+  impeller::ImpellerValidationErrorsSetFatal(true);
   fml::InstallCrashHandler();
   testing::InitGoogleTest(&argc, argv);
   fml::CommandLine cmd = fml::CommandLineFromPlatformOrArgcArgv(argc, argv);
