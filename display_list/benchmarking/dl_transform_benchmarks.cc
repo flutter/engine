@@ -16,6 +16,7 @@ namespace flutter {
 namespace {
 
 static constexpr float kPiOver4 = impeller::kPiOver4;
+static constexpr float kFieldOfView = impeller::kPiOver2 + impeller::kPiOver4;
 
 enum class AdapterType {
   kSkMatrix,
@@ -70,6 +71,10 @@ class TransformAdapter {
 
   // The actual methods that do work and are the meat of the benchmarks.
   virtual void SetIdentity(TestTransform& result) const = 0;
+  virtual void SetPerspective(TestTransform& result,
+                              float fov_radians,
+                              float near,
+                              float far) const = 0;
 
   virtual void Translate(TestTransform& result, float tx, float ty) const = 0;
   virtual void Scale(TestTransform& result, float sx, float sy) const = 0;
@@ -111,6 +116,11 @@ class SkiaAdapterBase : public TransformAdapter {
                     float bottom) const override {
     rect.sk_rect.setLTRB(left, top, right, bottom);
   }
+
+ protected:
+  static SkM44 MakePerspective(float fov_radians, float near, float far) {
+    return SkM44::Perspective(near, far, fov_radians);
+  }
 };
 
 class SkMatrixAdapter : public SkiaAdapterBase {
@@ -120,6 +130,13 @@ class SkMatrixAdapter : public SkiaAdapterBase {
 
   void SetIdentity(TestTransform& result) const override {
     result.sk_matrix.setIdentity();
+  }
+
+  virtual void SetPerspective(TestTransform& result,
+                              float fov_radians,
+                              float near,
+                              float far) const override {
+    result.sk_matrix = MakePerspective(fov_radians, near, far).asM33();
   }
 
   void Translate(TestTransform& result, float tx, float ty) const override {
@@ -180,6 +197,13 @@ class SkM44Adapter : public SkiaAdapterBase {
 
   void SetIdentity(TestTransform& storage) const override {
     storage.sk_m44.setIdentity();
+  }
+
+  virtual void SetPerspective(TestTransform& result,
+                              float fov_radians,
+                              float near,
+                              float far) const override {
+    result.sk_m44 = MakePerspective(fov_radians, near, far);
   }
 
   void Translate(TestTransform& storage, float tx, float ty) const override {
@@ -254,6 +278,15 @@ class ImpellerMatrixAdapter : public TransformAdapter {
 
   void SetIdentity(TestTransform& storage) const override {
     storage.impeller_matrix = impeller::Matrix();
+  }
+
+  virtual void SetPerspective(TestTransform& result,
+                              float fov_radians,
+                              float near,
+                              float far) const override {
+    impeller::Radians fov = impeller::Radians(fov_radians);
+    result.impeller_matrix =
+        impeller::Matrix::MakePerspective(fov, 1.0f, near, far);
   }
 
   void Translate(TestTransform& storage, float tx, float ty) const override {
@@ -342,6 +375,14 @@ static void SetupRotate(const TransformAdapter* adapter,
   adapter->RotateRadians(transform, kPiOver4);
 }
 
+static void SetupPerspective(const TransformAdapter* adapter,
+                             TestTransform& transform) {
+  auto fov_radians = kFieldOfView;
+  auto near = 1.0f;
+  auto far = 100.0f;
+  adapter->SetPerspective(transform, fov_radians, near, far);
+}
+
 // We use a function to return the appropriate adapter so that all methods
 // used in benchmarking are "pure virtual" and cannot be optimized out
 // due to issues such as the arguments being constexpr and the result
@@ -374,6 +415,17 @@ static void BM_SetIdentity(benchmark::State& state, AdapterType type) {
   TestTransform transform;
   while (state.KeepRunning()) {
     adapter->SetIdentity(transform);
+  }
+}
+
+static void BM_SetPerspective(benchmark::State& state, AdapterType type) {
+  auto adapter = GetAdapter(type);
+  TestTransform transform;
+  auto fov_radians = kFieldOfView;
+  auto near = 1.0f;
+  auto far = 100.0f;
+  while (state.KeepRunning()) {
+    adapter->SetPerspective(transform, fov_radians, near, far);
   }
 }
 
@@ -530,6 +582,7 @@ static void BM_InvertAndCheck(benchmark::State& state,
 BENCHMARK_CAPTURE_ALL(BM_AdapterDispatchOverhead);
 
 BENCHMARK_CAPTURE_ALL(BM_SetIdentity);
+BENCHMARK_CAPTURE_ALL(BM_SetPerspective);
 BENCHMARK_CAPTURE_ALL_ARGS(BM_Translate, 10.0f, 15.0f);
 BENCHMARK_CAPTURE_ALL_ARGS(BM_Scale, 2.0f);
 BENCHMARK_CAPTURE_ALL_ARGS(BM_Rotate, kPiOver4);
@@ -558,35 +611,42 @@ BENCHMARK_CAPTURE_ALL_ARGS(BM_Rotate, kPiOver4);
 BENCHMARK_CAPTURE_ALL_SETUP2(BM_Concat, Scale, Translate);
 BENCHMARK_CAPTURE_ALL_SETUP2(BM_Concat, ScaleTranslate, ScaleTranslate);
 BENCHMARK_CAPTURE_ALL_SETUP2(BM_Concat, ScaleTranslate, Rotate);
+BENCHMARK_CAPTURE_ALL_SETUP2(BM_Concat, ScaleTranslate, Perspective);
+BENCHMARK_CAPTURE_ALL_SETUP2(BM_Concat, Perspective, ScaleTranslate);
 
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertUnchecked, Identity);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertUnchecked, Translate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertUnchecked, Scale);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertUnchecked, ScaleTranslate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertUnchecked, Rotate);
+BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertUnchecked, Perspective);
 
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertAndCheck, Identity);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertAndCheck, Translate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertAndCheck, Scale);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertAndCheck, ScaleTranslate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertAndCheck, Rotate);
+BENCHMARK_CAPTURE_ALL_SETUP(BM_InvertAndCheck, Perspective);
 
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoint, Identity);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoint, Translate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoint, Scale);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoint, ScaleTranslate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoint, Rotate);
+BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoint, Perspective);
 
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoints, Identity);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoints, Translate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoints, Scale);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoints, ScaleTranslate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoints, Rotate);
+BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformPoints, Perspective);
 
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformRect, Identity);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformRect, Translate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformRect, Scale);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformRect, ScaleTranslate);
 BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformRect, Rotate);
+BENCHMARK_CAPTURE_ALL_SETUP(BM_TransformRect, Perspective);
 
 }  // namespace flutter
