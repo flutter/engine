@@ -5,7 +5,7 @@ A command-line tool that uploads golden images to Skia gold from a directory.
 ## Usage
 
 This program assumes you've _already run_ a suite of golden tests that produce
-a directory of images, of which the format, a JSON file named `digests.json`, is
+a directory of images with a JSON digest named `digests.json`, which is
 [documented in `lib/golden_tests_harvester.dart`][lib].
 
 Provide the directory as the only positional argument to the program:

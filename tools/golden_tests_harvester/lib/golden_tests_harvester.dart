@@ -5,7 +5,6 @@
 import 'dart:io' as io;
 
 import 'package:path/path.dart' as p;
-import 'package:skia_gold_client/skia_gold_client.dart';
 
 import 'src/digests_json_format.dart';
 
@@ -47,10 +46,6 @@ import 'src/digests_json_format.dart';
 ///   ]
 /// }
 /// ```
-///
-/// If [dryRun] is true, the images will _not_ be uploaded to Skia Gold, and
-/// authentication or validation that Skia Gold is available will _not_ be
-/// performed.
 Future<void> harvest({
   required io.Directory workDirectory,
   required AddImageToSkiaGold addImg,

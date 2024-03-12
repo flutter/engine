@@ -22,17 +22,16 @@ void main() async {
   test('should require a file named "digests.json" in the working directory', () async {
     await withTempDirectory((io.Directory tempDirectory) async {
       final StringSink stderr = StringBuffer();
-      try {
+
+      final io.FileSystemException error = await _expectThrow<io.FileSystemException>(() async {
         await harvest(
           workDirectory: tempDirectory,
           addImg: _alwaysThrowsAddImg,
           stderr: stderr,
         );
-        fail('Expected a FileSystemException');
-      } on io.FileSystemException catch (e) {
-        expect(e.path, contains('digests.json'));
-        expect(stderr.toString(), isEmpty);
-      }
+      });
+      expect(error.path, contains('digests.json'));
+      expect(stderr.toString(), isEmpty);
     });
   });
 
@@ -41,17 +40,16 @@ void main() async {
       final StringSink stderr = StringBuffer();
       final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digests.json'));
       await digestsFile.writeAsString('{"dimensions": "not a map", "entries": []}');
-      try {
+
+      final FormatException error = await _expectThrow<FormatException>(() async {
         await harvest(
           workDirectory: tempDirectory,
           addImg: _alwaysThrowsAddImg,
           stderr: stderr,
         );
-        fail('Expected a FormatException');
-      } on FormatException catch (e) {
-        expect(e.message, contains('dimensions'));
-        expect(stderr.toString(), isEmpty);
-      }
+      });
+      expect(error.message, contains('dimensions'));
+      expect(stderr.toString(), isEmpty);
     });
   });
 
@@ -73,17 +71,16 @@ void main() async {
           ]
         }
       ''');
-      try {
+
+      final FailedComparisonException error = await _expectThrow<FailedComparisonException>(() async {
         await harvest(
           workDirectory: tempDirectory,
           addImg: _alwaysThrowsAddImg,
           stderr: stderr,
         );
-        fail('Expected an _IntentionalError');
-      } on FailedComparisonException catch (e) {
-        expect(e.testName, 'test_name_1.png');
-        expect(stderr.toString(), contains('IntentionalError'));
-      }
+      });
+      expect(error.testName, 'test_name_1.png');
+      expect(stderr.toString(), contains('IntentionalError'));
     });
   });
 
@@ -133,6 +130,19 @@ void main() async {
     });
 
   });
+}
+
+FutureOr<T> _expectThrow<T extends Object>(FutureOr<void> Function() callback) async {
+  try {
+    await callback();
+    fail('Expected an exception of type $T');
+  } on T catch (e) {
+    return e;
+  } catch (e) {
+    fail('Expected an exception of type $T, but got $e');
+  }
+  // fail(...) unfortunately does not return Never, but it does always throw.
+  throw UnsupportedError('Unreachable');
 }
 
 final class _IntentionalError extends Error {}
