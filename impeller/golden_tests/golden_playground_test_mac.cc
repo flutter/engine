@@ -74,12 +74,6 @@ static const std::vector<std::string> kVulkanDenyValidationTests = {
     "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverageRotated_Vulkan",
     "impeller_Play_SceneTest_FlutterLogo_Vulkan",
     "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_TextureContentsWithEffectTransform_Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverageTranslate_Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverageRotated_Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_TextureContentsWithDestinationRect_Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_RenderCoverageMatchesGetCoverage_Vulkan",
-    "impeller_Play_GaussianBlurFilterContentsTest_TextureContentsWithDestinationRectScaled_Vulkan",
     "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
 };
 // clang-format on
