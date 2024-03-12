@@ -10,7 +10,7 @@
 #include "impeller/core/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <array>
@@ -24,23 +24,27 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ~AllocatorVK() override;
 
+  // Visible for testing
+  size_t DebugGetHeapUsage() const;
+
  private:
   friend class ContextVK;
 
   UniqueAllocatorVMA allocator_;
   UniquePoolVMA staging_buffer_pool_;
   std::weak_ptr<Context> context_;
-  std::weak_ptr<DeviceHolder> device_holder_;
+  std::weak_ptr<DeviceHolderVK> device_holder_;
   ISize max_texture_size_;
   bool is_valid_ = false;
   bool supports_memoryless_textures_ = false;
   // TODO(jonahwilliams): figure out why CI can't create these buffer pools.
   bool created_buffer_pool_ = true;
+  vk::PhysicalDeviceMemoryProperties memory_properties_;
 
   AllocatorVK(std::weak_ptr<Context> context,
               uint32_t vulkan_api_version,
               const vk::PhysicalDevice& physical_device,
-              const std::shared_ptr<DeviceHolder>& device_holder,
+              const std::shared_ptr<DeviceHolderVK>& device_holder,
               const vk::Instance& instance,
               const CapabilitiesVK& capabilities);
 
@@ -57,6 +61,9 @@ class AllocatorVK final : public Allocator {
 
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
+
+  // |Allocator|
+  void DebugTraceMemoryStatistics() const override;
 
   AllocatorVK(const AllocatorVK&) = delete;
 
