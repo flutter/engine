@@ -2766,9 +2766,7 @@ TEST_F(EmbedderTest, CanSendPointerEventWithViewId) {
   message_latch.Wait();
 }
 
-/// Send a window metrics event to Dart and wait until the Dart code echos with
-/// the view ID.
-TEST_F(EmbedderTest, CanSendWindowMetricsEventWithViewId) {
+TEST_F(EmbedderTest, WindowMetricsEventDefaultsToImplicitView) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
@@ -2784,7 +2782,7 @@ TEST_F(EmbedderTest, CanSendWindowMetricsEventWithViewId) {
       CREATE_NATIVE_ENTRY([&message_latch](Dart_NativeArguments args) {
         auto message = tonic::DartConverter<std::string>::FromDart(
             Dart_GetNativeArgument(args, 0));
-        ASSERT_EQ("ViewID: 2", message);
+        ASSERT_EQ("Changed: [0]", message);
         message_latch.Signal();
       }));
 
@@ -2798,7 +2796,7 @@ TEST_F(EmbedderTest, CanSendWindowMetricsEventWithViewId) {
   event.width = 200;
   event.height = 300;
   event.pixel_ratio = 1.5;
-  event.view_id = 2;
+  // Don't assign event.view_id here to test the default behavior.
 
   FlutterEngineResult result =
       FlutterEngineSendWindowMetricsEvent(engine.get(), &event);
