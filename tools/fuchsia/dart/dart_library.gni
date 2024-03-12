@@ -180,11 +180,10 @@ if (current_toolchain == dart_toolchain) {
           name = package_name
           if (defined(invoker.language_version)) {
             language_version = invoker.language_version
+          } else if (defined(invoker.pubspec)) {
+            pubspec_path = rebase_path(invoker.pubspec, root_build_dir)
           } else {
             language_version = "2.12"
-          }
-          if (defined(invoker.pubspec)) {
-            pubspec_path = rebase_path(invoker.pubspec, root_build_dir)
           }
           root_uri = rebase_path(package_root, root_build_dir)
           if (defined(invoker.source_dir)) {
