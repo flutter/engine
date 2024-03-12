@@ -25,7 +25,8 @@ struct Mask {
 
   constexpr Mask(Mask<EnumType>&& other) = default;
 
-  constexpr Mask(EnumType type) : mask_(static_cast<MaskType>(type)) {}
+  constexpr Mask(EnumType type)  // NOLINT(google-explicit-constructor)
+      : mask_(static_cast<MaskType>(type)) {}
 
   explicit constexpr Mask(MaskType mask) : mask_(static_cast<MaskType>(mask)) {}
 

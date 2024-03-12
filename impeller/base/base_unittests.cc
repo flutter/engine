@@ -282,7 +282,7 @@ TEST(BaseTest, CanUseTypedMasks) {
 
   {
     MyMask mask2(MyMaskBits::kBar);
-    MyMask mask(std::move(mask2));
+    MyMask mask(std::move(mask2));  // NOLINT
     ASSERT_EQ(static_cast<uint32_t>(mask), 1u);
     ASSERT_TRUE(mask);
   }
