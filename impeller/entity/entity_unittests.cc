@@ -2152,15 +2152,7 @@ TEST_P(EntityTest, YUVToRGBFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-// TODO(https://github.com/flutter/flutter/issues/144967):
-// This test is running a mix of real and mocked code, and as a result ending up
-// in a state where the real vulkan backends tries and fails to compile a compat
-// render pass with an unknown pixel format. To fix this test, it either needs
-// to be re-written to use entirely real types, or entirely mocked types
 TEST_P(EntityTest, RuntimeEffect) {
-  if (GetBackend() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP() << "RuntimeEffect tests are broken on Vulkan.";
-  }
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
   auto runtime_stage =
@@ -2228,9 +2220,6 @@ TEST_P(EntityTest, RuntimeEffect) {
 }
 
 TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
-  if (GetBackend() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP() << "RuntimeEffect tests are broken on Vulkan.";
-  }
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
   auto runtime_stage =
@@ -2277,7 +2266,7 @@ TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
                   .has_value());
 }
 
-TEST_P(EntityTest, DISABLED_RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
+TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
   if (GetBackend() != PlaygroundBackend::kVulkan) {
     GTEST_SKIP() << "Test only applies to Vulkan";
   }
