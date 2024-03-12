@@ -788,14 +788,8 @@ def to_gn_args(args):
   if args.enable_impeller_trace_canvas:
     gn_args['impeller_trace_canvas'] = True
 
-  if args.enable_impeller_vulkan:
-    gn_args['impeller_enable_vulkan'] = True
-
   if args.enable_impeller_vulkan_playgrounds:
     gn_args['impeller_enable_vulkan_playgrounds'] = True
-
-  if args.enable_impeller_opengles:
-    gn_args['impeller_enable_opengles'] = True
 
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
@@ -1253,17 +1247,10 @@ def parse_args(args):
 
   parser.add_argument(
       '--enable-impeller-vulkan-playgrounds',
-      default=False,
+      default=True,
       action='store_true',
       help='Enable the Impeller Vulkan Playgrounds. ' +
       'The Impeller Vulkan backend needs to be enabled.'
-  )
-
-  parser.add_argument(
-      '--enable-impeller-opengles',
-      default=False,
-      action='store_true',
-      help='Enable the Impeller OpenGL ES backend.'
   )
 
   parser.add_argument(
