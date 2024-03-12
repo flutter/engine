@@ -1024,6 +1024,7 @@ deps = {
         'version': Var('fuchsia_test_scripts_version'),
        }
      ],
+     'condition': 'host_os == "linux"',
      'dep_type': 'cipd',
    },
 
@@ -1034,6 +1035,7 @@ deps = {
         'version': Var('fuchsia_gn_sdk_version'),
        }
      ],
+     'condition': 'host_os == "linux"',
      'dep_type': 'cipd',
    },
 
@@ -1242,6 +1244,7 @@ hooks = [
   {
     'name': 'Generate Fuchsia GN build rules',
     'pattern': '.',
+    'condition': 'host_os == "linux"',
     'action': [
       'python3',
       'src/flutter/tools/fuchsia/with_envs.py',
