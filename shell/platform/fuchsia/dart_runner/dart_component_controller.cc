@@ -310,8 +310,6 @@ bool DartComponentController::SetUpFromKernel() {
                   manifest.size());
   Dart_Handle library = Dart_Null();
 
-  bool first_library = true;
-  bool result_sound_null_safety = false;
   for (size_t start = 0; start < manifest.size();) {
     size_t end = str.find("\n", start);
     if (end == std::string::npos) {
@@ -330,27 +328,12 @@ bool DartComponentController::SetUpFromKernel() {
       Dart_ExitScope();
       return false;
     }
-    bool sound_null_safety = Dart_DetectNullSafety(
-        /*script_uri=*/nullptr, /*package_config=*/nullptr,
-        /*original_working_directory=*/nullptr,
-        isolate_snapshot_data_.address(),
-        /*isolate_snapshot_instructions=*/nullptr, kernel.address(),
-        kernel.size());
-
-    if (first_library) {
-      result_sound_null_safety = sound_null_safety;
-      first_library = false;
-    } else if (sound_null_safety != result_sound_null_safety) {
-      FML_LOG(ERROR) << "Inconsistent sound null safety";
-      return false;
-    }
-
     kernel_peices_.emplace_back(std::move(kernel));
   }
 
   Dart_IsolateFlags isolate_flags;
   Dart_IsolateFlagsInitialize(&isolate_flags);
-  isolate_flags.null_safety = result_sound_null_safety;
+  isolate_flags.null_safety = true;
 
   if (!CreateIsolate(isolate_snapshot_data_.address(),
                      /*isolate_snapshot_instructions=*/nullptr,
