@@ -194,12 +194,6 @@ def metal_validation_env(build_dir):
           '1',  # Validates accesses to device and constant memory.
       'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY': '1',  # Validates accesses to threadgroup memory.
       'MTL_SHADER_VALIDATION_TEXTURE_USAGE': '1',  # Validates that texture references are not nil.
-      # Note: built from //third_party/swiftshader
-      'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
-      # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
-      # and //third_party/vulkan_validation_layers.
-      'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
-      'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
   }
   if is_aarm64():
     extra_env.update({
@@ -511,7 +505,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           shuffle_flags,
           coverage=coverage
       )
-    extra_env = metal_validation_env(build_dir)
+    extra_env = metal_validation_env(build_dir).merge(vulkan_validation_env(build_dir))
     mac_impeller_unittests_flags = shuffle_flags + [
         '--enable_vulkan_validation',
         '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
@@ -1054,7 +1048,7 @@ def run_impeller_golden_tests(build_dir: str):
                                                          ).joinpath('golden_tests_harvester')
 
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    extra_env = metal_validation_env(build_dir)
+    extra_env = metal_validation_env(build_dir).merge(vulkan_validation_env(build_dir))
     run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir, env=extra_env)
     dart_bin = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
