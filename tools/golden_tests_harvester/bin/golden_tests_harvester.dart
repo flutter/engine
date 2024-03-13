@@ -8,7 +8,7 @@ import 'package:args/args.dart';
 import 'package:golden_tests_harvester/golden_tests_harvester.dart';
 import 'package:skia_gold_client/skia_gold_client.dart';
 
-final bool _isLocalEnvWithoutSkiaGold = 
+final bool _isLocalEnvWithoutSkiaGold =
     !SkiaGoldClient.isAvailable(environment: io.Platform.environment) ||
     !SkiaGoldClient.isLuciEnv(environment: io.Platform.environment);
 
