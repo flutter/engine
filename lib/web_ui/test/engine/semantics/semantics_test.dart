@@ -686,8 +686,8 @@ void _testHeader() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
 
-    semantics().updateSemantics(builder.build());
-    expectSemanticsTree('''
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
 <sem role="heading" aria-label="Heading of the page" aria-level="2" style="$rootSemanticStyle"></sem>
 ''');
 
