@@ -1366,13 +1366,15 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testAccessibilityPerformEscapePopsRoute {
-  FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
-  id mockNavigationChannel = OCMClassMock([FlutterBasicMessageChannel class]);
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  id mockNavigationChannel = OCMClassMock([FlutterMethodChannel class]);
   OCMStub([mockEngine navigationChannel]).andReturn(mockNavigationChannel);
 
-  FlutterViewController* viewController =
-      [[FlutterViewController alloc] initWithEngine:self.mockEngine nibName:nil bundle:nil];
-  [viewController accessibilityPerformEscape];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  XCTAssertTrue([viewController accessibilityPerformEscape]);
 
   OCMVerify([mockNavigationChannel invokeMethod:@"popRoute" arguments:nil]);
 
