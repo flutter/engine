@@ -161,7 +161,7 @@ class TestApp {
     window.scheduleFrame();
   }
 
-  void _reportTouchInput(double localX, double localY, int timeReceived) {
+  void _reportTouchInput({required double localX, required double localY, required int timeReceived}) {
     print('embedding-flutter-view reporting touch input to TouchInputListener');
     final message = utf8.encode(json.encode({
       'method': 'TouchInputListener.ReportTouchInput',
@@ -217,10 +217,10 @@ class ChildView {
 
 Future<int> _launchChildView() async {
   final message = Int8List.fromList([0x31]);
-  final completer = new Completer<ByteData?>();
+  final completer = new Completer<ByteData>();
   PlatformDispatcher.instance.sendPlatformMessage(
       'fuchsia/child_view', ByteData.sublistView(message), (ByteData? reply) {
-    completer.complete(reply);
+    completer.complete(reply!);
   });
 
   return int.parse(
