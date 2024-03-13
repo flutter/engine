@@ -4,12 +4,12 @@
 
 import 'dart:convert' as convert;
 
-/// A Dart representation of a `digests.json` file.
+/// A Dart representation of a `digest.json` file.
 ///
 /// A single file is typically used to represent the results of a test suite,
 /// or a series of tests that have been run with the same [dimensions]. For
 /// example, "Impeller Unittests on Vulkan running on MacOS" might generate
-/// a `digests.json` file.
+/// a `digest.json` file.
 ///
 /// Other tools (perhaps implemented in other languages, like C++) can use this
 /// format to communicate with the `golden_tests_harvester` tool without
@@ -18,13 +18,13 @@ final class Digests {
   /// Creates a new instance of [Digests].
   ///
   /// In practice, [Digests.parse] is typically used to create a new instance
-  /// from an existing `digests.json` file read into memory as string contents.
+  /// from an existing `digest.json` file read into memory as string contents.
   const Digests({
     required this.dimensions,
     required this.entries,
   });
 
-  /// Parses a `digests.json` file from a string.
+  /// Parses a `digest.json` file from a string.
   factory Digests.parse(String json) {
     final Object? decoded = convert.json.decode(json);
     if (decoded is! Map<String, Object?>) {
@@ -86,7 +86,7 @@ final class Digests {
   final List<DigestEntry> entries;
 }
 
-/// A single entry in a `digests.json` file.
+/// A single entry in a `digest.json` file.
 ///
 /// Each entry is a test-run (or part of a test-run).
 final class DigestEntry {
@@ -99,7 +99,7 @@ final class DigestEntry {
     required this.maxColorDelta,
   });
 
-  /// File path that is a direct sibling of the parsed `digests.json`.
+  /// File path that is a direct sibling of the parsed `digest.json`.
   final String filename;
 
   /// Width of the image.

@@ -34,7 +34,7 @@ void main() async {
     });
   });
 
-  test('should require a file named "digests.json" in the working directory', () async {
+  test('should require a file named "digest.json" in the working directory', () async {
     await withTempDirectory((io.Directory tempDirectory) async {
       final StringSink stderr = StringBuffer();
 
@@ -45,15 +45,15 @@ void main() async {
           stderr: stderr,
         );
       });
-      expect(error.toString(), contains('digests.json'));
+      expect(error.toString(), contains('digest.json'));
       expect(stderr.toString(), isEmpty);
     });
   });
 
-  test('should throw if "digests.json" is in an unexpected format', () async {
+  test('should throw if "digest.json" is in an unexpected format', () async {
     await withTempDirectory((io.Directory tempDirectory) async {
       final StringSink stderr = StringBuffer();
-      final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digests.json'));
+      final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digest.json'));
       await digestsFile.writeAsString('{"dimensions": "not a map", "entries": []}');
 
       final FormatException error = await _expectThrow<FormatException>(() async {
@@ -70,7 +70,7 @@ void main() async {
 
   test('should fail eagerly if addImg fails', () async {
     await withTempDirectory((io.Directory tempDirectory) async {
-      final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digests.json'));
+      final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digest.json'));
       final StringSink stderr = StringBuffer();
       await digestsFile.writeAsString('''
         {
@@ -101,7 +101,7 @@ void main() async {
 
   test('should invoke addImg per test', () async {
     await withTempDirectory((io.Directory tempDirectory) async {
-      final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digests.json'));
+      final io.File digestsFile = io.File(p.join(tempDirectory.path, 'digest.json'));
       await digestsFile.writeAsString('''
         {
           "dimensions": {},

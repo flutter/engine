@@ -13,13 +13,13 @@ import 'src/digests_json_format.dart';
 /// The directory is expected to match the following structure:
 /// ```txt
 /// workDirectory/
-///   - digests.json
+///   - digest.json
 ///   - test_name_1.png
 ///   - test_name_2.png
 ///   - ...
 /// ```
 ///
-/// The format of `digests.json` is expected to match the following:
+/// The format of `digest.json` is expected to match the following:
 /// ```jsonc
 /// {
 ///   "dimensions": {
@@ -30,7 +30,7 @@ import 'src/digests_json_format.dart';
 ///   "entries": [
 ///     // Each entry is a test-run with the following format:
 ///     {
-///       // Path must be a direct sibling of digests.json.
+///       // Path must be a direct sibling of digest.json.
 ///       "filename": "test_name_1.png",
 ///
 ///       // Called `screenshotSize` in Skia Gold (width * height).
@@ -51,7 +51,7 @@ Future<void> harvest({
   required AddImageToSkiaGold addImg,
   required StringSink stderr,
 }) async {
-  final io.File file = io.File(p.join(workDirectory.path, 'digests.json'));
+  final io.File file = io.File(p.join(workDirectory.path, 'digest.json'));
   if (!file.existsSync()) {
     // Check if the directory exists or if the file is just missing.
     if (!workDirectory.existsSync()) {
@@ -60,7 +60,7 @@ Future<void> harvest({
     // Lookup sibling files to help the user understand what's missing.
     final List<io.FileSystemEntity> files = workDirectory.listSync();
     throw StateError(
-      'File "digests.json" not found in ${workDirectory.path}.\n\n'
+      'File "digest.json" not found in ${workDirectory.path}.\n\n'
       'Found files: ${files.map((io.FileSystemEntity e) => p.basename(e.path)).join(', ')}',
     );
   }
