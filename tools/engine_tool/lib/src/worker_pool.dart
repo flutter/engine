@@ -53,6 +53,7 @@ class WorkerPool {
   /// Run all tasks in the pool. Report progress via reporter.
   /// Returns 0 on success and non-zero on failure.
   Future<bool> run(Set<WorkerTask> tasks) async {
+    _environment.logger.info('Running ${tasks.length}');
     _runCompleter = Completer<bool>();
     _reporter.onRun(tasks);
     _pending.addAll(tasks);
