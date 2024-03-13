@@ -651,12 +651,12 @@ int? tryViewId(Object? arguments) {
   return null;
 }
 
+const String _viewRootSelector =
+    '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
+
 int? findParentViewId(DomElement element) {
-  DomElement? current = element;
-  while (current != null && element.tagName.toLowerCase() != DomManager.flutterViewTagName) {
-    current = element.parent;
-  }
-  final String? viewIdAttribute = current?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+  final DomElement? viewRoot = element.closest(_viewRootSelector);
+  final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
   return viewIdAttribute == null ? null : int.parse(viewIdAttribute);
 }
 
