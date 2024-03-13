@@ -34,7 +34,7 @@ NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemory
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
-      _finalizationRegistry.register(owner, ref.toJSBox);
+      _finalizationRegistry.register(owner.toJSAnyShallow, ref.toJSBox);
     }
   }
 }

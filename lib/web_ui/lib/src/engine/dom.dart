@@ -7,6 +7,7 @@ import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
 
@@ -36,27 +37,27 @@ import 'browser_detection.dart';
 /// are currently represented across web backends, these extensions should be
 /// used carefully and only on types that are known to not contains `JSNull` and
 /// `JSUndefined`.
-extension ObjectToJSAnyExtension on Object {
-  JSAny get toJSAnyShallow {
-    if (isWasm) {
-      return toJSAnyDeep;
-    } else {
-      return this as JSAny;
-    }
-  }
 
+extension ObjectToJSAnyExtension on Object {
+  // Once `Object.toJSBox` is faster (see
+  // https://github.com/dart-lang/sdk/issues/55183) we can remove this
+  // backend-specific workaround.
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  JSAny get toJSAnyShallow => dartToJsWrapper(this);
+
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:tryInline')
   JSAny get toJSAnyDeep => js_util.jsify(this) as JSAny;
 }
 
 extension JSAnyToObjectExtension on JSAny {
-  Object get toObjectShallow {
-    if (isWasm) {
-      return toObjectDeep;
-    } else {
-      return this;
-    }
-  }
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  Object get toObjectShallow => jsWrapperToDart(this);
 
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:tryInline')
   Object get toObjectDeep => js_util.dartify(this)!;
 }
 
@@ -3662,22 +3663,13 @@ DomFinalizationRegistry createDomFinalizationRegistry(JSFunction cleanup) =>
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
-  external JSVoid _register1(JSAny target, JSAny value);
+  external JSVoid register(JSAny target, JSAny value);
 
   @JS('register')
-  external JSVoid _register2(JSAny target, JSAny value, JSAny token);
-  void register(Object target, Object value, [Object? token]) {
-    if (token != null) {
-      _register2(
-          target.toJSAnyShallow, value.toJSAnyShallow, token.toJSAnyShallow);
-    } else {
-      _register1(target.toJSAnyShallow, value.toJSAnyShallow);
-    }
-  }
+  external JSVoid registerWithToken(JSAny target, JSAny value, JSAny token);
 
   @JS('unregister')
-  external JSVoid _unregister(JSAny token);
-  void unregister(Object token) => _unregister(token.toJSAnyShallow);
+  external JSVoid unregister(JSAny token);
 }
 
 /// Whether the current browser supports `FinalizationRegistry`.
