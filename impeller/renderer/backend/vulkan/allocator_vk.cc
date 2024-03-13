@@ -94,7 +94,7 @@ static PoolVMA CreateBufferPool(VmaAllocator allocator) {
 AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
-                         const std::shared_ptr<DeviceHolder>& device_holder,
+                         const std::shared_ptr<DeviceHolderVK>& device_holder,
                          const vk::Instance& instance,
                          const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
@@ -170,6 +170,32 @@ ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   return max_texture_size_;
 }
 
+int32_t AllocatorVK::FindMemoryTypeIndex(
+    uint32_t memory_type_bits_requirement,
+    vk::PhysicalDeviceMemoryProperties& memory_properties) {
+  int32_t type_index = -1;
+  vk::MemoryPropertyFlagBits required_properties =
+      vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+  const uint32_t memory_count = memory_properties.memoryTypeCount;
+  for (uint32_t memory_index = 0; memory_index < memory_count; ++memory_index) {
+    const uint32_t memory_type_bits = (1 << memory_index);
+    const bool is_required_memory_type =
+        memory_type_bits_requirement & memory_type_bits;
+
+    const auto properties =
+        memory_properties.memoryTypes[memory_index].propertyFlags;
+    const bool has_required_properties =
+        (properties & required_properties) == required_properties;
+
+    if (is_required_memory_type && has_required_properties) {
+      return static_cast<int32_t>(memory_index);
+    }
+  }
+
+  return type_index;
+}
+
 vk::ImageUsageFlags AllocatorVK::ToVKImageUsageFlags(
     PixelFormat format,
     TextureUsageMask usage,
@@ -188,7 +214,7 @@ vk::ImageUsageFlags AllocatorVK::ToVKImageUsageFlags(
       break;
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)) {
+  if (usage & TextureUsage::kRenderTarget) {
     if (PixelFormatIsDepthStencil(format)) {
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
@@ -197,11 +223,11 @@ vk::ImageUsageFlags AllocatorVK::ToVKImageUsageFlags(
     }
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
+  if (usage & TextureUsage::kShaderRead) {
     vk_usage |= vk::ImageUsageFlagBits::eSampled;
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
+  if (usage & TextureUsage::kShaderWrite) {
     vk_usage |= vk::ImageUsageFlagBits::eStorage;
   }
 

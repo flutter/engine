@@ -166,7 +166,7 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
 
 std::unique_ptr<PipelineVK> PipelineVK::Create(
     const PipelineDescriptor& desc,
-    const std::shared_ptr<DeviceHolder>& device_holder,
+    const std::shared_ptr<DeviceHolderVK>& device_holder,
     const std::weak_ptr<PipelineLibrary>& weak_library,
     std::shared_ptr<SamplerVK> immutable_sampler) {
   TRACE_EVENT0("flutter", "PipelineVK::Create");
@@ -357,7 +357,8 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   std::vector<vk::DescriptorSetLayoutBinding> set_bindings;
 
   vk::Sampler vk_immutable_sampler =
-      immutable_sampler ? immutable_sampler->GetSampler() : VK_NULL_HANDLE;
+      immutable_sampler ? immutable_sampler->GetSampler()
+                        : static_cast<vk::Sampler>(VK_NULL_HANDLE);
 
   for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
     vk::DescriptorSetLayoutBinding set_binding;
@@ -462,7 +463,7 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   return pipeline_vk;
 }
 
-PipelineVK::PipelineVK(std::weak_ptr<DeviceHolder> device_holder,
+PipelineVK::PipelineVK(std::weak_ptr<DeviceHolderVK> device_holder,
                        std::weak_ptr<PipelineLibrary> library,
                        const PipelineDescriptor& desc,
                        vk::UniquePipeline pipeline,

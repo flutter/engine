@@ -172,6 +172,37 @@ def find_executable_path(path):
   raise Exception('Executable %s does not exist!' % path)
 
 
+def vulkan_validation_env(build_dir):
+  extra_env = {
+      # pylint: disable=line-too-long
+      # Note: built from //third_party/swiftshader
+      'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+      # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
+      # and //third_party/vulkan_validation_layers.
+      'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
+      'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
+  }
+  return extra_env
+
+
+def metal_validation_env():
+  extra_env = {
+      # pylint: disable=line-too-long
+      # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+      'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
+      'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+          '1',  # Validates accesses to device and constant memory.
+      'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY': '1',  # Validates accesses to threadgroup memory.
+      'MTL_SHADER_VALIDATION_TEXTURE_USAGE': '1',  # Validates that texture references are not nil.
+  }
+  if is_aarm64():
+    extra_env.update({
+        'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
+        'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
+    })
+  return extra_env
+
+
 def build_engine_executable_command(
     build_dir, executable_name, flags=None, coverage=False, gtest=False
 ):
@@ -474,28 +505,8 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           shuffle_flags,
           coverage=coverage
       )
-    extra_env = {
-        # pylint: disable=line-too-long
-        # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-        'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
-        'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-            '1',  # Validates accesses to device and constant memory.
-        'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-            '1',  # Validates accesses to threadgroup memory.
-        'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-            '1',  # Validates that texture references are not nil.
-        # Note: built from //third_party/swiftshader
-        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
-        # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
-        # and //third_party/vulkan_validation_layers.
-        'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
-        'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
-    }
-    if is_aarm64():
-      extra_env.update({
-          'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
-          'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
-      })
+    extra_env = metal_validation_env()
+    extra_env.update(vulkan_validation_env(build_dir))
     mac_impeller_unittests_flags = shuffle_flags + [
         '--enable_vulkan_validation',
         '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
@@ -542,8 +553,9 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         shuffle_flags + [
             '--enable_vulkan_validation',
-            # TODO(https://github.com/flutter/flutter/issues/142642): Remove this.
-            '--gtest_filter=-*OpenGLES',
+            # TODO(https://github.com/flutter/flutter/issues/145036)
+            # TODO(https://github.com/flutter/flutter/issues/142642)
+            '--gtest_filter=*Metal',
         ],
         coverage=coverage,
         extra_env=extra_env,
@@ -1035,12 +1047,16 @@ def run_impeller_golden_tests(build_dir: str):
     )
   harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('tools'
                                                          ).joinpath('golden_tests_harvester')
+
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir)
+    extra_env = metal_validation_env()
+    extra_env.update(vulkan_validation_env(build_dir))
+    run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir, env=extra_env)
+    dart_bin = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
     script_path = os.path.join('tools', 'dir_contents_diff', 'bin', 'dir_contents_diff.dart')
     diff_result = subprocess.run(
-        f'dart run {script_path} {golden_path} {temp_dir}',
+        f'{dart_bin} run {script_path} {golden_path} {temp_dir}',
         check=False,
         shell=True,
         stdout=subprocess.PIPE,
@@ -1051,10 +1067,19 @@ def run_impeller_golden_tests(build_dir: str):
       print(diff_result.stdout.decode())
       raise RuntimeError('impeller_golden_tests diff failure')
 
+    # On release builds and local builds, we typically do not have GOLDCTL set,
+    # which on other words means that this invoking the SkiaGoldClient would
+    # throw. Skip this step in those cases and log a notice.
+    if 'GOLDCTL' not in os.environ:
+      print_divider('<')
+      print(
+          'Skipping the SkiaGoldClient invocation as the GOLDCTL environment variable is not set.'
+      )
+      return
+
     with DirectoryChange(harvester_path):
-      run_cmd(['dart', 'pub', 'get'])
       bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
-      run_cmd(['dart', 'run', str(bin_path), temp_dir])
+      run_cmd([dart_bin, 'run', str(bin_path), temp_dir])
 
 
 def main():
@@ -1226,8 +1251,14 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
+      extra_env = vulkan_validation_env(build_dir)
       run_engine_executable(
-          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage
+          build_dir,
+          'impeller_unittests',
+          engine_filter,
+          shuffle_flags,
+          coverage=args.coverage,
+          extra_env=extra_env
       )
     finally:
       xvfb.stop_virtual_x(build_name)

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
-#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_IMPL_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_IMPL_VK_H_
 
 #include <cstdint>
 #include <memory>
@@ -16,9 +16,9 @@
 namespace impeller {
 
 class Context;
-class SwapchainImageVK;
+class KHRSwapchainImageVK;
 class Surface;
-struct FrameSynchronizer;
+struct KHRFrameSynchronizerVK;
 
 //------------------------------------------------------------------------------
 /// @brief      An instance of a swapchain that does NOT adapt to going out of
@@ -28,17 +28,17 @@ struct FrameSynchronizer;
 ///             the caller must recreate another instance by optionally
 ///             stealing this implementations guts.
 ///
-class SwapchainImplVK final
-    : public std::enable_shared_from_this<SwapchainImplVK> {
+class KHRSwapchainImplVK final
+    : public std::enable_shared_from_this<KHRSwapchainImplVK> {
  public:
-  static std::shared_ptr<SwapchainImplVK> Create(
+  static std::shared_ptr<KHRSwapchainImplVK> Create(
       const std::shared_ptr<Context>& context,
       vk::UniqueSurfaceKHR surface,
       const ISize& size,
       bool enable_msaa = true,
       vk::SwapchainKHR old_swapchain = VK_NULL_HANDLE);
 
-  ~SwapchainImplVK();
+  ~KHRSwapchainImplVK();
 
   bool IsValid() const;
 
@@ -68,28 +68,29 @@ class SwapchainImplVK final
   vk::UniqueSurfaceKHR surface_;
   vk::Format surface_format_ = vk::Format::eUndefined;
   vk::UniqueSwapchainKHR swapchain_;
-  std::vector<std::shared_ptr<SwapchainImageVK>> images_;
-  std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers_;
+  std::vector<std::shared_ptr<KHRSwapchainImageVK>> images_;
+  std::vector<std::unique_ptr<KHRFrameSynchronizerVK>> synchronizers_;
   size_t current_frame_ = 0u;
   ISize size_;
   bool enable_msaa_ = true;
   bool is_valid_ = false;
 
-  SwapchainImplVK(const std::shared_ptr<Context>& context,
-                  vk::UniqueSurfaceKHR surface,
-                  const ISize& size,
-                  bool enable_msaa,
-                  vk::SwapchainKHR old_swapchain);
+  KHRSwapchainImplVK(const std::shared_ptr<Context>& context,
+                     vk::UniqueSurfaceKHR surface,
+                     const ISize& size,
+                     bool enable_msaa,
+                     vk::SwapchainKHR old_swapchain);
 
-  bool Present(const std::shared_ptr<SwapchainImageVK>& image, uint32_t index);
+  bool Present(const std::shared_ptr<KHRSwapchainImageVK>& image,
+               uint32_t index);
 
   void WaitIdle() const;
 
-  SwapchainImplVK(const SwapchainImplVK&) = delete;
+  KHRSwapchainImplVK(const KHRSwapchainImplVK&) = delete;
 
-  SwapchainImplVK& operator=(const SwapchainImplVK&) = delete;
+  KHRSwapchainImplVK& operator=(const KHRSwapchainImplVK&) = delete;
 };
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_IMPL_VK_H_
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SWAPCHAIN_IMPL_VK_H_
