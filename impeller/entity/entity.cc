@@ -19,26 +19,21 @@
 
 namespace impeller {
 
-std::optional<Entity> Entity::FromSnapshot(
-    const std::optional<Snapshot>& snapshot,
-    BlendMode blend_mode,
-    uint32_t clip_depth) {
-  if (!snapshot.has_value()) {
-    return std::nullopt;
-  }
-
-  auto texture_rect = Rect::MakeSize(snapshot->texture->GetSize());
+Entity Entity::FromSnapshot(const Snapshot& snapshot,
+                            BlendMode blend_mode,
+                            uint32_t clip_depth) {
+  auto texture_rect = Rect::MakeSize(snapshot.texture->GetSize());
 
   auto contents = TextureContents::MakeRect(texture_rect);
-  contents->SetTexture(snapshot->texture);
-  contents->SetSamplerDescriptor(snapshot->sampler_descriptor);
+  contents->SetTexture(snapshot.texture);
+  contents->SetSamplerDescriptor(snapshot.sampler_descriptor);
   contents->SetSourceRect(texture_rect);
-  contents->SetOpacity(snapshot->opacity);
+  contents->SetOpacity(snapshot.opacity);
 
   Entity entity;
   entity.SetBlendMode(blend_mode);
   entity.SetClipDepth(clip_depth);
-  entity.SetTransform(snapshot->transform);
+  entity.SetTransform(snapshot.transform);
   entity.SetContents(contents);
   return entity;
 }
@@ -110,7 +105,7 @@ uint32_t Entity::GetNewClipDepth() const {
 static const Scalar kDepthEpsilon = 1.0f / std::pow(2, 18);
 
 float Entity::GetShaderClipDepth() const {
-  return new_clip_depth_ * kDepthEpsilon;
+  return std::clamp(new_clip_depth_ * kDepthEpsilon, 0.0f, 1.0f);
 }
 
 void Entity::IncrementStencilDepth(uint32_t increment) {

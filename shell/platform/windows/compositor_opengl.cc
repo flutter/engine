@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/compositor_opengl.h"
 
 #include "GLES3/gl3.h"
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 namespace flutter {
@@ -93,12 +94,10 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
 
 bool CompositorOpenGL::Present(const FlutterLayer** layers,
                                size_t layers_count) {
-  if (!engine_->view()) {
-    return false;
-  }
-
-  if (!engine_->egl_manager()->surface() ||
-      !engine_->egl_manager()->surface()->IsValid()) {
+  // TODO(loicsharma): Remove implicit view assumption.
+  // https://github.com/flutter/flutter/issues/142845
+  FlutterWindowsView* view = engine_->view(kImplicitViewId);
+  if (!view) {
     return false;
   }
 
@@ -111,7 +110,7 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
       return false;
     }
 
-    return ClearSurface();
+    return Clear(view);
   }
 
   // TODO: Support compositing layers and platform views.
@@ -129,11 +128,16 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
 
   // Check if this frame can be presented. This resizes the surface if a resize
   // is pending and |width| and |height| match the target size.
-  if (!engine_->view()->OnFrameGenerated(width, height)) {
+  if (!view->OnFrameGenerated(width, height)) {
     return false;
   }
 
-  if (!engine_->egl_manager()->surface()->MakeCurrent()) {
+  // |OnFrameGenerated| should return false if the surface isn't valid.
+  FML_DCHECK(view->surface() != nullptr);
+  FML_DCHECK(view->surface()->IsValid());
+
+  egl::WindowSurface* surface = view->surface();
+  if (!surface->MakeCurrent()) {
     return false;
   }
 
@@ -159,11 +163,11 @@ bool CompositorOpenGL::Present(const FlutterLayer** layers,
                        GL_NEAREST            // filter
   );
 
-  if (!engine_->egl_manager()->surface()->SwapBuffers()) {
+  if (!surface->SwapBuffers()) {
     return false;
   }
 
-  engine_->view()->OnFramePresented();
+  view->OnFramePresented();
   return true;
 }
 
@@ -175,12 +179,7 @@ bool CompositorOpenGL::Initialize() {
     return false;
   }
 
-  egl::Surface* surface = manager->surface();
-  if (!surface || !surface->IsValid()) {
-    return false;
-  }
-
-  if (!surface->MakeCurrent()) {
+  if (!manager->render_context()->MakeCurrent()) {
     return false;
   }
 
@@ -195,24 +194,31 @@ bool CompositorOpenGL::Initialize() {
   return true;
 }
 
-bool CompositorOpenGL::ClearSurface() {
+bool CompositorOpenGL::Clear(FlutterWindowsView* view) {
   FML_DCHECK(is_initialized_);
 
-  // Resize the surface if needed.
-  engine_->view()->OnEmptyFrameGenerated();
+  // Check if this frame can be presented. This resizes the surface if needed.
+  if (!view->OnEmptyFrameGenerated()) {
+    return false;
+  }
 
-  if (!engine_->egl_manager()->surface()->MakeCurrent()) {
+  // |OnEmptyFrameGenerated| should return false if the surface isn't valid.
+  FML_DCHECK(view->surface() != nullptr);
+  FML_DCHECK(view->surface()->IsValid());
+
+  egl::WindowSurface* surface = view->surface();
+  if (!surface->MakeCurrent()) {
     return false;
   }
 
   gl_->ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
   gl_->Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-  if (!engine_->egl_manager()->surface()->SwapBuffers()) {
+  if (!surface->SwapBuffers()) {
     return false;
   }
 
-  engine_->view()->OnFramePresented();
+  view->OnFramePresented();
   return true;
 }
 

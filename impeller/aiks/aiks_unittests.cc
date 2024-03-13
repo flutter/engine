@@ -21,13 +21,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
-#include "impeller/entity/contents/conical_gradient_contents.h"
-#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
-#include "impeller/entity/contents/filters/inputs/filter_input.h"
-#include "impeller/entity/contents/linear_gradient_contents.h"
-#include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
@@ -38,9 +32,6 @@
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
-#include "impeller/renderer/testing/mocks.h"
-#include "impeller/scene/material.h"
-#include "impeller/scene/node.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
@@ -48,7 +39,6 @@
 #include "impeller/typographer/backends/stb/typographer_context_stb.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
-#include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/platform.h"
 
 namespace impeller {
@@ -503,6 +493,28 @@ TEST_P(AiksTest, CanPictureConvertToImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// Regression test for https://github.com/flutter/flutter/issues/142358 .
+// Without a change to force render pass construction the image is left in an
+// undefined layout and triggers a validation error.
+TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
+  Canvas recorder_canvas;
+
+  Canvas canvas;
+  AiksContext renderer(GetContext(), nullptr);
+  Paint paint;
+  paint.color = Color::BlackTransparent();
+  canvas.DrawPaint(paint);
+  Picture picture = recorder_canvas.EndRecordingAsPicture();
+  auto image = picture.ToImage(renderer, ISize{1000, 1000});
+  if (image) {
+    canvas.DrawImage(image, Point(), Paint());
+    paint.color = Color{0.1, 0.1, 0.1, 0.2};
+    canvas.DrawRect(Rect::MakeSize(ISize{1000, 1000}), paint);
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, BlendModeShouldCoverWholeScreen) {
   Canvas canvas;
   Paint paint;
@@ -785,33 +797,36 @@ TEST_P(AiksTest, CanRenderTextFrameSTB) {
 }
 
 TEST_P(AiksTest, TextFrameSubpixelAlignment) {
-  std::array<Scalar, 20> phase_offsets;
-  for (Scalar& offset : phase_offsets) {
-    auto rand = std::rand();  // NOLINT
-    offset = (static_cast<float>(rand) / static_cast<float>(RAND_MAX)) * k2Pi;
-  }
-
+  // "Random" numbers between 0 and 1. Hardcoded to avoid flakiness in goldens.
+  std::array<Scalar, 20> phase_offsets = {
+      7.82637e-06, 0.131538,  0.755605,   0.45865,   0.532767,
+      0.218959,    0.0470446, 0.678865,   0.679296,  0.934693,
+      0.383502,    0.519416,  0.830965,   0.0345721, 0.0534616,
+      0.5297,      0.671149,  0.00769819, 0.383416,  0.0668422};
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     static float font_size = 20;
     static float phase_variation = 0.2;
     static float speed = 0.5;
     static float magnitude = 100;
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::SliderFloat("Font size", &font_size, 5, 50);
-    ImGui::SliderFloat("Phase variation", &phase_variation, 0, 1);
-    ImGui::SliderFloat("Oscillation speed", &speed, 0, 2);
-    ImGui::SliderFloat("Oscillation magnitude", &magnitude, 0, 300);
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Font size", &font_size, 5, 50);
+      ImGui::SliderFloat("Phase variation", &phase_variation, 0, 1);
+      ImGui::SliderFloat("Oscillation speed", &speed, 0, 2);
+      ImGui::SliderFloat("Oscillation magnitude", &magnitude, 0, 300);
+      ImGui::End();
+    }
 
     Canvas canvas;
     canvas.Scale(GetContentScale());
 
     for (size_t i = 0; i < phase_offsets.size(); i++) {
-      auto position = Point(
-          200 + magnitude * std::sin((-phase_offsets[i] * phase_variation +
-                                      GetSecondsElapsed() * speed)),  //
-          200 + i * font_size * 1.1                                   //
-      );
+      auto position =
+          Point(200 + magnitude *
+                          std::sin((-phase_offsets[i] * k2Pi * phase_variation +
+                                    GetSecondsElapsed() * speed)),  //
+                200 + i * font_size * 1.1                           //
+          );
       if (!RenderTextInCanvasSkia(
               GetContext(), canvas,
               "the quick brown fox jumped over "
@@ -1045,15 +1060,15 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimesInteractive) {
     static Color foreground = Color::Color::OrangeRed().WithAlpha(0.5);
     static int current_blend_index = 3;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&background));
       ImGui::ColorEdit4("Foreground", reinterpret_cast<float*>(&foreground));
       ImGui::ListBox("Blend mode", &current_blend_index,
                      modes.blend_mode_names.data(),
                      modes.blend_mode_names.size());
+      ImGui::End();
     }
-    ImGui::End();
 
     Canvas canvas;
     canvas.Scale(Vector2(0.2, 0.2));
@@ -1140,8 +1155,8 @@ TEST_P(AiksTest, ColorWheel) {
     static Color color1 = Color::Green();
     static Color color2 = Color::Blue();
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
       ImGui::ListBox("Blending mode", &current_blend_index,
                      blend_modes.blend_mode_names.data(),
@@ -1151,8 +1166,8 @@ TEST_P(AiksTest, ColorWheel) {
       ImGui::ColorEdit4("Color B", reinterpret_cast<float*>(&color1));
       ImGui::ColorEdit4("Color C", reinterpret_cast<float*>(&color2));
       ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
+      ImGui::End();
     }
-    ImGui::End();
 
     static Point content_scale;
     Point new_content_scale = GetContentScale();
@@ -1700,8 +1715,9 @@ TEST_P(AiksTest, CoverageOriginShouldBeAccountedForInSubpasses) {
     const auto offset = Point{25, 25};
     const auto size = Size(100, 100);
 
-    auto [b0, b1] = IMPELLER_PLAYGROUND_LINE(Point(40, 40), Point(160, 160), 10,
-                                             Color::White(), Color::White());
+    static PlaygroundPoint point_a(Point(40, 40), 10, Color::White());
+    static PlaygroundPoint point_b(Point(160, 160), 10, Color::White());
+    auto [b0, b1] = DrawPlaygroundLine(point_a, point_b);
     auto bounds = Rect::MakeLTRB(b0.x, b0.y, b1.x, b1.y);
 
     canvas.DrawRect(bounds, Paint{.color = Color::Yellow(),
@@ -1846,14 +1862,16 @@ TEST_P(AiksTest, SceneColorSource) {
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     Paint paint;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     static Scalar distance = 2;
-    ImGui::SliderFloat("Distance", &distance, 0, 4);
     static Scalar y_pos = 0;
-    ImGui::SliderFloat("Y", &y_pos, -3, 3);
     static Scalar fov = 45;
-    ImGui::SliderFloat("FOV", &fov, 1, 180);
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Distance", &distance, 0, 4);
+      ImGui::SliderFloat("Y", &y_pos, -3, 3);
+      ImGui::SliderFloat("FOV", &fov, 1, 180);
+      ImGui::End();
+    }
 
     Scalar angle = GetSecondsElapsed();
     auto camera_position =
@@ -2977,14 +2995,11 @@ TEST_P(AiksTest, SolidColorApplyColorFilter) {
 
 TEST_P(AiksTest, DrawScaledTextWithPerspectiveNoSaveLayer) {
   Canvas canvas;
-  // clang-format off
-  canvas.Transform(Matrix(
-       2.000000,       0.000000,   0.000000,  0.000000,
-       1.445767,       2.637070,  -0.507928,  0.001524,
-      -2.451887,      -0.534662,   0.861399, -0.002584,
-    1063.481934,    1025.951416, -48.300270,  1.144901
-  ));
-  // clang-format on
+  canvas.Transform(Matrix(1.0, 0.0, 0.0, 0.0,    //
+                          0.0, 1.0, 0.0, 0.0,    //
+                          0.0, 0.0, 1.0, 0.01,   //
+                          0.0, 0.0, 0.0, 1.0) *  //
+                   Matrix::MakeRotationY({Degrees{10}}));
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
                                      "Roboto-Regular.ttf"));
@@ -2996,17 +3011,15 @@ TEST_P(AiksTest, DrawScaledTextWithPerspectiveSaveLayer) {
   Canvas canvas;
   Paint save_paint;
   canvas.SaveLayer(save_paint);
-  // clang-format off
-  canvas.Transform(Matrix(
-       2.000000,       0.000000,   0.000000,  0.000000,
-       1.445767,       2.637070,  -0.507928,  0.001524,
-      -2.451887,      -0.534662,   0.861399, -0.002584,
-    1063.481934,    1025.951416, -48.300270,  1.144901
-  ));
-  // clang-format on
+  canvas.Transform(Matrix(1.0, 0.0, 0.0, 0.0,    //
+                          0.0, 1.0, 0.0, 0.0,    //
+                          0.0, 0.0, 1.0, 0.01,   //
+                          0.0, 0.0, 0.0, 1.0) *  //
+                   Matrix::MakeRotationY({Degrees{10}}));
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
                                      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, PipelineBlendSingleParameter) {
@@ -3044,13 +3057,16 @@ TEST_P(AiksTest, CaptureContext) {
     auto color = document.AddColor("Background color", Color::CornflowerBlue());
     canvas.DrawPaint({.color = color});
 
-    ImGui::Begin("TestDocument", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    document.GetElement()->properties.Iterate([](CaptureProperty& property) {
-      property.Invoke({.color = [](CaptureColorProperty& p) {
-        ImGui::ColorEdit4(p.label.c_str(), reinterpret_cast<float*>(&p.value));
-      }});
-    });
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
+        property.Invoke({.color = [](CaptureColorProperty& p) {
+          ImGui::ColorEdit4(p.label.c_str(),
+                            reinterpret_cast<float*>(&p.value));
+        }});
+      });
+      ImGui::End();
+    }
 
     return canvas.EndRecordingAsPicture();
   };
@@ -3266,192 +3282,6 @@ TEST_P(AiksTest, SubpassWithClearColorOptimization) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
-  // This makes sure if mip maps are recycled across invocations of blurs the
-  // contents get updated each frame correctly. If they aren't updated the color
-  // inside the blur and outside the blur will be different.
-  //
-  // If there is some change to render target caching this could display a false
-  // positive in the future.  Also, if the LOD that is rendered is 1 it could
-  // present a false positive.
-  int32_t count = 0;
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    Canvas canvas;
-    if (count++ == 0) {
-      canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-    } else {
-      canvas.DrawCircle({100, 100}, 50, {.color = Color::Chartreuse()});
-    }
-    canvas.ClipRRect(Rect::MakeLTRB(75, 50, 375, 275), {20, 20});
-    canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                     ImageFilter::MakeBlur(Sigma(30.0), Sigma(30.0),
-                                           FilterContents::BlurStyle::kNormal,
-                                           Entity::TileMode::kClamp));
-    canvas.Restore();
-    return canvas.EndRecordingAsPicture();
-  };
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
-}
-
-TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
-  Canvas canvas;
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
-}
-
-TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-
-  Canvas canvas;
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {100, 100});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    max_mip_count =
-        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-}
-
-TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
-  fml::testing::LogCapture log_capture;
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-
-  Canvas canvas;
-  canvas.DrawPaint({.color = Color::Wheat()});
-  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(30), Sigma(30),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {100, 100});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    max_mip_count =
-        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
-}
-
-TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-  fml::testing::LogCapture log_capture;
-  Canvas canvas;
-  canvas.SaveLayer(
-      {.image_filter = ImageFilter::MakeBlur(Sigma(30), Sigma(30),
-                                             FilterContents::BlurStyle::kNormal,
-                                             Entity::TileMode::kClamp)});
-  canvas.DrawCircle({200, 200}, 50, {.color = Color::Chartreuse()});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {1024, 768});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    max_mip_count =
-        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
-}
-
-TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
-  size_t blur_required_mip_count =
-      GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-  fml::testing::LogCapture log_capture;
-  Canvas canvas;
-  canvas.DrawPath(PathBuilder{}
-                      .MoveTo({100, 100})
-                      .LineTo({200, 100})
-                      .LineTo({150, 200})
-                      .LineTo({50, 200})
-                      .Close()
-                      .TakePath(),
-                  {.color = Color::Chartreuse(),
-                   .image_filter = ImageFilter::MakeBlur(
-                       Sigma(30), Sigma(30), FilterContents::BlurStyle::kNormal,
-                       Entity::TileMode::kClamp)});
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  std::shared_ptr<RenderTargetCache> cache =
-      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
-  AiksContext aiks_context(GetContext(), nullptr, cache);
-  picture.ToImage(aiks_context, {1024, 768});
-
-  size_t max_mip_count = 0;
-  for (auto it = cache->GetTextureDataBegin(); it != cache->GetTextureDataEnd();
-       ++it) {
-    max_mip_count =
-        std::max(it->texture->GetTextureDescriptor().mip_count, max_mip_count);
-  }
-  EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
-}
-
 TEST_P(AiksTest, ImageColorSourceEffectTransform) {
   // Compare with https://fiddle.skia.org/c/6cdc5aefb291fda3833b806ca347a885
 
@@ -3504,10 +3334,10 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   canvas.DrawRRect(Rect::MakeLTRB(0, 0, 100, 100), {10, 10}, {});  // Depth 2
   canvas.Save();
   {
-    canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 5
-    canvas.SaveLayer({});                                          // Depth 3
+    canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 4
+    canvas.SaveLayer({});                                          // Depth 4
     {
-      canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 4
+      canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});  // Depth 3
     }
     canvas.Restore();  // Restore the savelayer.
   }
@@ -3515,13 +3345,19 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
                      //            once we switch to the clip depth approach.
 
   auto picture = canvas.EndRecordingAsPicture();
-  std::array<uint32_t, 5> expected = {
+
+  std::vector<uint32_t> expected = {
       2,  // DrawRRect
-      4,  // ClipRRect
-      3,  // SaveLayer
-      4,  // DrawRRect
-      5,  // Restore (will be removed once we switch to the clip depth approach)
+      4,  // ClipRRect -- Has a depth value equal to the max depth of all the
+          //              content it affect. In this case, the SaveLayer and all
+          //              its contents are affected.
+      4,  // SaveLayer -- The SaveLayer is drawn to the parent pass after its
+          //              contents are rendered, so it should have a depth value
+          //              greater than all its contents.
+      3,  // DrawRRect
+      5,  // Restore (no longer necessary when clipping on the depth buffer)
   };
+
   std::vector<uint32_t> actual;
 
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
@@ -3536,9 +3372,36 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 
   ASSERT_EQ(actual.size(), expected.size());
   for (size_t i = 0; i < expected.size(); i++) {
-    EXPECT_EQ(actual[i], expected[i]) << "Index: " << i;
+    EXPECT_EQ(expected[i], actual[i]) << "Index: " << i;
   }
+}
+
+TEST_P(AiksTest, EntityPassClipRecorderRestoresCancelOutClips) {
+  Canvas canvas;
+  canvas.Save();
+  canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});
+  canvas.DrawRRect(Rect::MakeLTRB(0, 0, 100, 100), {10, 10}, {});
+  canvas.Restore();
+  canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  AiksContext renderer(GetContext(), nullptr);
+  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+
+  EXPECT_EQ(
+      picture.pass->GetEntityPassClipRecorder().GetReplayEntities().size(), 0u);
 }
 
 }  // namespace testing
 }  // namespace impeller
+
+// █████████████████████████████████████████████████████████████████████████████
+// █ NOTICE: Before adding new tests to this file consider adding it to one of
+// █         the subdivisions of AiksTest to avoid having one massive file.
+// █
+// █ Subdivisions:
+// █ - aiks_blur_unittests.cc
+// █ - aiks_gradient_unittests.cc
+// █ - aiks_path_unittests.cc
+// █████████████████████████████████████████████████████████████████████████████

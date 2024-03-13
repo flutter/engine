@@ -4,6 +4,7 @@
 
 #include "impeller/entity/entity_pass.h"
 
+#include <limits>
 #include <memory>
 #include <utility>
 #include <variant>
@@ -291,9 +292,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
 
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(
+    target = renderer.GetRenderTargetCache()->CreateOffscreenMSAA(
         /*context=*/*context,
-        /*allocator=*/*renderer.GetRenderTargetCache(),
         /*size=*/size,
         /*mip_count=*/mip_count,
         /*label=*/"EntityPass",
@@ -307,10 +307,9 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
         /*stencil_attachment_config=*/
         kDefaultStencilConfig);
   } else {
-    target = RenderTarget::CreateOffscreen(
-        *context,                          // context
-        *renderer.GetRenderTargetCache(),  // allocator
-        size,                              // size
+    target = renderer.GetRenderTargetCache()->CreateOffscreen(
+        *context,  // context
+        size,      // size
         /*mip_count=*/mip_count,
         "EntityPass",  // label
         RenderTarget::AttachmentConfig{
@@ -460,31 +459,13 @@ bool EntityPass::Render(ContentContext& renderer,
   // this method.
   auto color0 = root_render_target.GetColorAttachments().find(0u)->second;
 
-  // If a root stencil was provided by the caller, then verify that it has a
-  // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
   auto depth_attachment = root_render_target.GetDepthAttachment();
-  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
-    auto stencil_texture = stencil_attachment->texture;
-    if (!stencil_texture) {
-      VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
-      return false;
-    }
-
-    auto stencil_storage_mode =
-        stencil_texture->GetTextureDescriptor().storage_mode;
-    if (reads_from_onscreen_backdrop &&
-        stencil_storage_mode == StorageMode::kDeviceTransient) {
-      VALIDATION_LOG << "The given root RenderTarget stencil needs to be read, "
-                        "but it's marked as transient.";
-      return false;
-    }
-  }
-  // Setup a new root stencil with an optimal configuration if one wasn't
-  // provided by the caller.
-  else {
+  if (!stencil_attachment.has_value() || !depth_attachment.has_value()) {
+    // Setup a new root stencil with an optimal configuration if one wasn't
+    // provided by the caller.
     root_render_target.SetupDepthStencilAttachments(
-        *renderer.GetContext(), *renderer.GetRenderTargetCache(),
+        *renderer.GetContext(), *renderer.GetContext()->GetResourceAllocator(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
         "ImpellerOnscreen", kDefaultStencilConfig);
@@ -740,12 +721,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     return false;
   }
 
-  // If the pass context returns a backdrop texture, we need to draw it to the
-  // current pass. We do this because it's faster and takes significantly less
-  // memory than storing/loading large MSAA textures. Also, it's not possible to
-  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
-  // (let alone a transient one).
-  if (result.backdrop_texture) {
+  if (result.just_created) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
     auto& replay_entities = clip_replay_->GetReplayEntities();
@@ -754,7 +730,14 @@ bool EntityPass::RenderElement(Entity& element_entity,
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
     }
+  }
 
+  // If the pass context returns a backdrop texture, we need to draw it to the
+  // current pass. We do this because it's faster and takes significantly less
+  // memory than storing/loading large MSAA textures. Also, it's not possible to
+  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
+  // (let alone a transient one).
+  if (result.backdrop_texture) {
     auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
     auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
     msaa_backdrop_contents->SetStencilEnabled(false);
@@ -765,6 +748,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
+    msaa_backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
@@ -837,6 +821,12 @@ bool EntityPass::RenderElement(Entity& element_entity,
       }
       clip_coverage_stack.resize(restoration_index + 1);
 
+      if constexpr (ContentContext::kEnableStencilThenCover) {
+        // Skip all clip restores when stencil-then-cover is enabled.
+        clip_replay_->RecordEntity(element_entity, clip_coverage.type);
+        return true;
+      }
+
       if (!clip_coverage_stack.back().coverage.has_value()) {
         // Running this restore op won't make anything renderable, so skip it.
         return true;
@@ -901,9 +891,10 @@ bool EntityPass::OnRender(
   }
   auto clear_color_size = pass_target.GetRenderTarget().GetRenderTargetSize();
 
-  if (!collapsed_parent_pass && GetClearColor(clear_color_size).has_value()) {
-    // Force the pass context to create at least one new pass if the clear color
-    // is present.
+  if (!collapsed_parent_pass) {
+    // Always force the pass to construct the render pass object, even if there
+    // is not a clear color. This ensures that the attachment textures are
+    // cleared/transitioned to the right state.
     pass_context.GetRenderPass(pass_depth);
   }
 
@@ -922,6 +913,7 @@ bool EntityPass::OnRender(
     backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
     backdrop_entity.SetClipDepth(clip_depth_floor);
+    backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
 
     RenderElement(backdrop_entity, clip_depth_floor, pass_context, pass_depth,
                   renderer, clip_coverage_stack, global_pass_position);
@@ -1214,6 +1206,10 @@ void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
 
 void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
+}
+
+const EntityPassClipRecorder& EntityPass::GetEntityPassClipRecorder() const {
+  return *clip_replay_;
 }
 
 EntityPassClipRecorder::EntityPassClipRecorder() {}

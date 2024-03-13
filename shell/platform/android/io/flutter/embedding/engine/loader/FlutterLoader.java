@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine.loader;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -16,7 +18,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
-import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.BuildConfig;
@@ -168,18 +169,9 @@ public class FlutterLoader {
       initStartTimestampMillis = SystemClock.uptimeMillis();
       flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
 
-      VsyncWaiter waiter;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 /* 17 */) {
-        final DisplayManager dm =
-            (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
-        waiter = VsyncWaiter.getInstance(dm, flutterJNI);
-      } else {
-        float fps =
-            ((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay()
-                .getRefreshRate();
-        waiter = VsyncWaiter.getInstance(fps, flutterJNI);
-      }
+      final DisplayManager dm =
+          (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
+      VsyncWaiter waiter = VsyncWaiter.getInstance(dm, flutterJNI);
       waiter.init();
 
       // Use a background thread for initialization tasks that require disk access.
@@ -213,7 +205,7 @@ public class FlutterLoader {
   }
 
   private static boolean areValidationLayersOnByDefault() {
-    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return Build.SUPPORTED_ABIS[0].equals("arm64-v8a");
     }
     return false;

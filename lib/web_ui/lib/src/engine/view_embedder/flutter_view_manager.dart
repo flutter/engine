@@ -39,8 +39,11 @@ class FlutterViewManager {
   EngineFlutterView createAndRegisterView(
     JsFlutterViewOptions jsViewOptions,
   ) {
-    final EngineFlutterView view =
-        EngineFlutterView(_dispatcher, jsViewOptions.hostElement);
+    final EngineFlutterView view = EngineFlutterView(
+      _dispatcher,
+      jsViewOptions.hostElement,
+      viewConstraints: jsViewOptions.viewConstraints,
+    );
     registerView(view, jsViewOptions: jsViewOptions);
     return view;
   }
@@ -91,6 +94,16 @@ class FlutterViewManager {
   /// be exposed through a method in ui_web.
   JsFlutterViewOptions? getOptions(int viewId) {
     return _jsViewOptions[viewId];
+  }
+
+  /// Returns the [viewId] if [rootElement] corresponds to any of the [views].
+  int? viewIdForRootElement(DomElement rootElement)  {
+    for(final EngineFlutterView view in views) {
+      if (view.dom.rootElement == rootElement) {
+        return view.viewId;
+      }
+    }
+    return null;
   }
 
   void dispose() {

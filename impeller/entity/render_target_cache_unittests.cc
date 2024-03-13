@@ -5,13 +5,19 @@
 #include <memory>
 
 #include "flutter/testing/testing.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/entity/entity_playground.h"
 #include "impeller/entity/render_target_cache.h"
+#include "impeller/playground/playground_test.h"
 #include "impeller/renderer/testing/mocks.h"
 
 namespace impeller {
 namespace testing {
+
+using RenderTargetCacheTest = EntityPlayground;
+INSTANTIATE_PLAYGROUND_SUITE(RenderTargetCacheTest);
 
 class TestAllocator : public Allocator {
  public:
@@ -42,47 +48,68 @@ class TestAllocator : public Allocator {
   bool should_fail = false;
 };
 
-TEST(RenderTargetCacheTest, CachesUsedTexturesAcrossFrames) {
-  auto allocator = std::make_shared<TestAllocator>();
-  auto render_target_cache = RenderTargetCache(allocator);
-  auto desc = TextureDescriptor{
-      .format = PixelFormat::kR8G8B8A8UNormInt,
-      .size = ISize(100, 100),
-      .usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)};
+TEST_P(RenderTargetCacheTest, CachesUsedTexturesAcrossFrames) {
+  auto render_target_cache =
+      RenderTargetCache(GetContext()->GetResourceAllocator());
 
   render_target_cache.Start();
-  // Create two textures of the same exact size/shape. Both should be marked
-  // as used this frame, so the cached data set will contain two.
-  render_target_cache.CreateTexture(desc);
-  render_target_cache.CreateTexture(desc);
+  // Create two render targets of the same exact size/shape. Both should be
+  // marked as used this frame, so the cached data set will contain two.
+  render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
+  render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
 
-  ASSERT_EQ(render_target_cache.CachedTextureCount(), 2u);
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 2u);
 
   render_target_cache.End();
   render_target_cache.Start();
 
   // Next frame, only create one texture. The set will still contain two,
   // but one will be removed at the end of the frame.
-  render_target_cache.CreateTexture(desc);
-  ASSERT_EQ(render_target_cache.CachedTextureCount(), 2u);
+  render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 2u);
 
   render_target_cache.End();
-  ASSERT_EQ(render_target_cache.CachedTextureCount(), 1u);
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 1u);
 }
 
-TEST(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
+TEST_P(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
+  ScopedValidationDisable disable;
   auto allocator = std::make_shared<TestAllocator>();
   auto render_target_cache = RenderTargetCache(allocator);
-  auto desc = TextureDescriptor{
-      .format = PixelFormat::kR8G8B8A8UNormInt,
-      .size = ISize(100, 100),
-      .usage = static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)};
 
   render_target_cache.Start();
   allocator->should_fail = true;
 
-  ASSERT_EQ(render_target_cache.CreateTexture(desc), nullptr);
-  ASSERT_EQ(render_target_cache.CachedTextureCount(), 0u);
+  auto render_target =
+      render_target_cache.CreateOffscreen(*GetContext(), {100, 100}, 1);
+
+  EXPECT_FALSE(render_target.IsValid());
+  EXPECT_EQ(render_target_cache.CachedTextureCount(), 0u);
+}
+
+TEST_P(RenderTargetCacheTest, CachedTextureGetsNewAttachmentConfig) {
+  auto render_target_cache =
+      RenderTargetCache(GetContext()->GetResourceAllocator());
+
+  render_target_cache.Start();
+  RenderTarget::AttachmentConfig color_attachment_config =
+      RenderTarget::kDefaultColorAttachmentConfig;
+  RenderTarget target1 = render_target_cache.CreateOffscreen(
+      *GetContext(), {100, 100}, 1, "Offscreen1", color_attachment_config);
+  render_target_cache.End();
+
+  render_target_cache.Start();
+  color_attachment_config.clear_color = Color::Red();
+  RenderTarget target2 = render_target_cache.CreateOffscreen(
+      *GetContext(), {100, 100}, 1, "Offscreen2", color_attachment_config);
+  render_target_cache.End();
+
+  auto color1 = target1.GetColorAttachments().find(0)->second;
+  auto color2 = target2.GetColorAttachments().find(0)->second;
+  // The second color attachment should reuse the first attachment's texture
+  // but with attributes from the second AttachmentConfig.
+  EXPECT_EQ(color2.texture, color1.texture);
+  EXPECT_EQ(color2.clear_color, Color::Red());
 }
 
 }  // namespace testing

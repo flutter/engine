@@ -140,8 +140,8 @@ template("runner_sources") {
 
     public_deps = [
                     "$fuchsia_sdk_root/pkg:inspect",
+                    "$fuchsia_sdk_root/pkg:inspect_component_cpp",
                     "$fuchsia_sdk_root/pkg:sys_cpp",
-                    "$fuchsia_sdk_root/pkg:sys_inspect_cpp",
                     "//flutter/shell/platform/fuchsia/runtime/dart/utils",
                   ] + flutter_public_deps
 
@@ -255,8 +255,8 @@ flutter_runner("jit") {
   product = false
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
+    "$dart_src/runtime:libdart_jit",
+    "$dart_src/runtime/platform:libdart_platform_jit",
   ]
 }
 
@@ -265,8 +265,8 @@ flutter_runner("jit_product") {
   product = true
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_jit",
-    "//third_party/dart/runtime/platform:libdart_platform_jit",
+    "$dart_src/runtime:libdart_jit",
+    "$dart_src/runtime/platform:libdart_platform_jit",
   ]
 }
 
@@ -275,8 +275,8 @@ flutter_runner("aot") {
   product = false
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_precompiled_runtime",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
+    "$dart_src/runtime:libdart_precompiled_runtime",
+    "$dart_src/runtime/platform:libdart_platform_precompiled_runtime",
   ]
 }
 
@@ -285,8 +285,8 @@ flutter_runner("aot_product") {
   product = true
 
   extra_deps = [
-    "//third_party/dart/runtime:libdart_precompiled_runtime",
-    "//third_party/dart/runtime/platform:libdart_platform_precompiled_runtime",
+    "$dart_src/runtime:libdart_precompiled_runtime",
+    "$dart_src/runtime/platform:libdart_platform_precompiled_runtime",
   ]
 }
 
@@ -321,7 +321,7 @@ template("jit_runner") {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -392,7 +392,7 @@ template("aot_runner") {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -504,19 +504,20 @@ if (enable_unittests) {
       "vsync_waiter_unittest.cc",
     ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.
     flutter_deps = [
+      "$dart_src/runtime:libdart_jit",
+      "$dart_src/runtime/platform:libdart_platform_jit",
       "//flutter/assets:assets",
       "//flutter/common/graphics",
       "//flutter/flow",
       "//flutter/lib/ui",
       "//flutter/shell/common",
-      "//third_party/dart/runtime:libdart_jit",
-      "//third_party/dart/runtime/platform:libdart_platform_jit",
     ]
 
     deps = [
@@ -537,16 +538,17 @@ if (enable_unittests) {
 
     sources = [ "runner_tzdata_unittest.cc" ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.
     flutter_deps = [
+      "$dart_src/runtime:libdart_jit",
+      "$dart_src/runtime/platform:libdart_platform_jit",
       "//flutter/lib/ui",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
-      "//third_party/dart/runtime:libdart_jit",
-      "//third_party/dart/runtime/platform:libdart_platform_jit",
     ]
 
     deps = [
@@ -563,16 +565,17 @@ if (enable_unittests) {
 
     sources = [ "runner_tzdata_missing_unittest.cc" ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     libs = [ "$fuchsia_sdk_path/arch/$target_cpu/sysroot/lib/libzircon.so" ]
 
     # The use of these dependencies is temporary and will be moved behind the
     # embedder API.
     flutter_deps = [
+      "$dart_src/runtime:libdart_jit",
+      "$dart_src/runtime/platform:libdart_platform_jit",
       "//flutter/lib/ui",
       "//flutter/shell/platform/common/client_wrapper:client_wrapper_library_stubs",
-      "//third_party/dart/runtime:libdart_jit",
-      "//third_party/dart/runtime/platform:libdart_platform_jit",
     ]
 
     deps = [
@@ -589,7 +592,7 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -602,7 +605,7 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
       {
@@ -630,7 +633,7 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
     ]
@@ -763,11 +766,11 @@ if (enable_unittests) {
 
     resources = [
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl.dat"
       },
       {
-        path = rebase_path("//third_party/icu/common/icudtl.dat")
+        path = rebase_path("//flutter/third_party/icu/common/icudtl.dat")
         dest = "icudtl2.dat"
       },
     ]

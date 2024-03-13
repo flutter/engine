@@ -644,8 +644,15 @@ TEST_F(EmbedderTest, VMAndIsolateSnapshotSizesAreRedundantInAOTMode) {
 /// Test the layer structure and pixels rendered when using a custom software
 /// compositor.
 ///
+// TODO(143940): Convert this test to use SkiaGold.
+#if FML_OS_MACOSX && FML_ARCH_CPU_ARM64
+TEST_F(EmbedderTest,
+       DISABLED_CompositorMustBeAbleToRenderKnownSceneWithSoftwareCompositor) {
+#else
 TEST_F(EmbedderTest,
        CompositorMustBeAbleToRenderKnownSceneWithSoftwareCompositor) {
+#endif  // FML_OS_MACOSX && FML_ARCH_CPU_ARM64
+
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
@@ -2693,7 +2700,7 @@ TEST_F(EmbedderTest, CanSendPointer) {
       CREATE_NATIVE_ENTRY([&message_latch](Dart_NativeArguments args) {
         auto message = tonic::DartConverter<std::string>::FromDart(
             Dart_GetNativeArgument(args, 0));
-        ASSERT_EQ("PointerData(x: 123.0, y: 456.0)", message);
+        ASSERT_EQ("PointerData(viewId: 0, x: 123.0, y: 456.0)", message);
         message_latch.Signal();
       }));
 
@@ -2708,6 +2715,7 @@ TEST_F(EmbedderTest, CanSendPointer) {
   pointer_event.x = 123;
   pointer_event.y = 456;
   pointer_event.timestamp = static_cast<size_t>(1234567890);
+  pointer_event.view_id = 0;
 
   FlutterEngineResult result =
       FlutterEngineSendPointerEvent(engine.get(), &pointer_event, 1);

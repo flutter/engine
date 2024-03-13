@@ -25,6 +25,7 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class PlatformMessageHandler;
+class PlatformIsolateManager;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -66,10 +67,20 @@ class PlatformConfigurationClient {
   virtual void ScheduleFrame() = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief    Called when a warm up frame has ended.
+  ///
+  ///           For more introduction, see `Animator::EndWarmUpFrame`.
+  ///
+  virtual void EndWarmUpFrame() = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
-  virtual void Render(Scene* scene, double width, double height) = 0;
+  virtual void Render(int64_t view_id,
+                      Scene* scene,
+                      double width,
+                      double height) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Receives an updated semantics tree from the Framework.
@@ -239,6 +250,9 @@ class PlatformConfigurationClient {
   ///
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const = 0;
+
+  virtual std::shared_ptr<PlatformIsolateManager>
+  GetPlatformIsolateManager() = 0;
 
  protected:
   virtual ~PlatformConfigurationClient();
@@ -467,13 +481,13 @@ class PlatformConfiguration final {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
-  /// @brief      Retrieves the Window with the given ID managed by the
-  ///             `PlatformConfiguration`.
+  /// @brief      Retrieves the viewport metrics with the given ID managed by
+  ///             the `PlatformConfiguration`.
   ///
-  /// @param[in] window_id The id of the window to find and return.
+  /// @param[in]  view_id The id of the view's viewport metrics to return.
   ///
-  /// @return     a pointer to the Window. Returns nullptr if the ID is not
-  ///             found.
+  /// @return     a pointer to the ViewportMetrics. Returns nullptr if the ID is
+  ///             not found.
   ///
   const ViewportMetrics* GetMetrics(int view_id);
 
@@ -556,6 +570,8 @@ class PlatformConfigurationNativeApi {
   static std::string DefaultRouteName();
 
   static void ScheduleFrame();
+
+  static void EndWarmUpFrame();
 
   static void Render(int64_t view_id,
                      Scene* scene,

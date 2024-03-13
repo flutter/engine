@@ -51,12 +51,6 @@ static int ToTessWindingRule(FillType fill_type) {
       return TESS_WINDING_ODD;
     case FillType::kNonZero:
       return TESS_WINDING_NONZERO;
-    case FillType::kPositive:
-      return TESS_WINDING_POSITIVE;
-    case FillType::kNegative:
-      return TESS_WINDING_NEGATIVE;
-    case FillType::kAbsGeqTwo:
-      return TESS_WINDING_ABS_GEQ_TWO;
   }
   return TESS_WINDING_ODD;
 }
@@ -195,6 +189,7 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
 
   output.reserve(polyline.points->size() +
                  (4 * (polyline.contours.size() - 1)));
+  bool previous_contour_odd_points = false;
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
     auto first_point = polyline.GetPoint(start);
@@ -211,6 +206,13 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
       output.emplace_back(output.back());
       output.emplace_back(first_point);
       output.emplace_back(first_point);
+
+      // If the contour has an odd number of points, insert an extra point when
+      // bridging to the next contour to preserve the correct triangle winding
+      // order.
+      if (previous_contour_odd_points) {
+        output.emplace_back(first_point);
+      }
     } else {
       output.emplace_back(first_point);
     }
@@ -224,7 +226,10 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
       b--;
     }
     if (a == b) {
+      previous_contour_odd_points = false;
       output.emplace_back(polyline.GetPoint(a));
+    } else {
+      previous_contour_odd_points = true;
     }
   }
   return output;

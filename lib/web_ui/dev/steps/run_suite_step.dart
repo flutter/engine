@@ -9,9 +9,10 @@ import 'package:path/path.dart' as pathlib;
 // TODO(yjbanov): remove hacks when this is fixed:
 //                https://github.com/dart-lang/test/issues/1521
 import 'package:skia_gold_client/skia_gold_client.dart';
-import 'package:test_api/src/backend/runtime.dart' as hack;
-import 'package:test_core/src/executable.dart' as test;
-import 'package:test_core/src/runner/hack_register_platform.dart' as hack;
+import 'package:test_api/backend.dart' as hack;
+// TODO(ditman): Fix ignores when https://github.com/flutter/flutter/issues/143599 is resolved.
+import 'package:test_core/src/executable.dart' as test; // ignore: implementation_imports
+import 'package:test_core/src/runner/hack_register_platform.dart' as hack; // ignore: implementation_imports
 
 import '../browser.dart';
 import '../common.dart';
@@ -177,6 +178,11 @@ class RunSuiteStep implements PipelineStep {
     if (suite.testBundle.compileConfigs.length > 1) {
       // Multiple compile configs are only used for our fallback tests, which
       // do not collect goldens.
+      return null;
+    }
+    if (suite.runConfig.browser == BrowserName.safari) {
+      // Goldens from Safari produce too many diffs, disabled for now.
+      // See https://github.com/flutter/flutter/issues/143591
       return null;
     }
     final Renderer renderer = suite.testBundle.compileConfigs.first.renderer;

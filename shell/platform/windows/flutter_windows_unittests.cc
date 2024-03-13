@@ -10,13 +10,16 @@
 
 #include "flutter/fml/synchronization/count_down_latch.h"
 #include "flutter/fml/synchronization/waitable_event.h"
+#include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/egl/manager.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "flutter/shell/platform/windows/testing/windows_test_config_builder.h"
 #include "flutter/shell/platform/windows/testing/windows_test_context.h"
+#include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
 #include "flutter/testing/stream_capture.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
@@ -30,9 +33,18 @@ class HalfBrokenEGLManager : public egl::Manager {
  public:
   HalfBrokenEGLManager() : egl::Manager(/*enable_impeller = */ false) {}
 
-  bool CreateWindowSurface(HWND hwnd, size_t width, size_t height) override {
-    return false;
+  std::unique_ptr<egl::WindowSurface>
+  CreateWindowSurface(HWND hwnd, size_t width, size_t height) override {
+    return nullptr;
   }
+};
+
+class MockWindowsLifecycleManager : public WindowsLifecycleManager {
+ public:
+  MockWindowsLifecycleManager(FlutterWindowsEngine* engine)
+      : WindowsLifecycleManager(engine) {}
+
+  MOCK_METHOD(void, SetLifecycleState, (AppLifecycleState), (override));
 };
 
 }  // namespace
@@ -104,10 +116,8 @@ TEST_F(WindowsTest, LaunchCustomEntrypointInEngineRunInvocation) {
 TEST_F(WindowsTest, LaunchHeadlessEngine) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
-  EnginePtr engine{builder.InitializeEngine()};
+  EnginePtr engine{builder.RunHeadless()};
   ASSERT_NE(engine, nullptr);
-
-  ASSERT_TRUE(FlutterDesktopEngineRun(engine.get(), nullptr));
 }
 
 // Verify that accessibility features are initialized when a view is created.
@@ -297,6 +307,18 @@ TEST_F(WindowsTest, NextFrameCallback) {
   captures.frame_drawn_latch.Wait();
 }
 
+// Implicit view has the implicit view ID.
+TEST_F(WindowsTest, GetViewId) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+  FlutterDesktopViewId view_id =
+      FlutterDesktopViewControllerGetViewId(controller.get());
+
+  ASSERT_EQ(view_id, static_cast<FlutterDesktopViewId>(kImplicitViewId));
+}
+
 TEST_F(WindowsTest, GetGraphicsAdapter) {
   auto& context = GetContext();
   WindowsConfigBuilder builder(context);
@@ -309,6 +331,64 @@ TEST_F(WindowsTest, GetGraphicsAdapter) {
   ASSERT_NE(dxgi_adapter, nullptr);
   DXGI_ADAPTER_DESC desc{};
   ASSERT_TRUE(SUCCEEDED(dxgi_adapter->GetDesc(&desc)));
+}
+
+// Implicit view has the implicit view ID.
+TEST_F(WindowsTest, PluginRegistrarGetImplicitView) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  FlutterDesktopEngineRef engine =
+      FlutterDesktopViewControllerGetEngine(controller.get());
+  FlutterDesktopPluginRegistrarRef registrar =
+      FlutterDesktopEngineGetPluginRegistrar(engine, "foo_bar");
+  FlutterDesktopViewRef implicit_view =
+      FlutterDesktopPluginRegistrarGetView(registrar);
+
+  ASSERT_NE(implicit_view, nullptr);
+}
+
+TEST_F(WindowsTest, PluginRegistrarGetView) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  FlutterDesktopEngineRef engine =
+      FlutterDesktopViewControllerGetEngine(controller.get());
+  FlutterDesktopPluginRegistrarRef registrar =
+      FlutterDesktopEngineGetPluginRegistrar(engine, "foo_bar");
+
+  FlutterDesktopViewId view_id =
+      FlutterDesktopViewControllerGetViewId(controller.get());
+  FlutterDesktopViewRef view =
+      FlutterDesktopPluginRegistrarGetViewById(registrar, view_id);
+
+  FlutterDesktopViewRef view_123 = FlutterDesktopPluginRegistrarGetViewById(
+      registrar, static_cast<FlutterDesktopViewId>(123));
+
+  ASSERT_NE(view, nullptr);
+  ASSERT_EQ(view_123, nullptr);
+}
+
+TEST_F(WindowsTest, PluginRegistrarGetViewHeadless) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
+  FlutterDesktopPluginRegistrarRef registrar =
+      FlutterDesktopEngineGetPluginRegistrar(engine.get(), "foo_bar");
+
+  FlutterDesktopViewRef implicit_view =
+      FlutterDesktopPluginRegistrarGetView(registrar);
+  FlutterDesktopViewRef view_123 = FlutterDesktopPluginRegistrarGetViewById(
+      registrar, static_cast<FlutterDesktopViewId>(123));
+
+  ASSERT_EQ(implicit_view, nullptr);
+  ASSERT_EQ(view_123, nullptr);
 }
 
 // Verify the app does not crash if EGL initializes successfully but
@@ -328,6 +408,52 @@ TEST_F(WindowsTest, SurfaceOptional) {
       FlutterDesktopViewControllerCreate(0, 0, engine.release())};
 
   ASSERT_NE(controller, nullptr);
+}
+
+// Verify the app produces the expected lifecycle events.
+TEST_F(WindowsTest, Lifecycle) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  EnginePtr engine{builder.InitializeEngine()};
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  EngineModifier modifier{windows_engine};
+
+  auto lifecycle_manager =
+      std::make_unique<MockWindowsLifecycleManager>(windows_engine);
+  auto lifecycle_manager_ptr = lifecycle_manager.get();
+  modifier.SetLifecycleManager(std::move(lifecycle_manager));
+
+  EXPECT_CALL(*lifecycle_manager_ptr,
+              SetLifecycleState(AppLifecycleState::kResumed))
+      .WillOnce([lifecycle_manager_ptr](AppLifecycleState state) {
+        lifecycle_manager_ptr->WindowsLifecycleManager::SetLifecycleState(
+            state);
+      });
+
+  EXPECT_CALL(*lifecycle_manager_ptr,
+              SetLifecycleState(AppLifecycleState::kHidden))
+      .WillOnce([lifecycle_manager_ptr](AppLifecycleState state) {
+        lifecycle_manager_ptr->WindowsLifecycleManager::SetLifecycleState(
+            state);
+      });
+
+  // Create a controller. This launches the engine and sets the app lifecycle
+  // to the "resumed" state.
+  ViewControllerPtr controller{
+      FlutterDesktopViewControllerCreate(0, 0, engine.release())};
+
+  FlutterDesktopViewRef view =
+      FlutterDesktopViewControllerGetView(controller.get());
+  ASSERT_NE(view, nullptr);
+
+  HWND hwnd = FlutterDesktopViewGetHWND(view);
+  ASSERT_NE(hwnd, nullptr);
+
+  // Give the window a non-zero size to show it. This does not change the app
+  // lifecycle directly. However, destroying the view will now result in a
+  // "hidden" app lifecycle event.
+  ::MoveWindow(hwnd, /* X */ 0, /* Y */ 0, /* nWidth*/ 100, /* nHeight*/ 100,
+               /* bRepaint*/ false);
 }
 
 }  // namespace testing

@@ -259,7 +259,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   @override
   ui.LineMetrics? getLineMetricsAt(int index) {
     final LineMetricsHandle lineMetrics = paragraphGetLineMetricsAtIndex(handle, index);
-    return lineMetrics == nullptr ? SkwasmLineMetrics._(lineMetrics) : null;
+    return lineMetrics != nullptr ? SkwasmLineMetrics._(lineMetrics) : null;
   }
 }
 
@@ -746,6 +746,8 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       skStringFree(localeHandle);
     }
     paragraphStyleSetTextStyle(handle, textStyleHandle);
+    paragraphStyleSetApplyRoundingHack(handle, false);
+
     return SkwasmParagraphStyle._(
       handle,
       textStyle,

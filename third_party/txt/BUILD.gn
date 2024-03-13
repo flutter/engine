@@ -83,8 +83,8 @@ source_set("txt") {
     "//flutter/fml",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//flutter/skia",
-    "//third_party/harfbuzz",
-    "//third_party/icu",
+    "//flutter/third_party/harfbuzz",
+    "//flutter/third_party/icu",
   ]
 
   deps = [
@@ -147,6 +147,7 @@ if (enable_unittests) {
 
     sources = [
       "tests/font_collection_tests.cc",
+      "tests/paragraph_builder_skia_tests.cc",
       "tests/paragraph_unittests.cc",
       "tests/txt_run_all_unittests.cc",
     ]
@@ -169,7 +170,8 @@ if (enable_unittests) {
       "//flutter/testing:testing_lib",
     ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     if (is_fuchsia) {
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]

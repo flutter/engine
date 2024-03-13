@@ -6,6 +6,7 @@
 
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -46,28 +47,44 @@ class PositionWriter {
 
 class PositionUVWriter {
  public:
-  PositionUVWriter(Point texture_origin,
-                   Size texture_coverage,
+  PositionUVWriter(const Point& texture_origin,
+                   const Size& texture_size,
                    const Matrix& effect_transform)
       : texture_origin_(texture_origin),
-        texture_coverage_(texture_coverage),
+        texture_size_(texture_size),
         effect_transform_(effect_transform) {}
 
-  const std::vector<TextureFillVertexShader::PerVertexData>& GetData() const {
+  const std::vector<TextureFillVertexShader::PerVertexData>& GetData() {
+    if (effect_transform_.IsIdentity()) {
+      auto origin = texture_origin_;
+      auto scale = 1.0 / texture_size_;
+
+      for (auto& pvd : data_) {
+        pvd.texture_coords = (pvd.position - origin) * scale;
+      }
+    } else {
+      auto texture_rect = Rect::MakeOriginSize(texture_origin_, texture_size_);
+      Matrix uv_transform =
+          texture_rect.GetNormalizingTransform() * effect_transform_;
+
+      for (auto& pvd : data_) {
+        pvd.texture_coords = uv_transform * pvd.position;
+      }
+    }
     return data_;
   }
 
   void AppendVertex(const Point& point) {
     data_.emplace_back(TextureFillVertexShader::PerVertexData{
         .position = point,
-        .texture_coords =
-            effect_transform_ * (point - texture_origin_) / texture_coverage_});
+        // .texture_coords = default, will be filled in during |GetData()|
+    });
   }
 
  private:
   std::vector<TextureFillVertexShader::PerVertexData> data_ = {};
   const Point texture_origin_;
-  const Size texture_coverage_;
+  const Size texture_size_;
   const Matrix effect_transform_;
 };
 
@@ -491,6 +508,44 @@ CapProc<VertexWriter> GetCapProc(Cap stroke_cap) {
 }
 }  // namespace
 
+std::vector<SolidFillVertexShader::PerVertexData>
+StrokePathGeometry::GenerateSolidStrokeVertices(const Path::Polyline& polyline,
+                                                Scalar stroke_width,
+                                                Scalar miter_limit,
+                                                Join stroke_join,
+                                                Cap stroke_cap,
+                                                Scalar scale) {
+  auto scaled_miter_limit = stroke_width * miter_limit * 0.5f;
+  auto join_proc = GetJoinProc<PositionWriter>(stroke_join);
+  auto cap_proc = GetCapProc<PositionWriter>(stroke_cap);
+  StrokeGenerator stroke_generator(polyline, stroke_width, scaled_miter_limit,
+                                   join_proc, cap_proc, scale);
+  PositionWriter vtx_builder;
+  stroke_generator.Generate(vtx_builder);
+  return vtx_builder.GetData();
+}
+
+std::vector<TextureFillVertexShader::PerVertexData>
+StrokePathGeometry::GenerateSolidStrokeVerticesUV(
+    const Path::Polyline& polyline,
+    Scalar stroke_width,
+    Scalar miter_limit,
+    Join stroke_join,
+    Cap stroke_cap,
+    Scalar scale,
+    Point texture_origin,
+    Size texture_size,
+    const Matrix& effect_transform) {
+  auto scaled_miter_limit = stroke_width * miter_limit * 0.5f;
+  auto join_proc = GetJoinProc<PositionUVWriter>(stroke_join);
+  auto cap_proc = GetCapProc<PositionUVWriter>(stroke_cap);
+  StrokeGenerator stroke_generator(polyline, stroke_width, scaled_miter_limit,
+                                   join_proc, cap_proc, scale);
+  PositionUVWriter vtx_builder(texture_origin, texture_size, effect_transform);
+  stroke_generator.Generate(vtx_builder);
+  return vtx_builder.GetData();
+}
+
 StrokePathGeometry::StrokePathGeometry(const Path& path,
                                        Scalar stroke_width,
                                        Scalar miter_limit,
@@ -560,7 +615,7 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = true,
+      .mode = GeometryResult::Mode::kPreventOverdraw,
   };
 }
 
@@ -606,8 +661,12 @@ GeometryResult StrokePathGeometry::GetPositionUVBuffer(
               .index_type = IndexType::kNone,
           },
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = true,
+      .mode = GeometryResult::Mode::kPreventOverdraw,
   };
+}
+
+GeometryResult::Mode StrokePathGeometry::GetResultMode() const {
+  return GeometryResult::Mode::kPreventOverdraw;
 }
 
 GeometryVertexType StrokePathGeometry::GetVertexType() const {

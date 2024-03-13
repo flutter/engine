@@ -84,7 +84,7 @@ flutter run \
   --local-engine=$ENGINE/out/android_debug_unopt_arm64
 ```
 
-> ![NOTE]
+> [!NOTE]
 > External texture rendering on Android is based on the device API level. For
 > example to test the OpenGLES branch (which uses `SurfaceTexture`), you'll
 > typically need an older device or emulator with an API version 29 or lower.
@@ -105,7 +105,7 @@ See [our wiki](https://github.com/flutter/flutter/wiki/Testing-the-engine#java--
 
 How to edit and contribute to the Android embedder.
 
-> ![TIP]
+> [!TIP]
 > This guide assumes you already have a working Engine development environment:
 >
 > - [Setting up the Engine development environment](https://github.com/flutter/flutter/wiki/Setting-up-the-Engine-development-environment)
@@ -149,7 +149,8 @@ completion:
 
 ![Example](https://github.com/flutter/flutter/assets/168174/8a75dd27-66e1-4c4f-88af-667a73b909b6)
 
-> ![NOTE] > `--compile-commands-dir` must point to an Android build output:
+> [!NOTE]
+> `--compile-commands-dir` must point to an Android build output:
 >
 > ```jsonc
 > {
@@ -214,7 +215,12 @@ Android Studio:
    ![Example](https://github.com/flutter/flutter/assets/168174/02fe0e6f-f0c4-47b2-8dae-9aa0b9520503)
 
 At this point you should be able to open Java files in Android Studio and get
-code completion in the `io/flutter` folder (additional, undocumented work is
-required for `test/io/flutter`). For example, `FlutterJNI.java`:
+code completion in the `io/flutter` and `test/io/flutter` folders. For example, `FlutterJNI.java`:
 
 ![Example](https://github.com/flutter/flutter/assets/168174/387550d4-eab7-4097-9da3-7713a6ec4da7)
+
+To get code coverage displayed in line: go to the test class you wish to run and
+1. Right click > Modify Run Configuration..., 
+2. In the window that pops up click Modify options > Specify classes
+and packages (under "code coverage"). 
+3. In the new box that appears at the bottom of the window, click the + > Add package, and then add `io.flutter.*`.

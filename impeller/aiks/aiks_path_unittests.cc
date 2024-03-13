@@ -185,11 +185,13 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     static float scale = 3;
     static bool add_circle_clip = true;
 
-    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
-    ImGui::SliderFloat("Scale", &scale, 0, 6);
-    ImGui::Checkbox("Circle clip", &add_circle_clip);
-    ImGui::End();
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&color));
+      ImGui::SliderFloat("Scale", &scale, 0, 6);
+      ImGui::Checkbox("Circle clip", &add_circle_clip);
+      ImGui::End();
+    }
 
     Canvas canvas;
     canvas.Scale(GetContentScale());
@@ -213,8 +215,12 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     canvas.Scale(Vector2(scale, scale));
 
     if (add_circle_clip) {
-      auto [handle_a, handle_b] = IMPELLER_PLAYGROUND_LINE(
-          Point(60, 300), Point(600, 300), 20, Color::Red(), Color::Red());
+      static PlaygroundPoint circle_clip_point_a(Point(60, 300), 20,
+                                                 Color::Red());
+      static PlaygroundPoint circle_clip_point_b(Point(600, 300), 20,
+                                                 Color::Red());
+      auto [handle_a, handle_b] =
+          DrawPlaygroundLine(circle_clip_point_a, circle_clip_point_b);
 
       auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
       Point point_a = screen_to_canvas * handle_a * GetContentScale();
@@ -389,6 +395,58 @@ TEST_P(AiksTest, CanRenderClips) {
   canvas.ClipPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 500, 500)).TakePath());
   canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderOverlappingMultiContourPath) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+
+  PathBuilder::RoundingRadii radii;
+  radii.top_left = {50, 50};
+  radii.top_right = {50, 50};
+  radii.bottom_right = {50, 50};
+  radii.bottom_left = {50, 50};
+
+  const Scalar kTriangleHeight = 100;
+  canvas.Translate(Vector2(200, 200));
+  // Form a path similar to the Material drop slider value indicator. Both
+  // shapes should render identically side-by-side.
+  {
+    auto path =
+        PathBuilder{}
+            .MoveTo({0, kTriangleHeight})
+            .LineTo({-kTriangleHeight / 2.0f, 0})
+            .LineTo({kTriangleHeight / 2.0f, 0})
+            .Close()
+            .AddRoundedRect(
+                Rect::MakeXYWH(-kTriangleHeight / 2.0f, -kTriangleHeight / 2.0f,
+                               kTriangleHeight, kTriangleHeight),
+                radii)
+            .TakePath();
+
+    canvas.DrawPath(path, paint);
+  }
+  canvas.Translate(Vector2(100, 0));
+  {
+    auto path =
+        PathBuilder{}
+            .MoveTo({0, kTriangleHeight})
+            .LineTo({-kTriangleHeight / 2.0f, 0})
+            .LineTo({0, -10})
+            .LineTo({kTriangleHeight / 2.0f, 0})
+            .Close()
+            .AddRoundedRect(
+                Rect::MakeXYWH(-kTriangleHeight / 2.0f, -kTriangleHeight / 2.0f,
+                               kTriangleHeight, kTriangleHeight),
+                radii)
+            .TakePath();
+
+    canvas.DrawPath(path, paint);
+  }
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

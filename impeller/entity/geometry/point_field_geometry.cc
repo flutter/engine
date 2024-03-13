@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
@@ -30,7 +31,6 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
   };
 }
 
@@ -58,7 +58,6 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
   };
 }
 
@@ -159,7 +158,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
                           DefaultUniformAlignment());
 
   BufferView geometry_buffer =
-      host_buffer.Emplace(nullptr, total * sizeof(Point), alignof(Point));
+      host_buffer.Emplace(nullptr, total * sizeof(Point),
+                          std::max(DefaultUniformAlignment(), alignof(Point)));
 
   BufferView output;
   {
@@ -187,8 +187,9 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   }
 
   if (texture_coverage.has_value() && effect_transform.has_value()) {
-    BufferView geometry_uv_buffer =
-        host_buffer.Emplace(nullptr, total * sizeof(Vector4), alignof(Vector4));
+    BufferView geometry_uv_buffer = host_buffer.Emplace(
+        nullptr, total * sizeof(Vector4),
+        std::max(DefaultUniformAlignment(), alignof(Vector4)));
 
     using UV = UvComputeShader;
 
@@ -223,7 +224,6 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
       .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
   };
 }
 

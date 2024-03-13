@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "impeller/entity/gles/entity_shaders_gles.h"
+#include "impeller/entity/gles/framebuffer_blend_shaders_gles.h"
+#include "impeller/entity/gles/modern_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
@@ -68,6 +70,12 @@ EmbedderSurfaceGLImpeller::EmbedderSurfaceGLImpeller(
       std::make_shared<fml::NonOwnedMapping>(
           impeller_entity_shaders_gles_data,
           impeller_entity_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_modern_shaders_gles_data,
+          impeller_modern_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_gles_data,
+          impeller_framebuffer_blend_shaders_gles_length),
 #if IMPELLER_ENABLE_3D
       std::make_shared<fml::NonOwnedMapping>(
           impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
@@ -170,9 +178,15 @@ EmbedderSurfaceGLImpeller::GLContextFramebufferInfo() const {
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGLImpeller::CreateGPUSurface() {
+  // Ensure that the GL context is current before creating the GPU surface.
+  // GPUSurfaceGLImpeller initialization will set up shader pipelines, and the
+  // current thread needs to be able to execute reactor operations.
+  GLContextMakeCurrent();
+
   return std::make_unique<GPUSurfaceGLImpeller>(
-      this,              // GPU surface GL delegate
-      impeller_context_  // render to surface
+      this,                     // GPU surface GL delegate
+      impeller_context_,        // Impeller context
+      !external_view_embedder_  // render to surface
   );
 }
 

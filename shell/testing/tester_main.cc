@@ -24,8 +24,8 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 
-#include "third_party/abseil-cpp/absl/base/no_destructor.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -600,6 +600,19 @@ EXPORTED void Spawn(const char* entrypoint, const char* route) {
       shell->GetTaskRunners().GetPlatformTaskRunner(), spawn_task);
 
   Dart_EnterIsolate(isolate);
+}
+
+EXPORTED void ForceShutdownIsolate() {
+  // Enable Isolate.exit().
+  FML_DCHECK(Dart_CurrentIsolate() != nullptr);
+  Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
+  FML_CHECK(!tonic::CheckAndHandleError(isolate_lib));
+  Dart_Handle isolate_type = Dart_GetNonNullableType(
+      isolate_lib, tonic::ToDart("Isolate"), 0, nullptr);
+  FML_CHECK(!tonic::CheckAndHandleError(isolate_type));
+  Dart_Handle result =
+      Dart_SetField(isolate_type, tonic::ToDart("_mayExit"), Dart_True());
+  FML_CHECK(!tonic::CheckAndHandleError(result));
 }
 }
 

@@ -4,6 +4,8 @@
 
 package dev.flutter.scenarios;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -32,12 +35,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class TestActivity extends TestableFlutterActivity {
   static final String TAG = "Scenarios";
 
-  private Runnable resultsTask =
+  private final Runnable resultsTask =
       new Runnable() {
         @Override
         public void run() {
@@ -47,7 +51,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
         }
       };
 
-  private Handler handler = new Handler();
+  private final Handler handler = new Handler();
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -56,7 +60,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
 
     final Intent launchIntent = getIntent();
     if ("com.google.intent.action.TEST_LOOP".equals(launchIntent.getAction())) {
-      if (Build.VERSION.SDK_INT > 22) {
+      if (Build.VERSION.SDK_INT > API_LEVELS.API_22) {
         requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
       }
       handler.postDelayed(resultsTask, 20000);
@@ -85,7 +89,10 @@ public abstract class TestActivity extends TestableFlutterActivity {
   public void onFlutterUiDisplayed() {
     final Intent launchIntent = getIntent();
     MethodChannel channel =
-        new MethodChannel(getFlutterEngine().getDartExecutor(), "driver", JSONMethodCodec.INSTANCE);
+        new MethodChannel(
+            Objects.requireNonNull(getFlutterEngine()).getDartExecutor(),
+            "driver",
+            JSONMethodCodec.INSTANCE);
     Map<String, Object> test = new HashMap<>(2);
     if (launchIntent.hasExtra("scenario_name")) {
       test.put("name", launchIntent.getStringExtra("scenario_name"));
@@ -125,8 +132,10 @@ public abstract class TestActivity extends TestableFlutterActivity {
           AssetFileDescriptor afd = null;
           try {
             afd = getContentResolver().openAssetFileDescriptor(logFile, "w");
+            assert afd != null;
             final FileDescriptor fd = afd.getFileDescriptor();
             final FileOutputStream outputStream = new FileOutputStream(fd);
+            assert reply != null;
             outputStream.write(reply.array());
             outputStream.close();
           } catch (IOException ex) {
@@ -150,7 +159,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
    * String[], Handler, Runnable)} invokes its callback when called after initialization.
    */
   protected void testFlutterLoaderCallbackWhenInitializedTwice() {
-    FlutterLoader flutterLoader = new FlutterLoader();
+    FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
 
     // Flutter is probably already loaded in this app based on
     // code that ran before this method. Nonetheless, invoke the
@@ -190,6 +199,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
   private static void hideSystemBars(Window window) {
     final WindowInsetsControllerCompat insetController =
         WindowCompat.getInsetsController(window, window.getDecorView());
+    assert insetController != null;
     insetController.setSystemBarsBehavior(
         WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
     insetController.hide(WindowInsetsCompat.Type.systemBars());

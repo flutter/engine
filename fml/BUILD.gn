@@ -64,6 +64,7 @@ source_set("fml") {
     "paths.cc",
     "paths.h",
     "posix_wrappers.h",
+    "process.h",
     "raster_thread_merger.cc",
     "raster_thread_merger.h",
     "shared_thread_merger.cc",
@@ -113,18 +114,18 @@ source_set("fml") {
   ]
 
   deps = [
-    "//third_party/dart/runtime:dart_api",
+    "$dart_src/runtime:dart_api",
 
     # These need to be in sync with the Fuchsia buildroot.
-    "//third_party/icu",
+    "//flutter/third_party/icu",
   ]
 
   if (enable_backtrace) {
     # This abseil dependency is only used by backtrace.cc.
-    deps += [ "//third_party/abseil-cpp/absl/debugging:symbolize" ]
+    deps += [ "//flutter/third_party/abseil-cpp/absl/debugging:symbolize" ]
   }
 
-  configs += [ "//third_party/icu:icu_config" ]
+  configs += [ "//flutter/third_party/icu:icu_config" ]
 
   public_configs = [
     "//flutter:config",
@@ -184,6 +185,8 @@ source_set("fml") {
       "platform/android/jni_weak_ref.h",
       "platform/android/message_loop_android.cc",
       "platform/android/message_loop_android.h",
+      "platform/android/ndk_helpers.cc",
+      "platform/android/ndk_helpers.h",
       "platform/android/paths_android.cc",
       "platform/android/paths_android.h",
       "platform/android/scoped_java_ref.cc",
@@ -249,6 +252,7 @@ source_set("fml") {
       "platform/win/native_library_win.cc",
       "platform/win/paths_win.cc",
       "platform/win/posix_wrappers_win.cc",
+      "platform/win/process_win.cc",
     ]
   } else {
     sources += [
@@ -258,6 +262,7 @@ source_set("fml") {
       "platform/posix/native_library_posix.cc",
       "platform/posix/paths_posix.cc",
       "platform/posix/posix_wrappers_posix.cc",
+      "platform/posix/process_posix.cc",
     ]
   }
 }
@@ -406,7 +411,8 @@ if (enable_unittests) {
         "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
       ]
 
-      # This is needed for //third_party/googletest for linking zircon symbols.
+      # This is needed for //flutter/third_party/googletest for linking zircon
+      # symbols.
       libs =
           [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }

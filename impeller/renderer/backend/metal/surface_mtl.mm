@@ -13,6 +13,10 @@
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "impeller/renderer/render_target.h"
 
+@protocol FlutterMetalDrawable <MTLDrawable>
+- (void)flutterPrepareForPresent:(nonnull id<MTLCommandBuffer>)commandBuffer;
+@end
+
 namespace impeller {
 
 #pragma GCC diagnostic push
@@ -63,8 +67,8 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   TextureDescriptor resolve_tex_desc;
   resolve_tex_desc.format = FromMTLPixelFormat(texture.pixelFormat);
   resolve_tex_desc.size = root_size;
-  resolve_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
-                           static_cast<uint64_t>(TextureUsage::kShaderRead);
+  resolve_tex_desc.usage =
+      TextureUsage::kRenderTarget | TextureUsage::kShaderRead;
   resolve_tex_desc.sample_count = SampleCount::kCount1;
   resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
 
@@ -94,7 +98,7 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   msaa_tex_desc.sample_count = SampleCount::kCount4;
   msaa_tex_desc.format = resolve_tex->GetTextureDescriptor().format;
   msaa_tex_desc.size = resolve_tex->GetSize();
-  msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+  msaa_tex_desc.usage = TextureUsage::kRenderTarget;
 
   auto msaa_tex = allocator.CreateTexture(msaa_tex_desc);
   if (!msaa_tex) {
@@ -254,6 +258,14 @@ bool SurfaceMTL::Present() const {
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
+
+    id<CAMetalDrawable> metal_drawable =
+        reinterpret_cast<id<CAMetalDrawable>>(drawable_);
+    if ([metal_drawable conformsToProtocol:@protocol(FlutterMetalDrawable)]) {
+      [(id<FlutterMetalDrawable>)metal_drawable
+          flutterPrepareForPresent:command_buffer];
+    }
+
     // If the threads have been merged, or there is a pending frame capture,
     // then block on cmd buffer scheduling to ensure that the
     // transaction/capture work correctly.

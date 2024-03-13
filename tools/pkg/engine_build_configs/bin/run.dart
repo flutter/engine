@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:ffi' as ffi;
 import 'dart:io' as io;
 
 import 'package:engine_build_configs/engine_build_configs.dart';
@@ -55,7 +56,9 @@ The build names are the "name" fields of the maps in the list of "builds".
 
   // Find and parse the engine build configs.
   final io.Directory buildConfigsDir = io.Directory(p.join(
-    engine.flutterDir.path, 'ci', 'builders',
+    engine.flutterDir.path,
+    'ci',
+    'builders',
   ));
   final BuildConfigLoader loader = BuildConfigLoader(
     buildConfigsDir: buildConfigsDir,
@@ -63,7 +66,7 @@ The build names are the "name" fields of the maps in the list of "builds".
 
   // Treat it as an error if no build configs were found. The caller likely
   // expected to find some.
-  final Map<String, BuildConfig> configs = loader.configs;
+  final Map<String, BuilderConfig> configs = loader.configs;
   if (configs.isEmpty) {
     io.stderr.writeln(
       'Error: No build configs found under ${buildConfigsDir.path}',
@@ -77,7 +80,7 @@ The build names are the "name" fields of the maps in the list of "builds".
   }
 
   // Check the parsed build configs for validity.
-  final BuildConfig? targetConfig = configs[configName];
+  final BuilderConfig? targetConfig = configs[configName];
   if (targetConfig == null) {
     io.stderr.writeln('Build config "$configName" not found.');
     io.exitCode = 1;
@@ -93,9 +96,9 @@ The build names are the "name" fields of the maps in the list of "builds".
     return;
   }
 
-  GlobalBuild? targetBuild;
+  Build? targetBuild;
   for (int i = 0; i < targetConfig.builds.length; i++) {
-    final GlobalBuild build = targetConfig.builds[i];
+    final Build build = targetConfig.builds[i];
     if (build.name == buildName) {
       targetBuild = build;
     }
@@ -108,11 +111,24 @@ The build names are the "name" fields of the maps in the list of "builds".
     return;
   }
 
-  final GlobalBuildRunner buildRunner = GlobalBuildRunner(
+  // If RBE config files aren't in the tree, then disable RBE.
+  final String rbeConfigPath = p.join(
+    engine.srcDir.path,
+    'flutter',
+    'build',
+    'rbe',
+  );
+  final List<String> extraGnArgs = <String>[
+    if (!io.Directory(rbeConfigPath).existsSync()) '--no-rbe',
+  ];
+
+  final BuildRunner buildRunner = BuildRunner(
     platform: const LocalPlatform(),
     processRunner: ProcessRunner(),
+    abi: ffi.Abi.current(),
     engineSrcDir: engine.srcDir,
     build: targetBuild,
+    extraGnArgs: extraGnArgs,
     runGenerators: false,
     runTests: false,
   );
@@ -122,26 +138,28 @@ The build names are the "name" fields of the maps in the list of "builds".
         io.stdout.writeln('$event: ${event.command.join(' ')}');
       case RunnerProgress(done: true):
         io.stdout.writeln(event);
-      case RunnerProgress(done: false): {
-        final int width = io.stdout.terminalColumns;
-        final String percent = '${event.percent.toStringAsFixed(1)}%';
-        final String fraction = '(${event.completed}/${event.total})';
-        final String prefix = '[${event.name}] $percent $fraction ';
-        final int remainingSpace = width - prefix.length;
-        final String what;
-        if (remainingSpace >= event.what.length) {
-          what = event.what;
-        } else {
-          what = event.what.substring(event.what.length - remainingSpace + 1);
+      case RunnerProgress(done: false):
+        {
+          final int width = io.stdout.terminalColumns;
+          final String percent = '${event.percent.toStringAsFixed(1)}%';
+          final String fraction = '(${event.completed}/${event.total})';
+          final String prefix = '[${event.name}] $percent $fraction ';
+          final int remainingSpace = width - prefix.length;
+          final String what;
+          if (remainingSpace >= event.what.length) {
+            what = event.what;
+          } else {
+            what = event.what.substring(event.what.length - remainingSpace + 1);
+          }
+          final String spaces = ' ' * width;
+          io.stdout.write('$spaces\r'); // Erase the old line.
+          io.stdout.write('$prefix$what\r'); // Print the new line.
         }
-        final String spaces = ' ' * width;
-        io.stdout.write('$spaces\r');  // Erase the old line.
-        io.stdout.write('$prefix$what\r'); // Print the new line.
-      }
       default:
         io.stdout.writeln(event);
     }
   }
+
   final bool buildResult = await buildRunner.run(handler);
   io.exitCode = buildResult ? 0 : 1;
 }

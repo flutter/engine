@@ -16,7 +16,7 @@ namespace impeller {
 
 class ContextVK;
 class Surface;
-class SwapchainVK;
+class KHRSwapchainVK;
 
 /// For Vulkan, there is both a ContextVK that implements Context and a
 /// SurfaceContextVK that also implements Context and takes a ContextVK as its
@@ -78,6 +78,8 @@ class SurfaceContextVK : public Context,
   ///        recreated on the next frame.
   void UpdateSurfaceSize(const ISize& size) const;
 
+  void InitializeCommonlyUsedShadersIfNeeded() const override;
+
 #ifdef FML_OS_ANDROID
   vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;
 #endif  // FML_OS_ANDROID
@@ -86,7 +88,7 @@ class SurfaceContextVK : public Context,
 
  private:
   std::shared_ptr<ContextVK> parent_;
-  std::shared_ptr<SwapchainVK> swapchain_;
+  std::shared_ptr<KHRSwapchainVK> swapchain_;
 };
 
 }  // namespace impeller
