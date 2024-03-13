@@ -19,18 +19,33 @@ void main() async {
     }
   }
 
+  test('should fail on a missing directory', () async {
+    await withTempDirectory((io.Directory tempDirectory) async {
+      final StringSink stderr = StringBuffer();
+      final ArgumentError error = await _expectThrow<ArgumentError>(() async {
+        await harvest(
+          workDirectory: io.Directory(p.join(tempDirectory.path, 'non_existent')),
+          addImg: _alwaysThrowsAddImg,
+          stderr: stderr,
+        );
+      });
+      expect(error.message, contains('non_existent'));
+      expect(stderr.toString(), isEmpty);
+    });
+  });
+
   test('should require a file named "digests.json" in the working directory', () async {
     await withTempDirectory((io.Directory tempDirectory) async {
       final StringSink stderr = StringBuffer();
 
-      final io.FileSystemException error = await _expectThrow<io.FileSystemException>(() async {
+      final StateError error = await _expectThrow<StateError>(() async {
         await harvest(
           workDirectory: tempDirectory,
           addImg: _alwaysThrowsAddImg,
           stderr: stderr,
         );
       });
-      expect(error.path, contains('digests.json'));
+      expect(error.toString(), contains('digests.json'));
       expect(stderr.toString(), isEmpty);
     });
   });

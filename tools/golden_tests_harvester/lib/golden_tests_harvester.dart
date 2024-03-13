@@ -59,7 +59,7 @@ Future<void> harvest({
     }
     // Lookup sibling files to help the user understand what's missing.
     final List<io.FileSystemEntity> files = workDirectory.listSync();
-    throw ArgumentError(
+    throw StateError(
       'File "digests.json" not found in ${workDirectory.path}.\n\n'
       'Found files: ${files.map((io.FileSystemEntity e) => p.basename(e.path)).join(', ')}',
     );
