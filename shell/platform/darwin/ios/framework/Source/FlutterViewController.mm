@@ -2106,7 +2106,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (BOOL)accessibilityPerformEscape {
   FlutterMethodChannel* navigationChannel = [_engine.get() navigationChannel];
-  if (navigationChannel != nil) {
+  if (navigationChannel) {
     [self popRoute];
     return YES;
   }
