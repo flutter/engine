@@ -62,12 +62,9 @@ void EmbedderExternalViewEmbedder::PrepareFlutterView(
     int64_t flutter_view_id,
     SkISize frame_size,
     double device_pixel_ratio) {
-  // TODO(dkwingsmt): This class only supports rendering into the implicit
-  // view. Properly support multi-view in the future.
-  // https://github.com/flutter/flutter/issues/135530 item 4
-  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   Reset();
 
+  pending_flutter_view_id_ = flutter_view_id;
   pending_frame_size_ = frame_size;
   pending_device_pixel_ratio_ = device_pixel_ratio;
   pending_surface_transformation_ = GetSurfaceTransformation();
@@ -494,9 +491,7 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
 
     builder.PushLayers(presented_layers);
 
-    // TODO(loic-sharma): Currently only supports a single view.
-    // See https://github.com/flutter/flutter/issues/135530.
-    presented_layers.InvokePresentCallback(kFlutterImplicitViewId,
+    presented_layers.InvokePresentCallback(pending_flutter_view_id_,
                                            present_callback_);
   }
 

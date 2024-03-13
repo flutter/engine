@@ -297,8 +297,8 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
   return runtime_controller_->GetLastError();
 }
 
-void Engine::AddView(int64_t view_id, const ViewportMetrics& view_metrics) {
-  runtime_controller_->AddView(view_id, view_metrics);
+bool Engine::AddView(int64_t view_id, const ViewportMetrics& view_metrics) {
+  return runtime_controller_->AddView(view_id, view_metrics);
 }
 
 bool Engine::RemoveView(int64_t view_id) {

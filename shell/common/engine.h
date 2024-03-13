@@ -722,7 +722,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  /// @return     Whether the view was added.
+  ///
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the Flutter application that a view is no

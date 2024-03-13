@@ -176,8 +176,15 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             including the implicit view. Adding a view that already exists
   ///             triggers an assertion.
   ///
+  ///             If the Dart isolate hasn't launched yet, this will return
+  ///             false but the view will be added when |LaunchRootIsolate| is
+  ///             called.
+  ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  ///
+  /// @return     If the add view operation was forwarded to the running
+  ///             isolate.
   ///
   bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
@@ -190,6 +197,9 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             removed. Doing so triggers an assertion.
   ///
   /// @param[in]  view_id  The ID of the view.
+  ///
+  /// @return     If the remove view operation was forwarded to the running
+  ///             isolate.
   ///
   bool RemoveView(int64_t view_id);
 

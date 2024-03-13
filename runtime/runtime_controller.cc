@@ -140,9 +140,7 @@ bool RuntimeController::AddView(int64_t view_id,
                                 const ViewportMetrics& view_metrics) {
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id, view_metrics);
-
-    return true;
+    return platform_configuration->AddView(view_id, view_metrics);
   }
 
   return false;

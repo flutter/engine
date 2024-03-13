@@ -844,6 +844,27 @@ void render_implicit_view() {
 }
 
 @pragma('vm:entry-point')
+void render_all_views() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      final Size size = Size(800.0, 600.0);
+      final Color red = Color.fromARGB(127, 255, 0, 0);
+
+      final SceneBuilder builder = SceneBuilder();
+
+      builder.pushOffset(0.0, 0.0);
+
+      builder.addPicture(
+          Offset(0.0, 0.0), CreateColoredBox(red, size));
+
+      builder.pop();
+
+      view.render(builder.build());
+    }
+  };
+}
+
+@pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final Size size = Size(800.0, 600.0);
@@ -1394,6 +1415,20 @@ void window_metrics_event_view_id() {
     final List<int> differences = _findDifferences(sizes, newSizes);
     sizes = newSizes;
     signalNativeMessage('Changed: $differences');
+  };
+
+  signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void window_metrics_event_all_view_ids() {
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    final List<int> viewIds =
+      PlatformDispatcher.instance.views.map((view) => view.viewId).toList();
+
+    viewIds.sort();
+
+    signalNativeMessage('View IDs: [${viewIds.join(', ')}]');
   };
 
   signalNativeTest();
