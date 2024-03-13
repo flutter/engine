@@ -1343,7 +1343,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // Geometry updates occur when a multiline input expands or contracts. If
       // we are in the middle of composition, we should just update the geometry.
       // See: https://github.com/flutter/flutter/issues/98817
-      if(composingText != null) {
+      if (composingText != null) {
         geometry?.applyToDomElement(activeDomElement);
       } else {
         placeElement();
