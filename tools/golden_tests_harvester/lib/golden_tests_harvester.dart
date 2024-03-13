@@ -52,6 +52,18 @@ Future<void> harvest({
   required StringSink stderr,
 }) async {
   final io.File file = io.File(p.join(workDirectory.path, 'digests.json'));
+  if (!file.existsSync()) {
+    // Check if the directory exists or if the file is just missing.
+    if (!workDirectory.existsSync()) {
+      throw ArgumentError('Directory not found: ${workDirectory.path}.');
+    }
+    // Lookup sibling files to help the user understand what's missing.
+    final List<io.FileSystemEntity> files = workDirectory.listSync();
+    throw ArgumentError(
+      'File "digests.json" not found in ${workDirectory.path}.\n\n'
+      'Found files: ${files.map((io.FileSystemEntity e) => p.basename(e.path)).join(', ')}',
+    );
+  }
   final Digests digests = Digests.parse(file.readAsStringSync());
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   for (final DigestEntry entry in digests.entries) {
