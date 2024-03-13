@@ -9,9 +9,6 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
-import 'package:ui/ui_web/src/ui_web/initialization.dart';
-
-import '../common/matchers.dart';
 
 @JS('_flutter')
 external set _loader(JSAny? loader);
@@ -79,16 +76,6 @@ void testMain() {
     // Check that the object we captured is actually a loader
     expect(pluginsRegistered, isTrue, reason: 'Plugins should be immediately registered in autoStart mode.');
     expect(appRan, isTrue, reason: 'App should run immediately in autoStart mode');
-  });
-
-  test('enable crawler mode', () {
-    expect(isCrawlerModeEnabled, isFalse);
-    enableCrawlerMode();
-    expect(isCrawlerModeEnabled, isTrue);
-    expect(
-      () => enableCrawlerMode(),
-      throwsAssertionError,
-    );
   });
 
   // We cannot test anymore, because by now the engine has registered some stuff that can't be rewound back.

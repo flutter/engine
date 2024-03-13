@@ -9,7 +9,6 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/ui_web/src/ui_web/initialization.dart';
 
 import '../../common/rendering.dart';
 import '../../common/test_initialization.dart';
@@ -30,13 +29,7 @@ Future<void> testMain() async {
   await bootstrapAndRunApp(withImplicitView: true);
   setUpRenderingForTests();
 
-  setUpAll(() {
-    enableCrawlerMode();
-  });
-
-  test('renders label text as DOM for crawler user agents and Windows screen readers', () async {
-    expect(userAgentNeedsDomText, isTrue);
-
+  test('renders label text as DOM', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -53,9 +46,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem aria-label="Hello" role="text" $_rootStyle>
-          <span>Hello</span>
-        </sem>'''
+        <sem role="text" $_rootStyle>Hello</sem>'''
       );
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
@@ -79,9 +70,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem aria-label="World" role="text" $_rootStyle>
-          <span>World</span>
-        </sem>'''
+        <sem role="text" $_rootStyle>World</sem>'''
       );
     }
 
@@ -103,8 +92,6 @@ Future<void> testMain() async {
   });
 
   test('does not add a span in container nodes', () async {
-    expect(userAgentNeedsDomText, isTrue);
-
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -129,9 +116,7 @@ Future<void> testMain() async {
     expectSemanticsTree(owner(), '''
       <sem aria-label="I am a parent" role="group" $_rootStyle>
         <sem-c>
-          <sem aria-label="I am a child" role="text">
-            <span>I am a child</span>
-          </sem>
+          <sem role="text">I am a child</sem>
         </sem-c>
       </sem>'''
     );
@@ -140,8 +125,6 @@ Future<void> testMain() async {
   });
 
   test('adds a span when a leaf becomes a parent, and vice versa', () async {
-    expect(userAgentNeedsDomText, isTrue);
-
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -158,9 +141,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem aria-label="I am a leaf" role="text" $_rootStyle>
-          <span>I am a leaf</span>
-        </sem>'''
+        <sem role="text" $_rootStyle>I am a leaf</sem>'''
       );
     }
 
@@ -186,9 +167,7 @@ Future<void> testMain() async {
       expectSemanticsTree(owner(), '''
         <sem aria-label="I am a parent" role="group" $_rootStyle>
           <sem-c>
-            <sem aria-label="I am a child" role="text">
-              <span>I am a child</span>
-            </sem>
+            <sem role="text">I am a child</sem>
           </sem-c>
         </sem>'''
       );
@@ -206,9 +185,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem aria-label="I am a leaf again" role="text" $_rootStyle>
-          <span>I am a leaf again</span>
-        </sem>'''
+        <sem role="text" $_rootStyle>I am a leaf again</sem>'''
       );
     }
 

@@ -55,33 +55,3 @@ Future<void> bootstrapEngine({
     loader.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
   }
 }
-
-/// Switches the web engine into the web crawler mode.
-///
-/// In this mode the engine renders the semantics DOM tree in a way that's
-/// friendlier to web crawlers. For example, normally text appears only in
-/// `aria-label` attributes, but most crawlers ignore this attributes. When the
-/// crawler mode is enabled, the engine will put the text into an element as a
-/// DOM `Text` node (https://developer.mozilla.org/en-US/docs/Web/API/Text).
-///
-/// This function should only be called once. Calling it more than once will
-/// result in a `StateError` in debug mode, and it will have no effect in
-/// release mode.
-///
-/// It is expected that this function is called early in the app's
-/// initialization, before the framework renders the semantics tree, e.g. prior
-/// to invoking `runApp`. Calling it too late, such as after the first frame has
-/// been rendered or in response to a user action, may result in incorrect
-/// rendering of the semantics tree. The crawler may already have crawled the
-/// app and failed to find the data it needed to index it.
-void enableCrawlerMode() {
-  assert(
-    !_isCrawlerModeEnabled,
-    '`enableCrawlerMode` was called more than once.',
-  );
-  _isCrawlerModeEnabled = true;
-}
-
-/// Whether the crawler mode is enabled.
-bool get isCrawlerModeEnabled => _isCrawlerModeEnabled;
-bool _isCrawlerModeEnabled = false;

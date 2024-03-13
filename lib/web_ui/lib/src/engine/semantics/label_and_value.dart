@@ -2,67 +2,44 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
-
-import '../browser_detection.dart';
 import '../dom.dart';
 import 'semantics.dart';
 
-/// If true, labels will apply a JAWS-specific workaround to make sure it can
-/// read labels on leaf text nodes.
+/// The method used to represend a label of a leaf node in the DOM.
 ///
-/// Even though the workaround is only needed for JAWS, the workaround is
-/// applied on all Windows systems because we can't know in advance what screen
-/// reader will be used, and NVDA is also OK with the workaround.
+/// This is required by some screen readers and web crawlers.
 ///
-/// The workaround is _not_ used on other systems because it breaks the
-/// navigation on some screen readers. For example, VoiceOver on macOS creates
-/// intermediate nodes that result in the label read multiple times as the user
-/// invokes next/previous actions. The workaround also adds extra performance
-/// cost because it requires an extra span element.
-///
-/// See also:
-///
-///   * https://github.com/flutter/flutter/issues/122607
-///   * https://github.com/FreedomScientific/standards-support/issues/759
-bool useJawsWorkaroundForLabels = operatingSystem == OperatingSystem.windows;
+/// Container nodes only use `aria-label`, even if [domText] is chosen. This is
+/// because screen readers treat container nodes as "groups" of other nodes, and
+/// respect the `aria-label` without a [DomText] node. Crawlers typically do not
+/// need this information, as they primarily scan visible text, which is
+/// communicated in semantics as leaf text and heading nodes.
+enum LeafLabelRepresentation {
+  /// Represents the label as an `aria-label` attribute.
+  ariaLabel,
 
-/// Whether the current user agent requires the text to be rendered into DOM
-/// elements to function.
-///
-/// For some user agents, such as search engines and JAWS on Windows
-/// `aria-label` is not sufficient.
-bool get userAgentNeedsDomText => ui_web.isCrawlerModeEnabled || useJawsWorkaroundForLabels;
+  /// Represents the label as a [DomText] node.
+  domText,
+}
 
 /// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.
 ///
-/// VoiceOver supports "aria-label" but only in conjunction with an ARIA role.
-/// Setting "aria-label" on an empty element without a role causes VoiceOver to
-/// treat element as if it does not exist. VoiceOver supports role "text", which
-/// is a proprietary role not supported by other browsers. Flutter Web still
-/// uses it because it provides the best user experience for plain text nodes.
-///
-/// TalkBack supports standalone "aria-label" attribute, but does not support
-/// role "text". This leads to TalkBack reading "group" or "empty group" on
-/// plain text elements, but that's still better than other alternatives
-/// considered.
-///
 /// The value is not always rendered. Some semantics nodes correspond to
-/// interactive controls, such as an `<input>` element. In such case the value
-/// is reported via that element's `value` attribute rather than rendering it
-/// separately.
-///
-/// This role manager does not manage images and text fields. See
-/// [ImageRoleManager] and [TextField].
+/// interactive controls. In such case the value is reported via that element's
+/// `value` attribute rather than rendering it separately.
 class LabelAndValue extends RoleManager {
-  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner)
+  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.labelRepresentation })
       : super(Role.labelAndValue, semanticsObject, owner);
+
+  /// Configures the representation of the label in the DOM.
+  final LeafLabelRepresentation labelRepresentation;
 
   @override
   void update() {
     final String? computedLabel = _computeLabel();
 
     if (computedLabel == null) {
+      _oldLabel = null;
       _cleanUpDom();
       return;
     }
@@ -70,28 +47,26 @@ class LabelAndValue extends RoleManager {
     _updateLabel(computedLabel);
   }
 
-  DomElement? _labelSpan;
+  DomText? _domText;
+  String? _oldLabel;
 
   void _updateLabel(String label) {
-    owner.setAttribute('aria-label', label);
+    if (label == _oldLabel) {
+      return;
+    }
+    _oldLabel = label;
 
-    final bool needsDomText = !semanticsObject.hasChildren && userAgentNeedsDomText;
+    final bool needsDomText = labelRepresentation == LeafLabelRepresentation.domText && !semanticsObject.hasChildren;
 
+    _domText?.remove();
     if (needsDomText) {
-      DomElement? span = _labelSpan;
-
-      // Lazy-create and cache the span.
-      if (span == null) {
-        _labelSpan = span = createDomElement('span');
-        semanticsObject.element.appendChild(span);
-      }
-
-      span.innerText = label;
+      owner.removeAttribute('aria-label');
+      final DomText domText = domDocument.createTextNode(label);
+      _domText = domText;
+      semanticsObject.element.appendChild(domText);
     } else {
-      // This handles the case where the node was previously a leaf, but then
-      // gained children. In that case, `aria-label` is sufficient.
-      _labelSpan?.remove();
-      _labelSpan = null;
+      owner.setAttribute('aria-label', label);
+      _domText = null;
     }
   }
 
@@ -131,7 +106,7 @@ class LabelAndValue extends RoleManager {
 
   void _cleanUpDom() {
     owner.removeAttribute('aria-label');
-    _labelSpan?.remove();
+    _domText?.remove();
   }
 
   @override
