@@ -617,6 +617,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
+    // Preserve the subpixel offset in the origin to position
+    // the local and global coordinates below.
+    auto origin = subpass_coverage->GetOrigin();
     subpass_coverage = Rect::RoundOut(subpass_coverage.value());
 
     auto subpass_size = ISize(subpass_coverage->GetSize());
@@ -650,13 +653,12 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
     if (!subpass->OnRender(
-            renderer,                       // renderer
-            subpass_capture,                // capture
-            root_pass_size,                 // root_pass_size
-            subpass_target,                 // pass_target
-            subpass_coverage->GetOrigin(),  // global_pass_position
-            subpass_coverage->GetOrigin() -
-                global_pass_position,         // local_pass_position
+            renderer,                         // renderer
+            subpass_capture,                  // capture
+            root_pass_size,                   // root_pass_size
+            subpass_target,                   // pass_target
+            origin,                           // global_pass_position
+            origin - global_pass_position,    // local_pass_position
             ++pass_depth,                     // pass_depth
             subpass_clip_coverage_stack,      // clip_coverage_stack
             subpass->clip_depth_,             // clip_depth_floor
