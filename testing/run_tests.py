@@ -185,7 +185,7 @@ def vulkan_validation_env(build_dir):
   return extra_env
 
 
-def metal_validation_env(build_dir):
+def metal_validation_env():
   extra_env = {
       # pylint: disable=line-too-long
       # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
@@ -505,7 +505,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           shuffle_flags,
           coverage=coverage
       )
-    extra_env = metal_validation_env(build_dir).update(vulkan_validation_env(build_dir))
+    extra_env = metal_validation_env().update(vulkan_validation_env(build_dir))
     mac_impeller_unittests_flags = shuffle_flags + [
         '--enable_vulkan_validation',
         '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
@@ -1048,7 +1048,7 @@ def run_impeller_golden_tests(build_dir: str):
                                                          ).joinpath('golden_tests_harvester')
 
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    extra_env = metal_validation_env(build_dir).update(vulkan_validation_env(build_dir))
+    extra_env = metal_validation_env().update(vulkan_validation_env(build_dir))
     run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir, env=extra_env)
     dart_bin = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
