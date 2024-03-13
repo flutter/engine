@@ -1769,11 +1769,9 @@ typedef bool (*FlutterLayersPresentCallback)(const FlutterLayer** layers,
                                              size_t layers_count,
                                              void* user_data);
 
-/// The callback invoked when the embedder should present
-/// to a view.
+/// The callback invoked when the embedder should present to a view.
 ///
-/// The |FlutterPresentViewInfo| will be deallocated
-/// once the callback returns.
+/// The |FlutterPresentViewInfo| will be deallocated once the callback returns.
 typedef bool (*FlutterPresentViewCallback)(
     const FlutterPresentViewInfo* /* present info */);
 
