@@ -21,7 +21,17 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "debug",
+                    "--simulator",
+                    "--no-lto",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -44,7 +54,18 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "debug",
+                    "--simulator",
+                    "--simulator-cpu=arm64",
+                    "--no-lto",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -67,7 +88,15 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "debug",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -91,7 +120,15 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "profile",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -115,7 +152,15 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "release",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -139,7 +184,18 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "debug",
+                    "--simulator",
+                    "--no-lto",
+                    "--darwin-extension-safe",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -163,7 +219,19 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "debug",
+                    "--simulator",
+                    "--simulator-cpu=arm64",
+                    "--no-lto",
+                    "--darwin-extension-safe",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -187,7 +255,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "debug",
+                    "--darwin-extension-safe",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -212,7 +289,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "profile",
+                    "--darwin-extension-safe",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "drone_dimensions": [
@@ -237,7 +323,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+	    "postsubmit_overrides": {
+                "gn": [
+                    "--ios",
+                    "--runtime-mode",
+                    "release",
+                    "--darwin-extension-safe",
+		    "--no-rbe"
+                ]
+	    }
         }
     ],
     "generators": {
