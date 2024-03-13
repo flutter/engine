@@ -179,7 +179,7 @@ class ChildView {
 
 Future<int> _launchChildView() async {
   final message = Int8List.fromList([0x31]);
-  final completer = new Completer<ByteData>();
+  final completer = new Completer<ByteData?>();
   PlatformDispatcher.instance.sendPlatformMessage(
       'fuchsia/child_view', ByteData.sublistView(message), (ByteData? reply) {
     completer.complete(reply);

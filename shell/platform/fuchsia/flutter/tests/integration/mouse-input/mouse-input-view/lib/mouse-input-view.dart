@@ -85,13 +85,13 @@ class MyApp {
         }
 
         _reportMouseInput(
-          data.physicalX,
-          data.physicalY,
-          nowNanos,
-          data.buttons,
-          data.change.name,
-          data.scrollDeltaX,
-          data.scrollDeltaY,
+          localX: data.physicalX,
+          localY: data.physicalY,
+          buttons: data.buttons,
+          phase: data.change.name,
+          timeReceived: nowNanos,
+          wheelXPhysicalPixel: data.scrollDeltaX,
+          wheelYPhysicalPixel: data.scrollDeltaY,
         );
       }
     }

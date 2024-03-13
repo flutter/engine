@@ -70,9 +70,9 @@ class TestApp {
 
       if (data.change == PointerChange.down || data.change == PointerChange.move) {
         _reportTouchInput(
-          data.physicalX,
-          data.physicalY,
-          nowNanos,
+          localX: data.physicalX,
+          localY: data.physicalY,
+          timeReceived: nowNanos,
         );
       }
     }
