@@ -94,7 +94,7 @@ static PoolVMA CreateBufferPool(VmaAllocator allocator) {
 AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
-                         const std::shared_ptr<DeviceHolder>& device_holder,
+                         const std::shared_ptr<DeviceHolderVK>& device_holder,
                          const vk::Instance& instance,
                          const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
@@ -188,7 +188,7 @@ vk::ImageUsageFlags AllocatorVK::ToVKImageUsageFlags(
       break;
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)) {
+  if (usage & TextureUsage::kRenderTarget) {
     if (PixelFormatIsDepthStencil(format)) {
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
@@ -197,11 +197,11 @@ vk::ImageUsageFlags AllocatorVK::ToVKImageUsageFlags(
     }
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
+  if (usage & TextureUsage::kShaderRead) {
     vk_usage |= vk::ImageUsageFlagBits::eSampled;
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
+  if (usage & TextureUsage::kShaderWrite) {
     vk_usage |= vk::ImageUsageFlagBits::eStorage;
   }
 

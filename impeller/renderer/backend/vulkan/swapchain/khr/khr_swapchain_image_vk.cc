@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_image_vk.h"
 
 namespace impeller {
 
-SwapchainImageVK::SwapchainImageVK(TextureDescriptor desc,
-                                   const vk::Device& device,
-                                   vk::Image image)
+KHRSwapchainImageVK::KHRSwapchainImageVK(TextureDescriptor desc,
+                                         const vk::Device& device,
+                                         vk::Image image)
     : TextureSourceVK(desc), image_(image) {
   vk::ImageViewCreateInfo view_info;
   view_info.image = image_;
@@ -29,49 +29,49 @@ SwapchainImageVK::SwapchainImageVK(TextureDescriptor desc,
   is_valid_ = true;
 }
 
-SwapchainImageVK::~SwapchainImageVK() = default;
+KHRSwapchainImageVK::~KHRSwapchainImageVK() = default;
 
-bool SwapchainImageVK::IsValid() const {
+bool KHRSwapchainImageVK::IsValid() const {
   return is_valid_;
 }
 
-std::shared_ptr<Texture> SwapchainImageVK::GetMSAATexture() const {
+std::shared_ptr<Texture> KHRSwapchainImageVK::GetMSAATexture() const {
   return msaa_texture_;
 }
 
-std::shared_ptr<Texture> SwapchainImageVK::GetDepthStencilTexture() const {
+std::shared_ptr<Texture> KHRSwapchainImageVK::GetDepthStencilTexture() const {
   return depth_stencil_texture_;
 }
 
-void SwapchainImageVK::SetMSAATexture(std::shared_ptr<Texture> texture) {
+void KHRSwapchainImageVK::SetMSAATexture(std::shared_ptr<Texture> texture) {
   msaa_texture_ = std::move(texture);
 }
 
-void SwapchainImageVK::SetDepthStencilTexture(
+void KHRSwapchainImageVK::SetDepthStencilTexture(
     std::shared_ptr<Texture> texture) {
   depth_stencil_texture_ = std::move(texture);
 }
 
-PixelFormat SwapchainImageVK::GetPixelFormat() const {
+PixelFormat KHRSwapchainImageVK::GetPixelFormat() const {
   return desc_.format;
 }
 
-ISize SwapchainImageVK::GetSize() const {
+ISize KHRSwapchainImageVK::GetSize() const {
   return desc_.size;
 }
 
 // |TextureSourceVK|
-vk::Image SwapchainImageVK::GetImage() const {
+vk::Image KHRSwapchainImageVK::GetImage() const {
   return image_;
 }
 
 // |TextureSourceVK|
-vk::ImageView SwapchainImageVK::GetImageView() const {
+vk::ImageView KHRSwapchainImageVK::GetImageView() const {
   return image_view_.get();
 }
 
 // |TextureSourceVK|
-vk::ImageView SwapchainImageVK::GetRenderTargetView() const {
+vk::ImageView KHRSwapchainImageVK::GetRenderTargetView() const {
   return image_view_.get();
 }
 

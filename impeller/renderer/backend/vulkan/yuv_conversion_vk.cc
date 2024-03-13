@@ -6,7 +6,7 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "impeller/base/validation.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 
 namespace impeller {
@@ -30,7 +30,8 @@ bool YUVConversionVK::IsValid() const {
 }
 
 vk::SamplerYcbcrConversion YUVConversionVK::GetConversion() const {
-  return conversion_ ? conversion_.get() : VK_NULL_HANDLE;
+  return conversion_ ? conversion_.get()
+                     : static_cast<vk::SamplerYcbcrConversion>(VK_NULL_HANDLE);
 }
 
 const YUVConversionDescriptorVK& YUVConversionVK::GetDescriptor() const {

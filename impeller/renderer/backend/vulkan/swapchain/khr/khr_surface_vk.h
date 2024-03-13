@@ -2,18 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
-#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SURFACE_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SURFACE_VK_H_
 
 #include <memory>
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_image_vk.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
 
-class SurfaceVK final : public Surface {
+class KHRSurfaceVK final : public Surface {
  public:
   using SwapCallback = std::function<bool(void)>;
 
@@ -22,28 +22,28 @@ class SurfaceVK final : public Surface {
   ///        target by Impeller.
   ///
   ///        This creates the associated MSAA and depth+stencil texture.
-  static std::unique_ptr<SurfaceVK> WrapSwapchainImage(
+  static std::unique_ptr<KHRSurfaceVK> WrapSwapchainImage(
       const std::shared_ptr<Context>& context,
-      std::shared_ptr<SwapchainImageVK>& swapchain_image,
+      std::shared_ptr<KHRSwapchainImageVK>& swapchain_image,
       SwapCallback swap_callback,
       bool enable_msaa = true);
 
   // |Surface|
-  ~SurfaceVK() override;
+  ~KHRSurfaceVK() override;
 
  private:
   SwapCallback swap_callback_;
 
-  SurfaceVK(const RenderTarget& target, SwapCallback swap_callback);
+  KHRSurfaceVK(const RenderTarget& target, SwapCallback swap_callback);
 
   // |Surface|
   bool Present() const override;
 
-  SurfaceVK(const SurfaceVK&) = delete;
+  KHRSurfaceVK(const KHRSurfaceVK&) = delete;
 
-  SurfaceVK& operator=(const SurfaceVK&) = delete;
+  KHRSurfaceVK& operator=(const KHRSurfaceVK&) = delete;
 };
 
 }  // namespace impeller
 
-#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SURFACE_VK_H_
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SWAPCHAIN_KHR_KHR_SURFACE_VK_H_

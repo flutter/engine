@@ -755,6 +755,105 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(AiksTest, GaussianBlurStyleInnerGradient) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.7568, 0.2627, 0.2118, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  Paint paint;
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {200, 200}, std::move(colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kInner,
+      .sigma = Sigma(30),
+  };
+  canvas.DrawPath(PathBuilder()
+                      .MoveTo({200, 200})
+                      .LineTo({300, 400})
+                      .LineTo({100, 400})
+                      .Close()
+                      .TakePath(),
+                  paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  Paint red;
+  red.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, GaussianBlurStyleSolidGradient) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.7568, 0.2627, 0.2118, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  Paint paint;
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {200, 200}, std::move(colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kSolid,
+      .sigma = Sigma(30),
+  };
+  canvas.DrawPath(PathBuilder()
+                      .MoveTo({200, 200})
+                      .LineTo({300, 400})
+                      .LineTo({100, 400})
+                      .Close()
+                      .TakePath(),
+                  paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  Paint red;
+  red.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, GaussianBlurStyleOuterGradient) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.7568, 0.2627, 0.2118, 1.0}};
+  std::vector<Scalar> stops = {0.0, 1.0};
+
+  Paint paint;
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {200, 200}, std::move(colors), std::move(stops),
+      Entity::TileMode::kMirror, {});
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kOuter,
+      .sigma = Sigma(30),
+  };
+  canvas.DrawPath(PathBuilder()
+                      .MoveTo({200, 200})
+                      .LineTo({300, 400})
+                      .LineTo({100, 400})
+                      .Close()
+                      .TakePath(),
+                  paint);
+
+  // Draw another thing to make sure the clip area is reset.
+  Paint red;
+  red.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, GaussianBlurStyleInner) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -837,6 +936,32 @@ TEST_P(AiksTest, GaussianBlurStyleSolid) {
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, MaskBlurTexture) {
+  Scalar sigma = 30;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 500);
+      ImGui::End();
+    }
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    Paint paint;
+    paint.color = Color::Green();
+    paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+        .style = FilterContents::BlurStyle::kNormal,
+        .sigma = Sigma(sigma),
+    };
+    std::shared_ptr<Texture> boston = CreateTextureForFixture("boston.jpg");
+    canvas.DrawImage(std::make_shared<Image>(boston), {200, 200}, paint);
+    Paint red;
+    red.color = Color::Red();
+    canvas.DrawRect(Rect::MakeXYWH(0, 0, 200, 200), red);
+    return canvas.EndRecordingAsPicture();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {

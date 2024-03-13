@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/backend/vulkan/swapchain_impl_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_impl_vk.h"
 
 #include "fml/synchronization/semaphore.h"
 #include "impeller/base/validation.h"
@@ -12,8 +12,8 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
-#include "impeller/renderer/backend/vulkan/surface_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain_image_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_surface_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_image_vk.h"
 #include "impeller/renderer/context.h"
 #include "vulkan/vulkan_structs.hpp"
 
@@ -26,14 +26,14 @@ static constexpr size_t kMaxFramesInFlight = 3u;
 // orientation will be polled every other frame.
 static constexpr size_t kPollFramesForOrientation = 1u;
 
-struct FrameSynchronizer {
+struct KHRFrameSynchronizerVK {
   vk::UniqueFence acquire;
   vk::UniqueSemaphore render_ready;
   vk::UniqueSemaphore present_ready;
   std::shared_ptr<CommandBuffer> final_cmd_buffer;
   bool is_valid = false;
 
-  explicit FrameSynchronizer(const vk::Device& device) {
+  explicit KHRFrameSynchronizerVK(const vk::Device& device) {
     auto acquire_res = device.createFenceUnique(
         vk::FenceCreateInfo{vk::FenceCreateFlagBits::eSignaled});
     auto render_res = device.createSemaphoreUnique({});
@@ -50,7 +50,7 @@ struct FrameSynchronizer {
     is_valid = true;
   }
 
-  ~FrameSynchronizer() = default;
+  ~KHRFrameSynchronizerVK() = default;
 
   bool WaitForFence(const vk::Device& device) {
     if (auto result = device.waitForFences(
@@ -116,21 +116,21 @@ static std::optional<vk::CompositeAlphaFlagBitsKHR> ChooseAlphaCompositionMode(
   return std::nullopt;
 }
 
-std::shared_ptr<SwapchainImplVK> SwapchainImplVK::Create(
+std::shared_ptr<KHRSwapchainImplVK> KHRSwapchainImplVK::Create(
     const std::shared_ptr<Context>& context,
     vk::UniqueSurfaceKHR surface,
     const ISize& size,
     bool enable_msaa,
     vk::SwapchainKHR old_swapchain) {
-  return std::shared_ptr<SwapchainImplVK>(new SwapchainImplVK(
+  return std::shared_ptr<KHRSwapchainImplVK>(new KHRSwapchainImplVK(
       context, std::move(surface), size, enable_msaa, old_swapchain));
 }
 
-SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
-                                 vk::UniqueSurfaceKHR surface,
-                                 const ISize& size,
-                                 bool enable_msaa,
-                                 vk::SwapchainKHR old_swapchain) {
+KHRSwapchainImplVK::KHRSwapchainImplVK(const std::shared_ptr<Context>& context,
+                                       vk::UniqueSurfaceKHR surface,
+                                       const ISize& size,
+                                       bool enable_msaa,
+                                       vk::SwapchainKHR old_swapchain) {
   if (!context) {
     VALIDATION_LOG << "Cannot create a swapchain without a context.";
     return;
@@ -222,8 +222,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   }
 
   TextureDescriptor texture_desc;
-  texture_desc.usage =
-      static_cast<decltype(texture_desc.usage)>(TextureUsage::kRenderTarget);
+  texture_desc.usage = TextureUsage::kRenderTarget;
   texture_desc.storage_mode = StorageMode::kDevicePrivate;
   texture_desc.format = ToPixelFormat(swapchain_info.imageFormat);
   texture_desc.size = ISize::MakeWH(swapchain_info.imageExtent.width,
@@ -237,7 +236,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   msaa_desc.sample_count = SampleCount::kCount4;
   msaa_desc.format = texture_desc.format;
   msaa_desc.size = texture_desc.size;
-  msaa_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+  msaa_desc.usage = TextureUsage::kRenderTarget;
 
   // The depth+stencil configuration matches the configuration used by
   // RenderTarget::SetupDepthStencilAttachments and matching the swapchain
@@ -254,7 +253,7 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   depth_stencil_desc.format =
       context->GetCapabilities()->GetDefaultDepthStencilFormat();
   depth_stencil_desc.size = texture_desc.size;
-  depth_stencil_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+  depth_stencil_desc.usage = TextureUsage::kRenderTarget;
 
   std::shared_ptr<Texture> msaa_texture;
   if (enable_msaa) {
@@ -263,13 +262,13 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   std::shared_ptr<Texture> depth_stencil_texture =
       context->GetResourceAllocator()->CreateTexture(depth_stencil_desc);
 
-  std::vector<std::shared_ptr<SwapchainImageVK>> swapchain_images;
+  std::vector<std::shared_ptr<KHRSwapchainImageVK>> swapchain_images;
   for (const auto& image : images) {
-    auto swapchain_image =
-        std::make_shared<SwapchainImageVK>(texture_desc,  // texture descriptor
-                                           vk_context.GetDevice(),  // device
-                                           image                    // image
-        );
+    auto swapchain_image = std::make_shared<KHRSwapchainImageVK>(
+        texture_desc,            // texture descriptor
+        vk_context.GetDevice(),  // device
+        image                    // image
+    );
     if (!swapchain_image->IsValid()) {
       VALIDATION_LOG << "Could not create swapchain image.";
       return;
@@ -287,9 +286,10 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
     swapchain_images.emplace_back(swapchain_image);
   }
 
-  std::vector<std::unique_ptr<FrameSynchronizer>> synchronizers;
+  std::vector<std::unique_ptr<KHRFrameSynchronizerVK>> synchronizers;
   for (size_t i = 0u; i < kMaxFramesInFlight; i++) {
-    auto sync = std::make_unique<FrameSynchronizer>(vk_context.GetDevice());
+    auto sync =
+        std::make_unique<KHRFrameSynchronizerVK>(vk_context.GetDevice());
     if (!sync->is_valid) {
       VALIDATION_LOG << "Could not create frame synchronizers.";
       return;
@@ -310,19 +310,19 @@ SwapchainImplVK::SwapchainImplVK(const std::shared_ptr<Context>& context,
   is_valid_ = true;
 }
 
-SwapchainImplVK::~SwapchainImplVK() {
+KHRSwapchainImplVK::~KHRSwapchainImplVK() {
   DestroySwapchain();
 }
 
-const ISize& SwapchainImplVK::GetSize() const {
+const ISize& KHRSwapchainImplVK::GetSize() const {
   return size_;
 }
 
-bool SwapchainImplVK::IsValid() const {
+bool KHRSwapchainImplVK::IsValid() const {
   return is_valid_;
 }
 
-void SwapchainImplVK::WaitIdle() const {
+void KHRSwapchainImplVK::WaitIdle() const {
   if (auto context = context_.lock()) {
     [[maybe_unused]] auto result =
         ContextVK::Cast(*context).GetDevice().waitIdle();
@@ -330,7 +330,7 @@ void SwapchainImplVK::WaitIdle() const {
 }
 
 std::pair<vk::UniqueSurfaceKHR, vk::UniqueSwapchainKHR>
-SwapchainImplVK::DestroySwapchain() {
+KHRSwapchainImplVK::DestroySwapchain() {
   WaitIdle();
   is_valid_ = false;
   synchronizers_.clear();
@@ -339,18 +339,18 @@ SwapchainImplVK::DestroySwapchain() {
   return {std::move(surface_), std::move(swapchain_)};
 }
 
-vk::Format SwapchainImplVK::GetSurfaceFormat() const {
+vk::Format KHRSwapchainImplVK::GetSurfaceFormat() const {
   return surface_format_;
 }
 
-std::shared_ptr<Context> SwapchainImplVK::GetContext() const {
+std::shared_ptr<Context> KHRSwapchainImplVK::GetContext() const {
   return context_.lock();
 }
 
-SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
+KHRSwapchainImplVK::AcquireResult KHRSwapchainImplVK::AcquireNextDrawable() {
   auto context_strong = context_.lock();
   if (!context_strong) {
-    return SwapchainImplVK::AcquireResult{};
+    return KHRSwapchainImplVK::AcquireResult{};
   }
 
   const auto& context = ContextVK::Cast(*context_strong);
@@ -364,7 +364,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
   ///
   if (!sync->WaitForFence(context.GetDevice())) {
     VALIDATION_LOG << "Could not wait for fence.";
-    return SwapchainImplVK::AcquireResult{};
+    return KHRSwapchainImplVK::AcquireResult{};
   }
 
   //----------------------------------------------------------------------------
@@ -395,7 +395,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
 
   if (index >= images_.size()) {
     VALIDATION_LOG << "Swapchain returned an invalid image index.";
-    return SwapchainImplVK::AcquireResult{};
+    return KHRSwapchainImplVK::AcquireResult{};
   }
 
   /// Record all subsequent cmd buffers as part of the current frame.
@@ -403,7 +403,7 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
 
   auto image = images_[index % images_.size()];
   uint32_t image_index = index;
-  return AcquireResult{SurfaceVK::WrapSwapchainImage(
+  return AcquireResult{KHRSurfaceVK::WrapSwapchainImage(
       context_strong,  // context
       image,           // swapchain image
       [weak_swapchain = weak_from_this(), image, image_index]() -> bool {
@@ -417,8 +417,9 @@ SwapchainImplVK::AcquireResult SwapchainImplVK::AcquireNextDrawable() {
       )};
 }
 
-bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
-                              uint32_t index) {
+bool KHRSwapchainImplVK::Present(
+    const std::shared_ptr<KHRSwapchainImageVK>& image,
+    uint32_t index) {
   auto context_strong = context_.lock();
   if (!context_strong) {
     return false;
