@@ -261,13 +261,8 @@ bool DartTestComponentController::SetUpFromKernel() {
     kernel_peices_.emplace_back(std::move(kernel));
   }
 
-  Dart_IsolateFlags isolate_flags;
-  Dart_IsolateFlagsInitialize(&isolate_flags);
-  isolate_flags.null_safety = true;
-
   if (!CreateIsolate(isolate_snapshot_data_.address(),
-                     /*isolate_snapshot_instructions=*/nullptr,
-                     &isolate_flags)) {
+                     /*isolate_snapshot_instructions=*/nullptr)) {
     return false;
   }
 
@@ -316,15 +311,13 @@ bool DartTestComponentController::SetUpFromAppSnapshot() {
     isolate_data = isolate_snapshot_data_.address();
     isolate_instructions = nullptr;
   }
-  return CreateIsolate(isolate_data, isolate_instructions,
-                       /*isolate_flags=*/nullptr);
+  return CreateIsolate(isolate_data, isolate_instructions);
 #endif  // defined(AOT_RUNTIME)
 }
 
 bool DartTestComponentController::CreateIsolate(
     const uint8_t* isolate_snapshot_data,
-    const uint8_t* isolate_snapshot_instructions,
-    Dart_IsolateFlags* isolate_flags) {
+    const uint8_t* isolate_snapshot_instructions) {
   // Create the isolate from the snapshot.
   char* error = nullptr;
 
@@ -335,9 +328,13 @@ bool DartTestComponentController::CreateIsolate(
   auto state = new std::shared_ptr<tonic::DartState>(new tonic::DartState(
       namespace_fd, [this](Dart_Handle result) { MessageEpilogue(result); }));
 
+  Dart_IsolateFlags isolate_flags;
+  Dart_IsolateFlagsInitialize(&isolate_flags);
+  isolate_flags.null_safety = true;
+
   isolate_ = Dart_CreateIsolateGroup(
       url_.c_str(), label_.c_str(), isolate_snapshot_data,
-      isolate_snapshot_instructions, isolate_flags, state, state, &error);
+      isolate_snapshot_instructions, &isolate_flags, state, state, &error);
   if (!isolate_) {
     FML_LOG(ERROR) << "Dart_CreateIsolateGroup failed: " << error;
     return false;
