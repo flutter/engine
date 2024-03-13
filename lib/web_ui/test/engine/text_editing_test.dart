@@ -2486,13 +2486,14 @@ Future<void> testMain() async {
       host.remove();
     });
 
-    test('move element to correct view', () {
+    test('moves element to correct view', () {
       final DomElement host1 = createDomElement('div');
-      final DomElement host2 = createDomElement('div');
       domDocument.body!.append(host1);
-      domDocument.body!.append(host2);
       final EngineFlutterView view1 = EngineFlutterView(dispatcher, host1);
       dispatcher.viewManager.registerView(view1);
+
+      final DomElement host2 = createDomElement('div');
+      domDocument.body!.append(host2);
       final EngineFlutterView view2 = EngineFlutterView(dispatcher, host2);
       dispatcher.viewManager.registerView(view2);
 
@@ -2523,6 +2524,113 @@ Future<void> testMain() async {
       host1.remove();
       host2.remove();
     });
+
+    test('places autofill form in the correct view', () async {
+      final DomElement host = createDomElement('div');
+      domDocument.body!.append(host);
+      final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+      dispatcher.viewManager.registerView(view);
+
+      textEditing = HybridTextEditing();
+
+      // Create a configuration with an AutofillGroup of three text fields.
+      final Map<String, dynamic> flutterMultiAutofillElementConfig =
+          createFlutterConfig(
+            'text',
+            viewId: view.viewId,
+            autofillHint: 'username',
+            autofillHintsForFields: <String>['username', 'email', 'name'],
+          );
+      final MethodCall setClient = MethodCall(
+        'TextInput.setClient',
+        <dynamic>[123, flutterMultiAutofillElementConfig],
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      await waitForDesktopSafariFocus();
+
+      final DomElement input = textEditing!.strategy.domElement!;
+      final DomElement form = textEditing!.configuration!.autofillGroup!.formElement;
+
+      // Input and form are appended to the right view.
+      expect(view.dom.textEditingHost.contains(input), isTrue);
+      expect(view.dom.textEditingHost.contains(form), isTrue);
+
+      // Cleanup.
+      hideKeyboard();
+      dispatcher.viewManager.unregisterView(view.viewId);
+      view.dispose();
+      host.remove();
+    });
+
+    test('moves autofill form to the correct view', () async {
+      final DomElement host1 = createDomElement('div');
+      domDocument.body!.append(host1);
+      final EngineFlutterView view1 = EngineFlutterView(dispatcher, host1);
+      dispatcher.viewManager.registerView(view1);
+
+      final DomElement host2 = createDomElement('div');
+      domDocument.body!.append(host2);
+      final EngineFlutterView view2 = EngineFlutterView(dispatcher, host2);
+      dispatcher.viewManager.registerView(view2);
+
+      textEditing = HybridTextEditing();
+
+      // Create a configuration with an AutofillGroup of three text fields.
+      final Map<String, dynamic> autofillConfig1 = createFlutterConfig(
+        'text',
+        viewId: view1.viewId,
+        autofillHint: 'username',
+        autofillHintsForFields: <String>['username', 'email', 'name'],
+      );
+      final MethodCall setClient = MethodCall(
+        'TextInput.setClient',
+        <dynamic>[123, autofillConfig1],
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(setClient));
+
+      const MethodCall show = MethodCall('TextInput.show');
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+
+      await waitForDesktopSafariFocus();
+
+      final DomElement input = textEditing!.strategy.domElement!;
+      final DomElement form = textEditing!.configuration!.autofillGroup!.formElement;
+
+      // Input and form are appended to view1.
+      expect(view1.dom.textEditingHost.contains(input), isTrue);
+      expect(view1.dom.textEditingHost.contains(form), isTrue);
+
+      // Move the input and form to view2.
+      final Map<String, dynamic> autofillConfig2 = createFlutterConfig(
+        'text',
+        viewId: view2.viewId,
+        autofillHint: 'username',
+        autofillHintsForFields: <String>['username', 'email', 'name'],
+      );
+      sendFrameworkMessage(codec.encodeMethodCall(MethodCall(
+        'TextInput.updateConfig',
+        autofillConfig2,
+      )));
+
+      // Input and form are in view2.
+      expect(view2.dom.textEditingHost.contains(input), isTrue);
+      expect(view2.dom.textEditingHost.contains(form), isTrue);
+
+      // Cleanup.
+      hideKeyboard();
+      dispatcher.viewManager.unregisterView(view1.viewId);
+      view1.dispose();
+      dispatcher.viewManager.unregisterView(view2.viewId);
+      view2.dispose();
+      host1.remove();
+      host2.remove();
+      // TODO(mdebbar): Autofill forms don't get updated in the current system.
+      //                https://github.com/flutter/flutter/issues/145101
+    }, skip: true);
 
     tearDown(() {
       clearForms();

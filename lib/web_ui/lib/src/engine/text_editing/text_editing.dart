@@ -183,13 +183,13 @@ void _insertEditingElementInView(DomElement element, int viewId) {
 /// static method.
 class EngineAutofillForm {
   EngineAutofillForm({
-    required int viewId,
+    required this.viewId,
     required this.formElement,
     this.elements,
     this.items,
     this.formIdentifier = '',
     this.insertionReferenceNode,
-  }) : _viewId = viewId;
+  });
 
   final DomHTMLFormElement formElement;
 
@@ -207,15 +207,8 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
-  int _viewId;
-  int get viewId => _viewId;
-  set viewId(int value) {
-    if (_viewId == value) {
-      return;
-    }
-    _viewId = value;
-    _ensureEditingElementInView(formElement, _viewId);
-  }
+  /// The ID of the view that this form is rendered into.
+  final int viewId;
 
   /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
   /// framework `TextInputConfiguration` object.
@@ -1342,7 +1335,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     final AutofillInfo? autofill = config.autofill;
     if (autofill != null) {
       autofill.applyToDomElement(activeDomElement, focusedElement: true);
-      config.autofillGroup!.viewId = config.viewId;
     } else {
       activeDomElement.setAttribute('autocomplete', 'off');
       // When the new input configuration contains a different view ID, we need
