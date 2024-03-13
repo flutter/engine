@@ -1,4 +1,4 @@
-Signature: 3471d855e9a8f28d93c30e4f3c1167e1
+Signature: d3f2dcef57ffd5aa8b5af87f1648c81f
 
 ====================================================================================================
 LIBRARY: dart
@@ -2728,7 +2728,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: dart
-ORIGIN: ../../../third_party/dart/runtime/bin/cli.cc + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/bin/dfe.cc + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/bin/dfe.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/bin/error_exit.cc + ../../../third_party/dart/LICENSE
@@ -2831,13 +2830,11 @@ ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/custo
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/identity_hash_map.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/linked_hash_map.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/profile.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/_internal/vm/bin/cli_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/vm/bin/namespace_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/vm/bin/sync_socket_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/vm/lib/class_id_fasta.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/bigint_patch.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/cli/cli.dart + ../../../third_party/dart/LICENSE
-ORIGIN: ../../../third_party/dart/sdk/lib/cli/wait_for.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/core/bigint.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/internal/linked_list.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/internal/patch.dart + ../../../third_party/dart/LICENSE
@@ -2848,7 +2845,6 @@ ORIGIN: ../../../third_party/dart/sdk/lib/io/sync_socket.dart + ../../../third_p
 ORIGIN: ../../../third_party/dart/sdk/lib/vmservice/named_lookup.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/utils/bazel/kernel_worker.dart + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/dart/runtime/bin/cli.cc
 FILE: ../../../third_party/dart/runtime/bin/dfe.cc
 FILE: ../../../third_party/dart/runtime/bin/dfe.h
 FILE: ../../../third_party/dart/runtime/bin/error_exit.cc
@@ -2951,13 +2947,11 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/custom_
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/identity_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/linked_hash_map.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/profile.dart
-FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/cli_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/namespace_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/bin/sync_socket_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/class_id_fasta.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/vm_shared/lib/bigint_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/cli/cli.dart
-FILE: ../../../third_party/dart/sdk/lib/cli/wait_for.dart
 FILE: ../../../third_party/dart/sdk/lib/core/bigint.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/linked_list.dart
 FILE: ../../../third_party/dart/sdk/lib/internal/patch.dart
@@ -4090,15 +4084,21 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: dart
 ORIGIN: ../../../third_party/dart/runtime/bin/ifaddrs.cc + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/runtime/bin/ifaddrs.h + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.cc + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.h + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart + ../../../third_party/dart/LICENSE
 ORIGIN: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart + ../../../third_party/dart/LICENSE
+ORIGIN: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart + ../../../third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/dart/runtime/bin/ifaddrs.cc
 FILE: ../../../third_party/dart/runtime/bin/ifaddrs.h
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.cc
+FILE: ../../../third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.h
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2024, the Dart project authors.  Please see the AUTHORS file
 for details. All rights reserved.
@@ -4751,7 +4751,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/fdf4a62bd07ba93394a7f7dd3438deb196bf9eda
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/18ec60df077411f8618f307402fec31d4fec3200
 /third_party/fallback_root_certificates/
 
 ====================================================================================================

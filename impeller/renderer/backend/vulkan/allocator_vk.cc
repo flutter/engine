@@ -94,13 +94,14 @@ static PoolVMA CreateBufferPool(VmaAllocator allocator) {
 AllocatorVK::AllocatorVK(std::weak_ptr<Context> context,
                          uint32_t vulkan_api_version,
                          const vk::PhysicalDevice& physical_device,
-                         const std::shared_ptr<DeviceHolder>& device_holder,
+                         const std::shared_ptr<DeviceHolderVK>& device_holder,
                          const vk::Instance& instance,
                          const CapabilitiesVK& capabilities)
     : context_(std::move(context)), device_holder_(device_holder) {
   auto limits = physical_device.getProperties().limits;
   max_texture_size_.width = max_texture_size_.height =
       limits.maxImageDimension2D;
+  physical_device.getMemoryProperties(&memory_properties_);
 
   VmaVulkanFunctions proc_table = {};
 
@@ -187,7 +188,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
       break;
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)) {
+  if (usage & TextureUsage::kRenderTarget) {
     if (PixelFormatIsDepthStencil(format)) {
       vk_usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
     } else {
@@ -196,7 +197,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
     vk_usage |= vk::ImageUsageFlagBits::eInputAttachment;
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
+  if (usage & TextureUsage::kShaderRead) {
     vk_usage |= vk::ImageUsageFlagBits::eSampled;
     // Device transient images can only be used as attachments. The caller
     // specified incorrect usage flags and is attempting to read a device
@@ -207,7 +208,7 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(
     }
   }
 
-  if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
+  if (usage & TextureUsage::kShaderWrite) {
     vk_usage |= vk::ImageUsageFlagBits::eStorage;
     // Device transient images can only be used as attachments. The caller
     // specified incorrect usage flags and is attempting to read a device
@@ -494,6 +495,28 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
                                 vk::Buffer{buffer}}},  //
       buffer_allocation_info                           //
   );
+}
+
+size_t AllocatorVK::DebugGetHeapUsage() const {
+  auto count = memory_properties_.memoryHeapCount;
+  std::vector<VmaBudget> budgets(count);
+  vmaGetHeapBudgets(allocator_.get(), budgets.data());
+  size_t total_usage = 0;
+  for (auto i = 0u; i < count; i++) {
+    const VmaBudget& budget = budgets[i];
+    total_usage += budget.usage;
+  }
+  // Convert bytes to MB.
+  total_usage *= 1e-6;
+  return total_usage;
+}
+
+void AllocatorVK::DebugTraceMemoryStatistics() const {
+#ifdef IMPELLER_DEBUG
+  FML_TRACE_COUNTER("flutter", "AllocatorVK",
+                    reinterpret_cast<int64_t>(this),  // Trace Counter ID
+                    "MemoryBudgetUsageMB", DebugGetHeapUsage());
+#endif  // IMPELLER_DEBUG
 }
 
 }  // namespace impeller
