@@ -258,7 +258,7 @@ void TraceSerializer::Write(const SourceRectConstraint& src_rect_constraint) {
   buffer_ << "[SourceRectConstraint] ";
 }
 
-void TraceSerializer::Write(const SaveLayerBoundsPromise& promise) {
+void TraceSerializer::Write(const ContentBoundsPromise& promise) {
   buffer_ << "[SaveLayerBoundsPromise]";
 }
 

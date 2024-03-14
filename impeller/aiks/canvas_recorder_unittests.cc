@@ -56,7 +56,7 @@ class Serializer {
 
   void Write(const SourceRectConstraint& src_rect_constraint) {}
 
-  void Write(const SaveLayerBoundsPromise& promise) {}
+  void Write(const ContentBoundsPromise& promise) {}
 
   CanvasRecorderOp last_op_;
 };

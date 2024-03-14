@@ -106,16 +106,18 @@ class TestPassDelegate final : public EntityPassDelegate {
   const bool collapse_;
 };
 
-auto CreatePassWithRectPath(Rect rect,
-                            std::optional<Rect> bounds_hint,
-                            bool collapse = false) {
+auto CreatePassWithRectPath(
+    Rect rect,
+    std::optional<Rect> bounds_hint,
+    ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
+    bool collapse = false) {
   auto subpass = std::make_unique<EntityPass>();
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(std::move(entity));
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
-  subpass->SetBoundsLimit(bounds_hint);
+  subpass->SetBoundsLimit(bounds_hint, bounds_promise);
   return subpass;
 }
 
@@ -149,33 +151,26 @@ TEST_P(EntityTest, EntityPassRespectsUntrustedSubpassBoundsLimit) {
 TEST_P(EntityTest, EntityPassTrustsSnugSubpassBoundsLimit) {
   EntityPass pass;
 
-  auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(10, 10, 90, 90),
-                                         Rect::MakeLTRB(5, 5, 95, 95));
-  auto subpass1 = CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
-                                         Rect::MakeLTRB(495, 495, 1005, 1005));
+  auto subpass0 =  //
+      CreatePassWithRectPath(Rect::MakeLTRB(10, 10, 90, 90),
+                             Rect::MakeLTRB(5, 5, 95, 95),
+                             ContentBoundsPromise::kContainsContents);
+  auto subpass1 =  //
+      CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
+                             Rect::MakeLTRB(495, 495, 1005, 1005),
+                             ContentBoundsPromise::kContainsContents);
 
   auto subpass0_coverage =
       pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
   EXPECT_TRUE(subpass0_coverage.has_value());
-  // First result is natural bounds
-  EXPECT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(10, 10, 90, 90));
-  subpass0->SetBoundsAreSnug(true);
-  subpass0_coverage = pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
-  EXPECT_TRUE(subpass0_coverage.has_value());
-  // Second result with snug flag is the overridden bounds
+  // Result should be the overridden bounds
   // (we lied about them being snug, but the property is respected)
   EXPECT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(5, 5, 95, 95));
 
   auto subpass1_coverage =
       pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
   EXPECT_TRUE(subpass1_coverage.has_value());
-  // First result is natural bounds
-  EXPECT_RECT_NEAR(subpass1_coverage.value(),
-                   Rect::MakeLTRB(500, 500, 1000, 1000));
-  subpass1->SetBoundsAreSnug(true);
-  subpass1_coverage = pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
-  EXPECT_TRUE(subpass1_coverage.has_value());
-  // Second result with snug flag is the overridden bounds
+  // Result should be the overridden bounds
   // (we lied about them being snug, but the property is respected)
   EXPECT_RECT_NEAR(subpass1_coverage.value(),
                    Rect::MakeLTRB(495, 495, 1005, 1005));
@@ -195,7 +190,8 @@ TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
 
   EntityPass pass;
   auto subpass = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
-                                        Rect::MakeLTRB(50, 50, 150, 150), true);
+                                        Rect::MakeLTRB(50, 50, 150, 150),
+                                        ContentBoundsPromise::kUnknown, true);
   pass.AddSubpass(std::move(subpass));
 
   Entity entity;

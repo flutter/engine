@@ -73,7 +73,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     EntityPass* entity_pass) {
   // Passes with enforced bounds that clip the contents can not be safely
   // collapsed.
-  if (entity_pass->GetBoundsMightClipContent()) {
+  if (entity_pass->GetBoundsLimitMightClipContent()) {
     return false;
   }
 

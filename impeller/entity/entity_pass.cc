@@ -60,30 +60,46 @@ void EntityPass::SetDelegate(std::shared_ptr<EntityPassDelegate> delegate) {
   delegate_ = std::move(delegate);
 }
 
-void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit) {
+void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit,
+                                ContentBoundsPromise bounds_promise) {
   bounds_limit_ = bounds_limit;
-  bounds_might_clip_ = bounds_limit.has_value();
-  bounds_are_snug_ = false;
+  bounds_promise_ = bounds_limit.has_value() ? bounds_promise
+                                             : ContentBoundsPromise::kUnknown;
 }
 
 std::optional<Rect> EntityPass::GetBoundsLimit() const {
   return bounds_limit_;
 }
 
-void EntityPass::SetBoundsMightClipContent(bool clips) {
-  bounds_might_clip_ = clips;
+bool EntityPass::GetBoundsLimitMightClipContent() const {
+  switch (bounds_promise_) {
+    case ContentBoundsPromise::kUnknown:
+      // If the promise is unknown due to not having a bounds limit,
+      // then no clipping will occur. But if we have a bounds limit
+      // and it is unkown, then we can make no promises about whether
+      // it causes clipping of the entity pass contents and we
+      // conservatively return true.
+      return bounds_limit_.has_value();
+    case ContentBoundsPromise::kContainsContents:
+      FML_DCHECK(bounds_limit_.has_value());
+      return false;
+    case ContentBoundsPromise::kMayClipContents:
+      FML_DCHECK(bounds_limit_.has_value());
+      return true;
+  }
+  FML_UNREACHABLE();
 }
 
-bool EntityPass::GetBoundsMightClipContent() const {
-  return bounds_might_clip_;
-}
-
-void EntityPass::SetBoundsAreSnug(bool clips) {
-  bounds_are_snug_ = clips;
-}
-
-bool EntityPass::GetBoundsAreSnug() const {
-  return bounds_are_snug_;
+bool EntityPass::GetBoundsLimitIsSnug() const {
+  switch (bounds_promise_) {
+    case ContentBoundsPromise::kUnknown:
+      return false;
+    case ContentBoundsPromise::kContainsContents:
+    case ContentBoundsPromise::kMayClipContents:
+      FML_DCHECK(bounds_limit_.has_value());
+      return true;
+  }
+  FML_UNREACHABLE();
 }
 
 void EntityPass::AddEntity(Entity entity) {
@@ -219,7 +235,7 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
 std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
-  if (subpass.bounds_limit_.has_value() && subpass.GetBoundsAreSnug()) {
+  if (subpass.bounds_limit_.has_value() && subpass.GetBoundsLimitIsSnug()) {
     return subpass.bounds_limit_->TransformBounds(subpass.transform_);
   }
 
