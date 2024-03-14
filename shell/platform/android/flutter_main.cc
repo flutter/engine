@@ -17,7 +17,6 @@
 #include "flutter/fml/native_library.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/android/jni_util.h"
-#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/fml/platform/android/paths_android.h"
 #include "flutter/fml/size.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"

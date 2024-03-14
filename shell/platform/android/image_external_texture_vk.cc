@@ -1,8 +1,11 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
 #include "flutter/shell/platform/android/image_external_texture_vk.h"
+
 #include <cstdint>
 
-#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/core/texture_descriptor.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"

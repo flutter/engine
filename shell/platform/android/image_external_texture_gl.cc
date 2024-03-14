@@ -8,7 +8,6 @@
 #include <android/sensor.h>
 
 #include "flutter/common/graphics/texture.h"
-#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/toolkit/egl/image.h"

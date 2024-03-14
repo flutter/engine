@@ -42,7 +42,6 @@ executable("flutter_shell_native_unittests") {
   visibility = [ "*" ]
   testonly = true
   sources = [
-    "//flutter/fml/platform/android/ndk_helpers_unittests.cc",
     "android_context_gl_impeller_unittests.cc",
     "android_context_gl_unittests.cc",
     "android_shell_holder_unittests.cc",

@@ -10,7 +10,6 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/android/jni_util.h"
-#include "flutter/fml/platform/android/ndk_helpers.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/fml/size.h"
 #include "flutter/fml/trace_event.h"
