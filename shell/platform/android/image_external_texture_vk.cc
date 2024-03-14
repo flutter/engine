@@ -10,6 +10,7 @@
 #include "flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/texture_vk.h"
+#include "flutter/impeller/toolkit/android/hardware_buffer.h"
 
 namespace flutter {
 
@@ -41,9 +42,8 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   JavaLocalRef hardware_buffer = HardwareBufferFor(image);
   AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
 
-  AHardwareBuffer_Desc hb_desc = {};
-  flutter::NDKHelpers::AHardwareBuffer_describe(latest_hardware_buffer,
-                                                &hb_desc);
+  auto hb_desc =
+      impeller::android::HardwareBuffer::Describe(latest_hardware_buffer);
   std::optional<HardwareBufferKey> key =
       flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
   auto existing_image = image_lru_.FindImage(key);
@@ -55,7 +55,7 @@ void ImageExternalTextureVK::ProcessFrame(PaintContext& context,
   }
 
   auto texture_source = std::make_shared<impeller::AHBTextureSourceVK>(
-      impeller_context_, latest_hardware_buffer, hb_desc);
+      impeller_context_, latest_hardware_buffer, hb_desc.value());
   if (!texture_source->IsValid()) {
     CloseHardwareBuffer(hardware_buffer);
     return;
