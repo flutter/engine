@@ -3649,17 +3649,9 @@ extension DomTextDecoderExtension on DomTextDecoder {
 
 @JS('window.FinalizationRegistry')
 @staticInterop
-class DomFinalizationRegistry {}
-
-@JS('window.FinalizationRegistry')
-external JSAny? get _finalizationRegistryConstructor;
-
-// Note: We don't use a factory constructor here because there is an issue in
-// dart2js that causes a crash in the Google3 build if we do use a factory
-// constructor. See b/284478971
-DomFinalizationRegistry createDomFinalizationRegistry(JSFunction cleanup) =>
-    js_util.callConstructor(
-        _finalizationRegistryConstructor!.toObjectShallow, <Object>[cleanup]);
+class DomFinalizationRegistry {
+  external factory DomFinalizationRegistry(JSFunction cleanup);
+}
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
@@ -3671,6 +3663,9 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('unregister')
   external JSVoid unregister(JSAny token);
 }
+
+@JS('window.FinalizationRegistry')
+external JSAny? get _finalizationRegistryConstructor;
 
 /// Whether the current browser supports `FinalizationRegistry`.
 bool browserSupportsFinalizationRegistry =
