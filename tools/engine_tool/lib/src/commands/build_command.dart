@@ -52,7 +52,6 @@ final class BuildCommand extends CommandBase {
       return 1;
     }
 
-    // TODO(loic-sharma): Fetch dependencies if needed.
     return runBuild(environment, build);
   }
 }

@@ -63,7 +63,9 @@ void debugCheckBuilds(List<Build> builds) {
 }
 
 /// Build the build target in the environment.
-Future<int> runBuild(Environment environment, Build build) async {
+Future<int> runBuild(Environment environment, Build build,
+    [List<String> targets = const <String>[]]) async {
+  // TODO(loic-sharma): Fetch dependencies if needed.
   final BuildRunner buildRunner = BuildRunner(
     platform: environment.platform,
     processRunner: environment.processRunner,
@@ -71,6 +73,7 @@ Future<int> runBuild(Environment environment, Build build) async {
     engineSrcDir: environment.engine.srcDir,
     build: build,
     runTests: false,
+    extraNinjaArgs: targets,
   );
 
   Spinner? spinner;

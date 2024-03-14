@@ -14,6 +14,7 @@ import 'package:engine_tool/src/logger.dart';
 import 'package:litetest/litetest.dart';
 import 'package:logging/logging.dart' as log;
 import 'package:platform/platform.dart';
+import 'utils.dart';
 import 'package:process_fakes/process_fakes.dart';
 import 'package:process_runner/process_runner.dart';
 
@@ -54,27 +55,29 @@ void main() {
     'win_test_config': winTestConfig,
   };
 
-  Environment linuxEnv(Logger logger) {
-    return Environment(
-      abi: ffi.Abi.linuxX64,
-      engine: engine,
-      platform: FakePlatform(
-          operatingSystem: Platform.linux,
-          resolvedExecutable: io.Platform.resolvedExecutable),
-      processRunner: ProcessRunner(
-        processManager: FakeProcessManager(),
-      ),
-      logger: logger,
-    );
-  }
-
   List<String> stringsFromLogs(List<log.LogRecord> logs) {
     return logs.map((log.LogRecord r) => r.message).toList();
   }
 
+  final List<CannedProcess> cannedProcesses = <CannedProcess>[
+    CannedProcess((List<String> command) => command.contains('--as=label'),
+        stdout: '''
+//flutter/display_list:display_list_unittests
+//flutter/flow:flow_unittests
+//flutter/fml:fml_arc_unittests
+'''),
+    CannedProcess((List<String> command) => command.contains('--as=output'),
+        stdout: '''
+display_list_unittests
+flow_unittests
+fml_arc_unittests
+''')
+  ];
+
   test('query command returns builds for the host platform.', () async {
-    final Logger logger = Logger.test();
-    final Environment env = linuxEnv(logger);
+    final TestEnvironment testEnvironment = TestEnvironment(engine,
+        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
+    final Environment env = testEnvironment.environment;
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,
       configs: configs,
@@ -85,7 +88,7 @@ void main() {
     ]);
     expect(result, equals(0));
     expect(
-      stringsFromLogs(logger.testLogs),
+      stringsFromLogs(env.logger.testLogs),
       equals(<String>[
         'Add --verbose to see detailed information about each builder\n',
         '\n',
@@ -103,8 +106,9 @@ void main() {
 
   test('query command with --builder returns only from the named builder.',
       () async {
-    final Logger logger = Logger.test();
-    final Environment env = linuxEnv(logger);
+    final TestEnvironment testEnvironment = TestEnvironment(engine,
+        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
+    final Environment env = testEnvironment.environment;
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,
       configs: configs,
@@ -117,7 +121,7 @@ void main() {
     ]);
     expect(result, equals(0));
     expect(
-        stringsFromLogs(logger.testLogs),
+        stringsFromLogs(env.logger.testLogs),
         equals(<String>[
           'Add --verbose to see detailed information about each builder\n',
           '\n',
@@ -129,8 +133,9 @@ void main() {
   });
 
   test('query command with --all returns all builds.', () async {
-    final Logger logger = Logger.test();
-    final Environment env = linuxEnv(logger);
+    final TestEnvironment testEnvironment = TestEnvironment(engine,
+        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
+    final Environment env = testEnvironment.environment;
     final ToolCommandRunner runner = ToolCommandRunner(
       environment: env,
       configs: configs,
@@ -142,8 +147,29 @@ void main() {
     ]);
     expect(result, equals(0));
     expect(
-      logger.testLogs.length,
+      env.logger.testLogs.length,
       equals(26),
     );
+  });
+
+  test('query tests', () async {
+    final TestEnvironment testEnvironment = TestEnvironment(engine,
+        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
+    final Environment env = testEnvironment.environment;
+    final ToolCommandRunner runner = ToolCommandRunner(
+      environment: env,
+      configs: configs,
+    );
+    final int result = await runner.run(<String>[
+      'query',
+      'tests',
+    ]);
+    expect(result, equals(0));
+    expect(
+      env.logger.testLogs.length,
+      equals(3),
+    );
+    expect(env.logger.testLogs[0].message,
+        startsWith('//flutter/display_list:display_list_unittests'));
   });
 }
