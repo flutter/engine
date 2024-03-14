@@ -4,6 +4,7 @@
 
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/testing/testing.h"
+#include "impeller/toolkit/android/choreographer.h"
 #include "impeller/toolkit/android/hardware_buffer.h"
 #include "impeller/toolkit/android/proc_table.h"
 #include "impeller/toolkit/android/surface_control.h"
@@ -58,6 +59,31 @@ TEST_F(ToolkitAndroidTest, SurfacControlsAreAvailable) {
 TEST_F(ToolkitAndroidTest, CanAccessDeviceAPILevel) {
   // This test will be skipped otherwise.
   ASSERT_GE(GetProcTable().GetAndroidDeviceAPILevel(), 29u);
+}
+
+TEST_F(ToolkitAndroidTest, ChoreographerIsAvailable) {
+  ASSERT_TRUE(Choreographer::IsAvailableOnPlatform());
+}
+
+TEST_F(ToolkitAndroidTest, CanPostAndNotWaitForFrameCallbacks) {
+  const auto& choreographer = Choreographer::GetInstance();
+  ASSERT_TRUE(choreographer.IsValid());
+  ASSERT_TRUE(choreographer.PostFrameCallback([](auto) {}));
+}
+
+TEST_F(ToolkitAndroidTest, CanPostAndWaitForFrameCallbacks) {
+  if ((true)) {
+    GTEST_SKIP()
+        << "Disabled till the test harness is in an Android activity. "
+           "Running it without one will hang because the choreographer "
+           "frame callback will never execute.";
+  }
+  const auto& choreographer = Choreographer::GetInstance();
+  ASSERT_TRUE(choreographer.IsValid());
+  fml::AutoResetWaitableEvent event;
+  ASSERT_TRUE(choreographer.PostFrameCallback(
+      [&event](auto point) { event.Signal(); }));
+  event.Wait();
 }
 
 }  // namespace impeller::android::testing

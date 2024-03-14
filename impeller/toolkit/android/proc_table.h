@@ -8,6 +8,7 @@
 #include <android/api-level.h>
 #include <android/hardware_buffer.h>
 #include <android/surface_control.h>
+#include <android/trace.h>
 
 #include <functional>
 
@@ -16,24 +17,28 @@
 
 namespace impeller::android {
 
-#define FOR_EACH_ANDROID_PROC(INVOKE)           \
-  INVOKE(AHardwareBuffer_allocate, 26)          \
-  INVOKE(AHardwareBuffer_acquire, 26)           \
-  INVOKE(AHardwareBuffer_release, 26)           \
-  INVOKE(AHardwareBuffer_isSupported, 29)       \
-  INVOKE(AHardwareBuffer_describe, 26)          \
-  INVOKE(ANativeWindow_acquire, 0)              \
-  INVOKE(ANativeWindow_release, 0)              \
-  INVOKE(ANativeWindow_getWidth, 0)             \
-  INVOKE(ANativeWindow_getHeight, 0)            \
-  INVOKE(ASurfaceControl_createFromWindow, 29)  \
-  INVOKE(ASurfaceControl_release, 29)           \
-  INVOKE(ASurfaceTransaction_create, 29)        \
-  INVOKE(ASurfaceTransaction_delete, 29)        \
-  INVOKE(ASurfaceTransaction_apply, 29)         \
-  INVOKE(ASurfaceTransaction_setOnComplete, 29) \
-  INVOKE(ASurfaceTransaction_reparent, 29)      \
-  INVOKE(ASurfaceTransaction_setBuffer, 29)     \
+#define FOR_EACH_ANDROID_PROC(INVOKE)            \
+  INVOKE(ATrace_isEnabled, 23)                   \
+  INVOKE(AChoreographer_getInstance, 24)         \
+  INVOKE(AChoreographer_postFrameCallback, 24)   \
+  INVOKE(AChoreographer_postFrameCallback64, 29) \
+  INVOKE(AHardwareBuffer_allocate, 26)           \
+  INVOKE(AHardwareBuffer_acquire, 26)            \
+  INVOKE(AHardwareBuffer_release, 26)            \
+  INVOKE(AHardwareBuffer_isSupported, 29)        \
+  INVOKE(AHardwareBuffer_describe, 26)           \
+  INVOKE(ANativeWindow_acquire, 0)               \
+  INVOKE(ANativeWindow_release, 0)               \
+  INVOKE(ANativeWindow_getWidth, 0)              \
+  INVOKE(ANativeWindow_getHeight, 0)             \
+  INVOKE(ASurfaceControl_createFromWindow, 29)   \
+  INVOKE(ASurfaceControl_release, 29)            \
+  INVOKE(ASurfaceTransaction_create, 29)         \
+  INVOKE(ASurfaceTransaction_delete, 29)         \
+  INVOKE(ASurfaceTransaction_apply, 29)          \
+  INVOKE(ASurfaceTransaction_setOnComplete, 29)  \
+  INVOKE(ASurfaceTransaction_reparent, 29)       \
+  INVOKE(ASurfaceTransaction_setBuffer, 29)      \
   INVOKE(ASurfaceTransaction_setColor, 29)
 
 template <class T>
@@ -48,6 +53,8 @@ struct AndroidProc {
 
   constexpr bool IsAvailable() const { return proc != nullptr; }
 
+  explicit constexpr operator bool() const { return IsAvailable(); }
+
   template <class... Args>
   auto operator()(Args&&... args) const {
     FML_DCHECK(IsAvailable())
@@ -58,9 +65,7 @@ struct AndroidProc {
 };
 
 //------------------------------------------------------------------------------
-/// @brief      The table of Android procs that are resolved dynamically. Those
-///             some members of are available at API levels lower than 29, this
-///             proc table may only be used on API levels at or above 29.
+/// @brief      The table of Android procs that are resolved dynamically.
 ///
 struct ProcTable {
   ProcTable();
@@ -87,6 +92,16 @@ struct ProcTable {
   /// @return     The Android device api level.
   ///
   uint32_t GetAndroidDeviceAPILevel() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Check if tracing in enabled in the process. This call can be
+  ///             made at any API level.
+  ///
+  /// @return     If tracing is enabled.
+  ///
+  bool TraceIsEnabled() const {
+    return this->ATrace_isEnabled ? this->ATrace_isEnabled() : false;
+  }
 
 #define DEFINE_PROC(name, api)                            \
   AndroidProc<decltype(name)> name = {.proc_name = #name, \
