@@ -103,6 +103,8 @@ class HardwareBuffer {
 
   const AHardwareBuffer_Desc& GetAndroidDescriptor() const;
 
+  std::optional<uint64_t> GetSystemUniqueID() const;
+
  private:
   struct UniqueAHardwareBufferTraits {
     static AHardwareBuffer* InvalidValue() { return nullptr; }

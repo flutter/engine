@@ -102,4 +102,15 @@ bool HardwareBuffer::IsAvailableOnPlatform() {
          GetProcTable().AHardwareBuffer_allocate.IsAvailable();
 }
 
+std::optional<uint64_t> HardwareBuffer::GetSystemUniqueID() const {
+  if (!IsValid() || !GetProcTable().AHardwareBuffer_getId) {
+    return false;
+  }
+  uint64_t out_id = 0u;
+  if (GetProcTable().AHardwareBuffer_getId(GetHandle(), &out_id) != 0) {
+    return std::nullopt;
+  }
+  return out_id;
+}
+
 }  // namespace impeller::android

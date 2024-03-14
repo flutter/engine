@@ -27,6 +27,7 @@ namespace impeller::android {
   INVOKE(AHardwareBuffer_release, 26)            \
   INVOKE(AHardwareBuffer_isSupported, 29)        \
   INVOKE(AHardwareBuffer_describe, 26)           \
+  INVOKE(AHardwareBuffer_getId, 31)              \
   INVOKE(ANativeWindow_acquire, 0)               \
   INVOKE(ANativeWindow_release, 0)               \
   INVOKE(ANativeWindow_getWidth, 0)              \
