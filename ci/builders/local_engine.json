@@ -8,6 +8,25 @@
       "gn": [
         "--runtime-mode",
         "debug",
+        "--android",
+        "--android-cpu=arm64",
+        "--no-stripped",
+        "--no-lto"
+      ],
+      "name": "android_debug_arm64",
+      "ninja": {
+        "config": "android_debug_arm64",
+        "targets": []
+      }
+    },
+    {
+      "drone_dimensions": [
+        "os=Mac-13",
+        "os=Linux"
+      ],
+      "gn": [
+        "--runtime-mode",
+        "debug",
         "--unoptimized",
         "--android",
         "--android-cpu=arm64",
