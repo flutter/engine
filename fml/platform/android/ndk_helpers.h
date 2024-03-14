@@ -35,53 +35,78 @@ class NDKHelpers {
   static void Init();
 
   // API Version 23
+  [[deprecated]]
   static bool ATrace_isEnabled();
 
   // API Version 24
+  [[deprecated]]
   static ChoreographerSupportStatus ChoreographerSupported();
-  static AChoreographer* _Nullable AChoreographer_getInstance();
+
+  [[deprecated]] static AChoreographer* _Nullable AChoreographer_getInstance();
   // Deprecated in 29, available since 24.
+
+  [[deprecated]]
   static void AChoreographer_postFrameCallback(
       AChoreographer* _Nonnull choreographer,
       AChoreographer_frameCallback _Nonnull callback,
       void* _Nullable data);
 
   // API Version 26
+  [[deprecated]]
   static bool HardwareBufferSupported();
-  static AHardwareBuffer* _Nonnull AHardwareBuffer_fromHardwareBuffer(
+
+  [[deprecated]] static AHardwareBuffer* _Nonnull AHardwareBuffer_fromHardwareBuffer(
       JNIEnv* _Nonnull env,
       jobject _Nonnull hardwareBufferObj);
+
+  [[deprecated]]
   static void AHardwareBuffer_release(AHardwareBuffer* _Nonnull buffer);
+
+  [[deprecated]]
   static void AHardwareBuffer_describe(AHardwareBuffer* _Nonnull buffer,
                                        AHardwareBuffer_Desc* _Nullable desc);
+
+  [[deprecated]]
   static int AHardwareBuffer_allocate(
       const AHardwareBuffer_Desc* _Nonnull desc,
       AHardwareBuffer* _Nullable* _Nullable outBuffer);
+
   static EGLClientBuffer _Nonnull eglGetNativeClientBufferANDROID(
       AHardwareBuffer* _Nonnull buffer);
 
   // API Version 29
+  [[deprecated]]
   static int AHardwareBuffer_isSupported(
       const AHardwareBuffer_Desc* _Nonnull desc);
 
+  [[deprecated]]
   static void AChoreographer_postFrameCallback64(
       AChoreographer* _Nonnull choreographer,
       AChoreographer_frameCallback64 _Nonnull callback,
       void* _Nullable data);
 
+  [[deprecated]]
   static bool SurfaceControlAndTransactionSupported();
 
-  static ASurfaceControl* _Nonnull ASurfaceControl_createFromWindow(
+  [[deprecated]] static ASurfaceControl* _Nonnull ASurfaceControl_createFromWindow(
       ANativeWindow* _Nonnull parent,
       const char* _Nullable debug_name);
+
+  [[deprecated]]
   static void ASurfaceControl_release(
       ASurfaceControl* _Nonnull surface_control);
 
-  static ASurfaceTransaction* _Nonnull ASurfaceTransaction_create();
+  [[deprecated]] static ASurfaceTransaction* _Nonnull ASurfaceTransaction_create();
+
+  [[deprecated]]
   static void ASurfaceTransaction_delete(
       ASurfaceTransaction* _Nonnull surface_transaction);
+
+  [[deprecated]]
   static void ASurfaceTransaction_apply(
       ASurfaceTransaction* _Nonnull surface_transaction);
+
+  [[deprecated]]
   static void ASurfaceTransaction_setBuffer(
       ASurfaceTransaction* _Nonnull transaction,
       ASurfaceControl* _Nonnull surface_control,

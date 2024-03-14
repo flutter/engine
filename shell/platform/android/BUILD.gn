@@ -143,6 +143,7 @@ source_set("flutter_shell_native_src") {
     "//flutter/flow",
     "//flutter/fml",
     "//flutter/impeller",
+    "//flutter/impeller/toolkit/android",
     "//flutter/impeller/toolkit/egl",
     "//flutter/impeller/toolkit/gles",
     "//flutter/lib/ui",

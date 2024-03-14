@@ -27,6 +27,7 @@
 #include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
 #include "flutter/shell/platform/android/flutter_main.h"
 #include "impeller/base/validation.h"
+#include "impeller/toolkit/android/proc_table.h"
 #include "third_party/dart/runtime/include/dart_tools_api.h"
 #include "txt/platform.h"
 
@@ -85,7 +86,8 @@ void FlutterMain::Init(JNIEnv* env,
   // Turn systracing on if ATrace_isEnabled is true and the user did not already
   // request systracing
   if (!settings.trace_systrace) {
-    settings.trace_systrace = NDKHelpers::ATrace_isEnabled();
+    settings.trace_systrace =
+        impeller::android::GetProcTable().TraceIsEnabled();
     if (settings.trace_systrace) {
       __android_log_print(
           ANDROID_LOG_INFO, "Flutter",

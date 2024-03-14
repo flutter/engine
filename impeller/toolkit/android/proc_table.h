@@ -7,6 +7,7 @@
 
 #include <android/api-level.h>
 #include <android/hardware_buffer.h>
+#include <android/hardware_buffer_jni.h>
 #include <android/surface_control.h>
 #include <android/trace.h>
 
@@ -22,6 +23,7 @@ namespace impeller::android {
   INVOKE(AChoreographer_getInstance, 24)         \
   INVOKE(AChoreographer_postFrameCallback, 24)   \
   INVOKE(AChoreographer_postFrameCallback64, 29) \
+  INVOKE(AHardwareBuffer_fromHardwareBuffer, 26) \
   INVOKE(AHardwareBuffer_allocate, 26)           \
   INVOKE(AHardwareBuffer_acquire, 26)            \
   INVOKE(AHardwareBuffer_release, 26)            \
