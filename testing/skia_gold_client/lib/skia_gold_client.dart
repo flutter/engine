@@ -18,6 +18,13 @@ const String _kLuciEnvName = 'LUCI_CONTEXT';
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
 
+/// Whether the Skia Gold client is available and can be used in this
+/// environment.
+bool get isSkiaGoldClientAvailable => SkiaGoldClient.isAvailable();
+
+/// Returns true if the current environment is a LUCI builder.
+bool get isLuciEnv => io.Platform.environment.containsKey(_kLuciEnvName);
+
 /// A client for uploading image tests and making baseline requests to the
 /// Flutter Gold Dashboard.
 interface class SkiaGoldClient {
@@ -456,28 +463,32 @@ interface class SkiaGoldClient {
   Future<String?> getExpectationForTest(String testName) async {
     late String? expectation;
     final String traceID = getTraceID(testName);
-    final Uri requestForExpectations = Uri.parse(
-      '$_skiaGoldHost/json/v2/latestpositivedigest/$traceID'
-    );
-    late String rawResponse;
-    try {
-      final io.HttpClientRequest request = await httpClient.getUrl(requestForExpectations);
-      final io.HttpClientResponse response = await request.close();
-      rawResponse = await utf8.decodeStream(response);
-      final dynamic jsonResponse = json.decode(rawResponse);
-      if (jsonResponse is! Map<String, dynamic>) {
-        throw const FormatException('Skia gold expectations do not match expected format.');
-      }
-      expectation = jsonResponse['digest'] as String?;
-    } on FormatException catch (error) {
-      _stderr.writeln(
-        'Formatting error detected requesting expectations from Flutter Gold.\n'
-        'error: $error\n'
-        'url: $requestForExpectations\n'
-        'response: $rawResponse'
+    await io.HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
+      final Uri requestForExpectations = Uri.parse(
+        '$_skiaGoldHost/json/v2/latestpositivedigest/$traceID'
       );
-      rethrow;
-    }
+      late String rawResponse;
+      try {
+        final io.HttpClientRequest request = await httpClient.getUrl(requestForExpectations);
+        final io.HttpClientResponse response = await request.close();
+        rawResponse = await utf8.decodeStream(response);
+        final dynamic jsonResponse = json.decode(rawResponse);
+        if (jsonResponse is! Map<String, dynamic>) {
+          throw const FormatException('Skia gold expectations do not match expected format.');
+        }
+        expectation = jsonResponse['digest'] as String?;
+      } on FormatException catch (error) {
+        _stderr.writeln(
+          'Formatting error detected requesting expectations from Flutter Gold.\n'
+          'error: $error\n'
+          'url: $requestForExpectations\n'
+          'response: $rawResponse'
+        );
+        rethrow;
+      }
+    },
+      SkiaGoldHttpOverrides(),
+    );
     return expectation;
   }
 
@@ -550,3 +561,6 @@ interface class SkiaGoldClient {
     return md5Sum;
   }
 }
+
+/// Used to make HttpRequests during testing.
+class SkiaGoldHttpOverrides extends io.HttpOverrides { }

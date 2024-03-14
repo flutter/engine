@@ -194,7 +194,7 @@ Future<void> _run({
         if (verbose) {
           log('wrote ${goldenFile.absolute.path}');
         }
-        if (SkiaGoldClient.isAvailable()) {
+        if (isSkiaGoldClientAvailable) {
           final Future<void> comparison = skiaGoldClient!
               // Each color channel can be off by 2.
               .addImg(fileName, goldenFile, screenshotSize: screenshot.pixelCount, pixelColorDelta: 8)
@@ -311,7 +311,7 @@ Future<void> _run({
     });
 
     await step('Skia Gold auth...', () async {
-      if (SkiaGoldClient.isAvailable()) {
+      if (isSkiaGoldClientAvailable) {
         await skiaGoldClient!.auth();
         log('skia gold client is available');
       } else {
