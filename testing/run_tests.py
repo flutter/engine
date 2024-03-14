@@ -173,7 +173,15 @@ def find_executable_path(path):
 
 
 def vulkan_validation_env(build_dir):
-  extra_env = {}
+  extra_env = {
+      # pylint: disable=line-too-long
+      # Note: built from //third_party/swiftshader
+      'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+      # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
+      # and //third_party/vulkan_validation_layers.
+      'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
+      'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
+  }
   return extra_env
 
 
