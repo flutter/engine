@@ -820,6 +820,26 @@ Future<void> key_data_late_echo() async {
 }
 
 @pragma('vm:entry-point')
+void render_implicit_view() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final Size size = Size(800.0, 600.0);
+    final Color red = Color.fromARGB(127, 255, 0, 0);
+
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0, 0.0);
+
+    builder.addPicture(
+        Offset(0.0, 0.0), CreateColoredBox(red, size));
+
+    builder.pop();
+
+    PlatformDispatcher.instance.implicitView?.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final Size size = Size(800.0, 600.0);
@@ -1334,6 +1354,42 @@ void pointer_data_packet_view_id() {
     for (final PointerData pointerData in packet.data) {
       signalNativeMessage('ViewID: ${pointerData.viewId}');
     }
+  };
+
+  signalNativeTest();
+}
+
+Map<int, Size> _getAllViewSizes() {
+  final Map<int, Size> result = <int, Size>{};
+  for (final FlutterView view in PlatformDispatcher.instance.views) {
+    result[view.viewId] = view.physicalSize;
+  }
+  return result;
+}
+
+List<int> _findDifferences(Map<int, Size> a, Map<int, Size> b) {
+  final Set<int> result = <int>{};
+  a.forEach((int viewId, Size sizeA) {
+    if (!b.containsKey(viewId) || b[viewId] != sizeA) {
+      result.add(viewId);
+    }
+  });
+  b.forEach((int viewId, Size sizeB) {
+    if (!a.containsKey(viewId)) {
+      result.add(viewId);
+    }
+  });
+  return result.toList()..sort();
+}
+
+@pragma('vm:entry-point')
+void window_metrics_event_view_id() {
+  Map<int, Size> sizes = _getAllViewSizes();
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    final Map<int, Size> newSizes = _getAllViewSizes();
+    final List<int> differences = _findDifferences(sizes, newSizes);
+    sizes = newSizes;
+    signalNativeMessage('Changed: $differences');
   };
 
   signalNativeTest();
