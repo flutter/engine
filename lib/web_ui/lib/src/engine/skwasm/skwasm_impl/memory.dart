@@ -28,7 +28,7 @@ typedef DisposeFunction<T extends NativeType> = void Function(Pointer<T>);
 
 class SkwasmFinalizationRegistry<T extends NativeType> {
   SkwasmFinalizationRegistry(this.dispose)
-    : registry = createDomFinalizationRegistry(((JSNumber address) =>
+    : registry = DomFinalizationRegistry(((JSNumber address) =>
       dispose(Pointer<T>.fromAddress(address.toDartDouble.toInt()))
     ).toJS);
 
