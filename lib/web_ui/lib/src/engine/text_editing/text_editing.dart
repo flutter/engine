@@ -1279,8 +1279,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   DomHTMLFormElement? get focusedFormElement =>
       inputConfiguration.autofillGroup?.formElement;
 
-  FlutterViewManager get viewManager => EnginePlatformDispatcher.instance.viewManager;
-
   @override
   void initializeTextEditing(
     InputConfiguration inputConfig, {
@@ -1300,8 +1298,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      final DomElement textEditingHost = viewManager[inputConfig.viewId]!.dom.textEditingHost;
-      textEditingHost.append(activeDomElement);
+      _insertEditingElementInView(activeDomElement, inputConfig.viewId);
       _appendedToForm = false;
     }
 
@@ -1795,8 +1792,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      final DomElement textEditingHost = viewManager[inputConfig.viewId]!.dom.textEditingHost;
-      textEditingHost.append(activeDomElement);
+      _insertEditingElementInView(activeDomElement, inputConfig.viewId);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(
         activeDomElement);
