@@ -41,13 +41,13 @@ bool RasterCacheUtil::ComputeIntegralTransCTM(const SkM44& in, SkM44* out) {
     // Y multiplied by either X or Z
     return false;
   }
-  // We do not need to worry about the Z row unless the W row
-  // has perspective entries...
   if (in.rc(3, 0) != 0 || in.rc(3, 1) != 0 || in.rc(3, 2) != 0 ||
       in.rc(3, 3) != 1) {
     // W not identity row, therefore perspective is applied
     return false;
   }
+  // We do not need to worry about the Z row unless the W row
+  // has perspective entries, which we've just eliminated...
 
   SkScalar in_tx = in.rc(0, 3);
   SkScalar in_ty = in.rc(1, 3);
