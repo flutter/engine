@@ -5,6 +5,8 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_ANDROID_HARDWARE_BUFFER_H_
 #define FLUTTER_IMPELLER_TOOLKIT_ANDROID_HARDWARE_BUFFER_H_
 
+#include <optional>
+
 #include "flutter/fml/unique_object.h"
 #include "impeller/geometry/size.h"
 #include "impeller/toolkit/android/proc_table.h"
@@ -103,6 +105,15 @@ class HardwareBuffer {
 
   const AHardwareBuffer_Desc& GetAndroidDescriptor() const;
 
+  static std::optional<AHardwareBuffer_Desc> Describe(AHardwareBuffer* buffer);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Get the system wide unique ID of the hardware buffer if
+  ///             possible. This is only available on Android API 31 and above.
+  ///             Within the process, the handle are unique.
+  ///
+  /// @return     The system unique id if one can be obtained.
+  ///
   std::optional<uint64_t> GetSystemUniqueID() const;
 
  private:

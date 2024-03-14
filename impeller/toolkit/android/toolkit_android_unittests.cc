@@ -55,6 +55,18 @@ TEST_F(ToolkitAndroidTest, CanGetHardwareBufferIDs) {
   ASSERT_TRUE(buffer.GetSystemUniqueID().has_value());
 }
 
+TEST_F(ToolkitAndroidTest, CanDescribeHardwareBufferHandles) {
+  ASSERT_TRUE(HardwareBuffer::IsAvailableOnPlatform());
+  auto desc = HardwareBufferDescriptor::MakeForSwapchainImage({100, 100});
+  ASSERT_TRUE(desc.IsAllocatable());
+  HardwareBuffer buffer(desc);
+  ASSERT_TRUE(buffer.IsValid());
+  auto a_desc = HardwareBuffer::Describe(buffer.GetHandle());
+  ASSERT_TRUE(a_desc.has_value());
+  ASSERT_EQ(a_desc->width, 100u);
+  ASSERT_EQ(a_desc->height, 100u);
+}
+
 TEST_F(ToolkitAndroidTest, CanApplySurfaceTransaction) {
   ASSERT_TRUE(SurfaceTransaction::IsAvailableOnPlatform());
   SurfaceTransaction transaction;

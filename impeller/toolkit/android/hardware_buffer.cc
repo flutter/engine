@@ -113,4 +113,14 @@ std::optional<uint64_t> HardwareBuffer::GetSystemUniqueID() const {
   return out_id;
 }
 
+std::optional<AHardwareBuffer_Desc> HardwareBuffer::Describe(
+    AHardwareBuffer* buffer) {
+  if (!buffer || !GetProcTable().AHardwareBuffer_describe) {
+    return std::nullopt;
+  }
+  AHardwareBuffer_Desc desc = {};
+  GetProcTable().AHardwareBuffer_describe(buffer, &desc);
+  return desc;
+}
+
 }  // namespace impeller::android
