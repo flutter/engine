@@ -80,6 +80,23 @@ TEST(GPUSurfaceMetalImpeller, AcquireFrameFromCAMetalLayerNullChecksDrawable) {
   ASSERT_EQ(frame, nullptr);
 }
 
+TEST(GPUSurfaceMetalImpeller, AcquireFrameFromCAMetalLayerNullChecksWrappedSurface) {
+  auto delegate = std::make_shared<TestGPUSurfaceMetalDelegate>();
+  delegate->SetDevice();
+  std::unique_ptr<Surface> surface =
+      std::make_unique<GPUSurfaceMetalImpeller>(delegate.get(), CreateImpellerContext());
+
+  ASSERT_TRUE(surface->IsValid());
+
+  auto frame = surface->AcquireFrame(SkISize::Make(100, 100));
+  ASSERT_TRUE(frame);
+
+  // Simulate a rasterizer teardown, e.g. due to going to the background.
+  surface.reset();
+
+  ASSERT_TRUE(frame->Submit());
+}
+
 TEST(GPUSurfaceMetalImpeller, AcquireFrameFromCAMetalLayerDoesNotRetainThis) {
   auto delegate = std::make_shared<TestGPUSurfaceMetalDelegate>();
   delegate->SetDevice();

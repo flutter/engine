@@ -59,6 +59,7 @@ impeller_component("metal") {
   public_deps = [
     "../../:renderer",
     "//flutter/fml",
+    "//flutter/third_party/abseil-cpp/absl/base:nullability",
   ]
 
   frameworks = [ "Metal.framework" ]

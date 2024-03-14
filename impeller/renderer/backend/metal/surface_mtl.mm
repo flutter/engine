@@ -120,15 +120,15 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   return render_target_desc;
 }
 
-std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromMetalLayerDrawable(
-    const std::shared_ptr<Context>& context,
-    id<CAMetalDrawable> drawable,
-    std::optional<IRect> clip_rect) {
+absl::Nullable<std::unique_ptr<SurfaceMTL>>
+SurfaceMTL::MakeFromMetalLayerDrawable(const std::shared_ptr<Context>& context,
+                                       id<CAMetalDrawable> drawable,
+                                       std::optional<IRect> clip_rect) {
   return SurfaceMTL::MakeFromTexture(context, drawable.texture, clip_rect,
                                      drawable);
 }
 
-std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromTexture(
+absl::Nullable<std::unique_ptr<SurfaceMTL>> SurfaceMTL::MakeFromTexture(
     const std::shared_ptr<Context>& context,
     id<MTLTexture> texture,
     std::optional<IRect> clip_rect,

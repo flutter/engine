@@ -13,6 +13,8 @@
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/surface.h"
 
+#include "flutter/third_party/abseil-cpp/absl/base/nullability.h"
+
 namespace impeller {
 
 class SurfaceMTL final : public Surface {
@@ -39,12 +41,12 @@ class SurfaceMTL final : public Surface {
       const std::shared_ptr<Context>& context,
       CAMetalLayer* layer);
 
-  static std::unique_ptr<SurfaceMTL> MakeFromMetalLayerDrawable(
+  static absl::Nullable<std::unique_ptr<SurfaceMTL>> MakeFromMetalLayerDrawable(
       const std::shared_ptr<Context>& context,
       id<CAMetalDrawable> drawable,
       std::optional<IRect> clip_rect = std::nullopt);
 
-  static std::unique_ptr<SurfaceMTL> MakeFromTexture(
+  static absl::Nullable<std::unique_ptr<SurfaceMTL>> MakeFromTexture(
       const std::shared_ptr<Context>& context,
       id<MTLTexture> texture,
       std::optional<IRect> clip_rect,
