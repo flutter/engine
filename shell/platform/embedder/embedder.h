@@ -843,11 +843,10 @@ typedef struct {
   void* user_data;
 } FlutterRemoveViewResult;
 
-/// The callback invoked by the engine when the engine has
-/// attempted to remove a view.
+/// The callback invoked by the engine when the engine has attempted to remove
+/// a view.
 ///
-/// The |FlutterRemoveViewResult| will be deallocated
-/// once the callback returns.
+/// The |FlutterRemoveViewResult| will be deallocated once the callback returns.
 typedef void (*FlutterRemoveViewCallback)(
     const FlutterRemoveViewResult* /* result */);
 
@@ -862,23 +861,20 @@ typedef struct {
   FlutterViewId view_id;
 
   /// A baton that is not interpreted by the engine in any way.
-  /// It will be given back to the embedder in
-  /// |remove_view_callback|. Embedder resources may be associated
-  /// with this baton.
+  /// It will be given back to the embedder in |remove_view_callback|.
+  /// Embedder resources may be associated with this baton.
   void* user_data;
 
   /// Called once the engine has attempted to remove the view.
   /// This callback is required.
   ///
-  /// The embedder must not destroy the underlying surface
-  /// until the callback is invoked with a `removed` value of
-  /// `true`.
+  /// The embedder must not destroy the underlying surface until the callback is
+  /// invoked with a `removed` value of `true`.
   ///
-  /// This callback is invoked on an internal engine managed
-  /// thread. Embedders must re-thread if necessary.
+  /// This callback is invoked on an internal engine managed thread.
+  /// Embedders must re-thread if necessary.
   ///
-  /// The |result| argument will be deallocated when the
-  /// callback returns.
+  /// The |result| argument will be deallocated when the callback returns.
   FlutterRemoveViewCallback remove_view_callback;
 } FlutterRemoveViewInfo;
 
