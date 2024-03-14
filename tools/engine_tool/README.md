@@ -1,6 +1,6 @@
 # The Engine Tool
 
-[![GitHub Issues or Pull Requests by label](https://img.shields.io/github/issues/flutter/flutter/e%3A%20engine-tool)](https://github.com/flutter/flutter/issues?q=is%3Aopen+is%3Aissue+label%3A%22e%3A+engine-tool%22)
+[![Open `e: engine-tool` issues](https://img.shields.io/github/issues/flutter/flutter/e%3A%20engine-tool)](https://github.com/flutter/flutter/issues?q=is%3Aopen+is%3Aissue+label%3A%22e%3A+engine-tool%22)
 
 This is a command line Dart program that automates workflows in the
 `flutter/engine` repository.
