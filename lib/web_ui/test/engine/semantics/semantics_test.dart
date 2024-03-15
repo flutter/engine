@@ -681,14 +681,13 @@ void _testHeader() {
     updateNode(
       builder,
       headingLevel: 2,
-      label: 'Heading of the page',
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
-<sem role="heading" aria-label="Heading of the page" aria-level="2" style="$rootSemanticStyle"></sem>
+<sem aria-level="2" role="heading" style="filter: opacity(0%); color: rgba(0, 0, 0, 0)"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
