@@ -398,11 +398,7 @@ deps = {
    Var('dart_git') + '/dart_style.git@a6ad7693555a9add6f98ad6fd94de80d35c89415',
 
   'src/third_party/dart/third_party/pkg/dartdoc':
-<<<<<<< HEAD
-   Var('dart_git') + '/dartdoc.git@0de8aff3d2feb6fb9fb5ecf5e4f699b3a0ef2c63',
-=======
    Var('dart_git') + '/dartdoc.git@89a3b4ae0b89c4e540fb00f27a61f0652ada6314',
->>>>>>> upstream/main
 
   'src/third_party/dart/third_party/pkg/file':
    Var('dart_git') + '/external/github.com/google/file.dart@3aa06490bf34bddf04c7ea964a50c177a4ca0de7',
