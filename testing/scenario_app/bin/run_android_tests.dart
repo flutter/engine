@@ -197,9 +197,9 @@ Future<void> _run({
         if (SkiaGoldClient.isAvailable()) {
           final Future<void> comparison = skiaGoldClient!
               .addImg(
-                fileName, 
-                goldenFile, 
-                screenshotSize: screenshot.pixelCount, 
+                fileName,
+                goldenFile,
+                screenshotSize: screenshot.pixelCount,
                 // Each color channel can be off by 2.
                 pixelColorDelta: 8,
               )
