@@ -428,11 +428,6 @@ interface class SkiaGoldClient {
           ..writeln('NOTE: Untriaged image detected in tryjob.')
           ..writeln('Triage should be required by the "Flutter Gold" check')
           ..writeln('stdout:\n$resultStdout');
-      } else if (isNegative) {
-        _stderr
-          ..writeln('NOTE: Negative image detected in tryjob.')
-          ..writeln('Triage should be required by the "Flutter Gold" check')
-          ..writeln('stdout:\n$resultStdout');
       }
     }
   }
