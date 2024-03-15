@@ -557,8 +557,8 @@ TEST_F(FlutterEngineTest, CompositorIgnoresUnknownView) {
   EXPECT_TRUE([engine runWithEntrypoint:@"empty"]);
 
   FlutterBackingStoreConfig config = {
-    .struct_size = sizeof(FlutterBackingStoreConfig),
-    .size = FlutterSize{10, 10},
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = FlutterSize{10, 10},
   };
   FlutterBackingStore backing_store = {};
   EXPECT_NE(compositor.create_backing_store_callback, nullptr);
