@@ -423,6 +423,7 @@ interface class SkiaGoldClient {
       }
       // ... but we want to know about them anyway.
       // See https://github.com/flutter/flutter/issues/145219.
+      // TODO(matanlurey): Update the documentation to reflect the new behavior.
       if (isUntriaged) {
         _stderr
           ..writeln('NOTE: Untriaged image detected in tryjob.')
