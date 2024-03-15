@@ -55,6 +55,10 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
 bool FlutterCompositor::Present(FlutterViewId view_id,
                                 const FlutterLayer** layers,
                                 size_t layers_count) {
+  // TODO(dkwignsmt): https://github.com/flutter/flutter/issues/144810
+  // There is only one mutator_views_, which can't be shared between views.
+  FML_DCHECK(view_id == kFlutterImplicitViewId)
+      << "macOS FlutterCompositor doesn't support non-implicit views yet.";
   FlutterView* view = [view_provider_ viewForId:view_id];
   if (!view) {
     return false;
