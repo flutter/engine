@@ -63,8 +63,8 @@ TEST_F(ToolkitAndroidTest, CanDescribeHardwareBufferHandles) {
   ASSERT_TRUE(buffer.IsValid());
   auto a_desc = HardwareBuffer::Describe(buffer.GetHandle());
   ASSERT_TRUE(a_desc.has_value());
-  ASSERT_EQ(a_desc->width, 100u);
-  ASSERT_EQ(a_desc->height, 100u);
+  ASSERT_EQ(a_desc->width, 100u);   // NOLINT
+  ASSERT_EQ(a_desc->height, 100u);  // NOLINT
 }
 
 TEST_F(ToolkitAndroidTest, CanApplySurfaceTransaction) {
