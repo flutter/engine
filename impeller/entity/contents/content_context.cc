@@ -24,6 +24,11 @@
 
 namespace impeller {
 
+bool IsAlphaClampedToOne(PixelFormat pixel_format) {
+  return !(pixel_format == PixelFormat::kR32G32B32A32Float ||
+           pixel_format == PixelFormat::kR16G16B16A16Float);
+}
+
 void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
@@ -124,7 +129,10 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
     case BlendMode::kPlus:
-      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_alpha_blend_factor =
+          IsAlphaClampedToOne(color_attachment_pixel_format)
+              ? BlendFactor::kOne
+              : BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
