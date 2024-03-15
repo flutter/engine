@@ -1101,6 +1101,27 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// Bug: https://github.com/flutter/flutter/issues/142549
+TEST_P(AiksTest, BlendModePlusAlpha) {
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({.color = Color(0.9, 1.0, 0.9, 1.0)});
+  canvas.SaveLayer({});
+  Paint paint;
+  paint.blend_mode = BlendMode::kPlus;
+  paint.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 400, 400), paint);
+  paint.color = Color::White();
+  canvas.DrawImageRect(
+      std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
+      Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
