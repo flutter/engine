@@ -62,6 +62,8 @@ std::string PlaygroundTest::GetWindowTitle() const {
   stream << "Impeller Playground for '"
          << flutter::testing::GetCurrentTestName() << "' ";
   switch (GetBackend()) {
+    case PlaygroundBackend::kMetalWideGamut:
+      [[fallthrough]];
     case PlaygroundBackend::kMetal:
       break;
     case PlaygroundBackend::kOpenGLES:

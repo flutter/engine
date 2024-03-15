@@ -50,6 +50,9 @@ std::unique_ptr<PlaygroundImpl> PlaygroundImpl::Create(
     PlaygroundSwitches switches) {
   switch (backend) {
 #if IMPELLER_ENABLE_METAL
+    case PlaygroundBackend::kMetalWideGamut:
+      switches.enable_wide_gamut = true;
+      return std::make_unique<PlaygroundImplMTL>(switches);
     case PlaygroundBackend::kMetal:
       return std::make_unique<PlaygroundImplMTL>(switches);
 #endif  // IMPELLER_ENABLE_METAL

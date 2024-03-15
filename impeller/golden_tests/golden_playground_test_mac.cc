@@ -146,8 +146,13 @@ void GoldenPlaygroundTest::SetUp() {
 
   bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
   switch (GetParam()) {
+    case PlaygroundBackend::kMetalWideGamut:
+      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>(
+          /*enable_wide_gamut=*/true);
+      break;
     case PlaygroundBackend::kMetal:
-      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>(
+          /*enable_wide_gamut=*/false);
       break;
     case PlaygroundBackend::kVulkan: {
       const std::unique_ptr<PlaygroundImpl>& playground =
@@ -166,14 +171,6 @@ void GoldenPlaygroundTest::SetUp() {
           pimpl_->test_opengl_playground);
       break;
     }
-  }
-  if (GetParam() == PlaygroundBackend::kMetal) {
-    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
-  } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    const std::unique_ptr<PlaygroundImpl>& playground =
-        GetSharedVulkanPlayground(enable_vulkan_validations);
-    pimpl_->screenshotter =
-        std::make_unique<testing::VulkanScreenshotter>(playground);
   }
 
   std::string test_name = GetTestName();
