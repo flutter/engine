@@ -479,16 +479,25 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
   }
 
   {
+    auto presentation_time_optional = frame->submit_info().presentation_time;
+    uint64_t presentation_time =
+        presentation_time_optional.has_value()
+            ? presentation_time_optional->ToEpochDelta().ToNanoseconds()
+            : 0;
+
     // Submit the scribbled layer to the embedder for presentation.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    EmbedderLayers presented_layers(pending_frame_size_,
-                                    pending_device_pixel_ratio_,
-                                    pending_surface_transformation_);
+    EmbedderLayers presented_layers(
+        pending_frame_size_, pending_device_pixel_ratio_,
+        pending_surface_transformation_, presentation_time);
 
     builder.PushLayers(presented_layers);
 
-    presented_layers.InvokePresentCallback(present_callback_);
+    // TODO(loic-sharma): Currently only supports a single view.
+    // See https://github.com/flutter/flutter/issues/135530.
+    presented_layers.InvokePresentCallback(kFlutterImplicitViewId,
+                                           present_callback_);
   }
 
   // See why this is necessary in the comment where this collection in

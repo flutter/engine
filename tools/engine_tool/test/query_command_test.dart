@@ -58,7 +58,9 @@ void main() {
     return Environment(
       abi: ffi.Abi.linuxX64,
       engine: engine,
-      platform: FakePlatform(operatingSystem: Platform.linux),
+      platform: FakePlatform(
+          operatingSystem: Platform.linux,
+          resolvedExecutable: io.Platform.resolvedExecutable),
       processRunner: ProcessRunner(
         processManager: FakeProcessManager(),
       ),
@@ -91,10 +93,12 @@ void main() {
         '   "build_name" config\n',
         '   "host_debug" config\n',
         '   "android_debug_arm64" config\n',
+        '   "android_debug_rbe_arm64" config\n',
         '"linux_test_config2" builder:\n',
         '   "build_name" config\n',
         '   "host_debug" config\n',
         '   "android_debug_arm64" config\n',
+        '   "android_debug_rbe_arm64" config\n',
       ]),
     );
   });
@@ -123,6 +127,7 @@ void main() {
           '   "build_name" config\n',
           '   "host_debug" config\n',
           '   "android_debug_arm64" config\n',
+          '   "android_debug_rbe_arm64" config\n',
         ]));
   });
 
@@ -141,7 +146,7 @@ void main() {
     expect(result, equals(0));
     expect(
       logger.testLogs.length,
-      equals(26),
+      equals(30),
     );
   });
 }

@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '32f1cb50734a4a5dad0c54b4a06ad8bdce2e7be5',
+  'skia_revision': '52bb1539c5cf8cf84d73bbf109b6a50879f9f718',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -289,7 +289,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'e9df434539745202fa5f9b729fe5f82e5de3f025',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'a22a4ea15e0b9cbba9200014f90fcea16ecb896a',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -339,7 +339,7 @@ deps = {
   'src/flutter/third_party/boringssl/src':
    'https://boringssl.googlesource.com/boringssl.git' + '@' + Var('dart_boringssl_rev'),
 
-  'src/third_party/perfetto':
+  'src/flutter/third_party/perfetto':
    Var('flutter_git') + "/third_party/perfetto" + '@' + Var('dart_perfetto_rev'),
 
   'src/flutter/third_party/protobuf':
@@ -398,7 +398,11 @@ deps = {
    Var('dart_git') + '/dart_style.git@a6ad7693555a9add6f98ad6fd94de80d35c89415',
 
   'src/third_party/dart/third_party/pkg/dartdoc':
+<<<<<<< HEAD
    Var('dart_git') + '/dartdoc.git@0de8aff3d2feb6fb9fb5ecf5e4f699b3a0ef2c63',
+=======
+   Var('dart_git') + '/dartdoc.git@89a3b4ae0b89c4e540fb00f27a61f0652ada6314',
+>>>>>>> upstream/main
 
   'src/third_party/dart/third_party/pkg/file':
    Var('dart_git') + '/external/github.com/google/file.dart@3aa06490bf34bddf04c7ea964a50c177a4ca0de7',
@@ -835,7 +839,7 @@ deps = {
     'dep_type': 'cipd',
   },
 
-  'src/buildtools/emsdk': {
+  'src/flutter/prebuilts/emsdk': {
    'url': Var('skia_git') + '/external/github.com/emscripten-core/emsdk.git' + '@' + 'a896e3d066448b3530dbcaa48869fafefd738f57',
    'condition': 'download_emsdk',
   },
@@ -1016,7 +1020,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'L6_XzizcJqjneCvGA941vq-Dpu0FPwhdyfqJ0qXDUG0C'
+        'version': 'da-siZ7wPDA0Z0wXJOEBxKat7HqQz9B3rXqV8wblgz8C'
        }
      ],
      'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',
@@ -1062,7 +1066,7 @@ deps = {
     'dep_type': 'cipd',
   },
 
-  'src/third_party/google_fonts_for_unit_tests': {
+  'src/flutter/third_party/google_fonts_for_unit_tests': {
       'packages': [
         {
           'package': 'flutter/flutter_font_fallbacks',

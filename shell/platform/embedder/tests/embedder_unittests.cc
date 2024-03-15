@@ -10,6 +10,7 @@
 
 #include "embedder.h"
 #include "embedder_engine.h"
+#include "flutter/common/constants.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -640,6 +641,71 @@ TEST_F(EmbedderTest, VMAndIsolateSnapshotSizesAreRedundantInAOTMode) {
   ASSERT_TRUE(engine.is_valid());
 }
 
+TEST_F(EmbedderTest, CanRenderImplicitView) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+  builder.SetDartEntrypoint("render_implicit_view");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
+
+  fml::AutoResetWaitableEvent latch;
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
+        ASSERT_EQ(view_id, kFlutterImplicitViewId);
+        latch.Signal();
+      });
+
+  auto engine = builder.LaunchEngine();
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 300;
+  event.height = 200;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+  latch.Wait();
+}
+
+TEST_F(EmbedderTest, CanRenderImplicitViewUsingPresentLayersCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor(/* avoid_backing_store_cache = */ false,
+                        /* use_present_layers_callback = */ true);
+  builder.SetDartEntrypoint("render_implicit_view");
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
+
+  fml::AutoResetWaitableEvent latch;
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
+        ASSERT_EQ(view_id, kFlutterImplicitViewId);
+        latch.Signal();
+      });
+
+  auto engine = builder.LaunchEngine();
+
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 300;
+  event.height = 200;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+  ASSERT_TRUE(engine.is_valid());
+  latch.Wait();
+}
+
 //------------------------------------------------------------------------------
 /// Test the layer structure and pixels rendered when using a custom software
 /// compositor.
@@ -668,7 +734,8 @@ TEST_F(EmbedderTest,
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 5u);
 
         // Layer Root
@@ -886,7 +953,8 @@ TEST_F(EmbedderTest, NoLayerCreatedForTransparentOverlayOnTopOfPlatformLayer) {
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer Root
@@ -1022,7 +1090,8 @@ TEST_F(EmbedderTest, NoLayerCreatedForNoOverlayOnTopOfPlatformLayer) {
   auto scene_image = context.GetNextSceneImage();
 
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer Root
@@ -1303,7 +1372,8 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
 
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
-      [&](const FlutterLayer** layers, size_t layers_count) {
+      [&](FlutterViewId view_id, const FlutterLayer** layers,
+          size_t layers_count) {
         ASSERT_EQ(layers_count, 2u);
 
         // Layer 0 (Root)
@@ -1935,7 +2005,8 @@ static void expectSoftwareRenderingOutputMatches(
   ASSERT_TRUE(engine.is_valid());
 
   context.GetCompositor().SetNextPresentCallback(
-      [&matches, &bytes, &latch](const FlutterLayer** layers,
+      [&matches, &bytes, &latch](FlutterViewId view_id,
+                                 const FlutterLayer** layers,
                                  size_t layers_count) {
         ASSERT_EQ(layers[0]->type, kFlutterLayerContentTypeBackingStore);
         ASSERT_EQ(layers[0]->backing_store->type,
@@ -2700,7 +2771,7 @@ TEST_F(EmbedderTest, CanSendPointer) {
       CREATE_NATIVE_ENTRY([&message_latch](Dart_NativeArguments args) {
         auto message = tonic::DartConverter<std::string>::FromDart(
             Dart_GetNativeArgument(args, 0));
-        ASSERT_EQ("PointerData(x: 123.0, y: 456.0)", message);
+        ASSERT_EQ("PointerData(viewId: 0, x: 123.0, y: 456.0)", message);
         message_latch.Signal();
       }));
 
@@ -2715,6 +2786,7 @@ TEST_F(EmbedderTest, CanSendPointer) {
   pointer_event.x = 123;
   pointer_event.y = 456;
   pointer_event.timestamp = static_cast<size_t>(1234567890);
+  pointer_event.view_id = 0;
 
   FlutterEngineResult result =
       FlutterEngineSendPointerEvent(engine.get(), &pointer_event, 1);
@@ -2726,7 +2798,7 @@ TEST_F(EmbedderTest, CanSendPointer) {
 
 /// Send a pointer event to Dart and wait until the Dart code echos with the
 /// view ID.
-TEST_F(EmbedderTest, CanSendPointerWithViewId) {
+TEST_F(EmbedderTest, CanSendPointerEventWithViewId) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
   builder.SetSoftwareRendererConfig();
@@ -2761,6 +2833,103 @@ TEST_F(EmbedderTest, CanSendPointerWithViewId) {
 
   FlutterEngineResult result =
       FlutterEngineSendPointerEvent(engine.get(), &pointer_event, 1);
+  ASSERT_EQ(result, kSuccess);
+
+  message_latch.Wait();
+}
+
+TEST_F(EmbedderTest, WindowMetricsEventDefaultsToImplicitView) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("window_metrics_event_view_id");
+
+  fml::AutoResetWaitableEvent ready_latch, message_latch;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready_latch](Dart_NativeArguments args) { ready_latch.Signal(); }));
+  context.AddNativeCallback(
+      "SignalNativeMessage",
+      CREATE_NATIVE_ENTRY([&message_latch](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        ASSERT_EQ("Changed: [0]", message);
+        message_latch.Signal();
+      }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  ready_latch.Wait();
+
+  FlutterWindowMetricsEvent event = {};
+  // Simulate an event that comes from an old version of embedder.h that doesn't
+  // have the view_id field.
+  event.struct_size = offsetof(FlutterWindowMetricsEvent, view_id);
+  event.width = 200;
+  event.height = 300;
+  event.pixel_ratio = 1.5;
+  // Skip assigning event.view_id here to test the default behavior.
+
+  FlutterEngineResult result =
+      FlutterEngineSendWindowMetricsEvent(engine.get(), &event);
+  ASSERT_EQ(result, kSuccess);
+
+  message_latch.Wait();
+}
+
+TEST_F(EmbedderTest, IgnoresWindowMetricsEventForUnknownView) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("window_metrics_event_view_id");
+
+  fml::AutoResetWaitableEvent ready_latch, message_latch;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&ready_latch](Dart_NativeArguments args) { ready_latch.Signal(); }));
+
+  context.AddNativeCallback(
+      "SignalNativeMessage",
+      CREATE_NATIVE_ENTRY([&message_latch](Dart_NativeArguments args) {
+        auto message = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        // Message latch should only be signaled once as the bad
+        // view metric should be dropped by the engine.
+        ASSERT_FALSE(message_latch.IsSignaledForTest());
+        ASSERT_EQ("Changed: [0]", message);
+        message_latch.Signal();
+      }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  ready_latch.Wait();
+
+  // Send a window metric for a nonexistent view, which should be dropped by the
+  // engine.
+  FlutterWindowMetricsEvent bad_event = {};
+  bad_event.struct_size = sizeof(FlutterWindowMetricsEvent);
+  bad_event.width = 200;
+  bad_event.height = 300;
+  bad_event.pixel_ratio = 1.5;
+  bad_event.view_id = 100;
+
+  FlutterEngineResult result =
+      FlutterEngineSendWindowMetricsEvent(engine.get(), &bad_event);
+  ASSERT_EQ(result, kSuccess);
+
+  // Send a window metric for a valid view. The engine notifies the Dart app.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(FlutterWindowMetricsEvent);
+  event.width = 200;
+  event.height = 300;
+  event.pixel_ratio = 1.5;
+  event.view_id = 0;
+
+  result = FlutterEngineSendWindowMetricsEvent(engine.get(), &event);
   ASSERT_EQ(result, kSuccess);
 
   message_latch.Wait();
