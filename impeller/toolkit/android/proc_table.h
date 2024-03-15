@@ -21,6 +21,19 @@
 
 namespace impeller::android {
 
+//------------------------------------------------------------------------------
+/// @brief      The Android procs along with the device API level on which these
+///             will be available. There is no checking of the actual API level
+///             however (because getting the API level is itself only possible
+///             on API levels 29 and above).
+///
+///             Take care to explicitly check for the availability of these APIs
+///             at runtime before invoking them.
+///
+///             Typically, you'll never have to deal with the proc. table
+///             directly. Instead, rely on the handle wrappers (`Choreographer`,
+///             `HardwareBuffer`, etc..).
+///
 #define FOR_EACH_ANDROID_PROC(INVOKE)            \
   INVOKE(AChoreographer_getInstance, 24)         \
   INVOKE(AChoreographer_postFrameCallback, 24)   \
@@ -54,8 +67,6 @@ struct AndroidProc {
 
   const char* proc_name = nullptr;
 
-  size_t api_availability = 0;
-
   AndroidProcType* proc = nullptr;
 
   constexpr bool IsAvailable() const { return proc != nullptr; }
@@ -69,6 +80,8 @@ struct AndroidProc {
         << " is not available on this device. Missing check.";
     return proc(std::forward<Args>(args)...);
   }
+
+  void Reset() { proc = nullptr; }
 };
 
 //------------------------------------------------------------------------------
@@ -92,33 +105,20 @@ struct ProcTable {
   bool IsValid() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Get the Android device API level. Due to the overall
-  ///             availability restrictions of this class, this may only be at
-  ///             or above 29 on a valid proc table.
-  ///
-  /// @return     The Android device api level.
-  ///
-  uint32_t GetAndroidDeviceAPILevel() const;
-
-  //----------------------------------------------------------------------------
   /// @brief      Check if tracing in enabled in the process. This call can be
   ///             made at any API level.
   ///
   /// @return     If tracing is enabled.
   ///
-  bool TraceIsEnabled() const {
-    return this->ATrace_isEnabled ? this->ATrace_isEnabled() : false;
-  }
+  bool TraceIsEnabled() const;
 
-#define DEFINE_PROC(name, api)                            \
-  AndroidProc<decltype(name)> name = {.proc_name = #name, \
-                                      .api_availability = api};
+#define DEFINE_PROC(name, api) \
+  AndroidProc<decltype(name)> name = {.proc_name = #name};
   FOR_EACH_ANDROID_PROC(DEFINE_PROC);
 #undef DEFINE_PROC
 
  private:
   std::vector<fml::RefPtr<fml::NativeLibrary>> libraries_;
-  uint32_t device_api_level_ = 0u;
   bool is_valid_ = false;
 };
 

@@ -80,11 +80,6 @@ TEST_F(ToolkitAndroidTest, SurfacControlsAreAvailable) {
   ASSERT_TRUE(SurfaceControl::IsAvailableOnPlatform());
 }
 
-TEST_F(ToolkitAndroidTest, CanAccessDeviceAPILevel) {
-  // This test will be skipped otherwise.
-  ASSERT_GE(GetProcTable().GetAndroidDeviceAPILevel(), 29u);
-}
-
 TEST_F(ToolkitAndroidTest, ChoreographerIsAvailable) {
   ASSERT_TRUE(Choreographer::IsAvailableOnPlatform());
 }

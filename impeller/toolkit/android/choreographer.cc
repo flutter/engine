@@ -14,16 +14,7 @@ Choreographer& Choreographer::GetInstance() {
 }
 
 Choreographer::Choreographer() {
-  if (!GetProcTable().AChoreographer_getInstance) {
-    return;
-  }
-
-  const auto api_level = GetProcTable().GetAndroidDeviceAPILevel();
-  if (api_level >= 29 && !GetProcTable().AChoreographer_postFrameCallback64) {
-    return;
-  }
-
-  if (api_level >= 24 && !GetProcTable().AChoreographer_postFrameCallback) {
+  if (!IsAvailableOnPlatform()) {
     return;
   }
 
@@ -57,8 +48,7 @@ bool Choreographer::PostFrameCallback(FrameCallback callback) const {
   data->callback = std::move(callback);
 
   const auto& table = GetProcTable();
-  const auto api_level = table.GetAndroidDeviceAPILevel();
-  if (api_level >= 29) {
+  if (table.AChoreographer_postFrameCallback64) {
     table.AChoreographer_postFrameCallback64(
         const_cast<AChoreographer*>(instance_),
         [](int64_t nanos, void* p_data) {
@@ -68,7 +58,7 @@ bool Choreographer::PostFrameCallback(FrameCallback callback) const {
         },
         data.release());
     return true;
-  } else if (api_level >= 24) {
+  } else if (table.AChoreographer_postFrameCallback) {
     table.AChoreographer_postFrameCallback(
         const_cast<AChoreographer*>(instance_),
         [](long /*NOLINT*/ nanos, void* p_data) {
@@ -86,7 +76,8 @@ bool Choreographer::PostFrameCallback(FrameCallback callback) const {
 }
 
 bool Choreographer::IsAvailableOnPlatform() {
-  return GetProcTable().AChoreographer_postFrameCallback64 ||
+  return GetProcTable().AChoreographer_getInstance ||
+         GetProcTable().AChoreographer_postFrameCallback64 ||
          GetProcTable().AChoreographer_postFrameCallback;
 }
 

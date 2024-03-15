@@ -4,6 +4,7 @@
 
 #include "flutter/impeller/toolkit/android/proc_table.h"
 
+#include "flutter/fml/build_config.h"
 #include "impeller/base/validation.h"
 
 namespace impeller::android {
@@ -14,28 +15,15 @@ const ProcTable& GetProcTable() {
 }
 
 template <class T>
-bool ResolveAndroidProc(
+void ResolveAndroidProc(
     AndroidProc<T>& proc,
-    uint32_t device_api_level,
     const std::vector<fml::RefPtr<fml::NativeLibrary>>& libs) {
-  if (device_api_level < proc.api_availability) {
-    // Nothing to do. We don't expect this proc. to be available on this device.
-    return true;
-  }
-  std::optional<T*> proc_value;
   for (const auto& lib : libs) {
-    proc_value = lib->ResolveFunction<T*>(proc.proc_name);
-    if (proc_value) {
+    proc.proc = lib->ResolveFunction<T*>(proc.proc_name).value_or(nullptr);
+    if (proc.proc) {
       break;
     }
   }
-  if (!proc_value.has_value()) {
-    VALIDATION_LOG << "Could not find proc in any of the Android libraries: "
-                   << proc.proc_name;
-    return false;
-  }
-  proc.proc = proc_value.value();
-  return true;
 }
 
 ProcTable::ProcTable() {
@@ -47,32 +35,22 @@ ProcTable::ProcTable() {
     return;
   }
 
-  libraries_.push_back(lib_android);
-  libraries_.push_back(lib_egl);
+  libraries_.push_back(std::move(lib_android));
+  libraries_.push_back(std::move(lib_egl));
 
-  auto proc =
-      lib_android->ResolveFunction<decltype(&::android_get_device_api_level)>(
-          "android_get_device_api_level");
-  if (!proc.has_value()) {
-    return;
-  }
-
-  int api = proc.value()();
-  if (api < 0) {
-    VALIDATION_LOG << "Could not get Android API level.";
-    return;
-  }
-
-  device_api_level_ = api;
-
-#define RESOLVE_PROC(table_member, api)                                     \
-  {                                                                         \
-    if (!ResolveAndroidProc(table_member, device_api_level_, libraries_)) { \
-      return;                                                               \
-    }                                                                       \
-  }
+#define RESOLVE_PROC(proc, api) ResolveAndroidProc(proc, libraries_);
   FOR_EACH_ANDROID_PROC(RESOLVE_PROC);
 #undef RESOLVE_PROC
+
+  if (AChoreographer_postFrameCallback64) {
+    AChoreographer_postFrameCallback.Reset();
+  }
+
+#if FML_ARCH_CPU_32_BITS
+  // On 32-bit platforms, the nanosecond resolution timestamp causes overflow on
+  // the argument in the callback. Don't use it on those platforms.
+  AChoreographer_postFrameCallback.Reset();
+#endif  // FML_ARCH_CPU_32_BITS
 
   is_valid_ = true;
 }
@@ -83,8 +61,8 @@ bool ProcTable::IsValid() const {
   return is_valid_;
 }
 
-uint32_t ProcTable::GetAndroidDeviceAPILevel() const {
-  return device_api_level_;
+bool ProcTable::TraceIsEnabled() const {
+  return this->ATrace_isEnabled ? this->ATrace_isEnabled() : false;
 }
 
 }  // namespace impeller::android
