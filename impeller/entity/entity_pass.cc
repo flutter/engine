@@ -418,7 +418,12 @@ bool EntityPass::Render(ContentContext& renderer,
         VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
-      renderer.RecordCommandBuffer(std::move(command_buffer));
+      if (!renderer.GetContext()
+               ->GetCommandQueue()
+               ->Submit({command_buffer})
+               .ok()) {
+        return false;
+      }
     } else {
       auto render_pass = command_buffer->CreateRenderPass(root_render_target);
       render_pass->SetLabel("EntityPass Root Render Pass");
@@ -446,7 +451,12 @@ bool EntityPass::Render(ContentContext& renderer,
         VALIDATION_LOG << "Failed to encode root pass command buffer.";
         return false;
       }
-      renderer.RecordCommandBuffer(std::move(command_buffer));
+      if (!renderer.GetContext()
+               ->GetCommandQueue()
+               ->Submit({command_buffer})
+               .ok()) {
+        return false;
+      }
     }
 
     return true;
