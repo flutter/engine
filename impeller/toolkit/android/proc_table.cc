@@ -13,15 +13,45 @@ const ProcTable& GetProcTable() {
   return gProcTable;
 }
 
-ProcTable::ProcTable()
-    : lib_android_(fml::NativeLibrary::Create("libandroid.so")) {
-  if (!lib_android_) {
-    VALIDATION_LOG << "Could not open libandroid.so";
+template <class T>
+bool ResolveAndroidProc(
+    AndroidProc<T>& proc,
+    uint32_t device_api_level,
+    const std::vector<fml::RefPtr<fml::NativeLibrary>>& libs) {
+  if (device_api_level < proc.api_availability) {
+    // Nothing to do. We don't expect this proc. to be available on this device.
+    return true;
+  }
+  std::optional<T*> proc_value;
+  for (const auto& lib : libs) {
+    proc_value = lib->ResolveFunction<T*>(proc.proc_name);
+    if (proc_value) {
+      break;
+    }
+  }
+  if (!proc_value.has_value()) {
+    VALIDATION_LOG << "Could not find proc in any of the Android libraries: "
+                   << proc.proc_name;
+    return false;
+  }
+  proc.proc = proc_value.value();
+  return true;
+}
+
+ProcTable::ProcTable() {
+  auto lib_android = fml::NativeLibrary::Create("libandroid.so");
+  auto lib_egl = fml::NativeLibrary::Create("libEGL.so");
+
+  if (!lib_android || !lib_egl) {
+    VALIDATION_LOG << "Could not open Android libraries.";
     return;
   }
 
+  libraries_.push_back(lib_android);
+  libraries_.push_back(lib_egl);
+
   auto proc =
-      lib_android_->ResolveFunction<decltype(&::android_get_device_api_level)>(
+      lib_android->ResolveFunction<decltype(&::android_get_device_api_level)>(
           "android_get_device_api_level");
   if (!proc.has_value()) {
     return;
@@ -35,20 +65,11 @@ ProcTable::ProcTable()
 
   device_api_level_ = api;
 
-#define RESOLVE_PROC(table_member, api)                                   \
-  {                                                                       \
-    if (device_api_level_ >= table_member.api_availability) {             \
-      if (auto resolved =                                                 \
-              lib_android_->ResolveFunction<decltype(table_member.proc)>( \
-                  table_member.proc_name);                                \
-          resolved.has_value()) {                                         \
-        table_member.proc = resolved.value();                             \
-      } else {                                                            \
-        VALIDATION_LOG << "Could not resolve function: "                  \
-                       << table_member.proc_name;                         \
-        return;                                                           \
-      }                                                                   \
-    }                                                                     \
+#define RESOLVE_PROC(table_member, api)                                     \
+  {                                                                         \
+    if (!ResolveAndroidProc(table_member, device_api_level_, libraries_)) { \
+      return;                                                               \
+    }                                                                       \
   }
   FOR_EACH_ANDROID_PROC(RESOLVE_PROC);
 #undef RESOLVE_PROC

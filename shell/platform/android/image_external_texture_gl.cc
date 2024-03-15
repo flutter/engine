@@ -90,7 +90,8 @@ impeller::UniqueEGLImageKHR ImageExternalTextureGL::CreateEGLImage(
   FML_CHECK(display != EGL_NO_DISPLAY);
 
   EGLClientBuffer client_buffer =
-      NDKHelpers::eglGetNativeClientBufferANDROID(hardware_buffer);
+      impeller::android::GetProcTable().eglGetNativeClientBufferANDROID(
+          hardware_buffer);
   FML_DCHECK(client_buffer != nullptr);
   if (client_buffer == nullptr) {
     FML_LOG(ERROR) << "eglGetNativeClientBufferAndroid returned null.";

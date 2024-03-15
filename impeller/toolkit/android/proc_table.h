@@ -5,6 +5,9 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_ANDROID_PROC_TABLE_H_
 #define FLUTTER_IMPELLER_TOOLKIT_ANDROID_PROC_TABLE_H_
 
+#include <EGL/egl.h>
+#define EGL_EGLEXT_PROTOTYPES
+#include <EGL/eglext.h>
 #include <android/api-level.h>
 #include <android/hardware_buffer.h>
 #include <android/hardware_buffer_jni.h>
@@ -19,30 +22,31 @@
 namespace impeller::android {
 
 #define FOR_EACH_ANDROID_PROC(INVOKE)            \
-  INVOKE(ATrace_isEnabled, 23)                   \
   INVOKE(AChoreographer_getInstance, 24)         \
   INVOKE(AChoreographer_postFrameCallback, 24)   \
   INVOKE(AChoreographer_postFrameCallback64, 29) \
-  INVOKE(AHardwareBuffer_fromHardwareBuffer, 26) \
-  INVOKE(AHardwareBuffer_allocate, 26)           \
   INVOKE(AHardwareBuffer_acquire, 26)            \
-  INVOKE(AHardwareBuffer_release, 26)            \
-  INVOKE(AHardwareBuffer_isSupported, 29)        \
+  INVOKE(AHardwareBuffer_allocate, 26)           \
   INVOKE(AHardwareBuffer_describe, 26)           \
+  INVOKE(AHardwareBuffer_fromHardwareBuffer, 26) \
   INVOKE(AHardwareBuffer_getId, 31)              \
+  INVOKE(AHardwareBuffer_isSupported, 29)        \
+  INVOKE(AHardwareBuffer_release, 26)            \
   INVOKE(ANativeWindow_acquire, 0)               \
-  INVOKE(ANativeWindow_release, 0)               \
-  INVOKE(ANativeWindow_getWidth, 0)              \
   INVOKE(ANativeWindow_getHeight, 0)             \
+  INVOKE(ANativeWindow_getWidth, 0)              \
+  INVOKE(ANativeWindow_release, 0)               \
   INVOKE(ASurfaceControl_createFromWindow, 29)   \
   INVOKE(ASurfaceControl_release, 29)            \
+  INVOKE(ASurfaceTransaction_apply, 29)          \
   INVOKE(ASurfaceTransaction_create, 29)         \
   INVOKE(ASurfaceTransaction_delete, 29)         \
-  INVOKE(ASurfaceTransaction_apply, 29)          \
-  INVOKE(ASurfaceTransaction_setOnComplete, 29)  \
   INVOKE(ASurfaceTransaction_reparent, 29)       \
   INVOKE(ASurfaceTransaction_setBuffer, 29)      \
-  INVOKE(ASurfaceTransaction_setColor, 29)
+  INVOKE(ASurfaceTransaction_setColor, 29)       \
+  INVOKE(ASurfaceTransaction_setOnComplete, 29)  \
+  INVOKE(ATrace_isEnabled, 23)                   \
+  INVOKE(eglGetNativeClientBufferANDROID, 0)
 
 template <class T>
 struct AndroidProc {
@@ -113,7 +117,7 @@ struct ProcTable {
 #undef DEFINE_PROC
 
  private:
-  fml::RefPtr<fml::NativeLibrary> lib_android_;
+  std::vector<fml::RefPtr<fml::NativeLibrary>> libraries_;
   uint32_t device_api_level_ = 0u;
   bool is_valid_ = false;
 };
