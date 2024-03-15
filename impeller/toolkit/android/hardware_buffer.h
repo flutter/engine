@@ -116,6 +116,15 @@ class HardwareBuffer {
   ///
   std::optional<uint64_t> GetSystemUniqueID() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Get the system wide unique ID of the hardware buffer if
+  ///             possible. This is only available on Android API 31 and above.
+  ///             Within the process, the handle are unique.
+  ///
+  /// @return     The system unique id if one can be obtained.
+  ///
+  static std::optional<uint64_t> GetSystemUniqueID(AHardwareBuffer* buffer);
+
  private:
   struct UniqueAHardwareBufferTraits {
     static AHardwareBuffer* InvalidValue() { return nullptr; }

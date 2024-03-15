@@ -10,6 +10,7 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/impeller/core/formats.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
+#include "flutter/impeller/toolkit/android/hardware_buffer.h"
 #include "flutter/impeller/toolkit/egl/image.h"
 #include "flutter/impeller/toolkit/gles/texture.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
@@ -44,7 +45,8 @@ void ImageExternalTextureGL::UpdateImage(JavaLocalRef& hardware_buffer,
                                          PaintContext& context) {
   AHardwareBuffer* latest_hardware_buffer = AHardwareBufferFor(hardware_buffer);
   std::optional<HardwareBufferKey> key =
-      flutter::NDKHelpers::AHardwareBuffer_getId(latest_hardware_buffer);
+      impeller::android::HardwareBuffer::GetSystemUniqueID(
+          latest_hardware_buffer);
   auto existing_image = image_lru_.FindImage(key);
   if (existing_image != nullptr) {
     dl_image_ = existing_image;

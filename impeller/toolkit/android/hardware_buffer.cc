@@ -103,11 +103,16 @@ bool HardwareBuffer::IsAvailableOnPlatform() {
 }
 
 std::optional<uint64_t> HardwareBuffer::GetSystemUniqueID() const {
-  if (!IsValid() || !GetProcTable().AHardwareBuffer_getId) {
+  return GetSystemUniqueID(GetHandle());
+}
+
+std::optional<uint64_t> HardwareBuffer::GetSystemUniqueID(
+    AHardwareBuffer* buffer) {
+  if (!GetProcTable().AHardwareBuffer_getId) {
     return false;
   }
   uint64_t out_id = 0u;
-  if (GetProcTable().AHardwareBuffer_getId(GetHandle(), &out_id) != 0) {
+  if (GetProcTable().AHardwareBuffer_getId(buffer, &out_id) != 0) {
     return std::nullopt;
   }
   return out_id;
