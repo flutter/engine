@@ -13,6 +13,7 @@
             "gn": [
                 "--android",
                 "--android-cpu=x64",
+                "--unoptimized",
                 "--no-lto",
                 "--rbe",
                 "--no-goma",
@@ -105,6 +106,7 @@
             "gn": [
                 "--android",
                 "--android-cpu=x86",
+                "--unoptimized",
                 "--no-lto",
                 "--rbe",
                 "--no-goma",
