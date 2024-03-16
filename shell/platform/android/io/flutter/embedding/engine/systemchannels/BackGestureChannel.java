@@ -117,8 +117,8 @@ public class BackGestureChannel {
   @RequiresApi(API_LEVELS.API_34)
   private Map<String, Object> backEventToJsonMap(@NonNull BackEvent backEvent) {
     Map<String, Object> message = new HashMap<>(4);
-    message.put("touchX", Float.isNaN(backEvent.getTouchX()) ? null : backEvent.getTouchX());
-    message.put("touchY", Float.isNaN(backEvent.getTouchY()) ? null : backEvent.getTouchY());
+    message.put("x", Float.isNaN(backEvent.getTouchX()) ? null : backEvent.getTouchX());
+    message.put("y", Float.isNaN(backEvent.getTouchY()) ? null : backEvent.getTouchY());
     message.put("progress", backEvent.getProgress());
     message.put("swipeEdge", backEvent.getSwipeEdge());
 
