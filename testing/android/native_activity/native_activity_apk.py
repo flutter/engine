@@ -5,13 +5,12 @@
 import sys
 
 import argparse
-import errno
 import os
 import zipfile
 import subprocess
 
 
-def RunCommandChecked(command):
+def run_command_checked(command):
   try:
     subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
   except subprocess.CalledProcessError as cpe:
@@ -66,10 +65,10 @@ def main():
       '-o',
       unaligned_apk_path,
   ]
-  RunCommandChecked(aapt2_command)
+  run_command_checked(aapt2_command)
 
   # Stuff the library in the APK which is just a regular ZIP file. Libraries are not compressed.
-  with zipfile.ZipFile(unaligned_apk_path, "a", compression=zipfile.ZIP_STORED) as zipf:
+  with zipfile.ZipFile(unaligned_apk_path, 'a', compression=zipfile.ZIP_STORED) as zipf:
     zipf.write(args.library, 'lib/%s/%s' % (args.android_abi, library_file))
 
   # Align the dylib to a page boundary.
@@ -81,14 +80,14 @@ def main():
       unaligned_apk_path,
       unsigned_apk_path,
   ]
-  RunCommandChecked(zipalign_command)
+  run_command_checked(zipalign_command)
 
   # Sign the APK.
   apksigner_command = [
       args.apksigner_bin, 'sign', '--ks', args.keystore, '--ks-pass', 'pass:android', '--out',
       apk_path, unsigned_apk_path
   ]
-  RunCommandChecked(apksigner_command)
+  run_command_checked(apksigner_command)
 
   return 0
 
