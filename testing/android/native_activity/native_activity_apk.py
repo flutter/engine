@@ -10,6 +10,7 @@ import os
 import zipfile
 import subprocess
 
+
 def RunCommandChecked(command):
   try:
     subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
@@ -17,19 +18,34 @@ def RunCommandChecked(command):
     print(cpe.output)
     raise cpe
 
+
 def main():
   parser = argparse.ArgumentParser()
 
   parser.add_argument('--aapt2-bin', type=str, required=True, help='The path to the aapt2 binary.')
-  parser.add_argument('--zipalign-bin', type=str, required=True, help='The path to the zipalign binary.')
-  parser.add_argument('--apksigner-bin', type=str, required=True, help='The path to the apksigner binary.')
-  parser.add_argument('--android-manifest', type=str, required=True, help='The path to the AndroidManifest.xml.')
+  parser.add_argument(
+      '--zipalign-bin', type=str, required=True, help='The path to the zipalign binary.'
+  )
+  parser.add_argument(
+      '--apksigner-bin', type=str, required=True, help='The path to the apksigner binary.'
+  )
+  parser.add_argument(
+      '--android-manifest', type=str, required=True, help='The path to the AndroidManifest.xml.'
+  )
   parser.add_argument('--android-jar', type=str, required=True, help='The path to android.jar.')
   parser.add_argument('--output-path', type=str, required=True, help='The path to the output apk.')
-  parser.add_argument('--library', type=str, required=True, help='The path to the library to put in the apk.')
-  parser.add_argument('--keystore', type=str, required=True, help='The path to the debug keystore to sign the apk.')
-  parser.add_argument('--gen-dir', type=str, required=True, help='The directory for generated files.')
-  parser.add_argument('--android-abi', type=str, required=True, help='The android ABI of the library.')
+  parser.add_argument(
+      '--library', type=str, required=True, help='The path to the library to put in the apk.'
+  )
+  parser.add_argument(
+      '--keystore', type=str, required=True, help='The path to the debug keystore to sign the apk.'
+  )
+  parser.add_argument(
+      '--gen-dir', type=str, required=True, help='The directory for generated files.'
+  )
+  parser.add_argument(
+      '--android-abi', type=str, required=True, help='The android ABI of the library.'
+  )
 
   args = parser.parse_args()
 
@@ -52,37 +68,30 @@ def main():
   ]
   RunCommandChecked(aapt2_command)
 
-
   # Stuff the library in the APK which is just a regular ZIP file. Libraries are not compressed.
   with zipfile.ZipFile(unaligned_apk_path, "a", compression=zipfile.ZIP_STORED) as zipf:
     zipf.write(args.library, 'lib/%s/%s' % (args.android_abi, library_file))
 
   # Align the dylib to a page boundary.
   zipalign_command = [
-    args.zipalign_bin,
-    '-p', # Page align the dylib
-    '-f', # overwrite output if exists
-    '4', # 32-bit alignment
-    unaligned_apk_path,
-    unsigned_apk_path,
+      args.zipalign_bin,
+      '-p',  # Page align the dylib
+      '-f',  # overwrite output if exists
+      '4',  # 32-bit alignment
+      unaligned_apk_path,
+      unsigned_apk_path,
   ]
   RunCommandChecked(zipalign_command)
 
   # Sign the APK.
   apksigner_command = [
-    args.apksigner_bin,
-    'sign',
-    '--ks',
-    args.keystore,
-    '--ks-pass',
-    'pass:android',
-    '--out',
-    apk_path,
-    unsigned_apk_path
+      args.apksigner_bin, 'sign', '--ks', args.keystore, '--ks-pass', 'pass:android', '--out',
+      apk_path, unsigned_apk_path
   ]
   RunCommandChecked(apksigner_command)
 
   return 0
+
 
 if __name__ == '__main__':
   sys.exit(main())

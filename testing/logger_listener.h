@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_TESTING_LOGGER_LISTERNER_H_
-#define FLUTTER_TESTING_LOGGER_LISTERNER_H_
+#ifndef FLUTTER_TESTING_LOGGER_LISTENER_H_
+#define FLUTTER_TESTING_LOGGER_LISTENER_H_
 
 #include "flutter/fml/logging.h"
 #include "flutter/testing/testing.h"
@@ -32,4 +32,4 @@ class LoggerListener : public ::testing::EmptyTestEventListener {
 
 }  // namespace flutter::testing
 
-#endif  // FLUTTER_TESTING_LOGGER_LISTERNER_H_
+#endif  // FLUTTER_TESTING_LOGGER_LISTENER_H_
