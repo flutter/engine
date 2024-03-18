@@ -729,15 +729,20 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
   run_cmd(command, cwd=test_runner_dir, env=env)
 
 
-def run_android_tests(android_variant='android_debug_unopt', adb_path=None):
-  test_runner_name = 'flutter_shell_native_unittests'
+def run_android_unittest(test_runner_name, android_variant, adb_path):
   tests_path = os.path.join(OUT_DIR, android_variant, test_runner_name)
   remote_path = '/data/local/tmp'
   remote_tests_path = os.path.join(remote_path, test_runner_name)
-  if adb_path is None:
-    adb_path = 'adb'
   run_cmd([adb_path, 'push', tests_path, remote_path], cwd=BUILDROOT_DIR)
   run_cmd([adb_path, 'shell', remote_tests_path])
+
+
+def run_android_tests(android_variant='android_debug_unopt', adb_path=None):
+  if adb_path is None:
+    adb_path = 'adb'
+
+  run_android_unittest('flutter_shell_native_unittests', android_variant, adb_path)
+  run_android_unittest('impeller_toolkit_android_unittests', android_variant, adb_path)
 
   systrace_test = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'android_systrace_test.py')
   scenario_apk = os.path.join(OUT_DIR, android_variant, 'firebase_apks', 'scenario_app.apk')
@@ -832,7 +837,7 @@ def gather_dart_tests(build_dir, test_filter):
       build_dir,
       os.path.join('dart-sdk', 'bin', 'dart'),
       None,
-      flags=['pub', 'get', '--offline'],
+      flags=['pub', '--suppress-analytics', 'get', '--offline'],
       cwd=dart_tests_dir,
   )
 
@@ -1056,7 +1061,7 @@ def run_impeller_golden_tests(build_dir: str):
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
     script_path = os.path.join('tools', 'dir_contents_diff', 'bin', 'dir_contents_diff.dart')
     diff_result = subprocess.run(
-        f'{dart_bin} run {script_path} {golden_path} {temp_dir}',
+        f'{dart_bin} --disable-dart-dev {script_path} {golden_path} {temp_dir}',
         check=False,
         shell=True,
         stdout=subprocess.PIPE,
@@ -1079,7 +1084,7 @@ def run_impeller_golden_tests(build_dir: str):
 
     with DirectoryChange(harvester_path):
       bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
-      run_cmd([dart_bin, 'run', str(bin_path), temp_dir])
+      run_cmd([dart_bin, '--disable-dart-dev', str(bin_path), temp_dir])
 
 
 def main():
