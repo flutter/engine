@@ -4,6 +4,7 @@ import unittest
 
 import build_fuchsia_artifacts
 
+
 class BuildFuchsiaArtifactsTest(unittest.TestCase):
 
   def test_read_fuchsia_target_api_level(self):
