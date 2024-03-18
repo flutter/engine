@@ -1214,8 +1214,7 @@ TEST_F(EmbedderTest, CannotRemoveImplicitView) {
   info.struct_size = sizeof(FlutterRemoveViewInfo);
   info.view_id = kFlutterImplicitViewId;
   info.remove_view_callback = [](const FlutterRemoveViewResult* result) {
-    // Unreachable
-    ASSERT_TRUE(false);
+    FAIL();
   };
   ASSERT_EQ(FlutterEngineRemoveView(engine.get(), &info), kInvalidArguments);
 }
