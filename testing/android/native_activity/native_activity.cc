@@ -43,6 +43,7 @@ NativeActivity::NativeActivity(ANativeActivity* activity)
     FML_CHECK(copied != nullptr)
         << "Allocation failure while saving instance state.";
     memcpy(copied, mapping->GetMapping(), mapping->GetSize());
+    *out_size = mapping->GetSize();
     return copied;
   };
   activity->callbacks->onWindowFocusChanged = [](ANativeActivity* activity,
