@@ -37,14 +37,13 @@ NativeActivity::NativeActivity(ANativeActivity* activity)
       *out_size = 0;
       return nullptr;
     }
-    // The framework is going to call free for us. That's why we copied to a
-    // malloc mapping.
-    auto malloc_mapping =
-        std::make_unique<fml::MallocMapping>(
-            fml::MallocMapping::Copy(mapping->GetMapping(), mapping->GetSize()))
-            .release();
-    *out_size = malloc_mapping->GetSize();
-    return const_cast<uint8_t*>(malloc_mapping->GetMapping());
+
+    // This will be `free`d by the framework.
+    auto copied = malloc(mapping->GetSize());
+    FML_CHECK(copied != nullptr)
+        << "Allocation failure while saving instance state.";
+    memcpy(copied, mapping->GetMapping(), mapping->GetSize());
+    return copied;
   };
   activity->callbacks->onWindowFocusChanged = [](ANativeActivity* activity,
                                                  int has_focus) {
@@ -138,5 +137,6 @@ extern "C" __attribute__((visibility("default"))) void ANativeActivity_onCreate(
         fml::MallocMapping::Copy(saved_state, saved_state_size));
   }
   flutter::NativeActivityMain(activity, std::move(saved_state_mapping))
-      .release();
+      .release();  // Will be freed when the frame calls the onDestroy. See the
+                   // delete in that callback.
 }
