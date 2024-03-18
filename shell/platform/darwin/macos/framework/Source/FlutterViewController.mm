@@ -19,6 +19,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+#pragma mark - Static data and functions.
+
 namespace {
 using flutter::KeyboardLayoutNotifier;
 using flutter::LayoutClue;
@@ -132,13 +134,27 @@ struct MouseState {
 };
 
 /**
+ * NotificationCenter callback invoked on kTISNotifySelectedKeyboardInputSourceChanged events.
+ */
+void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
+                             void* observer,
+                             CFStringRef name,
+                             const void* object,
+                             CFDictionaryRef userInfo) {
+  FlutterViewController* controller = (__bridge FlutterViewController*)observer;
+  if (controller != nil) {
+    [controller onKeyboardLayoutChanged];
+  }
+}
+
+/**
  * Returns the current Unicode layout data (kTISPropertyUnicodeKeyLayoutData).
  *
  * To use the returned data, convert it to CFDataRef first, finds its bytes
  * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
  * It's returned in NSData* to enable auto reference count.
  */
-NSData* currentKeyboardLayoutData() {
+NSData* CurrentKeyboardLayoutData() {
   TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
   CFTypeRef layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
   if (layout_data == nil) {
@@ -248,21 +264,6 @@ NSData* currentKeyboardLayoutData() {
 - (void)onKeyboardLayoutChanged;
 
 @end
-
-#pragma mark - Private dependant functions
-
-namespace {
-void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
-                             void* observer,
-                             CFStringRef name,
-                             const void* object,
-                             CFDictionaryRef userInfo) {
-  FlutterViewController* controller = (__bridge FlutterViewController*)observer;
-  if (controller != nil) {
-    [controller onKeyboardLayoutChanged];
-  }
-}
-}  // namespace
 
 #pragma mark - FlutterViewWrapper implementation.
 
@@ -922,7 +923,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 
 - (LayoutClue)lookUpLayoutForKeyCode:(uint16_t)keyCode shift:(BOOL)shift {
   if (_keyboardLayoutData == nil) {
-    _keyboardLayoutData = currentKeyboardLayoutData();
+    _keyboardLayoutData = CurrentKeyboardLayoutData();
   }
   const UCKeyboardLayout* layout = reinterpret_cast<const UCKeyboardLayout*>(
       CFDataGetBytePtr((__bridge CFDataRef)_keyboardLayoutData));
