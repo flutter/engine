@@ -49,9 +49,10 @@ def main():
   args = parser.parse_args()
 
   library_file = os.path.basename(args.library)
+  apk_name = os.path.basename(args.output_path)
 
-  unaligned_apk_path = os.path.join(args.gen_dir, '%s.unaligned' % library_file)
-  unsigned_apk_path = os.path.join(args.gen_dir, '%s.unsigned' % library_file)
+  unaligned_apk_path = os.path.join(args.gen_dir, '%s.unaligned' % apk_name)
+  unsigned_apk_path = os.path.join(args.gen_dir, '%s.unsigned' % apk_name)
   apk_path = args.output_path
 
   # Create the skeleton of the APK using aapt2.

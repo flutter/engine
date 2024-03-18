@@ -3,7 +3,7 @@
 # found in the LICENSE file.
 
 executable("templater") {
-  sources = [ "main.cc" ]
+  sources = [ "templater_main.cc" ]
   deps = [
     "//flutter/fml",
     "//third_party/inja",
