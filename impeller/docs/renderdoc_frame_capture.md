@@ -20,11 +20,13 @@
 
    Building a "debug_unopt" build ensures that you have tracing enabled. Without this, RenderDoc will not have much to show.
 
-3. Start RenderDoc using the `qrenderdoc` command, and (if necessary) select "Launch Application" button from the menu:
+3. Start RenderDoc and (if necessary) select "Launch Application" button from the menu:
 
    ![Launch App](assets/renderdoc_frame_capture/launch-app.png)
 
-   If necessary you may also need to click the message that says "Click here to set up Vulkan capture".
+   On Linux, the executable is `qrenderdoc`.
+
+   You may also need to click the message that says "Click here to set up Vulkan capture".
    This will probably be needed if you built from source.
 
 4. Fill out the configuration fields and click launch.
