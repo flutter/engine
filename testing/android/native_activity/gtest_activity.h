@@ -11,6 +11,13 @@
 
 namespace flutter {
 
+//------------------------------------------------------------------------------
+/// @brief      A native activity subclass an in implementation of
+///             `flutter::NativeActivityMain` that return it.
+///
+///             This class runs a Google Test harness on a background thread and
+///             redirects progress updates to `logcat` instead of STDOUT.
+///
 class GTestActivity final : public NativeActivity {
  public:
   explicit GTestActivity(ANativeActivity* activity);

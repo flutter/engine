@@ -12,10 +12,27 @@
 
 namespace flutter {
 
+//------------------------------------------------------------------------------
+/// @brief      An instance of a native activity. Users of the
+///             `native_activity_apk` are meant to subclass this and return an
+///             instance of this subclass from `flutter::NativeActivityMain`.
+///
+///             All methods are called on the Android Platform main-thread.
+///             Subclasses will usually re-thread calls to a background thread
+///             for long running tasks as these will lead to ANRs on when
+///             invoked on the platform thread.
+///
 class NativeActivity {
  public:
   virtual ~NativeActivity();
 
+  //----------------------------------------------------------------------------
+  /// @brief      Perform graceful termination of the activity. Will eventually
+  ///             lead to the other activity lifecycle callback on the way to
+  ///             termination.
+  ///
+  ///             Can be called from any thread.
+  ///
   void Terminate();
 
   virtual void OnStart();
