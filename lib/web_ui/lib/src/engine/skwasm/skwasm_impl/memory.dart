@@ -36,13 +36,13 @@ class SkwasmFinalizationRegistry<T extends NativeType> {
   final DisposeFunction<T> dispose;
 
   void register(SkwasmObjectWrapper<T> wrapper) {
-    final JSAny jsWrapper = wrapper.toJSAnyShallow;
+    final JSAny jsWrapper = wrapper.toJSWrapper;
     registry.registerWithToken(
         jsWrapper, wrapper.handle.address.toJS, jsWrapper);
   }
 
   void evict(SkwasmObjectWrapper<T> wrapper) {
-    final JSAny jsWrapper = wrapper.toJSAnyShallow;
+    final JSAny jsWrapper = wrapper.toJSWrapper;
     registry.unregister(jsWrapper);
     dispose(wrapper.handle);
   }

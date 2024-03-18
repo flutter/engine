@@ -1929,7 +1929,7 @@ void _paragraphTests() {
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
     final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
-    registry.register(Object().toJSAnyShallow, Object().toJSAnyShallow);
+    registry.register(Object().toJSWrapper, Object().toJSWrapper);
   });
 }
 

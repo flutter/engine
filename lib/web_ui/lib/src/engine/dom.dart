@@ -9,7 +9,8 @@ import 'dart:typed_data';
 
 import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/src/engine/skwasm/skwasm_stub.dart'
+    if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 import 'browser_detection.dart';
 
@@ -37,14 +38,23 @@ import 'browser_detection.dart';
 /// are currently represented across web backends, these extensions should be
 /// used carefully and only on types that are known to not contains `JSNull` and
 /// `JSUndefined`.
-
 extension ObjectToJSAnyExtension on Object {
   // Once `Object.toJSBox` is faster (see
   // https://github.com/dart-lang/sdk/issues/55183) we can remove this
   // backend-specific workaround.
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
-  JSAny get toJSAnyShallow => dartToJsWrapper(this);
+  JSAny get toJSWrapper => dartToJsWrapper(this);
+
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  JSAny get toJSAnyShallow {
+    if (isWasm) {
+      return toJSAnyDeep;
+    } else {
+      return this as JSAny;
+    }
+  }
 
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
@@ -54,7 +64,17 @@ extension ObjectToJSAnyExtension on Object {
 extension JSAnyToObjectExtension on JSAny {
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
-  Object get toObjectShallow => jsWrapperToDart(this);
+  Object get fromJSWrapper => jsWrapperToDart(this);
+
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:tryInline')
+  Object get toObjectShallow {
+    if (isWasm) {
+      return toObjectDeep;
+    } else {
+      return this;
+    }
+  }
 
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')

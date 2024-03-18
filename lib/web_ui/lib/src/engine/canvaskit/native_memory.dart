@@ -22,7 +22,7 @@ import 'package:ui/src/engine.dart';
 /// 6. We call `delete` on SkPaint.
 DomFinalizationRegistry _finalizationRegistry = DomFinalizationRegistry(
   (JSBoxedDartObject boxedUniq) {
-    final UniqueRef<Object> uniq = boxedUniq.toDart as UniqueRef<Object>;
+    final UniqueRef<Object> uniq = boxedUniq.fromJSWrapper as UniqueRef<Object>;
     uniq.collect();
   }.toJS
 );
@@ -34,7 +34,7 @@ NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemory
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
-      _finalizationRegistry.register(owner.toJSAnyShallow, ref.toJSBox);
+      _finalizationRegistry.register(owner.toJSWrapper, ref.toJSWrapper);
     }
   }
 }
