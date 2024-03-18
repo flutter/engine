@@ -37,9 +37,11 @@
    - command-line arguments: `--gtest_filter="*CanDrawRect/Vulkan*" --enable_playground`
 
 5. Click "Launch". If everything is working, you'll get a window with the selected unit test rendering,
-   with a prompt in the top-left corner telling you to press F12 or Print Screen to capture a frame.
+   with a prompt in the top-left corner telling you to press `F12` or `Print Screen` to capture a frame.
    (If you do not, try capturing a different program, like factorio. On at least one occasion that has
    shaken things loose, though we have no explanation for why.)
+
+   Press `ESC` to move on to the next test.
 
 5. For the frame you wish to capture, press `F12`, you will now be able to see the frame capture and inspect the state:
 
