@@ -101,7 +101,6 @@
 ../../../flutter/fml/message_loop_task_queues_unittests.cc
 ../../../flutter/fml/message_loop_unittests.cc
 ../../../flutter/fml/paths_unittests.cc
-../../../flutter/fml/platform/android/ndk_helpers_unittests.cc
 ../../../flutter/fml/platform/darwin/cf_utils_unittests.mm
 ../../../flutter/fml/platform/darwin/scoped_nsobject_arc_unittests.mm
 ../../../flutter/fml/platform/darwin/scoped_nsobject_unittests.mm
@@ -175,6 +174,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/driver_info_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/render_pass_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
@@ -200,6 +200,8 @@
 ../../../flutter/impeller/tessellator/dart/pubspec.lock
 ../../../flutter/impeller/tessellator/dart/pubspec.yaml
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
+../../../flutter/impeller/toolkit/android/README.md
+../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
 ../../../flutter/impeller/tools/build_metal_library.py
 ../../../flutter/impeller/tools/check_licenses.py
 ../../../flutter/impeller/tools/malioc_cores.py
@@ -330,7 +332,6 @@
 ../../../flutter/shell/platform/fuchsia/dart_runner/.gitignore
 ../../../flutter/shell/platform/fuchsia/dart_runner/README.md
 ../../../flutter/shell/platform/fuchsia/dart_runner/embedder/pubspec.yaml
-../../../flutter/shell/platform/fuchsia/dart_runner/fidl/meta.json
 ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.json
 ../../../flutter/shell/platform/fuchsia/dart_runner/kernel/libraries.yaml
 ../../../flutter/shell/platform/fuchsia/dart_runner/tests
@@ -2878,6 +2879,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.images2/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.input.virtualkeyboard/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.input/meta.json
@@ -2934,6 +2936,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.sys/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.sysinfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.sysmem2/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.thermal/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.tracing.perfetto/meta.json
