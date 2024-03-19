@@ -68,13 +68,13 @@ abstract class Harvester {
     final Digests digests = Digests.parse(file.readAsStringSync());
 
     if (addImageToSkiaGold != null) {
-      return VanillaHarvester(digests, stderr, workDirectory, addImageToSkiaGold);
+      return _VanillaHarvester(digests, stderr, workDirectory, addImageToSkiaGold);
     } else {
-      return SkiaGoldHarvester.create(digests, stderr, workDirectory);
+      return SkiaGoldHarvester._create(digests, stderr, workDirectory);
     }
   }
 
-  Future<void> addImg(
+  Future<void> _addImg(
     String testName,
     io.File goldenFile, {
     double differentPixelsRate,
@@ -82,32 +82,36 @@ abstract class Harvester {
     required int screenshotSize,
   });
 
-  Future<void> auth();
+  Future<void> _auth();
 
-  Digests get digests;
-  StringSink get stderr;
-  io.Directory get workDirectory;
+  Digests get _digests;
+  StringSink get _stderr;
+  io.Directory get _workDirectory;
 }
 
 /// A [Harvester] that communicates with a real [SkiaGoldHarvester].
 class SkiaGoldHarvester implements Harvester {
-  final Digests digests;
-  final StringSink stderr;
-  final io.Directory workDirectory;
+  SkiaGoldHarvester._init(
+      this._digests, this._stderr, this._workDirectory, this.client);
+
+  @override
+  final Digests _digests;
+  @override
+  final StringSink _stderr;
+  @override
+  final io.Directory _workDirectory;
+  /// The [SkiaGoldClient] that will be used for harvesting.
   final SkiaGoldClient client;
 
-  static Future<SkiaGoldHarvester> create(
+  static Future<SkiaGoldHarvester> _create(
       Digests digests, StringSink stderr, io.Directory workDirectory) async {
     final SkiaGoldClient client =
         SkiaGoldClient(workDirectory, dimensions: digests.dimensions);
     return SkiaGoldHarvester._init(digests, stderr, workDirectory, client);
   }
 
-  SkiaGoldHarvester._init(
-      this.digests, this.stderr, this.workDirectory, this.client);
-
   @override
-  Future<void> addImg(String testName, io.File goldenFile,
+  Future<void> _addImg(String testName, io.File goldenFile,
       {double differentPixelsRate = 0.01,
       int pixelColorDelta = 0,
       required int screenshotSize}) async {
@@ -118,46 +122,51 @@ class SkiaGoldHarvester implements Harvester {
   }
 
   @override
-  Future<void> auth() {
+  Future<void> _auth() {
     return client.auth();
   }
 }
 
 /// A [Harvester] that doesn't harvest, just logs to [stderr].
-class VanillaHarvester implements Harvester {
-  final Digests digests;
-  final StringSink stderr;
-  final io.Directory workDirectory;
-  final AddImageToSkiaGold addImageToSkiaGold;
-  VanillaHarvester(
-      this.digests, this.stderr, this.workDirectory, this.addImageToSkiaGold);
+class _VanillaHarvester implements Harvester {
+  _VanillaHarvester(
+      this._digests, this._stderr, this._workDirectory,
+      this._addImageToSkiaGold);
 
   @override
-  Future<void> addImg(String testName, io.File goldenFile,
+  final Digests _digests;
+  @override
+  final StringSink _stderr;
+  @override
+  final io.Directory _workDirectory;
+  final AddImageToSkiaGold _addImageToSkiaGold;
+
+  @override
+  Future<void> _addImg(String testName, io.File goldenFile,
       {double differentPixelsRate = 0.01,
       int pixelColorDelta = 0,
       required int screenshotSize}) async {
-    return addImageToSkiaGold(testName, goldenFile,
+    return _addImageToSkiaGold(testName, goldenFile,
         differentPixelsRate: differentPixelsRate,
         pixelColorDelta: pixelColorDelta,
         screenshotSize: screenshotSize);
   }
 
   @override
-  Future<void> auth() async {
+  Future<void> _auth() async {
     // Intentional noop.
   }
 }
 
 /// Uploads the images of digests  in [workDirectory] to Skia Gold.
 Future<void> harvest(Harvester harvester) async {
-  await harvester.auth();
+  await harvester._auth();
   final List<Future<void>> pendingComparisons = <Future<void>>[];
-  for (final DigestEntry entry in harvester.digests.entries) {
+  for (final DigestEntry entry in harvester._digests.entries) {
     final io.File goldenFile =
-        io.File(p.join(harvester.workDirectory.path, entry.filename));
+        io.File(p.join(harvester._workDirectory.path, entry.filename));
     final Future<void> future = harvester
-        .addImg(
+        ._addImg(
       entry.filename,
       goldenFile,
       screenshotSize: entry.width * entry.height,
@@ -165,7 +174,7 @@ Future<void> harvest(Harvester harvester) async {
       pixelColorDelta: entry.maxColorDelta,
     )
         .catchError((Object e) {
-      harvester.stderr.writeln('Failed to add image to Skia Gold: $e');
+      harvester._stderr.writeln('Failed to add image to Skia Gold: $e');
       throw FailedComparisonException(entry.filename);
     });
     pendingComparisons.add(future);

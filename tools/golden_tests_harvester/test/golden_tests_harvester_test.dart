@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:io' as io;
 
 import 'package:golden_tests_harvester/golden_tests_harvester.dart';
-import 'package:golden_tests_harvester/src/digests_json_format.dart';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as p;
 
