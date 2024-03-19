@@ -89,7 +89,7 @@ abstract class Harvester {
   io.Directory get _workDirectory;
 }
 
-/// A [Harvester] that communicates with a real [SkiaGoldHarvester].
+/// A [Harvester] that communicates with a real [SkiaGoldClient].
 class SkiaGoldHarvester implements Harvester {
   SkiaGoldHarvester._init(
       this._digests, this._stderr, this._workDirectory, this.client);
