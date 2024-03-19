@@ -209,8 +209,6 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_fuchsia
-      # pm in fuchsia-sdk is required when uploading artifacts, so we have to
-      # download the fuchsia-deps in root builder.
       gclient_variables: >-
         {
           "download_android_deps": false
