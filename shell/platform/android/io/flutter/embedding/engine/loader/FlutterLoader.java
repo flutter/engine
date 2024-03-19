@@ -184,12 +184,6 @@ public class FlutterLoader {
 
                 try {
                   flutterJNI.loadLibrary();
-                  Log.e(
-                      "GRAYMACKALL",
-                      System.getProperty("os.arch")
-                          + " and "
-                          + Arrays.toString(
-                              new File(flutterApplicationInfo.nativeLibraryDir).list()));
                 } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
                   String couldntFindVersion = "couldn't find \"libflutter.so\"";
                   String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
