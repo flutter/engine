@@ -787,10 +787,12 @@ import java.util.List;
   /**
    * Invoke this from {@link OnBackAnimationCallback#onBackStarted(BackEvent)}.
    *
-   * <p>This method should be called when the back gesture is initiated, as part of the
-   * implementation of {@link OnBackAnimationCallback}. It's responsible for handling the initial
-   * response to the start of a back gesture, such as initiating animations or preparing the UI for
-   * the back navigation process.
+   * <p>This method should be called when the back gesture is initiated. It should be invoked as
+   * part of the implementation of {@link OnBackAnimationCallback}.
+   *
+   * <p>This method delegates the handling of the start of a back gesture to the Flutter framework,
+   * which is responsible for the appropriate response, such as initiating animations or preparing
+   * the UI for the back navigation process.
    *
    * @param backEvent The BackEvent object containing information about the touch.
    */
@@ -810,9 +812,10 @@ import java.util.List;
    * Invoke this from {@link OnBackAnimationCallback#onBackProgressed(BackEvent)}.
    *
    * <p>This method should be called in response to progress in a back gesture, as part of the
-   * implementation of {@link OnBackAnimationCallback}. It allows for updating the state of the
-   * application or UI elements based on the ongoing back gesture, such as progressing animations or
-   * interactive elements.
+   * implementation of {@link OnBackAnimationCallback}.
+   *
+   * <p>This method delegates to the Flutter framework to update UI elements or animations based on
+   * the progression of the back gesture.
    *
    * @param backEvent An BackEvent object describing the progress event.
    */
@@ -833,11 +836,13 @@ import java.util.List;
   /**
    * Invoke this from {@link OnBackAnimationCallback#onBackInvoked()}.
    *
-   * <p>This method signifies the completion of a back gesture and commits the navigation action
-   * initiated by the gesture. It should be called as a final step in the back gesture handling,
-   * indicating that the application is ready to proceed with the back navigation. This could
-   * involve finalizing animations, updating the UI to reflect the navigation, or performing cleanup
-   * tasks related to the gesture.
+   * <p>This method is called to signify the completion of a back gesture and commits the navigation
+   * action initiated by the gesture. It should be invoked as the final step in handling a back
+   * gesture.
+   *
+   * <p>This method indicates to the Flutter framework that it should proceed with the back
+   * navigation, including finalizing animations and updating the UI to reflect the navigation
+   * outcome.
    */
   @TargetApi(API_LEVELS.API_34)
   @RequiresApi(API_LEVELS.API_34)
@@ -854,10 +859,12 @@ import java.util.List;
   /**
    * Invoke this from {@link OnBackAnimationCallback#onBackCancelled()}.
    *
-   * <p>This method should be called when a back gesture is cancelled or back button pressed, as
-   * part of the implementation of {@link OnBackAnimationCallback}. It's responsible for handling
-   * the rollback of any changes or animations that were initiated in response to the back gesture.
-   * This includes resetting UI elements or state to their original form before the gesture started.
+   * <p>This method should be called when a back gesture is cancelled or the back button is pressed.
+   * It informs the Flutter framework about the cancellation.
+   *
+   * <p>This method enables the Flutter framework to rollback any UI changes or animations initiated
+   * in response to the back gesture. This includes resetting UI elements to their state prior to
+   * the gesture's start.
    */
   @TargetApi(API_LEVELS.API_34)
   @RequiresApi(API_LEVELS.API_34)
