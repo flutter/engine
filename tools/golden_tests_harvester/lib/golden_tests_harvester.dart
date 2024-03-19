@@ -82,6 +82,8 @@ abstract class Harvester {
     required int screenshotSize,
   });
 
+  Future<void> auth();
+
   Digests get digests;
   StringSink get stderr;
   io.Directory get workDirectory;
@@ -93,7 +95,6 @@ class SkiaGoldHarvester implements Harvester {
   final StringSink stderr;
   final io.Directory workDirectory;
   final SkiaGoldClient client;
-  bool _didAuth = false;
 
   static Future<SkiaGoldHarvester> create(
       Digests digests, StringSink stderr, io.Directory workDirectory) async {
@@ -110,15 +111,15 @@ class SkiaGoldHarvester implements Harvester {
       {double differentPixelsRate = 0.01,
       int pixelColorDelta = 0,
       required int screenshotSize}) async {
-    if (!_didAuth) {
-      // If GOLDCTL is not configured (i.e. on CI), this will throw.
-      await client.auth();
-      _didAuth = true;
-    }
     return client.addImg(testName, goldenFile,
         differentPixelsRate: differentPixelsRate,
         pixelColorDelta: pixelColorDelta,
         screenshotSize: screenshotSize);
+  }
+
+  @override
+  Future<void> auth() {
+    return client.auth();
   }
 }
 
@@ -141,10 +142,16 @@ class VanillaHarvester implements Harvester {
         pixelColorDelta: pixelColorDelta,
         screenshotSize: screenshotSize);
   }
+
+  @override
+  Future<void> auth() async {
+    // Intentional noop.
+  }
 }
 
 /// Uploads the images of digests  in [workDirectory] to Skia Gold.
 Future<void> harvest(Harvester harvester) async {
+  await harvester.auth();
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   for (final DigestEntry entry in harvester.digests.entries) {
     final io.File goldenFile =

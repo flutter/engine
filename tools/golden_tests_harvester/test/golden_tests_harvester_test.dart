@@ -167,6 +167,33 @@ void main() async {
           <String, String>{'key': 'value'});
     });
   });
+
+  test('throws without GOLDCTL', () async {
+    await withTempDirectory((io.Directory tempDirectory) async {
+      final StringSink stderr = StringBuffer();
+      final io.File digestsFile =
+          io.File(p.join(tempDirectory.path, 'digest.json'));
+      await digestsFile.writeAsString('''
+{
+  "dimensions": {"key":"value"},
+  "entries": [
+    {
+      "filename": "foo.png",
+      "width": 100,
+      "height": 100,
+      "maxDiffPixelsPercent": 0.01,
+      "maxColorDelta": 0
+    }
+  ]}
+''');
+      final Harvester harvester = await Harvester.create(tempDirectory, stderr);
+      final StateError error = await _expectThrow<StateError>(() async {
+        await harvest(harvester);
+      });
+      expect(error.message, contains('GOLDCTL'));
+      expect(stderr.toString(), isEmpty);
+    });
+  });
 }
 
 
