@@ -151,7 +151,24 @@ void main() async {
       ]);
     });
   });
+
+  test('client has dimensions', () async {
+    await withTempDirectory((io.Directory tempDirectory) async {
+      final StringSink stderr = StringBuffer();
+      final io.File digestsFile =
+          io.File(p.join(tempDirectory.path, 'digest.json'));
+      await digestsFile
+          .writeAsString('{"dimensions": {"key":"value"}, "entries": []}');
+      final Harvester harvester = await Harvester.create(tempDirectory, stderr);
+      expect(harvester is SkiaGoldHarvester, true);
+      final SkiaGoldHarvester skiaGoldHarvester =
+          harvester as SkiaGoldHarvester;
+      expect(skiaGoldHarvester.client.dimensions,
+          <String, String>{'key': 'value'});
+    });
+  });
 }
+
 
 FutureOr<T> _expectThrow<T extends Object>(
     FutureOr<void> Function() callback) async {

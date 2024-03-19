@@ -44,10 +44,10 @@ Future<void> main(List<String> args) async {
   final bool isDryRun = results['dry-run'] as bool;
   late Harvester harvester;
   if (isDryRun) {
+    io.stderr.writeln('=== DRY RUN. Results not submitted to Skia Gold. ===');
     harvester =
       await Harvester.create(workDirectory, io.stderr,
         addImageToSkiaGold: _dryRunAddImg);
-
   }else {
     harvester =
       await Harvester.create(workDirectory, io.stderr);

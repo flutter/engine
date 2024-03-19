@@ -93,13 +93,12 @@ class SkiaGoldHarvester implements Harvester {
   final StringSink stderr;
   final io.Directory workDirectory;
   final SkiaGoldClient client;
+  bool _didAuth = false;
 
   static Future<SkiaGoldHarvester> create(
       Digests digests, StringSink stderr, io.Directory workDirectory) async {
-    // If GOLDCTL is not configured (i.e. on CI), this will throw.
     final SkiaGoldClient client =
         SkiaGoldClient(workDirectory, dimensions: digests.dimensions);
-    await client.auth();
     return SkiaGoldHarvester._init(digests, stderr, workDirectory, client);
   }
 
@@ -110,7 +109,12 @@ class SkiaGoldHarvester implements Harvester {
   Future<void> addImg(String testName, io.File goldenFile,
       {double differentPixelsRate = 0.01,
       int pixelColorDelta = 0,
-      required int screenshotSize}) {
+      required int screenshotSize}) async {
+    if (!_didAuth) {
+      // If GOLDCTL is not configured (i.e. on CI), this will throw.
+      await client.auth();
+      _didAuth = true;
+    }
     return client.addImg(testName, goldenFile,
         differentPixelsRate: differentPixelsRate,
         pixelColorDelta: pixelColorDelta,
