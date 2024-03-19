@@ -158,7 +158,7 @@ class _VanillaHarvester implements Harvester {
   }
 }
 
-/// Uploads the images of digests  in [workDirectory] to Skia Gold.
+/// Uploads the images of digests in [harvester] to Skia Gold.
 Future<void> harvest(Harvester harvester) async {
   await harvester._auth();
   final List<Future<void>> pendingComparisons = <Future<void>>[];
