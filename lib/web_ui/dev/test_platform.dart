@@ -504,7 +504,7 @@ class BrowserPlatform extends PlatformPlugin {
         extension == '.mjs' ||
         extension == '.html';
       return shelf.Response.ok(
-        fileInDirectory.readAsBytesSync(),
+        fileInDirectory.openRead(),
         headers: <String, Object>{
           HttpHeaders.contentTypeHeader: contentType,
           if (isScript && needsCrossOriginIsolated)
