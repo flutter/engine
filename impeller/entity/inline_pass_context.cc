@@ -23,6 +23,7 @@ InlinePassContext::InlinePassContext(
     : context_(std::move(context)),
       pass_target_(pass_target),
       entity_count_(entity_count),
+      total_pass_reads_(pass_texture_reads),
       is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
     pass_ = collapsed_parent_pass.value().pass;
@@ -141,9 +142,17 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     return {};
   }
 
-  stencil->load_action = LoadAction::kClear;
-  stencil->store_action = StoreAction::kDontCare;
+  // Only clear the stencil if this is the very first pass of the
+  // layer.
+  stencil->load_action =
+      pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
+  // If we're on the last pass of the layer, there's no need to store the
+  // stencil because nothing needs to read it.
+  stencil->store_action = pass_count_ == total_pass_reads_
+                              ? StoreAction::kDontCare
+                              : StoreAction::kStore;
   pass_target_.target_.SetStencilAttachment(stencil.value());
+
   pass_target_.target_.SetColorAttachment(color0, 0);
 
   pass_ = command_buffer_->CreateRenderPass(pass_target_.GetRenderTarget());
