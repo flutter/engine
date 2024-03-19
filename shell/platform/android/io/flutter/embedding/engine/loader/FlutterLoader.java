@@ -184,26 +184,35 @@ public class FlutterLoader {
 
                 try {
                   flutterJNI.loadLibrary();
-                  Log.e("GRAYMACKALL",System.getProperty("os.arch") + " and " + Arrays.toString(new File(flutterApplicationInfo.nativeLibraryDir).list()));
+                  Log.e(
+                      "GRAYMACKALL",
+                      System.getProperty("os.arch")
+                          + " and "
+                          + Arrays.toString(
+                              new File(flutterApplicationInfo.nativeLibraryDir).list()));
                 } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
                   String couldntFindVersion = "couldn't find \"libflutter.so\"";
                   String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
 
                   if (unsatisfiedLinkError.toString().contains(couldntFindVersion)
-                          || unsatisfiedLinkError.toString().contains(notFoundVersion)) {
-                    // To gather more information for https://github.com/flutter/flutter/issues/144291,
+                      || unsatisfiedLinkError.toString().contains(notFoundVersion)) {
+                    // To gather more information for
+                    // https://github.com/flutter/flutter/issues/144291,
                     // log the contents of the native directory as well as the cpu architecture.
 
                     String cpuArch = System.getProperty("os.arch");
                     String[] nativeLibs = new File(flutterApplicationInfo.nativeLibraryDir).list();
 
                     throw new UnsupportedOperationException(
-                            "Could not load libflutter.so this is likely because the application"
-                                    + " is running on an architecture that Flutter Android does not support (e.g. x86)"
-                                    + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
-                                    + " for more detail.\n"
-                                    + "App is using cpu architecture: " + cpuArch + " and loading native libraries: " + nativeLibs.toString(),
-                            unsatisfiedLinkError);
+                        "Could not load libflutter.so this is likely because the application"
+                            + " is running on an architecture that Flutter Android does not support (e.g. x86)"
+                            + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
+                            + " for more detail.\n"
+                            + "App is using cpu architecture: "
+                            + cpuArch
+                            + " and loading native libraries: "
+                            + nativeLibs.toString(),
+                        unsatisfiedLinkError);
                   }
 
                   throw unsatisfiedLinkError;

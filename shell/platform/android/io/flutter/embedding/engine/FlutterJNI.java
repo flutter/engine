@@ -24,12 +24,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
-
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
-import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
@@ -41,7 +39,6 @@ import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
 import io.flutter.view.TextureRegistry;
-
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
