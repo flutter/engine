@@ -205,7 +205,7 @@ public class FlutterLoader {
                             + " for more detail.\n"
                             + "App is using cpu architecture: "
                             + cpuArch
-                            + ", and the native libraries directory contains the following .so files: "
+                            + ", and the native libraries directory contains the following files: "
                             + Arrays.toString(nativeLibs),
                         unsatisfiedLinkError);
                   }
