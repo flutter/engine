@@ -485,7 +485,7 @@ class BrowserPlatform extends PlatformPlugin {
         request.url.path,
       ));
 
-      if (!fileInDirectory.existsSync()) {
+      if (request.url.path.contains('//') || !fileInDirectory.existsSync()) {
         return shelf.Response.notFound('File not found: ${request.url.path}');
       }
 
@@ -504,7 +504,7 @@ class BrowserPlatform extends PlatformPlugin {
         extension == '.mjs' ||
         extension == '.html';
       return shelf.Response.ok(
-        fileInDirectory.openRead(),
+        fileInDirectory.readAsBytesSync(),
         headers: <String, Object>{
           HttpHeaders.contentTypeHeader: contentType,
           if (isScript && needsCrossOriginIsolated)
