@@ -154,7 +154,7 @@ class _VanillaHarvester implements Harvester {
 
   @override
   Future<void> _auth() async {
-    // Intentional noop.
+    _stderr.writeln('using dimensions: ${_digests.dimensions}');
   }
 }
 
