@@ -29,6 +29,7 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
+import io.flutter.embedding.engine.loader.ApplicationInfoLoader;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
@@ -146,37 +147,7 @@ public class FlutterJNI {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
 
-    try {
-      System.loadLibrary("flutter");
-    } catch (UnsatisfiedLinkError e) {
-      // Sniff if this because libflutter.so couldn't be found.
-      String couldntFindVersion = "couldn't find \"libflutter.so\"";
-      String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
-
-      if (e.toString().contains(couldntFindVersion)
-              || e.toString().contains(notFoundVersion)) {
-        // To gather more information for https://github.com/flutter/flutter/issues/144291,
-        // try to do the same thing that the android code itself does, and log along the way.
-        // This code only exists because despite the underlying issue causing an increasingly
-        // large number of crashes, we still don't have a reproduction.
-
-        Class<?> callerClass = this.getClass();
-        ClassLoader loader = callerClass.getClassLoader();
-        String libname = "flutter";
-
-        // BEGIN COPIED CODE FROM RUNTIME.JAVA
-
-        // END COPIED CODE FROM RUNTIME.JAVA
-
-        throw new UnsupportedOperationException(
-            "Could not load libflutter.so this is likely because the application"
-                + " is running on an architecture that Flutter Android does not support (e.g. x86)"
-                + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
-                + " for more detail.",
-            e);
-      }
-      throw e;
-    }
+    System.loadLibrary("flutter");
     FlutterJNI.loadLibraryCalled = true;
   }
 
