@@ -41,23 +41,18 @@ Future<void> main(List<String> args) async {
   }
 
   final io.Directory workDirectory = io.Directory(rest.single);
-  final AddImageToSkiaGold addImg;
-  final bool dryRun = results['dry-run'] as bool;
-  if (dryRun) {
-    io.stderr.writeln('=== DRY RUN. Results not submitted to Skia Gold. ===');
-    addImg = _dryRunAddImg;
-  } else {
-    // If GOLDCTL is not configured (i.e. on CI), this will throw.
-    final SkiaGoldClient client = SkiaGoldClient(workDirectory);
-    await client.auth();
-    addImg = client.addImg;
-  }
+  final bool isDryRun = results['dry-run'] as bool;
+  late Harvester harvester;
+  if (isDryRun) {
+    harvester =
+      await Harvester.create(workDirectory, io.stderr,
+        addImageToSkiaGold: _dryRunAddImg);
 
-  await harvest(
-    workDirectory: workDirectory,
-    addImg: addImg,
-    stderr: io.stderr,
-  );
+  }else {
+    harvester =
+      await Harvester.create(workDirectory, io.stderr);
+  }
+  await harvest(harvester);
 }
 
 Future<void> _dryRunAddImg(
