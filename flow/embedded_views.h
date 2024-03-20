@@ -358,6 +358,8 @@ class EmbedderViewSlice {
     // regions are already rounded out (see:
     // https://github.com/flutter/engine/blob/5f40c9f49f88729bc3e71390356209dbe29ec788/display_list/geometry/dl_rtree.cc#L209),
     // we can simply round in the queried rect to avoid the situation.
+    // After rounding in, it will ignore a single (or partial) pixel overlap,
+    // and give the ownership to the platform view.  
     return DlRegion::MakeIntersection(getRegion(), DlRegion(query.roundIn()));
   }
 
