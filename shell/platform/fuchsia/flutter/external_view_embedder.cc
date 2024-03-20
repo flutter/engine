@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 #include "external_view_embedder.h"
+
 #include <algorithm>
 #include <cstdint>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
