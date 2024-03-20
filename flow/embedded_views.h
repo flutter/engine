@@ -340,7 +340,8 @@ class EmbedderViewSlice {
   virtual void end_recording() = 0;
   virtual const DlRegion& getRegion() const = 0;
   // TODO(hellohuanlin): We should deprecate this function if we migrate
-  // all platforms to use `roundedInRegion`.
+  // all platforms to use `roundedInRegion`. Then we should rename
+  // `roundedInRegion` to just `region`.
   DlRegion region(const SkRect& query) const {
     return DlRegion::MakeIntersection(getRegion(), DlRegion(query.roundOut()));
   }
