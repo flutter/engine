@@ -19,11 +19,18 @@ class FlutterWindowsViewController {
                                std::unique_ptr<FlutterWindowsView> view)
       : engine_(std::move(engine)), view_(std::move(view)) {}
 
-  FlutterWindowsEngine* engine() { return engine_.get(); }
+  FlutterWindowsEngine* engine() { return view_->GetEngine(); }
   FlutterWindowsView* view() { return view_.get(); }
 
  private:
+  // The engine owned by this view controller, if any.
+  // This is only used if the view controller was created
+  // using |FlutterDesktopViewControllerCreate| as that takes
+  // ownership of the engine. View controllers created using
+  // |FlutterDesktopEngineCreateViewController| do not take
+  // ownership of the engine and do not set this.
   std::unique_ptr<FlutterWindowsEngine> engine_;
+
   std::unique_ptr<FlutterWindowsView> view_;
 };
 
