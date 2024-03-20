@@ -68,7 +68,7 @@ abstract class Harvester {
     final Digests digests = Digests.parse(file.readAsStringSync());
 
     if (addImageToSkiaGold != null) {
-      return _VanillaHarvester(digests, stderr, workDirectory, addImageToSkiaGold);
+      return _DryRunHarvester(digests, stderr, workDirectory, addImageToSkiaGold);
     } else {
       return SkiaGoldHarvester._create(digests, stderr, workDirectory);
     }
@@ -127,9 +127,9 @@ class SkiaGoldHarvester implements Harvester {
   }
 }
 
-/// A [Harvester] that doesn't harvest, just logs to [stderr].
-class _VanillaHarvester implements Harvester {
-  _VanillaHarvester(
+/// A [Harvester] that doesn't harvest, just calls a callback.
+class _DryRunHarvester implements Harvester {
+  _DryRunHarvester(
       this._digests, this._stderr, this._workDirectory,
       this._addImageToSkiaGold);
 
