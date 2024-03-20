@@ -199,7 +199,6 @@ public class FlutterLoader {
                     File nativeLibsDir = new File(flutterApplicationInfo.nativeLibraryDir);
                     String[] nativeLibsContents = nativeLibsDir.list();
 
-
                     throw new UnsupportedOperationException(
                         "Could not load libflutter.so this is possibly because the application"
                             + " is running on an architecture that Flutter Android does not support (e.g. x86)"
@@ -208,7 +207,8 @@ public class FlutterLoader {
                             + "App is using cpu architecture: "
                             + cpuArch
                             + ", and the native libraries directory (with path "
-                            + nativeLibsDir.getAbsolutePath() + ") contains the following files: "
+                            + nativeLibsDir.getAbsolutePath()
+                            + ") contains the following files: "
                             + Arrays.toString(nativeLibsContents),
                         unsatisfiedLinkError);
                   }
