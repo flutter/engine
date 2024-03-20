@@ -28,7 +28,7 @@ const bool _debugLogPointerEvents = false;
 const bool _debugLogFlutterEvents = false;
 
 /// The signature of a callback that handles pointer events.
-typedef _PointerDataCallback = void Function(DomEvent event, List<ui.PointerData>);
+typedef _PointerDataCallback = bool Function(DomEvent event, List<ui.PointerData>);
 
 // The mask for the bitfield of event buttons. Buttons not contained in this
 // mask are cut off.
@@ -233,18 +233,17 @@ class ClickDebouncer {
   /// debouncing events.
   ///
   /// In all other situations forwards the event to the framework.
-  void onPointerData(DomEvent event, List<ui.PointerData> data) {
+  bool onPointerData(DomEvent event, List<ui.PointerData> data) {
     if (!EnginePlatformDispatcher.instance.semanticsEnabled) {
-      _sendToFramework(event, data);
-      return;
+      return _sendToFramework(event, data);
     }
 
     if (isDebouncing) {
-      _debounce(event, data);
+      return _debounce(event, data);
     } else if (event.type == 'pointerdown') {
-      _startDebouncing(event, data);
+      return _startDebouncing(event, data);
     } else {
-      _sendToFramework(event, data);
+      return _sendToFramework(event, data);
     }
   }
 
@@ -297,7 +296,7 @@ class ClickDebouncer {
         semanticsNodeId, ui.SemanticsAction.tap, null);
   }
 
-  void _startDebouncing(DomEvent event, List<ui.PointerData> data) {
+  bool _startDebouncing(DomEvent event, List<ui.PointerData> data) {
     assert(
       _state == null,
       'Cannot start debouncing. Already debouncing.'
@@ -328,14 +327,15 @@ class ClickDebouncer {
           data: data,
         )],
       );
+      return true;
     } else {
       // The event landed on an non-tappable target. Assume this won't lead to
       // double clicks and forward the event to the framework.
-      _sendToFramework(event, data);
+      return _sendToFramework(event, data);
     }
   }
 
-  void _debounce(DomEvent event, List<ui.PointerData> data) {
+  bool _debounce(DomEvent event, List<ui.PointerData> data) {
     assert(
       _state != null,
       'Cannot debounce event. Debouncing state not established by _startDebouncing.'
@@ -359,6 +359,7 @@ class ClickDebouncer {
         _flush();
       }
     }
+    return true;
   }
 
   void _onTimerExpired() {
@@ -402,7 +403,7 @@ class ClickDebouncer {
     _state = null;
   }
 
-  void _sendToFramework(DomEvent? event, List<ui.PointerData> data) {
+  bool _sendToFramework(DomEvent? event, List<ui.PointerData> data) {
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: data.toList());
     if (_debugLogFlutterEvents) {
       for(final ui.PointerData datum in data) {
@@ -410,6 +411,7 @@ class ClickDebouncer {
       }
     }
     EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(packet);
+    return packet.handled;
   }
 
   /// Cancels any pending debounce process and forgets anything that happened so
@@ -728,11 +730,13 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    _callback(e, _convertWheelEventToPointerData(event));
+    final bool handled = _callback(e, _convertWheelEventToPointerData(event));
     // Prevent default so mouse wheel event doesn't get converted to
     // a scroll event that semantic nodes would process.
-    //
-    event.preventDefault();
+    // print('Wheel event handled: $handled');
+    if (handled) {
+      event.preventDefault();
+    }
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox
