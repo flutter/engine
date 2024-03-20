@@ -980,7 +980,7 @@ deps = {
     'packages': [
       {
         'package': 'flutter_internal/rbe/reclient_cfgs',
-        'version': 'PKYzmgx_GlWBAq7PEphD7bsfZ55WSOifmWisD0N-4e4C',
+        'version': 'ZuU_165luvP45DTYUP6WlEXb5EXyVxEuAm45ZB1c3zoC',
       }
     ],
     'condition': 'use_rbe',
