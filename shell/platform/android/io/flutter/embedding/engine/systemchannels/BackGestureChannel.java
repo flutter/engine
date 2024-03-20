@@ -37,7 +37,7 @@ public class BackGestureChannel {
    *     framework.
    */
   public BackGestureChannel(@NonNull DartExecutor dartExecutor) {
-    this.channel = new MethodChannel(dartExecutor, "flutter/backGesture", JSONMethodCodec.INSTANCE);
+    this.channel = new MethodChannel(dartExecutor, "flutter/backgesture", JSONMethodCodec.INSTANCE);
     channel.setMethodCallHandler(defaultHandler);
   }
 
