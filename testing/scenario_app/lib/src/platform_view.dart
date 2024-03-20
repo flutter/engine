@@ -382,11 +382,12 @@ class PlatformViewSurroundingLayersScenario extends Scenario
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    builder.pushOffset(101, 101);
+    // a square platform view from (99.5, 99.5) to (200.5, 200.5)
+    builder.pushOffset(99.5, 99.5);
     addPlatformView(
       id,
-      width: 100,
-      height: 100,
+      width: 101,
+      height: 101,
       dispatcher: view.platformDispatcher,
       sceneBuilder: builder,
     );

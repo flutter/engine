@@ -320,10 +320,12 @@ static const CGFloat kCompareAccuracy = 0.001;
 
   XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
-  XCTAssertEqual(platform_view.frame.origin.x, 49.75);
-  XCTAssertEqual(platform_view.frame.origin.y, 49.75);
-  XCTAssertEqual(platform_view.frame.size.width, 50);
-  XCTAssertEqual(platform_view.frame.size.height, 50);
+
+  CGFloat scale = [UIScreen mainScreen].scale;
+  XCTAssertEqual(platform_view.frame.origin.x * scale, 99.5);
+  XCTAssertEqual(platform_view.frame.origin.y * scale, 99.5);
+  XCTAssertEqual(platform_view.frame.size.width * scale, 101);
+  XCTAssertEqual(platform_view.frame.size.height * scale, 101);
 
   XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
   XCTAssertFalse(overlay.exists);
