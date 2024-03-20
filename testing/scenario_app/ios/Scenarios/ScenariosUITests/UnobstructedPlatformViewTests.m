@@ -320,10 +320,10 @@ static const CGFloat kCompareAccuracy = 0.001;
 
   XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
   XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
-  XCTAssertEqual(platform_view.frame.origin.x, 99.5);
-  XCTAssertEqual(platform_view.frame.origin.y, 99.5);
-  XCTAssertEqual(platform_view.frame.size.width, 101);
-  XCTAssertEqual(platform_view.frame.size.height, 101);
+  XCTAssertEqual(platform_view.frame.origin.x, 50.5);
+  XCTAssertEqual(platform_view.frame.origin.y, 50.5);
+  XCTAssertEqual(platform_view.frame.size.width, 50);
+  XCTAssertEqual(platform_view.frame.size.height, 50);
 
   XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
   XCTAssertFalse(overlay.exists);

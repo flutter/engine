@@ -382,16 +382,14 @@ class PlatformViewSurroundingLayersScenario extends Scenario
   void onBeginFrame(Duration duration) {
     final SceneBuilder builder = SceneBuilder();
 
-    // a square platform view from (99.5, 99.5) to (200.5, 200.5)
-    builder.pushOffset(99.5, 99.5);
+    builder.pushOffset(101, 101);
     addPlatformView(
       id,
-      width: 101,
-      height: 101,
+      width: 100,
+      height: 100,
       dispatcher: view.platformDispatcher,
       sceneBuilder: builder,
     );
-
     builder.pop();
 
     final PictureRecorder recorder = PictureRecorder();
@@ -399,25 +397,25 @@ class PlatformViewSurroundingLayersScenario extends Scenario
 
     // Rect at the left of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(0, 99.5, 99.5, 99.5),
+      const Rect.fromLTWH(0, 101, 101, 101),
       Paint()..color = const Color(0x22FF0000),
     );
 
     // Rect at the right of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(200.5, 99.5, 99.5, 99.5),
+      const Rect.fromLTWH(201, 101, 101, 101),
       Paint()..color = const Color(0x22FF0000),
     );
 
     // Rect at the top of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(99.5, 0, 99.5, 99.5),
+      const Rect.fromLTWH(101, 0, 101, 101),
       Paint()..color = const Color(0x22FF0000),
     );
 
     // Rect at the bottom of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(99.5, 200.5, 99.5, 99.5),
+      const Rect.fromLTWH(101, 201, 101, 101),
       Paint()..color = const Color(0x22FF0000),
     );
 
