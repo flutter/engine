@@ -397,25 +397,25 @@ class PlatformViewSurroundingLayersScenario extends Scenario
 
     // Rect at the left of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(0, 101, 101, 101),
+      const Rect.fromLTWH(0, 99.5, 99.5, 99.5),
       Paint()..color = const Color(0x22FF0000),
     );
 
     // Rect at the right of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(201, 101, 101, 101),
+      const Rect.fromLTWH(200.5, 99.5, 99.5, 99.5),
       Paint()..color = const Color(0x22FF0000),
     );
 
     // Rect at the top of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(101, 0, 101, 101),
+      const Rect.fromLTWH(99.5, 0, 99.5, 99.5),
       Paint()..color = const Color(0x22FF0000),
     );
 
     // Rect at the bottom of platform view
     canvas.drawRect(
-      const Rect.fromLTWH(101, 201, 101, 101),
+      const Rect.fromLTWH(99.5, 200.5, 99.5, 99.5),
       Paint()..color = const Color(0x22FF0000),
     );
 
