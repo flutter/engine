@@ -40,6 +40,9 @@ void testMain() {
 
     setUp(() {
       renderer.fontCollection.debugResetFallbackFonts();
+      debugOverrideJsConfiguration(<String, Object?>{
+        'fontFallbackBaseUrl': 'assets/fallback_fonts/',
+      }.jsify() as JsFlutterConfiguration?);
       renderer.fontCollection.fontFallbackManager!.downloadQueue
               .debugOnLoadFontFamily =
           (String family) => downloadedFontFamilies.add(family);
@@ -57,6 +60,11 @@ void testMain() {
     });
 
     test('can override font fallback base URL using JS', () {
+      expect(
+        renderer.fontCollection.fontFallbackManager!.downloadQueue
+            .fallbackFontUrlPrefix,
+        'assets/fallback_fonts/',
+      );
       debugOverrideJsConfiguration(<String, Object?>{
         'fontFallbackBaseUrl': 'http://my-special-fonts.com/',
       }.jsify() as JsFlutterConfiguration?);
