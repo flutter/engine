@@ -119,7 +119,7 @@ void ExternalViewEmbedder::PrepareFlutterView(int64_t flutter_view_id,
                                               double device_pixel_ratio) {
   // TODO(team-fuchsia): Support multiple views. For now, Fuchsia can render
   // only into the implicit view.
-  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
+  FML_DCHECK(flutter_view_id == flutter::kFlutterImplicitViewId);
 
   // Reset for new view.
   Reset();
