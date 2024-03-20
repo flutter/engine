@@ -327,7 +327,9 @@ class PlatformConfiguration final {
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view was removed.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Update the view metrics for the specified view.
@@ -481,13 +483,13 @@ class PlatformConfiguration final {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
-  /// @brief      Retrieves the Window with the given ID managed by the
-  ///             `PlatformConfiguration`.
+  /// @brief      Retrieves the viewport metrics with the given ID managed by
+  ///             the `PlatformConfiguration`.
   ///
-  /// @param[in] window_id The id of the window to find and return.
+  /// @param[in]  view_id The id of the view's viewport metrics to return.
   ///
-  /// @return     a pointer to the Window. Returns nullptr if the ID is not
-  ///             found.
+  /// @return     a pointer to the ViewportMetrics. Returns nullptr if the ID is
+  ///             not found.
   ///
   const ViewportMetrics* GetMetrics(int view_id);
 

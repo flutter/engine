@@ -11,7 +11,6 @@
         "--android",
         "--android-cpu=arm64",
         "--no-stripped",
-        "--enable-impeller-vulkan",
         "--no-lto"
       ],
       "name": "android_debug_arm64",
@@ -27,11 +26,30 @@
       ],
       "gn": [
         "--runtime-mode",
+        "debug",
+        "--unoptimized",
+        "--android",
+        "--android-cpu=arm64",
+        "--no-stripped",
+        "--no-lto"
+      ],
+      "name": "android_debug_unopt_arm64",
+      "ninja": {
+        "config": "android_debug_unopt_arm64",
+        "targets": []
+      }
+    },
+    {
+      "drone_dimensions": [
+        "os=Mac-13",
+        "os=Linux"
+      ],
+      "gn": [
+        "--runtime-mode",
         "profile",
         "--android",
         "--android-cpu=arm64",
         "--no-stripped",
-        "--enable-impeller-vulkan",
         "--no-lto"
       ],
       "name": "android_profile_arm64",
@@ -51,7 +69,6 @@
         "--android",
         "--android-cpu=arm64",
         "--no-stripped",
-        "--enable-impeller-vulkan",
         "--no-lto"
       ],
       "name": "android_release_arm64",
@@ -69,7 +86,6 @@
         "--runtime-mode",
         "debug",
         "--no-stripped",
-        "--enable-impeller-vulkan",
         "--no-lto"
       ],
       "name": "host_debug",
@@ -87,7 +103,6 @@
         "--runtime-mode",
         "profile",
         "--no-stripped",
-        "--enable-impeller-vulkan",
         "--no-lto"
       ],
       "name": "host_profile",
@@ -105,7 +120,6 @@
         "--runtime-mode",
         "release",
         "--no-stripped",
-        "--enable-impeller-vulkan",
         "--no-lto"
       ],
       "name": "host_release",

@@ -458,8 +458,7 @@ ContentContext::ContentContext(
   auto clip_color_attachments =
       clip_pipeline_descriptor->GetColorAttachmentDescriptors();
   for (auto& color_attachment : clip_color_attachments) {
-    color_attachment.second.write_mask =
-        static_cast<uint64_t>(ColorWriteMask::kNone);
+    color_attachment.second.write_mask = ColorWriteMaskBits::kNone;
   }
   clip_pipeline_descriptor->SetColorAttachmentDescriptors(
       std::move(clip_color_attachments));
@@ -545,7 +544,9 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     }
   }
 
-  RecordCommandBuffer(std::move(sub_command_buffer));
+  if (!context->GetCommandQueue()->Submit({sub_command_buffer}).ok()) {
+    return fml::Status(fml::StatusCode::kUnknown, "");
+  }
 
   return subpass_target;
 }
@@ -596,16 +597,6 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
       it++;
     }
   }
-}
-
-void ContentContext::RecordCommandBuffer(
-    std::shared_ptr<CommandBuffer> command_buffer) const {
-  GetContext()->GetCommandQueue()->Submit({std::move(command_buffer)});
-}
-
-void ContentContext::FlushCommandBuffers() const {
-  auto buffers = std::move(pending_command_buffers_->command_buffers);
-  GetContext()->GetCommandQueue()->Submit(buffers);
 }
 
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
