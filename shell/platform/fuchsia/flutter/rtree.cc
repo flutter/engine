@@ -42,14 +42,14 @@ std::list<SkRect> RTree::searchNonOverlappingDrawnRects(
   std::vector<int> intermediary_results;
   search(query, &intermediary_results);
 
-  std::vector<SkIRect> rects;
+  std::vector<DlIRect> rects;
   for (int index : intermediary_results) {
     auto draw_op = draw_op_.find(index);
     // Ignore records that don't draw anything.
     if (draw_op == draw_op_.end()) {
       continue;
     }
-    SkIRect current_record_rect;
+    DlIRect current_record_rect;
     draw_op->second.roundOut(&current_record_rect);
     rects.push_back(current_record_rect);
   }
