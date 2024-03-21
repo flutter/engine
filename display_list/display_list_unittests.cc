@@ -2136,7 +2136,7 @@ static void test_rtree(const sk_sp<const DlRTree>& rtree,
   rtree->search(query, &indices);
   EXPECT_EQ(indices, expected_indices);
   EXPECT_EQ(indices.size(), expected_indices.size());
-  std::list<SkRect> rects = rtree->searchAndConsolidateRects(query);
+  std::list<DlRect> rects = rtree->searchAndConsolidateRects(query);
   // ASSERT_EQ(rects.size(), expected_indices.size());
   auto iterator = rects.cbegin();
   for (int i : expected_indices) {

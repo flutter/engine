@@ -94,11 +94,11 @@ void DlRegion::SpanBuffer::getSpans(SpanChunkHandle handle,
   end = begin + getChunkSize(handle);
 }
 
-DlRegion::DlRegion(const std::vector<SkIRect>& rects) {
+DlRegion::DlRegion(const std::vector<DlIRect>& rects) {
   setRects(rects);
 }
 
-DlRegion::DlRegion(const SkIRect& rect) : bounds_(rect) {
+DlRegion::DlRegion(const DlIRect& rect) : bounds_(rect) {
   Span span{rect.left(), rect.right()};
   lines_.push_back(makeLine(rect.top(), rect.bottom(), &span, &span + 1));
 }
@@ -248,7 +248,7 @@ size_t DlRegion::intersectLineSpans(std::vector<Span>& res,
   return new_span - res.data();
 }
 
-void DlRegion::setRects(const std::vector<SkIRect>& unsorted_rects) {
+void DlRegion::setRects(const std::vector<DlIRect>& unsorted_rects) {
   // setRects can only be called on empty regions.
   FML_DCHECK(lines_.empty());
 
@@ -560,8 +560,8 @@ DlRegion DlRegion::MakeIntersection(const DlRegion& a, const DlRegion& b) {
   return res;
 }
 
-std::vector<SkIRect> DlRegion::getRects(bool deband) const {
-  std::vector<SkIRect> rects;
+std::vector<DlIRect> DlRegion::getRects(bool deband) const {
+  std::vector<DlIRect> rects;
   if (isEmpty()) {
     return rects;
   } else if (isSimple()) {
@@ -614,12 +614,12 @@ bool DlRegion::isComplex() const {
           span_buffer_.getChunkSize(lines_.front().chunk_handle) > 1);
 }
 
-bool DlRegion::intersects(const SkIRect& rect) const {
+bool DlRegion::intersects(const DlIRect& rect) const {
   if (isEmpty()) {
     return false;
   }
 
-  auto bounds_intersect = SkIRect::Intersects(bounds_, rect);
+  auto bounds_intersect = DlIRect::Intersects(bounds_, rect);
 
   if (isSimple()) {
     return bounds_intersect;

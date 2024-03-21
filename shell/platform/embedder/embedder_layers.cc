@@ -21,7 +21,7 @@ EmbedderLayers::~EmbedderLayers() = default;
 
 void EmbedderLayers::PushBackingStoreLayer(
     const FlutterBackingStore* store,
-    const std::vector<SkIRect>& paint_region_vec) {
+    const std::vector<DlIRect>& paint_region_vec) {
   FlutterLayer layer = {};
 
   layer.struct_size = sizeof(FlutterLayer);

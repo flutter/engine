@@ -9,7 +9,7 @@
 
 namespace flutter {
 
-DlRTree::DlRTree(const SkRect rects[],
+DlRTree::DlRTree(const DlRect rects[],
                  int N,
                  const int ids[],
                  bool p(int),
@@ -139,7 +139,7 @@ DlRTree::DlRTree(const SkRect rects[],
   FML_DCHECK(gen_start + gen_count == total_node_count);
 }
 
-void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
+void DlRTree::search(const DlRect& query, std::vector<int>* results) const {
   FML_DCHECK(results != nullptr);
   if (query.isEmpty()) {
     return;
@@ -160,31 +160,31 @@ void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
   }
 }
 
-std::list<SkRect> DlRTree::searchAndConsolidateRects(const SkRect& query,
+std::list<DlRect> DlRTree::searchAndConsolidateRects(const DlRect& query,
                                                      bool deband) const {
   // Get the indexes for the operations that intersect with the query rect.
   std::vector<int> intermediary_results;
   search(query, &intermediary_results);
 
-  std::vector<SkIRect> rects;
+  std::vector<DlIRect> rects;
   rects.reserve(intermediary_results.size());
   for (int index : intermediary_results) {
-    SkIRect current_record_rect;
+    DlIRect current_record_rect;
     bounds(index).roundOut(&current_record_rect);
     rects.push_back(current_record_rect);
   }
   DlRegion region(rects);
 
   auto non_overlapping_rects = region.getRects(deband);
-  std::list<SkRect> final_results;
+  std::list<DlRect> final_results;
   for (const auto& rect : non_overlapping_rects) {
-    final_results.push_back(SkRect::Make(rect));
+    final_results.push_back(DlRect::Make(rect));
   }
   return final_results;
 }
 
 void DlRTree::search(const Node& parent,
-                     const SkRect& query,
+                     const DlRect& query,
                      std::vector<int>* results) const {
   // Caller protects against empty query
   int start = parent.child.index;
@@ -203,7 +203,7 @@ void DlRTree::search(const Node& parent,
 
 const DlRegion& DlRTree::region() const {
   if (!region_) {
-    std::vector<SkIRect> rects;
+    std::vector<DlIRect> rects;
     rects.resize(leaf_count_);
     for (int i = 0; i < leaf_count_; i++) {
       nodes_[i].bounds.roundOut(&rects[i]);
@@ -213,7 +213,7 @@ const DlRegion& DlRTree::region() const {
   return *region_;
 }
 
-const SkRect& DlRTree::bounds() const {
+const DlRect& DlRTree::bounds() const {
   if (!nodes_.empty()) {
     return nodes_.back().bounds;
   } else {

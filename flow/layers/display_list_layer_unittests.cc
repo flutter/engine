@@ -329,8 +329,8 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
   auto root_canvas_dl = expected_root_canvas.Build();
   const auto root_canvas_rects =
       root_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
-  std::list<SkRect> root_canvas_rects_expected = {
-      SkRect::MakeLTRB(26, 26, 56, 56),
+  std::list<DlRect> root_canvas_rects_expected = {
+      DlRect::MakeLTRB(26, 26, 56, 56),
   };
   EXPECT_EQ(root_canvas_rects_expected, root_canvas_rects);
 
@@ -344,10 +344,10 @@ TEST_F(DisplayListLayerTest, RasterCachePreservesRTree) {
       overlay_canvas_dl->rtree()->searchAndConsolidateRects(kGiantRect, true);
 
   // Same bounds as root canvas, but preserves individual rects.
-  std::list<SkRect> overlay_canvas_rects_expected = {
-      SkRect::MakeLTRB(26, 26, 46, 36),
-      SkRect::MakeLTRB(26, 36, 56, 46),
-      SkRect::MakeLTRB(36, 46, 56, 56),
+  std::list<DlRect> overlay_canvas_rects_expected = {
+      DlRect::MakeLTRB(26, 26, 46, 36),
+      DlRect::MakeLTRB(26, 36, 56, 46),
+      DlRect::MakeLTRB(36, 46, 56, 56),
   };
   EXPECT_EQ(overlay_canvas_rects_expected, overlay_canvas_rects);
 };

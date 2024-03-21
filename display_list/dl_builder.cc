@@ -77,7 +77,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   bool affects_transparency = current_layer_->affects_transparent_layer();
 
   sk_sp<DlRTree> rtree = this->rtree();
-  SkRect bounds = rtree ? rtree->bounds() : this->bounds();
+  DlRect bounds = rtree ? rtree->bounds() : this->bounds();
 
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
@@ -534,10 +534,10 @@ void DisplayListBuilder::Restore() {
   // outgoing layer (saved above, if any) to adjust the bounds that
   // were accumulated while that layer was active.
   if (filter) {
-    const SkRect clip = tracker_.device_cull_rect();
+    const DlRect clip = tracker_.device_cull_rect();
     if (!accumulator()->restore(
-            [filter = filter, matrix = GetTransform()](const SkRect& input,
-                                                       SkRect& output) {
+            [filter = filter, matrix = GetTransform()](const DlRect& input,
+                                                       DlRect& output) {
               SkIRect output_bounds;
               bool ret = filter->map_device_bounds(input.roundOut(), matrix,
                                                    output_bounds);
@@ -1376,7 +1376,7 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
     case BoundsAccumulatorType::kRTree:
       auto rtree = display_list->rtree();
       if (rtree) {
-        std::list<SkRect> rects =
+        std::list<DlRect> rects =
             rtree->searchAndConsolidateRects(GetLocalClipBounds(), false);
         accumulated = false;
         for (const SkRect& rect : rects) {

@@ -691,7 +691,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     return layer_stack_.front().is_unbounded();
   }
 
-  SkRect bounds() const {
+  DlRect bounds() const {
     FML_DCHECK(layer_stack_.size() == 1);
     if (is_unbounded()) {
       FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
