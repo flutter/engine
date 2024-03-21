@@ -231,7 +231,9 @@ def setup_rbe(args):
   if args.rbe_platform:
     rbe_gn_args['rbe_platform'] = args.rbe_platform
 
-  rbe_gn_args['rbe_dir'] = os.path.join(SRC_ROOT, 'buildtools', buildtools_dir(), 'reclient')
+  rbe_gn_args['rbe_dir'] = os.path.join(
+      SRC_ROOT, 'flutter', 'buildtools', buildtools_dir(), 'reclient'
+  )
 
   rbe_gn_args['rbe_cfg'] = os.path.join(
       SRC_ROOT, 'flutter', 'build', 'rbe', 'rewrapper-' + buildtools_dir() + '.cfg'
@@ -271,7 +273,7 @@ def setup_goma(args):
     buildtools_platform = 'mac-x64'
 
   # Prefer the goma fetched by gclient if it exists.
-  cipd_goma_dir = os.path.join(SRC_ROOT, 'buildtools', buildtools_platform, 'goma')
+  cipd_goma_dir = os.path.join(SRC_ROOT, 'flutter', 'buildtools', buildtools_platform, 'goma')
 
   # Next, if GOMA_DIR is set, use that install.
   goma_dir = os.environ.get('GOMA_DIR')
@@ -457,6 +459,8 @@ def to_gn_args(args):
 
   gn_args = {}
 
+  gn_args['buildtools_path'] = '//flutter/buildtools'
+
   gn_args['is_debug'] = args.unoptimized
 
   gn_args.update(setup_git_versions())
@@ -490,7 +494,6 @@ def to_gn_args(args):
 
   # Skia GN args.
   gn_args['skia_use_dng_sdk'] = False  # RAW image handling.
-  gn_args['skia_use_sfntly'] = False  # PDF handling dependency.
   gn_args['skia_enable_pdf'] = False  # PDF handling.
   gn_args['skia_use_x11'] = False  # Never add the X11 dependency (only takes effect on Linux).
   gn_args['skia_use_wuffs'] = True
@@ -769,12 +772,6 @@ def to_gn_args(args):
   if args.target_os == 'fuchsia':
     gn_args['gn_configs_path'] = '//flutter/build/config/fuchsia/gn_configs.gni'
     gn_args['fuchsia_gn_sdk'] = '//flutter/tools/fuchsia/gn-sdk'
-  if args.fuchsia_target_api_level is not None:
-    gn_args['fuchsia_target_api_level'] = args.fuchsia_target_api_level
-  elif args.target_os == 'fuchsia':
-    # Read the default target api level from a file so we can update it with a roller
-    with open(os.path.join(os.path.dirname(__file__), 'fuchsia/target_api_level')) as file:
-      gn_args['fuchsia_target_api_level'] = int(file.read().strip())
 
   # Flags for Dart features:
   if args.use_mallinfo2:
@@ -1222,8 +1219,6 @@ def parse_args(args):
       'true and is enabled on CI.'
   )
   parser.add_argument('--no-prebuilt-dart-sdk', dest='prebuilt_dart_sdk', action='store_false')
-
-  parser.add_argument('--fuchsia-target-api-level', dest='fuchsia_target_api_level')
 
   # Flags for Dart features.
   parser.add_argument(
