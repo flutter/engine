@@ -195,7 +195,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
     const SkISize& frame_size) {
   GPUMTLTextureInfo texture_info = delegate_->GetMTLTexture(frame_size);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture_info.texture);
-
   if (!mtl_texture) {
     FML_LOG(ERROR) << "Invalid MTLTexture given by the embedder.";
     return nullptr;

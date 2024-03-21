@@ -133,6 +133,13 @@ ContextMTL::ContextMTL(
 #ifdef IMPELLER_DEBUG
   gpu_tracer_ = std::make_shared<GPUTracerMTL>();
 #endif  // IMPELLER_DEBUG
+
+  capture_scope_ = [[MTLCaptureManager sharedCaptureManager]
+      newCaptureScopeWithDevice:device_];
+  [capture_scope_ setLabel:(@"Flutter Frame")];
+  [[MTLCaptureManager sharedCaptureManager]
+      setDefaultCaptureScope:capture_scope_];
+
   is_valid_ = true;
 }
 
@@ -399,6 +406,14 @@ void ContextMTL::SyncSwitchObserver::OnSyncSwitchUpdate(bool new_is_disabled) {
 // |Context|
 std::shared_ptr<CommandQueue> ContextMTL::GetCommandQueue() const {
   return command_queue_ip_;
+}
+
+void ContextMTL::BeginCaptureScope() const {
+  [capture_scope_ beginScope];
+}
+
+void ContextMTL::EndCaptureScope() const {
+  [capture_scope_ endScope];
 }
 
 }  // namespace impeller

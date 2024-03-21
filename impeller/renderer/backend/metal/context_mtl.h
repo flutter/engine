@@ -106,6 +106,16 @@ class ContextMTL final : public Context,
   // |Context|
   void StoreTaskForGPU(const std::function<void()>& task) override;
 
+  /// Begin an Xcode capture scope for frame debugging.
+  ///
+  /// All command buffers created after this method is called and until
+  /// [EndCaptureScope] is called will be recorded in the Xcode frame capture
+  /// tool.
+  void BeginCaptureScope() const;
+
+  /// End an Xcode capture scope for frame debugging.
+  void EndCaptureScope() const;
+
  private:
   class SyncSwitchObserver : public fml::SyncSwitch::Observer {
    public:
@@ -119,6 +129,7 @@ class ContextMTL final : public Context,
 
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
+  id<MTLCaptureScope> capture_scope_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
   std::shared_ptr<PipelineLibraryMTL> pipeline_library_;
   std::shared_ptr<SamplerLibrary> sampler_library_;

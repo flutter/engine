@@ -133,6 +133,7 @@ std::unique_ptr<SurfaceMTL> SurfaceMTL::MakeFromTexture(
     id<MTLTexture> texture,
     std::optional<IRect> clip_rect,
     id<CAMetalDrawable> drawable) {
+  ContextMTL::Cast(context.get())->BeginCaptureScope();
   bool partial_repaint_blit_required = ShouldPerformPartialRepaint(clip_rect);
 
   // The returned render target is the texture that Impeller will render the
@@ -265,12 +266,12 @@ bool SurfaceMTL::Present() const {
       [(id<FlutterMetalDrawable>)metal_drawable
           flutterPrepareForPresent:command_buffer];
     }
+    ContextMTL::Cast(context.get())->EndCaptureScope();
 
     // If the threads have been merged, or there is a pending frame capture,
     // then block on cmd buffer scheduling to ensure that the
     // transaction/capture work correctly.
-    if ([[NSThread currentThread] isMainThread] ||
-        [[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+    if ([[NSThread currentThread] isMainThread]) {
       TRACE_EVENT0("flutter", "waitUntilScheduled");
       [command_buffer commit];
       [command_buffer waitUntilScheduled];
@@ -284,6 +285,8 @@ bool SurfaceMTL::Present() const {
       }];
       [command_buffer commit];
     }
+  } else {
+    ContextMTL::Cast(context.get())->EndCaptureScope();
   }
 
   return true;
