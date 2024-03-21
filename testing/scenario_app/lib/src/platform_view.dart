@@ -399,7 +399,7 @@ class PlatformViewSurroundingLayersScenario extends Scenario
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    final Rect rect = Rect.fromLTWH(100, 100, 100, 100);
+    final Rect rect = const Rect.fromLTWH(100, 100, 100, 100);
 
     // Rect at the left of platform view
     canvas.drawRect(
