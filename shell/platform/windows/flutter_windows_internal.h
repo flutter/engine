@@ -21,7 +21,6 @@ typedef struct {
 
   // The view's initial height.
   int height;
-
 } FlutterDesktopViewControllerProperties;
 
 // Creates a view for the given engine.

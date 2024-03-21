@@ -73,6 +73,9 @@ static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
 }
 
 // Creates a view controller that might own the engine.
+//
+// If `owns_engine` is true, then the returned `FlutterDesktopViewControllerRef`
+// owns `engine_ref` and will deallocate `engine_ref` upon its own destruction.
 static FlutterDesktopViewControllerRef CreateViewController(
     FlutterDesktopEngineRef engine_ref,
     int width,
