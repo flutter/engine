@@ -50,7 +50,16 @@ void main() {
                      )));
   src.a *= frag_info.src_input_alpha;
 
-  f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, int(blend_type));
+  int nblend_type = int(blend_type);
 
-  frag_color = IPApplyBlendedColor(dst, src, blend_result);
+  if (nblend_type == /*BlendSelectValues::kPlus*/ 14) {
+    f16vec4 plus = src + dst;
+    if (plus.a > 1.0hf) {
+      plus.a = 1.0hf;
+    }
+    frag_color = IPHalfPremultiply(plus);
+  } else {
+    f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, nblend_type);
+    frag_color = IPApplyBlendedColor(dst, src, blend_result);
+  }
 }

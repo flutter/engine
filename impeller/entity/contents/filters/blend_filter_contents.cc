@@ -338,6 +338,9 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
       case BlendMode::kColor:
         pass.SetPipeline(renderer.GetBlendColorPipeline(options));
         break;
+      case BlendMode::kPlus:
+        pass.SetPipeline(renderer.GetBlendPlusPipeline(options));
+        break;
       case BlendMode::kLuminosity:
         pass.SetPipeline(renderer.GetBlendLuminosityPipeline(options));
         break;

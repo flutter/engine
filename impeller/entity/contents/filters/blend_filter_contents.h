@@ -12,7 +12,7 @@
 
 namespace impeller {
 
-constexpr std::array<std::array<Scalar, 5>, 15> kPorterDuffCoefficients = {{
+constexpr std::array<std::array<Scalar, 5>, 14> kPorterDuffCoefficients = {{
     {0, 0, 0, 0, 0},    // Clear
     {1, 0, 0, 0, 0},    // Source
     {0, 0, 1, 0, 0},    // Destination
@@ -25,7 +25,6 @@ constexpr std::array<std::array<Scalar, 5>, 15> kPorterDuffCoefficients = {{
     {0, 1, 1, -1, 0},   // SourceATop
     {1, -1, 0, 1, 0},   // DestinationATop
     {1, -1, 1, -1, 0},  // Xor
-    {1, 0, 1, 0, 0},    // Plus
     {0, 0, 0, 0, 1},    // Modulate
     {0, 0, 1, 0, -1},   // Screen
 }};
