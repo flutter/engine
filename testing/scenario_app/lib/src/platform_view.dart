@@ -395,11 +395,12 @@ class PlatformViewSurroundingLayersScenario extends Scenario
       dispatcher: view.platformDispatcher,
       sceneBuilder: builder,
     );
+    builder.pop();
 
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
 
-    final Rect rect = const Rect.fromLTWH(100, 100, 100, 100);
+    const Rect rect = Rect.fromLTWH(100, 100, 100, 100);
 
     // Rect at the left of platform view
     canvas.drawRect(
@@ -425,10 +426,12 @@ class PlatformViewSurroundingLayersScenario extends Scenario
       Paint()..color = const Color(0x22FF0000),
     );
 
-    builder.pop();
-
     final Picture picture = recorder.endRecording();
     builder.addPicture(Offset.zero, picture);
+
+    // Pop the (0.5, 0.5) offset.
+    builder.pop();
+
     final Scene scene = builder.build();
     view.render(scene);
     scene.dispose();
