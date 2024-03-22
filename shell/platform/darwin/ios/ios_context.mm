@@ -13,6 +13,8 @@
 #include "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
 #endif  // SHELL_ENABLE_METAL
 
+FLUTTER_ASSERT_ARC
+
 namespace flutter {
 
 IOSContext::IOSContext(MsaaSampleCount msaa_samples) : msaa_samples_(msaa_samples) {}
