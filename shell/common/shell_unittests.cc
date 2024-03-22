@@ -4574,11 +4574,8 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     // The construtor for ViewportMetrics{_, width, _, _, _} (only the 2nd
     // argument matters in this test).
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 10, 1, 0, 0});
-    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0}, [](bool added) {
-      // The Dart isolate hasn't been started yet. The view won't be added until
-      // the shell flushes the platform state.
-      ASSERT_FALSE(added);
-    });
+    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0},
+                   [](bool added) { ASSERT_TRUE(added); });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
   });
 

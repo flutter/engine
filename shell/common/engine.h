@@ -721,10 +721,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  /// @param[in]  callback          Optional callback that will be invoked once
+  ///                               the engine attempts to add the view.
   ///
-  /// @return     Whether the view was added.
-  ///
-  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  void AddView(int64_t view_id,
+               const ViewportMetrics& view_metrics,
+               std::function<void(bool added)> callback = nullptr);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the Flutter application that a view is no

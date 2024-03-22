@@ -121,9 +121,24 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
   FML_DCHECK(!has_flushed_runtime_state_)
       << "FlushRuntimeStateToIsolate is called more than once somehow.";
   has_flushed_runtime_state_ = true;
+
+  auto platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    return false;
+  }
+
   for (auto const& [view_id, viewport_metrics] :
        platform_data_.viewport_metrics_for_views) {
-    if (!AddView(view_id, viewport_metrics)) {
+    bool added = platform_configuration->AddView(view_id, viewport_metrics);
+
+    // Add view callbacks are optional.
+    auto add_view_callback_it = pending_add_view_callbacks_.find(view_id);
+    if (add_view_callback_it != pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](added);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    if (!added) {
       return false;
     }
   }
@@ -136,14 +151,25 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::AddView(int64_t view_id,
-                                const ViewportMetrics& view_metrics) {
+void RuntimeController::AddView(int64_t view_id,
+                                const ViewportMetrics& view_metrics,
+                                AddViewCallback callback) {
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    return platform_configuration->AddView(view_id, view_metrics);
+
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    // The Dart isolate is not running. |FlushRuntimeStateToIsolate| will
+    // add the view when the isolate is started.
+    if (callback != nullptr) {
+      pending_add_view_callbacks_[view_id] = std::move(callback);
+    }
+    return;
   }
 
-  return false;
+  bool added = platform_configuration->AddView(view_id, view_metrics);
+  if (callback != nullptr) {
+    callback(added);
+  }
 }
 
 bool RuntimeController::RemoveView(int64_t view_id) {
