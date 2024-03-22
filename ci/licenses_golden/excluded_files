@@ -9,6 +9,7 @@
 ../../../README.md
 ../../../build
 ../../../build_overrides
+../../../buildtools
 ../../../flutter/.ci.yaml
 ../../../flutter/.clang-format
 ../../../flutter/.clang-tidy
