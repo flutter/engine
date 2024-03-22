@@ -36,30 +36,36 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
 }
 
 void main() {
-  f16vec4 dst =
-      IPHalfUnpremultiply(Sample(texture_sampler_dst,  // sampler
-                                 v_dst_texture_coords  // texture coordinates
-                                 ));
-  dst *= blend_info.dst_input_alpha;
-  f16vec4 src = blend_info.color_factor > 0.0hf
-                    ? blend_info.color
-                    : IPHalfUnpremultiply(Sample(
-                          texture_sampler_src,  // sampler
-                          v_src_texture_coords  // texture coordinates
-                          ));
-  if (blend_info.color_factor == 0.0hf) {
-    src.a *= blend_info.src_input_alpha;
-  }
-
+  f16vec4 premultiplied_dst =
+      Sample(texture_sampler_dst,  // sampler
+             v_dst_texture_coords  // texture coordinates
+      );
   int nblend_type = int(blend_type);
 
   if (nblend_type == /*BlendSelectValues::kPlus*/ 14) {
-    f16vec4 plus = src + dst;
+    f16vec4 premultiplied_src =
+        Sample(texture_sampler_src,  // sampler
+               v_src_texture_coords  // texture coordinates
+        );
+    f16vec4 plus = premultiplied_dst + premultiplied_src;
     if (plus.a > 1.0hf) {
       plus.a = 1.0hf;
     }
-    frag_color = IPHalfPremultiply(plus);
+    frag_color = plus;
   } else {
+    f16vec4 dst = IPHalfUnpremultiply(premultiplied_dst);
+    dst *= blend_info.dst_input_alpha;
+
+    f16vec4 src = blend_info.color_factor > 0.0hf
+                      ? blend_info.color
+                      : IPHalfUnpremultiply(Sample(
+                            texture_sampler_src,  // sampler
+                            v_src_texture_coords  // texture coordinates
+                            ));
+    if (blend_info.color_factor == 0.0hf) {
+      src.a *= blend_info.src_input_alpha;
+    }
+
     f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, nblend_type);
     frag_color = IPApplyBlendedColor(dst, src, blend_result);
   }
