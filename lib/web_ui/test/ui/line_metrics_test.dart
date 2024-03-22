@@ -132,7 +132,7 @@ Future<void> testMain() async {
     final ui.LineMetrics? metrics = paragraph.getLineMetricsAt(0);
     expect(metrics, isNotNull);
 
-    // Ahem's 'X' character is a square, so it's the font size (10.0) * 4 characters.
+    // FlutterTest font's 'X' character is a square, so it's the font size (10.0) * 4 characters.
     expect(metrics!.width, 40.0);
   });
 }
