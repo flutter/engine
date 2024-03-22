@@ -12,9 +12,10 @@ import androidx.annotation.RequiresApi;
 import io.flutter.Build.API_LEVELS;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
-import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
+import io.flutter.plugin.common.StandardMethodCodec;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ public class BackGestureChannel {
    *     framework.
    */
   public BackGestureChannel(@NonNull DartExecutor dartExecutor) {
-    this.channel = new MethodChannel(dartExecutor, "flutter/backgesture", JSONMethodCodec.INSTANCE);
+    this.channel = new MethodChannel(dartExecutor, "flutter/backgesture", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(defaultHandler);
   }
 
@@ -116,9 +117,13 @@ public class BackGestureChannel {
   @TargetApi(API_LEVELS.API_34)
   @RequiresApi(API_LEVELS.API_34)
   private Map<String, Object> backEventToJsonMap(@NonNull BackEvent backEvent) {
-    Map<String, Object> message = new HashMap<>(4);
-    message.put("x", Float.isNaN(backEvent.getTouchX()) ? null : backEvent.getTouchX());
-    message.put("y", Float.isNaN(backEvent.getTouchY()) ? null : backEvent.getTouchY());
+    Map<String, Object> message = new HashMap<>(3);
+    final float x = backEvent.getTouchX();
+    final float y = backEvent.getTouchY();
+    final Object touchOffset = (Float.isNaN(x) || Float.isNaN(y))
+            ? null
+            : Arrays.asList(x, y);
+    message.put("touchOffset", touchOffset);
     message.put("progress", backEvent.getProgress());
     message.put("swipeEdge", backEvent.getSwipeEdge());
 
