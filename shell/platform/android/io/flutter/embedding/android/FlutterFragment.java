@@ -1543,7 +1543,7 @@ public class FlutterFragment extends Fragment
    */
   @Override
   public boolean shouldAttachEngineToActivity() {
-    return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY);
+    return getArguments().getBoolean(ARG_SHOULD_ATTACH_ENGINE_TO_ACTIVITY, true);
   }
 
   /**
