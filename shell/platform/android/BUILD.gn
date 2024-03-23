@@ -472,7 +472,7 @@ action("flutter_shell_java") {
 action("android_jar") {
   script = "//build/android/gyp/create_flutter_jar.py"
 
-  if (stripped_symbols) {
+  if (stripped_symbols && flutter_runtime_mode != "release") {
     engine_library = "lib.stripped/libflutter.so"
   } else {
     engine_library = "libflutter.so"
