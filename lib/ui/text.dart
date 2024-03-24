@@ -1242,6 +1242,41 @@ final class GlyphInfo {
   String toString() => 'Glyph($graphemeClusterLayoutBounds, textRange: $graphemeClusterCodeUnitRange, direction: $writingDirection)';
 }
 
+/// Information associated with a font used to render text in a [Paragraph].
+final class FontInfo {
+  const FontInfo._(bool isItalic, this.weight, this.fontSize, this.fontFamily)
+    : style = isItalic ? FontStyle.italic : FontStyle.normal;
+
+  /// Whether the font uses the italic type variation of the typeface.
+  final FontStyle style;
+
+  /// The thickness of the strokes used to draw the glyphs in the font.
+  ///
+  /// This is the same measurement as [FontWeight.value]: a [weight] value of
+  /// 400 is equivalent to [FontWeight.w400].
+  final int weight;
+
+  /// The size of the font in logical pixels.
+  ///
+  /// Besides `TextStyle.fontSize`, the operating system's accessibility text
+  /// scaling may also affect the font's size.
+  final double fontSize;
+
+  /// The family name of the typeface, typically assigned by the creator of the
+  /// font.
+  ///
+  /// This value may not be the same value as the family name used to register
+  /// (either via the `FontLoader` API, or in the `pubspec.yaml` file) the font.
+  ///
+  /// The text layout library may not provide a meaningful family name for every
+  /// font. For example, on Android a system fallback font may have a family name
+  /// of "12##Fallback".
+  final String fontFamily;
+
+  @override
+  String toString() => '$fontFamily $fontSize, w$weight, $style';
+}
+
 /// Whether and how to align text horizontally.
 // The order of this enum must match the order of the values in RenderStyleConstants.h's ETextAlign.
 enum TextAlign {
@@ -3104,6 +3139,21 @@ abstract class Paragraph {
   /// rather than the beginning of the new line.
   int? getLineNumberAt(int codeUnitOffset);
 
+  /// Returns the information of the font used to render the glyph at the given
+  /// `codeUnitOffset`, for debugging purposes.
+  ///
+  /// This method is typically used to debug applications. Application code
+  /// should avoid relying on the return value of this method when possible, as
+  /// it may not be stable: the font may change when the application decides to
+  /// download more suitable fonts, as is common in web apps. Operating systems
+  /// may not provide meaningful names for certain fonts.
+  ///
+  /// This method always returns null when asserts are disabled, or when the text
+  /// layout library does not support this feature. Null is also returned if the
+  /// given `codeUnitOffset` is not within the visible lines of text, or is
+  /// ellipsized.
+  FontInfo? debugGetFontAt(int codeUnitOffset);
+
   /// Release the resources used by this object. The object is no longer usable
   /// after this method is called.
   void dispose();
@@ -3307,6 +3357,18 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
   }
   @Native<Int32 Function(Pointer<Void>, Uint32)>(symbol: 'Paragraph::getLineNumberAt')
   external int _getLineNumber(int codeUnitOffset);
+
+  @override
+  FontInfo? debugGetFontAt(int codeUnitOffset) {
+    FontInfo? returnValue;
+    assert(() {
+      returnValue = codeUnitOffset < 0 ? null : _getFontInfoAt(codeUnitOffset, FontInfo._);
+      return true;
+    }());
+    return returnValue;
+  }
+  @Native<Handle Function(Pointer<Void>, Uint32, Handle)>(symbol: 'Paragraph::getFontInfoAt')
+  external FontInfo? _getFontInfoAt(int codeUnitOffset, Function constructor);
 
   @override
   void dispose() {

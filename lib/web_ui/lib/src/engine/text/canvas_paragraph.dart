@@ -286,6 +286,9 @@ class CanvasParagraph implements ui.Paragraph {
     return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
   }
 
+  @override
+  ui.FontInfo? debugGetFontAt(int codeUnitOffset) => null;
+
   bool _disposed = false;
 
   @override
