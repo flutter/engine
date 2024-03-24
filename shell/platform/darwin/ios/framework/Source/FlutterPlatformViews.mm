@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include <Metal/Metal.h>
+#include <QuartzCore/QuartzCore.h>
 #import <UIKit/UIGestureRecognizerSubclass.h>
+#include "third_party/skia/include/core/SkRRect.h"
 
 #include <list>
 #include <map>
@@ -476,6 +478,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     clipView.maskView = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
+  std::optional<SkRect> clip_rect;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
@@ -488,9 +491,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                      transformMatrix)) {
           break;
         }
-        ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
-                                                       matrix:transformMatrix];
+        clip_rect = transformMatrix.mapRect((*iter)->GetRect());
+        // TODO: If there is already a clip rect, compute a new clip rect with an intersection.
         break;
       }
       case kClipRRect: {
@@ -571,11 +573,32 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // Thus, this translate needs to be reversed so the platform view can layout at the correct
   // offset.
   //
-  // Note that the transforms are not applied to the clipping paths because clipping paths happen on
+  // Note that the transforms are not applied to the clipping paths because clipping paths happen
+  // on
   // the mask view, whose origin is always (0,0) to the flutter_view.
   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
 
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
+
+  if (clip_rect.has_value()) {
+    // The fully transformed clip rect includes the screen scale, while the clipView frame
+    // will not.
+    SkRect new_rect =
+        SkRect::MakeXYWH(clip_rect->x() / screenScale, clip_rect->y() / screenScale,
+                         clip_rect->width() / screenScale, clip_rect->height() / screenScale);
+    CGRect clipRect = flutter::GetCGRectFromSkRect(new_rect);
+    CGRect intersected = CGRectIntersection(clipRect, clipView.frame);
+
+    // The rect intersection may result in a different origin. However, changing the frame
+    // origin will result in UIView being incorrectly positioned. To account for this, we
+    // apply a corresponding offset to the child UIView.
+    CGPoint origin_offset = CGPointMake(intersected.origin.x - clipView.frame.origin.x,
+                                        intersected.origin.y - clipView.frame.origin.y);
+    for (auto i = 0u; i < [clipView.subviews count]; i++) {
+      clipView.subviews[i].frame.origin = origin_offset;
+    }
+    clipView.clipsToBounds = YES;
+  }
 }
 
 // Composite the PlatformView with `view_id`.
@@ -907,6 +930,7 @@ void FlutterPlatformViewsController::BeginCATransaction() {
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   FML_DCHECK(!catransaction_added_);
   [CATransaction begin];
+  [CATransaction setDisableActions:YES];
   catransaction_added_ = true;
 }
 
