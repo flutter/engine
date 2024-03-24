@@ -27,6 +27,8 @@ namespace flutter {
 ///
 class EmbedderRenderTarget {
  public:
+  using MakeOrClearCurrentCallback = std::function<std::pair<bool, bool>()>;
+
   //----------------------------------------------------------------------------
   /// @brief      Destroys this instance of the render target and invokes the
   ///             callback for the embedder to release its resource associated
@@ -76,6 +78,40 @@ class EmbedderRenderTarget {
   /// @return     The backing store.
   ///
   const FlutterBackingStore* GetBackingStore() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Make the render target current.
+  ///
+  ///             Sometimes render targets are actually (for example)
+  ///             EGL surfaces instead of framebuffers or textures.
+  ///             In that case, we can't fully wrap them as SkSurfaces, instead,
+  ///             the embedder will provide a callback that should be called
+  ///             when the target surface should be made current.
+  ///
+  /// @return     A pair of booleans. The first bool is true if the operation
+  ///             succeeded (even if it was a no-op), false if the target could
+  ///             not be make current.
+  ///             The second boolean is true if any native graphics API
+  ///             (e.g. GL, but not EGL) state has changed and skia/impeller
+  ///             should not assume any GL state values are the same as before
+  ///             MaybeMakeCurrent was called.
+  virtual std::pair<bool, bool> MaybeMakeCurrent() const {
+    return {true, false};
+  }
+
+  //----------------------------------------------------------------------------
+  /// @brief      Clear the current render target. @see MaybeMakeCurrent
+  ///
+  /// @return     A pair of booleans. The first bool is true if the operation
+  ///             succeeded (even if it was a no-op), false if the target could
+  ///             not be cleared.
+  ///             The second boolean is true if any native graphics API
+  ///             (e.g. GL, but not EGL) state has changed and skia/impeller
+  ///             should not assume any GL state values are the same as before
+  ///             MaybeClearCurrent was called.
+  virtual std::pair<bool, bool> MaybeClearCurrent() const {
+    return {true, false};
+  }
 
  protected:
   //----------------------------------------------------------------------------

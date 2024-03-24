@@ -65,6 +65,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
  protected:
   virtual void SetupCompositor() override;
 
+  void SetupCompositorUsingGLSurfaces();
+
  private:
   // This allows the builder to access the hooks.
   friend class EmbedderConfigBuilder;
