@@ -4,7 +4,8 @@
 
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
-#include "impeller/entity/entity_pass.h"
+#include "impeller/entity/entity.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 
 namespace impeller {
 namespace testing {

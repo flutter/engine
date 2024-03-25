@@ -408,7 +408,7 @@ bool EntityPass::Render(ContentContext& renderer,
     return true;
   });
 
-  clip_replay_->Initialize(
+  clip_stack_->Initialize(
       Rect::MakeSize(root_render_target.GetRenderTargetSize()));
 
   bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
@@ -619,13 +619,13 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       pass_context.EndPass();
     }
 
-    if (!clip_replay_->HasCoverage()) {
+    if (!clip_stack_->HasCoverage()) {
       // The current clip is empty. This means the pass texture won't be
       // visible, so skip it.
       capture.CreateChild("Subpass Entity (Skipped: Empty clip A)");
       return EntityPass::EntityResult::Skip();
     }
-    auto clip_coverage_back = clip_replay_->CurrentClipCoverage();
+    auto clip_coverage_back = clip_stack_->CurrentClipCoverage();
     if (!clip_coverage_back.has_value()) {
       capture.CreateChild("Subpass Entity (Skipped: Empty clip B)");
       return EntityPass::EntityResult::Skip();
@@ -684,7 +684,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // save layers may transform the subpass texture after it's rendered,
     // causing parent clip coverage to get misaligned with the actual area that
     // the subpass will affect in the parent pass.
-    clip_replay_->PushSubpass(subpass_coverage, subpass->clip_depth_);
+    clip_stack_->PushSubpass(subpass_coverage, subpass->clip_depth_);
 
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
@@ -704,7 +704,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // cases.
       return EntityPass::EntityResult::Failure();
     }
-    clip_replay_->PopSubpass();
+    clip_stack_->PopSubpass();
 
     // The subpass target's texture may have changed during OnRender.
     auto subpass_texture =
@@ -762,7 +762,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
   if (result.just_created) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
-    auto& replay_entities = clip_replay_->GetReplayEntities();
+    auto& replay_entities = clip_stack_->GetReplayEntities();
     for (const auto& entity : replay_entities) {
       if (!entity.Render(renderer, *result.pass)) {
         VALIDATION_LOG << "Failed to render entity for clip restore.";
@@ -793,7 +793,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     }
   }
 
-  auto current_clip_coverage = clip_replay_->CurrentClipCoverage();
+  auto current_clip_coverage = clip_stack_->CurrentClipCoverage();
   if (current_clip_coverage.has_value()) {
     // Entity transforms are relative to the current pass position, so we need
     // to check clip coverage in the same space.
@@ -818,9 +818,9 @@ bool EntityPass::RenderElement(Entity& element_entity,
   element_entity.GetContents()->SetCoverageHint(
       Rect::Intersection(element_coverage_hint, current_clip_coverage));
 
-  if (!clip_replay_->AppendClipCoverage(clip_coverage, element_entity,
-                                        clip_depth_floor,
-                                        global_pass_position)) {
+  if (!clip_stack_->AppendClipCoverage(clip_coverage, element_entity,
+                                       clip_depth_floor,
+                                       global_pass_position)) {
     return true;
   }
 
@@ -1177,7 +1177,7 @@ void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
 }
 
 const EntityPassClipStack& EntityPass::GetEntityPassClipRecorder() const {
-  return *clip_replay_;
+  return *clip_stack_;
 }
 
 }  // namespace impeller

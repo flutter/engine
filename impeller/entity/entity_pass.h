@@ -60,13 +60,6 @@ class EntityPass {
       const Matrix& effect_transform,
       Entity::RenderingMode rendering_mode)>;
 
-  // struct ClipCoverageLayer {
-  //   std::optional<Rect> coverage;
-  //   size_t clip_depth;
-  // };
-
-  // using ClipCoverageStack = std::vector<ClipCoverageLayer>;
-
   EntityPass();
 
   ~EntityPass();
@@ -345,7 +338,7 @@ class EntityPass {
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
   ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
-  std::unique_ptr<EntityPassClipStack> clip_replay_ =
+  std::unique_ptr<EntityPassClipStack> clip_stack_ =
       std::make_unique<EntityPassClipStack>();
   int32_t required_mip_count_ = 1;
 
