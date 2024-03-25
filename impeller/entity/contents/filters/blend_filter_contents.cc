@@ -586,6 +586,7 @@ void BlendFilterContents::SetBlendMode(BlendMode blend_mode) {
       BLEND_CASE(Hue)
       BLEND_CASE(Saturation)
       BLEND_CASE(Color)
+      BLEND_CASE(Plus)
       BLEND_CASE(Luminosity)
       default:
         FML_UNREACHABLE();
