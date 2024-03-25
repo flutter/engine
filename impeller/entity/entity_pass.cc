@@ -15,7 +15,6 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
-#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -410,9 +409,8 @@ bool EntityPass::Render(ContentContext& renderer,
     return true;
   });
 
-  std::unique_ptr<EntityPassClipStack> clip_stack =
-      std::make_unique<EntityPassClipStack>(
-          Rect::MakeSize(root_render_target.GetRenderTargetSize()));
+  EntityPassClipStack clip_stack = EntityPassClipStack(
+      Rect::MakeSize(root_render_target.GetRenderTargetSize()));
 
   bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
   // In this branch path, we need to render everything to an offscreen texture
@@ -432,7 +430,7 @@ bool EntityPass::Render(ContentContext& renderer,
                   Point(),                     // global_pass_position
                   Point(),                     // local_pass_position
                   0,                           // pass_depth
-                  *clip_stack                  // clip_coverage_stack
+                  clip_stack                   // clip_coverage_stack
                   )) {
       // Validation error messages are triggered for all `OnRender()` failure
       // cases.
@@ -538,7 +536,7 @@ bool EntityPass::Render(ContentContext& renderer,
       Point(),                                   // global_pass_position
       Point(),                                   // local_pass_position
       0,                                         // pass_depth
-      *clip_stack);                              // clip_coverage_stack
+      clip_stack);                               // clip_coverage_stack
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
