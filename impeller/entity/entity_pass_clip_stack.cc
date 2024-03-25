@@ -9,38 +9,44 @@
 
 namespace impeller {
 
-EntityPassClipStack::EntityPassClipStack() {}
+EntityPassClipStack::EntityPassClipStack(const Rect& initial_coverage_rect) {
+  subpass_state_.push_back(SubpassState{
+      .clip_coverage =
+          {
+              {ClipCoverageLayer{
+                  .coverage = initial_coverage_rect,
+                  .clip_depth = 0,
+              }},
+          },
+  });
+}
 
 std::optional<Rect> EntityPassClipStack::CurrentClipCoverage() const {
-  return clip_coverage_.back().back().coverage;
+  return subpass_state_.back().clip_coverage.back().coverage;
 }
 
 bool EntityPassClipStack::HasCoverage() const {
-  return !clip_coverage_.back().empty();
-}
-
-void EntityPassClipStack::Initialize(const Rect& rect) {
-  clip_coverage_.clear();
-  clip_coverage_.push_back({ClipCoverageLayer{
-      .coverage = rect,
-      .clip_depth = 0,
-  }});
+  return !subpass_state_.back().clip_coverage.empty();
 }
 
 void EntityPassClipStack::PushSubpass(std::optional<Rect> subpass_coverage,
                                       size_t clip_depth) {
-  clip_coverage_.push_back({
-      ClipCoverageLayer{.coverage = subpass_coverage, .clip_depth = clip_depth},
+  subpass_state_.push_back(SubpassState{
+      .clip_coverage =
+          {
+              ClipCoverageLayer{.coverage = subpass_coverage,
+                                .clip_depth = clip_depth},
+          },
   });
 }
 
 void EntityPassClipStack::PopSubpass() {
-  clip_coverage_.pop_back();
+  subpass_state_.pop_back();
 }
 
-const std::vector<std::vector<ClipCoverageLayer>>
+const std::vector<ClipCoverageLayer>
 EntityPassClipStack::GetClipCoverageLayers() const {
-  return clip_coverage_;
+  return subpass_state_.back().clip_coverage;
 }
 
 bool EntityPassClipStack::AppendClipCoverage(
@@ -48,18 +54,19 @@ bool EntityPassClipStack::AppendClipCoverage(
     Entity& entity,
     size_t clip_depth_floor,
     Point global_pass_position) {
+  auto& subpass_state = GetCurrentSubpassState();
   switch (clip_coverage.type) {
     case Contents::ClipCoverage::Type::kNoChange:
       break;
     case Contents::ClipCoverage::Type::kAppend: {
       auto op = CurrentClipCoverage();
-      clip_coverage_.back().push_back(
+      subpass_state.clip_coverage.push_back(
           ClipCoverageLayer{.coverage = clip_coverage.coverage,
                             .clip_depth = entity.GetClipDepth() + 1});
 
-      FML_DCHECK(clip_coverage_.back().back().clip_depth ==
-                 clip_coverage_.back().front().clip_depth +
-                     clip_coverage_.back().size() - 1);
+      FML_DCHECK(subpass_state.clip_coverage.back().clip_depth ==
+                 subpass_state.clip_coverage.front().clip_depth +
+                     subpass_state.clip_coverage.size() - 1);
 
       if (!op.has_value()) {
         // Running this append op won't impact the clip buffer because the
@@ -68,36 +75,37 @@ bool EntityPassClipStack::AppendClipCoverage(
       }
     } break;
     case Contents::ClipCoverage::Type::kRestore: {
-      if (clip_coverage_.back().back().clip_depth <= entity.GetClipDepth()) {
+      if (subpass_state.clip_coverage.back().clip_depth <=
+          entity.GetClipDepth()) {
         // Drop clip restores that will do nothing.
         return false;
       }
 
-      auto restoration_index =
-          entity.GetClipDepth() - clip_coverage_.back().front().clip_depth;
-      FML_DCHECK(restoration_index < clip_coverage_.back().size());
+      auto restoration_index = entity.GetClipDepth() -
+                               subpass_state.clip_coverage.front().clip_depth;
+      FML_DCHECK(restoration_index < subpass_state.clip_coverage.size());
 
       // We only need to restore the area that covers the coverage of the
       // clip rect at target depth + 1.
       std::optional<Rect> restore_coverage =
-          (restoration_index + 1 < clip_coverage_.back().size())
-              ? clip_coverage_.back()[restoration_index + 1].coverage
+          (restoration_index + 1 < subpass_state.clip_coverage.size())
+              ? subpass_state.clip_coverage[restoration_index + 1].coverage
               : std::nullopt;
       if (restore_coverage.has_value()) {
         // Make the coverage rectangle relative to the current pass.
         restore_coverage = restore_coverage->Shift(-global_pass_position);
       }
-      clip_coverage_.back().resize(restoration_index + 1);
+      subpass_state.clip_coverage.resize(restoration_index + 1);
 
       if constexpr (ContentContext::kEnableStencilThenCover) {
         // Skip all clip restores when stencil-then-cover is enabled.
-        if (clip_coverage_.back().back().coverage.has_value()) {
+        if (subpass_state.clip_coverage.back().coverage.has_value()) {
           RecordEntity(entity, clip_coverage.type);
         }
         return false;
       }
 
-      if (!clip_coverage_.back().back().coverage.has_value()) {
+      if (!subpass_state.clip_coverage.back().coverage.has_value()) {
         // Running this restore op won't make anything renderable, so skip it.
         return false;
       }
@@ -129,22 +137,28 @@ bool EntityPassClipStack::AppendClipCoverage(
 
 void EntityPassClipStack::RecordEntity(const Entity& entity,
                                        Contents::ClipCoverage::Type type) {
+  auto& subpass_state = GetCurrentSubpassState();
   switch (type) {
     case Contents::ClipCoverage::Type::kNoChange:
       return;
     case Contents::ClipCoverage::Type::kAppend:
-      rendered_clip_entities_.push_back(entity.Clone());
+      subpass_state.rendered_clip_entities.push_back(entity.Clone());
       break;
     case Contents::ClipCoverage::Type::kRestore:
-      if (!rendered_clip_entities_.empty()) {
-        rendered_clip_entities_.pop_back();
+      if (!subpass_state.rendered_clip_entities.empty()) {
+        subpass_state.rendered_clip_entities.pop_back();
       }
       break;
   }
 }
 
+EntityPassClipStack::SubpassState&
+EntityPassClipStack::GetCurrentSubpassState() {
+  return subpass_state_.back();
+}
+
 const std::vector<Entity>& EntityPassClipStack::GetReplayEntities() const {
-  return rendered_clip_entities_;
+  return subpass_state_.back().rendered_clip_entities;
 }
 
 }  // namespace impeller

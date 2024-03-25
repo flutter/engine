@@ -11,7 +11,8 @@ namespace impeller {
 namespace testing {
 
 TEST(EntityPassClipStackTest, CanPushAndPopEntities) {
-  EntityPassClipStack recorder = EntityPassClipStack();
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 
@@ -30,7 +31,8 @@ TEST(EntityPassClipStackTest, CanPushAndPopEntities) {
 }
 
 TEST(EntityPassClipStackTest, CanPopEntitiesSafely) {
-  EntityPassClipStack recorder = EntityPassClipStack();
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 
@@ -40,7 +42,8 @@ TEST(EntityPassClipStackTest, CanPopEntitiesSafely) {
 }
 
 TEST(EntityPassClipStackTest, CanAppendNoChange) {
-  EntityPassClipStack recorder = EntityPassClipStack();
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 
@@ -50,13 +53,12 @@ TEST(EntityPassClipStackTest, CanAppendNoChange) {
 }
 
 TEST(EntityPassClipStackTest, AppendCoverageNoChange) {
-  EntityPassClipStack recorder = EntityPassClipStack();
-  recorder.Initialize(Rect::MakeSize(Size::MakeWH(100, 100)));
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].coverage,
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
 
   Entity entity;
   recorder.AppendClipCoverage(
@@ -66,17 +68,16 @@ TEST(EntityPassClipStackTest, AppendCoverageNoChange) {
       },
       entity, 0, Point(0, 0));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].coverage,
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
 }
 
 TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
-  EntityPassClipStack recorder = EntityPassClipStack();
-  recorder.Initialize(Rect::MakeSize(Size::MakeWH(100, 100)));
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
 
   // Push a clip.
   Entity entity;
@@ -88,10 +89,10 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
       },
       entity, 0, Point(0, 0));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 2u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][1].coverage,
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 2u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][1].clip_depth, 2u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_depth, 2u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Restore the clip.
@@ -103,18 +104,18 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
       },
       entity, 0, Point(0, 0));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].coverage,
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 0u);
 }
 
 TEST(EntityPassClipStackTest, UnbalancedRestore) {
-  EntityPassClipStack recorder = EntityPassClipStack();
-  recorder.Initialize(Rect::MakeSize(Size::MakeWH(100, 100)));
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
 
   // Restore the clip.
   Entity entity;
@@ -126,18 +127,18 @@ TEST(EntityPassClipStackTest, UnbalancedRestore) {
       },
       entity, 0, Point(0, 0));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].coverage,
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 0u);
 }
 
 TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpasses) {
-  EntityPassClipStack recorder = EntityPassClipStack();
-  recorder.Initialize(Rect::MakeSize(Size::MakeWH(100, 100)));
+  EntityPassClipStack recorder =
+      EntityPassClipStack(Rect::MakeLTRB(0, 0, 100, 100));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 1u);
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
 
   // Push a clip.
   Entity entity;
@@ -149,16 +150,16 @@ TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpasses) {
       },
       entity, 0, Point(0, 0));
 
-  ASSERT_EQ(recorder.GetClipCoverageLayers()[0].size(), 2u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][1].coverage,
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 2u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][1].clip_depth, 2u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_depth, 2u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Begin a subpass.
   recorder.PushSubpass(Rect::MakeLTRB(50, 50, 55, 55), 0);
-  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 2u);
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[1][0].coverage,
+  ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
 
   entity.SetClipDepth(1);
@@ -169,13 +170,13 @@ TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpasses) {
       },
       entity, 0, Point(0, 0));
 
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[1][1].coverage,
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(54, 54, 55, 55));
 
   // End subpass.
   recorder.PopSubpass();
 
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0][1].coverage,
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
 }
 

@@ -21,11 +21,10 @@ struct ClipCoverageLayer {
 ///        stencil buffer is left in an identical state.
 class EntityPassClipStack {
  public:
-  EntityPassClipStack();
+  /// Create a new [EntityPassClipStack] with an initialized coverage rect.
+  explicit EntityPassClipStack(const Rect& initial_coverage_rect);
 
   ~EntityPassClipStack() = default;
-
-  void Initialize(const Rect& rect);
 
   std::optional<Rect> CurrentClipCoverage() const;
 
@@ -48,12 +47,17 @@ class EntityPassClipStack {
   const std::vector<Entity>& GetReplayEntities() const;
 
   // Visible for testing.
-  const std::vector<std::vector<ClipCoverageLayer>> GetClipCoverageLayers()
-      const;
+  const std::vector<ClipCoverageLayer> GetClipCoverageLayers() const;
 
  private:
-  std::vector<Entity> rendered_clip_entities_;
-  std::vector<std::vector<ClipCoverageLayer>> clip_coverage_;
+  struct SubpassState {
+    std::vector<Entity> rendered_clip_entities;
+    std::vector<ClipCoverageLayer> clip_coverage;
+  };
+
+  SubpassState& GetCurrentSubpassState();
+
+  std::vector<SubpassState> subpass_state_;
 };
 
 }  // namespace impeller

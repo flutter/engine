@@ -22,6 +22,7 @@
 namespace impeller {
 
 class ContentContext;
+class EntityPassClipRecorder;
 
 /// Specifies how much to trust the bounds rectangle provided for a list
 /// of contents. Used by both |EntityPass| and |Canvas::SaveLayer|.
@@ -214,7 +215,7 @@ class EntityPass {
       std::optional<Rect> coverage_limit) const;
 
   /// Exposed for testing purposes only.
-  const EntityPassClipStack& GetEntityPassClipRecorder() const;
+  const EntityPassClipRecorder& GetEntityPassClipRecorder() const;
 
  private:
   struct EntityResult {
@@ -245,6 +246,7 @@ class EntityPass {
                      InlinePassContext& pass_context,
                      int32_t pass_depth,
                      ContentContext& renderer,
+                     EntityPassClipStack& clip_coverage_stack,
                      Point global_pass_position) const;
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,
@@ -254,6 +256,7 @@ class EntityPass {
                                    ISize root_pass_size,
                                    Point global_pass_position,
                                    uint32_t pass_depth,
+                                   EntityPassClipStack& clip_coverage_stack,
                                    size_t clip_depth_floor) const;
 
   //----------------------------------------------------------------------------
@@ -288,6 +291,12 @@ class EntityPass {
   ///                                      and debugging purposes. This can vary
   ///                                      depending on whether passes are
   ///                                      collapsed or not.
+  /// @param[in]  clip_coverage_stack      A global stack of coverage rectangles
+  ///                                      for the clip buffer at each depth.
+  ///                                      Higher depths are more restrictive.
+  ///                                      Used to cull Elements that we
+  ///                                      know won't result in a visible
+  ///                                      change.
   /// @param[in]  clip_depth_floor         The clip depth that a value of
   ///                                      zero corresponds to in the given
   ///                                      `pass_target` clip buffer.
@@ -314,6 +323,7 @@ class EntityPass {
                 Point global_pass_position,
                 Point local_pass_position,
                 uint32_t pass_depth,
+                EntityPassClipStack& clip_coverage_stack,
                 size_t clip_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 const std::optional<InlinePassContext::RenderPassResult>&
@@ -338,8 +348,6 @@ class EntityPass {
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
   ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
-  std::unique_ptr<EntityPassClipStack> clip_stack_ =
-      std::make_unique<EntityPassClipStack>();
   int32_t required_mip_count_ = 1;
 
   /// These values are incremented whenever something is added to the pass that

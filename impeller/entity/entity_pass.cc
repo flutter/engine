@@ -15,12 +15,14 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
@@ -408,8 +410,9 @@ bool EntityPass::Render(ContentContext& renderer,
     return true;
   });
 
-  clip_stack_->Initialize(
-      Rect::MakeSize(root_render_target.GetRenderTargetSize()));
+  std::unique_ptr<EntityPassClipStack> clip_stack =
+      std::make_unique<EntityPassClipStack>(
+          Rect::MakeSize(root_render_target.GetRenderTargetSize()));
 
   bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
   // In this branch path, we need to render everything to an offscreen texture
@@ -428,7 +431,8 @@ bool EntityPass::Render(ContentContext& renderer,
                   offscreen_target,            // pass_target
                   Point(),                     // global_pass_position
                   Point(),                     // local_pass_position
-                  0                            // pass_depth
+                  0,                           // pass_depth
+                  *clip_stack                  // clip_coverage_stack
                   )) {
       // Validation error messages are triggered for all `OnRender()` failure
       // cases.
@@ -533,7 +537,8 @@ bool EntityPass::Render(ContentContext& renderer,
       pass_target,                               // pass_target
       Point(),                                   // global_pass_position
       Point(),                                   // local_pass_position
-      0);                                        // pass_depth
+      0,                                         // pass_depth
+      *clip_stack);                              // clip_coverage_stack
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
@@ -544,6 +549,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     ISize root_pass_size,
     Point global_pass_position,
     uint32_t pass_depth,
+    EntityPassClipStack& clip_coverage_stack,
     size_t clip_depth_floor) const {
   //--------------------------------------------------------------------------
   /// Setup entity element.
@@ -585,6 +591,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
               global_pass_position,          // global_pass_position
               Point(),                       // local_pass_position
               pass_depth,                    // pass_depth
+              clip_coverage_stack,           // clip_coverage_stack
               clip_depth_,                   // clip_depth_floor
               nullptr,                       // backdrop_filter_contents
               pass_context.GetRenderPass(pass_depth)  // collapsed_parent_pass
@@ -619,13 +626,13 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       pass_context.EndPass();
     }
 
-    if (!clip_stack_->HasCoverage()) {
+    if (!clip_coverage_stack.HasCoverage()) {
       // The current clip is empty. This means the pass texture won't be
       // visible, so skip it.
       capture.CreateChild("Subpass Entity (Skipped: Empty clip A)");
       return EntityPass::EntityResult::Skip();
     }
-    auto clip_coverage_back = clip_stack_->CurrentClipCoverage();
+    auto clip_coverage_back = clip_coverage_stack.CurrentClipCoverage();
     if (!clip_coverage_back.has_value()) {
       capture.CreateChild("Subpass Entity (Skipped: Empty clip B)");
       return EntityPass::EntityResult::Skip();
@@ -684,7 +691,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // save layers may transform the subpass texture after it's rendered,
     // causing parent clip coverage to get misaligned with the actual area that
     // the subpass will affect in the parent pass.
-    clip_stack_->PushSubpass(subpass_coverage, subpass->clip_depth_);
+    clip_coverage_stack.PushSubpass(subpass_coverage, subpass->clip_depth_);
 
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
@@ -697,6 +704,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
             subpass_coverage->GetOrigin() -
                 global_pass_position,         // local_pass_position
             ++pass_depth,                     // pass_depth
+            clip_coverage_stack,              // clip_coverage_stack
             subpass->clip_depth_,             // clip_depth_floor
             subpass_backdrop_filter_contents  // backdrop_filter_contents
             )) {
@@ -704,7 +712,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // cases.
       return EntityPass::EntityResult::Failure();
     }
-    clip_stack_->PopSubpass();
+
+    clip_coverage_stack.PopSubpass();
 
     // The subpass target's texture may have changed during OnRender.
     auto subpass_texture =
@@ -750,6 +759,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
                                InlinePassContext& pass_context,
                                int32_t pass_depth,
                                ContentContext& renderer,
+                               EntityPassClipStack& clip_coverage_stack,
                                Point global_pass_position) const {
   auto result = pass_context.GetRenderPass(pass_depth);
   if (!result.pass) {
@@ -762,7 +772,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
   if (result.just_created) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
-    auto& replay_entities = clip_stack_->GetReplayEntities();
+    auto& replay_entities = clip_coverage_stack.GetReplayEntities();
     for (const auto& entity : replay_entities) {
       if (!entity.Render(renderer, *result.pass)) {
         VALIDATION_LOG << "Failed to render entity for clip restore.";
@@ -793,7 +803,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     }
   }
 
-  auto current_clip_coverage = clip_stack_->CurrentClipCoverage();
+  auto current_clip_coverage = clip_coverage_stack.CurrentClipCoverage();
   if (current_clip_coverage.has_value()) {
     // Entity transforms are relative to the current pass position, so we need
     // to check clip coverage in the same space.
@@ -818,9 +828,11 @@ bool EntityPass::RenderElement(Entity& element_entity,
   element_entity.GetContents()->SetCoverageHint(
       Rect::Intersection(element_coverage_hint, current_clip_coverage));
 
-  if (!clip_stack_->AppendClipCoverage(clip_coverage, element_entity,
-                                       clip_depth_floor,
-                                       global_pass_position)) {
+  if (!clip_coverage_stack.AppendClipCoverage(clip_coverage, element_entity,
+                                              clip_depth_floor,
+                                              global_pass_position)) {
+    // If the entity's coverage change did not change the clip coverage, we
+    // don't need to render it.
     return true;
   }
 
@@ -839,6 +851,7 @@ bool EntityPass::OnRender(
     Point global_pass_position,
     Point local_pass_position,
     uint32_t pass_depth,
+    EntityPassClipStack& clip_coverage_stack,
     size_t clip_depth_floor,
     std::shared_ptr<Contents> backdrop_filter_contents,
     const std::optional<InlinePassContext::RenderPassResult>&
@@ -886,7 +899,7 @@ bool EntityPass::OnRender(
     backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
 
     RenderElement(backdrop_entity, clip_depth_floor, pass_context, pass_depth,
-                  renderer, global_pass_position);
+                  renderer, clip_coverage_stack, global_pass_position);
   }
 
   bool is_collapsing_clear_colors = !collapsed_parent_pass &&
@@ -912,6 +925,7 @@ bool EntityPass::OnRender(
                             root_pass_size,        // root_pass_size
                             global_pass_position,  // global_pass_position
                             pass_depth,            // pass_depth
+                            clip_coverage_stack,   // clip_coverage_stack
                             clip_depth_floor);     // clip_depth_floor
 
     switch (result.status) {
@@ -979,7 +993,8 @@ bool EntityPass::OnRender(
     /// Render the Element.
     ///
     if (!RenderElement(result.entity, clip_depth_floor, pass_context,
-                       pass_depth, renderer, global_pass_position)) {
+                       pass_depth, renderer, clip_coverage_stack,
+                       global_pass_position)) {
       // Specific validation logs are handled in `render_element()`.
       return false;
     }
@@ -1174,10 +1189,6 @@ void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
 
 void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
-}
-
-const EntityPassClipStack& EntityPass::GetEntityPassClipRecorder() const {
-  return *clip_stack_;
 }
 
 }  // namespace impeller
