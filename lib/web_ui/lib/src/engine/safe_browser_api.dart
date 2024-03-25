@@ -960,7 +960,7 @@ class OffScreenCanvas {
   }
 
   void resize(int requestedWidth, int requestedHeight) {
-    if(requestedWidth != width && requestedHeight != height) {
+    if(requestedWidth != width || requestedHeight != height) {
       width = requestedWidth;
       height = requestedHeight;
       if(offScreenCanvas != null) {
