@@ -263,7 +263,7 @@ class PlatformConfigurationClient {
 ///             to and from the Dart code in Flutter's framework.
 ///
 ///             It handles communication between the engine and the framework,
-///             and owns the main window.
+///             and owns views' metrics.
 ///
 ///             It communicates with the RuntimeController through the use of a
 ///             PlatformConfigurationClient interface, which the
