@@ -26,6 +26,10 @@ const DlRegion& DisplayListEmbedderViewSlice::getRegion() const {
   return display_list_->rtree()->region();
 }
 
+const DlRegion& DisplayListEmbedderViewSlice::getRoundedInRegion() const {
+  return display_list_->rtree()->roundedInRegion();
+}
+
 void DisplayListEmbedderViewSlice::render_into(DlCanvas* canvas) {
   canvas->DrawDisplayList(display_list_);
 }

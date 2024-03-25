@@ -127,8 +127,11 @@ class DlRTree : public SkRefCnt {
                                               bool deband = true) const;
 
   /// Returns DlRegion that represents the union of all rectangles in the
-  /// R-Tree.
+  /// R-Tree. Each rectangle is rounded out.
   const DlRegion& region() const;
+  /// Returns DlRegion that represents the union of all rectangles in the
+  /// R-Tree. Each rectangle is rounded in.
+  const DlRegion& roundedInRegion() const;
 
   /// Returns DlRegion that represents the union of all rectangles in the
   /// R-Tree intersected with the query rect.
@@ -147,6 +150,7 @@ class DlRTree : public SkRefCnt {
   int leaf_count_ = 0;
   int invalid_id_;
   mutable std::optional<DlRegion> region_;
+  const DlRegion& region(bool useRoundIn) const;
 };
 
 }  // namespace flutter

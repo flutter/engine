@@ -201,16 +201,28 @@ void DlRTree::search(const Node& parent,
   }
 }
 
-const DlRegion& DlRTree::region() const {
+const DlRegion& DlRTree::region(bool useRoundIn) const {
   if (!region_) {
     std::vector<SkIRect> rects;
     rects.resize(leaf_count_);
     for (int i = 0; i < leaf_count_; i++) {
-      nodes_[i].bounds.roundOut(&rects[i]);
+      if (useRoundIn) {
+        nodes_[i].bounds.roundIn(&rects[i]);
+      } else {
+        nodes_[i].bounds.roundOut(&rects[i]);
+      }
     }
     region_.emplace(rects);
   }
   return *region_;
+}
+
+const DlRegion& DlRTree::region() const {
+  return region(/*useRoundIn=*/false);
+}
+
+const DlRegion& DlRTree::roundedInRegion() const {
+  return region(/*useRoundIn=*/true);
 }
 
 const SkRect& DlRTree::bounds() const {
