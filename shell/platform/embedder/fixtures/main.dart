@@ -1329,6 +1329,18 @@ void can_schedule_frame() {
   signalNativeTest();
 }
 
+@pragma('vm:entry-point')
+void add_view_schedules_frame() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      if (view.viewId == 123) {
+        signalNativeCount(beginTime.inMicroseconds);
+      }
+    }
+  };
+  signalNativeTest();
+}
+
 void drawSolidColor(Color c) {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final SceneBuilder builder = SceneBuilder();

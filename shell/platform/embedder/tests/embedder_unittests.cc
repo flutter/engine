@@ -1310,6 +1310,48 @@ TEST_F(EmbedderTest, CanAddView) {
   ASSERT_EQ("View IDs: [0, 123]", message);
 }
 
+TEST_F(EmbedderTest, AddViewSchedulesFrame) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("add_view_schedules_frame");
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "SignalNativeTest",
+      CREATE_NATIVE_ENTRY(
+          [&latch](Dart_NativeArguments args) { latch.Signal(); }));
+
+  fml::AutoResetWaitableEvent check_latch;
+  context.AddNativeCallback(
+      "SignalNativeCount",
+      CREATE_NATIVE_ENTRY(
+          [&check_latch](Dart_NativeArguments args) { check_latch.Signal(); }));
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Wait for the application to attach the listener.
+  latch.Wait();
+
+  FlutterWindowMetricsEvent metrics = {};
+  metrics.struct_size = sizeof(FlutterWindowMetricsEvent);
+  metrics.width = 800;
+  metrics.height = 600;
+  metrics.pixel_ratio = 1.0;
+  metrics.view_id = 123;
+
+  FlutterAddViewInfo info = {};
+  info.struct_size = sizeof(FlutterAddViewInfo);
+  info.view_id = 123;
+  info.view_metrics = &metrics;
+  info.add_view_callback = [](const FlutterAddViewResult* result) {
+    ASSERT_TRUE(result->added);
+  };
+  ASSERT_EQ(FlutterEngineAddView(engine.get(), &info), kSuccess);
+
+  check_latch.Wait();
+}
+
 TEST_F(EmbedderTest, CanRemoveView) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
