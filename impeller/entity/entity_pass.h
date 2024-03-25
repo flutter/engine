@@ -14,6 +14,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
@@ -21,7 +22,6 @@
 namespace impeller {
 
 class ContentContext;
-class EntityPassClipRecorder;
 
 /// Specifies how much to trust the bounds rectangle provided for a list
 /// of contents. Used by both |EntityPass| and |Canvas::SaveLayer|.
@@ -60,12 +60,12 @@ class EntityPass {
       const Matrix& effect_transform,
       Entity::RenderingMode rendering_mode)>;
 
-  struct ClipCoverageLayer {
-    std::optional<Rect> coverage;
-    size_t clip_depth;
-  };
+  // struct ClipCoverageLayer {
+  //   std::optional<Rect> coverage;
+  //   size_t clip_depth;
+  // };
 
-  using ClipCoverageStack = std::vector<ClipCoverageLayer>;
+  // using ClipCoverageStack = std::vector<ClipCoverageLayer>;
 
   EntityPass();
 
@@ -221,7 +221,7 @@ class EntityPass {
       std::optional<Rect> coverage_limit) const;
 
   /// Exposed for testing purposes only.
-  const EntityPassClipRecorder& GetEntityPassClipRecorder() const;
+  const EntityPassClipStack& GetEntityPassClipRecorder() const;
 
  private:
   struct EntityResult {
@@ -252,7 +252,6 @@ class EntityPass {
                      InlinePassContext& pass_context,
                      int32_t pass_depth,
                      ContentContext& renderer,
-                     ClipCoverageStack& clip_coverage_stack,
                      Point global_pass_position) const;
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,
@@ -262,7 +261,6 @@ class EntityPass {
                                    ISize root_pass_size,
                                    Point global_pass_position,
                                    uint32_t pass_depth,
-                                   ClipCoverageStack& clip_coverage_stack,
                                    size_t clip_depth_floor) const;
 
   //----------------------------------------------------------------------------
@@ -297,12 +295,6 @@ class EntityPass {
   ///                                      and debugging purposes. This can vary
   ///                                      depending on whether passes are
   ///                                      collapsed or not.
-  /// @param[in]  clip_coverage_stack      A global stack of coverage rectangles
-  ///                                      for the clip buffer at each depth.
-  ///                                      Higher depths are more restrictive.
-  ///                                      Used to cull Elements that we
-  ///                                      know won't result in a visible
-  ///                                      change.
   /// @param[in]  clip_depth_floor         The clip depth that a value of
   ///                                      zero corresponds to in the given
   ///                                      `pass_target` clip buffer.
@@ -329,7 +321,6 @@ class EntityPass {
                 Point global_pass_position,
                 Point local_pass_position,
                 uint32_t pass_depth,
-                ClipCoverageStack& clip_coverage_stack,
                 size_t clip_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 const std::optional<InlinePassContext::RenderPassResult>&
@@ -354,8 +345,8 @@ class EntityPass {
   bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
   ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
-  std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
-      std::make_unique<EntityPassClipRecorder>();
+  std::unique_ptr<EntityPassClipStack> clip_replay_ =
+      std::make_unique<EntityPassClipStack>();
   int32_t required_mip_count_ = 1;
 
   /// These values are incremented whenever something is added to the pass that
@@ -379,26 +370,6 @@ class EntityPass {
   EntityPass(const EntityPass&) = delete;
 
   EntityPass& operator=(const EntityPass&) = delete;
-};
-
-/// @brief A class that tracks all clips that have been recorded in the current
-///        entity pass stencil.
-///
-///        These clips are replayed when restoring the backdrop so that the
-///        stencil buffer is left in an identical state.
-class EntityPassClipRecorder {
- public:
-  EntityPassClipRecorder();
-
-  ~EntityPassClipRecorder() = default;
-
-  /// @brief Record the entity based on the provided coverage [type].
-  void RecordEntity(const Entity& entity, Contents::ClipCoverage::Type type);
-
-  const std::vector<Entity>& GetReplayEntities() const;
-
- private:
-  std::vector<Entity> rendered_clip_entities_;
 };
 
 }  // namespace impeller
