@@ -4693,6 +4693,12 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0},
                    [](bool added) { ASSERT_TRUE(added); });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
+
+    // A view can be added and removed all before the isolate launches.
+    // This effectively cancels the pending add view operation.
+    shell->AddView(2, ViewportMetrics{1, 30, 1, 0, 0},
+                   [](bool added) { ASSERT_FALSE(added); });
+    shell->RemoveView(2, [](bool removed) { ASSERT_FALSE(removed); });
   });
 
   bool first_report = true;

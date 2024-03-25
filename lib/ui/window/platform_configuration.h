@@ -262,8 +262,7 @@ class PlatformConfigurationClient {
 /// @brief      A class for holding and distributing platform-level information
 ///             to and from the Dart code in Flutter's framework.
 ///
-///             It handles communication between the engine and the framework,
-///             and owns the views' metrics.
+///             It handles communication between the engine and the framework.
 ///
 ///             It communicates with the RuntimeController through the use of a
 ///             PlatformConfigurationClient interface, which the

@@ -159,7 +159,7 @@ void RuntimeController::AddView(int64_t view_id,
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
 
   // If the Dart isolate is not running, |FlushRuntimeStateToIsolate| will
-  // add the view when the isolate is started.
+  // add the view and invoke the callback when the isolate is started.
   auto* platform_configuration = GetPlatformConfigurationIfAvailable();
   if (!platform_configuration) {
     FML_DCHECK(has_flushed_runtime_state_ == false);
@@ -173,11 +173,23 @@ void RuntimeController::AddView(int64_t view_id,
 
 bool RuntimeController::RemoveView(int64_t view_id) {
   platform_data_.viewport_metrics_for_views.erase(view_id);
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    return platform_configuration->RemoveView(view_id);
+
+  // If the Dart isolate has not been launched yet, the pending
+  // add view operation's callback is stored by the runtime controller.
+  // Notify this callback of the cancellation.
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    FML_DCHECK(has_flushed_runtime_state_ == false);
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](false);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    return false;
   }
 
-  return false;
+  return platform_configuration->RemoveView(view_id);
 }
 
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
