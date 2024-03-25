@@ -21,20 +21,20 @@ TEST_P(RendererTest, CachesRenderPassAndFramebuffer) {
   auto allocator = std::make_shared<RenderTargetAllocator>(
       GetContext()->GetResourceAllocator());
 
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *allocator, {100, 100}, 1);
+  auto render_target =
+      allocator->CreateOffscreenMSAA(*GetContext(), {100, 100}, 1);
   auto resolve_texture =
       render_target.GetColorAttachments().find(0u)->second.resolve_texture;
   auto& texture_vk = TextureVK::Cast(*resolve_texture);
 
-  EXPECT_EQ(texture_vk.GetFramebuffer(), nullptr);
-  EXPECT_EQ(texture_vk.GetRenderPass(), nullptr);
+  EXPECT_EQ(texture_vk.GetCachedFramebuffer(), nullptr);
+  EXPECT_EQ(texture_vk.GetCachedRenderPass(), nullptr);
 
   auto buffer = GetContext()->CreateCommandBuffer();
   auto render_pass = buffer->CreateRenderPass(render_target);
 
-  EXPECT_NE(texture_vk.GetFramebuffer(), nullptr);
-  EXPECT_NE(texture_vk.GetRenderPass(), nullptr);
+  EXPECT_NE(texture_vk.GetCachedFramebuffer(), nullptr);
+  EXPECT_NE(texture_vk.GetCachedRenderPass(), nullptr);
 
   render_pass->EncodeCommands();
   GetContext()->GetCommandQueue()->Submit({buffer});

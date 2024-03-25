@@ -17,8 +17,7 @@ buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '
 
 ARCH_SUBPATH = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
 DSYMUTIL = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'buildtools', ARCH_SUBPATH, 'clang', 'bin',
-    'dsymutil'
+    os.path.dirname(__file__), '..', '..', 'buildtools', ARCH_SUBPATH, 'clang', 'bin', 'dsymutil'
 )
 
 out_dir = os.path.join(buildroot_dir, 'out')
@@ -100,11 +99,13 @@ def main():
   find_subprocess.wait()
   xargs_subprocess.wait()
 
+  process_framework(dst, args, fat_framework, fat_framework_binary)
+
   # Create XCFramework from the arm64 and x64 fat framework.
   xcframeworks = [fat_framework]
   create_xcframework(location=dst, name='FlutterMacOS', frameworks=xcframeworks)
 
-  process_framework(dst, args, fat_framework, fat_framework_binary)
+  zip_framework(dst, args)
 
   return 0
 
@@ -168,6 +169,8 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
     subprocess.check_call(['strip', '-x', '-S', fat_framework_binary])
 
+
+def zip_framework(dst, args):
   # Zip FlutterMacOS.framework.
   if args.zip:
     filepath_with_entitlements = ''
@@ -216,7 +219,7 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 def zip_xcframework_archive(dst):
   filepath_with_entitlements = ''
   filepath_without_entitlements = (
-      'FlutterMacOS.xcframework/macos-arm64_x84_64/'
+      'FlutterMacOS.xcframework/macos-arm64_x86_64/'
       'FlutterMacOS.framework/Versions/A/FlutterMacOS'
   )
   embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements)

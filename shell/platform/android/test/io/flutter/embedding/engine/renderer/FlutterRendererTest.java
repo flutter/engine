@@ -27,7 +27,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
@@ -263,8 +262,8 @@ public class FlutterRendererTest {
             });
     fakeFinalizer.start();
     try {
-      latch.await(5L, TimeUnit.SECONDS);
-    } catch (Throwable e) {
+      latch.await();
+    } catch (InterruptedException e) {
       // do nothing
     }
   }
@@ -649,11 +648,12 @@ public class FlutterRendererTest {
     assertEquals(1, texture.numImages());
 
     // Invoke the onTrimMemory callback.
+    // This should do nothing.
     texture.onTrimMemory(0);
     shadowOf(Looper.getMainLooper()).idle();
 
-    assertEquals(0, texture.numImageReaders());
-    assertEquals(0, texture.numImages());
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(1, texture.numImages());
   }
 
   // A 0x0 ImageReader is a runtime error.

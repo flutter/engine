@@ -74,7 +74,12 @@ bool InlinePassContext::EndPass() {
       return false;
     }
   }
-  renderer_.RecordCommandBuffer(std::move(command_buffer_));
+  if (!renderer_.GetContext()
+           ->GetCommandQueue()
+           ->Submit({std::move(command_buffer_)})
+           .ok()) {
+    return false;
+  }
 
   pass_ = nullptr;
   command_buffer_ = nullptr;
@@ -158,15 +163,18 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     pass_target_.target_.SetDepthAttachment(depth.value());
   }
 
+  auto depth = pass_target_.GetRenderTarget().GetDepthAttachment();
   auto stencil = pass_target_.GetRenderTarget().GetStencilAttachment();
-  if (!stencil.has_value()) {
-    VALIDATION_LOG << "Stencil attachment unexpectedly missing from the "
+  if (!depth.has_value() || !stencil.has_value()) {
+    VALIDATION_LOG << "Stencil/Depth attachment unexpectedly missing from the "
                       "EntityPass render target.";
     return {};
   }
-
   stencil->load_action = LoadAction::kClear;
   stencil->store_action = StoreAction::kDontCare;
+  depth->load_action = LoadAction::kClear;
+  depth->store_action = StoreAction::kDontCare;
+  pass_target_.target_.SetDepthAttachment(depth);
   pass_target_.target_.SetStencilAttachment(stencil.value());
   pass_target_.target_.SetColorAttachment(color0, 0);
 
@@ -184,6 +192,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
       " Count=" + std::to_string(pass_count_));
 
   result.pass = pass_;
+  result.just_created = true;
 
   if (!renderer_.GetContext()->GetCapabilities()->SupportsReadFromResolve() &&
       result.backdrop_texture ==

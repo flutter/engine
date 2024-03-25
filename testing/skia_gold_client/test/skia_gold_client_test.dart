@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
@@ -76,7 +80,7 @@ void main() {
       try {
         await client.auth();
         fail('auth should fail if GOLDCTL is not set');
-      } catch (error) {
+      } on StateError catch (error) {
         expect('$error', contains('GOLDCTL is not set'));
       }
     } finally {
@@ -172,15 +176,17 @@ void main() {
         fixture,
         environment: presubmitEnv,
         onRun: (List<String> command) {
-          return io.ProcessResult(1, 0, '', 'error-text');
+          return io.ProcessResult(1, 0, 'stdout-text', 'stderr-text');
         },
       );
 
       try {
         await client.auth();
-      } catch (error) {
-        expect('$error', contains('Skia Gold authorization failed.'));
-        expect('$error', contains('error-text'));
+      } on SkiaGoldProcessError catch (error) {
+        expect(error.command, contains('auth'));
+        expect(error.stdout, 'stdout-text');
+        expect(error.stderr, 'stderr-text');
+        expect(error.message, contains('Skia Gold authorization failed'));
       }
     } finally {
       fixture.dispose();
@@ -321,6 +327,10 @@ void main() {
         io.File(p.join(fixture.workDirectory.path, 'temp', 'golden.png')),
         screenshotSize: 1000,
       );
+
+      // Expect a stderr log message.
+      final String log = fixture.outputSink.toString();
+      expect(log, contains('Untriaged image detected'));
     } finally {
       fixture.dispose();
     }
@@ -339,7 +349,7 @@ void main() {
           if (command case ['python tools/goldctl.py', 'imgtest', 'init', ...]) {
             return io.ProcessResult(0, 0, '', '');
           }
-          return io.ProcessResult(1, 0, '', 'error-text');
+          return io.ProcessResult(1, 0, 'stdout-text', 'stderr-text');
         },
       );
 
@@ -349,9 +359,11 @@ void main() {
           io.File(p.join(fixture.workDirectory.path, 'temp', 'golden.png')),
           screenshotSize: 1000,
         );
-      } catch (error) {
-        expect('$error', contains('Skia Gold image test failed.'));
-        expect('$error', contains('error-text'));
+      } on SkiaGoldProcessError catch (error) {
+        expect(error.message, contains('Skia Gold image test failed.'));
+        expect(error.stdout, 'stdout-text');
+        expect(error.stderr, 'stderr-text');
+        expect(error.command, contains('imgtest add'));
       }
     } finally {
       fixture.dispose();
@@ -466,7 +478,7 @@ void main() {
           if (command case ['python tools/goldctl.py', 'imgtest', 'init', ...]) {
             return io.ProcessResult(0, 0, '', '');
           }
-          return io.ProcessResult(1, 0, '', 'error-text');
+          return io.ProcessResult(1, 0, 'stdout-text', 'stderr-text');
         },
       );
 
@@ -476,9 +488,11 @@ void main() {
           io.File(p.join(fixture.workDirectory.path, 'temp', 'golden.png')),
           screenshotSize: 1000,
         );
-      } catch (error) {
-        expect('$error', contains('Skia Gold image test failed.'));
-        expect('$error', contains('error-text'));
+      } on SkiaGoldProcessError catch (error) {
+        expect(error.message, contains('Skia Gold image test failed.'));
+        expect(error.stdout, 'stdout-text');
+        expect(error.stderr, 'stderr-text');
+        expect(error.command, contains('imgtest add'));
       }
     } finally {
       fixture.dispose();

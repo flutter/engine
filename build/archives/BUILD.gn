@@ -72,7 +72,7 @@ if (build_engine_artifacts && !is_android) {
       }
       files += [
         {
-          source = "//third_party/icu/flutter/icudtl.dat"
+          source = "//flutter/third_party/icu/flutter/icudtl.dat"
           destination = "icudtl.dat"
         },
         {
@@ -86,6 +86,10 @@ if (build_engine_artifacts && !is_android) {
         {
           source = "//flutter/impeller/compiler/shader_lib"
           destination = "shader_lib"
+        },
+        {
+          source = "//flutter/lib/gpu"
+          destination = "flutter_gpu"
         },
         {
           source = "$root_out_dir/${lib_prefix}path_ops$dll"

@@ -6,6 +6,7 @@ package io.flutter.plugin.platform;
 
 import static android.view.MotionEvent.PointerCoords;
 import static android.view.MotionEvent.PointerProperties;
+import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -156,7 +157,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private final PlatformViewsChannel.PlatformViewsHandler channelHandler =
       new PlatformViewsChannel.PlatformViewsHandler() {
 
-        @TargetApi(19)
         @Override
         // TODO(egarciad): Remove the need for this.
         // https://github.com/flutter/flutter/issues/96679
@@ -173,7 +173,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // not applicable to fallback from TLHC to HC.
         }
 
-        @TargetApi(20)
         @Override
         public long createForTextureLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
@@ -212,7 +211,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           //   view hierarchy via callbacks such as ViewParent#onDescendantInvalidated().
           // - The API level is <23, due to TLHC implementation API requirements.
           final boolean supportsTextureLayerMode =
-              Build.VERSION.SDK_INT >= 23
+              Build.VERSION.SDK_INT >= API_LEVELS.API_23
                   && !ViewUtils.hasChildViewOfType(
                       embeddedView, VIEW_TYPES_REQUIRE_VIRTUAL_DISPLAY);
 
@@ -419,7 +418,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           view.dispatchTouchEvent(event);
         }
 
-        @TargetApi(17)
         @Override
         public void setDirection(int viewId, int direction) {
           if (!validateDirection(direction)) {
@@ -504,7 +502,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   // Creates a platform view based on `request`, performs configuration that's common to
   // all display modes, and adds it to `platformViews`.
-  @TargetApi(19)
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public PlatformView createPlatformView(
       @NonNull PlatformViewsChannel.PlatformViewCreationRequest request, boolean wrapContext) {
@@ -597,7 +594,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   // Configures the view for Texture Layer Hybrid Composition mode, returning the associated
   // texture ID.
-  @TargetApi(23)
+  @TargetApi(API_LEVELS.API_23)
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public long configureForTextureLayerComposition(
       @NonNull PlatformView platformView,
@@ -968,12 +965,12 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private static PlatformViewRenderTarget makePlatformViewRenderTarget(
       TextureRegistry textureRegistry) {
-    if (enableSurfaceProducerRenderTarget && Build.VERSION.SDK_INT >= 29) {
+    if (enableSurfaceProducerRenderTarget && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final TextureRegistry.SurfaceProducer textureEntry = textureRegistry.createSurfaceProducer();
       Log.i(TAG, "PlatformView is using SurfaceProducer backend");
       return new SurfaceProducerPlatformViewRenderTarget(textureEntry);
     }
-    if (enableImageRenderTarget && Build.VERSION.SDK_INT >= 29) {
+    if (enableImageRenderTarget && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final TextureRegistry.ImageTextureEntry textureEntry = textureRegistry.createImageTexture();
       Log.i(TAG, "PlatformView is using ImageReader backend");
       return new ImageReaderPlatformViewRenderTarget(textureEntry);
@@ -1080,7 +1077,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     testing.
    */
   @VisibleForTesting
-  @TargetApi(Build.VERSION_CODES.KITKAT)
   void initializePlatformViewIfNeeded(int viewId) {
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
@@ -1292,7 +1288,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     for public use, and is only visible for testing.
    */
   @VisibleForTesting
-  @TargetApi(19)
   @NonNull
   public FlutterOverlaySurface createOverlaySurface(@NonNull PlatformOverlayView imageView) {
     final int id = nextOverlayLayerId++;
@@ -1307,7 +1302,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *
    * <p>This member is not intended for public use, and is only visible for testing.
    */
-  @TargetApi(19)
   @NonNull
   public FlutterOverlaySurface createOverlaySurface() {
     // Overlay surfaces have the same size as the background surface.

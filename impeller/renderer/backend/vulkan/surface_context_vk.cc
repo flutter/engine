@@ -7,7 +7,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
@@ -64,7 +64,7 @@ void SurfaceContextVK::Shutdown() {
 
 bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface,
                                         const ISize& size) {
-  auto swapchain = SwapchainVK::Create(parent_, std::move(surface), size);
+  auto swapchain = KHRSwapchainVK::Create(parent_, std::move(surface), size);
   if (!swapchain) {
     VALIDATION_LOG << "Could not create swapchain.";
     return false;
@@ -88,6 +88,7 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
         .DidAcquireSurfaceFrame();
   }
   parent_->GetCommandPoolRecycler()->Dispose();
+  parent_->GetResourceAllocator()->DebugTraceMemoryStatistics();
   return surface;
 }
 
@@ -124,6 +125,10 @@ const vk::Device& SurfaceContextVK::GetDevice() const {
 
 void SurfaceContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
   parent_->InitializeCommonlyUsedShadersIfNeeded();
+}
+
+const ContextVK& SurfaceContextVK::GetParent() const {
+  return *parent_;
 }
 
 }  // namespace impeller

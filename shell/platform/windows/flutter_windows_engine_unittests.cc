@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -12,10 +13,12 @@
 #include "flutter/shell/platform/windows/testing/egl/mock_manager.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_platform_view_manager.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/mock_windows_proc_table.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
+#include "flutter/shell/platform/windows/testing/windows_test_config_builder.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 #include "fml/synchronization/waitable_event.h"
 #include "gmock/gmock.h"
@@ -27,9 +30,23 @@
 namespace flutter {
 namespace testing {
 
+using ::testing::NiceMock;
 using ::testing::Return;
 
 class FlutterWindowsEngineTest : public WindowsTest {};
+
+// The engine can be run without any views.
+TEST_F(FlutterWindowsEngineTest, RunHeadless) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  ASSERT_TRUE(engine->Run());
+  ASSERT_EQ(engine->view(kImplicitViewId), nullptr);
+  ASSERT_EQ(engine->view(123), nullptr);
+}
 
 TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
   FlutterWindowsEngineBuilder builder{GetContext()};
@@ -636,45 +653,97 @@ class MockFlutterWindowsView : public FlutterWindowsView {
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
 };
 
-TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
-  FlutterWindowsEngineBuilder builder{GetContext()};
-  builder.SetDartEntrypoint("alertPlatformChannel");
+// Verify the view is notified of accessibility announcements.
+TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncement) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder{context};
+  builder.SetDartEntrypoint("sendAccessibilityAnnouncement");
 
-  auto engine = builder.Build();
-  auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  bool done = false;
+  auto native_entry =
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { done = true; });
+  context.AddNativeFunction("Signal", native_entry);
+
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
   ui::AXPlatformNodeDelegateBase parent_delegate;
-  AlertPlatformNodeDelegate delegate(parent_delegate);
+  AlertPlatformNodeDelegate delegate{parent_delegate};
+
+  auto window_binding_handler =
+      std::make_unique<NiceMock<MockWindowBindingHandler>>();
   EXPECT_CALL(*window_binding_handler, GetAlertDelegate)
-      .WillRepeatedly(Return(&delegate));
-  MockFlutterWindowsView view(engine.get(), std::move(window_binding_handler));
+      .WillOnce(Return(&delegate));
 
-  EngineModifier modifier(engine.get());
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  MockFlutterWindowsView view{windows_engine,
+                              std::move(window_binding_handler)};
+  EngineModifier modifier{windows_engine};
   modifier.SetImplicitView(&view);
-  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
 
-  auto binary_messenger =
-      std::make_unique<BinaryMessengerImpl>(engine->messenger());
-  binary_messenger->SetMessageHandler(
-      "semantics", [&engine](const uint8_t* message, size_t message_size,
-                             BinaryReply reply) {
-        engine->UpdateSemanticsEnabled(true);
-        char response[] = "";
-        reply(reinterpret_cast<uint8_t*>(response), 0);
-      });
+  windows_engine->UpdateSemanticsEnabled(true);
 
-  bool did_call = false;
-  EXPECT_CALL(view, NotifyWinEventWrapper)
-      .WillOnce([&did_call](ui::AXPlatformNodeWin* node,
-                            ax::mojom::Event event) { did_call = true; });
-
-  engine->UpdateSemanticsEnabled(true);
-  engine->Run();
+  EXPECT_CALL(view, NotifyWinEventWrapper).Times(1);
 
   // Rely on timeout mechanism in CI.
-  while (!did_call) {
-    engine->task_runner()->ProcessTasks();
+  while (!done) {
+    windows_engine->task_runner()->ProcessTasks();
   }
+}
+
+// Verify the app can send accessibility announcements while in headless mode.
+TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncementHeadless) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder{context};
+  builder.SetDartEntrypoint("sendAccessibilityAnnouncement");
+
+  bool done = false;
+  auto native_entry =
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { done = true; });
+  context.AddNativeFunction("Signal", native_entry);
+
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  windows_engine->UpdateSemanticsEnabled(true);
+
+  // Rely on timeout mechanism in CI.
+  while (!done) {
+    windows_engine->task_runner()->ProcessTasks();
+  }
+}
+
+// Verify the engine does not crash if it receives an accessibility event
+// it does not support yet.
+TEST_F(FlutterWindowsEngineTest, AccessibilityTooltip) {
+  fml::testing::LogCapture log_capture;
+
+  auto& context = GetContext();
+  WindowsConfigBuilder builder{context};
+  builder.SetDartEntrypoint("sendAccessibilityTooltipEvent");
+
+  bool done = false;
+  auto native_entry =
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { done = true; });
+  context.AddNativeFunction("Signal", native_entry);
+
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  auto engine = FlutterDesktopViewControllerGetEngine(controller.get());
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine);
+  windows_engine->UpdateSemanticsEnabled(true);
+
+  // Rely on timeout mechanism in CI.
+  while (!done) {
+    windows_engine->task_runner()->ProcessTasks();
+  }
+
+  // Verify no error was logged.
+  // Regression test for:
+  // https://github.com/flutter/flutter/issues/144274
+  EXPECT_EQ(log_capture.str().find("tooltip"), std::string::npos);
 }
 
 class MockWindowsLifecycleManager : public WindowsLifecycleManager {
@@ -1167,6 +1236,31 @@ TEST_F(FlutterWindowsEngineTest, ChannelListenedTo) {
   engine->Run();
 
   while (!lifecycle_began) {
+    engine->task_runner()->ProcessTasks();
+  }
+}
+
+TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("sendCreatePlatformViewMethod");
+  auto engine = builder.Build();
+
+  EngineModifier modifier{engine.get()};
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  bool received_call = false;
+
+  auto manager = std::make_unique<MockPlatformViewManager>(engine.get());
+  EXPECT_CALL(*manager, AddPlatformView)
+      .WillOnce([&](PlatformViewId id, std::string_view type_name) {
+        received_call = true;
+        return true;
+      });
+  modifier.SetPlatformViewPlugin(std::move(manager));
+
+  engine->Run();
+
+  while (!received_call) {
     engine->task_runner()->ProcessTasks();
   }
 }

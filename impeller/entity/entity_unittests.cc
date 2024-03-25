@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <optional>
@@ -37,6 +38,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/point_field_geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
+#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
@@ -104,20 +106,22 @@ class TestPassDelegate final : public EntityPassDelegate {
   const bool collapse_;
 };
 
-auto CreatePassWithRectPath(Rect rect,
-                            std::optional<Rect> bounds_hint,
-                            bool collapse = false) {
+auto CreatePassWithRectPath(
+    Rect rect,
+    std::optional<Rect> bounds_hint,
+    ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
+    bool collapse = false) {
   auto subpass = std::make_unique<EntityPass>();
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(std::move(entity));
   subpass->SetDelegate(std::make_unique<TestPassDelegate>(collapse));
-  subpass->SetBoundsLimit(bounds_hint);
+  subpass->SetBoundsLimit(bounds_hint, bounds_promise);
   return subpass;
 }
 
-TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
+TEST_P(EntityTest, EntityPassRespectsUntrustedSubpassBoundsLimit) {
   EntityPass pass;
 
   auto subpass0 = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
@@ -144,13 +148,50 @@ TEST_P(EntityTest, EntityPassRespectsSubpassBoundsLimit) {
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
 }
 
+TEST_P(EntityTest, EntityPassTrustsSnugSubpassBoundsLimit) {
+  EntityPass pass;
+
+  auto subpass0 =  //
+      CreatePassWithRectPath(Rect::MakeLTRB(10, 10, 90, 90),
+                             Rect::MakeLTRB(5, 5, 95, 95),
+                             ContentBoundsPromise::kContainsContents);
+  auto subpass1 =  //
+      CreatePassWithRectPath(Rect::MakeLTRB(500, 500, 1000, 1000),
+                             Rect::MakeLTRB(495, 495, 1005, 1005),
+                             ContentBoundsPromise::kContainsContents);
+
+  auto subpass0_coverage =
+      pass.GetSubpassCoverage(*subpass0.get(), std::nullopt);
+  EXPECT_TRUE(subpass0_coverage.has_value());
+  // Result should be the overridden bounds
+  // (we lied about them being snug, but the property is respected)
+  EXPECT_RECT_NEAR(subpass0_coverage.value(), Rect::MakeLTRB(5, 5, 95, 95));
+
+  auto subpass1_coverage =
+      pass.GetSubpassCoverage(*subpass1.get(), std::nullopt);
+  EXPECT_TRUE(subpass1_coverage.has_value());
+  // Result should be the overridden bounds
+  // (we lied about them being snug, but the property is respected)
+  EXPECT_RECT_NEAR(subpass1_coverage.value(),
+                   Rect::MakeLTRB(495, 495, 1005, 1005));
+
+  pass.AddSubpass(std::move(subpass0));
+  pass.AddSubpass(std::move(subpass1));
+
+  auto coverage = pass.GetElementsCoverage(std::nullopt);
+  EXPECT_TRUE(coverage.has_value());
+  // This result should be the union of the overridden bounds
+  EXPECT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(5, 5, 1005, 1005));
+}
+
 TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
   // Both a red and a blue box should appear if the pass merging has worked
   // correctly.
 
   EntityPass pass;
   auto subpass = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
-                                        Rect::MakeLTRB(50, 50, 150, 150), true);
+                                        Rect::MakeLTRB(50, 50, 150, 150),
+                                        ContentBoundsPromise::kUnknown, true);
   pass.AddSubpass(std::move(subpass));
 
   Entity entity;
@@ -1120,13 +1161,14 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       case 0:
         blur = std::make_shared<GaussianBlurFilterContents>(
             blur_sigma_x.sigma, blur_sigma_y.sigma,
-            tile_modes[selected_tile_mode]);
+            tile_modes[selected_tile_mode], blur_styles[selected_blur_style],
+            /*geometry=*/nullptr);
         blur->SetInputs({FilterInput::Make(input)});
         break;
       case 1:
         blur = FilterContents::MakeGaussianBlur(
             FilterInput::Make(input), blur_sigma_x, blur_sigma_y,
-            blur_styles[selected_blur_style], tile_modes[selected_tile_mode]);
+            tile_modes[selected_tile_mode], blur_styles[selected_blur_style]);
         break;
     };
     FML_CHECK(blur);
@@ -2164,7 +2206,6 @@ TEST_P(EntityTest, RuntimeEffect) {
 
     auto contents = std::make_shared<RuntimeEffectContents>();
     contents->SetGeometry(Geometry::MakeCover());
-
     contents->SetRuntimeStage(runtime_stage);
 
     struct FragUniforms {
@@ -2247,10 +2288,10 @@ TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
 
   // Create a render target with a depth-stencil, similar to how EntityPass
   // does.
-  RenderTarget target = RenderTarget::CreateOffscreenMSAA(
-      *GetContext(), *GetContentContext()->GetRenderTargetCache(),
-      {GetWindowSize().width, GetWindowSize().height}, 1,
-      "RuntimeEffect Texture");
+  RenderTarget target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *GetContext(), {GetWindowSize().width, GetWindowSize().height}, 1,
+          "RuntimeEffect Texture");
   testing::MockRenderPass pass(GetContext(), target);
 
   ASSERT_TRUE(contents->Render(*GetContentContext(), entity, pass));
@@ -2589,31 +2630,6 @@ TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
 }
 
-class TestRenderTargetAllocator : public RenderTargetAllocator {
- public:
-  explicit TestRenderTargetAllocator(std::shared_ptr<Allocator> allocator)
-      : RenderTargetAllocator(std::move(allocator)) {}
-
-  ~TestRenderTargetAllocator() = default;
-
-  std::shared_ptr<Texture> CreateTexture(
-      const TextureDescriptor& desc) override {
-    allocated_.push_back(desc);
-    return RenderTargetAllocator::CreateTexture(desc);
-  }
-
-  void Start() override { RenderTargetAllocator::Start(); }
-
-  void End() override { RenderTargetAllocator::End(); }
-
-  std::vector<TextureDescriptor> GetDescriptors() const { return allocated_; }
-
-  void ResetDescriptors() { allocated_.clear(); }
-
- private:
-  std::vector<TextureDescriptor> allocated_;
-};
-
 TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   if (GetContext()->GetCapabilities()->SupportsFramebufferFetch()) {
     GTEST_SKIP() << "Backends that support framebuffer fetch dont use coverage "
@@ -2633,61 +2649,47 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
   EXPECT_TRUE(coverage.has_value());
 
   auto pass = std::make_unique<EntityPass>();
-  auto test_allocator = std::make_shared<TestRenderTargetAllocator>(
-      GetContext()->GetResourceAllocator());
+  std::shared_ptr<RenderTargetCache> render_target_allocator =
+      std::make_shared<RenderTargetCache>(GetContext()->GetResourceAllocator());
   auto stencil_config = RenderTarget::AttachmentConfig{
       .storage_mode = StorageMode::kDevicePrivate,
       .load_action = LoadAction::kClear,
       .store_action = StoreAction::kDontCare,
       .clear_color = Color::BlackTransparent()};
-  auto rt = RenderTarget::CreateOffscreen(
-      *GetContext(), *test_allocator, ISize::MakeWH(1000, 1000),
+  auto rt = render_target_allocator->CreateOffscreen(
+      *GetContext(), ISize::MakeWH(1000, 1000),
       /*mip_count=*/1, "Offscreen", RenderTarget::kDefaultColorAttachmentConfig,
       stencil_config);
   auto content_context = ContentContext(
-      GetContext(), TypographerContextSkia::Make(), test_allocator);
+      GetContext(), TypographerContextSkia::Make(), render_target_allocator);
   pass->AddEntity(std::move(entity));
-  test_allocator->ResetDescriptors();
 
   EXPECT_TRUE(pass->Render(content_context, rt));
 
-  if (test_allocator->GetDescriptors().size() == 6u) {
-    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(1000, 1000));
+  auto contains_size = [&render_target_allocator](ISize size) -> bool {
+    return std::find_if(render_target_allocator->GetRenderTargetDataBegin(),
+                        render_target_allocator->GetRenderTargetDataEnd(),
+                        [&size](const auto& data) {
+                          return data.config.size == size;
+                        }) != render_target_allocator->GetRenderTargetDataEnd();
+  };
 
-    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
-  } else if (test_allocator->GetDescriptors().size() == 7u) {
-    // Onscreen render target.
-    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(1000, 1000));
-
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[4].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[5].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[6].size, ISize(200, 200));
-  } else if (test_allocator->GetDescriptors().size() == 4u) {
-    EXPECT_EQ(test_allocator->GetDescriptors()[0].size, ISize(1000, 1000));
-    EXPECT_EQ(test_allocator->GetDescriptors()[1].size, ISize(1000, 1000));
-
-    EXPECT_EQ(test_allocator->GetDescriptors()[2].size, ISize(200, 200));
-    EXPECT_EQ(test_allocator->GetDescriptors()[3].size, ISize(200, 200));
-  } else {
-    EXPECT_TRUE(false);
-  }
+  EXPECT_TRUE(contains_size(ISize(1000, 1000)))
+      << "The root texture wasn't allocated";
+  EXPECT_TRUE(contains_size(ISize(200, 200)))
+      << "The ColorBurned texture wasn't allocated (100x100 scales up 2x)";
 }
 
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
-  auto content_context =
-      ContentContext(GetContext(), TypographerContextSkia::Make());
+  auto content_context = GetContentContext();
 
-  auto default_color_burn = content_context.GetBlendColorBurnPipeline(
-      {.has_depth_stencil_attachments = false});
-  auto alt_color_burn = content_context.GetBlendColorBurnPipeline(
-      {.has_depth_stencil_attachments = true});
+  auto default_color_burn = content_context->GetBlendColorBurnPipeline({
+      .color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
+      .has_depth_stencil_attachments = false,
+  });
+  auto alt_color_burn = content_context->GetBlendColorBurnPipeline(
+      {.color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
+       .has_depth_stencil_attachments = true});
 
   ASSERT_NE(default_color_burn, alt_color_burn);
   ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
@@ -2701,10 +2703,10 @@ TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
 }
 
 TEST_P(EntityTest, DecalSpecializationAppliedToMorphologyFilter) {
-  auto content_context =
-      ContentContext(GetContext(), TypographerContextSkia::Make());
-
-  auto default_color_burn = content_context.GetMorphologyFilterPipeline({});
+  auto content_context = GetContentContext();
+  auto default_color_burn = content_context->GetMorphologyFilterPipeline({
+      .color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
+  });
 
   auto decal_supported = static_cast<Scalar>(
       GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
@@ -2788,8 +2790,26 @@ TEST_P(EntityTest, FillPathGeometryGetPositionBufferReturnsExpectedMode) {
                     .Close()
                     .TakePath();
     GeometryResult result = get_result(path);
-    EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
+    if constexpr (ContentContext::kEnableStencilThenCover) {
+      EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
+    } else {
+      EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
+    }
   }
+}
+
+TEST_P(EntityTest, FailOnValidationError) {
+  if (GetParam() != PlaygroundBackend::kVulkan) {
+    GTEST_SKIP() << "Validation is only fatal on Vulkan backend.";
+  }
+  EXPECT_DEATH(
+      // The easiest way to trigger a validation error is to try to compile
+      // a shader with an unsupported pixel format.
+      GetContentContext()->GetBlendColorBurnPipeline({
+          .color_attachment_pixel_format = PixelFormat::kUnknown,
+          .has_depth_stencil_attachments = false,
+      }),
+      "");
 }
 
 }  // namespace testing

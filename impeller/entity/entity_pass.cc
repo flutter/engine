@@ -60,12 +60,46 @@ void EntityPass::SetDelegate(std::shared_ptr<EntityPassDelegate> delegate) {
   delegate_ = std::move(delegate);
 }
 
-void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit) {
+void EntityPass::SetBoundsLimit(std::optional<Rect> bounds_limit,
+                                ContentBoundsPromise bounds_promise) {
   bounds_limit_ = bounds_limit;
+  bounds_promise_ = bounds_limit.has_value() ? bounds_promise
+                                             : ContentBoundsPromise::kUnknown;
 }
 
 std::optional<Rect> EntityPass::GetBoundsLimit() const {
   return bounds_limit_;
+}
+
+bool EntityPass::GetBoundsLimitMightClipContent() const {
+  switch (bounds_promise_) {
+    case ContentBoundsPromise::kUnknown:
+      // If the promise is unknown due to not having a bounds limit,
+      // then no clipping will occur. But if we have a bounds limit
+      // and it is unkown, then we can make no promises about whether
+      // it causes clipping of the entity pass contents and we
+      // conservatively return true.
+      return bounds_limit_.has_value();
+    case ContentBoundsPromise::kContainsContents:
+      FML_DCHECK(bounds_limit_.has_value());
+      return false;
+    case ContentBoundsPromise::kMayClipContents:
+      FML_DCHECK(bounds_limit_.has_value());
+      return true;
+  }
+  FML_UNREACHABLE();
+}
+
+bool EntityPass::GetBoundsLimitIsSnug() const {
+  switch (bounds_promise_) {
+    case ContentBoundsPromise::kUnknown:
+      return false;
+    case ContentBoundsPromise::kContainsContents:
+    case ContentBoundsPromise::kMayClipContents:
+      FML_DCHECK(bounds_limit_.has_value());
+      return true;
+  }
+  FML_UNREACHABLE();
 }
 
 void EntityPass::AddEntity(Entity entity) {
@@ -201,6 +235,10 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
 std::optional<Rect> EntityPass::GetSubpassCoverage(
     const EntityPass& subpass,
     std::optional<Rect> coverage_limit) const {
+  if (subpass.bounds_limit_.has_value() && subpass.GetBoundsLimitIsSnug()) {
+    return subpass.bounds_limit_->TransformBounds(subpass.transform_);
+  }
+
   std::shared_ptr<FilterContents> image_filter =
       subpass.delegate_->WithImageFilter(Rect(), subpass.transform_);
 
@@ -292,9 +330,8 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
 
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(
+    target = renderer.GetRenderTargetCache()->CreateOffscreenMSAA(
         /*context=*/*context,
-        /*allocator=*/*renderer.GetRenderTargetCache(),
         /*size=*/size,
         /*mip_count=*/mip_count,
         /*label=*/"EntityPass",
@@ -308,10 +345,9 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
         /*stencil_attachment_config=*/
         kDefaultStencilConfig);
   } else {
-    target = RenderTarget::CreateOffscreen(
-        *context,                          // context
-        *renderer.GetRenderTargetCache(),  // allocator
-        size,                              // size
+    target = renderer.GetRenderTargetCache()->CreateOffscreen(
+        *context,  // context
+        size,      // size
         /*mip_count=*/mip_count,
         "EntityPass",  // label
         RenderTarget::AttachmentConfig{
@@ -420,7 +456,12 @@ bool EntityPass::Render(ContentContext& renderer,
         VALIDATION_LOG << "Failed to encode root pass blit command.";
         return false;
       }
-      renderer.RecordCommandBuffer(std::move(command_buffer));
+      if (!renderer.GetContext()
+               ->GetCommandQueue()
+               ->Submit({command_buffer})
+               .ok()) {
+        return false;
+      }
     } else {
       auto render_pass = command_buffer->CreateRenderPass(root_render_target);
       render_pass->SetLabel("EntityPass Root Render Pass");
@@ -448,7 +489,12 @@ bool EntityPass::Render(ContentContext& renderer,
         VALIDATION_LOG << "Failed to encode root pass command buffer.";
         return false;
       }
-      renderer.RecordCommandBuffer(std::move(command_buffer));
+      if (!renderer.GetContext()
+               ->GetCommandQueue()
+               ->Submit({command_buffer})
+               .ok()) {
+        return false;
+      }
     }
 
     return true;
@@ -461,31 +507,13 @@ bool EntityPass::Render(ContentContext& renderer,
   // this method.
   auto color0 = root_render_target.GetColorAttachments().find(0u)->second;
 
-  // If a root stencil was provided by the caller, then verify that it has a
-  // configuration which can be used to render this pass.
   auto stencil_attachment = root_render_target.GetStencilAttachment();
   auto depth_attachment = root_render_target.GetDepthAttachment();
-  if (stencil_attachment.has_value() && depth_attachment.has_value()) {
-    auto stencil_texture = stencil_attachment->texture;
-    if (!stencil_texture) {
-      VALIDATION_LOG << "The root RenderTarget must have a stencil texture.";
-      return false;
-    }
-
-    auto stencil_storage_mode =
-        stencil_texture->GetTextureDescriptor().storage_mode;
-    if (reads_from_onscreen_backdrop &&
-        stencil_storage_mode == StorageMode::kDeviceTransient) {
-      VALIDATION_LOG << "The given root RenderTarget stencil needs to be read, "
-                        "but it's marked as transient.";
-      return false;
-    }
-  }
-  // Setup a new root stencil with an optimal configuration if one wasn't
-  // provided by the caller.
-  else {
+  if (!stencil_attachment.has_value() || !depth_attachment.has_value()) {
+    // Setup a new root stencil with an optimal configuration if one wasn't
+    // provided by the caller.
     root_render_target.SetupDepthStencilAttachments(
-        *renderer.GetContext(), *renderer.GetRenderTargetCache(),
+        *renderer.GetContext(), *renderer.GetContext()->GetResourceAllocator(),
         color0.texture->GetSize(),
         renderer.GetContext()->GetCapabilities()->SupportsOffscreenMSAA(),
         "ImpellerOnscreen", kDefaultStencilConfig);
@@ -637,8 +665,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    subpass_coverage = Rect::RoundOut(subpass_coverage.value());
-
     auto subpass_size = ISize(subpass_coverage->GetSize());
     if (subpass_size.IsEmpty()) {
       capture.CreateChild("Subpass Entity (Skipped: Empty subpass coverage B)");
@@ -741,12 +767,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     return false;
   }
 
-  // If the pass context returns a backdrop texture, we need to draw it to the
-  // current pass. We do this because it's faster and takes significantly less
-  // memory than storing/loading large MSAA textures. Also, it's not possible to
-  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
-  // (let alone a transient one).
-  if (result.backdrop_texture) {
+  if (result.just_created) {
     // Restore any clips that were recorded before the backdrop filter was
     // applied.
     auto& replay_entities = clip_replay_->GetReplayEntities();
@@ -755,7 +776,14 @@ bool EntityPass::RenderElement(Entity& element_entity,
         VALIDATION_LOG << "Failed to render entity for clip restore.";
       }
     }
+  }
 
+  // If the pass context returns a backdrop texture, we need to draw it to the
+  // current pass. We do this because it's faster and takes significantly less
+  // memory than storing/loading large MSAA textures. Also, it's not possible to
+  // blit the non-MSAA resolve texture of the previous pass to MSAA textures
+  // (let alone a transient one).
+  if (result.backdrop_texture) {
     auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
     auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
     msaa_backdrop_contents->SetStencilEnabled(false);
@@ -838,6 +866,14 @@ bool EntityPass::RenderElement(Entity& element_entity,
         restore_coverage = restore_coverage->Shift(-global_pass_position);
       }
       clip_coverage_stack.resize(restoration_index + 1);
+
+      if constexpr (ContentContext::kEnableStencilThenCover) {
+        // Skip all clip restores when stencil-then-cover is enabled.
+        if (clip_coverage_stack.back().coverage.has_value()) {
+          clip_replay_->RecordEntity(element_entity, clip_coverage.type);
+        }
+        return true;
+      }
 
       if (!clip_coverage_stack.back().coverage.has_value()) {
         // Running this restore op won't make anything renderable, so skip it.
@@ -1220,6 +1256,10 @@ void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
   enable_offscreen_debug_checkerboard_ = enabled;
 }
 
+const EntityPassClipRecorder& EntityPass::GetEntityPassClipRecorder() const {
+  return *clip_replay_;
+}
+
 EntityPassClipRecorder::EntityPassClipRecorder() {}
 
 void EntityPassClipRecorder::RecordEntity(const Entity& entity,
@@ -1231,7 +1271,9 @@ void EntityPassClipRecorder::RecordEntity(const Entity& entity,
       rendered_clip_entities_.push_back(entity.Clone());
       break;
     case Contents::ClipCoverage::Type::kRestore:
-      rendered_clip_entities_.pop_back();
+      if (!rendered_clip_entities_.empty()) {
+        rendered_clip_entities_.pop_back();
+      }
       break;
   }
 }

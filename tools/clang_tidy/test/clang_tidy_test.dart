@@ -359,7 +359,7 @@ Future<int> main(List<String> args) async {
       ),
     );
     final List<io.File> fileList = await fixture.tool.computeFilesOfInterest();
-    expect(fileList.length, lessThan(1000));
+    expect(fileList.length, lessThan(2000));
   });
 
   test('Sharding', () async {
@@ -581,6 +581,30 @@ Future<int> main(List<String> args) async {
         'command':
           '../../buildtools/mac-x64/clang/bin/clang filename '
           "&& sed -i 's@/b/f/w@../..@g' filename",
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
+  });
+
+  test('Command filters out the -MF flag', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          '../../buildtools/mac-x64/clang/bin/clang -MF stuff filename ',
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
+  });
+
+  test('Command filters out rewrapper command before a compile command', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          'flutter/engine/src/buildtools/mac-arm64/reclient/rewrapper '
+          '--cfg=flutter/engine/src/flutter/build/rbe/rewrapper-mac-arm64.cfg '
+          '--exec_root=flutter/engine/src/ '
+          '--labels=type=compile,compiler=clang,lang=cpp '
+          '../../buildtools/mac-x64/clang/bin/clang++ filename ',
         'file': 'unused',
     });
     expect(command.tidyArgs.trim(), 'filename');

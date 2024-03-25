@@ -154,9 +154,8 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       [&renderer, &pipeline_method](ContentContextOptions options) {
         return (renderer.*pipeline_method)(options);
       };
-  return ColorSourceContents::DrawPositionsAndUVs<VS>(
-      Rect::MakeSize(texture_size), GetInverseEffectTransform(), renderer,
-      entity, pass, pipeline_callback, frame_info,
+  return ColorSourceContents::DrawGeometry<VS>(
+      renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer, &is_external_texture,
        &uses_emulated_tile_mode](RenderPass& pass) {
         auto& host_buffer = renderer.GetTransientsBuffer();
@@ -215,7 +214,10 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
         }
 
         return true;
-      });
+      },
+      /*enable_uvs=*/true,
+      /*texture_coverage=*/Rect::MakeSize(texture_size),
+      /*effect_transform=*/GetInverseEffectTransform());
 }
 
 std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
@@ -226,8 +228,12 @@ std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(
     bool msaa_enabled,
     int32_t mip_count,
     const std::string& label) const {
+  std::optional<Rect> geometry_coverage = GetGeometry()->GetCoverage({});
   if (GetInverseEffectTransform().IsIdentity() &&
-      GetGeometry()->IsAxisAlignedRect()) {
+      GetGeometry()->IsAxisAlignedRect() &&
+      (!geometry_coverage.has_value() ||
+       Rect::MakeSize(texture_->GetSize())
+           .Contains(geometry_coverage.value()))) {
     auto coverage = GetCoverage(entity);
     if (!coverage.has_value()) {
       return std::nullopt;

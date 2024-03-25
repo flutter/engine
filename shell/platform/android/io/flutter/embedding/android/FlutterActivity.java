@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_URI_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_BACKGROUND_MODE;
@@ -49,7 +50,6 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.util.ViewUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -216,7 +216,7 @@ public class FlutterActivity extends Activity
    * <p>This ID can be used to lookup {@code FlutterView} in the Android view hierarchy. For more,
    * see {@link android.view.View#findViewById}.
    */
-  public static final int FLUTTER_VIEW_ID = ViewUtils.generateViewId(0xF1F2);
+  public static final int FLUTTER_VIEW_ID = View.generateViewId();
 
   /**
    * Creates an {@link Intent} that launches a {@code FlutterActivity}, which creates a {@link
@@ -655,7 +655,7 @@ public class FlutterActivity extends Activity
    */
   @VisibleForTesting
   public void registerOnBackInvokedCallback() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
@@ -671,14 +671,14 @@ public class FlutterActivity extends Activity
    */
   @VisibleForTesting
   public void unregisterOnBackInvokedCallback() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
       hasRegisteredBackCallback = false;
     }
   }
 
   private final OnBackInvokedCallback onBackInvokedCallback =
-      Build.VERSION.SDK_INT >= 33
+      Build.VERSION.SDK_INT >= API_LEVELS.API_33
           ? new OnBackInvokedCallback() {
             // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
             // a google3 bug where the linter is not properly running against API 33, causing
@@ -773,12 +773,10 @@ public class FlutterActivity extends Activity
   }
 
   private void configureStatusBarForFullscreenFlutterExperience() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      Window window = getWindow();
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.setStatusBarColor(0x40000000);
-      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
-    }
+    Window window = getWindow();
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    window.setStatusBarColor(0x40000000);
+    window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
   }
 
   @Override
@@ -1372,7 +1370,7 @@ public class FlutterActivity extends Activity
     // * reportFullyDrawn behavior isn't tested on pre-Q versions.
     // See https://github.com/flutter/flutter/issues/46172, and
     // https://github.com/flutter/flutter/issues/88767.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       reportFullyDrawn();
     }
   }

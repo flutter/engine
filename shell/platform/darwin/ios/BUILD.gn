@@ -6,6 +6,7 @@ assert(is_ios)
 
 import("//build/config/ios/ios_sdk.gni")
 import("//build/toolchain/clang.gni")
+import("//build/toolchain/toolchain.gni")
 import("//flutter/common/config.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/shell/gpu/gpu.gni")
@@ -53,7 +54,7 @@ source_set("flutter_framework_source_arc") {
     "//flutter/fml",
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/darwin/common:framework_common",
-    "//third_party/icu",
+    "//flutter/third_party/icu",
   ]
   public_configs = [ "//flutter:config" ]
 
@@ -344,7 +345,7 @@ copy("copy_asan_runtime_dylib") {
   visibility = [ ":*" ]
 
   _libclang_base_path =
-      "//buildtools/mac-x64/clang/lib/clang/13.0.0/lib/darwin/"
+      "$buildtools_path/mac-x64/clang/lib/clang/13.0.0/lib/darwin/"
 
   if (defined(use_ios_simulator) && use_ios_simulator) {
     _dylib_name = "libclang_rt.asan_iossim_dynamic.dylib"
@@ -407,7 +408,7 @@ action("copy_framework_headers") {
 
 copy("copy_framework_icu") {
   visibility = [ ":*" ]
-  sources = [ "//third_party/icu/flutter/icudtl.dat" ]
+  sources = [ "//flutter/third_party/icu/flutter/icudtl.dat" ]
   outputs = [ "$_flutter_framework_dir/{{source_file_part}}" ]
 }
 

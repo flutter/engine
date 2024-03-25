@@ -11,6 +11,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/closure.h"
@@ -22,6 +23,7 @@
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
+#include "flutter/shell/platform/windows/accessibility_plugin.h"
 #include "flutter/shell/platform/windows/compositor.h"
 #include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/egl/manager.h"
@@ -32,6 +34,7 @@
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/platform_handler.h"
+#include "flutter/shell/platform/windows/platform_view_plugin.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
@@ -117,12 +120,13 @@ class FlutterWindowsEngine {
   // Returns false if stopping the engine fails, or if it was not running.
   virtual bool Stop();
 
-  // Create the view that is displaying this engine's content.
+  // Create a view that can display this engine's content.
   std::unique_ptr<FlutterWindowsView> CreateView(
       std::unique_ptr<WindowBindingHandler> window);
 
-  // The view displaying this engine's content, if any. This will be null for
-  // headless engines.
+  // Get a view that displays this engine's content.
+  //
+  // Returns null if the view does not exist.
   FlutterWindowsView* view(FlutterViewId view_id) const;
 
   // Returns the currently configured Plugin Registrar.
@@ -143,6 +147,8 @@ class FlutterWindowsEngine {
   }
 
   TaskRunner* task_runner() { return task_runner_.get(); }
+
+  BinaryMessenger* messenger_wrapper() { return messenger_wrapper_.get(); }
 
   FlutterWindowsTextureRegistrar* texture_registrar() {
     return texture_registrar_.get();
@@ -335,9 +341,6 @@ class FlutterWindowsEngine {
   // Send the currently enabled accessibility features to the engine.
   void SendAccessibilityFeatures();
 
-  void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
-                                  const FlutterDesktopMessage* message);
-
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
 
@@ -348,8 +351,8 @@ class FlutterWindowsEngine {
   // AOT data, if any.
   UniqueAotDataPtr aot_data_;
 
-  // The view displaying the content running in this engine, if any.
-  FlutterWindowsView* view_ = nullptr;
+  // The views displaying the content running in this engine, if any.
+  std::unordered_map<FlutterViewId, FlutterWindowsView*> views_;
 
   // Task runner for tasks posted from the engine.
   std::unique_ptr<TaskRunner> task_runner_;
@@ -380,6 +383,9 @@ class FlutterWindowsEngine {
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
+
+  // Handler for accessibility events.
+  std::unique_ptr<AccessibilityPlugin> accessibility_plugin_;
 
   // Handler for cursor events.
   std::unique_ptr<CursorHandler> cursor_handler_;
@@ -433,6 +439,8 @@ class FlutterWindowsEngine {
   std::shared_ptr<WindowsProcTable> windows_proc_table_;
 
   std::shared_ptr<egl::ProcTable> gl_;
+
+  std::unique_ptr<PlatformViewPlugin> platform_view_plugin_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

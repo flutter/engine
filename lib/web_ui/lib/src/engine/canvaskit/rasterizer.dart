@@ -55,17 +55,12 @@ abstract class ViewRasterizer {
     viewEmbedder.frameSize = currentFrameSize;
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize);
-    pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
     final Frame compositorFrame =
         context.acquireFrame(pictureRecorder.recordingCanvas!, viewEmbedder);
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-    sceneHost.prepend(displayFactory.baseCanvas.hostElement);
-    await rasterizeToCanvas(
-        displayFactory.baseCanvas, <CkPicture>[pictureRecorder.endRecording()]);
-
-    await viewEmbedder.submitFrame();
+    await viewEmbedder.submitFrame(pictureRecorder.endRecording());
   }
 
   /// Do some initialization to prepare to draw a frame.
@@ -103,6 +98,11 @@ abstract class ViewRasterizer {
     viewEmbedder.dispose();
     displayFactory.dispose();
   }
+
+  /// Clears the state. Used in tests.
+  void debugClear() {
+    viewEmbedder.debugClear();
+  }
 }
 
 /// A [DisplayCanvas] is an abstraction for a canvas element which displays
@@ -131,6 +131,7 @@ abstract class DisplayCanvas {
 typedef RenderRequest = ({
   ui.Scene scene,
   Completer<void> completer,
+  FrameTimingRecorder? recorder,
 });
 
 /// A per-view queue of render requests. Only contains the current render

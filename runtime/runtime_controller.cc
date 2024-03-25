@@ -47,8 +47,8 @@ RuntimeController::RuntimeController(
 
 std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     RuntimeDelegate& p_client,
-    std::string advisory_script_uri,
-    std::string advisory_script_entrypoint,
+    const std::string& advisory_script_uri,
+    const std::string& advisory_script_entrypoint,
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
@@ -57,13 +57,18 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
-  UIDartState::Context spawned_context{
-      context_.task_runners,          std::move(snapshot_delegate),
-      std::move(io_manager),          context_.unref_queue,
-      std::move(image_decoder),       std::move(image_generator_registry),
-      std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
-      context_.volatile_path_tracker, context_.concurrent_task_runner,
-      context_.enable_impeller,       context_.runtime_stage_backend};
+  UIDartState::Context spawned_context{context_.task_runners,
+                                       std::move(snapshot_delegate),
+                                       std::move(io_manager),
+                                       context_.unref_queue,
+                                       std::move(image_decoder),
+                                       std::move(image_generator_registry),
+                                       advisory_script_uri,
+                                       advisory_script_entrypoint,
+                                       context_.volatile_path_tracker,
+                                       context_.concurrent_task_runner,
+                                       context_.enable_impeller,
+                                       context_.runtime_stage_backend};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -146,8 +151,7 @@ bool RuntimeController::AddView(int64_t view_id,
 bool RuntimeController::RemoveView(int64_t view_id) {
   platform_data_.viewport_metrics_for_views.erase(view_id);
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->RemoveView(view_id);
-    return true;
+    return platform_configuration->RemoveView(view_id);
   }
 
   return false;
@@ -226,6 +230,7 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
 
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
                                    uint64_t frame_number) {
+  MarkAsFrameBorder();
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     platform_configuration->BeginFrame(frame_time, frame_number);
     return true;
@@ -340,22 +345,37 @@ void RuntimeController::ScheduleFrame() {
   client_.ScheduleFrame();
 }
 
-// |PlatformConfigurationClient|
 void RuntimeController::EndWarmUpFrame() {
-  client_.EndWarmUpFrame();
+  client_.OnAllViewsRendered();
 }
 
 // |PlatformConfigurationClient|
-void RuntimeController::Render(Scene* scene, double width, double height) {
-  // TODO(dkwingsmt): Currently only supports a single window.
-  int64_t view_id = kFlutterImplicitViewId;
+void RuntimeController::Render(int64_t view_id,
+                               Scene* scene,
+                               double width,
+                               double height) {
   const ViewportMetrics* view_metrics =
       UIDartState::Current()->platform_configuration()->GetMetrics(view_id);
   if (view_metrics == nullptr) {
     return;
   }
-  client_.Render(scene->takeLayerTree(width, height),
+  client_.Render(view_id, scene->takeLayerTree(width, height),
                  view_metrics->device_pixel_ratio);
+  rendered_views_during_frame_.insert(view_id);
+  CheckIfAllViewsRendered();
+}
+
+void RuntimeController::MarkAsFrameBorder() {
+  rendered_views_during_frame_.clear();
+}
+
+void RuntimeController::CheckIfAllViewsRendered() {
+  if (rendered_views_during_frame_.size() != 0 &&
+      rendered_views_during_frame_.size() ==
+          platform_data_.viewport_metrics_for_views.size()) {
+    client_.OnAllViewsRendered();
+    MarkAsFrameBorder();
+  }
 }
 
 // |PlatformConfigurationClient|
@@ -557,6 +577,10 @@ bool RuntimeController::SetDisplays(const std::vector<DisplayData>& displays) {
 double RuntimeController::GetScaledFontSize(double unscaled_font_size,
                                             int configuration_id) const {
   return client_.GetScaledFontSize(unscaled_font_size, configuration_id);
+}
+
+void RuntimeController::ShutdownPlatformIsolates() {
+  platform_isolate_manager_->ShutdownPlatformIsolates();
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,
