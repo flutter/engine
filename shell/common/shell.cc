@@ -2118,7 +2118,7 @@ void Shell::AddView(int64_t view_id,
                                              callback = std::move(callback)   //
   ] {
     if (engine) {
-      engine->AddView(view_id, viewport_metrics, std::move(callback));
+      engine->AddView(view_id, viewport_metrics, callback);
     }
   });
 }
