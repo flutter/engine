@@ -47,12 +47,47 @@ void main(List<String> args) {
   final Map<String, Object?> entry = compileCommands.first! as Map<String, Object?>;
   final String checkFile;
   if (entry case {
-    'command': final String path,
+    'command': final String command,
     'file': final String file,
   }) {
     // Given a path like ../../flutter/foo.cc, we want to check foo.cc.
     checkFile = p.split(file).skip(3).join(p.separator);
-    clangd ??= p.join(p.dirname(p.dirname(path.split(' ').first)), 'clang', 'bin', 'clangd');
+    // On CI, the command path is different from the local path.
+    // Find the engine root and derive the clangd path from there.
+    if (clangd == null) {
+      // Strip the command to find the path to the engine root.
+      // i.e. "command": "/path/to/engine/src/... arg1 arg2 ..."
+      //
+      // This now looks like "../../flutter/buildtools/{platform}/{...}"
+      final String commandPath = p.dirname(command.split(' ').first);
+
+      // Find the canonical path to the command (i.e. resolve "../" and ".")
+      //
+      // This now looks like "/path/to/engine/src/flutter/buildtools/{platform}/{...}"
+      final String path = p.canonicalize(
+        p.join(compileCommandsDir, commandPath),
+      );
+
+      // Extract which platform we're building for (e.g. linux-x64, mac-arm64, mac-x64).
+      final String platform = RegExp(
+        r'buildtools/([^/]+)/',
+      ).firstMatch(path)!.group(1)!;
+
+      // Find the engine root and derive the clangd path from there.
+      final Engine compileCommandsEngineRoot = Engine.findWithin(path);
+      clangd = p.join(
+        // engine/src/flutter
+        compileCommandsEngineRoot.flutterDir.path,
+        // buildtools
+        'buildtools',
+        // {platform}
+        platform,
+        // clangd
+        'clang',
+        'bin',
+        'clangd',
+      );
+    }
   } else {
     io.stderr.writeln('Unexpected: compile_commands.json has an unexpected format');
     io.stderr.writeln('First entry: ${const JsonEncoder.withIndent('  ').convert(entry)}');
