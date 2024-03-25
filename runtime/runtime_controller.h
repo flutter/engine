@@ -184,6 +184,8 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             If the isolate is not running, the view will be saved and
   ///             flushed to the isolate when it starts.
   ///
+  ///             If the isolate is running, a frame will be scheduled.
+  ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   /// @param[in]  callback          Optional callback that will be invoked after
@@ -679,7 +681,7 @@ class RuntimeController : public PlatformConfigurationClient {
   //
   // These views will be added when `FlushRuntimeStateToIsolate` is called.
   // `AddView`'s callback is optional, this can be empty even if views were
-  // added.
+  // added before the isolate was launched.
   std::unordered_map<int64_t, AddViewCallback> pending_add_view_callbacks_;
 
   // Tracks the views that have been called `Render` during a frame.
