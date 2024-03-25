@@ -5,15 +5,9 @@
 import("//build/config/android/rules.gni")
 
 config("cpu_features_include") {
-  include_dirs = [ "ndk/sources/android/cpufeatures" ]
+  configs = [ "//third_party/cpu_features:ndk_compat_headers" ]
 }
 
-# This is the GN version of
-# //build/android/ndk.gyp:cpu_features
-source_set("cpu_features") {
-  sources = [ "ndk/sources/android/cpufeatures/cpu-features.c" ]
-  public_configs = [ ":cpu_features_include" ]
-
-  configs -= [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
+group("cpu_features") {
+  public_deps = [ "//third_party/cpu_features:ndk_compat" ]
 }

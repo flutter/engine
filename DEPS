@@ -84,7 +84,7 @@ vars = {
   'dart_webdev_rev': '51b5484348b4a8ede351e8dff0428b083495ba78',
   'dart_webkit_inspection_protocol_rev': '153fea4fe5ac45bebf0c2e76bb3d76b0f1fcdaae',
   'dart_yaml_edit_rev': '54884db790720ac0f7ca491cb9e6d7a0395ad4cb',
-  'dart_zlib_rev': '14dd4c4455602c9b71a1a89b5cafd1f4030d2e3f',
+  'dart_zlib_rev': '24c07df5033183efad8607cba62e746bea7180bf',
 
   'ocmock_rev': 'c4ec0e3a7a9f56cfdbd0aa01f4f97bb4b75c5ef8', # v3.7.1
 
@@ -289,7 +289,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'bce07474ce354afc8ea6bb1b695cc86ef376260d',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '4f1907cd067d717a4577ad8e4ceefec887504966',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -667,6 +667,9 @@ deps = {
 
   'src/third_party/zlib':
    Var('chromium_git') + '/chromium/src/third_party/zlib.git' + '@' + Var('dart_zlib_rev'),
+
+  'src/third_party/cpu_features/src':
+   Var('chromium_git') + '/external/github.com/google/cpu_features.git' + '@' + '936b9ab5515dead115606559502e3864958f7f6e',
 
   'src/flutter/third_party/inja':
    Var('flutter_git') + '/third_party/inja' + '@' + '88bd6112575a80d004e551c98cf956f88ff4d445',
