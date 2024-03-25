@@ -91,7 +91,8 @@
                     "name": "test: clangd",
                     "script": "flutter/tools/clangd_check/bin/main.dart",
                     "parameters": [
-                        "--clangd=buildtools/linux-x64/clang/bin/clangd"
+                        "--clangd=buildtools/linux-x64/clang/bin/clangd",
+                        "--ignore-unknown-clangd-args"
                     ]
                 },
                 {

@@ -12,6 +12,10 @@ import 'package:path/path.dart' as p;
 void main(List<String> args) {
   final Engine? engine = Engine.tryFindWithin();
   final ArgParser parser = ArgParser()
+    ..addFlag(
+      'ignore-unknown-clangd-args',
+      help: 'Ignore unknown arguments passed to clangd.',
+    )
     ..addOption(
       'clangd',
       help: 'Path to clangd. Defaults to deriving the path from compile_commands.json.',
@@ -101,6 +105,10 @@ void main(List<String> args) {
       '--compile-commands-dir',
       compileCommandsDir,
       '--check=$checkFile',
+      // Ignore unknown arguments.
+      // Sometimes there is a wrapper script that has additional arguments.
+      if (results['ignore-unknown-clangd-args'] as bool)
+      '-Wno-unknown-warning-option',
     ]);
     io.stdout.write(result.stdout);
     io.stderr.write(result.stderr);

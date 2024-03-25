@@ -299,7 +299,8 @@
                     "name": "test: clangd",
                     "script": "flutter/tools/clangd_check/bin/main.dart",
                     "parameters": [
-                        "--clangd=buildtools/mac-x64/clang/bin/clangd"
+                        "--clangd=buildtools/mac-x64/clang/bin/clangd",
+                        "--ignore-unknown-clangd-args"
                     ]
                 }
             ]
