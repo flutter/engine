@@ -300,7 +300,7 @@ tonic::DartErrorHandleType Engine::GetUIIsolateLastError() {
 void Engine::AddView(int64_t view_id,
                      const ViewportMetrics& view_metrics,
                      std::function<void(bool added)> callback) {
-  runtime_controller_->AddView(view_id, view_metrics, callback);
+  runtime_controller_->AddView(view_id, view_metrics, std::move(callback));
 }
 
 bool Engine::RemoveView(int64_t view_id) {

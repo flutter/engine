@@ -862,6 +862,7 @@ void render_all_views() {
       view.render(builder.build());
     }
   };
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
