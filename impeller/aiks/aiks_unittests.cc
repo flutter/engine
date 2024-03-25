@@ -1123,24 +1123,7 @@ TEST_P(AiksTest, BlendModePlusAlpha) {
 }
 
 // Bug: https://github.com/flutter/flutter/issues/142549
-TEST_P(AiksTest, BlendModePlusAlphaHalf) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  canvas.DrawPaint({.color = Color(0.9, 1.0, 0.9, 1.0)});
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 300, 300),
-                  {.color = Color(1, 0, 0, 0.5)});
-  canvas.SaveLayer({});
-  Paint paint;
-  paint.blend_mode = BlendMode::kPlus;
-  paint.color = Color(0, 0, 1, 0.5);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 150, 300), paint);
-  paint.color = Color(1, 0, 1, 1);
-  canvas.DrawRect(Rect::MakeXYWH(150, 0, 150, 300), paint);
-  canvas.Restore();
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, BlendModePlusAlphaFoo) {
+TEST_P(AiksTest, BlendModePlusAlphaOverlapping) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
   canvas.DrawPaint({.color = Color(0.9, 1.0, 0.9, 1.0)});
