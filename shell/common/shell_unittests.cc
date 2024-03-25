@@ -4504,8 +4504,10 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(2, ViewportMetrics{}); });
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    shell->AddView(2, ViewportMetrics{},
+                   [](bool added) { EXPECT_TRUE(added); });
+  });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
@@ -4519,12 +4521,130 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(4, ViewportMetrics{}); });
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    shell->AddView(4, ViewportMetrics{},
+                   [](bool added) { EXPECT_TRUE(added); });
+  });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
   ASSERT_EQ(viewIds[1], 4ll);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// Test that add view fails if the view ID already exists.
+TEST_F(ShellTest, ShellCannotAddDuplicateViewId) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool has_implicit_view;
+  std::vector<int64_t> view_ids;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      ParseViewIdsCallback(args, &has_implicit_view, &view_ids);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  ASSERT_TRUE(has_implicit_view);
+  ASSERT_EQ(view_ids.size(), 1u);
+  ASSERT_EQ(view_ids[0], kImplicitViewId);
+
+  // Add view 123.
+  fml::AutoResetWaitableEvent add_latch;
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&shell, &add_latch] {
+             shell->AddView(123, ViewportMetrics{}, [&](bool added) {
+               EXPECT_TRUE(added);
+               add_latch.Signal();
+             });
+           });
+
+  add_latch.Wait();
+
+  report_latch.Wait();
+  ASSERT_EQ(view_ids.size(), 2u);
+  ASSERT_EQ(view_ids[0], kImplicitViewId);
+  ASSERT_EQ(view_ids[1], 123);
+
+  // Attempt to add duplicate view ID 123. This should fail.
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&shell, &add_latch] {
+             shell->AddView(123, ViewportMetrics{}, [&](bool added) {
+               EXPECT_FALSE(added);
+               add_latch.Signal();
+             });
+           });
+
+  add_latch.Wait();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// Test that remove view fails if the view ID does not exist.
+TEST_F(ShellTest, ShellCannotRemoveNonexistentId) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  bool has_implicit_view;
+  std::vector<int64_t> view_ids;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewIdsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      ParseViewIdsCallback(args, &has_implicit_view, &view_ids);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewIds");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  ASSERT_TRUE(has_implicit_view);
+  ASSERT_EQ(view_ids.size(), 1u);
+  ASSERT_EQ(view_ids[0], kImplicitViewId);
+
+  // Remove view 123. This should fail as this view doesn't exist.
+  fml::AutoResetWaitableEvent remove_latch;
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
+           [&shell, &remove_latch] {
+             shell->RemoveView(123, [&](bool removed) {
+               EXPECT_FALSE(removed);
+               remove_latch.Signal();
+             });
+           });
+
+  remove_latch.Wait();
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
@@ -4570,7 +4690,8 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     // The construtor for ViewportMetrics{_, width, _, _, _} (only the 2nd
     // argument matters in this test).
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 10, 1, 0, 0});
-    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0});
+    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0},
+                   [](bool added) { ASSERT_TRUE(added); });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
   });
 

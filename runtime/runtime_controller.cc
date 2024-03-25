@@ -121,12 +121,29 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
   FML_DCHECK(!has_flushed_runtime_state_)
       << "FlushRuntimeStateToIsolate is called more than once somehow.";
   has_flushed_runtime_state_ = true;
+
+  auto platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    return false;
+  }
+
   for (auto const& [view_id, viewport_metrics] :
        platform_data_.viewport_metrics_for_views) {
-    if (!AddView(view_id, viewport_metrics)) {
+    bool added = platform_configuration->AddView(view_id, viewport_metrics);
+
+    // Callbacks will have been already invoked if the engine was restarted.
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](added);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    if (!added) {
       return false;
     }
   }
+
+  FML_DCHECK(pending_add_view_callbacks_.empty());
   return SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
@@ -136,16 +153,22 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::AddView(int64_t view_id,
-                                const ViewportMetrics& view_metrics) {
+void RuntimeController::AddView(int64_t view_id,
+                                const ViewportMetrics& view_metrics,
+                                AddViewCallback callback) {
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id, view_metrics);
 
-    return true;
+  // If the Dart isolate is not running, |FlushRuntimeStateToIsolate| will
+  // add the view when the isolate is started.
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    FML_DCHECK(has_flushed_runtime_state_ == false);
+    pending_add_view_callbacks_[view_id] = std::move(callback);
+    return;
   }
 
-  return false;
+  bool added = platform_configuration->AddView(view_id, view_metrics);
+  callback(added);
 }
 
 bool RuntimeController::RemoveView(int64_t view_id) {
