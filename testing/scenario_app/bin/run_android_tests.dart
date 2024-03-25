@@ -194,10 +194,16 @@ Future<void> _run({
         if (verbose) {
           log('wrote ${goldenFile.absolute.path}');
         }
-        if (isSkiaGoldClientAvailable) {
+        if (SkiaGoldClient.isAvailable()) {
           final Future<void> comparison = skiaGoldClient!
-              // Each color channel can be off by 2.
-              .addImg(fileName, goldenFile, screenshotSize: screenshot.pixelCount, pixelColorDelta: 8)
+              .addImg(
+                fileName,
+                goldenFile,
+                screenshotSize: screenshot.pixelCount,
+                // Each color channel can be off by 2.
+                pixelColorDelta: 8,
+              )
+              .then((_) => logImportant('skia gold comparison succeeded: $fileName'))
               .catchError((Object error) {
             logWarning('skia gold comparison failed: $error');
             comparisonsFailed++;
@@ -311,7 +317,7 @@ Future<void> _run({
     });
 
     await step('Skia Gold auth...', () async {
-      if (isSkiaGoldClientAvailable) {
+      if (SkiaGoldClient.isAvailable()) {
         await skiaGoldClient!.auth();
         log('skia gold client is available');
       } else {
