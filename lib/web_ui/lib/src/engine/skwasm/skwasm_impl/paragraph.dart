@@ -578,16 +578,13 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
     ui.TextLeadingDistribution? leadingDistribution,
   }) {
     final StrutStyleHandle handle = strutStyleCreate();
-    if (fontFamily != null || fontFamilyFallback != null) {
-      final List<String> fontFamilies = <String>[
-        if (fontFamily != null) fontFamily,
-        if (fontFamilyFallback != null) ...fontFamilyFallback,
-      ];
-      if (fontFamilies.isNotEmpty) {
-        withScopedFontList(_computeEffectiveFontFamilies(fontFamilies),
-          (Pointer<SkStringHandle> families, int count) =>
-            strutStyleSetFontFamilies(handle, families, count));
-      }
+    final List<String> effectiveFontFamilies = _computeEffectiveFontFamilies(<String>[
+      if (fontFamily != null) fontFamily,
+      if (fontFamilyFallback != null) ...fontFamilyFallback,
+    ]);
+    if (effectiveFontFamilies.isNotEmpty) {
+      withScopedFontList(effectiveFontFamilies, (Pointer<SkStringHandle> families, int count) =>
+          strutStyleSetFontFamilies(handle, families, count));
     }
     if (fontSize != null) {
       strutStyleSetFontSize(handle, fontSize);
@@ -730,9 +727,11 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle.copy();
     final TextStyleHandle textStyleHandle = textStyle.handle;
 
-    if (fontFamily != null) {
-      withScopedFontList(_computeEffectiveFontFamilies(<String>[fontFamily]),
-        (Pointer<SkStringHandle> families, int count) =>
+    final List<String> effectiveFontFamilies = _computeEffectiveFontFamilies(<String>[
+      if (fontFamily != null) fontFamily
+    ]);
+    if (effectiveFontFamilies.isNotEmpty) {
+      withScopedFontList(effectiveFontFamilies, (Pointer<SkStringHandle> families, int count) =>
           textStyleAddFontFamilies(textStyleHandle, families, count));
     }
     if (fontSize != null) {
