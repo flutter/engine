@@ -109,11 +109,11 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
     cursor_name = kFallbackCursor;
   }
 
-  GdkWindow* window =
-      gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
-  g_autoptr(GdkCursor) cursor =
-      gdk_cursor_new_from_name(gdk_window_get_display(window), cursor_name);
-  gdk_window_set_cursor(window, cursor);
+  // GdkWindow* window =
+  //     gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
+  // g_autoptr(GdkCursor) cursor =
+  //     gdk_cursor_new_from_name(gdk_window_get_display(window), cursor_name);
+  // gdk_window_set_cursor(window, cursor);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }

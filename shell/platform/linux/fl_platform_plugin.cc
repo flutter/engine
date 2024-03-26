@@ -25,7 +25,7 @@ static constexpr char kInitializationCompleteMethod[] =
 static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 static constexpr char kSystemNavigatorPopMethod[] = "SystemNavigator.pop";
 static constexpr char kTextKey[] = "text";
-static constexpr char kValueKey[] = "value";
+// static constexpr char kValueKey[] = "value";
 
 static constexpr char kExitTypeKey[] = "type";
 static constexpr char kExitTypeCancelable[] = "cancelable";
@@ -61,6 +61,7 @@ static void send_response(FlMethodCall* method_call,
 }
 
 // Called when clipboard text received.
+#if 0
 static void clipboard_text_cb(GtkClipboard* clipboard,
                               const gchar* text,
                               gpointer user_data) {
@@ -76,8 +77,10 @@ static void clipboard_text_cb(GtkClipboard* clipboard,
       FL_METHOD_RESPONSE(fl_method_success_response_new(result));
   send_response(method_call, response);
 }
+#endif
 
 // Called when clipboard text received during has_strings.
+#if 0
 static void clipboard_text_has_strings_cb(GtkClipboard* clipboard,
                                           const gchar* text,
                                           gpointer user_data) {
@@ -92,6 +95,7 @@ static void clipboard_text_has_strings_cb(GtkClipboard* clipboard,
       FL_METHOD_RESPONSE(fl_method_success_response_new(result));
   send_response(method_call, response);
 }
+#endif
 
 // Called when Flutter wants to copy to the clipboard.
 static FlMethodResponse* clipboard_set_data(FlPlatformPlugin* self,
@@ -108,9 +112,9 @@ static FlMethodResponse* clipboard_set_data(FlPlatformPlugin* self,
         kBadArgumentsError, "Missing clipboard text", nullptr));
   }
 
-  GtkClipboard* clipboard =
-      gtk_clipboard_get_default(gdk_display_get_default());
-  gtk_clipboard_set_text(clipboard, fl_value_get_string(text_value), -1);
+  // GtkClipboard* clipboard =
+  //     gtk_clipboard_get_default(gdk_display_get_default());
+  // gtk_clipboard_set_text(clipboard, fl_value_get_string(text_value), -1);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
@@ -132,10 +136,10 @@ static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
         nullptr));
   }
 
-  GtkClipboard* clipboard =
-      gtk_clipboard_get_default(gdk_display_get_default());
-  gtk_clipboard_request_text(clipboard, clipboard_text_cb,
-                             g_object_ref(method_call));
+  // GtkClipboard* clipboard =
+  //     gtk_clipboard_get_default(gdk_display_get_default());
+  // gtk_clipboard_request_text(clipboard, clipboard_text_cb,
+  //                            g_object_ref(method_call));
 
   // Will respond later.
   return nullptr;
@@ -146,10 +150,10 @@ static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
 static FlMethodResponse* clipboard_has_strings_async(
     FlPlatformPlugin* self,
     FlMethodCall* method_call) {
-  GtkClipboard* clipboard =
-      gtk_clipboard_get_default(gdk_display_get_default());
-  gtk_clipboard_request_text(clipboard, clipboard_text_has_strings_cb,
-                             g_object_ref(method_call));
+  // GtkClipboard* clipboard =
+  //     gtk_clipboard_get_default(gdk_display_get_default());
+  // gtk_clipboard_request_text(clipboard, clipboard_text_has_strings_cb,
+  //                            g_object_ref(method_call));
 
   // Will respond later.
   return nullptr;

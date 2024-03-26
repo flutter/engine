@@ -221,7 +221,7 @@ static void fl_key_channel_responder_handle_event(
   // being "stuck" when a key-up event is lost because it happens after the app
   // loses focus.
   //
-  // For Lock keys (ShiftLock, CapsLock, NumLock), however, GTK keeps track of
+  // For Lock keys (ShiftLock, CapsLock), however, GTK keeps track of
   // the state of the locks themselves, not the "pressed" state of the key.
   //
   // Since Flutter expects the "pressed" state of the modifier keys, the lock
@@ -239,15 +239,11 @@ static void fl_key_channel_responder_handle_event(
   // interactions (for example, if shift-lock is on, tab traversal is broken).
 
   // Remove lock states from state mask.
-  guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
+  guint state = event->state & ~GDK_LOCK_MASK;
 
   static bool shift_lock_pressed = FALSE;
   static bool caps_lock_pressed = FALSE;
-  static bool num_lock_pressed = FALSE;
   switch (event->keyval) {
-    case GDK_KEY_Num_Lock:
-      num_lock_pressed = event->is_press;
-      break;
     case GDK_KEY_Caps_Lock:
       caps_lock_pressed = event->is_press;
       break;
@@ -259,7 +255,6 @@ static void fl_key_channel_responder_handle_event(
   // Add back in the state matching the actual pressed state of the lock keys,
   // not the lock states.
   state |= (shift_lock_pressed || caps_lock_pressed) ? GDK_LOCK_MASK : 0x0;
-  state |= num_lock_pressed ? GDK_MOD2_MASK : 0x0;
 
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTypeKey, fl_value_new_string(type));
