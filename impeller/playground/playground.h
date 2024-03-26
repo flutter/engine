@@ -28,7 +28,6 @@ class PlaygroundImpl;
 
 enum class PlaygroundBackend {
   kMetal,
-  kMetalWideGamut,
   kOpenGLES,
   kVulkan,
 };
@@ -37,8 +36,6 @@ constexpr inline RuntimeStageBackend PlaygroundBackendToRuntimeStageBackend(
     PlaygroundBackend backend) {
   switch (backend) {
     case PlaygroundBackend::kMetal:
-      [[fallthrough]];
-    case PlaygroundBackend::kMetalWideGamut:
       return RuntimeStageBackend::kMetal;
     case PlaygroundBackend::kOpenGLES:
       return RuntimeStageBackend::kOpenGLES;
@@ -60,7 +57,8 @@ class Playground {
 
   static bool ShouldOpenNewPlaygrounds();
 
-  void SetupContext(PlaygroundBackend backend);
+  void SetupContext(PlaygroundBackend backend,
+                    const PlaygroundSwitches& switches);
 
   void SetupWindow();
 

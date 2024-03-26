@@ -16,13 +16,8 @@ namespace testing {
 MetalScreenshotter::MetalScreenshotter(bool enable_wide_gamut) {
   FML_CHECK(::glfwInit() == GLFW_TRUE);
   PlaygroundSwitches switches;
-  if (enable_wide_gamut) {
-    switches.enable_wide_gamut = true;
-    playground_ =
-        PlaygroundImpl::Create(PlaygroundBackend::kMetalWideGamut, switches);
-  } else {
-    playground_ = PlaygroundImpl::Create(PlaygroundBackend::kMetal, switches);
-  }
+  switches.enable_wide_gamut = enable_wide_gamut;
+  playground_ = PlaygroundImpl::Create(PlaygroundBackend::kMetal, switches);
 }
 
 std::unique_ptr<Screenshot> MetalScreenshotter::MakeScreenshot(

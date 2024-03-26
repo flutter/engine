@@ -43,8 +43,6 @@ namespace impeller {
 
 std::string PlaygroundBackendToString(PlaygroundBackend backend) {
   switch (backend) {
-    case PlaygroundBackend::kMetalWideGamut:
-      return "MetalWideGamut";
     case PlaygroundBackend::kMetal:
       return "Metal";
     case PlaygroundBackend::kOpenGLES:
@@ -100,8 +98,6 @@ std::shared_ptr<Context> Playground::MakeContext() const {
 
 bool Playground::SupportsBackend(PlaygroundBackend backend) {
   switch (backend) {
-    case PlaygroundBackend::kMetalWideGamut:
-      [[fallthrough]];
     case PlaygroundBackend::kMetal:
 #if IMPELLER_ENABLE_METAL
       return true;
@@ -124,10 +120,11 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-void Playground::SetupContext(PlaygroundBackend backend) {
+void Playground::SetupContext(PlaygroundBackend backend,
+                              const PlaygroundSwitches& switches) {
   FML_CHECK(SupportsBackend(backend));
 
-  impl_ = PlaygroundImpl::Create(backend, switches_);
+  impl_ = PlaygroundImpl::Create(backend, switches);
   if (!impl_) {
     FML_LOG(WARNING) << "PlaygroundImpl::Create failed.";
     return;

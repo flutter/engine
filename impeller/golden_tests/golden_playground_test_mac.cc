@@ -139,10 +139,6 @@ void GoldenPlaygroundTest::SetUp() {
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
   switch (GetParam()) {
-    case PlaygroundBackend::kMetalWideGamut:
-      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>(
-          /*enable_wide_gamut=*/true);
-      break;
     case PlaygroundBackend::kMetal:
       pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>(
           /*enable_wide_gamut=*/false);
