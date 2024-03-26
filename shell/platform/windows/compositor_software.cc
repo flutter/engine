@@ -53,17 +53,17 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
 
   // TODO: Support compositing layers and platform views.
   // See: https://github.com/flutter/flutter/issues/31713
-  FML_DCHECK(layers_count == 1);
-  FML_DCHECK(layers[0]->offset.x == 0 && layers[0]->offset.y == 0);
-  FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
-  FML_DCHECK(layers[0]->backing_store->type ==
-             kFlutterBackingStoreTypeSoftware);
+  //FML_DCHECK(layers_count == 1);
+  //FML_DCHECK(layers[0]->offset.x == 0 && layers[0]->offset.y == 0);
+  //FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
+  //FML_DCHECK(layers[0]->backing_store->type ==
+  //           kFlutterBackingStoreTypeSoftware);
 
   HWND hwnd = view->GetWindowHandle();
   RECT rect;
   GetClientRect(hwnd, &rect);
-  int width = rect.right - rect.left;
-  int height = rect.bottom - rect.top;
+  int width = layers[0]->size.width;//rect.right - rect.left;
+  int height = layers[0]->size.height;//rect.bottom - rect.top;
   std::vector<uint32_t> allocation(width * height);
 
   for (const FlutterLayer** layer = layers; layer < layers + layers_count; layer++) {
