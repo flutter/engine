@@ -81,6 +81,19 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
   return transformed_rrect.contains(platformview_boundingrect);
 }
 
+// Determines if the intersection rect of a layer and a platform view is a single pixel width
+// or height, and on the edge of the platform view.
+static bool IsIntersectionSinglePixelWidthOrHeightOnEdgeOfPlatformView(
+    const SkIRect& rounded_out_platform_view_rect,
+    const SkIRect& intersection_rect) {
+  bool onLeftOrRight = intersection_rect.left() == rounded_out_platform_view_rect.left() ||
+                       intersection_rect.right() == rounded_out_platform_view_rect.right();
+  bool onTopOrBottom = intersection_rect.top() == rounded_out_platform_view_rect.top() ||
+                       intersection_rect.bottom() == rounded_out_platform_view_rect.bottom();
+  return (intersection_rect.width() == 1 && onLeftOrRight) ||
+         (intersection_rect.height() == 1 && onTopOrBottom);
+}
+
 namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
@@ -705,8 +718,27 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
     for (size_t j = i + 1; j > 0; j--) {
       int64_t current_platform_view_id = composition_order_[j - 1];
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
-      std::vector<SkIRect> intersection_rects =
-          slice->roundedInRegion(platform_view_rect).getRects();
+      std::vector<SkIRect> intersection_rects = slice->region(platform_view_rect).getRects();
+      const SkIRect rounded_out_platform_view_rect = platform_view_rect.roundOut();
+      // Ignore intersections of single width/height on the edge of the platform view.
+      // This is to address the following performance issue when interleaving adjacent
+      // platform views and layers:
+      // Since we `roundOut` both platform view rects and the layer rects, as long as
+      // the coordinate is fractional, there will be an intersection of a single pixel width
+      // (or height) after rounding out, even if they do not intersect before rounding out.
+      // We have to round out both platform view rect and the layer rect.
+      // Rounding in platform view rect will result in missing pixel on the intersection edge.
+      // Rounding in layer rect will result in missing pixel on the edge of the layer on top
+      // of the platform view.
+      for (auto it = intersection_rects.begin(); it != intersection_rects.end(); /*no-op*/) {
+        if (IsIntersectionSinglePixelWidthOrHeightOnEdgeOfPlatformView(
+                rounded_out_platform_view_rect, *it)) {
+          it = intersection_rects.erase(it);
+        } else {
+          ++it;
+        }
+      }
+
       auto allocation_size = intersection_rects.size();
 
       // For testing purposes, the overlay id is used to find the overlay view.
@@ -731,7 +763,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       for (SkIRect& joined_rect : intersection_rects) {
         // Get the intersection rect between the current rect
         // and the platform view rect.
-        joined_rect.intersect(platform_view_rect.roundOut());
+        joined_rect.intersect(rounded_out_platform_view_rect);
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
         background_canvas->ClipRect(SkRect::Make(joined_rect), DlCanvas::ClipOp::kDifference);
