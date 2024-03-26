@@ -19,7 +19,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-#pragma mark - Static data and functions.
+#pragma mark - Static types and data.
 
 namespace {
 using flutter::KeyboardLayoutNotifier;
@@ -133,41 +133,6 @@ struct MouseState {
   }
 };
 
-/**
- * NotificationCenter callback invoked on kTISNotifySelectedKeyboardInputSourceChanged events.
- */
-void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
-                             void* observer,
-                             CFStringRef name,
-                             const void* object,
-                             CFDictionaryRef userInfo) {
-  FlutterViewController* controller = (__bridge FlutterViewController*)observer;
-  if (controller != nil) {
-    [controller onKeyboardLayoutChanged];
-  }
-}
-
-/**
- * Returns the current Unicode layout data (kTISPropertyUnicodeKeyLayoutData).
- *
- * To use the returned data, convert it to CFDataRef first, finds its bytes
- * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
- * It's returned in NSData* to enable auto reference count.
- */
-NSData* CurrentKeyboardLayoutData() {
-  TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
-  CFTypeRef layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
-  if (layout_data == nil) {
-    CFRelease(source);
-    // TISGetInputSourceProperty returns null with Japanese keyboard layout.
-    // Using TISCopyCurrentKeyboardLayoutInputSource to fix NULL return.
-    // https://github.com/microsoft/node-native-keymap/blob/5f0699ded00179410a14c0e1b0e089fe4df8e130/src/keyboard_mac.mm#L91
-    source = TISCopyCurrentKeyboardLayoutInputSource();
-    layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
-  }
-  return (__bridge_transfer NSData*)CFRetain(layout_data);
-}
-
 }  // namespace
 
 #pragma mark - Private interface declaration.
@@ -266,6 +231,20 @@ NSData* CurrentKeyboardLayoutData() {
 @end
 
 #pragma mark - FlutterViewWrapper implementation.
+
+/**
+ * NotificationCenter callback invoked on kTISNotifySelectedKeyboardInputSourceChanged events.
+ */
+static void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
+                                    void* observer,
+                                    CFStringRef name,
+                                    const void* object,
+                                    CFDictionaryRef userInfo) {
+  FlutterViewController* controller = (__bridge FlutterViewController*)observer;
+  if (controller != nil) {
+    [controller onKeyboardLayoutChanged];
+  }
+}
 
 @implementation FlutterViewWrapper {
   FlutterView* _flutterView;
@@ -902,6 +881,27 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 }
 
 #pragma mark - FlutterKeyboardViewDelegate
+
+/**
+ * Returns the current Unicode layout data (kTISPropertyUnicodeKeyLayoutData).
+ *
+ * To use the returned data, convert it to CFDataRef first, finds its bytes
+ * with CFDataGetBytePtr, then reinterpret it into const UCKeyboardLayout*.
+ * It's returned in NSData* to enable auto reference count.
+ */
+static NSData* CurrentKeyboardLayoutData() {
+  TISInputSourceRef source = TISCopyCurrentKeyboardInputSource();
+  CFTypeRef layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
+  if (layout_data == nil) {
+    CFRelease(source);
+    // TISGetInputSourceProperty returns null with Japanese keyboard layout.
+    // Using TISCopyCurrentKeyboardLayoutInputSource to fix NULL return.
+    // https://github.com/microsoft/node-native-keymap/blob/5f0699ded00179410a14c0e1b0e089fe4df8e130/src/keyboard_mac.mm#L91
+    source = TISCopyCurrentKeyboardLayoutInputSource();
+    layout_data = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData);
+  }
+  return (__bridge_transfer NSData*)CFRetain(layout_data);
+}
 
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(nullable FlutterKeyEventCallback)callback
