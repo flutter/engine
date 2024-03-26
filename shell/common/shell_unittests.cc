@@ -4693,12 +4693,6 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0},
                    [](bool added) { ASSERT_TRUE(added); });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
-
-    // A view can be added and removed all before the isolate launches.
-    // This effectively cancels the pending add view operation.
-    shell->AddView(2, ViewportMetrics{1, 30, 1, 0, 0},
-                   [](bool added) { ASSERT_FALSE(added); });
-    shell->RemoveView(2, [](bool removed) { ASSERT_FALSE(removed); });
   });
 
   bool first_report = true;
@@ -4723,6 +4717,55 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
   EXPECT_EQ(viewWidths.size(), 2u);
   EXPECT_EQ(viewWidths[0], 20ll);
   EXPECT_EQ(viewWidths[1], 30ll);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
+// A view can be added and removed before the Dart isolate is launched.
+TEST_F(ShellTest, CanRemoveViewBeforeLaunchingIsolate) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    auto platform_view = shell->GetPlatformView();
+
+    // A view can be added and removed all before the isolate launches.
+    // The pending add view operation is cancelled, the view is never
+    // added to the Dart isolate.
+    shell->AddView(123, ViewportMetrics{1, 30, 1, 0, 0},
+                   [](bool added) { ASSERT_FALSE(added); });
+    shell->RemoveView(123, [](bool removed) { ASSERT_FALSE(removed); });
+  });
+
+  bool first_report = true;
+  std::map<int64_t, int64_t> view_widths;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewWidthsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      EXPECT_TRUE(first_report);
+                      first_report = false;
+                      ParseViewWidthsCallback(args, &view_widths);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewWidths");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  EXPECT_EQ(view_widths.size(), 1u);
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
