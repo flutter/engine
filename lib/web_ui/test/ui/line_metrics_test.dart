@@ -162,16 +162,19 @@ Future<void> testMain() async {
 
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
-      fontSize: 14.0,
+      fontSize: 16.0,
       fontFamily: 'Roboto',
     ));
-    builder.addText('XXXX');
+    builder.addText('O');
     final ui.Paragraph paragraph = builder.build();
-    paragraph.layout(const ui.ParagraphConstraints(width: 400000));
+    paragraph.layout(const ui.ParagraphConstraints(width: 400));
 
     expect(paragraph.numberOfLines, 1);
 
-    // Roboto has 2 points of leading around the font, whereas the test font does not.
-    expect(paragraph.height, 16);
-  });
+    final ui.LineMetrics? metrics = paragraph.getLineMetricsAt(0);
+    expect(metrics, isNotNull);
+
+    // In Roboto, the width should be 11 here. In the test font, it would be square (16 points)
+    expect(metrics!.width, 11);
+  }, solo: true);
 }
