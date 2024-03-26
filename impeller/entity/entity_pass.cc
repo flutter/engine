@@ -841,6 +841,13 @@ bool EntityPass::RenderElement(Entity& element_entity,
   return true;
 }
 
+namespace {
+bool IsAlphaClampedToOne(PixelFormat pixel_format) {
+  return !(pixel_format == PixelFormat::kR32G32B32A32Float ||
+           pixel_format == PixelFormat::kR16G16B16A16Float);
+}
+}  // namespace
+
 bool EntityPass::OnRender(
     ContentContext& renderer,
     Capture& capture,
@@ -940,6 +947,13 @@ bool EntityPass::OnRender(
     //--------------------------------------------------------------------------
     /// Setup advanced blends.
     ///
+
+    if (result.entity.GetBlendMode() == BlendMode::kPlus &&
+        !IsAlphaClampedToOne(pass_context.GetPassTarget()
+                                 .GetRenderTarget()
+                                 .GetRenderTargetPixelFormat())) {
+      result.entity.SetBlendMode(BlendMode::kPlusAdvanced);
+    }
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
       if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
