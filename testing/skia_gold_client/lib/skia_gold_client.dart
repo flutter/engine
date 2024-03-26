@@ -418,7 +418,7 @@ interface class SkiaGoldClient {
           ..writeln('stdout:\n$resultStdout');
         return;
       }
-      
+
       // Negative images are considered failures during tryjobs.
       //
       // We don't actually use negative images as part of our workflow, but
