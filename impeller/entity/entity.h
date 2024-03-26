@@ -82,7 +82,7 @@ class Entity {
 
   /// @brief  Static utility that computes the vertex shader transform used for
   ///         drawing an Entity with a given the clip depth and RenderPass size.
-  static Matrix GetShaderTransform(Scalar shader_clip_depth,
+  static Matrix GetShaderTransform(Scalar clip_depth,
                                    const RenderPass& pass,
                                    const Matrix& transform);
 
