@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "impeller/base/validation.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/texture_descriptor.h"
 
 namespace impeller {
@@ -69,16 +70,20 @@ void TextureMTL::SetLabel(std::string_view label) {
 }
 
 // |Texture|
-bool TextureMTL::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+bool TextureMTL::OnSetContents(const BufferView& buffer_view,
+                               IRect region,
                                size_t slice) {
   // Metal has no threading restrictions. So we can pass this data along to the
   // client rendering API immediately.
-  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+  return OnSetContents(
+      buffer_view.buffer->OnGetContents() + buffer_view.range.offset,
+      buffer_view.range.length, region, slice);
 }
 
 // |Texture|
 bool TextureMTL::OnSetContents(const uint8_t* contents,
                                size_t length,
+                               IRect region,
                                size_t slice) {
   if (!IsValid() || !contents || is_wrapped_ || is_drawable_) {
     return false;
@@ -87,17 +92,20 @@ bool TextureMTL::OnSetContents(const uint8_t* contents,
   const auto& desc = GetTextureDescriptor();
 
   // Out of bounds access.
-  if (length != desc.GetByteSizeOfBaseMipLevel()) {
+  if (length != desc.GetByteSizeOfRegion(region)) {
     return false;
   }
 
-  const auto region =
-      MTLRegionMake2D(0u, 0u, desc.size.width, desc.size.height);
-  [aquire_proc_() replaceRegion:region                            //
+  const auto region_mtl = MTLRegionMake2D(
+      region.GetX(), region.GetY(), region.GetWidth(), region.GetHeight());
+
+  auto bytes_per_row =
+      BytesPerPixelForPixelFormat(desc.format) * region.GetWidth();
+  [aquire_proc_() replaceRegion:region_mtl                        //
                     mipmapLevel:0u                                //
                           slice:slice                             //
                       withBytes:contents                          //
-                    bytesPerRow:desc.GetBytesPerRow()             //
+                    bytesPerRow:bytes_per_row                     //
                   bytesPerImage:desc.GetByteSizeOfBaseMipLevel()  //
   ];
 

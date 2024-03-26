@@ -63,6 +63,10 @@ void GlyphAtlas::AddTypefaceGlyphPosition(const FontGlyphPair& pair,
   font_atlas_map_[pair.scaled_font].positions_[pair.glyph] = rect;
 }
 
+void GlyphAtlas::RemoveTypefaceGlyphPosition(const FontGlyphPair& pair) {
+  font_atlas_map_[pair.scaled_font].positions_.erase(pair.glyph);
+}
+
 std::optional<Rect> GlyphAtlas::FindFontGlyphBounds(
     const FontGlyphPair& pair) const {
   const auto& found = font_atlas_map_.find(pair.scaled_font);

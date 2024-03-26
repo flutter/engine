@@ -84,10 +84,17 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   // |Texture|
   bool OnSetContents(const uint8_t* contents,
                      size_t length,
+                     IRect region,
                      size_t slice) override;
 
   // |Texture|
-  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+  bool OnSetContents(const BufferView& buffer_view,
+                     IRect region,
+                     size_t slice) override;
+
+  // |Texture|
+  bool OnSetContents(const ContentUpdate updates[],
+                     size_t update_count,
                      size_t slice) override;
 
   // |Texture|

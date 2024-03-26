@@ -31,6 +31,7 @@ void TextureVK::SetLabel(std::string_view label) {
 
 bool TextureVK::OnSetContents(const uint8_t* contents,
                               size_t length,
+                              IRect region,
                               size_t slice) {
   if (!IsValid() || !contents) {
     return false;
@@ -39,8 +40,9 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   const auto& desc = GetTextureDescriptor();
 
   // Out of bounds access.
-  if (length != desc.GetByteSizeOfBaseMipLevel()) {
-    VALIDATION_LOG << "Illegal to set contents for invalid size.";
+  if (length != desc.GetByteSizeOfRegion(region)) {
+    VALIDATION_LOG << "Illegal to set contents for invalid size: " << length
+                   << " vs " << desc.GetByteSizeOfRegion(region);
     return false;
   }
 
@@ -88,11 +90,11 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   copy.bufferOffset = 0u;
   copy.bufferRowLength = 0u;    // 0u means tightly packed per spec.
   copy.bufferImageHeight = 0u;  // 0u means tightly packed per spec.
-  copy.imageOffset.x = 0u;
-  copy.imageOffset.y = 0u;
+  copy.imageOffset.x = region.GetX();
+  copy.imageOffset.y = region.GetY();
   copy.imageOffset.z = 0u;
-  copy.imageExtent.width = desc.size.width;
-  copy.imageExtent.height = desc.size.height;
+  copy.imageExtent.width = region.GetWidth();
+  copy.imageExtent.height = region.GetHeight();
   copy.imageExtent.depth = 1u;
   copy.imageSubresource.aspectMask =
       ToImageAspectFlags(GetTextureDescriptor().format);
@@ -129,11 +131,190 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
 }
 
-bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+bool TextureVK::OnSetContents(const BufferView& buffer_view,
+                              IRect region,
                               size_t slice) {
-  // Vulkan has no threading restrictions. So we can pass this data along to the
-  // client rendering API immediately.
-  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+  if (!IsValid() || !buffer_view) {
+    return false;
+  }
+
+  const auto& desc = GetTextureDescriptor();
+
+  // Out of bounds access.
+  // if (length != desc.GetByteSizeOfRegion(region)) {
+  //   VALIDATION_LOG << "Illegal to set contents for invalid size: " << length
+  //                  << " vs " << desc.GetByteSizeOfRegion(region);
+  //   return false;
+  // }
+
+  auto context = context_.lock();
+  if (!context) {
+    VALIDATION_LOG << "Context died before setting contents on texture.";
+    return false;
+  }
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+
+  if (!cmd_buffer) {
+    return false;
+  }
+
+  const auto encoder = CommandBufferVK::Cast(*cmd_buffer).GetEncoder();
+
+  if (!encoder->Track(buffer_view.buffer) || !encoder->Track(source_)) {
+    return false;
+  }
+
+  const auto& vk_cmd_buffer = encoder->GetCommandBuffer();
+
+  BarrierVK barrier;
+  barrier.cmd_buffer = vk_cmd_buffer;
+  barrier.new_layout = vk::ImageLayout::eTransferDstOptimal;
+  barrier.src_access = {};
+  barrier.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  barrier.dst_access = vk::AccessFlagBits::eTransferWrite;
+  barrier.dst_stage = vk::PipelineStageFlagBits::eTransfer;
+
+  if (!SetLayout(barrier)) {
+    return false;
+  }
+
+  vk::BufferImageCopy copy;
+  copy.bufferOffset = buffer_view.range.offset;
+  copy.bufferRowLength = 0u;    // 0u means tightly packed per spec.
+  copy.bufferImageHeight = 0u;  // 0u means tightly packed per spec.
+  copy.imageOffset.x = region.GetX();
+  copy.imageOffset.y = region.GetY();
+  copy.imageOffset.z = 0u;
+  copy.imageExtent.width = region.GetWidth();
+  copy.imageExtent.height = region.GetHeight();
+  copy.imageExtent.depth = 1u;
+  copy.imageSubresource.aspectMask =
+      ToImageAspectFlags(GetTextureDescriptor().format);
+  copy.imageSubresource.mipLevel = 0u;
+  copy.imageSubresource.baseArrayLayer = slice;
+  copy.imageSubresource.layerCount = 1u;
+
+  vk_cmd_buffer.copyBufferToImage(
+      DeviceBufferVK::Cast(*buffer_view.buffer).GetBuffer(),  // src buffer
+      GetImage(),                                             // dst image
+      barrier.new_layout,  // dst image layout
+      1u,                  // region count
+      &copy                // regions
+  );
+
+  // Transition to shader-read.
+  {
+    BarrierVK barrier;
+    barrier.cmd_buffer = vk_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
+                         vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
+                        vk::PipelineStageFlagBits::eTransfer;
+    barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+    barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+    barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+    if (!SetLayout(barrier)) {
+      return false;
+    }
+  }
+
+  return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
+}
+
+bool TextureVK::OnSetContents(const ContentUpdate updates[],
+                              size_t update_count,
+                              size_t slice) {
+  if (!IsValid()) {
+    return false;
+  }
+
+  const auto& desc = GetTextureDescriptor();
+
+  auto context = context_.lock();
+  if (!context) {
+    VALIDATION_LOG << "Context died before setting contents on texture.";
+    return false;
+  }
+
+  auto cmd_buffer = context->CreateCommandBuffer();
+
+  if (!cmd_buffer) {
+    return false;
+  }
+
+  const auto encoder = CommandBufferVK::Cast(*cmd_buffer).GetEncoder();
+
+  if (!encoder->Track(source_)) {
+    return false;
+  }
+
+  const auto& vk_cmd_buffer = encoder->GetCommandBuffer();
+
+  BarrierVK barrier;
+  barrier.cmd_buffer = vk_cmd_buffer;
+  barrier.new_layout = vk::ImageLayout::eTransferDstOptimal;
+  barrier.src_access = {};
+  barrier.src_stage = vk::PipelineStageFlagBits::eTopOfPipe;
+  barrier.dst_access = vk::AccessFlagBits::eTransferWrite;
+  barrier.dst_stage = vk::PipelineStageFlagBits::eTransfer;
+
+  if (!SetLayout(barrier)) {
+    return false;
+  }
+
+  for (auto i = 0u; i < update_count; i++) {
+    const auto& buffer_view = updates[i].buffer_view;
+    const auto& region = updates[i].region;
+
+    if (!encoder->Track(buffer_view.buffer)) {
+      return false;
+    }
+
+    vk::BufferImageCopy copy;
+    copy.bufferOffset = buffer_view.range.offset;
+    copy.bufferRowLength = 0u;    // 0u means tightly packed per spec.
+    copy.bufferImageHeight = 0u;  // 0u means tightly packed per spec.
+    copy.imageOffset.x = region.GetX();
+    copy.imageOffset.y = region.GetY();
+    copy.imageOffset.z = 0u;
+    copy.imageExtent.width = region.GetWidth();
+    copy.imageExtent.height = region.GetHeight();
+    copy.imageExtent.depth = 1u;
+    copy.imageSubresource.aspectMask =
+        ToImageAspectFlags(GetTextureDescriptor().format);
+    copy.imageSubresource.mipLevel = 0u;
+    copy.imageSubresource.baseArrayLayer = slice;
+    copy.imageSubresource.layerCount = 1u;
+
+    vk_cmd_buffer.copyBufferToImage(
+        DeviceBufferVK::Cast(*buffer_view.buffer).GetBuffer(),  // src buffer
+        GetImage(),                                             // dst image
+        barrier.new_layout,  // dst image layout
+        1u,                  // region count
+        &copy                // regions
+    );
+  }
+
+  // Transition to shader-read.
+  {
+    BarrierVK barrier;
+    barrier.cmd_buffer = vk_cmd_buffer;
+    barrier.src_access = vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eTransfer;
+    barrier.dst_access = vk::AccessFlagBits::eShaderRead;
+    barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
+
+    barrier.new_layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+    if (!SetLayout(barrier)) {
+      return false;
+    }
+  }
+
+  return context->GetCommandQueue()->Submit({cmd_buffer}).ok();
 }
 
 bool TextureVK::IsValid() const {

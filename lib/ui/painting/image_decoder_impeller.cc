@@ -420,13 +420,9 @@ ImageDecoderImpeller::UploadTextureToStorage(
     return std::make_pair(nullptr, decode_error);
   }
 
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
-      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
-  );
-
-  if (!texture->SetContents(mapping)) {
+  if (!texture->SetContents(
+          reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),
+          texture_descriptor.GetByteSizeOfBaseMipLevel())) {
     std::string decode_error("Could not copy contents into Impeller texture.");
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
