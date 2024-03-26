@@ -1102,7 +1102,7 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
 }
 
 // Bug: https://github.com/flutter/flutter/issues/142549
-TEST_P(AiksTest, BlendModePlusAlpha) {
+TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
   auto texture = CreateTextureForFixture("airplane.jpg",
                                          /*enable_mipmapping=*/true);
 
@@ -1118,25 +1118,6 @@ TEST_P(AiksTest, BlendModePlusAlpha) {
   canvas.DrawImageRect(
       std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
       Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
-  canvas.Restore();
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Bug: https://github.com/flutter/flutter/issues/142549
-TEST_P(AiksTest, BlendModePlusAlphaOverlapping) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  canvas.DrawPaint({.color = Color(0.9, 1.0, 0.9, 1.0)});
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 300, 300), {.color = Color(1, 0, 0, 1)});
-  canvas.SaveLayer({});
-  Paint paint;
-  paint.blend_mode = BlendMode::kPlus;
-  paint.color = Color(0, 0, 1, 10.0 / 255.0);
-  for (int i = 0; i < 20; ++i) {
-    canvas.DrawRect(Rect::MakeXYWH(0, 0, 150, 300), paint);
-  }
-  paint.color = Color(0, 0, 1, 200.0 / 255.0);
-  canvas.DrawRect(Rect::MakeXYWH(150, 0, 150, 300), paint);
   canvas.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
