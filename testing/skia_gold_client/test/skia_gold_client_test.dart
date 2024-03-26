@@ -526,7 +526,7 @@ void main() {
         );
         fail('addImg should fail due to an unapproved image');
       } on SkiaGoldProcessError catch (error) {
-        expect(error.message, contains('Skia Gold received an unapproved image.'));
+        expect(error.message, contains('Skia Gold received an unapproved image'));
         expect(error.stdout, 'stdout-text');
         expect(error.stderr, 'stderr-text');
         expect(error.command.join(' '), contains('imgtest add'));
