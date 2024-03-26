@@ -277,7 +277,17 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
-  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+
+  std::array<DescriptorSetLayout, 2> descriptor_set_layouts = {
+      VS::kDescriptorSetLayouts[0],
+      DescriptorSetLayout{
+          64,                              // binding = 0
+          DescriptorType::kUniformBuffer,  // descriptor_type =
+                                           // DescriptorType::kUniformBuffer
+          ShaderStage::kFragment,  // shader_stage = ShaderStage::kFragment
+      },
+  };
+  vertex_descriptor->RegisterDescriptorSetLayouts(descriptor_set_layouts);
 
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   ColorAttachmentDescriptor color0;
