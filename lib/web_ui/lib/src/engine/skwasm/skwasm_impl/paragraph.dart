@@ -15,10 +15,12 @@ const int _kSoftLineBreak = 0;
 const int _kHardLineBreak = 100;
 
 final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
-String _computeEffectiveFontFamily(String fontFamily) {
-  return ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)
-    ? _testFonts.first
-    : fontFamily;
+List<String> _computeEffectiveFontFamilies(List<String> fontFamilies) {
+  if (!ui_web.debugEmulateFlutterTesterEnvironment) {
+    return fontFamilies;
+  }
+  final Iterable<String> filteredFonts = fontFamilies.where(_testFonts.contains);
+  return filteredFonts.isEmpty ? _testFonts : filteredFonts.toList();
 }
 
 class SkwasmLineMetrics extends SkwasmObjectWrapper<RawLineMetrics> implements ui.LineMetrics {
@@ -359,7 +361,7 @@ class SkwasmTextStyle implements ui.TextStyle {
       textStyleSetTextBaseline(handle, textBaseline!.index);
     }
 
-    final List<String> effectiveFontFamilies = fontFamilies;
+    final List<String> effectiveFontFamilies = _computeEffectiveFontFamilies(fontFamilies);
     if (effectiveFontFamilies.isNotEmpty) {
       withScopedFontList(effectiveFontFamilies,
         (Pointer<SkStringHandle> families, int count) =>
@@ -438,8 +440,8 @@ class SkwasmTextStyle implements ui.TextStyle {
   }
 
   List<String> get fontFamilies => <String>[
-    if (fontFamily != null) _computeEffectiveFontFamily(fontFamily!),
-    if (fontFamilyFallback != null) ...fontFamilyFallback!.map(_computeEffectiveFontFamily),
+    if (fontFamily != null) fontFamily!,
+    if (fontFamilyFallback != null) ...fontFamilyFallback!,
   ];
 
   final ui.Color? color;
@@ -582,7 +584,7 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
         if (fontFamilyFallback != null) ...fontFamilyFallback,
       ];
       if (fontFamilies.isNotEmpty) {
-        withScopedFontList(fontFamilies,
+        withScopedFontList(_computeEffectiveFontFamilies(fontFamilies),
           (Pointer<SkStringHandle> families, int count) =>
             strutStyleSetFontFamilies(handle, families, count));
       }
@@ -729,7 +731,7 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
     final TextStyleHandle textStyleHandle = textStyle.handle;
 
     if (fontFamily != null) {
-      withScopedFontList(<String>[fontFamily],
+      withScopedFontList(_computeEffectiveFontFamilies(<String>[fontFamily]),
         (Pointer<SkStringHandle> families, int count) =>
           textStyleAddFontFamilies(textStyleHandle, families, count));
     }
