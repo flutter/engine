@@ -42,7 +42,7 @@ void main() {
       );
   int nblend_type = int(blend_type);
 
-  if (nblend_type == /*BlendSelectValues::kPlus*/ 14) {
+  if (nblend_type == /*BlendSelectValues::kPlusAdvanced*/ 14) {
     f16vec4 premultiplied_src =
         Sample(texture_sampler_src,  // sampler
                v_src_texture_coords  // texture coordinates

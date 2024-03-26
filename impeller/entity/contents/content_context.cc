@@ -134,6 +134,14 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
+    case BlendMode::kPlus:
+      // The kPlusAdvanced should be used instead.
+      FML_DCHECK(IsAlphaClampedToOne(color_attachment_pixel_format));
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      color0.dst_color_blend_factor = BlendFactor::kOne;
+      color0.src_alpha_blend_factor = BlendFactor::kOne;
+      color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
     default:
       FML_UNREACHABLE();
   }
@@ -325,7 +333,8 @@ ContentContext::ContentContext(
         {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
     framebuffer_blend_plus_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kPlus), supports_decal});
+        {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced),
+         supports_decal});
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
@@ -375,7 +384,7 @@ ContentContext::ContentContext(
       {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
   blend_plus_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kPlus), supports_decal});
+      {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced), supports_decal});
   blend_luminosity_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});

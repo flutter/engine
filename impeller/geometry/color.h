@@ -29,6 +29,7 @@
   V(SourceATop)                         \
   V(DestinationATop)                    \
   V(Xor)                                \
+  V(Plus)                               \
   V(Modulate)                           \
   V(Screen)                             \
   V(Overlay)                            \
@@ -44,7 +45,7 @@
   V(Hue)                                \
   V(Saturation)                         \
   V(Color)                              \
-  V(Plus)                               \
+  V(PlusAdvanced)                       \
   V(Luminosity)
 
 namespace impeller {
@@ -71,6 +72,7 @@ enum class BlendMode : uint8_t {
   kSourceATop,
   kDestinationATop,
   kXor,
+  kPlus,
   kModulate,
 
   // The following blend modes use equations that are not available for
@@ -90,7 +92,7 @@ enum class BlendMode : uint8_t {
   kHue,
   kSaturation,
   kColor,
-  kPlus,
+  kPlusAdvanced,
   kLuminosity,
 
   kLast = kLuminosity,

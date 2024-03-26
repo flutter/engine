@@ -20,7 +20,7 @@
 // kHue,
 // kSaturation,
 // kColor,
-// kPlus,
+// kPlusAdvanced,
 // kLuminosity,
 // Note, this isn't a switch as GLSL ES 1.0 does not support them.
 f16vec3 AdvancedBlend(f16vec3 dst, f16vec3 src, int blend_type) {

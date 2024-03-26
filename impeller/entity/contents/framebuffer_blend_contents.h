@@ -27,7 +27,7 @@ enum class BlendSelectValues {
   kHue,
   kSaturation,
   kColor,
-  kPlus,
+  kPlusAdvanced,
   kLuminosity,
 };
 

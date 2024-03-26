@@ -50,7 +50,7 @@ void main() {
                      ));
   int nblend_type = int(blend_type);
 
-  if (nblend_type == /*BlendSelectValues::kPlus*/ 14) {
+  if (nblend_type == /*BlendSelectValues::kPlusAdvanced*/ 14) {
     f16vec4 plus = premultiplied_dst + premultiplied_src;
     if (plus.a > 1.0hf) {
       plus.a = 1.0hf;

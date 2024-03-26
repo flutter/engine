@@ -338,8 +338,8 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
       case BlendMode::kColor:
         pass.SetPipeline(renderer.GetBlendColorPipeline(options));
         break;
-      case BlendMode::kPlus:
-        pass.SetPipeline(renderer.GetBlendPlusPipeline(options));
+      case BlendMode::kPlusAdvanced:
+        pass.SetPipeline(renderer.GetBlendPlusAdvancedPipeline(options));
         break;
       case BlendMode::kLuminosity:
         pass.SetPipeline(renderer.GetBlendLuminosityPipeline(options));
@@ -586,7 +586,7 @@ void BlendFilterContents::SetBlendMode(BlendMode blend_mode) {
       BLEND_CASE(Hue)
       BLEND_CASE(Saturation)
       BLEND_CASE(Color)
-      BLEND_CASE(Plus)
+      BLEND_CASE(PlusAdvanced)
       BLEND_CASE(Luminosity)
       default:
         FML_UNREACHABLE();
