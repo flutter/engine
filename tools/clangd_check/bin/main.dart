@@ -13,8 +13,10 @@ void main(List<String> args) {
   final Engine? engine = Engine.tryFindWithin();
   final ArgParser parser = ArgParser()
     ..addFlag(
-      'ignore-unknown-clangd-args',
-      help: 'Ignore unknown arguments passed to clangd.',
+      'help',
+      abbr: 'h',
+      help: 'Print this usage information.',
+      negatable: false,
     )
     ..addOption(
       'clangd',
@@ -26,6 +28,10 @@ void main(List<String> args) {
       defaultsTo: engine?.latestOutput()?.compileCommandsJson.parent.path,
     );
   final ArgResults results = parser.parse(args);
+  if (results['help'] as bool) {
+    io.stdout.writeln(parser.usage);
+    return;
+  }
 
   final String? compileCommandsDir = results['compile-commands-dir'] as String?;
   if (compileCommandsDir == null) {
@@ -105,10 +111,6 @@ void main(List<String> args) {
       '--compile-commands-dir',
       compileCommandsDir,
       '--check=$checkFile',
-      // Ignore unknown arguments.
-      // Sometimes there is a wrapper script that has additional arguments.
-      if (results['ignore-unknown-clangd-args'] as bool)
-      '-Wno-unknown-warning-option',
     ]);
     io.stdout.write(result.stdout);
     io.stderr.write(result.stderr);
