@@ -5,6 +5,7 @@
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web/testing.dart';
 
 import '../common/test_initialization.dart';
 import 'utils.dart';
@@ -121,7 +122,7 @@ Future<void> testMain() async {
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 10.0,
-      fontFamily: 'SomeOtherFontFamily',
+      fontFamily: 'Roboto',
     ));
     builder.addText('XXXX');
     final ui.Paragraph paragraph = builder.build();
@@ -154,5 +155,23 @@ Future<void> testMain() async {
 
     // FlutterTest font's 'X' character is a square, so it's the font size (10.0) * 4 characters.
     expect(metrics!.width, 40.0);
+  });
+
+  test('uses specified font when debugEmulateFlutterTesterEnvironment is disabled', () {
+    debugEmulateFlutterTesterEnvironment = false;
+
+    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+    builder.pushStyle(ui.TextStyle(
+      fontSize: 14.0,
+      fontFamily: 'Roboto',
+    ));
+    builder.addText('XXXX');
+    final ui.Paragraph paragraph = builder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: 400000));
+
+    expect(paragraph.numberOfLines, 1);
+
+    // Roboto has 2 points of leading around the font, whereas the test font does not.
+    expect(paragraph.height, 16);
   });
 }
