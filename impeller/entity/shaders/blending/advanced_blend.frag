@@ -47,11 +47,7 @@ void main() {
         Sample(texture_sampler_src,  // sampler
                v_src_texture_coords  // texture coordinates
         );
-    f16vec4 plus = premultiplied_dst + premultiplied_src;
-    if (plus.a > 1.0hf) {
-      plus.a = 1.0hf;
-    }
-    frag_color = plus;
+    frag_color = IPHalfPlusBlend(premultiplied_src, premultiplied_dst);
   } else {
     f16vec4 dst = IPHalfUnpremultiply(premultiplied_dst);
     dst *= blend_info.dst_input_alpha;
