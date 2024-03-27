@@ -768,6 +768,8 @@ static void SetClipScissor(std::optional<Rect> clip_coverage,
                               std::floor(clip_coverage->GetTop()),
                               std::ceil(clip_coverage->GetRight()),
                               std::ceil(clip_coverage->GetBottom()));
+    scissor = scissor.Intersection(IRect::MakeSize(pass.GetRenderTargetSize()))
+                  .value_or(IRect());
   }
   pass.SetScissor(scissor);
 }
