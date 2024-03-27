@@ -17,16 +17,24 @@ TEST(EntityPassClipStackTest, CanPushAndPopEntities) {
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 
   Entity entity;
-  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kAppend);
+  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kAppend,
+                        Rect::MakeLTRB(0, 0, 100, 100));
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
-  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kAppend);
+  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kAppend,
+                        Rect::MakeLTRB(0, 0, 50, 50));
   EXPECT_EQ(recorder.GetReplayEntities().size(), 2u);
+  ASSERT_TRUE(recorder.GetReplayEntities()[0].clip_coverage.has_value());
+  ASSERT_TRUE(recorder.GetReplayEntities()[1].clip_coverage.has_value());
+  EXPECT_EQ(recorder.GetReplayEntities()[0].clip_coverage.value(),
+            Rect::MakeLTRB(0, 0, 100, 100));
+  EXPECT_EQ(recorder.GetReplayEntities()[1].clip_coverage.value(),
+            Rect::MakeLTRB(0, 0, 50, 50));
 
-  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore);
+  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore, Rect());
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
-  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore);
+  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore, Rect());
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 }
 
@@ -37,7 +45,7 @@ TEST(EntityPassClipStackTest, CanPopEntitiesSafely) {
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 
   Entity entity;
-  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore);
+  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore, Rect());
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 }
 
@@ -48,7 +56,8 @@ TEST(EntityPassClipStackTest, CanAppendNoChange) {
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 
   Entity entity;
-  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kNoChange);
+  recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kNoChange,
+                        Rect());
   EXPECT_TRUE(recorder.GetReplayEntities().empty());
 }
 
@@ -61,7 +70,7 @@ TEST(EntityPassClipStackTest, AppendCoverageNoChange) {
   EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
 
   Entity entity;
-  recorder.AppendClipCoverage(
+  recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kNoChange,
           .coverage = std::nullopt,
@@ -82,7 +91,7 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
   // Push a clip.
   Entity entity;
   entity.SetClipDepth(0);
-  recorder.AppendClipCoverage(
+  recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kAppend,
           .coverage = Rect::MakeLTRB(50, 50, 55, 55),
@@ -97,7 +106,7 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
 
   // Restore the clip.
   entity.SetClipDepth(0);
-  recorder.AppendClipCoverage(
+  recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kRestore,
           .coverage = Rect::MakeLTRB(50, 50, 55, 55),
@@ -120,7 +129,7 @@ TEST(EntityPassClipStackTest, UnbalancedRestore) {
   // Restore the clip.
   Entity entity;
   entity.SetClipDepth(0);
-  recorder.AppendClipCoverage(
+  recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kRestore,
           .coverage = Rect::MakeLTRB(50, 50, 55, 55),
@@ -143,7 +152,7 @@ TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpasses) {
   // Push a clip.
   Entity entity;
   entity.SetClipDepth(0u);
-  recorder.AppendClipCoverage(
+  recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kAppend,
           .coverage = Rect::MakeLTRB(50, 50, 55, 55),
@@ -163,7 +172,7 @@ TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpasses) {
             Rect::MakeLTRB(50, 50, 55, 55));
 
   entity.SetClipDepth(1);
-  recorder.AppendClipCoverage(
+  recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kAppend,
           .coverage = Rect::MakeLTRB(54, 54, 55, 55),
