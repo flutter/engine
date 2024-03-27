@@ -128,12 +128,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case BlendMode::kModulate:
-      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
-      color0.dst_color_blend_factor = BlendFactor::kSourceColor;
-      color0.src_alpha_blend_factor = BlendFactor::kZero;
-      color0.src_color_blend_factor = BlendFactor::kZero;
-      break;
     case BlendMode::kPlus:
       // The kPlusAdvanced should be used instead.
       FML_DCHECK(IsAlphaClampedToOne(color_attachment_pixel_format));
@@ -141,6 +135,12 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
+      break;
+    case BlendMode::kModulate:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
+      color0.dst_color_blend_factor = BlendFactor::kSourceColor;
+      color0.src_alpha_blend_factor = BlendFactor::kZero;
+      color0.src_color_blend_factor = BlendFactor::kZero;
       break;
     default:
       FML_UNREACHABLE();
