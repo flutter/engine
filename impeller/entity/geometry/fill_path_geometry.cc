@@ -6,6 +6,7 @@
 
 #include "fml/logging.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
 
@@ -20,8 +21,21 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   auto& host_buffer = renderer.GetTransientsBuffer();
-  VertexBuffer vertex_buffer;
 
+  if (path_.GetBoundingBox()->IsEmpty()) {
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            VertexBuffer{
+                .vertex_buffer = {},
+                .vertex_count = 0,
+                .index_type = IndexType::k16bit,
+            },
+        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+    };
+  }
+
+  VertexBuffer vertex_buffer;
   if constexpr (!ContentContext::kEnableStencilThenCover) {
     if (!path_.IsConvex()) {
       auto tesselation_result = renderer.GetTessellator()->Tessellate(
@@ -78,6 +92,19 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   using VS = TextureFillVertexShader;
+
+  if (path_.GetBoundingBox()->IsEmpty()) {
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            VertexBuffer{
+                .vertex_buffer = {},
+                .vertex_count = 0,
+                .index_type = IndexType::k16bit,
+            },
+        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+    };
+  }
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
