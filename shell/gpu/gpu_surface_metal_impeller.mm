@@ -150,6 +150,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(renderer->GetContext(),
                                                                         drawable, clip_rect);
 
+        if (!surface) {
+          return false;
+        }
+
         if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
         }
