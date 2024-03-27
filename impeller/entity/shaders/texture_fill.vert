@@ -7,7 +7,6 @@
 
 uniform FrameInfo {
   mat4 mvp;
-  float depth;
   float texture_sampler_y_coord_scale;
   float16_t alpha;
 }
