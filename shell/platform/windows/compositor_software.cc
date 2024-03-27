@@ -51,19 +51,21 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
     return view->ClearSoftwareBitmap();
   }
 
-  // TODO: Support compositing layers and platform views.
-  // See: https://github.com/flutter/flutter/issues/31713
-  //FML_DCHECK(layers_count == 1);
-  //FML_DCHECK(layers[0]->offset.x == 0 && layers[0]->offset.y == 0);
-  //FML_DCHECK(layers[0]->type == kFlutterLayerContentTypeBackingStore);
-  //FML_DCHECK(layers[0]->backing_store->type ==
-  //           kFlutterBackingStoreTypeSoftware);
+  int x_min = INT_MAX;
+  int x_max = INT_MIN;
+  int y_min = INT_MAX;
+  int y_max = INT_MIN;
+  for (const FlutterLayer** layer = layers; layer < layers + layers_count; layer++) {
+    auto& offset = (*layer)->offset;
+    auto& size = (*layer)->size;
+    x_min = std::min(x_min, static_cast<int>(offset.x));
+    y_min = std::min(y_min, static_cast<int>(offset.y));
+    x_max = std::max(x_max, static_cast<int>(offset.x + size.width));
+    y_max = std::max(y_max, static_cast<int>(offset.y + size.height));
+  }
 
-  HWND hwnd = view->GetWindowHandle();
-  RECT rect;
-  GetClientRect(hwnd, &rect);
-  int width = layers[0]->size.width;//rect.right - rect.left;
-  int height = layers[0]->size.height;//rect.bottom - rect.top;
+  int width = x_max - x_min;
+  int height = y_max - y_min;
   std::vector<uint32_t> allocation(width * height);
 
   for (const FlutterLayer** layer = layers; layer < layers + layers_count; layer++) {
@@ -77,7 +79,7 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
     auto& size = (*layer)->size;
 
     for (int y_src = 0; y_src < size.height; y_src++) {
-      int y_dst = y_src + offset.y;
+      int y_dst = y_src + offset.y - y_min;
       if (y_dst < 0) {
         continue;
       }
@@ -85,7 +87,7 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
         break;
       }
       for (int x_src = 0; x_src < size.width; x_src++) {
-        int x_dst = x_src + offset.x;
+        int x_dst = x_src + offset.x + x_min;
         if (x_dst < 0) {
           continue;
         }
@@ -114,11 +116,6 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
       }
     }
   }
-
-  //const auto& backing_store = layers[0]->backing_store->software;
-
-  //return view->PresentSoftwareBitmap(
-  //    backing_store.allocation, backing_store.row_bytes, backing_store.height);
 
   return view->PresentSoftwareBitmap(static_cast<void*>(allocation.data()), width * 4, height);
 }
