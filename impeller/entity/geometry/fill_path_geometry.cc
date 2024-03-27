@@ -22,7 +22,8 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     RenderPass& pass) const {
   auto& host_buffer = renderer.GetTransientsBuffer();
 
-  if (path_.GetBoundingBox()->IsEmpty()) {
+  const auto& bounding_box = path_.GetBoundingBox();
+  if (bounding_box.has_value() && bounding_box->IsEmpty()) {
     return GeometryResult{
         .type = PrimitiveType::kTriangle,
         .vertex_buffer =
@@ -93,7 +94,8 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
     RenderPass& pass) const {
   using VS = TextureFillVertexShader;
 
-  if (path_.GetBoundingBox()->IsEmpty()) {
+  const auto& bounding_box = path_.GetBoundingBox();
+  if (bounding_box.has_value() && bounding_box->IsEmpty()) {
     return GeometryResult{
         .type = PrimitiveType::kTriangle,
         .vertex_buffer =

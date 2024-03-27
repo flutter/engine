@@ -17,7 +17,9 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
     Tessellator t;
-    auto path = PathBuilder{}.TakePath(FillType::kOdd);
+    auto path = PathBuilder{}
+                    .AddRect(Rect::MakeLTRB(0, 0, 100, 100))
+                    .TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
