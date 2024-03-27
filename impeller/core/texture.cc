@@ -14,13 +14,18 @@ Texture::~Texture() = default;
 
 bool Texture::SetContents(const uint8_t* contents,
                           size_t length,
+                          std::optional<IRect> region,
                           size_t slice,
                           bool is_opaque) {
   if (!IsSliceValid(slice)) {
     VALIDATION_LOG << "Invalid slice for texture.";
     return false;
   }
-  if (!OnSetContents(contents, length, slice)) {
+  auto& desc = GetTextureDescriptor();
+  if (!OnSetContents(contents, length,
+                     region.value_or(IRect::MakeLTRB(0, 0, desc.size.width,
+                                                     desc.size.height)),
+                     slice)) {
     return false;
   }
   coordinate_system_ = TextureCoordinateSystem::kUploadFromHost;
@@ -29,6 +34,7 @@ bool Texture::SetContents(const uint8_t* contents,
 }
 
 bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
+                          std::optional<IRect> region,
                           size_t slice,
                           bool is_opaque) {
   if (!IsSliceValid(slice)) {
@@ -38,7 +44,11 @@ bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
   if (!mapping) {
     return false;
   }
-  if (!OnSetContents(std::move(mapping), slice)) {
+  auto& desc = GetTextureDescriptor();
+  if (!OnSetContents(std::move(mapping),
+                     region.value_or(IRect::MakeLTRB(0, 0, desc.size.width,
+                                                     desc.size.height)),
+                     slice)) {
     return false;
   }
   coordinate_system_ = TextureCoordinateSystem::kUploadFromHost;

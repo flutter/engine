@@ -31,6 +31,7 @@ void TextureVK::SetLabel(std::string_view label) {
 
 bool TextureVK::OnSetContents(const uint8_t* contents,
                               size_t length,
+                              IRect region,
                               size_t slice) {
   if (!IsValid() || !contents) {
     return false;
@@ -39,7 +40,7 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   const auto& desc = GetTextureDescriptor();
 
   // Out of bounds access.
-  if (length != desc.GetByteSizeOfBaseMipLevel()) {
+  if (length != desc.GetByteSizeOfRegion(region)) {
     VALIDATION_LOG << "Illegal to set contents for invalid size.";
     return false;
   }
@@ -88,11 +89,11 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   copy.bufferOffset = 0u;
   copy.bufferRowLength = 0u;    // 0u means tightly packed per spec.
   copy.bufferImageHeight = 0u;  // 0u means tightly packed per spec.
-  copy.imageOffset.x = 0u;
-  copy.imageOffset.y = 0u;
+  copy.imageOffset.x = region.GetX();
+  copy.imageOffset.y = region.GetY();
   copy.imageOffset.z = 0u;
-  copy.imageExtent.width = desc.size.width;
-  copy.imageExtent.height = desc.size.height;
+  copy.imageExtent.width = region.GetWidth();
+  copy.imageExtent.height = region.GetHeight();
   copy.imageExtent.depth = 1u;
   copy.imageSubresource.aspectMask =
       ToImageAspectFlags(GetTextureDescriptor().format);
@@ -130,10 +131,12 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
 }
 
 bool TextureVK::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                              IRect region,
                               size_t slice) {
   // Vulkan has no threading restrictions. So we can pass this data along to the
   // client rendering API immediately.
-  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), region,
+                       slice);
 }
 
 bool TextureVK::IsValid() const {

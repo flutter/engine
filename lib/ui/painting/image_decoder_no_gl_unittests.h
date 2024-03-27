@@ -25,10 +25,14 @@ class TestImpellerTexture : public Texture {
   bool IsValid() const override { return true; }
   ISize GetSize() const { return GetTextureDescriptor().size; }
 
-  bool OnSetContents(const uint8_t* contents, size_t length, size_t slice) {
+  bool OnSetContents(const uint8_t* contents,
+                     size_t length,
+                     IRect region,
+                     size_t slice) {
     return true;
   }
   bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     IRect region,
                      size_t slice) {
     return true;
   }
