@@ -1143,6 +1143,33 @@ TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// Bug: https://github.com/flutter/flutter/issues/142549
+TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({.color = Color(0.1, 0.2, 0.1, 1.0)});
+  canvas.SaveLayer({
+    .color_filter = ColorFilter::MakeBlend(BlendMode::kPlus, Color(Vector4{1,0,0,1})),
+  });
+  Paint paint;
+  paint.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 400, 400), paint);
+  paint.color = Color::White();
+  canvas.DrawImageRect(
+      std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
+      Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
