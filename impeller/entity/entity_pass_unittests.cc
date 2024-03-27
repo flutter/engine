@@ -26,10 +26,12 @@ TEST(EntityPassClipStackTest, CanPushAndPopEntities) {
   EXPECT_EQ(recorder.GetReplayEntities().size(), 2u);
   ASSERT_TRUE(recorder.GetReplayEntities()[0].clip_coverage.has_value());
   ASSERT_TRUE(recorder.GetReplayEntities()[1].clip_coverage.has_value());
+  // NOLINTBEGIN(bugprone-unchecked-optional-access)
   EXPECT_EQ(recorder.GetReplayEntities()[0].clip_coverage.value(),
             Rect::MakeLTRB(0, 0, 100, 100));
   EXPECT_EQ(recorder.GetReplayEntities()[1].clip_coverage.value(),
             Rect::MakeLTRB(0, 0, 50, 50));
+  // NOLINTEND(bugprone-unchecked-optional-access)
 
   recorder.RecordEntity(entity, Contents::ClipCoverage::Type::kRestore, Rect());
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
