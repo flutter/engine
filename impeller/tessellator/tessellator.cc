@@ -58,7 +58,6 @@ static int ToTessWindingRule(FillType fill_type) {
 Tessellator::Result Tessellator::Tessellate(const Path& path,
                                             Scalar tolerance,
                                             const BuilderCallback& callback) {
-  FML_DCHECK(!path.GetBoundingBox()->IsEmpty());
   if (!callback) {
     return Result::kInputError;
   }
@@ -179,7 +178,6 @@ Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
 
 std::vector<Point> Tessellator::TessellateConvex(const Path& path,
                                                  Scalar tolerance) {
-  FML_DCHECK(!path.GetBoundingBox()->IsEmpty());
   FML_DCHECK(point_buffer_);
 
   std::vector<Point> output;
