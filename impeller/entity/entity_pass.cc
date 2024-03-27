@@ -764,10 +764,8 @@ static void SetClipScissor(std::optional<Rect> clip_coverage,
   IRect scissor;
   if (clip_coverage.has_value()) {
     clip_coverage = clip_coverage->Shift(-global_pass_position);
-    scissor = IRect::MakeLTRB(std::floor(clip_coverage->GetLeft()),
-                              std::floor(clip_coverage->GetTop()),
-                              std::ceil(clip_coverage->GetRight()),
-                              std::ceil(clip_coverage->GetBottom()));
+    scissor = IRect::RoundOut(clip_coverage.value());
+    // The scissor rect must not exceed the size of the render target.
     scissor = scissor.Intersection(IRect::MakeSize(pass.GetRenderTargetSize()))
                   .value_or(IRect());
   }
@@ -856,6 +854,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
                                          global_pass_position);
 
   if (clip_state_result.clip_did_change) {
+    // We only need to update the pass scissor if the clip state has changed.
     SetClipScissor(clip_coverage_stack.CurrentClipCoverage(), *result.pass,
                    global_pass_position);
   }

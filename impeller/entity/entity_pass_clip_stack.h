@@ -29,7 +29,11 @@ class EntityPassClipStack {
   };
 
   struct ClipStateResult {
+    /// Whether or not the Entity should be rendered. If false, the Entity may
+    /// be safely skipped.
     bool should_render = false;
+    /// Whether or not the current clip coverage changed during the call to
+    /// `ApplyClipState`.
     bool clip_did_change = false;
   };
 
