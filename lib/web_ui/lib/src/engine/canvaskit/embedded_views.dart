@@ -5,8 +5,7 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart'
-    show PlatformViewManager, configuration, longestIncreasingSubsequence;
+import '../../engine.dart' show PlatformViewManager, configuration, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
