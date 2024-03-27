@@ -4771,6 +4771,63 @@ TEST_F(ShellTest, CanRemoveViewBeforeLaunchingIsolate) {
   DestroyShell(std::move(shell), task_runners);
 }
 
+// Ensure pending "add views" failures are properly flushed when the Dart
+// isolate is launched.
+TEST_F(ShellTest, IgnoresBadAddViewsBeforeLaunchingIsolate) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host(ThreadHost::ThreadHostConfig(
+      "io.flutter.test." + GetCurrentTestName() + ".",
+      ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+          ThreadHost::Type::kIo | ThreadHost::Type::kUi));
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(shell);
+
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    auto platform_view = shell->GetPlatformView();
+
+    // Add the same view twice. The second time should fail.
+    shell->AddView(123, ViewportMetrics{1, 100, 1, 0, 0},
+                   [](bool added) { ASSERT_TRUE(added); });
+
+    shell->AddView(123, ViewportMetrics{1, 200, 1, 0, 0},
+                   [](bool added) { ASSERT_FALSE(added); });
+
+    // Add another view. Previous failures should not affect this.
+    shell->AddView(456, ViewportMetrics{1, 300, 1, 0, 0},
+                   [](bool added) { ASSERT_TRUE(added); });
+  });
+
+  bool first_report = true;
+  std::map<int64_t, int64_t> view_widths;
+  fml::AutoResetWaitableEvent report_latch;
+  AddNativeCallback("NativeReportViewWidthsCallback",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      EXPECT_TRUE(first_report);
+                      first_report = false;
+                      ParseViewWidthsCallback(args, &view_widths);
+                      report_latch.Signal();
+                    }));
+
+  PlatformViewNotifyCreated(shell.get());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testReportViewWidths");
+  RunEngine(shell.get(), std::move(configuration));
+
+  report_latch.Wait();
+  EXPECT_EQ(view_widths.size(), 3u);
+  EXPECT_EQ(view_widths[0], 0);
+  EXPECT_EQ(view_widths[123], 100);
+  EXPECT_EQ(view_widths[456], 300);
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
 TEST_F(ShellTest, RuntimeStageBackendDefaultsToSkSLWithoutImpeller) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();

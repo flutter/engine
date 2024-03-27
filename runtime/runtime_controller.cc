@@ -139,7 +139,8 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
     }
 
     if (!added) {
-      return false;
+      FML_LOG(ERROR) << "Failed to flush view #" << view_id
+                     << ". The Dart isolate may be in an inconsistent state.";
     }
   }
 
@@ -156,17 +157,25 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
 void RuntimeController::AddView(int64_t view_id,
                                 const ViewportMetrics& view_metrics,
                                 AddViewCallback callback) {
-  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-
   // If the Dart isolate is not running, |FlushRuntimeStateToIsolate| will
   // add the view and invoke the callback when the isolate is started.
   auto* platform_configuration = GetPlatformConfigurationIfAvailable();
   if (!platform_configuration) {
     FML_DCHECK(has_flushed_runtime_state_ == false);
+
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      FML_LOG(ERROR) << "View #" << view_id << " is already pending creation.";
+      callback(false);
+      return;
+    }
+
+    platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
     pending_add_view_callbacks_[view_id] = std::move(callback);
     return;
   }
 
+  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   bool added = platform_configuration->AddView(view_id, view_metrics);
   callback(added);
 }
