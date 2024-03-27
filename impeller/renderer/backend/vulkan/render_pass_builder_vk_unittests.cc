@@ -7,7 +7,6 @@
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/render_pass_builder_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
-#include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
@@ -44,8 +43,8 @@ TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
 
   EXPECT_TRUE(!!render_pass);
 
-  auto maybe_color = builder.GetColors().find(0u);
-  ASSERT_NE(maybe_color, builder.GetColors().end());
+  auto maybe_color = builder.GetColorAttachments().find(0u);
+  ASSERT_NE(maybe_color, builder.GetColorAttachments().end());
   auto color = maybe_color->second;
 
   EXPECT_EQ(color.initialLayout, vk::ImageLayout::eGeneral);

@@ -185,7 +185,7 @@ void InsertBarrierForInputAttachmentRead(const vk::CommandBuffer& buffer,
 }
 
 const std::map<size_t, vk::AttachmentDescription>&
-RenderPassBuilderVK::GetColors() const {
+RenderPassBuilderVK::GetColorAttachments() const {
   return colors_;
 }
 
