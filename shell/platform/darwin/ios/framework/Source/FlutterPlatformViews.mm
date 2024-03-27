@@ -81,19 +81,6 @@ static bool ClipRRectContainsPlatformViewBoundingRect(const SkRRect& clip_rrect,
   return transformed_rrect.contains(platformview_boundingrect);
 }
 
-// Determines if the intersection rect of a layer and a platform view is a single pixel width
-// or height, and on the edge of the platform view.
-static bool IsIntersectionSinglePixelWidthOrHeightOnEdgeOfPlatformView(
-    const SkIRect& rounded_out_platform_view_rect,
-    const SkIRect& intersection_rect) {
-  bool onLeftOrRight = intersection_rect.left() == rounded_out_platform_view_rect.left() ||
-                       intersection_rect.right() == rounded_out_platform_view_rect.right();
-  bool onTopOrBottom = intersection_rect.top() == rounded_out_platform_view_rect.top() ||
-                       intersection_rect.bottom() == rounded_out_platform_view_rect.bottom();
-  return (intersection_rect.width() == 1 && onLeftOrRight) ||
-         (intersection_rect.height() == 1 && onTopOrBottom);
-}
-
 namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
@@ -708,6 +695,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   auto did_submit = true;
   auto num_platform_views = composition_order_.size();
 
+  // TODO(hellohuanlin) this double for-loop is expensive with wasted computations.
+  // See: https://github.com/flutter/flutter/issues/145802
   for (size_t i = 0; i < num_platform_views; i++) {
     int64_t platform_view_id = composition_order_[i];
     EmbedderViewSlice* slice = slices_[platform_view_id].get();
@@ -719,7 +708,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       int64_t current_platform_view_id = composition_order_[j - 1];
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
       std::vector<SkIRect> intersection_rects = slice->region(platform_view_rect).getRects();
-      const SkIRect rounded_out_platform_view_rect = platform_view_rect.roundOut();
+      const SkIRect rounded_in_platform_view_rect = platform_view_rect.roundIn();
       // Ignore intersections of single width/height on the edge of the platform view.
       // This is to address the following performance issue when interleaving adjacent
       // platform views and layers:
@@ -731,8 +720,9 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       // Rounding in layer rect will result in missing pixel on the edge of the layer on top
       // of the platform view.
       for (auto it = intersection_rects.begin(); it != intersection_rects.end(); /*no-op*/) {
-        if (IsIntersectionSinglePixelWidthOrHeightOnEdgeOfPlatformView(
-                rounded_out_platform_view_rect, *it)) {
+        // If intersection_rect does not intersect with the *rounded in* platform
+        // view rect, then the intersection must be a single pixel width (or height) on edge.
+        if (!SkIRect::Intersects(*it, rounded_in_platform_view_rect)) {
           it = intersection_rects.erase(it);
         } else {
           ++it;
@@ -763,7 +753,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       for (SkIRect& joined_rect : intersection_rects) {
         // Get the intersection rect between the current rect
         // and the platform view rect.
-        joined_rect.intersect(rounded_out_platform_view_rect);
+        joined_rect.intersect(platform_view_rect.roundOut());
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
         background_canvas->ClipRect(SkRect::Make(joined_rect), DlCanvas::ClipOp::kDifference);
