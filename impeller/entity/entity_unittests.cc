@@ -2812,7 +2812,7 @@ TEST_P(EntityTest, FailOnValidationError) {
       "");
 }
 
-TEST_P(EntityTest, CanRenderEmptyPathsWithoutCrashing) {
+TEST_P(EntityTest, CanComputeGeometryForEmptyPathsWithoutCrashing) {
   PathBuilder builder = {};
   builder.AddRect(Rect::MakeLTRB(0, 0, 0, 0));
   Path path = builder.TakePath();
@@ -2835,6 +2835,26 @@ TEST_P(EntityTest, CanRenderEmptyPathsWithoutCrashing) {
 
   EXPECT_EQ(position_result.vertex_buffer.vertex_count, 0u);
   EXPECT_EQ(uv_result.vertex_buffer.vertex_count, 0u);
+
+  EXPECT_EQ(geom->GetResultMode(), GeometryResult::Mode::kNormal);
+}
+
+TEST_P(EntityTest, CanRenderEmptyPathsWithoutCrashing) {
+  PathBuilder builder = {};
+  builder.AddRect(Rect::MakeLTRB(0, 0, 0, 0));
+  Path path = builder.TakePath();
+
+  EXPECT_TRUE(path.GetBoundingBox()->IsEmpty());
+
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 }  // namespace testing

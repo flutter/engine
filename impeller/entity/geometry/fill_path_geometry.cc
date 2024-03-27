@@ -168,7 +168,9 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
 }
 
 GeometryResult::Mode FillPathGeometry::GetResultMode() const {
-  if (!ContentContext::kEnableStencilThenCover || path_.IsConvex()) {
+  const auto& bounding_box = path_.GetBoundingBox();
+  if (!ContentContext::kEnableStencilThenCover || path_.IsConvex() ||
+      (bounding_box.has_value() && bounding_box->IsEmpty())) {
     return GeometryResult::Mode::kNormal;
   }
 
