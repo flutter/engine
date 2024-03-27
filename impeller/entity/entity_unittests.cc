@@ -2254,7 +2254,6 @@ TEST_P(EntityTest, RuntimeEffect) {
     ASSERT_TRUE(runtime_stage->IsDirty());
     expect_dirty = true;
 
-    // callback(*content_context, mock_pass);
     callback(*content_context, mock_pass);
   }
 }
