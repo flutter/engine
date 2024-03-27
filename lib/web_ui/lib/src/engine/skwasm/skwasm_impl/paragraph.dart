@@ -947,8 +947,6 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
       text = '';
       jsText = ''.toJS;
     } else {
-      // TODO(jacksongardner): We could make a subclass of `List<int>` here to
-      // avoid this copy.
       final List<int> codeUnitList = List<int>.generate(
         outSize.value,
         (int index) => utf8Data[index]

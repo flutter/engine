@@ -44,6 +44,9 @@ Future<void> testMain() async {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
     builder.addText('');
     final Paragraph paragraph = builder.build();
-    paragraph.layout(const ParagraphConstraints(width: double.infinity));
+    expect(
+      () => paragraph.layout(const ParagraphConstraints(width: double.infinity)),
+      returnsNormally,
+    );
   });
 }
