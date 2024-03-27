@@ -1157,7 +1157,8 @@ TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
   canvas.Scale(GetContentScale());
   canvas.DrawPaint({.color = Color(0.1, 0.2, 0.1, 1.0)});
   canvas.SaveLayer({
-    .color_filter = ColorFilter::MakeBlend(BlendMode::kPlus, Color(Vector4{1,0,0,1})),
+      .color_filter =
+          ColorFilter::MakeBlend(BlendMode::kPlus, Color(Vector4{1, 0, 0, 1})),
   });
   Paint paint;
   paint.color = Color::Red();
