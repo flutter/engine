@@ -49,11 +49,13 @@ EntityPassClipStack::GetClipCoverageLayers() const {
   return subpass_state_.back().clip_coverage;
 }
 
-bool EntityPassClipStack::ApplyClipState(
+EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
     Contents::ClipCoverage global_clip_coverage,
     Entity& entity,
     size_t clip_depth_floor,
     Point global_pass_position) {
+  ClipStateResult result = {.should_render = false, .clip_did_change = false};
+
   auto& subpass_state = GetCurrentSubpassState();
   switch (global_clip_coverage.type) {
     case Contents::ClipCoverage::Type::kNoChange:
@@ -63,6 +65,7 @@ bool EntityPassClipStack::ApplyClipState(
       subpass_state.clip_coverage.push_back(
           ClipCoverageLayer{.coverage = global_clip_coverage.coverage,
                             .clip_depth = entity.GetClipDepth() + 1});
+      result.clip_did_change = true;
 
       FML_DCHECK(subpass_state.clip_coverage.back().clip_depth ==
                  subpass_state.clip_coverage.front().clip_depth +
@@ -71,14 +74,14 @@ bool EntityPassClipStack::ApplyClipState(
       if (!op.has_value()) {
         // Running this append op won't impact the clip buffer because the
         // whole screen is already being clipped, so skip it.
-        return false;
+        return result;
       }
     } break;
     case Contents::ClipCoverage::Type::kRestore: {
       if (subpass_state.clip_coverage.back().clip_depth <=
           entity.GetClipDepth()) {
         // Drop clip restores that will do nothing.
-        return false;
+        return result;
       }
 
       auto restoration_index = entity.GetClipDepth() -
@@ -96,18 +99,19 @@ bool EntityPassClipStack::ApplyClipState(
         restore_coverage = restore_coverage->Shift(-global_pass_position);
       }
       subpass_state.clip_coverage.resize(restoration_index + 1);
+      result.clip_did_change = true;
 
       if constexpr (ContentContext::kEnableStencilThenCover) {
         // Skip all clip restores when stencil-then-cover is enabled.
         if (subpass_state.clip_coverage.back().coverage.has_value()) {
           RecordEntity(entity, global_clip_coverage.type, Rect());
         }
-        return false;
+        return result;
       }
 
       if (!subpass_state.clip_coverage.back().coverage.has_value()) {
         // Running this restore op won't make anything renderable, so skip it.
-        return false;
+        return result;
       }
 
       auto restore_contents =
@@ -133,7 +137,8 @@ bool EntityPassClipStack::ApplyClipState(
   RecordEntity(entity, global_clip_coverage.type,
                subpass_state.clip_coverage.back().coverage);
 
-  return true;
+  result.should_render = true;
+  return result;
 }
 
 void EntityPassClipStack::RecordEntity(const Entity& entity,

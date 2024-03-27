@@ -28,6 +28,11 @@ class EntityPassClipStack {
     std::optional<Rect> clip_coverage;
   };
 
+  struct ClipStateResult {
+    bool should_render = false;
+    bool clip_did_change = false;
+  };
+
   /// Create a new [EntityPassClipStack] with an initialized coverage rect.
   explicit EntityPassClipStack(const Rect& initial_coverage_rect);
 
@@ -43,12 +48,10 @@ class EntityPassClipStack {
 
   /// @brief  Applies the current clip state to an Entity. If the given Entity
   ///         is a clip operation, then the clip state is updated accordingly.
-  ///
-  /// @return true if the Entity should be rendered.
-  bool ApplyClipState(Contents::ClipCoverage global_clip_coverage,
-                      Entity& entity,
-                      size_t clip_depth_floor,
-                      Point global_pass_position);
+  ClipStateResult ApplyClipState(Contents::ClipCoverage global_clip_coverage,
+                                 Entity& entity,
+                                 size_t clip_depth_floor,
+                                 Point global_pass_position);
 
   // Visible for testing.
   void RecordEntity(const Entity& entity,

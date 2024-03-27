@@ -848,14 +848,17 @@ bool EntityPass::RenderElement(Entity& element_entity,
   element_entity.GetContents()->SetCoverageHint(
       Rect::Intersection(element_coverage_hint, current_clip_coverage));
 
-  bool should_render = clip_coverage_stack.ApplyClipState(
-      clip_coverage, element_entity, clip_depth_floor, global_pass_position);
+  EntityPassClipStack::ClipStateResult clip_state_result =
+      clip_coverage_stack.ApplyClipState(clip_coverage, element_entity,
+                                         clip_depth_floor,
+                                         global_pass_position);
 
-  SetClipScissor(clip_coverage_stack.CurrentClipCoverage(), *result.pass,
-                 global_pass_position);
+  if (clip_state_result.clip_did_change) {
+    SetClipScissor(clip_coverage_stack.CurrentClipCoverage(), *result.pass,
+                   global_pass_position);
+  }
 
-  if (!should_render) {
-    // `ApplyClipState` returns false if the Entity can be safely skipped.
+  if (!clip_state_result.should_render) {
     return true;
   }
 
