@@ -38,7 +38,8 @@ public class BackGestureChannel {
    *     framework.
    */
   public BackGestureChannel(@NonNull DartExecutor dartExecutor) {
-    this.channel = new MethodChannel(dartExecutor, "flutter/backgesture", StandardMethodCodec.INSTANCE);
+    this.channel =
+        new MethodChannel(dartExecutor, "flutter/backgesture", StandardMethodCodec.INSTANCE);
     channel.setMethodCallHandler(defaultHandler);
   }
 
@@ -120,9 +121,7 @@ public class BackGestureChannel {
     Map<String, Object> message = new HashMap<>(3);
     final float x = backEvent.getTouchX();
     final float y = backEvent.getTouchY();
-    final Object touchOffset = (Float.isNaN(x) || Float.isNaN(y))
-            ? null
-            : Arrays.asList(x, y);
+    final Object touchOffset = (Float.isNaN(x) || Float.isNaN(y)) ? null : Arrays.asList(x, y);
     message.put("touchOffset", touchOffset);
     message.put("progress", backEvent.getProgress());
     message.put("swipeEdge", backEvent.getSwipeEdge());
