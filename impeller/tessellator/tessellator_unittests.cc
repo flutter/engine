@@ -17,8 +17,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
     // This will hit a DHCECK so the test can only run in non-debug builds.
-#ifndef NDEBUG
-#else
+#if NDEBUG
     Tessellator t;
     auto path = PathBuilder{}.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
@@ -32,6 +31,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
 
   // One point.
   {
+#if NDEBUG
     Tessellator t;
     auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
@@ -40,6 +40,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
            const uint16_t* indices, size_t indices_count) { return true; });
 
     ASSERT_EQ(result, Tessellator::Result::kSuccess);
+#endif  // NDEBUG
   }
 
   // Two points.
