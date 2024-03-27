@@ -841,13 +841,6 @@ bool EntityPass::RenderElement(Entity& element_entity,
   return true;
 }
 
-namespace {
-bool IsAlphaClampedToOne(PixelFormat pixel_format) {
-  return !(pixel_format == PixelFormat::kR32G32B32A32Float ||
-           pixel_format == PixelFormat::kR16G16B16A16Float);
-}
-}  // namespace
-
 bool EntityPass::OnRender(
     ContentContext& renderer,
     Capture& capture,
