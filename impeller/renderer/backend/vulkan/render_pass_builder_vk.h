@@ -42,6 +42,15 @@ class RenderPassBuilderVK {
 
   vk::UniqueRenderPass Build(const vk::Device& device) const;
 
+  // Visible for testing.
+  const std::map<size_t, vk::AttachmentDescription>& GetColors() const;
+
+  // Visible for testing.
+  const std::map<size_t, vk::AttachmentDescription>& GetResolves() const;
+
+  // Visible for testing.
+  const std::optional<vk::AttachmentDescription>& GetDepthStencil() const;
+
  private:
   std::map<size_t, vk::AttachmentDescription> colors_;
   std::map<size_t, vk::AttachmentDescription> resolves_;
