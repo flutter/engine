@@ -17,7 +17,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
     // This will hit a DHCECK so the test can only run in non-debug builds.
-#ifndef NDEBUG
+#ifdef NDEBUG
     Tessellator t;
     auto path = PathBuilder{}.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
