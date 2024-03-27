@@ -1101,8 +1101,21 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// This makes sure the WideGamut named tests use 16bit float pixel format.
+TEST_P(AiksTest, F16WideGamut) {
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+}
+
+TEST_P(AiksTest, NotF16) {
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kB8G8R8A8UNormInt);
+}
+
 // Bug: https://github.com/flutter/flutter/issues/142549
 TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
   auto texture = CreateTextureForFixture("airplane.jpg",
                                          /*enable_mipmapping=*/true);
 
