@@ -647,7 +647,7 @@ class ContentContext {
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendPlusAdvancedPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(blend_plus_pipelines_, opts);
+    return GetPipeline(blend_plus_advanced_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendLuminosityPipeline(
@@ -738,7 +738,7 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendPlusAdvancedPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
-    return GetPipeline(framebuffer_blend_plus_pipelines_, opts);
+    return GetPipeline(framebuffer_blend_plus_advanced_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
@@ -1005,7 +1005,7 @@ class ContentContext {
   mutable Variants<BlendHardLightPipeline> blend_hardlight_pipelines_;
   mutable Variants<BlendHuePipeline> blend_hue_pipelines_;
   mutable Variants<BlendLightenPipeline> blend_lighten_pipelines_;
-  mutable Variants<BlendPlusAdvancedPipeline> blend_plus_pipelines_;
+  mutable Variants<BlendPlusAdvancedPipeline> blend_plus_advanced_pipelines_;
   mutable Variants<BlendLuminosityPipeline> blend_luminosity_pipelines_;
   mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
   mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
@@ -1032,7 +1032,7 @@ class ContentContext {
   mutable Variants<FramebufferBlendLightenPipeline>
       framebuffer_blend_lighten_pipelines_;
   mutable Variants<FramebufferBlendPlusAdvancedPipeline>
-      framebuffer_blend_plus_pipelines_;
+      framebuffer_blend_plus_advanced_pipelines_;
   mutable Variants<FramebufferBlendLuminosityPipeline>
       framebuffer_blend_luminosity_pipelines_;
   mutable Variants<FramebufferBlendMultiplyPipeline>

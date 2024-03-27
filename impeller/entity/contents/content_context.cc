@@ -331,7 +331,7 @@ ContentContext::ContentContext(
     framebuffer_blend_lighten_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
-    framebuffer_blend_plus_pipelines_.CreateDefault(
+    framebuffer_blend_plus_advanced_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced),
          supports_decal});
@@ -382,7 +382,7 @@ ContentContext::ContentContext(
   blend_lighten_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
-  blend_plus_pipelines_.CreateDefault(
+  blend_plus_advanced_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced), supports_decal});
   blend_luminosity_pipelines_.CreateDefault(
