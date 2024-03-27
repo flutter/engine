@@ -1103,6 +1103,9 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
 
 // This makes sure the WideGamut named tests use 16bit float pixel format.
 TEST_P(AiksTest, F16WideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
             PixelFormat::kR16G16B16A16Float);
 }
@@ -1114,6 +1117,9 @@ TEST_P(AiksTest, NotF16) {
 
 // Bug: https://github.com/flutter/flutter/issues/142549
 TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
             PixelFormat::kR16G16B16A16Float);
   auto texture = CreateTextureForFixture("airplane.jpg",
