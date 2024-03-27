@@ -55,6 +55,9 @@ TEST(RenderPassBuilder, CreatesRenderPassWithCombinedDepthStencil) {
 
   auto maybe_depth_stencil = builder.GetDepthStencil();
   ASSERT_TRUE(maybe_depth_stencil.has_value());
+  if (!maybe_depth_stencil.has_value()) {
+    return;
+  }
   auto depth_stencil = maybe_depth_stencil.value();
 
   EXPECT_EQ(depth_stencil.initialLayout, vk::ImageLayout::eUndefined);
@@ -83,6 +86,9 @@ TEST(RenderPassBuilder, CreatesRenderPassWithOnlyStencil) {
 
   auto maybe_depth_stencil = builder.GetDepthStencil();
   ASSERT_TRUE(maybe_depth_stencil.has_value());
+  if (!maybe_depth_stencil.has_value()) {
+    return;
+  }
   auto depth_stencil = maybe_depth_stencil.value();
 
   EXPECT_EQ(depth_stencil.initialLayout, vk::ImageLayout::eUndefined);
