@@ -16,16 +16,17 @@ namespace testing {
 TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
+    // This will hit a DHCECK so the test can only run in non-debug builds.
+#ifndef NDEBUG
     Tessellator t;
-    auto path = PathBuilder{}
-                    .AddRect(Rect::MakeLTRB(0, 0, 100, 100))
-                    .TakePath(FillType::kOdd);
+    auto path = PathBuilder{}.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return true; });
 
     ASSERT_EQ(result, Tessellator::Result::kInputError);
+#endif // NDEBUG
   }
 
   // One point.
