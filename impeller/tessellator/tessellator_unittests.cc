@@ -26,7 +26,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
            const uint16_t* indices, size_t indices_count) { return true; });
 
     ASSERT_EQ(result, Tessellator::Result::kInputError);
-#endif // NDEBUG
+#endif  // NDEBUG
   }
 
   // One point.
