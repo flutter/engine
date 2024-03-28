@@ -149,6 +149,7 @@ class CanvasParagraph implements ui.Paragraph {
 
     for (int i = 0; i < lines.length; i++) {
       final ParagraphLine line = lines[i];
+      String fullText = '';
       for (final LayoutFragment fragment in line.fragments) {
         if (fragment.isPlaceholder) {
           continue;
@@ -158,15 +159,18 @@ class CanvasParagraph implements ui.Paragraph {
         if (text.isEmpty) {
           continue;
         }
-
+        fullText += text;
+      }
+      if (line.fragments.isNotEmpty) {
+        final LayoutFragment firstFragment = line.fragments[0];
         final DomElement spanElement = domDocument.createElement('flt-span');
-        if (fragment.textDirection == ui.TextDirection.rtl) {
+        if (firstFragment.textDirection == ui.TextDirection.rtl) {
           spanElement.setAttribute('dir', 'rtl');
         }
-        applyTextStyleToElement(element: spanElement, style: fragment.style);
-        _positionSpanElement(spanElement, line, fragment);
-
-        spanElement.appendText(text);
+        applyTextStyleToElement(
+            element: spanElement, style: firstFragment.style);
+        _positionSpanElement(spanElement, line, firstFragment);
+        spanElement.appendText(fullText);
         rootElement.append(spanElement);
       }
     }
