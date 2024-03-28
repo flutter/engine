@@ -64,11 +64,30 @@ source_set("flutter_framework_source_arc") {
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
+    "framework/Source/connection_collection.h",
+    "framework/Source/connection_collection.mm",
+    "framework/Source/platform_message_response_darwin.h",
+    "framework/Source/platform_message_response_darwin.mm",
+    "framework/Source/profiler_metrics_ios.h",
+    "framework/Source/profiler_metrics_ios.mm",
+    "ios_context.h",
+    "ios_context.mm",
+    "ios_context_software.h",
+    "ios_context_software.mm",
+    "rendering_api_selection.h",
+    "rendering_api_selection.mm",
   ]
 
   frameworks = [
     "UIKit.framework",
     "IOSurface.framework",
+  ]
+
+  deps += [
+    "//flutter/common/graphics",
+    "//flutter/lib/ui",
+    "//flutter/shell/platform/darwin/common",
+    "//flutter/shell/profiling:profiling",
   ]
 }
 
@@ -137,18 +156,8 @@ source_set("flutter_framework_source") {
     "framework/Source/accessibility_bridge.mm",
     "framework/Source/accessibility_text_entry.h",
     "framework/Source/accessibility_text_entry.mm",
-    "framework/Source/connection_collection.h",
-    "framework/Source/connection_collection.mm",
-    "framework/Source/platform_message_response_darwin.h",
-    "framework/Source/platform_message_response_darwin.mm",
-    "framework/Source/profiler_metrics_ios.h",
-    "framework/Source/profiler_metrics_ios.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
-    "ios_context.h",
-    "ios_context.mm",
-    "ios_context_software.h",
-    "ios_context_software.mm",
     "ios_external_view_embedder.h",
     "ios_external_view_embedder.mm",
     "ios_surface.h",
@@ -159,8 +168,6 @@ source_set("flutter_framework_source") {
     "platform_message_handler_ios.mm",
     "platform_view_ios.h",
     "platform_view_ios.mm",
-    "rendering_api_selection.h",
-    "rendering_api_selection.mm",
   ]
 
   sources += _flutter_framework_headers
@@ -190,10 +197,8 @@ source_set("flutter_framework_source") {
   deps += [
     ":ios_gpu_configuration",
     "//flutter/common",
-    "//flutter/common/graphics",
     "//flutter/flow",
     "//flutter/fml",
-    "//flutter/lib/ui",
     "//flutter/runtime",
     "//flutter/runtime:libdart",
     "//flutter/shell/common",
