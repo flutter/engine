@@ -36,6 +36,7 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'tools', 'clang_tidy'),
     os.path.join(ENGINE_DIR, 'tools', 'compare_goldens'),
     os.path.join(ENGINE_DIR, 'tools', 'const_finder'),
+    os.path.join(ENGINE_DIR, 'tools', 'dir_contents_diff'),
     os.path.join(ENGINE_DIR, 'tools', 'engine_tool'),
     os.path.join(ENGINE_DIR, 'tools', 'gen_web_locale_keymap'),
     os.path.join(ENGINE_DIR, 'tools', 'githooks'),
@@ -71,7 +72,8 @@ def check_package(package):
     for package_data in packages_data:
       package_uri = package_data['rootUri']
       package_name = package_data['name']
-      if '.pub-cache' in package_uri and 'pub.dartlang.org' in package_uri:
+      if '.pub-cache' in package_uri and ('pub.dartlang.org' in package_uri or
+                                          'pub.dev' in package_uri):
         print('Error: package "%s" was fetched from pub' % package_name)
         pub_count = pub_count + 1
   if pub_count > 0:
@@ -127,7 +129,7 @@ def main():
   dart = 'dart'
   if os.name == 'nt':
     dart = 'dart.exe'
-  pubcmd = [os.path.join(dart_sdk_bin, dart), 'pub', 'get', '--offline']
+  pubcmd = [os.path.join(dart_sdk_bin, dart), 'pub', '--suppress-analytics', 'get', '--offline']
 
   pub_count = 0
   for package in ALL_PACKAGES:

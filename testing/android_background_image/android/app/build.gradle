@@ -1,6 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
+    namespace 'dev.flutter.android_background_image'
     lintOptions {
         abortOnError true
         checkAllWarnings true
@@ -24,7 +25,7 @@ android {
     }
     defaultConfig {
         applicationId 'dev.flutter.android_background_image'
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 34
         versionCode 1
         versionName '1.0'

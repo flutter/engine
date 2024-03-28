@@ -84,9 +84,13 @@ void UpdateVsync(const FlutterWindowsEngine& engine,
 }  // namespace
 
 FlutterWindowsView::FlutterWindowsView(
+    FlutterViewId view_id,
+    FlutterWindowsEngine* engine,
     std::unique_ptr<WindowBindingHandler> window_binding,
     std::shared_ptr<WindowsProcTable> windows_proc_table)
-    : windows_proc_table_(std::move(windows_proc_table)) {
+    : view_id_(view_id),
+      engine_(engine),
+      windows_proc_table_(std::move(windows_proc_table)) {
   if (windows_proc_table_ == nullptr) {
     windows_proc_table_ = std::make_shared<WindowsProcTable>();
   }
@@ -97,31 +101,15 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
-  if (engine_) {
-    // The view owns the child window.
-    // Notify the engine the view's child window will no longer be visible.
-    engine_->OnWindowStateEvent(GetWindowHandle(), WindowStateEvent::kHide);
+  // The view owns the child window.
+  // Notify the engine the view's child window will no longer be visible.
+  engine_->OnWindowStateEvent(GetWindowHandle(), WindowStateEvent::kHide);
 
-    // The engine renders into the view's surface. The engine must be
-    // shutdown before the view's resources can be destroyed.
-    engine_->Stop();
-  }
+  // The engine renders into the view's surface. The engine must be
+  // shutdown before the view's resources can be destroyed.
+  engine_->Stop();
 
   DestroyRenderSurface();
-}
-
-void FlutterWindowsView::SetEngine(FlutterWindowsEngine* engine) {
-  FML_DCHECK(engine_ == nullptr);
-  FML_DCHECK(engine != nullptr);
-
-  engine_ = engine;
-
-  engine_->SetView(this);
-
-  PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
-
-  SendWindowMetrics(bounds.width, bounds.height,
-                    binding_handler_->GetDpiScale());
 }
 
 bool FlutterWindowsView::OnEmptyFrameGenerated() {
@@ -364,6 +352,7 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
+  event.view_id = view_id_;
   engine_->SendWindowMetricsEvent(event);
 }
 
@@ -600,10 +589,7 @@ void FlutterWindowsView::SendPointerEventWithData(
   event.device_kind = state->device_kind;
   event.device = state->pointer_id;
   event.buttons = state->buttons;
-  // TODO(dkwingsmt): Use the correct view ID for pointer events once the
-  // Windows embedder supports multiple views.
-  // https://github.com/flutter/flutter/issues/138179
-  event.view_id = flutter::kFlutterImplicitViewId;
+  event.view_id = view_id_;
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);
@@ -667,10 +653,14 @@ bool FlutterWindowsView::PresentSoftwareBitmap(const void* allocation,
                                                   height);
 }
 
+FlutterViewId FlutterWindowsView::view_id() const {
+  return view_id_;
+}
+
 void FlutterWindowsView::CreateRenderSurface() {
   FML_DCHECK(surface_ == nullptr);
 
-  if (engine_ && engine_->egl_manager()) {
+  if (engine_->egl_manager()) {
     PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
     surface_ = engine_->egl_manager()->CreateWindowSurface(
         GetWindowHandle(), bounds.width, bounds.height);
@@ -789,9 +779,7 @@ void FlutterWindowsView::OnDwmCompositionChanged() {
 }
 
 void FlutterWindowsView::OnWindowStateEvent(HWND hwnd, WindowStateEvent event) {
-  if (engine_) {
-    engine_->OnWindowStateEvent(hwnd, event);
-  }
+  engine_->OnWindowStateEvent(hwnd, event);
 }
 
 bool FlutterWindowsView::NeedsVsync() const {

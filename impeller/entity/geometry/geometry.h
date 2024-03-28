@@ -18,10 +18,25 @@ namespace impeller {
 class Tessellator;
 
 struct GeometryResult {
-  PrimitiveType type;
+  enum class Mode {
+    /// The geometry has no overlapping triangles.
+    kNormal,
+    /// The geometry may have overlapping triangles. The geometry should be
+    /// stenciled with the NonZero fill rule.
+    kNonZero,
+    /// The geometry may have overlapping triangles. The geometry should be
+    /// stenciled with the EvenOdd fill rule.
+    kEvenOdd,
+    /// The geometry may have overlapping triangles, but they should not
+    /// overdraw or cancel each other out. This is a special case for stroke
+    /// geometry.
+    kPreventOverdraw,
+  };
+
+  PrimitiveType type = PrimitiveType::kTriangleStrip;
   VertexBuffer vertex_buffer;
   Matrix transform;
-  bool prevent_overdraw;
+  Mode mode = Mode::kNormal;
 };
 
 static const GeometryResult kEmptyResult = {
@@ -113,6 +128,8 @@ class Geometry {
                                              const Entity& entity,
                                              RenderPass& pass) const = 0;
 
+  virtual GeometryResult::Mode GetResultMode() const;
+
   virtual GeometryVertexType GetVertexType() const = 0;
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
@@ -130,6 +147,8 @@ class Geometry {
   virtual bool CoversArea(const Matrix& transform, const Rect& rect) const;
 
   virtual bool IsAxisAlignedRect() const;
+
+  virtual bool CanApplyMaskFilter() const;
 
  protected:
   static GeometryResult ComputePositionGeometry(

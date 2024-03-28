@@ -5,8 +5,11 @@
 #include "impeller/entity/contents/content_context.h"
 
 #include <memory>
+#include <utility>
 
+#include "fml/trace_event.h"
 #include "impeller/base/strings.h"
+#include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
@@ -162,28 +165,32 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         front_stencil.depth_stencil_pass = StencilOperation::kKeep;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kSetToRef:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
-        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kNonZeroWrite:
+      case StencilMode::kStencilNonZeroFill:
+        // The stencil ref should be 0 on commands that use this mode.
         front_stencil.stencil_compare = CompareFunction::kAlways;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
         back_stencil.stencil_compare = CompareFunction::kAlways;
         back_stencil.depth_stencil_pass = StencilOperation::kDecrementWrap;
         desc.SetStencilAttachmentDescriptors(front_stencil, back_stencil);
         break;
-      case StencilMode::kEvenOddWrite:
+      case StencilMode::kStencilEvenOddFill:
+        // The stencil ref should be 0 on commands that use this mode.
         front_stencil.stencil_compare = CompareFunction::kEqual;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementWrap;
         front_stencil.stencil_failure = StencilOperation::kDecrementWrap;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
       case StencilMode::kCoverCompare:
+        // The stencil ref should be 0 on commands that use this mode.
         front_stencil.stencil_compare = CompareFunction::kNotEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
+        desc.SetStencilAttachmentDescriptors(front_stencil);
+        break;
+      case StencilMode::kCoverCompareInverted:
+        // The stencil ref should be 0 on commands that use this mode.
+        front_stencil.stencil_compare = CompareFunction::kEqual;
+        front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
       case StencilMode::kLegacyClipRestore:
@@ -451,8 +458,7 @@ ContentContext::ContentContext(
   auto clip_color_attachments =
       clip_pipeline_descriptor->GetColorAttachmentDescriptors();
   for (auto& color_attachment : clip_color_attachments) {
-    color_attachment.second.write_mask =
-        static_cast<uint64_t>(ColorWriteMask::kNone);
+    color_attachment.second.write_mask = ColorWriteMaskBits::kNone;
   }
   clip_pipeline_descriptor->SetColorAttachmentDescriptors(
       std::move(clip_color_attachments));
@@ -460,6 +466,7 @@ ContentContext::ContentContext(
                                           *context_, clip_pipeline_descriptor));
 
   is_valid_ = true;
+  InitializeCommonlyUsedShadersIfNeeded();
 }
 
 ContentContext::~ContentContext() = default;
@@ -473,23 +480,25 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled,
+    bool depth_stencil_enabled,
     int32_t mip_count) const {
   const std::shared_ptr<Context>& context = GetContext();
   RenderTarget subpass_target;
+
+  std::optional<RenderTarget::AttachmentConfig> depth_stencil_config =
+      depth_stencil_enabled ? RenderTarget::kDefaultStencilAttachmentConfig
+                            : std::optional<RenderTarget::AttachmentConfig>();
+
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
-    subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, *GetRenderTargetCache(), texture_size,
+    subpass_target = GetRenderTargetCache()->CreateOffscreenMSAA(
+        *context, texture_size,
         /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfigMSAA,
-        std::nullopt  // stencil_attachment_config
-    );
+        RenderTarget::kDefaultColorAttachmentConfigMSAA, depth_stencil_config);
   } else {
-    subpass_target = RenderTarget::CreateOffscreen(
-        *context, *GetRenderTargetCache(), texture_size,
+    subpass_target = GetRenderTargetCache()->CreateOffscreen(
+        *context, texture_size,
         /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
-        RenderTarget::kDefaultColorAttachmentConfig,  //
-        std::nullopt  // stencil_attachment_config
-    );
+        RenderTarget::kDefaultColorAttachmentConfig, depth_stencil_config);
   }
   return MakeSubpass(label, subpass_target, subpass_callback);
 }
@@ -535,7 +544,9 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     }
   }
 
-  RecordCommandBuffer(std::move(sub_command_buffer));
+  if (!context->GetCommandQueue()->Submit({sub_command_buffer}).ok()) {
+    return fml::Status(fml::StatusCode::kUnknown, "");
+  }
 
   return subpass_target;
 }
@@ -588,24 +599,66 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
   }
 }
 
-void ContentContext::RecordCommandBuffer(
-    std::shared_ptr<CommandBuffer> command_buffer) const {
-  // Metal systems seem to have a limit on the number of command buffers that
-  // can be created concurrently, which appears to be in the range of 50 or so
-  // command buffers. When this limit is hit, creation of further command
-  // buffers will fail. To work around this, we regularly flush the
-  // command buffers on the metal backend.
-  if (GetContext()->GetBackendType() == Context::BackendType::kMetal) {
-    GetContext()->GetCommandQueue()->Submit({command_buffer});
-  } else {
-    pending_command_buffers_->command_buffers.push_back(
-        std::move(command_buffer));
-  }
-}
+void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
+  TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
+  GetContext()->InitializeCommonlyUsedShadersIfNeeded();
 
-void ContentContext::FlushCommandBuffers() const {
-  auto buffers = std::move(pending_command_buffers_->command_buffers);
-  GetContext()->GetCommandQueue()->Submit(buffers);
+  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
+    // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
+    // runs.
+    return;
+  }
+
+  // Initialize commonly used shaders that aren't defaults. These settings were
+  // chosen based on the knowledge that we mix and match triangle and
+  // triangle-strip geometry, and also have fairly agressive srcOver to src
+  // blend mode conversions.
+  auto options = ContentContextOptions{
+      .sample_count = SampleCount::kCount4,
+      .color_attachment_pixel_format =
+          context_->GetCapabilities()->GetDefaultColorFormat()};
+
+  for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
+    for (const auto geometry :
+         {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
+      options.blend_mode = mode;
+      options.primitive_type = geometry;
+      CreateIfNeeded(solid_fill_pipelines_, options);
+      CreateIfNeeded(texture_pipelines_, options);
+      if (GetContext()->GetCapabilities()->SupportsSSBO()) {
+        CreateIfNeeded(linear_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(radial_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(sweep_gradient_ssbo_fill_pipelines_, options);
+        CreateIfNeeded(conical_gradient_ssbo_fill_pipelines_, options);
+      }
+    }
+  }
+
+  options.blend_mode = BlendMode::kDestination;
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  for (const auto stencil_mode :
+       {ContentContextOptions::StencilMode::kLegacyClipIncrement,
+        ContentContextOptions::StencilMode::kLegacyClipDecrement,
+        ContentContextOptions::StencilMode::kLegacyClipRestore}) {
+    options.stencil_mode = stencil_mode;
+    CreateIfNeeded(clip_pipelines_, options);
+  }
+
+  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
+  // observed to take 10s of ms as an internal shader is compiled to perform
+  // the operation. Similarly, the initial render pass can also take 10s of ms
+  // for a similar reason. Because the context object is initialized far
+  // before the first frame, create a trivial texture and render pass to force
+  // the driver to compiler these shaders before the frame begins.
+  TextureDescriptor desc;
+  desc.size = {1, 1};
+  desc.storage_mode = StorageMode::kHostVisible;
+  desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+  uint32_t color = 0;
+  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
+    VALIDATION_LOG << "Failed to set bootstrap texture.";
+  }
 }
 
 }  // namespace impeller

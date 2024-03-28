@@ -21,6 +21,8 @@ source_set("testing_lib") {
     "debugger_detection.h",
     "display_list_testing.cc",
     "display_list_testing.h",
+    "logger_listener.cc",
+    "logger_listener.h",
     "mock_canvas.cc",
     "mock_canvas.h",
     "post_task_sync.cc",
@@ -40,8 +42,8 @@ source_set("testing_lib") {
   public_deps = [
     "//flutter/display_list",
     "//flutter/fml",
-    "//third_party/googletest:gmock",
-    "//third_party/googletest:gtest",
+    "//flutter/third_party/googletest:gmock",
+    "//flutter/third_party/googletest:gtest",
   ]
   public_configs = [ "//flutter:config" ]
 }
@@ -51,7 +53,7 @@ source_set("testing") {
 
   sources = [ "run_all_unittests.cc" ]
 
-  if (is_linux) {
+  if (enable_unittests && is_linux) {
     # So that we can call gtk_init in main().
     configs += [ "//flutter/shell/platform/linux/config:gtk" ]
   }
@@ -139,7 +141,7 @@ if (is_mac || is_ios) {
 
     deps = [
       "//flutter/fml",
-      "//third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest",
     ]
   }
 }
@@ -259,13 +261,13 @@ if (use_swiftshader) {
 
     configs -= [ "//build/config/clang:extra_warnings" ]
     configs += [
-      "//third_party/angle:gl_prototypes",
+      "//flutter/third_party/angle:gl_prototypes",
       "//flutter/third_party/swiftshader:swiftshader_config",
     ]
     deps += [
+      "//flutter/third_party/angle:libEGL_static",
+      "//flutter/third_party/angle:libGLESv2_static",
       "//flutter/third_party/swiftshader",
-      "//third_party/angle:libEGL_static",
-      "//third_party/angle:libGLESv2_static",
     ]
   }
 }

@@ -90,6 +90,8 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
+  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame});
+
   AccessibilityFeatures get accessibilityFeatures;
 
   VoidCallback? get onAccessibilityFeaturesChanged;
@@ -500,6 +502,7 @@ class Locale {
   @override
   int get hashCode => Object.hash(languageCode, scriptCode, countryCode);
 
+  @keepToString
   @override
   String toString() => _rawToString('_');
 

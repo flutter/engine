@@ -336,11 +336,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
-         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         const std::shared_ptr<fml::ConcurrentTaskRunner>&
+             image_decoder_task_runner,
          const TaskRunners& task_runners,
          const Settings& settings,
          std::unique_ptr<Animator> animator,
-         fml::WeakPtr<IOManager> io_manager,
+         const fml::WeakPtr<IOManager>& io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
          std::unique_ptr<RuntimeController> runtime_controller,
          const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
@@ -396,7 +397,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
-         fml::RefPtr<SkiaUnrefQueue> unref_queue,
+         const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
          const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
@@ -734,7 +735,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view was removed.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for a view. The viewport metrics
@@ -836,6 +839,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// Schedule a frame with the default parameter of regenerating the layer
   /// tree.
   void ScheduleFrame() { ScheduleFrame(true); }
+
+  // |RuntimeDelegate|
+  void OnAllViewsRendered() override;
 
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
@@ -958,12 +964,19 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Shuts down all registered platform isolates. Must be called
+  ///             from the platform thread.
+  ///
+  void ShutdownPlatformIsolates();
+
  private:
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|

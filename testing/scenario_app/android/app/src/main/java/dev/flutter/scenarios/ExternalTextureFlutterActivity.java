@@ -4,6 +4,8 @@
 
 package dev.flutter.scenarios;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
@@ -11,7 +13,6 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Shader.TileMode;
-import android.graphics.SurfaceTexture;
 import android.hardware.HardwareBuffer;
 import android.media.Image;
 import android.media.ImageReader;
@@ -20,7 +21,6 @@ import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -36,10 +36,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.util.Supplier;
-import io.flutter.view.TextureRegistry.SurfaceTextureEntry;
+import io.flutter.view.TextureRegistry;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
 public class ExternalTextureFlutterActivity extends TestActivity {
@@ -47,20 +48,20 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private static final int SURFACE_WIDTH = 192;
   private static final int SURFACE_HEIGHT = 256;
 
-  private SurfaceRenderer surfaceViewRenderer, flutterRenderer;
+  private SurfaceRenderer flutterRenderer;
 
   // Latch used to ensure both SurfaceRenderers produce a frame before taking a screenshot.
-  private final CountDownLatch firstFrameLatch = new CountDownLatch(2);
+  private final CountDownLatch firstFrameLatch = new CountDownLatch(1);
 
   private long textureId = 0;
-  private SurfaceTextureEntry surfaceTextureEntry;
+  private TextureRegistry.SurfaceProducer surfaceProducer;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     String surfaceRenderer = getIntent().getStringExtra("surface_renderer");
-    surfaceViewRenderer = selectSurfaceRenderer(surfaceRenderer, getIntent().getExtras());
+    assert surfaceRenderer != null;
     flutterRenderer = selectSurfaceRenderer(surfaceRenderer, getIntent().getExtras());
 
     // Create and place a SurfaceView above the Flutter content.
@@ -84,7 +85,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
     SurfaceHolder surfaceHolder = surfaceView.getHolder();
     surfaceHolder.setFixedSize(SURFACE_WIDTH, SURFACE_HEIGHT);
-    surfaceHolder.addCallback(new SurfaceRendererCallback(surfaceViewRenderer, firstFrameLatch));
   }
 
   @Override
@@ -92,7 +92,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     super.waitUntilFlutterRendered();
 
     try {
-      firstFrameLatch.await(10, java.util.concurrent.TimeUnit.SECONDS);
+      firstFrameLatch.await();
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
@@ -101,7 +101,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   private SurfaceRenderer selectSurfaceRenderer(String surfaceRenderer, Bundle extras) {
     switch (surfaceRenderer) {
       case "image":
-        if (VERSION.SDK_INT >= VERSION_CODES.M) {
+        if (VERSION.SDK_INT >= API_LEVELS.API_23) {
           // CanvasSurfaceRenderer doesn't work correctly when used with ImageSurfaceRenderer.
           // Use MediaSurfaceRenderer for now.
           return new ImageSurfaceRenderer(
@@ -110,11 +110,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
           throw new RuntimeException("ImageSurfaceRenderer not supported");
         }
       case "media":
-        if (VERSION.SDK_INT >= VERSION_CODES.LOLLIPOP) {
-          return new MediaSurfaceRenderer(this::createMediaExtractor, extras.getInt("rotation", 0));
-        } else {
-          throw new RuntimeException("MediaSurfaceRenderer not supported");
-        }
+        return new MediaSurfaceRenderer(this::createMediaExtractor, extras.getInt("rotation", 0));
       case "canvas":
       default:
         return new CanvasSurfaceRenderer();
@@ -127,8 +123,9 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     // -profile:v main -level:v 5.2 -t 1 -r 1 -vf scale=192:256 -b:v 1M sample.mp4
     try {
       MediaExtractor extractor = new MediaExtractor();
-      AssetFileDescriptor afd = getAssets().openFd("sample.mp4");
-      extractor.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+      try (AssetFileDescriptor afd = getAssets().openFd("sample.mp4")) {
+        extractor.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+      }
       return extractor;
     } catch (IOException e) {
       e.printStackTrace();
@@ -138,20 +135,19 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
   @Override
   public void onPause() {
-    surfaceViewRenderer.destroy();
     flutterRenderer.destroy();
-    surfaceTextureEntry.release();
+    surfaceProducer.release();
     super.onPause();
   }
 
   @Override
   public void onFlutterUiDisplayed() {
-    surfaceTextureEntry = getFlutterEngine().getRenderer().createSurfaceTexture();
-    SurfaceTexture surfaceTexture = surfaceTextureEntry.surfaceTexture();
-    surfaceTexture.setDefaultBufferSize(SURFACE_WIDTH, SURFACE_HEIGHT);
-    flutterRenderer.attach(new Surface(surfaceTexture), firstFrameLatch);
+    surfaceProducer =
+        Objects.requireNonNull(getFlutterEngine()).getRenderer().createSurfaceProducer();
+    surfaceProducer.setSize(SURFACE_WIDTH, SURFACE_HEIGHT);
+    flutterRenderer.attach(surfaceProducer.getSurface(), firstFrameLatch);
     flutterRenderer.repaint();
-    textureId = surfaceTextureEntry.id();
+    textureId = surfaceProducer.id();
 
     super.onFlutterUiDisplayed();
   }
@@ -188,7 +184,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void repaint() {
       Canvas canvas =
-          VERSION.SDK_INT >= VERSION_CODES.M
+          VERSION.SDK_INT >= API_LEVELS.API_23
               ? surface.lockHardwareCanvas()
               : surface.lockCanvas(null);
       Paint paint = new Paint();
@@ -222,7 +218,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
   }
 
   /** Decodes a sample video into the attached Surface. */
-  @RequiresApi(VERSION_CODES.LOLLIPOP)
   private static class MediaSurfaceRenderer implements SurfaceRenderer {
     private final Supplier<MediaExtractor> extractorSupplier;
     private final int rotation;
@@ -256,7 +251,9 @@ public class ExternalTextureFlutterActivity extends TestActivity {
 
     private void decodeThreadMain() {
       try {
-        MediaCodec codec = MediaCodec.createDecoderByType(format.getString(MediaFormat.KEY_MIME));
+        MediaCodec codec =
+            MediaCodec.createDecoderByType(
+                Objects.requireNonNull(format.getString(MediaFormat.KEY_MIME)));
         codec.configure(format, surface, null, 0);
         codec.start();
 
@@ -274,6 +271,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
           if (!seenEOS) {
             int inputBufferIndex = codec.dequeueInputBuffer(-1);
             ByteBuffer inputBuffer = codec.getInputBuffer(inputBufferIndex);
+            assert inputBuffer != null;
             int sampleSize = extractor.readSampleData(inputBuffer, 0);
             if (sampleSize >= 0) {
               long presentationTimeUs = extractor.getSampleTime();
@@ -337,7 +335,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
    * Takes frames from the inner SurfaceRenderer and feeds it through an ImageReader and ImageWriter
    * pair.
    */
-  @RequiresApi(VERSION_CODES.M)
+  @RequiresApi(API_LEVELS.API_23)
   private static class ImageSurfaceRenderer implements SurfaceRenderer {
     private final SurfaceRenderer inner;
     private final Rect crop;
@@ -360,7 +358,7 @@ public class ExternalTextureFlutterActivity extends TestActivity {
     @Override
     public void attach(Surface surface, CountDownLatch onFirstFrame) {
       this.onFirstFrame = onFirstFrame;
-      if (VERSION.SDK_INT >= VERSION_CODES.Q) {
+      if (VERSION.SDK_INT >= API_LEVELS.API_29) {
         // On Android Q+, use PRIVATE image format.
         // Also let the frame producer know the images will
         // be sampled from by the GPU.
@@ -411,7 +409,6 @@ public class ExternalTextureFlutterActivity extends TestActivity {
         // Simply log and return.
         Log.i(TAG, "Surface disconnected from ImageWriter", e);
         image.close();
-        return;
       }
 
       Log.v(TAG, "Output image");
@@ -460,28 +457,5 @@ public class ExternalTextureFlutterActivity extends TestActivity {
       Log.i(TAG, "ImageReader destroyed");
       handlerThread.quitSafely();
     }
-  }
-
-  private static class SurfaceRendererCallback implements SurfaceHolder.Callback {
-    final SurfaceRenderer surfaceRenderer;
-    final CountDownLatch onFirstFrame;
-
-    public SurfaceRendererCallback(SurfaceRenderer surfaceRenderer, CountDownLatch onFirstFrame) {
-      this.surfaceRenderer = surfaceRenderer;
-      this.onFirstFrame = onFirstFrame;
-    }
-
-    @Override
-    public void surfaceCreated(@NonNull SurfaceHolder holder) {
-      surfaceRenderer.attach(holder.getSurface(), onFirstFrame);
-    }
-
-    @Override
-    public void surfaceChanged(@NonNull SurfaceHolder holder, int format, int width, int height) {
-      surfaceRenderer.repaint();
-    }
-
-    @Override
-    public void surfaceDestroyed(@NonNull SurfaceHolder holder) {}
   }
 }

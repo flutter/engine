@@ -4,6 +4,8 @@
 
 package dev.flutter.scenarios;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
+import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -57,7 +60,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
 
     final Intent launchIntent = getIntent();
     if ("com.google.intent.action.TEST_LOOP".equals(launchIntent.getAction())) {
-      if (Build.VERSION.SDK_INT > 22) {
+      if (Build.VERSION.SDK_INT > API_LEVELS.API_22) {
         requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
       }
       handler.postDelayed(resultsTask, 20000);
@@ -156,7 +159,7 @@ public abstract class TestActivity extends TestableFlutterActivity {
    * String[], Handler, Runnable)} invokes its callback when called after initialization.
    */
   protected void testFlutterLoaderCallbackWhenInitializedTwice() {
-    FlutterLoader flutterLoader = new FlutterLoader();
+    FlutterLoader flutterLoader = FlutterInjector.instance().flutterLoader();
 
     // Flutter is probably already loaded in this app based on
     // code that ran before this method. Nonetheless, invoke the

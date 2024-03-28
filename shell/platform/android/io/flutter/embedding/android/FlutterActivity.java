@@ -4,6 +4,7 @@
 
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DART_ENTRYPOINT_URI_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_BACKGROUND_MODE;
@@ -21,6 +22,7 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.HANDLE_D
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.INITIAL_ROUTE_META_DATA_KEY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.NORMAL_THEME_META_DATA_KEY;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -34,10 +36,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.BackEvent;
+import android.window.OnBackAnimationCallback;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -49,7 +54,6 @@ import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.util.ViewUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -216,7 +220,7 @@ public class FlutterActivity extends Activity
    * <p>This ID can be used to lookup {@code FlutterView} in the Android view hierarchy. For more,
    * see {@link android.view.View#findViewById}.
    */
-  public static final int FLUTTER_VIEW_ID = ViewUtils.generateViewId(0xF1F2);
+  public static final int FLUTTER_VIEW_ID = View.generateViewId();
 
   /**
    * Creates an {@link Intent} that launches a {@code FlutterActivity}, which creates a {@link
@@ -655,7 +659,7 @@ public class FlutterActivity extends Activity
    */
   @VisibleForTesting
   public void registerOnBackInvokedCallback() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
@@ -671,25 +675,50 @@ public class FlutterActivity extends Activity
    */
   @VisibleForTesting
   public void unregisterOnBackInvokedCallback() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
       hasRegisteredBackCallback = false;
     }
   }
 
   private final OnBackInvokedCallback onBackInvokedCallback =
-      Build.VERSION.SDK_INT >= 33
-          ? new OnBackInvokedCallback() {
-            // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
-            // a google3 bug where the linter is not properly running against API 33, causing
-            // a failure here. See b/243609613 and https://github.com/flutter/flutter/issues/111295
-            @SuppressWarnings("Override")
-            @Override
-            public void onBackInvoked() {
-              onBackPressed();
-            }
-          }
-          : null;
+      Build.VERSION.SDK_INT < API_LEVELS.API_33 ? null : createOnBackInvokedCallback();
+
+  @VisibleForTesting
+  protected OnBackInvokedCallback getOnBackInvokedCallback() {
+    return onBackInvokedCallback;
+  }
+
+  @NonNull
+  @TargetApi(API_LEVELS.API_33)
+  @RequiresApi(API_LEVELS.API_33)
+  private OnBackInvokedCallback createOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
+      return new OnBackAnimationCallback() {
+        @Override
+        public void onBackInvoked() {
+          commitBackGesture();
+        }
+
+        @Override
+        public void onBackCancelled() {
+          cancelBackGesture();
+        }
+
+        @Override
+        public void onBackProgressed(@NonNull BackEvent backEvent) {
+          updateBackGestureProgress(backEvent);
+        }
+
+        @Override
+        public void onBackStarted(@NonNull BackEvent backEvent) {
+          startBackGesture(backEvent);
+        }
+      };
+    }
+
+    return this::onBackPressed;
+  }
 
   @Override
   public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
@@ -773,12 +802,10 @@ public class FlutterActivity extends Activity
   }
 
   private void configureStatusBarForFullscreenFlutterExperience() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-      Window window = getWindow();
-      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-      window.setStatusBarColor(0x40000000);
-      window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
-    }
+    Window window = getWindow();
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+    window.setStatusBarColor(0x40000000);
+    window.getDecorView().setSystemUiVisibility(PlatformPlugin.DEFAULT_SYSTEM_UI);
   }
 
   @Override
@@ -898,6 +925,38 @@ public class FlutterActivity extends Activity
   public void onBackPressed() {
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void startBackGesture(@NonNull BackEvent backEvent) {
+    if (stillAttachedForEvent("startBackGesture")) {
+      delegate.startBackGesture(backEvent);
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void updateBackGestureProgress(@NonNull BackEvent backEvent) {
+    if (stillAttachedForEvent("updateBackGestureProgress")) {
+      delegate.updateBackGestureProgress(backEvent);
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void commitBackGesture() {
+    if (stillAttachedForEvent("commitBackGesture")) {
+      delegate.commitBackGesture();
+    }
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void cancelBackGesture() {
+    if (stillAttachedForEvent("cancelBackGesture")) {
+      delegate.cancelBackGesture();
     }
   }
 
@@ -1372,7 +1431,7 @@ public class FlutterActivity extends Activity
     // * reportFullyDrawn behavior isn't tested on pre-Q versions.
     // See https://github.com/flutter/flutter/issues/46172, and
     // https://github.com/flutter/flutter/issues/88767.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       reportFullyDrawn();
     }
   }

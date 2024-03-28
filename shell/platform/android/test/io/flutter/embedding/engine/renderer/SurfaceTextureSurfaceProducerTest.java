@@ -1,11 +1,13 @@
 package io.flutter.embedding.engine.renderer;
 
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.annotation.TargetApi;
 import android.graphics.Canvas;
+import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.Surface;
@@ -16,16 +18,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
-@TargetApi(26)
+@TargetApi(API_LEVELS.API_26)
 public final class SurfaceTextureSurfaceProducerTest {
   private final FlutterJNI fakeJNI = mock(FlutterJNI.class);
 
   @Test
   public void createsSurfaceTextureOfGivenSizeAndResizesWhenRequested() {
+    final FlutterRenderer flutterRenderer = new FlutterRenderer(fakeJNI);
+
     // Create a surface and set the initial size.
     final Handler handler = new Handler(Looper.getMainLooper());
     final SurfaceTextureSurfaceProducer producer =
-        new SurfaceTextureSurfaceProducer(0, handler, fakeJNI);
+        new SurfaceTextureSurfaceProducer(
+            0, handler, fakeJNI, flutterRenderer.registerSurfaceTexture(new SurfaceTexture(0)));
     final Surface surface = producer.getSurface();
     AtomicInteger frames = new AtomicInteger();
     producer

@@ -121,26 +121,28 @@ void PlatformConfiguration::AddView(int64_t view_id,
       }));
 }
 
-void PlatformConfiguration::RemoveView(int64_t view_id) {
+bool PlatformConfiguration::RemoveView(int64_t view_id) {
   if (view_id == kFlutterImplicitViewId) {
-    FML_LOG(ERROR) << "The implicit view #" << view_id << " cannot be removed.";
-    FML_DCHECK(false);
-    return;
+    FML_LOG(FATAL) << "The implicit view #" << view_id << " cannot be removed.";
+    return false;
   }
   size_t erased_elements = metrics_.erase(view_id);
-  FML_DCHECK(erased_elements != 0) << "View #" << view_id << " doesn't exist.";
-  (void)erased_elements;  // Suppress unused variable warning
+  if (erased_elements == 0) {
+    FML_LOG(ERROR) << "View #" << view_id << " doesn't exist.";
+    return false;
+  }
 
   std::shared_ptr<tonic::DartState> dart_state =
       remove_view_.dart_state().lock();
   if (!dart_state) {
-    return;
+    return false;
   }
   tonic::DartState::Scope scope(dart_state);
   tonic::CheckAndHandleError(
       tonic::DartInvoke(remove_view_.Get(), {
                                                 tonic::ToDart(view_id),
                                             }));
+  return true;
 }
 
 bool PlatformConfiguration::UpdateViewMetrics(
@@ -453,12 +455,9 @@ void PlatformConfigurationNativeApi::Render(int64_t view_id,
                                             Scene* scene,
                                             double width,
                                             double height) {
-  // TODO(dkwingsmt): Currently only supports a single window.
-  // See https://github.com/flutter/flutter/issues/135530, item 2.
-  FML_DCHECK(view_id == kFlutterImplicitViewId);
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->Render(
-      scene, width, height);
+      view_id, scene, width, height);
 }
 
 void PlatformConfigurationNativeApi::SetNeedsReportTimings(bool value) {
@@ -587,6 +586,11 @@ Dart_Handle PlatformConfigurationNativeApi::GetPersistentIsolateData() {
 void PlatformConfigurationNativeApi::ScheduleFrame() {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->platform_configuration()->client()->ScheduleFrame();
+}
+
+void PlatformConfigurationNativeApi::EndWarmUpFrame() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  UIDartState::Current()->platform_configuration()->client()->EndWarmUpFrame();
 }
 
 void PlatformConfigurationNativeApi::UpdateSemantics(SemanticsUpdate* update) {

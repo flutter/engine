@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/compositor_software.h"
 
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 namespace flutter {
@@ -37,15 +38,17 @@ bool CompositorSoftware::CollectBackingStore(const FlutterBackingStore* store) {
   return true;
 }
 
-bool CompositorSoftware::Present(const FlutterLayer** layers,
+bool CompositorSoftware::Present(FlutterViewId view_id,
+                                 const FlutterLayer** layers,
                                  size_t layers_count) {
-  if (!engine_->view()) {
+  FlutterWindowsView* view = engine_->view(view_id);
+  if (!view) {
     return false;
   }
 
   // Clear the view if there are no layers to present.
   if (layers_count == 0) {
-    return engine_->view()->ClearSoftwareBitmap();
+    return view->ClearSoftwareBitmap();
   }
 
   // TODO: Support compositing layers and platform views.
@@ -58,7 +61,7 @@ bool CompositorSoftware::Present(const FlutterLayer** layers,
 
   const auto& backing_store = layers[0]->backing_store->software;
 
-  return engine_->view()->PresentSoftwareBitmap(
+  return view->PresentSoftwareBitmap(
       backing_store.allocation, backing_store.row_bytes, backing_store.height);
 }
 

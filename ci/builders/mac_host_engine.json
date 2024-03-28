@@ -28,7 +28,6 @@
                 "--no-lto",
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples",
-                "--enable-impeller-vulkan",
                 "--use-glfw-swiftshader"
             ],
             "name": "host_debug",
@@ -158,8 +157,6 @@
                 "--no-lto",
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples",
-                "--enable-impeller-vulkan",
-                "--enable-impeller-opengles",
                 "--use-glfw-swiftshader"
             ],
             "name": "host_release",
@@ -475,6 +472,21 @@
         {
             "source": "out/release/snapshot/gen_snapshot.zip",
             "destination": "darwin-x64-release/gen_snapshot.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/debug/framework/framework.zip",
+            "destination": "darwin-x64/framework.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/profile/framework/framework.zip",
+            "destination": "darwin-x64-profile/framework.zip",
+            "realm": "production"
+        },
+        {
+            "source": "out/release/framework/framework.zip",
+            "destination": "darwin-x64-release/framework.zip",
             "realm": "production"
         }
     ]

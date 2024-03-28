@@ -119,6 +119,7 @@ skt::ParagraphStyle ParagraphBuilderSkia::TxtToSkia(const ParagraphStyle& txt) {
   strut_style.setFontSize(SkDoubleToScalar(txt.strut_font_size));
   strut_style.setHeight(SkDoubleToScalar(txt.strut_height));
   strut_style.setHeightOverride(txt.strut_has_height_override);
+  strut_style.setHalfLeading(txt.strut_half_leading);
 
   std::vector<SkString> strut_fonts;
   std::transform(txt.strut_font_families.begin(), txt.strut_font_families.end(),
@@ -139,7 +140,7 @@ skt::ParagraphStyle ParagraphBuilderSkia::TxtToSkia(const ParagraphStyle& txt) {
 
   skia.turnHintingOff();
   skia.setReplaceTabCharacters(true);
-  skia.setApplyRoundingHack(txt.apply_rounding_hack);
+  skia.setApplyRoundingHack(false);
 
   return skia;
 }

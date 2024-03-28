@@ -35,7 +35,8 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
           const std::shared_ptr<impeller::AiksContext>& aiks_context,
           const FlutterBackingStoreConfig& config)>;
   using PresentCallback =
-      std::function<bool(const std::vector<const FlutterLayer*>& layers)>;
+      std::function<bool(FlutterViewId view_id,
+                         const std::vector<const FlutterLayer*>& layers)>;
   using SurfaceTransformationCallback = std::function<SkMatrix(void)>;
 
   //----------------------------------------------------------------------------
@@ -86,8 +87,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareFlutterView(int64_t flutter_view_id,
-                          SkISize frame_size,
+  void PrepareFlutterView(SkISize frame_size,
                           double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
@@ -100,6 +100,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void SubmitFlutterView(
+      int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
       std::unique_ptr<SurfaceFrame> frame) override;

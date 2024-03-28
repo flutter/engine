@@ -32,10 +32,10 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
 
   auto content_context = GetContentContext();
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100},
-      /*mip_count=*/1);
+  auto render_target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *content_context->GetContext(), {100, 100},
+          /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
   auto recording_pass = std::make_shared<RecordingRenderPass>(
       render_pass, GetContext(), render_target);
@@ -44,8 +44,8 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipeline) {
   const std::vector<Command>& commands = recording_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
-  ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
-               "TextureFill Pipeline V#1");
+  EXPECT_TRUE(commands[0].pipeline->GetDescriptor().GetLabel().find(
+                  "TextureFill Pipeline") != std::string::npos);
 
   if (GetParam() == PlaygroundBackend::kMetal) {
     recording_pass->EncodeCommands();
@@ -74,18 +74,18 @@ TEST_P(EntityTest, TiledTextureContentsRendersWithCorrectPipelineExternalOES) {
 
   auto content_context = GetContentContext();
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100},
-      /*mip_count=*/1);
+  auto render_target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *content_context->GetContext(), {100, 100},
+          /*mip_count=*/1);
   auto render_pass = buffer->CreateRenderPass(render_target);
 
   ASSERT_TRUE(contents.Render(*GetContentContext(), {}, *render_pass));
   const std::vector<Command>& commands = render_pass->GetCommands();
 
   ASSERT_EQ(commands.size(), 1u);
-  ASSERT_STREQ(commands[0].pipeline->GetDescriptor().GetLabel().c_str(),
-               "TiledTextureFillExternal Pipeline V#1");
+  EXPECT_TRUE(commands[0].pipeline->GetDescriptor().GetLabel().find(
+                  "TiledTextureFillExternal Pipeline") != std::string::npos);
 }
 #endif
 

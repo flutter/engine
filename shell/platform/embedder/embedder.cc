@@ -1048,9 +1048,8 @@ MakeRenderTargetFromBackingStoreImpeller(
   resolve_tex_desc.size = size;
   resolve_tex_desc.sample_count = impeller::SampleCount::kCount1;
   resolve_tex_desc.storage_mode = impeller::StorageMode::kDevicePrivate;
-  resolve_tex_desc.usage =
-      static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget) |
-      static_cast<uint64_t>(impeller::TextureUsage::kShaderRead);
+  resolve_tex_desc.usage = impeller::TextureUsage::kRenderTarget |
+                           impeller::TextureUsage::kShaderRead;
 
   auto resolve_tex = impeller::WrapTextureMTL(
       resolve_tex_desc, metal->texture.texture,
@@ -1068,8 +1067,7 @@ MakeRenderTargetFromBackingStoreImpeller(
   msaa_tex_desc.sample_count = impeller::SampleCount::kCount4;
   msaa_tex_desc.format = resolve_tex->GetTextureDescriptor().format;
   msaa_tex_desc.size = size;
-  msaa_tex_desc.usage =
-      static_cast<uint64_t>(impeller::TextureUsage::kRenderTarget);
+  msaa_tex_desc.usage = impeller::TextureUsage::kRenderTarget;
 
   auto msaa_tex =
       aiks_context->GetContext()->GetResourceAllocator()->CreateTexture(
@@ -1290,12 +1288,21 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
       SAFE_ACCESS(compositor, collect_backing_store_callback, nullptr);
   auto c_present_callback =
       SAFE_ACCESS(compositor, present_layers_callback, nullptr);
+  auto c_present_view_callback =
+      SAFE_ACCESS(compositor, present_view_callback, nullptr);
   bool avoid_backing_store_cache =
       SAFE_ACCESS(compositor, avoid_backing_store_cache, false);
 
   // Make sure the required callbacks are present
-  if (!c_create_callback || !c_collect_callback || !c_present_callback) {
+  if (!c_create_callback || !c_collect_callback) {
     FML_LOG(ERROR) << "Required compositor callbacks absent.";
+    return {nullptr, true};
+  }
+  // Either the present view or the present layers callback must be provided.
+  if ((!c_present_view_callback && !c_present_callback) ||
+      (c_present_view_callback && c_present_callback)) {
+    FML_LOG(ERROR) << "Either present_layers_callback or present_view_callback "
+                      "must be provided but not both.";
     return {nullptr, true};
   }
 
@@ -1312,19 +1319,82 @@ InferExternalViewEmbedderFromArgs(const FlutterCompositor* compositor,
                                               enable_impeller);
           };
 
-  flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback =
-      [c_present_callback,
-       user_data = compositor->user_data](const auto& layers) {
-        TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
-        return c_present_callback(
-            const_cast<const FlutterLayer**>(layers.data()), layers.size(),
-            user_data);
+  flutter::EmbedderExternalViewEmbedder::PresentCallback present_callback;
+  if (c_present_callback) {
+    present_callback = [c_present_callback, user_data = compositor->user_data](
+                           FlutterViewId view_id, const auto& layers) {
+      TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
+      return c_present_callback(const_cast<const FlutterLayer**>(layers.data()),
+                                layers.size(), user_data);
+    };
+  } else {
+    FML_DCHECK(c_present_view_callback != nullptr);
+    present_callback = [c_present_view_callback,
+                        user_data = compositor->user_data](
+                           FlutterViewId view_id, const auto& layers) {
+      TRACE_EVENT0("flutter", "FlutterCompositorPresentLayers");
+
+      FlutterPresentViewInfo info = {
+          .struct_size = sizeof(FlutterPresentViewInfo),
+          .view_id = view_id,
+          .layers = const_cast<const FlutterLayer**>(layers.data()),
+          .layers_count = layers.size(),
+          .user_data = user_data,
       };
+
+      return c_present_view_callback(&info);
+    };
+  }
 
   return {std::make_unique<flutter::EmbedderExternalViewEmbedder>(
               avoid_backing_store_cache, create_render_target_callback,
               present_callback),
           false};
+}
+
+// Translates embedder metrics to engine metrics, or returns a string on error.
+static std::variant<flutter::ViewportMetrics, std::string>
+MakeViewportMetricsFromWindowMetrics(
+    const FlutterWindowMetricsEvent* flutter_metrics) {
+  if (flutter_metrics == nullptr) {
+    return "Invalid metrics handle.";
+  }
+
+  flutter::ViewportMetrics metrics;
+
+  metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
+  metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
+  metrics.device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
+  metrics.physical_view_inset_top =
+      SAFE_ACCESS(flutter_metrics, physical_view_inset_top, 0.0);
+  metrics.physical_view_inset_right =
+      SAFE_ACCESS(flutter_metrics, physical_view_inset_right, 0.0);
+  metrics.physical_view_inset_bottom =
+      SAFE_ACCESS(flutter_metrics, physical_view_inset_bottom, 0.0);
+  metrics.physical_view_inset_left =
+      SAFE_ACCESS(flutter_metrics, physical_view_inset_left, 0.0);
+  metrics.display_id = SAFE_ACCESS(flutter_metrics, display_id, 0);
+
+  if (metrics.device_pixel_ratio <= 0.0) {
+    return "Device pixel ratio was invalid. It must be greater than zero.";
+  }
+
+  if (metrics.physical_view_inset_top < 0 ||
+      metrics.physical_view_inset_right < 0 ||
+      metrics.physical_view_inset_bottom < 0 ||
+      metrics.physical_view_inset_left < 0) {
+    return "Physical view insets are invalid. They must be non-negative.";
+  }
+
+  if (metrics.physical_view_inset_top > metrics.physical_height ||
+      metrics.physical_view_inset_right > metrics.physical_width ||
+      metrics.physical_view_inset_bottom > metrics.physical_height ||
+      metrics.physical_view_inset_left > metrics.physical_width) {
+    return "Physical view insets are invalid. They cannot be greater than "
+           "physical height or width.";
+  }
+
+  return metrics;
 }
 
 struct _FlutterPlatformMessageResponseHandle {
@@ -2114,6 +2184,44 @@ FlutterEngineResult FlutterEngineRunInitialized(
 }
 
 FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                                engine,
+                                            const FlutterRemoveViewInfo* info) {
+  if (!engine) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+  if (!info || !info->remove_view_callback) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Remove view info handle was invalid.");
+  }
+
+  if (info->view_id == kFlutterImplicitViewId) {
+    return LOG_EMBEDDER_ERROR(
+        kInvalidArguments,
+        "Remove view info was invalid. The implicit view cannot be removed.");
+  }
+
+  // The engine must be running to remove a view.
+  auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  if (!embedder_engine->IsValid()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+
+  flutter::Shell::RemoveViewCallback callback =
+      [c_callback = info->remove_view_callback,
+       user_data = info->user_data](bool removed) {
+        FlutterRemoveViewResult result = {};
+        result.struct_size = sizeof(FlutterRemoveViewResult);
+        result.removed = removed;
+        result.user_data = user_data;
+        c_callback(&result);
+      };
+
+  embedder_engine->GetShell().RemoveView(info->view_id, callback);
+  return kSuccess;
+}
+
+FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineDeinitialize(FLUTTER_API_SYMBOL(FlutterEngine)
                                                   engine) {
   if (engine == nullptr) {
@@ -2143,47 +2251,16 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   if (engine == nullptr || flutter_metrics == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
-  // TODO(dkwingsmt): Use a real view ID when multiview is supported.
-  int64_t view_id = kFlutterImplicitViewId;
+  FlutterViewId view_id =
+      SAFE_ACCESS(flutter_metrics, view_id, kFlutterImplicitViewId);
 
-  flutter::ViewportMetrics metrics;
-
-  metrics.physical_width = SAFE_ACCESS(flutter_metrics, width, 0.0);
-  metrics.physical_height = SAFE_ACCESS(flutter_metrics, height, 0.0);
-  metrics.device_pixel_ratio = SAFE_ACCESS(flutter_metrics, pixel_ratio, 1.0);
-  metrics.physical_view_inset_top =
-      SAFE_ACCESS(flutter_metrics, physical_view_inset_top, 0.0);
-  metrics.physical_view_inset_right =
-      SAFE_ACCESS(flutter_metrics, physical_view_inset_right, 0.0);
-  metrics.physical_view_inset_bottom =
-      SAFE_ACCESS(flutter_metrics, physical_view_inset_bottom, 0.0);
-  metrics.physical_view_inset_left =
-      SAFE_ACCESS(flutter_metrics, physical_view_inset_left, 0.0);
-  metrics.display_id = SAFE_ACCESS(flutter_metrics, display_id, 0);
-
-  if (metrics.device_pixel_ratio <= 0.0) {
-    return LOG_EMBEDDER_ERROR(
-        kInvalidArguments,
-        "Device pixel ratio was invalid. It must be greater than zero.");
+  std::variant<flutter::ViewportMetrics, std::string> metrics_or_error =
+      MakeViewportMetricsFromWindowMetrics(flutter_metrics);
+  if (const std::string* error = std::get_if<std::string>(&metrics_or_error)) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, error->c_str());
   }
 
-  if (metrics.physical_view_inset_top < 0 ||
-      metrics.physical_view_inset_right < 0 ||
-      metrics.physical_view_inset_bottom < 0 ||
-      metrics.physical_view_inset_left < 0) {
-    return LOG_EMBEDDER_ERROR(
-        kInvalidArguments,
-        "Physical view insets are invalid. They must be non-negative.");
-  }
-
-  if (metrics.physical_view_inset_top > metrics.physical_height ||
-      metrics.physical_view_inset_right > metrics.physical_width ||
-      metrics.physical_view_inset_bottom > metrics.physical_height ||
-      metrics.physical_view_inset_left > metrics.physical_width) {
-    return LOG_EMBEDDER_ERROR(kInvalidArguments,
-                              "Physical view insets are invalid. They cannot "
-                              "be greater than physical height or width.");
-  }
+  auto metrics = std::get<flutter::ViewportMetrics>(metrics_or_error);
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
              view_id, metrics)
