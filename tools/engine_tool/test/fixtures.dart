@@ -122,6 +122,35 @@ String testConfig(String os) => '''
 }
 ''';
 
+const String configsToTestNamespacing = '''
+{
+  "builds": [
+    {
+      "drone_dimensions": [
+        "os=Linux"
+      ],
+      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "name": "linux/host_debug",
+      "ninja": {
+        "config": "local_host_debug",
+        "targets": ["ninja_target"]
+      }
+    },
+    {
+      "drone_dimensions": [
+        "os=Linux"
+      ],
+      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "name": "host_debug",
+      "ninja": {
+        "config": "ci_host_debug",
+        "targets": ["ninja_target"]
+      }
+    }
+  ]
+}
+''';
+
 String attachedDevices() => '''
 [
   {

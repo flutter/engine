@@ -86,3 +86,29 @@ const String buildConfigJson = '''
   ]
 }
 ''';
+
+const String multiOSBuilderConfig = '''
+{
+  "builds": [
+    {
+      "drone_dimensions": [
+        "os=Mac-13|Linux"
+      ],
+      "gn": [
+        "--runtime-mode",
+        "debug",
+        "--android",
+        "--android-cpu=arm64",
+        "--no-stripped",
+        "--enable-impeller-vulkan",
+        "--no-lto"
+      ],
+      "name": "android_debug_arm64",
+      "ninja": {
+        "config": "android_debug_arm64",
+        "targets": []
+      }
+    }
+  ]
+}
+''';

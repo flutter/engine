@@ -30,11 +30,11 @@ final class RunCommand extends CommandBase {
           'Specify the build config to use for the target build (usually auto detected)',
       allowed: <String>[
         for (final Build build in runnableBuilds(environment, configs))
-          build.name,
+          mangleConfigName(environment, build.name),
       ],
       allowedHelp: <String, String>{
         for (final Build build in runnableBuilds(environment, configs))
-          build.name: build.gn.join(' '),
+          mangleConfigName(environment, build.name): build.gn.join(' '),
       },
     );
     argParser.addFlag(
@@ -59,26 +59,28 @@ final class RunCommand extends CommandBase {
       'See `flutter run --help` for a listing';
 
   Build? _lookup(String configName) {
-    return builds.where((Build build) => build.name == configName).firstOrNull;
+    final String demangledName = demangleConfigName(environment, configName);
+    return builds.where((Build build) => build.name == demangledName).firstOrNull;
   }
 
   Build? _findHostBuild(Build? targetBuild) {
     if (targetBuild == null) {
       return null;
     }
-
-    final String name = targetBuild.name;
-    if (name.startsWith('host_')) {
+    final String mangledName = mangleConfigName(environment, targetBuild.name);
+    if (mangledName.contains('host_')) {
       return targetBuild;
     }
+
     // TODO(johnmccutchan): This is brittle, it would be better if we encoded
     // the host config name in the target config.
-    if (name.contains('_debug')) {
-      return _lookup('host_debug');
-    } else if (name.contains('_profile')) {
-      return _lookup('host_profile');
-    } else if (name.contains('_release')) {
-      return _lookup('host_release');
+    final String ci = mangledName.startsWith('ci/') ? 'ci/' : '';
+    if (mangledName.contains('_debug')) {
+      return _lookup('${ci}host_debug');
+    } else if (mangledName.contains('_profile')) {
+      return _lookup('${ci}host_profile');
+    } else if (mangledName.contains('_release')) {
+      return _lookup('${ci}host_release');
     }
     return null;
   }
@@ -119,11 +121,11 @@ final class RunCommand extends CommandBase {
     final RunTarget? target =
         await detectAndSelectRunTarget(environment, deviceId);
     if (target == null) {
-      return 'host_debug';
+      return mangleConfigName(environment, 'host_debug');
     }
     environment.logger.status(
         'Building to run on "${target.name}" running ${target.targetPlatform}');
-    return target.buildConfigFor(_getMode());
+    return mangleConfigName(environment, target.buildConfigFor(_getMode()));
   }
 
   @override

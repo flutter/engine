@@ -319,5 +319,30 @@ int main() {
           'For field "name", expected type: string, actual type: int.',
         ));
   });
+
+  test('canRunOn handles multiple OSs separated by |', () {
+    final BuilderConfig buildConfig = BuilderConfig.fromJson(
+      path: 'linux_test_config',
+      map: convert.jsonDecode(fixtures.multiOSBuilderConfig) as Map<String, Object?>,
+    );
+    expect(buildConfig.valid, isTrue);
+    expect(buildConfig.errors, isNull);
+    expect(buildConfig.builds.length, equals(1));
+
+    final Build globalBuild = buildConfig.builds[0];
+    expect(
+      globalBuild.canRunOn(FakePlatform(operatingSystem: Platform.linux)),
+      isTrue,
+    );
+    expect(
+      globalBuild.canRunOn(FakePlatform(operatingSystem: Platform.macOS)),
+      isTrue,
+    );
+    expect(
+      globalBuild.canRunOn(FakePlatform(operatingSystem: Platform.windows)),
+      isFalse,
+    );
+  });
+
   return 0;
 }
