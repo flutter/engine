@@ -6,10 +6,45 @@
 
 #include <cstdint>
 
+#include "impeller/renderer/backend/vulkan/barrier_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vulkan/vulkan_core.h"
+#include "vulkan/vulkan_enums.hpp"
+#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
+
+static void InsertImageMemoryBarrier(const vk::CommandBuffer& cmd,
+                                     const vk::Image& image,
+                                     vk::AccessFlags src_access_mask,
+                                     vk::AccessFlags dst_access_mask,
+                                     vk::ImageLayout old_layout,
+                                     vk::ImageLayout new_layout,
+                                     vk::PipelineStageFlags src_stage,
+                                     vk::PipelineStageFlags dst_stage,
+                                     uint32_t base_mip_level,
+                                     uint32_t mip_level_count = 1u) {
+  if (old_layout == new_layout) {
+    return;
+  }
+
+  vk::ImageMemoryBarrier barrier;
+  barrier.srcAccessMask = src_access_mask;
+  barrier.dstAccessMask = dst_access_mask;
+  barrier.oldLayout = old_layout;
+  barrier.newLayout = new_layout;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.image = image;
+  barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+  barrier.subresourceRange.baseMipLevel = base_mip_level;
+  barrier.subresourceRange.levelCount = mip_level_count;
+  barrier.subresourceRange.baseArrayLayer = 0u;
+  barrier.subresourceRange.layerCount = 1u;
+
+  cmd.pipelineBarrier(src_stage, dst_stage, {}, nullptr, nullptr, barrier);
+}
 
 BlitEncodeVK::~BlitEncodeVK() = default;
 
@@ -240,37 +275,6 @@ std::string BlitGenerateMipmapCommandVK::GetLabel() const {
   return label;
 }
 
-static void InsertImageMemoryBarrier(const vk::CommandBuffer& cmd,
-                                     const vk::Image& image,
-                                     vk::AccessFlags src_access_mask,
-                                     vk::AccessFlags dst_access_mask,
-                                     vk::ImageLayout old_layout,
-                                     vk::ImageLayout new_layout,
-                                     vk::PipelineStageFlags src_stage,
-                                     vk::PipelineStageFlags dst_stage,
-                                     uint32_t base_mip_level,
-                                     uint32_t mip_level_count = 1u) {
-  if (old_layout == new_layout) {
-    return;
-  }
-
-  vk::ImageMemoryBarrier barrier;
-  barrier.srcAccessMask = src_access_mask;
-  barrier.dstAccessMask = dst_access_mask;
-  barrier.oldLayout = old_layout;
-  barrier.newLayout = new_layout;
-  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.image = image;
-  barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-  barrier.subresourceRange.baseMipLevel = base_mip_level;
-  barrier.subresourceRange.levelCount = mip_level_count;
-  barrier.subresourceRange.baseArrayLayer = 0u;
-  barrier.subresourceRange.layerCount = 1u;
-
-  cmd.pipelineBarrier(src_stage, dst_stage, {}, nullptr, nullptr, barrier);
-}
-
 bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   auto& src = TextureVK::Cast(*texture);
 
@@ -288,41 +292,44 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     return false;
   }
 
-  // Transition the base mip level to transfer-src layout so we can read from
-  // it and transition the rest to dst-optimal since they are going to be
-  // written to.
   InsertImageMemoryBarrier(
       cmd,                                   // command buffer
       image,                                 // image
       vk::AccessFlagBits::eTransferWrite,    // src access mask
       vk::AccessFlagBits::eTransferRead,     // dst access mask
       src.GetLayout(),                       // old layout
-      vk::ImageLayout::eTransferSrcOptimal,  // new layout
-      vk::PipelineStageFlagBits::eTransfer,  // src stage
-      vk::PipelineStageFlagBits::eTransfer,  // dst stage
-      0u                                     // mip level
-  );
-  InsertImageMemoryBarrier(
-      cmd,                                   // command buffer
-      image,                                 // image
-      {},                                    // src access mask
-      vk::AccessFlagBits::eTransferWrite,    // dst access mask
-      vk::ImageLayout::eUndefined,           // old layout
       vk::ImageLayout::eTransferDstOptimal,  // new layout
       vk::PipelineStageFlagBits::eTransfer,  // src stage
       vk::PipelineStageFlagBits::eTransfer,  // dst stage
-      1u,                                    // mip level
-      mip_count - 1                          // mip level count
-  );
+      0u,                                    // mip level
+      mip_count);
 
-  // Blit from the base mip level to all other levels.
+  vk::ImageMemoryBarrier barrier;
+  barrier.image = image;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+  barrier.subresourceRange.baseArrayLayer = 0;
+  barrier.subresourceRange.layerCount = 1;
+  barrier.subresourceRange.levelCount = 1;
+
+  // Blit from the mip level N - 1 to mip level N.
   for (size_t mip_level = 1u; mip_level < mip_count; mip_level++) {
-    vk::ImageBlit blit;
+    barrier.subresourceRange.baseMipLevel = mip_level - 1;
+    barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+    barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+    barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+    barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
 
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                        vk::PipelineStageFlagBits::eTransfer, {}, {}, {},
+                        {barrier});
+
+    vk::ImageBlit blit;
     blit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     blit.srcSubresource.baseArrayLayer = 0u;
     blit.srcSubresource.layerCount = 1u;
-    blit.srcSubresource.mipLevel = 0u;
+    blit.srcSubresource.mipLevel = mip_level - 1;
 
     blit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
     blit.dstSubresource.baseArrayLayer = 0u;
@@ -330,8 +337,9 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     blit.dstSubresource.mipLevel = mip_level;
 
     // offsets[0] is origin.
-    blit.srcOffsets[1].x = size.width;
-    blit.srcOffsets[1].y = size.height;
+    blit.dstOffsets[1].x = std::max<int32_t>(size.width >> (mip_level - 1), 1u);
+    blit.dstOffsets[1].y =
+        std::max<int32_t>(size.height >> (mip_level - 1), 1u);
     blit.srcOffsets[1].z = 1u;
 
     // offsets[0] is origin.
@@ -347,33 +355,26 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
                   &blit,                                 // regions
                   vk::Filter::eLinear                    // filter
     );
+
+    barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+    barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+    barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+    barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+    cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                        vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {},
+                        {barrier});
   }
 
-  // Transition all mip levels to shader read. The base mip level has a
-  // different "old" layout than the rest now.
-  InsertImageMemoryBarrier(
-      cmd,                                         // command buffer
-      image,                                       // image
-      vk::AccessFlagBits::eTransferWrite,          // src access mask
-      vk::AccessFlagBits::eShaderRead,             // dst access mask
-      vk::ImageLayout::eTransferSrcOptimal,        // old layout
-      vk::ImageLayout::eShaderReadOnlyOptimal,     // new layout
-      vk::PipelineStageFlagBits::eTransfer,        // src stage
-      vk::PipelineStageFlagBits::eFragmentShader,  // dst stage
-      0u                                           // mip level
-  );
-  InsertImageMemoryBarrier(
-      cmd,                                         // command buffer
-      image,                                       // image
-      vk::AccessFlagBits::eTransferWrite,          // src access mask
-      vk::AccessFlagBits::eShaderRead,             // dst access mask
-      vk::ImageLayout::eTransferDstOptimal,        // old layout
-      vk::ImageLayout::eShaderReadOnlyOptimal,     // new layout
-      vk::PipelineStageFlagBits::eTransfer,        // src stage
-      vk::PipelineStageFlagBits::eFragmentShader,  // dst stage
-      1u,                                          // mip level
-      mip_count - 1                                // mip level count
-  );
+  barrier.subresourceRange.baseMipLevel = mip_count - 1;
+  barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+  barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+  barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+  barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+  cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                      vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {},
+                      {barrier});
 
   // We modified the layouts of this image from underneath it. Tell it its new
   // state so it doesn't try to perform redundant transitions under the hood.
