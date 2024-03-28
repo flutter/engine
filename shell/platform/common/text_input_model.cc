@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/common/text_input_model.h"
 
 #include <algorithm>
+#include <regex>
 #include <string>
 
 #include "flutter/fml/string_conversion.h"
@@ -79,8 +80,18 @@ void TextInputModel::UpdateComposingText(const std::u16string& text,
       composing_range_.collapsed() ? selection_ : composing_range_;
   text_.replace(rangeToDelete.start(), rangeToDelete.length(), text);
   composing_range_.set_end(composing_range_.start() + text.length());
+
   selection_ = TextRange(selection.start() + composing_range_.start(),
                          selection.extent() + composing_range_.start());
+
+  bool korean_included = false;
+  if (text.length() > 0) {
+    std::wregex kor_regex(L"[ㄱ-ㅎㅏ-ㅣ가-힣]");
+    korean_included = std::regex_match(text.cbegin(), text.cend(), kor_regex);
+  }
+  if (korean_included) {
+    selection_ = TextRange(selection.extent() + composing_range_.end());
+  }
 }
 
 void TextInputModel::UpdateComposingText(const std::u16string& text) {

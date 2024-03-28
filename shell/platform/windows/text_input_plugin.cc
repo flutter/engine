@@ -198,7 +198,6 @@ void TextInputPlugin::ComposeChangeHook(const std::u16string& text,
   TextRange composing_before_change = active_model_->composing_range();
   active_model_->AddText(text);
   active_model_->UpdateComposingText(text, TextRange(cursor_pos, cursor_pos));
-  std::string text_after_change = active_model_->GetText();
   if (enable_delta_model) {
     TextEditingDelta delta = TextEditingDelta(
         fml::Utf8ToUtf16(text_before_change), composing_before_change, text);
