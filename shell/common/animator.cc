@@ -115,6 +115,7 @@ void Animator::BeginFrame(
       frame_timings_recorder_->GetVsyncTargetTime();
   dart_frame_deadline_ = frame_target_time.ToEpochDelta();
   uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
+  TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame", frame_number);
   delegate_.OnAnimatorBeginFrame(frame_target_time, frame_number);
 }
 
@@ -125,6 +126,7 @@ void Animator::EndFrame() {
     // `EndFrame` again.
     return;
   }
+  uint64_t frame_number = frame_timings_recorder_->GetFrameNumber();
   if (!layer_trees_tasks_.empty()) {
     // The build is completed in OnAnimatorBeginFrame.
     frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
@@ -154,6 +156,7 @@ void Animator::EndFrame() {
     }
   }
   frame_timings_recorder_ = nullptr;
+  TRACE_EVENT_ASYNC_END0("flutter", "Frame", frame_number);
 
   if (!frame_scheduled_ && has_rendered_) {
     // Wait a tad more than 3 60hz frames before reporting a big idle period.
