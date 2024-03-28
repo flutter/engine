@@ -57,7 +57,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// and invoked after the isolate is launched.
   ///
   /// The `added` parameter is false if the add operation fails or was
-  /// cancelled using `RemoveView`.
+  /// cancelled while pending using `RemoveView`.
   using AddViewCallback = std::function<void(bool added)>;
 
   //----------------------------------------------------------------------------
