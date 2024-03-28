@@ -3,6 +3,6 @@
 # See ./testing/skia_gold_client/README.md#release-testing for more information.
 
 # On the main branch, this should always read 'none'.
-# On release branches, this should be the release version such as
-# '3.20.0-1.2.pre' or '3.19.4' (without the quotes).
+# On release branches, this should be the release version such as '3.21'
+# (without the quotes).
 none
