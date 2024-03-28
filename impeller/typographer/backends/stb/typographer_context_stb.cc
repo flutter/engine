@@ -22,6 +22,16 @@ constexpr auto kColorFontBitsPerPixel = 1;
 constexpr auto kColorFontBitsPerPixel = 4;
 #endif
 
+#if __ANDROID__ && __NDK_MAJOR__ < 26
+template <typename To, typename From>
+inline std::shared_ptr<To> reinterpret_pointer_cast(
+    std::shared_ptr<From> const& ptr) noexcept {
+  return std::shared_ptr<To>(ptr, reinterpret_cast<To*>(ptr.get()));
+}
+#else
+using std::reinterpret_pointer_cast;
+#endif
+
 namespace impeller {
 
 constexpr size_t kPadding = 1;
@@ -61,7 +71,7 @@ static size_t PairsFitInAtlasOfSize(
     // We downcast to the correct typeface type to access `stb` specific
     // methods.
     std::shared_ptr<TypefaceSTB> typeface_stb =
-        std::reinterpret_pointer_cast<TypefaceSTB>(font.GetTypeface());
+        reinterpret_pointer_cast<TypefaceSTB>(font.GetTypeface());
     // Conversion factor to scale font size in Points to pixels.
     // Note this assumes typical DPI.
     float text_size_pixels =
@@ -119,7 +129,7 @@ static bool CanAppendToExistingAtlas(
 
     // We downcast to the correct typeface type to access `stb` specific methods
     std::shared_ptr<TypefaceSTB> typeface_stb =
-        std::reinterpret_pointer_cast<TypefaceSTB>(font.GetTypeface());
+        reinterpret_pointer_cast<TypefaceSTB>(font.GetTypeface());
     // Conversion factor to scale font size in Points to pixels.
     // Note this assumes typical DPI.
     float text_size_pixels =
@@ -206,7 +216,7 @@ static void DrawGlyph(BitmapSTB* bitmap,
   auto typeface = font.GetTypeface();
   // We downcast to the correct typeface type to access `stb` specific methods
   std::shared_ptr<TypefaceSTB> typeface_stb =
-      std::reinterpret_pointer_cast<TypefaceSTB>(typeface);
+      reinterpret_pointer_cast<TypefaceSTB>(typeface);
   // Conversion factor to scale font size in Points to pixels.
   // Note this assumes typical DPI.
   float text_size_pixels = metrics.point_size * TypefaceSTB::kPointsToPixels;
