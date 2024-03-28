@@ -29,6 +29,8 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/rect.h"
+#include "impeller/geometry/size.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
@@ -3376,21 +3378,84 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
   }
 }
 
-TEST_P(AiksTest, EntityPassClipRecorderRestoresCancelOutClips) {
+TEST_P(AiksTest, CanDrawPerspectiveTransformWithClips) {
+  // Avoiding `GetSecondsElapsed()` to reduce risk of golden flakiness.
+  int time = 0;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    Canvas canvas;
+
+    canvas.Save();
+    {
+      canvas.Translate({300, 300});
+
+      // 1. Draw/restore a clip before drawing the image, which will get drawn
+      //    to the depth buffer behind the image.
+      canvas.Save();
+      {
+        canvas.DrawPaint({.color = Color::Green()});
+        canvas.ClipRect(Rect::MakeLTRB(-180, -180, 180, 180),
+                        Entity::ClipOperation::kDifference);
+        canvas.DrawPaint({.color = Color::Black()});
+      }
+      canvas.Restore();  // Restore rectangle difference clip.
+
+      canvas.Save();
+      {
+        // 2. Draw an oval clip that applies to the image, which will get drawn
+        //    in front of the image on the depth buffer.
+        canvas.ClipOval(Rect::MakeLTRB(-200, -200, 200, 200));
+
+        // 3. Draw the rotating image with a perspective transform.
+        canvas.Transform(
+            Matrix(1.0, 0.0, 0.0, 0.0,    //
+                   0.0, 1.0, 0.0, 0.0,    //
+                   0.0, 0.0, 1.0, 0.003,  //
+                   0.0, 0.0, 0.0, 1.0) *  //
+            Matrix::MakeRotationY({Radians{-1.0f + (time++ / 60.0f)}}));
+        auto image =
+            std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+        canvas.DrawImage(image, -Point(image->GetSize()) / 2, {});
+      }
+      canvas.Restore();  // Restore oval intersect clip.
+
+      // 4. Draw a semi-translucent blue circle atop all previous draws.
+      canvas.DrawCircle({}, 230, {.color = Color::Blue().WithAlpha(0.4)});
+    }
+    canvas.Restore();  // Restore translation.
+
+    return canvas.EndRecordingAsPicture();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
   Canvas canvas;
-  canvas.Save();
-  canvas.ClipRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});
-  canvas.DrawRRect(Rect::MakeLTRB(0, 0, 100, 100), {10, 10}, {});
-  canvas.Restore();
-  canvas.DrawRRect(Rect::MakeLTRB(0, 0, 50, 50), {10, 10}, {});
+  Paint paint;
 
-  Picture picture = canvas.EndRecordingAsPicture();
+  canvas.Scale(GetContentScale());
 
-  AiksContext renderer(GetContext(), nullptr);
-  std::shared_ptr<Image> image = picture.ToImage(renderer, {300, 300});
+  // Draw something interesting in the background.
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      1.0,
+  };
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {100, 100}, std::move(colors), std::move(stops),
+      Entity::TileMode::kRepeat, {});
+  canvas.DrawPaint(paint);
 
-  EXPECT_EQ(
-      picture.pass->GetEntityPassClipRecorder().GetReplayEntities().size(), 0u);
+  Rect clip_rect = Rect::MakeLTRB(50, 50, 400, 300);
+
+  // Draw a clipped SaveLayer, where the clip coverage and SaveLayer size are
+  // the same.
+  canvas.ClipRRect(clip_rect, Size(100, 100),
+                   Entity::ClipOperation::kIntersect);
+  canvas.SaveLayer({}, clip_rect,
+                   ImageFilter::MakeFromColorFilter(*ColorFilter::MakeBlend(
+                       BlendMode::kExclusion, Color::Red())));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 }  // namespace testing

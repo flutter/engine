@@ -144,6 +144,7 @@
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/checkerboard_contents_unittests.cc
+../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/content_context_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
@@ -152,6 +153,7 @@
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/vertices_contents_unittests.cc
 ../../../flutter/impeller/entity/entity_pass_target_unittests.cc
+../../../flutter/impeller/entity/entity_pass_unittests.cc
 ../../../flutter/impeller/entity/entity_unittests.cc
 ../../../flutter/impeller/entity/geometry/geometry_unittests.cc
 ../../../flutter/impeller/entity/render_target_cache_unittests.cc
@@ -176,6 +178,7 @@
 ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/driver_info_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk_unittests.cc
+../../../flutter/impeller/renderer/backend/vulkan/render_pass_builder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/render_pass_cache_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/resource_manager_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/swapchain/README.md
@@ -2230,7 +2233,7 @@
 ../../../flutter/third_party/skia/.git
 ../../../flutter/third_party/skia/.gitignore
 ../../../flutter/third_party/skia/.gn
-../../../flutter/third_party/skia/.vpython
+../../../flutter/third_party/skia/.vpython3
 ../../../flutter/third_party/skia/AUTHORS
 ../../../flutter/third_party/skia/BUILD.bazel
 ../../../flutter/third_party/skia/CONTRIBUTING
@@ -2277,7 +2280,6 @@
 ../../../flutter/third_party/skia/gn/find_headers.py
 ../../../flutter/third_party/skia/gn/find_msvc.py
 ../../../flutter/third_party/skia/gn/find_xcode_sysroot.py
-../../../flutter/third_party/skia/gn/gen_plist_ios.py
 ../../../flutter/third_party/skia/gn/gn_meta_sln.py
 ../../../flutter/third_party/skia/gn/gn_to_bp.py
 ../../../flutter/third_party/skia/gn/gn_to_bp_utils.py
@@ -3144,6 +3146,7 @@
 ../../../fuchsia/sdk/linux/pkg/vulkan/meta.json
 ../../../fuchsia/sdk/linux/pkg/vulkan_layers/meta.json
 ../../../fuchsia/sdk/linux/pkg/zx/meta.json
+../../../fuchsia/sdk/linux/python/rtc_conformance_test/meta.json
 ../../../fuchsia/sdk/linux/tools
 ../../../fuchsia/sdk/linux/version_history.json
 ../../../out
@@ -3401,12 +3404,15 @@
 ../../../third_party/dart/sdk/lib/vmservice_libraries.json
 ../../../third_party/dart/sdk/lib/vmservice_libraries.yaml
 ../../../third_party/dart/sdk/version
+../../../third_party/dart/sdk_packages.yaml
 ../../../third_party/dart/tests
 ../../../third_party/dart/third_party/.gitignore
 ../../../third_party/dart/third_party/OWNERS
 ../../../third_party/dart/third_party/binary_size
 ../../../third_party/dart/third_party/binaryen
 ../../../third_party/dart/third_party/clang.tar.gz.sha1
+../../../third_party/dart/third_party/cpu_features/OWNERS
+../../../third_party/dart/third_party/cpu_features/README.chromium
 ../../../third_party/dart/third_party/d3
 ../../../third_party/dart/third_party/d8
 ../../../third_party/dart/third_party/devtools
