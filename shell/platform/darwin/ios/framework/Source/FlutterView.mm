@@ -122,9 +122,9 @@ static void PrintWideGamutWarningOnce() {
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
       CFRelease(srgb);
-      // MTLPixelFormatBGR10_XR was chosen since it is compatible with
+      // MTLPixelFormatBGRA10_XR was chosen since it is compatible with
       // impeller's offscreen buffers which need to have transparency.
-      layer.pixelFormat = MTLPixelFormatBGR10_XR;
+      layer.pixelFormat = MTLPixelFormatBGRA10_XR;
     } else if (_isWideGamutEnabled && !isWideGamutSupported) {
       PrintWideGamutWarningOnce();
     }

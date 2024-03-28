@@ -259,6 +259,9 @@ extern CFTimeInterval display_link_target;
   } else if (self.pixelFormat == MTLPixelFormatBGRA8Unorm) {
     pixelFormat = kCVPixelFormatType_32BGRA;
     bytesPerElement = 4;
+  } else if (self.pixelFormat == MTLPixelFormatBGRA10_XR) {
+    // TODO;
+    return nil;
   } else {
     FML_LOG(ERROR) << "Unsupported pixel format: " << self.pixelFormat;
     return nil;
