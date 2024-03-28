@@ -182,7 +182,8 @@ class RuntimeController : public PlatformConfigurationClient {
   ///             triggers an assertion.
   ///
   ///             If the isolate is not running, the view will be saved and
-  ///             flushed to the isolate when it starts.
+  ///             flushed to the isolate when it starts. The `callback` will
+  ///             be invoked after the flush.
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
@@ -196,7 +197,11 @@ class RuntimeController : public PlatformConfigurationClient {
   //----------------------------------------------------------------------------
   /// @brief      Notify the isolate that a view is no longer available.
   ///
-  ///             Removing a view that does not exist triggers an assertion.
+  ///             Views that are added before the isolate is started are
+  ///             queued until the isolate is launched. If one of these
+  ///             "pending" views are removed, the view add is cancelled:
+  ///             the `AddViewCallback` will be invoked with an `added` of
+  ///             false and `RemoveView` will return false.
   ///
   ///             The implicit view (kFlutterImplicitViewId) should never be
   ///             removed. Doing so triggers an assertion.
@@ -204,8 +209,9 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @param[in]  view_id  The ID of the view.
   ///
   /// @return     If the remove view operation was forwarded to the running
-  ///             isolate.
-  ///
+  ///             isolate. False if the view does not exist. If the Dart isolate
+  ///             is not running, then the pending view creation (if any) is
+  ///             cancelled and the return value is always false.
   bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
@@ -678,6 +684,7 @@ class RuntimeController : public PlatformConfigurationClient {
   // Callbacks when `AddView` was called before the Dart isolate is launched.
   //
   // These views will be added when `FlushRuntimeStateToIsolate` is called.
+  // This is no longer used once the Dart isolate starts.
   std::unordered_map<int64_t, AddViewCallback> pending_add_view_callbacks_;
 
   // Tracks the views that have been called `Render` during a frame.
