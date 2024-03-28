@@ -275,7 +275,8 @@ class FlutterConfiguration {
   ///
   /// Limits the amount of overlays that can be created.
   int get canvasKitMaximumSurfaces {
-    int maxSurfaces = _configuration?.canvasKitMaximumSurfaces?.toInt() ?? 8;
+    final int maxSurfaces =
+        _configuration?.canvasKitMaximumSurfaces?.toInt() ?? 8;
     if (maxSurfaces < 1) {
       return 1;
     }
