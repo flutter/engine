@@ -30,6 +30,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/rect.h"
+#include "impeller/geometry/size.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
@@ -1098,6 +1099,76 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   canvas.DrawCircle(Point(550, 250), 100, paint);
   paint.color = Color::Blue();
   canvas.DrawCircle(Point(500, 150), 100, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// This makes sure the WideGamut named tests use 16bit float pixel format.
+TEST_P(AiksTest, F16WideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  EXPECT_FALSE(IsAlphaClampedToOne(
+      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+}
+
+TEST_P(AiksTest, NotF16) {
+  EXPECT_TRUE(IsAlphaClampedToOne(
+      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+}
+
+// Bug: https://github.com/flutter/flutter/issues/142549
+TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({.color = Color(0.9, 1.0, 0.9, 1.0)});
+  canvas.SaveLayer({});
+  Paint paint;
+  paint.blend_mode = BlendMode::kPlus;
+  paint.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 400, 400), paint);
+  paint.color = Color::White();
+  canvas.DrawImageRect(
+      std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
+      Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Bug: https://github.com/flutter/flutter/issues/142549
+TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({.color = Color(0.1, 0.2, 0.1, 1.0)});
+  canvas.SaveLayer({
+      .color_filter =
+          ColorFilter::MakeBlend(BlendMode::kPlus, Color(Vector4{1, 0, 0, 1})),
+  });
+  Paint paint;
+  paint.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 400, 400), paint);
+  paint.color = Color::White();
+  canvas.DrawImageRect(
+      std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
+      Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
+  canvas.Restore();
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -3425,6 +3496,36 @@ TEST_P(AiksTest, CanDrawPerspectiveTransformWithClips) {
     return canvas.EndRecordingAsPicture();
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
+  Canvas canvas;
+  Paint paint;
+
+  canvas.Scale(GetContentScale());
+
+  // Draw something interesting in the background.
+  std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                               Color{0.1294, 0.5882, 0.9529, 1.0}};
+  std::vector<Scalar> stops = {
+      0.0,
+      1.0,
+  };
+  paint.color_source = ColorSource::MakeLinearGradient(
+      {0, 0}, {100, 100}, std::move(colors), std::move(stops),
+      Entity::TileMode::kRepeat, {});
+  canvas.DrawPaint(paint);
+
+  Rect clip_rect = Rect::MakeLTRB(50, 50, 400, 300);
+
+  // Draw a clipped SaveLayer, where the clip coverage and SaveLayer size are
+  // the same.
+  canvas.ClipRRect(clip_rect, Size(100, 100),
+                   Entity::ClipOperation::kIntersect);
+  canvas.SaveLayer({}, clip_rect,
+                   ImageFilter::MakeFromColorFilter(*ColorFilter::MakeBlend(
+                       BlendMode::kExclusion, Color::Red())));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 }  // namespace testing
