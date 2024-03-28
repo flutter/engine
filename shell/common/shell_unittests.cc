@@ -4504,8 +4504,10 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(2, ViewportMetrics{}); });
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    shell->AddView(2, ViewportMetrics{},
+                   [](bool added) { EXPECT_TRUE(added); });
+  });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
@@ -4519,8 +4521,10 @@ TEST_F(ShellTest, ShellCanAddViewOrRemoveView) {
   ASSERT_EQ(viewIds.size(), 1u);
   ASSERT_EQ(viewIds[0], 0ll);
 
-  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(),
-           [&shell] { shell->AddView(4, ViewportMetrics{}); });
+  PostSync(shell->GetTaskRunners().GetPlatformTaskRunner(), [&shell] {
+    shell->AddView(4, ViewportMetrics{},
+                   [](bool added) { EXPECT_TRUE(added); });
+  });
   reportLatch.Wait();
   ASSERT_TRUE(hasImplicitView);
   ASSERT_EQ(viewIds.size(), 2u);
@@ -4570,7 +4574,8 @@ TEST_F(ShellTest, ShellFlushesPlatformStatesByMain) {
     // The construtor for ViewportMetrics{_, width, _, _, _} (only the 2nd
     // argument matters in this test).
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 10, 1, 0, 0});
-    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0});
+    shell->AddView(1, ViewportMetrics{1, 30, 1, 0, 0},
+                   [](bool added) { ASSERT_TRUE(added); });
     platform_view->SetViewportMetrics(0, ViewportMetrics{1, 20, 1, 0, 0});
   });
 
