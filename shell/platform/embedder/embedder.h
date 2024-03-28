@@ -1731,6 +1731,9 @@ typedef struct {
   size_t struct_size;
   /// The size of the render target the engine expects to render into.
   FlutterSize size;
+  /// The identifier for the view that the engine will use this backing store to
+  /// render into.
+  FlutterViewId view_id;
 } FlutterBackingStoreConfig;
 
 typedef enum {
