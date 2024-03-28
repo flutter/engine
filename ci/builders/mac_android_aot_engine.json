@@ -37,7 +37,15 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--runtime-mode",
+                    "profile",
+                    "--android",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "archives": [
@@ -77,7 +85,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--runtime-mode",
+                    "profile",
+                    "--android",
+                    "--android-cpu=arm64",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "archives": [
@@ -117,7 +134,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--runtime-mode",
+                    "profile",
+                    "--android",
+                    "--android-cpu=x64",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "archives": [
@@ -156,7 +182,15 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                     "--runtime-mode",
+                     "release",
+                     "--android",
+		     "--no-rbe"
+                ]
+	    }
         },
         {
             "archives": [
@@ -196,7 +230,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--runtime-mode",
+                    "release",
+                    "--android",
+                    "--android-cpu=arm64",
+		    "--no-rbe"
+                ]
+	    }
         },
         {
             "archives": [
@@ -236,7 +279,16 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--runtime-mode",
+                    "release",
+                    "--android",
+                    "--android-cpu=x64",
+		    "--no-rbe"
+                ]
+	    }
         }
     ],
     "generators": {},
