@@ -236,7 +236,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
     final int characterPosition = switch (position.affinity) {
       ui.TextAffinity.upstream => position.offset - 1,
       ui.TextAffinity.downstream => position.offset,
-    }
+    };
     paragraphGetWordBoundary(handle, characterPosition, outRange);
     return ui.TextRange(start: outRange[0], end: outRange[1]);
   });
