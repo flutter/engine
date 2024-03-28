@@ -222,5 +222,16 @@ TEST(ContextVKTest, WarmUpFunctionCreatesRenderPass) {
                         "vkCreateRenderPass") != functions->end());
 }
 
+TEST(ContextVKTest, FatalMissingValidations) {
+  EXPECT_DEATH(const std::shared_ptr<ContextVK> context =
+                   MockVulkanContextBuilder()
+                       .SetSettingsCallback([](ContextVK::Settings& settings) {
+                         settings.enable_validation = true;
+                         settings.fatal_missing_validations = true;
+                       })
+                       .Build(),
+               "");
+}
+
 }  // namespace testing
 }  // namespace impeller
