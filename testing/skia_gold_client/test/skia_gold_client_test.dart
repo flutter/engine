@@ -596,7 +596,7 @@ final class _TestFixture {
     ReleaseVersion? engineVersion,
   }) {
     workDirectory = rootDirectory.createTempSync('working');
-    
+
     // Create the engine/src directory.
     engineSrcDir = io.Directory(p.join(rootDirectory.path, 'engine', 'src'));
     engineSrcDir.createSync(recursive: true);

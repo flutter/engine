@@ -32,7 +32,7 @@ final class ReleaseVersion {
   }
 
   /// Parses a [ReleaseVersion] from the contents of a `release.version` file.
-  /// 
+  ///
   /// Returns `null` if and only if the version is parsed as the string `none`.
   ///
   /// The format of the file is plaintext, and any lines that are empty
@@ -48,7 +48,7 @@ final class ReleaseVersion {
   /// ```
   ///
   /// ... would parse to `ReleaseVersion(major: 3, minior: 21)`.
-  /// 
+  ///
   /// Throws a [FormatException] if the file contents are not in the expected
   /// format (either empty/comments only, or missing a `major.minor` line in
   /// the format described in [ReleaseVersion.new]).

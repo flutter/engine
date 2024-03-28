@@ -24,7 +24,7 @@ const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
 
 /// Uploads images and makes baseline requests to Skia Gold.
-/// 
+///
 /// For an example of how to use this class, see `tool/e2e_test.dart`.
 interface class SkiaGoldClient {
   /// Creates a [SkiaGoldClient] with the given [workDirectory].
@@ -32,7 +32,7 @@ interface class SkiaGoldClient {
   /// A set of [dimensions] can be provided to add attributes about the
   /// environment used to generate the screenshots, which are treated as keys
   /// for the image:
-  /// 
+  ///
   /// ```dart
   /// final SkiaGoldClient skiaGoldClient = SkiaGoldClient(
   ///   someDir,
@@ -41,7 +41,7 @@ interface class SkiaGoldClient {
   ///   },
   /// );
   /// ```
-  /// 
+  ///
   /// The [verbose] flag is intended for use in debugging CI issues, and
   /// produces more detailed output that some may find useful, but would be too
   /// spammy for regular use.
@@ -58,10 +58,10 @@ interface class SkiaGoldClient {
   }
 
   /// Creates a [SkiaGoldClient] for testing.
-  /// 
+  ///
   /// Similar to the default constructor, but allows for dependency injection
   /// for testing purposes:
-  /// 
+  ///
   /// - [httpClient] makes requests to Skia Gold to fetch expectations.
   /// - [processManager] launches sub-processes.
   /// - [stderr] is where output is written for diagnostics.
@@ -309,13 +309,13 @@ interface class SkiaGoldClient {
   /// determined by the [pixelColorDelta] parameter. It's in the range [0.0,
   /// 1.0] and defaults to 0.01. A value of 0.01 means that 1% of the pixels are
   /// allowed to be different.
-  /// 
+  ///
   /// ## Release Testing
-  /// 
+  ///
   /// In release branches, we add a unique test suffix to the test name. For
   /// example "testName" -> "testName_Release_3_21", based on the version in the
   /// `.engine-release.version` file at the root of the engine repository.
-  /// 
+  ///
   /// See <../README.md#release-testing> for more information.
   Future<void> addImg(
     String testName,
