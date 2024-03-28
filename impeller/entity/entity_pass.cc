@@ -787,19 +787,6 @@ bool EntityPass::RenderElement(Entity& element_entity,
     return false;
   }
 
-  if (result.just_created) {
-    // Restore any clips that were recorded before the backdrop filter was
-    // applied.
-    auto& replay_entities = clip_coverage_stack.GetReplayEntities();
-    for (const auto& replay : replay_entities) {
-      SetClipScissor(clip_coverage_stack.CurrentClipCoverage(), *result.pass,
-                     global_pass_position);
-      if (!replay.entity.Render(renderer, *result.pass)) {
-        VALIDATION_LOG << "Failed to render entity for clip restore.";
-      }
-    }
-  }
-
   // If the pass context returns a backdrop texture, we need to draw it to the
   // current pass. We do this because it's faster and takes significantly less
   // memory than storing/loading large MSAA textures. Also, it's not possible to
@@ -820,6 +807,19 @@ bool EntityPass::RenderElement(Entity& element_entity,
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
+    }
+  }
+
+  if (result.just_created) {
+    // Restore any clips that were recorded before the backdrop filter was
+    // applied.
+    auto& replay_entities = clip_coverage_stack.GetReplayEntities();
+    for (const auto& replay : replay_entities) {
+      SetClipScissor(clip_coverage_stack.CurrentClipCoverage(), *result.pass,
+                     global_pass_position);
+      if (!replay.entity.Render(renderer, *result.pass)) {
+        VALIDATION_LOG << "Failed to render entity for clip restore.";
+      }
     }
   }
 
