@@ -51,8 +51,13 @@ class Window;
 class RuntimeController : public PlatformConfigurationClient {
  public:
   /// A callback that's invoked after this `RuntimeController` attempts to
-  /// add a view to the Dart isolate. The `added` parameter is true if the add
-  /// operation succeeds.
+  /// add a view to the Dart isolate.
+  ///
+  /// If the Dart isolate is not launched yet, this callback will be stored
+  /// and invoked after the isolate is launched.
+  ///
+  /// The `added` parameter is false if the add operation fails or was
+  /// cancelled using `RemoveView`.
   using AddViewCallback = std::function<void(bool added)>;
 
   //----------------------------------------------------------------------------
@@ -179,16 +184,20 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   ///             A view must be added before other methods can refer to it,
   ///             including the implicit view. Adding a view that already exists
-  ///             triggers an assertion.
+  ///             is an error.
   ///
-  ///             If the isolate is not running, the view will be saved and
-  ///             flushed to the isolate when it starts. The `callback` will
-  ///             be invoked after the flush.
+  ///             The `callback` is invoked when the add operation is attempted,
+  ///             failed, or is cancelled.
+  ///
+  ///             If the isolate is not running, the view add will be queued and
+  ///             flushed to the isolate when it starts. Calling `RemoveView`
+  ///             before the isolate is launched cancels the add operation.
+  ///
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   /// @param[in]  callback          Callback that will be invoked after the add
-  ///                               operation is attempted.
+  ///                               operation is attempted or cancelled.
   ///
   void AddView(int64_t view_id,
                const ViewportMetrics& view_metrics,
