@@ -124,9 +124,9 @@ void FlutterCompositor::ViewPresenter::PresentPlatformViews(
   NSMutableArray<FlutterMutatorView*>* present_mutators = [NSMutableArray array];
 
   for (const auto& platform_view : platform_views) {
-    [present_mutators
-        addObject:PresentPlatformView(default_base_view, platform_view.first, platform_view.second,
-                                      platform_view_controller)];
+    FlutterMutatorView* container = PresentPlatformView(
+        default_base_view, platform_view.first, platform_view.second, platform_view_controller);
+    [present_mutators addObject:container];
   }
 
   NSMutableArray<FlutterMutatorView*>* obsolete_mutators =

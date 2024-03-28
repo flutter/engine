@@ -82,6 +82,8 @@ class FlutterCompositor {
         const PlatformViewLayer& layer,
         size_t layer_position,
         const FlutterPlatformViewController* platform_views_controller);
+
+    FML_DISALLOW_COPY_AND_ASSIGN(ViewPresenter);
   };
 
   // Where the compositor can query FlutterViews. Must not be null.
