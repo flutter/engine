@@ -62,6 +62,9 @@
     if (pixelFormat == MTLPixelFormatRGBA16Float) {
       self->_colorSpaceRef = fml::CFRef(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB));
       layer.colorspace = self->_colorSpaceRef;
+    } else if (pixelFormat == MTLPixelFormatBGR10_XR) {
+      self->_colorSpaceRef = fml::CFRef(CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB));
+      layer.colorspace = self->_colorSpaceRef;
     }
   }
   return self;
