@@ -154,6 +154,7 @@ class PointerData {
 }
 
 class PointerDataPacket {
-  const PointerDataPacket({this.data = const <PointerData>[]});
+  PointerDataPacket({this.data = const <PointerData>[]});
   final List<PointerData> data;
+  bool handled = true;
 }
