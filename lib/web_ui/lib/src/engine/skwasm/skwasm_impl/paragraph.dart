@@ -233,7 +233,14 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) => withStackScope((StackScope scope) {
     final Pointer<Int32> outRange = scope.allocInt32Array(2);
-    paragraphGetWordBoundary(handle, position.offset, outRange);
+    final int characterPosition;
+    switch (position.affinity) {
+      case ui.TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+      case ui.TextAffinity.downstream:
+        characterPosition = position.offset;
+    }
+    paragraphGetWordBoundary(handle, characterPosition, outRange);
     return ui.TextRange(start: outRange[0], end: outRange[1]);
   });
 
