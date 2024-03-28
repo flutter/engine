@@ -77,10 +77,11 @@ class FlutterCompositor {
     // Presents the platform view layer represented by `layer`. `layer_index` is
     // used to position the layer in the z-axis. If the layer does not have a
     // superview, it will become subview of `default_base_view`.
-    FlutterMutatorView* PresentPlatformView(FlutterView* default_base_view,
-                                            const PlatformViewLayer& layer,
-                                            size_t layer_position,
-                                            const FlutterPlatformViewController* platform_views_controller);
+    FlutterMutatorView* PresentPlatformView(
+        FlutterView* default_base_view,
+        const PlatformViewLayer& layer,
+        size_t layer_position,
+        const FlutterPlatformViewController* platform_views_controller);
   };
 
   // Where the compositor can query FlutterViews. Must not be null.

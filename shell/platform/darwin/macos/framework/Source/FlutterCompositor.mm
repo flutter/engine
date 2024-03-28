@@ -98,20 +98,20 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
   auto platform_views_layers = std::make_shared<std::vector<PlatformViewLayerWithIndex>>(
       CopyPlatformViewLayers(layers, layers_count));
 
-  [view.surfaceManager
-      presentSurfaces:surfaces
-               atTime:presentation_time
-               notify:^{
-                  // Gets a presenter or create a new one for the view.
-                  ViewPresenter& presenter = presenters_[view_id];
-                  presenter.PresentPlatformViews(view, *platform_views_layers, platform_view_controller_);
-               }];
+  [view.surfaceManager presentSurfaces:surfaces
+                                atTime:presentation_time
+                                notify:^{
+                                  // Gets a presenter or create a new one for the view.
+                                  ViewPresenter& presenter = presenters_[view_id];
+                                  presenter.PresentPlatformViews(view, *platform_views_layers,
+                                                                 platform_view_controller_);
+                                }];
 
   return true;
 }
 
-FlutterCompositor::ViewPresenter::ViewPresenter() :
-      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {}
+FlutterCompositor::ViewPresenter::ViewPresenter()
+    : mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {}
 
 void FlutterCompositor::ViewPresenter::PresentPlatformViews(
     FlutterView* default_base_view,
@@ -124,8 +124,9 @@ void FlutterCompositor::ViewPresenter::PresentPlatformViews(
   NSMutableArray<FlutterMutatorView*>* present_mutators = [NSMutableArray array];
 
   for (const auto& platform_view : platform_views) {
-    [present_mutators addObject:PresentPlatformView(default_base_view, platform_view.first,
-                                                    platform_view.second, platform_view_controller)];
+    [present_mutators
+        addObject:PresentPlatformView(default_base_view, platform_view.first, platform_view.second,
+                                      platform_view_controller)];
   }
 
   NSMutableArray<FlutterMutatorView*>* obsolete_mutators =
