@@ -55,7 +55,8 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
   int x_max = INT_MIN;
   int y_min = INT_MAX;
   int y_max = INT_MIN;
-  for (const FlutterLayer** layer = layers; layer < layers + layers_count; layer++) {
+  for (const FlutterLayer** layer = layers; layer < layers + layers_count;
+       layer++) {
     auto& offset = (*layer)->offset;
     auto& size = (*layer)->size;
     x_min = std::min(x_min, static_cast<int>(offset.x));
@@ -68,13 +69,15 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
   int height = y_max - y_min;
   std::vector<uint32_t> allocation(width * height);
 
-  for (const FlutterLayer** layer = layers; layer < layers + layers_count; layer++) {
+  for (const FlutterLayer** layer = layers; layer < layers + layers_count;
+       layer++) {
     // TODO(schectman): handle platform view type layers.
     // https://github.com/flutter/flutter/issues/143375
     FML_DCHECK((*layer)->type == kFlutterLayerContentTypeBackingStore);
     auto& backing_store = *(*layer)->backing_store;
     FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
-    auto src_data = static_cast<const uint32_t*>(backing_store.software.allocation);
+    auto src_data =
+        static_cast<const uint32_t*>(backing_store.software.allocation);
     auto& offset = (*layer)->offset;
     auto& size = (*layer)->size;
 
@@ -117,7 +120,8 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
     }
   }
 
-  return view->PresentSoftwareBitmap(static_cast<void*>(allocation.data()), width * 4, height);
+  return view->PresentSoftwareBitmap(static_cast<void*>(allocation.data()),
+                                     width * 4, height);
 }
 
 }  // namespace flutter

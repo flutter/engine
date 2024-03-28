@@ -184,8 +184,10 @@ TEST_F(CompositorSoftwareTest, PresentMultiLayers) {
   uint32_t pixels0[4] = {0xff000000, 0xff0000ff, 0xff00ff00, 0xffffffff};
   uint32_t pixels1[4] = {0x7f0000ff, 0x00ffffff, 0x7fff0000, 0xff000000};
 
-  std::memcpy(const_cast<void*>(backing_store0.software.allocation), pixels0, sizeof(uint32_t) * 4);
-  std::memcpy(const_cast<void*>(backing_store1.software.allocation), pixels1, sizeof(uint32_t) * 4);
+  std::memcpy(const_cast<void*>(backing_store0.software.allocation), pixels0,
+              sizeof(uint32_t) * 4);
+  std::memcpy(const_cast<void*>(backing_store1.software.allocation), pixels1,
+              sizeof(uint32_t) * 4);
 
   FlutterLayer layer0 = {};
   layer0.type = kFlutterLayerContentTypeBackingStore;
@@ -197,14 +199,15 @@ TEST_F(CompositorSoftwareTest, PresentMultiLayers) {
   layer1.backing_store = &backing_store1;
   const FlutterLayer* layer_ptr[2] = {&layer0, &layer1};
 
-  EXPECT_CALL(*view(), PresentSoftwareBitmap).WillOnce([&](const void* allocation, size_t row_bytes, size_t height){
-    auto pixel_data = static_cast<const uint32_t*>(allocation);
-    EXPECT_EQ(pixel_data[0], 0xff00007f);
-    EXPECT_EQ(pixel_data[1], 0xff0000ff);
-    EXPECT_EQ(pixel_data[2], 0xff7f8000);
-    EXPECT_EQ(pixel_data[3], 0xff000000);
-    return true;
-  });
+  EXPECT_CALL(*view(), PresentSoftwareBitmap)
+      .WillOnce([&](const void* allocation, size_t row_bytes, size_t height) {
+        auto pixel_data = static_cast<const uint32_t*>(allocation);
+        EXPECT_EQ(pixel_data[0], 0xff00007f);
+        EXPECT_EQ(pixel_data[1], 0xff0000ff);
+        EXPECT_EQ(pixel_data[2], 0xff7f8000);
+        EXPECT_EQ(pixel_data[3], 0xff000000);
+        return true;
+      });
   EXPECT_TRUE(compositor.Present(view()->view_id(), layer_ptr, 2));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store0));
