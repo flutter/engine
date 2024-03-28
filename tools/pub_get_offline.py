@@ -26,6 +26,7 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'testing', 'benchmark'),
     os.path.join(ENGINE_DIR, 'testing', 'dart'),
     os.path.join(ENGINE_DIR, 'testing', 'litetest'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'testing', 'scenario_app'),
     os.path.join(ENGINE_DIR, 'testing', 'skia_gold_client'),
     os.path.join(ENGINE_DIR, 'testing', 'smoke_test_failure'),
@@ -91,6 +92,8 @@ EXCLUDED_DIRS = [
     os.path.join(ENGINE_DIR, 'shell', 'platform', 'fuchsia'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
     os.path.join(ENGINE_DIR, 'sky', 'packages'),
+    # FIXME: Do not submit, this is just to validate everything works on CI.
+    os.path.join(ENGINE_DIR, 'third_party', 'tools', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'third_party'),
     os.path.join(ENGINE_DIR, 'web_sdk'),
 ]
