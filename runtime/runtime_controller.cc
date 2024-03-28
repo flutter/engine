@@ -175,6 +175,8 @@ void RuntimeController::AddView(int64_t view_id,
     return;
   }
 
+  FML_DCHECK(has_flushed_runtime_state_ || pending_add_view_callbacks_.empty());
+
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   bool added = platform_configuration->AddView(view_id, view_metrics);
   callback(added);
