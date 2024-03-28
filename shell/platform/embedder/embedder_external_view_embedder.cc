@@ -314,7 +314,7 @@ class LayerBuilder {
   }
 
   /// Prepares the render targets for all layers that have Flutter contents.
-  void PrepareBackingStore(RenderTargetProvider target_provider) {
+  void PrepareBackingStore(const RenderTargetProvider& target_provider) {
     for (auto& layer : layers_) {
       if (layer.has_flutter_contents()) {
         layer.SetRenderTarget(target_provider(frame_size_));
