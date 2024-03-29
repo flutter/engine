@@ -45,4 +45,9 @@ void main() {
       dst * (frag_info.dst_coeff + src.a * frag_info.dst_coeff_src_alpha +
              src * frag_info.dst_coeff_src_color);
   frag_color *= frag_info.output_alpha;
+  // This currently needs a clamp so that floating point textures blend
+  // correctly in wide gamut. Remove if we switch to a fixed point extended
+  // range format.
+  float16_t clamped_alpha = clamp(frag_color.a, 0.0hf, 1.0hf);
+  frag_color.a = clamped_alpha;
 }
