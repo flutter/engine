@@ -54,6 +54,12 @@ class TiledTextureContents final : public ColorSourceContents {
   /// much smaller size that its original texture size.
   void SetColorFilter(ColorFilterProc color_filter);
 
+  const std::shared_ptr<Texture>& GetTexture() const;
+
+  const SamplerDescriptor& GetSamplerDescriptor() const;
+
+  std::pair<Entity::TileMode, Entity::TileMode> GetTileModes() const;
+
   // |Contents|
   std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,

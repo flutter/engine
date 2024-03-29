@@ -4,11 +4,13 @@
 
 #include "impeller/aiks/canvas.h"
 
+#include <memory>
 #include <optional>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/aiks/color_source.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -18,8 +20,10 @@
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 
@@ -881,6 +885,29 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   // are vertex coordinates then only if the contents are an image.
   if (UseColorSourceContents(vertices, paint)) {
     entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
+    AddEntityToCurrentPass(std::move(entity));
+    return;
+  }
+
+  // If there is are per-vertex colors, an image, and the blend mode
+  // is simple we can draw without a sub-renderpass.
+  if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors() &&
+      paint.color_source.GetType() == ColorSource::Type::kImage) {
+    auto contents = std::make_shared<VerticesSimpleBlendContents>();
+    contents->SetBlendMode(blend_mode);
+    contents->SetAlpha(paint.color.alpha);
+    contents->SetGeometry(vertices);
+
+    // Turbo hack.
+    auto color_contents = std::reinterpret_pointer_cast<TiledTextureContents>(
+        paint.color_source.GetContents(paint));
+
+    contents->SetEffectTransform(color_contents->GetInverseEffectTransform());
+    contents->SetTexture(color_contents->GetTexture());
+    auto [tmx, tmy] = color_contents->GetTileModes();
+    contents->SetTileMode(tmx, tmy);
+
+    entity.SetContents(paint.WithFilters(std::move(contents)));
     AddEntityToCurrentPass(std::move(entity));
     return;
   }
