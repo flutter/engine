@@ -18,12 +18,6 @@ analyzer:
   exclude: # DIFFERENT FROM FLUTTER/FLUTTER
     # Fixture depends on dart:ui and raises false positives.
     - flutter_frontend_server/test/fixtures/lib/main.dart
-    - examples/
-    - impeller/
-    - prebuilts/
-    - runtime/
-    - shell/
-    - third_party/
 
 linter:
   rules:
