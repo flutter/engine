@@ -33,7 +33,7 @@ xcuserdata
 .dart_tool/**
 !.dart_tool/package_config.json
 # But ignore the .dart_tool directory in any subdirectories.
-**/.dart_tool/
+*/**/.dart_tool/
 
 # Miscellaneous
 *.class
