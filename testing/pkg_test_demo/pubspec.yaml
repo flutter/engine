@@ -21,6 +21,8 @@ dev_dependencies:
 dependency_overrides:
   _fe_analyzer_shared:
     path: ../../../third_party/dart/pkg/_fe_analyzer_shared
+  _macros:
+    path: ../../../third_party/dart/pkg/_macros
   analyzer:
     path: ../../../third_party/dart/pkg/analyzer
   args:
@@ -33,9 +35,8 @@ dependency_overrides:
     path: ../../../third_party/dart/third_party/pkg/collection
   convert:
     path: ../../../third_party/dart/third_party/pkg/convert
-  # TODO(matanlurey): Add this package to flutter.googlesource.com and use.
-  # coverage:
-  #   path: ../../../third_party/dart/third_party/pkg/coverage
+  coverage:
+    path: ../../third_party/pkg/coverage
   crypto:
     path: ../../../third_party/dart/third_party/pkg/crypto
   file:
@@ -48,22 +49,22 @@ dependency_overrides:
     path: ../../../third_party/dart/third_party/pkg/http_multi_server
   http_parser:
     path: ../../../third_party/dart/third_party/pkg/http_parser
-  # TODO(matanlurey): Add this package to flutter.googlesource.com and use.
-  # io:
-  #   path: ../../../third_party/dart/third_party/pkg/io
+  io:
+    path: ../../third_party/pkg/io
   js:
     path: ../../../third_party/dart/pkg/js
   logging:
     path: ../../../third_party/dart/third_party/pkg/logging
+  macros:
+    path: ../../../third_party/dart/pkg/macros
   matcher:
     path: ../../../third_party/dart/third_party/pkg/matcher
   meta:
     path: ../../../third_party/dart/pkg/meta
   mime:
     path: ../../../third_party/dart/third_party/pkg/mime
-  # TODO(matanlurey): Add this package to flutter.googlesource.com and use.
-  # node_preamble:
-  #   path: ../../../third_party/dart/third_party/pkg/node_preamble
+  node_preamble:
+    path: ../../third_party/pkg/node_preamble
   package_config:
     path: ../../../third_party/dart/third_party/pkg/package_config
   path:
