@@ -937,6 +937,7 @@ def build_dart_host_test_list(build_dir):
           ],
       ),
       (os.path.join('flutter', 'testing', 'litetest'), []),
+      (os.path.join('flutter', 'testing', 'pkg_test_demo'), []),
       (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
       (os.path.join('flutter', 'testing', 'scenario_app'), []),
       (
@@ -957,7 +958,6 @@ def build_dart_host_test_list(build_dir):
       (os.path.join('flutter', 'tools', 'engine_tool'), []),
       (os.path.join('flutter', 'tools', 'githooks'), []),
       (os.path.join('flutter', 'tools', 'header_guard_check'), []),
-      (os.path.join('flutter', 'tools', 'pkg_test_demo'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_build_configs'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'engine_repo_tools'), []),
       (os.path.join('flutter', 'tools', 'pkg', 'git_repo_tools'), []),
