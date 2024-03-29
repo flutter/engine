@@ -3227,7 +3227,7 @@ TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-// Fixes https://github.com/flutter/flutter/issues/145707
+// Regression test for https://github.com/flutter/flutter/issues/145707
 TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
   Canvas canvas;
   Paint paint;
@@ -3256,7 +3256,7 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
       vertices, indices, texture_coordinates, vertex_colors,
       Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
 
-  canvas.DrawVertices(geometry, BlendMode::kDestinationIn, paint);
+  canvas.DrawVertices(geometry, BlendMode::kDestinationOver, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

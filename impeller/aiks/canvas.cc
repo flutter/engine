@@ -898,7 +898,6 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     contents->SetAlpha(paint.color.alpha);
     contents->SetGeometry(vertices);
 
-    // Turbo hack.
     auto color_contents = std::reinterpret_pointer_cast<TiledTextureContents>(
         paint.color_source.GetContents(paint));
 
