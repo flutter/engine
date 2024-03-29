@@ -16,6 +16,7 @@
         "debug",
         "--unoptimized",
         "--prebuilt-dart-sdk",
+        "--no-lto",
         "--no-rbe",
         "--no-goma",
         "--xcode-symlinks",
@@ -23,10 +24,6 @@
         "mac_unopt_debug_no_rbe"
       ],
       "name": "mac_unopt_debug_no_rbe",
-      "ninja": {
-        "config": "mac_unopt_debug_no_rbe",
-        "targets": []
-      },
       "tests": [
         {
           "language": "dart",
