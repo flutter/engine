@@ -314,6 +314,8 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
   barrier.subresourceRange.levelCount = 1;
 
   // Blit from the mip level N - 1 to mip level N.
+  size_t width = size.width;
+  size_t height = size.height;
   for (size_t mip_level = 1u; mip_level < mip_count; mip_level++) {
     barrier.subresourceRange.baseMipLevel = mip_level - 1;
     barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -337,14 +339,16 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     blit.dstSubresource.mipLevel = mip_level;
 
     // offsets[0] is origin.
-    blit.dstOffsets[1].x = std::max<int32_t>(size.width >> (mip_level - 1), 1u);
-    blit.dstOffsets[1].y =
-        std::max<int32_t>(size.height >> (mip_level - 1), 1u);
+    blit.srcOffsets[1].x = std::max<int32_t>(width, 1u);
+    blit.srcOffsets[1].y = std::max<int32_t>(height, 1u);
     blit.srcOffsets[1].z = 1u;
 
+    width = width / 2;
+    height = height / 2;
+
     // offsets[0] is origin.
-    blit.dstOffsets[1].x = std::max<int32_t>(size.width >> mip_level, 1u);
-    blit.dstOffsets[1].y = std::max<int32_t>(size.height >> mip_level, 1u);
+    blit.dstOffsets[1].x = std::max<int32_t>(width, 1u);
+    blit.dstOffsets[1].y = std::max<int32_t>(height, 1u);
     blit.dstOffsets[1].z = 1u;
 
     cmd.blitImage(image,                                 // src image
