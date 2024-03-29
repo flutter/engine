@@ -17,10 +17,6 @@ class FlutterViewManager {
   final Map<int, JsFlutterViewOptions> _jsViewOptions =
       <int, JsFlutterViewOptions>{};
 
-  // A map of root elements to their corresponding EngineFlutterView.
-  final Map<DomElement, EngineFlutterView> _elementToView =
-      <DomElement, EngineFlutterView>{};
-
   // The controller of the [onViewCreated] stream.
   final StreamController<int> _onViewCreatedController =
       StreamController<int>.broadcast(sync: true);
@@ -67,7 +63,6 @@ class FlutterViewManager {
 
     // Store the view, and the jsViewOptions, if any...
     _viewData[viewId] = view;
-    _elementToView[view.dom.rootElement] = view;
     if (jsViewOptions != null) {
       _jsViewOptions[viewId] = jsViewOptions;
     }
@@ -90,10 +85,7 @@ class FlutterViewManager {
   ///
   /// Returns its [JsFlutterViewOptions] (if any).
   JsFlutterViewOptions? unregisterView(int viewId) {
-    final EngineFlutterView? unregisteredView = _viewData.remove(viewId);
-    if (unregisteredView != null) {
-      _elementToView.remove(unregisteredView.dom.rootElement);
-    }
+    _viewData.remove(viewId);
     final JsFlutterViewOptions? jsViewOptions = _jsViewOptions.remove(viewId);
     _onViewDisposedController.add(viewId);
     return jsViewOptions;
@@ -108,15 +100,12 @@ class FlutterViewManager {
   }
 
   EngineFlutterView? findViewForElement(DomElement? element) {
-    DomElement? current = element;
-    while (current != null) {
-      final EngineFlutterView? view = _elementToView[current];
-      if (view != null) {
-        return view;
-      }
-      current = current.parent;
-    }
-    return null;
+    const String viewRootSelector =
+        '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
+    final DomElement? viewRoot = element?.closest(viewRootSelector);
+    final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+    final int? viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
+    return viewId == null ? null : _viewData[viewId];
   }
 
   void dispose() {

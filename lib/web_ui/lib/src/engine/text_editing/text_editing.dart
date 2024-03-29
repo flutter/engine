@@ -167,13 +167,11 @@ void _ensureEditingElementInView(DomElement element, int viewId) {
 void _insertEditingElementInView(DomElement element, int viewId) {
   final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
   final EngineFlutterView? view = viewManager[viewId];
-  if (view == null) {
-    // `viewId` points to a non-existent view, is this even possible? Should we
-    // throw?
-    return;
-  }
-
-  view.dom.textEditingHost.append(element);
+  assert(
+    view != null,
+    'Could not find View with id $viewId. This should never happen, please file a bug!',
+  );
+  view!.dom.textEditingHost.append(element);
 }
 
 /// Form that contains all the fields in the same AutofillGroup.

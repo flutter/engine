@@ -2523,7 +2523,7 @@ Future<void> testMain() async {
       expect(event.defaultPrevented, isFalse);
     });
 
-    test('inserts element in the correct view', () {
+    test('inserts element in the correct view', () async {
       final DomElement host = createDomElement('div');
       domDocument.body!.append(host);
       final EngineFlutterView view = EngineFlutterView(dispatcher, host);
@@ -2531,8 +2531,16 @@ Future<void> testMain() async {
 
       textEditing = HybridTextEditing();
       showKeyboard(inputType: 'text', viewId: view.viewId);
+      // The Safari strategy doesn't insert the input element into the DOM until
+      // it has received the geometry information.
+      final List<double> transform = Matrix4.identity().storage.toList();
+      final MethodCall setSizeAndTransform = configureSetSizeAndTransformMethodCall(10, 10, transform);
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
+
+      await waitForDesktopSafariFocus();
 
       final DomElement input = textEditing!.strategy.domElement!;
+
 
       // Input is appended to the right view.
       expect(view.dom.textEditingHost.contains(input), isTrue);
@@ -2607,6 +2615,11 @@ Future<void> testMain() async {
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
+      // The Safari strategy doesn't insert the input element into the DOM until
+      // it has received the geometry information.
+      final List<double> transform = Matrix4.identity().storage.toList();
+      final MethodCall setSizeAndTransform = configureSetSizeAndTransformMethodCall(10, 10, transform);
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
       await waitForDesktopSafariFocus();
 
