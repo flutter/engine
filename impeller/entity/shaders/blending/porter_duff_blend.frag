@@ -37,7 +37,9 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
 }
 
 float16_t ClampAlpha(float16_t alpha) {
-  return clamp(alpha, 0.0hf, 1.0hf);
+  float16_t min = 0.0hf;
+  float16_t max = 1.0hf;
+  return clamp(alpha, min, max);
 }
 
 void main() {
