@@ -120,6 +120,30 @@ TEST_F(WindowsTest, LaunchHeadlessEngine) {
   ASSERT_NE(engine, nullptr);
 }
 
+// Verify that the engine can return to headless mode.
+TEST_F(WindowsTest, EngineCanTransitionToHeadless) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
+  // Create and then destroy a view controller that does not own its engine.
+  // This causes the engine to transition back to headless mode.
+  {
+    FlutterDesktopViewControllerProperties properties = {};
+    ViewControllerPtr controller{
+        FlutterDesktopEngineCreateViewController(engine.get(), &properties)};
+
+    ASSERT_NE(controller, nullptr);
+  }
+
+  // The engine is back in headless mode now.
+  ASSERT_NE(engine, nullptr);
+
+  auto engine_ptr = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  ASSERT_TRUE(engine_ptr->running());
+}
+
 // Verify that accessibility features are initialized when a view is created.
 TEST_F(WindowsTest, LaunchRefreshesAccessibility) {
   auto& context = GetContext();
@@ -454,6 +478,44 @@ TEST_F(WindowsTest, Lifecycle) {
   // "hidden" app lifecycle event.
   ::MoveWindow(hwnd, /* X */ 0, /* Y */ 0, /* nWidth*/ 100, /* nHeight*/ 100,
                /* bRepaint*/ false);
+}
+
+TEST_F(WindowsTest, GetKeyboardStateHeadless) {
+  // Run the test on its own thread so that it can pump its event loop while
+  // this thread waits.
+  fml::AutoResetWaitableEvent latch;
+  auto platform_task_runner = CreateNewThread("test_platform_thread");
+  platform_task_runner->PostTask([&]() {
+    auto& context = GetContext();
+    WindowsConfigBuilder builder(context);
+    builder.SetDartEntrypoint("sendGetKeyboardState");
+
+    bool done = false;
+    context.AddNativeFunction(
+        "SignalStringValue",
+        CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+          auto handle = Dart_GetNativeArgument(args, 0);
+          ASSERT_FALSE(Dart_IsError(handle));
+          auto value = tonic::DartConverter<std::string>::FromDart(handle);
+          EXPECT_EQ(value, "Success");
+          done = true;
+          latch.Signal();
+        }));
+
+    ViewControllerPtr controller{builder.Run()};
+    ASSERT_NE(controller, nullptr);
+
+    // Pump messages for the Windows platform task runner.
+    ::MSG msg;
+    while (!done) {
+      if (::GetMessage(&msg, nullptr, 0, 0)) {
+        ::TranslateMessage(&msg);
+        ::DispatchMessage(&msg);
+      }
+    }
+  });
+
+  latch.Wait();
 }
 
 }  // namespace testing

@@ -29,7 +29,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = 4,
               .index_type = IndexType::k16bit,
           },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
@@ -56,6 +56,10 @@ std::optional<Rect> CoverGeometry::GetCoverage(const Matrix& transform) const {
 bool CoverGeometry::CoversArea(const Matrix& transform,
                                const Rect& rect) const {
   return true;
+}
+
+bool CoverGeometry::CanApplyMaskFilter() const {
+  return false;
 }
 
 }  // namespace impeller
