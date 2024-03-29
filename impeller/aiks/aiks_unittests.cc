@@ -1102,6 +1102,76 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// This makes sure the WideGamut named tests use 16bit float pixel format.
+TEST_P(AiksTest, F16WideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  EXPECT_FALSE(IsAlphaClampedToOne(
+      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+}
+
+TEST_P(AiksTest, NotF16) {
+  EXPECT_TRUE(IsAlphaClampedToOne(
+      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+}
+
+// Bug: https://github.com/flutter/flutter/issues/142549
+TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({.color = Color(0.9, 1.0, 0.9, 1.0)});
+  canvas.SaveLayer({});
+  Paint paint;
+  paint.blend_mode = BlendMode::kPlus;
+  paint.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 400, 400), paint);
+  paint.color = Color::White();
+  canvas.DrawImageRect(
+      std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
+      Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// Bug: https://github.com/flutter/flutter/issues/142549
+TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
+  if (GetParam() != PlaygroundBackend::kMetal) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+  }
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  canvas.DrawPaint({.color = Color(0.1, 0.2, 0.1, 1.0)});
+  canvas.SaveLayer({
+      .color_filter =
+          ColorFilter::MakeBlend(BlendMode::kPlus, Color(Vector4{1, 0, 0, 1})),
+  });
+  Paint paint;
+  paint.color = Color::Red();
+  canvas.DrawRect(Rect::MakeXYWH(100, 100, 400, 400), paint);
+  paint.color = Color::White();
+  canvas.DrawImageRect(
+      std::make_shared<Image>(texture), Rect::MakeSize(texture->GetSize()),
+      Rect::MakeXYWH(100, 100, 400, 400).Expand(-100, -100), paint);
+  canvas.Restore();
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, ColorWheel) {
   // Compare with https://fiddle.skia.org/c/@BlendModes
 
@@ -3455,6 +3525,57 @@ TEST_P(AiksTest, CanRenderClippedBackdropFilter) {
   canvas.SaveLayer({}, clip_rect,
                    ImageFilter::MakeFromColorFilter(*ColorFilter::MakeBlend(
                        BlendMode::kExclusion, Color::Red())));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
+  TextureDescriptor texture_descriptor;
+  texture_descriptor.size = ISize{1024, 1024};
+  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  texture_descriptor.mip_count = texture_descriptor.size.MipCount();
+
+  std::vector<uint8_t> bytes(4194304);
+  bool alternate = false;
+  for (auto i = 0u; i < 4194304; i += 4) {
+    if (alternate) {
+      bytes[i] = 255;
+      bytes[i + 1] = 0;
+      bytes[i + 2] = 0;
+      bytes[i + 3] = 255;
+    } else {
+      bytes[i] = 0;
+      bytes[i + 1] = 255;
+      bytes[i + 2] = 0;
+      bytes[i + 3] = 255;
+    }
+    alternate = !alternate;
+  }
+
+  ASSERT_EQ(texture_descriptor.GetByteSizeOfBaseMipLevel(), bytes.size());
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      bytes.data(),                                   // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel()  // size
+  );
+  auto texture =
+      GetContext()->GetResourceAllocator()->CreateTexture(texture_descriptor);
+
+  ASSERT_TRUE(!!texture);
+  ASSERT_TRUE(texture->SetContents(mapping));
+
+  auto command_buffer = GetContext()->CreateCommandBuffer();
+  auto blit_pass = command_buffer->CreateBlitPass();
+
+  blit_pass->GenerateMipmap(texture);
+  EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
+  EXPECT_TRUE(GetContext()->GetCommandQueue()->Submit({command_buffer}).ok());
+
+  auto image = std::make_shared<Image>(texture);
+
+  Canvas canvas;
+  canvas.DrawImageRect(image, Rect::MakeSize(texture->GetSize()),
+                       Rect::MakeLTRB(0, 0, 100, 100), {});
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

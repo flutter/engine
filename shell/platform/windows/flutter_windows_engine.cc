@@ -473,6 +473,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
   settings_plugin_->StartWatching();
   settings_plugin_->SendSettings();
 
+  InitializeKeyboard();
+
   return true;
 }
 
@@ -497,9 +499,26 @@ std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
       kImplicitViewId, this, std::move(window), windows_proc_table_);
 
   views_[kImplicitViewId] = view.get();
-  InitializeKeyboard();
 
   return std::move(view);
+}
+
+void FlutterWindowsEngine::RemoveView(FlutterViewId view_id) {
+  FML_DCHECK(running());
+  FML_DCHECK(views_.find(view_id) != views_.end());
+
+  if (view_id == kImplicitViewId) {
+    // The engine and framework assume the implicit view always exists.
+    // Attempts to render to the implicit view will be ignored.
+    views_.erase(view_id);
+    return;
+  }
+
+  // TODO(loicsharma): Remove the view from the engine using the
+  // `FlutterEngineRemoveView` embedder API. Windows does not
+  // support views other than the implicit view yet.
+  // https://github.com/flutter/flutter/issues/144810
+  FML_UNREACHABLE();
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
@@ -675,10 +694,6 @@ void FlutterWindowsEngine::SendSystemLocales() {
 }
 
 void FlutterWindowsEngine::InitializeKeyboard() {
-  if (views_.empty()) {
-    FML_LOG(ERROR) << "Cannot initialize keyboard on Windows headless mode.";
-  }
-
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
@@ -773,9 +788,7 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
 
 void FlutterWindowsEngine::OnPreEngineRestart() {
   // Reset the keyboard's state on hot restart.
-  if (!views_.empty()) {
-    InitializeKeyboard();
-  }
+  InitializeKeyboard();
 }
 
 std::string FlutterWindowsEngine::GetExecutableName() const {
