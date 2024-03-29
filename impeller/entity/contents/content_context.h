@@ -67,7 +67,7 @@
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
-#include "impeller/entity/gaussian_blur.vert.h"
+#include "impeller/entity/kernel.vert.h"
 #include "impeller/entity/kernel_decal.frag.h"
 #include "impeller/entity/kernel_nodecal.frag.h"
 
@@ -138,9 +138,9 @@ using PositionUVPipeline =
 using TiledTexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using KernelDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+    RenderPipelineT<KernelVertexShader, KernelDecalFragmentShader>;
 using KernelPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
+    RenderPipelineT<KernelVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
