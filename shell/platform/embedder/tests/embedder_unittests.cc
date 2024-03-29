@@ -3057,6 +3057,7 @@ TEST_F(EmbedderTest, PlatformThreadIsolatesWithCustomPlatformTaskRunner) {
     builder.SetSoftwareRendererConfig();
     builder.SetPlatformTaskRunner(&task_runner_description);
     builder.SetDartEntrypoint("invokePlatformThreadIsolate");
+    builder.AddCommandLineArgument("--enable-platform-isolates");
     engine = builder.LaunchEngine();
     ASSERT_TRUE(engine.is_valid());
   });
