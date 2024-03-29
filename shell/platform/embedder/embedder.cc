@@ -2210,6 +2210,10 @@ FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
     }
   }
 
+  // TODO(loicsharma): Return an error if the engine was initialized with
+  // callbacks that are incompatible with multiple views.
+  // https://github.com/flutter/flutter/issues/144806
+
   std::variant<flutter::ViewportMetrics, std::string> metrics_or_error =
       MakeViewportMetricsFromWindowMetrics(info->view_metrics);
 
@@ -2256,6 +2260,10 @@ FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
         kInvalidArguments,
         "Remove view info was invalid. The implicit view cannot be removed.");
   }
+
+  // TODO(loicsharma): Return an error if the engine was initialized with
+  // callbacks that are incompatible with multiple views.
+  // https://github.com/flutter/flutter/issues/144806
 
   // The engine must be running to remove a view.
   auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);

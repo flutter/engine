@@ -1898,7 +1898,9 @@ typedef struct {
   /// Callback invoked by the engine to composite the contents of each layer
   /// onto the implicit view.
   ///
-  /// DEPRECATED: Use |present_view_callback| to support multiple views.
+  /// DEPRECATED: Use `present_view_callback` to support multiple views.
+  /// If this callback is provided, `FlutterEngineAddView` and
+  /// `FlutterEngineRemoveView` should not be used.
   ///
   /// Only one of `present_layers_callback` and `present_view_callback` may be
   /// provided. Providing both is an error and engine initialization will
@@ -2222,6 +2224,10 @@ typedef struct {
   ///                `update_semantics_callback`, and
   ///                `update_semantics_callback2` may be provided; the others
   ///                should be set to null.
+  ///
+  ///                This callback is incompatible with multiple views. If this
+  ///                callback is provided, `FlutterEngineAddView` and
+  ///                `FlutterEngineRemoveView` should not be used.
   FlutterUpdateSemanticsNodeCallback update_semantics_node_callback;
   /// The legacy callback invoked by the engine in order to give the embedder
   /// the chance to respond to updates to semantics custom actions from the Dart
@@ -2238,6 +2244,10 @@ typedef struct {
   ///                `update_semantics_callback`, and
   ///                `update_semantics_callback2` may be provided; the others
   ///                should be set to null.
+  ///
+  ///                This callback is incompatible with multiple views. If this
+  ///                callback is provided, `FlutterEngineAddView` and
+  ///                `FlutterEngineRemoveView` should not be used.
   FlutterUpdateSemanticsCustomActionCallback
       update_semantics_custom_action_callback;
   /// Path to a directory used to store data that is cached across runs of a
@@ -2387,6 +2397,10 @@ typedef struct {
   ///                `update_semantics_callback`, and
   ///                `update_semantics_callback2` may be provided; the others
   ///                must be set to null.
+  ///
+  ///                This callback is incompatible with multiple views. If this
+  ///                callback is provided, `FlutterEngineAddView` and
+  ///                `FlutterEngineRemoveView` should not be used.
   FlutterUpdateSemanticsCallback update_semantics_callback;
 
   /// The callback invoked by the engine in order to give the embedder the
