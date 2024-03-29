@@ -18,13 +18,11 @@
         "--prebuilt-dart-sdk",
         "--no-rbe",
         "--no-goma",
-        "--xcode-symlinks",
-        "--out-dir",
-        "mac_unopt_debug_no_rbe"
+        "--xcode-symlinks"
       ],
       "name": "mac_unopt_debug_no_rbe",
       "ninja": {
-        "config": "mac_unopt_debug_no_rbe",
+        "config": "host_debug_unopt",
         "targets": []
       },
       "tests": [

@@ -12,13 +12,11 @@
         "--unoptimized",
         "--prebuilt-dart-sdk",
         "--no-rbe",
-        "--no-goma",
-        "--out-dir",
-        "linux_unopt_debug_no_rbe"
+        "--no-goma"
       ],
       "name": "linux_unopt_debug_no_rbe",
       "ninja": {
-        "config": "linux_unopt_debug_no_rbe",
+        "config": "host_debug_unopt",
         "targets": []
       },
       "tests": [
