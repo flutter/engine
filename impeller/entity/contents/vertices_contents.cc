@@ -7,6 +7,7 @@
 #include "fml/logging.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -280,7 +281,7 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   using VS = PorterDuffBlendPipeline::VertexShader;
   using FS = PorterDuffBlendPipeline::FragmentShader;
 
-  auto geometry_result = geometry_->GetPositionUVColorBuffer(
+  GeometryResult geometry_result = geometry_->GetPositionUVColorBuffer(
       Rect::MakeSize(texture_->GetSize()), effect_transform_, renderer, entity,
       pass);
   if (geometry_result.vertex_buffer.vertex_count == 0) {
@@ -294,29 +295,28 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
 #endif  // IMPELLER_DEBUG
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
   pass.SetStencilReference(entity.GetClipDepth());
-  pass.SetPipeline(renderer.GetPorterDuffBlendPipeline(OptionsFromPass(pass)));
 
-  FS::FragInfo frag_info;
-  VS::FrameInfo frame_info;
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  options.primitive_type = geometry_result.type;
+  pass.SetPipeline(renderer.GetPorterDuffBlendPipeline(options));
 
   auto dst_sampler_descriptor = descriptor_;
   dst_sampler_descriptor.width_address_mode =
       TileModeToAddressMode(tile_mode_x_, renderer.GetDeviceCapabilities())
-          .value_or(SamplerAddressMode::kDecal);
+          .value_or(SamplerAddressMode::kClampToEdge);
   dst_sampler_descriptor.height_address_mode =
       TileModeToAddressMode(tile_mode_y_, renderer.GetDeviceCapabilities())
-          .value_or(SamplerAddressMode::kDecal);
+          .value_or(SamplerAddressMode::kClampToEdge);
 
-  if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
-    dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
-    dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
-  }
   const std::unique_ptr<const Sampler>& dst_sampler =
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           dst_sampler_descriptor);
   FS::BindTextureSamplerDst(pass, texture_, dst_sampler);
-  frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
+  FS::FragInfo frag_info;
+  VS::FrameInfo frame_info;
+
+  frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.output_alpha = alpha_;
   frag_info.input_alpha = 1.0;
 
@@ -333,7 +333,7 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  frame_info.mvp = entity.GetShaderTransform(pass);
+  frame_info.mvp = geometry_result.transform;
 
   auto uniform_view = host_buffer.EmplaceUniform(frame_info);
   VS::BindFrameInfo(pass, uniform_view);

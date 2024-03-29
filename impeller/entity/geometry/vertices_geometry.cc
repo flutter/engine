@@ -252,14 +252,12 @@ GeometryResult VerticesGeometry::GetPositionUVColorBuffer(
     RenderPass& pass) const {
   using VS = PorterDuffBlendPipeline::VertexShader;
 
-  auto index_count = indices_.size();
   auto vertex_count = vertices_.size();
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
   auto has_texture_coordinates = HasTextureCoordinates();
 
   size_t total_vtx_bytes = vertices_.size() * sizeof(VS::PerVertexData);
-  size_t total_idx_bytes = index_count * sizeof(uint16_t);
   auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
       total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
         VS::PerVertexData* vtx_contents =
@@ -283,6 +281,8 @@ GeometryResult VerticesGeometry::GetPositionUVColorBuffer(
       });
 
   BufferView index_buffer = {};
+  auto index_count = indices_.size();
+  size_t total_idx_bytes = index_count * sizeof(uint16_t);
   if (index_count > 0) {
     index_buffer = renderer.GetTransientsBuffer().Emplace(
         indices_.data(), total_idx_bytes, alignof(uint16_t));

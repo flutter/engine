@@ -898,8 +898,11 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     contents->SetAlpha(paint.color.alpha);
     contents->SetGeometry(vertices);
 
-    auto color_contents = std::reinterpret_pointer_cast<TiledTextureContents>(
-        paint.color_source.GetContents(paint));
+    std::shared_ptr<ColorSourceContents> raw_color_source_contents =
+        paint.color_source.GetContents(paint);
+    TiledTextureContents* color_contents =
+        static_cast<TiledTextureContents*>(raw_color_source_contents.get());
+    FML_DCHECK(color_contents);
 
     contents->SetEffectTransform(color_contents->GetInverseEffectTransform());
     contents->SetTexture(color_contents->GetTexture());

@@ -3245,16 +3245,17 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
       Point(0, 0),
       Point(texture->GetSize().width, texture->GetSize().height),
   };
-  std::vector<uint16_t> indices = {0u, 1u, 2u, 3u, 4u, 5u};
+  std::vector<uint16_t> indices = {};
   std::vector<Point> texture_coordinates = {};
   std::vector<Color> vertex_colors = {
-      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
-      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
-      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
+      Color::Red().WithAlpha(0.5),
+      Color::Blue().WithAlpha(0.5),
+      Color::Green().WithAlpha(0.5),
+      Color::Red().WithAlpha(0.5),
   };
   auto geometry = std::make_shared<VerticesGeometry>(
       vertices, indices, texture_coordinates, vertex_colors,
-      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
+      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
 
   canvas.DrawVertices(geometry, BlendMode::kDestinationOver, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
