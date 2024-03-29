@@ -48,6 +48,7 @@ void main() {
   // This currently needs a clamp so that floating point textures blend
   // correctly in wide gamut. Remove if we switch to a fixed point extended
   // range format.
+  // See https://github.com/flutter/flutter/issues/145933 .
   float16_t clamped_alpha = clamp(frag_color.a, 0.0hf, 1.0hf);
   frag_color.a = clamped_alpha;
 }
