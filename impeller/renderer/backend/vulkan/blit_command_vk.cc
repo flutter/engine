@@ -292,6 +292,11 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     return false;
   }
 
+  // Initialize all mip levels to be in TransferDst mode. Later, in a loop,
+  // after writing to that mip level, we'll first switch its layout to
+  // TransferSrc to prepare the mip level after it, use the image as the source
+  // of the blit, before finally switching it to ShaderReadOnly so its available
+  // for sampling in a shader.
   InsertImageMemoryBarrier(
       cmd,                                   // command buffer
       image,                                 // image
@@ -302,7 +307,8 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
       vk::PipelineStageFlagBits::eTransfer,  // src stage
       vk::PipelineStageFlagBits::eTransfer,  // dst stage
       0u,                                    // mip level
-      mip_count);
+      mip_count                              // mip level count
+  );
 
   vk::ImageMemoryBarrier barrier;
   barrier.image = image;
@@ -323,6 +329,10 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
     barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
 
+    // We just finished writing to the previous (N-1) mip level or it was the
+    // base mip level. These were initialized to TransferDst earler. We are now
+    // going to read from it to write to the current level (N) . So it must be
+    // converted to TransferSrc.
     cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                         vk::PipelineStageFlagBits::eTransfer, {}, {}, {},
                         {barrier});
@@ -365,6 +375,9 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
     barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
 
+    // Now that the blit is done, the image at the previous level (N-1)
+    // is done reading from (TransferSrc)/ Now we must prepare it to be read
+    // from a shader (ShaderReadOnly).
     cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
                         vk::PipelineStageFlagBits::eFragmentShader, {}, {}, {},
                         {barrier});
