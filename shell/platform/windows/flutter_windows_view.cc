@@ -8,6 +8,7 @@
 
 #include "flutter/common/constants.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
+#include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
@@ -81,6 +82,26 @@ void UpdateVsync(const FlutterWindowsEngine& engine,
   }
 }
 
+/// Destroys a rendering surface that backs a Flutter view.
+void DestroyWindowSurface(const FlutterWindowsEngine& engine,
+                          egl::WindowSurface& surface) {
+  // EGL surfaces are used on the raster thread if the engine is running.
+  // There may be pending raster tasks that use this surface. Destroy the
+  // surface on the raster thread to avoid concurrent uses.
+  if (engine.running()) {
+    fml::AutoResetWaitableEvent latch;
+    engine.PostRasterThreadTask([&]() {
+      surface.Destroy();
+      latch.Signal();
+    });
+    latch.Wait();
+  } else {
+    // There's no raster thread if engine isn't running. The surface can be
+    // destroyed on the platform thread.
+    surface.Destroy();
+  }
+}
+
 }  // namespace
 
 FlutterWindowsView::FlutterWindowsView(
@@ -105,7 +126,9 @@ FlutterWindowsView::~FlutterWindowsView() {
   // Notify the engine the view's child window will no longer be visible.
   engine_->OnWindowStateEvent(GetWindowHandle(), WindowStateEvent::kHide);
 
-  DestroyRenderSurface();
+  if (surface_) {
+    DestroyWindowSurface(*engine_, *surface_);
+  }
 }
 
 bool FlutterWindowsView::OnEmptyFrameGenerated() {
@@ -704,12 +727,6 @@ bool FlutterWindowsView::ResizeRenderSurface(size_t width, size_t height) {
 
   surface_ = std::move(resized_surface);
   return true;
-}
-
-void FlutterWindowsView::DestroyRenderSurface() {
-  if (surface_) {
-    surface_->Destroy();
-  }
 }
 
 egl::WindowSurface* FlutterWindowsView::surface() const {
