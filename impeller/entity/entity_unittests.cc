@@ -1446,10 +1446,13 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   ASSERT_TRUE(OpenPlaygroundHere(std::move(e)));
 }
 
-TEST_P(EntityTest, F16WideGamutDrawAtlasPlus) {
+TEST_P(EntityTest, DrawAtlasPlusWideGamut) {
   if (GetParam() != PlaygroundBackend::kMetal) {
     GTEST_SKIP_("This backend doesn't yet support wide gamut.");
   }
+
+  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
+            PixelFormat::kR16G16B16A16Float);
 
   // Draws the image as four squares stiched together.
   auto atlas = CreateTextureForFixture("bay_bridge.jpg");
