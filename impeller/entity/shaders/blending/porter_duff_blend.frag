@@ -36,6 +36,10 @@ f16vec4 Sample(f16sampler2D texture_sampler, vec2 texture_coords) {
   return IPHalfSampleDecal(texture_sampler, texture_coords);
 }
 
+float16_t ClampAlpha(float16_t alpha) {
+  return clamp(alpha, 0.0hf, 1.0hf);
+}
+
 void main() {
   f16vec4 dst =
       texture(texture_sampler_dst, v_texture_coords) * frag_info.input_alpha;
@@ -49,6 +53,5 @@ void main() {
   // correctly in wide gamut. Remove if we switch to a fixed point extended
   // range format.
   // See https://github.com/flutter/flutter/issues/145933 .
-  float16_t clamped_alpha = clamp(frag_color.a, 0.0hf, 1.0hf);
-  frag_color.a = clamped_alpha;
+  frag_color.a = ClampAlpha(frag_color.a);
 }
