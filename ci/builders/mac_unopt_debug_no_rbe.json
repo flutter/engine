@@ -23,7 +23,7 @@
       "name": "mac_unopt_debug_no_rbe",
       "ninja": {
         "config": "mac_unopt_debug_no_rbe",
-        "targets": ["flutter/build/dart:copy_dart_sdk"]
+        "targets": []
       },
       "tests": [
         {
