@@ -63,10 +63,10 @@ To use the client in CI, you'll need to make two changes:
      - name: Linux linux_android_emulator_tests
        properties:
          config_name: linux_android_emulator
-         + dependencies: >-
-         +   [
-         +     {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
-         +   ]
+   +       dependencies: >-
+   +         [
+   +           {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+   +         ]
    ```
 
 2. **Ensure the builder (i.e. `config_name: {name}`) also has a dependency**
