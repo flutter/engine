@@ -7,6 +7,7 @@
 #include <chrono>
 
 #include "flutter/common/constants.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
@@ -84,21 +85,17 @@ void UpdateVsync(const FlutterWindowsEngine& engine,
 
 /// Destroys a rendering surface that backs a Flutter view.
 void DestroyWindowSurface(const FlutterWindowsEngine& engine,
-                          egl::WindowSurface& surface) {
+                          std::unique_ptr<egl::WindowSurface> surface) {
   // EGL surfaces are used on the raster thread if the engine is running.
   // There may be pending raster tasks that use this surface. Destroy the
   // surface on the raster thread to avoid concurrent uses.
   if (engine.running()) {
-    fml::AutoResetWaitableEvent latch;
-    engine.PostRasterThreadTask([&]() {
-      surface.Destroy();
-      latch.Signal();
-    });
-    latch.Wait();
+    engine.PostRasterThreadTask(fml::MakeCopyable(
+        [surface = std::move(surface)] { surface->Destroy(); }));
   } else {
     // There's no raster thread if engine isn't running. The surface can be
     // destroyed on the platform thread.
-    surface.Destroy();
+    surface->Destroy();
   }
 }
 
@@ -127,7 +124,7 @@ FlutterWindowsView::~FlutterWindowsView() {
   engine_->OnWindowStateEvent(GetWindowHandle(), WindowStateEvent::kHide);
 
   if (surface_) {
-    DestroyWindowSurface(*engine_, *surface_);
+    DestroyWindowSurface(*engine_, std::move(surface_));
   }
 }
 
