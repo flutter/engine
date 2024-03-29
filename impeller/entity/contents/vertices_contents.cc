@@ -5,6 +5,7 @@
 #include "vertices_contents.h"
 
 #include "fml/logging.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
@@ -16,6 +17,29 @@
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
+
+namespace {
+static std::optional<SamplerAddressMode> TileModeToAddressMode(
+    Entity::TileMode tile_mode,
+    const Capabilities& capabilities) {
+  switch (tile_mode) {
+    case Entity::TileMode::kClamp:
+      return SamplerAddressMode::kClampToEdge;
+      break;
+    case Entity::TileMode::kMirror:
+      return SamplerAddressMode::kMirror;
+      break;
+    case Entity::TileMode::kRepeat:
+      return SamplerAddressMode::kRepeat;
+      break;
+    case Entity::TileMode::kDecal:
+      if (capabilities.SupportsDecalSamplerAddressMode()) {
+        return SamplerAddressMode::kDecal;
+      }
+      return std::nullopt;
+  }
+}
+}  // namespace
 
 VerticesContents::VerticesContents() = default;
 
@@ -265,8 +289,8 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   FML_DCHECK(geometry_result.mode == GeometryResult::Mode::kNormal);
 
 #ifdef IMPELLER_DEBUG
-  pass.SetCommandLabel(
-      SPrintF("DrawVertices Blend (%s)", BlendModeToString(blend_mode_)));
+  pass.SetCommandLabel(SPrintF("DrawVertices Porterduff Blend (%s)",
+                               BlendModeToString(blend_mode_)));
 #endif  // IMPELLER_DEBUG
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
   pass.SetStencilReference(entity.GetClipDepth());
@@ -275,8 +299,14 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   FS::FragInfo frag_info;
   VS::FrameInfo frame_info;
 
-  // TODO: hook this up.
   auto dst_sampler_descriptor = descriptor_;
+  dst_sampler_descriptor.width_address_mode =
+      TileModeToAddressMode(tile_mode_x_, renderer.GetDeviceCapabilities())
+          .value_or(SamplerAddressMode::kDecal);
+  dst_sampler_descriptor.height_address_mode =
+      TileModeToAddressMode(tile_mode_y_, renderer.GetDeviceCapabilities())
+          .value_or(SamplerAddressMode::kDecal);
+
   if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
     dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
     dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
