@@ -831,6 +831,85 @@ typedef struct {
   };
 } FlutterRendererConfig;
 
+/// Display refers to a graphics hardware system consisting of a framebuffer,
+/// typically a monitor or a screen. This ID is unique per display and is
+/// stable until the Flutter application restarts.
+typedef uint64_t FlutterEngineDisplayId;
+
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterWindowMetricsEvent).
+  size_t struct_size;
+  /// Physical width of the window.
+  size_t width;
+  /// Physical height of the window.
+  size_t height;
+  /// Scale factor for the physical screen.
+  double pixel_ratio;
+  /// Horizontal physical location of the left side of the window on the screen.
+  size_t left;
+  /// Vertical physical location of the top of the window on the screen.
+  size_t top;
+  /// Top inset of window.
+  double physical_view_inset_top;
+  /// Right inset of window.
+  double physical_view_inset_right;
+  /// Bottom inset of window.
+  double physical_view_inset_bottom;
+  /// Left inset of window.
+  double physical_view_inset_left;
+  /// The identifier of the display the view is rendering on.
+  FlutterEngineDisplayId display_id;
+  /// The view that this event is describing.
+  int64_t view_id;
+} FlutterWindowMetricsEvent;
+
+typedef struct {
+  /// The size of this struct.
+  /// Must be sizeof(FlutterAddViewResult).
+  size_t struct_size;
+
+  /// True if the add view operation succeeded.
+  bool added;
+
+  /// The |FlutterAddViewInfo.user_data|.
+  void* user_data;
+} FlutterAddViewResult;
+
+/// The callback invoked by the engine when the engine has attempted to add a
+/// view.
+///
+/// The |FlutterAddViewResult| will be deallocated once the callback returns.
+typedef void (*FlutterAddViewCallback)(const FlutterAddViewResult* result);
+
+typedef struct {
+  /// The size of this struct.
+  /// Must be sizeof(FlutterAddViewInfo).
+  size_t struct_size;
+
+  /// The identifier for the view to add. This must be unique.
+  FlutterViewId view_id;
+
+  /// The view's properties.
+  ///
+  /// The metric's |view_id| must match this struct's |view_id|.
+  const FlutterWindowMetricsEvent* view_metrics;
+
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in |add_view_callback|. Embedder resources may be
+  /// associated with this baton.
+  void* user_data;
+
+  /// Called once the engine has attempted to add the view. This callback is
+  /// required.
+  ///
+  /// The embedder/app must not use the view until the callback is invoked with
+  /// an `added` value of `true`.
+  ///
+  /// This callback is invoked on an internal engine managed thread. Embedders
+  /// must re-thread if necessary.
+  FlutterAddViewCallback add_view_callback;
+} FlutterAddViewInfo;
+
 typedef struct {
   /// The size of this struct.
   /// Must be sizeof(FlutterRemoveViewResult).
@@ -877,38 +956,6 @@ typedef struct {
   /// The |result| argument will be deallocated when the callback returns.
   FlutterRemoveViewCallback remove_view_callback;
 } FlutterRemoveViewInfo;
-
-/// Display refers to a graphics hardware system consisting of a framebuffer,
-/// typically a monitor or a screen. This ID is unique per display and is
-/// stable until the Flutter application restarts.
-typedef uint64_t FlutterEngineDisplayId;
-
-typedef struct {
-  /// The size of this struct. Must be sizeof(FlutterWindowMetricsEvent).
-  size_t struct_size;
-  /// Physical width of the window.
-  size_t width;
-  /// Physical height of the window.
-  size_t height;
-  /// Scale factor for the physical screen.
-  double pixel_ratio;
-  /// Horizontal physical location of the left side of the window on the screen.
-  size_t left;
-  /// Vertical physical location of the top of the window on the screen.
-  size_t top;
-  /// Top inset of window.
-  double physical_view_inset_top;
-  /// Right inset of window.
-  double physical_view_inset_right;
-  /// Bottom inset of window.
-  double physical_view_inset_bottom;
-  /// Left inset of window.
-  double physical_view_inset_left;
-  /// The identifier of the display the view is rendering on.
-  FlutterEngineDisplayId display_id;
-  /// The view that this event is describing.
-  int64_t view_id;
-} FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
 typedef enum {
@@ -2504,6 +2551,25 @@ FlutterEngineResult FlutterEngineDeinitialize(FLUTTER_API_SYMBOL(FlutterEngine)
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineRunInitialized(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
+
+//------------------------------------------------------------------------------
+/// @brief      Add a view.
+///
+///             This is an asynchronous operation. The view should not be used
+///             until the |add_view_callback| is invoked with an `added` of
+///             `true`.
+///
+/// @param[in]  engine  A running engine instance.
+/// @param[in]  info    The add view arguments. This can be deallocated
+///                     once |FlutterEngineAddView| returns, before
+///                     |add_view_callback| is invoked.
+///
+/// @return     The result of *starting* the asynchronous operation. If
+///             `kSuccess`, the |add_view_callback| will be invoked.
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
+                                             engine,
+                                         const FlutterAddViewInfo* info);
 
 //------------------------------------------------------------------------------
 /// @brief      Removes a view.
