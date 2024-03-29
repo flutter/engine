@@ -16,6 +16,17 @@ analyzer:
     deprecated_member_use: ignore
     deprecated_member_use_from_same_package: ignore
   exclude: # DIFFERENT FROM FLUTTER/FLUTTER
+    # Directories that might have Dart code, but aren't part of the engine, i.e.
+    # vended directories or code that is copied by tooling.
+    - prebuilts/
+    - third_party/
+    # Directories that have Dart code, but the Dart code isn't resolvable by the
+    # analyzer, i.e. it uses custom embedding or other tooling that the analyzer
+    # can't be aware of.
+    - examples/
+    - impeller/
+    - runtime/
+    - shell/
     # Fixture depends on dart:ui and raises false positives.
     - flutter_frontend_server/test/fixtures/lib/main.dart
 

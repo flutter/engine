@@ -1,4 +1,4 @@
-# commonly generated files
+# Commonly generated files
 *.pyc
 *~
 .*.sw?
@@ -8,7 +8,6 @@
 .classpath
 .clangd/
 .cproject
-.dart_tool
 .gdb_history
 .checkstyle
 .gdbinit
@@ -27,6 +26,14 @@ pubspec.lock
 .vscode/
 docs/doxygen/
 xcuserdata
+
+# Typical projects would hide all of .dart_tool, but we're treating it as a
+# mono repository to resolve packages across the entire repository, so hide
+# .dart_tool but allow the .dart_tool/package_config.json file.
+.dart_tool/**
+!.dart_tool/package_config.json
+# But ignore the .dart_tool directory in any subdirectories.
+**/.dart_tool/
 
 # Miscellaneous
 *.class
@@ -56,7 +63,6 @@ xcuserdata
 
 # Flutter/Dart/Pub related
 **/doc/api/
-.dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages

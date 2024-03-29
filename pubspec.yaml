@@ -1,0 +1,86 @@
+# A mock package that serves as the root of the repository.
+name: _engine
+publish_to: none
+
+# This needs to be set high enough to use newer language features, but does not
+# need to be revved everytime a new SDK is pushed. In other words, manually
+# update this as needed.
+environment: 
+  sdk: ^3.3.0
+
+# Packages that are hosted in the engine, i.e. the package is defined here.
+#
+# Nothing here should have the words "third_party" in the path.
+dev_dependencies: 
+  engine_build_configs:
+    path: tools/pkg/engine_build_configs
+  engine_repo_tools:
+    path: tools/pkg/engine_repo_tools
+  engine_tool:
+    path: tools/engine_tool
+  process_fakes:
+    path: tools/pkg/process_fakes
+
+# Dependencies that are not hosted in the engine, i.e. brought in via DEPS.
+# The version should be "any", as we override the path to point to the local
+# copy below.
+dependencies:
+  args: any
+  async: any
+  async_helper: any
+  collection: any
+  expect: any
+  file: any
+  litetest: any
+  logging: any
+  meta: any
+  path: any
+  platform: any
+  process: any
+  process_runner: any
+  smith: any
+  source_span: any
+  string_scanner: any
+  term_glyph: any
+  yaml: any
+
+# Every dependency must resolve to a local directory, either because it is a
+# local package (i.e. in tools/pkg or similar), or because it is vended to a
+# third_party directly (i.e. through DEPS). Nothing should resolve to pub.dev.
+dependency_overrides:
+  args:
+    path: ../third_party/dart/third_party/pkg/args
+  async:
+    path: ../third_party/dart/third_party/pkg/async
+  async_helper:
+    path: ../third_party/dart/pkg/async_helper
+  collection:
+    path: ../third_party/dart/third_party/pkg/collection
+  expect:
+    path: ../third_party/dart/pkg/expect
+  file:
+    path: ../third_party/dart/third_party/pkg/file/packages/file
+  litetest:
+    path: testing/litetest
+  logging:
+    path: ../third_party/dart/third_party/pkg/logging
+  meta:
+    path: ../third_party/dart/pkg/meta
+  path:
+    path: ../third_party/dart/third_party/pkg/path
+  platform:
+    path: third_party/pkg/platform
+  process:
+    path: third_party/pkg/process
+  process_runner:
+    path: third_party/pkg/process_runner
+  smith:
+    path: ../third_party/dart/pkg/smith
+  source_span:
+    path: ../third_party/dart/third_party/pkg/source_span
+  string_scanner:
+    path: ../third_party/dart/third_party/pkg/string_scanner
+  term_glyph:
+    path: ../third_party/dart/third_party/pkg/term_glyph
+  yaml:
+    path: ../third_party/dart/third_party/pkg/yaml
