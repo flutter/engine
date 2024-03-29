@@ -40,13 +40,14 @@ void main() {
   f16vec4 dst =
       texture(texture_sampler_dst, v_texture_coords) * frag_info.input_alpha;
   f16vec4 src = v_color;
-  // This currently needs a clamp so that floating point textures blend
-  // correctly in wide gamut. Remove if we switch to a fixed point extended
-  // range format.
   frag_color =
       src * (frag_info.src_coeff + dst.a * frag_info.src_coeff_dst_alpha) +
       dst * (frag_info.dst_coeff + src.a * frag_info.dst_coeff_src_alpha +
              src * frag_info.dst_coeff_src_color);
   frag_color *= frag_info.output_alpha;
-  frag_color.a = clamp(frag_color.a, 0.0hf, 1.0hf);
+  // This currently needs a clamp so that floating point textures blend
+  // correctly in wide gamut. Remove if we switch to a fixed point extended
+  // range format.
+  float16_t clamped_alpha = clamp(frag_color.a, 0.0hf, 1.0hf);
+  frag_color.a = clamped_alpha;
 }
