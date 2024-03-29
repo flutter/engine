@@ -6,7 +6,6 @@
 
 uniform FrameInfo {
   mat4 mvp;
-  float depth;
 }
 frame_info;
 
@@ -16,7 +15,6 @@ out vec2 v_position;
 
 void main() {
   gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
-  gl_Position.z = frame_info.depth;
   // The fragment stage uses local coordinates to compute the blur.
   v_position = position;
 }

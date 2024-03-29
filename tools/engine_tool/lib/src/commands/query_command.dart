@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:engine_build_configs/engine_build_configs.dart';
 
+import 'package:path/path.dart' as p;
+
+import '../build_utils.dart';
+import '../gn_utils.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -36,15 +42,13 @@ final class QueryCommand extends CommandBase {
             if (entry.value.canRunOn(environment.platform))
               entry.key: entry.value.path,
         },
-      )
-      ..addFlag(
-        verboseFlag,
-        abbr: 'v',
-        help: 'Respond to queries with extra information',
-        negatable: false,
       );
 
     addSubcommand(QueryBuildersCommand(
+      environment: environment,
+      configs: configs,
+    ));
+    addSubcommand(QueryTestsCommand(
       environment: environment,
       configs: configs,
     ));
@@ -61,9 +65,9 @@ final class QueryCommand extends CommandBase {
       'and tests.';
 }
 
-/// The 'query builds' command.
+/// The 'query builders' command.
 final class QueryBuildersCommand extends CommandBase {
-  /// Constructs the 'query build' command.
+  /// Constructs the 'query builders' command.
   QueryBuildersCommand({
     required super.environment,
     required this.configs,
@@ -85,7 +89,7 @@ final class QueryBuildersCommand extends CommandBase {
     // current platform.
     final bool all = parent!.argResults![allFlag]! as bool;
     final String? builderName = parent!.argResults![builderFlag] as String?;
-    final bool verbose = parent!.argResults![verboseFlag] as bool;
+    final bool verbose = globalResults![verboseFlag]! as bool;
     if (!verbose) {
       environment.logger.status(
         'Add --verbose to see detailed information about each builder',
@@ -122,6 +126,48 @@ final class QueryBuildersCommand extends CommandBase {
           }
         }
       }
+    }
+    return 0;
+  }
+}
+
+/// The query tests command.
+final class QueryTestsCommand extends CommandBase {
+  /// Constructs the 'query tests' command.
+  QueryTestsCommand({
+    required super.environment,
+    required this.configs,
+  }) {
+    builds = runnableBuilds(environment, configs);
+    debugCheckBuilds(builds);
+    addConfigOption(argParser, runnableBuilds(environment, configs));
+  }
+
+  /// Build configurations loaded from the engine from under ci/builders.
+  final Map<String, BuilderConfig> configs;
+
+  /// List of compatible builds.
+  late final List<Build> builds;
+
+  @override
+  String get name => 'tests';
+
+  @override
+  String get description => 'Provides information about test targets';
+
+  @override
+  Future<int> run() async {
+    final String configName = argResults![configFlag] as String;
+    final Build? build =
+        builds.where((Build build) => build.name == configName).firstOrNull;
+    if (build == null) {
+      environment.logger.error('Could not find config $configName');
+      return 1;
+    }
+    final Map<String, TestTarget> targets = await findTestTargets(environment,
+        Directory(p.join(environment.engine.outDir.path, build.ninja.config)));
+    for (final TestTarget target in targets.values) {
+      environment.logger.status(target.label);
     }
     return 0;
   }

@@ -87,5 +87,48 @@ TEST_P(RenderTargetCacheTest, DoesNotPersistFailedAllocations) {
   EXPECT_EQ(render_target_cache.CachedTextureCount(), 0u);
 }
 
+TEST_P(RenderTargetCacheTest, CachedTextureGetsNewAttachmentConfig) {
+  auto render_target_cache =
+      RenderTargetCache(GetContext()->GetResourceAllocator());
+
+  render_target_cache.Start();
+  RenderTarget::AttachmentConfig color_attachment_config =
+      RenderTarget::kDefaultColorAttachmentConfig;
+  RenderTarget target1 = render_target_cache.CreateOffscreen(
+      *GetContext(), {100, 100}, 1, "Offscreen1", color_attachment_config);
+  render_target_cache.End();
+
+  render_target_cache.Start();
+  color_attachment_config.clear_color = Color::Red();
+  RenderTarget target2 = render_target_cache.CreateOffscreen(
+      *GetContext(), {100, 100}, 1, "Offscreen2", color_attachment_config);
+  render_target_cache.End();
+
+  auto color1 = target1.GetColorAttachments().find(0)->second;
+  auto color2 = target2.GetColorAttachments().find(0)->second;
+  // The second color attachment should reuse the first attachment's texture
+  // but with attributes from the second AttachmentConfig.
+  EXPECT_EQ(color2.texture, color1.texture);
+  EXPECT_EQ(color2.clear_color, Color::Red());
+}
+
+TEST_P(RenderTargetCacheTest, CreateWithEmptySize) {
+  auto render_target_cache =
+      RenderTargetCache(GetContext()->GetResourceAllocator());
+
+  render_target_cache.Start();
+  RenderTarget empty_target =
+      render_target_cache.CreateOffscreen(*GetContext(), {100, 0}, 1);
+  RenderTarget empty_target_msaa =
+      render_target_cache.CreateOffscreenMSAA(*GetContext(), {0, 0}, 1);
+  render_target_cache.End();
+
+  {
+    ScopedValidationDisable disable_validation;
+    EXPECT_FALSE(empty_target.IsValid());
+    EXPECT_FALSE(empty_target_msaa.IsValid());
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller

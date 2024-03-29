@@ -17,8 +17,7 @@ buildroot_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '
 
 ARCH_SUBPATH = 'mac-arm64' if platform.processor() == 'arm' else 'mac-x64'
 DSYMUTIL = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', 'buildtools', ARCH_SUBPATH, 'clang', 'bin',
-    'dsymutil'
+    os.path.dirname(__file__), '..', '..', 'buildtools', ARCH_SUBPATH, 'clang', 'bin', 'dsymutil'
 )
 
 out_dir = os.path.join(buildroot_dir, 'out')
@@ -220,7 +219,7 @@ def zip_framework(dst, args):
 def zip_xcframework_archive(dst):
   filepath_with_entitlements = ''
   filepath_without_entitlements = (
-      'FlutterMacOS.xcframework/macos-arm64_x84_64/'
+      'FlutterMacOS.xcframework/macos-arm64_x86_64/'
       'FlutterMacOS.framework/Versions/A/FlutterMacOS'
   )
   embed_codesign_configuration(os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements)

@@ -35,6 +35,7 @@
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
+#include "impeller/renderer/backend/vulkan/yuv_conversion_library_vk.h"
 #include "impeller/renderer/capabilities.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -323,9 +324,9 @@ void ContextVK::Setup(Settings settings) {
 
   vk::DeviceCreateInfo device_info;
 
+  device_info.setPNext(&enabled_features.value().get());
   device_info.setQueueCreateInfos(queue_create_infos);
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
-  device_info.setPEnabledFeatures(&enabled_features.value());
   // Device layers are deprecated and ignored.
 
   {
@@ -438,11 +439,15 @@ void ContextVK::Setup(Settings settings) {
   /// All done!
   ///
   device_holder_ = std::move(device_holder);
+  driver_info_ =
+      std::make_unique<DriverInfoVK>(device_holder_->physical_device);
   debug_report_ = std::move(debug_report);
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
   pipeline_library_ = std::move(pipeline_library);
+  yuv_conversion_library_ = std::shared_ptr<YUVConversionLibraryVK>(
+      new YUVConversionLibraryVK(device_holder_));
   queues_ = std::move(queues);
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
@@ -611,6 +616,15 @@ void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
   }
 
   auto pass = builder.Build(GetDevice());
+}
+
+const std::shared_ptr<YUVConversionLibraryVK>&
+ContextVK::GetYUVConversionLibrary() const {
+  return yuv_conversion_library_;
+}
+
+const std::unique_ptr<DriverInfoVK>& ContextVK::GetDriverInfo() const {
+  return driver_info_;
 }
 
 }  // namespace impeller

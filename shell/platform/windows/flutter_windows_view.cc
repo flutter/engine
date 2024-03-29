@@ -105,10 +105,6 @@ FlutterWindowsView::~FlutterWindowsView() {
   // Notify the engine the view's child window will no longer be visible.
   engine_->OnWindowStateEvent(GetWindowHandle(), WindowStateEvent::kHide);
 
-  // The engine renders into the view's surface. The engine must be
-  // shutdown before the view's resources can be destroyed.
-  engine_->Stop();
-
   DestroyRenderSurface();
 }
 
@@ -352,6 +348,7 @@ void FlutterWindowsView::SendWindowMetrics(size_t width,
   event.width = width;
   event.height = height;
   event.pixel_ratio = dpiScale;
+  event.view_id = view_id_;
   engine_->SendWindowMetricsEvent(event);
 }
 
@@ -588,10 +585,7 @@ void FlutterWindowsView::SendPointerEventWithData(
   event.device_kind = state->device_kind;
   event.device = state->pointer_id;
   event.buttons = state->buttons;
-  // TODO(dkwingsmt): Use the correct view ID for pointer events once the
-  // Windows embedder supports multiple views.
-  // https://github.com/flutter/flutter/issues/138179
-  event.view_id = flutter::kFlutterImplicitViewId;
+  event.view_id = view_id_;
 
   // Set metadata that's always the same regardless of the event.
   event.struct_size = sizeof(event);

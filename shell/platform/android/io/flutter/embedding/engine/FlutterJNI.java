@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -142,20 +144,7 @@ public class FlutterJNI {
       Log.w(TAG, "FlutterJNI.loadLibrary called more than once");
     }
 
-    try {
-      System.loadLibrary("flutter");
-    } catch (UnsatisfiedLinkError e) {
-      // Sniff if this because libflutter.so couldn't be found.
-      if (e.toString().contains("couldn't find \"libflutter.so\"")) {
-        throw new UnsupportedOperationException(
-            "Could not load libflutter.so this is likely because the application"
-                + " is running on an architecture that Flutter Android does not support (e.g. x86)"
-                + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
-                + " for more detail.",
-            e);
-      }
-      throw e;
-    }
+    System.loadLibrary("flutter");
     FlutterJNI.loadLibraryCalled = true;
   }
 
@@ -566,7 +555,7 @@ public class FlutterJNI {
   @VisibleForTesting
   @Nullable
   public static Bitmap decodeImage(@NonNull ByteBuffer buffer, long imageGeneratorAddress) {
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       ImageDecoder.Source source = ImageDecoder.createSource(buffer);
       try {
         return ImageDecoder.decodeBitmap(

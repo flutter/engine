@@ -21,6 +21,8 @@ final Set<String> skippedPaths = <String>{
   r'build_overrides', // only used by build
   r'buildtools', // only used by build
   r'flutter/build',
+  r'flutter/build_overrides', // only used by build
+  r'flutter/buildtools', // only used by build
   r'flutter/ci',
   r'flutter/docs',
   r'flutter/flutter_frontend_server',
@@ -29,6 +31,17 @@ final Set<String> skippedPaths = <String>{
   r'flutter/lib/web_ui/dev', // these are build tools; they do not end up in Engine artifacts
   r'flutter/prebuilts',
   r'flutter/sky/packages/sky_engine/LICENSE',
+  r'flutter/third_party/angle/android',
+  r'flutter/third_party/angle/doc',
+  r'flutter/third_party/angle/extensions',
+  r'flutter/third_party/angle/infra',
+  r'flutter/third_party/angle/scripts',
+  r'flutter/third_party/angle/src/libANGLE/renderer/metal/doc',
+  r'flutter/third_party/angle/src/libANGLE/renderer/vulkan/doc',
+  r'flutter/third_party/angle/src/third_party/volk', // We don't use Vulkan in our ANGLE build.
+  r'flutter/third_party/angle/third_party', // Unused by Flutter: BUILD files with forwarding targets (but no code).
+  r'flutter/third_party/angle/tools', // These are build-time tools, and aren't shipped.
+  r'flutter/third_party/angle/util',
   r'flutter/third_party/benchmark', // only used by tests
   r'flutter/third_party/boringssl/src/crypto/err/err_data_generate.go',
   r'flutter/third_party/boringssl/src/fuzz', // testing tools, not shipped
@@ -51,6 +64,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/glfw/deps', // Only used by examples and tests; not linked in build.
   r'flutter/third_party/glfw/docs',
   r'flutter/third_party/gn',
+  r'flutter/third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'flutter/third_party/harfbuzz/docs',
   r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
   r'flutter/third_party/icu/filters',
@@ -81,6 +95,16 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/libwebp/webp_js',
   r'flutter/third_party/ninja', // build system
   r'flutter/third_party/ocmock', // only used for tests
+  r'flutter/third_party/perfetto/debian', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/infra', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/protos', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/python/perfetto/trace_processor', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/src/ipc', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/src/profiling/memory', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/src/tools', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
+  r'flutter/third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
   r'flutter/third_party/pkg/archive', // contains nothing that ends up in the binary executable
   r'flutter/third_party/pkg/equatable',
   r'flutter/third_party/pkg/flutter_packages',
@@ -143,6 +167,11 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/vulkan-deps/vulkan-tools', // on hosts for tests
   r'flutter/third_party/vulkan-deps/vulkan-utility-libraries/src/LICENSE.md', // redundant with licenses inside files
   r'flutter/third_party/vulkan-deps/vulkan-validation-layers/src/docs',
+  r'flutter/third_party/vulkan_memory_allocator/bin',
+  r'flutter/third_party/vulkan_memory_allocator/docs',
+  r'flutter/third_party/vulkan_memory_allocator/media',
+  r'flutter/third_party/vulkan_memory_allocator/src',
+  r'flutter/third_party/vulkan_memory_allocator/tools',
   r'flutter/third_party/wuffs/docs',
   r'flutter/third_party/wuffs/script',
   r'flutter/third_party/yapf', // only used for code formatting
@@ -160,17 +189,6 @@ final Set<String> skippedPaths = <String>{
   r'out', // output of build
   r'third_party/android_embedding_dependencies', // Not shipped. Used only for the build-time classpath, and for the in-tree testing framework for Android
   r'third_party/android_tools', // excluded on advice
-  r'third_party/angle/android',
-  r'third_party/angle/doc',
-  r'third_party/angle/extensions',
-  r'third_party/angle/infra',
-  r'third_party/angle/scripts',
-  r'third_party/angle/src/libANGLE/renderer/metal/doc',
-  r'third_party/angle/src/libANGLE/renderer/vulkan/doc',
-  r'third_party/angle/src/third_party/volk', // We don't use Vulkan in our ANGLE build.
-  r'third_party/angle/third_party', // Unused by Flutter: BUILD files with forwarding targets (but no code).
-  r'third_party/angle/tools', // These are build-time tools, and aren't shipped.
-  r'third_party/angle/util',
   r'third_party/dart/benchmarks', // not shipped in binary
   r'third_party/dart/build', // not shipped in binary
   r'third_party/dart/docs', // not shipped in binary
@@ -192,7 +210,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/dart/third_party/pkg_tested',
   r'third_party/dart/third_party/requirejs', // only used by DDC
   r'third_party/dart/tools', // not shipped in binary
-  r'third_party/google_fonts_for_unit_tests', // only used in web unit tests
   r'third_party/gradle',
   r'third_party/java', // only used for Android builds
   r'third_party/libcxx/benchmarks',
@@ -201,21 +218,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libcxx/utils',
   r'third_party/libcxxabi/www',
   r'third_party/libxml', // dependency of the testing system that we don't actually use
-  r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/protos', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/python/perfetto/trace_processor', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/src/ipc', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/src/profiling/memory', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/src/tools', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
-  r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
-  r'third_party/vulkan_memory_allocator/bin',
-  r'third_party/vulkan_memory_allocator/docs',
-  r'third_party/vulkan_memory_allocator/media',
-  r'third_party/vulkan_memory_allocator/src',
-  r'third_party/vulkan_memory_allocator/tools',
   r'third_party/web_dependencies/canvaskit', // redundant; covered by Skia dependencies
   r'third_party/zlib/contrib/minizip/miniunz.c', // sample file
   r'third_party/zlib/contrib/minizip/minizip.c', // sample file
@@ -459,12 +461,12 @@ final List<Pattern> skippedFilePatterns = <Pattern>[
   RegExp(r'^flutter/(?:.+/)*[^/]+_unittests?\.[^/]+$'),
   RegExp(r'^flutter/lib/web_ui/lib/assets/ahem\.ttf$', expectNoMatch: true), // this gitignored file exists only for testing purposes
   RegExp(r'^flutter/sky/packages/sky_engine/LICENSE$'), // that is the output of this script
+  RegExp(r'^flutter/third_party/abseil-cpp/(?:.+/)*[^/]+_test\.[^/]+$'),
+  RegExp(r'^flutter/third_party/angle/(?:.+/)*[^/]+_unittest\.[^/]+$'),
   RegExp(r'^flutter/third_party/boringssl/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/bn/[^/]+.go$'),
   RegExp(r'^flutter/third_party/boringssl/src/crypto/fipsmodule/ec/[^/]+.go$'),
   RegExp(r'^flutter/third_party/freetype2/docs/(?!FTL\.TXT$).+'), // ignore all documentation except the license
-  RegExp(r'^third_party/abseil-cpp/(?:.+/)*[^/]+_test\.[^/]+$'),
-  RegExp(r'^third_party/angle/(?:.+/)*[^/]+_unittest\.[^/]+$'),
   RegExp(r'^third_party/dart/(?:.+/)*[^/]+_test\.[^/]+$'),
   RegExp(r'^third_party/zlib/(?:.+/)*[^/]+_unittest\.[^/]+$'),
 ];

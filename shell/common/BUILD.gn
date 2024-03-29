@@ -2,11 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/gpu/gpu.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 # Template to generate a dart embedder resource.cc file.
 # Required invoker inputs:
@@ -310,6 +313,7 @@ if (enable_unittests) {
       "base64_unittests.cc",
       "context_options_unittests.cc",
       "dl_op_spy_unittests.cc",
+      "engine_animator_unittests.cc",
       "engine_unittests.cc",
       "input_events_unittests.cc",
       "persistent_cache_unittests.cc",
@@ -339,10 +343,10 @@ if (enable_unittests) {
       sources += [ "shell_fuchsia_unittests.cc" ]
 
       deps += [
-        "$fuchsia_sdk_root/fidl:fuchsia.intl",
-        "$fuchsia_sdk_root/fidl:fuchsia.settings",
-        "$fuchsia_sdk_root/pkg:fidl_cpp",
-        "$fuchsia_sdk_root/pkg:sys_cpp",
+        "${fuchsia_sdk}/fidl/fuchsia.intl",
+        "${fuchsia_sdk}/fidl/fuchsia.settings",
+        "${fuchsia_sdk}/pkg/fidl_cpp",
+        "${fuchsia_sdk}/pkg/sys_cpp",
       ]
     } else if (shell_enable_gl) {
       # TODO(63837): This test is hard-coded to use a TestGLSurface so it cannot
@@ -353,9 +357,9 @@ if (enable_unittests) {
 
     if (shell_enable_gl) {
       deps += [
+        "//flutter/third_party/angle:libEGL_static",
+        "//flutter/third_party/angle:libGLESv2_static",
         "//flutter/third_party/swiftshader",
-        "//third_party/angle:libEGL_static",
-        "//third_party/angle:libGLESv2_static",
       ]
     }
   }

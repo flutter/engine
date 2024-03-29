@@ -197,6 +197,8 @@ using BlendHuePipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendLightenPipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
+using BlendPlusAdvancedPipeline =
+    RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendLuminosityPipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendMultiplyPipeline =
@@ -235,6 +237,9 @@ using FramebufferBlendHuePipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendFragmentShader>;
 using FramebufferBlendLightenPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendFragmentShader>;
+using FramebufferBlendPlusAdvancedPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendFragmentShader>;
 using FramebufferBlendLuminosityPipeline =
@@ -408,7 +413,7 @@ class ContentContext {
   ///
   // TODO(bdero): Remove this setting once StC is fully de-risked
   //              https://github.com/flutter/flutter/issues/123671
-  static constexpr bool kEnableStencilThenCover = false;
+  static constexpr bool kEnableStencilThenCover = true;
 
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
@@ -640,6 +645,11 @@ class ContentContext {
     return GetPipeline(blend_lighten_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendPlusAdvancedPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_plus_advanced_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendLuminosityPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_luminosity_pipelines_, opts);
@@ -726,6 +736,12 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendPlusAdvancedPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
+    return GetPipeline(framebuffer_blend_plus_advanced_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
@@ -778,10 +794,6 @@ class ContentContext {
   const Capabilities& GetDeviceCapabilities() const;
 
   void SetWireframe(bool wireframe);
-
-  void RecordCommandBuffer(std::shared_ptr<CommandBuffer> command_buffer) const;
-
-  void FlushCommandBuffers() const;
 
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
@@ -993,6 +1005,7 @@ class ContentContext {
   mutable Variants<BlendHardLightPipeline> blend_hardlight_pipelines_;
   mutable Variants<BlendHuePipeline> blend_hue_pipelines_;
   mutable Variants<BlendLightenPipeline> blend_lighten_pipelines_;
+  mutable Variants<BlendPlusAdvancedPipeline> blend_plus_advanced_pipelines_;
   mutable Variants<BlendLuminosityPipeline> blend_luminosity_pipelines_;
   mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
   mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
@@ -1018,6 +1031,8 @@ class ContentContext {
       framebuffer_blend_hue_pipelines_;
   mutable Variants<FramebufferBlendLightenPipeline>
       framebuffer_blend_lighten_pipelines_;
+  mutable Variants<FramebufferBlendPlusAdvancedPipeline>
+      framebuffer_blend_plus_advanced_pipelines_;
   mutable Variants<FramebufferBlendLuminosityPipeline>
       framebuffer_blend_luminosity_pipelines_;
   mutable Variants<FramebufferBlendMultiplyPipeline>

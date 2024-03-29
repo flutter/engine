@@ -59,13 +59,8 @@ void EmbedderExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::PrepareFlutterView(
-    int64_t flutter_view_id,
     SkISize frame_size,
     double device_pixel_ratio) {
-  // TODO(dkwingsmt): This class only supports rendering into the implicit
-  // view. Properly support multi-view in the future.
-  // https://github.com/flutter/flutter/issues/135530 item 4
-  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   Reset();
 
   pending_frame_size_ = frame_size;
@@ -417,6 +412,7 @@ class LayerBuilder {
 };  // namespace
 
 void EmbedderExternalViewEmbedder::SubmitFlutterView(
+    int64_t flutter_view_id,
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
@@ -479,16 +475,22 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
   }
 
   {
+    auto presentation_time_optional = frame->submit_info().presentation_time;
+    uint64_t presentation_time =
+        presentation_time_optional.has_value()
+            ? presentation_time_optional->ToEpochDelta().ToNanoseconds()
+            : 0;
+
     // Submit the scribbled layer to the embedder for presentation.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    EmbedderLayers presented_layers(pending_frame_size_,
-                                    pending_device_pixel_ratio_,
-                                    pending_surface_transformation_);
+    EmbedderLayers presented_layers(
+        pending_frame_size_, pending_device_pixel_ratio_,
+        pending_surface_transformation_, presentation_time);
 
     builder.PushLayers(presented_layers);
 
-    presented_layers.InvokePresentCallback(present_callback_);
+    presented_layers.InvokePresentCallback(flutter_view_id, present_callback_);
   }
 
   // See why this is necessary in the comment where this collection in

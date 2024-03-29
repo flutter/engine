@@ -133,6 +133,8 @@ class Shell final : public PlatformView::Delegate,
       const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
       impeller::RuntimeStageBackend runtime_stage_type)>
       EngineCreateCallback;
+  using AddViewCallback = std::function<void(bool added)>;
+  using RemoveViewCallback = std::function<void(bool removed)>;
 
   //----------------------------------------------------------------------------
   /// @brief      Creates a shell instance using the provided settings. The
@@ -316,8 +318,12 @@ class Shell final : public PlatformView::Delegate,
   ///
   /// @param[in]  view_id           The view ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  /// @param[in]  callback          The callback that's invoked once the engine
+  ///                               has attempted to add the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& viewport_metrics);
+  void AddView(int64_t view_id,
+               const ViewportMetrics& viewport_metrics,
+               AddViewCallback callback);
 
   /// @brief  Deallocates resources for a non-implicit view.
   ///
@@ -330,8 +336,10 @@ class Shell final : public PlatformView::Delegate,
   ///         `kFlutterImplicitViewId` triggers an assertion.
   ///
   /// @param[in]  view_id     The view ID of the view to be removed.
+  /// @param[in]  callback    The callback that's invoked once the engine has
+  ///                         attempted to remove the view.
   ///
-  void RemoveView(int64_t view_id);
+  void RemoveView(int64_t view_id, RemoveViewCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Captures a screenshot and optionally Base64 encodes the data

@@ -74,7 +74,12 @@ bool InlinePassContext::EndPass() {
       return false;
     }
   }
-  renderer_.RecordCommandBuffer(std::move(command_buffer_));
+  if (!renderer_.GetContext()
+           ->GetCommandQueue()
+           ->Submit({std::move(command_buffer_)})
+           .ok()) {
+    return false;
+  }
 
   pass_ = nullptr;
   command_buffer_ = nullptr;
@@ -187,6 +192,7 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
       " Count=" + std::to_string(pass_count_));
 
   result.pass = pass_;
+  result.just_created = true;
 
   if (!renderer_.GetContext()->GetCapabilities()->SupportsReadFromResolve() &&
       result.backdrop_texture ==

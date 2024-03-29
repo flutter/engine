@@ -9,11 +9,25 @@
 
 namespace flutter {
 
+namespace {
+std::vector<PlatformViewLayerWithIndex> CopyPlatformViewLayers(const FlutterLayer** layers,
+                                                               size_t layer_count) {
+  std::vector<PlatformViewLayerWithIndex> platform_views;
+  for (size_t i = 0; i < layer_count; i++) {
+    if (layers[i]->type == kFlutterLayerContentTypePlatformView) {
+      platform_views.push_back(std::make_pair(PlatformViewLayer(layers[i]), i));
+    }
+  }
+  return platform_views;
+}
+}  // namespace
+
 FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
+                                     FlutterTimeConverter* time_converter,
                                      FlutterPlatformViewController* platform_view_controller)
     : view_provider_(view_provider),
-      platform_view_controller_(platform_view_controller),
-      mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {
+      time_converter_(time_converter),
+      platform_view_controller_(platform_view_controller) {
   FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
 }
 
@@ -40,6 +54,10 @@ bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* conf
 bool FlutterCompositor::Present(FlutterViewId view_id,
                                 const FlutterLayer** layers,
                                 size_t layers_count) {
+  // TODO(dkwingsmt): The macOS embedder only supports rendering to the implicit
+  // view for now. As it supports adding more views, this assertion should be
+  // lifted. https://github.com/flutter/flutter/issues/142845
+  FML_DCHECK(view_id == kFlutterImplicitViewId);
   FlutterView* view = [view_provider_ viewForId:view_id];
   if (!view) {
     return false;
@@ -69,28 +87,46 @@ bool FlutterCompositor::Present(FlutterViewId view_id,
     }
   }
 
-  [view.surfaceManager present:surfaces
-                        notify:^{
-                          PresentPlatformViews(view, layers, layers_count);
-                        }];
+  CFTimeInterval presentation_time = 0;
+
+  if (layers_count > 0 && layers[0]->presentation_time != 0) {
+    presentation_time = [time_converter_ engineTimeToCAMediaTime:layers[0]->presentation_time];
+  }
+
+  // Notify block below may be called asynchronously, hence the need to copy
+  // the layer information instead of passing the original pointers from embedder.
+  auto platform_views_layers = std::make_shared<std::vector<PlatformViewLayerWithIndex>>(
+      CopyPlatformViewLayers(layers, layers_count));
+
+  [view.surfaceManager presentSurfaces:surfaces
+                                atTime:presentation_time
+                                notify:^{
+                                  // Gets a presenter or create a new one for the view.
+                                  ViewPresenter& presenter = presenters_[view_id];
+                                  presenter.PresentPlatformViews(view, *platform_views_layers,
+                                                                 platform_view_controller_);
+                                }];
 
   return true;
 }
 
-void FlutterCompositor::PresentPlatformViews(FlutterView* default_base_view,
-                                             const FlutterLayer** layers,
-                                             size_t layers_count) {
+FlutterCompositor::ViewPresenter::ViewPresenter()
+    : mutator_views_([NSMapTable strongToStrongObjectsMapTable]) {}
+
+void FlutterCompositor::ViewPresenter::PresentPlatformViews(
+    FlutterView* default_base_view,
+    const std::vector<PlatformViewLayerWithIndex>& platform_views,
+    const FlutterPlatformViewController* platform_view_controller) {
   FML_DCHECK([[NSThread currentThread] isMainThread])
       << "Must be on the main thread to present platform views";
 
   // Active mutator views for this frame.
   NSMutableArray<FlutterMutatorView*>* present_mutators = [NSMutableArray array];
 
-  for (size_t i = 0; i < layers_count; i++) {
-    FlutterLayer* layer = (FlutterLayer*)layers[i];
-    if (layer->type == kFlutterLayerContentTypePlatformView) {
-      [present_mutators addObject:PresentPlatformView(default_base_view, layer, i)];
-    }
+  for (const auto& platform_view : platform_views) {
+    FlutterMutatorView* container = PresentPlatformView(
+        default_base_view, platform_view.first, platform_view.second, platform_view_controller);
+    [present_mutators addObject:container];
   }
 
   NSMutableArray<FlutterMutatorView*>* obsolete_mutators =
@@ -102,17 +138,19 @@ void FlutterCompositor::PresentPlatformViews(FlutterView* default_base_view,
     [mutator removeFromSuperview];
   }
 
-  [platform_view_controller_ disposePlatformViews];
+  [platform_view_controller disposePlatformViews];
 }
 
-FlutterMutatorView* FlutterCompositor::PresentPlatformView(FlutterView* default_base_view,
-                                                           const FlutterLayer* layer,
-                                                           size_t layer_position) {
+FlutterMutatorView* FlutterCompositor::ViewPresenter::PresentPlatformView(
+    FlutterView* default_base_view,
+    const PlatformViewLayer& layer,
+    size_t index,
+    const FlutterPlatformViewController* platform_view_controller) {
   FML_DCHECK([[NSThread currentThread] isMainThread])
       << "Must be on the main thread to present platform views";
 
-  int64_t platform_view_id = layer->platform_view->identifier;
-  NSView* platform_view = [platform_view_controller_ platformViewWithID:platform_view_id];
+  int64_t platform_view_id = layer.identifier();
+  NSView* platform_view = [platform_view_controller platformViewWithID:platform_view_id];
 
   FML_DCHECK(platform_view) << "Platform view not found for id: " << platform_view_id;
 
@@ -124,8 +162,8 @@ FlutterMutatorView* FlutterCompositor::PresentPlatformView(FlutterView* default_
     [default_base_view addSubview:container];
   }
 
-  container.layer.zPosition = layer_position;
-  [container applyFlutterLayer:layer];
+  container.layer.zPosition = index;
+  [container applyFlutterLayer:&layer];
 
   return container;
 }

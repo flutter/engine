@@ -13,6 +13,7 @@
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
+#include "impeller/base/mask.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
@@ -135,6 +136,14 @@ constexpr bool IsStencilWritable(PixelFormat format) {
     default:
       return false;
   }
+}
+
+/// Returns `true` if the pixel format has an implicit `clamp(x, 0, 1)` in the
+/// pixel format. This is important for example when performing the `Plus` blend
+/// where we don't want alpha values over 1.0.
+constexpr bool IsAlphaClampedToOne(PixelFormat pixel_format) {
+  return !(pixel_format == PixelFormat::kR32G32B32A32Float ||
+           pixel_format == PixelFormat::kR16G16B16A16Float);
 }
 
 constexpr const char* PixelFormatToString(PixelFormat format) {
@@ -297,18 +306,15 @@ enum class SampleCount : uint8_t {
   kCount4 = 4,
 };
 
-using TextureUsageMask = uint64_t;
-
-enum class TextureUsage : TextureUsageMask {
+enum class TextureUsage {
   kUnknown = 0,
   kShaderRead = 1 << 0,
   kShaderWrite = 1 << 1,
   kRenderTarget = 1 << 2,
 };
+IMPELLER_ENUM_IS_MASK(TextureUsage);
 
-constexpr bool TextureUsageIsRenderTarget(TextureUsageMask mask) {
-  return static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) & mask;
-}
+using TextureUsageMask = Mask<TextureUsage>;
 
 constexpr const char* TextureUsageToString(TextureUsage usage) {
   switch (usage) {
@@ -435,7 +441,7 @@ enum class SamplerAddressMode {
   kDecal,
 };
 
-enum class ColorWriteMask : uint64_t {
+enum class ColorWriteMaskBits : uint64_t {
   kNone = 0,
   kRed = 1 << 0,
   kGreen = 1 << 1,
@@ -443,6 +449,9 @@ enum class ColorWriteMask : uint64_t {
   kAlpha = 1 << 3,
   kAll = kRed | kGreen | kBlue | kAlpha,
 };
+IMPELLER_ENUM_IS_MASK(ColorWriteMaskBits);
+
+using ColorWriteMask = Mask<ColorWriteMaskBits>;
 
 constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
   switch (format) {
@@ -508,8 +517,7 @@ struct ColorAttachmentDescriptor {
   BlendOperation alpha_blend_op = BlendOperation::kAdd;
   BlendFactor dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
 
-  std::underlying_type_t<ColorWriteMask> write_mask =
-      static_cast<uint64_t>(ColorWriteMask::kAll);
+  ColorWriteMask write_mask = ColorWriteMaskBits::kAll;
 
   constexpr bool operator==(const ColorAttachmentDescriptor& o) const {
     return format == o.format &&                                  //
@@ -524,10 +532,10 @@ struct ColorAttachmentDescriptor {
   }
 
   constexpr size_t Hash() const {
-    return fml::HashCombine(format, blending_enabled, src_color_blend_factor,
-                            color_blend_op, dst_color_blend_factor,
-                            src_alpha_blend_factor, alpha_blend_op,
-                            dst_alpha_blend_factor, write_mask);
+    return fml::HashCombine(
+        format, blending_enabled, src_color_blend_factor, color_blend_op,
+        dst_color_blend_factor, src_alpha_blend_factor, alpha_blend_op,
+        dst_alpha_blend_factor, static_cast<uint64_t>(write_mask));
   }
 };
 

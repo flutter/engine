@@ -4,6 +4,8 @@
 
 package io.flutter.view;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -36,6 +38,7 @@ import android.view.autofill.AutofillValue;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputMethodManager;
+import android.window.BackEvent;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.UiThread;
@@ -47,6 +50,7 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.embedding.engine.systemchannels.BackGestureChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -122,6 +126,7 @@ public class FlutterView extends SurfaceView
   private final DartExecutor dartExecutor;
   private final FlutterRenderer flutterRenderer;
   private final NavigationChannel navigationChannel;
+  private final BackGestureChannel backGestureChannel;
   private final LifecycleChannel lifecycleChannel;
   private final LocalizationChannel localizationChannel;
   private final PlatformChannel platformChannel;
@@ -212,6 +217,7 @@ public class FlutterView extends SurfaceView
 
     // Create all platform channels
     navigationChannel = new NavigationChannel(dartExecutor);
+    backGestureChannel = new BackGestureChannel(dartExecutor);
     lifecycleChannel = new LifecycleChannel(dartExecutor);
     localizationChannel = new LocalizationChannel(dartExecutor);
     platformChannel = new PlatformChannel(dartExecutor);
@@ -234,7 +240,7 @@ public class FlutterView extends SurfaceView
         new TextInputPlugin(this, new TextInputChannel(dartExecutor), platformViewsController);
     mKeyboardManager = new KeyboardManager(this);
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       mMouseCursorPlugin = new MouseCursorPlugin(this, new MouseCursorChannel(dartExecutor));
     } else {
       mMouseCursorPlugin = null;
@@ -365,6 +371,30 @@ public class FlutterView extends SurfaceView
 
   public void popRoute() {
     navigationChannel.popRoute();
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void startBackGesture(@NonNull BackEvent backEvent) {
+    backGestureChannel.startBackGesture(backEvent);
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void updateBackGestureProgress(@NonNull BackEvent backEvent) {
+    backGestureChannel.updateBackGestureProgress(backEvent);
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void commitBackGesture() {
+    backGestureChannel.commitBackGesture();
+  }
+
+  @TargetApi(API_LEVELS.API_34)
+  @RequiresApi(API_LEVELS.API_34)
+  public void cancelBackGesture() {
+    backGestureChannel.cancelBackGesture();
   }
 
   private void sendUserPlatformSettingsToDart() {
@@ -516,7 +546,7 @@ public class FlutterView extends SurfaceView
         return ZeroSides.RIGHT;
       } else if (rotation == Surface.ROTATION_270) {
         // In android API >= 23, the nav bar always appears on the "bottom" (USB) side.
-        return Build.VERSION.SDK_INT >= 23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
+        return Build.VERSION.SDK_INT >= API_LEVELS.API_23 ? ZeroSides.LEFT : ZeroSides.RIGHT;
       }
       // Ambiguous orientation due to landscape left/right default. Zero both sides.
       else if (rotation == Surface.ROTATION_0 || rotation == Surface.ROTATION_180) {
@@ -560,7 +590,7 @@ public class FlutterView extends SurfaceView
   @SuppressLint({"InlinedApi", "NewApi"})
   public final WindowInsets onApplyWindowInsets(WindowInsets insets) {
     // getSystemGestureInsets() was introduced in API 29 and immediately deprecated in 30.
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+    if (Build.VERSION.SDK_INT == API_LEVELS.API_29) {
       Insets systemGestureInsets = insets.getSystemGestureInsets();
       mMetrics.systemGestureInsetTop = systemGestureInsets.top;
       mMetrics.systemGestureInsetRight = systemGestureInsets.right;
@@ -572,7 +602,7 @@ public class FlutterView extends SurfaceView
     boolean navigationBarVisible =
         (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
       int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
@@ -789,8 +819,8 @@ public class FlutterView extends SurfaceView
   // -------- Start: Mouse -------
 
   @Override
-  @TargetApi(Build.VERSION_CODES.N)
-  @RequiresApi(Build.VERSION_CODES.N)
+  @TargetApi(API_LEVELS.API_24)
+  @RequiresApi(API_LEVELS.API_24)
   @NonNull
   public PointerIcon getSystemPointerIcon(int type) {
     return PointerIcon.getSystemIcon(getContext(), type);
