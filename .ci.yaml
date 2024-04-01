@@ -367,8 +367,7 @@ targets:
     drone_dimensions:
       - os=Mac-13
 
-  - name: Mac clangd
-    bringup: true
+  - name: Linux mac_clangd
     recipe: engine_v2/engine_v2
     # Avoid using a Mac orchestrator to save ~5 minutes of Mac host time.
     drone_dimensions:

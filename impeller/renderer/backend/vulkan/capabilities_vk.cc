@@ -167,14 +167,6 @@ static const char* GetExtensionName(RequiredAndroidDeviceExtensionVK ext) {
     case RequiredAndroidDeviceExtensionVK::
         kANDROIDExternalMemoryAndroidHardwareBuffer:
       return "VK_ANDROID_external_memory_android_hardware_buffer";
-    case RequiredAndroidDeviceExtensionVK::kKHRSamplerYcbcrConversion:
-      return VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kKHRExternalMemory:
-      return VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kEXTQueueFamilyForeign:
-      return VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME;
-    case RequiredAndroidDeviceExtensionVK::kKHRDedicatedAllocation:
-      return VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -297,7 +289,7 @@ static bool HasSuitableDepthStencilFormat(const vk::PhysicalDevice& device,
 static bool PhysicalDeviceSupportsRequiredFormats(
     const vk::PhysicalDevice& device) {
   const auto has_color_format =
-      HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm);
+      HasSuitableColorFormat(device, vk::Format::eR8G8B8A8Unorm);
   const auto has_stencil_format =
       HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint) ||
       HasSuitableDepthStencilFormat(device, vk::Format::eD24UnormS8Uint);
@@ -373,9 +365,7 @@ CapabilitiesVK::GetEnabledDeviceFeatures(
     required.fillModeNonSolid = supported.fillModeNonSolid;
   }
   // VK_KHR_sampler_ycbcr_conversion features.
-  if (IsExtensionInList(
-          enabled_extensions.value(),
-          RequiredAndroidDeviceExtensionVK::kKHRSamplerYcbcrConversion)) {
+  {
     auto& required =
         required_chain
             .get<vk::PhysicalDeviceSamplerYcbcrConversionFeaturesKHR>();
@@ -412,6 +402,12 @@ void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
 }
 
 bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
+  if (HasSuitableColorFormat(device, vk::Format::eR8G8B8A8Unorm)) {
+    default_color_format_ = PixelFormat::kR8G8B8A8UNormInt;
+  } else {
+    default_color_format_ = PixelFormat::kUnknown;
+  }
+
   if (HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint)) {
     default_depth_stencil_format_ = PixelFormat::kD32FloatS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,
