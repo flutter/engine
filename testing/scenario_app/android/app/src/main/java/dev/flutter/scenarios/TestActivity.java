@@ -99,18 +99,15 @@ public abstract class TestActivity extends TestableFlutterActivity {
     final AtomicBoolean didInvokeCallback = new AtomicBoolean(false);
 
     flutterLoader.ensureInitializationCompleteAsync(
-        getApplication(),
-        new String[] {},
-        mainHandler,
-            () -> didInvokeCallback.set(true));
+        getApplication(), new String[] {}, mainHandler, () -> didInvokeCallback.set(true));
 
     mainHandler.post(
-            () -> {
-              if (!didInvokeCallback.get()) {
-                throw new RuntimeException(
-                    "Failed test: FlutterLoader#ensureInitializationCompleteAsync() did not invoke its callback.");
-              }
-            });
+        () -> {
+          if (!didInvokeCallback.get()) {
+            throw new RuntimeException(
+                "Failed test: FlutterLoader#ensureInitializationCompleteAsync() did not invoke its callback.");
+          }
+        });
   }
 
   private static void hideSystemBars(Window window) {
