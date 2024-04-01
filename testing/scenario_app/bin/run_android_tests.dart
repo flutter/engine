@@ -91,6 +91,7 @@ void main(List<String> args) async {
         ndkStack: options.ndkStack,
         forceSurfaceProducerSurfaceTexture: options.forceSurfaceProducerSurfaceTexture,
         prefixLogsPerRun: options.prefixLogsPerRun,
+        recordScreen: options.recordScreen,
       );
       onSigint.cancel();
       exit(0);
@@ -135,6 +136,7 @@ Future<void> _run({
   required String ndkStack,
   required bool forceSurfaceProducerSurfaceTexture,
   required bool prefixLogsPerRun,
+  required bool recordScreen,
 }) async {
   const ProcessManager pm = LocalProcessManager();
   final String scenarioAppPath = join(outDir.path, 'scenario_app');
@@ -230,6 +232,7 @@ Future<void> _run({
   late Process logcatProcess;
   late Future<int> logcatProcessExitCode;
   _ImpellerBackend? actualImpellerBackend;
+  Process? screenRecordProcess;
 
   final IOSink logcat = File(logcatPath).openWrite();
   try {
@@ -361,6 +364,19 @@ Future<void> _run({
       }
     });
 
+    if (recordScreen) {
+      await step('Recording screen...', () async {
+        final String screenRecordingPath = join(logsDir.path, 'screen.mp4');
+        screenRecordProcess = await pm.start(<String>[
+          adb.path,
+          'shell',
+          'screenrecord',
+          screenRecordingPath,
+        ]);
+        log('writing screen recording to $screenRecordingPath');
+      });
+    }
+
     await step('Running instrumented tests...', () async {
       final (int exitCode, StringBuffer out) = await pm.runAndCapture(<String>[
         adb.path,
@@ -368,7 +384,7 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-	'--no-window-animation',
+	      '--no-window-animation',
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         if (enableImpeller)
@@ -446,6 +462,13 @@ Future<void> _run({
         logError('could not kill test app');
       }
     });
+
+    if (screenRecordProcess != null) {
+      await step('Killing screen recording process...', () async {
+        screenRecordProcess!.kill(ProcessSignal.sigkill);
+        await screenRecordProcess!.exitCode;
+      });
+    }
 
     await step('Killing logcat process...', () async {
       final bool delivered = logcatProcess.kill(ProcessSignal.sigkill);
