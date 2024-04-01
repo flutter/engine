@@ -488,8 +488,8 @@ Future<void> _run({
 
         // Pull the screen recording from the device.
         final String screenRecordingPath = join(
-          _emulatorStoragePath, 
-          'tmp', 
+          _emulatorStoragePath,
+          'tmp',
           'screen.mp4',
         );
         final String screenRecordingLocalPath = join(
