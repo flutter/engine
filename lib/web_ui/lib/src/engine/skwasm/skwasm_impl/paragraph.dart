@@ -694,7 +694,7 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
           'fontFamily: ${_fontFamily ?? "unspecified"}, '
           'fontFamilyFallback: ${_fontFamilyFallback ?? "unspecified"}, '
           'fontFamilyFallback: ${fontFamilyFallback != null && fontFamilyFallback.isNotEmpty ? fontFamilyFallback : "unspecified"}, '
-          'fontSize: ${_fontSize ?? "unspecified"}, '
+          'fontSize: ${fontSize != null ? fontSize.toStringAsFixed(1) : "unspecified"}, '
           'height: ${height != null ? "${height.toStringAsFixed(1)}x" : "unspecified"}, '
           'leading: ${leading != null ? "${leading.toStringAsFixed(1)}x" : "unspecified"}, '
           'fontWeight: ${_fontWeight ?? "unspecified"}, '
