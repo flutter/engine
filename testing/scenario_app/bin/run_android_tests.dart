@@ -366,11 +366,28 @@ Future<void> _run({
 
     if (recordScreen) {
       await step('Recording screen...', () async {
-        final String screenRecordingPath = join(logsDir.path, 'screen.mp4');
+        // Create a /tmp directory on the device to store the screen recording.
+        final int exitCode = await pm.runAndForward(<String>[
+          adb.path,
+          'shell',
+          'mkdir',
+          '-p',
+          join(_emulatorStoragePath, 'tmp'),
+        ]);
+        if (exitCode != 0) {
+          panic(<String>['could not create /tmp directory on device']);
+        }
+        final String screenRecordingPath = join(
+          _emulatorStoragePath,
+          'tmp',
+          'screen.mp4',
+        );
         screenRecordProcess = await pm.start(<String>[
           adb.path,
           'shell',
           'screenrecord',
+          '--time-limit=0',
+          '--bugreport',
           screenRecordingPath,
         ]);
         log('writing screen recording to $screenRecordingPath');
@@ -465,8 +482,42 @@ Future<void> _run({
 
     if (screenRecordProcess != null) {
       await step('Killing screen recording process...', () async {
+        // Kill the screen recording process.
         screenRecordProcess!.kill(ProcessSignal.sigkill);
         await screenRecordProcess!.exitCode;
+
+        // Pull the screen recording from the device.
+        final String screenRecordingPath = join(
+          _emulatorStoragePath, 
+          'tmp', 
+          'screen.mp4',
+        );
+        final String screenRecordingLocalPath = join(
+          logsDir.path,
+          'screen.mp4',
+        );
+        final int exitCode = await pm.runAndForward(<String>[
+          adb.path,
+          'pull',
+          screenRecordingPath,
+          screenRecordingLocalPath,
+        ]);
+        if (exitCode != 0) {
+          logError('could not pull screen recording from device');
+        }
+
+        log('wrote screen recording to $screenRecordingLocalPath');
+
+        // Remove the screen recording from the device.
+        final int removeExitCode = await pm.runAndForward(<String>[
+          adb.path,
+          'shell',
+          'rm',
+          screenRecordingPath,
+        ]);
+        if (removeExitCode != 0) {
+          logError('could not remove screen recording from device');
+        }
       });
     }
 
@@ -558,6 +609,8 @@ Future<void> _run({
     });
   }
 }
+
+const String _emulatorStoragePath = '/storage/emulated/0/Download';
 
 void _withTemporaryCwd(String path, void Function() callback) {
   final String originalCwd = Directory.current.path;
