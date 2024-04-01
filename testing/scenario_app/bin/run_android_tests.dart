@@ -401,7 +401,7 @@ Future<void> _run({
         'am',
         'instrument',
         '-w',
-	      '--no-window-animation',
+        '--no-window-animation',
         if (smokeTestFullPath != null)
           '-e class $smokeTestFullPath',
         if (enableImpeller)
