@@ -84,10 +84,10 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif  // SHELL_ENABLE_GL
 
 #ifdef SHELL_ENABLE_METAL
+#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
-#include "third_party/skia/include/ports/SkCFObject.h"
-#include" third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/ports/SkCFObject.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
 #include "flutter/shell/platform/embedder/embedder_surface_metal_impeller.h"  // nogncheck
@@ -749,10 +749,9 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   texture_info.fID = texture->name;
   texture_info.fFormat = texture->format;
 
-  GrBackendTexture backend_texture = GrBackendTextures::MakeGL(config.size.width,
-                                                   config.size.height,
-                                                   skgpu::Mipmapped::kNo,
-                                                   texture_info);
+  GrBackendTexture backend_texture =
+      GrBackendTextures::MakeGL(config.size.width, config.size.height,
+                                skgpu::Mipmapped::kNo, texture_info);
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
@@ -923,11 +922,12 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   sk_cfp<FlutterMetalTextureHandle> mtl_texture;
   mtl_texture.retain(metal->texture.texture);
   texture_info.fTexture = mtl_texture;
-  GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(config.size.width,      //
-                                   config.size.height,     //
-                                   skgpu::Mipmapped::kNo,  //
-                                   texture_info            //
-  );
+  GrBackendTexture backend_texture =
+      GrBackendTextures::MakeMtl(config.size.width,      //
+                                 config.size.height,     //
+                                 skgpu::Mipmapped::kNo,  //
+                                 texture_info            //
+      );
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 

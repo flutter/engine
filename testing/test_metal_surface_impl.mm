@@ -6,6 +6,7 @@
 
 #include <Metal/Metal.h>
 
+#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/testing/test_metal_context.h"
@@ -18,7 +19,6 @@
 #include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include" third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 
 namespace flutter {
@@ -29,8 +29,8 @@ void TestMetalSurfaceImpl::Init(const TestMetalContext::TextureInfo& texture_inf
 
   GrMtlTextureInfo skia_texture_info;
   skia_texture_info.fTexture.reset([texture retain]);
-  GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(surface_size.width(), surface_size.height(),
-                                   skgpu::Mipmapped::kNo, skia_texture_info);
+  GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(
+      surface_size.width(), surface_size.height(), skgpu::Mipmapped::kNo, skia_texture_info);
 
   sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
       test_metal_context_.GetSkiaContext().get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,

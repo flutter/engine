@@ -27,7 +27,7 @@
 #endif  // SHELL_ENABLE_VULKAN
 
 #ifdef SHELL_ENABLE_METAL
-#include" third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
+#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 #endif
 
@@ -286,8 +286,9 @@ bool EmbedderTestBackingStoreProducer::CreateMTLTexture(
 
   GrMtlTextureInfo skia_texture_info;
   skia_texture_info.fTexture.reset(SkCFSafeRetain(texture_info.texture));
-  GrBackendTexture backend_texture = GrBackendTextures::MakeMtl(surface_size.width(), surface_size.height(),
-                                   skgpu::Mipmapped::kNo, skia_texture_info);
+  GrBackendTexture backend_texture =
+      GrBackendTextures::MakeMtl(surface_size.width(), surface_size.height(),
+                                 skgpu::Mipmapped::kNo, skia_texture_info);
 
   sk_sp<SkSurface> surface = SkSurfaces::WrapBackendTexture(
       context_.get(), backend_texture, kTopLeft_GrSurfaceOrigin, 1,

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
+#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "impeller/base/validation.h"
 #include "impeller/display_list/dl_image_impeller.h"
@@ -15,9 +16,8 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrYUVABackendTextures.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
-#include "third_party/skia/include/ports/SkCFObject.h"
-#include" third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/ports/SkCFObject.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -296,18 +296,14 @@ FLUTTER_ASSERT_ARC
   ySkiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)yTex};
 
   GrBackendTexture skiaBackendTextures[2];
-  skiaBackendTextures[0] = GrBackendTextures::MakeMtl(width,
-                                            height,
-                                            skgpu::Mipmapped::kNo,
-                                            ySkiaTextureInfo);
+  skiaBackendTextures[0] =
+      GrBackendTextures::MakeMtl(width, height, skgpu::Mipmapped::kNo, ySkiaTextureInfo);
 
   GrMtlTextureInfo uvSkiaTextureInfo;
   uvSkiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)uvTex};
 
-  skiaBackendTextures[1] = GrBackendTextures::MakeMtl(width,
-                                            height,
-                                            skgpu::Mipmapped::kNo,
-                                            uvSkiaTextureInfo);
+  skiaBackendTextures[1] =
+      GrBackendTextures::MakeMtl(width, height, skgpu::Mipmapped::kNo, uvSkiaTextureInfo);
   SkYUVAInfo yuvaInfo(skiaBackendTextures[0].dimensions(), SkYUVAInfo::PlaneConfig::kY_UV,
                       SkYUVAInfo::Subsampling::k444, colorSpace);
   GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
@@ -325,10 +321,8 @@ FLUTTER_ASSERT_ARC
   GrMtlTextureInfo skiaTextureInfo;
   skiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)rgbaTex};
 
-  GrBackendTexture skiaBackendTexture = GrBackendTextures::MakeMtl(width,
-                                      height,
-                                      skgpu::Mipmapped ::kNo,
-                                      skiaTextureInfo);
+  GrBackendTexture skiaBackendTexture =
+      GrBackendTextures::MakeMtl(width, height, skgpu::Mipmapped ::kNo, skiaTextureInfo);
 
   return SkImages::BorrowTextureFrom(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
                                      kBGRA_8888_SkColorType, kPremul_SkAlphaType,
