@@ -104,12 +104,6 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   return true;
 }
 
-bool ShouldTestHaveVulkanValidations() {
-  std::string test_name = GetTestName();
-  return std::find(kVulkanDenyValidationTests.begin(),
-                   kVulkanDenyValidationTests.end(),
-                   test_name) == kVulkanDenyValidationTests.end();
-}
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
@@ -144,14 +138,16 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+  std::string test_name = GetTestName();
+  bool enable_wide_gamut = test_name.find("WideGamut_") != std::string::npos;
   switch (GetParam()) {
     case PlaygroundBackend::kMetal:
-      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+      pimpl_->screenshotter =
+          std::make_unique<testing::MetalScreenshotter>(enable_wide_gamut);
       break;
     case PlaygroundBackend::kVulkan: {
       const std::unique_ptr<PlaygroundImpl>& playground =
-          GetSharedVulkanPlayground(enable_vulkan_validations);
+          GetSharedVulkanPlayground(/*enable_validations=*/true);
       pimpl_->screenshotter =
           std::make_unique<testing::VulkanScreenshotter>(playground);
       break;
@@ -167,16 +163,7 @@ void GoldenPlaygroundTest::SetUp() {
       break;
     }
   }
-  if (GetParam() == PlaygroundBackend::kMetal) {
-    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
-  } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    const std::unique_ptr<PlaygroundImpl>& playground =
-        GetSharedVulkanPlayground(enable_vulkan_validations);
-    pimpl_->screenshotter =
-        std::make_unique<testing::VulkanScreenshotter>(playground);
-  }
 
-  std::string test_name = GetTestName();
   if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
       kSkipTests.end()) {
     GTEST_SKIP_(
@@ -257,7 +244,7 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
     /// On Metal we create a context for each test.
     return GetContext();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+    bool enable_vulkan_validations = true;
     FML_CHECK(!pimpl_->test_vulkan_playground)
         << "We don't support creating multiple contexts for one test";
     pimpl_->test_vulkan_playground =

@@ -67,9 +67,7 @@
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
-#include "impeller/entity/gaussian_blur.vert.h"
-#include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
-#include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel.vert.h"
 #include "impeller/entity/kernel_decal.frag.h"
 #include "impeller/entity/kernel_nodecal.frag.h"
 
@@ -139,16 +137,10 @@ using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
-using GaussianBlurDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurNoalphaDecalFragmentShader>;
-using GaussianBlurPipeline =
-    RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurNoalphaNodecalFragmentShader>;
 using KernelDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+    RenderPipelineT<KernelVertexShader, KernelDecalFragmentShader>;
 using KernelPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
+    RenderPipelineT<KernelVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -197,6 +189,8 @@ using BlendHuePipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendLightenPipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
+using BlendPlusAdvancedPipeline =
+    RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendLuminosityPipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendMultiplyPipeline =
@@ -235,6 +229,9 @@ using FramebufferBlendHuePipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendFragmentShader>;
 using FramebufferBlendLightenPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendFragmentShader>;
+using FramebufferBlendPlusAdvancedPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendFragmentShader>;
 using FramebufferBlendLuminosityPipeline =
@@ -518,16 +515,6 @@ class ContentContext {
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurDecalPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_noalpha_decal_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(kernel_decal_pipelines_, opts);
@@ -640,6 +627,11 @@ class ContentContext {
     return GetPipeline(blend_lighten_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendPlusAdvancedPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(blend_plus_advanced_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendLuminosityPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_luminosity_pipelines_, opts);
@@ -723,6 +715,12 @@ class ContentContext {
   GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendPlusAdvancedPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
+    return GetPipeline(framebuffer_blend_plus_advanced_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
@@ -961,10 +959,6 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
-  mutable Variants<GaussianBlurDecalPipeline>
-      gaussian_blur_noalpha_decal_pipelines_;
-  mutable Variants<GaussianBlurPipeline>
-      gaussian_blur_noalpha_nodecal_pipelines_;
   mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
   mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
@@ -989,6 +983,7 @@ class ContentContext {
   mutable Variants<BlendHardLightPipeline> blend_hardlight_pipelines_;
   mutable Variants<BlendHuePipeline> blend_hue_pipelines_;
   mutable Variants<BlendLightenPipeline> blend_lighten_pipelines_;
+  mutable Variants<BlendPlusAdvancedPipeline> blend_plus_advanced_pipelines_;
   mutable Variants<BlendLuminosityPipeline> blend_luminosity_pipelines_;
   mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
   mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
@@ -1014,6 +1009,8 @@ class ContentContext {
       framebuffer_blend_hue_pipelines_;
   mutable Variants<FramebufferBlendLightenPipeline>
       framebuffer_blend_lighten_pipelines_;
+  mutable Variants<FramebufferBlendPlusAdvancedPipeline>
+      framebuffer_blend_plus_advanced_pipelines_;
   mutable Variants<FramebufferBlendLuminosityPipeline>
       framebuffer_blend_luminosity_pipelines_;
   mutable Variants<FramebufferBlendMultiplyPipeline>
