@@ -79,7 +79,7 @@ std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
                                                   TextureDescriptor desc,
                                                   GLuint fbo) {
   return std::shared_ptr<TextureGLES>(
-      new TextureGLES(reactor, desc, true, fbo));
+      new TextureGLES(std::move(reactor), desc, true, fbo));
 }
 
 TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
@@ -91,7 +91,7 @@ TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       handle_(reactor_->CreateHandle(ToHandleType(type_))),
       is_wrapped_(is_wrapped),
-      fbo_(fbo) {
+      wrapped_fbo_(fbo) {
   // Ensure the texture descriptor itself is valid.
   if (!GetTextureDescriptor().IsValid()) {
     VALIDATION_LOG << "Invalid texture descriptor.";

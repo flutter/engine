@@ -175,6 +175,7 @@ struct RenderPassData {
 
   if (is_default_fbo) {
     if (color_gles.GetFBO().has_value()) {
+      // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
       gl.BindFramebuffer(GL_FRAMEBUFFER, *color_gles.GetFBO());
     }
   } else {
