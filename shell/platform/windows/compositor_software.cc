@@ -51,6 +51,18 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
     return view->ClearSoftwareBitmap();
   }
 
+  // Bypass composition logic if there is only one layer.
+  if (layers_count == 1) {
+    auto& layer = *layers[0];
+    if (layer.type == kFlutterLayerContentTypeBackingStore && layer.offset.x == 0 && layer.offset.y == 0) {
+      auto& backing_store = *layer.backing_store;
+      FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
+      auto& software = backing_store.software;
+      return view->PresentSoftwareBitmap(software.allocation, software.row_bytes, software.height);
+    }
+  }
+
+  // Composite many layers.
   int x_min = INT_MAX;
   int x_max = INT_MIN;
   int y_min = INT_MAX;
