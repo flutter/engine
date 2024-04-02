@@ -54,11 +54,13 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
   // Bypass composition logic if there is only one layer.
   if (layers_count == 1) {
     auto& layer = *layers[0];
-    if (layer.type == kFlutterLayerContentTypeBackingStore && layer.offset.x == 0 && layer.offset.y == 0) {
+    if (layer.type == kFlutterLayerContentTypeBackingStore &&
+        layer.offset.x == 0 && layer.offset.y == 0) {
       auto& backing_store = *layer.backing_store;
       FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
       auto& software = backing_store.software;
-      return view->PresentSoftwareBitmap(software.allocation, software.row_bytes, software.height);
+      return view->PresentSoftwareBitmap(software.allocation,
+                                         software.row_bytes, software.height);
     }
   }
 
@@ -97,52 +99,57 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
                                      width * 4, height);
 }
 
-void CompositorSoftware::BlendLayer(std::vector<uint32_t>& allocation, const FlutterLayer& layer, int x_min, int y_min, int width, int height) const {
-    FML_DCHECK(layer.type == kFlutterLayerContentTypeBackingStore);
-    auto& backing_store = *layer.backing_store;
-    FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
-    auto src_data =
-        static_cast<const uint32_t*>(backing_store.software.allocation);
-    auto& offset = layer.offset;
-    auto& size = layer.size;
+void CompositorSoftware::BlendLayer(std::vector<uint32_t>& allocation,
+                                    const FlutterLayer& layer,
+                                    int x_min,
+                                    int y_min,
+                                    int width,
+                                    int height) const {
+  FML_DCHECK(layer.type == kFlutterLayerContentTypeBackingStore);
+  auto& backing_store = *layer.backing_store;
+  FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
+  auto src_data =
+      static_cast<const uint32_t*>(backing_store.software.allocation);
+  auto& offset = layer.offset;
+  auto& size = layer.size;
 
-    for (int y_src = 0; y_src < size.height; y_src++) {
-      int y_dst = y_src + offset.y - y_min;
-      if (y_dst < 0) {
+  for (int y_src = 0; y_src < size.height; y_src++) {
+    int y_dst = y_src + offset.y - y_min;
+    if (y_dst < 0) {
+      continue;
+    }
+    if (y_dst >= height) {
+      break;
+    }
+    for (int x_src = 0; x_src < size.width; x_src++) {
+      int x_dst = x_src + offset.x + x_min;
+      if (x_dst < 0) {
         continue;
       }
-      if (y_dst >= height) {
+      if (x_dst >= width) {
         break;
       }
-      for (int x_src = 0; x_src < size.width; x_src++) {
-        int x_dst = x_src + offset.x + x_min;
-        if (x_dst < 0) {
-          continue;
-        }
-        if (x_dst >= width) {
-          break;
-        }
-        size_t i_src = y_src * size.width + x_src;
-        size_t i_dst = y_dst * width + x_dst;
-        uint32_t src = src_data[i_src];
-        uint32_t dst = allocation[i_dst];
+      size_t i_src = y_src * size.width + x_src;
+      size_t i_dst = y_dst * width + x_dst;
+      uint32_t src = src_data[i_src];
+      uint32_t dst = allocation[i_dst];
 
-        int r_src = (src >> 0) & 0xff;
-        int g_src = (src >> 8) & 0xff;
-        int b_src = (src >> 16) & 0xff;
-        int a_src = (src >> 24) & 0xff;
+      int r_src = (src >> 0) & 0xff;
+      int g_src = (src >> 8) & 0xff;
+      int b_src = (src >> 16) & 0xff;
+      int a_src = (src >> 24) & 0xff;
 
-        int r_dst = (dst >> 0) & 0xff;
-        int g_dst = (dst >> 8) & 0xff;
-        int b_dst = (dst >> 16) & 0xff;
+      int r_dst = (dst >> 0) & 0xff;
+      int g_dst = (dst >> 8) & 0xff;
+      int b_dst = (dst >> 16) & 0xff;
 
-        int r = (r_dst * 255 + (r_src - r_dst) * a_src) / 255;
-        int g = (g_dst * 255 + (g_src - g_dst) * a_src) / 255;
-        int b = (b_dst * 255 + (b_src - b_dst) * a_src) / 255;
+      int r = (r_dst * 255 + (r_src - r_dst) * a_src) / 255;
+      int g = (g_dst * 255 + (g_src - g_dst) * a_src) / 255;
+      int b = (b_dst * 255 + (b_src - b_dst) * a_src) / 255;
 
-        allocation[i_dst] = (r << 0) | (g << 8) | (b << 16) | (0xff << 24);
-      }
+      allocation[i_dst] = (r << 0) | (g << 8) | (b << 16) | (0xff << 24);
     }
+  }
 }
 
 }  // namespace flutter

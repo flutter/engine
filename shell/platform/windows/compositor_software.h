@@ -29,7 +29,12 @@ class CompositorSoftware : public Compositor {
                size_t layers_count) override;
 
  private:
-  void BlendLayer(std::vector<uint32_t>& allocation, const FlutterLayer& layer, int x_min, int y_min, int width, int height) const;
+  void BlendLayer(std::vector<uint32_t>& allocation,
+                  const FlutterLayer& layer,
+                  int x_min,
+                  int y_min,
+                  int width,
+                  int height) const;
 
   FlutterWindowsEngine* engine_;
 };

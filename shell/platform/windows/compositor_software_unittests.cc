@@ -224,9 +224,11 @@ TEST_F(CompositorSoftwareTest, PresentOffsetLayers) {
 
   auto compositor = CompositorSoftware{engine()};
 
-  FlutterBackingStoreConfig config0 = {sizeof(FlutterBackingStoreConfig), {1, 1}};
+  FlutterBackingStoreConfig config0 = {sizeof(FlutterBackingStoreConfig),
+                                       {1, 1}};
   FlutterBackingStore backing_store0 = {sizeof(FlutterBackingStore), nullptr};
-  FlutterBackingStoreConfig config1 = {sizeof(FlutterBackingStoreConfig), {2, 1}};
+  FlutterBackingStoreConfig config1 = {sizeof(FlutterBackingStoreConfig),
+                                       {2, 1}};
   FlutterBackingStore backing_store1 = {sizeof(FlutterBackingStore), nullptr};
 
   ASSERT_TRUE(compositor.CreateBackingStore(config0, &backing_store0));
