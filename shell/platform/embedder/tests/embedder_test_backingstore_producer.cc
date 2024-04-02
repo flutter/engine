@@ -27,8 +27,8 @@
 #endif  // SHELL_ENABLE_VULKAN
 
 #ifdef SHELL_ENABLE_METAL
-#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #endif
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
