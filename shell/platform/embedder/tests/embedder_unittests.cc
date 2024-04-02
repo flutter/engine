@@ -1306,7 +1306,7 @@ TEST_F(EmbedderTest, CanAddView) {
   info.view_id = 123;
   info.view_metrics = &metrics;
   info.add_view_callback = [](const FlutterAddViewResult* result) {
-    ASSERT_TRUE(result->added);
+    EXPECT_TRUE(result->added);
   };
   ASSERT_EQ(FlutterEngineAddView(engine.get(), &info), kSuccess);
   message_latch.Wait();
@@ -1351,7 +1351,7 @@ TEST_F(EmbedderTest, AddViewSchedulesFrame) {
   info.view_id = 123;
   info.view_metrics = &metrics;
   info.add_view_callback = [](const FlutterAddViewResult* result) {
-    ASSERT_TRUE(result->added);
+    EXPECT_TRUE(result->added);
   };
   ASSERT_EQ(FlutterEngineAddView(engine.get(), &info), kSuccess);
 
@@ -1411,7 +1411,7 @@ TEST_F(EmbedderTest, CanRemoveView) {
   remove_info.struct_size = sizeof(FlutterAddViewInfo);
   remove_info.view_id = 123;
   remove_info.remove_view_callback = [](const FlutterRemoveViewResult* result) {
-    ASSERT_TRUE(result->removed);
+    EXPECT_TRUE(result->removed);
   };
   ASSERT_EQ(FlutterEngineRemoveView(engine.get(), &remove_info), kSuccess);
   message_latch.Wait();
@@ -1495,7 +1495,7 @@ TEST_F(EmbedderTest, CannotAddDuplicateViews) {
     if (count == 0) {
       ASSERT_TRUE(result->added);
     } else {
-      ASSERT_FALSE(result->added);
+      EXPECT_FALSE(result->added);
       captures->failure_latch.Signal();
     }
   };
@@ -1593,7 +1593,7 @@ TEST_F(EmbedderTest, CannotRemoveUnknownView) {
   info.view_id = 123;
   info.user_data = &latch;
   info.remove_view_callback = [](const FlutterRemoveViewResult* result) {
-    ASSERT_FALSE(result->removed);
+    EXPECT_FALSE(result->removed);
     reinterpret_cast<fml::AutoResetWaitableEvent*>(result->user_data)->Signal();
   };
   ASSERT_EQ(FlutterEngineRemoveView(engine.get(), &info), kSuccess);

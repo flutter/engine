@@ -2567,7 +2567,7 @@ FlutterEngineResult FlutterEngineRunInitialized(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 //------------------------------------------------------------------------------
-/// @brief      Add a view.
+/// @brief      Adds a view.
 ///
 ///             This is an asynchronous operation. The view should not be used
 ///             until the |add_view_callback| is invoked with an `added` of
