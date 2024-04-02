@@ -79,7 +79,10 @@ struct RuntimeEffectData {
 };
 
 #if IMPELLER_ENABLE_3D
-struct SceneData {};
+struct SceneData {
+  std::shared_ptr<scene::Node> scene_node;
+  Matrix camera_transform;
+};
 #endif  // IMPELLER_ENABLE_3D
 
 using ColorSourceData = std::variant<LinearGradientData,
@@ -88,26 +91,10 @@ using ColorSourceData = std::variant<LinearGradientData,
                                      SweepGradientData,
                                      ImageData,
                                      RuntimeEffectData,
+#if IMPELLER_ENABLE_3D
+                                     SceneData,
+#endif  // IMPELLER_ENABLE_3D
                                      std::monostate>;
-
-struct ColorSourceDataVisitor {
-  explicit ColorSourceDataVisitor(const Paint& p_paint) : paint(p_paint) {}
-
-  const Paint& paint;
-
-  std::shared_ptr<ColorSourceContents> operator()(
-      const LinearGradientData& data);
-  std::shared_ptr<ColorSourceContents> operator()(
-      const RadialGradientData& data);
-  std::shared_ptr<ColorSourceContents> operator()(
-      const ConicalGradientData& data);
-  std::shared_ptr<ColorSourceContents> operator()(
-      const SweepGradientData& data);
-  std::shared_ptr<ColorSourceContents> operator()(const ImageData& data);
-  std::shared_ptr<ColorSourceContents> operator()(
-      const RuntimeEffectData& data);
-  std::shared_ptr<ColorSourceContents> operator()(const std::monostate& data);
-};
 
 class ColorSource {
  public:

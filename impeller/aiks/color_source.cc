@@ -30,113 +30,130 @@
 
 namespace impeller {
 
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const LinearGradientData& data) {
-  auto contents = std::make_shared<LinearGradientContents>();
-  contents->SetOpacityFactor(paint.color.alpha);
-  contents->SetColors(data.colors);
-  contents->SetStops(data.stops);
-  contents->SetEndPoints(data.start_point, data.end_point);
-  contents->SetTileMode(data.tile_mode);
-  contents->SetEffectTransform(data.effect_transform);
+namespace {
 
-  std::vector<Point> bounds{data.start_point, data.end_point};
-  auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
-  if (intrinsic_size.has_value()) {
-    contents->SetColorSourceSize(intrinsic_size->GetSize());
+struct CreateContentsVisitor {
+  explicit CreateContentsVisitor(const Paint& p_paint) : paint(p_paint) {}
+
+  const Paint& paint;
+
+  std::shared_ptr<ColorSourceContents> operator()(
+      const LinearGradientData& data) {
+    auto contents = std::make_shared<LinearGradientContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetColors(data.colors);
+    contents->SetStops(data.stops);
+    contents->SetEndPoints(data.start_point, data.end_point);
+    contents->SetTileMode(data.tile_mode);
+    contents->SetEffectTransform(data.effect_transform);
+
+    std::vector<Point> bounds{data.start_point, data.end_point};
+    auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
+    if (intrinsic_size.has_value()) {
+      contents->SetColorSourceSize(intrinsic_size->GetSize());
+    }
+    return contents;
   }
-  return contents;
-}
 
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const RadialGradientData& data) {
-  auto contents = std::make_shared<RadialGradientContents>();
-  contents->SetOpacityFactor(paint.color.alpha);
-  contents->SetColors(data.colors);
-  contents->SetStops(data.stops);
-  contents->SetCenterAndRadius(data.center, data.radius);
-  contents->SetTileMode(data.tile_mode);
-  contents->SetEffectTransform(data.effect_transform);
+  std::shared_ptr<ColorSourceContents> operator()(
+      const RadialGradientData& data) {
+    auto contents = std::make_shared<RadialGradientContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetColors(data.colors);
+    contents->SetStops(data.stops);
+    contents->SetCenterAndRadius(data.center, data.radius);
+    contents->SetTileMode(data.tile_mode);
+    contents->SetEffectTransform(data.effect_transform);
 
-  auto radius_pt = Point(data.radius, data.radius);
-  std::vector<Point> bounds{data.center + radius_pt, data.center - radius_pt};
-  auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
-  if (intrinsic_size.has_value()) {
-    contents->SetColorSourceSize(intrinsic_size->GetSize());
+    auto radius_pt = Point(data.radius, data.radius);
+    std::vector<Point> bounds{data.center + radius_pt, data.center - radius_pt};
+    auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
+    if (intrinsic_size.has_value()) {
+      contents->SetColorSourceSize(intrinsic_size->GetSize());
+    }
+    return contents;
   }
-  return contents;
-}
 
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const ConicalGradientData& data) {
-  std::shared_ptr<ConicalGradientContents> contents =
-      std::make_shared<ConicalGradientContents>();
-  contents->SetOpacityFactor(paint.color.alpha);
-  contents->SetColors(data.colors);
-  contents->SetStops(data.stops);
-  contents->SetCenterAndRadius(data.center, data.radius);
-  contents->SetTileMode(data.tile_mode);
-  contents->SetEffectTransform(data.effect_transform);
-  contents->SetFocus(data.focus_center, data.focus_radius);
+  std::shared_ptr<ColorSourceContents> operator()(
+      const ConicalGradientData& data) {
+    std::shared_ptr<ConicalGradientContents> contents =
+        std::make_shared<ConicalGradientContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetColors(data.colors);
+    contents->SetStops(data.stops);
+    contents->SetCenterAndRadius(data.center, data.radius);
+    contents->SetTileMode(data.tile_mode);
+    contents->SetEffectTransform(data.effect_transform);
+    contents->SetFocus(data.focus_center, data.focus_radius);
 
-  auto radius_pt = Point(data.radius, data.radius);
-  std::vector<Point> bounds{data.center + radius_pt, data.center - radius_pt};
-  auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
-  if (intrinsic_size.has_value()) {
-    contents->SetColorSourceSize(intrinsic_size->GetSize());
+    auto radius_pt = Point(data.radius, data.radius);
+    std::vector<Point> bounds{data.center + radius_pt, data.center - radius_pt};
+    auto intrinsic_size = Rect::MakePointBounds(bounds.begin(), bounds.end());
+    if (intrinsic_size.has_value()) {
+      contents->SetColorSourceSize(intrinsic_size->GetSize());
+    }
+    return contents;
   }
-  return contents;
-}
 
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const SweepGradientData& data) {
-  auto contents = std::make_shared<SweepGradientContents>();
-  contents->SetOpacityFactor(paint.color.alpha);
-  contents->SetCenterAndAngles(data.center, data.start_angle, data.end_angle);
-  contents->SetColors(data.colors);
-  contents->SetStops(data.stops);
-  contents->SetTileMode(data.tile_mode);
-  contents->SetEffectTransform(data.effect_transform);
+  std::shared_ptr<ColorSourceContents> operator()(
+      const SweepGradientData& data) {
+    auto contents = std::make_shared<SweepGradientContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetCenterAndAngles(data.center, data.start_angle, data.end_angle);
+    contents->SetColors(data.colors);
+    contents->SetStops(data.stops);
+    contents->SetTileMode(data.tile_mode);
+    contents->SetEffectTransform(data.effect_transform);
 
-  return contents;
-}
-
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const ImageData& data) {
-  auto contents = std::make_shared<TiledTextureContents>();
-  contents->SetOpacityFactor(paint.color.alpha);
-  contents->SetTexture(data.texture);
-  contents->SetTileModes(data.x_tile_mode, data.y_tile_mode);
-  contents->SetSamplerDescriptor(data.sampler_descriptor);
-  contents->SetEffectTransform(data.effect_transform);
-  if (paint.color_filter) {
-    TiledTextureContents::ColorFilterProc filter_proc =
-        [color_filter = paint.color_filter](FilterInput::Ref input) {
-          return color_filter->WrapWithGPUColorFilter(
-              std::move(input), ColorFilterContents::AbsorbOpacity::kNo);
-        };
-    contents->SetColorFilter(filter_proc);
+    return contents;
   }
-  contents->SetColorSourceSize(Size::Ceil(data.texture->GetSize()));
-  return contents;
-}
 
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const RuntimeEffectData& data) {
-  auto contents = std::make_shared<RuntimeEffectContents>();
-  contents->SetOpacityFactor(paint.color.alpha);
-  contents->SetRuntimeStage(data.runtime_stage);
-  contents->SetUniformData(data.uniform_data);
-  contents->SetTextureInputs(data.texture_inputs);
-  return contents;
-}
+  std::shared_ptr<ColorSourceContents> operator()(const ImageData& data) {
+    auto contents = std::make_shared<TiledTextureContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetTexture(data.texture);
+    contents->SetTileModes(data.x_tile_mode, data.y_tile_mode);
+    contents->SetSamplerDescriptor(data.sampler_descriptor);
+    contents->SetEffectTransform(data.effect_transform);
+    if (paint.color_filter) {
+      TiledTextureContents::ColorFilterProc filter_proc =
+          [color_filter = paint.color_filter](FilterInput::Ref input) {
+            return color_filter->WrapWithGPUColorFilter(
+                std::move(input), ColorFilterContents::AbsorbOpacity::kNo);
+          };
+      contents->SetColorFilter(filter_proc);
+    }
+    contents->SetColorSourceSize(Size::Ceil(data.texture->GetSize()));
+    return contents;
+  }
 
-std::shared_ptr<ColorSourceContents> ColorSourceDataVisitor::operator()(
-    const std::monostate& data) {
-  auto contents = std::make_shared<SolidColorContents>();
-  contents->SetColor(paint.color);
-  return contents;
-}
+  std::shared_ptr<ColorSourceContents> operator()(
+      const RuntimeEffectData& data) {
+    auto contents = std::make_shared<RuntimeEffectContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetRuntimeStage(data.runtime_stage);
+    contents->SetUniformData(data.uniform_data);
+    contents->SetTextureInputs(data.texture_inputs);
+    return contents;
+  }
+
+  std::shared_ptr<ColorSourceContents> operator()(const std::monostate& data) {
+    auto contents = std::make_shared<SolidColorContents>();
+    contents->SetColor(paint.color);
+    return contents;
+  }
+
+#if IMPELLER_ENABLE_3D
+  std::shared_ptr<ColorSourceContents> operator()(const SceneData& data) {
+    auto contents = std::make_shared<SceneContents>();
+    contents->SetOpacityFactor(paint.color.alpha);
+    contents->SetNode(data.scene_node);
+    contents->SetCameraTransform(data.camera_transform);
+    return contents;
+  }
+#endif  // IMPELLER_ENABLE_3D
+};
+}  // namespace
 
 ColorSource::ColorSource() noexcept : color_source_data_(std::monostate()) {}
 
@@ -230,30 +247,13 @@ ColorSource ColorSource::MakeRuntimeEffect(
   return result;
 }
 
-#if IMPELLER_ENABLE_3D
-ColorSource ColorSource::MakeScene(std::shared_ptr<scene::Node> scene_node,
-                                   Matrix camera_transform) {
-  ColorSource result;
-  result.type_ = Type::kScene;
-  result.proc_ = [scene_node = std::move(scene_node),
-                  camera_transform](const Paint& paint) {
-    auto contents = std::make_shared<SceneContents>();
-    contents->SetOpacityFactor(paint.color.alpha);
-    contents->SetNode(scene_node);
-    contents->SetCameraTransform(camera_transform);
-    return contents;
-  };
-  return result;
-}
-#endif  // IMPELLER_ENABLE_3D
-
 ColorSource::Type ColorSource::GetType() const {
   return type_;
 }
 
 std::shared_ptr<ColorSourceContents> ColorSource::GetContents(
     const Paint& paint) const {
-  return std::visit(ColorSourceDataVisitor{paint}, color_source_data_);
+  return std::visit(CreateContentsVisitor{paint}, color_source_data_);
 }
 
 }  // namespace impeller
