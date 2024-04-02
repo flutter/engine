@@ -6,6 +6,7 @@
 
 #include "flutter/fml/make_copyable.h"
 #include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/display_list/dl_dispatcher_2.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/surface.h"
@@ -82,21 +83,22 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
 
         auto cull_rect =
             surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
-        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
-        display_list->Dispatch(
-            impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
             std::move(surface),
-            fml::MakeCopyable(
-                [aiks_context, picture = std::move(picture)](
-                    impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target,
-                                              /*reset_host_buffer=*/true);
-                }));
+            fml::MakeCopyable([aiks_context,
+                               display_list = std::move(display_list),
+                               cull_rect](impeller::RenderTarget& render_target)
+                                  -> bool {
+              impeller::DlDispatcher2 impeller_dispatcher(
+                  aiks_context->GetContentContext(), render_target);
+              display_list->Dispatch(
+                  impeller_dispatcher,
+                  SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+              impeller_dispatcher.EndReplay();
+              aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+              return true;
+            }));
       });
 
   return std::make_unique<SurfaceFrame>(

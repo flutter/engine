@@ -24,6 +24,8 @@ impeller_component("display_list") {
   sources = [
     "dl_dispatcher.cc",
     "dl_dispatcher.h",
+    "dl_dispatcher_2.cc",
+    "dl_dispatcher_2.h",
     "dl_image_impeller.cc",
     "dl_image_impeller.h",
     "dl_vertices_geometry.cc",

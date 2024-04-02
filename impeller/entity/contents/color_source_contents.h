@@ -49,6 +49,15 @@ class ColorSourceContents : public Contents {
   ///
   const std::shared_ptr<Geometry>& GetGeometry() const;
 
+  Geometry* GetLocalGeometry() const {
+    if (geometry_) {
+      return geometry_.get();
+    }
+    return raw_geometry_;
+  }
+
+  void SetRawGeometry(Geometry* raw_geometry) { raw_geometry_ = raw_geometry; }
+
   //----------------------------------------------------------------------------
   /// @brief  Set the effect transform for this color source.
   ///
@@ -124,8 +133,8 @@ class ColorSourceContents : public Contents {
                     const Matrix& effect_transform = {}) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
 
-    GeometryResult::Mode geometry_mode = GetGeometry()->GetResultMode();
-    Geometry& geometry = *GetGeometry();
+    GeometryResult::Mode geometry_mode = GetLocalGeometry()->GetResultMode();
+    Geometry& geometry = *GetLocalGeometry();
 
     const bool is_stencil_then_cover =
         geometry_mode == GeometryResult::Mode::kNonZero ||
@@ -136,7 +145,7 @@ class ColorSourceContents : public Contents {
       /// Stencil preparation draw.
 
       GeometryResult stencil_geometry_result =
-          GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+          GetLocalGeometry()->GetPositionBuffer(renderer, entity, pass);
       if (stencil_geometry_result.vertex_buffer.vertex_count == 0u) {
         return true;
       }
@@ -173,7 +182,8 @@ class ColorSourceContents : public Contents {
 
       options.blend_mode = entity.GetBlendMode();
       options.stencil_mode = ContentContextOptions::StencilMode::kCoverCompare;
-      std::optional<Rect> maybe_cover_area = GetGeometry()->GetCoverage({});
+      std::optional<Rect> maybe_cover_area =
+          GetLocalGeometry()->GetCoverage({});
       if (!maybe_cover_area.has_value()) {
         return true;
       }
@@ -245,6 +255,7 @@ class ColorSourceContents : public Contents {
 
  private:
   std::shared_ptr<Geometry> geometry_;
+  Geometry* raw_geometry_;
   Matrix inverse_matrix_;
   Scalar opacity_ = 1.0;
   Scalar inherited_opacity_ = 1.0;

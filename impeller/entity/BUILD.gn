@@ -184,6 +184,8 @@ impeller_component("entity") {
     "contents/vertices_contents.h",
     "entity.cc",
     "entity.h",
+    "entity_canvas.cc",
+    "entity_canvas.h",
     "entity_pass.cc",
     "entity_pass.h",
     "entity_pass_clip_stack.cc",
