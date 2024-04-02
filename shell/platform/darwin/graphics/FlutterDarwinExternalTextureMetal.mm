@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
-#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "impeller/base/validation.h"
 #include "impeller/display_list/dl_image_impeller.h"
@@ -17,6 +16,7 @@
 #include "third_party/skia/include/gpu/GrYUVABackendTextures.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 
 FLUTTER_ASSERT_ARC

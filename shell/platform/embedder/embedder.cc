@@ -84,9 +84,9 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif  // SHELL_ENABLE_GL
 
 #ifdef SHELL_ENABLE_METAL
-#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck

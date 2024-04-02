@@ -20,12 +20,12 @@
 #include "flutter/testing/assertions_skia.h"
 #include "flutter/testing/testing.h"
 
-#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)

@@ -9,7 +9,6 @@
 
 #include <utility>
 
-#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
@@ -29,6 +28,7 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");

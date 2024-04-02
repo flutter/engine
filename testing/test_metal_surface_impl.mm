@@ -6,7 +6,6 @@
 
 #include <Metal/Metal.h>
 
-#include " third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/testing/test_metal_context.h"
@@ -20,6 +19,7 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 
 namespace flutter {
 
