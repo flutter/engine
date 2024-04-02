@@ -5,6 +5,7 @@
 #include "impeller/entity/entity_canvas.h"
 
 #include "impeller/entity/contents/solid_color_contents.h"
+#include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_target.h"
@@ -383,9 +384,30 @@ void EntityCanvas::DrawImageRect(const std::shared_ptr<Texture>& image,
   Entity entity;
   entity.SetBlendMode(blend_mode);
   entity.SetClipDepth(GetClipDepth());
-  entity.SetTransform(GetCurrentTransform());
+  entity.SetTransform(
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
+      GetCurrentTransform());
 
   texture_contents.Render(renderer_, entity, *render_passes_.back());
+}
+
+void EntityCanvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+                                 Point position) {
+  Entity entity;
+  entity.SetClipDepth(GetClipDepth());
+  entity.SetBlendMode(BlendMode::kSourceOver);
+
+  TextContents text_contents;
+  text_contents.SetTextFrame(text_frame);
+  text_contents.SetColor(Color::White());
+  text_contents.SetForceTextColor(false);
+  text_contents.SetScale(2.625);
+
+  entity.SetTransform(
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
+      GetCurrentTransform() * Matrix::MakeTranslation(position));
+
+  text_contents.Render(renderer_, entity, *render_passes_.back());
 }
 
 }  // namespace impeller

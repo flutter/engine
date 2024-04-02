@@ -95,6 +95,9 @@ class EntityCanvas {
                      SamplerDescriptor sampler,
                      bool strict_src_rect);
 
+  void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+                     Point position);
+
   void EndReplay() {
     FML_DCHECK(inline_pass_contexts_.size() == 1u);
     inline_pass_contexts_.back()->EndPass();

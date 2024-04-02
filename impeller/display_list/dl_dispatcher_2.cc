@@ -895,7 +895,9 @@ void DlDispatcher2::drawTextBlob(const sk_sp<SkTextBlob> blob,
 
 void DlDispatcher2::drawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                                   SkScalar x,
-                                  SkScalar y) {}
+                                  SkScalar y) {
+  canvas_.DrawTextFrame(text_frame, Point(x, y));
+}
 
 // |flutter::DlOpReceiver|
 void DlDispatcher2::drawShadow(const SkPath& path,
@@ -912,5 +914,191 @@ void DlDispatcher2::drawShadow(const CacheablePath& cache,
                                const SkScalar elevation,
                                bool transparent_occluder,
                                SkScalar dpr) {}
+
+//////////////////  GlyphAndCLipCollector ///////////////////
+
+void GlyphAndCLipCollector::setAntiAlias(bool aa) {}
+
+void GlyphAndCLipCollector::setDrawStyle(flutter::DlDrawStyle style) {}
+
+void GlyphAndCLipCollector::setColor(flutter::DlColor color) {}
+
+void GlyphAndCLipCollector::setStrokeWidth(SkScalar width) {}
+
+void GlyphAndCLipCollector::setStrokeMiter(SkScalar limit) {}
+
+void GlyphAndCLipCollector::setStrokeCap(flutter::DlStrokeCap cap) {}
+
+void GlyphAndCLipCollector::setStrokeJoin(flutter::DlStrokeJoin join) {}
+
+void GlyphAndCLipCollector::setColorSource(
+    const flutter::DlColorSource* source) {}
+
+void GlyphAndCLipCollector::setColorFilter(
+    const flutter::DlColorFilter* filter) {}
+
+void GlyphAndCLipCollector::setInvertColors(bool invert) {}
+
+void GlyphAndCLipCollector::setBlendMode(flutter::DlBlendMode dl_mode) {}
+
+void GlyphAndCLipCollector::setPathEffect(const flutter::DlPathEffect* effect) {
+}
+
+void GlyphAndCLipCollector::setMaskFilter(const flutter::DlMaskFilter* filter) {
+}
+
+void GlyphAndCLipCollector::setImageFilter(
+    const flutter::DlImageFilter* filter) {}
+
+void GlyphAndCLipCollector::save() {}
+
+void GlyphAndCLipCollector::saveLayer(const SkRect& bounds,
+                                      const flutter::SaveLayerOptions options,
+                                      const flutter::DlImageFilter* backdrop) {}
+
+void GlyphAndCLipCollector::restore() {}
+
+void GlyphAndCLipCollector::translate(SkScalar tx, SkScalar ty) {}
+
+void GlyphAndCLipCollector::scale(SkScalar sx, SkScalar sy) {}
+
+void GlyphAndCLipCollector::rotate(SkScalar degrees) {}
+
+void GlyphAndCLipCollector::skew(SkScalar sx, SkScalar sy) {}
+
+void GlyphAndCLipCollector::transform2DAffine(SkScalar mxx,
+                                              SkScalar mxy,
+                                              SkScalar mxt,
+                                              SkScalar myx,
+                                              SkScalar myy,
+                                              SkScalar myt) {}
+
+void GlyphAndCLipCollector::transformFullPerspective(SkScalar mxx,
+                                                     SkScalar mxy,
+                                                     SkScalar mxz,
+                                                     SkScalar mxt,
+                                                     SkScalar myx,
+                                                     SkScalar myy,
+                                                     SkScalar myz,
+                                                     SkScalar myt,
+                                                     SkScalar mzx,
+                                                     SkScalar mzy,
+                                                     SkScalar mzz,
+                                                     SkScalar mzt,
+                                                     SkScalar mwx,
+                                                     SkScalar mwy,
+                                                     SkScalar mwz,
+                                                     SkScalar mwt) {}
+
+void GlyphAndCLipCollector::transformReset() {}
+
+void GlyphAndCLipCollector::clipRect(const SkRect& rect,
+                                     ClipOp clip_op,
+                                     bool is_aa) {}
+
+void GlyphAndCLipCollector::clipRRect(const SkRRect& rrect,
+                                      ClipOp sk_op,
+                                      bool is_aa) {}
+
+void GlyphAndCLipCollector::clipPath(const SkPath& path,
+                                     ClipOp sk_op,
+                                     bool is_aa) {}
+
+void GlyphAndCLipCollector::clipPath(const CacheablePath& cache,
+                                     ClipOp sk_op,
+                                     bool is_aa) {}
+
+void GlyphAndCLipCollector::drawColor(flutter::DlColor color,
+                                      flutter::DlBlendMode dl_mode) {}
+
+void GlyphAndCLipCollector::drawPaint() {}
+
+void GlyphAndCLipCollector::drawLine(const SkPoint& p0, const SkPoint& p1) {}
+
+void GlyphAndCLipCollector::drawRect(const SkRect& rect) {}
+
+void GlyphAndCLipCollector::drawOval(const SkRect& bounds) {}
+
+void GlyphAndCLipCollector::drawCircle(const SkPoint& center, SkScalar radius) {
+}
+
+void GlyphAndCLipCollector::drawRRect(const SkRRect& rrect) {}
+
+void GlyphAndCLipCollector::drawDRRect(const SkRRect& outer,
+                                       const SkRRect& inner) {}
+
+void GlyphAndCLipCollector::drawPath(const SkPath& path) {}
+
+void GlyphAndCLipCollector::drawPath(const CacheablePath& cache) {}
+
+void GlyphAndCLipCollector::drawArc(const SkRect& oval_bounds,
+                                    SkScalar start_degrees,
+                                    SkScalar sweep_degrees,
+                                    bool use_center) {}
+
+void GlyphAndCLipCollector::drawPoints(PointMode mode,
+                                       uint32_t count,
+                                       const SkPoint points[]) {}
+
+void GlyphAndCLipCollector::drawVertices(const flutter::DlVertices* vertices,
+                                         flutter::DlBlendMode dl_mode) {}
+
+void GlyphAndCLipCollector::drawImage(const sk_sp<flutter::DlImage> image,
+                                      const SkPoint point,
+                                      flutter::DlImageSampling sampling,
+                                      bool render_with_attributes) {}
+
+void GlyphAndCLipCollector::drawImageRect(
+    const sk_sp<flutter::DlImage> image,
+    const SkRect& src,
+    const SkRect& dst,
+    flutter::DlImageSampling sampling,
+    bool render_with_attributes,
+    SrcRectConstraint constraint = SrcRectConstraint::kFast) {}
+
+void GlyphAndCLipCollector::drawImageNine(const sk_sp<flutter::DlImage> image,
+                                          const SkIRect& center,
+                                          const SkRect& dst,
+                                          flutter::DlFilterMode filter,
+                                          bool render_with_attributes) {}
+
+void GlyphAndCLipCollector::drawAtlas(const sk_sp<flutter::DlImage> atlas,
+                                      const SkRSXform xform[],
+                                      const SkRect tex[],
+                                      const flutter::DlColor colors[],
+                                      int count,
+                                      flutter::DlBlendMode mode,
+                                      flutter::DlImageSampling sampling,
+                                      const SkRect* cull_rect,
+                                      bool render_with_attributes) {}
+
+void GlyphAndCLipCollector::drawDisplayList(
+    const sk_sp<flutter::DisplayList> display_list,
+    SkScalar opacity) {
+  display_list->Dispatch(*this);
+}
+
+void GlyphAndCLipCollector::drawTextBlob(const sk_sp<SkTextBlob> blob,
+                                         SkScalar x,
+                                         SkScalar y) {}
+
+void GlyphAndCLipCollector::drawTextFrame(
+    const std::shared_ptr<TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y) {
+  glyphs_.push_back(std::make_pair(text_frame, 2.625));
+}
+
+void GlyphAndCLipCollector::drawShadow(const SkPath& path,
+                                       const flutter::DlColor color,
+                                       const SkScalar elevation,
+                                       bool transparent_occluder,
+                                       SkScalar dpr) {}
+
+void GlyphAndCLipCollector::drawShadow(const CacheablePath& cache,
+                                       const flutter::DlColor color,
+                                       const SkScalar elevation,
+                                       bool transparent_occluder,
+                                       SkScalar dpr) {}
 
 }  // namespace impeller

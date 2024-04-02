@@ -61,6 +61,10 @@ void TextContents::PopulateGlyphAtlas(
   scale_ = scale;
 }
 
+void TextContents::SetScale(Scalar scale) {
+  scale_ = scale;
+}
+
 bool TextContents::Render(const ContentContext& renderer,
                           const Entity& entity,
                           RenderPass& pass) const {
@@ -179,7 +183,9 @@ bool TextContents::Render(const ContentContext& renderer,
             std::optional<Rect> maybe_atlas_glyph_bounds =
                 font_atlas->FindGlyphBounds(glyph_position.glyph);
             if (!maybe_atlas_glyph_bounds.has_value()) {
-              VALIDATION_LOG << "Could not find glyph position in the atlas.";
+              VALIDATION_LOG
+                  << "Could not find glyph position in the atlas.: " << scale_
+                  << " r:  " << rounded_scale;
               continue;
             }
             const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();

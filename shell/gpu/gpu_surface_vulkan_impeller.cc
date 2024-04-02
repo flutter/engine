@@ -90,8 +90,12 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
                                display_list = std::move(display_list),
                                cull_rect](impeller::RenderTarget& render_target)
                                   -> bool {
+              impeller::GlyphAndCLipCollector prepass;
               impeller::DlDispatcher2 impeller_dispatcher(
                   aiks_context->GetContentContext(), render_target);
+
+              display_list->Dispatch(prepass);
+              prepass.CollectAllGlyphs(aiks_context->GetContentContext());
               display_list->Dispatch(
                   impeller_dispatcher,
                   SkIRect::MakeWH(cull_rect.width, cull_rect.height));
