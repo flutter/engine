@@ -85,13 +85,26 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
        layer++) {
     // TODO(schectman): handle platform view type layers.
     // https://github.com/flutter/flutter/issues/143375
-    FML_DCHECK((*layer)->type == kFlutterLayerContentTypeBackingStore);
-    auto& backing_store = *(*layer)->backing_store;
+    if ((*layer)->type == kFlutterLayerContentTypeBackingStore) {
+      BlendLayer(allocation, **layer, x_min, y_min, width, height);
+    } else {
+      FML_UNREACHABLE();
+      return false;
+    }
+  }
+
+  return view->PresentSoftwareBitmap(static_cast<void*>(allocation.data()),
+                                     width * 4, height);
+}
+
+void CompositorSoftware::BlendLayer(std::vector<uint32_t>& allocation, const FlutterLayer& layer, int x_min, int y_min, int width, int height) const {
+    FML_DCHECK(layer.type == kFlutterLayerContentTypeBackingStore);
+    auto& backing_store = *layer.backing_store;
     FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
     auto src_data =
         static_cast<const uint32_t*>(backing_store.software.allocation);
-    auto& offset = (*layer)->offset;
-    auto& size = (*layer)->size;
+    auto& offset = layer.offset;
+    auto& size = layer.size;
 
     for (int y_src = 0; y_src < size.height; y_src++) {
       int y_dst = y_src + offset.y - y_min;
@@ -130,10 +143,6 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
         allocation[i_dst] = (r << 0) | (g << 8) | (b << 16) | (0xff << 24);
       }
     }
-  }
-
-  return view->PresentSoftwareBitmap(static_cast<void*>(allocation.data()),
-                                     width * 4, height);
 }
 
 }  // namespace flutter
