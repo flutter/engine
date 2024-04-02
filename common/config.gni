@@ -31,6 +31,9 @@ declare_args() {
 
   # Whether binary size optimizations with the assumption that Impeller is the
   # only supported rendering engine are enabled.
+  #
+  # See [go/slimpeller-dashboard](https://github.com/orgs/flutter/projects/21)
+  # for details.
   slimpeller = false
 }
 

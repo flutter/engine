@@ -1268,7 +1268,8 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Enable optimizations that attempt to reduce binary size of the ' +
-      'Flutter engine by assuming only the Impeller rendering engine is supported.'
+      'Flutter engine by assuming only the Impeller rendering engine is supported.' +
+      'See [go/slimpeller-dashboard](https://github.com/orgs/flutter/projects/21) for details.'
   )
 
   # Sanitizers.
