@@ -709,7 +709,11 @@ void DlDispatcher2::drawPaint() {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher2::drawLine(const SkPoint& p0, const SkPoint& p1) {}
+void DlDispatcher2::drawLine(const SkPoint& p0, const SkPoint& p1) {
+  canvas_.DrawLine(skia_conversions::ToPoint(p0), skia_conversions::ToPoint(p1),
+                   paint_.color, paint_.blend_mode, paint_.stroke_width,
+                   paint_.stroke_cap);
+}
 
 // |flutter::DlOpReceiver|
 void DlDispatcher2::drawRect(const SkRect& rect) {
@@ -896,7 +900,8 @@ void DlDispatcher2::drawTextBlob(const sk_sp<SkTextBlob> blob,
 void DlDispatcher2::drawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                                   SkScalar x,
                                   SkScalar y) {
-  canvas_.DrawTextFrame(text_frame, Point(x, y));
+  canvas_.DrawTextFrame(text_frame, Point(x, y), paint_.color,
+                        paint_.blend_mode);
 }
 
 // |flutter::DlOpReceiver|

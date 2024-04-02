@@ -96,7 +96,16 @@ class EntityCanvas {
                      bool strict_src_rect);
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                     Point position);
+                     Point position,
+                     Color color,
+                     BlendMode blend_mode);
+
+  void DrawLine(const Point& p0,
+                const Point& p1,
+                Color color,
+                BlendMode blend_mode,
+                Scalar width,
+                Cap cap);
 
   void EndReplay() {
     FML_DCHECK(inline_pass_contexts_.size() == 1u);

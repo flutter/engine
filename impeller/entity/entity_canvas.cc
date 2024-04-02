@@ -12,6 +12,7 @@
 #include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/cover_geometry.h"
 #include "impeller/entity/geometry/fill_path_geometry.h"
+#include "impeller/entity/geometry/line_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/geometry/color.h"
 
@@ -392,14 +393,16 @@ void EntityCanvas::DrawImageRect(const std::shared_ptr<Texture>& image,
 }
 
 void EntityCanvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
-                                 Point position) {
+                                 Point position,
+                                 Color color,
+                                 BlendMode blend_mode) {
   Entity entity;
   entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(BlendMode::kSourceOver);
+  entity.SetBlendMode(blend_mode);
 
   TextContents text_contents;
   text_contents.SetTextFrame(text_frame);
-  text_contents.SetColor(Color::White());
+  text_contents.SetColor(color);
   text_contents.SetForceTextColor(false);
   text_contents.SetScale(2.625);
 
@@ -408,6 +411,27 @@ void EntityCanvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
       GetCurrentTransform() * Matrix::MakeTranslation(position));
 
   text_contents.Render(renderer_, entity, *render_passes_.back());
+}
+
+void EntityCanvas::DrawLine(const Point& p0,
+                            const Point& p1,
+                            Color color,
+                            BlendMode blend_mode,
+                            Scalar width,
+                            Cap cap) {
+  Entity entity;
+  entity.SetClipDepth(GetClipDepth());
+  entity.SetBlendMode(blend_mode);
+  entity.SetTransform(
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
+      GetCurrentTransform());
+
+  LineGeometry geom(p0, p1, width, cap);
+  SolidColorContents color_source;
+  color_source.SetRawGeometry(&geom);
+  color_source.SetColor(color);
+
+  color_source.Render(renderer_, entity, *render_passes_.back());
 }
 
 }  // namespace impeller
