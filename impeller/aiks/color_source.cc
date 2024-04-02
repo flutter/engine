@@ -247,6 +247,16 @@ ColorSource ColorSource::MakeRuntimeEffect(
   return result;
 }
 
+#if IMPELLER_ENABLE_3D
+ColorSource ColorSource::MakeScene(std::shared_ptr<scene::Node> scene_node,
+                                   Matrix camera_transform) {
+  ColorSource result;
+  result.type_ = Type::kScene;
+  result.color_source_data_ = SceneData{scene_node, camera_transform};
+  return result;
+}
+#endif  // IMPELLER_ENABLE_3D
+
 ColorSource::Type ColorSource::GetType() const {
   return type_;
 }
