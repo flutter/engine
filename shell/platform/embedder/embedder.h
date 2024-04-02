@@ -878,7 +878,8 @@ typedef struct {
 /// The callback invoked by the engine when the engine has attempted to add a
 /// view.
 ///
-/// The |FlutterAddViewResult| will be deallocated once the callback returns.
+/// The |FlutterAddViewResult| is only guaranteed to be valid during this
+/// callback.
 typedef void (*FlutterAddViewCallback)(const FlutterAddViewResult* result);
 
 typedef struct {
@@ -925,7 +926,8 @@ typedef struct {
 /// The callback invoked by the engine when the engine has attempted to remove
 /// a view.
 ///
-/// The |FlutterRemoveViewResult| will be deallocated once the callback returns.
+/// The |FlutterRemoveViewResult| is only guaranteed to be valid during this
+/// callback.
 typedef void (*FlutterRemoveViewCallback)(
     const FlutterRemoveViewResult* /* result */);
 
