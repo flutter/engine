@@ -79,7 +79,7 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
 
   int width = x_max - x_min;
   int height = y_max - y_min;
-  std::vector<uint32_t> allocation(width * height);
+  std::vector<uint32_t> allocation(width * height, 0xff000000);
 
   for (const FlutterLayer** layer = layers; layer < layers + layers_count;
        layer++) {
