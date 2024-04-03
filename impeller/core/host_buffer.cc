@@ -188,6 +188,10 @@ HostBuffer::EmplaceInternal(const void* buffer, size_t length, size_t align) {
   return EmplaceInternal(buffer, length);
 }
 
+const std::shared_ptr<DeviceBuffer>& HostBuffer::GetCurrentBuffer() const {
+  return device_buffers_[frame_index_][current_buffer_];
+}
+
 void HostBuffer::Reset() {
   // When resetting the host buffer state at the end of the frame, check if
   // there are any unused buffers and remove them.
