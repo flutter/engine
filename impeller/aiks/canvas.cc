@@ -934,7 +934,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors()) {
     if (std::optional<ImageData> maybe_image_data =
             GetImageColorSourceData(paint.color_source)) {
-      ImageData image_data = maybe_image_data.value();
+      const ImageData& image_data = maybe_image_data.value();
       auto contents = std::make_shared<VerticesSimpleBlendContents>();
       contents->SetBlendMode(blend_mode);
       contents->SetAlpha(paint.color.alpha);
