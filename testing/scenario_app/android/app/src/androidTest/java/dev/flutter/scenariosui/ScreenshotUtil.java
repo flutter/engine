@@ -17,6 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import android.util.Log;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Allows to capture screenshots, and transfers the screenshots to the host where they can be
@@ -52,6 +53,8 @@ public class ScreenshotUtil {
       final byte[] bytes = buffer.array();
       out.write(bytes, 0, bytes.length);
       out.flush();
+
+      in.read();
     }
 
     synchronized void close() throws IOException {
@@ -99,7 +102,8 @@ public class ScreenshotUtil {
    * @param fileContent The file content.
    */
   public static synchronized void writeFile(
-      @NonNull String filename) {
+      @NonNull String filename,
+      @NonNull CountDownLatch latch) {
     if (executor != null && conn != null) {
       executor.execute(
           () -> {
@@ -107,6 +111,8 @@ public class ScreenshotUtil {
               conn.writeFile(filename);
             } catch (IOException e) {
               throw new RuntimeException(e);
+            } finally {
+              latch.countDown();
             }
           });
     }
@@ -123,8 +129,9 @@ public class ScreenshotUtil {
    */
   public static void capture(@NonNull TestableFlutterActivity activity, @NonNull String captureName)
       throws Exception {
+    CountDownLatch latch = new CountDownLatch(1);
     activity.waitUntilFlutterRendered();
-    ScreenshotUtil.writeFile(captureName);
-    Thread.sleep(5000);
+    ScreenshotUtil.writeFile(captureName, latch);
+    latch.await();
   }
 }

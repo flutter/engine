@@ -192,27 +192,25 @@ Future<void> _run({
       }
       pendingConnections.add(client);
       client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) async {
-         print('got screenshot signal');
         final String fileName = screenshot.filename;
         final String filePath = join(screenshotPath, fileName);
         {
           const String remotePath = '/data/local/tmp/flutter_screenshot.png';
           ProcessResult result = await pm.run(<String>['adb', 'shell', 'screencap', '-p', remotePath]);
           if (result.exitCode != 0) {
-
+            panic(<String>['Failed to capture screenshot']);
           }
           result = await pm.run(
             <String>['adb', 'pull', remotePath, filePath],
           );
           if (result.exitCode != 0) {
-
+            panic(<String>['Failed to pull screenshot']);
           }
           result = await pm.run(<String>['adb', 'shell', 'rm', remotePath]);
           if (result.exitCode != 0) {
-
+            stderr.writeln('Warning: failed to delete old screenshot on device.');
           }
         }
-        print('write screenshot signal');
         // Signal that screenshot was written.
         client.write(0x8);
 
