@@ -15,13 +15,13 @@ class SerializedTestSuite {
     final Completer<void>? lastTestCompleter = _previousTestCompleter;
     final Completer<void> currentTestCompleter = Completer<void>();
     _previousTestCompleter = currentTestCompleter;
-    Future<void> Function() wrappedBody  = () async {
+    Future<void> wrappedBody() async {
       if (lastTestCompleter != null) {
-        await lastTestCompleter!.future;
+        await lastTestCompleter.future;
       }
       await body();
       currentTestCompleter.complete();
-    };
+    }
     litetest.test(name, wrappedBody);
   }
 }

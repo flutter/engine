@@ -70,7 +70,7 @@ Future<void> _testPerfettoFormatTrace(vms.VmService vmService) async {
 }
 
 void main() {
-  SerializedTestSuite suite = SerializedTestSuite();
+  final SerializedTestSuite suite = SerializedTestSuite();
 
   suite.test('Canvas.saveLayer emits tracing', () async {
     final developer.ServiceProtocolInfo info = await developer.Service.getInfo();
