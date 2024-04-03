@@ -5,19 +5,15 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_CANVAS_H_
 #define FLUTTER_IMPELLER_ENTITY_ENTITY_CANVAS_H_
 
-#include <cstdint>
 #include <deque>
-#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 
+#include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
-#include "impeller/entity/entity_pass_clip_stack.h"
-#include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
@@ -107,6 +103,11 @@ class EntityCanvas {
                 Scalar width,
                 Cap cap);
 
+  void DrawRRect(const Rect& rect,
+                 const Size& corner_radii,
+                 Color color,
+                 BlendMode blend_mode);
+
   void EndReplay() {
     FML_DCHECK(inline_pass_contexts_.size() == 1u);
     inline_pass_contexts_.back()->EndPass();
@@ -118,6 +119,8 @@ class EntityCanvas {
   }
 
  private:
+  void Draw(const ColorSourceContents& color_source, BlendMode blend_mode);
+
   struct CanvasStackEntry {
     Matrix transform;
     // |cull_rect| is conservative screen-space bounds of the clipped output

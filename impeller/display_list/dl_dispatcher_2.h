@@ -10,7 +10,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity_canvas.h"
-#include "impeller/geometry/scalar.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
 
@@ -257,16 +257,11 @@ class DlDispatcher2 final : public flutter::DlOpReceiver {
 /// Pre-pass for impeller rendering that Collects depth information and glyphs
 class GlyphAndCLipCollector final : public flutter::DlOpReceiver {
  public:
-  GlyphAndCLipCollector() {}
+  explicit GlyphAndCLipCollector(LazyGlyphAtlas& atlas) : atlas_(atlas) {
+    atlas_.ResetTextFrames();
+  }
 
   ~GlyphAndCLipCollector() {}
-
-  void CollectAllGlyphs(ContentContext& renderer) {
-    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
-    for (const auto& [frame, scale] : glyphs_) {
-      renderer.GetLazyGlyphAtlas()->AddTextFrame(*frame, scale);
-    }
-  }
 
   // |flutter::DlOpReceiver|
   bool PrefersImpellerPaths() const override { return true; }
@@ -485,7 +480,7 @@ class GlyphAndCLipCollector final : public flutter::DlOpReceiver {
                   SkScalar dpr) override;
 
  private:
-  std::vector<std::pair<std::shared_ptr<TextFrame>, Scalar>> glyphs_;
+  LazyGlyphAtlas& atlas_;
 
   GlyphAndCLipCollector(const GlyphAndCLipCollector&) = delete;
 

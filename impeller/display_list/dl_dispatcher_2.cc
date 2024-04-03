@@ -701,7 +701,10 @@ void DlDispatcher2::clipPath(const CacheablePath& cache,
 
 // |flutter::DlOpReceiver|
 void DlDispatcher2::drawColor(flutter::DlColor color,
-                              flutter::DlBlendMode dl_mode) {}
+                              flutter::DlBlendMode dl_mode) {
+  auto ip_color = skia_conversions::ToColor(color);
+  canvas_.DrawPaint(ip_color, ToBlendMode(dl_mode));
+}
 
 // |flutter::DlOpReceiver|
 void DlDispatcher2::drawPaint() {
@@ -731,7 +734,16 @@ void DlDispatcher2::drawCircle(const SkPoint& center, SkScalar radius) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcher2::drawRRect(const SkRRect& rrect) {}
+void DlDispatcher2::drawRRect(const SkRRect& rrect) {
+  if (rrect.isSimple()) {
+    canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
+                      skia_conversions::ToSize(rrect.getSimpleRadii()),
+                      paint_.color, paint_.blend_mode);
+  } else {
+    canvas_.DrawPath(skia_conversions::ToPath(rrect), paint_.color,
+                     paint_.blend_mode);
+  }
+}
 
 // |flutter::DlOpReceiver|
 void DlDispatcher2::drawDRRect(const SkRRect& outer, const SkRRect& inner) {}
@@ -1091,7 +1103,7 @@ void GlyphAndCLipCollector::drawTextFrame(
     const std::shared_ptr<TextFrame>& text_frame,
     SkScalar x,
     SkScalar y) {
-  glyphs_.push_back(std::make_pair(text_frame, 2.625));
+  atlas_.AddTextFrame(*text_frame, 2.625);
 }
 
 void GlyphAndCLipCollector::drawShadow(const SkPath& path,

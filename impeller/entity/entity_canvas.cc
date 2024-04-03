@@ -14,6 +14,7 @@
 #include "impeller/entity/geometry/fill_path_geometry.h"
 #include "impeller/entity/geometry/line_geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
+#include "impeller/entity/geometry/round_rect_geometry.h"
 #include "impeller/geometry/color.h"
 
 namespace impeller {
@@ -232,7 +233,6 @@ bool EntityCanvas::Restore() {
   if (transform_stack_.size() == 1) {
     return false;
   }
-  size_t num_clips = transform_stack_.back().num_clips;
 
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
@@ -264,9 +264,6 @@ bool EntityCanvas::Restore() {
   }
 
   transform_stack_.pop_back();
-  if (num_clips > 0) {
-    // RestoreClip();
-  }
 
   return true;
 }
@@ -275,72 +272,44 @@ bool EntityCanvas::Restore() {
 void EntityCanvas::DrawRect(const Rect& rect,
                             Color& color,
                             BlendMode blend_mode) {
-  Entity entity;
-  entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
-      GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(blend_mode);
-
   auto geom = RectGeometry(rect);
   SolidColorContents color_source;
   color_source.SetRawGeometry(&geom);
   color_source.SetColor(color);
 
-  color_source.Render(renderer_, entity, *render_passes_.back());
+  Draw(color_source, blend_mode);
 }
 
 void EntityCanvas::DrawPaint(Color& color, BlendMode blend_mode) {
-  Entity entity;
-  entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
-      GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(blend_mode);
-
   auto geom = CoverGeometry();
   SolidColorContents color_source;
   color_source.SetRawGeometry(&geom);
   color_source.SetColor(color);
 
-  color_source.Render(renderer_, entity, *render_passes_.back());
+  Draw(color_source, blend_mode);
 }
 
 void EntityCanvas::DrawCircle(const Point& center,
                               Scalar radius,
                               Color& color,
                               BlendMode blend_mode) {
-  Entity entity;
-  entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
-      GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(blend_mode);
-
   CircleGeometry geom(center, radius);
   SolidColorContents color_source;
   color_source.SetRawGeometry(&geom);
   color_source.SetColor(color);
 
-  color_source.Render(renderer_, entity, *render_passes_.back());
+  Draw(color_source, blend_mode);
 }
 
 void EntityCanvas::DrawPath(const Path& path,
                             Color& color,
                             BlendMode blend_mode) {
-  Entity entity;
-  entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
-      GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(blend_mode);
-
   FillPathGeometry geom(path);
   SolidColorContents color_source;
   color_source.SetRawGeometry(&geom);
   color_source.SetColor(color);
 
-  color_source.Render(renderer_, entity, *render_passes_.back());
+  Draw(color_source, blend_mode);
 }
 
 void EntityCanvas::DrawImage(const std::shared_ptr<Texture>& image,
@@ -419,17 +388,34 @@ void EntityCanvas::DrawLine(const Point& p0,
                             BlendMode blend_mode,
                             Scalar width,
                             Cap cap) {
-  Entity entity;
-  entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(blend_mode);
-  entity.SetTransform(
-      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
-      GetCurrentTransform());
-
   LineGeometry geom(p0, p1, width, cap);
   SolidColorContents color_source;
   color_source.SetRawGeometry(&geom);
   color_source.SetColor(color);
+
+  Draw(color_source, blend_mode);
+}
+
+void EntityCanvas::DrawRRect(const Rect& rect,
+                             const Size& corner_radii,
+                             Color color,
+                             BlendMode blend_mode) {
+  auto geom = RoundRectGeometry(rect, corner_radii);
+  SolidColorContents color_source;
+  color_source.SetRawGeometry(&geom);
+  color_source.SetColor(color);
+
+  Draw(color_source, blend_mode);
+}
+
+void EntityCanvas::Draw(const ColorSourceContents& color_source,
+                        BlendMode blend_mode) {
+  Entity entity;
+  entity.SetTransform(
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
+      GetCurrentTransform());
+  entity.SetClipDepth(GetClipDepth());
+  entity.SetBlendMode(blend_mode);
 
   color_source.Render(renderer_, entity, *render_passes_.back());
 }
