@@ -4,20 +4,17 @@
 
 package dev.flutter.scenariosui;
 
-import android.graphics.Bitmap;
+import android.util.Log;
 import androidx.annotation.NonNull;
-import androidx.test.InstrumentationRegistry;
 import dev.flutter.scenarios.TestableFlutterActivity;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import android.util.Log;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Allows to capture screenshots, and transfers the screenshots to the host where they can be
@@ -41,8 +38,7 @@ public class ScreenshotUtil {
       in = socket.getInputStream();
     }
 
-    synchronized void writeFile(String name)
-        throws IOException {
+    synchronized void writeFile(String name) throws IOException {
       Log.i("Scenario", "Send Screnshot signal");
       final ByteBuffer buffer = ByteBuffer.allocate(name.length() + 12);
       // See ScreenshotBlobTransformer#bind in screenshot_transformer.dart for consumer side.
@@ -102,8 +98,7 @@ public class ScreenshotUtil {
    * @param fileContent The file content.
    */
   public static synchronized void writeFile(
-      @NonNull String filename,
-      @NonNull CountDownLatch latch) {
+      @NonNull String filename, @NonNull CountDownLatch latch) {
     if (executor != null && conn != null) {
       executor.execute(
           () -> {
