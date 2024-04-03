@@ -1814,10 +1814,23 @@ TEST_F(EmbedderTest, CanRenderMultipleViews) {
   latch123.Wait();
 }
 
-TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
-  // This test involves two views: the implicit view, and the OtherView as
-  // defined here.
-  constexpr FlutterViewId kOtherViewId = 123;
+//------------------------------------------------------------------------------
+/// Test that the backing store is created with the correct view ID, is used
+/// for the correct view, and is cached according to their views.
+///
+/// The test involves two frames:
+/// 1. The first frame renders the implicit view and the second view.
+/// 2. The second frame renders the implicit view and the third view.
+///
+/// The test verifies that:
+/// - Each backing store is created with a valid view ID.
+/// - Each backing store is presented for the view that it was created for.
+/// - Both frames render the expected sets of views.
+/// - By the end of frame 1, only 2 backing stores were created.
+/// - By the end of frame 2, only 3 backing stores were created.
+TEST_F(EmbedderTest, BackingStoresCorrespondToTheirViews) {
+  constexpr FlutterViewId kSecondViewId = 123;
+  constexpr FlutterViewId kThirdViewId = 456;
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   EmbedderConfigBuilder builder(context);
@@ -1829,15 +1842,23 @@ TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
       context.GetCompositor().GetGrContext(),
       EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
 
+  // The variables needed by the callbacks of the compositor.
   struct CompositorUserData {
-    // The two latches wait for the signal for the two views. The first waits
-    // for the implicit view. The second waits for the OtherView.
-    fml::AutoResetWaitableEvent latch_implicit;
-    fml::AutoResetWaitableEvent latch_other;
     EmbedderTestBackingStoreProducer* producer;
-  } compositor_user_data;
-
-  compositor_user_data.producer = &producer;
+    // Each latch is signaled when its corresponding view is presented.
+    fml::AutoResetWaitableEvent latch_implicit;
+    fml::AutoResetWaitableEvent latch_second;
+    fml::AutoResetWaitableEvent latch_third;
+    // Whether the respective view should be rendered in the frame.
+    bool second_expected;
+    bool third_expected;
+    // The total number of backing stores created to verify caching.
+    int backing_stores_created;
+  };
+  CompositorUserData compositor_user_data{
+      .producer = &producer,
+      .backing_stores_created = 0,
+  };
 
   builder.GetCompositor() = FlutterCompositor{
       .struct_size = sizeof(FlutterCompositor),
@@ -1845,12 +1866,17 @@ TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
       .create_backing_store_callback =
           [](const FlutterBackingStoreConfig* config,
              FlutterBackingStore* backing_store_out, void* user_data) {
+            // Verify that the backing store comes with the correct view ID.
             EXPECT_TRUE(config->view_id == 0 ||
-                        config->view_id == kOtherViewId);
-            auto producer =
-                reinterpret_cast<CompositorUserData*>(user_data)->producer;
-            bool result = producer->Create(config, backing_store_out);
-            // Use user_data to record the view that the store is created for.
+                        config->view_id == kSecondViewId ||
+                        config->view_id == kThirdViewId);
+            auto compositor_user_data =
+                reinterpret_cast<CompositorUserData*>(user_data);
+            compositor_user_data->backing_stores_created += 1;
+            bool result = compositor_user_data->producer->Create(
+                config, backing_store_out);
+            // The created backing store has a user_data that records the view
+            // that the store is created for.
             backing_store_out->user_data =
                 reinterpret_cast<void*>(config->view_id);
             return result;
@@ -1861,9 +1887,7 @@ TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
       .avoid_backing_store_cache = false,
       .present_view_callback =
           [](const FlutterPresentViewInfo* info) {
-            if (info->layers_count != 1) {
-              return true;
-            }
+            EXPECT_EQ(info->layers_count, 1u);
             // Verify that the given layer's backing store has the same view ID
             // as the target view.
             int64_t store_view_id = reinterpret_cast<int64_t>(
@@ -1871,12 +1895,18 @@ TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
             EXPECT_EQ(store_view_id, info->view_id);
             auto compositor_user_data =
                 reinterpret_cast<CompositorUserData*>(info->user_data);
+            // Verify that the respective views are rendered.
             switch (info->view_id) {
               case 0:
                 compositor_user_data->latch_implicit.Signal();
                 break;
-              case kOtherViewId:
-                compositor_user_data->latch_other.Signal();
+              case kSecondViewId:
+                EXPECT_TRUE(compositor_user_data->second_expected);
+                compositor_user_data->latch_second.Signal();
+                break;
+              case kThirdViewId:
+                EXPECT_TRUE(compositor_user_data->third_expected);
+                compositor_user_data->latch_third.Signal();
                 break;
               default:
                 FML_UNREACHABLE();
@@ -1885,33 +1915,39 @@ TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
           },
   };
 
+  compositor_user_data.second_expected = true;
+  compositor_user_data.third_expected = false;
+
+  /*=== First frame ===*/
+
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
 
   // Give the implicit view a non-zero size so that it renders something.
-  FlutterWindowMetricsEvent metrics0 = {
+  FlutterWindowMetricsEvent metrics_implicit = {
       .struct_size = sizeof(FlutterWindowMetricsEvent),
       .width = 800,
       .height = 600,
       .pixel_ratio = 1.0,
       .view_id = 0,
   };
-  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &metrics0),
-            kSuccess);
+  ASSERT_EQ(
+      FlutterEngineSendWindowMetricsEvent(engine.get(), &metrics_implicit),
+      kSuccess);
 
-  // Add the other view.
-  FlutterWindowMetricsEvent metrics123 = {
+  // Add the second view.
+  FlutterWindowMetricsEvent metrics_add = {
       .struct_size = sizeof(FlutterWindowMetricsEvent),
       .width = 800,
       .height = 600,
       .pixel_ratio = 1.0,
-      .view_id = kOtherViewId,
+      .view_id = kSecondViewId,
   };
 
   FlutterAddViewInfo add_view_info = {};
   add_view_info.struct_size = sizeof(FlutterAddViewInfo);
-  add_view_info.view_id = 123;
-  add_view_info.view_metrics = &metrics123;
+  add_view_info.view_id = kSecondViewId;
+  add_view_info.view_metrics = &metrics_add;
   add_view_info.add_view_callback = [](const FlutterAddViewResult* result) {
     ASSERT_TRUE(result->added);
   };
@@ -1919,7 +1955,33 @@ TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
   ASSERT_EQ(FlutterEngineAddView(engine.get(), &add_view_info), kSuccess);
 
   compositor_user_data.latch_implicit.Wait();
-  compositor_user_data.latch_other.Wait();
+  compositor_user_data.latch_second.Wait();
+
+  /*=== Second frame ===*/
+
+  compositor_user_data.second_expected = false;
+  compositor_user_data.third_expected = true;
+  EXPECT_EQ(compositor_user_data.backing_stores_created, 2);
+
+  // Remove the second view
+  FlutterRemoveViewInfo remove_view_info = {};
+  remove_view_info.struct_size = sizeof(FlutterRemoveViewInfo);
+  remove_view_info.view_id = kSecondViewId;
+  remove_view_info.remove_view_callback =
+      [](const FlutterRemoveViewResult* result) {
+        ASSERT_TRUE(result->removed);
+      };
+  ASSERT_EQ(FlutterEngineRemoveView(engine.get(), &remove_view_info), kSuccess);
+
+  // Add the third view.
+  add_view_info.view_id = kThirdViewId;
+  metrics_add.view_id = kThirdViewId;
+  ASSERT_EQ(FlutterEngineAddView(engine.get(), &add_view_info), kSuccess);
+  // Adding the view should have scheduled a frame.
+
+  compositor_user_data.latch_implicit.Wait();
+  compositor_user_data.latch_third.Wait();
+  EXPECT_EQ(compositor_user_data.backing_stores_created, 3);
 }
 
 TEST_F(EmbedderTest, CanUpdateLocales) {
