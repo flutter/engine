@@ -932,8 +932,8 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   // If there is are per-vertex colors, an image, and the blend mode
   // is simple we can draw without a sub-renderpass.
   if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors()) {
-    if (auto maybe_image_data = GetImageColorSourceData(paint.color_source)) {
-      auto image_data = maybe_image_data.value();
+    if (std::optional<ImageData> maybe_image_data = GetImageColorSourceData(paint.color_source)) {
+      ImageData image_data = maybe_image_data.value();
       auto contents = std::make_shared<VerticesSimpleBlendContents>();
       contents->SetBlendMode(blend_mode);
       contents->SetAlpha(paint.color.alpha);
