@@ -60,6 +60,12 @@ void invokePlatformTaskRunner() {
   PlatformDispatcher.instance.sendPlatformMessage('OhHi', null, null);
 }
 
+@pragma('vm:entry-point')
+void invokePlatformThreadIsolate() {
+  signalNativeTest();
+  runOnPlatformThread(ffiSignalNativeTest);
+}
+
 Float64List kTestTransform = () {
   final Float64List values = Float64List(16);
   values[0] = 1.0; // scaleX
@@ -86,6 +92,9 @@ external void notifySemanticsEnabled(bool enabled);
 external void notifyAccessibilityFeatures(bool reduceMotion);
 @pragma('vm:external-name', 'NotifySemanticsAction')
 external void notifySemanticsAction(int nodeId, int action, List<int> data);
+
+@ffi.Native<ffi.Void Function()>(symbol: 'FFISignalNativeTest')
+external void ffiSignalNativeTest();
 
 /// Returns a future that completes when
 /// `PlatformDispatcher.instance.onSemanticsEnabledChanged` fires.
@@ -835,6 +844,28 @@ void render_implicit_view() {
 }
 
 @pragma('vm:entry-point')
+void render_all_views() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      final Size size = Size(800.0, 600.0);
+      final Color red = Color.fromARGB(127, 255, 0, 0);
+
+      final SceneBuilder builder = SceneBuilder();
+
+      builder.pushOffset(0.0, 0.0);
+
+      builder.addPicture(
+          Offset(0.0, 0.0), CreateColoredBox(red, size));
+
+      builder.pop();
+
+      view.render(builder.build());
+    }
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
 void render_gradient() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final Size size = Size(800.0, 600.0);
@@ -1298,6 +1329,18 @@ void can_schedule_frame() {
   signalNativeTest();
 }
 
+@pragma('vm:entry-point')
+void add_view_schedules_frame() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      if (view.viewId == 123) {
+        signalNativeCount(beginTime.inMicroseconds);
+      }
+    }
+  };
+  signalNativeTest();
+}
+
 void drawSolidColor(Color c) {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final SceneBuilder builder = SceneBuilder();
@@ -1385,6 +1428,20 @@ void window_metrics_event_view_id() {
     final List<int> differences = _findDifferences(sizes, newSizes);
     sizes = newSizes;
     signalNativeMessage('Changed: $differences');
+  };
+
+  signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void window_metrics_event_all_view_ids() {
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    final List<int> viewIds =
+      PlatformDispatcher.instance.views.map((view) => view.viewId).toList();
+
+    viewIds.sort();
+
+    signalNativeMessage('View IDs: [${viewIds.join(', ')}]');
   };
 
   signalNativeTest();

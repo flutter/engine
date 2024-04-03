@@ -17,25 +17,14 @@ final class BuildCommand extends CommandBase {
   }) {
     builds = runnableBuilds(environment, configs);
     debugCheckBuilds(builds);
-    argParser.addOption(
-      configFlag,
-      abbr: 'c',
-      defaultsTo: 'host_debug',
-      help: 'Specify the build config to use',
-      allowed: <String>[
-        for (final Build config in runnableBuilds(environment, configs))
-          config.name,
-      ],
-      allowedHelp: <String, String>{
-        for (final Build config in runnableBuilds(environment, configs))
-          config.name: config.gn.join(' '),
-      },
+    addConfigOption(
+      environment, argParser, runnableBuilds(environment, configs),
     );
     argParser.addFlag(
       rbeFlag,
       defaultsTo: true,
       help: 'RBE is enabled by default when available. Use --no-rbe to '
-            'disable it.',
+          'disable it.',
     );
   }
 
@@ -52,8 +41,9 @@ final class BuildCommand extends CommandBase {
   Future<int> run() async {
     final String configName = argResults![configFlag] as String;
     final bool useRbe = argResults![rbeFlag] as bool;
+    final String demangledName = demangleConfigName(environment, configName);
     final Build? build =
-        builds.where((Build build) => build.name == configName).firstOrNull;
+        builds.where((Build build) => build.name == demangledName).firstOrNull;
     if (build == null) {
       environment.logger.error('Could not find config $configName');
       return 1;
@@ -63,7 +53,6 @@ final class BuildCommand extends CommandBase {
       if (!useRbe) '--no-rbe',
     ];
 
-    // TODO(loic-sharma): Fetch dependencies if needed.
     return runBuild(environment, build, extraGnArgs: extraGnArgs);
   }
 }

@@ -6,6 +6,7 @@
 
 #include "fml/logging.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
 
@@ -20,8 +21,22 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   auto& host_buffer = renderer.GetTransientsBuffer();
-  VertexBuffer vertex_buffer;
 
+  const auto& bounding_box = path_.GetBoundingBox();
+  if (bounding_box.has_value() && bounding_box->IsEmpty()) {
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            VertexBuffer{
+                .vertex_buffer = {},
+                .vertex_count = 0,
+                .index_type = IndexType::k16bit,
+            },
+        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+    };
+  }
+
+  VertexBuffer vertex_buffer;
   if constexpr (!ContentContext::kEnableStencilThenCover) {
     if (!path_.IsConvex()) {
       auto tesselation_result = renderer.GetTessellator()->Tessellate(
@@ -49,7 +64,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
       return GeometryResult{
           .type = PrimitiveType::kTriangle,
           .vertex_buffer = vertex_buffer,
-          .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+          .transform = entity.GetShaderTransform(pass),
       };
     }
   }
@@ -65,7 +80,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_buffer,
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+      .transform = entity.GetShaderTransform(pass),
       .mode = GetResultMode(),
   };
 }
@@ -78,6 +93,20 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
     const Entity& entity,
     RenderPass& pass) const {
   using VS = TextureFillVertexShader;
+
+  const auto& bounding_box = path_.GetBoundingBox();
+  if (bounding_box.has_value() && bounding_box->IsEmpty()) {
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            VertexBuffer{
+                .vertex_buffer = {},
+                .vertex_count = 0,
+                .index_type = IndexType::k16bit,
+            },
+        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+    };
+  }
 
   auto uv_transform =
       texture_coverage.GetNormalizingTransform() * effect_transform;
@@ -112,7 +141,7 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
           .type = PrimitiveType::kTriangle,
           .vertex_buffer =
               vertex_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()),
-          .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+          .transform = entity.GetShaderTransform(pass),
       };
     }
   }
@@ -133,13 +162,15 @@ GeometryResult FillPathGeometry::GetPositionUVBuffer(
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
           vertex_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()),
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
+      .transform = entity.GetShaderTransform(pass),
       .mode = GetResultMode(),
   };
 }
 
 GeometryResult::Mode FillPathGeometry::GetResultMode() const {
-  if (!ContentContext::kEnableStencilThenCover || path_.IsConvex()) {
+  const auto& bounding_box = path_.GetBoundingBox();
+  if (!ContentContext::kEnableStencilThenCover || path_.IsConvex() ||
+      (bounding_box.has_value() && bounding_box->IsEmpty())) {
     return GeometryResult::Mode::kNormal;
   }
 

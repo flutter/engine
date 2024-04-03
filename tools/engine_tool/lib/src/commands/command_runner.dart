@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../environment.dart';
+import '../logger.dart';
 import 'build_command.dart';
 import 'fetch_command.dart';
 import 'flags.dart';
@@ -13,6 +15,7 @@ import 'format_command.dart';
 import 'lint_command.dart';
 import 'query_command.dart';
 import 'run_command.dart';
+import 'test_command.dart';
 
 const int _usageLineLength = 80;
 
@@ -31,6 +34,7 @@ final class ToolCommandRunner extends CommandRunner<int> {
       BuildCommand(environment: environment, configs: configs),
       RunCommand(environment: environment, configs: configs),
       LintCommand(environment: environment),
+      TestCommand(environment: environment, configs: configs),
     ];
     commands.forEach(addCommand);
 
@@ -59,8 +63,13 @@ final class ToolCommandRunner extends CommandRunner<int> {
 
   @override
   Future<int> run(Iterable<String> args) async {
+    final ArgResults argResults = parse(args);
+    final bool verbose = argResults[verboseFlag]! as bool;
+    if (verbose) {
+      environment.logger.level = Logger.infoLevel;
+    }
     try {
-      return await runCommand(parse(args)) ?? 0;
+      return await runCommand(argResults) ?? 0;
     } on FormatException catch (e) {
       environment.logger.error(e);
       return 1;

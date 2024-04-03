@@ -65,12 +65,61 @@ void debugCheckBuilds(List<Build> builds) {
   }
 }
 
+String _ciPrefix(Environment env) => 'ci${env.platform.pathSeparator}';
+String _osPrefix(Environment env) => '${env.platform.operatingSystem}/';
+const String _webTestsPrefix = 'web_tests/';
+
+bool _doNotMangle(Environment env, String name) {
+  return name.startsWith(_ciPrefix(env)) || name.startsWith(_webTestsPrefix);
+}
+
+/// Transform the name of a build into the name presented and accepted by the
+/// CLI
+///
+/// If a name starts with '$OS/', it is a local development build, and the
+/// mangled name has the '$OS/' part stripped off, where $OS is the value of
+/// `platform.operatingSystem` in the passed-in `environment`.
+///
+/// If the name does not start with '$OS/', then it must start with 'ci/',
+/// 'ci\', or 'web_tests/' in which case the name is returned unchanged.
+///
+/// Examples:
+///   macos/host_debug -> host_debug
+///   ci/ios_release -> ci/ios_release
+///   ci\host_profile -> ci\host_profile
+///   web_tests/artifacts -> web_tests/artifacts
+String mangleConfigName(Environment env, String name) {
+  final String osPrefix = _osPrefix(env);
+  if (name.startsWith(osPrefix)) {
+    return name.substring(osPrefix.length);
+  }
+  if (_doNotMangle(env, name)) {
+    return name;
+  }
+  throw ArgumentError(
+    'name argument "$name" must start with a valid platform name or "ci"',
+  );
+}
+
+/// Transform the mangled (CLI) name of a build into its true name in the build
+/// config json file.
+///
+/// This does the reverse of [mangleConfigName] taking the operating system
+/// name from `environment`.
+///
+/// Examples:
+///   host_debug -> macos/host_debug
+///   ci/ios_release -> ci/ios_release
+///   ci\host_profile -> ci\host_profile
+///   web_tests/artifacts -> web_tests/artifacts
+String demangleConfigName(Environment env, String name) {
+  return _doNotMangle(env, name) ? name : '${_osPrefix(env)}$name';
+}
+
 /// Build the build target in the environment.
-Future<int> runBuild(
-  Environment environment,
-  Build build, {
-  List<String> extraGnArgs = const <String>[],
-}) async {
+Future<int> runBuild(Environment environment, Build build,
+    {List<String> extraGnArgs = const <String>[],
+    List<String> targets = const <String>[]}) async {
   // If RBE config files aren't in the tree, then disable RBE.
   final String rbeConfigPath = p.join(
     environment.engine.srcDir.path,
@@ -79,10 +128,11 @@ Future<int> runBuild(
     'rbe',
   );
   final List<String> gnArgs = <String>[
-    ...extraGnArgs,
     if (!io.Directory(rbeConfigPath).existsSync()) '--no-rbe',
+    ...extraGnArgs,
   ];
 
+  // TODO(loic-sharma): Fetch dependencies if needed.
   final BuildRunner buildRunner = BuildRunner(
     platform: environment.platform,
     processRunner: environment.processRunner,
@@ -91,6 +141,7 @@ Future<int> runBuild(
     build: build,
     extraGnArgs: gnArgs,
     runTests: false,
+    extraNinjaArgs: targets,
   );
 
   Spinner? spinner;
