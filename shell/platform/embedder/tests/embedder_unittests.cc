@@ -1814,6 +1814,114 @@ TEST_F(EmbedderTest, CanRenderMultipleViews) {
   latch123.Wait();
 }
 
+TEST_F(EmbedderTest, BackingStoresAreCreatedWithViewId) {
+  // This test involves two views: the implicit view, and the OtherView as
+  // defined here.
+  constexpr FlutterViewId kOtherViewId = 123;
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetDartEntrypoint("render_all_views");
+  builder.SetSoftwareRendererConfig(SkISize::Make(800, 600));
+  builder.SetCompositor();
+
+  EmbedderTestBackingStoreProducer producer(
+      context.GetCompositor().GetGrContext(),
+      EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
+
+  struct CompositorUserData {
+    // The two latches wait for the signal for the two views. The first waits
+    // for the implicit view. The second waits for the OtherView.
+    fml::AutoResetWaitableEvent latch_implicit;
+    fml::AutoResetWaitableEvent latch_other;
+    EmbedderTestBackingStoreProducer* producer;
+  } compositor_user_data;
+
+  compositor_user_data.producer = &producer;
+
+  builder.GetCompositor() = FlutterCompositor{
+      .struct_size = sizeof(FlutterCompositor),
+      .user_data = reinterpret_cast<void*>(&compositor_user_data),
+      .create_backing_store_callback =
+          [](const FlutterBackingStoreConfig* config,
+             FlutterBackingStore* backing_store_out, void* user_data) {
+            EXPECT_TRUE(config->view_id == 0 ||
+                        config->view_id == kOtherViewId);
+            auto producer =
+                reinterpret_cast<CompositorUserData*>(user_data)->producer;
+            bool result = producer->Create(config, backing_store_out);
+            // Use user_data to record the view that the store is created for.
+            backing_store_out->user_data =
+                reinterpret_cast<void*>(config->view_id);
+            return result;
+          },
+      .collect_backing_store_callback = [](const FlutterBackingStore* renderer,
+                                           void* user_data) { return true; },
+      .present_layers_callback = nullptr,
+      .avoid_backing_store_cache = false,
+      .present_view_callback =
+          [](const FlutterPresentViewInfo* info) {
+            if (info->layers_count != 1) {
+              return true;
+            }
+            // Verify that the given layer's backing store has the same view ID
+            // as the target view.
+            int64_t store_view_id = reinterpret_cast<int64_t>(
+                info->layers[0]->backing_store->user_data);
+            EXPECT_EQ(store_view_id, info->view_id);
+            auto compositor_user_data =
+                reinterpret_cast<CompositorUserData*>(info->user_data);
+            switch (info->view_id) {
+              case 0:
+                compositor_user_data->latch_implicit.Signal();
+                break;
+              case kOtherViewId:
+                compositor_user_data->latch_other.Signal();
+                break;
+              default:
+                FML_UNREACHABLE();
+            }
+            return true;
+          },
+  };
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Give the implicit view a non-zero size so that it renders something.
+  FlutterWindowMetricsEvent metrics0 = {
+      .struct_size = sizeof(FlutterWindowMetricsEvent),
+      .width = 800,
+      .height = 600,
+      .pixel_ratio = 1.0,
+      .view_id = 0,
+  };
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &metrics0),
+            kSuccess);
+
+  // Add the other view.
+  FlutterWindowMetricsEvent metrics123 = {
+      .struct_size = sizeof(FlutterWindowMetricsEvent),
+      .width = 800,
+      .height = 600,
+      .pixel_ratio = 1.0,
+      .view_id = kOtherViewId,
+  };
+
+  FlutterAddViewInfo add_view_info = {};
+  add_view_info.struct_size = sizeof(FlutterAddViewInfo);
+  add_view_info.view_id = 123;
+  add_view_info.view_metrics = &metrics123;
+  add_view_info.add_view_callback = [](const FlutterAddViewResult* result) {
+    ASSERT_TRUE(result->added);
+  };
+
+  ASSERT_EQ(FlutterEngineAddView(engine.get(), &add_view_info), kSuccess);
+
+  compositor_user_data.latch_implicit.Wait();
+  compositor_user_data.latch_other.Wait();
+}
+
 TEST_F(EmbedderTest, CanUpdateLocales) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
