@@ -423,7 +423,8 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
-  // Get the view's cache, or create one if the view doesn't have a cache yet.
+  // The unordered_map render_target_cache creates a new entry if the view ID is
+  // unrecognized.
   EmbedderRenderTargetCache& render_target_cache =
       render_target_caches_[flutter_view_id];
   SkRect _rect = SkRect::MakeIWH(pending_frame_size_.width(),
