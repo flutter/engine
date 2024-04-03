@@ -1827,7 +1827,8 @@ TEST_F(EmbedderTest, CanRenderMultipleViews) {
 /// - Each backing store is presented for the view that it was created for.
 /// - Both frames render the expected sets of views.
 /// - By the end of frame 1, only 2 backing stores were created.
-/// - By the end of frame 2, only 3 backing stores were created.
+/// - By the end of frame 2, only 3 backing stores were created. This ensures
+/// that the backing store for the 2nd view is not reused for the 3rd view.
 TEST_F(EmbedderTest, BackingStoresCorrespondToTheirViews) {
   constexpr FlutterViewId kSecondViewId = 123;
   constexpr FlutterViewId kThirdViewId = 456;
