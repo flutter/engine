@@ -4,7 +4,6 @@
 
 package dev.flutter.scenariosui;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import dev.flutter.scenarios.TestableFlutterActivity;
 import java.io.IOException;
@@ -39,7 +38,6 @@ public class ScreenshotUtil {
     }
 
     synchronized void writeFile(String name) throws IOException {
-      Log.i("Scenario", "Send Screnshot signal");
       final ByteBuffer buffer = ByteBuffer.allocate(name.length() + 12);
       // See ScreenshotBlobTransformer#bind in screenshot_transformer.dart for consumer side.
       buffer.putInt(name.length());
