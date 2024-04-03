@@ -7,6 +7,7 @@
 #include <epoxy/egl.h>
 #include <epoxy/gl.h>
 
+#include "flutter/fml/closure.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/linux/fl_backing_store_provider.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
@@ -324,6 +325,12 @@ void fl_renderer_render(FlRenderer* self, int width, int height) {
   GLint saved_array_buffer_binding;
   glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &saved_array_buffer_binding);
 
+  fml::ScopedCleanupClosure restore_bindings([&] {
+    glBindTexture(GL_TEXTURE_2D, saved_texture_binding);
+    glBindVertexArray(saved_vao_binding);
+    glBindBuffer(GL_ARRAY_BUFFER, saved_array_buffer_binding);
+  });
+
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
 
@@ -374,10 +381,6 @@ void fl_renderer_render(FlRenderer* self, int width, int height) {
   }
 
   glFlush();
-
-  glBindTexture(GL_TEXTURE_2D, saved_texture_binding);
-  glBindVertexArray(saved_vao_binding);
-  glBindBuffer(GL_ARRAY_BUFFER, saved_array_buffer_binding);
 }
 
 void fl_renderer_cleanup(FlRenderer* self) {
