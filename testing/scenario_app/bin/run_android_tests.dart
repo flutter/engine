@@ -5,7 +5,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:dir_contents_diff/dir_contents_diff.dart' show dirContentsDiff;
 import 'package:engine_repo_tools/engine_repo_tools.dart';
