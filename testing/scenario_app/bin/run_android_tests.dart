@@ -191,19 +191,33 @@ Future<void> _run({
         stdout.writeln('client connected ${client.remoteAddress.address}:${client.remotePort}');
       }
       pendingConnections.add(client);
-      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) {
+      client.transform(const ScreenshotBlobTransformer()).listen((Screenshot screenshot) async {
+         print('got screenshot signal');
         final String fileName = screenshot.filename;
-        final Uint8List fileContent = screenshot.fileContent;
-        if (verbose) {
-          log('host received ${fileContent.lengthInBytes} bytes for screenshot `$fileName`');
+        final String filePath = join(screenshotPath, fileName);
+        {
+          const String remotePath = '/data/local/tmp/flutter_screenshot.png';
+          ProcessResult result = await pm.run(<String>['adb', 'shell', 'screencap', '-p', remotePath]);
+          if (result.exitCode != 0) {
+
+          }
+          result = await pm.run(
+            <String>['adb', 'pull', remotePath, filePath],
+          );
+          if (result.exitCode != 0) {
+
+          }
+          result = await pm.run(<String>['adb', 'shell', 'rm', remotePath]);
+          if (result.exitCode != 0) {
+
+          }
         }
+        print('write screenshot signal');
+        // Signal that screenshot was written.
+        client.write(0x8);
+
         assert(skiaGoldClient != null, 'expected Skia Gold client');
-        late File goldenFile;
-        try {
-          goldenFile = File(join(screenshotPath, fileName))..writeAsBytesSync(fileContent, flush: true);
-        } on FileSystemException catch (err) {
-          panic(<String>['failed to create screenshot $fileName: $err']);
-        }
+        final File goldenFile = File(filePath);
         if (verbose) {
           log('wrote ${goldenFile.absolute.path}');
         }

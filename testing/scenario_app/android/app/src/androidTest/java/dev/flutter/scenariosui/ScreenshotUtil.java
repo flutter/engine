@@ -11,10 +11,12 @@ import dev.flutter.scenarios.TestableFlutterActivity;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import android.util.Log;
 
 /**
  * Allows to capture screenshots, and transfers the screenshots to the host where they can be
@@ -30,21 +32,23 @@ public class ScreenshotUtil {
   private static class Connection {
     final Socket clientSocket;
     final OutputStream out;
+    final InputStream in;
 
     Connection(Socket socket) throws IOException {
       clientSocket = socket;
       out = socket.getOutputStream();
+      in = socket.getInputStream();
     }
 
-    synchronized void writeFile(String name, byte[] fileContent, int pixelCount)
+    synchronized void writeFile(String name)
         throws IOException {
-      final ByteBuffer buffer = ByteBuffer.allocate(name.length() + fileContent.length + 12);
+      Log.i("Scenario", "Send Screnshot signal");
+      final ByteBuffer buffer = ByteBuffer.allocate(name.length() + 12);
       // See ScreenshotBlobTransformer#bind in screenshot_transformer.dart for consumer side.
       buffer.putInt(name.length());
-      buffer.putInt(fileContent.length);
-      buffer.putInt(pixelCount);
+      buffer.putInt(0);
+      buffer.putInt(0);
       buffer.put(name.getBytes());
-      buffer.put(fileContent);
       final byte[] bytes = buffer.array();
       out.write(bytes, 0, bytes.length);
       out.flush();
@@ -95,12 +99,12 @@ public class ScreenshotUtil {
    * @param fileContent The file content.
    */
   public static synchronized void writeFile(
-      @NonNull String filename, @NonNull byte[] fileContent, int pixelCount) {
+      @NonNull String filename) {
     if (executor != null && conn != null) {
       executor.execute(
           () -> {
             try {
-              conn.writeFile(filename, fileContent, pixelCount);
+              conn.writeFile(filename);
             } catch (IOException e) {
               throw new RuntimeException(e);
             }
@@ -120,15 +124,7 @@ public class ScreenshotUtil {
   public static void capture(@NonNull TestableFlutterActivity activity, @NonNull String captureName)
       throws Exception {
     activity.waitUntilFlutterRendered();
-
-    final Bitmap bitmap =
-        InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
-    if (bitmap == null) {
-      throw new RuntimeException("failed to capture screenshot");
-    }
-    int pixelCount = bitmap.getWidth() * bitmap.getHeight();
-    final ByteArrayOutputStream out = new ByteArrayOutputStream();
-    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-    ScreenshotUtil.writeFile(captureName, out.toByteArray(), pixelCount);
+    ScreenshotUtil.writeFile(captureName);
+    Thread.sleep(5000);
   }
 }
