@@ -211,7 +211,8 @@ Future<void> _run({
             stderr.writeln('Warning: failed to delete old screenshot on device.');
           }
         }
-        // Signal that screenshot was written.
+        // Write a single byte into the socket as a signal to ScreenshotUtil.java
+        // that the screenshot was taken.
         client.write(0x8);
 
         assert(skiaGoldClient != null, 'expected Skia Gold client');

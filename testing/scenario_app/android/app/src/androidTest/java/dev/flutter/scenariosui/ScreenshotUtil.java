@@ -48,6 +48,8 @@ public class ScreenshotUtil {
       out.write(bytes, 0, bytes.length);
       out.flush();
 
+      // Wait on run_android_tests.dart to write a single byte into the socket
+      // as a signal that adb screencapture has completed.
       in.read();
     }
 
