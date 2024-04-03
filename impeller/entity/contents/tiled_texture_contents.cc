@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
-#include <utility>
 
 #include "fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
@@ -107,19 +106,6 @@ bool TiledTextureContents::IsOpaque() const {
     return false;
   }
   return texture_->IsOpaque();
-}
-
-const std::shared_ptr<Texture>& TiledTextureContents::GetTexture() const {
-  return texture_;
-}
-
-const SamplerDescriptor& TiledTextureContents::GetSamplerDescriptor() const {
-  return sampler_descriptor_;
-}
-
-std::pair<Entity::TileMode, Entity::TileMode>
-TiledTextureContents::GetTileModes() const {
-  return std::make_pair(x_tile_mode_, y_tile_mode_);
 }
 
 bool TiledTextureContents::Render(const ContentContext& renderer,

@@ -9,7 +9,6 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
@@ -53,12 +52,6 @@ class TiledTextureContents final : public ColorSourceContents {
   /// This may not be a performance improvement if the image is tiled into a
   /// much smaller size that its original texture size.
   void SetColorFilter(ColorFilterProc color_filter);
-
-  const std::shared_ptr<Texture>& GetTexture() const;
-
-  const SamplerDescriptor& GetSamplerDescriptor() const;
-
-  std::pair<Entity::TileMode, Entity::TileMode> GetTileModes() const;
 
   // |Contents|
   std::optional<Snapshot> RenderToSnapshot(
