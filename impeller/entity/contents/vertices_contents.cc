@@ -268,7 +268,7 @@ void VerticesSimpleBlendContents::SetTileMode(Entity::TileMode tile_mode_x,
 }
 
 void VerticesSimpleBlendContents::SetEffectTransform(Matrix transform) {
-  effect_transform_ = transform;
+  inverse_matrix_ = transform.Invert();
 }
 
 bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
@@ -282,7 +282,7 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   using FS = PorterDuffBlendPipeline::FragmentShader;
 
   GeometryResult geometry_result = geometry_->GetPositionUVColorBuffer(
-      Rect::MakeSize(texture_->GetSize()), effect_transform_, renderer, entity,
+      Rect::MakeSize(texture_->GetSize()), inverse_matrix_, renderer, entity,
       pass);
   if (geometry_result.vertex_buffer.vertex_count == 0) {
     return true;

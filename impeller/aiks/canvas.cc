@@ -940,7 +940,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
       contents->SetAlpha(paint.color.alpha);
       contents->SetGeometry(vertices);
 
-      contents->SetEffectTransform(image_data.effect_transform.Invert());
+      contents->SetEffectTransform(image_data.effect_transform);
       contents->SetTexture(image_data.texture);
       contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
 

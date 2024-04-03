@@ -146,7 +146,7 @@ class VerticesSimpleBlendContents final : public Contents {
   SamplerDescriptor descriptor_ = {};
   Entity::TileMode tile_mode_x_ = Entity::TileMode::kClamp;
   Entity::TileMode tile_mode_y_ = Entity::TileMode::kClamp;
-  Matrix effect_transform_ = {};
+  Matrix inverse_matrix_ = {};
 
   VerticesSimpleBlendContents(const VerticesSimpleBlendContents&) = delete;
 
