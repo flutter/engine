@@ -147,7 +147,7 @@ class HostBuffer {
 
   void MaybeCreateNewBuffer();
 
-  std::shared_ptr<DeviceBuffer>& GetCurrentBuffer() {
+  const std::shared_ptr<DeviceBuffer>& GetCurrentBuffer() const {
     return device_buffers_[frame_index_][current_buffer_];
   }
 
