@@ -261,8 +261,8 @@ class Rasterizer final : public SnapshotDelegate,
   //----------------------------------------------------------------------------
   /// @brief      Deallocate the resources for displaying a view.
   ///
-  ///             This method must be called when a view is removed from the
-  ///             engine.
+  ///             This method must be called on the raster task runner when a
+  ///             view is removed from the engine.
   ///
   ///             When the rasterizer is requested to draw an unrecognized view,
   ///             it implicitly allocates necessary resources. These resources
