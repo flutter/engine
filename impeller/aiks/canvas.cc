@@ -80,6 +80,47 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   return contents_copy;
 }
 
+struct GetTextureColorSourceDataVisitor {
+  GetTextureColorSourceDataVisitor() {}
+
+  std::optional<ImageData> operator()(const LinearGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const RadialGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const ConicalGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const SweepGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const ImageData& data) { return data; }
+
+  std::optional<ImageData> operator()(const RuntimeEffectData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const std::monostate& data) {
+    return std::nullopt;
+  }
+
+#if IMPELLER_ENABLE_3D
+  std::shared_ptr<ColorSourceContents> operator()(const SceneData& data) {
+    return std::nullopt;
+  }
+#endif  // IMPELLER_ENABLE_3D
+};
+
+static std::optional<ImageData> GetImageColorSourceData(
+    const ColorSource& color_source) {
+  return std::visit(GetTextureColorSourceDataVisitor{}, color_source.GetData());
+}
+
 static std::shared_ptr<Contents> CreatePathContentsWithFilters(
     const Paint& paint,
     const Path& path) {
@@ -891,27 +932,22 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   // If there is are per-vertex colors, an image, and the blend mode
   // is simple we can draw without a sub-renderpass.
-  if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors() &&
-      paint.color_source.GetType() == ColorSource::Type::kImage) {
-    auto contents = std::make_shared<VerticesSimpleBlendContents>();
-    contents->SetBlendMode(blend_mode);
-    contents->SetAlpha(paint.color.alpha);
-    contents->SetGeometry(vertices);
+  if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors()) {
+    if (auto maybe_image_data = GetImageColorSourceData(paint.color_source)) {
+      auto image_data = maybe_image_data.value();
+      auto contents = std::make_shared<VerticesSimpleBlendContents>();
+      contents->SetBlendMode(blend_mode);
+      contents->SetAlpha(paint.color.alpha);
+      contents->SetGeometry(vertices);
 
-    std::shared_ptr<ColorSourceContents> raw_color_source_contents =
-        paint.color_source.GetContents(paint);
-    TiledTextureContents* color_contents =
-        static_cast<TiledTextureContents*>(raw_color_source_contents.get());
-    FML_DCHECK(color_contents);
+      contents->SetEffectTransform(image_data.effect_transform.Invert());
+      contents->SetTexture(image_data.texture);
+      contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
 
-    contents->SetEffectTransform(color_contents->GetInverseEffectTransform());
-    contents->SetTexture(color_contents->GetTexture());
-    auto [tmx, tmy] = color_contents->GetTileModes();
-    contents->SetTileMode(tmx, tmy);
-
-    entity.SetContents(paint.WithFilters(std::move(contents)));
-    AddEntityToCurrentPass(std::move(entity));
-    return;
+      entity.SetContents(paint.WithFilters(std::move(contents)));
+      AddEntityToCurrentPass(std::move(entity));
+      return;
+    }
   }
 
   auto src_paint = paint;

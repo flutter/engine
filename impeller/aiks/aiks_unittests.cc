@@ -2754,10 +2754,9 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
   std::vector<uint16_t> indices = {};
   std::vector<Point> texture_coordinates = {};
   std::vector<Color> vertex_colors = {
-      Color::Red().WithAlpha(0.5),
-      Color::Blue().WithAlpha(0.5),
-      Color::Green().WithAlpha(0.5),
-      Color::Red().WithAlpha(0.5),
+      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
+      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
+      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
   };
   auto geometry = std::make_shared<VerticesGeometry>(
       vertices, indices, texture_coordinates, vertex_colors,
