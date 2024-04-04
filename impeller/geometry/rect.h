@@ -612,6 +612,14 @@ struct TRect {
                            saturated::Cast<U, Type>(ceil(r.GetBottom())));
   }
 
+  ONLY_ON_FLOAT_M([[nodiscard]] constexpr static, TRect)
+  Round(const TRect<U>& r) {
+    return TRect::MakeLTRB(saturated::Cast<U, Type>(round(r.GetLeft())),
+                           saturated::Cast<U, Type>(round(r.GetTop())),
+                           saturated::Cast<U, Type>(round(r.GetRight())),
+                           saturated::Cast<U, Type>(round(r.GetBottom())));
+  }
+
   [[nodiscard]] constexpr static std::optional<TRect> Union(
       const TRect& a,
       const std::optional<TRect> b) {
