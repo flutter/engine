@@ -193,7 +193,7 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/common:common_cpp_input",
     "//flutter/shell/platform/darwin/common",
     "//flutter/shell/platform/darwin/common:framework_common",
-    "//flutter/shell/platform/darwin/graphics"
+    "//flutter/shell/platform/darwin/graphics",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/profiling:profiling",
     "//flutter/skia",
