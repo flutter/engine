@@ -16,13 +16,6 @@
 
 namespace flutter {
 
-bool ShouldUseMetalRenderer() {
-  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
-    return YES;
-  }
-  return NO;
-}
-
 IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
 #if TARGET_OS_SIMULATOR
   if (force_software) {
@@ -35,7 +28,7 @@ IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
   }
 #endif  // TARGET_OS_SIMULATOR
 
-  if (ShouldUseMetalRenderer()) {
+  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
     return IOSRenderingAPI::kMetal;
   }
 
