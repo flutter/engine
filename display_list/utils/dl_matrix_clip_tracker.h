@@ -46,7 +46,6 @@ class DisplayListMatrixClipState {
   }
 
   static constexpr DlMatrix ToDlMatrix(const SkM44& matrix) {
-    // clang-format off
     DlMatrix dl_matrix;
     matrix.getColMajor(dl_matrix.m);
     return dl_matrix;
@@ -199,7 +198,7 @@ class DisplayListMatrixClipTracker {
   // Omitting the |cull_rect| argument, or passing nullptr, will restore the
   // cull rect to the initial value it had when the tracker was constructed.
   void resetCullRect(const DlRect* cull_rect = nullptr) {
-    current_->resetCullRect(cull_rect ? *cull_rect : saved_[0]->cull_rect_);
+    current_->resetCullRect(cull_rect ? *cull_rect : saved_[0].cull_rect_);
   }
   void resetCullRect(const SkRect* cull_rect = nullptr) {
     current_->resetCullRect(cull_rect ? *cull_rect : base_device_cull_rect());
@@ -207,7 +206,7 @@ class DisplayListMatrixClipTracker {
 
   static bool is_3x3(const SkM44& m44);
 
-  SkRect base_device_cull_rect() const { return saved_[0]->device_cull_rect(); }
+  SkRect base_device_cull_rect() const { return saved_[0].device_cull_rect(); }
 
   bool using_4x4_matrix() const { return current_->using_4x4_matrix(); }
 
@@ -292,7 +291,7 @@ class DisplayListMatrixClipTracker {
 
  private:
   DisplayListMatrixClipState* current_;
-  std::vector<std::unique_ptr<DisplayListMatrixClipState>> saved_;
+  std::vector<DisplayListMatrixClipState> saved_;
 };
 
 }  // namespace flutter

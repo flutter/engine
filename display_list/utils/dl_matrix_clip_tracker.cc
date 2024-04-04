@@ -35,9 +35,8 @@ DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const DlMatrix& matrix) {
   // isEmpty protects us against NaN as we normalize any empty cull rects
   DlRect cull = cull_rect.IsEmpty() ? DlRect() : cull_rect;
-  saved_.emplace_back(
-      std::make_unique<DisplayListMatrixClipState>(cull, matrix));
-  current_ = saved_.back().get();
+  saved_.emplace_back(cull, matrix);
+  current_ = &saved_.back();
   save();  // saved_[0] will always be the initial settings
 }
 
@@ -46,9 +45,8 @@ DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const SkMatrix& matrix) {
   // isEmpty protects us against NaN as we normalize any empty cull rects
   SkRect cull = cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect;
-  saved_.emplace_back(
-      std::make_unique<DisplayListMatrixClipState>(cull, matrix));
-  current_ = saved_.back().get();
+  saved_.emplace_back(cull, matrix);
+  current_ = &saved_.back();
   save();  // saved_[0] will always be the initial settings
 }
 
@@ -57,27 +55,27 @@ DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const SkM44& m44) {
   // isEmpty protects us against NaN as we normalize any empty cull rects
   SkRect cull = cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect;
-  saved_.emplace_back(std::make_unique<DisplayListMatrixClipState>(cull, m44));
-  current_ = saved_.back().get();
+  saved_.emplace_back(cull, m44);
+  current_ = &saved_.back();
   save();  // saved_[0] will always be the initial settings
 }
 
 void DisplayListMatrixClipTracker::save() {
-  saved_.emplace_back(std::make_unique<DisplayListMatrixClipState>(*current_));
-  current_ = saved_.back().get();
+  saved_.emplace_back(*current_);
+  current_ = &saved_.back();
 }
 
 void DisplayListMatrixClipTracker::restore() {
   if (saved_.size() > 2) {
     saved_.pop_back();
-    current_ = saved_.back().get();
+    current_ = &saved_.back();
   }
 }
 
 void DisplayListMatrixClipTracker::reset() {
   while (saved_.size() > 1) {
     saved_.pop_back();
-    current_ = saved_.back().get();
+    current_ = &saved_.back();
   }
   save();  // saved_[0] will always be the initial settings
 }
