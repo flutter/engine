@@ -89,7 +89,7 @@ class GaussianBlurFilterContentsTest : public EntityPlayground {
              ->GetCommandQueue()
              ->Submit({command_buffer})
              .ok()) {
-      return nullptr
+      return nullptr;
     }
 
     if (render_target.ok()) {
