@@ -118,22 +118,15 @@ void CompositorSoftware::BlendLayer(std::vector<uint32_t>& allocation,
   const FlutterPoint& offset = layer.offset;
   const FlutterSize& size = layer.size;
 
-  for (int y_src = 0; y_src < size.height; y_src++) {
+  // Bounds for iteration to prevent out-of-bounds destination coordinates.
+  int y_src_min = std::max(0., y_min - offset.y);
+  int y_src_max = std::min(size.height, height + y_min - offset.y);
+  int x_src_min = std::max(0., x_min - offset.x);
+  int x_src_max = std::min(size.width, width + x_min - offset.x);
+  for (int y_src = y_src_min; y_src < y_src_max; y_src++) {
     int y_dst = y_src + offset.y - y_min;
-    if (y_dst < 0) {
-      continue;
-    }
-    if (y_dst >= height) {
-      break;
-    }
-    for (int x_src = 0; x_src < size.width; x_src++) {
+    for (int x_src = x_src_min; x_src < x_src_max; x_src++) {
       int x_dst = x_src + offset.x + x_min;
-      if (x_dst < 0) {
-        continue;
-      }
-      if (x_dst >= width) {
-        break;
-      }
       size_t i_src = y_src * size.width + x_src;
       size_t i_dst = y_dst * width + x_dst;
       uint32_t src = src_data[i_src];
