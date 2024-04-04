@@ -40,6 +40,8 @@ bool CompositorSoftware::CollectBackingStore(const FlutterBackingStore* store) {
 bool CompositorSoftware::Present(FlutterWindowsView* view,
                                  const FlutterLayer** layers,
                                  size_t layers_count) {
+  FML_DCHECK(view != nullptr);
+
   // Clear the view if there are no layers to present.
   if (layers_count == 0) {
     return view->ClearSoftwareBitmap();

@@ -95,6 +95,8 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
 bool CompositorOpenGL::Present(FlutterWindowsView* view,
                                const FlutterLayer** layers,
                                size_t layers_count) {
+  FML_DCHECK(view != nullptr);
+
   // Clear the view if there are no layers to present.
   if (layers_count == 0) {
     // Normally the compositor is initialized when the first backing store is
