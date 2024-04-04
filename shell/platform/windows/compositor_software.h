@@ -29,6 +29,8 @@ class CompositorSoftware : public Compositor {
                size_t layers_count) override;
 
  private:
+  /// Blend layer in-place onto allocation, which already holds the previous
+  /// results of composition.
   void BlendLayer(std::vector<uint32_t>& allocation,
                   const FlutterLayer& layer,
                   int x_min,

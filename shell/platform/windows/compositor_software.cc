@@ -9,6 +9,8 @@
 
 namespace flutter {
 
+constexpr int kOpaqueBlack = 0xff000000;
+
 CompositorSoftware::CompositorSoftware(FlutterWindowsEngine* engine)
     : engine_(engine) {}
 
@@ -53,10 +55,11 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
 
   // Bypass composition logic if there is only one layer.
   if (layers_count == 1) {
-    auto& layer = *layers[0];
-    if (layer.type == kFlutterLayerContentTypeBackingStore &&
-        layer.offset.x == 0 && layer.offset.y == 0) {
-      auto& backing_store = *layer.backing_store;
+    const FlutterLayer* layer = layers[0];
+    FML_DCHECK(layer != nullptr);
+    if (layer->type == kFlutterLayerContentTypeBackingStore &&
+        layer->offset.x == 0 && layer->offset.y == 0) {
+      auto& backing_store = *layer->backing_store;
       FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
       auto& software = backing_store.software;
       return view->PresentSoftwareBitmap(software.allocation,
@@ -71,8 +74,10 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
   int y_max = INT_MIN;
   for (const FlutterLayer** layer = layers; layer < layers + layers_count;
        layer++) {
-    auto& offset = (*layer)->offset;
-    auto& size = (*layer)->size;
+    const FlutterPoint& offset = (*layer)->offset;
+    const FlutterSize& size = (*layer)->size;
+    // FlutterPoint and FlutterSize store coordinates as doubles.
+    // Coordinates must be trucated to integers to represent whole pixels.
     x_min = std::min(x_min, static_cast<int>(offset.x));
     y_min = std::min(y_min, static_cast<int>(offset.y));
     x_max = std::max(x_max, static_cast<int>(offset.x + size.width));
@@ -81,7 +86,7 @@ bool CompositorSoftware::Present(FlutterViewId view_id,
 
   int width = x_max - x_min;
   int height = y_max - y_min;
-  std::vector<uint32_t> allocation(width * height, 0xff000000);
+  std::vector<uint32_t> allocation(width * height, kOpaqueBlack);
 
   for (const FlutterLayer** layer = layers; layer < layers + layers_count;
        layer++) {
@@ -110,8 +115,8 @@ void CompositorSoftware::BlendLayer(std::vector<uint32_t>& allocation,
   FML_DCHECK(backing_store.type == kFlutterBackingStoreTypeSoftware);
   auto src_data =
       static_cast<const uint32_t*>(backing_store.software.allocation);
-  auto& offset = layer.offset;
-  auto& size = layer.size;
+  const FlutterPoint& offset = layer.offset;
+  const FlutterSize& size = layer.size;
 
   for (int y_src = 0; y_src < size.height; y_src++) {
     int y_dst = y_src + offset.y - y_min;
