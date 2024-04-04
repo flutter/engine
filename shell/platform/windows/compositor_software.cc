@@ -9,8 +9,7 @@
 
 namespace flutter {
 
-CompositorSoftware::CompositorSoftware(FlutterWindowsEngine* engine)
-    : engine_(engine) {}
+CompositorSoftware::CompositorSoftware() {}
 
 bool CompositorSoftware::CreateBackingStore(
     const FlutterBackingStoreConfig& config,
@@ -38,14 +37,9 @@ bool CompositorSoftware::CollectBackingStore(const FlutterBackingStore* store) {
   return true;
 }
 
-bool CompositorSoftware::Present(FlutterViewId view_id,
+bool CompositorSoftware::Present(FlutterWindowsView* view,
                                  const FlutterLayer** layers,
                                  size_t layers_count) {
-  FlutterWindowsView* view = engine_->view(view_id);
-  if (!view) {
-    return false;
-  }
-
   // Clear the view if there are no layers to present.
   if (layers_count == 0) {
     return view->ClearSoftwareBitmap();
