@@ -1,4 +1,4 @@
-Signature: 47617870351a76d9aa7abeb8ba6b0750
+Signature: df70b9c1a9ed97fd8e16f627c966137c
 
 ====================================================================================================
 LIBRARY: etc1
@@ -400,6 +400,7 @@ FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/CacheBudget.md
 FILE: ../../../flutter/third_party/skia/relnotes/GraphiteContextMaxTextureSize.md
 FILE: ../../../flutter/third_party/skia/relnotes/MTLBinaryArchive.md
+FILE: ../../../flutter/third_party/skia/relnotes/SkBitmap_setColorSpace.md
 FILE: ../../../flutter/third_party/skia/relnotes/metal_backendsurface.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
