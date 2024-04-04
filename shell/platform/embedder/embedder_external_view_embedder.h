@@ -121,7 +121,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   SkMatrix pending_surface_transformation_;
   EmbedderExternalView::PendingViews pending_views_;
   std::vector<EmbedderExternalView::ViewIdentifier> composition_order_;
-  // The render target cache for each view. Each key is a view ID.
+  // The render target caches for views. Each key is a view ID.
   std::unordered_map<int64_t, EmbedderRenderTargetCache> render_target_caches_;
 
   void Reset();
