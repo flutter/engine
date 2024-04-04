@@ -229,6 +229,9 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
+  // Log a warning during shell initialization if Impeller is not enabled.
+  bool warn_on_impeller_opt_out = false;
+
   // The selected Android rendering API.
   AndroidRenderingAPI android_rendering_api =
       AndroidRenderingAPI::kSkiaOpenGLES;
@@ -356,6 +359,11 @@ struct Settings {
   ///
   /// This is currently only used by iOS.
   bool enable_embedder_api = false;
+
+  /// Enable support for isolates that run on the platform thread.
+  ///
+  /// This is used by the runOnPlatformThread API.
+  bool enable_platform_isolates = false;
 };
 
 }  // namespace flutter
