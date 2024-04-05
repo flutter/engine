@@ -24,7 +24,6 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
 #include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
@@ -113,7 +112,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         depth->load_action,                                   //
         depth->store_action                                   //
     );
-    TextureVK::Cast(*depth->texture).SetLayout(barrier);
   } else if (auto stencil = render_target_.GetStencilAttachment();
              stencil.has_value()) {
     builder.SetStencilAttachment(
@@ -122,7 +120,6 @@ SharedHandleVK<vk::RenderPass> RenderPassVK::CreateVKRenderPass(
         stencil->load_action,                                   //
         stencil->store_action                                   //
     );
-    TextureVK::Cast(*stencil->texture).SetLayout(barrier);
   }
 
   if (recycled_renderpass != nullptr) {
@@ -300,8 +297,7 @@ SharedHandleVK<vk::Framebuffer> RenderPassVK::CreateVKFramebuffer(
 // |RenderPass|
 void RenderPassVK::SetPipeline(
     const std::shared_ptr<Pipeline<PipelineDescriptor>>& pipeline) {
-  pipeline_ = pipeline;
-
+  pipeline_ = pipeline.get();
   if (!pipeline_) {
     return;
   }
@@ -458,7 +454,7 @@ fml::Status RenderPassVK::Draw() {
           fml::StatusCode::kAborted,
           "Could not create pipeline variant with immutable sampler.");
     }
-    pipeline_ = std::move(pipeline_variant);
+    pipeline_ = pipeline_variant.get();
   }
 
   const auto& context_vk = ContextVK::Cast(*context_);

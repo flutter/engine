@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:engine_build_configs/engine_build_configs.dart';
+import 'package:path/path.dart' as p;
 
 import '../build_utils.dart';
+import '../gn_utils.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -17,25 +21,16 @@ final class BuildCommand extends CommandBase {
   }) {
     builds = runnableBuilds(environment, configs);
     debugCheckBuilds(builds);
-    argParser.addOption(
-      configFlag,
-      abbr: 'c',
-      defaultsTo: 'host_debug',
-      help: 'Specify the build config to use',
-      allowed: <String>[
-        for (final Build config in runnableBuilds(environment, configs))
-          config.name,
-      ],
-      allowedHelp: <String, String>{
-        for (final Build config in runnableBuilds(environment, configs))
-          config.name: config.gn.join(' '),
-      },
+    addConfigOption(
+      environment,
+      argParser,
+      runnableBuilds(environment, configs),
     );
     argParser.addFlag(
       rbeFlag,
       defaultsTo: true,
       help: 'RBE is enabled by default when available. Use --no-rbe to '
-            'disable it.',
+          'disable it.',
     );
   }
 
@@ -46,14 +41,17 @@ final class BuildCommand extends CommandBase {
   String get name => 'build';
 
   @override
-  String get description => 'Builds the engine';
+  String get description => 'Builds the engine'
+      'et build //flutter/fml/...             # Build all targets in `//flutter/fml/`'
+      'et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml/`';
 
   @override
   Future<int> run() async {
     final String configName = argResults![configFlag] as String;
     final bool useRbe = argResults![rbeFlag] as bool;
+    final String demangledName = demangleConfigName(environment, configName);
     final Build? build =
-        builds.where((Build build) => build.name == configName).firstOrNull;
+        builds.where((Build build) => build.name == demangledName).firstOrNull;
     if (build == null) {
       environment.logger.error('Could not find config $configName');
       return 1;
@@ -63,7 +61,22 @@ final class BuildCommand extends CommandBase {
       if (!useRbe) '--no-rbe',
     ];
 
-    // TODO(loic-sharma): Fetch dependencies if needed.
-    return runBuild(environment, build, extraGnArgs: extraGnArgs);
+    final Map<String, BuildTarget> allTargets = await findTargets(environment,
+        Directory(p.join(environment.engine.outDir.path, build.ninja.config)));
+    final Set<BuildTarget> selectedTargets =
+        selectTargets(argResults!.rest, allTargets);
+    if (selectedTargets.isEmpty) {
+      environment.logger.error(
+          'No build targets matched ${argResults!.rest}\nRun `et query targets` to see list of targets.');
+      return 1;
+    }
+
+    // Chop off the '//' prefix.
+    final List<String> buildTargets = selectedTargets
+        .map<String>(
+            (BuildTarget target) => target.label.substring('//'.length))
+        .toList();
+    return runBuild(environment, build,
+        extraGnArgs: extraGnArgs, targets: buildTargets);
   }
 }

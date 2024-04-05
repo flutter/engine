@@ -167,7 +167,7 @@ TEST(CapabilitiesVKTest, ContextInitializesWithNoStencilFormat) {
           .SetPhysicalDeviceFormatPropertiesCallback(
               [](VkPhysicalDevice physicalDevice, VkFormat format,
                  VkFormatProperties* pFormatProperties) {
-                if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+                if (format == VK_FORMAT_R8G8B8A8_UNORM) {
                   pFormatProperties->optimalTilingFeatures =
                       static_cast<VkFormatFeatureFlags>(
                           vk::FormatFeatureFlagBits::eColorAttachment);
@@ -200,7 +200,7 @@ TEST(CapabilitiesVKTest,
           .SetPhysicalDeviceFormatPropertiesCallback(
               [](VkPhysicalDevice physicalDevice, VkFormat format,
                  VkFormatProperties* pFormatProperties) {
-                if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+                if (format == VK_FORMAT_R8G8B8A8_UNORM) {
                   pFormatProperties->optimalTilingFeatures =
                       static_cast<VkFormatFeatureFlags>(
                           vk::FormatFeatureFlagBits::eColorAttachment);
@@ -231,6 +231,14 @@ TEST(ContextVKTest, FatalMissingValidations) {
                        })
                        .Build(),
                "");
+}
+
+TEST(ContextVKTest, HasDefaultColorFormat) {
+  std::shared_ptr<ContextVK> context = MockVulkanContextBuilder().Build();
+
+  const CapabilitiesVK* capabilites_vk =
+      reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+  ASSERT_NE(capabilites_vk->GetDefaultColorFormat(), PixelFormat::kUnknown);
 }
 
 }  // namespace testing

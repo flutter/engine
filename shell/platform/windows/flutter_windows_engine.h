@@ -124,6 +124,9 @@ class FlutterWindowsEngine {
   std::unique_ptr<FlutterWindowsView> CreateView(
       std::unique_ptr<WindowBindingHandler> window);
 
+  // Remove a view. The engine will no longer render into it.
+  virtual void RemoveView(FlutterViewId view_id);
+
   // Get a view that displays this engine's content.
   //
   // Returns null if the view does not exist.
@@ -340,6 +343,11 @@ class FlutterWindowsEngine {
 
   // Send the currently enabled accessibility features to the engine.
   void SendAccessibilityFeatures();
+
+  // Present content to a view. Returns true if the content was presented.
+  //
+  // This is invoked on the raster thread.
+  bool Present(const FlutterPresentViewInfo* info);
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;

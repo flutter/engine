@@ -2,8 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io';
+
 import 'package:engine_build_configs/engine_build_configs.dart';
 
+import 'package:path/path.dart' as p;
+
+import '../build_utils.dart';
+import '../gn_utils.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -42,6 +48,10 @@ final class QueryCommand extends CommandBase {
       environment: environment,
       configs: configs,
     ));
+    addSubcommand(QueryTargetsCommand(
+      environment: environment,
+      configs: configs,
+    ));
   }
 
   /// Build configurations loaded from the engine from under ci/builders.
@@ -55,9 +65,9 @@ final class QueryCommand extends CommandBase {
       'and tests.';
 }
 
-/// The 'query builds' command.
+/// The 'query builders' command.
 final class QueryBuildersCommand extends CommandBase {
-  /// Constructs the 'query build' command.
+  /// Constructs the 'query builders' command.
   QueryBuildersCommand({
     required super.environment,
     required this.configs,
@@ -116,6 +126,73 @@ final class QueryBuildersCommand extends CommandBase {
           }
         }
       }
+    }
+    return 0;
+  }
+}
+
+/// The query targets command.
+final class QueryTargetsCommand extends CommandBase {
+  /// Constructs the 'query targets' command.
+  QueryTargetsCommand({
+    required super.environment,
+    required this.configs,
+  }) {
+    builds = runnableBuilds(environment, configs);
+    debugCheckBuilds(builds);
+    addConfigOption(
+      environment,
+      argParser,
+      runnableBuilds(environment, configs),
+    );
+    argParser.addFlag(
+      testOnlyFlag,
+      abbr: 't',
+      help: 'Filter build targets to only include tests',
+      negatable: false,
+    );
+  }
+
+  /// Build configurations loaded from the engine from under ci/builders.
+  final Map<String, BuilderConfig> configs;
+
+  /// List of compatible builds.
+  late final List<Build> builds;
+
+  @override
+  String get name => 'targets';
+
+  @override
+  String get description => 'Provides information about build targets'
+      'et query targets --testonly         # List only test targets'
+      'et query targets //flutter/fml/...  # List all targets under `//flutter/fml`';
+
+  @override
+  Future<int> run() async {
+    final String configName = argResults![configFlag] as String;
+    final bool testOnly = argResults![testOnlyFlag] as bool;
+    final String demangledName = demangleConfigName(environment, configName);
+    final Build? build =
+        builds.where((Build build) => build.name == demangledName).firstOrNull;
+    if (build == null) {
+      environment.logger.error('Could not find config $configName');
+      return 1;
+    }
+    final Map<String, BuildTarget> allTargets = await findTargets(environment,
+        Directory(p.join(environment.engine.outDir.path, build.ninja.config)));
+    final Set<BuildTarget> selectedTargets =
+        selectTargets(argResults!.rest, allTargets);
+    if (selectedTargets.isEmpty) {
+      environment.logger.error(
+          'No build targets matched ${argResults!.rest}\nRun `et query targets` to see list of targets.');
+      return 1;
+    }
+    for (final BuildTarget target in selectedTargets) {
+      if (testOnly &&
+          (!target.testOnly || target.type != BuildTargetType.executable)) {
+        continue;
+      }
+      environment.logger.status(target.label);
     }
     return 0;
   }

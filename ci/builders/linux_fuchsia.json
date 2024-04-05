@@ -6,18 +6,23 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_arm64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
                 "--runtime-mode",
-                "profile"
+                "profile",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_profile_arm64",
+            "name": "ci/fuchsia_profile_arm64",
             "ninja": {
-                "config": "fuchsia_profile_arm64",
+                "config": "ci/fuchsia_profile_arm64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -32,19 +37,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_arm64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
                 "--runtime-mode",
                 "profile",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_profile_arm64_tester",
+            "name": "ci/fuchsia_profile_arm64_tester",
             "ninja": {
-                "config": "fuchsia_profile_arm64",
+                "config": "ci/fuchsia_profile_arm64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -58,7 +68,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_profile_arm64"
+                        "ci/fuchsia_profile_arm64_tester"
                     ]
                 }
             ]
@@ -69,18 +79,23 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_arm64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
                 "--runtime-mode",
-                "release"
+                "release",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_release_arm64",
+            "name": "ci/fuchsia_release_arm64",
             "ninja": {
-                "config": "fuchsia_release_arm64",
+                "config": "ci/fuchsia_release_arm64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -95,19 +110,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_arm64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
                 "--runtime-mode",
                 "release",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_release_arm64_tester",
+            "name": "ci/fuchsia_release_arm64_tester",
             "ninja": {
-                "config": "fuchsia_release_arm64",
+                "config": "ci/fuchsia_release_arm64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -121,7 +141,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_release_arm64"
+                        "ci/fuchsia_release_arm64_tester"
                     ]
                 }
             ]
@@ -132,19 +152,24 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_arm64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
                 "--runtime-mode",
                 "debug",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_debug_arm64",
+            "name": "ci/fuchsia_debug_arm64",
             "ninja": {
-                "config": "fuchsia_debug_arm64",
+                "config": "ci/fuchsia_debug_arm64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -157,7 +182,7 @@
                     "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
                     "parameters": [
                         "--symbol-dir",
-                        "out/fuchsia_debug_arm64/.build-id",
+                        "out/ci/fuchsia_debug_arm64/.build-id",
                         "--engine-version",
                         "${REVISION}",
                         "--upload"
@@ -174,19 +199,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_arm64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
                 "--runtime-mode",
                 "debug",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_debug_arm64_tester",
+            "name": "ci/fuchsia_debug_arm64_tester",
             "ninja": {
-                "config": "fuchsia_debug_arm64",
+                "config": "ci/fuchsia_debug_arm64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -200,7 +230,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_debug_arm64"
+                        "ci/fuchsia_debug_arm64_tester"
                     ]
                 }
             ]
@@ -211,18 +241,23 @@
                 "os=Linux"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_x64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
-                "profile"
+                "profile",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_profile_x64",
+            "name": "ci/fuchsia_profile_x64",
             "ninja": {
-                "config": "fuchsia_profile_x64",
+                "config": "ci/fuchsia_profile_x64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -237,19 +272,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_x64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
                 "profile",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_profile_x64_tester",
+            "name": "ci/fuchsia_profile_x64_tester",
             "ninja": {
-                "config": "fuchsia_profile_x64",
+                "config": "ci/fuchsia_profile_x64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -263,7 +303,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_profile_x64"
+                        "ci/fuchsia_profile_x64_tester"
                     ]
                 }
             ]
@@ -275,18 +315,23 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_x64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
-                "release"
+                "release",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_release_x64",
+            "name": "ci/fuchsia_release_x64",
             "ninja": {
-                "config": "fuchsia_release_x64",
+                "config": "ci/fuchsia_release_x64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -301,19 +346,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_x64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
                 "release",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_release_x64_tester",
+            "name": "ci/fuchsia_release_x64_tester",
             "ninja": {
-                "config": "fuchsia_release_x64",
+                "config": "ci/fuchsia_release_x64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -327,7 +377,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_release_x64"
+                        "ci/fuchsia_release_x64_tester"
                     ]
                 }
             ]
@@ -339,19 +389,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_x64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
                 "debug",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_debug_x64",
+            "name": "ci/fuchsia_debug_x64",
             "ninja": {
-                "config": "fuchsia_debug_x64",
+                "config": "ci/fuchsia_debug_x64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -364,7 +419,7 @@
                     "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
                     "parameters": [
                         "--symbol-dir",
-                        "out/fuchsia_debug_x64/.build-id",
+                        "out/ci/fuchsia_debug_x64/.build-id",
                         "--engine-version",
                         "${REVISION}",
                         "--upload"
@@ -381,19 +436,24 @@
             ],
             "gclient_variables": {
                 "download_android_deps": false,
-                "run_fuchsia_emu": true
+                "run_fuchsia_emu": true,
+                "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_x64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
                 "--runtime-mode",
                 "debug",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "fuchsia_debug_x64_tester",
+            "name": "ci/fuchsia_debug_x64_tester",
             "ninja": {
-                "config": "fuchsia_debug_x64",
+                "config": "ci/fuchsia_debug_x64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -406,11 +466,16 @@
                     "script": "flutter/testing/fuchsia/run_tests_test.py"
                 },
                 {
+                    "name": "build_fuchsia_artifacts test",
+                    "script": "flutter/tools/fuchsia/build_fuchsia_artifacts_test.py"
+                },
+                {
                     "name": "x64 emulator based debug tests",
                     "language": "python3",
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
-                        "testing/fuchsia/run_tests.py"
+                        "testing/fuchsia/run_tests.py",
+                        "ci/fuchsia_debug_x64_tester"
                     ]
                 }
             ]
@@ -440,9 +505,9 @@
                     "--out-dir",
                     "${LUCI_CLEANUP}",
                     "--symbol-dirs",
-                    "out/fuchsia_debug_arm64/.build-id",
-                    "out/fuchsia_profile_arm64/.build-id",
-                    "out/fuchsia_release_arm64/.build-id"
+                    "out/ci/fuchsia_debug_arm64/.build-id",
+                    "out/ci/fuchsia_profile_arm64/.build-id",
+                    "out/ci/fuchsia_release_arm64/.build-id"
                 ],
                 "script": "flutter/tools/fuchsia/merge_and_upload_debug_symbols.py",
                 "language": "python3"
@@ -458,9 +523,9 @@
                     "--out-dir",
                     "${LUCI_CLEANUP}",
                     "--symbol-dirs",
-                    "out/fuchsia_debug_x64/.build-id",
-                    "out/fuchsia_profile_x64/.build-id",
-                    "out/fuchsia_release_x64/.build-id"
+                    "out/ci/fuchsia_debug_x64/.build-id",
+                    "out/ci/fuchsia_profile_x64/.build-id",
+                    "out/ci/fuchsia_release_x64/.build-id"
                 ],
                 "script": "flutter/tools/fuchsia/merge_and_upload_debug_symbols.py",
                 "language": "python3"
@@ -468,7 +533,8 @@
             {
                 "name": "Verify-export-symbols-release-binaries",
                 "parameters": [
-                    "src/out"
+                    "src/out/ci",
+                    "src/flutter/buildtools"
                 ],
                 "script": "flutter/testing/symbols/verify_exported.dart",
                 "language": "dart"
