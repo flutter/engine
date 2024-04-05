@@ -358,7 +358,11 @@ bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
-    platform_configuration->DispatchPointerDataPacket(packet);
+    std::unique_ptr<PointerDataPacket> converted_packet =
+        pointer_data_packet_converter_.Convert(packet);
+    if (converted_packet->GetLength() != 0) {
+      platform_configuration->DispatchPointerDataPacket(*converted_packet);
+    }
     return true;
   }
 
