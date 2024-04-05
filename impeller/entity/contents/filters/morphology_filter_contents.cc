@@ -148,7 +148,7 @@ std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
   }
   if (!renderer.GetContext()
            ->GetCommandQueue()
-           ->Submit({std::move(command_buffer)})
+           ->Submit(/*buffers=*/{std::move(command_buffer)})
            .ok()) {
     return std::nullopt;
   }

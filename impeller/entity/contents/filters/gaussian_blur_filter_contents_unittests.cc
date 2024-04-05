@@ -87,7 +87,7 @@ class GaussianBlurFilterContentsTest : public EntityPlayground {
     if (!GetContentContext()
              ->GetContext()
              ->GetCommandQueue()
-             ->Submit({command_buffer})
+             ->Submit(/*buffers=*/{command_buffer})
              .ok()) {
       return nullptr;
     }

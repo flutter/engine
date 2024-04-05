@@ -540,7 +540,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   if (!renderer.GetContext()
            ->GetCommandQueue()
-           ->Submit({command_buffer})
+           ->Submit(/*buffers=*/{command_buffer})
            .ok()) {
     return std::nullopt;
   }
