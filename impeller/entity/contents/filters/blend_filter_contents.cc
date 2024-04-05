@@ -259,10 +259,10 @@ std::optional<Entity> BlendFilterContents::CreateForegroundAdvancedBlend(
     return std::nullopt;
   }
 
-  RenderProc render_proc = [foreground_color, dst_snapshot,
-                            blend_mode, alpha, absorb_opacity](
-                               const ContentContext& renderer,
-                               const Entity& entity, RenderPass& pass) -> bool {
+  RenderProc render_proc = [foreground_color, dst_snapshot, blend_mode, alpha,
+                            absorb_opacity](const ContentContext& renderer,
+                                            const Entity& entity,
+                                            RenderPass& pass) -> bool {
     using VS = BlendScreenPipeline::VertexShader;
     using FS = BlendScreenPipeline::FragmentShader;
 

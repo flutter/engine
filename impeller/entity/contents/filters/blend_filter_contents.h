@@ -81,8 +81,7 @@ class BlendFilterContents : public ColorFilterContents {
   /// @brief Optimized porter-duff blend that avoids a second subpass when there
   ///        is only a single input and a foreground color.
   ///
-  /// These contents cannot absorb opacity and require that the applied transform
-  /// is scale/translate only.
+  /// These contents cannot absorb opacity.
   std::optional<Entity> CreateForegroundPorterDuffBlend(
       const std::shared_ptr<FilterInput>& input,
       const ContentContext& renderer,
