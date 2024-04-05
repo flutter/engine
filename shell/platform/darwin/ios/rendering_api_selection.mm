@@ -16,6 +16,16 @@
 
 namespace flutter {
 
+bool ShouldUseMetalRenderer() {
+  bool ios_version_supports_metal = false;
+  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
+    auto device = MTLCreateSystemDefaultDevice();
+    ios_version_supports_metal = [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily1_v3];
+    [device release];
+  }
+  return ios_version_supports_metal;
+}
+
 IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
 #if TARGET_OS_SIMULATOR
   if (force_software) {
@@ -28,7 +38,8 @@ IOSRenderingAPI GetRenderingAPIForProcess(bool force_software) {
   }
 #endif  // TARGET_OS_SIMULATOR
 
-  if (@available(iOS METAL_IOS_VERSION_BASELINE, *)) {
+  static bool should_use_metal = ShouldUseMetalRenderer();
+  if (should_use_metal) {
     return IOSRenderingAPI::kMetal;
   }
 
