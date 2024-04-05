@@ -167,12 +167,22 @@ bool DisplayListMatrixClipState::content_culled(
   return !mapped.IntersectsWithRect(cull_rect_);
 }
 
-void DisplayListMatrixClipState::resetCullRect(const DlRect& cull_rect) {
+void DisplayListMatrixClipState::resetDeviceCullRect(const DlRect& cull_rect) {
   if (cull_rect.IsEmpty()) {
     cull_rect_ = DlRect();
   } else {
     cull_rect_ = cull_rect;
   }
+}
+
+void DisplayListMatrixClipState::resetLocalCullRect(const DlRect& cull_rect) {
+  if (!cull_rect.IsEmpty()) {
+    mapRect(cull_rect, &cull_rect_);
+    if (!cull_rect_.IsEmpty()) {
+      return;
+    }
+  }
+  cull_rect_ = DlRect();
 }
 
 void DisplayListMatrixClipState::adjustCullRect(const DlRect& clip,

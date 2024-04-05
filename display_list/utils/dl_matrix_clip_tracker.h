@@ -80,9 +80,13 @@ class DisplayListMatrixClipState {
   // layer into the enclosing clipped area.
   // Omitting the |cull_rect| argument, or passing nullptr, will restore the
   // cull rect to the initial value it had when the tracker was constructed.
-  void resetCullRect(const DlRect& cull_rect);
-  void resetCullRect(const SkRect& cull_rect) {
-    resetCullRect(ToDlRect(cull_rect));
+  void resetDeviceCullRect(const DlRect& cull_rect);
+  void resetDeviceCullRect(const SkRect& cull_rect) {
+    resetDeviceCullRect(ToDlRect(cull_rect));
+  }
+  void resetLocalCullRect(const DlRect& cull_rect);
+  void resetLocalCullRect(const SkRect& cull_rect) {
+    resetLocalCullRect(ToDlRect(cull_rect));
   }
 
   bool using_4x4_matrix() const { return !matrix_.IsAffine(); }
@@ -188,8 +192,8 @@ class DisplayListMatrixClipTracker {
   DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkMatrix& matrix);
   DisplayListMatrixClipTracker(const SkRect& cull_rect, const SkM44& matrix);
 
-  // This method should almost never be used as it breaks the encapsulation
-  // of the enclosing clips. However it is needed for practical purposes in
+  // These methods should almost never be used as they breaks the encapsulation
+  // of the enclosing clips. However they are needed for practical purposes in
   // some rare cases - such as when a saveLayer is collecting rendering
   // operations prior to applying a filter on the entire layer bounds and
   // some of those operations fall outside the enclosing clip, but their
@@ -197,11 +201,33 @@ class DisplayListMatrixClipTracker {
   // layer into the enclosing clipped area.
   // Omitting the |cull_rect| argument, or passing nullptr, will restore the
   // cull rect to the initial value it had when the tracker was constructed.
-  void resetCullRect(const DlRect* cull_rect = nullptr) {
-    current_->resetCullRect(cull_rect ? *cull_rect : saved_[0].cull_rect_);
+  void resetDeviceCullRect(const DlRect* cull_rect = nullptr) {
+    if (cull_rect) {
+      current_->resetDeviceCullRect(*cull_rect);
+    } else {
+      current_->resetDeviceCullRect(saved_[0].cull_rect_);
+    }
   }
-  void resetCullRect(const SkRect* cull_rect = nullptr) {
-    current_->resetCullRect(cull_rect ? *cull_rect : base_device_cull_rect());
+  void resetDeviceCullRect(const SkRect* cull_rect = nullptr) {
+    if (cull_rect) {
+      current_->resetDeviceCullRect(*cull_rect);
+    } else {
+      current_->resetDeviceCullRect(saved_[0].cull_rect_);
+    }
+  }
+  void resetLocalCullRect(const DlRect* cull_rect = nullptr) {
+    if (cull_rect) {
+      current_->resetLocalCullRect(*cull_rect);
+    } else {
+      current_->resetDeviceCullRect(saved_[0].cull_rect_);
+    }
+  }
+  void resetLocalCullRect(const SkRect* cull_rect = nullptr) {
+    if (cull_rect) {
+      current_->resetLocalCullRect(*cull_rect);
+    } else {
+      current_->resetDeviceCullRect(saved_[0].cull_rect_);
+    }
   }
 
   static bool is_3x3(const SkM44& m44);
