@@ -336,6 +336,52 @@ Path::Polyline Path::CreatePolyline(
   return polyline;
 }
 
+void Path::WritePolyline(PolylineWriter& writer, Scalar scale) const {
+  auto& path_components = data_->components;
+  auto& path_points = data_->points;
+
+  for (size_t component_i = 0; component_i < path_components.size();
+       component_i++) {
+    const auto& path_component = path_components[component_i];
+    switch (path_component.type) {
+      case ComponentType::kLinear: {
+        const LinearPathComponent* linear =
+            reinterpret_cast<const LinearPathComponent*>(
+                &path_points[path_component.index]);
+        writer.Write(linear->p1);
+        writer.Write(linear->p2);
+        break;
+      }
+      case ComponentType::kQuadratic: {
+        const QuadraticPathComponent* quad =
+            reinterpret_cast<const QuadraticPathComponent*>(
+                &path_points[path_component.index]);
+        quad->ToLinearPathComponents(
+            scale, [&writer](Point point) { writer.Write(point); });
+
+        for (size_t i = 1; i < 12; i += 1) {
+          writer.Write(quad->Solve(i / 12.0));
+        }
+        writer.Write(quad->p2);
+        break;
+      }
+      case ComponentType::kCubic: {
+        const CubicPathComponent* cubic =
+            reinterpret_cast<const CubicPathComponent*>(
+                &path_points[path_component.index]);
+        for (size_t i = 1; i < 12; i += 1) {
+          writer.Write(cubic->Solve(i / 12.0));
+        }
+        writer.Write(cubic->p2);
+        break;
+      }
+      case ComponentType::kContour:
+        writer.EndContour();
+        break;
+    }
+  }
+}
+
 std::optional<Rect> Path::GetBoundingBox() const {
   return data_->bounds;
 }

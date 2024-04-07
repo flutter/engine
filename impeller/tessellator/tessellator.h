@@ -9,7 +9,10 @@
 #include <memory>
 #include <vector>
 
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/trig.h"
@@ -212,6 +215,8 @@ class Tessellator {
   ///
   std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
 
+  VertexBuffer TessellateConvex2(const Path& path, HostBuffer& host_buffer, Scalar tolerance);
+
   //----------------------------------------------------------------------------
   /// @brief      Create a temporary polyline. Only one per-process can exist at
   ///             a time.
@@ -299,6 +304,9 @@ class Tessellator {
  private:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
+  /// Scratch data for indices.
+  std::unique_ptr<std::vector<uint16_t>> index_buffer_;
+
   CTessellator c_tessellator_;
 
   // Data for variouos Circle/EllipseGenerator classes, cached per

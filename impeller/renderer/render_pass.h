@@ -46,6 +46,8 @@ class RenderPass : public ResourceBinder {
 
   void SetLabel(std::string label);
 
+  const std::shared_ptr<CommandBuffer>& GetCommandBuffer();
+
   /// @brief Reserve [command_count] commands in the HAL command buffer.
   ///
   /// Note: this is not the native command buffer.
@@ -166,6 +168,7 @@ class RenderPass : public ResourceBinder {
 
  protected:
   const std::shared_ptr<const Context> context_;
+  std::shared_ptr<CommandBuffer> command_buffer_;
   // The following properties: sample_count, pixel_format,
   // has_stencil_attachment, and render_target_size are cached on the
   // RenderTarget to speed up numerous lookups during rendering. This is safe as

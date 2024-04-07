@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 #include "impeller/tessellator/tessellator.h"
+#include <cstdint>
+#include <memory>
 
+#include "impeller/core/host_buffer.h"
+#include "impeller/geometry/path.h"
 #include "third_party/libtess2/Include/tesselator.h"
 
 namespace impeller {
@@ -33,8 +37,10 @@ static const TESSalloc kAlloc = {
 
 Tessellator::Tessellator()
     : point_buffer_(std::make_unique<std::vector<Point>>()),
+      index_buffer_(std::make_unique<std::vector<uint16_t>>()),
       c_tessellator_(nullptr, &DestroyTessellator) {
-  point_buffer_->reserve(2048);
+  point_buffer_->reserve(4096);
+  index_buffer_->reserve(4096);
   TESSalloc alloc = kAlloc;
   {
     // libTess2 copies the TESSalloc despite the non-const argument.
@@ -690,6 +696,81 @@ void Tessellator::GenerateFilledRoundRect(
     proc({right + offset.x, bottom + offset.y});
     proc({right + offset.x, top - offset.y});
   }
+}
+
+class ConvexWriter : public PolylineWriter {
+ public:
+  explicit ConvexWriter(std::vector<Point>& points,
+                        std::vector<uint16_t>& indices)
+      : points_(points), indices_(indices) {}
+
+  ~ConvexWriter() = default;
+
+  void EndContour() override {
+    if (points_.size() == 0u || contour_start_ == points_.size() - 1) {
+      // Empty or first contour.
+      return;
+    }
+
+    auto start = contour_start_;
+    auto end = points_.size() - 1;
+    // Some polygons will not self close and an additional triangle
+    // must be inserted, others will self close and we need to avoid
+    // inserting an extra triangle.
+    if (points_[end] == points_[start]) {
+      end--;
+    }
+
+    if (contour_start_ != 0) {
+      indices_.emplace_back(0xFFFF);
+    }
+    indices_.emplace_back(start);
+
+    size_t a = start + 1;
+    size_t b = end;
+    while (a < b) {
+      indices_.emplace_back(a);
+      indices_.emplace_back(b);
+      a++;
+      b--;
+    }
+    if (a == b) {
+      indices_.emplace_back(a);
+    }
+    contour_start_ = points_.size();
+  }
+
+  void Write(Point point) override { points_.emplace_back(point); }
+
+ private:
+  size_t contour_start_ = 0u;
+  std::vector<Point>& points_;
+  std::vector<uint16_t>& indices_;
+};
+
+VertexBuffer Tessellator::TessellateConvex2(const Path& path,
+                                            HostBuffer& host_bufer,
+                                            Scalar tolerance) {
+  index_buffer_->clear();
+  point_buffer_->clear();
+  ConvexWriter writer(*point_buffer_, *index_buffer_);
+  path.WritePolyline(writer, tolerance);
+  writer.EndContour();
+
+  auto vertex_buffer = host_bufer.Emplace(
+      point_buffer_->data(), sizeof(Point) * point_buffer_->size(),
+      alignof(Point));
+
+  auto index_buffer = host_bufer.Emplace(
+      index_buffer_->data(), sizeof(uint16_t) * index_buffer_->size(),
+      alignof(uint16_t));
+
+  return VertexBuffer{
+      .vertex_buffer = std::move(vertex_buffer),
+      .index_buffer = std::move(index_buffer),
+      .vertex_count = index_buffer_->size(),
+      .index_type = IndexType::k16bit,
+  };
 }
 
 }  // namespace impeller

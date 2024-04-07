@@ -10,6 +10,7 @@
 #include <tuple>
 #include <vector>
 
+#include "impeller/core/host_buffer.h"
 #include "impeller/geometry/path_component.h"
 
 namespace impeller {
@@ -34,6 +35,13 @@ enum class FillType {
 enum class Convexity {
   kUnknown,
   kConvex,
+};
+
+class PolylineWriter {
+  public:
+    virtual void EndContour() = 0;
+
+    virtual void Write(Point a) = 0;
 };
 
 //------------------------------------------------------------------------------
@@ -136,6 +144,10 @@ class Path {
   bool IsConvex() const;
 
   bool IsEmpty() const;
+
+  void WritePolyline(PolylineWriter& writer, Scalar scale) const;
+
+  size_t ComputePolylineLength() const;
 
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
