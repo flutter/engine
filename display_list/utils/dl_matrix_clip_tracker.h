@@ -156,12 +156,12 @@ class DisplayListMatrixClipState {
 
   bool mapRect(DlRect* rect) const { return mapRect(*rect, rect); }
   bool mapRect(const DlRect& src, DlRect* mapped) const {
-    *mapped = src.TransformBounds(matrix_);
+    *mapped = src.TransformAndClipBounds(matrix_);
     return matrix_.IsAligned2D();
   }
   bool mapRect(SkRect* rect) const { return mapRect(*rect, rect); }
   bool mapRect(const SkRect& src, SkRect* mapped) const {
-    *mapped = ToSkRect(ToDlRect(src).TransformBounds(matrix_));
+    *mapped = ToSkRect(ToDlRect(src).TransformAndClipBounds(matrix_));
     return matrix_.IsAligned2D();
   }
 

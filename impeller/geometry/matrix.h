@@ -323,6 +323,10 @@ struct Matrix {
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
   }
 
+  constexpr bool HasPerspective2D() const {
+    return m[3] != 0 || m[7] != 0 || m[15] != 1;
+  }
+
   constexpr bool HasPerspective() const {
     return m[3] != 0 || m[7] != 0 || m[11] != 0 || m[15] != 1;
   }
@@ -451,6 +455,12 @@ struct Matrix {
       w = 1 / w;
     }
     return result * w;
+  }
+
+  constexpr Vector3 TransformHomogenous(const Point& v) const {
+    return Vector3(v.x * m[0] + v.y * m[4] + m[12],
+                   v.x * m[1] + v.y * m[5] + m[13],
+                   v.x * m[3] + v.y * m[7] + m[15]);
   }
 
   constexpr Vector4 TransformDirection(const Vector4& v) const {

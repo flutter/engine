@@ -237,13 +237,15 @@ SkRect DisplayListMatrixClipState::local_cull_rect() const {
   if (!is_matrix_invertable()) {
     return SkRect::MakeEmpty();
   }
-  if (matrix_.HasPerspective()) {
+  if (matrix_.HasPerspective2D()) {
     // We could do a 4-point long-form conversion, but since this is
     // only used for culling, let's just return a non-constricting
     // cull rect.
     return DisplayListBuilder::kMaxCullRect;
   }
   DlMatrix inverse = matrix_.Invert();
+  // We eliminated perspective above so we can use the cheaper non-clipping
+  // bounds transform method.
   return ToSkRect(cull_rect_.TransformBounds(inverse));
 }
 
