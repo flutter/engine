@@ -258,12 +258,8 @@ void ShellTest::PumpOneFrame(Shell* shell, FrameContent frame_content) {
   latch.Wait();
 }
 
-void ShellTest::DispatchFakePointerData(Shell* shell, double x) {
+void ShellTest::DispatchFakePointerData(Shell* shell) {
   auto packet = std::make_unique<PointerDataPacket>(1);
-  packet->SetPointerData(0, PointerData{
-                                .change = PointerData::Change::kHover,
-                                .physical_x = x,
-                            });
   DispatchPointerData(shell, std::move(packet));
 }
 

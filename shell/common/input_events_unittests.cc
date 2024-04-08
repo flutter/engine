@@ -124,9 +124,7 @@ static void TestSimulatedInputEvents(
     for (int i = 0, j = 0; i < num_events; j += 1) {
       double t = j * frame_time;
       while (i < num_events && delivery_time(i) <= t) {
-        // Use a different x every time for the pointer data converter to
-        // generate non-empty events.
-        ShellTest::DispatchFakePointerData(shell.get(), /*x=*/i);
+        ShellTest::DispatchFakePointerData(shell.get());
         i += 1;
       }
       ShellTest::VSyncFlush(shell.get(), &will_draw_new_frame);
