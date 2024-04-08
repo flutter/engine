@@ -8,12 +8,13 @@
 #include <memory>
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_image_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/swapchain_transients_vk.h"
+#include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
 
-class KHRSurfaceVK final : public Surface {
+class SurfaceVK final : public Surface {
  public:
   using SwapCallback = std::function<bool(void)>;
 
@@ -22,26 +23,25 @@ class KHRSurfaceVK final : public Surface {
   ///        target by Impeller.
   ///
   ///        This creates the associated MSAA and depth+stencil texture.
-  static std::unique_ptr<KHRSurfaceVK> WrapSwapchainImage(
-      const std::shared_ptr<Context>& context,
-      std::shared_ptr<KHRSwapchainImageVK>& swapchain_image,
-      SwapCallback swap_callback,
-      bool enable_msaa = true);
+  static std::unique_ptr<SurfaceVK> WrapSwapchainImage(
+      const std::shared_ptr<SwapchainTransientsVK>& transients,
+      const std::shared_ptr<TextureSourceVK>& swapchain_image,
+      SwapCallback swap_callback);
 
   // |Surface|
-  ~KHRSurfaceVK() override;
+  ~SurfaceVK() override;
 
  private:
   SwapCallback swap_callback_;
 
-  KHRSurfaceVK(const RenderTarget& target, SwapCallback swap_callback);
+  SurfaceVK(const RenderTarget& target, SwapCallback swap_callback);
 
   // |Surface|
   bool Present() const override;
 
-  KHRSurfaceVK(const KHRSurfaceVK&) = delete;
+  SurfaceVK(const SurfaceVK&) = delete;
 
-  KHRSurfaceVK& operator=(const KHRSurfaceVK&) = delete;
+  SurfaceVK& operator=(const SurfaceVK&) = delete;
 };
 
 }  // namespace impeller
