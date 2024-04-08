@@ -332,7 +332,7 @@ struct Matrix {
   }
 
   constexpr bool IsAligned2D(Scalar tolerance = 0) const {
-    if (HasPerspective()) {
+    if (HasPerspective2D()) {
       return false;
     }
     if (ScalarNearlyZero(m[1], tolerance) &&
@@ -347,6 +347,9 @@ struct Matrix {
   }
 
   constexpr bool IsAligned(Scalar tolerance = 0) const {
+    if (HasPerspective()) {
+      return false;
+    }
     int v[] = {!ScalarNearlyZero(m[0], tolerance),  //
                !ScalarNearlyZero(m[1], tolerance),  //
                !ScalarNearlyZero(m[2], tolerance),  //
