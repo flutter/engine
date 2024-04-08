@@ -23,7 +23,10 @@ namespace flutter {
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
                                      const TaskRunners& task_runners)
-    : client_(p_client), vm_(nullptr), context_(task_runners) {}
+    : client_(p_client),
+      vm_(nullptr),
+      context_(task_runners),
+      pointer_data_packet_converter_(*this) {}
 
 RuntimeController::RuntimeController(
     RuntimeDelegate& p_client,
@@ -43,7 +46,8 @@ RuntimeController::RuntimeController(
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
       persistent_isolate_data_(std::move(p_persistent_isolate_data)),
-      context_(p_context) {}
+      context_(p_context),
+      pointer_data_packet_converter_(*this) {}
 
 std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     RuntimeDelegate& p_client,
@@ -205,6 +209,10 @@ bool RuntimeController::RemoveView(int64_t view_id) {
   }
 
   return platform_configuration->RemoveView(view_id);
+}
+
+bool RuntimeController::ViewExists(int64_t view_id) const {
+  return platform_data_.viewport_metrics_for_views.count(view_id) != 0;
 }
 
 bool RuntimeController::SetViewportMetrics(int64_t view_id,

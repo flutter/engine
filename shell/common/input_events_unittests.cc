@@ -19,6 +19,12 @@ using UnitlessTime = int;
 // returns the time of that frame.
 using Generator = std::function<UnitlessTime(int)>;
 
+namespace {
+
+constexpr int64_t kImplicitViewId = 0;
+
+}
+
 //----------------------------------------------------------------------------
 /// Simulate n input events where the i-th one is delivered at delivery_time(i).
 ///
@@ -182,6 +188,7 @@ void CreateSimulatedPointerData(PointerData& data,
   data.platformData = 0;
   data.scroll_delta_x = 0.0;
   data.scroll_delta_y = 0.0;
+  data.view_id = kImplicitViewId;
 }
 
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {
