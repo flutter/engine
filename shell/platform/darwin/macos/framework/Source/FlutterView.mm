@@ -107,6 +107,13 @@
 // and will not restore it back.
 - (void)cursorUpdate:(NSEvent*)event {
   [_lastCursor set];
+  // It is possible that there is a platform view with NSTrackingArea below flutter content.
+  // This could override the mouse cursor as a result of mouse move event. There is no good way
+  // to prevent that short of swizzling [NSCursor set], so as a workaround force flutter cursor
+  // in next runloop turn. This is not ideal, as it may cause the cursor flicker a bit.
+  [[NSRunLoop currentRunLoop] performBlock:^{
+    [_lastCursor set];
+  }];
 }
 
 - (void)viewDidChangeBackingProperties {

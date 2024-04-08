@@ -115,8 +115,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterViewEngineProvider.mm",
     "framework/Source/FlutterViewProvider.h",
     "framework/Source/KeyCodeMap.g.mm",
-    "framework/Source/NSCursor+IgnoreChange.h",
-    "framework/Source/NSCursor+IgnoreChange.mm",
   ]
 
   sources += _flutter_framework_headers

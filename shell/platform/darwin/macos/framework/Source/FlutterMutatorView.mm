@@ -4,7 +4,6 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/NSCursor+IgnoreChange.h"
 
 #include <QuartzCore/QuartzCore.h>
 
@@ -47,8 +46,6 @@ PlatformViewLayer::PlatformViewLayer(FlutterPlatformViewIdentifier identifier,
 - (void)frameCleanup {
   _cleanupScheduled = NO;
   _mouseMoveHandled = NO;
-
-  NSCursor.flutterIgnoreCursorChange = NO;
 }
 
 - (BOOL)cleanupScheduled {
@@ -80,13 +77,6 @@ PlatformViewLayer::PlatformViewLayer(FlutterPlatformViewIdentifier identifier,
     if (CGRectContainsPoint(r, point)) {
       [_flutterView cursorUpdate:event];
       _mouseMoveHandled = YES;
-      // There may be active NSTrackingAreas in platform views (for example
-      // focused NSTextField has one) that will try to set the mouse cursor
-      // despite being obscured by another view. NSTrackingAreas are not subject
-      // to hit testing and there doesn't seem to be a way to prevent obscured
-      // tracking from generating hover events so this disbles cursor changes
-      // for the rest of RunLoop turn.
-      NSCursor.flutterIgnoreCursorChange = YES;
       return;
     }
   }
