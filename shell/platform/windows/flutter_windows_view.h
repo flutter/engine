@@ -50,11 +50,13 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   //
   // The implicit view is a special view for backwards compatibility.
   // The engine assumes it can always render to this view, even if the app has
-  // destroyed the window for this view. The embedder must ignore presents to
-  // this view after it is destroyed.
+  // destroyed the window for this view.
   //
-  // The implicit view is the only view that can be created before the
-  // engine is launched.
+  // Today, the implicit view is the first view that is created. It is the only
+  // view that can be created before the engine is launched.
+  //
+  // The embedder must ignore presents to this view before it is created and
+  // after it is destroyed.
   //
   // See:
   // https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html
