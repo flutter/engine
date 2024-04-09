@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_COMPOSITOR_SOFTWARE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_COMPOSITOR_SOFTWARE_H_
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/compositor.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
@@ -15,7 +16,7 @@ namespace flutter {
 // rasterization and bitmaps.
 class CompositorSoftware : public Compositor {
  public:
-  CompositorSoftware(FlutterWindowsEngine* engine);
+  CompositorSoftware();
 
   /// |Compositor|
   bool CreateBackingStore(const FlutterBackingStoreConfig& config,
@@ -24,7 +25,7 @@ class CompositorSoftware : public Compositor {
   bool CollectBackingStore(const FlutterBackingStore* store) override;
 
   /// |Compositor|
-  bool Present(FlutterViewId view_id,
+  bool Present(FlutterWindowsView* view,
                const FlutterLayer** layers,
                size_t layers_count) override;
 
@@ -38,7 +39,7 @@ class CompositorSoftware : public Compositor {
                   int width,
                   int height) const;
 
-  FlutterWindowsEngine* engine_;
+  FML_DISALLOW_COPY_AND_ASSIGN(CompositorSoftware);
 };
 
 }  // namespace flutter

@@ -397,16 +397,6 @@ class ContentContext {
 
   bool IsValid() const;
 
-  /// This setting does two things:
-  /// 1. Enables clipping with the depth buffer, freeing up the stencil buffer.
-  ///    See also: https://github.com/flutter/flutter/issues/138460
-  /// 2. Switches the generic tessellation fallback to use stencil-then-cover.
-  ///    See also: https://github.com/flutter/flutter/issues/123671
-  ///
-  // TODO(bdero): Remove this setting once StC is fully de-risked
-  //              https://github.com/flutter/flutter/issues/123671
-  static constexpr bool kEnableStencilThenCover = true;
-
 #if IMPELLER_ENABLE_3D
   std::shared_ptr<scene::SceneContext> GetSceneContext() const;
 #endif  // IMPELLER_ENABLE_3D
@@ -783,8 +773,9 @@ class ContentContext {
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
   fml::StatusOr<RenderTarget> MakeSubpass(
-      const std::string& label,
+      std::string_view label,
       ISize texture_size,
+      const std::shared_ptr<CommandBuffer>& command_buffer,
       const SubpassCallback& subpass_callback,
       bool msaa_enabled = true,
       bool depth_stencil_enabled = false,
@@ -792,8 +783,9 @@ class ContentContext {
 
   /// Makes a subpass that will render to `subpass_target`.
   fml::StatusOr<RenderTarget> MakeSubpass(
-      const std::string& label,
+      std::string_view label,
       const RenderTarget& subpass_target,
+      const std::shared_ptr<CommandBuffer>& command_buffer,
       const SubpassCallback& subpass_callback) const;
 
   const std::shared_ptr<LazyGlyphAtlas>& GetLazyGlyphAtlas() const {

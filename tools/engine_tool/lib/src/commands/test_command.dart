@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:engine_build_configs/engine_build_configs.dart';
-import 'package:path/path.dart' as p;
 
 import '../build_utils.dart';
 import '../gn_utils.dart';
@@ -37,9 +34,11 @@ final class TestCommand extends CommandBase {
   String get name => 'test';
 
   @override
-  String get description => 'Runs a test target'
-      'et test //flutter/fml/...             # Run all test targets in `//flutter/fml/`'
-      'et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/fml/`';
+  String get description => '''
+Runs a test target
+et test //flutter/fml/...             # Run all test targets in `//flutter/fml/`
+et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/fml/`
+''';
 
   @override
   Future<int> run() async {
@@ -52,15 +51,23 @@ final class TestCommand extends CommandBase {
       return 1;
     }
 
-    final Map<String, BuildTarget> allTargets = await findTargets(environment,
-        Directory(p.join(environment.engine.outDir.path, build.ninja.config)));
-    final Set<BuildTarget> selectedTargets =
-        selectTargets(argResults!.rest, allTargets);
-    if (selectedTargets.isEmpty) {
-      environment.logger.error(
-          'No build targets matched ${argResults!.rest}\nRun `et query targets --testonly` to see list of targets.');
+    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
+      environment,
+      build,
+      argResults!.rest,
+      defaultToAll: true,
+    );
+    if (selectedTargets == null) {
+      // The user typed something wrong and targetsFromCommandLine has already
+      // logged the error message.
       return 1;
     }
+    if (selectedTargets.isEmpty) {
+      environment.logger.fatal(
+        'targetsFromCommandLine unexpectedly returned an empty list',
+      );
+    }
+
     for (final BuildTarget target in selectedTargets) {
       if (!target.testOnly || target.type != BuildTargetType.executable) {
         // Remove any targets that aren't testOnly and aren't executable.
