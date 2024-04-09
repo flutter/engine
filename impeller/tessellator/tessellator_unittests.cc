@@ -187,7 +187,7 @@ TEST(TessellatorTest, FilledCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * radius;
-      // Note that cos(radians(90 degrees) isn't exactly 0.0 like it should be)
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
       double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radius;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
@@ -235,7 +235,7 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius + half_width);
-      // Note that cos(radians(90 degrees) isn't exactly 0.0 like it should be)
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
       double rcos =
           (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius + half_width);
       EXPECT_POINT_NEAR(vertices[i * 2],
@@ -257,7 +257,7 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius - half_width);
-      // Note that cos(radians(90 degrees) isn't exactly 0.0 like it should be)
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
       double rcos =
           (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius - half_width);
       EXPECT_POINT_NEAR(vertices[i * 2 + 1],
@@ -311,7 +311,7 @@ TEST(TessellatorTest, RoundCapLineTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      // Note that cos(radians(90 degrees) isn't exactly 0.0 like it should be)
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
       Point relative_along =
           along * ((i == quadrant_count - 1) ? 0.0f : cos(angle));
       Point relative_across = across * sin(angle);
@@ -377,7 +377,7 @@ TEST(TessellatorTest, FilledEllipseTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      // Note that cos(radians(90 degrees) isn't exactly 0.0 like it should be)
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
       double rcos =
           (i == quadrant_count - 1) ? 0.0f : cos(angle) * half_size.width;
       double rsin = sin(angle) * half_size.height;
@@ -444,7 +444,7 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      // Note that cos(radians(90 degrees) isn't exactly 0.0 like it should be)
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
       double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radii.width;
       double rsin = sin(angle) * radii.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
