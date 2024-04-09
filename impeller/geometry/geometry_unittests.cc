@@ -66,10 +66,10 @@ TEST(GeometryTest, MakeRow) {
 
 TEST(GeometryTest, RotationMatrix) {
   auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
-  auto expect = Matrix{0.707,  0.707, 0, 0,  //
-                       -0.707, 0.707, 0, 0,  //
-                       0,      0,     1, 0,  //
-                       0,      0,     0, 1};
+  auto expect = Matrix{0.707107,  0.707107, 0, 0,  //
+                       -0.707107, 0.707107, 0, 0,  //
+                       0,         0,        1, 0,  //
+                       0,         0,        0, 1};
   ASSERT_MATRIX_NEAR(rotation, expect);
 }
 
@@ -77,10 +77,10 @@ TEST(GeometryTest, InvertMultMatrix) {
   {
     auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
     auto invert = rotation.Invert();
-    auto expect = Matrix{0.707, -0.707, 0, 0,  //
-                         0.707, 0.707,  0, 0,  //
-                         0,     0,      1, 0,  //
-                         0,     0,      0, 1};
+    auto expect = Matrix{0.707107, -0.707107, 0, 0,  //
+                         0.707107, 0.707107,  0, 0,  //
+                         0,        0,         1, 0,  //
+                         0,        0,         0, 1};
     ASSERT_MATRIX_NEAR(invert, expect);
   }
   {
