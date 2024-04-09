@@ -15,7 +15,7 @@ SwapchainTransientsVK::SwapchainTransientsVK(std::weak_ptr<Context> context,
 
 SwapchainTransientsVK::~SwapchainTransientsVK() = default;
 
-const std::shared_ptr<Texture>& SwapchainTransientsVK::GetMSAATexture() const {
+const std::shared_ptr<Texture>& SwapchainTransientsVK::GetMSAATexture() {
   if (cached_msaa_texture_) {
     return cached_msaa_texture_;
   }
@@ -23,8 +23,8 @@ const std::shared_ptr<Texture>& SwapchainTransientsVK::GetMSAATexture() const {
   return cached_msaa_texture_;
 }
 
-const std::shared_ptr<Texture>& SwapchainTransientsVK::GetDepthStencilTexture()
-    const {
+const std::shared_ptr<Texture>&
+SwapchainTransientsVK::GetDepthStencilTexture() {
   if (cached_depth_stencil_) {
     return cached_depth_stencil_;
   }

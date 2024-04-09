@@ -36,16 +36,16 @@ class SwapchainTransientsVK {
 
   bool IsMSAAEnabled() const;
 
-  const std::shared_ptr<Texture>& GetMSAATexture() const;
+  const std::shared_ptr<Texture>& GetMSAATexture();
 
-  const std::shared_ptr<Texture>& GetDepthStencilTexture() const;
+  const std::shared_ptr<Texture>& GetDepthStencilTexture();
 
  private:
   std::weak_ptr<Context> context_;
   const TextureDescriptor desc_;
   const bool enable_msaa_;
-  mutable std::shared_ptr<Texture> cached_msaa_texture_;
-  mutable std::shared_ptr<Texture> cached_depth_stencil_;
+  std::shared_ptr<Texture> cached_msaa_texture_;
+  std::shared_ptr<Texture> cached_depth_stencil_;
 
   std::shared_ptr<Texture> CreateMSAATexture() const;
 
