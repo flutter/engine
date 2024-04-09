@@ -18,7 +18,7 @@ std::vector<LayerVariant> CopyLayers(const FlutterLayer** layers, size_t layer_c
     } else if (layer->type == kFlutterLayerContentTypeBackingStore) {
       std::vector<FlutterRect> rects;
       auto present_info = layer->backing_store_present_info;
-      if (present_info) {
+      if (present_info != nullptr && present_info->paint_region != nullptr) {
         rects.reserve(present_info->paint_region->rects_count);
         std::copy(present_info->paint_region->rects,
                   present_info->paint_region->rects + present_info->paint_region->rects_count,
