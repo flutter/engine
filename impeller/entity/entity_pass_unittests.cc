@@ -69,7 +69,7 @@ TEST(EntityPassClipStackTest, AppendCoverageNoChange) {
 
   EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_height, 0u);
 
   Entity entity;
   EntityPassClipStack::ClipStateResult result = recorder.ApplyClipState(
@@ -83,7 +83,7 @@ TEST(EntityPassClipStackTest, AppendCoverageNoChange) {
 
   EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_height, 0u);
 }
 
 TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
@@ -107,7 +107,7 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
   ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 2u);
   EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_depth, 1u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_height, 1u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Restore the clip.
@@ -122,7 +122,7 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
   ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
   EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_height, 0u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 0u);
 }
 
@@ -147,7 +147,7 @@ TEST(EntityPassClipStackTest, UnbalancedRestore) {
   ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 1u);
   EXPECT_EQ(recorder.GetClipCoverageLayers()[0].coverage,
             Rect::MakeSize(Size::MakeWH(100, 100)));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_depth, 0u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[0].clip_height, 0u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 0u);
 }
 
@@ -174,7 +174,7 @@ TEST(EntityPassClipStackTest, ClipAndRestoreWithSubpasses) {
   ASSERT_EQ(recorder.GetClipCoverageLayers().size(), 2u);
   EXPECT_EQ(recorder.GetClipCoverageLayers()[1].coverage,
             Rect::MakeLTRB(50, 50, 55, 55));
-  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_depth, 1u);
+  EXPECT_EQ(recorder.GetClipCoverageLayers()[1].clip_height, 1u);
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Begin a subpass.

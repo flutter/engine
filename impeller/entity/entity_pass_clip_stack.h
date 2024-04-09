@@ -13,7 +13,7 @@ namespace impeller {
 
 struct ClipCoverageLayer {
   std::optional<Rect> coverage;
-  size_t clip_depth;
+  size_t clip_height;
 };
 
 /// @brief A class that tracks all clips that have been recorded in the current

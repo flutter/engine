@@ -218,7 +218,7 @@ void Canvas::Save(bool create_subpass,
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
-  entry.clip_depth = transform_stack_.back().clip_depth;
+  entry.clip_height = transform_stack_.back().clip_height;
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
@@ -244,7 +244,7 @@ void Canvas::Save(bool create_subpass,
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransform(transform_stack_.back().transform);
-    current_pass_->SetClipDepth(transform_stack_.back().clip_depth);
+    current_pass_->SetClipDepth(transform_stack_.back().clip_height);
   }
   transform_stack_.emplace_back(entry);
 }
@@ -684,7 +684,7 @@ void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
 
   GetCurrentPass().PushClip(std::move(entity));
 
-  ++transform_stack_.back().clip_depth;
+  ++transform_stack_.back().clip_height;
   ++transform_stack_.back().num_clips;
 }
 
@@ -819,7 +819,7 @@ EntityPass& Canvas::GetCurrentPass() {
 }
 
 size_t Canvas::GetClipDepth() const {
-  return transform_stack_.back().clip_depth;
+  return transform_stack_.back().clip_height;
 }
 
 void Canvas::AddEntityToCurrentPass(Entity entity) {
