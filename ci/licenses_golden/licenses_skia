@@ -1,4 +1,4 @@
-Signature: d2208bcdf0f0408cf27730cf471dc4ca
+Signature: b97abe04f4697ac3f966c942743154e8
 
 ====================================================================================================
 LIBRARY: etc1
@@ -400,8 +400,10 @@ FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/CacheBudget.md
 FILE: ../../../flutter/third_party/skia/relnotes/GraphiteContextMaxTextureSize.md
 FILE: ../../../flutter/third_party/skia/relnotes/MTLBinaryArchive.md
+FILE: ../../../flutter/third_party/skia/relnotes/MinifyBraces.md
 FILE: ../../../flutter/third_party/skia/relnotes/SkBitmap_setColorSpace.md
 FILE: ../../../flutter/third_party/skia/relnotes/metal_backendsurface.md
+FILE: ../../../flutter/third_party/skia/relnotes/shaping_behavior.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -9514,8 +9516,11 @@ ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSur
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/gl/epoxy/GrGLMakeEpoxyEGLInterface.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_coretext.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_factory.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_harfbuzz.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_skunicode.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/src/SkShaper_factory.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/utils/FactoryHelpers.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode_client.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode_icu.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode_icu4x.h + ../../../flutter/third_party/skia/LICENSE
@@ -9541,6 +9546,7 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/task/DrawTask.cpp + .
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/task/DrawTask.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckSymbolTableCorrectness.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/sksl/transform/SkSLEliminateUnnecessaryBraces.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinStructs.cpp + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/gm/emptyshader.cpp
@@ -9552,8 +9558,11 @@ FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurfa
 FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h
 FILE: ../../../flutter/third_party/skia/include/gpu/gl/epoxy/GrGLMakeEpoxyEGLInterface.h
 FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_coretext.h
+FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_factory.h
 FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_harfbuzz.h
 FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_skunicode.h
+FILE: ../../../flutter/third_party/skia/modules/skshaper/src/SkShaper_factory.cpp
+FILE: ../../../flutter/third_party/skia/modules/skshaper/utils/FactoryHelpers.h
 FILE: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode_client.h
 FILE: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode_icu.h
 FILE: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode_icu4x.h
@@ -9579,6 +9588,7 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/task/DrawTask.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/task/DrawTask.h
 FILE: ../../../flutter/third_party/skia/src/sksl/analysis/SkSLCheckSymbolTableCorrectness.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLSymbol.cpp
+FILE: ../../../flutter/third_party/skia/src/sksl/transform/SkSLEliminateUnnecessaryBraces.cpp
 FILE: ../../../flutter/third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinStructs.cpp
 ----------------------------------------------------------------------------------------------------
 Copyright 2024 Google LLC

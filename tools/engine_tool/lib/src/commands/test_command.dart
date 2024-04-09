@@ -2,10 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io';
-
 import 'package:engine_build_configs/engine_build_configs.dart';
-import 'package:path/path.dart' as p;
 
 import '../build_utils.dart';
 import '../gn_utils.dart';
@@ -24,7 +21,9 @@ final class TestCommand extends CommandBase {
     builds = runnableBuilds(environment, configs);
     debugCheckBuilds(builds);
     addConfigOption(
-      environment, argParser, runnableBuilds(environment, configs),
+      environment,
+      argParser,
+      runnableBuilds(environment, configs),
     );
   }
 
@@ -35,9 +34,11 @@ final class TestCommand extends CommandBase {
   String get name => 'test';
 
   @override
-  String get description => 'Runs a test target'
-      'et test //flutter/fml/...             # Run all test targets in `//flutter/fml/`'
-      'et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/fml/`';
+  String get description => '''
+Runs a test target
+et test //flutter/fml/...             # Run all test targets in `//flutter/fml/`
+et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/fml/`
+''';
 
   @override
   Future<int> run() async {
@@ -50,19 +51,37 @@ final class TestCommand extends CommandBase {
       return 1;
     }
 
-    final Map<String, TestTarget> allTargets = await findTestTargets(
-        environment,
-        Directory(p.join(environment.engine.outDir.path, build.ninja.config)));
-    final Set<TestTarget> selectedTargets =
-        selectTargets(argResults!.rest, allTargets);
-    if (selectedTargets.isEmpty) {
-      environment.logger.error(
-          'No build targets matched ${argResults!.rest}\nRun `et query tests` to see list of targets.');
+    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
+      environment,
+      build,
+      argResults!.rest,
+      defaultToAll: true,
+    );
+    if (selectedTargets == null) {
+      // The user typed something wrong and targetsFromCommandLine has already
+      // logged the error message.
       return 1;
+    }
+    if (selectedTargets.isEmpty) {
+      environment.logger.fatal(
+        'targetsFromCommandLine unexpectedly returned an empty list',
+      );
+    }
+
+    for (final BuildTarget target in selectedTargets) {
+      if (!target.testOnly || target.type != BuildTargetType.executable) {
+        // Remove any targets that aren't testOnly and aren't executable.
+        selectedTargets.remove(target);
+      }
+      if (target.executable == null) {
+        environment.logger.fatal(
+            '$target is an executable but is missing the executable path');
+      }
     }
     // Chop off the '//' prefix.
     final List<String> buildTargets = selectedTargets
-        .map<String>((TestTarget target) => target.label.substring('//'.length))
+        .map<String>(
+            (BuildTarget target) => target.label.substring('//'.length))
         .toList();
     // TODO(johnmccutchan): runBuild manipulates buildTargets and adds some
     // targets listed in Build. Fix this.
@@ -74,8 +93,8 @@ final class TestCommand extends CommandBase {
     final WorkerPool workerPool =
         WorkerPool(environment, ProcessTaskProgressReporter(environment));
     final Set<ProcessTask> tasks = <ProcessTask>{};
-    for (final TestTarget target in selectedTargets) {
-      final List<String> commandLine = <String>[target.executable.path];
+    for (final BuildTarget target in selectedTargets) {
+      final List<String> commandLine = <String>[target.executable!.path];
       tasks.add(ProcessTask(
           target.label, environment, environment.engine.srcDir, commandLine));
     }
