@@ -6,6 +6,8 @@
 #include "flutter/impeller/entity/mtl/entity_shaders.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 
+FLUTTER_ASSERT_ARC
+
 namespace flutter {
 
 IOSContextMetalImpeller::IOSContextMetalImpeller(
@@ -54,9 +56,9 @@ std::unique_ptr<Texture> IOSContextMetalImpeller::CreateExternalTexture(
     int64_t texture_id,
     fml::scoped_nsobject<NSObject<FlutterTexture>> texture) {
   return std::make_unique<IOSExternalTextureMetal>(
-      fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>{
-          [[darwin_context_metal_impeller_ createExternalTextureWithIdentifier:texture_id
-                                                                       texture:texture] retain]});
+      fml::scoped_nsobject<FlutterDarwinExternalTextureMetal>{[darwin_context_metal_impeller_
+          createExternalTextureWithIdentifier:texture_id
+                                      texture:texture]});
 }
 
 }  // namespace flutter
