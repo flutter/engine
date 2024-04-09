@@ -192,7 +192,7 @@ class Canvas {
 
   EntityPass& GetCurrentPass();
 
-  size_t GetClipDepth() const;
+  size_t GetClipHeight() const;
 
   void AddEntityToCurrentPass(Entity entity);
 
