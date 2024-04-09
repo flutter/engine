@@ -9,6 +9,7 @@ enabled_branches:
   - main
   - flutter-\d+\.\d+-candidate\.\d+
   - fuchsia_r\d+[a-z]*
+  - flutter-test-golden-1
 
 platform_properties:
   linux:
