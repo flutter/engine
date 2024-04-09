@@ -73,7 +73,7 @@ bool CompositorSoftware::Present(FlutterWindowsView* view,
     const FlutterPoint& offset = (*layer)->offset;
     const FlutterSize& size = (*layer)->size;
     // FlutterPoint and FlutterSize store coordinates as doubles.
-    // Coordinates must be trucated to integers to represent whole pixels.
+    // Coordinates must be truncated to integers to represent whole pixels.
     x_min = std::min(x_min, static_cast<int>(offset.x));
     y_min = std::min(y_min, static_cast<int>(offset.y));
     x_max = std::max(x_max, static_cast<int>(offset.x + size.width));
