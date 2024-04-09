@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "impeller/core/host_buffer.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "third_party/libtess2/Include/tesselator.h"
 
@@ -698,15 +699,16 @@ void Tessellator::GenerateFilledRoundRect(
   }
 }
 
-class ConvexWriter : public PolylineWriter {
+template <bool write_uvs>
+class VertexWriter {
  public:
-  explicit ConvexWriter(std::vector<Point>& points,
+  explicit VertexWriter(std::vector<Point>& points,
                         std::vector<uint16_t>& indices)
       : points_(points), indices_(indices) {}
 
-  ~ConvexWriter() = default;
+  ~VertexWriter() = default;
 
-  void EndContour() override {
+  void EndContour() {
     if (points_.size() == 0u || contour_start_ == points_.size() - 1) {
       // Empty or first contour.
       return;
@@ -721,10 +723,21 @@ class ConvexWriter : public PolylineWriter {
       end--;
     }
 
-    if (contour_start_ != 0) {
-      indices_.emplace_back(0xFFFF);
+    if (contour_start_ > 0) {
+      // Triangle strip break.
+      indices_.emplace_back(end);
+      indices_.emplace_back(start);
+      indices_.emplace_back(start);
+
+      // If the contour has an odd number of points, insert an extra point when
+      // bridging to the next contour to preserve the correct triangle winding
+      // order.
+      if (previous_contour_odd_points_) {
+        indices_.emplace_back(start);
+      }
+    } else {
+      indices_.emplace_back(start);
     }
-    indices_.emplace_back(start);
 
     size_t a = start + 1;
     size_t b = end;
@@ -736,13 +749,22 @@ class ConvexWriter : public PolylineWriter {
     }
     if (a == b) {
       indices_.emplace_back(a);
+      previous_contour_odd_points_ = false;
+    } else {
+      previous_contour_odd_points_ = true;
     }
     contour_start_ = points_.size();
   }
 
-  void Write(Point point) override { points_.emplace_back(point); }
+  void Write(Point point) {
+    points_.emplace_back(point);
+    if constexpr (write_uvs) {
+      points_.emplace_back(Point{0, 0});
+    }
+  }
 
  private:
+  bool previous_contour_odd_points_ = false;
   size_t contour_start_ = 0u;
   std::vector<Point>& points_;
   std::vector<uint16_t>& indices_;
@@ -750,16 +772,27 @@ class ConvexWriter : public PolylineWriter {
 
 VertexBuffer Tessellator::TessellateConvex2(const Path& path,
                                             HostBuffer& host_bufer,
-                                            Scalar tolerance) {
+                                            Scalar tolerance,
+                                            bool create_uvs) {
   index_buffer_->clear();
   point_buffer_->clear();
-  ConvexWriter writer(*point_buffer_, *index_buffer_);
-  path.WritePolyline(writer, tolerance);
-  writer.EndContour();
 
-  auto vertex_buffer = host_bufer.Emplace(
-      point_buffer_->data(), sizeof(Point) * point_buffer_->size(),
-      alignof(Point));
+  size_t alignment_size = 0;
+  if (create_uvs) {
+    alignment_size = alignof(Vector4);
+    VertexWriter<false> writer(*point_buffer_, *index_buffer_);
+    path.WritePolyline(writer, tolerance);
+    writer.EndContour();
+  } else {
+    alignment_size = alignof(Point);
+    VertexWriter<false> writer(*point_buffer_, *index_buffer_);
+    path.WritePolyline(writer, tolerance);
+    writer.EndContour();
+  }
+
+  auto vertex_buffer =
+      host_bufer.Emplace(point_buffer_->data(),
+                         sizeof(Point) * point_buffer_->size(), alignment_size);
 
   auto index_buffer = host_bufer.Emplace(
       index_buffer_->data(), sizeof(uint16_t) * index_buffer_->size(),

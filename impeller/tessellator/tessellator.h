@@ -215,7 +215,10 @@ class Tessellator {
   ///
   std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
 
-  VertexBuffer TessellateConvex2(const Path& path, HostBuffer& host_buffer, Scalar tolerance);
+  VertexBuffer TessellateConvex2(const Path& path,
+                                 HostBuffer& host_buffer,
+                                 Scalar tolerance,
+                                 bool create_uvs = false);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a temporary polyline. Only one per-process can exist at

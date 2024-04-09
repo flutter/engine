@@ -37,13 +37,6 @@ enum class Convexity {
   kConvex,
 };
 
-class PolylineWriter {
-  public:
-    virtual void EndContour() = 0;
-
-    virtual void Write(Point a) = 0;
-};
-
 //------------------------------------------------------------------------------
 /// @brief      Paths are lightweight objects that describe a collection of
 ///             linear, quadratic, or cubic segments. These segments may be
@@ -145,10 +138,45 @@ class Path {
 
   bool IsEmpty() const;
 
-  void WritePolyline(PolylineWriter& writer, Scalar scale) const;
+  template <typename VertexWriter>
+  void WritePolyline(VertexWriter& writer, Scalar scale) const {
+    auto& path_components = data_->components;
+    auto& path_points = data_->points;
 
-  size_t ComputePolylineLength() const;
+    const auto& cb = [&writer](Point point) { writer.Write(point); };
 
+    for (size_t component_i = 0; component_i < path_components.size();
+         component_i++) {
+      const auto& path_component = path_components[component_i];
+      switch (path_component.type) {
+        case ComponentType::kLinear: {
+          const LinearPathComponent* linear =
+              reinterpret_cast<const LinearPathComponent*>(
+                  &path_points[path_component.index]);
+          writer.Write(linear->p1);
+          writer.Write(linear->p2);
+          break;
+        }
+        case ComponentType::kQuadratic: {
+          const QuadraticPathComponent* quad =
+              reinterpret_cast<const QuadraticPathComponent*>(
+                  &path_points[path_component.index]);
+          quad->ToLinearPathComponents(scale, cb);
+          break;
+        }
+        case ComponentType::kCubic: {
+          const CubicPathComponent* cubic =
+              reinterpret_cast<const CubicPathComponent*>(
+                  &path_points[path_component.index]);
+          cubic->ToLinearPathComponents(scale, cb);
+          break;
+        }
+        case ComponentType::kContour:
+          writer.EndContour();
+          break;
+      }
+    }
+  }
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
   void EnumerateComponents(
