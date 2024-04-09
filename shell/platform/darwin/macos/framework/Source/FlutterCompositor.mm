@@ -19,9 +19,10 @@ std::vector<LayerVariant> CopyLayers(const FlutterLayer** layers, size_t layer_c
       std::vector<FlutterRect> rects;
       auto present_info = layer->backing_store_present_info;
       if (present_info) {
-        for (size_t j = 0; j < present_info->paint_region->rects_count; j++) {
-          rects.push_back(present_info->paint_region->rects[j]);
-        }
+        rects.reserve(present_info->paint_region->rects_count);
+        std::copy(present_info->paint_region->rects,
+                  present_info->paint_region->rects + present_info->paint_region->rects_count,
+                  std::back_inserter(rects));
       }
       layers_copy.push_back(BackingStoreLayer{rects});
     }
