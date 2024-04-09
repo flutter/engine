@@ -117,7 +117,7 @@ TEST_F(CompositorSoftwareTest, PresentEmpty) {
 TEST_F(CompositorSoftwareTest, PresentMultiLayers) {
   UseEngineWithView();
 
-  auto compositor = CompositorSoftware{engine()};
+  CompositorSoftware compositor;
 
   FlutterBackingStoreConfig config = {sizeof(config), {2, 2}};
   FlutterBackingStore backing_store0 = {sizeof(FlutterBackingStore), nullptr};
@@ -155,7 +155,7 @@ TEST_F(CompositorSoftwareTest, PresentMultiLayers) {
         EXPECT_EQ(pixel_data[3], 0xff000000);
         return true;
       });
-  EXPECT_TRUE(compositor.Present(view()->view_id(), layer_ptr, 2));
+  EXPECT_TRUE(compositor.Present(view(), layer_ptr, 2));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store0));
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store1));
@@ -167,7 +167,7 @@ TEST_F(CompositorSoftwareTest, PresentMultiLayers) {
 TEST_F(CompositorSoftwareTest, PresentOffsetLayers) {
   UseEngineWithView();
 
-  auto compositor = CompositorSoftware{engine()};
+  CompositorSoftware compositor;
 
   FlutterBackingStoreConfig config0 = {sizeof(FlutterBackingStoreConfig),
                                        {1, 1}};
@@ -210,7 +210,7 @@ TEST_F(CompositorSoftwareTest, PresentOffsetLayers) {
         EXPECT_EQ(pixel_data[3], 0xffff0000);
         return true;
       });
-  EXPECT_TRUE(compositor.Present(view()->view_id(), layer_ptr, 2));
+  EXPECT_TRUE(compositor.Present(view(), layer_ptr, 2));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store0));
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store1));
