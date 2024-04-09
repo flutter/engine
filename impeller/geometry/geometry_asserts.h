@@ -39,10 +39,8 @@ inline bool NumberNear(double a, double b) {
   static constexpr float kMinimumULPStep = (1.0f / (1 << 24));
 
   auto adjust_step = [](float v) {
-    if (v > -kMinimumULPStep && v < kMinimumULPStep) {
-      v = v < 0 ? -kMinimumULPStep : kMinimumULPStep;
-    }
-    return v;
+    return (std::abs(v) < kMinimumULPStep) ? std::copysignf(kMinimumULPStep, v)
+                                           : v;
   };
 
   float step_ab = adjust_step(a - std::nexttowardf(a, b));
