@@ -260,7 +260,7 @@ extern CFTimeInterval display_link_target;
     pixelFormat = kCVPixelFormatType_32BGRA;
     bytesPerElement = 4;
   } else if (self.pixelFormat == MTLPixelFormatBGRA10_XR) {
-    pixelFormat = kCVPixelFormatType_64RGBAHalf;
+    pixelFormat = kCVPixelFormatType_40ARGBLEWideGamut;
     bytesPerElement = 8;
   } else {
     FML_LOG(ERROR) << "Unsupported pixel format: " << self.pixelFormat;
