@@ -2582,23 +2582,20 @@ FlutterEngineResult FlutterEngineRunInitialized(
 //------------------------------------------------------------------------------
 /// @brief      Adds a view.
 ///
-///             This operation notifies the engine to allocate resources and
-///             inform Dart about the view, and on success, schedules a new
-///             frame. Finally, it invokes |info.add_view_callback| with whether
-///             the operation is successful.
+///             This is an asynchronous operation. The view should not be used
+///             until the |info.add_view_callback| is invoked with an |added|
+///             value of true. The embedder should prepare resources in advance
+///             but be ready to clean up on failure.
 ///
-///             This operation is asynchronous; avoid using the view until
-///             |info.add_view_callback| returns true. The embedder should
-///             prepare resources in advance but be ready to clean up on
-///             failure.
+///             A frame is scheduled if the operation succeeds.
 ///
-///             The callback is called on a different thread managed by the
-///             engine. The embedder must re-thread if needed.
+///             The callback is invoked on a thread managed by the engine. The
+///             embedder should re-thread if needed.
 ///
-///             Do not use for implicit views, which are added internally during
-///             initialization. Adding the implicit view ID or an existing view
-///             ID will fail, indicated by |info.add_view_callback| returning
-///             false.
+///             Attempting to add the implicit view will fail and will return
+///             kInvalidArguments. Attempting to add a view with an already
+///             existing view ID will fail, and |info.add_view_callback| will be
+///             invoked with an |added| value of false.
 ///
 /// @param[in]  engine  A running engine instance.
 /// @param[in]  info    The add view arguments. This can be deallocated
@@ -2615,18 +2612,17 @@ FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
 //------------------------------------------------------------------------------
 /// @brief      Removes a view.
 ///
-///             This operation notifies the engine to deallocate resources and
-///             inform Dart about the removal. Finally, it invokes
-///             |info.remove_view_callback| with whether the operation is
-///             successful.
+///             This is an asynchronous operation. The view's resources must not
+///             be cleaned up until |info.remove_view_callback| is invoked with
+///             a |removed| value of true.
 ///
-///             This operation is asynchronous. The embedder should not
-///             deallocate resources until the |callback| is invoked.
+///             The callback is invoked on a thread managed by the engine. The
+///             embedder should re-thread if needed.
 ///
-///             Do not use for implicit views, which are never removed
-///             throughout the lifetime of the app.  Removing
-///             |kFlutterImplicitViewId| or an non-existent view ID will fail,
-///             indicated by |callback| returning false.
+///             Attempting to remove the implicit view will fail and will return
+///             kInvalidArguments. Attempting to remove a view with a
+///             non-existent view ID will fail, and |info.remove_view_callback|
+///             will be invoked with a |removed| value of false.
 ///
 /// @param[in]  engine  A running engine instance.
 /// @param[in]  info    The remove view arguments. This can be deallocated
