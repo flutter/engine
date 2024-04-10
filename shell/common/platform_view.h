@@ -102,10 +102,9 @@ class PlatformView {
     /// @param[in]  callback          The callback that's invoked once the shell
     ///                               has attempted to add the view.
     ///
-    virtual void OnPlatformViewAddView(
-        int64_t view_id,
-        const ViewportMetrics& viewport_metrics,
-        PlatformView::AddViewCallback callback) = 0;
+    virtual void OnPlatformViewAddView(int64_t view_id,
+                                       const ViewportMetrics& viewport_metrics,
+                                       AddViewCallback callback) = 0;
 
     /// @brief  Deallocate resources for a removed view and inform
     ///         Dart about the removal.
@@ -120,9 +119,8 @@ class PlatformView {
     /// @param[in]  callback    The callback that's invoked once the shell has
     ///                         attempted to remove the view.
     ///
-    virtual void OnPlatformViewRemoveView(
-        int64_t view_id,
-        PlatformView::RemoveViewCallback callback) = 0;
+    virtual void OnPlatformViewRemoveView(int64_t view_id,
+                                          RemoveViewCallback callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the specified callback needs to
@@ -565,8 +563,10 @@ class PlatformView {
   ///         successful.
   ///
   ///         This operation is asynchronous; avoid using the view until
-  ///         |callback| returns true. Embedders should prepare resources in
-  ///         advance but be ready to clean up on failure.
+  ///         |callback| returns true. Callers should prepare resources for the
+  ///         view (if any) in advance but be ready to clean up on failure.
+  ///
+  ///         The callback is called on a different thread.
   ///
   ///         Do not use for implicit views, which are added internally during
   ///         shell initialization. Adding |kFlutterImplicitViewId| or an
@@ -589,8 +589,10 @@ class PlatformView {
   ///         Dart about the removal. Finally, it invokes |callback| with
   ///         whether the operation is successful.
   ///
-  ///         This operation is asynchronous. Embedders should not deallocate
+  ///         This operation is asynchronous. The embedder should not deallocate
   ///         resources until the |callback| is invoked.
+  ///
+  ///         The callback is called on a different thread.
   ///
   ///         Do not use for implicit views, which are never removed throughout
   ///         the lifetime of the app.
