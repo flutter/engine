@@ -122,10 +122,6 @@ class Entity {
 
   static bool IsBlendModeDestructive(BlendMode blend_mode);
 
-  bool CanInheritOpacity() const;
-
-  bool SetInheritedOpacity(Scalar alpha);
-
   std::optional<Color> AsBackgroundColor(ISize target_size) const;
 
   Scalar DeriveTextScale() const;

@@ -98,12 +98,6 @@ class ColorSourceContents : public Contents {
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // |Contents|
-  void SetInheritedOpacity(Scalar opacity) override;
-
  protected:
   using BindFragmentCallback = std::function<bool(RenderPass& pass)>;
   using PipelineBuilderMethod = std::shared_ptr<Pipeline<PipelineDescriptor>> (
@@ -239,7 +233,6 @@ class ColorSourceContents : public Contents {
   std::shared_ptr<Geometry> geometry_;
   Matrix inverse_matrix_;
   Scalar opacity_ = 1.0;
-  Scalar inherited_opacity_ = 1.0;
 
   ColorSourceContents(const ColorSourceContents&) = delete;
 

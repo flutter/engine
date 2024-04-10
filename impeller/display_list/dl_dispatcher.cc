@@ -203,7 +203,8 @@ void DlDispatcher::setColor(flutter::DlColor color) {
       color.getRedF(),
       color.getGreenF(),
       color.getBlueF(),
-      color.getAlphaF(),
+      color.getAlphaF() *
+          (distributed_opacity_.empty() ? 1.0f : distributed_opacity_.back()),
   };
 }
 
@@ -630,6 +631,23 @@ void DlDispatcher::saveLayer(const SkRect& bounds,
   auto promise = options.content_is_clipped()
                      ? ContentBoundsPromise::kMayClipContents
                      : ContentBoundsPromise::kContainsContents;
+  if (!options.content_is_clipped() && options.can_distribute_opacity() &&
+      !paint.color_filter && !paint.image_filter) {
+    FML_LOG(ERROR) << "Distributing opacity!";
+    Scalar alpha = paint.color.alpha;
+    if (!distributed_opacity_.empty()) {
+      alpha *= distributed_opacity_.back();
+    }
+    distributed_opacity_.push_back(alpha);
+    canvas_.Save();
+    return;
+  } else {
+    FML_LOG(ERROR) << "Unoptimized save layer: " << "clipped: "
+                   << options.content_is_clipped()
+                   << "can_distribute: " << options.can_distribute_opacity()
+                   << "has_color_filter: " << !!paint.color_filter
+                   << "has_image_filter: " << !!paint.image_filter;
+  }
   canvas_.SaveLayer(paint, skia_conversions::ToRect(bounds),
                     ToImageFilter(backdrop), promise);
 }
@@ -637,6 +655,9 @@ void DlDispatcher::saveLayer(const SkRect& bounds,
 // |flutter::DlOpReceiver|
 void DlDispatcher::restore() {
   canvas_.Restore();
+  if (!distributed_opacity_.empty()) {
+    distributed_opacity_.pop_back();
+  }
 }
 
 // |flutter::DlOpReceiver|

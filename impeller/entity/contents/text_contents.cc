@@ -34,14 +34,6 @@ Color TextContents::GetColor() const {
   return color_.WithAlpha(color_.alpha * inherited_opacity_);
 }
 
-bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  return !frame_->MaybeHasOverlapping();
-}
-
-void TextContents::SetInheritedOpacity(Scalar opacity) {
-  inherited_opacity_ = opacity;
-}
-
 void TextContents::SetOffset(Vector2 offset) {
   offset_ = offset;
 }

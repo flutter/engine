@@ -9,7 +9,6 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -42,11 +41,6 @@ class ClipContents final : public Contents {
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // |Contents|
-  void SetInheritedOpacity(Scalar opacity) override;
 
  private:
   std::shared_ptr<Geometry> geometry_;
@@ -85,12 +79,6 @@ class ClipRestoreContents final : public Contents {
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
-
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // |Contents|
-  void SetInheritedOpacity(Scalar opacity) override;
 
  private:
   std::optional<Rect> restore_coverage_;

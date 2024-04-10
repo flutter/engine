@@ -135,28 +135,6 @@ BlendMode Entity::GetBlendMode() const {
   return blend_mode_;
 }
 
-bool Entity::CanInheritOpacity() const {
-  if (!contents_) {
-    return false;
-  }
-  if (!((blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) ||
-        blend_mode_ == BlendMode::kSourceOver)) {
-    return false;
-  }
-  return contents_->CanInheritOpacity(*this);
-}
-
-bool Entity::SetInheritedOpacity(Scalar alpha) {
-  if (!CanInheritOpacity()) {
-    return false;
-  }
-  if (blend_mode_ == BlendMode::kSource && contents_->IsOpaque()) {
-    blend_mode_ = BlendMode::kSourceOver;
-  }
-  contents_->SetInheritedOpacity(alpha);
-  return true;
-}
-
 std::optional<Color> Entity::AsBackgroundColor(ISize target_size) const {
   return contents_->AsBackgroundColor(*this, target_size);
 }

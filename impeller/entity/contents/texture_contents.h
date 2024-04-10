@@ -73,12 +73,6 @@ class TextureContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // |Contents|
-  void SetInheritedOpacity(Scalar opacity) override;
-
   void SetDeferApplyingOpacity(bool defer_applying_opacity);
 
  private:

@@ -26,7 +26,7 @@ void ColorSourceContents::SetOpacityFactor(Scalar alpha) {
 }
 
 Scalar ColorSourceContents::GetOpacityFactor() const {
-  return opacity_ * inherited_opacity_;
+  return opacity_;
 }
 
 void ColorSourceContents::SetEffectTransform(Matrix matrix) {
@@ -45,13 +45,5 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
   return geometry_->GetCoverage(entity.GetTransform());
 };
-
-bool ColorSourceContents::CanInheritOpacity(const Entity& entity) const {
-  return true;
-}
-
-void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
-  inherited_opacity_ = opacity;
-}
 
 }  // namespace impeller

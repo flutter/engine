@@ -243,6 +243,7 @@ class DlDispatcher final : public flutter::DlOpReceiver {
   Paint paint_;
   CanvasType canvas_;
   Matrix initial_matrix_;
+  std::vector<Scalar> distributed_opacity_ = {};
 
   static const Path& GetOrCachePath(const CacheablePath& cache);
 

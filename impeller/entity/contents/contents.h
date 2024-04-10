@@ -139,25 +139,6 @@ class Contents {
   void SetColorSourceSize(Size size);
 
   //----------------------------------------------------------------------------
-  /// @brief Whether or not this contents can accept the opacity peephole
-  ///        optimization.
-  ///
-  ///        By default all contents return false. Contents are responsible
-  ///        for determining whether or not their own geometries intersect in
-  ///        a way that makes accepting opacity impossible. It is always safe
-  ///        to return false, especially if computing overlap would be
-  ///        computationally expensive.
-  ///
-  virtual bool CanInheritOpacity(const Entity& entity) const;
-
-  //----------------------------------------------------------------------------
-  /// @brief Inherit the provided opacity.
-  ///
-  ///        Use of this method is invalid if CanAcceptOpacity returns false.
-  ///
-  virtual void SetInheritedOpacity(Scalar opacity);
-
-  //----------------------------------------------------------------------------
   /// @brief Returns a color if this Contents will flood the given `target_size`
   ///        with a color. This output color is the "Source" color that will be
   ///        used for the Entity's blend operation.

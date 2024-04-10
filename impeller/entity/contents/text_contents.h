@@ -35,12 +35,6 @@ class TextContents final : public Contents {
 
   Color GetColor() const;
 
-  // |Contents|
-  bool CanInheritOpacity(const Entity& entity) const override;
-
-  // |Contents|
-  void SetInheritedOpacity(Scalar opacity) override;
-
   void SetOffset(Vector2 offset);
 
   std::optional<Rect> GetTextFrameBounds() const;
