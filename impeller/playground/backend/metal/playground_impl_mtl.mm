@@ -73,6 +73,7 @@ PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
   if (!window) {
     return;
   }
+
   auto context = ContextMTL::Create(
       ShaderLibraryMappingsForPlayground(), is_gpu_disabled_sync_switch_,
       "Playground Library",
