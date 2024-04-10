@@ -462,7 +462,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "ci/host_release",
+                        "ci/host_release_arm64",
                         "--type",
                         "impeller-golden"
                     ]
