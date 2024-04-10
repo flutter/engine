@@ -131,7 +131,7 @@ TEST(SwitchesTest, EnableAsserts) {
   ASSERT_EQ(settings.dart_flags.size(), 1ul);
   EXPECT_EQ(settings.dart_flags[0], "--enable-asserts");
 }
-#endif 
+#endif
 
 }  // namespace testing
 }  // namespace flutter
