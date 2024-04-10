@@ -158,7 +158,7 @@ bool CompositorSoftware::Present(FlutterWindowsView* view,
   }
 
   return view->PresentSoftwareBitmap(static_cast<void*>(allocation.data()),
-                                     width * 4, height);
+                                     width * sizeof(uint32_t), height);
 }
 
 }  // namespace flutter
