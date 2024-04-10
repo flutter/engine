@@ -36,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import android.os.Looper;
 
 /**
  * Represents the rendering responsibilities of a {@code FlutterEngine}.
@@ -484,7 +485,7 @@ public class FlutterRenderer implements TextureRegistry {
 
       public PerImageReader(ImageReader reader) {
         this.reader = reader;
-        reader.setOnImageAvailableListener(onImageAvailableListener, new Handler());
+        reader.setOnImageAvailableListener(onImageAvailableListener, new Handler(Looper.getMainLooper()));
       }
 
       PerImage queueImage(Image image) {
