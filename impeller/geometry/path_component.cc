@@ -98,7 +98,7 @@ Point QuadraticPathComponent::SolveDerivative(Scalar time) const {
   };
 }
 
-static Scalar ApproximateParabolaIntegral(Scalar x) {
+Scalar ApproximateParabolaIntegral(Scalar x) {
   constexpr Scalar d = 0.67;
   return x / (1.0 - d + sqrt(sqrt(pow(d, 4) + 0.25 * x * x)));
 }
@@ -114,41 +114,41 @@ void QuadraticPathComponent::AppendPolylinePoints(
 void QuadraticPathComponent::ToLinearPathComponents(
     Scalar scale_factor,
     const PointProc& proc) const {
-  auto tolerance = kDefaultCurveTolerance / scale_factor;
-  auto sqrt_tolerance = sqrt(tolerance);
+  Scalar tolerance = kDefaultCurveTolerance / scale_factor;
+  Scalar sqrt_tolerance = sqrt(tolerance);
 
-  auto d01 = cp - p1;
-  auto d12 = p2 - cp;
-  auto dd = d01 - d12;
-  auto cross = (p2 - p1).Cross(dd);
-  auto x0 = d01.Dot(dd) * 1 / cross;
-  auto x2 = d12.Dot(dd) * 1 / cross;
-  auto scale = std::abs(cross / (hypot(dd.x, dd.y) * (x2 - x0)));
+  Point d01 = cp - p1;
+  Point d12 = p2 - cp;
+  Point dd = d01 - d12;
+  Scalar cross = (p2 - p1).Cross(dd);
+  Scalar x0 = d01.Dot(dd) * 1 / cross;
+  Scalar x2 = d12.Dot(dd) * 1 / cross;
+  Scalar scale = std::abs(cross / (FastHypot(dd.x, dd.y) * (x2 - x0)));
 
-  auto a0 = ApproximateParabolaIntegral(x0);
-  auto a2 = ApproximateParabolaIntegral(x2);
+  Scalar a0 = ApproximateParabolaIntegral(x0);
+  Scalar a2 = ApproximateParabolaIntegral(x2);
   Scalar val = 0.f;
-  if (std::isfinite(scale)) {
-    auto da = std::abs(a2 - a0);
-    auto sqrt_scale = sqrt(scale);
-    if ((x0 < 0 && x2 < 0) || (x0 >= 0 && x2 >= 0)) {
-      val = da * sqrt_scale;
-    } else {
-      // cusp case
-      auto xmin = sqrt_tolerance / sqrt_scale;
-      val = sqrt_tolerance * da / ApproximateParabolaIntegral(xmin);
-    }
+  // if (std::isfinite(scale)) {
+  Scalar da = std::abs(a2 - a0);
+  Scalar sqrt_scale = sqrt(scale);
+  if ((x0 < 0 && x2 < 0) || (x0 >= 0 && x2 >= 0)) {
+    val = da * sqrt_scale;
+  } else {
+    // cusp case
+    Scalar xmin = sqrt_tolerance / sqrt_scale;
+    val = sqrt_tolerance * da / ApproximateParabolaIntegral(xmin);
   }
-  auto u0 = ApproximateParabolaIntegral(a0);
-  auto u2 = ApproximateParabolaIntegral(a2);
-  auto uscale = 1 / (u2 - u0);
+  // }
+  Scalar u0 = ApproximateParabolaIntegral(a0);
+  Scalar u2 = ApproximateParabolaIntegral(a2);
+  Scalar uscale = 1.0f / (u2 - u0);
 
-  auto line_count = std::max(1., ceil(0.5 * val / sqrt_tolerance));
-  auto step = 1 / line_count;
+  Scalar line_count = std::max(1.0f, ceil(0.5f * val / sqrt_tolerance));
+  Scalar step = 1.0f / line_count;
   for (size_t i = 1; i < line_count; i += 1) {
-    auto u = i * step;
-    auto a = a0 + (a2 - a0) * u;
-    auto t = (ApproximateParabolaIntegral(a) - u0) * uscale;
+    Scalar u = i * step;
+    Scalar a = a0 + (a2 - a0) * u;
+    Scalar t = (ApproximateParabolaIntegral(a) - u0) * uscale;
     proc(Solve(t));
   }
   proc(p2);

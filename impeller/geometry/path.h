@@ -143,8 +143,6 @@ class Path {
     auto& path_components = data_->components;
     auto& path_points = data_->points;
 
-    const auto& cb = [&writer](Point point) { writer.Write(point); };
-
     for (size_t component_i = 0; component_i < path_components.size();
          component_i++) {
       const auto& path_component = path_components[component_i];
@@ -160,14 +158,14 @@ class Path {
           const QuadraticPathComponent* quad =
               reinterpret_cast<const QuadraticPathComponent*>(
                   &path_points[path_component.index]);
-          quad->ToLinearPathComponents(scale, cb);
+          quad->WriteLinearPathComponents<VertexWriter>(scale, writer);
           break;
         }
         case ComponentType::kCubic: {
           const CubicPathComponent* cubic =
               reinterpret_cast<const CubicPathComponent*>(
                   &path_points[path_component.index]);
-          cubic->ToLinearPathComponents(scale, cb);
+          cubic->WriteLinearPathComponents<VertexWriter>(scale, writer);
           break;
         }
         case ComponentType::kContour:
@@ -176,8 +174,6 @@ class Path {
             // contour, so skip it.
             continue;
           }
-          const auto& contour = data_->contours[path_component.index];
-          writer.Write(contour.destination);
           writer.EndContour();
           break;
       }
