@@ -48,8 +48,11 @@ def main():
 
   if not os.path.exists(args.out_dir):
     os.makedirs(args.out_dir)
-  
-  android_jar_path = os.path.join(args.src_dir, 'flutter', 'third_party', 'android_tools', 'sdk', 'platforms', 'android-34', 'android.jar')
+
+  android_jar_path = os.path.join(
+      args.src_dir, 'flutter', 'third_party', 'android_tools', 'sdk', 'platforms', 'android-34',
+      'android.jar'
+  )
   if not os.path.exists(android_jar_path):
     print('Android SDK not found at %s' % android_jar_path)
     return 1
