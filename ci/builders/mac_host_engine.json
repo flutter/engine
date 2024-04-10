@@ -65,19 +65,7 @@
                         "--engine-capture-core-dump"
                     ]
                 }
-            ],
-	    "postsubmit_overrides": {
-                "gn": [
-                    "--runtime-mode",
-                    "debug",
-                    "--no-lto",
-                    "--prebuilt-dart-sdk",
-                    "--build-embedder-examples",
-                    "--enable-impeller-vulkan",
-                    "--use-glfw-swiftshader",
-		    "--no-rbe"
-                ]
-	    }
+            ]
         },
         {
             "archives": [
@@ -139,17 +127,7 @@
                         "--engine-capture-core-dump"
                     ]
                 }
-            ],
-	    "postsubmit_overrides": {
-                "gn": [
-                    "--runtime-mode",
-                    "profile",
-                    "--no-lto",
-                    "--prebuilt-dart-sdk",
-                    "--build-embedder-examples",
-		    "--no-rbe"
-                ]
-	    }
+            ]
         },
         {
             "archives": [
@@ -220,20 +198,7 @@
                         "dart,dart-host,engine,impeller-golden"
                     ]
                 }
-            ],
-	    "postsubmit_overrides": {
-                "gn": [
-                    "--runtime-mode",
-                    "release",
-                    "--no-lto",
-                    "--prebuilt-dart-sdk",
-                    "--build-embedder-examples",
-                    "--enable-impeller-vulkan",
-                    "--enable-impeller-opengles",
-                    "--use-glfw-swiftshader",
-		    "--no-rbe"
-                ]
-	    }
+            ]
         },
         {
             "archives": [
@@ -284,19 +249,7 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            },
-	    "postsubmit_overrides": {
-                "gn": [
-                    "--mac",
-                    "--mac-cpu",
-                    "arm64",
-                    "--runtime-mode",
-                    "debug",
-                    "--no-lto",
-                    "--prebuilt-dart-sdk",
-		    "--no-rbe"
-                ]
-	    }
+            }
         },
         {
             "archives": [
@@ -342,19 +295,7 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            },
-	    "postsubmit_overrides": {
-                "gn": [
-                    "--mac",
-                    "--mac-cpu",
-                    "arm64",
-                    "--runtime-mode",
-                    "profile",
-                    "--no-lto",
-                    "--prebuilt-dart-sdk",
-		    "--no-rbe"
-                ]
-	    }
+            }
         },
         {
             "archives": [
@@ -402,19 +343,7 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            },
-	    "postsubmit_overrides": {
-                "gn": [
-                    "--mac",
-                    "--mac-cpu",
-                    "arm64",
-                    "--runtime-mode",
-                    "release",
-                    "--no-lto",
-                    "--prebuilt-dart-sdk",
-		    "--no-rbe"
-                ]
-	    }
+            }
         }
     ],
     "generators": {
