@@ -17,6 +17,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -36,7 +37,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import android.os.Looper;
 
 /**
  * Represents the rendering responsibilities of a {@code FlutterEngine}.
@@ -485,7 +485,8 @@ public class FlutterRenderer implements TextureRegistry {
 
       public PerImageReader(ImageReader reader) {
         this.reader = reader;
-        reader.setOnImageAvailableListener(onImageAvailableListener, new Handler(Looper.getMainLooper()));
+        reader.setOnImageAvailableListener(
+            onImageAvailableListener, new Handler(Looper.getMainLooper()));
       }
 
       PerImage queueImage(Image image) {
