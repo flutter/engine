@@ -146,6 +146,14 @@ class PointerBinding {
     _keyboardConverter = keyboardConverter;
   }
 
+  /// Forwards a [ui.PointerDataResponse] for a [ui.PointerData] to the current event adapter.
+  void acknowledgePointerEvent(
+    ui.PointerData datum,
+    ui.PointerDataResponse response,
+  ) {
+    _adapter.ackPointerData(datum, response);
+  }
+
   _BaseAdapter _createAdapter() {
     if (_detector.hasPointerEvents) {
       return _PointerAdapter(this);
@@ -552,6 +560,26 @@ abstract class _BaseAdapter {
     ));
   }
 
+  final Map<ui.PointerData, ui.PointerDataResponse> _pointerDataAcks =
+    <ui.PointerData, ui.PointerDataResponse>{};
+
+  void ackPointerData(ui.PointerData data, ui.PointerDataResponse response) {
+    _pointerDataAcks[data] = response;
+  }
+
+  void _resetPointerDataAcks() {
+    _pointerDataAcks.clear();
+  }
+
+  ui.PointerDataResponse? _getPointerDataAck(List<ui.PointerData> dataList) {
+    for (final ui.PointerData pointerData in dataList) {
+      if (_pointerDataAcks.containsKey(pointerData)) {
+        return _pointerDataAcks[pointerData];
+      }
+    }
+    return null;
+  }
+
   /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
   /// splitting it into two integer components: milliseconds + microseconds.
   static Duration _eventTimeStampToDuration(num milliseconds) {
@@ -722,17 +750,28 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     ));
   }
 
+  bool _shouldPreventDefault(List<ui.PointerData> dataList) {
+    final ui.PointerDataResponse? ack = _getPointerDataAck(dataList);
+    return ack?.preventPlatformDefault ?? true;
+  }
+
   void _handleWheelEvent(DomEvent e) {
     assert(domInstanceOfString(e, 'WheelEvent'));
     final DomWheelEvent event = e as DomWheelEvent;
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    _callback(e, _convertWheelEventToPointerData(event));
+    // Start allowing modifications to _handleData here...
+    _resetPointerDataAcks();
+    final List<ui.PointerData> data = _convertWheelEventToPointerData(event);
+    _callback(e, data);
+    final bool preventDefault = _shouldPreventDefault(data);
     // Prevent default so mouse wheel event doesn't get converted to
     // a scroll event that semantic nodes would process.
-    //
-    event.preventDefault();
+    if (preventDefault) {
+      event.preventDefault();
+    }
+    // Do not allow more modifications to _handledData somehow!
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox

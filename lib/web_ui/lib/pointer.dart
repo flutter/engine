@@ -157,3 +157,8 @@ class PointerDataPacket {
   const PointerDataPacket({this.data = const <PointerData>[]});
   final List<PointerData> data;
 }
+
+class PointerDataResponse {
+  const PointerDataResponse({this.preventPlatformDefault = true});
+  final bool preventPlatformDefault;
+}

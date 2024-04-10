@@ -435,6 +435,17 @@ class PlatformDispatcher {
     _onPointerDataPacket = callback;
     _onPointerDataPacketZone = Zone.current;
   }
+  /// Used by flutter to send a [PointerDataResponse] back to the engine about
+  /// a [PointerData] `datum`.
+  ///
+  /// This can be understood as a channel for [onPointerDataPacket] to return
+  /// something.
+  void acknowledgePointerData(
+    PointerData datum,
+    PointerDataResponse response,
+  ) {
+    // So far, this is a noop in mobile.
+  }
 
   // Called from the engine, via hooks.dart
   void _dispatchPointerDataPacket(ByteData packet) {

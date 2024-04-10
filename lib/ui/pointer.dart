@@ -435,3 +435,12 @@ class PointerDataPacket {
   /// This list might contain multiple pieces of data about the same pointer.
   final List<PointerData> data;
 }
+
+/// The data passed from the framework to the engine about a [PointerData] event.
+class PointerDataResponse {
+  /// Creates a response for a pointer data.
+  const PointerDataResponse({this.preventPlatformDefault = true});
+
+  /// Whether the default platform behavior for this event should be prevented.
+  final bool preventPlatformDefault;
+}

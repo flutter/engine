@@ -58,6 +58,10 @@ abstract class PlatformDispatcher {
 
   PointerDataPacketCallback? get onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback);
+  void acknowledgePointerData(
+    PointerData datum,
+    PointerDataResponse response,
+  );
 
   KeyDataCallback? get onKeyData;
   set onKeyData(KeyDataCallback? callback);

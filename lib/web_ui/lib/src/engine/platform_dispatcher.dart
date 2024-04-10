@@ -340,6 +340,22 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _onPointerDataPacket, _onPointerDataPacketZone, dataPacket);
   }
 
+  /// Used by Flutter to respond to a given [ui.PointerData] with a [ui.PointerDataResponse].
+  @override
+  void acknowledgePointerData(
+    ui.PointerData datum,
+    ui.PointerDataResponse response,
+  ) {
+    // Grab the PointerBinding for datum.viewId, and attempt to store a response.
+    final EngineFlutterView? flutterView = view(id: datum.viewId);
+
+    assert(flutterView != null, 'acknowledging pointer data on an unknown view is impossible.');
+
+    final PointerBinding pointers = flutterView!.pointerBinding;
+
+    pointers.acknowledgePointerEvent(datum, response);
+  }
+
   /// A callback that is invoked when key data is available.
   ///
   /// The framework invokes this callback in the same zone in which the
