@@ -9,7 +9,7 @@
 #include "flutter/impeller/geometry/rect.h"
 
 namespace flutter {
-  
+
 using DlRect = impeller::Rect;
 using DlMatrix = impeller::Matrix;
 using DlDegrees = impeller::Degrees;
