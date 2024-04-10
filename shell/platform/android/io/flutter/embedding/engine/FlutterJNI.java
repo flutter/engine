@@ -24,6 +24,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
+import io.flutter.Build.API_LEVELS;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine.EngineLifecycleListener;
 import io.flutter.embedding.engine.dart.PlatformMessageHandler;
@@ -429,7 +430,9 @@ public class FlutterJNI {
 
   @VisibleForTesting
   public long performNativeAttach(@NonNull FlutterJNI flutterJNI) {
-    return nativeAttach(flutterJNI);
+    // return nativeAttach(flutterJNI);
+    io.flutter.Log.e("TEST!!!!!!", "in actual function");
+    return 0;
   }
 
   private native long nativeAttach(@NonNull FlutterJNI flutterJNI);
@@ -873,22 +876,26 @@ public class FlutterJNI {
   @UiThread
   public void setSemanticsEnabled(boolean enabled) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
-    nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
+    if (isAttached()) {
+      nativeSetSemanticsEnabled(nativeShellHolderId, enabled);
+    }
   }
 
-  private native void nativeSetSemanticsEnabled(long nativeShellHolderId, boolean enabled);
+  @VisibleForTesting
+  public native void nativeSetSemanticsEnabled(long nativeShellHolderId, boolean enabled);
 
   // TODO(mattcarroll): figure out what flags are supported and add javadoc about when/why/where to
   // use this.
   @UiThread
   public void setAccessibilityFeatures(int flags) {
     ensureRunningOnMainThread();
-    ensureAttachedToNative();
-    nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
+    if (isAttached()) {
+      nativeSetAccessibilityFeatures(nativeShellHolderId, flags);
+    }
   }
 
-  private native void nativeSetAccessibilityFeatures(long nativeShellHolderId, int flags);
+  @VisibleForTesting
+  public native void nativeSetAccessibilityFeatures(long nativeShellHolderId, int flags);
   // ------ End Accessibility Support ----
 
   // ------ Start Texture Registration Support -----
