@@ -54,7 +54,7 @@ FLUTTER_ASSERT_ARC
 
 - (void)setRestorationData:(NSData*)data {
   if (data != _restorationData) {
-    _restorationData = data;
+    _restorationData = [data copy];
   }
   _waitForData = NO;
   if (self.pendingRequest != nil) {
