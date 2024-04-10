@@ -123,6 +123,18 @@ TEST(SwitchesTest, NoEnableImpeller) {
   }
 }
 
+TEST(SwitchesTest, EnableAsserts) {
+  fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+      {"command", "--dart-flags=--enable-asserts"});
+  Settings settings = SettingsFromCommandLine(command_line);
+#if !FLUTTER_RELEASE
+  ASSERT_EQ(settings.dart_flags.size(), 1ul);
+  EXPECT_EQ(settings.dart_flags[0], "--enable-asserts");
+#else
+  EXPECT_TRUE(settings.dart_flags.empty());
+#endif
+}
+
 }  // namespace testing
 }  // namespace flutter
 
