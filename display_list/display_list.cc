@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_op_records.h"
+#include "flutter/display_list/utils/dl_matrix_clip_tracker.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -146,6 +147,121 @@ void DisplayList::Dispatch(DlOpReceiver& receiver) const {
 void DisplayList::Dispatch(DlOpReceiver& receiver,
                            const SkIRect& cull_rect) const {
   Dispatch(receiver, SkRect::Make(cull_rect));
+}
+
+void DisplayList::IterateTextFrames(const TextFrameIterator& iterator,
+                                    const DlMatrix& initial_matrix) const {
+  DisplayListMatrixClipTracker tracker(DlRect::MakeMaximum(), initial_matrix);
+  uint8_t* ptr = storage_.get();
+  uint8_t* end = ptr + byte_count_;
+  while (ptr < end) {
+    auto op = reinterpret_cast<const DLOp*>(ptr);
+    ptr += op->size;
+    FML_DCHECK(ptr <= end);
+    switch (op->type) {
+      case DisplayListOpType::kDrawTextFrame: {
+        auto text_frame_op = static_cast<const DrawTextFrameOp*>(op);
+        iterator(*text_frame_op->text_frame, tracker.matrix(),  //
+                 text_frame_op->x, text_frame_op->y);
+        break;
+      }
+
+      case DisplayListOpType::kSave:
+      case DisplayListOpType::kSaveLayer:
+        tracker.save();
+        break;
+
+      case DisplayListOpType::kRestore:
+        tracker.restore();
+        break;
+
+      case DisplayListOpType::kTranslate: {
+        auto translate_op = static_cast<const TranslateOp*>(op);
+        tracker.translate(translate_op->tx, translate_op->ty);
+        break;
+      }
+
+      case DisplayListOpType::kScale: {
+        auto scale_op = static_cast<const ScaleOp*>(op);
+        tracker.scale(scale_op->sx, scale_op->sy);
+        break;
+      }
+
+      case DisplayListOpType::kRotate: {
+        auto rotate_op = static_cast<const RotateOp*>(op);
+        tracker.rotate(rotate_op->degrees);
+        break;
+      }
+
+      case DisplayListOpType::kSkew: {
+        auto skew_op = static_cast<const SkewOp*>(op);
+        tracker.scale(skew_op->sx, skew_op->sy);
+        break;
+      }
+
+      case DisplayListOpType::kTransform2DAffine: {
+        auto affine_op = static_cast<const Transform2DAffineOp*>(op);
+        tracker.transform2DAffine(                           //
+            affine_op->mxx, affine_op->mxy, affine_op->mxt,  //
+            affine_op->myx, affine_op->myy, affine_op->myt);
+        break;
+      }
+
+      case DisplayListOpType::kTransformFullPerspective: {
+        auto affine_op = static_cast<const TransformFullPerspectiveOp*>(op);
+        tracker.transformFullPerspective(
+            affine_op->mxx, affine_op->mxy, affine_op->mxz, affine_op->mxt,
+            affine_op->myx, affine_op->myy, affine_op->myz, affine_op->myt,
+            affine_op->mzx, affine_op->mzy, affine_op->mzz, affine_op->mzt,
+            affine_op->mwx, affine_op->mwy, affine_op->mwz, affine_op->mwt);
+        break;
+      }
+
+      case DisplayListOpType::kTransformReset: {
+        tracker.setIdentity();
+        break;
+      }
+
+      case DisplayListOpType::kDrawDisplayList: {
+        auto draw_dl_op = static_cast<const DrawDisplayListOp*>(op);
+        draw_dl_op->display_list->IterateTextFrames(iterator, tracker.matrix());
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+}
+
+void DisplayList::IterateTextFrames2(const TextFrameIterator& iterator,
+                                     const DlMatrix& initial_matrix) const {
+  uint8_t* ptr = storage_.get();
+  uint8_t* end = ptr + byte_count_;
+  while (ptr < end) {
+    auto op = reinterpret_cast<const DLOp*>(ptr);
+    ptr += op->size;
+    FML_DCHECK(ptr <= end);
+    switch (op->type) {
+      case DisplayListOpType::kDrawTextFrame: {
+        auto text_frame_op = static_cast<const DrawTextFrameOp*>(op);
+        iterator(*text_frame_op->text_frame,              //
+                 initial_matrix * text_frame_op->matrix,  //
+                 text_frame_op->x, text_frame_op->y);
+        break;
+      }
+
+      case DisplayListOpType::kDrawDisplayList: {
+        auto draw_dl_op = static_cast<const DrawDisplayListOp*>(op);
+        draw_dl_op->display_list->IterateTextFrames2(
+            iterator, initial_matrix * draw_dl_op->matrix);
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,

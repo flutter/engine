@@ -8,9 +8,8 @@
 #include <vector>
 
 #include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/fml/logging.h"
-#include "flutter/impeller/geometry/matrix.h"
-#include "flutter/impeller/geometry/rect.h"
 
 #include "third_party/skia/include/core/SkM44.h"
 #include "third_party/skia/include/core/SkMatrix.h"
@@ -24,9 +23,6 @@ namespace flutter {
 class DisplayListMatrixClipState {
  private:
   using ClipOp = DlCanvas::ClipOp;
-  using DlRect = impeller::Rect;
-  using DlMatrix = impeller::Matrix;
-  using DlDegrees = impeller::Degrees;
 
   static_assert(sizeof(SkRect) == sizeof(DlRect));
 
@@ -184,8 +180,6 @@ class DisplayListMatrixClipState {
 class DisplayListMatrixClipTracker {
  private:
   using ClipOp = DlCanvas::ClipOp;
-  using DlRect = impeller::Rect;
-  using DlMatrix = impeller::Matrix;
 
  public:
   DisplayListMatrixClipTracker(const DlRect& cull_rect, const DlMatrix& matrix);
@@ -236,7 +230,7 @@ class DisplayListMatrixClipTracker {
 
   bool using_4x4_matrix() const { return current_->using_4x4_matrix(); }
 
-  DlMatrix matrix() const { return current_->matrix(); }
+  const DlMatrix& matrix() const { return current_->matrix(); }
   SkM44 matrix_4x4() const { return current_->matrix_4x4(); }
   SkMatrix matrix_3x3() const { return current_->matrix_3x3(); }
   SkRect local_cull_rect() const { return current_->local_cull_rect(); }

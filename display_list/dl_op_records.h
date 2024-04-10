@@ -1028,11 +1028,13 @@ struct DrawDisplayListOp final : DrawOpBase {
   static const auto kType = DisplayListOpType::kDrawDisplayList;
 
   explicit DrawDisplayListOp(const sk_sp<DisplayList>& display_list,
+                             const DlMatrix& matrix,
                              SkScalar opacity)
-      : opacity(opacity), display_list(display_list) {}
+      : opacity(opacity), display_list(display_list), matrix(matrix) {}
 
   SkScalar opacity;
   const sk_sp<DisplayList> display_list;
+  DlMatrix matrix;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
@@ -1071,13 +1073,15 @@ struct DrawTextFrameOp final : DrawOpBase {
   static const auto kType = DisplayListOpType::kDrawTextFrame;
 
   DrawTextFrameOp(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                  const impeller::Matrix matrix,
                   SkScalar x,
                   SkScalar y)
-      : x(x), y(y), text_frame(text_frame) {}
+      : x(x), y(y), text_frame(text_frame), matrix(matrix) {}
 
   const SkScalar x;
   const SkScalar y;
   const std::shared_ptr<impeller::TextFrame> text_frame;
+  const impeller::Matrix matrix;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {

@@ -1397,7 +1397,7 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   }
 
   DlPaint current_paint = current_;
-  Push<DrawDisplayListOp>(0, 1, display_list,
+  Push<DrawDisplayListOp>(0, 1, display_list, tracker_.matrix(),
                           opacity < SK_Scalar1 ? opacity : SK_Scalar1);
   is_ui_thread_safe_ = is_ui_thread_safe_ && display_list->isUIThreadSafe();
   // Not really necessary if the developer is interacting with us via
@@ -1477,7 +1477,7 @@ void DisplayListBuilder::drawTextFrame(
   unclipped = true;
 #endif  // OS_FUCHSIA
   if (unclipped) {
-    Push<DrawTextFrameOp>(0, 1, text_frame, x, y);
+    Push<DrawTextFrameOp>(0, 1, text_frame, tracker_.matrix(), x, y);
     // There is no way to query if the glyphs of a text blob overlap and
     // there are no current guarantees from either Skia or Impeller that
     // they will protect overlapping glyphs from the effects of overdraw

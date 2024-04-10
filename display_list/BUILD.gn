@@ -60,6 +60,7 @@ source_set("display_list") {
     "effects/dl_path_effect.h",
     "effects/dl_runtime_effect.cc",
     "effects/dl_runtime_effect.h",
+    "geometry/dl_geometry_types.h",
     "geometry/dl_region.cc",
     "geometry/dl_region.h",
     "geometry/dl_rtree.cc",

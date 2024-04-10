@@ -9,8 +9,11 @@
 #include <optional>
 
 #include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
+
+#include "flutter/impeller/typographer/text_frame.h"
 
 // The Flutter DisplayList mechanism encapsulates a persistent sequence of
 // rendering operations.
@@ -306,6 +309,22 @@ class DisplayList : public SkRefCnt {
   bool modifies_transparent_black() const {
     return modifies_transparent_black_;
   }
+
+ private:
+  using TextFrame = impeller::TextFrame;
+
+ public:
+  typedef std::function<void(const TextFrame&,  //
+                             const DlMatrix&,   //
+                             SkScalar x,        //
+                             SkScalar y)>
+      TextFrameIterator;
+
+  void IterateTextFrames(const TextFrameIterator& iterator,
+                         const DlMatrix& initial_matrix) const;
+
+  void IterateTextFrames2(const TextFrameIterator& iterator,
+                          const DlMatrix& initial_matrix) const;
 
  private:
   DisplayList(DisplayListStorage&& ptr,

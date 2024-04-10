@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/benchmarking/benchmarking.h"
+#include "flutter/display_list/display_list.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
+#include "flutter/display_list/utils/dl_receiver_utils.h"
 
 namespace flutter {
 
@@ -171,6 +173,137 @@ static void BM_DisplayListBuilderWithSaveLayerAndImageFilter(
   }
 }
 
+class TextFrameDispatcher : public IgnoreAttributeDispatchHelper,
+                            public IgnoreClipDispatchHelper,
+                            public IgnoreDrawDispatchHelper {
+ public:
+  TextFrameDispatcher(DisplayList::TextFrameIterator& iterator,
+                      const DlMatrix& initial_matrix)
+      : iterator_(iterator), tracker_(DlRect::MakeMaximum(), initial_matrix) {}
+
+  void save() override { tracker_.save(); }
+
+  void saveLayer(const SkRect& bounds,
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {
+    tracker_.save();
+  }
+
+  void restore() override { tracker_.restore(); }
+
+  void translate(SkScalar tx, SkScalar ty) override {
+    tracker_.translate(tx, ty);
+  }
+
+  void scale(SkScalar sx, SkScalar sy) override { tracker_.scale(sx, sy); }
+
+  void rotate(SkScalar degrees) override { tracker_.rotate(degrees); }
+
+  void skew(SkScalar sx, SkScalar sy) override { tracker_.skew(sx, sy); }
+
+  // clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override {
+    tracker_.transform2DAffine(mxx, mxy, mxt,
+                               myx, myy, myt);
+  }
+
+  // full 4x4 transform in row major order
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
+    tracker_.transformFullPerspective(mxx, mxy, mxz, mxt,
+                                      myx, myy, myz, myt,
+                                      mzx, mzy, mzz, mzt,
+                                      mwx, mwy, mwz, mwt);
+  }
+  // clang-format on
+
+  void transformReset() override { tracker_.setIdentity(); }
+
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override {
+    count_++;
+    iterator_(*text_frame, tracker_.matrix(), x, y);
+  }
+
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override {
+    TextFrameDispatcher sub_dispatcher(iterator_, tracker_.matrix());
+    display_list->Dispatch(sub_dispatcher);
+    count_ += sub_dispatcher.GetTextFrameCount();
+  }
+
+  int GetTextFrameCount() { return count_; }
+
+ private:
+  DisplayList::TextFrameIterator& iterator_;
+  DisplayListMatrixClipTracker tracker_;
+  int count_ = 0;
+};
+
+static void BM_DisplayListIterateTextFrames(
+    benchmark::State& state,
+    DisplayListBuilderBenchmarkType type) {
+  bool prepare_rtree = NeedPrepareRTree(type);
+  DisplayListBuilder builder(prepare_rtree);
+  InvokeAllRenderingOps(builder);
+  auto display_list = builder.Build();
+  DisplayList::TextFrameIterator iterator = [](const impeller::TextFrame&,  //
+                                               const DlMatrix&,             //
+                                               SkScalar x, SkScalar y) {};
+  while (state.KeepRunning()) {
+    display_list->IterateTextFrames(iterator, DlMatrix());
+  }
+}
+
+static void BM_DisplayListIterateTextFrames2(
+    benchmark::State& state,
+    DisplayListBuilderBenchmarkType type) {
+  bool prepare_rtree = NeedPrepareRTree(type);
+  DisplayListBuilder builder(prepare_rtree);
+  InvokeAllRenderingOps(builder);
+  auto display_list = builder.Build();
+  DisplayList::TextFrameIterator iterator = [](const impeller::TextFrame&,  //
+                                               const DlMatrix&,             //
+                                               SkScalar x, SkScalar y) {};
+  while (state.KeepRunning()) {
+    display_list->IterateTextFrames2(iterator, DlMatrix());
+  }
+}
+
+static void BM_DisplayListDispatchTextFrames(
+    benchmark::State& state,
+    DisplayListBuilderBenchmarkType type) {
+  bool prepare_rtree = NeedPrepareRTree(type);
+  DisplayListBuilder builder(prepare_rtree);
+  InvokeAllRenderingOps(builder);
+  auto display_list = builder.Build();
+  DisplayList::TextFrameIterator iterator = [](const impeller::TextFrame&,  //
+                                               const DlMatrix&,             //
+                                               SkScalar x, SkScalar y) {};
+  TextFrameDispatcher dispatcher(iterator, DlMatrix());
+  while (state.KeepRunning()) {
+    display_list->Dispatch(dispatcher);
+  }
+}
+
+BENCHMARK_CAPTURE(BM_DisplayListIterateTextFrames,
+                  kDefault,
+                  DisplayListBuilderBenchmarkType::kDefault)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DisplayListIterateTextFrames2,
+                  kDefault,
+                  DisplayListBuilderBenchmarkType::kDefault)
+    ->Unit(benchmark::kMicrosecond);
+BENCHMARK_CAPTURE(BM_DisplayListDispatchTextFrames,
+                  kDefault,
+                  DisplayListBuilderBenchmarkType::kDefault)
+    ->Unit(benchmark::kMicrosecond);
 BENCHMARK_CAPTURE(BM_DisplayListBuilderDefault,
                   kDefault,
                   DisplayListBuilderBenchmarkType::kDefault)
