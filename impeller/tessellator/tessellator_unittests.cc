@@ -5,6 +5,7 @@
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
+#include "impeller/core/host_buffer.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"

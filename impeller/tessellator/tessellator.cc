@@ -725,7 +725,7 @@ class VertexWriter {
 
     if (contour_start_ > 0) {
       // Triangle strip break.
-      indices_.emplace_back(end);
+      indices_.emplace_back(start - 1);
       indices_.emplace_back(start);
       indices_.emplace_back(start);
 

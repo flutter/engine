@@ -153,7 +153,6 @@ class Path {
           const LinearPathComponent* linear =
               reinterpret_cast<const LinearPathComponent*>(
                   &path_points[path_component.index]);
-          writer.Write(linear->p1);
           writer.Write(linear->p2);
           break;
         }
@@ -172,6 +171,13 @@ class Path {
           break;
         }
         case ComponentType::kContour:
+          if (component_i == path_components.size() - 1) {
+            // If the last component is a contour, that means it's an empty
+            // contour, so skip it.
+            continue;
+          }
+          const auto& contour = data_->contours[path_component.index];
+          writer.Write(contour.destination);
           writer.EndContour();
           break;
       }
