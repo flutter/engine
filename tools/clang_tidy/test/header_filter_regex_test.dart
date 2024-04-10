@@ -38,6 +38,7 @@ void main() {
     const Set<String> intentionallyOmitted = <String>{
       '.git',
       '.github',
+      'buildtools',
       'prebuilts',
       'third_party',
     };
