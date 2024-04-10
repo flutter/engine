@@ -7,20 +7,14 @@
 
 #include "flutter/display_list/dl_op_receiver.h"
 #include "impeller/aiks/canvas_type.h"
+#include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
+#include "impeller/entity/contents/content_context.h"
 
 namespace impeller {
 
-class DlDispatcher final : public flutter::DlOpReceiver {
+class DlDispatcherBase : public flutter::DlOpReceiver {
  public:
-  DlDispatcher();
-
-  explicit DlDispatcher(Rect cull_rect);
-
-  explicit DlDispatcher(IRect cull_rect);
-
-  ~DlDispatcher();
-
   Picture EndRecordingAsPicture();
 
   // |flutter::DlOpReceiver|
@@ -239,20 +233,49 @@ class DlDispatcher final : public flutter::DlOpReceiver {
                   bool transparent_occluder,
                   SkScalar dpr) override;
 
+  virtual Canvas& GetCanvas() = 0;
+
  private:
   Paint paint_;
-  CanvasType canvas_;
   Matrix initial_matrix_;
 
   static const Path& GetOrCachePath(const CacheablePath& cache);
 
-  static void SimplifyOrDrawPath(CanvasType& canvas,
+  static void SimplifyOrDrawPath(Canvas& canvas,
                                  const CacheablePath& cache,
                                  const Paint& paint);
+};
 
-  DlDispatcher(const DlDispatcher&) = delete;
+class DlDispatcher : public DlDispatcherBase {
+ public:
+  DlDispatcher();
 
-  DlDispatcher& operator=(const DlDispatcher&) = delete;
+  explicit DlDispatcher(IRect cull_rect);
+
+  explicit DlDispatcher(Rect cull_rect);
+
+  ~DlDispatcher() = default;
+
+ private:
+  Canvas canvas_;
+
+  Canvas& GetCanvas() override;
+};
+
+class ExperimentalDlDispatcher : public DlDispatcherBase {
+ public:
+  ExperimentalDlDispatcher(ContentContext& renderer,
+                           RenderTarget& render_target,
+                           IRect cull_rect);
+
+  ~ExperimentalDlDispatcher() = default;
+
+  void FinishRecording() { canvas_.EndReplay(); }
+
+ private:
+  ExperimentalCanvas canvas_;
+
+  Canvas& GetCanvas() override;
 };
 
 }  // namespace impeller
