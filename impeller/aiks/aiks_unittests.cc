@@ -937,9 +937,19 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimes) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+namespace {
+bool DoesSupportWideGamutTests() {
+#ifdef __arm64__
+  return true;
+#else
+  return false;
+#endif
+}
+}  // namespace
+
 // This makes sure the WideGamut named tests use 16bit float pixel format.
 TEST_P(AiksTest, FormatWideGamut) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kMetal || !DoesSupportWideGamutTests()) {
     GTEST_SKIP_("This backend doesn't yet support wide gamut.");
   }
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
@@ -3107,7 +3117,7 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
 }
 
 TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
+  if (GetParam() != PlaygroundBackend::kMetal || !DoesSupportWideGamutTests()) {
     GTEST_SKIP_("This backend doesn't yet support wide gamut.");
   }
 
