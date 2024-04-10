@@ -15,11 +15,12 @@ public interface PluginRegistry {
   /**
    * This interface exists solely for backwards compatibility for plugin authors.
    *
-   * When the v1 embedding was initially deprecated, Flutter docs recommended plugin authors
-   * continue to include a `registerWith(PluginRegistry.Registrar)` for backwards compatibility
-   * with v1 apps. Removing it without warning would break them.
+   * <p>When the v1 embedding was initially deprecated, Flutter docs recommended plugin authors
+   * continue to include a `registerWith(PluginRegistry.Registrar)` for backwards compatibility with
+   * v1 apps. Removing it without warning would break them.
    *
-   * TODO(gmackall): Delete this after plugin authors have been given one major release to migrate.
+   * <p>TODO(gmackall): Delete this after plugin authors have been given one major release to
+   * migrate.
    */
   @Deprecated
   interface Registrar {}
