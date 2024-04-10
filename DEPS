@@ -745,7 +745,7 @@ deps = {
     'dep_type': 'cipd'
   },
 
-  'src/third_party/android_tools/trace_to_text': {
+  'src/flutter/third_party/android_tools/trace_to_text': {
     'packages': [
       {
         # 25.0 downloads for both mac-amd64 and mac-arm64
@@ -759,7 +759,7 @@ deps = {
     'dep_type': 'cipd'
   },
 
-   'src/third_party/android_tools/google-java-format': {
+   'src/flutter/third_party/android_tools/google-java-format': {
      'packages': [
        {
         'package': 'flutter/android/google-java-format',
@@ -773,7 +773,7 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/third_party/android_tools': {
+  'src/flutter/third_party/android_tools': {
      'packages': [
        {
         'package': 'flutter/android/sdk/all/${{platform}}',
