@@ -4,9 +4,9 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h"
 
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-
 #import <UIKit/UIKit.h>
+
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 
 FLUTTER_ASSERT_ARC
 
