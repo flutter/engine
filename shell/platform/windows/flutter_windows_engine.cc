@@ -517,7 +517,7 @@ std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
       fml::AutoResetWaitableEvent latch;
       bool added;
     };
-    Captures captures;
+    Captures captures = {};
 
     FlutterWindowMetricsEvent metrics = view->CreateWindowMetricsEvent();
 
@@ -566,7 +566,7 @@ void FlutterWindowsEngine::RemoveView(FlutterViewId view_id) {
       fml::AutoResetWaitableEvent latch;
       bool removed;
     };
-    Captures captures;
+    Captures captures = {};
 
     FlutterRemoveViewInfo info = {};
     info.struct_size = sizeof(FlutterRemoveViewInfo);
