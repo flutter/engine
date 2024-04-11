@@ -179,34 +179,47 @@ class TextFrameDispatcher : public IgnoreAttributeDispatchHelper,
  public:
   TextFrameDispatcher(DisplayList::TextFrameIterator& iterator,
                       const DlMatrix& initial_matrix)
-      : iterator_(iterator), tracker_(DlRect::MakeMaximum(), initial_matrix) {}
+      : iterator_(iterator), matrix_(initial_matrix) {}
 
-  void save() override { tracker_.save(); }
+  void save() override { stack_.emplace_back(matrix_); }
 
   void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override {
-    tracker_.save();
+    save();
   }
 
-  void restore() override { tracker_.restore(); }
+  void restore() override {
+    matrix_ = stack_.back();
+    stack_.pop_back();
+  }
 
   void translate(SkScalar tx, SkScalar ty) override {
-    tracker_.translate(tx, ty);
+    matrix_ = matrix_.Translate({tx, ty});
   }
 
-  void scale(SkScalar sx, SkScalar sy) override { tracker_.scale(sx, sy); }
+  void scale(SkScalar sx, SkScalar sy) override {
+    matrix_ = matrix_.Scale({sx, sy, 1.0f});
+  }
 
-  void rotate(SkScalar degrees) override { tracker_.rotate(degrees); }
+  void rotate(SkScalar degrees) override {
+    matrix_ = matrix_ * DlMatrix::MakeRotationZ(DlDegrees(degrees));
+  }
 
-  void skew(SkScalar sx, SkScalar sy) override { tracker_.skew(sx, sy); }
+  void skew(SkScalar sx, SkScalar sy) override {
+    matrix_ = matrix_ * DlMatrix::MakeSkew(sx, sy);
+  }
 
   // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
   void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
                          SkScalar myx, SkScalar myy, SkScalar myt) override {
-    tracker_.transform2DAffine(mxx, mxy, mxt,
-                               myx, myy, myt);
+    matrix_ = matrix_ * DlMatrix::MakeColumn(
+        mxx,  myx,  0.0f, 0.0f,
+        mxy,  myy,  0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        mxt,  myt,  0.0f, 1.0f
+    );
   }
 
   // full 4x4 transform in row major order
@@ -215,34 +228,37 @@ class TextFrameDispatcher : public IgnoreAttributeDispatchHelper,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
       SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
-    tracker_.transformFullPerspective(mxx, mxy, mxz, mxt,
-                                      myx, myy, myz, myt,
-                                      mzx, mzy, mzz, mzt,
-                                      mwx, mwy, mwz, mwt);
+    matrix_ = matrix_ * DlMatrix::MakeColumn(
+        mxx, myx, mzx, mwx,
+        mxy, myy, mzy, mwy,
+        mxz, myz, mzz, mwz,
+        mxt, myt, mzt, mwt
+    );
   }
   // clang-format on
 
-  void transformReset() override { tracker_.setIdentity(); }
+  void transformReset() override { matrix_ = DlMatrix(); }
 
   void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
                      SkScalar x,
                      SkScalar y) override {
     count_++;
-    iterator_(*text_frame, tracker_.matrix(), x, y);
+    iterator_(*text_frame, matrix_, x, y);
   }
 
   void drawDisplayList(const sk_sp<DisplayList> display_list,
                        SkScalar opacity) override {
-    TextFrameDispatcher sub_dispatcher(iterator_, tracker_.matrix());
-    display_list->Dispatch(sub_dispatcher);
-    count_ += sub_dispatcher.GetTextFrameCount();
+    save();
+    display_list->Dispatch(*this);
+    restore();
   }
 
   int GetTextFrameCount() { return count_; }
 
  private:
   DisplayList::TextFrameIterator& iterator_;
-  DisplayListMatrixClipTracker tracker_;
+  DlMatrix matrix_;
+  std::vector<DlMatrix> stack_;
   int count_ = 0;
 };
 
