@@ -66,10 +66,12 @@ TEST(GeometryTest, MakeRow) {
 
 TEST(GeometryTest, RotationMatrix) {
   auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
-  auto expect = Matrix{0.707,  0.707, 0, 0,  //
-                       -0.707, 0.707, 0, 0,  //
-                       0,      0,     1, 0,  //
-                       0,      0,     0, 1};
+  // clang-format off
+  auto expect = Matrix{k1OverSqrt2,  k1OverSqrt2, 0, 0,
+                       -k1OverSqrt2, k1OverSqrt2, 0, 0,
+                       0,            0,           1, 0,
+                       0,            0,           0, 1};
+  // clang-format on
   ASSERT_MATRIX_NEAR(rotation, expect);
 }
 
@@ -77,10 +79,12 @@ TEST(GeometryTest, InvertMultMatrix) {
   {
     auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
     auto invert = rotation.Invert();
-    auto expect = Matrix{0.707, -0.707, 0, 0,  //
-                         0.707, 0.707,  0, 0,  //
-                         0,     0,      1, 0,  //
-                         0,     0,      0, 1};
+    // clang-format off
+    auto expect = Matrix{k1OverSqrt2, -k1OverSqrt2, 0, 0,
+                         k1OverSqrt2, k1OverSqrt2,  0, 0,
+                         0,           0,            1, 0,
+                         0,           0,            0, 1};
+    // clang-format on
     ASSERT_MATRIX_NEAR(invert, expect);
   }
   {
@@ -459,20 +463,6 @@ TEST(GeometryTest, MatrixGetDirectionScale) {
              Matrix::MakeScale(Vector3(3, 4, 5));
     Scalar result = m.GetDirectionScale(Vector3{2, 0, 0});
     ASSERT_FLOAT_EQ(result, 8);
-  }
-}
-
-TEST(GeometryTest, MatrixIsAligned) {
-  {
-    auto m = Matrix::MakeTranslation({1, 2, 3});
-    bool result = m.IsAligned();
-    ASSERT_TRUE(result);
-  }
-
-  {
-    auto m = Matrix::MakeRotationZ(Degrees{123});
-    bool result = m.IsAligned();
-    ASSERT_FALSE(result);
   }
 }
 

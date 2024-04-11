@@ -188,7 +188,8 @@ TEST(TessellatorTest, FilledCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * radius;
-      double rcos = cos(angle) * radius;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radius;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -235,7 +236,9 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius + half_width);
-      double rcos = cos(angle) * (radius + half_width);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius + half_width);
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -255,7 +258,9 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius - half_width);
-      double rcos = cos(angle) * (radius - half_width);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius - half_width);
       EXPECT_POINT_NEAR(vertices[i * 2 + 1],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -307,7 +312,9 @@ TEST(TessellatorTest, RoundCapLineTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      Point relative_along = along * cos(angle);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      Point relative_along =
+          along * ((i == quadrant_count - 1) ? 0.0f : cos(angle));
       Point relative_across = across * sin(angle);
       EXPECT_POINT_NEAR(vertices[i * 2],  //
                         p0 - relative_along + relative_across)
@@ -371,7 +378,9 @@ TEST(TessellatorTest, FilledEllipseTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rcos = cos(angle) * half_size.width;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * half_size.width;
       double rsin = sin(angle) * half_size.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
@@ -436,7 +445,8 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rcos = cos(angle) * radii.width;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radii.width;
       double rsin = sin(angle) * radii.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(middle_left - rcos, middle_bottom + rsin))
@@ -479,6 +489,19 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
        Rect::MakeXYWH(5000, 10000, 3000, 2000), {50, 70});
   test(Matrix::MakeScale({0.002, 0.002, 0.0}),
        Rect::MakeXYWH(5000, 10000, 2000, 3000), {50, 70});
+}
+
+TEST(TessellatorTest, EarlyReturnEmptyConvexShape) {
+  // This path is not technically empty (it has a size in one dimension),
+  // but is otherwise completely flat.
+  auto tessellator = std::make_shared<Tessellator>();
+  PathBuilder builder;
+  builder.MoveTo({0, 0});
+  builder.MoveTo({10, 10}, /*relative=*/true);
+
+  auto points = tessellator->TessellateConvex(builder.TakePath(), 3.0);
+
+  EXPECT_TRUE(points.empty());
 }
 
 #if !NDEBUG

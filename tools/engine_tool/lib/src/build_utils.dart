@@ -47,9 +47,11 @@ List<Build> filterBuilds(Map<String, BuilderConfig> input, BuildFilter test) {
 }
 
 /// Returns a list of runnable builds.
-List<Build> runnableBuilds(Environment env, Map<String, BuilderConfig> input) {
+List<Build> runnableBuilds(
+    Environment env, Map<String, BuilderConfig> input, bool verbose) {
   return filterBuilds(input, (String configName, Build build) {
-    return build.canRunOn(env.platform);
+    return build.canRunOn(env.platform) &&
+           (verbose || build.name.startsWith(env.platform.operatingSystem));
   });
 }
 
@@ -148,6 +150,7 @@ Future<int> runBuild(Environment environment, Build build,
   void handler(RunnerEvent event) {
     switch (event) {
       case RunnerStart():
+        environment.logger.info('$event: ${event.command.join(' ')}');
         environment.logger.status('$event     ', newline: false);
         spinner = environment.logger.startSpinner();
       case RunnerProgress(done: true):
@@ -174,5 +177,45 @@ Future<int> runBuild(Environment environment, Build build,
   }
 
   final bool buildResult = await buildRunner.run(handler);
+  return buildResult ? 0 : 1;
+}
+
+/// Given a [Build] object, run only its GN step.
+Future<int> runGn(
+  Environment environment,
+  Build build, {
+  List<String> extraGnArgs = const <String>[],
+}) async {
+  // If RBE config files aren't in the tree, then disable RBE.
+  final String rbeConfigPath = p.join(
+    environment.engine.srcDir.path,
+    'flutter',
+    'build',
+    'rbe',
+  );
+  final List<String> gnArgs = <String>[
+    if (!io.Directory(rbeConfigPath).existsSync()) '--no-rbe',
+    ...extraGnArgs,
+  ];
+
+  final BuildRunner buildRunner = BuildRunner(
+    platform: environment.platform,
+    processRunner: environment.processRunner,
+    abi: environment.abi,
+    engineSrcDir: environment.engine.srcDir,
+    build: build,
+    extraGnArgs: gnArgs,
+    runNinja: false,
+    runGenerators: false,
+    runTests: false,
+  );
+
+  final bool buildResult = await buildRunner.run((RunnerEvent event) {
+    switch (event) {
+      case RunnerResult(ok: false):
+        environment.logger.error(event);
+      default:
+    }
+  });
   return buildResult ? 0 : 1;
 }

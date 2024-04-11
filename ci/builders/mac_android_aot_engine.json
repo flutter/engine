@@ -18,21 +18,37 @@
                 "cpu=x86"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--target-dir",
                 "ci/android_profile",
                 "--runtime-mode",
                 "profile",
-                "--android"
+                "--android",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ci/android_profile",
+            "description": "Produces profile mode artifacts to target 32-bit arm Android from a macOS host.",
             "ninja": {
                 "config": "ci/android_profile",
                 "targets": [
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/android_profile",
+                    "--runtime-mode",
+                    "profile",
+                    "--android",
+                    "--no-rbe",
+                    "--no-goma"
                 ]
             },
             "properties": {
@@ -59,7 +75,8 @@
                 "cpu=x86"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--target-dir",
@@ -67,14 +84,30 @@
                 "--runtime-mode",
                 "profile",
                 "--android",
-                "--android-cpu=arm64"
+                "--android-cpu=arm64",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ci/android_profile_arm64",
+            "description": "Produces profile mode artifacts to target 64-bit arm Android from a macOS host.",
             "ninja": {
                 "config": "ci/android_profile_arm64",
                 "targets": [
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/android_profile_arm64",
+                    "--runtime-mode",
+                    "profile",
+                    "--android",
+                    "--android-cpu=arm64",
+                    "--no-rbe",
+                    "--no-goma"
                 ]
             },
             "properties": {
@@ -101,7 +134,8 @@
                 "cpu=x86"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--target-dir",
@@ -109,14 +143,30 @@
                 "--runtime-mode",
                 "profile",
                 "--android",
-                "--android-cpu=x64"
+                "--android-cpu=x64",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ci/android_profile_x64",
+            "description": "Produces profile mode artifacts to target x64 Android from a macOS host.",
             "ninja": {
                 "config": "ci/android_profile_x64",
                 "targets": [
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/android_profile_x64",
+                    "--runtime-mode",
+                    "profile",
+                    "--android",
+                    "--android-cpu=x64",
+                    "--no-rbe",
+                    "--no-goma"
                 ]
             },
             "properties": {
@@ -143,21 +193,37 @@
                 "cpu=x86"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--target-dir",
                 "ci/android_release",
                 "--runtime-mode",
                 "release",
-                "--android"
+                "--android",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ci/android_release",
+            "description": "Produces release mode artifacts to target 32-bit arm Android from a macOS host.",
             "ninja": {
                 "config": "ci/android_release",
                 "targets": [
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/android_release",
+                    "--runtime-mode",
+                    "release",
+                    "--android",
+                    "--no-rbe",
+                    "--no-goma"
                 ]
             },
             "properties": {
@@ -184,7 +250,8 @@
                 "cpu=x86"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--target-dir",
@@ -192,14 +259,30 @@
                 "--runtime-mode",
                 "release",
                 "--android",
-                "--android-cpu=arm64"
+                "--android-cpu=arm64",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ci/android_release_arm64",
+            "description": "Produces release mode artifacts to target 64-bit arm Android from a macOS host.",
             "ninja": {
                 "config": "ci/android_release_arm64",
                 "targets": [
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/android_release_arm64",
+                    "--runtime-mode",
+                    "release",
+                    "--android",
+                    "--android-cpu=arm64",
+                    "--no-rbe",
+                    "--no-goma"
                 ]
             },
             "properties": {
@@ -226,7 +309,8 @@
                 "cpu=x86"
             ],
             "gclient_variables": {
-                "download_android_deps": false
+                "download_android_deps": false,
+                "use_rbe": true
             },
             "gn": [
                 "--target-dir",
@@ -234,14 +318,30 @@
                 "--runtime-mode",
                 "release",
                 "--android",
-                "--android-cpu=x64"
+                "--android-cpu=x64",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks"
             ],
             "name": "ci/android_release_x64",
+            "description": "Produces release mode artifacts to target x64 Android from a macOS host.",
             "ninja": {
                 "config": "ci/android_release_x64",
                 "targets": [
                     "flutter/lib/snapshot",
                     "flutter/shell/platform/android:gen_snapshot"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/android_release_x64",
+                    "--runtime-mode",
+                    "release",
+                    "--android",
+                    "--android-cpu=x64",
+                    "--no-rbe",
+                    "--no-goma"
                 ]
             },
             "properties": {

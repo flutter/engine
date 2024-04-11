@@ -2514,7 +2514,11 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));
-  EXPECT_LT(transform.e[0][0], 0.f);
+  // Note that e[0][0] used to be tested here, but it was -epsilon solely
+  // due to floating point inaccuracy in the transcendental trig functions.
+  // e[1][0] is the intended negative value that we care about (-1.0) as it
+  // comes from the rotation of pi/2.
+  EXPECT_LT(transform.e[1][0], 0.0f);
   auto coverage = geometry->GetCoverage(transform);
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
 }
@@ -2791,11 +2795,7 @@ TEST_P(EntityTest, FillPathGeometryGetPositionBufferReturnsExpectedMode) {
                     .Close()
                     .TakePath();
     GeometryResult result = get_result(path);
-    if constexpr (ContentContext::kEnableStencilThenCover) {
-      EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
-    } else {
-      EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
-    }
+    EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
   }
 }
 

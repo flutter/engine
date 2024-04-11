@@ -7,6 +7,169 @@
         "device_type=none"
       ],
       "gclient_variables": {
+        "download_android_deps": false,
+        "use_rbe": true
+      },
+      "gn": [
+        "--ios",
+        "--runtime-mode",
+        "debug",
+        "--no-stripped",
+        "--no-lto",
+        "--xcode-symlinks",
+        "--rbe",
+        "--no-goma"
+      ],
+      "name": "macos/ios_debug",
+      "description": "Builds a debug mode engine that targets iOS from a macOS host.",
+      "ninja": {
+        "config": "ios_debug",
+        "targets": []
+      },
+      "properties": {
+        "$flutter/osx_sdk": {
+          "sdk_version": "15a240d"
+        }
+      }
+    },
+    {
+      "cas_archive": false,
+      "drone_dimensions": [
+        "os=Mac-13",
+        "device_type=none"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "use_rbe": true
+      },
+      "gn": [
+        "--ios",
+        "--runtime-mode",
+        "profile",
+        "--no-stripped",
+        "--no-lto",
+        "--xcode-symlinks",
+        "--rbe",
+        "--no-goma"
+      ],
+      "name": "macos/ios_profile",
+      "description": "Builds a profile mode engine that targets iOS from a macOS host.",
+      "ninja": {
+        "config": "ios_profile",
+        "targets": []
+      },
+      "properties": {
+        "$flutter/osx_sdk": {
+          "sdk_version": "15a240d"
+        }
+      }
+    },
+    {
+      "cas_archive": false,
+      "drone_dimensions": [
+        "os=Mac-13",
+        "device_type=none"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "use_rbe": true
+      },
+      "gn": [
+        "--ios",
+        "--runtime-mode",
+        "release",
+        "--no-stripped",
+        "--no-lto",
+        "--xcode-symlinks",
+        "--rbe",
+        "--no-goma"
+      ],
+      "name": "macos/ios_release",
+      "description": "Builds a release mode engine that targets iOS from a macOS host.",
+      "ninja": {
+        "config": "ios_release",
+        "targets": []
+      },
+      "properties": {
+        "$flutter/osx_sdk": {
+          "sdk_version": "15a240d"
+        }
+      }
+    },
+    {
+      "cas_archive": false,
+      "drone_dimensions": [
+        "os=Mac-13",
+        "device_type=none"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "use_rbe": true
+      },
+      "gn": [
+        "--ios",
+        "--simulator",
+        "--runtime-mode",
+        "debug",
+        "--no-stripped",
+        "--no-lto",
+        "--xcode-symlinks",
+        "--rbe",
+        "--no-goma"
+      ],
+      "name": "macos/ios_debug_sim",
+      "description": "Builds a debug mode engine that targets the x64 iOS simulator from a macOS host.",
+      "ninja": {
+        "config": "ios_debug_sim",
+        "targets": []
+      },
+      "properties": {
+        "$flutter/osx_sdk": {
+          "sdk_version": "15a240d"
+        }
+      }
+    },
+    {
+      "cas_archive": false,
+      "drone_dimensions": [
+        "os=Mac-13",
+        "device_type=none"
+      ],
+      "gclient_variables": {
+        "download_android_deps": false,
+        "use_rbe": true
+      },
+      "gn": [
+        "--ios",
+        "--simulator",
+        "--simulator-cpu=arm64",
+        "--runtime-mode",
+        "debug",
+        "--no-stripped",
+        "--no-lto",
+        "--xcode-symlinks",
+        "--rbe",
+        "--no-goma"
+      ],
+      "name": "macos/ios_debug_sim_arm64",
+      "description": "Builds a debug mode engine that targets the arm64 iOS simulator from a macOS host.",
+      "ninja": {
+        "config": "ios_debug_sim_arm64",
+        "targets": []
+      },
+      "properties": {
+        "$flutter/osx_sdk": {
+          "sdk_version": "15a240d"
+        }
+      }
+    },
+    {
+      "cas_archive": false,
+      "drone_dimensions": [
+        "os=Mac-13",
+        "device_type=none"
+      ],
+      "gclient_variables": {
         "use_rbe": true
       },
       "gn": [
@@ -21,6 +184,7 @@
         "--no-goma"
       ],
       "name": "macos/android_debug_arm64",
+      "description": "Builds a debug mode engine that targets 64-bit arm Android from a macOS host.",
       "ninja": {
         "config": "android_debug_arm64",
         "targets": []
@@ -51,6 +215,7 @@
         "--no-goma"
       ],
       "name": "linux/android_debug_arm64",
+      "description": "Builds a debug mode engine that targets 64-bit arm Android from a Linux host.",
       "ninja": {
         "config": "android_debug_arm64",
         "targets": []
@@ -76,6 +241,7 @@
         "--no-goma"
       ],
       "name": "windows/android_debug_arm64",
+      "description": "Builds a debug mode engine that targets 64-bit arm Android from a Windows host.",
       "ninja": {
         "config": "android_debug_arm64",
         "targets": []
@@ -103,6 +269,7 @@
         "--no-goma"
       ],
       "name": "macos/android_debug_unopt_arm64",
+      "description": "Builds a debug mode unopt engine that targets 64-bit arm Android from a macOS host.",
       "ninja": {
         "config": "android_debug_unopt_arm64",
         "targets": []
@@ -114,10 +281,14 @@
       }
     },
     {
+      "cas_archive": false,
       "drone_dimensions": [
         "os=Mac-13",
         "device_type=none"
       ],
+      "gclient_variables": {
+        "use_rbe": true
+      },
       "gn": [
         "--runtime-mode",
         "profile",
@@ -130,6 +301,7 @@
         "--no-goma"
       ],
       "name": "macos/android_profile_arm64",
+      "description": "Builds a profile mode engine that targets 64-bit arm Android from a macOS host.",
       "ninja": {
         "config": "android_profile_arm64",
         "targets": []
@@ -160,6 +332,7 @@
         "--no-goma"
       ],
       "name": "linux/android_profile_arm64",
+      "description": "Builds a profile mode engine that targets 64-bit arm Android from a Linux host.",
       "ninja": {
         "config": "android_profile_arm64",
         "targets": []
@@ -185,6 +358,7 @@
         "--no-goma"
       ],
       "name": "windows/android_profile_arm64",
+      "description": "Builds a profile mode engine that targets 64-bit arm Android from a Windows host.",
       "ninja": {
         "config": "android_profile_arm64",
         "targets": []
@@ -211,6 +385,7 @@
         "--no-goma"
       ],
       "name": "macos/android_release_arm64",
+      "description": "Builds a release mode engine that targets 64-bit arm Android from a macOS host.",
       "ninja": {
         "config": "android_release_arm64",
         "targets": []
@@ -241,6 +416,7 @@
         "--no-goma"
       ],
       "name": "linux/android_release_arm64",
+      "description": "Builds a release mode engine that targets 64-bit arm Android from a Linux host.",
       "ninja": {
         "config": "android_release_arm64",
         "targets": []
@@ -266,6 +442,7 @@
         "--no-goma"
       ],
       "name": "windows/android_release_arm64",
+      "description": "Builds a release mode engine that targets 64-bit arm Android from a Windows host.",
       "ninja": {
         "config": "android_release_arm64",
         "targets": []
@@ -291,6 +468,7 @@
         "--no-goma"
       ],
       "name": "macos/host_debug",
+      "description": "Builds a debug mode engine for a macOS host.",
       "ninja": {
         "config": "host_debug",
         "targets": []
@@ -320,6 +498,7 @@
         "--no-goma"
       ],
       "name": "linux/host_debug",
+      "description": "Builds a debug mode engine for a Linux host.",
       "ninja": {
         "config": "host_debug",
         "targets": []
@@ -344,6 +523,7 @@
         "--no-goma"
       ],
       "name": "windows/host_debug",
+      "description": "Builds a debug mode engine for a Windows host.",
       "ninja": {
         "config": "host_debug",
         "targets": []
@@ -369,6 +549,7 @@
         "--no-goma"
       ],
       "name": "macos/host_profile",
+      "description": "Builds a profile mode engine for a macOS host.",
       "ninja": {
         "config": "host_profile",
         "targets": []
@@ -398,6 +579,7 @@
         "--no-goma"
       ],
       "name": "linux/host_profile",
+      "description": "Builds a profile mode engine for a Linux host.",
       "ninja": {
         "config": "host_profile",
         "targets": []
@@ -422,6 +604,7 @@
         "--no-goma"
       ],
       "name": "windows/host_profile",
+      "description": "Builds a profile mode engine for a Windows host.",
       "ninja": {
         "config": "host_profile",
         "targets": []
@@ -447,6 +630,7 @@
         "--no-goma"
       ],
       "name": "macos/host_release",
+      "description": "Builds a release mode engine for a macOS host.",
       "ninja": {
         "config": "host_release",
         "targets": []
@@ -477,6 +661,7 @@
         "--xcode-symlinks"
       ],
       "name": "linux/host_release",
+      "description": "Builds a release mode engine for a Linux host.",
       "ninja": {
         "config": "host_release",
         "targets": []
@@ -502,6 +687,7 @@
         "--xcode-symlinks"
       ],
       "name": "windows/host_release",
+      "description": "Builds a release mode engine for a Windows host.",
       "ninja": {
         "config": "host_release",
         "targets": []
