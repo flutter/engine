@@ -96,6 +96,9 @@ enum class DisplayListCompare {
 // of data for "free" and works best when it packs well into an 8-byte
 // aligned size.
 struct DLOp {
+  static const uint32_t kDepthInc = 0;
+  static const uint32_t kRenderOpInc = 0;
+
   DisplayListOpType type : 8;
   uint32_t size : 24;
 
@@ -315,16 +318,20 @@ struct SetSharedImageFilterOp : DLOp {
 // The base struct for all save() and saveLayer() ops
 // 4 byte header + 8 byte payload packs into 16 bytes (4 bytes unused)
 struct SaveOpBase : DLOp {
+  static const uint32_t kDepthInc = 0;
+  static const uint32_t kRenderOpInc = 1;
+
   SaveOpBase() : options(), restore_index(0) {}
 
   explicit SaveOpBase(const SaveLayerOptions& options)
-      : options(options), restore_index(0) {}
+      : options(options), restore_index(0), max_content_depth(0) {}
 
   // options parameter is only used by saveLayer operations, but since
   // it packs neatly into the empty space created by laying out the 64-bit
   // offsets, it can be stored for free and defaulted to 0 for save operations.
   SaveLayerOptions options;
   int restore_index;
+  uint32_t max_content_depth;
 
   inline bool save_needed(DispatchContext& ctx) const {
     bool needed = ctx.next_render_index <= restore_index;
@@ -341,7 +348,7 @@ struct SaveOp final : SaveOpBase {
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
-      ctx.receiver.save();
+      ctx.receiver.save(max_content_depth);
     }
   }
 };
@@ -362,7 +369,7 @@ struct SaveLayerOp final : SaveLayerOpBase {
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
-      ctx.receiver.saveLayer(rect, options);
+      ctx.receiver.saveLayer(rect, options, max_content_depth);
     }
   }
 };
@@ -379,7 +386,7 @@ struct SaveLayerBackdropOp final : SaveLayerOpBase {
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
-      ctx.receiver.saveLayer(rect, options, backdrop.get());
+      ctx.receiver.saveLayer(rect, options, max_content_depth, backdrop.get());
     }
   }
 
@@ -393,6 +400,8 @@ struct SaveLayerBackdropOp final : SaveLayerOpBase {
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct RestoreOp final : DLOp {
   static const auto kType = DisplayListOpType::kRestore;
+  static const uint32_t kDepthInc = 0;
+  static const uint32_t kRenderOpInc = 1;
 
   RestoreOp() {}
 
@@ -407,6 +416,9 @@ struct RestoreOp final : DLOp {
 };
 
 struct TransformClipOpBase : DLOp {
+  static const uint32_t kDepthInc = 0;
+  static const uint32_t kRenderOpInc = 1;
+
   inline bool op_needed(const DispatchContext& context) const {
     return context.next_render_index <= context.next_restore_index;
   }
@@ -605,6 +617,9 @@ DEFINE_CLIP_PATH_OP(Difference)
 #undef DEFINE_CLIP_PATH_OP
 
 struct DrawOpBase : DLOp {
+  static const uint32_t kDepthInc = 1;
+  static const uint32_t kRenderOpInc = 1;
+
   inline bool op_needed(const DispatchContext& ctx) const {
     return ctx.cur_index >= ctx.next_render_index;
   }
@@ -1025,6 +1040,11 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
 // 4 byte header + ptr aligned payload uses 12 bytes round up to 16
 // (4 bytes unused)
 struct DrawDisplayListOp final : DrawOpBase {
+  // We don't want |Push| to increment depth_, we will do that manually
+  // in the |drawDisplayList| method based on the max depth of the sub-DL.
+  static const uint32_t kDepthInc = 0;
+  static const uint32_t kRenderOpInc = 1;
+
   static const auto kType = DisplayListOpType::kDrawDisplayList;
 
   explicit DrawDisplayListOp(const sk_sp<DisplayList>& display_list,

@@ -278,6 +278,8 @@ class DisplayList : public SkRefCnt {
     return op_count_ + (nested ? nested_op_count_ : 0);
   }
 
+  uint32_t max_depth() const { return max_depth_; }
+
   uint32_t unique_id() const { return unique_id_; }
 
   const SkRect& bounds() const { return bounds_; }
@@ -313,6 +315,7 @@ class DisplayList : public SkRefCnt {
               unsigned int op_count,
               size_t nested_byte_count,
               unsigned int nested_op_count,
+              uint32_t max_depth,
               const SkRect& bounds,
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
@@ -329,6 +332,8 @@ class DisplayList : public SkRefCnt {
 
   const size_t nested_byte_count_;
   const unsigned int nested_op_count_;
+
+  const uint32_t max_depth_;
 
   const uint32_t unique_id_;
   const SkRect bounds_;

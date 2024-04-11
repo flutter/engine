@@ -489,6 +489,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   size_t used_ = 0;
   size_t allocated_ = 0;
   int render_op_count_ = 0;
+  uint32_t depth_ = 0;
   int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
@@ -498,7 +499,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   bool is_ui_thread_safe_ = true;
 
   template <typename T, typename... Args>
-  void* Push(size_t extra, int op_inc, Args&&... args);
+  void* Push(size_t extra, Args&&... args);
 
   void intersect(const SkRect& rect);
 

@@ -118,6 +118,9 @@ class DlOpReceiver {
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
+  // Optional variant of save() that passes the maximum depth count of
+  // all rendering operations that occur until the next restore() call.
+  virtual void save(uint32_t max_content_depth) { save(); }
   // The |options| parameter can specify whether the existing rendering
   // attributes will be applied to the save layer surface while rendering
   // it back to the current surface. If the flag is false then this method
@@ -137,6 +140,14 @@ class DlOpReceiver {
   virtual void saveLayer(const SkRect& bounds,
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr) = 0;
+  // Optional variant of saveLayer() that passes the maximum depth count of
+  // all rendering operations that occur until the next restore() call.
+  virtual void saveLayer(const SkRect& bounds,
+                         const SaveLayerOptions& options,
+                         uint32_t max_content_depth,
+                         const DlImageFilter* backdrop = nullptr) {
+    saveLayer(bounds, options, backdrop);
+  }
   virtual void restore() = 0;
 
   // ---------------------------------------------------------------------
