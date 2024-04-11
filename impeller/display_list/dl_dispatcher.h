@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 #define FLUTTER_IMPELLER_DISPLAY_LIST_DL_DISPATCHER_H_
 
+#include "display_list/utils/dl_receiver_utils.h"
 #include "flutter/display_list/dl_op_receiver.h"
 #include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/experimental_canvas.h"
@@ -276,6 +277,95 @@ class ExperimentalDlDispatcher : public DlDispatcherBase {
   ExperimentalCanvas canvas_;
 
   Canvas& GetCanvas() override;
+};
+
+/// Performs a first pass over the display list to collect all text frames.
+class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
+                            public flutter::IgnoreClipDispatchHelper,
+                            public flutter::IgnoreDrawDispatchHelper {
+ public:
+  TextFrameDispatcher(const ContentContext& renderer,
+                      const Matrix& initial_matrix)
+      : renderer_(renderer), matrix_(initial_matrix) {
+    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
+  }
+
+  void save() override { stack_.emplace_back(matrix_); }
+
+  void saveLayer(const SkRect& bounds,
+                 const flutter::SaveLayerOptions options,
+                 const flutter::DlImageFilter* backdrop) override {
+    save();
+  }
+
+  void restore() override {
+    matrix_ = stack_.back();
+    stack_.pop_back();
+  }
+
+  void translate(SkScalar tx, SkScalar ty) override {
+    matrix_ = matrix_.Translate({tx, ty});
+  }
+
+  void scale(SkScalar sx, SkScalar sy) override {
+    matrix_ = matrix_.Scale({sx, sy, 1.0f});
+  }
+
+  void rotate(SkScalar degrees) override {
+    matrix_ = matrix_ * Matrix::MakeRotationZ(Degrees(degrees));
+  }
+
+  void skew(SkScalar sx, SkScalar sy) override {
+    matrix_ = matrix_ * Matrix::MakeSkew(sx, sy);
+  }
+
+  // clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) override {
+    matrix_ = matrix_ * Matrix::MakeColumn(
+        mxx,  myx,  0.0f, 0.0f,
+        mxy,  myy,  0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        mxt,  myt,  0.0f, 1.0f
+    );
+  }
+
+  // full 4x4 transform in row major order
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
+    matrix_ = matrix_ * Matrix::MakeColumn(
+        mxx, myx, mzx, mwx,
+        mxy, myy, mzy, mwy,
+        mxz, myz, mzz, mwz,
+        mxt, myt, mzt, mwt
+    );
+  }
+  // clang-format on
+
+  void transformReset() override { matrix_ = Matrix(); }
+
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override {
+    renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,
+                                                matrix_.GetMaxBasisLengthXY());
+  }
+
+  void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
+                       SkScalar opacity) override {
+    save();
+    display_list->Dispatch(*this);
+    restore();
+  }
+
+ private:
+  const ContentContext& renderer_;
+  Matrix matrix_;
+  std::vector<Matrix> stack_;
 };
 
 }  // namespace impeller

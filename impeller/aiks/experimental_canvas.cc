@@ -6,6 +6,7 @@
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/paint_pass_delegate.h"
+#include "impeller/entity/contents/text_contents.h"
 
 namespace impeller {
 
@@ -202,6 +203,35 @@ bool ExperimentalCanvas::Restore() {
   transform_stack_.pop_back();
 
   return true;
+}
+
+void ExperimentalCanvas::DrawTextFrame(
+    const std::shared_ptr<TextFrame>& text_frame,
+    Point position,
+    const Paint& paint) {
+  Entity entity;
+  entity.SetClipDepth(GetClipDepth());
+  entity.SetBlendMode(paint.blend_mode);
+
+  auto text_contents = std::make_shared<TextContents>();
+  text_contents->SetTextFrame(text_frame);
+  text_contents->SetColor(paint.color);
+  text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
+  text_contents->SetScale(GetCurrentTransform().GetMaxBasisLengthXY());
+
+  entity.SetTransform(GetCurrentTransform() *
+                      Matrix::MakeTranslation(position));
+
+  // TODO(bdero): This mask blur application is a hack. It will always wind up
+  //              doing a gaussian blur that affects the color source itself
+  //              instead of just the mask. The color filter text support
+  //              needs to be reworked in order to interact correctly with
+  //              mask filters.
+  //              https://github.com/flutter/flutter/issues/133297
+  entity.SetContents(
+      paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
+
+  AddEntityToCurrentPass(std::move(entity));
 }
 
 void ExperimentalCanvas::AddEntityToCurrentPass(Entity entity) {

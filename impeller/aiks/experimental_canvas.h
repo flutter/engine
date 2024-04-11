@@ -54,7 +54,7 @@ class ExperimentalCanvas : public Canvas {
 
   void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                      Point position,
-                     const Paint& paint) override {}
+                     const Paint& paint) override;
 
   struct SaveLayerState {
     Paint paint;

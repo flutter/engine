@@ -91,6 +91,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
                                   impeller::RenderTarget& render_target)
                                   -> bool {
 #if ENABLE_EXPERIMENTAL_CANVAS
+              impeller::TextFrameDispatcher collector(
+                  aiks_context->GetContentContext(), impeller::Matrix());
+              display_list->Dispatch(
+                  collector,
+                  SkIRect::MakeWH(cull_rect.width, cull_rect.height));
               impeller::ExperimentalDlDispatcher impeller_dispatcher(
                   aiks_context->GetContentContext(), render_target,
                   impeller::IRect::RoundOut(
