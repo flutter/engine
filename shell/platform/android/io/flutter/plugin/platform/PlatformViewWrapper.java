@@ -63,11 +63,13 @@ public class PlatformViewWrapper extends FrameLayout {
     this.renderTarget = renderTarget;
 
     Surface surface = renderTarget.getSurface();
-    final Canvas canvas = surface.lockHardwareCanvas();
-    try {
-      canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
-    } finally {
-      surface.unlockCanvasAndPost(canvas);
+    if (surface != null) {
+      final Canvas canvas = surface.lockHardwareCanvas();
+      try {
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      } finally {
+        surface.unlockCanvasAndPost(canvas);
+      }
     }
   }
 
