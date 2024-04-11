@@ -262,6 +262,7 @@ API_AVAILABLE(ios(13.4))
   ]
                     timeout:1.0
                enforceOrder:YES];
+  OCMVerifyAll(mockPrimaryResponder);
 }
 
 @end
