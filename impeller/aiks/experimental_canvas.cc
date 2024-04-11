@@ -5,6 +5,7 @@
 #include "impeller/aiks/experimental_canvas.h"
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
+#include "impeller/aiks/paint_pass_delegate.h"
 
 namespace impeller {
 
@@ -150,8 +151,7 @@ void ExperimentalCanvas::SaveLayer(
                                        subpass_coverage.GetSize().height),
                          1u, Color::BlackTransparent());
   entity_pass_targets_.push_back(std::move(target));
-  save_layer_state_.push_back(
-      SaveLayerState{paint.blend_mode, paint.color.alpha, subpass_coverage});
+  save_layer_state_.push_back(SaveLayerState{paint, subpass_coverage});
 
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
@@ -181,14 +181,10 @@ bool ExperimentalCanvas::Restore() {
     SaveLayerState save_layer_state = save_layer_state_.back();
     save_layer_state_.pop_back();
 
-    auto contents = TextureContents::MakeRect(Rect::MakeSize(
-        inline_pass->GetPassTarget().GetRenderTarget().GetRenderTargetSize()));
-    contents->SetTexture(inline_pass->GetTexture());
-    contents->SetLabel("Subpass");
-    contents->SetSourceRect(Rect::MakeSize(
-        inline_pass->GetPassTarget().GetRenderTarget().GetRenderTargetSize()));
-    contents->SetOpacity(save_layer_state.opacity);
-    contents->SetDeferApplyingOpacity(false);
+    std::shared_ptr<Contents> contents =
+        PaintPassDelegate(save_layer_state.paint)
+            .CreateContentsForSubpassTarget(inline_pass->GetTexture(),
+                                            transform_stack_.back().transform);
 
     inline_pass->EndPass();
     render_passes_.pop_back();
@@ -197,7 +193,7 @@ bool ExperimentalCanvas::Restore() {
     Entity element_entity;
     element_entity.SetClipDepth(GetClipDepth());
     element_entity.SetContents(std::move(contents));
-    element_entity.SetBlendMode(save_layer_state.blend_mode);
+    element_entity.SetBlendMode(save_layer_state.paint.blend_mode);
     element_entity.SetTransform(Matrix::MakeTranslation(
         Vector3(save_layer_state.coverage.GetOrigin())));
     element_entity.Render(renderer_, *render_passes_.back());

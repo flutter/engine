@@ -57,8 +57,7 @@ class ExperimentalCanvas : public Canvas {
                      const Paint& paint) override {}
 
   struct SaveLayerState {
-    BlendMode blend_mode;
-    Scalar opacity;
+    Paint paint;
     Rect coverage;
   };
 
