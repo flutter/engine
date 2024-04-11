@@ -433,7 +433,8 @@
                     "flutter/tools/font_subset",
                     "flutter/build/archives:artifacts",
                     "flutter/impeller/golden_tests:impeller_golden_tests",
-                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
+                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
+                    "flutter:unittests"
                 ]
             },
            "postsubmit_overrides": {
