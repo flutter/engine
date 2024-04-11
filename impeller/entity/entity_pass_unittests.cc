@@ -2,8 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_clip_stack.h"
 
@@ -111,7 +114,9 @@ TEST(EntityPassClipStackTest, AppendAndRestoreClipCoverage) {
   EXPECT_EQ(recorder.GetReplayEntities().size(), 1u);
 
   // Restore the clip.
-  entity.SetClipDepth(0);
+  auto restore_clip = std::make_shared<ClipRestoreContents>();
+  restore_clip->SetRestoreHeight(0);
+  entity.SetContents(std::move(restore_clip));
   recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kRestore,
@@ -134,7 +139,9 @@ TEST(EntityPassClipStackTest, UnbalancedRestore) {
 
   // Restore the clip.
   Entity entity;
-  entity.SetClipDepth(0);
+  auto restore_clip = std::make_shared<ClipRestoreContents>();
+  restore_clip->SetRestoreHeight(0);
+  entity.SetContents(std::move(restore_clip));
   EntityPassClipStack::ClipStateResult result = recorder.ApplyClipState(
       Contents::ClipCoverage{
           .type = Contents::ClipCoverage::Type::kRestore,

@@ -30,12 +30,12 @@ bool EntityPassClipStack::HasCoverage() const {
 }
 
 void EntityPassClipStack::PushSubpass(std::optional<Rect> subpass_coverage,
-                                      size_t clip_depth) {
+                                      size_t clip_height) {
   subpass_state_.push_back(SubpassState{
       .clip_coverage =
           {
               ClipCoverageLayer{.coverage = subpass_coverage,
-                                .clip_height = clip_depth},
+                                .clip_height = clip_height},
           },
   });
 }
@@ -52,7 +52,7 @@ EntityPassClipStack::GetClipCoverageLayers() const {
 EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
     Contents::ClipCoverage global_clip_coverage,
     Entity& entity,
-    size_t clip_depth_floor,
+    size_t clip_height_floor,
     Point global_pass_position) {
   ClipStateResult result = {.should_render = false, .clip_did_change = false};
 
@@ -69,8 +69,8 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
         previous_clip_height = subpass_state.clip_coverage.back().clip_height;
       } else {
         // If there is no clip coverage, then the previous clip height is the
-        // clip depth floor.
-        previous_clip_height = clip_depth_floor;
+        // clip height floor.
+        previous_clip_height = clip_height_floor;
       }
 
       subpass_state.clip_coverage.push_back(
@@ -89,9 +89,9 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
       }
     } break;
     case Contents::ClipCoverage::Type::kRestore: {
-      ClipRestoreContents& restore_contents =
-          reinterpret_cast<ClipRestoreContents&>(*entity.GetContents());
-      size_t restore_height = restore_contents.GetRestoreHeight();
+      ClipRestoreContents* restore_contents =
+          reinterpret_cast<ClipRestoreContents*>(entity.GetContents().get());
+      size_t restore_height = restore_contents->GetRestoreHeight();
 
       if (subpass_state.clip_coverage.back().clip_height <= restore_height) {
         // Drop clip restores that will do nothing.

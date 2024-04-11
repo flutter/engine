@@ -718,8 +718,9 @@ void Canvas::RestoreClip() {
   entity.SetTransform(GetCurrentTransform());
   // This path is empty because ClipRestoreContents just generates a quad that
   // takes up the full render target.
-  entity.SetContents(std::make_shared<ClipRestoreContents>());
-  entity.SetClipDepth(GetClipHeight());
+  auto clip_restore = std::make_shared<ClipRestoreContents>();
+  clip_restore->SetRestoreHeight(GetClipHeight());
+  entity.SetContents(std::move(clip_restore));
 
   AddEntityToCurrentPass(std::move(entity));
 }
