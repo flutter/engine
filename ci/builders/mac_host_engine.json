@@ -422,7 +422,8 @@
                 "--prebuilt-dart-sdk",
                 "--rbe",
                 "--no-goma",
-                "--xcode-symlinks"
+                "--xcode-symlinks",
+                "--use-glfw-swiftshader"
             ],
             "name": "ci/mac_release_arm64",
             "description": "Produces release mode arm64 macOS host-side tooling.",
