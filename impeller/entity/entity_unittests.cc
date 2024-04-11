@@ -2200,7 +2200,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   bool expect_dirty = true;
-  Pipeline<PipelineDescriptor>* first_pipeline = nullptr;
+  Pipeline<PipelineDescriptor>* first_pipeline;
   auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
     EXPECT_EQ(runtime_stage->IsDirty(), expect_dirty);
 
@@ -2238,7 +2238,10 @@ TEST_P(EntityTest, RuntimeEffect) {
   // Simulate some renders and hot reloading of the shader.
   auto content_context = GetContentContext();
   {
-    RenderTarget target;
+    RenderTarget target =
+        content_context->GetRenderTargetCache()->CreateOffscreen(
+            *content_context->GetContext(), {1, 1}, 1u);
+
     testing::MockRenderPass mock_pass(GetContext(), target);
     callback(*content_context, mock_pass);
     callback(*content_context, mock_pass);
@@ -2252,10 +2255,7 @@ TEST_P(EntityTest, RuntimeEffect) {
     expect_dirty = true;
 
     callback(*content_context, mock_pass);
-    callback(*content_context, mock_pass);
   }
-
-  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
@@ -2319,7 +2319,6 @@ TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
 
   auto contents = std::make_shared<RuntimeEffectContents>();
   contents->SetGeometry(Geometry::MakeCover());
-
   contents->SetRuntimeStage(runtime_stage);
 
   struct FragUniforms {
@@ -2338,7 +2337,9 @@ TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
   entity.SetContents(contents);
 
   auto context = GetContentContext();
-  RenderTarget target;
+  RenderTarget target = context->GetRenderTargetCache()->CreateOffscreen(
+      *context->GetContext(), {1, 1}, 1u);
+
   testing::MockRenderPass pass(GetContext(), target);
   ASSERT_TRUE(contents->Render(*context, entity, pass));
   ASSERT_EQ(pass.GetCommands().size(), 1u);
@@ -2513,7 +2514,11 @@ TEST_P(EntityTest, CoverageForStrokePathWithNegativeValuesInTransform) {
 
   auto transform = Matrix::MakeTranslation({300, 300}) *
                    Matrix::MakeRotationZ(Radians(kPiOver2));
-  EXPECT_LT(transform.e[0][0], 0.f);
+  // Note that e[0][0] used to be tested here, but it was -epsilon solely
+  // due to floating point inaccuracy in the transcendental trig functions.
+  // e[1][0] is the intended negative value that we care about (-1.0) as it
+  // comes from the rotation of pi/2.
+  EXPECT_LT(transform.e[1][0], 0.0f);
   auto coverage = geometry->GetCoverage(transform);
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeXYWH(102.5, 342.5, 85, 155));
 }
@@ -2790,12 +2795,67 @@ TEST_P(EntityTest, FillPathGeometryGetPositionBufferReturnsExpectedMode) {
                     .Close()
                     .TakePath();
     GeometryResult result = get_result(path);
-    if constexpr (ContentContext::kEnableStencilThenCover) {
-      EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
-    } else {
-      EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
-    }
+    EXPECT_EQ(result.mode, GeometryResult::Mode::kNonZero);
   }
+}
+
+TEST_P(EntityTest, FailOnValidationError) {
+  if (GetParam() != PlaygroundBackend::kVulkan) {
+    GTEST_SKIP() << "Validation is only fatal on Vulkan backend.";
+  }
+  EXPECT_DEATH(
+      // The easiest way to trigger a validation error is to try to compile
+      // a shader with an unsupported pixel format.
+      GetContentContext()->GetBlendColorBurnPipeline({
+          .color_attachment_pixel_format = PixelFormat::kUnknown,
+          .has_depth_stencil_attachments = false,
+      }),
+      "");
+}
+
+TEST_P(EntityTest, CanComputeGeometryForEmptyPathsWithoutCrashing) {
+  PathBuilder builder = {};
+  builder.AddRect(Rect::MakeLTRB(0, 0, 0, 0));
+  Path path = builder.TakePath();
+
+  EXPECT_TRUE(path.GetBoundingBox()->IsEmpty());
+
+  auto geom = Geometry::MakeFillPath(path);
+
+  Entity entity;
+  RenderTarget target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreen(
+          *GetContext(), {1, 1}, 1u);
+  testing::MockRenderPass render_pass(GetContext(), target);
+  auto position_result =
+      geom->GetPositionBuffer(*GetContentContext(), entity, render_pass);
+
+  auto uv_result =
+      geom->GetPositionUVBuffer(Rect::MakeLTRB(0, 0, 100, 100), Matrix(),
+                                *GetContentContext(), entity, render_pass);
+
+  EXPECT_EQ(position_result.vertex_buffer.vertex_count, 0u);
+  EXPECT_EQ(uv_result.vertex_buffer.vertex_count, 0u);
+
+  EXPECT_EQ(geom->GetResultMode(), GeometryResult::Mode::kNormal);
+}
+
+TEST_P(EntityTest, CanRenderEmptyPathsWithoutCrashing) {
+  PathBuilder builder = {};
+  builder.AddRect(Rect::MakeLTRB(0, 0, 0, 0));
+  Path path = builder.TakePath();
+
+  EXPECT_TRUE(path.GetBoundingBox()->IsEmpty());
+
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeFillPath(path));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransform(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(std::move(entity)));
 }
 
 }  // namespace testing

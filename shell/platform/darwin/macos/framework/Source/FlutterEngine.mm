@@ -86,7 +86,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
 /**
  * Private interface declaration for FlutterEngine.
  */
-@interface FlutterEngine () <FlutterBinaryMessenger>
+@interface FlutterEngine () <FlutterBinaryMessenger, FlutterMouseCursorPluginDelegate>
 
 /**
  * A mutable array that holds one bool value that determines if responses to platform messages are
@@ -466,6 +466,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Map from ViewId to vsync waiter. Note that this is modified on main thread
   // but accessed on UI thread, so access must be @synchronized.
   NSMapTable<NSNumber*, FlutterVSyncWaiter*>* _vsyncWaiters;
+
+  // Weak reference to last view that received a pointer event. This is used to
+  // pair cursor change with a view.
+  __weak FlutterView* _lastViewWithPointerEvent;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
@@ -847,15 +851,9 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
                                                   void* user_data                            //
                                                ) { return true; };
 
-  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           void* user_data               //
-                                        ) {
-    // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the implicit view. To support multi-view, we need a new
-    // callback that also receives a view ID.
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterImplicitViewId,
-                                                                             layers, layers_count);
+  _compositor.present_view_callback = [](const FlutterPresentViewInfo* info) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(info->user_data)
+        ->Present(info->view_id, info->layers, info->layers_count);
   };
 
   _compositor.avoid_backing_store_cache = true;
@@ -987,6 +985,7 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
+  _lastViewWithPointerEvent = [self viewControllerForId:kFlutterImplicitViewId].flutterView;
 }
 
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
@@ -1173,7 +1172,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 - (void)addInternalPlugins {
   __weak FlutterEngine* weakSelf = self;
-  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]
+                                         delegate:self];
   [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
   _settingsChannel =
       [FlutterBasicMessageChannel messageChannelWithName:kFlutterSettingsChannel
@@ -1186,6 +1186,13 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
+}
+
+- (void)didUpdateMouseCursor:(NSCursor*)cursor {
+  // Mouse cursor plugin does not specify which view is responsible for changing the cursor,
+  // so the reasonable assumption here is that cursor change is a result of a mouse movement
+  // and thus the cursor will be paired with last Flutter view that reveived mouse event.
+  [_lastViewWithPointerEvent didUpdateMouseCursor:cursor];
 }
 
 - (void)applicationWillTerminate:(NSNotification*)notification {

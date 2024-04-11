@@ -17,14 +17,15 @@
                 "--no-lto",
                 "--force-mac-arm64",
                 "--target-dir",
-                "host_debug_clang_tidy",
+                "ci/host_debug_clang_tidy",
                 "--rbe",
                 "--no-goma",
                 "--xcode-symlinks"
             ],
-            "name": "host_debug_clang_tidy",
+            "name": "ci/host_debug_clang_tidy",
+            "description": "A debug mode macOS host build used only as the basis for a clang-tidy run.",
             "ninja": {
-                "config": "host_debug_clang_tidy"
+                "config": "ci/host_debug_clang_tidy"
             }
         },
         {
@@ -45,14 +46,15 @@
                 "--no-lto",
                 "--force-mac-arm64",
                 "--target-dir",
-                "ios_debug_sim_clang_tidy",
+                "ci/ios_debug_sim_clang_tidy",
                 "--rbe",
                 "--no-goma",
                 "--xcode-symlinks"
             ],
-            "name": "ios_debug_sim_clang_tidy",
+            "name": "ci/ios_debug_sim_clang_tidy",
+            "description": "A debug mode iOS simulator build used only as the basis for a clang-tidy run.",
             "ninja": {
-                "config": "ios_debug_sim_clang_tidy"
+                "config": "ci/ios_debug_sim_clang_tidy"
             }
         }
     ],
@@ -70,7 +72,7 @@
                 "use_rbe": true
             },
             "dependencies": [
-                "host_debug_clang_tidy"
+                "ci/host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -87,7 +89,7 @@
                         "--no-lto",
                         "--force-mac-arm64",
                         "--target-dir",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--rbe",
                         "--no-goma",
                         "--xcode-symlinks"
@@ -97,10 +99,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -120,7 +122,7 @@
                 "use_rbe": true
             },
             "dependencies": [
-                "host_debug_clang_tidy"
+                "ci/host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -137,7 +139,7 @@
                         "--no-lto",
                         "--force-mac-arm64",
                         "--target-dir",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--rbe",
                         "--no-goma",
                         "--xcode-symlinks"
@@ -147,10 +149,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=1",
-                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -170,7 +172,7 @@
                 "use_rbe": true
             },
             "dependencies": [
-                "host_debug_clang_tidy"
+                "ci/host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -187,7 +189,7 @@
                         "--no-lto",
                         "--force-mac-arm64",
                         "--target-dir",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--rbe",
                         "--no-goma",
                         "--xcode-symlinks"
@@ -197,10 +199,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=2",
-                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -220,7 +222,7 @@
                 "use_rbe": true
             },
             "dependencies": [
-                "host_debug_clang_tidy"
+                "ci/host_debug_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -237,7 +239,7 @@
                         "--no-lto",
                         "--force-mac-arm64",
                         "--target-dir",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--rbe",
                         "--no-goma",
                         "--xcode-symlinks"
@@ -247,10 +249,10 @@
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=3",
-                        "--shard-variants=host_debug_clang_tidy,host_debug_clang_tidy,host_debug_clang_tidy"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
@@ -270,8 +272,8 @@
                 "use_rbe": true
             },
             "dependencies": [
-                "host_debug_clang_tidy",
-                "ios_debug_sim_clang_tidy"
+                "ci/host_debug_clang_tidy",
+                "ci/ios_debug_sim_clang_tidy"
             ],
             "contexts": [
                 "osx_sdk"
@@ -288,7 +290,7 @@
                         "--no-lto",
                         "--force-mac-arm64",
                         "--target-dir",
-                        "host_debug_clang_tidy",
+                        "ci/host_debug_clang_tidy",
                         "--rbe",
                         "--no-goma",
                         "--xcode-symlinks"
@@ -306,7 +308,7 @@
                         "--no-lto",
                         "--force-mac-arm64",
                         "--target-dir",
-                        "ios_debug_sim_clang_tidy",
+                        "ci/ios_debug_sim_clang_tidy",
                         "--rbe",
                         "--no-goma",
                         "--xcode-symlinks"
@@ -316,10 +318,10 @@
                     "name": "test: lint ios_debug_sim",
                     "parameters": [
                         "--variant",
-                        "ios_debug_sim_clang_tidy",
+                        "ci/ios_debug_sim_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug_clang_tidy"
+                        "--shard-variants=ci/host_debug_clang_tidy"
                     ],
                     "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"

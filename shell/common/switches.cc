@@ -65,6 +65,7 @@ static const std::string kAllowedDartFlags[] = {
     "--null_assertions",
     "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
+    "--enable-asserts",
 };
 // clang-format on
 
@@ -541,6 +542,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                       << "' (expected 0, 1, 2, 4, 8, or 16).";
     }
   }
+
+  settings.enable_platform_isolates =
+      command_line.HasOption(FlagForSwitch(Switch::EnablePlatformIsolates));
 
   return settings;
 }

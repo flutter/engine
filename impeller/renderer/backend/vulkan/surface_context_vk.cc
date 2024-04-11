@@ -64,7 +64,7 @@ void SurfaceContextVK::Shutdown() {
 
 bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface,
                                         const ISize& size) {
-  auto swapchain = KHRSwapchainVK::Create(parent_, std::move(surface), size);
+  auto swapchain = SwapchainVK::Create(parent_, std::move(surface), size);
   if (!swapchain) {
     VALIDATION_LOG << "Could not create swapchain.";
     return false;
@@ -125,6 +125,10 @@ const vk::Device& SurfaceContextVK::GetDevice() const {
 
 void SurfaceContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
   parent_->InitializeCommonlyUsedShadersIfNeeded();
+}
+
+const ContextVK& SurfaceContextVK::GetParent() const {
+  return *parent_;
 }
 
 }  // namespace impeller
