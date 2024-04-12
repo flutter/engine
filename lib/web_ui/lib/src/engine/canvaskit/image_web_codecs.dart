@@ -134,6 +134,7 @@ void _bgrToStraightRgba(ByteBuffer pixels, bool isBgrx) {
 }
 
 /// Based on Chromium's SetRGBAPremultiply.
+@pragma('dart2js:tryInline')
 int _premultiply(int value, int alpha) {
   if (alpha == 255) {
     return value;
