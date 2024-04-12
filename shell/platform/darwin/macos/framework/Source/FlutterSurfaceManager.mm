@@ -291,9 +291,9 @@ static const double kIdleDelay = 1.0;
 
     FlutterSurface* res;
 
-    // Returns youngest surface that is not in use. Inside [returnSurfaces:]
-    // surfaces over certain age are purged, returning youngest surface ensures
-    // that the cache doesn't keep more surfaces than it needs to.
+    // Returns youngest surface that is not in use. Returning youngest surface ensures
+    // that the cache doesn't keep more surfaces than it needs to, as the unused surfaces
+    // kept in cache will have their age kept increasing until purged (inside [returnSurfaces:]).
     for (FlutterSurface* surface in _surfaces) {
       if (!surface.isInUse && (res == nil || res.age > surface.age)) {
         res = surface;
