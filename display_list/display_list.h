@@ -274,7 +274,7 @@ class DisplayList : public SkRefCnt {
            (nested ? nested_byte_count_ : 0);
   }
 
-  unsigned int op_count(bool nested = false) const {
+  uint32_t op_count(bool nested = false) const {
     return op_count_ + (nested ? nested_op_count_ : 0);
   }
 
@@ -312,9 +312,9 @@ class DisplayList : public SkRefCnt {
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
-              unsigned int op_count,
+              uint32_t op_count,
               size_t nested_byte_count,
-              unsigned int nested_op_count,
+              uint32_t nested_op_count,
               uint32_t max_depth,
               const SkRect& bounds,
               bool can_apply_group_opacity,
@@ -328,10 +328,10 @@ class DisplayList : public SkRefCnt {
 
   const DisplayListStorage storage_;
   const size_t byte_count_;
-  const unsigned int op_count_;
+  const uint32_t op_count_;
 
   const size_t nested_byte_count_;
-  const unsigned int nested_op_count_;
+  const uint32_t nested_op_count_;
 
   const uint32_t max_depth_;
 

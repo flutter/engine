@@ -28,9 +28,9 @@ DisplayList::DisplayList()
 
 DisplayList::DisplayList(DisplayListStorage&& storage,
                          size_t byte_count,
-                         unsigned int op_count,
+                         uint32_t op_count,
                          size_t nested_byte_count,
-                         unsigned int nested_op_count,
+                         uint32_t nested_op_count,
                          uint32_t max_depth,
                          const SkRect& bounds,
                          bool can_apply_group_opacity,

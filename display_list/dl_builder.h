@@ -488,13 +488,13 @@ class DisplayListBuilder final : public virtual DlCanvas,
   DisplayListStorage storage_;
   size_t used_ = 0;
   size_t allocated_ = 0;
-  int render_op_count_ = 0;
+  uint32_t render_op_count_ = 0;
   uint32_t depth_ = 0;
   int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
-  int nested_op_count_ = 0;
+  uint32_t nested_op_count_ = 0;
 
   bool is_ui_thread_safe_ = true;
 

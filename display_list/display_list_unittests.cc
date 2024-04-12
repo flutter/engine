@@ -65,8 +65,9 @@ class DisplayListTestBase : public BaseT {
     DisplayListBuilder builder;
     DlOpReceiver& receiver =
         DisplayListTestBase<::testing::Test>::ToReceiver(builder);
-    unsigned int op_count = 0;
+    uint32_t op_count = 0;
     size_t byte_count = 0;
+    uint32_t depth = 0;
     for (size_t i = 0; i < allGroups.size(); i++) {
       DisplayListInvocationGroup& group = allGroups[i];
       size_t j = (i == g_index ? v_index : 0);
@@ -76,6 +77,7 @@ class DisplayListTestBase : public BaseT {
       DisplayListInvocation& invocation = group.variants[j];
       op_count += invocation.op_count();
       byte_count += invocation.raw_byte_count();
+      depth += invocation.depth();
       invocation.invoker(receiver);
     }
     sk_sp<DisplayList> dl = builder.Build();
@@ -92,6 +94,7 @@ class DisplayListTestBase : public BaseT {
     }
     EXPECT_EQ(dl->op_count(false), op_count) << name;
     EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
+    EXPECT_EQ(dl->max_depth(), depth) << name;
     return dl;
   }
 
@@ -231,6 +234,7 @@ TEST_F(DisplayListTest, EmptyBuild) {
   auto dl = builder.Build();
   EXPECT_EQ(dl->op_count(), 0u);
   EXPECT_EQ(dl->bytes(), sizeof(DisplayList));
+  EXPECT_EQ(dl->max_depth(), 0u);
 }
 
 TEST_F(DisplayListTest, EmptyRebuild) {
@@ -526,6 +530,7 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
   auto display_list = builder.Build();
 
   ASSERT_EQ(display_list->op_count(), 6u);
+  EXPECT_EQ(display_list->max_depth(), 1u);
 
   SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.intersect(clip_rect));
@@ -558,6 +563,7 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
   auto display_list = builder.Build();
 
   ASSERT_EQ(display_list->op_count(), 6u);
+  EXPECT_EQ(display_list->max_depth(), 1u);
 
   SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.intersect(clip_rect));
@@ -573,6 +579,7 @@ TEST_F(DisplayListTest, SingleOpSizes) {
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
       ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
       ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
+      EXPECT_EQ(dl->max_depth(), invocation.depth()) << desc;
     }
   }
 }
@@ -611,6 +618,7 @@ TEST_F(DisplayListTest, SingleOpDisplayListsRecapturedAreEqual) {
       ASSERT_EQ(copy->bytes(false), dl->bytes(false)) << desc;
       ASSERT_EQ(copy->op_count(true), dl->op_count(true)) << desc;
       ASSERT_EQ(copy->bytes(true), dl->bytes(true)) << desc;
+      EXPECT_EQ(copy->max_depth(), dl->max_depth()) << desc;
       ASSERT_EQ(copy->bounds(), dl->bounds()) << desc;
       ASSERT_TRUE(copy->Equals(*dl)) << desc;
       ASSERT_TRUE(dl->Equals(*copy)) << desc;
@@ -640,6 +648,7 @@ TEST_F(DisplayListTest, SingleOpDisplayListsCompareToEachOther) {
           ASSERT_EQ(listA->bytes(false), listB->bytes(false)) << desc;
           ASSERT_EQ(listA->op_count(true), listB->op_count(true)) << desc;
           ASSERT_EQ(listA->bytes(true), listB->bytes(true)) << desc;
+          EXPECT_EQ(listA->max_depth(), listB->max_depth()) << desc;
           ASSERT_EQ(listA->bounds(), listB->bounds()) << desc;
           ASSERT_TRUE(listA->Equals(*listB)) << desc;
           ASSERT_TRUE(listB->Equals(*listA)) << desc;
@@ -669,7 +678,9 @@ TEST_F(DisplayListTest, SingleOpDisplayListsAreEqualWithOrWithoutRtree) {
       ASSERT_EQ(dl1->bytes(false), dl2->bytes(false)) << desc;
       ASSERT_EQ(dl1->op_count(true), dl2->op_count(true)) << desc;
       ASSERT_EQ(dl1->bytes(true), dl2->bytes(true)) << desc;
+      EXPECT_EQ(dl1->max_depth(), dl2->max_depth()) << desc;
       ASSERT_EQ(dl1->bounds(), dl2->bounds()) << desc;
+      ASSERT_EQ(dl1->max_depth(), dl2->max_depth()) << desc;
       ASSERT_TRUE(DisplayListsEQ_Verbose(dl1, dl2)) << desc;
       ASSERT_TRUE(DisplayListsEQ_Verbose(dl2, dl2)) << desc;
       ASSERT_EQ(dl1->rtree().get(), nullptr) << desc;
@@ -691,6 +702,7 @@ TEST_F(DisplayListTest, FullRotationsAreNop) {
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
   ASSERT_EQ(dl->op_count(false), 0u);
   ASSERT_EQ(dl->op_count(true), 0u);
+  EXPECT_EQ(dl->max_depth(), 0u);
 }
 
 TEST_F(DisplayListTest, AllBlendModeNops) {
@@ -702,6 +714,7 @@ TEST_F(DisplayListTest, AllBlendModeNops) {
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
   ASSERT_EQ(dl->op_count(false), 0u);
   ASSERT_EQ(dl->op_count(true), 0u);
+  EXPECT_EQ(dl->max_depth(), 0u);
 }
 
 TEST_F(DisplayListTest, DisplayListsWithVaryingOpComparisons) {
@@ -940,6 +953,7 @@ TEST_F(DisplayListTest, NestedOpCountMetricsSameAsSkPicture) {
   auto display_list = outer_builder.Build();
   ASSERT_EQ(display_list->op_count(), 1u);
   ASSERT_EQ(display_list->op_count(true), 36u);
+  EXPECT_EQ(display_list->max_depth(), 36u);
 
   ASSERT_EQ(picture->approximateOpCount(),
             static_cast<int>(display_list->op_count()));
@@ -1556,6 +1570,7 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
   EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 400u);
+  EXPECT_EQ(display_list->max_depth(), 2u);
 }
 
 TEST_F(DisplayListTest, TranslateAffectsCurrentTransform) {
@@ -3098,6 +3113,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
             FML_LOG(ERROR) << *list;
           }
           ASSERT_EQ(list->op_count(), expected_op_count) << name;
+          EXPECT_EQ(list->max_depth(), 0u) << name;
           ASSERT_TRUE(list->bounds().isEmpty()) << name;
         };
     run_one_test(
