@@ -10,8 +10,8 @@
 #include <tuple>
 #include <vector>
 
-#include "impeller/core/host_buffer.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/vertex_writer.h"
 
 namespace impeller {
 
@@ -138,47 +138,11 @@ class Path {
 
   bool IsEmpty() const;
 
-  template <typename VertexWriter>
-  void WritePolyline(VertexWriter& writer, Scalar scale) const {
-    auto& path_components = data_->components;
-    auto& path_points = data_->points;
+  // vertex count, index count
+  std::pair<size_t, size_t> ComputeStorage(Scalar scale) const;
 
-    for (size_t component_i = 0; component_i < path_components.size();
-         component_i++) {
-      const auto& path_component = path_components[component_i];
-      switch (path_component.type) {
-        case ComponentType::kLinear: {
-          const LinearPathComponent* linear =
-              reinterpret_cast<const LinearPathComponent*>(
-                  &path_points[path_component.index]);
-          writer.Write(linear->p2);
-          break;
-        }
-        case ComponentType::kQuadratic: {
-          const QuadraticPathComponent* quad =
-              reinterpret_cast<const QuadraticPathComponent*>(
-                  &path_points[path_component.index]);
-          quad->WriteLinearPathComponents<VertexWriter>(scale, writer);
-          break;
-        }
-        case ComponentType::kCubic: {
-          const CubicPathComponent* cubic =
-              reinterpret_cast<const CubicPathComponent*>(
-                  &path_points[path_component.index]);
-          cubic->WriteLinearPathComponents<VertexWriter>(scale, writer);
-          break;
-        }
-        case ComponentType::kContour:
-          if (component_i == path_components.size() - 1) {
-            // If the last component is a contour, that means it's an empty
-            // contour, so skip it.
-            continue;
-          }
-          writer.EndContour();
-          break;
-      }
-    }
-  }
+  void WritePolyline(VertexWriter& writer, Scalar scale) const;
+
   template <class T>
   using Applier = std::function<void(size_t index, const T& component)>;
   void EnumerateComponents(

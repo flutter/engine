@@ -5,6 +5,8 @@
 #include "path_component.h"
 
 #include <cmath>
+#include "impeller/geometry/path.h"
+#include "impeller/geometry/wangs_formula.h"
 
 namespace impeller {
 
@@ -59,13 +61,6 @@ Point LinearPathComponent::Solve(Scalar time) const {
   };
 }
 
-void LinearPathComponent::AppendPolylinePoints(
-    std::vector<Point>& points) const {
-  if (points.size() == 0 || points.back() != p2) {
-    points.push_back(p2);
-  }
-}
-
 std::vector<Point> LinearPathComponent::Extrema() const {
   return {p1, p2};
 }
@@ -103,55 +98,18 @@ Scalar ApproximateParabolaIntegral(Scalar x) {
   return x / (1.0 - d + sqrt(sqrt(pow(d, 4) + 0.25 * x * x)));
 }
 
-void QuadraticPathComponent::AppendPolylinePoints(
-    Scalar scale_factor,
-    std::vector<Point>& points) const {
-  ToLinearPathComponents(scale_factor, [&points](const Point& point) {
-    points.emplace_back(point);
-  });
-}
-
 void QuadraticPathComponent::ToLinearPathComponents(
     Scalar scale_factor,
-    const PointProc& proc) const {
-  Scalar tolerance = kDefaultCurveTolerance / scale_factor;
-  Scalar sqrt_tolerance = sqrt(tolerance);
-
-  Point d01 = cp - p1;
-  Point d12 = p2 - cp;
-  Point dd = d01 - d12;
-  Scalar cross = (p2 - p1).Cross(dd);
-  Scalar x0 = d01.Dot(dd) * 1 / cross;
-  Scalar x2 = d12.Dot(dd) * 1 / cross;
-  Scalar scale = std::abs(cross / (FastHypot(dd.x, dd.y) * (x2 - x0)));
-
-  Scalar a0 = ApproximateParabolaIntegral(x0);
-  Scalar a2 = ApproximateParabolaIntegral(x2);
-  Scalar val = 0.f;
-  // if (std::isfinite(scale)) {
-  Scalar da = std::abs(a2 - a0);
-  Scalar sqrt_scale = sqrt(scale);
-  if ((x0 < 0 && x2 < 0) || (x0 >= 0 && x2 >= 0)) {
-    val = da * sqrt_scale;
-  } else {
-    // cusp case
-    Scalar xmin = sqrt_tolerance / sqrt_scale;
-    val = sqrt_tolerance * da / ApproximateParabolaIntegral(xmin);
-  }
-  // }
-  Scalar u0 = ApproximateParabolaIntegral(a0);
-  Scalar u2 = ApproximateParabolaIntegral(a2);
-  Scalar uscale = 1.0f / (u2 - u0);
-
-  Scalar line_count = std::max(1.0f, ceil(0.5f * val / sqrt_tolerance));
-  Scalar step = 1.0f / line_count;
+    VertexWriter& writer) const {
+  Scalar line_count = quadratic(scale_factor, *this);
   for (size_t i = 1; i < line_count; i += 1) {
-    Scalar u = i * step;
-    Scalar a = a0 + (a2 - a0) * u;
-    Scalar t = (ApproximateParabolaIntegral(a) - u0) * uscale;
-    proc(Solve(t));
+    Scalar time = i / line_count;
+    writer.Write({
+        QuadraticSolve(time, p1.x, cp.x, p2.x),  // x
+        QuadraticSolve(time, p1.y, cp.y, p2.y),  // y
+    });
   }
-  proc(p2);
+  writer.Write(p2);
 }
 
 std::vector<Point> QuadraticPathComponent::Extrema() const {
@@ -193,13 +151,6 @@ Point CubicPathComponent::SolveDerivative(Scalar time) const {
   };
 }
 
-void CubicPathComponent::AppendPolylinePoints(
-    Scalar scale,
-    std::vector<Point>& points) const {
-  ToLinearPathComponents(
-      scale, [&points](const Point& point) { points.emplace_back(point); });
-}
-
 inline QuadraticPathComponent CubicPathComponent::Lower() const {
   return QuadraticPathComponent(3.0 * (cp1 - p1), 3.0 * (cp2 - cp1),
                                 3.0 * (p2 - cp2));
@@ -216,34 +167,16 @@ CubicPathComponent CubicPathComponent::Subsegment(Scalar t0, Scalar t1) const {
 }
 
 void CubicPathComponent::ToLinearPathComponents(Scalar scale,
-                                                const PointProc& proc) const {
-  constexpr Scalar accuracy = 0.1;
-  // The maximum error, as a vector from the cubic to the best approximating
-  // quadratic, is proportional to the third derivative, which is constant
-  // across the segment. Thus, the error scales down as the third power of
-  // the number of subdivisions. Our strategy then is to subdivide `t` evenly.
-  //
-  // This is an overestimate of the error because only the component
-  // perpendicular to the first derivative is important. But the simplicity is
-  // appealing.
-
-  // This magic number is the square of 36 / sqrt(3).
-  // See: http://caffeineowl.com/graphics/2d/vectorial/cubic2quad01.html
-  auto max_hypot2 = 432.0 * accuracy * accuracy;
-  auto p1x2 = 3.0 * cp1 - p1;
-  auto p2x2 = 3.0 * cp2 - p2;
-  auto p = p2x2 - p1x2;
-  auto err = p.Dot(p);
-  auto quad_count = std::max(1., ceil(pow(err / max_hypot2, 1. / 6.0)));
-  for (size_t i = 0; i < quad_count; i++) {
-    auto t0 = i / quad_count;
-    auto t1 = (i + 1) / quad_count;
-    auto seg = Subsegment(t0, t1);
-    auto p1x2 = 3.0 * seg.cp1 - seg.p1;
-    auto p2x2 = 3.0 * seg.cp2 - seg.p2;
-    QuadraticPathComponent(seg.p1, ((p1x2 + p2x2) / 4.0), seg.p2)
-        .ToLinearPathComponents(scale, proc);
+                                                VertexWriter& writer) const {
+  Scalar line_count = cubic(scale, *this);
+  for (size_t i = 1; i < line_count; i += 1) {
+    Scalar time = i / line_count;
+    writer.Write({
+        CubicSolve(time, p1.x, cp1.x, cp2.x, p2.x),  // x
+        CubicSolve(time, p1.y, cp1.y, cp2.y, p2.y)   // y
+    });
   }
+  writer.Write(p2);
 }
 
 static inline bool NearEqual(Scalar a, Scalar b, Scalar epsilon) {

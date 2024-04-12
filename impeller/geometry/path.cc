@@ -10,6 +10,7 @@
 #include "flutter/fml/logging.h"
 #include "impeller/geometry/path_component.h"
 #include "impeller/geometry/point.h"
+#include "impeller/geometry/wangs_formula.h"
 
 namespace impeller {
 
@@ -288,9 +289,9 @@ Path::Polyline Path::CreatePolyline(
             .component_start_index = polyline.points->size() - 1,
             .is_curve = false,
         });
-        reinterpret_cast<const LinearPathComponent*>(
-            &path_points[path_component.index])
-            ->AppendPolylinePoints(*polyline.points);
+        // reinterpret_cast<const LinearPathComponent*>(
+        //     &path_points[path_component.index])
+        //     ->AppendPolylinePoints(*polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
@@ -298,9 +299,9 @@ Path::Polyline Path::CreatePolyline(
             .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        reinterpret_cast<const QuadraticPathComponent*>(
-            &path_points[path_component.index])
-            ->AppendPolylinePoints(scale, *polyline.points);
+        // reinterpret_cast<const QuadraticPathComponent*>(
+        //     &path_points[path_component.index])
+        //     ->AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
@@ -308,9 +309,9 @@ Path::Polyline Path::CreatePolyline(
             .component_start_index = polyline.points->size() - 1,
             .is_curve = true,
         });
-        reinterpret_cast<const CubicPathComponent*>(
-            &path_points[path_component.index])
-            ->AppendPolylinePoints(scale, *polyline.points);
+        // reinterpret_cast<const CubicPathComponent*>(
+        //     &path_points[path_component.index])
+        //     ->AppendPolylinePoints(scale, *polyline.points);
         previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
@@ -347,6 +348,85 @@ std::optional<Rect> Path::GetTransformedBoundingBox(
     return std::nullopt;
   }
   return bounds->TransformBounds(transform);
+}
+
+std::pair<size_t, size_t> Path::ComputeStorage(Scalar scale) const {
+  auto& path_components = data_->components;
+  auto& path_points = data_->points;
+
+  size_t count = 0;
+  size_t contours = 0;
+  for (size_t component_i = 0; component_i < path_components.size();
+       component_i++) {
+    const auto& path_component = path_components[component_i];
+    switch (path_component.type) {
+      case ComponentType::kLinear: {
+        count++;
+        break;
+      }
+      case ComponentType::kQuadratic: {
+        const QuadraticPathComponent* quad =
+            reinterpret_cast<const QuadraticPathComponent*>(
+                &path_points[path_component.index]);
+        count += quadratic(scale, *quad);
+        break;
+      }
+      case ComponentType::kCubic: {
+        const CubicPathComponent* cub =
+            reinterpret_cast<const CubicPathComponent*>(
+                &path_points[path_component.index]);
+        count += cubic(scale, *cub);
+        break;
+      }
+      case ComponentType::kContour:
+        if (component_i > 0 && component_i < path_components.size() - 1) {
+          contours++;
+        }
+        break;
+    }
+  }
+  return std::make_pair(count, count + contours);
+}
+
+void Path::WritePolyline(VertexWriter& writer, Scalar scale) const {
+  auto& path_components = data_->components;
+  auto& path_points = data_->points;
+
+  for (size_t component_i = 0; component_i < path_components.size();
+       component_i++) {
+    const auto& path_component = path_components[component_i];
+    switch (path_component.type) {
+      case ComponentType::kLinear: {
+        const LinearPathComponent* linear =
+            reinterpret_cast<const LinearPathComponent*>(
+                &path_points[path_component.index]);
+        writer.Write(linear->p2);
+        break;
+      }
+      case ComponentType::kQuadratic: {
+        const QuadraticPathComponent* quad =
+            reinterpret_cast<const QuadraticPathComponent*>(
+                &path_points[path_component.index]);
+        quad->ToLinearPathComponents(scale, writer);
+        break;
+      }
+      case ComponentType::kCubic: {
+        const CubicPathComponent* cubic =
+            reinterpret_cast<const CubicPathComponent*>(
+                &path_points[path_component.index]);
+        cubic->ToLinearPathComponents(scale, writer);
+        break;
+      }
+      case ComponentType::kContour:
+        if (component_i == path_components.size() - 1) {
+          // If the last component is a contour, that means it's an empty
+          // contour, so skip it.
+          continue;
+        }
+        writer.EndContour();
+        break;
+    }
+  }
 }
 
 }  // namespace impeller

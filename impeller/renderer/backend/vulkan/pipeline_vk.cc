@@ -287,6 +287,7 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
   const auto topology = ToVKPrimitiveTopology(desc.GetPrimitiveType());
   input_assembly.setTopology(topology);
+  input_assembly.setPrimitiveRestartEnable(true);
   pipeline_info.setPInputAssemblyState(&input_assembly);
 
   //----------------------------------------------------------------------------

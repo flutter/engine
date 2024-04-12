@@ -252,6 +252,9 @@ struct Vector4 {
 
   constexpr Vector4(const Point& p) : x(p.x), y(p.y) {}
 
+  constexpr Vector4(const Point& p1, const Point& p2)
+      : x(p1.x), y(p1.y), z(p2.x), w(p2.y) {}
+
   constexpr Vector4(std::array<Scalar, 4> values)
       : x(values[0]), y(values[1]), z(values[2]), w(values[3]) {}
 

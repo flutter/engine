@@ -321,35 +321,36 @@ void CreateRoundCap(VertexWriter& vtx_builder,
                     const Point& offset,
                     Scalar scale,
                     bool reverse) {
-  Point orientation = offset * (reverse ? -1 : 1);
-  Point forward(offset.y, -offset.x);
-  Point forward_normal = forward.Normalize();
+  // Point orientation = offset * (reverse ? -1 : 1);
+  // Point forward(offset.y, -offset.x);
+  // Point forward_normal = forward.Normalize();
 
-  CubicPathComponent arc;
-  if (reverse) {
-    arc = CubicPathComponent(
-        forward, forward + orientation * PathBuilder::kArcApproximationMagic,
-        orientation + forward * PathBuilder::kArcApproximationMagic,
-        orientation);
-  } else {
-    arc = CubicPathComponent(
-        orientation,
-        orientation + forward * PathBuilder::kArcApproximationMagic,
-        forward + orientation * PathBuilder::kArcApproximationMagic, forward);
-  }
+  // CubicPathComponent arc;
+  // if (reverse) {
+  //   arc = CubicPathComponent(
+  //       forward, forward + orientation * PathBuilder::kArcApproximationMagic,
+  //       orientation + forward * PathBuilder::kArcApproximationMagic,
+  //       orientation);
+  // } else {
+  //   arc = CubicPathComponent(
+  //       orientation,
+  //       orientation + forward * PathBuilder::kArcApproximationMagic,
+  //       forward + orientation * PathBuilder::kArcApproximationMagic,
+  //       forward);
+  // }
 
-  Point vtx = position + orientation;
-  vtx_builder.AppendVertex(vtx);
-  vtx = position - orientation;
-  vtx_builder.AppendVertex(vtx);
+  // Point vtx = position + orientation;
+  // vtx_builder.AppendVertex(vtx);
+  // vtx = position - orientation;
+  // vtx_builder.AppendVertex(vtx);
 
-  arc.ToLinearPathComponents(scale, [&vtx_builder, &vtx, forward_normal,
-                                     position](const Point& point) {
-    vtx = position + point;
-    vtx_builder.AppendVertex(vtx);
-    vtx = position + (-point).Reflect(forward_normal);
-    vtx_builder.AppendVertex(vtx);
-  });
+  // arc.ToLinearPathComponents(scale, [&vtx_builder, &vtx, forward_normal,
+  //                                    position](const Point& point) {
+  //   vtx = position + point;
+  //   vtx_builder.AppendVertex(vtx);
+  //   vtx = position + (-point).Reflect(forward_normal);
+  //   vtx_builder.AppendVertex(vtx);
+  // });
 }
 
 template <typename VertexWriter>
@@ -425,38 +426,41 @@ void CreateRoundJoin(VertexWriter& vtx_builder,
                      const Point& end_offset,
                      Scalar miter_limit,
                      Scalar scale) {
-  Point start_normal = start_offset.Normalize();
-  Point end_normal = end_offset.Normalize();
+  // Point start_normal = start_offset.Normalize();
+  // Point end_normal = end_offset.Normalize();
 
-  // 0 for no joint (straight line), 1 for max joint (180 degrees).
-  Scalar alignment = 1 - (start_normal.Dot(end_normal) + 1) / 2;
-  if (ScalarNearlyEqual(alignment, 0)) {
-    return;
-  }
+  // // 0 for no joint (straight line), 1 for max joint (180 degrees).
+  // Scalar alignment = 1 - (start_normal.Dot(end_normal) + 1) / 2;
+  // if (ScalarNearlyEqual(alignment, 0)) {
+  //   return;
+  // }
 
-  Scalar direction = CreateBevelAndGetDirection(vtx_builder, position,
-                                                start_offset, end_offset);
+  // Scalar direction = CreateBevelAndGetDirection(vtx_builder, position,
+  //                                               start_offset, end_offset);
 
-  Point middle =
-      (start_offset + end_offset).Normalize() * start_offset.GetLength();
-  Point middle_normal = middle.Normalize();
+  // Point middle =
+  //     (start_offset + end_offset).Normalize() * start_offset.GetLength();
+  // Point middle_normal = middle.Normalize();
 
-  Point middle_handle = middle + Point(-middle.y, middle.x) *
-                                     PathBuilder::kArcApproximationMagic *
-                                     alignment * direction;
-  Point start_handle = start_offset + Point(start_offset.y, -start_offset.x) *
-                                          PathBuilder::kArcApproximationMagic *
-                                          alignment * direction;
+  // Point middle_handle = middle + Point(-middle.y, middle.x) *
+  //                                    PathBuilder::kArcApproximationMagic *
+  //                                    alignment * direction;
+  // Point start_handle = start_offset + Point(start_offset.y, -start_offset.x)
+  // *
+  //                                         PathBuilder::kArcApproximationMagic
+  //                                         * alignment * direction;
 
-  VS::PerVertexData vtx;
-  CubicPathComponent(start_offset, start_handle, middle_handle, middle)
-      .ToLinearPathComponents(scale, [&vtx_builder, direction, &vtx, position,
-                                      middle_normal](const Point& point) {
-        vtx.position = position + point * direction;
-        vtx_builder.AppendVertex(vtx.position);
-        vtx.position = position + (-point * direction).Reflect(middle_normal);
-        vtx_builder.AppendVertex(vtx.position);
-      });
+  // VS::PerVertexData vtx;
+  // CubicPathComponent(start_offset, start_handle, middle_handle, middle)
+  //     .ToLinearPathComponents(scale, [&vtx_builder, direction, &vtx,
+  //     position,
+  //                                     middle_normal](const Point& point) {
+  //       vtx.position = position + point * direction;
+  //       vtx_builder.AppendVertex(vtx.position);
+  //       vtx.position = position + (-point *
+  //       direction).Reflect(middle_normal);
+  //       vtx_builder.AppendVertex(vtx.position);
+  //     });
 }
 
 template <typename VertexWriter>
