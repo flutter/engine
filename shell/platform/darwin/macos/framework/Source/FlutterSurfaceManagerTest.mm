@@ -117,6 +117,21 @@ TEST(FlutterSurfaceManager, BackBufferCacheDoesNotLeak) {
   auto surfaceFromCache = [surfaceManager surfaceForSize:CGSizeMake(110, 110)];
   EXPECT_EQ(surfaceFromCache, surface2);
 
+  // Submit empty surfaces until the one in cache gets to age > 4, in which case
+  // it should be removed.
+
+  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+
+  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+
+  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+
+  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+
   [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
   EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
 
@@ -161,6 +176,90 @@ TEST(FlutterSurfaceManager, SurfacesAreRecycled) {
   // Check that surface is properly reused.
   auto surface3 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
   EXPECT_EQ(surface3, surface1);
+}
+
+TEST(FlutterSurfaceManager, BackingStoreCacheSurfaceStuckInUse) {
+  TestView* testView = [[TestView alloc] init];
+  FlutterSurfaceManager* surfaceManager = CreateSurfaceManager(testView);
+
+  auto surface1 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface1) ] atTime:0 notify:nil];
+  // Pretend that compositor is holding on to the surface. The surface will be kept
+  // in cache until the age of 5 is reached, and then evicted.
+  surface1.isInUseOverride = YES;
+
+  auto surface2 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface2) ] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+
+  auto surface3 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface3) ] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
+
+  auto surface4 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface4) ] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
+
+  auto surface5 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface5) ] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
+
+  auto surface6 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface6) ] atTime:0 notify:nil];
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
+
+  auto surface7 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface7) ] atTime:0 notify:nil];
+  // Surface in use should bet old enough at this point to be evicted.
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+}
+
+TEST(FlutterSurfaceManager, BackingStoreClampsNumberOfBuffers) {
+  TestView* testView = [[TestView alloc] init];
+  FlutterSurfaceManager* surfaceManager = CreateSurfaceManager(testView);
+
+  auto surface1 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  auto surface2 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  auto surface3 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+
+  [surfaceManager presentSurfaces:@[
+    CreatePresentInfo(surface1),
+    CreatePresentInfo(surface2),
+    CreatePresentInfo(surface3),
+  ]
+                           atTime:0
+                           notify:nil];
+
+  auto surface4 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  auto surface5 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  auto surface6 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+
+  [surfaceManager presentSurfaces:@[
+    CreatePresentInfo(surface4),
+    CreatePresentInfo(surface5),
+    CreatePresentInfo(surface6),
+  ]
+                           atTime:0
+                           notify:nil];
+
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 3ul);
+  EXPECT_EQ(surfaceManager.frontSurfaces.count, 3ul);
+
+  auto surface7 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+  auto surface8 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+
+  [surfaceManager presentSurfaces:@[
+    CreatePresentInfo(surface7),
+    CreatePresentInfo(surface8),
+  ]
+                           atTime:0
+                           notify:nil];
+
+  // Number of back buffers gets trimmed to number of front surfaces.
+  // 2 buffers for age == 0 and 2 buffers for age == 1.
+  EXPECT_EQ(surfaceManager.backBufferCache.count, 4ul);
+  EXPECT_EQ(surfaceManager.frontSurfaces.count, 2ul);
 }
 
 inline bool operator==(const CGRect& lhs, const CGRect& rhs) {

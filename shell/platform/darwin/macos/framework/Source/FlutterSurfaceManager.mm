@@ -153,7 +153,7 @@ static void UpdateContentSubLayers(CALayer* layer,
   FML_DCHECK([NSThread isMainThread]);
 
   // Release all unused back buffer surfaces and replace them with front surfaces.
-  [_backBufferCache replaceSurfaces:_frontSurfaces];
+  [_backBufferCache returnSurfaces:_frontSurfaces];
 
   // Front surfaces will be replaced by currently presented surfaces.
   [_frontSurfaces removeAllObjects];
@@ -284,22 +284,48 @@ static const double kIdleDelay = 1.0;
 
 - (nullable FlutterSurface*)removeSurfaceForSize:(CGSize)size {
   @synchronized(self) {
+    // Purge all cached surfaces if the size has changed.
+    if (_surfaces.firstObject != nil && !CGSizeEqualToSize(_surfaces.firstObject.size, size)) {
+      [_surfaces removeAllObjects];
+    }
+
+    FlutterSurface* res;
+
+    // Returns youngest surface that is not in use. Inside [returnSurfaces:]
+    // surfaces over certain age are purged, returning youngest surface ensures
+    // that the cache doesn't keep more surfaces than it needs to.
     for (FlutterSurface* surface in _surfaces) {
-      if (CGSizeEqualToSize(surface.size, size)) {
-        // By default ARC doesn't retain enumeration iteration variables.
-        FlutterSurface* res = surface;
-        [_surfaces removeObject:surface];
-        return res;
+      if (!surface.isInUse && (res == nil || res.age > surface.age)) {
+        res = surface;
       }
     }
-    return nil;
+    if (res != nil) {
+      [_surfaces removeObject:res];
+    }
+    return res;
   }
 }
 
-- (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces {
+- (void)returnSurfaces:(nonnull NSArray<FlutterSurface*>*)returnedSurfaces {
   @synchronized(self) {
-    [_surfaces removeAllObjects];
-    [_surfaces addObjectsFromArray:surfaces];
+    for (FlutterSurface* surface in returnedSurfaces) {
+      surface.age = 0;
+    }
+    for (FlutterSurface* surface in _surfaces) {
+      ++surface.age;
+    }
+
+    [_surfaces addObjectsFromArray:returnedSurfaces];
+
+    // Purge all surface with age > 4. Reaching this age can mean two things:
+    // - Surface is still in use and we can't return it. This can happen in some edge
+    //   cases where the compositor holds on to the surface for much longer than expected.
+    // - Surface is not in use but it hasn't been requested from the cache for a while.
+    //   This means there are too many surfaces in the cache.
+    [_surfaces filterUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(FlutterSurface* surface,
+                                                                          NSDictionary* bindings) {
+                 return surface.age <= 4;
+               }]];
   }
 
   // performSelector:withObject:afterDelay needs to be performed on RunLoop thread
