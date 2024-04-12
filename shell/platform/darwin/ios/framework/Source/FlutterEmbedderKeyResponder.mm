@@ -316,7 +316,7 @@ void HandleResponse(bool handled, void* user_data);
 - (nonnull instancetype)initWithCallback:(FlutterAsyncKeyCallback)callback {
   self = [super init];
   if (self != nil) {
-    _callback = callback;
+    _callback = [callback copy];
     _handled = FALSE;
   }
   return self;
@@ -354,7 +354,7 @@ void HandleResponse(bool handled, void* user_data);
  *
  * Set by the initializer.
  */
-@property(nonatomic, readonly) FlutterSendKeyEvent sendEvent;
+@property(nonatomic, copy, readonly) FlutterSendKeyEvent sendEvent;
 
 /**
  * A map of pressed keys.
@@ -362,7 +362,7 @@ void HandleResponse(bool handled, void* user_data);
  * The keys of the dictionary are physical keys, while the values are the logical keys
  * of the key down event.
  */
-@property(nonatomic, readonly) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
+@property(nonatomic, copy, readonly) NSMutableDictionary<NSNumber*, NSNumber*>* pressingRecords;
 
 /**
  * A constant mask for NSEvent.modifierFlags that Flutter synchronizes with.
@@ -401,7 +401,7 @@ void HandleResponse(bool handled, void* user_data);
  * Its values are |responseId|s, and keys are the callback that was received
  * along with the event.
  */
-@property(nonatomic, readonly)
+@property(nonatomic, copy, readonly)
     NSMutableDictionary<NSNumber*, FlutterAsyncKeyCallback>* pendingResponses;
 
 /**
@@ -490,7 +490,7 @@ void HandleResponse(bool handled, void* user_data);
 - (nonnull instancetype)initWithSendEvent:(FlutterSendKeyEvent)sendEvent {
   self = [super init];
   if (self != nil) {
-    _sendEvent = sendEvent;
+    _sendEvent = [sendEvent copy];
     _pressingRecords = [[NSMutableDictionary alloc] init];
     _pendingResponses = [[NSMutableDictionary alloc] init];
     _responseId = 1;
