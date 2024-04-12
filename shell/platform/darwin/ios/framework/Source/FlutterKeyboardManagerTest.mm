@@ -43,10 +43,16 @@ API_AVAILABLE(ios(13.4))
       OCMStrictProtocolMock(@protocol(FlutterKeyPrimaryResponder));
   OCMStub([mock handlePress:[OCMArg any] callback:[OCMArg any]])
       .andDo((^(NSInvocation* invocation) {
-        __unsafe_unretained FlutterUIPressProxy* press;
-        __unsafe_unretained FlutterAsyncKeyCallback callback;
-        [invocation getArgument:&press atIndex:2];
-        [invocation getArgument:&callback atIndex:3];
+        __unsafe_unretained FlutterUIPressProxy* pressUnsafe;
+        __unsafe_unretained FlutterAsyncKeyCallback callbackUnsafe;
+
+        [invocation getArgument:&pressUnsafe atIndex:2];
+        [invocation getArgument:&callbackUnsafe atIndex:3];
+
+        // Retain the unretained parameters so they can
+        // be run in the perform block when this invocation goes out of scope.
+        FlutterUIPressProxy* press = pressUnsafe;
+        FlutterAsyncKeyCallback callback = callbackUnsafe;
         CFRunLoopPerformBlock(CFRunLoopGetCurrent(),
                               fml::MessageLoopDarwin::kMessageLoopCFRunLoopMode, ^() {
                                 callbackSetter(press, callback);

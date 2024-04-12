@@ -16,12 +16,13 @@ static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 /**
  * The primary responders added by addPrimaryResponder.
  */
-@property(nonatomic, readonly) NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
+@property(nonatomic, copy, readonly)
+    NSMutableArray<id<FlutterKeyPrimaryResponder>>* primaryResponders;
 
 /**
  * The secondary responders added by addSecondaryResponder.
  */
-@property(nonatomic, readonly)
+@property(nonatomic, copy, readonly)
     NSMutableArray<id<FlutterKeySecondaryResponder>>* secondaryResponders;
 
 - (void)dispatchToSecondaryResponders:(nonnull FlutterUIPressProxy*)press
@@ -47,11 +48,6 @@ static constexpr CFTimeInterval kDistantFuture = 1.0e10;
 
 - (void)addSecondaryResponder:(nonnull id<FlutterKeySecondaryResponder>)responder {
   [_secondaryResponders addObject:responder];
-}
-
-- (void)dealloc {
-  [_primaryResponders removeAllObjects];
-  [_secondaryResponders removeAllObjects];
 }
 
 - (void)handlePress:(nonnull FlutterUIPressProxy*)press
