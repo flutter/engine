@@ -3797,5 +3797,81 @@ TEST_F(DisplayListTest, SaveLayerBoundsClipDetectionSimpleClippedRect) {
   EXPECT_TRUE(expector.all_bounds_checked());
 }
 
+class DepthExpector : public virtual DlOpReceiver,
+                      virtual IgnoreAttributeDispatchHelper,
+                      virtual IgnoreTransformDispatchHelper,
+                      virtual IgnoreClipDispatchHelper,
+                      virtual IgnoreDrawDispatchHelper {
+ public:
+  explicit DepthExpector(std::vector<uint32_t> expectations)
+      : depth_expectations_(std::move(expectations)) {}
+
+  void save() override {
+    // This method should not be called since we override the variant with
+    // the max_content_depth parameter.
+    FAIL() << "save(no depth parameter) method should not be called";
+  }
+
+  void save(uint32_t max_content_depth) override {
+    ASSERT_LT(index_, depth_expectations_.size());
+    EXPECT_EQ(depth_expectations_[index_], max_content_depth)
+        << "at index " << index_;
+    index_++;
+  }
+
+  void saveLayer(const SkRect& bounds,
+                 SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {
+    // This method should not be called since we override the variant with
+    // the max_content_depth parameter.
+    FAIL() << "saveLayer(no depth parameter) method should not be called";
+  }
+
+  void saveLayer(const SkRect& bounds,
+                 const SaveLayerOptions& options,
+                 uint32_t max_content_depth,
+                 const DlImageFilter* backdrop) override {
+    ASSERT_LT(index_, depth_expectations_.size());
+    EXPECT_EQ(depth_expectations_[index_], max_content_depth)
+        << "at index " << index_;
+    index_++;
+  }
+
+ private:
+  size_t index_ = 0;
+  std::vector<uint32_t> depth_expectations_;
+};
+
+TEST_F(DisplayListTest, SaveContentDepthTest) {
+  DisplayListBuilder builder;
+  builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 1
+
+  builder.Save();  // lasts through depth 6
+  {
+    builder.Translate(5, 5);
+    builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 2
+
+    builder.SaveLayer(nullptr, nullptr);  // lasts through depth 4
+    {
+      builder.DrawRect({12, 12, 22, 22}, DlPaint());  // depth 3
+      builder.DrawRect({14, 14, 24, 24}, DlPaint());  // depth 4
+    }
+    builder.Restore();
+
+    builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 5
+    builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 6
+  }
+  builder.Restore();
+
+  builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 7
+  builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 8
+  auto display_list = builder.Build();
+
+  EXPECT_EQ(display_list->max_depth(), 8u);
+
+  DepthExpector expector({6, 4});
+  display_list->Dispatch(expector);
+}
+
 }  // namespace testing
 }  // namespace flutter
