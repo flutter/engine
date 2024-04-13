@@ -115,7 +115,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  using VS = TextureFillVertexShader;
+  using VS = TextureUvFillVertexShader;
   using FS = TiledTextureFillFragmentShader;
   using FSExternal = TiledTextureFillExternalFragmentShader;
 
@@ -133,6 +133,9 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = GetOpacityFactor();
+  frame_info.uv_transform =
+      Rect::MakeSize(texture_size).GetNormalizingTransform() *
+      GetInverseEffectTransform();
 
   PipelineBuilderMethod pipeline_method;
 
@@ -214,10 +217,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
         }
 
         return true;
-      },
-      /*enable_uvs=*/true,
-      /*texture_coverage=*/Rect::MakeSize(texture_size),
-      /*effect_transform=*/GetInverseEffectTransform());
+      });
 }
 
 std::optional<Snapshot> TiledTextureContents::RenderToSnapshot(

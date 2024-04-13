@@ -61,6 +61,7 @@
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/texture_fill_strict_src.frag.h"
+#include "impeller/entity/texture_uv_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -129,14 +130,14 @@ using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
-    RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+    RenderPipelineT<TextureUvFillVertexShader, TextureFillFragmentShader>;
 using TextureStrictSrcPipeline =
-    RenderPipelineT<TextureFillVertexShader,
+    RenderPipelineT<TextureUvFillVertexShader,
                     TextureFillStrictSrcFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
-    RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
+    RenderPipelineT<TextureUvFillVertexShader, TiledTextureFillFragmentShader>;
 using KernelDecalPipeline =
     RenderPipelineT<KernelVertexShader, KernelDecalFragmentShader>;
 using KernelPipeline =
@@ -259,10 +260,11 @@ using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
 
 #ifdef IMPELLER_ENABLE_OPENGLES
 using TextureExternalPipeline =
-    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
+    RenderPipelineT<TextureUvFillVertexShader,
+                    TextureFillExternalFragmentShader>;
 
 using TiledTextureExternalPipeline =
-    RenderPipelineT<TextureFillVertexShader,
+    RenderPipelineT<TextureUvFillVertexShader,
                     TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
@@ -755,12 +757,6 @@ class ContentContext {
     return point_field_compute_pipelines_;
   }
 
-  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetUvComputePipeline()
-      const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
-    return uv_compute_pipelines_;
-  }
-
   std::shared_ptr<Context> GetContext() const;
 
   const Capabilities& GetDeviceCapabilities() const;
@@ -1017,8 +1013,6 @@ class ContentContext {
       framebuffer_blend_softlight_pipelines_;
   mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
       point_field_compute_pipelines_;
-  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
-      uv_compute_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

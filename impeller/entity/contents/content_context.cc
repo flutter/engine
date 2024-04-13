@@ -440,11 +440,6 @@ ContentContext::ContentContext(
         PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
     point_field_compute_pipelines_ =
         context_->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
-
-    auto uv_pipeline_desc =
-        UvComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
-    uv_compute_pipelines_ =
-        context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
   }
 
   /// Setup default clip pipeline.

@@ -111,7 +111,7 @@ bool TextureContents::Render(const ContentContext& renderer,
                              RenderPass& pass) const {
   auto capture = entity.GetCapture().CreateChild("TextureContents");
 
-  using VS = TextureFillVertexShader;
+  using VS = TextureUvFillVertexShader;
   using FS = TextureFillFragmentShader;
   using FSStrictSrc = TextureFillStrictSrcFragmentShader;
   using FSExternal = TextureFillExternalFragmentShader;
@@ -125,18 +125,15 @@ bool TextureContents::Render(const ContentContext& renderer,
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
 
   auto source_rect = capture.AddRect("Source rect", source_rect_);
-  auto texture_coords =
-      Rect::MakeSize(texture_->GetSize()).Project(source_rect);
-
-  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-
   auto destination_rect =
       capture.AddRect("Destination rect", destination_rect_);
+
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   vertex_builder.AddVertices({
-      {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
-      {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
-      {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
-      {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
+      {destination_rect.GetLeftTop()},
+      {destination_rect.GetRightTop()},
+      {destination_rect.GetLeftBottom()},
+      {destination_rect.GetRightBottom()},
   });
 
   auto& host_buffer = renderer.GetTransientsBuffer();
@@ -145,6 +142,8 @@ bool TextureContents::Render(const ContentContext& renderer,
   frame_info.mvp = entity.GetShaderTransform(pass);
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.alpha = capture.AddScalar("Alpha", GetOpacity());
+  // TODO: src/dst rect.
+  frame_info.uv_transform = destination_rect_.GetNormalizingTransform();
 
 #ifdef IMPELLER_DEBUG
   if (label_.empty()) {

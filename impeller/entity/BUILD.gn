@@ -51,6 +51,7 @@ impeller_shaders("entity_shaders") {
     "shaders/texture_fill.vert",
     "shaders/texture_fill_external.frag",
     "shaders/texture_fill_strict_src.frag",
+    "shaders/texture_uv_fill.vert",
     "shaders/tiled_texture_fill.frag",
     "shaders/tiled_texture_fill_external.frag",
     "shaders/vertices.frag",
@@ -85,7 +86,6 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/radial_gradient_ssbo_fill.frag",
     "shaders/sweep_gradient_ssbo_fill.frag",
     "shaders/geometry/points.comp",
-    "shaders/geometry/uv.comp",
   ]
 }
 
