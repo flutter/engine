@@ -157,14 +157,15 @@ static void DNSSD_API RegistrationCallback(DNSServiceRef sdRef,
       [weakSelf, runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
         if (!uri.empty()) {
           runner->PostTask([weakSelf, uri]() {
+            FlutterDartVMServicePublisher* strongSelf = weakSelf;
             // uri comes in as something like 'http://127.0.0.1:XXXXX/' where XXXXX is the port
             // number.
-            if (weakSelf) {
+            if (strongSelf) {
               NSURL* url =
                   [[NSURL alloc] initWithString:[NSString stringWithUTF8String:uri.c_str()]];
-              weakSelf.url = url;
-              if (weakSelf.enableVMServicePublication) {
-                [[weakSelf delegate] publishServiceProtocolPort:url];
+              strongSelf.url = url;
+              if (strongSelf.enableVMServicePublication) {
+                [[strongSelf delegate] publishServiceProtocolPort:url];
               }
             }
           });
