@@ -204,7 +204,6 @@ vars = {
   "upstream_libexpat": "https://github.com/libexpat/libexpat.git",
   "upstream_libjpeg-turbo": "https://github.com/libjpeg-turbo/libjpeg-turbo.git",
   "upstream_libpng": "https://github.com/glennrp/libpng.git",
-  "upstream_libtess2": "https://github.com/memononen/libtess2.git",
   "upstream_libwebp": "https://chromium.googlesource.com/webm/libwebp.git",
   "upstream_leak_tracker": "https://github.com/dart-lang/leak_tracker.git",
   "upstream_logging": "https://github.com/dart-lang/logging.git",
@@ -669,9 +668,6 @@ deps = {
 
   'src/flutter/third_party/inja':
    Var('flutter_git') + '/third_party/inja' + '@' + '88bd6112575a80d004e551c98cf956f88ff4d445',
-
-  'src/flutter/third_party/libtess2':
-   Var('flutter_git') + '/third_party/libtess2' + '@' + '725e5e08ec8751477565f1d603fd7eb9058c277c',
 
   'src/flutter/third_party/sqlite':
    Var('flutter_git') + '/third_party/sqlite' + '@' + '0f61bd2023ba94423b4e4c8cfb1a23de1fe6a21c',

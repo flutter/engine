@@ -2122,13 +2122,6 @@
 ../../../flutter/third_party/libpng/projects
 ../../../flutter/third_party/libpng/scripts
 ../../../flutter/third_party/libpng/tests
-../../../flutter/third_party/libtess2/.git
-../../../flutter/third_party/libtess2/.gitignore
-../../../flutter/third_party/libtess2/Contrib/nanosvg.c
-../../../flutter/third_party/libtess2/Contrib/nanosvg.h
-../../../flutter/third_party/libtess2/Example
-../../../flutter/third_party/libtess2/README.md
-../../../flutter/third_party/libtess2/alg_outline.md
 ../../../flutter/third_party/libwebp/.cmake-format.py
 ../../../flutter/third_party/libwebp/.git
 ../../../flutter/third_party/libwebp/.gitattributes
