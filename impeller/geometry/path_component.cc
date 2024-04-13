@@ -183,7 +183,7 @@ CubicPathComponent CubicPathComponent::Subsegment(Scalar t0, Scalar t1) const {
 void CubicPathComponent::ToLinearPathComponents(Scalar scale,
                                                 const PointProc& proc) const {
   Scalar line_count = std::ceilf(ComputeCubicSubdivisions(scale, *this));
-  for (size_t i = 0; i < line_count; i++) {
+  for (size_t i = 1; i < line_count; i++) {
     proc(Solve(i / line_count));
   }
   proc(p2);
