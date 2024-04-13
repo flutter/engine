@@ -8,8 +8,6 @@
 #include <QuartzCore/CADisplayLink.h>
 
 #include "flutter/fml/macros.h"
-#include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/common/variable_refresh_rate_reporter.h"
 #include "flutter/shell/common/vsync_waiter.h"
 
@@ -73,15 +71,12 @@ class VsyncWaiterIOS final : public VsyncWaiter, public VariableRefreshRateRepor
   // |VariableRefreshRateReporter|
   double GetRefreshRate() const override;
 
-  // Made public for testing.
-  fml::scoped_nsobject<VSyncClient> GetVsyncClient() const;
-
   // |VsyncWaiter|
   // Made public for testing.
   void AwaitVSync() override;
 
  private:
-  fml::scoped_nsobject<VSyncClient> client_;
+  VSyncClient* client_;
   double max_refresh_rate_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VsyncWaiterIOS);
