@@ -11,7 +11,6 @@
 #include "impeller/entity/contents/filters/blend_filter_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
@@ -108,6 +107,53 @@ bool AtlasContents::Render(const ContentContext& renderer,
   }
 
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
+
+  if (colors_.empty() || blend_mode_ == BlendMode::kSource) {
+    using VS = TexturePipeline::VertexShader;
+    using FS = TexturePipeline::FragmentShader;
+
+    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    vtx_builder.Reserve(texture_coords_.size() * 6);
+    const auto texture_size = texture_->GetSize();
+    auto& host_buffer = renderer.GetTransientsBuffer();
+
+    for (size_t i = 0; i < texture_coords_.size(); i++) {
+      auto sample_rect = texture_coords_[i];
+      auto matrix = transforms_[i];
+      auto points = sample_rect.GetPoints();
+      auto transformed_points =
+          Rect::MakeSize(sample_rect.GetSize()).GetTransformedPoints(matrix);
+      for (size_t j = 0; j < 6; j++) {
+        VS::PerVertexData data;
+        data.position = transformed_points[indices[j]];
+        data.texture_coords = points[indices[j]] / texture_size;
+        vtx_builder.AppendVertex(data);
+      }
+    }
+
+    pass.SetCommandLabel("DrawAtlas");
+    pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
+    pass.SetPipeline(renderer.GetTexturePipeline(OptionsFromPass(pass)));
+
+    VS::FrameInfo frame_info;
+    frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
+    frame_info.mvp = entity.GetShaderTransform(pass);
+    frame_info.alpha = alpha_;
+
+    VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+
+    auto dst_sampler_descriptor = sampler_descriptor_;
+    if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
+      dst_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+      dst_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+    }
+    const std::unique_ptr<const Sampler>& dst_sampler =
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            dst_sampler_descriptor);
+
+    FS::BindTextureSampler(pass, texture_, dst_sampler);
+    return pass.Draw().ok();
+  }
 
   using VS = PorterDuffBlendPipeline::VertexShader;
   using FS = PorterDuffBlendPipeline::FragmentShader;
