@@ -63,15 +63,12 @@
 #include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
-#include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
 #include "impeller/entity/kernel.vert.h"
 #include "impeller/entity/kernel_decal.frag.h"
 #include "impeller/entity/kernel_nodecal.frag.h"
-
-#include "impeller/entity/position_color.vert.h"
 
 #include "impeller/typographer/glyph_atlas.h"
 
@@ -85,6 +82,9 @@
 
 #include "impeller/entity/framebuffer_blend.frag.h"
 #include "impeller/entity/framebuffer_blend.vert.h"
+
+#include "impeller/entity/vertices_uber.frag.h"
+#include "impeller/entity/vertices_uber.vert.h"
 
 #ifdef IMPELLER_ENABLE_OPENGLES
 #include "impeller/entity/texture_fill_external.frag.h"
@@ -165,10 +165,12 @@ using PorterDuffBlendPipeline =
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
 
-using GeometryColorPipeline =
-    RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 using YUVToRGBFilterPipeline =
     RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
+
+// Vertices + Atlas Uber shader.
+using VerticesUberShader =
+    RenderPipelineT<VerticesUberVertexShader, VerticesUberFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline =
@@ -265,12 +267,6 @@ using TiledTextureExternalPipeline =
     RenderPipelineT<TextureFillVertexShader,
                     TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
-
-// A struct used to isolate command buffer storage from the content
-// context options to preserve const-ness.
-struct PendingCommandBuffers {
-  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
-};
 
 /// Pipeline state configuration.
 ///
@@ -555,11 +551,6 @@ class ContentContext {
     return GetPipeline(glyph_atlas_color_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_color_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
@@ -568,6 +559,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPorterDuffBlendPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(porter_duff_blend_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetVerticesUberShader(
+      ContentContextOptions opts) const {
+    return GetPipeline(vertices_uber_shader_, opts);
   }
 
   // Advanced blends.
@@ -962,9 +958,9 @@ class ContentContext {
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
-  mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
+  mutable Variants<VerticesUberShader> vertices_uber_shader_;
   // Advanced blends.
   mutable Variants<BlendColorPipeline> blend_color_pipelines_;
   mutable Variants<BlendColorBurnPipeline> blend_colorburn_pipelines_;
@@ -1077,7 +1073,6 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
-  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

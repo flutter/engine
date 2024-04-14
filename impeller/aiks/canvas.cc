@@ -930,61 +930,41 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     return;
   }
 
-  // If there is are per-vertex colors, an image, and the blend mode
-  // is simple we can draw without a sub-renderpass.
-  if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors()) {
-    if (std::optional<ImageData> maybe_image_data =
-            GetImageColorSourceData(paint.color_source)) {
-      const ImageData& image_data = maybe_image_data.value();
-      auto contents = std::make_shared<VerticesSimpleBlendContents>();
-      contents->SetBlendMode(blend_mode);
-      contents->SetAlpha(paint.color.alpha);
-      contents->SetGeometry(vertices);
+  // If there is a texture attached, use that directly. Otherwise, render the
+  // contents to a texture.
+  std::shared_ptr<Texture> texture;
+  Entity::TileMode tmx;
+  Entity::TileMode tmy;
+  Matrix effect_transform;
 
-      contents->SetEffectTransform(image_data.effect_transform);
-      contents->SetTexture(image_data.texture);
-      contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
-
-      entity.SetContents(paint.WithFilters(std::move(contents)));
-      AddEntityToCurrentPass(std::move(entity));
-      return;
-    }
-  }
-
-  auto src_paint = paint;
-  src_paint.color = paint.color.WithAlpha(1.0);
-
-  std::shared_ptr<Contents> src_contents =
-      src_paint.CreateContentsForGeometry(vertices);
-  if (vertices->HasTextureCoordinates()) {
+  if (std::optional<ImageData> maybe_image_data =
+          GetImageColorSourceData(paint.color_source)) {
+    const ImageData& image_data = maybe_image_data.value();
+    texture = image_data.texture;
+    tmx = image_data.x_tile_mode;
+    tmy = image_data.y_tile_mode;
+    effect_transform = image_data.effect_transform;
+  } else {
     // If the color source has an intrinsic size, then we use that to
     // create the src contents as a simplification. Otherwise we use
     // the extent of the texture coordinates to determine how large
     // the src contents should be. If neither has a value we fall back
     // to using the geometry coverage data.
-    Rect src_coverage;
-    auto size = src_contents->GetColorSourceSize();
-    if (size.has_value()) {
-      src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
-    } else {
-      auto cvg = vertices->GetCoverage(Matrix{});
-      FML_CHECK(cvg.has_value());
-      src_coverage =
-          // Covered by FML_CHECK.
-          // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-          vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
-    }
-    src_contents =
-        src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
+    // TODO: not supported as we don't have a renderer yet. call
+    // render to snapshot and treat this uniformly as a texture.
+
+    return;
   }
 
   auto contents = std::make_shared<VerticesContents>();
-  contents->SetAlpha(paint.color.alpha);
   contents->SetBlendMode(blend_mode);
+  contents->SetAlpha(paint.color.alpha);
   contents->SetGeometry(vertices);
-  contents->SetSourceContents(std::move(src_contents));
-  entity.SetContents(paint.WithFilters(std::move(contents)));
+  contents->SetEffectTransform(effect_transform);
+  contents->SetTexture(texture);
+  contents->SetTileMode(tmx, tmy);
 
+  entity.SetContents(paint.WithFilters(std::move(contents)));
   AddEntityToCurrentPass(std::move(entity));
 }
 

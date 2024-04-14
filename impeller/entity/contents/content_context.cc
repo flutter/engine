@@ -262,8 +262,7 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())),
-      pending_command_buffers_(std::make_unique<PendingCommandBuffers>()) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -422,7 +421,7 @@ ContentContext::ContentContext(
           GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
           PixelFormat::kA8UNormInt)});
   glyph_atlas_color_pipelines_.CreateDefault(*context_, options);
-  geometry_color_pipelines_.CreateDefault(*context_, options);
+  vertices_uber_shader_.CreateDefault(*context_, options);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});

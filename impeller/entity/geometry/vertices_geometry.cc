@@ -143,50 +143,6 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
   };
 }
 
-GeometryResult VerticesGeometry::GetPositionColorBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  using VS = GeometryColorPipeline::VertexShader;
-
-  auto index_count = indices_.size();
-  auto vertex_count = vertices_.size();
-  size_t total_vtx_bytes = vertex_count * sizeof(VS::PerVertexData);
-  size_t total_idx_bytes = index_count * sizeof(uint16_t);
-
-  auto vertex_buffer = renderer.GetTransientsBuffer().Emplace(
-      total_vtx_bytes, alignof(VS::PerVertexData), [&](uint8_t* data) {
-        VS::PerVertexData* vtx_contents =
-            reinterpret_cast<VS::PerVertexData*>(data);
-        for (auto i = 0u; i < vertices_.size(); i++) {
-          VS::PerVertexData vertex_data = {
-              .position = vertices_[i],
-              .color = colors_[i],
-          };
-          std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
-        }
-      });
-
-  BufferView index_buffer = {};
-  if (index_count > 0) {
-    index_buffer = renderer.GetTransientsBuffer().Emplace(
-        indices_.data(), total_idx_bytes, alignof(uint16_t));
-  }
-
-  return GeometryResult{
-      .type = GetPrimitiveType(),
-      .vertex_buffer =
-          {
-              .vertex_buffer = vertex_buffer,
-              .index_buffer = index_buffer,
-              .vertex_count = index_count > 0 ? index_count : vertex_count,
-              .index_type =
-                  index_count > 0 ? IndexType::k16bit : IndexType::kNone,
-          },
-      .transform = entity.GetShaderTransform(pass),
-  };
-}
-
 GeometryResult VerticesGeometry::GetPositionUVBuffer(
     Rect texture_coverage,
     Matrix effect_transform,
@@ -274,7 +230,7 @@ GeometryResult VerticesGeometry::GetPositionUVColorBuffer(
               .texture_coords =
                   Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
                         std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
-              .color = colors_[i],
+              .color = colors_.empty() ? Color::BlackTransparent() : colors_[i],
           };
           std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
         }
