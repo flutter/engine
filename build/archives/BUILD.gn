@@ -14,7 +14,6 @@ generated_file("artifacts_entitlement_config") {
   if (flutter_runtime_mode == "debug") {
     deps += [
       "//flutter/impeller/compiler:impellerc",
-      "//flutter/impeller/tessellator:tessellator_shared",
       "//flutter/shell/testing:testing",
       "//flutter/tools/path_ops:path_ops",
     ]
@@ -27,7 +26,6 @@ if (build_engine_artifacts && !is_android) {
       "$dart_src/runtime/bin:gen_snapshot",
       "//flutter/flutter_frontend_server:frontend_server",
       "//flutter/impeller/compiler:impellerc",
-      "//flutter/impeller/tessellator:tessellator_shared",
       "//flutter/lib/snapshot:generate_snapshot_bin",
       "//flutter/shell/testing:testing",
       "//flutter/tools/path_ops:path_ops",

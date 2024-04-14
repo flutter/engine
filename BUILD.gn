@@ -106,9 +106,8 @@ group("flutter") {
         # gen_snapshot for the host and not the target.
         "$dart_src/runtime/bin:gen_snapshot",
 
-        # Impeller artifacts - compiler and libtessellator
+        # Impeller artifacts - compiler
         "//flutter/impeller/compiler:impellerc",
-        "//flutter/impeller/tessellator:tessellator_shared",
 
         # path_ops
         "//flutter/tools/path_ops",
