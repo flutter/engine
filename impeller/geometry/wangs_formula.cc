@@ -9,50 +9,44 @@ namespace impeller {
 namespace {
 
 // Don't allow linearized segments to be off by more than 1/4th of a pixel from
-// the true curve.
+// the true curve. This value should be scaled by the max basis of the
+// X and Y directions.
 constexpr static Scalar kPrecision = 4;
 
-static inline Scalar length(Point n) {
+constexpr Scalar length(Point n) {
   Point nn = n * n;
   return std::sqrt(nn.x + nn.y);
 }
 
-static inline Point Max(Point a, Point b) {
-  return Point{
-      a.x > b.x ? a.x : b.x,  //
-      a.y > b.y ? a.y : b.y   //
-  };
-}
-
 }  // namespace
 
-Scalar ComputeCubicSubdivisions(Scalar intolerance,
+Scalar ComputeCubicSubdivisions(Scalar scale_factor,
                                 Point p0,
                                 Point p1,
                                 Point p2,
                                 Point p3) {
-  Scalar k = intolerance * .75f * kPrecision;
+  Scalar k = scale_factor * .75f * kPrecision;
   Point a = (p0 - p1 * 2 + p2).Abs();
   Point b = (p1 - p2 * 2 + p3).Abs();
-  return std::sqrt(k * length(Max(a, b)));
+  return std::sqrt(k * length(a.Max(b)));
 }
 
-Scalar ComputeQuadradicSubdivisions(Scalar intolerance,
+Scalar ComputeQuadradicSubdivisions(Scalar scale_factor,
                                     Point p0,
                                     Point p1,
                                     Point p2) {
-  Scalar k = intolerance * .25f * kPrecision;
+  Scalar k = scale_factor * .25f * kPrecision;
   return std::sqrt(k * length(p0 - p1 * 2 + p2));
 }
 
-Scalar ComputeQuadradicSubdivisions(Scalar intolerance,
+Scalar ComputeQuadradicSubdivisions(Scalar scale_factor,
                                     const QuadraticPathComponent& quad) {
-  return ComputeQuadradicSubdivisions(intolerance, quad.p1, quad.cp, quad.p2);
+  return ComputeQuadradicSubdivisions(scale_factor, quad.p1, quad.cp, quad.p2);
 }
 
-Scalar ComputeCubicSubdivisions(float intolerance,
+Scalar ComputeCubicSubdivisions(float scale_factor,
                                 const CubicPathComponent& cub) {
-  return ComputeCubicSubdivisions(intolerance, cub.p1, cub.cp1, cub.cp2,
+  return ComputeCubicSubdivisions(scale_factor, cub.p1, cub.cp1, cub.cp2,
                                   cub.p2);
 }
 

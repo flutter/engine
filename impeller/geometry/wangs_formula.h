@@ -27,7 +27,9 @@ namespace impeller {
 /// Returns the minimum number of evenly spaced (in the parametric sense) line
 /// segments that the cubic must be chopped into in order to guarantee all lines
 /// stay within a distance of "1/intolerance" pixels from the true curve.
-Scalar ComputeCubicSubdivisions(Scalar intolerance,
+///
+/// The scale_factor should be the max basis XY of the current transform.
+Scalar ComputeCubicSubdivisions(Scalar scale_factor,
                                 Point p0,
                                 Point p1,
                                 Point p2,
@@ -36,7 +38,9 @@ Scalar ComputeCubicSubdivisions(Scalar intolerance,
 /// Returns the minimum number of evenly spaced (in the parametric sense) line
 /// segments that the quadratic must be chopped into in order to guarantee all
 /// lines stay within a distance of "1/intolerance" pixels from the true curve.
-Scalar ComputeQuadradicSubdivisions(Scalar intolerance,
+///
+/// The scale_factor should be the max basis XY of the current transform.
+Scalar ComputeQuadradicSubdivisions(Scalar scale_factor,
                                     Point p0,
                                     Point p1,
                                     Point p2);
@@ -44,13 +48,17 @@ Scalar ComputeQuadradicSubdivisions(Scalar intolerance,
 /// Returns the minimum number of evenly spaced (in the parametric sense) line
 /// segments that the quadratic must be chopped into in order to guarantee all
 /// lines stay within a distance of "1/intolerance" pixels from the true curve.
-Scalar ComputeQuadradicSubdivisions(Scalar intolerance,
+///
+/// The scale_factor should be the max basis XY of the current transform.
+Scalar ComputeQuadradicSubdivisions(Scalar scale_factor,
                                     const QuadraticPathComponent& quad);
 
 /// Returns the minimum number of evenly spaced (in the parametric sense) line
 /// segments that the cubic must be chopped into in order to guarantee all lines
 /// stay within a distance of "1/intolerance" pixels from the true curve.
-Scalar ComputeCubicSubdivisions(float intolerance,
+///
+/// The scale_factor should be the max basis XY of the current transform.
+Scalar ComputeCubicSubdivisions(float scale_factor,
                                 const CubicPathComponent& cub);
 }  // namespace impeller
 
