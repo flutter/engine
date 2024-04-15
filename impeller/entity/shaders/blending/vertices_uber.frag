@@ -7,8 +7,8 @@
 #include "blend_select.glsl"
 
 uniform FragInfo {
-  float alpha;
-  float blend_mode;
+  float16_t alpha;
+  float16_t blend_mode;
 }
 frag_info;
 
