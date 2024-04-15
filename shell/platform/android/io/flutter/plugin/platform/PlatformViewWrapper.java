@@ -63,7 +63,7 @@ public class PlatformViewWrapper extends FrameLayout {
     this.renderTarget = renderTarget;
 
     Surface surface = renderTarget.getSurface();
-    if (surface != null) {
+    if (surface != null && !FlutterRenderer.debugDisableSurfaceClear) {
       final Canvas canvas = surface.lockHardwareCanvas();
       try {
         canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
