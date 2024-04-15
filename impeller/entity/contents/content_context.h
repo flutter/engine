@@ -29,8 +29,6 @@
 #include "impeller/entity/checkerboard.vert.h"
 #endif  // IMPELLER_DEBUG
 
-#include "impeller/entity/blend.frag.h"
-#include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/clip.frag.h"
@@ -58,7 +56,6 @@
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
-#include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
@@ -124,12 +121,8 @@ using SweepGradientSSBOFillPipeline =
                     SweepGradientSsboFillFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
-using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
-using TextureStrictSrcPipeline =
-    RenderPipelineT<TextureFillVertexShader,
-                    TextureFillStrictSrcFragmentShader>;
 using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
@@ -250,9 +243,6 @@ using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
 using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
 
 #ifdef IMPELLER_ENABLE_OPENGLES
-using TextureExternalPipeline =
-    RenderPipelineT<TextureFillVertexShader, TextureFillExternalFragmentShader>;
-
 using TiledTextureExternalPipeline =
     RenderPipelineT<TextureFillVertexShader,
                     TiledTextureFillExternalFragmentShader>;
@@ -456,29 +446,12 @@ class ContentContext {
     return GetPipeline(solid_fill_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(texture_blend_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureStrictSrcPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(texture_strict_src_pipelines_, opts);
-  }
-
 #ifdef IMPELLER_ENABLE_OPENGLES
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetTextureExternalPipeline(
-      ContentContextOptions opts) const {
-    FML_DCHECK(GetContext()->GetBackendType() ==
-               Context::BackendType::kOpenGLES);
-    return GetPipeline(texture_external_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
@@ -933,11 +906,8 @@ class ContentContext {
   mutable Variants<SweepGradientSSBOFillPipeline>
       sweep_gradient_ssbo_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
-  mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
-  mutable Variants<TextureStrictSrcPipeline> texture_strict_src_pipelines_;
 #ifdef IMPELLER_ENABLE_OPENGLES
-  mutable Variants<TextureExternalPipeline> texture_external_pipelines_;
   mutable Variants<TiledTextureExternalPipeline>
       tiled_texture_external_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
