@@ -224,7 +224,7 @@ void Tessellator::TessellateConvexInternal(const Path& path,
   index_buffer_->clear();
   point_buffer_->clear();
 
-  VertexWriter writer(*point_buffer_, *index_buffer_, uv_transform);
+  VertexWriter writer(point_buffer, index_buffer, uv_transform);
 
   path.WritePolyline(tolerance, writer);
   writer.EndContour();
