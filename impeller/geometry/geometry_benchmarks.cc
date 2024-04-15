@@ -155,11 +155,13 @@ static void BM_Convex(benchmark::State& state, Args&&... args) {
   size_t point_count = 0u;
   size_t single_point_count = 0u;
   auto points = std::make_unique<std::vector<Point>>();
+  auto indices = std::make_unique<std::vector<uint16_t>>();
   points->reserve(2048);
+  indices->reserve(2048);
   while (state.KeepRunning()) {
-    auto points = tess.TessellateConvex(path, 1.0f);
-    single_point_count = points.size();
-    point_count += points.size();
+    tess.TessellateConvexInternal(path, *points, *indices, 1.0f);
+    single_point_count = indices->size();
+    point_count += indices->size();
   }
   state.counters["SinglePointCount"] = single_point_count;
   state.counters["TotalPointCount"] = point_count;

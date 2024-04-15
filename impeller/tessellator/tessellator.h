@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
+#include "impeller/core/vertex_buffer.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/trig.h"
@@ -207,10 +209,28 @@ class Tessellator {
   ///                        a polyline. This value is often derived from the
   ///                        Matrix::GetMaxBasisLength of the CTM applied to the
   ///                        path for rendering.
+  /// @param[in]  host_buffer  The host buffer for allocation of vertices/index
+  ///                          data.
+  /// @param[in]  uv_transform If provided, then uvs are also generated into the
+  ///                          point buffer. Defaults to std::nullopt.
   ///
-  /// @return A point vector containing the vertices in triangle strip format.
+  /// @return A vertex buffer containing all data from the provided curve.
+  VertexBuffer TessellateConvex(
+      const Path& path,
+      HostBuffer& host_buffer,
+      Scalar tolerance,
+      std::optional<Matrix> uv_transform = std::nullopt);
+
+  /// Visible for testing.
   ///
-  std::vector<Point> TessellateConvex(const Path& path, Scalar tolerance);
+  /// This method only exists for the ease of benchmarking without using the
+  /// real allocator needed by the [host_buffer].
+  void TessellateConvexInternal(
+      const Path& path,
+      std::vector<Point>& point_buffer,
+      std::vector<uint16_t>& index_buffer,
+      Scalar tolerance,
+      std::optional<Matrix> uv_transform = std::nullopt);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a temporary polyline. Only one per-process can exist at
@@ -299,6 +319,7 @@ class Tessellator {
  private:
   /// Used for polyline generation.
   std::unique_ptr<std::vector<Point>> point_buffer_;
+  std::unique_ptr<std::vector<uint16_t>> index_buffer_;
   CTessellator c_tessellator_;
 
   // Data for variouos Circle/EllipseGenerator classes, cached per

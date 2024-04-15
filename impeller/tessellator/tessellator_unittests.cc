@@ -83,26 +83,31 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
 TEST(TessellatorTest, TessellateConvex) {
   {
     Tessellator t;
+    std::vector<Point> points;
+    std::vector<uint16_t> indices;
     // Sanity check simple rectangle.
-    auto pts = t.TessellateConvex(
-        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), 1.0);
+    t.TessellateConvexInternal(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), points,
+        indices, 1.0);
 
     std::vector<Point> expected = {{0, 0}, {10, 0}, {0, 10}, {10, 10}};
-    EXPECT_EQ(pts, expected);
+    EXPECT_EQ(points, expected);
   }
 
   {
     Tessellator t;
-    auto pts = t.TessellateConvex(PathBuilder{}
-                                      .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                                      .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                                      .TakePath(),
-                                  1.0);
+    std::vector<Point> points;
+    std::vector<uint16_t> indices;
+    t.TessellateConvexInternal(PathBuilder{}
+                                   .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                                   .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                                   .TakePath(),
+                               points, indices, 1.0);
 
     std::vector<Point> expected = {{0, 0},   {10, 0},  {0, 10},  {10, 10},
                                    {10, 10}, {20, 20}, {20, 20}, {30, 20},
                                    {20, 30}, {30, 30}};
-    EXPECT_EQ(pts, expected);
+    EXPECT_EQ(points, expected);
   }
 }
 
@@ -474,7 +479,10 @@ TEST(TessellatorTest, EarlyReturnEmptyConvexShape) {
   builder.MoveTo({0, 0});
   builder.MoveTo({10, 10}, /*relative=*/true);
 
-  auto points = tessellator->TessellateConvex(builder.TakePath(), 3.0);
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+  tessellator->TessellateConvexInternal(builder.TakePath(), points, indices,
+                                        3.0);
 
   EXPECT_TRUE(points.empty());
 }
