@@ -22,10 +22,10 @@ out f16vec4 frag_color;
 
 void main() {
   frag_color =
-      IPHalfSampleWithTileMode(texture_sampler,        // sampler
-                               v_texture_coords,       // texture coordinates
-                               frag_info.x_tile_mode,  // x tile mode
-                               frag_info.y_tile_mode   // y tile mode
+      IPHalfSampleWithTileMode(texture_sampler,   // sampler
+                               v_texture_coords,  // texture coordinates
+                               float16_t(frag_info.x_tile_mode),  // x tile mode
+                               float16_t(frag_info.y_tile_mode)   // y tile mode
                                ) *
       float16_t(frag_info.alpha);
 }
