@@ -71,8 +71,6 @@ public class PlatformViewWrapper extends FrameLayout {
       } finally {
         surface.unlockCanvasAndPost(canvas);
       }
-    } else {
-      Log.e(TAG, "DISABLED SURFACE CLEAR");
     }
   }
 
