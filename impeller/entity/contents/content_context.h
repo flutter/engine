@@ -81,7 +81,6 @@
 #include "impeller/entity/framebuffer_blend.vert.h"
 
 #ifdef IMPELLER_ENABLE_OPENGLES
-#include "impeller/entity/texture_fill_external.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
 #endif  // IMPELLER_ENABLE_OPENGLES
 
