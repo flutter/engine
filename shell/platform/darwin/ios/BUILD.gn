@@ -59,6 +59,10 @@ source_set("flutter_framework_source_arc") {
   public_configs = [ "//flutter:config" ]
 
   sources = [
+    "framework/Source/FlutterEmbedderKeyResponder.h",
+    "framework/Source/FlutterEmbedderKeyResponder.mm",
+    "framework/Source/FlutterKeyPrimaryResponder.h",
+    "framework/Source/FlutterKeySecondaryResponder.h",
     "framework/Source/FlutterMetalLayer.h",
     "framework/Source/FlutterMetalLayer.mm",
     "framework/Source/FlutterRestorationPlugin.h",
@@ -68,6 +72,8 @@ source_set("flutter_framework_source_arc") {
     "framework/Source/FlutterTextInputPlugin.mm",
     "framework/Source/FlutterTextureRegistryRelay.h",
     "framework/Source/FlutterTextureRegistryRelay.mm",
+    "framework/Source/KeyCodeMap.g.mm",
+    "framework/Source/KeyCodeMap_Internal.h",
     "framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h",
     "framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.mm",
   ]
@@ -76,6 +82,8 @@ source_set("flutter_framework_source_arc") {
     "UIKit.framework",
     "IOSurface.framework",
   ]
+
+  deps += [ "//flutter/shell/platform/embedder:embedder_as_internal_library" ]
 }
 
 source_set("flutter_framework_source") {
@@ -98,14 +106,10 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterDartProject_Internal.h",
     "framework/Source/FlutterDartVMServicePublisher.h",
     "framework/Source/FlutterDartVMServicePublisher.mm",
-    "framework/Source/FlutterEmbedderKeyResponder.h",
-    "framework/Source/FlutterEmbedderKeyResponder.mm",
     "framework/Source/FlutterEngine.mm",
     "framework/Source/FlutterEngineGroup.mm",
     "framework/Source/FlutterEngine_Internal.h",
     "framework/Source/FlutterHeadlessDartRunner.mm",
-    "framework/Source/FlutterKeyPrimaryResponder.h",
-    "framework/Source/FlutterKeySecondaryResponder.h",
     "framework/Source/FlutterKeyboardManager.h",
     "framework/Source/FlutterKeyboardManager.mm",
     "framework/Source/FlutterOverlayView.h",
@@ -129,8 +133,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
-    "framework/Source/KeyCodeMap.g.mm",
-    "framework/Source/KeyCodeMap_Internal.h",
     "framework/Source/SemanticsObject.h",
     "framework/Source/SemanticsObject.mm",
     "framework/Source/accessibility_bridge.h",
