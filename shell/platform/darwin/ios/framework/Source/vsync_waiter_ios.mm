@@ -15,6 +15,10 @@
 #include "flutter/fml/memory/task_runner_checker.h"
 #include "flutter/fml/trace_event.h"
 
+@interface VSyncClient ()
+@property(nonatomic, assign, readonly) double refreshRate;
+@end
+
 // When calculating refresh rate diffrence, anything within 0.1 fps is ignored.
 const static double kRefreshRateDiffToIgnore = 0.1;
 
@@ -29,7 +33,7 @@ VsyncWaiterIOS::VsyncWaiterIOS(const flutter::TaskRunners& task_runners)
   };
   client_ = [[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
                                            callback:callback];
-  max_refresh_rate_ = [DisplayLinkManager displayRefreshRate];
+  max_refresh_rate_ = DisplayLinkManager.displayRefreshRate;
 }
 
 VsyncWaiterIOS::~VsyncWaiterIOS() {
@@ -39,7 +43,7 @@ VsyncWaiterIOS::~VsyncWaiterIOS() {
 }
 
 void VsyncWaiterIOS::AwaitVSync() {
-  double new_max_refresh_rate = [DisplayLinkManager displayRefreshRate];
+  double new_max_refresh_rate = DisplayLinkManager.displayRefreshRate;
   if (fabs(new_max_refresh_rate - max_refresh_rate_) > kRefreshRateDiffToIgnore) {
     max_refresh_rate_ = new_max_refresh_rate;
     [client_ setMaxRefreshRate:max_refresh_rate_];
@@ -49,15 +53,14 @@ void VsyncWaiterIOS::AwaitVSync() {
 
 // |VariableRefreshRateReporter|
 double VsyncWaiterIOS::GetRefreshRate() const {
-  return [client_ getRefreshRate];
+  return client_.refreshRate;
 }
 
 }  // namespace flutter
 
 @implementation VSyncClient {
-  flutter::VsyncWaiter::Callback callback_;
+  flutter::VsyncWaiter::Callback _callback;
   CADisplayLink* _displayLink;
-  double current_refresh_rate_;
 }
 
 - (instancetype)initWithTaskRunner:(fml::RefPtr<fml::TaskRunner>)task_runner
@@ -65,18 +68,18 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   self = [super init];
 
   if (self) {
-    current_refresh_rate_ = [DisplayLinkManager displayRefreshRate];
+    _refreshRate = DisplayLinkManager.displayRefreshRate;
     _allowPauseAfterVsync = YES;
-    callback_ = std::move(callback);
+    _callback = std::move(callback);
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
     _displayLink.paused = YES;
 
-    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate]];
+    [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate];
 
     // Strongly retain the the captured link until it is added to the runloop.
     CADisplayLink* localDisplayLink = _displayLink;
     task_runner->PostTask([localDisplayLink]() {
-      [localDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
+      [localDisplayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
     });
   }
 
@@ -119,26 +122,18 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   std::unique_ptr<flutter::FrameTimingsRecorder> recorder =
       std::make_unique<flutter::FrameTimingsRecorder>();
 
-  current_refresh_rate_ = round(1 / (frame_target_time - frame_start_time).ToSecondsF());
+  _refreshRate = round(1 / (frame_target_time - frame_start_time).ToSecondsF());
 
   recorder->RecordVsync(frame_start_time, frame_target_time);
   if (_allowPauseAfterVsync) {
     link.paused = YES;
   }
-  callback_(std::move(recorder));
+  _callback(std::move(recorder));
 }
 
 - (void)invalidate {
   [_displayLink invalidate];
   _displayLink = nil;  // Break retain cycle.
-}
-
-- (void)dealloc {
-  [_displayLink invalidate];
-}
-
-- (double)getRefreshRate {
-  return current_refresh_rate_;
 }
 
 - (CADisplayLink*)getDisplayLink {
@@ -164,7 +159,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
     return preferredFPS;
   }
 
-  return [UIScreen mainScreen].maximumFramesPerSecond;
+  return UIScreen.mainScreen.maximumFramesPerSecond;
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
@@ -172,7 +167,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 }
 
 + (BOOL)maxRefreshRateEnabledOnIPhone {
-  return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"]
+  return [[NSBundle.mainBundle objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"]
       boolValue];
 }
 

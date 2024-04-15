@@ -29,7 +29,7 @@
 ///
 /// @return     The refresh rate in frames per second.
 ///
-+ (double)displayRefreshRate;
+@property(class, nonatomic, readonly) double displayRefreshRate;
 
 @end
 
@@ -52,9 +52,10 @@
 
 - (void)pause;
 
+//------------------------------------------------------------------------------
+/// @brief      Call invalidate before releasing this object to remove from runloops.
+///
 - (void)invalidate;
-
-- (double)getRefreshRate;
 
 - (void)setMaxRefreshRate:(double)refreshRate;
 
