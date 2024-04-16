@@ -51,7 +51,6 @@ void main() {
   int nblend_type = int(blend_type);
 
   if (nblend_type == /*BlendSelectValues::kPlusAdvanced*/ 14) {
-    premultiplied_src *= frag_info.src_input_alpha;
     frag_color = IPHalfPlusBlend(premultiplied_src, premultiplied_dst);
   } else {
     f16vec4 dst = IPHalfUnpremultiply(premultiplied_dst);
