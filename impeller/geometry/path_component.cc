@@ -23,12 +23,6 @@ void VertexWriter::EndContour() {
 
   auto start = contour_start_;
   auto end = points_.size() - 1;
-  // Some polygons will not self close and an additional triangle
-  // must be inserted, others will self close and we need to avoid
-  // inserting an extra triangle.
-  if (points_[end] == points_[start]) {
-    end--;
-  }
 
   if (contour_start_ > 0) {
     // Triangle strip break.

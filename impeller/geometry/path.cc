@@ -385,6 +385,15 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
           continue;
         }
         writer.EndContour();
+
+        // Insert contour start.
+        const auto& next_component = path_components[component_i + 1];
+        // It doesn't matter what type this is as all structs are laid out
+        // with p1 as the first member.
+        const LinearPathComponent* linear =
+            reinterpret_cast<const LinearPathComponent*>(
+                &path_points[next_component.index]);
+        writer.Write(linear->p1);
         break;
     }
   }
