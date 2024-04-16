@@ -124,6 +124,8 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
     case BlendMode::kPlus:
+      // The kPlusAdvanced should be used instead.
+      FML_DCHECK(IsAlphaClampedToOne(color_attachment_pixel_format));
       color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
@@ -324,6 +326,10 @@ ContentContext::ContentContext(
     framebuffer_blend_lighten_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
+    framebuffer_blend_plus_advanced_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced),
+         supports_decal});
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
@@ -371,6 +377,9 @@ ContentContext::ContentContext(
   blend_lighten_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
+  blend_plus_advanced_pipelines_.CreateDefault(
+      *context_, options_trianglestrip,
+      {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced), supports_decal});
   blend_luminosity_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
@@ -396,10 +405,6 @@ ContentContext::ContentContext(
   texture_strict_src_pipelines_.CreateDefault(*context_, options);
   position_uv_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options);
-  gaussian_blur_noalpha_decal_pipelines_.CreateDefault(*context_,
-                                                       options_trianglestrip);
-  gaussian_blur_noalpha_nodecal_pipelines_.CreateDefault(*context_,
-                                                         options_trianglestrip);
   kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
   kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
@@ -476,8 +481,9 @@ bool ContentContext::IsValid() const {
 }
 
 fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
-    const std::string& label,
+    std::string_view label,
     ISize texture_size,
+    const std::shared_ptr<CommandBuffer>& command_buffer,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled,
     bool depth_stencil_enabled,
@@ -492,20 +498,21 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
   if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = GetRenderTargetCache()->CreateOffscreenMSAA(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA, depth_stencil_config);
   } else {
     subpass_target = GetRenderTargetCache()->CreateOffscreen(
         *context, texture_size,
-        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.c_str()),
+        /*mip_count=*/mip_count, SPrintF("%s Offscreen", label.data()),
         RenderTarget::kDefaultColorAttachmentConfig, depth_stencil_config);
   }
-  return MakeSubpass(label, subpass_target, subpass_callback);
+  return MakeSubpass(label, subpass_target, command_buffer, subpass_callback);
 }
 
 fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
-    const std::string& label,
+    std::string_view label,
     const RenderTarget& subpass_target,
+    const std::shared_ptr<CommandBuffer>& command_buffer,
     const SubpassCallback& subpass_callback) const {
   const std::shared_ptr<Context>& context = GetContext();
 
@@ -514,17 +521,11 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
-  auto sub_command_buffer = context->CreateCommandBuffer();
-  sub_command_buffer->SetLabel(SPrintF("%s CommandBuffer", label.c_str()));
-  if (!sub_command_buffer) {
-    return fml::Status(fml::StatusCode::kUnknown, "");
-  }
-
-  auto sub_renderpass = sub_command_buffer->CreateRenderPass(subpass_target);
+  auto sub_renderpass = command_buffer->CreateRenderPass(subpass_target);
   if (!sub_renderpass) {
     return fml::Status(fml::StatusCode::kUnknown, "");
   }
-  sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.c_str()));
+  sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.data()));
 
   if (!subpass_callback(*this, *sub_renderpass)) {
     return fml::Status(fml::StatusCode::kUnknown, "");
@@ -538,14 +539,10 @@ fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
       subpass_target.GetRenderTargetTexture();
   if (target_texture->GetMipCount() > 1) {
     fml::Status mipmap_status =
-        AddMipmapGeneration(sub_command_buffer, context, target_texture);
+        AddMipmapGeneration(command_buffer, context, target_texture);
     if (!mipmap_status.ok()) {
       return mipmap_status;
     }
-  }
-
-  if (!context->GetCommandQueue()->Submit({sub_command_buffer}).ok()) {
-    return fml::Status(fml::StatusCode::kUnknown, "");
   }
 
   return subpass_target;

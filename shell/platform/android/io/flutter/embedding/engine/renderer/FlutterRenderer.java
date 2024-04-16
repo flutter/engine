@@ -17,6 +17,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -60,6 +61,9 @@ public class FlutterRenderer implements TextureRegistry {
    * behavior if set to true while running in a Vulkan (Impeller) context.
    */
   @VisibleForTesting public static boolean debugForceSurfaceProducerGlTextures = false;
+
+  /** Whether to disable clearing of the Surface used to render platform views. */
+  @VisibleForTesting public static boolean debugDisableSurfaceClear = false;
 
   private static final String TAG = "FlutterRenderer";
 
@@ -484,7 +488,8 @@ public class FlutterRenderer implements TextureRegistry {
 
       public PerImageReader(ImageReader reader) {
         this.reader = reader;
-        reader.setOnImageAvailableListener(onImageAvailableListener, new Handler());
+        reader.setOnImageAvailableListener(
+            onImageAvailableListener, new Handler(Looper.getMainLooper()));
       }
 
       PerImage queueImage(Image image) {

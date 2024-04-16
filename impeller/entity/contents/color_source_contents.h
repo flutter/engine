@@ -137,6 +137,9 @@ class ColorSourceContents : public Contents {
 
       GeometryResult stencil_geometry_result =
           GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+      if (stencil_geometry_result.vertex_buffer.vertex_count == 0u) {
+        return true;
+      }
       pass.SetVertexBuffer(std::move(stencil_geometry_result.vertex_buffer));
       options.primitive_type = stencil_geometry_result.type;
 
@@ -182,12 +185,14 @@ class ColorSourceContents : public Contents {
             ? geometry.GetPositionUVBuffer(texture_coverage, effect_transform,
                                            renderer, entity, pass)
             : geometry.GetPositionBuffer(renderer, entity, pass);
+    if (geometry_result.vertex_buffer.vertex_count == 0u) {
+      return true;
+    }
     pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
     options.primitive_type = geometry_result.type;
 
     // Take the pre-populated vertex shader uniform struct and set managed
     // values.
-    frame_info.depth = entity.GetShaderClipDepth();
     frame_info.mvp = geometry_result.transform;
 
     // If overdraw prevention is enabled (like when drawing stroke paths), we
@@ -198,11 +203,7 @@ class ColorSourceContents : public Contents {
       options.stencil_mode =
           ContentContextOptions::StencilMode::kLegacyClipIncrement;
     }
-    if constexpr (ContentContext::kEnableStencilThenCover) {
-      pass.SetStencilReference(0);
-    } else {
-      pass.SetStencilReference(entity.GetClipDepth());
-    }
+    pass.SetStencilReference(0);
 
     VertexShaderT::BindFrameInfo(
         pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -227,13 +228,8 @@ class ColorSourceContents : public Contents {
     if (geometry_result.mode == GeometryResult::Mode::kPreventOverdraw) {
       auto restore = ClipRestoreContents();
       restore.SetRestoreCoverage(GetCoverage(entity));
-      if constexpr (ContentContext::kEnableStencilThenCover) {
-        Entity restore_entity = entity.Clone();
-        restore_entity.SetClipDepth(0);
-        return restore.Render(renderer, restore_entity, pass);
-      } else {
-        return restore.Render(renderer, entity, pass);
-      }
+      Entity restore_entity = entity.Clone();
+      return restore.Render(renderer, restore_entity, pass);
     }
     return true;
   }

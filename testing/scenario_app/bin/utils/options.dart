@@ -65,7 +65,7 @@ extension type const Options._(ArgResults _args) {
   /// This is a shortcut that can be used to determine if the usage information
   /// before parsing the remaining command line arguments. For example:
   ///
-  /// ```
+  /// ```dart
   /// void main(List<String> args) {
   ///   if (Options.showUsage(args)) {
   ///     stdout.writeln(Options.usage);
@@ -88,7 +88,7 @@ extension type const Options._(ArgResults _args) {
   /// be enabled before parsing the remaining command line arguments. For
   /// example:
   ///
-  /// ```
+  /// ```dart
   /// void main(List<String> args) {
   ///   final bool verbose = Options.showVerbose(args);
   ///   // ...
@@ -164,6 +164,10 @@ extension type const Options._(ArgResults _args) {
         help: 'Whether to prefix logs with a per-run unique identifier.',
         defaultsTo: environment.isCi,
         hide: hideUnusualOptions,
+      )
+      ..addFlag(
+        'record-screen',
+        help: 'Whether to record the screen during the test run.',
       )
       ..addOption(
         'impeller-backend',
@@ -285,6 +289,9 @@ extension type const Options._(ArgResults _args) {
 
   /// Whether to enable Impeller as the graphics backend.
   bool get enableImpeller => _args['enable-impeller'] as bool;
+
+  /// Whether to record the screen during the test run.
+  bool get recordScreen => _args['record-screen'] as bool;
 
   /// The graphics backend to use when --enable-impeller is true.
   String get impellerBackend => _args['impeller-backend'] as String;

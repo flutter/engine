@@ -4,6 +4,8 @@
 
 import 'package:engine_build_configs/engine_build_configs.dart';
 
+import '../build_utils.dart';
+import '../gn_utils.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -13,6 +15,8 @@ final class QueryCommand extends CommandBase {
   QueryCommand({
     required super.environment,
     required this.configs,
+    super.verbose = false,
+    super.usageLineLength,
   }) {
     // Add options here that are common to all queries.
     argParser
@@ -31,7 +35,6 @@ final class QueryCommand extends CommandBase {
             if (entry.value.canRunOn(environment.platform)) entry.key,
         ],
         allowedHelp: <String, String>{
-          // TODO(zanderso): Add human readable descriptions to the json files.
           for (final MapEntry<String, BuilderConfig> entry in configs.entries)
             if (entry.value.canRunOn(environment.platform))
               entry.key: entry.value.path,
@@ -41,6 +44,12 @@ final class QueryCommand extends CommandBase {
     addSubcommand(QueryBuildersCommand(
       environment: environment,
       configs: configs,
+      verbose: verbose,
+    ));
+    addSubcommand(QueryTargetsCommand(
+      environment: environment,
+      configs: configs,
+      verbose: verbose,
     ));
   }
 
@@ -55,12 +64,13 @@ final class QueryCommand extends CommandBase {
       'and tests.';
 }
 
-/// The 'query builds' command.
+/// The 'query builders' command.
 final class QueryBuildersCommand extends CommandBase {
-  /// Constructs the 'query build' command.
+  /// Constructs the 'query builders' command.
   QueryBuildersCommand({
     required super.environment,
     required this.configs,
+    super.verbose = false,
   });
 
   /// Build configurations loaded from the engine from under ci/builders.
@@ -79,7 +89,6 @@ final class QueryBuildersCommand extends CommandBase {
     // current platform.
     final bool all = parent!.argResults![allFlag]! as bool;
     final String? builderName = parent!.argResults![builderFlag] as String?;
-    final bool verbose = globalResults![verboseFlag]! as bool;
     if (!verbose) {
       environment.logger.status(
         'Add --verbose to see detailed information about each builder',
@@ -116,6 +125,85 @@ final class QueryBuildersCommand extends CommandBase {
           }
         }
       }
+    }
+    return 0;
+  }
+}
+
+/// The query targets command.
+final class QueryTargetsCommand extends CommandBase {
+  /// Constructs the 'query targets' command.
+  QueryTargetsCommand({
+    required super.environment,
+    required this.configs,
+    super.verbose = false,
+  }) {
+    builds = runnableBuilds(environment, configs, verbose);
+    debugCheckBuilds(builds);
+    addConfigOption(
+      environment,
+      argParser,
+      builds,
+    );
+    argParser.addFlag(
+      testOnlyFlag,
+      abbr: 't',
+      help: 'Filter build targets to only include tests',
+      negatable: false,
+    );
+  }
+
+  /// Build configurations loaded from the engine from under ci/builders.
+  final Map<String, BuilderConfig> configs;
+
+  /// List of compatible builds.
+  late final List<Build> builds;
+
+  @override
+  String get name => 'targets';
+
+  @override
+  String get description => '''
+Provides information about build targets
+et query targets --testonly         # List only test targets
+et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
+''';
+
+  @override
+  Future<int> run() async {
+    final String configName = argResults![configFlag] as String;
+    final bool testOnly = argResults![testOnlyFlag] as bool;
+    final String demangledName = demangleConfigName(environment, configName);
+    final Build? build =
+        builds.where((Build build) => build.name == demangledName).firstOrNull;
+    if (build == null) {
+      environment.logger.error('Could not find config $configName');
+      return 1;
+    }
+
+    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
+      environment,
+      build,
+      argResults!.rest,
+      defaultToAll: true,
+    );
+    if (selectedTargets == null) {
+      // The user typed something wrong and targetsFromCommandLine has already
+      // logged the error message.
+      return 1;
+    }
+    if (selectedTargets.isEmpty) {
+      environment.logger.fatal(
+        'targetsFromCommandLine unexpectedly returned an empty list',
+      );
+    }
+
+    for (final BuildTarget target in selectedTargets) {
+      if (testOnly &&
+          (!target.testOnly || target.type != BuildTargetType.executable)) {
+        continue;
+      }
+      environment.logger.status(target.label);
     }
     return 0;
   }

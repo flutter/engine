@@ -68,6 +68,9 @@ def get_out_dir(args):
   if args.darwin_extension_safe:
     target_dir.append('extension_safe')
 
+  if args.slimpeller:
+    target_dir.append('slimpeller')
+
   if args.target_dir != '':
     target_dir = [args.target_dir]
 
@@ -209,6 +212,13 @@ def buildtools_dir():
   return '%s-%s' % (host_os, host_cpu)
 
 
+def get_dart_path():
+  new_dart_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'dart')
+  if os.path.exists(new_dart_path):
+    return new_dart_path
+  return os.path.join(SRC_ROOT, 'third_party', 'dart')
+
+
 def setup_rbe(args):
   rbe_gn_args = {}
   # RBE is default-off. If it is not asked for, then silently keep all default
@@ -231,7 +241,9 @@ def setup_rbe(args):
   if args.rbe_platform:
     rbe_gn_args['rbe_platform'] = args.rbe_platform
 
-  rbe_gn_args['rbe_dir'] = os.path.join(SRC_ROOT, 'buildtools', buildtools_dir(), 'reclient')
+  rbe_gn_args['rbe_dir'] = os.path.join(
+      SRC_ROOT, 'flutter', 'buildtools', buildtools_dir(), 'reclient'
+  )
 
   rbe_gn_args['rbe_cfg'] = os.path.join(
       SRC_ROOT, 'flutter', 'build', 'rbe', 'rewrapper-' + buildtools_dir() + '.cfg'
@@ -271,7 +283,7 @@ def setup_goma(args):
     buildtools_platform = 'mac-x64'
 
   # Prefer the goma fetched by gclient if it exists.
-  cipd_goma_dir = os.path.join(SRC_ROOT, 'buildtools', buildtools_platform, 'goma')
+  cipd_goma_dir = os.path.join(SRC_ROOT, 'flutter', 'buildtools', buildtools_platform, 'goma')
 
   # Next, if GOMA_DIR is set, use that install.
   goma_dir = os.environ.get('GOMA_DIR')
@@ -375,8 +387,7 @@ def setup_git_versions():
   skia_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'skia')
   revision_args['skia_version'] = get_repository_version(skia_path)
 
-  dart_path = os.path.join(SRC_ROOT, 'third_party', 'dart')
-  revision_args['dart_version'] = get_repository_version(dart_path)
+  revision_args['dart_version'] = get_repository_version(get_dart_path())
 
   return revision_args
 
@@ -456,6 +467,8 @@ def to_gn_args(args):
   runtime_mode = args.runtime_mode
 
   gn_args = {}
+
+  gn_args['buildtools_path'] = '//flutter/buildtools'
 
   gn_args['is_debug'] = args.unoptimized
 
@@ -563,11 +576,12 @@ def to_gn_args(args):
   if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
-  if gn_args['target_os'] == 'ios':
-    gn_args['use_ios_simulator'] = args.simulator
-    gn_args.update(setup_apple_sdks())
-  elif get_host_os() == 'mac':
-    gn_args['use_ios_simulator'] = False
+  if gn_args['target_os'] == 'ios' or get_host_os() == 'mac':
+    if gn_args['target_os'] == 'ios':
+      gn_args['use_ios_simulator'] = args.simulator
+    else:
+      gn_args['use_ios_simulator'] = False
+    gn_args['ios_use_simulator'] = gn_args['use_ios_simulator']
     gn_args.update(setup_apple_sdks())
 
   if args.dart_debug:
@@ -602,7 +616,7 @@ def to_gn_args(args):
   # Hardcoding this avoids invoking a relatively expensive python script from
   # GN, but removes the ability to use git-worktrees in the Dart checkout from
   # within the Engine repo, but it's unlikely anyone is using that.
-  gn_args['default_git_folder'] = os.path.join(SRC_ROOT, 'third_party', 'dart', '.git')
+  gn_args['default_git_folder'] = os.path.join(get_dart_path(), '.git')
 
   # By default, the Dart GN build will invoke a relatively expensive python
   # script to calculate an SDK "hash" that ensures compatibility between the
@@ -768,12 +782,6 @@ def to_gn_args(args):
   if args.target_os == 'fuchsia':
     gn_args['gn_configs_path'] = '//flutter/build/config/fuchsia/gn_configs.gni'
     gn_args['fuchsia_gn_sdk'] = '//flutter/tools/fuchsia/gn-sdk'
-  if args.fuchsia_target_api_level is not None:
-    gn_args['fuchsia_target_api_level'] = args.fuchsia_target_api_level
-  elif args.target_os == 'fuchsia':
-    # Read the default target api level from a file so we can update it with a roller
-    with open(os.path.join(os.path.dirname(__file__), 'fuchsia/target_api_level')) as file:
-      gn_args['fuchsia_target_api_level'] = int(file.read().strip())
 
   # Flags for Dart features:
   if args.use_mallinfo2:
@@ -1222,8 +1230,6 @@ def parse_args(args):
   )
   parser.add_argument('--no-prebuilt-dart-sdk', dest='prebuilt_dart_sdk', action='store_false')
 
-  parser.add_argument('--fuchsia-target-api-level', dest='fuchsia_target_api_level')
-
   # Flags for Dart features.
   parser.add_argument(
       '--use-mallinfo2',
@@ -1262,6 +1268,15 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Do not run GN. Instead configure the Impeller cmake example build.',
+  )
+
+  parser.add_argument(
+      '--slimpeller',
+      default=False,
+      action='store_true',
+      help='Enable optimizations that attempt to reduce binary size of the ' +
+      'Flutter engine by assuming only the Impeller rendering engine is supported.' +
+      'See [go/slimpeller-dashboard](https://github.com/orgs/flutter/projects/21) for details.'
   )
 
   # Sanitizers.
