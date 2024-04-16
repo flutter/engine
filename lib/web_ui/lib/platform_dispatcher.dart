@@ -90,7 +90,7 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  Future<void> render(Scene scene, [FlutterView view]);
+  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame});
 
   AccessibilityFeatures get accessibilityFeatures;
 
@@ -502,6 +502,7 @@ class Locale {
   @override
   int get hashCode => Object.hash(languageCode, scriptCode, countryCode);
 
+  @keepToString
   @override
   String toString() => _rawToString('_');
 
@@ -587,5 +588,5 @@ enum ViewFocusState {
 enum ViewFocusDirection {
   undefined,
   forward,
-  backwards,
+  backward,
 }

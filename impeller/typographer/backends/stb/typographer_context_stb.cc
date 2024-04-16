@@ -220,8 +220,7 @@ static void DrawGlyph(BitmapSTB* bitmap,
   // Glyph in place
   if (!has_color || DISABLE_COLOR_FONT_SUPPORT) {
     stbtt_MakeGlyphBitmap(typeface_stb->GetFontInfo(), output,
-                          location.GetWidth() - kPadding,
-                          location.GetHeight() - kPadding,
+                          location.GetWidth(), location.GetHeight(),
                           bitmap->GetRowBytes(), scale_x, scale_y, glyph.index);
   } else {
     // But for color bitmaps we need to get the glyph pixels and then carry all
@@ -516,11 +515,12 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   PixelFormat format;
   switch (type) {
     case GlyphAtlas::Type::kAlphaBitmap:
-      format = PixelFormat::kA8UNormInt;
+      format = context.GetCapabilities()->GetDefaultGlyphAtlasFormat();
       break;
     case GlyphAtlas::Type::kColorBitmap:
-      format = DISABLE_COLOR_FONT_SUPPORT ? PixelFormat::kA8UNormInt
-                                          : PixelFormat::kR8G8B8A8UNormInt;
+      format = DISABLE_COLOR_FONT_SUPPORT
+                   ? context.GetCapabilities()->GetDefaultGlyphAtlasFormat()
+                   : PixelFormat::kR8G8B8A8UNormInt;
       break;
   }
   auto texture = UploadGlyphTextureAtlas(context.GetResourceAllocator(), bitmap,

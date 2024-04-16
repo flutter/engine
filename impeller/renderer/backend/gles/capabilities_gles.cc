@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/gles/capabilities_gles.h"
 
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
 
 namespace impeller {
@@ -102,6 +103,12 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     num_shader_binary_formats = value;
   }
 
+  if (desc->IsES()) {
+    default_glyph_atlas_format_ = PixelFormat::kA8UNormInt;
+  } else {
+    default_glyph_atlas_format_ = PixelFormat::kR8UNormInt;
+  }
+
   supports_framebuffer_fetch_ = desc->HasExtension(kFramebufferFetchExt);
 
   if (desc->HasExtension(kTextureBorderClampExt) ||
@@ -117,6 +124,8 @@ CapabilitiesGLES::CapabilitiesGLES(const ProcTableGLES& gl) {
     gl.GetIntegerv(GL_MAX_SAMPLES_EXT, &value);
     supports_offscreen_msaa_ = value >= 4;
   }
+
+  is_angle_ = desc->IsANGLE();
 }
 
 size_t CapabilitiesGLES::GetMaxTextureUnits(ShaderStage stage) const {
@@ -186,6 +195,14 @@ PixelFormat CapabilitiesGLES::GetDefaultStencilFormat() const {
 
 PixelFormat CapabilitiesGLES::GetDefaultDepthStencilFormat() const {
   return PixelFormat::kD24UnormS8Uint;
+}
+
+bool CapabilitiesGLES::IsANGLE() const {
+  return is_angle_;
+}
+
+PixelFormat CapabilitiesGLES::GetDefaultGlyphAtlasFormat() const {
+  return default_glyph_atlas_format_;
 }
 
 }  // namespace impeller

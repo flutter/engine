@@ -22,6 +22,14 @@
 
 namespace flutter {
 
+// The combination of targeted graphics API and Impeller support.
+enum class AndroidRenderingAPI {
+  kSoftware,
+  kImpellerOpenGLES,
+  kImpellerVulkan,
+  kSkiaOpenGLES
+};
+
 class FrameTiming {
  public:
   enum Phase {
@@ -221,8 +229,15 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
-  // Requests a particular backend to be used (ex "opengles" or "vulkan")
-  std::optional<std::string> impeller_backend;
+  // Log a warning during shell initialization if Impeller is not enabled.
+  bool warn_on_impeller_opt_out = false;
+
+  // The selected Android rendering API.
+  AndroidRenderingAPI android_rendering_api =
+      AndroidRenderingAPI::kSkiaOpenGLES;
+
+  // Requests a specific rendering backend.
+  std::optional<std::string> requested_rendering_backend;
 
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
@@ -344,6 +359,11 @@ struct Settings {
   ///
   /// This is currently only used by iOS.
   bool enable_embedder_api = false;
+
+  /// Enable support for isolates that run on the platform thread.
+  ///
+  /// This is used by the runOnPlatformThread API.
+  bool enable_platform_isolates = false;
 };
 
 }  // namespace flutter

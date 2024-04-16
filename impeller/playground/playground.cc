@@ -8,8 +8,8 @@
 #include <sstream>
 
 #include "fml/time/time_point.h"
-#include "impeller/image/backends/skia/compressed_image_skia.h"
-#include "impeller/image/decompressed_image.h"
+#include "impeller/playground/image/backends/skia/compressed_image_skia.h"
+#include "impeller/playground/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
@@ -20,8 +20,8 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
-#include "impeller/image/compressed_image.h"
 #include "impeller/playground/backend/vulkan/swiftshader_utilities.h"
+#include "impeller/playground/image/compressed_image.h"
 #include "impeller/playground/imgui/imgui_impl_impeller.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_impl.h"
@@ -33,7 +33,11 @@
 
 #if FML_OS_MACOSX
 #include "fml/platform/darwin/scoped_nsautorelease_pool.h"
-#endif
+#endif  // FML_OS_MACOSX
+
+#if IMPELLER_ENABLE_VULKAN
+#include "impeller/playground/backend/vulkan/playground_impl_vk.h"
+#endif  // IMPELLER_ENABLE_VULKAN
 
 namespace impeller {
 
@@ -107,8 +111,8 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
       return false;
 #endif  // IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kVulkan:
-#if IMPELLER_ENABLE_VULKAN && IMPELLER_ENABLE_VULKAN_PLAYGROUNDS
-      return true;
+#if IMPELLER_ENABLE_VULKAN
+      return PlaygroundImplVK::IsVulkanDriverPresent();
 #else   // IMPELLER_ENABLE_VULKAN
       return false;
 #endif  // IMPELLER_ENABLE_VULKAN
@@ -116,10 +120,11 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-void Playground::SetupContext(PlaygroundBackend backend) {
+void Playground::SetupContext(PlaygroundBackend backend,
+                              const PlaygroundSwitches& switches) {
   FML_CHECK(SupportsBackend(backend));
 
-  impl_ = PlaygroundImpl::Create(backend, switches_);
+  impl_ = PlaygroundImpl::Create(backend, switches);
   if (!impl_) {
     FML_LOG(WARNING) << "PlaygroundImpl::Create failed.";
     return;

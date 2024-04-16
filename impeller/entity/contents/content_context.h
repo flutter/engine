@@ -36,15 +36,14 @@
 #include "impeller/entity/clip.frag.h"
 #include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
-#include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
+#include "impeller/entity/filter.vert.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
-#include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/points.comp.h"
@@ -56,7 +55,6 @@
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
-#include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
@@ -65,11 +63,8 @@
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
-#include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
-#include "impeller/entity/gaussian_blur.vert.h"
-#include "impeller/entity/gaussian_blur_noalpha_decal.frag.h"
-#include "impeller/entity/gaussian_blur_noalpha_nodecal.frag.h"
+#include "impeller/entity/kernel.vert.h"
 #include "impeller/entity/kernel_decal.frag.h"
 #include "impeller/entity/kernel_nodecal.frag.h"
 
@@ -139,44 +134,33 @@ using PositionUVPipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
-using GaussianBlurDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurNoalphaDecalFragmentShader>;
-using GaussianBlurPipeline =
-    RenderPipelineT<GaussianBlurVertexShader,
-                    GaussianBlurNoalphaNodecalFragmentShader>;
 using KernelDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, KernelDecalFragmentShader>;
+    RenderPipelineT<KernelVertexShader, KernelDecalFragmentShader>;
 using KernelPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, KernelNodecalFragmentShader>;
+    RenderPipelineT<KernelVertexShader, KernelNodecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
     RenderPipelineT<MorphologyFilterVertexShader,
                     MorphologyFilterFragmentShader>;
 using ColorMatrixColorFilterPipeline =
-    RenderPipelineT<ColorMatrixColorFilterVertexShader,
-                    ColorMatrixColorFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, ColorMatrixColorFilterFragmentShader>;
 using LinearToSrgbFilterPipeline =
-    RenderPipelineT<LinearToSrgbFilterVertexShader,
-                    LinearToSrgbFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, LinearToSrgbFilterFragmentShader>;
 using SrgbToLinearFilterPipeline =
-    RenderPipelineT<SrgbToLinearFilterVertexShader,
-                    SrgbToLinearFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, SrgbToLinearFilterFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using GlyphAtlasColorPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
 using PorterDuffBlendPipeline =
     RenderPipelineT<PorterDuffBlendVertexShader, PorterDuffBlendFragmentShader>;
-// Instead of requiring new shaders for clips, the solid fill stages are used
-// to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
 
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 using YUVToRGBFilterPipeline =
-    RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, YuvToRgbFilterFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline =
@@ -287,21 +271,34 @@ struct PendingCommandBuffers {
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
   enum class StencilMode : uint8_t {
-    // Operations used for stencil-then-cover
-
     /// Turn the stencil test off. Used when drawing without stencil-then-cover.
     kIgnore,
-    /// Overwrite the stencil content to the ref value. Used for resetting the
-    /// stencil buffer after a stencil-then-cover operation.
-    kSetToRef,
-    /// Draw the stencil for the nonzero fill path rule.
-    kNonZeroWrite,
-    /// Draw the stencil for the evenoff fill path rule.
-    kEvenOddWrite,
+
+    // Operations used for stencil-then-cover
+
+    /// Draw the stencil for the NonZero fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilNonZeroFill,
+    /// Draw the stencil for the EvenOdd fill path rule.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kStencilEvenOddFill,
     /// Used for draw calls which fill in the stenciled area. Intended to be
-    /// used after `kNonZeroWrite` or `kEvenOddWrite` is used to set up the
-    /// stencil buffer.
+    /// used after `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set
+    /// up the stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
     kCoverCompare,
+    /// The opposite of `kCoverCompare`. Used for draw calls which fill in the
+    /// non-stenciled area (intersection clips). Intended to be used after
+    /// `kStencilNonZeroFill` or `kStencilEvenOddFill` is used to set up the
+    /// stencil buffer. Also cleans up the stencil buffer by resetting
+    /// everything to zero.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kCoverCompareInverted,
 
     // Operations to control the legacy clip implementation, which forms a
     // heightmap on the stencil buffer.
@@ -493,16 +490,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(tiled_texture_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurDecalPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_noalpha_decal_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_noalpha_nodecal_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
@@ -756,26 +743,25 @@ class ContentContext {
 
   void SetWireframe(bool wireframe);
 
-  void RecordCommandBuffer(std::shared_ptr<CommandBuffer> command_buffer) const;
-
-  void FlushCommandBuffers() const;
-
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
   fml::StatusOr<RenderTarget> MakeSubpass(
-      const std::string& label,
+      std::string_view label,
       ISize texture_size,
+      const std::shared_ptr<CommandBuffer>& command_buffer,
       const SubpassCallback& subpass_callback,
       bool msaa_enabled = true,
+      bool depth_stencil_enabled = false,
       int32_t mip_count = 1) const;
 
   /// Makes a subpass that will render to `subpass_target`.
   fml::StatusOr<RenderTarget> MakeSubpass(
-      const std::string& label,
+      std::string_view label,
       const RenderTarget& subpass_target,
+      const std::shared_ptr<CommandBuffer>& command_buffer,
       const SubpassCallback& subpass_callback) const;
 
   const std::shared_ptr<LazyGlyphAtlas>& GetLazyGlyphAtlas() const {
@@ -815,6 +801,14 @@ class ContentContext {
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
+
+  /// Run backend specific additional setup and create common shader variants.
+  ///
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
+  void InitializeCommonlyUsedShadersIfNeeded() const;
 
   struct RuntimeEffectPipelineKey {
     std::string unique_entrypoint_name;
@@ -933,10 +927,6 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
-  mutable Variants<GaussianBlurDecalPipeline>
-      gaussian_blur_noalpha_decal_pipelines_;
-  mutable Variants<GaussianBlurPipeline>
-      gaussian_blur_noalpha_nodecal_pipelines_;
   mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
   mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
@@ -1007,6 +997,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
       Variants<TypedPipeline>& container,
       ContentContextOptions opts) const {
+    TypedPipeline* pipeline = CreateIfNeeded(container, opts);
+    if (!pipeline) {
+      return nullptr;
+    }
+    return pipeline->WaitAndGet();
+  }
+
+  template <class TypedPipeline>
+  TypedPipeline* CreateIfNeeded(Variants<TypedPipeline>& container,
+                                ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
     }
@@ -1015,16 +1015,17 @@ class ContentContext {
       opts.wireframe = true;
     }
 
-    if (auto found = container.Get(opts)) {
-      return found->WaitAndGet();
+    if (TypedPipeline* found = container.Get(opts)) {
+      return found;
     }
 
-    auto prototype = container.GetDefault();
+    TypedPipeline* prototype = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != nullptr);
 
-    auto pipeline = prototype->WaitAndGet();
+    std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
+        prototype->WaitAndGet();
     if (!pipeline) {
       return nullptr;
     }
@@ -1036,10 +1037,10 @@ class ContentContext {
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
-    auto variant = std::make_unique<TypedPipeline>(std::move(variant_future));
-    auto variant_pipeline = variant->WaitAndGet();
+    std::unique_ptr<TypedPipeline> variant =
+        std::make_unique<TypedPipeline>(std::move(variant_future));
     container.Set(opts, std::move(variant));
-    return variant_pipeline;
+    return container.Get(opts);
   }
 
   bool is_valid_ = false;

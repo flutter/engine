@@ -3,12 +3,12 @@
         {
             "archives": [
                 {
-                    "name": "android_jit_release_x86",
+                    "name": "ci/android_jit_release_x86",
                     "type": "gcs",
-                    "base_path": "out/android_jit_release_x86/zip_archives/",
+                    "base_path": "out/ci/android_jit_release_x86/zip_archives/",
                     "include_paths": [
-                        "out/android_jit_release_x86/zip_archives/android-x86-jit-release/artifacts.zip",
-                        "out/android_jit_release_x86/zip_archives/download.flutter.io"
+                        "out/ci/android_jit_release_x86/zip_archives/android-x86-jit-release/artifacts.zip",
+                        "out/ci/android_jit_release_x86/zip_archives/download.flutter.io"
                     ],
                     "realm": "production"
                 }
@@ -17,14 +17,22 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_jit_release_x86",
                 "--android",
                 "--android-cpu=x86",
-                "--runtime-mode=jit_release"
+                "--runtime-mode=jit_release",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "android_jit_release_x86",
+            "name": "ci/android_jit_release_x86",
+            "description": "Produces jit-release mode artifacts to target x86 Android from a Linux host.",
             "ninja": {
-                "config": "android_jit_release_x86",
+                "config": "ci/android_jit_release_x86",
                 "targets": [
                     "flutter",
                     "flutter/shell/platform/android:embedding_jars",
@@ -39,12 +47,12 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "android_jit_release_x86",
+                        "ci/android_jit_release_x86",
                         "--type",
                         "java",
                         "--engine-capture-core-dump",
                         "--android-variant",
-                        "android_jit_release_x86"
+                        "ci/android_jit_release_x86"
                     ]
                 }
             ]
@@ -52,15 +60,15 @@
         {
             "archives": [
                 {
-                    "name": "android_debug",
+                    "name": "ci/android_debug",
                     "type": "gcs",
-                    "base_path": "out/android_debug/zip_archives/",
+                    "base_path": "out/ci/android_debug/zip_archives/",
                     "include_paths": [
-                        "out/android_debug/zip_archives/android-arm/artifacts.zip",
-                        "out/android_debug/zip_archives/android-arm/symbols.zip",
-                        "out/android_debug/zip_archives/download.flutter.io",
-                        "out/android_debug/zip_archives/sky_engine.zip",
-                        "out/android_debug/zip_archives/android-javadoc.zip"
+                        "out/ci/android_debug/zip_archives/android-arm/artifacts.zip",
+                        "out/ci/android_debug/zip_archives/android-arm/symbols.zip",
+                        "out/ci/android_debug/zip_archives/download.flutter.io",
+                        "out/ci/android_debug/zip_archives/sky_engine.zip",
+                        "out/ci/android_debug/zip_archives/android-javadoc.zip"
                     ],
                     "realm": "production"
                 }
@@ -69,14 +77,22 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_debug",
                 "--android",
                 "--android-cpu=arm",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "android_debug",
+            "name": "ci/android_debug",
+            "description": "Produces debug mode artifacts to target 32-bit arm Android from a Linux host.",
             "ninja": {
-                "config": "android_debug",
+                "config": "ci/android_debug",
                 "targets": [
                     "flutter",
                     "flutter/sky/dist:zip_old_location",
@@ -92,12 +108,12 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "android_debug",
+                        "ci/android_debug",
                         "--type",
                         "java",
                         "--engine-capture-core-dump",
                         "--android-variant",
-                        "android_debug"
+                        "ci/android_debug"
                     ]
                 }
             ]
@@ -105,13 +121,13 @@
         {
             "archives": [
                 {
-                    "name": "android_debug_arm64",
+                    "name": "ci/android_debug_arm64",
                     "type": "gcs",
-                    "base_path": "out/android_debug_arm64/zip_archives/",
+                    "base_path": "out/ci/android_debug_arm64/zip_archives/",
                     "include_paths": [
-                        "out/android_debug_arm64/zip_archives/android-arm64/artifacts.zip",
-                        "out/android_debug_arm64/zip_archives/android-arm64/symbols.zip",
-                        "out/android_debug_arm64/zip_archives/download.flutter.io"
+                        "out/ci/android_debug_arm64/zip_archives/android-arm64/artifacts.zip",
+                        "out/ci/android_debug_arm64/zip_archives/android-arm64/symbols.zip",
+                        "out/ci/android_debug_arm64/zip_archives/download.flutter.io"
                     ],
                     "realm": "production"
                 }
@@ -120,35 +136,22 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
-                "--android",
-                "--android-cpu=arm64",
-                "--no-lto"
-            ],
-            "name": "android_debug_arm64",
-            "ninja": {
-                "config": "android_debug_arm64",
-                "targets": [
-                    "flutter",
-                    "flutter/shell/platform/android:abi_jars"
-                ]
-            }
-        },
-        {
-            "cas_archive": false,
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "gn": [
+                "--target-dir",
+                "ci/android_debug_arm64",
                 "--android",
                 "--android-cpu=arm64",
                 "--no-lto",
-                "--enable-vulkan-validation-layers"
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "android_debug_arm64_validation_layers",
+            "name": "ci/android_debug_arm64",
+            "description": "Produces debug mode artifacts to target 64-bit arm Android from a Linux host.",
             "ninja": {
-                "config": "android_debug_arm64",
+                "config": "ci/android_debug_arm64",
                 "targets": [
                     "flutter",
                     "flutter/shell/platform/android:abi_jars"
@@ -158,13 +161,13 @@
         {
             "archives": [
                 {
-                    "name": "android_debug_x86",
+                    "name": "ci/android_debug_x86",
                     "type": "gcs",
-                    "base_path": "out/android_debug_x86/zip_archives/",
+                    "base_path": "out/ci/android_debug_x86/zip_archives/",
                     "include_paths": [
-                        "out/android_debug_x86/zip_archives/android-x86/artifacts.zip",
-                        "out/android_debug_x86/zip_archives/android-x86/symbols.zip",
-                        "out/android_debug_x86/zip_archives/download.flutter.io"
+                        "out/ci/android_debug_x86/zip_archives/android-x86/artifacts.zip",
+                        "out/ci/android_debug_x86/zip_archives/android-x86/symbols.zip",
+                        "out/ci/android_debug_x86/zip_archives/download.flutter.io"
                     ],
                     "realm": "production"
                 }
@@ -173,14 +176,22 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_debug_x86",
                 "--android",
                 "--android-cpu=x86",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "android_debug_x86",
+            "name": "ci/android_debug_x86",
+            "description": "Produces debug mode artifacts to target x86 Android from a Linux host.",
             "ninja": {
-                "config": "android_debug_x86",
+                "config": "ci/android_debug_x86",
                 "targets": [
                     "flutter",
                     "flutter/shell/platform/android:abi_jars"
@@ -190,13 +201,13 @@
         {
             "archives": [
                 {
-                    "name": "android_debug_x64",
+                    "name": "ci/android_debug_x64",
                     "type": "gcs",
-                    "base_path": "out/android_debug_x64/zip_archives/",
+                    "base_path": "out/ci/android_debug_x64/zip_archives/",
                     "include_paths": [
-                        "out/android_debug_x64/zip_archives/android-x64/artifacts.zip",
-                        "out/android_debug_x64/zip_archives/android-x64/symbols.zip",
-                        "out/android_debug_x64/zip_archives/download.flutter.io"
+                        "out/ci/android_debug_x64/zip_archives/android-x64/artifacts.zip",
+                        "out/ci/android_debug_x64/zip_archives/android-x64/symbols.zip",
+                        "out/ci/android_debug_x64/zip_archives/download.flutter.io"
                     ],
                     "realm": "production"
                 }
@@ -205,14 +216,22 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
+                "--target-dir",
+                "ci/android_debug_x64",
                 "--android",
                 "--android-cpu=x64",
-                "--no-lto"
+                "--no-lto",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "android_debug_x64",
+            "name": "ci/android_debug_x64",
+            "description": "Produces debug mode artifacts to target x64 Android from a Linux host.",
             "ninja": {
-                "config": "android_debug_x64",
+                "config": "ci/android_debug_x64",
                 "targets": [
                     "flutter",
                     "flutter/shell/platform/android:abi_jars"
@@ -225,7 +244,8 @@
             {
                 "name": "Verify-export-symbols-release-binaries",
                 "parameters": [
-                    "src/out"
+                    "src/out/ci",
+                    "src/flutter/buildtools"
                 ],
                 "script": "flutter/testing/symbols/verify_exported.dart",
                 "language": "dart"

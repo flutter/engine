@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/logging.h"
-
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
@@ -336,8 +335,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
     texture_descriptor.storage_mode = StorageMode::kHostVisible;
     texture_descriptor.size = {400, 400};
     texture_descriptor.mip_count = 1u;
-    texture_descriptor.usage =
-        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+    texture_descriptor.usage = TextureUsage::kRenderTarget;
 
     color0.texture =
         context->GetResourceAllocator()->CreateTexture(texture_descriptor);
@@ -353,8 +351,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
     stencil_texture_desc.storage_mode = StorageMode::kDeviceTransient;
     stencil_texture_desc.size = texture_descriptor.size;
     stencil_texture_desc.format = PixelFormat::kS8UInt;
-    stencil_texture_desc.usage =
-        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+    stencil_texture_desc.usage = TextureUsage::kRenderTarget;
     stencil0.texture =
         context->GetResourceAllocator()->CreateTexture(stencil_texture_desc);
 
@@ -400,7 +397,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
             Tessellator{}.Tessellate(
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath(FillType::kPositive),
+                    .TakePath(FillType::kOdd),
                 1.0f,
                 [&builder](const float* vertices, size_t vertices_count,
                            const uint16_t* indices, size_t indices_count) {
@@ -477,9 +474,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_desc.size = {800, 600};
   texture_desc.mip_count = 1u;
-  texture_desc.usage =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
-      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  texture_desc.usage = TextureUsage::kRenderTarget | TextureUsage::kShaderRead;
   auto texture = context->GetResourceAllocator()->CreateTexture(texture_desc);
   ASSERT_TRUE(texture);
 
@@ -601,10 +596,8 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
   texture_desc.size = bridge->GetTextureDescriptor().size;
   texture_desc.mip_count = 1u;
-  texture_desc.usage =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
-      static_cast<TextureUsageMask>(TextureUsage::kShaderWrite) |
-      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  texture_desc.usage = TextureUsage::kRenderTarget |
+                       TextureUsage::kShaderWrite | TextureUsage::kShaderRead;
   DeviceBufferDescriptor device_buffer_desc;
   device_buffer_desc.storage_mode = StorageMode::kHostVisible;
   device_buffer_desc.size =
@@ -1178,10 +1171,8 @@ TEST_P(RendererTest, StencilMask) {
       stencil_config.load_action = LoadAction::kLoad;
       stencil_config.store_action = StoreAction::kDontCare;
       stencil_config.storage_mode = StorageMode::kHostVisible;
-      auto render_target_allocator =
-          RenderTargetAllocator(context->GetResourceAllocator());
       render_target.SetupDepthStencilAttachments(
-          *context, render_target_allocator,
+          *context, *context->GetResourceAllocator(),
           render_target.GetRenderTargetSize(), true, "stencil", stencil_config);
       // Fill the stencil buffer with an checkerboard pattern.
       const auto target_width = render_target.GetRenderTargetSize().width;
@@ -1280,8 +1271,8 @@ TEST_P(RendererTest, CanLookupRenderTargetProperties) {
   auto render_target_cache = std::make_shared<RenderTargetAllocator>(
       GetContext()->GetResourceAllocator());
 
-  auto render_target = RenderTarget::CreateOffscreen(
-      *context, *render_target_cache, {100, 100}, /*mip_count=*/1);
+  auto render_target = render_target_cache->CreateOffscreen(
+      *context, {100, 100}, /*mip_count=*/1);
   auto render_pass = cmd_buffer->CreateRenderPass(render_target);
 
   EXPECT_EQ(render_pass->GetSampleCount(), render_target.GetSampleCount());
@@ -1300,8 +1291,8 @@ TEST_P(RendererTest,
   auto render_target_cache = std::make_shared<RenderTargetAllocator>(
       GetContext()->GetResourceAllocator());
 
-  RenderTarget render_target = RenderTarget::CreateOffscreenMSAA(
-      *context, *render_target_cache, {100, 100}, /*mip_count=*/1);
+  RenderTarget render_target = render_target_cache->CreateOffscreenMSAA(
+      *context, {100, 100}, /*mip_count=*/1);
   EXPECT_EQ(render_target.GetDepthAttachment()
                 ->texture->GetTextureDescriptor()
                 .format,
@@ -1328,6 +1319,13 @@ std::shared_ptr<Pipeline<PipelineDescriptor>> CreateDefaultPipeline(
 }
 
 TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
+  // The GLES framebuffer fetch implementation currently does not support this.
+  // TODO(chinmaygarde): revisit after the GLES framebuffer fetch capabilities
+  // are clarified.
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("Not supported on GLES.");
+  }
+
   // Define shader types
   using TextureVS = TextureVertexShader;
   using TextureFS = TextureFragmentShader;
@@ -1416,6 +1414,13 @@ TEST_P(RendererTest, CanSepiaToneWithSubpasses) {
 }
 
 TEST_P(RendererTest, CanSepiaToneThenSwizzleWithSubpasses) {
+  // The GLES framebuffer fetch implementation currently does not support this.
+  // TODO(chinmaygarde): revisit after the GLES framebuffer fetch capabilities
+  // are clarified.
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("Not supported on GLES.");
+  }
+
   // Define shader types
   using TextureVS = TextureVertexShader;
   using TextureFS = TextureFragmentShader;

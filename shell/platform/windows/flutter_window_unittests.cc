@@ -3,21 +3,23 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/windows/testing/flutter_window_test.h"
+#include "flutter/shell/platform/windows/flutter_window.h"
+#include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler_delegate.h"
+#include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "flutter/shell/platform/windows/testing/wm_builders.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-using testing::_;
-using testing::AnyNumber;
-using testing::Invoke;
-using testing::Return;
-
 namespace flutter {
 namespace testing {
+
+using ::testing::_;
+using ::testing::AnyNumber;
+using ::testing::Invoke;
+using ::testing::Return;
 
 namespace {
 static constexpr int32_t kDefaultPointerDeviceId = 0;
@@ -25,7 +27,7 @@ static constexpr int32_t kDefaultPointerDeviceId = 0;
 class MockFlutterWindow : public FlutterWindow {
  public:
   MockFlutterWindow(bool reset_view_on_exit = true)
-      : FlutterWindow(800, 600), reset_view_on_exit_(reset_view_on_exit) {
+      : reset_view_on_exit_(reset_view_on_exit) {
     ON_CALL(*this, GetDpiScale())
         .WillByDefault(Return(this->FlutterWindow::GetDpiScale()));
   }
@@ -94,8 +96,10 @@ class MockFlutterWindow : public FlutterWindow {
 
 class MockFlutterWindowsView : public FlutterWindowsView {
  public:
-  MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding)
-      : FlutterWindowsView(std::move(window_binding)) {}
+  MockFlutterWindowsView(FlutterWindowsEngine* engine,
+                         std::unique_ptr<WindowBindingHandler> window_binding)
+      : FlutterWindowsView(kImplicitViewId, engine, std::move(window_binding)) {
+  }
   ~MockFlutterWindowsView() {}
 
   MOCK_METHOD(void,
@@ -107,14 +111,16 @@ class MockFlutterWindowsView : public FlutterWindowsView {
   FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
 };
 
+class FlutterWindowTest : public WindowsTest {};
+
 }  // namespace
 
-TEST(FlutterWindowTest, CreateDestroy) {
-  FlutterWindowTest window(800, 600);
+TEST_F(FlutterWindowTest, CreateDestroy) {
+  FlutterWindow window(800, 600);
   ASSERT_TRUE(TRUE);
 }
 
-TEST(FlutterWindowTest, OnBitmapSurfaceUpdated) {
+TEST_F(FlutterWindowTest, OnBitmapSurfaceUpdated) {
   FlutterWindow win32window(100, 100);
   int old_handle_count = GetGuiResources(GetCurrentProcess(), GR_GDIOBJECTS);
 
@@ -131,7 +137,7 @@ TEST(FlutterWindowTest, OnBitmapSurfaceUpdated) {
 // Tests that composing rect updates are transformed from Flutter logical
 // coordinates to device coordinates and passed to the text input manager
 // when the DPI scale is 100% (96 DPI).
-TEST(FlutterWindowTest, OnCursorRectUpdatedRegularDPI) {
+TEST_F(FlutterWindowTest, OnCursorRectUpdatedRegularDPI) {
   MockFlutterWindow win32window;
   EXPECT_CALL(win32window, GetDpiScale()).WillOnce(Return(1.0));
 
@@ -144,7 +150,7 @@ TEST(FlutterWindowTest, OnCursorRectUpdatedRegularDPI) {
 // Tests that composing rect updates are transformed from Flutter logical
 // coordinates to device coordinates and passed to the text input manager
 // when the DPI scale is 150% (144 DPI).
-TEST(FlutterWindowTest, OnCursorRectUpdatedHighDPI) {
+TEST_F(FlutterWindowTest, OnCursorRectUpdatedHighDPI) {
   MockFlutterWindow win32window;
   EXPECT_CALL(win32window, GetDpiScale()).WillOnce(Return(1.5));
 
@@ -155,7 +161,7 @@ TEST(FlutterWindowTest, OnCursorRectUpdatedHighDPI) {
   win32window.OnCursorRectUpdated(cursor_rect);
 }
 
-TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
+TEST_F(FlutterWindowTest, OnPointerStarSendsDeviceType) {
   FlutterWindow win32window(100, 100);
   MockWindowBindingHandlerDelegate delegate;
   EXPECT_CALL(delegate, OnWindowStateEvent).Times(AnyNumber());
@@ -256,15 +262,16 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
 
 // Tests that calls to OnScroll in turn calls GetScrollOffsetMultiplier
 // for mapping scroll ticks to pixels.
-TEST(FlutterWindowTest, OnScrollCallsGetScrollOffsetMultiplier) {
+TEST_F(FlutterWindowTest, OnScrollCallsGetScrollOffsetMultiplier) {
   MockFlutterWindow win32window;
   MockWindowBindingHandlerDelegate delegate;
   EXPECT_CALL(win32window, OnWindowStateEvent).Times(AnyNumber());
   win32window.SetView(&delegate);
 
-  ON_CALL(win32window, GetScrollOffsetMultiplier())
-      .WillByDefault(Return(120.0f));
-  EXPECT_CALL(win32window, GetScrollOffsetMultiplier()).Times(1);
+  EXPECT_CALL(win32window, GetWindowHandle).WillOnce([&win32window]() {
+    return win32window.FlutterWindow::GetWindowHandle();
+  });
+  EXPECT_CALL(win32window, GetScrollOffsetMultiplier).WillOnce(Return(120.0f));
 
   EXPECT_CALL(delegate,
               OnScroll(_, _, 0, 0, 120.0f, kFlutterPointerDeviceKindMouse,
@@ -275,7 +282,7 @@ TEST(FlutterWindowTest, OnScrollCallsGetScrollOffsetMultiplier) {
                        kDefaultPointerDeviceId);
 }
 
-TEST(FlutterWindowTest, OnWindowRepaint) {
+TEST_F(FlutterWindowTest, OnWindowRepaint) {
   MockFlutterWindow win32window;
   MockWindowBindingHandlerDelegate delegate;
   EXPECT_CALL(win32window, OnWindowStateEvent).Times(AnyNumber());
@@ -286,7 +293,7 @@ TEST(FlutterWindowTest, OnWindowRepaint) {
   win32window.InjectWindowMessage(WM_PAINT, 0, 0);
 }
 
-TEST(FlutterWindowTest, OnThemeChange) {
+TEST_F(FlutterWindowTest, OnThemeChange) {
   MockFlutterWindow win32window;
   MockWindowBindingHandlerDelegate delegate;
   EXPECT_CALL(win32window, OnWindowStateEvent).Times(AnyNumber());
@@ -300,7 +307,7 @@ TEST(FlutterWindowTest, OnThemeChange) {
 // The window should return no root accessibility node if
 // it isn't attached to a view.
 // Regression test for https://github.com/flutter/flutter/issues/129791
-TEST(FlutterWindowTest, AccessibilityNodeWithoutView) {
+TEST_F(FlutterWindowTest, AccessibilityNodeWithoutView) {
   MockFlutterWindow win32window;
 
   EXPECT_EQ(win32window.GetNativeViewAccessible(), nullptr);
@@ -308,13 +315,15 @@ TEST(FlutterWindowTest, AccessibilityNodeWithoutView) {
 
 // Ensure that announcing the alert propagates the message to the alert node.
 // Different screen readers use different properties for alerts.
-TEST(FlutterWindowTest, AlertNode) {
-  std::unique_ptr<MockFlutterWindow> win32window =
-      std::make_unique<MockFlutterWindow>();
+TEST_F(FlutterWindowTest, AlertNode) {
+  std::unique_ptr<FlutterWindowsEngine> engine =
+      FlutterWindowsEngineBuilder{GetContext()}.Build();
+  auto win32window = std::make_unique<MockFlutterWindow>();
   EXPECT_CALL(*win32window.get(), GetAxFragmentRootDelegate())
       .WillRepeatedly(Return(nullptr));
   EXPECT_CALL(*win32window.get(), OnWindowStateEvent).Times(AnyNumber());
-  MockFlutterWindowsView view(std::move(win32window));
+  EXPECT_CALL(*win32window.get(), GetWindowHandle).Times(AnyNumber());
+  MockFlutterWindowsView view{engine.get(), std::move(win32window)};
   std::wstring message = L"Test alert";
   EXPECT_CALL(view, NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
       .Times(1);
@@ -338,7 +347,7 @@ TEST(FlutterWindowTest, AlertNode) {
   EXPECT_EQ(role.lVal, ROLE_SYSTEM_ALERT);
 }
 
-TEST(FlutterWindowTest, LifecycleFocusMessages) {
+TEST_F(FlutterWindowTest, LifecycleFocusMessages) {
   MockFlutterWindow win32window;
   EXPECT_CALL(win32window, GetWindowHandle)
       .WillRepeatedly(Return(reinterpret_cast<HWND>(1)));
@@ -370,7 +379,7 @@ TEST(FlutterWindowTest, LifecycleFocusMessages) {
   EXPECT_EQ(last_event, WindowStateEvent::kUnfocus);
 }
 
-TEST(FlutterWindowTest, CachedLifecycleMessage) {
+TEST_F(FlutterWindowTest, CachedLifecycleMessage) {
   MockFlutterWindow win32window;
   EXPECT_CALL(win32window, GetWindowHandle)
       .WillRepeatedly(Return(reinterpret_cast<HWND>(1)));
@@ -403,39 +412,7 @@ TEST(FlutterWindowTest, CachedLifecycleMessage) {
   EXPECT_TRUE(restored);
 }
 
-TEST(FlutterWindowTest, PosthumousWindowMessage) {
-  MockWindowBindingHandlerDelegate delegate;
-  int msg_count = 0;
-  HWND hwnd;
-  EXPECT_CALL(delegate, OnWindowStateEvent)
-      .WillRepeatedly([&](HWND hwnd, WindowStateEvent event) { msg_count++; });
-
-  {
-    MockFlutterWindow win32window(false);
-    EXPECT_CALL(win32window, GetWindowHandle).WillRepeatedly([&]() {
-      return win32window.FlutterWindow::GetWindowHandle();
-    });
-    EXPECT_CALL(win32window, OnWindowStateEvent)
-        .WillRepeatedly([&](WindowStateEvent event) {
-          win32window.FlutterWindow::OnWindowStateEvent(event);
-        });
-    EXPECT_CALL(win32window, OnResize).Times(AnyNumber());
-    win32window.SetView(&delegate);
-    win32window.InitializeChild("Title", 1, 1);
-    hwnd = win32window.GetWindowHandle();
-    SendMessage(hwnd, WM_SIZE, 0, MAKEWORD(1, 1));
-    SendMessage(hwnd, WM_SETFOCUS, 0, 0);
-
-    // By setting this to zero before exiting the scope that contains
-    // win32window, and then checking its value afterwards, enforce that the
-    // window receive and process messages from its destructor without
-    // accessing out-of-bounds memory.
-    msg_count = 0;
-  }
-  EXPECT_GE(msg_count, 1);
-}
-
-TEST(FlutterWindowTest, UpdateCursor) {
+TEST_F(FlutterWindowTest, UpdateCursor) {
   FlutterWindow win32window(100, 100);
   win32window.UpdateFlutterCursor("text");
   HCURSOR cursor = ::GetCursor();

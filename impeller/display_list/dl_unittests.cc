@@ -184,8 +184,9 @@ TEST_P(DisplayListTest, CanDrawArc) {
         break;
     }
 
-    auto [p1, p2] = IMPELLER_PLAYGROUND_LINE(
-        Point(200, 200), Point(400, 400), 20, Color::White(), Color::White());
+    static PlaygroundPoint point_a(Point(200, 200), 20, Color::White());
+    static PlaygroundPoint point_b(Point(400, 400), 20, Color::White());
+    auto [p1, p2] = DrawPlaygroundLine(point_a, point_b);
 
     flutter::DisplayListBuilder builder;
     flutter::DlPaint paint;
@@ -676,8 +677,9 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
 
     std::optional<SkRect> bounds;
     if (use_bounds) {
-      auto [p1, p2] = IMPELLER_PLAYGROUND_LINE(
-          Point(350, 150), Point(800, 600), 20, Color::White(), Color::White());
+      static PlaygroundPoint point_a(Point(350, 150), 20, Color::White());
+      static PlaygroundPoint point_b(Point(800, 600), 20, Color::White());
+      auto [p1, p2] = DrawPlaygroundLine(point_a, point_b);
       bounds = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
     }
 
@@ -694,8 +696,8 @@ TEST_P(DisplayListTest, CanDrawBackdropFilter) {
                       &filter);
 
     if (draw_circle) {
-      auto circle_center =
-          IMPELLER_PLAYGROUND_POINT(Point(500, 400), 20, Color::Red());
+      static PlaygroundPoint center_point(Point(500, 400), 20, Color::Red());
+      auto circle_center = DrawPlaygroundPoint(center_point);
 
       flutter::DlPaint paint;
       paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
@@ -1518,8 +1520,9 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
   std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 
   auto vertices = flutter::DlVertices::Make(
-      flutter::DlVertexMode::kTriangles, 6, positions.data(),
-      /*texture_coordinates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
+      flutter::DlVertexMode::kTriangles, positions.size(), positions.data(),
+      /*texture_coordinates=*/nullptr, /*colors=*/nullptr, indices.size(),
+      indices.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1539,8 +1542,9 @@ TEST_P(DisplayListTest, DrawVerticesPremultipliesColors) {
   std::vector<flutter::DlColor> colors = {color, color, color, color};
 
   auto vertices = flutter::DlVertices::Make(
-      flutter::DlVertexMode::kTriangles, 6, positions.data(),
-      /*texture_coordinates=*/nullptr, colors.data(), 6, indices.data());
+      flutter::DlVertexMode::kTriangles, positions.size(), positions.data(),
+      /*texture_coordinates=*/nullptr, colors.data(), indices.size(),
+      indices.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1829,6 +1833,29 @@ TEST_P(DisplayListTest, SceneColorSource) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 #endif
+
+TEST_P(DisplayListTest, DrawPaintIgnoresMaskFilter) {
+  flutter::DisplayListBuilder builder;
+  builder.DrawPaint(flutter::DlPaint().setColor(flutter::DlColor::kWhite()));
+
+  auto filter = flutter::DlBlurMaskFilter(flutter::DlBlurStyle::kNormal, 10.0f);
+  builder.DrawCircle({300, 300}, 200,
+                     flutter::DlPaint().setMaskFilter(&filter));
+
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kGreen()};
+  const float stops[2] = {0.0, 1.0};
+  auto linear = flutter::DlColorSource::MakeLinear(
+      {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
+      flutter::DlTileMode::kRepeat);
+  flutter::DlPaint blend_paint =
+      flutter::DlPaint()           //
+          .setColorSource(linear)  //
+          .setBlendMode(flutter::DlBlendMode::kScreen);
+  builder.DrawPaint(blend_paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
 
 }  // namespace testing
 }  // namespace impeller

@@ -2,10 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 config("display_list_config") {
   defines = []
@@ -128,6 +131,7 @@ if (enable_unittests) {
       ":display_list_fixtures",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing",
+      "//flutter/testing:skia",
     ]
 
     if (!defined(defines)) {
@@ -138,10 +142,10 @@ if (enable_unittests) {
       defines += [ "_USE_MATH_DEFINES" ]
     }
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     if (is_fuchsia) {
-      libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 
@@ -169,10 +173,10 @@ if (enable_unittests) {
       defines += [ "_USE_MATH_DEFINES" ]
     }
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     if (is_fuchsia) {
-      libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 
@@ -201,6 +205,18 @@ if (enable_unittests) {
       "//flutter/testing:testing_lib",
     ]
   }
+
+  executable("display_list_transform_benchmarks") {
+    testonly = true
+
+    sources = [ "benchmarking/dl_transform_benchmarks.cc" ]
+
+    deps = [
+      ":display_list_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/testing:testing_lib",
+    ]
+  }
 }
 
 source_set("display_list_benchmarks_source") {
@@ -214,6 +230,7 @@ source_set("display_list_benchmarks_source") {
   deps = [
     ":display_list",
     ":display_list_fixtures",
+    "$dart_src/runtime:libdart_jit",  # for tracing
     "//flutter/benchmarking",
     "//flutter/common/graphics",
     "//flutter/display_list/testing:display_list_surface_provider",
@@ -222,7 +239,6 @@ source_set("display_list_benchmarks_source") {
     "//flutter/skia",
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
-    "//third_party/dart/runtime:libdart_jit",  # for tracing
   ]
 }
 

@@ -15,12 +15,22 @@
                 "--android-cpu=x64",
                 "--no-lto",
                 "--rbe",
-                "--no-goma"
+                "--no-goma",
+                "--target-dir",
+                "ci/android_emulator_debug_x64"
             ],
-            "name": "android_debug_x64",
+            "dependencies": [
+                {
+                    "dependency": "goldctl",
+                    "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+                }
+            ],
+            "name": "ci/android_emulator_debug_x64",
+            "description": "Build for debug mode x64 Android emulator tests, and Impeller scenario app tests.",
             "ninja": {
-                "config": "android_debug_x64",
+                "config": "ci/android_emulator_debug_x64",
                 "targets": [
+                    "flutter/impeller/toolkit/android:unittests",
                     "flutter/shell/platform/android:flutter_shell_native_unittests",
                     "flutter/testing/scenario_app"
                 ]
@@ -45,14 +55,22 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                             "--android-variant",
-                            "android_debug_x64",
+                            "ci/android_emulator_debug_x64",
                             "--type",
                             "android"
                     ]
                 },
                 {
-                    "language": "bash",
-                    "name": "Scenario App Integration Tests",
+                    "language": "dart",
+                    "name": "skia_gold_client/e2e_test",
+                    "script": "flutter/testing/skia_gold_client/tool/e2e_test.dart",
+                    "max_attempts": 1
+                },
+                {
+                    "language": "dart",
+                    "name": "Android Scenario App Integration Tests (Impeller/Vulkan)",
+                    "test_timeout_secs": 900,
+                    "max_attempts": 2,
                     "test_dependencies": [
                         {
                             "dependency": "android_virtual_device",
@@ -66,9 +84,11 @@
                     "contexts": [
                         "android_virtual_device"
                     ],
-                    "script": "flutter/testing/scenario_app/run_android_tests.sh",
+                    "script": "flutter/testing/scenario_app/bin/run_android_tests.dart",
                     "parameters": [
-                            "android_debug_x64"
+                        "--out-dir=../out/ci/android_emulator_debug_x64",
+                        "--enable-impeller",
+                        "--impeller-backend=vulkan"
                     ]
                 }
             ]
@@ -88,13 +108,24 @@
                 "--android-cpu=x86",
                 "--no-lto",
                 "--rbe",
-                "--no-goma"
+                "--no-goma",
+                "--target-dir",
+                "ci/android_emulator_debug_x86"
             ],
-            "name": "android_debug_x86",
+            "dependencies": [
+                {
+                    "dependency": "goldctl",
+                    "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"
+                }
+            ],
+            "name": "ci/android_emulator_debug_x86",
+            "description": "Build for debug mode x86 Android emulator tests.",
             "ninja": {
-                "config": "android_debug_x86",
+                "config": "ci/android_emulator_debug_x86",
                 "targets": [
-                    "flutter/shell/platform/android:flutter_shell_native_unittests"
+                    "flutter/impeller/toolkit/android:unittests",
+                    "flutter/shell/platform/android:flutter_shell_native_unittests",
+                    "flutter/testing/scenario_app"
                 ]
             },
             "tests": [
@@ -117,7 +148,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                             "--android-variant",
-                            "android_debug_x86",
+                            "ci/android_emulator_debug_x86",
                             "--type",
                             "android"
                     ]

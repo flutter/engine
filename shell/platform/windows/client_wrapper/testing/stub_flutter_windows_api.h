@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/shell/platform/windows/flutter_windows_internal.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 
 namespace flutter {
@@ -72,12 +73,26 @@ class StubFlutterWindowsApi {
   // Called for FlutterDesktopEngineReloadSystemFonts.
   virtual void EngineReloadSystemFonts() {}
 
+  // Called for FlutterDesktopEngineRegisterPlatformViewType.
+  virtual void EngineRegisterPlatformViewType(
+      const char* view_type_name,
+      FlutterPlatformViewTypeEntry view_type) {}
+
   // Called for FlutterDesktopViewGetHWND.
   virtual HWND ViewGetHWND() { return reinterpret_cast<HWND>(1); }
 
   // Called for FlutterDesktopViewGetGraphicsAdapter.
   virtual IDXGIAdapter* ViewGetGraphicsAdapter() {
     return reinterpret_cast<IDXGIAdapter*>(2);
+  }
+
+  // Called for FlutterDesktopPluginRegistrarGetView.
+  virtual FlutterDesktopViewRef PluginRegistrarGetView() { return nullptr; }
+
+  // Called for FlutterDesktopPluginRegistrarGetViewById.
+  virtual FlutterDesktopViewRef PluginRegistrarGetViewById(
+      FlutterDesktopViewId view_id) {
+    return nullptr;
   }
 
   // Called for FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate.

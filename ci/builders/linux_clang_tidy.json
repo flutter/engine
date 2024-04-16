@@ -6,15 +6,23 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
                 "--android",
                 "--android-cpu",
                 "arm64",
-                "--no-lto"
+                "--no-lto",
+                "--target-dir",
+                "ci/android_debug_arm64_clang_tidy",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "android_debug_arm64",
+            "name": "ci/android_debug_arm64_clang_tidy",
+            "description": "A debug mode arm64 Android build used only as the basis for a clang-tidy run.",
             "ninja": {
-                "config": "android_debug_arm64"
+                "config": "ci/android_debug_arm64_clang_tidy"
             }
         },
         {
@@ -23,15 +31,23 @@
                 "device_type=none",
                 "os=Linux"
             ],
+            "gclient_variables": {
+                "use_rbe": true
+            },
             "gn": [
                 "--runtime-mode",
                 "debug",
                 "--prebuilt-dart-sdk",
-                "--no-lto"
+                "--no-lto",
+                "--target-dir",
+                "ci/host_debug_clang_tidy",
+                "--rbe",
+                "--no-goma"
             ],
-            "name": "host_debug",
+            "name": "ci/host_debug_clang_tidy",
+            "description": "A debug mode Linux host build used only as the basis for a clang-tidy run.",
             "ninja": {
-                "config": "host_debug"
+                "config": "ci/host_debug_clang_tidy"
             }
         }
     ],
@@ -48,19 +64,19 @@
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug"
+                "ci/host_debug_clang_tidy"
             ],
             "tasks": [
                 {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
-		    "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -77,19 +93,19 @@
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug"
+                "ci/host_debug_clang_tidy"
             ],
             "tasks": [
                 {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=1",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -106,20 +122,19 @@
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug",
-                "android_debug_arm64"
+                "ci/host_debug_clang_tidy"
             ],
             "tasks": [
                 {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=2",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -136,20 +151,19 @@
                 "download_android_deps": false
             },
             "dependencies": [
-                "host_debug",
-                "android_debug_arm64"
+                "ci/host_debug_clang_tidy"
             ],
             "tasks": [
                 {
                     "name": "test: lint host_debug",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "ci/host_debug_clang_tidy",
                         "--lint-all",
                         "--shard-id=3",
-                        "--shard-variants=host_debug,host_debug,host_debug"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
-            "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]
@@ -163,20 +177,20 @@
                 "cores=32"
             ],
             "dependencies": [
-                "host_debug",
-                "android_debug_arm64"
+                "ci/host_debug_clang_tidy",
+                "ci/android_debug_arm64_clang_tidy"
             ],
             "tasks": [
                 {
                     "name": "test: lint android_debug_arm64",
                     "parameters": [
                         "--variant",
-                        "android_debug_arm64",
+                        "ci/android_debug_arm64_clang_tidy",
                         "--lint-all",
                         "--shard-id=0",
-                        "--shard-variants=host_debug,host_debug,host_debug,host_debug"
+                        "--shard-variants=ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy,ci/host_debug_clang_tidy"
                     ],
-		    "max_attempts": 1,
+                    "max_attempts": 1,
                     "script": "flutter/ci/clang_tidy.sh"
                 }
             ]

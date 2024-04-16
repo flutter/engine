@@ -4,7 +4,8 @@
 
 package io.flutter.plugin.platform;
 
-import android.annotation.TargetApi;
+import static io.flutter.Build.API_LEVELS;
+
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
@@ -201,14 +202,12 @@ public class PlatformPlugin {
         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         break;
       case HEAVY_IMPACT:
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= API_LEVELS.API_23) {
           view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
         }
         break;
       case SELECTION_CLICK:
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-          view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
-        }
+        view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
         break;
     }
   }
@@ -220,20 +219,10 @@ public class PlatformPlugin {
   @SuppressWarnings("deprecation")
   private void setSystemChromeApplicationSwitcherDescription(
       PlatformChannel.AppSwitcherDescription description) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
-
-    // Linter refuses to believe we're only executing this code in API 28 unless we
-    // use distinct if
-    // blocks and
-    // hardcode the API 28 constant.
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P
-        && Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_28) {
       activity.setTaskDescription(
           new TaskDescription(description.label, /* icon= */ null, description.color));
-    }
-    if (Build.VERSION.SDK_INT >= 28) {
+    } else {
       TaskDescription taskDescription =
           new TaskDescription(description.label, 0, description.color);
       activity.setTaskDescription(taskDescription);
@@ -291,8 +280,7 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE) {
       // IMMERSIVE
       // Available starting at 19
       // Should not show overlays, swipe from edges to reveal overlays, needs onChange callback
@@ -307,8 +295,7 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
-    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    } else if (systemUiMode == PlatformChannel.SystemUiMode.IMMERSIVE_STICKY) {
       // STICKY IMMERSIVE
       // Available starting at 19
       // Should not show overlays, swipe from edges to reveal overlays. The app will also receive
@@ -323,7 +310,7 @@ public class PlatformPlugin {
               | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
               | View.SYSTEM_UI_FLAG_FULLSCREEN;
     } else if (systemUiMode == PlatformChannel.SystemUiMode.EDGE_TO_EDGE
-        && Build.VERSION.SDK_INT >= 29) {
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       // EDGE TO EDGE
       // Available starting at 29
       // SDK 29 and up will apply a translucent body scrim behind 2/3 button navigation bars
@@ -352,10 +339,7 @@ public class PlatformPlugin {
             | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
 
-    // The SYSTEM_UI_FLAG_IMMERSIVE_STICKY flag was introduced in API 19, so we
-    // apply it
-    // if desired, and if the current Android version is 19 or greater.
-    if (overlaysToShow.size() == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+    if (overlaysToShow.size() == 0) {
       enabledOverlays |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
     }
 
@@ -397,7 +381,6 @@ public class PlatformPlugin {
   }
 
   @SuppressWarnings("deprecation")
-  @TargetApi(21)
   private void setSystemChromeSystemUIOverlayStyle(
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();
@@ -405,7 +388,7 @@ public class PlatformPlugin {
     WindowInsetsControllerCompat windowInsetsControllerCompat =
         new WindowInsetsControllerCompat(window, view);
 
-    if (Build.VERSION.SDK_INT < 30) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_30) {
       // Flag set to specify that this window is responsible for drawing the background for the
       // system bars. Must be set for all operations on API < 30 excluding enforcing system
       // bar contrasts. Deprecated in API 30.
@@ -426,7 +409,7 @@ public class PlatformPlugin {
     // If transparent, SDK 29 and higher may apply a translucent scrim behind the bar to ensure
     // proper contrast. This can be overridden with
     // SystemChromeStyle.systemStatusBarContrastEnforced.
-    if (Build.VERSION.SDK_INT >= 23) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_23) {
       if (systemChromeStyle.statusBarIconBrightness != null) {
         switch (systemChromeStyle.statusBarIconBrightness) {
           case DARK:
@@ -449,7 +432,8 @@ public class PlatformPlugin {
     // You can't override the enforced contrast for a transparent status bar until SDK 29.
     // This overrides the translucent scrim that may be placed behind the bar on SDK 29+ to ensure
     // contrast is appropriate when using full screen layout modes like Edge to Edge.
-    if (systemChromeStyle.systemStatusBarContrastEnforced != null && Build.VERSION.SDK_INT >= 29) {
+    if (systemChromeStyle.systemStatusBarContrastEnforced != null
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       window.setStatusBarContrastEnforced(systemChromeStyle.systemStatusBarContrastEnforced);
     }
 
@@ -460,7 +444,7 @@ public class PlatformPlugin {
     // If transparent, SDK 29 and higher may apply a translucent scrim behind 2/3 button navigation
     // bars to ensure proper contrast. This can be overridden with
     // SystemChromeStyle.systemNavigationBarContrastEnforced.
-    if (Build.VERSION.SDK_INT >= 26) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       if (systemChromeStyle.systemNavigationBarIconBrightness != null) {
         switch (systemChromeStyle.systemNavigationBarIconBrightness) {
           case DARK:
@@ -481,7 +465,8 @@ public class PlatformPlugin {
       }
     }
     // You can't change the color of the navigation bar divider color until SDK 28.
-    if (systemChromeStyle.systemNavigationBarDividerColor != null && Build.VERSION.SDK_INT >= 28) {
+    if (systemChromeStyle.systemNavigationBarDividerColor != null
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       window.setNavigationBarDividerColor(systemChromeStyle.systemNavigationBarDividerColor);
     }
 
@@ -490,7 +475,7 @@ public class PlatformPlugin {
     // SDK 29+ to ensure contrast is appropriate when using full screen layout modes like
     // Edge to Edge.
     if (systemChromeStyle.systemNavigationBarContrastEnforced != null
-        && Build.VERSION.SDK_INT >= 29) {
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       window.setNavigationBarContrastEnforced(
           systemChromeStyle.systemNavigationBarContrastEnforced);
     }

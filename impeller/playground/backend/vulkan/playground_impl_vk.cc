@@ -20,7 +20,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
-#include "impeller/renderer/backend/vulkan/surface_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 #include "impeller/renderer/vk/compute_shaders_vk.h"
 #include "impeller/scene/shaders/vk/scene_shaders_vk.h"
@@ -60,18 +60,7 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
 
 PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
     : PlaygroundImpl(switches), handle_(nullptr, &DestroyWindowHandle) {
-  if (!::glfwVulkanSupported()) {
-#ifdef TARGET_OS_MAC
-    VALIDATION_LOG << "Attempted to initialize a Vulkan playground on macOS "
-                      "where Vulkan cannot be found. It can be installed via "
-                      "MoltenVK and make sure to install it globally so "
-                      "dlopen can find it.";
-#else
-    VALIDATION_LOG << "Attempted to initialize a Vulkan playground on a system "
-                      "that does not support Vulkan.";
-#endif
-    return;
-  }
+  FML_CHECK(IsVulkanDriverPresent());
 
   InitGlobalVulkanInstance();
 
@@ -99,21 +88,15 @@ PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
   context_settings.shader_libraries_data = ShaderLibraryMappingsForPlayground();
   context_settings.cache_directory = fml::paths::GetCachesDirectory();
   context_settings.enable_validation = switches_.enable_vulkan_validation;
+  context_settings.fatal_missing_validations =
+      switches_.enable_vulkan_validation;
+  ;
 
   auto context_vk = ContextVK::Create(std::move(context_settings));
   if (!context_vk || !context_vk->IsValid()) {
     VALIDATION_LOG << "Could not create Vulkan context in the playground.";
     return;
   }
-
-  // Without this, the playground will timeout waiting for the presentation.
-  // It's better to have some Vulkan validation tests running on CI to catch
-  // regressions, but for now this is a workaround.
-  //
-  // TODO(matanlurey): https://github.com/flutter/flutter/issues/134852.
-  //
-  // (Note, if you're using MoltenVK, or Linux, you can comment out this line).
-  context_vk->SetSyncPresentation(true);
 
   VkSurfaceKHR vk_surface;
   auto res = vk::Result{::glfwCreateWindowSurface(
@@ -231,6 +214,22 @@ fml::Status PlaygroundImplVK::SetCapabilities(
   return fml::Status(
       fml::StatusCode::kUnimplemented,
       "PlaygroundImplVK doesn't support setting the capabilities.");
+}
+
+bool PlaygroundImplVK::IsVulkanDriverPresent() {
+  if (::glfwVulkanSupported()) {
+    return true;
+  }
+#ifdef TARGET_OS_MAC
+  FML_LOG(ERROR) << "Attempting to initialize a Vulkan playground on macOS "
+                    "where Vulkan cannot be found. It can be installed via "
+                    "MoltenVK and make sure to install it globally so "
+                    "dlopen can find it.";
+#else   // TARGET_OS_MAC
+  FML_LOG(ERROR) << "Attempting to initialize a Vulkan playground on a system "
+                    "that does not support Vulkan.";
+#endif  // TARGET_OS_MAC
+  return false;
 }
 
 }  // namespace impeller

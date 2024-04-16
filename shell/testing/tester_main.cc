@@ -24,8 +24,8 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 
-#include "third_party/abseil-cpp/absl/base/no_destructor.h"
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -35,7 +35,6 @@
 
 #if ALLOW_IMPELLER
 #include <vulkan/vulkan.h>                                        // nogncheck
-#include "flutter/vulkan/procs/vulkan_proc_table.h"               // nogncheck
 #include "impeller/entity/vk/entity_shaders_vk.h"                 // nogncheck
 #include "impeller/entity/vk/framebuffer_blend_shaders_vk.h"      // nogncheck
 #include "impeller/entity/vk/modern_shaders_vk.h"                 // nogncheck
@@ -69,7 +68,6 @@ static std::vector<std::shared_ptr<fml::Mapping>> ShaderLibraryMappings() {
 struct ImpellerVulkanContextHolder {
   ImpellerVulkanContextHolder() = default;
   ImpellerVulkanContextHolder(ImpellerVulkanContextHolder&&) = default;
-  fml::RefPtr<vulkan::VulkanProcTable> vulkan_proc_table;
   std::shared_ptr<impeller::ContextVK> context;
   std::shared_ptr<impeller::SurfaceContextVK> surface_context;
 
@@ -77,15 +75,8 @@ struct ImpellerVulkanContextHolder {
 };
 
 bool ImpellerVulkanContextHolder::Initialize(bool enable_validation) {
-  vulkan_proc_table =
-      fml::MakeRefCounted<vulkan::VulkanProcTable>(&vkGetInstanceProcAddr);
-  if (!vulkan_proc_table->NativeGetInstanceProcAddr()) {
-    FML_LOG(ERROR) << "Could not load Swiftshader library.";
-    return false;
-  }
   impeller::ContextVK::Settings context_settings;
-  context_settings.proc_address_callback =
-      vulkan_proc_table->NativeGetInstanceProcAddr();
+  context_settings.proc_address_callback = &vkGetInstanceProcAddr;
   context_settings.shader_libraries_data = ShaderLibraryMappings();
   context_settings.cache_directory = fml::paths::GetCachesDirectory();
   context_settings.enable_validation = enable_validation;
@@ -168,8 +159,7 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override {}
 
   // |ExternalViewEmbedder|
-  void PrepareFlutterView(int64_t flutter_view_id,
-                          SkISize frame_size,
+  void PrepareFlutterView(SkISize frame_size,
                           double device_pixel_ratio) override {}
 
   // |ExternalViewEmbedder|
@@ -610,6 +600,19 @@ EXPORTED void Spawn(const char* entrypoint, const char* route) {
 
   Dart_EnterIsolate(isolate);
 }
+
+EXPORTED void ForceShutdownIsolate() {
+  // Enable Isolate.exit().
+  FML_DCHECK(Dart_CurrentIsolate() != nullptr);
+  Dart_Handle isolate_lib = Dart_LookupLibrary(tonic::ToDart("dart:isolate"));
+  FML_CHECK(!tonic::CheckAndHandleError(isolate_lib));
+  Dart_Handle isolate_type = Dart_GetNonNullableType(
+      isolate_lib, tonic::ToDart("Isolate"), 0, nullptr);
+  FML_CHECK(!tonic::CheckAndHandleError(isolate_type));
+  Dart_Handle result =
+      Dart_SetField(isolate_type, tonic::ToDart("_mayExit"), Dart_True());
+  FML_CHECK(!tonic::CheckAndHandleError(result));
+}
 }
 
 }  // namespace flutter
@@ -638,6 +641,7 @@ int main(int argc, char* argv[]) {
   }
 
   settings.leak_vm = false;
+  settings.enable_platform_isolates = true;
 
   if (settings.icu_data_path.empty()) {
     settings.icu_data_path = "icudtl.dat";

@@ -2,11 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 source_set("flow") {
   sources = [
@@ -134,7 +137,7 @@ if (enable_unittests) {
 
     public_deps = [
       "//flutter/testing:skia",
-      "//third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest",
     ]
 
     deps = [
@@ -187,6 +190,7 @@ if (enable_unittests) {
       ":flow",
       ":flow_fixtures",
       ":flow_testing",
+      "$dart_src/runtime:libdart_jit",  # for tracing
       "//flutter/common/graphics",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/fml",
@@ -194,8 +198,7 @@ if (enable_unittests) {
       "//flutter/skia",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
-      "//third_party/dart/runtime:libdart_jit",  # for tracing
-      "//third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest",
     ]
 
     if (!defined(defines)) {

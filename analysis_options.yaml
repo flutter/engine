@@ -10,8 +10,10 @@ analyzer:
     strict-inference: true
     strict-raw-types: true
   errors:
-    # allow self-reference to deprecated members (we do this because otherwise we have
-    # to annotate every member in every test, assert, etc, when we deprecate something)
+    # allow deprecated members (we do this because otherwise we have to annotate
+    # every member in every test, assert, etc, when we or the Dart SDK deprecates
+    # something (https://github.com/flutter/flutter/issues/143312)
+    deprecated_member_use: ignore
     deprecated_member_use_from_same_package: ignore
   exclude: # DIFFERENT FROM FLUTTER/FLUTTER
     # Fixture depends on dart:ui and raises false positives.
@@ -108,6 +110,7 @@ linter:
     # - lines_longer_than_80_chars # not required by flutter style
     - literal_only_boolean_expressions
     # - matching_super_parameters # blocked on https://github.com/dart-lang/language/issues/2509
+    - missing_code_block_language_in_doc_comment
     # - missing_whitespace_between_adjacent_strings # DIFFERENT FROM FLUTTER/FLUTTER (too many false positives)
     - no_adjacent_strings_in_list
     - no_default_cases

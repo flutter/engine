@@ -18,10 +18,13 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDisplayLink.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTimeConverter.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterVSyncWaiter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 
@@ -83,7 +86,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
 /**
  * Private interface declaration for FlutterEngine.
  */
-@interface FlutterEngine () <FlutterBinaryMessenger>
+@interface FlutterEngine () <FlutterBinaryMessenger, FlutterMouseCursorPluginDelegate>
 
 /**
  * A mutable array that holds one bool value that determines if responses to platform messages are
@@ -459,10 +462,33 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   // Proxy to allow plugins, channels to hold a weak reference to the binary messenger (self).
   FlutterBinaryMessengerRelay* _binaryMessenger;
+
+  // Map from ViewId to vsync waiter. Note that this is modified on main thread
+  // but accessed on UI thread, so access must be @synchronized.
+  NSMapTable<NSNumber*, FlutterVSyncWaiter*>* _vsyncWaiters;
+
+  // Weak reference to last view that received a pointer event. This is used to
+  // pair cursor change with a view.
+  __weak FlutterView* _lastViewWithPointerEvent;
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix project:(FlutterDartProject*)project {
   return [self initWithName:labelPrefix project:project allowHeadlessExecution:YES];
+}
+
+static const int kMainThreadPriority = 47;
+
+static void SetThreadPriority(FlutterThreadPriority priority) {
+  if (priority == kDisplay || priority == kRaster) {
+    pthread_t thread = pthread_self();
+    sched_param param;
+    int policy;
+    if (!pthread_getschedparam(thread, &policy, &param)) {
+      param.sched_priority = kMainThreadPriority;
+      pthread_setschedparam(thread, policy, &param);
+    }
+    pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+  }
 }
 
 - (instancetype)initWithName:(NSString*)labelPrefix
@@ -514,6 +540,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else {
     _terminationHandler = nil;
   }
+
+  _vsyncWaiters = [NSMapTable strongToStrongObjectsMapTable];
 
   return self;
 }
@@ -624,7 +652,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   const FlutterCustomTaskRunners custom_task_runners = {
       .struct_size = sizeof(FlutterCustomTaskRunners),
       .platform_task_runner = &cocoa_task_runner_description,
-  };
+      .thread_priority_setter = SetThreadPriority};
   flutterArguments.custom_task_runners = &custom_task_runners;
 
   [self loadAOTData:_project.assetsPath];
@@ -637,6 +665,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
     [engine engineCallbackOnPreEngineRestart];
+  };
+
+  flutterArguments.vsync_callback = [](void* user_data, intptr_t baton) {
+    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+    [engine onVSync:baton];
   };
 
   FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];
@@ -703,6 +736,37 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [controller setUpWithEngine:self viewId:viewId threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
+
+  if (controller.viewLoaded) {
+    [self viewControllerViewDidLoad:controller];
+  }
+}
+
+- (void)viewControllerViewDidLoad:(FlutterViewController*)viewController {
+  __weak FlutterEngine* weakSelf = self;
+  FlutterTimeConverter* timeConverter = [[FlutterTimeConverter alloc] initWithEngine:self];
+  FlutterVSyncWaiter* waiter = [[FlutterVSyncWaiter alloc]
+      initWithDisplayLink:[FlutterDisplayLink displayLinkWithView:viewController.view]
+                    block:^(CFTimeInterval timestamp, CFTimeInterval targetTimestamp,
+                            uintptr_t baton) {
+                      uint64_t timeNanos = [timeConverter CAMediaTimeToEngineTime:timestamp];
+                      uint64_t targetTimeNanos =
+                          [timeConverter CAMediaTimeToEngineTime:targetTimestamp];
+                      FlutterEngine* engine = weakSelf;
+                      if (engine) {
+                        // It is a bit unfortunate that embedder requires OnVSync call on
+                        // platform thread just to immediately redispatch it to UI thread.
+                        // We are already on UI thread right now, but have to do the
+                        // extra hop to main thread.
+                        [engine->_threadSynchronizer performOnPlatformThread:^{
+                          engine->_embedderAPI.OnVsync(_engine, baton, timeNanos, targetTimeNanos);
+                        }];
+                      }
+                    }];
+  FML_DCHECK([_vsyncWaiters objectForKey:@(viewController.viewId)] == nil);
+  @synchronized(_vsyncWaiters) {
+    [_vsyncWaiters setObject:waiter forKey:@(viewController.viewId)];
+  }
 }
 
 - (void)deregisterViewControllerForId:(FlutterViewId)viewId {
@@ -710,6 +774,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   if (oldController != nil) {
     [oldController detachFromEngine];
     [_viewControllers removeObjectForKey:@(viewId)];
+  }
+  @synchronized(_vsyncWaiters) {
+    [_vsyncWaiters removeObjectForKey:@(viewId)];
   }
 }
 
@@ -765,7 +832,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (FlutterCompositor*)createFlutterCompositor {
   _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
-      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
+      [[FlutterViewEngineProvider alloc] initWithEngine:self],
+      [[FlutterTimeConverter alloc] initWithEngine:self], _platformViewController);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
@@ -783,15 +851,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                   void* user_data                            //
                                                ) { return true; };
 
-  _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
-                                           size_t layers_count,          //
-                                           void* user_data               //
-                                        ) {
-    // TODO(dkwingsmt): This callback only supports single-view, therefore it
-    // only operates on the implicit view. To support multi-view, we need a new
-    // callback that also receives a view ID.
-    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->Present(kFlutterImplicitViewId,
-                                                                             layers, layers_count);
+  _compositor.present_view_callback = [](const FlutterPresentViewInfo* info) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(info->user_data)
+        ->Present(info->view_id, info->layers, info->layers_count);
   };
 
   _compositor.avoid_backing_store_cache = true;
@@ -824,23 +886,28 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [self updateDisplayConfig];
 }
 
+- (NSArray<NSScreen*>*)screens {
+  return [NSScreen screens];
+}
+
 - (void)updateDisplayConfig {
   if (!_engine) {
     return;
   }
 
   std::vector<FlutterEngineDisplay> displays;
-  for (NSScreen* screen : [NSScreen screens]) {
+  for (NSScreen* screen : [self screens]) {
     CGDirectDisplayID displayID =
         static_cast<CGDirectDisplayID>([screen.deviceDescription[@"NSScreenNumber"] integerValue]);
 
+    double devicePixelRatio = screen.backingScaleFactor;
     FlutterEngineDisplay display;
     display.struct_size = sizeof(display);
     display.display_id = displayID;
     display.single_display = false;
-    display.width = static_cast<size_t>(screen.frame.size.width);
-    display.height = static_cast<size_t>(screen.frame.size.height);
-    display.device_pixel_ratio = screen.backingScaleFactor;
+    display.width = static_cast<size_t>(screen.frame.size.width) * devicePixelRatio;
+    display.height = static_cast<size_t>(screen.frame.size.height) * devicePixelRatio;
+    display.device_pixel_ratio = devicePixelRatio;
 
     CVDisplayLinkRef displayLinkRef = nil;
     CVReturn error = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLinkRef);
@@ -893,12 +960,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
-  if (viewController.viewId != kFlutterImplicitViewId) {
-    // TODO(dkwingsmt): The embedder API only supports single-view for now. As
-    // embedder APIs are converted to multi-view, this method should support any
-    // views.
-    return;
-  }
   if (!_engine || !viewController || !viewController.viewLoaded) {
     return;
   }
@@ -917,12 +978,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       .left = static_cast<size_t>(scaledBounds.origin.x),
       .top = static_cast<size_t>(scaledBounds.origin.y),
       .display_id = static_cast<uint64_t>(displayId),
+      .view_id = viewController.viewId,
   };
   _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
 }
 
 - (void)sendPointerEvent:(const FlutterPointerEvent&)event {
   _embedderAPI.SendPointerEvent(_engine, &event, 1);
+  _lastViewWithPointerEvent = [self viewControllerForId:kFlutterImplicitViewId].flutterView;
 }
 
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
@@ -1029,6 +1092,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
 }
 
+- (void)onVSync:(uintptr_t)baton {
+  @synchronized(_vsyncWaiters) {
+    // TODO(knopp): Use vsync waiter for correct view.
+    // https://github.com/flutter/flutter/issues/142845
+    FlutterVSyncWaiter* waiter = [_vsyncWaiters objectForKey:@(kFlutterImplicitViewId)];
+    [waiter waitForVSync:baton];
+  }
+}
+
 /**
  * Note: Called from dealloc. Should not use accessors or other methods.
  */
@@ -1100,7 +1172,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)addInternalPlugins {
   __weak FlutterEngine* weakSelf = self;
-  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]];
+  [FlutterMouseCursorPlugin registerWithRegistrar:[self registrarForPlugin:@"mousecursor"]
+                                         delegate:self];
   [FlutterMenuPlugin registerWithRegistrar:[self registrarForPlugin:@"menu"]];
   _settingsChannel =
       [FlutterBasicMessageChannel messageChannelWithName:kFlutterSettingsChannel
@@ -1113,6 +1186,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   [_platformChannel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
     [weakSelf handleMethodCall:call result:result];
   }];
+}
+
+- (void)didUpdateMouseCursor:(NSCursor*)cursor {
+  // Mouse cursor plugin does not specify which view is responsible for changing the cursor,
+  // so the reasonable assumption here is that cursor change is a result of a mouse movement
+  // and thus the cursor will be paired with last Flutter view that reveived mouse event.
+  [_lastViewWithPointerEvent didUpdateMouseCursor:cursor];
 }
 
 - (void)applicationWillTerminate:(NSNotification*)notification {

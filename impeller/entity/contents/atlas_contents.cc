@@ -240,13 +240,11 @@ bool AtlasContents::Render(const ContentContext& renderer,
         SPrintF("DrawAtlas Blend (%s)", BlendModeToString(blend_mode_)));
 #endif  // IMPELLER_DEBUG
     pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
-    pass.SetStencilReference(entity.GetClipDepth());
     pass.SetPipeline(
         renderer.GetPorterDuffBlendPipeline(OptionsFromPass(pass)));
 
     FS::FragInfo frag_info;
     VS::FrameInfo frame_info;
-    frame_info.depth = entity.GetShaderClipDepth();
 
     auto dst_sampler_descriptor = sampler_descriptor_;
     if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
@@ -274,7 +272,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
     FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
+    frame_info.mvp = entity.GetShaderTransform(pass);
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
     VS::BindFrameInfo(pass, uniform_view);
@@ -405,14 +403,12 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.depth = entity.GetShaderClipDepth();
-  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
+  frame_info.mvp = entity.GetShaderTransform(pass);
   frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frame_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   pass.SetPipeline(renderer.GetTexturePipeline(options));
-  pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
   FS::BindTextureSampler(pass, texture,
@@ -492,8 +488,7 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   VS::FrameInfo frame_info;
-  frame_info.depth = entity.GetShaderClipDepth();
-  frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform();
+  frame_info.mvp = entity.GetShaderTransform(pass);
 
   FS::FragInfo frag_info;
   frag_info.alpha = alpha_;
@@ -501,7 +496,6 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.blend_mode = BlendMode::kSourceOver;
   pass.SetPipeline(renderer.GetGeometryColorPipeline(opts));
-  pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));

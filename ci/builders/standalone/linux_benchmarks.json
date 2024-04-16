@@ -8,6 +8,8 @@
         "use_rbe": true
     },
     "gn": [
+        "--target-dir",
+        "ci/host_release_benchmarks",
         "--runtime-mode",
         "release",
         "--prebuilt-dart-sdk",
@@ -15,13 +17,16 @@
         "--rbe",
         "--no-goma"
     ],
-    "name": "host_release",
+    "name": "ci/host_release_benchmarks",
+    "description": "Builds and runs host-side benchmarks on Linux.",
     "ninja": {
-        "config": "host_release",
+        "config": "ci/host_release_benchmarks",
         "targets": [
             "flutter/build/dart:copy_dart_sdk",
             "flutter/display_list:display_list_benchmarks",
             "flutter/display_list:display_list_builder_benchmarks",
+            "flutter/display_list:display_list_region_benchmarks",
+            "flutter/display_list:display_list_transform_benchmarks",
             "flutter/fml:fml_benchmarks",
             "flutter/impeller/geometry:geometry_benchmarks",
             "flutter/impeller/aiks:canvas_benchmarks",
@@ -38,7 +43,10 @@
         {
             "language": "bash",
             "name": "Generate metrics test",
-            "script": "flutter/testing/benchmark/generate_metrics.sh"
+            "script": "flutter/testing/benchmark/generate_metrics.sh",
+            "parameters": [
+                "ci/host_release_benchmarks"
+            ]
         },
         {
             "contexts": [
@@ -46,7 +54,10 @@
             ],
             "language": "bash",
             "name": "Upload metrics",
-            "script": "flutter/testing/benchmark/upload_metrics.sh"
+            "script": "flutter/testing/benchmark/upload_metrics.sh",
+            "parameters": [
+                "ci/host_release_benchmarks"
+            ]
         }
     ]
 }

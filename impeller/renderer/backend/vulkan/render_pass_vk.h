@@ -9,6 +9,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "vulkan/vulkan_handles.hpp"
@@ -16,6 +17,7 @@
 namespace impeller {
 
 class CommandBufferVK;
+class SamplerVK;
 
 class RenderPassVK final : public RenderPass {
  public:
@@ -47,10 +49,9 @@ class RenderPassVK final : public RenderPass {
   size_t vertex_count_ = 0u;
   bool has_index_buffer_ = false;
   bool has_label_ = false;
-  bool pipeline_valid_ = false;
+  const Pipeline<PipelineDescriptor>* pipeline_;
   bool pipeline_uses_input_attachments_ = false;
-  vk::DescriptorSet descriptor_set_ = {};
-  vk::PipelineLayout pipeline_layout_ = {};
+  std::shared_ptr<SamplerVK> immutable_sampler_;
 
   RenderPassVK(const std::shared_ptr<const Context>& context,
                const RenderTarget& target,

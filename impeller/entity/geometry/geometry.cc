@@ -7,6 +7,7 @@
 #include <memory>
 #include <optional>
 
+#include "fml/status.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/circle_geometry.h"
 #include "impeller/entity/geometry/cover_geometry.h"
@@ -49,8 +50,7 @@ GeometryResult Geometry::ComputePositionGeometry(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
@@ -85,8 +85,7 @@ GeometryResult Geometry::ComputePositionUVGeometry(
               .vertex_count = count,
               .index_type = IndexType::kNone,
           },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
@@ -157,8 +156,7 @@ GeometryResult ComputeUVGeometryForRect(Rect source_rect,
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
@@ -168,6 +166,10 @@ GeometryResult Geometry::GetPositionUVBuffer(Rect texture_coverage,
                                              const Entity& entity,
                                              RenderPass& pass) const {
   return {};
+}
+
+GeometryResult::Mode Geometry::GetResultMode() const {
+  return GeometryResult::Mode::kNormal;
 }
 
 std::shared_ptr<Geometry> Geometry::MakeFillPath(
@@ -236,6 +238,10 @@ bool Geometry::CoversArea(const Matrix& transform, const Rect& rect) const {
 
 bool Geometry::IsAxisAlignedRect() const {
   return false;
+}
+
+bool Geometry::CanApplyMaskFilter() const {
+  return true;
 }
 
 }  // namespace impeller

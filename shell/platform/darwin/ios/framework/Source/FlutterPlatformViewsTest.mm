@@ -88,6 +88,10 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
+  void OnPlatformViewAddView(int64_t view_id,
+                             const ViewportMetrics& viewport_metrics,
+                             AddViewCallback callback) override {}
+  void OnPlatformViewRemoveView(int64_t view_id, RemoveViewCallback callback) override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics) override {}
   const flutter::Settings& OnPlatformViewGetSettings() const override { return settings_; }
@@ -244,6 +248,17 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertTrue([childClippingView pointInside:CGPointMake(199, 100) withEvent:nil]);
   XCTAssertTrue([childClippingView pointInside:CGPointMake(100, 199) withEvent:nil]);
   XCTAssertTrue([childClippingView pointInside:CGPointMake(199, 199) withEvent:nil]);
+}
+
+- (void)testReleasesBackdropFilterSubviewsOnChildClippingViewDealloc {
+  __weak NSMutableArray<UIVisualEffectView*>* weakBackdropFilterSubviews = nil;
+  @autoreleasepool {
+    ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
+    weakBackdropFilterSubviews = clipping_view.backdropFilterSubviews;
+    XCTAssertNotNil(weakBackdropFilterSubviews);
+    clipping_view = nil;
+  }
+  XCTAssertNil(weakBackdropFilterSubviews);
 }
 
 - (void)testApplyBackdropFilter {

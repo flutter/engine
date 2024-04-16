@@ -14,7 +14,8 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
+#include "impeller/renderer/backend/vulkan/driver_info_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
@@ -48,11 +49,18 @@ class ContextVK final : public Context,
     fml::UniqueFD cache_directory;
     bool enable_validation = false;
     bool enable_gpu_tracing = false;
+    /// If validations are requested but cannot be enabled, log a fatal error.
+    bool fatal_missing_validations = false;
 
     Settings() = default;
 
     Settings(Settings&&) = default;
   };
+
+  /// Choose the number of worker threads the context_vk will create.
+  ///
+  /// Visible for testing.
+  static size_t ChooseThreadCountForWorkers(size_t hardware_concurrency);
 
   static std::shared_ptr<ContextVK> Create(Settings settings);
 
@@ -88,13 +96,11 @@ class ContextVK final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  const std::shared_ptr<YUVConversionLibraryVK>& GetYUVConversionLibrary()
+      const;
+
   // |Context|
   void Shutdown() override;
-
-  // |Context|
-  void SetSyncPresentation(bool value) override { sync_presentation_ = value; }
-
-  bool GetSyncPresentation() const { return sync_presentation_; }
 
   void SetOffscreenFormat(PixelFormat pixel_format);
 
@@ -127,7 +133,7 @@ class ContextVK final : public Context,
     return true;
   }
 
-  std::shared_ptr<DeviceHolder> GetDeviceHolder() const {
+  std::shared_ptr<DeviceHolderVK> GetDeviceHolder() const {
     return device_holder_;
   }
 
@@ -135,20 +141,10 @@ class ContextVK final : public Context,
 
   const vk::Device& GetDevice() const;
 
+  const std::unique_ptr<DriverInfoVK>& GetDriverInfo() const;
+
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
-
-  /// @brief A single-threaded task runner that should only be used for
-  ///        submitKHR.
-  ///
-  /// SubmitKHR will block until all previously submitted command buffers have
-  /// been scheduled. If there are no platform views in the scene (excluding
-  /// texture backed platform views). Then it is safe for SwapchainImpl::Present
-  /// to return before submit has completed. To do so, we offload the submit
-  /// command to a specialized single threaded task runner. The single thread
-  /// ensures that we do not queue up too much work and that the submissions
-  /// proceed in order.
-  const fml::RefPtr<fml::TaskRunner> GetQueueSubmitRunner() const;
 
   std::shared_ptr<SurfaceContextVK> CreateSurfaceContext();
 
@@ -170,8 +166,10 @@ class ContextVK final : public Context,
 
   void RecordFrameEndTime() const;
 
+  void InitializeCommonlyUsedShadersIfNeeded() const override;
+
  private:
-  struct DeviceHolderImpl : public DeviceHolder {
+  struct DeviceHolderImpl : public DeviceHolderVK {
     // |DeviceHolder|
     const vk::Device& GetDevice() const override { return device.get(); }
     // |DeviceHolder|
@@ -185,11 +183,13 @@ class ContextVK final : public Context,
   };
 
   std::shared_ptr<DeviceHolderImpl> device_holder_;
+  std::unique_ptr<DriverInfoVK> driver_info_;
   std::unique_ptr<DebugReportVK> debug_report_;
   std::shared_ptr<Allocator> allocator_;
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  std::shared_ptr<YUVConversionLibraryVK> yuv_conversion_library_;
   QueuesVK queues_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
@@ -197,12 +197,10 @@ class ContextVK final : public Context,
   std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
-  std::unique_ptr<fml::Thread> queue_submit_thread_;
   std::shared_ptr<GPUTracerVK> gpu_tracer_;
   std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
   std::shared_ptr<CommandQueue> command_queue_vk_;
 
-  bool sync_presentation_ = false;
   const uint64_t hash_;
 
   bool is_valid_ = false;

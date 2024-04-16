@@ -4,11 +4,13 @@
 
 #include "impeller/aiks/canvas.h"
 
+#include <memory>
 #include <optional>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/aiks/color_source.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -20,6 +22,7 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 
@@ -44,8 +47,10 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
     }
   }
 
+  bool can_apply_mask_filter = geometry->CanApplyMaskFilter();
   contents->SetGeometry(std::move(geometry));
-  if (paint.mask_blur_descriptor.has_value()) {
+
+  if (can_apply_mask_filter && paint.mask_blur_descriptor.has_value()) {
     // If there's a mask blur and we need to apply the color filter on the GPU,
     // we need to be careful to only apply the color filter to the source
     // colors. CreateMaskBlur is able to handle this case.
@@ -72,6 +77,47 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   }
 
   return contents_copy;
+}
+
+struct GetTextureColorSourceDataVisitor {
+  GetTextureColorSourceDataVisitor() {}
+
+  std::optional<ImageData> operator()(const LinearGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const RadialGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const ConicalGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const SweepGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const ImageData& data) { return data; }
+
+  std::optional<ImageData> operator()(const RuntimeEffectData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const std::monostate& data) {
+    return std::nullopt;
+  }
+
+#if IMPELLER_ENABLE_3D
+  std::optional<ImageData> operator()(const SceneData& data) {
+    return std::nullopt;
+  }
+#endif  // IMPELLER_ENABLE_3D
+};
+
+static std::optional<ImageData> GetImageColorSourceData(
+    const ColorSource& color_source) {
+  return std::visit(GetTextureColorSourceDataVisitor{}, color_source.GetData());
 }
 
 static std::shared_ptr<Contents> CreatePathContentsWithFilters(
@@ -172,11 +218,10 @@ void Canvas::Save(bool create_subpass,
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
-  entry.clip_depth = transform_stack_.back().clip_depth;
+  entry.clip_height = transform_stack_.back().clip_height;
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetNewClipDepth(++current_depth_);
     subpass->SetEnableOffscreenCheckerboard(
         debug_options.offscreen_texture_checkerboard);
     if (backdrop_filter) {
@@ -199,7 +244,7 @@ void Canvas::Save(bool create_subpass,
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransform(transform_stack_.back().transform);
-    current_pass_->SetClipDepth(transform_stack_.back().clip_depth);
+    current_pass_->SetClipDepth(transform_stack_.back().clip_height);
   }
   transform_stack_.emplace_back(entry);
 }
@@ -210,9 +255,11 @@ bool Canvas::Restore() {
     return false;
   }
   size_t num_clips = transform_stack_.back().num_clips;
+  current_pass_->PopClips(num_clips, current_depth_);
+
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
-    current_pass_->PopClips(num_clips, current_depth_);
+    current_pass_->SetNewClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -289,7 +336,7 @@ void Canvas::RestoreToCount(size_t count) {
 void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreatePathContentsWithFilters(paint, path));
 
@@ -299,7 +346,7 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateCoverContentsWithFilters(paint));
 
@@ -307,41 +354,119 @@ void Canvas::DrawPaint(const Paint& paint) {
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
-                                     Size corner_radius,
+                                     Size corner_radii,
                                      const Paint& paint) {
   if (paint.color_source.GetType() != ColorSource::Type::kColor ||
       paint.style != Paint::Style::kFill) {
     return false;
   }
 
-  if (!paint.mask_blur_descriptor.has_value() ||
-      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
+  if (!paint.mask_blur_descriptor.has_value()) {
     return false;
   }
+
   // A blur sigma that is not positive enough should not result in a blur.
   if (paint.mask_blur_descriptor->sigma.sigma <= kEhCloseEnough) {
     return false;
   }
 
-  Paint new_paint = paint;
-
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
 
-  auto contents = std::make_shared<SolidRRectBlurContents>();
-  contents->SetColor(new_paint.color);
-  contents->SetSigma(new_paint.mask_blur_descriptor->sigma);
-  contents->SetRRect(rect, corner_radius);
+  Color rrect_color =
+      paint.HasColorFilter()
+          // Absorb the color filter, if any.
+          ? paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color)
+          : paint.color;
 
-  new_paint.mask_blur_descriptor = std::nullopt;
+  Paint rrect_paint = {.mask_blur_descriptor = paint.mask_blur_descriptor};
 
-  Entity entity;
-  entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
-  entity.SetBlendMode(new_paint.blend_mode);
-  entity.SetContents(new_paint.WithFilters(std::move(contents)));
+  // In some cases, we need to render the mask blur to a separate layer.
+  //
+  //   1. If the blur style is normal, we'll be drawing using one draw call and
+  //      no clips. And so we can just wrap the RRect contents with the
+  //      ImageFilter, which will get applied to the result as per usual.
+  //
+  //   2. If the blur style is solid, we combine the non-blurred RRect with the
+  //      blurred RRect via two separate draw calls, and so we need to defer any
+  //      fancy blending, translucency, or image filtering until after these two
+  //      draws have been combined in a separate layer.
+  //
+  //   3. If the blur style is outer or inner, we apply the blur style via a
+  //      clip. The ImageFilter needs to be applied to the mask blurred result.
+  //      And so if there's an ImageFilter, we need to defer applying it until
+  //      after the clipped RRect blur has been drawn to a separate texture.
+  //      However, since there's only one draw call that produces color, we
+  //      don't need to worry about the blend mode or translucency (unlike with
+  //      BlurStyle::kSolid).
+  //
+  if ((paint.mask_blur_descriptor->style !=
+           FilterContents::BlurStyle::kNormal &&
+       paint.image_filter) ||
+      (paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kSolid &&
+       (!rrect_color.IsOpaque() ||
+        paint.blend_mode != BlendMode::kSourceOver))) {
+    // Defer the alpha, blend mode, and image filter to a separate layer.
+    SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
+               .blend_mode = paint.blend_mode,
+               .image_filter = paint.image_filter});
+    rrect_paint.color = rrect_color.WithAlpha(1);
+  } else {
+    rrect_paint.color = rrect_color;
+    rrect_paint.blend_mode = paint.blend_mode;
+    rrect_paint.image_filter = paint.image_filter;
+    Save();
+  }
 
-  AddEntityToCurrentPass(std::move(entity));
+  auto draw_blurred_rrect = [this, &rect, &corner_radii, &rrect_paint]() {
+    auto contents = std::make_shared<SolidRRectBlurContents>();
+
+    contents->SetColor(rrect_paint.color);
+    contents->SetSigma(rrect_paint.mask_blur_descriptor->sigma);
+    contents->SetRRect(rect, corner_radii);
+
+    Entity blurred_rrect_entity;
+    blurred_rrect_entity.SetTransform(GetCurrentTransform());
+    blurred_rrect_entity.SetClipDepth(GetClipHeight());
+    blurred_rrect_entity.SetBlendMode(rrect_paint.blend_mode);
+
+    rrect_paint.mask_blur_descriptor = std::nullopt;
+    blurred_rrect_entity.SetContents(
+        rrect_paint.WithFilters(std::move(contents)));
+    AddEntityToCurrentPass(std::move(blurred_rrect_entity));
+  };
+
+  switch (rrect_paint.mask_blur_descriptor->style) {
+    case FilterContents::BlurStyle::kNormal: {
+      draw_blurred_rrect();
+      break;
+    }
+    case FilterContents::BlurStyle::kSolid: {
+      // First, draw the blurred RRect.
+      draw_blurred_rrect();
+      // Then, draw the non-blurred RRect on top.
+      Entity entity;
+      entity.SetTransform(GetCurrentTransform());
+      entity.SetClipDepth(GetClipHeight());
+      entity.SetBlendMode(rrect_paint.blend_mode);
+      entity.SetContents(CreateContentsForGeometryWithFilters(
+          rrect_paint, Geometry::MakeRoundRect(rect, corner_radii)));
+      AddEntityToCurrentPass(std::move(entity));
+      break;
+    }
+    case FilterContents::BlurStyle::kOuter: {
+      ClipRRect(rect, corner_radii, Entity::ClipOperation::kDifference);
+      draw_blurred_rrect();
+      break;
+    }
+    case FilterContents::BlurStyle::kInner: {
+      ClipRRect(rect, corner_radii, Entity::ClipOperation::kIntersect);
+      draw_blurred_rrect();
+      break;
+    }
+  }
+
+  Restore();
 
   return true;
 }
@@ -349,7 +474,7 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateContentsForGeometryWithFilters(
       paint, Geometry::MakeLine(p0, p1, paint.stroke_width, paint.stroke_cap)));
@@ -369,7 +494,7 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(
       CreateContentsForGeometryWithFilters(paint, Geometry::MakeRect(rect)));
@@ -396,7 +521,7 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(
       CreateContentsForGeometryWithFilters(paint, Geometry::MakeOval(rect)));
@@ -414,7 +539,7 @@ void Canvas::DrawRRect(const Rect& rect,
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
     entity.SetTransform(GetCurrentTransform());
-    entity.SetClipDepth(GetClipDepth());
+    entity.SetClipDepth(GetClipHeight());
     entity.SetBlendMode(paint.blend_mode);
     entity.SetContents(CreateContentsForGeometryWithFilters(
         paint, Geometry::MakeRoundRect(rect, corner_radii)));
@@ -443,7 +568,7 @@ void Canvas::DrawCircle(const Point& center,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   auto geometry =
       paint.style == Paint::Style::kStroke
@@ -555,11 +680,11 @@ void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetContents(std::move(contents));
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
 
   GetCurrentPass().PushClip(std::move(entity));
 
-  ++transform_stack_.back().clip_depth;
+  ++transform_stack_.back().clip_height;
   ++transform_stack_.back().num_clips;
 }
 
@@ -593,10 +718,10 @@ void Canvas::RestoreClip() {
   entity.SetTransform(GetCurrentTransform());
   // This path is empty because ClipRestoreContents just generates a quad that
   // takes up the full render target.
-  entity.SetContents(std::make_shared<ClipRestoreContents>());
-  entity.SetClipDepth(GetClipDepth());
+  auto clip_restore = std::make_shared<ClipRestoreContents>();
+  clip_restore->SetRestoreHeight(GetClipHeight());
+  entity.SetContents(std::move(clip_restore));
 
-  // TODO(bdero): To be removed when swapping the clip strategy.
   AddEntityToCurrentPass(std::move(entity));
 }
 
@@ -610,7 +735,7 @@ void Canvas::DrawPoints(std::vector<Point> points,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateContentsForGeometryWithFilters(
       paint,
@@ -650,18 +775,23 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
     return;
   }
 
-  auto contents = TextureContents::MakeRect(dest);
-  contents->SetTexture(image->GetTexture());
-  contents->SetSourceRect(source);
-  contents->SetStrictSourceRect(src_rect_constraint ==
-                                SourceRectConstraint::kStrict);
-  contents->SetSamplerDescriptor(std::move(sampler));
-  contents->SetOpacity(paint.color.alpha);
-  contents->SetDeferApplyingOpacity(paint.HasColorFilter());
+  auto texture_contents = TextureContents::MakeRect(dest);
+  texture_contents->SetTexture(image->GetTexture());
+  texture_contents->SetSourceRect(source);
+  texture_contents->SetStrictSourceRect(src_rect_constraint ==
+                                        SourceRectConstraint::kStrict);
+  texture_contents->SetSamplerDescriptor(std::move(sampler));
+  texture_contents->SetOpacity(paint.color.alpha);
+  texture_contents->SetDeferApplyingOpacity(paint.HasColorFilter());
+
+  std::shared_ptr<Contents> contents = texture_contents;
+  if (paint.mask_blur_descriptor.has_value()) {
+    contents = paint.mask_blur_descriptor->CreateMaskBlur(texture_contents);
+  }
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetContents(paint.WithFilters(contents));
   entity.SetTransform(GetCurrentTransform());
 
@@ -689,8 +819,8 @@ EntityPass& Canvas::GetCurrentPass() {
   return *current_pass_;
 }
 
-size_t Canvas::GetClipDepth() const {
-  return transform_stack_.back().clip_depth;
+size_t Canvas::GetClipHeight() const {
+  return transform_stack_.back().clip_height;
 }
 
 void Canvas::AddEntityToCurrentPass(Entity entity) {
@@ -700,7 +830,8 @@ void Canvas::AddEntityToCurrentPass(Entity entity) {
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
-                       const std::shared_ptr<ImageFilter>& backdrop_filter) {
+                       const std::shared_ptr<ImageFilter>& backdrop_filter,
+                       ContentBoundsPromise bounds_promise) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   Save(true, paint.blend_mode, backdrop_filter);
 
@@ -713,7 +844,9 @@ void Canvas::SaveLayer(const Paint& paint,
   }
 
   auto& new_layer_pass = GetCurrentPass();
-  new_layer_pass.SetBoundsLimit(bounds);
+  if (bounds) {
+    new_layer_pass.SetBoundsLimit(bounds, bounds_promise);
+  }
 
   if (paint.image_filter) {
     MipCountVisitor mip_count_visitor;
@@ -734,7 +867,7 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {
   Entity entity;
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
@@ -786,7 +919,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
 
   // If there are no vertex color or texture coordinates. Or if there
@@ -795,6 +928,27 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
     AddEntityToCurrentPass(std::move(entity));
     return;
+  }
+
+  // If there is are per-vertex colors, an image, and the blend mode
+  // is simple we can draw without a sub-renderpass.
+  if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors()) {
+    if (std::optional<ImageData> maybe_image_data =
+            GetImageColorSourceData(paint.color_source)) {
+      const ImageData& image_data = maybe_image_data.value();
+      auto contents = std::make_shared<VerticesSimpleBlendContents>();
+      contents->SetBlendMode(blend_mode);
+      contents->SetAlpha(paint.color.alpha);
+      contents->SetGeometry(vertices);
+
+      contents->SetEffectTransform(image_data.effect_transform);
+      contents->SetTexture(image_data.texture);
+      contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
+
+      entity.SetContents(paint.WithFilters(std::move(contents)));
+      AddEntityToCurrentPass(std::move(entity));
+      return;
+    }
   }
 
   auto src_paint = paint;
@@ -858,7 +1012,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(contents));
 

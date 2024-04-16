@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.platform;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -24,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.util.ViewUtils;
 
 /**
@@ -37,7 +40,7 @@ import io.flutter.util.ViewUtils;
  * <p>Since the view is in the Android view hierarchy, keyboard and accessibility interactions
  * behave normally.
  */
-@TargetApi(23)
+@TargetApi(API_LEVELS.API_23)
 public class PlatformViewWrapper extends FrameLayout {
   private static final String TAG = "PlatformViewWrapper";
 
@@ -59,6 +62,16 @@ public class PlatformViewWrapper extends FrameLayout {
       @NonNull Context context, @NonNull PlatformViewRenderTarget renderTarget) {
     this(context);
     this.renderTarget = renderTarget;
+
+    Surface surface = renderTarget.getSurface();
+    if (surface != null && !FlutterRenderer.debugDisableSurfaceClear) {
+      final Canvas canvas = surface.lockHardwareCanvas();
+      try {
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      } finally {
+        surface.unlockCanvasAndPost(canvas);
+      }
+    }
   }
 
   /**

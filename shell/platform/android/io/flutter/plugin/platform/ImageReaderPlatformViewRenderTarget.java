@@ -1,5 +1,7 @@
 package io.flutter.plugin.platform;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.graphics.ImageFormat;
 import android.hardware.HardwareBuffer;
@@ -11,7 +13,7 @@ import android.view.Surface;
 import io.flutter.Log;
 import io.flutter.view.TextureRegistry.ImageTextureEntry;
 
-@TargetApi(29)
+@TargetApi(API_LEVELS.API_29)
 public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTarget {
   private ImageTextureEntry textureEntry;
   private ImageReader reader;
@@ -48,21 +50,17 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
         }
       };
 
-  @TargetApi(33)
+  @TargetApi(API_LEVELS.API_33)
   protected ImageReader createImageReader33() {
     final ImageReader.Builder builder = new ImageReader.Builder(bufferWidth, bufferHeight);
     // Allow for double buffering.
     builder.setMaxImages(MAX_IMAGES);
     // Use PRIVATE image format so that we can support video decoding.
-    // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our
-    // ability to read back texture data. If we don't always want to use it, how do
-    // we
-    // decide when to use it or not? Perhaps PlatformViews can indicate if they may
-    // contain
-    // DRM'd content.
-    // I need to investigate how PRIVATE impacts our ability to take screenshots or
-    // capture
-    // the output of Flutter application.
+    // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our ability to read
+    // back texture data. If we don't always want to use it, how do we decide when to use it or not?
+    // Perhaps PlatformViews can indicate if they may contain DRM'd content. I need to investigate
+    // how PRIVATE impacts our ability to take screenshots or capture the output of Flutter
+    // application.
     builder.setImageFormat(ImageFormat.PRIVATE);
     // Hint that consumed images will only be read by GPU.
     builder.setUsage(HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
@@ -71,7 +69,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
     return reader;
   }
 
-  @TargetApi(29)
+  @TargetApi(API_LEVELS.API_29)
   protected ImageReader createImageReader29() {
     final ImageReader reader =
         ImageReader.newInstance(
@@ -85,9 +83,9 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
   }
 
   protected ImageReader createImageReader() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       return createImageReader33();
-    } else if (Build.VERSION.SDK_INT >= 29) {
+    } else if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       return createImageReader29();
     }
     throw new UnsupportedOperationException(
@@ -95,7 +93,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
   }
 
   public ImageReaderPlatformViewRenderTarget(ImageTextureEntry textureEntry) {
-    if (Build.VERSION.SDK_INT < 29) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_29) {
       throw new UnsupportedOperationException(
           "ImageReaderPlatformViewRenderTarget requires API version 29+");
     }

@@ -171,17 +171,6 @@ class Context {
   ///
   virtual void Shutdown() = 0;
 
-  //----------------------------------------------------------------------------
-  /// @brief      Force the Vulkan presentation (submitKHR) to be performed on
-  ///             the raster task runner.
-  ///
-  ///             This is required for correct rendering on Android when using
-  ///             the hybrid composition mode. This has no effect on other
-  ///             backends. This is analogous to the check for isMainThread in
-  ///             surface_mtl.mm to block presentation on scheduling of all
-  ///             pending work.
-  virtual void SetSyncPresentation(bool value) {}
-
   CaptureContext capture;
 
   /// Stores a task on the `ContextMTL` that is awaiting access for the GPU.
@@ -196,6 +185,14 @@ class Context {
   virtual void StoreTaskForGPU(const std::function<void()>& task) {
     FML_CHECK(false && "not supported in this context");
   }
+
+  /// Run backend specific additional setup and create common shader variants.
+  ///
+  /// This bootstrap is intended to improve the performance of several
+  /// first frame benchmarks that are tracked in the flutter device lab.
+  /// The workload includes initializing commonly used but not default
+  /// shader variants, as well as forcing driver initialization.
+  virtual void InitializeCommonlyUsedShadersIfNeeded() const {}
 
  protected:
   Context();

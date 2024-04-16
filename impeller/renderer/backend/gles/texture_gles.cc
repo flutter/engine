@@ -45,8 +45,7 @@ static bool IsDepthStencilFormat(PixelFormat format) {
 static TextureGLES::Type GetTextureTypeFromDescriptor(
     const TextureDescriptor& desc) {
   const auto usage = static_cast<TextureUsageMask>(desc.usage);
-  const auto render_target =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+  const auto render_target = TextureUsage::kRenderTarget;
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
   if (usage == render_target && IsDepthStencilFormat(desc.format)) {
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
@@ -69,21 +68,30 @@ HandleType ToHandleType(TextureGLES::Type type) {
 }
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false) {}
+    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
                          TextureDescriptor desc,
                          enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true) {}
+    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
+
+std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
+                                                  TextureDescriptor desc,
+                                                  GLuint fbo) {
+  return std::shared_ptr<TextureGLES>(
+      new TextureGLES(std::move(reactor), desc, true, fbo));
+}
 
 TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
                          TextureDescriptor desc,
-                         bool is_wrapped)
+                         bool is_wrapped,
+                         std::optional<GLuint> fbo)
     : Texture(desc),
       reactor_(std::move(reactor)),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       handle_(reactor_->CreateHandle(ToHandleType(type_))),
-      is_wrapped_(is_wrapped) {
+      is_wrapped_(is_wrapped),
+      wrapped_fbo_(fbo) {
   // Ensure the texture descriptor itself is valid.
   if (!GetTextureDescriptor().IsValid()) {
     VALIDATION_LOG << "Invalid texture descriptor.";
@@ -130,6 +138,11 @@ struct TexImage2DData {
         external_format = GL_ALPHA;
         type = GL_UNSIGNED_BYTE;
         break;
+      case PixelFormat::kR8UNormInt:
+        internal_format = GL_RED;
+        external_format = GL_RED;
+        type = GL_UNSIGNED_BYTE;
+        break;
       case PixelFormat::kR8G8B8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormInt:
       case PixelFormat::kR8G8B8A8UNormIntSRGB:
@@ -161,7 +174,6 @@ struct TexImage2DData {
         break;
       case PixelFormat::kUnknown:
       case PixelFormat::kD32FloatS8UInt:
-      case PixelFormat::kR8UNormInt:
       case PixelFormat::kR8G8UNormInt:
       case PixelFormat::kB10G10R10XRSRGB:
       case PixelFormat::kB10G10R10XR:

@@ -17,7 +17,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
     Tessellator t;
-    auto path = PathBuilder{}.TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -29,7 +29,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // One point.
   {
     Tessellator t;
-    auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -41,8 +41,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Two points.
   {
     Tessellator t;
-    auto path =
-        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -59,7 +58,7 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
       auto coord = i * 1.0f;
       builder.AddLine({coord, coord}, {coord + 1, coord + 1});
     }
-    auto path = builder.TakePath(FillType::kPositive);
+    auto path = builder.TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
@@ -71,38 +70,13 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Closure fails.
   {
     Tessellator t;
-    auto path =
-        PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kPositive);
+    auto path = PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kOdd);
     Tessellator::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return false; });
 
     ASSERT_EQ(result, Tessellator::Result::kInputError);
-  }
-
-  // More than uint16 points, odd fill mode.
-  {
-    Tessellator t;
-    PathBuilder builder = {};
-    for (auto i = 0; i < 1000; i++) {
-      builder.AddCircle(Point(i, i), 4);
-    }
-    auto path = builder.TakePath(FillType::kOdd);
-    bool no_indices = false;
-    size_t count = 0u;
-    Tessellator::Result result = t.Tessellate(
-        path, 1.0f,
-        [&no_indices, &count](const float* vertices, size_t vertices_count,
-                              const uint16_t* indices, size_t indices_count) {
-          no_indices = indices == nullptr;
-          count = vertices_count;
-          return true;
-        });
-
-    ASSERT_TRUE(no_indices);
-    ASSERT_TRUE(count >= USHRT_MAX);
-    ASSERT_EQ(result, Tessellator::Result::kSuccess);
   }
 }
 
@@ -113,9 +87,7 @@ TEST(TessellatorTest, TessellateConvex) {
     auto pts = t.TessellateConvex(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), 1.0);
 
-    std::vector<Point> expected = {
-        {0, 0}, {10, 0}, {0, 10}, {10, 10},  //
-    };
+    std::vector<Point> expected = {{0, 0}, {10, 0}, {0, 10}, {10, 10}};
     EXPECT_EQ(pts, expected);
   }
 
@@ -191,7 +163,8 @@ TEST(TessellatorTest, FilledCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * radius;
-      double rcos = cos(angle) * radius;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radius;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -238,7 +211,9 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius + half_width);
-      double rcos = cos(angle) * (radius + half_width);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius + half_width);
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -258,7 +233,9 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius - half_width);
-      double rcos = cos(angle) * (radius - half_width);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius - half_width);
       EXPECT_POINT_NEAR(vertices[i * 2 + 1],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -310,7 +287,9 @@ TEST(TessellatorTest, RoundCapLineTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      Point relative_along = along * cos(angle);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      Point relative_along =
+          along * ((i == quadrant_count - 1) ? 0.0f : cos(angle));
       Point relative_across = across * sin(angle);
       EXPECT_POINT_NEAR(vertices[i * 2],  //
                         p0 - relative_along + relative_across)
@@ -374,7 +353,9 @@ TEST(TessellatorTest, FilledEllipseTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rcos = cos(angle) * half_size.width;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * half_size.width;
       double rsin = sin(angle) * half_size.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
@@ -439,7 +420,8 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rcos = cos(angle) * radii.width;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radii.width;
       double rsin = sin(angle) * radii.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(middle_left - rcos, middle_bottom + rsin))
@@ -483,6 +465,32 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
   test(Matrix::MakeScale({0.002, 0.002, 0.0}),
        Rect::MakeXYWH(5000, 10000, 2000, 3000), {50, 70});
 }
+
+TEST(TessellatorTest, EarlyReturnEmptyConvexShape) {
+  // This path is not technically empty (it has a size in one dimension),
+  // but is otherwise completely flat.
+  auto tessellator = std::make_shared<Tessellator>();
+  PathBuilder builder;
+  builder.MoveTo({0, 0});
+  builder.MoveTo({10, 10}, /*relative=*/true);
+
+  auto points = tessellator->TessellateConvex(builder.TakePath(), 3.0);
+
+  EXPECT_TRUE(points.empty());
+}
+
+#if !NDEBUG
+TEST(TessellatorTest, ChecksConcurrentPolylineUsage) {
+  auto tessellator = std::make_shared<Tessellator>();
+  PathBuilder builder;
+  builder.AddLine({0, 0}, {100, 100});
+  auto path = builder.TakePath();
+
+  auto polyline = tessellator->CreateTempPolyline(path, 0.1);
+  EXPECT_DEBUG_DEATH(tessellator->CreateTempPolyline(path, 0.1),
+                     "point_buffer_");
+}
+#endif  // NDEBUG
 
 }  // namespace testing
 }  // namespace impeller

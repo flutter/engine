@@ -60,6 +60,7 @@ extern CFTimeInterval display_link_target;
 @property(readonly, nonatomic) id<MTLTexture> texture;
 @property(readonly, nonatomic) IOSurface* surface;
 @property(readwrite, nonatomic) CFTimeInterval presentedTime;
+@property(readwrite, atomic) BOOL waitingForCompletion;
 
 @end
 
@@ -68,6 +69,7 @@ extern CFTimeInterval display_link_target;
 @synthesize texture = _texture;
 @synthesize surface = _surface;
 @synthesize presentedTime = _presentedTime;
+@synthesize waitingForCompletion;
 
 - (instancetype)initWithTexture:(id<MTLTexture>)texture surface:(IOSurface*)surface {
   if (self = [super init]) {
@@ -79,7 +81,7 @@ extern CFTimeInterval display_link_target;
 
 @end
 
-@interface FlutterDrawable : NSObject <CAMetalDrawable> {
+@interface FlutterDrawable : NSObject <FlutterMetalDrawable> {
   FlutterTexture* _texture;
   __weak FlutterMetalLayer* _layer;
   NSUInteger _drawableId;
@@ -147,6 +149,14 @@ extern CFTimeInterval display_link_target;
   FML_LOG(WARNING) << "FlutterMetalLayer drawable does not implement presentAfterMinimumDuration:";
 }
 
+- (void)flutterPrepareForPresent:(nonnull id<MTLCommandBuffer>)commandBuffer {
+  FlutterTexture* texture = _texture;
+  texture.waitingForCompletion = YES;
+  [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+    texture.waitingForCompletion = NO;
+  }];
+}
+
 @end
 
 @implementation FlutterMetalLayer
@@ -166,7 +176,7 @@ extern CFTimeInterval display_link_target;
     _availableTextures = [[NSMutableSet alloc] init];
 
     _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)];
-    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
+    [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate forceMax:NO];
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSRunLoopCommonModes];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(didEnterBackground:)
@@ -204,7 +214,7 @@ extern CFTimeInterval display_link_target;
   if (_displayLinkPauseCountdown == 3) {
     _displayLink.paused = YES;
     if (_displayLinkForcedMaxRate) {
-      [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:NO];
+      [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate forceMax:NO];
       _displayLinkForcedMaxRate = NO;
     }
   } else {
@@ -249,6 +259,9 @@ extern CFTimeInterval display_link_target;
   } else if (self.pixelFormat == MTLPixelFormatBGRA8Unorm) {
     pixelFormat = kCVPixelFormatType_32BGRA;
     bytesPerElement = 4;
+  } else if (self.pixelFormat == MTLPixelFormatBGRA10_XR) {
+    pixelFormat = kCVPixelFormatType_40ARGBLEWideGamut;
+    bytesPerElement = 8;
   } else {
     FML_LOG(ERROR) << "Unsupported pixel format: " << self.pixelFormat;
     return nil;
@@ -283,7 +296,25 @@ extern CFTimeInterval display_link_target;
 }
 
 - (FlutterTexture*)nextTexture {
+  CFTimeInterval start = CACurrentMediaTime();
+  while (true) {
+    FlutterTexture* texture = [self tryNextTexture];
+    if (texture != nil) {
+      return texture;
+    }
+    CFTimeInterval elapsed = CACurrentMediaTime() - start;
+    if (elapsed > 1.0) {
+      NSLog(@"Waited %f seconds for a drawable, giving up.", elapsed);
+      return nil;
+    }
+  }
+}
+
+- (FlutterTexture*)tryNextTexture {
   @synchronized(self) {
+    if (_front != nil && _front.waitingForCompletion) {
+      return nil;
+    }
     if (_totalTextures < 3) {
       ++_totalTextures;
       IOSurface* surface = [self createIOSurface];
@@ -309,21 +340,6 @@ extern CFTimeInterval display_link_target;
                                                                        surface:surface];
       return flutterTexture;
     } else {
-      // Make sure raster thread doesn't have too many drawables in flight.
-      if (_availableTextures.count == 0) {
-        CFTimeInterval start = CACurrentMediaTime();
-        while (_availableTextures.count == 0 && CACurrentMediaTime() - start < 1.0) {
-          usleep(100);
-        }
-        CFTimeInterval elapsed = CACurrentMediaTime() - start;
-        if (_availableTextures.count == 0) {
-          NSLog(@"Waited %f seconds for a drawable, giving up.", elapsed);
-          return nil;
-        } else {
-          NSLog(@"Had to wait %f seconds for a drawable", elapsed);
-        }
-      }
-
       // Prefer surface that is not in use and has been presented the longest
       // time ago.
       // When isInUse is false, the surface is definitely not used by the compositor.
@@ -345,7 +361,9 @@ extern CFTimeInterval display_link_target;
           res = texture;
         }
       }
-      [_availableTextures removeObject:res];
+      if (res != nil) {
+        [_availableTextures removeObject:res];
+      }
       return res;
     }
   }
@@ -370,7 +388,6 @@ extern CFTimeInterval display_link_target;
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
   self.contents = texture.surface;
-  texture.presentedTime = CACurrentMediaTime();
   [CATransaction commit];
   _displayLink.paused = NO;
   _displayLinkPauseCountdown = 0;
@@ -378,7 +395,7 @@ extern CFTimeInterval display_link_target;
     _didSetContentsDuringThisDisplayLinkPeriod = YES;
   } else if (!_displayLinkForcedMaxRate) {
     _displayLinkForcedMaxRate = YES;
-    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate] forceMax:YES];
+    [self setMaxRefreshRate:DisplayLinkManager.displayRefreshRate forceMax:YES];
   }
 }
 
@@ -388,6 +405,7 @@ extern CFTimeInterval display_link_target;
       [_availableTextures addObject:_front];
     }
     _front = texture;
+    texture.presentedTime = CACurrentMediaTime();
     if ([NSThread isMainThread]) {
       [self presentOnMainThread:texture];
     } else {
