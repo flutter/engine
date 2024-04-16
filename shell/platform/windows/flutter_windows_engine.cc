@@ -534,10 +534,10 @@ std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
 
     FlutterEngineResult result = embedder_api_.AddView(engine_, &info);
     if (result != kSuccess) {
-      // Starting the add view operation failed. This is unexpected and
-      // indicates a bug in the Windows embedder.
-      FML_LOG(ERROR) << "FlutterEngineAddView returned unexpected result: "
-                     << result;
+      FML_DCHECK(false)
+          << "Starting the add view operation failed. FlutterEngineAddView "
+             "returned an unexpected result: "
+          << result << ". This indicates a bug in the Windows embedder.";
       return nullptr;
     }
 
@@ -590,10 +590,11 @@ void FlutterWindowsEngine::RemoveView(FlutterViewId view_id) {
 
     FlutterEngineResult result = embedder_api_.RemoveView(engine_, &info);
     if (result != kSuccess) {
-      // Starting the remove view operation failed. This is unexpected and
-      // indicates a bug in the Windows embedder.
-      FML_LOG(ERROR) << "FlutterEngineRemoveView returned unexpected result: "
-                     << result;
+      FML_DCHECK(false) << "Starting the remove view operation failed. "
+                           "FlutterEngineRemoveView "
+                           "returned an unexpected result: "
+                        << result
+                        << ". This indicates a bug in the Windows embedder.";
       return;
     }
 
