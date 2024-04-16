@@ -1,4 +1,4 @@
-Signature: b5e7f00b1c999e4f28da153fdfdb0842
+Signature: 8b5044d663ffa55c32a4f93879f33dba
 
 ====================================================================================================
 LIBRARY: etc1
@@ -4035,7 +4035,6 @@ ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLVarDeclarations.h + ..
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLVariable.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/sksl/ir/SkSLVariableReference.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkMultiPictureDocument.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/utils/SkMultiPictureDocument.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkMultiPictureDocumentPriv.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/utils/SkOSPath.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
@@ -4339,7 +4338,6 @@ FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLVarDeclarations.h
 FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLVariable.h
 FILE: ../../../flutter/third_party/skia/src/sksl/ir/SkSLVariableReference.h
 FILE: ../../../flutter/third_party/skia/src/utils/SkMultiPictureDocument.cpp
-FILE: ../../../flutter/third_party/skia/src/utils/SkMultiPictureDocument.h
 FILE: ../../../flutter/third_party/skia/src/utils/SkMultiPictureDocumentPriv.h
 FILE: ../../../flutter/third_party/skia/src/utils/SkOSPath.h
 ----------------------------------------------------------------------------------------------------
@@ -9458,11 +9456,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: skia
 ORIGIN: ../../../flutter/third_party/skia/include/ports/SkFontMgr_Fontations.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/skottie/utils/PreshapeTool.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/skottie/utils/TextPreshape.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/modules/skottie/utils/TextPreshape.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkFontScanner.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_fontations_empty.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/ports/SkFontMgr_fontations_empty.h + ../../../flutter/third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/skia/include/ports/SkFontMgr_Fontations.h
+FILE: ../../../flutter/third_party/skia/modules/skottie/utils/PreshapeTool.cpp
+FILE: ../../../flutter/third_party/skia/modules/skottie/utils/TextPreshape.cpp
+FILE: ../../../flutter/third_party/skia/modules/skottie/utils/TextPreshape.h
 FILE: ../../../flutter/third_party/skia/src/core/SkFontScanner.h
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_fontations_empty.cpp
 FILE: ../../../flutter/third_party/skia/src/ports/SkFontMgr_fontations_empty.h

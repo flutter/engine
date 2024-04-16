@@ -451,7 +451,8 @@
                     "--no-lto",
                     "--prebuilt-dart-sdk",
                     "--no-rbe",
-                    "--no-goma"
+                    "--no-goma",
+                    "--use-glfw-swiftshader"
                 ]
             },
             "properties": {
