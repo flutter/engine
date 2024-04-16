@@ -1266,8 +1266,6 @@ TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
 }
 
 TEST_F(FlutterWindowsEngineTest, AddViewFailureDoesNotHang) {
-  fml::testing::LogCapture log_capture;
-
   FlutterWindowsEngineBuilder builder{GetContext()};
   auto engine = builder.Build();
 
