@@ -163,7 +163,7 @@ Canvas::~Canvas() = default;
 void Canvas::Initialize(std::optional<Rect> cull_rect) {
   initial_cull_rect_ = cull_rect;
   base_pass_ = std::make_unique<EntityPass>();
-  base_pass_->SetNewClipDepth(++current_depth_);
+  base_pass_->SetClipDepth(++current_depth_);
   current_pass_ = base_pass_.get();
   transform_stack_.emplace_back(CanvasStackEntry{.cull_rect = cull_rect});
   FML_DCHECK(GetSaveCount() == 1u);
@@ -259,7 +259,7 @@ bool Canvas::Restore() {
 
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
-    current_pass_->SetNewClipDepth(++current_depth_);
+    current_pass_->SetClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -812,7 +812,7 @@ size_t Canvas::GetClipHeight() const {
 }
 
 void Canvas::AddEntityToCurrentPass(Entity entity) {
-  entity.SetNewClipDepth(++current_depth_);
+  entity.SetClipDepth(++current_depth_);
   GetCurrentPass().AddEntity(std::move(entity));
 }
 

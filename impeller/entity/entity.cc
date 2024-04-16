@@ -95,16 +95,16 @@ const std::shared_ptr<Contents>& Entity::GetContents() const {
   return contents_;
 }
 
-void Entity::SetNewClipDepth(uint32_t clip_depth) {
-  new_clip_depth_ = clip_depth;
+void Entity::SetClipDepth(uint32_t clip_depth) {
+  clip_depth_ = clip_depth;
 }
 
-uint32_t Entity::GetNewClipDepth() const {
-  return new_clip_depth_;
+uint32_t Entity::GetClipDepth() const {
+  return clip_depth_;
 }
 
 Scalar Entity::GetShaderClipDepth() const {
-  return Entity::GetShaderClipDepth(new_clip_depth_);
+  return Entity::GetShaderClipDepth(clip_depth_);
 }
 
 Scalar Entity::GetShaderClipDepth(uint32_t clip_depth) {
