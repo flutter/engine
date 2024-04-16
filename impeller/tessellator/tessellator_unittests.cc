@@ -23,7 +23,7 @@ TEST(TessellatorTest, TessellateConvex) {
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), points,
         indices, 1.0);
 
-    std::vector<Point> expected = {{10, 0}, {10, 10}, {0, 10}, {0, 0}};
+    std::vector<Point> expected = {{0, 0}, {10, 0}, {10, 10}, {0, 10}};
     std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
     EXPECT_EQ(points, expected);
     EXPECT_EQ(indices, expected_indices);
@@ -39,8 +39,8 @@ TEST(TessellatorTest, TessellateConvex) {
                                    .TakePath(),
                                points, indices, 1.0);
 
-    std::vector<Point> expected = {{10, 0},  {10, 10}, {0, 10},  {0, 0},
-                                   {30, 20}, {30, 30}, {20, 30}, {20, 20}};
+    std::vector<Point> expected = {{0, 0},   {10, 0},  {10, 10}, {0, 10},
+                                   {20, 20}, {30, 20}, {30, 30}, {20, 30}};
     std::vector<uint16_t> expected_indices = {0, 1, 3, 2, 2, 4, 4, 5, 7, 6};
     EXPECT_EQ(points, expected);
     EXPECT_EQ(indices, expected_indices);
@@ -61,7 +61,7 @@ TEST(TessellatorTest, TessellateConvexUnclosedPath) {
                   .TakePath();
   t.TessellateConvexInternal(path, points, indices, 1.0);
 
-  std::vector<Point> expected = {{0, 0}, {10, 0}, {10, 10}, {0, 10}};
+  std::vector<Point> expected = {{0, 0}, {100, 0}, {100, 100}, {0, 100}};
   std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
   EXPECT_EQ(points, expected);
   EXPECT_EQ(indices, expected_indices);
