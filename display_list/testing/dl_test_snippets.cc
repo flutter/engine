@@ -266,7 +266,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 112, 2,
+           {5, 112, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
@@ -274,7 +274,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 112, 2,
+           {5, 112, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
@@ -282,7 +282,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 112, 2,
+           {5, 112, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes);
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
@@ -290,7 +290,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 112, 2,
+           {5, 112, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes);
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
@@ -298,7 +298,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 128, 2,
+           {5, 128, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
@@ -307,7 +307,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 128, 2,
+           {5, 128, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
@@ -316,7 +316,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 128, 2,
+           {5, 128, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
@@ -325,7 +325,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 128, 2,
+           {5, 128, 3,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);

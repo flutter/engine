@@ -530,7 +530,7 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
   auto display_list = builder.Build();
 
   ASSERT_EQ(display_list->op_count(), 6u);
-  EXPECT_EQ(display_list->max_depth(), 1u);
+  EXPECT_EQ(display_list->max_depth(), 2u);
 
   SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.intersect(clip_rect));
@@ -563,7 +563,7 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
   auto display_list = builder.Build();
 
   ASSERT_EQ(display_list->op_count(), 6u);
-  EXPECT_EQ(display_list->max_depth(), 1u);
+  EXPECT_EQ(display_list->max_depth(), 2u);
 
   SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.intersect(clip_rect));
@@ -1570,7 +1570,7 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
   EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 400u);
-  EXPECT_EQ(display_list->max_depth(), 2u);
+  EXPECT_EQ(display_list->max_depth(), 3u);
 }
 
 TEST_F(DisplayListTest, TranslateAffectsCurrentTransform) {
@@ -3099,11 +3099,13 @@ TEST_F(DisplayListTest, DrawUnorderedRoundRectPathCCW) {
 TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
   auto run_tests = [](const std::string& name,
                       void init(DisplayListBuilder & builder, DlPaint & paint),
-                      uint32_t expected_op_count = 0u) {
+                      uint32_t expected_op_count = 0u,
+                      uint32_t expected_max_depth = 0u) {
     auto run_one_test =
         [init](const std::string& name,
                void build(DisplayListBuilder & builder, DlPaint & paint),
-               uint32_t expected_op_count = 0u) {
+               uint32_t expected_op_count = 0u,
+               uint32_t expected_max_depth = 0u) {
           DisplayListBuilder builder;
           DlPaint paint;
           init(builder, paint);
@@ -3113,7 +3115,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
             FML_LOG(ERROR) << *list;
           }
           ASSERT_EQ(list->op_count(), expected_op_count) << name;
-          EXPECT_EQ(list->max_depth(), 0u) << name;
+          EXPECT_EQ(list->max_depth(), expected_max_depth) << name;
           ASSERT_TRUE(list->bounds().isEmpty()) << name;
         };
     run_one_test(
@@ -3121,19 +3123,19 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
         [](DisplayListBuilder& builder, DlPaint& paint) {
           builder.DrawColor(paint.getColor(), paint.getBlendMode());
         },
-        expected_op_count);
+        expected_op_count, expected_max_depth);
     run_one_test(
         name + " DrawPaint",
         [](DisplayListBuilder& builder, DlPaint& paint) {
           builder.DrawPaint(paint);
         },
-        expected_op_count);
+        expected_op_count, expected_max_depth);
     run_one_test(
         name + " DrawRect",
         [](DisplayListBuilder& builder, DlPaint& paint) {
           builder.DrawRect({10, 10, 20, 20}, paint);
         },
-        expected_op_count);
+        expected_op_count, expected_max_depth);
     run_one_test(
         name + " Other Draw Ops",
         [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3171,7 +3173,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
             builder.DrawShadow(kTestPath1, paint.getColor(), 1, true, 1);
           }
         },
-        expected_op_count);
+        expected_op_count, expected_max_depth);
     run_one_test(
         name + " SaveLayer",
         [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3179,7 +3181,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawRect({10, 10, 20, 20}, DlPaint());
           builder.Restore();
         },
-        expected_op_count);
+        expected_op_count, expected_max_depth);
     run_one_test(
         name + " inside Save",
         [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3187,7 +3189,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawRect({10, 10, 20, 20}, paint);
           builder.Restore();
         },
-        expected_op_count);
+        expected_op_count, expected_max_depth);
   };
   run_tests("transparent color",  //
             [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3246,7 +3248,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
         builder.SaveLayer(nullptr, nullptr);
         paint.setBlendMode(DlBlendMode::kDst);
       },
-      2u);
+      2u, 1u);
   run_tests("DrawImage inside Culled SaveLayer",  //
             [](DisplayListBuilder& builder, DlPaint& paint) {
               DlPaint save_paint;
@@ -3846,30 +3848,30 @@ TEST_F(DisplayListTest, SaveContentDepthTest) {
   DisplayListBuilder builder;
   builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 1
 
-  builder.Save();  // lasts through depth 6
+  builder.Save();  // lasts through depth 7
   {
     builder.Translate(5, 5);
     builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 2
 
-    builder.SaveLayer(nullptr, nullptr);  // lasts through depth 4
+    builder.SaveLayer(nullptr, nullptr);  // lasts through depth 4, is depth 5
     {
       builder.DrawRect({12, 12, 22, 22}, DlPaint());  // depth 3
       builder.DrawRect({14, 14, 24, 24}, DlPaint());  // depth 4
     }
-    builder.Restore();
+    builder.Restore();  // layer is restored with depth 5
 
-    builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 5
-    builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 6
+    builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 6
+    builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 7
   }
   builder.Restore();
 
-  builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 7
-  builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 8
+  builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 8
+  builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 9
   auto display_list = builder.Build();
 
-  EXPECT_EQ(display_list->max_depth(), 8u);
+  EXPECT_EQ(display_list->max_depth(), 9u);
 
-  DepthExpector expector({6, 4});
+  DepthExpector expector({7, 4});
   display_list->Dispatch(expector);
 }
 

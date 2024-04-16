@@ -434,6 +434,12 @@ void DisplayListBuilder::Restore() {
     op->restore_index = op_index_;
     op->max_content_depth = depth_;
     Push<RestoreOp>(0);
+    if (current_layer_->is_save_layer()) {
+      // A saveLayer will do a final copy to the main buffer after it is
+      // done resolving all of the clips within it. So, it gets a depth
+      // value allocated, but only after its max_content_depth is recorded.
+      depth_++;
+    }
   }
 
   std::shared_ptr<const DlImageFilter> filter = current_layer_->filter();
