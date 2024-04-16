@@ -160,7 +160,7 @@ class PathBuilder {
   Point subpath_start_;
   Point current_;
   Path::Data prototype_;
-  bool stroke_;
+  bool stroke_ = false;
 
   PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
 
