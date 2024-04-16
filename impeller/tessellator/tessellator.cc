@@ -7,7 +7,6 @@
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/vertex_buffer.h"
-#include "impeller/geometry/path_component.h"
 #include "third_party/libtess2/Include/tesselator.h"
 
 namespace impeller {
