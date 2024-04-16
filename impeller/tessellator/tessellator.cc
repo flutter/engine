@@ -52,7 +52,8 @@ static int ToTessWindingRule(FillType fill_type) {
     case FillType::kNonZero:
       return TESS_WINDING_NONZERO;
   }
-  return TESS_WINDING_ODD;
+  // Test to for recompilation.
+  return TESS_WINDING_NONZERO;
 }
 
 Tessellator::Result Tessellator::Tessellate(const Path& path,
