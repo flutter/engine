@@ -37,8 +37,18 @@ PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
   return *this;
 }
 
+void PathBuilder::SetStroke(bool value) {
+  stroke_ = value;
+}
+
 PathBuilder& PathBuilder::Close() {
-  LineTo(subpath_start_);
+  // TODO(jonahwilliams): this could be simplified by ensuring that the first
+  // point of any filled contour is included instead of special casing the
+  // path builder. That change would be harder to cherry pick as it will
+  // depend on the rewrite of the convex tessellator.
+  if (!stroke_) {
+    LineTo(subpath_start_);
+  }
   SetContourClosed(true);
   AddContourComponent(current_);
   return *this;

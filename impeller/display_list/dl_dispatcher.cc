@@ -748,9 +748,11 @@ void DlDispatcher::clipPath(const SkPath& path, ClipOp sk_op, bool is_aa) {
   UNIMPLEMENTED;
 }
 
-const Path& DlDispatcher::GetOrCachePath(const CacheablePath& cache) {
+const Path& DlDispatcher::GetOrCachePath(const CacheablePath& cache,
+                                         bool stroke) {
   if (cache.cached_impeller_path.IsEmpty() && !cache.sk_path.isEmpty()) {
-    cache.cached_impeller_path = skia_conversions::ToPath(cache.sk_path);
+    cache.cached_impeller_path =
+        skia_conversions::ToPath(cache.sk_path, stroke);
   }
   return cache.cached_impeller_path;
 }
@@ -773,7 +775,7 @@ void DlDispatcher::clipPath(const CacheablePath& cache,
                         skia_conversions::ToSize(rrect.getSimpleRadii()),
                         clip_op);
     } else {
-      canvas_.ClipPath(GetOrCachePath(cache), clip_op);
+      canvas_.ClipPath(GetOrCachePath(cache, /*stroke=*/false), clip_op);
     }
   }
 }
@@ -866,7 +868,9 @@ void DlDispatcher::SimplifyOrDrawPath(CanvasType& canvas,
     return;
   }
 
-  canvas.DrawPath(GetOrCachePath(cache), paint);
+  canvas.DrawPath(
+      GetOrCachePath(cache, /*stroke=*/paint.style == Paint::Style::kStroke),
+      paint);
 }
 
 // |flutter::DlOpReceiver|

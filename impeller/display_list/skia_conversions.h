@@ -42,7 +42,7 @@ std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count);
 
 PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect);
 
-Path ToPath(const SkPath& path, Point shift = Point(0, 0));
+Path ToPath(const SkPath& path, bool stroke, Point shift = Point(0, 0));
 
 Path ToPath(const SkRRect& rrect);
 

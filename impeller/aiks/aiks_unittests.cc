@@ -3135,6 +3135,25 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, StrokedClosedPathDrawnCorrectly) {
+  PathBuilder builder;
+  builder.SetStroke(true);
+  Path path = builder.MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  .LineTo({400, 0})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.DrawPath(path, {
+                            .color = Color::Red(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
 

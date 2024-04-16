@@ -46,7 +46,7 @@ PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect) {
   return radii;
 }
 
-Path ToPath(const SkPath& path, Point shift) {
+Path ToPath(const SkPath& path, bool stroke, Point shift) {
   auto iterator = SkPath::Iter(path, false);
 
   struct PathData {
@@ -56,6 +56,7 @@ Path ToPath(const SkPath& path, Point shift) {
   };
 
   PathBuilder builder;
+  builder.SetStroke(stroke);
   PathData data;
   // Reserve a path size with some arbitrarily additional padding.
   builder.Reserve(path.countPoints() + 8, path.countVerbs() + 8);
@@ -171,12 +172,14 @@ std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
   return result;
 }
 
-Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob, Point shift) {
+Path PathDataFromTextBlob(const sk_sp<SkTextBlob>& blob,
+                          bool stroke,
+                          Point shift) {
   if (!blob) {
     return {};
   }
 
-  return ToPath(skia::textlayout::Paragraph::GetPath(blob.get()), shift);
+  return ToPath(skia::textlayout::Paragraph::GetPath(blob.get()), true, shift);
 }
 
 std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {

@@ -30,6 +30,9 @@ class PathBuilder {
 
   Path TakePath(FillType fill = FillType::kNonZero);
 
+  /// @brief Whether or not this is building a stroked path or a filled path.
+  void SetStroke(bool value);
+
   /// @brief Reserve [point_size] points and [verb_size] verbs in the underlying
   ///        path buffer.
   void Reserve(size_t point_size, size_t verb_size);
@@ -157,6 +160,7 @@ class PathBuilder {
   Point subpath_start_;
   Point current_;
   Path::Data prototype_;
+  bool stroke_;
 
   PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
 
