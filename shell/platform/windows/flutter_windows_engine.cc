@@ -532,7 +532,14 @@ std::unique_ptr<FlutterWindowsView> FlutterWindowsEngine::CreateView(
       captures->latch.Signal();
     };
 
-    embedder_api_.AddView(engine_, &info);
+    FlutterEngineResult result = embedder_api_.AddView(engine_, &info);
+    if (result != kSuccess) {
+      // Starting the add view operation failed. This is unexpected and
+      // indicates a bug in the Windows embedder.
+      FML_LOG(ERROR) << "FlutterEngineAddView returned unexpected result: "
+                     << result;
+      return nullptr;
+    }
 
     // Block the platform thread until the engine has added the view.
     // TODO(loicsharma): This blocks the platform thread eagerly and can
@@ -573,15 +580,22 @@ void FlutterWindowsEngine::RemoveView(FlutterViewId view_id) {
     info.view_id = view_id;
     info.user_data = &captures;
     info.remove_view_callback = [](const FlutterRemoveViewResult* result) {
-      // This is invoked on the raster thread, the same thread that the present
-      // callback is invoked. If |FlutterRemoveViewResult.removed| is `true`,
-      // the engine guarantees the view won't be presented.
+      // This is invoked on an engine thread. If
+      // |FlutterRemoveViewResult.removed| is `true`, the engine guarantees the
+      // view won't be presented.
       Captures* captures = reinterpret_cast<Captures*>(result->user_data);
       captures->removed = result->removed;
       captures->latch.Signal();
     };
 
-    embedder_api_.RemoveView(engine_, &info);
+    FlutterEngineResult result = embedder_api_.RemoveView(engine_, &info);
+    if (result != kSuccess) {
+      // Starting the remove view operation failed. This is unexpected and
+      // indicates a bug in the Windows embedder.
+      FML_LOG(ERROR) << "FlutterEngineRemoveView returned unexpected result: "
+                     << result;
+      return;
+    }
 
     // Block the platform thread until the engine has removed the view.
     // TODO(loicsharma): This blocks the platform thread eagerly and can

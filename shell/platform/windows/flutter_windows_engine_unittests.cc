@@ -1265,5 +1265,64 @@ TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
   }
 }
 
+TEST_F(FlutterWindowsEngineTest, AddViewFailureDoesNotHang) {
+  fml::testing::LogCapture log_capture;
+
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  auto engine = builder.Build();
+
+  EngineModifier modifier{engine.get()};
+
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  modifier.embedder_api().AddView = MOCK_ENGINE_PROC(
+      AddView,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterAddViewInfo* info) { return kInternalInconsistency; });
+
+  ASSERT_TRUE(engine->Run());
+
+  // Create the first view. This is the implicit view and isn't added to the
+  // engine.
+  auto implicit_window = std::make_unique<NiceMock<MockWindowBindingHandler>>();
+
+  std::unique_ptr<FlutterWindowsView> implicit_view =
+      engine->CreateView(std::move(implicit_window));
+
+  EXPECT_TRUE(implicit_view);
+
+  // Create a second view. The embedder attempts to add it to the engine.
+  auto second_window = std::make_unique<NiceMock<MockWindowBindingHandler>>();
+  std::unique_ptr<FlutterWindowsView> second_view =
+      engine->CreateView(std::move(second_window));
+
+  EXPECT_FALSE(second_view);
+  EXPECT_NE(
+      log_capture.str().find("FlutterEngineAddView returned unexpected result"),
+      std::string::npos);
+}
+
+TEST_F(FlutterWindowsEngineTest, RemoveViewFailureDoesNotHang) {
+  fml::testing::LogCapture log_capture;
+
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("sendCreatePlatformViewMethod");
+  auto engine = builder.Build();
+
+  EngineModifier modifier{engine.get()};
+
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  modifier.embedder_api().RemoveView = MOCK_ENGINE_PROC(
+      RemoveView,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterRemoveViewInfo* info) { return kInternalInconsistency; });
+
+  ASSERT_TRUE(engine->Run());
+  engine->RemoveView(123);
+
+  EXPECT_NE(log_capture.str().find(
+                "FlutterEngineRemoveView returned unexpected result"),
+            std::string::npos);
+}
+
 }  // namespace testing
 }  // namespace flutter
