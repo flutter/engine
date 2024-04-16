@@ -6,6 +6,8 @@
 
 #include <vector>
 
+#include "impeller/tessellator/tessellator.h"
+
 namespace impeller {
 PathBuilder* CreatePathBuilder() {
   return new PathBuilder();
