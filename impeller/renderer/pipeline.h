@@ -93,7 +93,7 @@ class RenderPipelineT {
   static_assert(
       ShaderStageCompatibilityChecker<VertexShader_, FragmentShader_>::Check(),
       "The output slots for the fragment shader don't have matches in the "
-      "vertex shader's output slots.");
+      "vertex shader's output slots. This will result in a linker error.");
 
  public:
   using VertexShader = VertexShader_;

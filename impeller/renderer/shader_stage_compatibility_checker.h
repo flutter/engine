@@ -8,7 +8,8 @@
 namespace impeller {
 /// This is a classed use to check that the input slots of fragment shaders
 /// match the output slots of the vertex shaders.
-/// It's not used at runtime.
+/// If they don't match it will result in linker errors when creating the
+/// pipeline.  It's not used at runtime.
 template <typename VertexShaderT, typename FragmentShaderT>
 class ShaderStageCompatibilityChecker {
  public:
