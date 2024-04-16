@@ -95,14 +95,6 @@ const std::shared_ptr<Contents>& Entity::GetContents() const {
   return contents_;
 }
 
-void Entity::SetClipDepth(uint32_t clip_depth) {
-  clip_depth_ = clip_depth;
-}
-
-uint32_t Entity::GetClipDepth() const {
-  return clip_depth_;
-}
-
 void Entity::SetNewClipDepth(uint32_t clip_depth) {
   new_clip_depth_ = clip_depth;
 }
@@ -118,10 +110,6 @@ Scalar Entity::GetShaderClipDepth() const {
 Scalar Entity::GetShaderClipDepth(uint32_t clip_depth) {
   Scalar result = std::clamp(clip_depth * kDepthEpsilon, 0.0f, 1.0f);
   return std::min(result, 1.0f - kDepthEpsilon);
-}
-
-void Entity::IncrementStencilDepth(uint32_t increment) {
-  clip_depth_ += increment;
 }
 
 void Entity::SetBlendMode(BlendMode blend_mode) {
