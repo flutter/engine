@@ -135,7 +135,7 @@ static NSString* getEventCharacters(NSString* characters, UIKeyboardHIDUsage key
   NSString* characters = getEventCharacters(press.key.characters, press.key.keyCode);
   NSString* charactersIgnoringModifiers =
       getEventCharacters(press.key.charactersIgnoringModifiers, press.key.keyCode);
-  NSMutableDictionary* keyMessage = [@{
+  NSDictionary* keyMessage = @{
     @"keymap" : @"ios",
     @"type" : type,
     @"keyCode" : @(press.key.keyCode),
@@ -144,7 +144,7 @@ static NSString* getEventCharacters(NSString* characters, UIKeyboardHIDUsage key
     @"charactersIgnoringModifiers" : charactersIgnoringModifiers == nil
         ? @""
         : charactersIgnoringModifiers,
-  } mutableCopy];
+  };
   [self.channel sendMessage:keyMessage
                       reply:^(id reply) {
                         bool handled = reply ? [[reply valueForKey:@"handled"] boolValue] : true;

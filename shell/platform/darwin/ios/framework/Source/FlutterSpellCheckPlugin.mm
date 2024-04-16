@@ -102,7 +102,8 @@ static NSString* const kInitiateSpellCheck = @"SpellCheck.initiateSpellCheck";
     }
   } while (nextSpellSuggestion != nil && nextOffset < text.length);
 
-  NSMutableArray* methodChannelResult = [[NSMutableArray alloc] init];
+  NSMutableArray* methodChannelResult =
+      [[NSMutableArray alloc] initWithCapacity:allSpellSuggestions.count];
 
   for (FlutterSpellCheckResult* result in allSpellSuggestions) {
     [methodChannelResult addObject:[result toDictionary]];
