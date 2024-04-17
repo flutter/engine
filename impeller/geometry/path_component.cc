@@ -23,6 +23,13 @@ void VertexWriter::EndContour() {
 
   auto start = contour_start_;
   auto end = points_.size() - 1;
+  // All filled paths are drawn as if they are closed, but if
+  // there is an explicit close then a lineTo to the origin
+  // is inserted. This point isn't strictly necesary to
+  // correctly render the shape and can be dropped.
+  if (points_[end] == points_[start]) {
+    end--;
+  }
 
   if (contour_start_ > 0) {
     // Triangle strip break.
