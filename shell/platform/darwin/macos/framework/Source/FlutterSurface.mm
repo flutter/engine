@@ -10,21 +10,12 @@
   CGSize _size;
   IOSurfaceRef _ioSurface;
   id<MTLTexture> _texture;
-  int _age;
   // Used for testing.
   BOOL _isInUseOverride;
 }
 @end
 
 @implementation FlutterSurface
-
-- (void)setAge:(int)age {
-  self->_age = age;
-}
-
-- (int)age {
-  return _age;
-}
 
 - (IOSurfaceRef)ioSurface {
   return _ioSurface;

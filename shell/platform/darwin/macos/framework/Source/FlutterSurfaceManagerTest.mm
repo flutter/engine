@@ -117,23 +117,13 @@ TEST(FlutterSurfaceManager, BackBufferCacheDoesNotLeak) {
   auto surfaceFromCache = [surfaceManager surfaceForSize:CGSizeMake(110, 110)];
   EXPECT_EQ(surfaceFromCache, surface2);
 
-  // Submit empty surfaces until the one in cache gets to age > 4, in which case
+  // Submit empty surfaces until the one in cache gets to age >= kSurfaceEvictionAge, in which case
   // it should be removed.
 
-  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
-
-  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
-
-  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
-
-  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
-
-  [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+  for (int i = 0; i < 30 /* kSurfaceEvictionAge */; ++i) {
+    [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
+    EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
+  }
 
   [surfaceManager presentSurfaces:@[] atTime:0 notify:nil];
   EXPECT_EQ(surfaceManager.backBufferCache.count, 0ul);
@@ -186,31 +176,21 @@ TEST(FlutterSurfaceManager, BackingStoreCacheSurfaceStuckInUse) {
 
   [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface1) ] atTime:0 notify:nil];
   // Pretend that compositor is holding on to the surface. The surface will be kept
-  // in cache until the age of 5 is reached, and then evicted.
+  // in cache until the age of kSurfaceEvictionAge is reached, and then evicted.
   surface1.isInUseOverride = YES;
 
   auto surface2 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
   [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface2) ] atTime:0 notify:nil];
   EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
 
-  auto surface3 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
-  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface3) ] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
+  for (int i = 0; i < 30 /* kSurfaceEvictionAge */ - 1; ++i) {
+    auto surface3 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
+    [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface3) ] atTime:0 notify:nil];
+    EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
+  }
 
   auto surface4 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
   [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface4) ] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
-
-  auto surface5 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
-  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface5) ] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
-
-  auto surface6 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
-  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface6) ] atTime:0 notify:nil];
-  EXPECT_EQ(surfaceManager.backBufferCache.count, 2ul);
-
-  auto surface7 = [surfaceManager surfaceForSize:CGSizeMake(100, 100)];
-  [surfaceManager presentSurfaces:@[ CreatePresentInfo(surface7) ] atTime:0 notify:nil];
   // Surface in use should bet old enough at this point to be evicted.
   EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
 }

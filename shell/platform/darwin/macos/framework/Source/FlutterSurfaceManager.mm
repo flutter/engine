@@ -266,9 +266,12 @@ static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces
 
 // Cached back buffers will be released after kIdleDelay if there is no activity.
 static const double kIdleDelay = 1.0;
+// Once surfaces reach kEvictionAge, they will be evicted from the cache.
+static const int kSurfaceEvictionAge = 30;
 
 @interface FlutterBackBufferCache () {
   NSMutableArray<FlutterSurface*>* _surfaces;
+  NSMapTable<FlutterSurface*, NSNumber*>* _surfaceAge;
 }
 
 @end
@@ -278,8 +281,18 @@ static const double kIdleDelay = 1.0;
 - (instancetype)init {
   if (self = [super init]) {
     self->_surfaces = [[NSMutableArray alloc] init];
+    self->_surfaceAge = [NSMapTable weakToStrongObjectsMapTable];
   }
   return self;
+}
+
+- (int)ageForSurface:(FlutterSurface*)surface {
+  NSNumber* age = [_surfaceAge objectForKey:surface];
+  return age != nil ? age.intValue : 0;
+}
+
+- (void)setAge:(int)age forSurface:(FlutterSurface*)surface {
+  [_surfaceAge setObject:@(age) forKey:surface];
 }
 
 - (nullable FlutterSurface*)removeSurfaceForSize:(CGSize)size {
@@ -295,7 +308,8 @@ static const double kIdleDelay = 1.0;
     // that the cache doesn't keep more surfaces than it needs to, as the unused surfaces
     // kept in cache will have their age kept increasing until purged (inside [returnSurfaces:]).
     for (FlutterSurface* surface in _surfaces) {
-      if (!surface.isInUse && (res == nil || res.age > surface.age)) {
+      if (!surface.isInUse &&
+          (res == nil || [self ageForSurface:res] > [self ageForSurface:surface])) {
         res = surface;
       }
     }
@@ -309,22 +323,22 @@ static const double kIdleDelay = 1.0;
 - (void)returnSurfaces:(nonnull NSArray<FlutterSurface*>*)returnedSurfaces {
   @synchronized(self) {
     for (FlutterSurface* surface in returnedSurfaces) {
-      surface.age = 0;
+      [self setAge:0 forSurface:surface];
     }
     for (FlutterSurface* surface in _surfaces) {
-      ++surface.age;
+      [self setAge:[self ageForSurface:surface] + 1 forSurface:surface];
     }
 
     [_surfaces addObjectsFromArray:returnedSurfaces];
 
-    // Purge all surface with age > 4. Reaching this age can mean two things:
+    // Purge all surface with age = kSurfaceEvictionAge. Reaching this age can mean two things:
     // - Surface is still in use and we can't return it. This can happen in some edge
     //   cases where the compositor holds on to the surface for much longer than expected.
     // - Surface is not in use but it hasn't been requested from the cache for a while.
     //   This means there are too many surfaces in the cache.
     [_surfaces filterUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(FlutterSurface* surface,
                                                                           NSDictionary* bindings) {
-                 return surface.age <= 4;
+                 return [self ageForSurface:surface] < kSurfaceEvictionAge;
                }]];
   }
 

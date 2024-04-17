@@ -32,8 +32,6 @@
 @property(readonly, nonatomic, nonnull) IOSurfaceRef ioSurface;
 @property(readonly, nonatomic) CGSize size;
 @property(readonly, nonatomic) int64_t textureId;
-// Age of the surface in frames. 0 means just returned from the compositor.
-@property(readwrite, nonatomic) int age;
 // Whether the surface is currently in use by the compositor.
 @property(readonly, nonatomic) BOOL isInUse;
 
