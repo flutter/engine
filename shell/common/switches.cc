@@ -41,8 +41,6 @@ struct SwitchDesc {
 
 // clang-format off
 static const std::string kAllowedDartFlags[] = {
-    "--enable-isolate-groups",
-    "--no-enable-isolate-groups",
 };
 // clang-format on
 
@@ -50,8 +48,6 @@ static const std::string kAllowedDartFlags[] = {
 
 // clang-format off
 static const std::string kAllowedDartFlags[] = {
-    "--enable-isolate-groups",
-    "--no-enable-isolate-groups",
     "--enable_mirrors",
     "--enable-service-port-fallback",
     "--max_profile_depth",
@@ -62,8 +58,6 @@ static const std::string kAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
-    "--null_assertions",
-    "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
     "--enable-asserts",
 };
