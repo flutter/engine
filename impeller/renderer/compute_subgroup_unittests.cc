@@ -86,7 +86,7 @@ TEST_P(ComputeSubgroupTest, PathPlayground) {
       std::promise<bool> promise;
       auto future = promise.get_future();
 
-      auto path = skia_conversions::ToPath(sk_path, /*stroke=*/true);
+      auto path = skia_conversions::ToPath(sk_path);
       auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
       auto status =
           ComputeTessellator{}

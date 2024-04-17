@@ -20,6 +20,7 @@ Path PathBuilder::CopyPath(FillType fill) {
 }
 
 Path PathBuilder::TakePath(FillType fill) {
+  last_verb_close_ = false;
   prototype_.fill = fill;
   UpdateBounds();
   return Path(std::move(prototype_));
@@ -33,28 +34,27 @@ void PathBuilder::Reserve(size_t point_size, size_t verb_size) {
 PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
   current_ = relative ? current_ + point : point;
   subpath_start_ = current_;
+  if (last_verb_close_) {
+    return *this;
+  }
+  last_verb_close_ = true;
   AddContourComponent(current_);
   return *this;
 }
 
-void PathBuilder::SetStroke(bool value) {
-  stroke_ = value;
-}
-
 PathBuilder& PathBuilder::Close() {
-  // TODO(jonahwilliams): this could be simplified by ensuring that the first
-  // point of any filled contour is included instead of special casing the
-  // path builder. That change would be harder to cherry pick as it will
-  // depend on the rewrite of the convex tessellator.
-  if (!stroke_) {
-    LineTo(subpath_start_);
+  if (last_verb_close_) {
+    return *this;
   }
+  last_verb_close_ = true;
+  LineTo(subpath_start_);
   SetContourClosed(true);
   AddContourComponent(current_);
   return *this;
 }
 
 PathBuilder& PathBuilder::LineTo(Point point, bool relative) {
+  last_verb_close_ = false;
   point = relative ? current_ + point : point;
   AddLinearComponent(current_, point);
   current_ = point;
@@ -62,6 +62,7 @@ PathBuilder& PathBuilder::LineTo(Point point, bool relative) {
 }
 
 PathBuilder& PathBuilder::HorizontalLineTo(Scalar x, bool relative) {
+  last_verb_close_ = false;
   Point endpoint =
       relative ? Point{current_.x + x, current_.y} : Point{x, current_.y};
   AddLinearComponent(current_, endpoint);
@@ -70,6 +71,7 @@ PathBuilder& PathBuilder::HorizontalLineTo(Scalar x, bool relative) {
 }
 
 PathBuilder& PathBuilder::VerticalLineTo(Scalar y, bool relative) {
+  last_verb_close_ = false;
   Point endpoint =
       relative ? Point{current_.x, current_.y + y} : Point{current_.x, y};
   AddLinearComponent(current_, endpoint);
@@ -80,6 +82,7 @@ PathBuilder& PathBuilder::VerticalLineTo(Scalar y, bool relative) {
 PathBuilder& PathBuilder::QuadraticCurveTo(Point controlPoint,
                                            Point point,
                                            bool relative) {
+  last_verb_close_ = false;
   point = relative ? current_ + point : point;
   controlPoint = relative ? current_ + controlPoint : controlPoint;
   AddQuadraticComponent(current_, controlPoint, point);
@@ -96,6 +99,7 @@ PathBuilder& PathBuilder::CubicCurveTo(Point controlPoint1,
                                        Point controlPoint2,
                                        Point point,
                                        bool relative) {
+  last_verb_close_ = false;
   controlPoint1 = relative ? current_ + controlPoint1 : controlPoint1;
   controlPoint2 = relative ? current_ + controlPoint2 : controlPoint2;
   point = relative ? current_ + point : point;
@@ -107,6 +111,7 @@ PathBuilder& PathBuilder::CubicCurveTo(Point controlPoint1,
 PathBuilder& PathBuilder::AddQuadraticCurve(Point p1, Point cp, Point p2) {
   MoveTo(p1);
   AddQuadraticComponent(p1, cp, p2);
+  last_verb_close_ = false;
   return *this;
 }
 
@@ -116,10 +121,12 @@ PathBuilder& PathBuilder::AddCubicCurve(Point p1,
                                         Point p2) {
   MoveTo(p1);
   AddCubicComponent(p1, cp1, cp2, p2);
+  last_verb_close_ = false;
   return *this;
 }
 
 PathBuilder& PathBuilder::AddRect(Rect rect) {
+  last_verb_close_ = false;
   auto origin = rect.GetOrigin();
   auto size = rect.GetSize();
 
@@ -138,21 +145,25 @@ PathBuilder& PathBuilder::AddRect(Rect rect) {
 }
 
 PathBuilder& PathBuilder::AddCircle(const Point& c, Scalar r) {
+  last_verb_close_ = false;
   return AddOval(Rect::MakeXYWH(c.x - r, c.y - r, 2.0f * r, 2.0f * r));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Scalar radius) {
+  last_verb_close_ = false;
   return radius <= 0.0 ? AddRect(rect)
                        : AddRoundedRect(rect, RoundingRadii(radius));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, Size radii) {
+  last_verb_close_ = false;
   return radii.width <= 0 || radii.height <= 0
              ? AddRect(rect)
              : AddRoundedRect(rect, RoundingRadii(radii));
 }
 
 PathBuilder& PathBuilder::AddRoundedRect(Rect rect, RoundingRadii radii) {
+  last_verb_close_ = false;
   if (radii.AreAllZero()) {
     return AddRect(rect);
   }
