@@ -1172,4 +1172,92 @@ Canvas& ExperimentalDlDispatcher::GetCanvas() {
   return canvas_;
 }
 
+//// Text Frame Dispatcher
+
+TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
+                                         const Matrix& initial_matrix)
+    : renderer_(renderer), matrix_(initial_matrix) {
+  renderer.GetLazyGlyphAtlas()->ResetTextFrames();
+}
+
+void TextFrameDispatcher::save() {
+  stack_.emplace_back(matrix_);
+}
+
+void TextFrameDispatcher::saveLayer(const SkRect& bounds,
+                                    const flutter::SaveLayerOptions options,
+                                    const flutter::DlImageFilter* backdrop) {
+  save();
+}
+
+void TextFrameDispatcher::restore() {
+  matrix_ = stack_.back();
+  stack_.pop_back();
+}
+
+void TextFrameDispatcher::translate(SkScalar tx, SkScalar ty) {
+  matrix_ = matrix_.Translate({tx, ty});
+}
+
+void TextFrameDispatcher::scale(SkScalar sx, SkScalar sy) {
+  matrix_ = matrix_.Scale({sx, sy, 1.0f});
+}
+
+void TextFrameDispatcher::rotate(SkScalar degrees) {
+  matrix_ = matrix_ * Matrix::MakeRotationZ(Degrees(degrees));
+}
+
+void TextFrameDispatcher::skew(SkScalar sx, SkScalar sy) {
+  matrix_ = matrix_ * Matrix::MakeSkew(sx, sy);
+}
+
+// clang-format off
+  // 2x3 2D affine subset of a 4x4 transform in row major order
+  void TextFrameDispatcher::transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
+                         SkScalar myx, SkScalar myy, SkScalar myt) {
+    matrix_ = matrix_ * Matrix::MakeColumn(
+        mxx,  myx,  0.0f, 0.0f,
+        mxy,  myy,  0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        mxt,  myt,  0.0f, 1.0f
+    );
+  }
+
+  // full 4x4 transform in row major order
+  void TextFrameDispatcher::transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+    matrix_ = matrix_ * Matrix::MakeColumn(
+        mxx, myx, mzx, mwx,
+        mxy, myy, mzy, mwy,
+        mxz, myz, mzz, mwz,
+        mxt, myt, mzt, mwt
+    );
+  }
+// clang-format on
+
+void TextFrameDispatcher::transformReset() {
+  matrix_ = Matrix();
+}
+
+void TextFrameDispatcher::drawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y) {
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,
+                                              matrix_.GetMaxBasisLengthXY());
+}
+
+void TextFrameDispatcher::drawDisplayList(
+    const sk_sp<flutter::DisplayList> display_list,
+    SkScalar opacity) {
+  save();
+  [[maybe_unused]] size_t stack_depth = stack_.size();
+  display_list->Dispatch(*this);
+  restore();
+  FML_DCHECK(stack_depth == stack_.size());
+}
+
 }  // namespace impeller

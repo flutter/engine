@@ -286,84 +286,43 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
                             public flutter::IgnoreDrawDispatchHelper {
  public:
   TextFrameDispatcher(const ContentContext& renderer,
-                      const Matrix& initial_matrix)
-      : renderer_(renderer), matrix_(initial_matrix) {
-    renderer.GetLazyGlyphAtlas()->ResetTextFrames();
-  }
-
-  void save() override { stack_.emplace_back(matrix_); }
+                      const Matrix& initial_matrix);
+  void save() override;
 
   void saveLayer(const SkRect& bounds,
                  const flutter::SaveLayerOptions options,
-                 const flutter::DlImageFilter* backdrop) override {
-    save();
-  }
+                 const flutter::DlImageFilter* backdrop) override;
 
-  void restore() override {
-    matrix_ = stack_.back();
-    stack_.pop_back();
-  }
+  void restore() override;
 
-  void translate(SkScalar tx, SkScalar ty) override {
-    matrix_ = matrix_.Translate({tx, ty});
-  }
+  void translate(SkScalar tx, SkScalar ty) override;
 
-  void scale(SkScalar sx, SkScalar sy) override {
-    matrix_ = matrix_.Scale({sx, sy, 1.0f});
-  }
+  void scale(SkScalar sx, SkScalar sy) override;
 
-  void rotate(SkScalar degrees) override {
-    matrix_ = matrix_ * Matrix::MakeRotationZ(Degrees(degrees));
-  }
+  void rotate(SkScalar degrees) override;
 
-  void skew(SkScalar sx, SkScalar sy) override {
-    matrix_ = matrix_ * Matrix::MakeSkew(sx, sy);
-  }
+  void skew(SkScalar sx, SkScalar sy) override;
 
   // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
   void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                         SkScalar myx, SkScalar myy, SkScalar myt) override {
-    matrix_ = matrix_ * Matrix::MakeColumn(
-        mxx,  myx,  0.0f, 0.0f,
-        mxy,  myy,  0.0f, 0.0f,
-        0.0f, 0.0f, 1.0f, 0.0f,
-        mxt,  myt,  0.0f, 1.0f
-    );
-  }
+                         SkScalar myx, SkScalar myy, SkScalar myt) override;
 
   // full 4x4 transform in row major order
   void transformFullPerspective(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
-    matrix_ = matrix_ * Matrix::MakeColumn(
-        mxx, myx, mzx, mwx,
-        mxy, myy, mzy, mwy,
-        mxz, myz, mzz, mwz,
-        mxt, myt, mzt, mwt
-    );
-  }
-  // clang-format on
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override;
 
-  void transformReset() override { matrix_ = Matrix(); }
+  void transformReset() override;
 
   void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
                      SkScalar x,
-                     SkScalar y) override {
-    renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,
-                                                matrix_.GetMaxBasisLengthXY());
-  }
+                     SkScalar y) override;
 
   void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
-                       SkScalar opacity) override {
-    save();
-    auto stack_depth = stack_.size();
-    display_list->Dispatch(*this);
-    restore();
-    FML_DCHECK(stack_depth == stack_.size());
-  }
+                       SkScalar opacity) override;
 
  private:
   const ContentContext& renderer_;
