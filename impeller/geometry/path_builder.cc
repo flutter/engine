@@ -38,7 +38,6 @@ PathBuilder& PathBuilder::MoveTo(Point point, bool relative) {
 }
 
 PathBuilder& PathBuilder::Close() {
-  // LineTo(subpath_start_);
   SetContourClosed(true);
   AddContourComponent(current_);
   return *this;

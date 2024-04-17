@@ -3135,6 +3135,25 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// Ensure that a stroked path that calls close does not actually close.
+TEST_P(AiksTest, StrokedClosedPathDrawnCorrectly) {
+  PathBuilder builder;
+  Path path = builder.MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  .LineTo({400, 0})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.DrawPath(path, {
+                            .color = Color::Red(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
 
