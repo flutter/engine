@@ -1024,12 +1024,14 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventScrollPhase, kCGScrollPhaseBegan);
   CGEventSetIntegerValueField(cgEventStart, kCGScrollWheelEventIsContinuous, 1);
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventStart]];
+  CFRelease(cgEventStart);
 
   CGEventRef cgEventUpdate = CGEventCreateCopy(cgEventStart);
   CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventScrollPhase, kCGScrollPhaseChanged);
   CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis2, 1);  // pan_x
   CGEventSetIntegerValueField(cgEventUpdate, kCGScrollWheelEventDeltaAxis1, 2);  // pan_y
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
+  CFRelease(cgEventUpdate);
 
   // Magic mouse can interleave mouse events with scroll events.
   NSEvent* mouseEvent = flutter::testing::CreateMouseEvent(0x00);
@@ -1040,6 +1042,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   CGEventRef cgEventEnd = CGEventCreateCopy(cgEventStart);
   CGEventSetIntegerValueField(cgEventEnd, kCGScrollWheelEventScrollPhase, kCGScrollPhaseEnded);
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventEnd]];
+  CFRelease(cgEventEnd);
 
   return true;
 }
