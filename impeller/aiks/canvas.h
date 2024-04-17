@@ -183,7 +183,7 @@ class Canvas {
   std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
 
-  size_t GetClipDepth() const;
+  size_t GetClipHeight() const;
 
   void Initialize(std::optional<Rect> cull_rect);
 
@@ -195,8 +195,6 @@ class Canvas {
   uint64_t current_depth_ = 0u;
 
   EntityPass& GetCurrentPass();
-
-  size_t GetClipHeight() const;
 
   virtual void AddEntityToCurrentPass(Entity entity);
 

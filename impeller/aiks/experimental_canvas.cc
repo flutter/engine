@@ -192,7 +192,7 @@ bool ExperimentalCanvas::Restore() {
     inline_pass_contexts_.pop_back();
 
     Entity element_entity;
-    element_entity.SetClipDepth(GetClipDepth());
+    element_entity.SetClipDepth(GetClipHeight());
     element_entity.SetContents(std::move(contents));
     element_entity.SetBlendMode(save_layer_state.paint.blend_mode);
     element_entity.SetTransform(Matrix::MakeTranslation(
@@ -210,7 +210,7 @@ void ExperimentalCanvas::DrawTextFrame(
     Point position,
     const Paint& paint) {
   Entity entity;
-  entity.SetClipDepth(GetClipDepth());
+  entity.SetClipDepth(GetClipHeight());
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
