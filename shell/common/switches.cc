@@ -62,9 +62,8 @@ static const std::string kAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
-    "--null_assertions",
-    "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
+    "--enable-asserts",
 };
 // clang-format on
 

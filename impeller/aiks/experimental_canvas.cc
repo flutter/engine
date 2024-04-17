@@ -118,7 +118,7 @@ void ExperimentalCanvas::SetupRenderPass() {
       renderer_.GetDeviceCapabilities().SupportsImplicitResolvingMSAA()));
 
   auto inline_pass = std::make_unique<InlinePassContext>(
-      renderer_, *entity_pass_targets_.back(), 0, 0);
+      renderer_, *entity_pass_targets_.back(), 0);
   inline_pass_contexts_.emplace_back(std::move(inline_pass));
   auto result = inline_pass_contexts_.back()->GetRenderPass(0u);
   render_passes_.push_back(result.pass);
@@ -130,7 +130,7 @@ void ExperimentalCanvas::Save() {
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
-  entry.clip_depth = transform_stack_.back().clip_depth;
+  entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
   transform_stack_.emplace_back(entry);
 }
@@ -157,12 +157,12 @@ void ExperimentalCanvas::SaveLayer(
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
-  entry.clip_depth = transform_stack_.back().clip_depth;
+  entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpass;
   transform_stack_.emplace_back(entry);
 
   auto inline_pass = std::make_unique<InlinePassContext>(
-      renderer_, *entity_pass_targets_.back(), 0, 0);
+      renderer_, *entity_pass_targets_.back(), 0);
   inline_pass_contexts_.emplace_back(std::move(inline_pass));
 
   auto result = inline_pass_contexts_.back()->GetRenderPass(0u);

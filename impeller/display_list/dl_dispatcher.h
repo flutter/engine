@@ -7,6 +7,7 @@
 
 #include "display_list/utils/dl_receiver_utils.h"
 #include "flutter/display_list/dl_op_receiver.h"
+#include "fml/logging.h"
 #include "impeller/aiks/canvas_type.h"
 #include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
@@ -358,8 +359,10 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
                        SkScalar opacity) override {
     save();
+    auto stack_depth = stack_.size();
     display_list->Dispatch(*this);
     restore();
+    FML_DCHECK(stack_depth == stack_.size());
   }
 
  private:

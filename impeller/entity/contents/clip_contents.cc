@@ -19,8 +19,8 @@ static Scalar GetShaderClipDepth(const Entity& entity) {
   // Draw the clip at the max of the clip entity's depth slice, so that other
   // draw calls with this same depth value will be culled even if they have a
   // perspective transform.
-  return std::nextafterf(
-      Entity::GetShaderClipDepth(entity.GetNewClipDepth() + 1), 0.0f);
+  return std::nextafterf(Entity::GetShaderClipDepth(entity.GetClipDepth() + 1),
+                         0.0f);
 }
 
 /*******************************************************************************
@@ -191,6 +191,14 @@ ClipRestoreContents::ClipRestoreContents() = default;
 
 ClipRestoreContents::~ClipRestoreContents() = default;
 
+void ClipRestoreContents::SetRestoreHeight(size_t clip_height) {
+  restore_height_ = clip_height;
+}
+
+size_t ClipRestoreContents::GetRestoreHeight() const {
+  return restore_height_;
+}
+
 void ClipRestoreContents::SetRestoreCoverage(
     std::optional<Rect> restore_coverage) {
   restore_coverage_ = restore_coverage;
@@ -230,7 +238,7 @@ bool ClipRestoreContents::Render(const ContentContext& renderer,
   options.stencil_mode = ContentContextOptions::StencilMode::kLegacyClipRestore;
   options.primitive_type = PrimitiveType::kTriangleStrip;
   pass.SetPipeline(renderer.GetClipPipeline(options));
-  pass.SetStencilReference(entity.GetClipDepth());
+  pass.SetStencilReference(0);
 
   // Create a rect that covers either the given restore area, or the whole
   // render target texture.

@@ -13,7 +13,7 @@
 
 namespace flutter {
 
-#define ENABLE_EXPERIMENTAL_CANVAS true
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
     std::shared_ptr<impeller::Context> context) {

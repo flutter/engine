@@ -36,15 +36,14 @@
 #include "impeller/entity/clip.frag.h"
 #include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
-#include "impeller/entity/color_matrix_color_filter.vert.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
+#include "impeller/entity/filter.vert.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
-#include "impeller/entity/linear_to_srgb_filter.vert.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/points.comp.h"
@@ -56,7 +55,6 @@
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
-#include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
@@ -65,7 +63,6 @@
 #include "impeller/entity/uv.comp.h"
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
-#include "impeller/entity/yuv_to_rgb_filter.vert.h"
 
 #include "impeller/entity/kernel.vert.h"
 #include "impeller/entity/kernel_decal.frag.h"
@@ -147,28 +144,23 @@ using MorphologyFilterPipeline =
     RenderPipelineT<MorphologyFilterVertexShader,
                     MorphologyFilterFragmentShader>;
 using ColorMatrixColorFilterPipeline =
-    RenderPipelineT<ColorMatrixColorFilterVertexShader,
-                    ColorMatrixColorFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, ColorMatrixColorFilterFragmentShader>;
 using LinearToSrgbFilterPipeline =
-    RenderPipelineT<LinearToSrgbFilterVertexShader,
-                    LinearToSrgbFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, LinearToSrgbFilterFragmentShader>;
 using SrgbToLinearFilterPipeline =
-    RenderPipelineT<SrgbToLinearFilterVertexShader,
-                    SrgbToLinearFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, SrgbToLinearFilterFragmentShader>;
 using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using GlyphAtlasColorPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
 using PorterDuffBlendPipeline =
     RenderPipelineT<PorterDuffBlendVertexShader, PorterDuffBlendFragmentShader>;
-// Instead of requiring new shaders for clips, the solid fill stages are used
-// to redirect writing to the stencil instead of color attachments.
 using ClipPipeline = RenderPipelineT<ClipVertexShader, ClipFragmentShader>;
 
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 using YUVToRGBFilterPipeline =
-    RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
+    RenderPipelineT<FilterVertexShader, YuvToRgbFilterFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline =
@@ -188,8 +180,6 @@ using BlendHardLightPipeline =
 using BlendHuePipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendLightenPipeline =
-    RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
-using BlendPlusAdvancedPipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
 using BlendLuminosityPipeline =
     RenderPipelineT<AdvancedBlendVertexShader, AdvancedBlendFragmentShader>;
@@ -229,9 +219,6 @@ using FramebufferBlendHuePipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendFragmentShader>;
 using FramebufferBlendLightenPipeline =
-    RenderPipelineT<FramebufferBlendVertexShader,
-                    FramebufferBlendFragmentShader>;
-using FramebufferBlendPlusAdvancedPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendFragmentShader>;
 using FramebufferBlendLuminosityPipeline =
@@ -617,11 +604,6 @@ class ContentContext {
     return GetPipeline(blend_lighten_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendPlusAdvancedPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(blend_plus_advanced_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBlendLuminosityPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(blend_luminosity_pipelines_, opts);
@@ -705,12 +687,6 @@ class ContentContext {
   GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendPlusAdvancedPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
-    return GetPipeline(framebuffer_blend_plus_advanced_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
@@ -975,7 +951,6 @@ class ContentContext {
   mutable Variants<BlendHardLightPipeline> blend_hardlight_pipelines_;
   mutable Variants<BlendHuePipeline> blend_hue_pipelines_;
   mutable Variants<BlendLightenPipeline> blend_lighten_pipelines_;
-  mutable Variants<BlendPlusAdvancedPipeline> blend_plus_advanced_pipelines_;
   mutable Variants<BlendLuminosityPipeline> blend_luminosity_pipelines_;
   mutable Variants<BlendMultiplyPipeline> blend_multiply_pipelines_;
   mutable Variants<BlendOverlayPipeline> blend_overlay_pipelines_;
@@ -1001,8 +976,6 @@ class ContentContext {
       framebuffer_blend_hue_pipelines_;
   mutable Variants<FramebufferBlendLightenPipeline>
       framebuffer_blend_lighten_pipelines_;
-  mutable Variants<FramebufferBlendPlusAdvancedPipeline>
-      framebuffer_blend_plus_advanced_pipelines_;
   mutable Variants<FramebufferBlendLuminosityPipeline>
       framebuffer_blend_luminosity_pipelines_;
   mutable Variants<FramebufferBlendMultiplyPipeline>
