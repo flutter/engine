@@ -131,12 +131,12 @@ TEST(PathTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .Close()
                                 .TakePath()
                                 .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.points->size(), 6u);
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.contours[0].is_closed, false);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_EQ(polyline.contours[1].is_closed, true);
-  ASSERT_EQ(polyline.contours[1].start_index, 2u);
+  EXPECT_EQ(polyline.points->size(), 5u);
+  EXPECT_EQ(polyline.contours.size(), 2u);
+  EXPECT_EQ(polyline.contours[0].is_closed, false);
+  EXPECT_EQ(polyline.contours[0].start_index, 0u);
+  EXPECT_EQ(polyline.contours[1].is_closed, true);
+  EXPECT_EQ(polyline.contours[1].start_index, 2u);
 }
 
 TEST(PathTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
@@ -154,7 +154,7 @@ TEST(PathTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
   ASSERT_EQ(a1, 0u);
   ASSERT_EQ(a2, 2u);
   ASSERT_EQ(b1, 2u);
-  ASSERT_EQ(b2, 6u);
+  ASSERT_EQ(b2, 5u);
 }
 
 TEST(PathTest, PathAddRectPolylineHasCorrectContourData) {
@@ -165,12 +165,11 @@ TEST(PathTest, PathAddRectPolylineHasCorrectContourData) {
   ASSERT_EQ(polyline.contours.size(), 1u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
-  ASSERT_EQ(polyline.points->size(), 5u);
+  ASSERT_EQ(polyline.points->size(), 4u);
   ASSERT_EQ(polyline.GetPoint(0), Point(50, 60));
   ASSERT_EQ(polyline.GetPoint(1), Point(70, 60));
   ASSERT_EQ(polyline.GetPoint(2), Point(70, 80));
   ASSERT_EQ(polyline.GetPoint(3), Point(50, 80));
-  ASSERT_EQ(polyline.GetPoint(4), Point(50, 60));
 }
 
 TEST(PathTest, PathPolylineDuplicatesAreRemovedForSameContour) {
@@ -187,19 +186,18 @@ TEST(PathTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
           .CreatePolyline(1.0f);
-  ASSERT_EQ(polyline.contours.size(), 2u);
-  ASSERT_EQ(polyline.contours[0].start_index, 0u);
+  EXPECT_EQ(polyline.contours.size(), 2u);
+  EXPECT_EQ(polyline.contours[0].start_index, 0u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
-  ASSERT_EQ(polyline.contours[1].start_index, 4u);
+  ASSERT_EQ(polyline.contours[1].start_index, 3u);
   ASSERT_FALSE(polyline.contours[1].is_closed);
-  ASSERT_EQ(polyline.points->size(), 7u);
-  ASSERT_EQ(polyline.GetPoint(0), Point(50, 50));
-  ASSERT_EQ(polyline.GetPoint(1), Point(100, 50));
-  ASSERT_EQ(polyline.GetPoint(2), Point(100, 100));
-  ASSERT_EQ(polyline.GetPoint(3), Point(50, 50));
-  ASSERT_EQ(polyline.GetPoint(4), Point(50, 50));
-  ASSERT_EQ(polyline.GetPoint(5), Point(0, 50));
-  ASSERT_EQ(polyline.GetPoint(6), Point(0, 100));
+  ASSERT_EQ(polyline.points->size(), 6u);
+  EXPECT_EQ(polyline.GetPoint(0), Point(50, 50));
+  EXPECT_EQ(polyline.GetPoint(1), Point(100, 50));
+  EXPECT_EQ(polyline.GetPoint(2), Point(100, 100));
+  EXPECT_EQ(polyline.GetPoint(3), Point(50, 50));
+  EXPECT_EQ(polyline.GetPoint(4), Point(0, 50));
+  EXPECT_EQ(polyline.GetPoint(5), Point(0, 100));
 }
 
 TEST(PathTest, PolylineBufferReuse) {
