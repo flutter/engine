@@ -267,6 +267,9 @@ static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces
 // Cached back buffers will be released after kIdleDelay if there is no activity.
 static const double kIdleDelay = 1.0;
 // Once surfaces reach kEvictionAge, they will be evicted from the cache.
+// The age of 30 has been chosen to reduce potential surface allocation churn.
+// For unused surface 30 frames means only half a second at 60fps, and there is
+// idle timeout of 1 second where all surfaces are evicted.
 static const int kSurfaceEvictionAge = 30;
 
 @interface FlutterBackBufferCache () {
