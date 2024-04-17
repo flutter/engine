@@ -38,9 +38,9 @@ void doTests() {
       expect(rootChildren[3].tagName, equalsIgnoringCase('style'));
 
       final List<DomElement> shadowChildren = domManager.renderingHost.childNodes.cast<DomElement>().toList();
-      expect(shadowChildren.length, 3);
+      expect(shadowChildren.length, 2);
       expect(shadowChildren[0], domManager.sceneHost);
-      expect(shadowChildren[2].tagName, equalsIgnoringCase('style'));
+      expect(shadowChildren[1].tagName, equalsIgnoringCase('style'));
     });
 
     test('hide placeholder text for textfield', () {
