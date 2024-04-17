@@ -1040,11 +1040,6 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
 // 4 byte header + ptr aligned payload uses 12 bytes round up to 16
 // (4 bytes unused)
 struct DrawDisplayListOp final : DrawOpBase {
-  // We don't want |Push| to increment depth_, we will do that manually
-  // in the |drawDisplayList| method based on the max depth of the sub-DL.
-  static constexpr uint32_t kDepthInc = 0;
-  static constexpr uint32_t kRenderOpInc = 1;
-
   static constexpr auto kType = DisplayListOpType::kDrawDisplayList;
 
   explicit DrawDisplayListOp(const sk_sp<DisplayList>& display_list,

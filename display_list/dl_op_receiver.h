@@ -38,6 +38,80 @@ class DisplayList;
 /// Unlike DlCanvas, this interface has attribute state which is global across
 /// an entire DisplayList (not affected by save/restore).
 ///
+/// DISPLAYLIST DEPTH TRACKING
+///
+/// Each rendering call in the DisplayList stream is assumed to have a "depth"
+/// value relative to the beginning of its DisplayList. The depth value is
+/// implicitly allocated during recording and only reported in 2 places so
+/// it is important for a dispatcher to perform the same internal allocations
+/// if it is to make sense of the information reported by the save/saveLayer
+/// calls. This depth value is maintained as follows:
+///
+/// - The depth value of a brand new DisplayList before any drawing calls
+///   are recorded or dispatched is 0.
+/// - The depth value is incremented for every drawing operation, including:
+///   - all draw* calls (including drawDisplayList)
+///   - drawDisplayList will also increment the depth value by the max_depth
+///     reported for the DisplayList object it is drawing (in other words
+///     it will skip enough depth values for each drawing call in the child).
+///     This bump is in addition to the depth value it records for being
+///     a rendering operation. Some implementations may need to surround
+///     the actual drawDisplayList with a protective saveLayer, but others
+///     may not - so the implicit depth value assigned to the drawDisplayList
+///     call itself may go unused, but must be accounted for.
+///   - a saveLayer call will increment the depth value, but it will do so
+///     at the time it is restore()'d (which is when it renders back into
+///     the parent layer). Thus the first draw call within the saveLayer
+///     will be at a depth 1 greater than the last draw call before the
+///     saveLayer. Also, the first draw call after the saveLayer is restored
+///     will be 2 greater than the last draw call before the restore.
+///   - some saveLayer calls may be omitted at dispatch time (for example
+///     if the layer is elided for opacity peephole optimization), but the
+///     implicitly assigned depth value should be accounted for when the
+///     layer is restored even if no rendering occured.
+/// - Each save() or saveLayer() call will record the maximum depth of any
+///   draw call within its content (i.e. recorded before the corresponding
+///   restore) and this maximum depth of its content will be reported in the
+///   save() or saveLayer() call during dispatch. This information can be
+///   used to manage clipping state within the save/restore pair. Clipping
+///   information outside of the first save or restore call can be managed
+///   according to the max depth of the DisplayList itself.
+///
+/// A note on drawing child DisplayLists:
+/// - The child DisplayList will have been recorded with, and be played back
+///   with, depth values that are relative to its own object.
+/// - If a dispatcher either ignores such child DisplayList objects, or
+///   renders them in isolation, then all it needs to do to maintain the
+///   synchronization of depth values is to increment the depth by the
+///   max depth of the child DisplayList + 1 for the drawDisplayList
+///   call itself. But, if the dispatcher is rendering the child DisplayLists
+///   recursively, then...
+/// - The drawDisplayList call will have skipped enough depth values that
+///   the dispatcher can renumber the depth values of the child DisplayList
+///   relative to the depth value at which the drawDisplayList was encountered
+///   and should end up at the correct depth for the next draw call after
+///   the drawDisplayList. Note that the drawDisplayList call implies an
+///   additional depth value allocation which the dispatcher must either
+///   use or skip as it needs, before or after the recursion.
+/// - In addition, the depth values reported by the save() and saveLayer()
+///   calls within the child DisplayList will also be relative and be
+///   subject to the same renumbering by the dispatcher.
+/// - As such, a dispatcher that wishes to track the depth values of the
+///   rendering calls will have to remember the depth at which a child
+///   DisplayList is rendered and the reported depth values for that
+///   child DisplayList (those reported in save/saveLayer) calls will have
+///   to be offset accordingly to match the depths reported in the parent
+///   DisplayList.
+/// - If a dispatcher needs to perform some rendering associated with a
+///   drawDisplayList call then it can use the implicitly assigned depth
+///   value that was assumed when the stream was recorded. Whether this
+///   depth value is consumed by the dispatcher before or after the recursive
+///   dispatch of the child is left to the dispatcher.
+/// - If a dispatcher does not need to perform any rendering associated with
+///   a drawDisplayList call other than the rendering recorded in the child
+///   DisplayList then it can simply skip the associated implicitly assigned
+///   depth value before or after the recursive dispatch as it wishes.
+///
 /// @see        DlSkCanvasDispatcher
 /// @see        impeller::DlDispatcher
 /// @see        DlOpSpy

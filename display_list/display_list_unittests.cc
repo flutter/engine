@@ -946,14 +946,15 @@ TEST_F(DisplayListTest, NestedOpCountMetricsSameAsSkPicture) {
       receiver.drawRect(SkRect::MakeXYWH(x, y, 80, 80));
     }
   }
+
   DisplayListBuilder outer_builder(SkRect::MakeWH(150, 100));
   DlOpReceiver& outer_receiver = ToReceiver(outer_builder);
   outer_receiver.drawDisplayList(builder.Build());
-
   auto display_list = outer_builder.Build();
+
   ASSERT_EQ(display_list->op_count(), 1u);
   ASSERT_EQ(display_list->op_count(true), 36u);
-  EXPECT_EQ(display_list->max_depth(), 36u);
+  EXPECT_EQ(display_list->max_depth(), 37u);
 
   ASSERT_EQ(picture->approximateOpCount(),
             static_cast<int>(display_list->op_count()));
@@ -3845,33 +3846,39 @@ class DepthExpector : public virtual DlOpReceiver,
 };
 
 TEST_F(DisplayListTest, SaveContentDepthTest) {
+  DisplayListBuilder child_builder;
+  child_builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 1
+  auto child = child_builder.Build();
+
   DisplayListBuilder builder;
   builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 1
 
-  builder.Save();  // lasts through depth 7
+  builder.Save();  // lasts through depth 9
   {
     builder.Translate(5, 5);
     builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 2
 
-    builder.SaveLayer(nullptr, nullptr);  // lasts through depth 4, is depth 5
-    {
-      builder.DrawRect({12, 12, 22, 22}, DlPaint());  // depth 3
-      builder.DrawRect({14, 14, 24, 24}, DlPaint());  // depth 4
-    }
-    builder.Restore();  // layer is restored with depth 5
+    builder.DrawDisplayList(child, 1.0f);  // depth 3 (content) + 4 (self)
 
-    builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 6
-    builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 7
+    builder.SaveLayer(nullptr, nullptr);  // lasts through depth 6
+    {
+      builder.DrawRect({12, 12, 22, 22}, DlPaint());  // depth 5
+      builder.DrawRect({14, 14, 24, 24}, DlPaint());  // depth 6
+    }
+    builder.Restore();  // layer is restored with depth 7
+
+    builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 8
+    builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 9
   }
   builder.Restore();
 
-  builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 8
-  builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 9
+  builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 10
+  builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 11
   auto display_list = builder.Build();
 
-  EXPECT_EQ(display_list->max_depth(), 9u);
+  EXPECT_EQ(display_list->max_depth(), 11u);
 
-  DepthExpector expector({7, 4});
+  DepthExpector expector({9, 6});
   display_list->Dispatch(expector);
 }
 

@@ -1410,6 +1410,14 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   Push<DrawDisplayListOp>(0, display_list,
                           opacity < SK_Scalar1 ? opacity : SK_Scalar1);
 
+  // This depth increment accounts for every draw call in the child
+  // DisplayList and is in addition to the implicit depth increment
+  // that was performed when we pushed the DrawDisplayListOp. The
+  // eventual dispatcher can use or ignore the implicit depth increment
+  // as it sees fit depending on whether it needs to do rendering
+  // before or after the drawDisplayList op, but it must be accounted
+  // for if the depth value accounting is to remain consistent between
+  // the recording and dispatching process.
   depth_ += display_list->max_depth();
 
   is_ui_thread_safe_ = is_ui_thread_safe_ && display_list->isUIThreadSafe();

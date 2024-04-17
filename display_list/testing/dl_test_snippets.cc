@@ -870,13 +870,13 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        }},
       {"DrawDisplayList",
        {
-           {1, 16, 1,
+           {1, 16, 2,
             [](DlOpReceiver& r) { r.drawDisplayList(TestDisplayList1, 1.0); }},
-           {1, 16, 1,
+           {1, 16, 2,
             [](DlOpReceiver& r) { r.drawDisplayList(TestDisplayList1, 0.5); }},
-           {1, 16, 1,
+           {1, 16, 2,
             [](DlOpReceiver& r) { r.drawDisplayList(TestDisplayList2, 1.0); }},
-           {1, 16, 1,
+           {1, 16, 2,
             [](DlOpReceiver& r) {
               r.drawDisplayList(MakeTestDisplayList(10, 10, SK_ColorRED), 1.0);
             }},
