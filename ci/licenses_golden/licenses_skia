@@ -1,4 +1,4 @@
-Signature: 8b5044d663ffa55c32a4f93879f33dba
+Signature: f0bd4d21a3b9103e42ca5a02d6517a54
 
 ====================================================================================================
 LIBRARY: etc1
@@ -397,14 +397,6 @@ FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/pathops.bench.js
 FILE: ../../../flutter/third_party/skia/modules/pathkit/perf/perfReporter.js
 FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
-FILE: ../../../flutter/third_party/skia/relnotes/CacheBudget.md
-FILE: ../../../flutter/third_party/skia/relnotes/GraphiteContextMaxTextureSize.md
-FILE: ../../../flutter/third_party/skia/relnotes/MTLBinaryArchive.md
-FILE: ../../../flutter/third_party/skia/relnotes/MinifyBraces.md
-FILE: ../../../flutter/third_party/skia/relnotes/SkBitmap_setColorSpace.md
-FILE: ../../../flutter/third_party/skia/relnotes/draw_looper.md
-FILE: ../../../flutter/third_party/skia/relnotes/metal_backendsurface.md
-FILE: ../../../flutter/third_party/skia/relnotes/shaping_behavior.md
 FILE: ../../../flutter/third_party/skia/src/gpu/gpu_workaround_list.txt
 FILE: ../../../flutter/third_party/skia/src/ports/fontations/Cargo.toml
 FILE: ../../../flutter/third_party/skia/src/sksl/generated/sksl_compute.minified.sksl
@@ -6689,6 +6681,7 @@ ORIGIN: ../../../flutter/third_party/skia/include/gpu/d3d/GrD3DTypes.h + ../../.
 ORIGIN: ../../../flutter/third_party/skia/include/ports/SkImageGeneratorNDK.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/private/SkIDChangeListener.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/private/SkSLSampleUsage.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/include/private/base/SkASAN.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/private/gpu/ganesh/GrD3DTypesMinimal.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/utils/SkCustomTypeface.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/canvaskit/gm_bindings.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -6696,7 +6689,6 @@ ORIGIN: ../../../flutter/third_party/skia/modules/canvaskit/viewer_bindings.cpp 
 ORIGIN: ../../../flutter/third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_float_capabilities.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_int_capabilities.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/base/SkASAN.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkBlockAllocator.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/base/SkBlockAllocator.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/core/SkIDChangeListener.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -6823,6 +6815,7 @@ FILE: ../../../flutter/third_party/skia/include/gpu/d3d/GrD3DTypes.h
 FILE: ../../../flutter/third_party/skia/include/ports/SkImageGeneratorNDK.h
 FILE: ../../../flutter/third_party/skia/include/private/SkIDChangeListener.h
 FILE: ../../../flutter/third_party/skia/include/private/SkSLSampleUsage.h
+FILE: ../../../flutter/third_party/skia/include/private/base/SkASAN.h
 FILE: ../../../flutter/third_party/skia/include/private/gpu/ganesh/GrD3DTypesMinimal.h
 FILE: ../../../flutter/third_party/skia/include/utils/SkCustomTypeface.h
 FILE: ../../../flutter/third_party/skia/modules/canvaskit/gm_bindings.cpp
@@ -6830,7 +6823,6 @@ FILE: ../../../flutter/third_party/skia/modules/canvaskit/viewer_bindings.cpp
 FILE: ../../../flutter/third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_float_capabilities.cpp
 FILE: ../../../flutter/third_party/skia/modules/canvaskit/wasm_tools/SIMD/simd_int_capabilities.cpp
 FILE: ../../../flutter/third_party/skia/modules/skunicode/include/SkUnicode.h
-FILE: ../../../flutter/third_party/skia/src/base/SkASAN.h
 FILE: ../../../flutter/third_party/skia/src/base/SkBlockAllocator.cpp
 FILE: ../../../flutter/third_party/skia/src/base/SkBlockAllocator.h
 FILE: ../../../flutter/third_party/skia/src/core/SkIDChangeListener.cpp
