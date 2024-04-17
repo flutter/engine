@@ -941,13 +941,14 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimes) {
 TEST_P(AiksTest, FormatWideGamut) {
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
             PixelFormat::kB10G10R10A10XR);
-  EXPECT_TRUE(IsAlphaClampedToOne(
-      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
 }
 
 TEST_P(AiksTest, FormatSRGB) {
-  EXPECT_TRUE(IsAlphaClampedToOne(
-      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+  PixelFormat pixel_format =
+      GetContext()->GetCapabilities()->GetDefaultColorFormat();
+  EXPECT_TRUE(pixel_format == PixelFormat::kR8G8B8A8UNormInt ||
+              pixel_format == PixelFormat::kB8G8R8A8UNormInt)
+      << "pixel format: " << PixelFormatToString(pixel_format);
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
@@ -3131,54 +3132,6 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   Canvas canvas;
   canvas.DrawAtlas(atlas, transforms, texture_coordinates, colors,
                    BlendMode::kPlus, {}, std::nullopt, {});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Ensure that a stroked path that calls close does not actually close.
-TEST_P(AiksTest, StrokedClosedPathDrawnCorrectly) {
-  PathBuilder builder;
-  Path path = builder.MoveTo({0, 400})
-                  .LineTo({0, 0})
-                  .LineTo({400, 0})
-                  .Close()
-                  .TakePath();
-
-  Canvas canvas;
-  canvas.Translate({50, 50, 0});
-  canvas.DrawPath(path, {
-                            .color = Color::Red(),
-                            .stroke_width = 10,
-                            .stroke_cap = Cap::kRound,
-                            .style = Paint::Style::kStroke,
-                        });
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// All shapes should be closed.
-TEST_P(AiksTest, StrokedGeometry) {
-  PathBuilder builder;
-
-  Paint paint = {
-      .color = Color::Red(),
-      .stroke_width = 10,
-      .stroke_cap = Cap::kRound,
-      .style = Paint::Style::kStroke,
-  };
-
-  Canvas canvas;
-  canvas.Translate({50, 50, 0});
-  canvas.DrawPath(
-      PathBuilder{}.AddRect(Rect::MakeLTRB(50, 50, 250, 250)).TakePath(),
-      paint);
-  canvas.DrawPath(PathBuilder{}
-                      .AddRoundedRect(Rect::MakeLTRB(200, 200, 400, 400),
-                                      Size::MakeWH(8, 8))
-                      .TakePath(),
-                  paint);
-  canvas.DrawPath(
-      PathBuilder{}.AddOval(Rect::MakeLTRB(150, 250, 550, 450)).TakePath(),
-      paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
