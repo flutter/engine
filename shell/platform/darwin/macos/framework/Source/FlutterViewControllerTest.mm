@@ -1011,6 +1011,7 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   return true;
 }
 
+// Magic mouse can interleave mouse events with scroll events. This must not crash.
 - (bool)mouseAndGestureEventsAreHandledSeparately:(id)engineMock {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
@@ -1033,7 +1034,6 @@ TEST_F(FlutterViewControllerTest, testViewControllerIsReleased) {
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventUpdate]];
   CFRelease(cgEventUpdate);
 
-  // Magic mouse can interleave mouse events with scroll events.
   NSEvent* mouseEvent = flutter::testing::CreateMouseEvent(0x00);
   [viewController mouseEntered:mouseEvent];
   [viewController mouseExited:mouseEvent];
