@@ -324,14 +324,14 @@ struct SaveOpBase : DLOp {
   SaveOpBase() : options(), restore_index(0) {}
 
   explicit SaveOpBase(const SaveLayerOptions& options)
-      : options(options), restore_index(0), max_content_depth(0) {}
+      : options(options), restore_index(0), total_content_depth(0) {}
 
   // options parameter is only used by saveLayer operations, but since
   // it packs neatly into the empty space created by laying out the 64-bit
   // offsets, it can be stored for free and defaulted to 0 for save operations.
   SaveLayerOptions options;
   int restore_index;
-  uint32_t max_content_depth;
+  uint32_t total_content_depth;
 
   inline bool save_needed(DispatchContext& ctx) const {
     bool needed = ctx.next_render_index <= restore_index;
@@ -348,7 +348,7 @@ struct SaveOp final : SaveOpBase {
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
-      ctx.receiver.save(max_content_depth);
+      ctx.receiver.save(total_content_depth);
     }
   }
 };
@@ -369,7 +369,7 @@ struct SaveLayerOp final : SaveLayerOpBase {
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
-      ctx.receiver.saveLayer(rect, options, max_content_depth);
+      ctx.receiver.saveLayer(rect, options, total_content_depth);
     }
   }
 };
@@ -386,7 +386,8 @@ struct SaveLayerBackdropOp final : SaveLayerOpBase {
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
-      ctx.receiver.saveLayer(rect, options, max_content_depth, backdrop.get());
+      ctx.receiver.saveLayer(rect, options, total_content_depth,
+                             backdrop.get());
     }
   }
 

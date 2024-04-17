@@ -73,7 +73,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   int count = render_op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
-  uint32_t max_depth = depth_;
+  uint32_t total_depth = depth_;
   bool compatible = current_layer_->is_group_opacity_compatible();
   bool is_safe = is_ui_thread_safe_;
   bool affects_transparency = current_layer_->affects_transparent_layer();
@@ -93,9 +93,10 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   layer_tracker_.reset();
   current_ = DlPaint();
 
-  return sk_sp<DisplayList>(new DisplayList(
-      std::move(storage_), bytes, count, nested_bytes, nested_count, max_depth,
-      bounds, compatible, is_safe, affects_transparency, std::move(rtree)));
+  return sk_sp<DisplayList>(
+      new DisplayList(std::move(storage_), bytes, count, nested_bytes,
+                      nested_count, total_depth, bounds, compatible, is_safe,
+                      affects_transparency, std::move(rtree)));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
@@ -389,6 +390,7 @@ void DisplayListBuilder::checkForDeferredSave() {
     size_t save_offset_ = used_;
     Push<SaveOp>(0);
     current_layer_->save_offset_ = save_offset_;
+    current_layer_->start_depth_ = depth_;
     current_layer_->has_deferred_save_op_ = false;
   }
 }
@@ -432,12 +434,12 @@ void DisplayListBuilder::Restore() {
 
   if (!current_layer_->has_deferred_save_op_) {
     op->restore_index = op_index_;
-    op->max_content_depth = depth_;
+    op->total_content_depth = depth_ - current_layer_->start_depth_;
     Push<RestoreOp>(0);
     if (current_layer_->is_save_layer()) {
-      // A saveLayer will do a final copy to the main buffer after it is
-      // done resolving all of the clips within it. So, it gets a depth
-      // value allocated, but only after its max_content_depth is recorded.
+      // A saveLayer will usually do a final copy to the main buffer in
+      // addition to its content, but that is accounted for outside of
+      // the total content depth computed above.
       depth_++;
     }
   }
@@ -605,11 +607,11 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
       FML_DCHECK(unclipped);
     }
     CheckLayerOpacityCompatibility(true);
-    layer_stack_.emplace_back(save_layer_offset);
+    layer_stack_.emplace_back(save_layer_offset, depth_);
     layer_stack_.back().filter_ = current_.getImageFilter();
   } else {
     CheckLayerOpacityCompatibility(false);
-    layer_stack_.emplace_back(save_layer_offset);
+    layer_stack_.emplace_back(save_layer_offset, depth_);
   }
   current_layer_ = &layer_stack_.back();
   current_layer_->is_save_layer_ = true;
@@ -1418,7 +1420,7 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   // before or after the drawDisplayList op, but it must be accounted
   // for if the depth value accounting is to remain consistent between
   // the recording and dispatching process.
-  depth_ += display_list->max_depth();
+  depth_ += display_list->total_depth();
 
   is_ui_thread_safe_ = is_ui_thread_safe_ && display_list->isUIThreadSafe();
   // Not really necessary if the developer is interacting with us via

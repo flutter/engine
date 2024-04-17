@@ -47,70 +47,42 @@ class DisplayList;
 /// if it is to make sense of the information reported by the save/saveLayer
 /// calls. This depth value is maintained as follows:
 ///
-/// - The depth value of a brand new DisplayList before any drawing calls
-///   are recorded or dispatched is 0.
+/// - The absolute depth value is never reported, only the total depth
+///   size of the entire DisplayList or one of its save/restore pairs
+///   is reported. Since the DisplayList might be dispatched recursively
+///   due to embedded drawDisplayList calls, these depth size values
+///   will often be relative to things like:
+///     - the start of a given save/saveLayer group
+///     - the start of a DisplayList dispatch or recursion
+///   as such, only totals for groups of DisplayList dispatched calls
+///   will be reported. These totals will be reported in:
+///     - the `DisplayList::total_depth()` method reporting the total
+///       depth accumulated for every operation in the DisplayList
+///     - the save/saveLayer dispatch calls will report the total
+///       depth accumulated for every call until their corresponding
+///       restore call.
 /// - The depth value is incremented for every drawing operation, including:
 ///   - all draw* calls (including drawDisplayList)
-///   - drawDisplayList will also increment the depth value by the max_depth
-///     reported for the DisplayList object it is drawing (in other words
-///     it will skip enough depth values for each drawing call in the child).
+///   - drawDisplayList will also accumulate the total_depth() of the
+///     DisplayList object it is drawing (in other words it will skip enough
+///     depth values for each drawing call in the child).
 ///     This bump is in addition to the depth value it records for being
 ///     a rendering operation. Some implementations may need to surround
 ///     the actual drawDisplayList with a protective saveLayer, but others
 ///     may not - so the implicit depth value assigned to the drawDisplayList
 ///     call itself may go unused, but must be accounted for.
-///   - a saveLayer call will increment the depth value, but it will do so
-///     at the time it is restore()'d (which is when it renders back into
-///     the parent layer). Thus the first draw call within the saveLayer
-///     will be at a depth 1 greater than the last draw call before the
-///     saveLayer. Also, the first draw call after the saveLayer is restored
-///     will be 2 greater than the last draw call before the restore.
-///   - some saveLayer calls may be omitted at dispatch time (for example
-///     if the layer is elided for opacity peephole optimization), but the
-///     implicitly assigned depth value should be accounted for when the
-///     layer is restored even if no rendering occured.
-/// - Each save() or saveLayer() call will record the maximum depth of any
-///   draw call within its content (i.e. recorded before the corresponding
-///   restore) and this maximum depth of its content will be reported in the
-///   save() or saveLayer() call during dispatch. This information can be
-///   used to manage clipping state within the save/restore pair. Clipping
-///   information outside of the first save or restore call can be managed
-///   according to the max depth of the DisplayList itself.
-///
-/// A note on drawing child DisplayLists:
-/// - The child DisplayList will have been recorded with, and be played back
-///   with, depth values that are relative to its own object.
-/// - If a dispatcher either ignores such child DisplayList objects, or
-///   renders them in isolation, then all it needs to do to maintain the
-///   synchronization of depth values is to increment the depth by the
-///   max depth of the child DisplayList + 1 for the drawDisplayList
-///   call itself. But, if the dispatcher is rendering the child DisplayLists
-///   recursively, then...
-/// - The drawDisplayList call will have skipped enough depth values that
-///   the dispatcher can renumber the depth values of the child DisplayList
-///   relative to the depth value at which the drawDisplayList was encountered
-///   and should end up at the correct depth for the next draw call after
-///   the drawDisplayList. Note that the drawDisplayList call implies an
-///   additional depth value allocation which the dispatcher must either
-///   use or skip as it needs, before or after the recursion.
-/// - In addition, the depth values reported by the save() and saveLayer()
-///   calls within the child DisplayList will also be relative and be
-///   subject to the same renumbering by the dispatcher.
-/// - As such, a dispatcher that wishes to track the depth values of the
-///   rendering calls will have to remember the depth at which a child
-///   DisplayList is rendered and the reported depth values for that
-///   child DisplayList (those reported in save/saveLayer) calls will have
-///   to be offset accordingly to match the depths reported in the parent
-///   DisplayList.
-/// - If a dispatcher needs to perform some rendering associated with a
-///   drawDisplayList call then it can use the implicitly assigned depth
-///   value that was assumed when the stream was recorded. Whether this
-///   depth value is consumed by the dispatcher before or after the recursive
-///   dispatch of the child is left to the dispatcher.
-/// - If a dispatcher does not need to perform any rendering associated with
-///   a drawDisplayList call other than the rendering recorded in the child
-///   DisplayList then it can simply skip the associated implicitly assigned
-///   depth value before or after the recursive dispatch as it wishes.
+///   - a saveLayer call will also increment the depth value just like a
+///     rendering call. This is in addition to the depth of its content.
+///     It is doing so to reserve a depth for the drawing operation that
+///     copies its layer back to the parent.
+/// - Each save() or saveLayer() call will report the total depth of all
+///   rendering calls within its content (recorded before the corresponding
+///   restore) and report this total during dispatch. This information might
+///   be needed to assign depths to the clip operations that occur within
+///   its content. As there is no enclosing saveLayer/restore pair around
+///   the root of a DisplayList, the total depth of the DisplayList can
+///   be used to determine the appropriate clip depths for any clip ops
+///   appearing before the first save/saveLayer or after the last restore.
 ///
 /// @see        DlSkCanvasDispatcher
 /// @see        impeller::DlDispatcher
@@ -192,9 +164,9 @@ class DlOpReceiver {
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
-  // Optional variant of save() that passes the maximum depth count of
+  // Optional variant of save() that passes the total depth count of
   // all rendering operations that occur until the next restore() call.
-  virtual void save(uint32_t max_content_depth) { save(); }
+  virtual void save(uint32_t total_content_depth) { save(); }
   // The |options| parameter can specify whether the existing rendering
   // attributes will be applied to the save layer surface while rendering
   // it back to the current surface. If the flag is false then this method
@@ -214,11 +186,11 @@ class DlOpReceiver {
   virtual void saveLayer(const SkRect& bounds,
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr) = 0;
-  // Optional variant of saveLayer() that passes the maximum depth count of
+  // Optional variant of saveLayer() that passes the total depth count of
   // all rendering operations that occur until the next restore() call.
   virtual void saveLayer(const SkRect& bounds,
                          const SaveLayerOptions& options,
-                         uint32_t max_content_depth,
+                         uint32_t total_content_depth,
                          const DlImageFilter* backdrop = nullptr) {
     saveLayer(bounds, options, backdrop);
   }

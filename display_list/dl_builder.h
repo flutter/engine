@@ -511,7 +511,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   class SaveInfo {
    public:
-    explicit SaveInfo(size_t save_offset = 0) : save_offset_(save_offset) {}
+    explicit SaveInfo(size_t save_offset = 0, uint32_t start_depth = 0)
+        : save_offset_(save_offset), start_depth_(start_depth) {}
 
     // The offset into the memory buffer where the save DLOp record
     // for this save() call is placed. This may be needed if the
@@ -588,6 +589,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
    private:
     size_t save_offset_;
+    uint32_t start_depth_;
     bool is_save_layer_ = false;
     bool cannot_inherit_opacity_ = false;
     bool has_compatible_op_ = false;
