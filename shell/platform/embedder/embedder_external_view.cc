@@ -11,7 +11,7 @@
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
 #define ENABLE_EXPERIMENTAL_CANVAS true
-#endif                                            // IMPELLER_SUPPORTS_RENDERING
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
@@ -108,15 +108,21 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
 
 #if ENABLE_EXPERIMENTAL_CANVAS
     FML_LOG(ERROR) << "Using experimental dl dispatcher Embedder";
+    auto cull_rect =
+        impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
+    SkIRect sk_cull_rect =
+        SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
+
     impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                             impeller::Matrix());
-    display_list->Dispatch(collector);
-    auto cull_rect = impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
+    display_list->Dispatch(collector, sk_cull_rect);
+
     impeller::ExperimentalDlDispatcher impeller_dispatcher(
         aiks_context->GetContentContext(), *impeller_target, cull_rect);
-    display_list->Dispatch(impeller_dispatcher);
+    display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
     impeller_dispatcher.FinishRecording();
     aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+
     return true;
 #else
     FML_LOG(ERROR) << "Using normal dl dispatcher Embedder";
