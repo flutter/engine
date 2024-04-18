@@ -8,51 +8,48 @@
 #import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
 FLUTTER_ASSERT_ARC
 
-@interface FlutterEngine ()
-- (nonnull FlutterUndoManagerPlugin*)undoManagerPlugin;
-- (nonnull FlutterTextInputPlugin*)textInputPlugin;
+@interface FlutterUndoManagerDelegateForTest : NSObject <FlutterUndoManagerDelegate>
+@property(nonatomic, weak) UIResponder* viewController;
+@property(nonatomic) FlutterTextInputPlugin* textInputPlugin;
 @end
 
-@interface FlutterUndoManagerPluginForTest : FlutterUndoManagerPlugin
-@property(nonatomic, assign) NSUndoManager* undoManager;
-@end
+@implementation FlutterUndoManagerDelegateForTest
 
-@implementation FlutterUndoManagerPluginForTest {
+- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
+         handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
 }
 @end
 
 @interface FlutterUndoManagerPluginTest : XCTestCase
-@property(nonatomic, strong) id engine;
-@property(nonatomic, strong) FlutterUndoManagerPluginForTest* undoManagerPlugin;
-@property(nonatomic, strong) FlutterViewController* viewController;
-@property(nonatomic, strong) NSUndoManager* undoManager;
+@property(nonatomic) id undoManagerDelegate;
+@property(nonatomic) FlutterUndoManagerPlugin* undoManagerPlugin;
+@property(nonatomic) UIResponder* viewController;
+@property(nonatomic) NSUndoManager* undoManager;
 @end
 
-@implementation FlutterUndoManagerPluginTest {
-}
+@implementation FlutterUndoManagerPluginTest
 
 - (void)setUp {
   [super setUp];
-  self.engine = OCMClassMock([FlutterEngine class]);
+  self.undoManagerDelegate = OCMClassMock([FlutterUndoManagerDelegateForTest class]);
 
-  self.undoManagerPlugin = [[FlutterUndoManagerPluginForTest alloc] initWithDelegate:self.engine];
-
-  self.viewController = [[FlutterViewController alloc] init];
-  self.undoManagerPlugin.viewController = self.viewController;
+  self.undoManagerPlugin =
+      [[FlutterUndoManagerPlugin alloc] initWithDelegate:self.undoManagerDelegate];
 
   self.undoManager = OCMClassMock([NSUndoManager class]);
-  self.undoManagerPlugin.undoManager = self.undoManager;
+
+  self.viewController = OCMClassMock([UIResponder class]);
+  OCMStub([self.viewController undoManager]).andReturn(self.undoManager);
+  OCMStub([self.undoManagerDelegate viewController]).andReturn(self.viewController);
 }
 
 - (void)tearDown {
   [self.undoManager removeAllActionsWithTarget:self.undoManagerPlugin];
-  self.engine = nil;
+  self.undoManagerDelegate = nil;
   self.viewController = nil;
   self.undoManager = nil;
   [super tearDown];
@@ -75,14 +72,14 @@ FLUTTER_ASSERT_ARC
         removeAllActionsCount++;
       });
   __block int delegateUndoCount = 0;
-  OCMStub([self.engine flutterUndoManagerPlugin:[OCMArg any]
-                        handleUndoWithDirection:FlutterUndoRedoDirectionUndo])
+  OCMStub([self.undoManagerDelegate flutterUndoManagerPlugin:[OCMArg any]
+                                     handleUndoWithDirection:FlutterUndoRedoDirectionUndo])
       .andDo(^(NSInvocation* invocation) {
         delegateUndoCount++;
       });
   __block int delegateRedoCount = 0;
-  OCMStub([self.engine flutterUndoManagerPlugin:[OCMArg any]
-                        handleUndoWithDirection:FlutterUndoRedoDirectionRedo])
+  OCMStub([self.undoManagerDelegate flutterUndoManagerPlugin:[OCMArg any]
+                                     handleUndoWithDirection:FlutterUndoRedoDirectionRedo])
       .andDo(^(NSInvocation* invocation) {
         delegateRedoCount++;
       });
@@ -143,14 +140,10 @@ FLUTTER_ASSERT_ARC
 
 - (void)testSetUndoStateDoesInteractWithInputDelegate {
   // Regression test for https://github.com/flutter/flutter/issues/133424
-  FlutterViewController* viewController = OCMPartialMock(self.viewController);
-  self.undoManagerPlugin.viewController = self.viewController;
-
   FlutterTextInputPlugin* textInputPlugin = OCMClassMock([FlutterTextInputPlugin class]);
   FlutterTextInputView* textInputView = OCMClassMock([FlutterTextInputView class]);
 
-  OCMStub([viewController engine]).andReturn(self.engine);
-  OCMStub([self.engine textInputPlugin]).andReturn(textInputPlugin);
+  OCMStub([self.undoManagerDelegate textInputPlugin]).andReturn(textInputPlugin);
   OCMStub([textInputPlugin textInputView]).andReturn(textInputView);
 
   FlutterMethodCall* setUndoStateCall =

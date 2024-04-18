@@ -430,7 +430,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self maybeSetupPlatformViewChannels];
   [self updateDisplays];
   _textInputPlugin.get().viewController = viewController;
-  _undoManagerPlugin.get().viewController = viewController;
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -465,7 +464,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
   _textInputPlugin.get().viewController = nil;
-  _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else if (_shell) {

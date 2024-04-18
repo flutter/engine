@@ -7,6 +7,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(NSInteger, FlutterUndoRedoDirection) {
@@ -19,8 +21,14 @@ typedef NS_ENUM(NSInteger, FlutterUndoRedoDirection) {
 @class FlutterUndoManagerPlugin;
 
 @protocol FlutterUndoManagerDelegate <NSObject>
+
+@property(nonatomic, weak) UIResponder* viewController;
+
+- (FlutterTextInputPlugin*)textInputPlugin;
+
 - (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
          handleUndoWithDirection:(FlutterUndoRedoDirection)direction;
+
 @end
 NS_ASSUME_NONNULL_END
 
