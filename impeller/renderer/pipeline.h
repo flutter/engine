@@ -89,7 +89,7 @@ PipelineFuture<ComputePipelineDescriptor> CreatePipelineFuture(
     std::optional<ComputePipelineDescriptor> desc);
 
 template <class VertexShader_, class FragmentShader_>
-class RenderPipelineT {
+class RenderPipelineHandle {
   static_assert(
       ShaderStageCompatibilityChecker<VertexShader_, FragmentShader_>::Check(),
       "The output slots for the fragment shader don't have matches in the "
@@ -100,16 +100,16 @@ class RenderPipelineT {
   using FragmentShader = FragmentShader_;
   using Builder = PipelineBuilder<VertexShader, FragmentShader>;
 
-  explicit RenderPipelineT(const Context& context)
-      : RenderPipelineT(CreatePipelineFuture(
+  explicit RenderPipelineHandle(const Context& context)
+      : RenderPipelineHandle(CreatePipelineFuture(
             context,
             Builder::MakeDefaultPipelineDescriptor(context))) {}
 
-  explicit RenderPipelineT(const Context& context,
-                           std::optional<PipelineDescriptor> desc)
-      : RenderPipelineT(CreatePipelineFuture(context, desc)) {}
+  explicit RenderPipelineHandle(const Context& context,
+                                std::optional<PipelineDescriptor> desc)
+      : RenderPipelineHandle(CreatePipelineFuture(context, desc)) {}
 
-  explicit RenderPipelineT(PipelineFuture<PipelineDescriptor> future)
+  explicit RenderPipelineHandle(PipelineFuture<PipelineDescriptor> future)
       : pipeline_future_(std::move(future)) {}
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> WaitAndGet() {
@@ -132,9 +132,9 @@ class RenderPipelineT {
   std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline_;
   bool did_wait_ = false;
 
-  RenderPipelineT(const RenderPipelineT&) = delete;
+  RenderPipelineHandle(const RenderPipelineHandle&) = delete;
 
-  RenderPipelineT& operator=(const RenderPipelineT&) = delete;
+  RenderPipelineHandle& operator=(const RenderPipelineHandle&) = delete;
 };
 
 template <class ComputeShader_>
