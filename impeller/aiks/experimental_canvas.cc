@@ -7,8 +7,29 @@
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/text_contents.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 
 namespace impeller {
+
+namespace {
+
+static void SetClipScissor(std::optional<Rect> clip_coverage,
+                           RenderPass& pass,
+                           Point global_pass_position) {
+  // Set the scissor to the clip coverage area. We do this prior to rendering
+  // the clip itself and all its contents.
+  IRect scissor;
+  if (clip_coverage.has_value()) {
+    clip_coverage = clip_coverage->Shift(-global_pass_position);
+    scissor = IRect::RoundOut(clip_coverage.value());
+    // The scissor rect must not exceed the size of the render target.
+    scissor = scissor.Intersection(IRect::MakeSize(pass.GetRenderTargetSize()))
+                  .value_or(IRect());
+  }
+  pass.SetScissor(scissor);
+}
+
+}  // namespace
 
 static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
     RenderTarget::AttachmentConfig{
@@ -74,21 +95,33 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
 
 ExperimentalCanvas::ExperimentalCanvas(ContentContext& renderer,
                                        RenderTarget& render_target)
-    : Canvas(), renderer_(renderer), render_target_(render_target) {
+    : Canvas(),
+      renderer_(renderer),
+      render_target_(render_target),
+      clip_coverage_stack_(EntityPassClipStack(
+          Rect::MakeSize(render_target.GetRenderTargetSize()))) {
   SetupRenderPass();
 }
 
 ExperimentalCanvas::ExperimentalCanvas(ContentContext& renderer,
                                        RenderTarget& render_target,
                                        Rect cull_rect)
-    : Canvas(cull_rect), renderer_(renderer), render_target_(render_target) {
+    : Canvas(cull_rect),
+      renderer_(renderer),
+      render_target_(render_target),
+      clip_coverage_stack_(EntityPassClipStack(
+          Rect::MakeSize(render_target.GetRenderTargetSize()))) {
   SetupRenderPass();
 }
 
 ExperimentalCanvas::ExperimentalCanvas(ContentContext& renderer,
                                        RenderTarget& render_target,
                                        IRect cull_rect)
-    : Canvas(cull_rect), renderer_(renderer), render_target_(render_target) {
+    : Canvas(cull_rect),
+      renderer_(renderer),
+      render_target_(render_target),
+      clip_coverage_stack_(EntityPassClipStack(
+          Rect::MakeSize(render_target.GetRenderTargetSize()))) {
   SetupRenderPass();
 }
 
@@ -167,6 +200,13 @@ void ExperimentalCanvas::SaveLayer(
 
   auto result = inline_pass_contexts_.back()->GetRenderPass(0u);
   render_passes_.push_back(result.pass);
+
+  // Start non-collapsed subpasses with a fresh clip coverage stack limited by
+  // the subpass coverage. This is important because image filters applied to
+  // save layers may transform the subpass texture after it's rendered,
+  // causing parent clip coverage to get misaligned with the actual area that
+  // the subpass will affect in the parent pass.
+  clip_coverage_stack_.PushSubpass(subpass_coverage, 0);  // TODO
 }
 
 bool ExperimentalCanvas::Restore() {
@@ -198,6 +238,8 @@ bool ExperimentalCanvas::Restore() {
     element_entity.SetTransform(Matrix::MakeTranslation(
         Vector3(save_layer_state.coverage.GetOrigin())));
     element_entity.Render(renderer_, *render_passes_.back());
+
+    clip_coverage_stack_.PopSubpass();
   }
 
   transform_stack_.pop_back();
@@ -238,6 +280,44 @@ void ExperimentalCanvas::AddEntityToCurrentPass(Entity entity) {
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+
+  auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+  if (current_clip_coverage.has_value()) {
+    // Entity transforms are relative to the current pass position, so we need
+    // to check clip coverage in the same space.
+    current_clip_coverage =
+        current_clip_coverage->Shift(-GetGlobalPassPosition());
+  }
+
+  auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
+  if (clip_coverage.coverage.has_value()) {
+    clip_coverage.coverage =
+        clip_coverage.coverage->Shift(GetGlobalPassPosition());
+  }
+
+  // The coverage hint tells the rendered Contents which portion of the
+  // rendered output will actually be used, and so we set this to the current
+  // clip coverage (which is the max clip bounds). The contents may
+  // optionally use this hint to avoid unnecessary rendering work.
+  auto element_coverage_hint = entity.GetContents()->GetCoverageHint();
+  entity.GetContents()->SetCoverageHint(
+      Rect::Intersection(element_coverage_hint, current_clip_coverage));
+
+  EntityPassClipStack::ClipStateResult clip_state_result =
+      clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
+                                          0,  // TODO
+                                          GetGlobalPassPosition());
+
+  if (clip_state_result.clip_did_change) {
+    // We only need to update the pass scissor if the clip state has changed.
+    SetClipScissor(clip_coverage_stack_.CurrentClipCoverage(),
+                   *render_passes_.back(), GetGlobalPassPosition());
+  }
+
+  if (!clip_state_result.should_render) {
+    return;
+  }
+
   entity.Render(renderer_, *render_passes_.back());
 }
 

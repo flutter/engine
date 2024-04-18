@@ -14,6 +14,7 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 
 namespace impeller {
 
@@ -64,6 +65,7 @@ class ExperimentalCanvas : public Canvas {
  private:
   ContentContext& renderer_;
   RenderTarget& render_target_;
+  EntityPassClipStack clip_coverage_stack_;
   std::vector<std::unique_ptr<InlinePassContext>> inline_pass_contexts_;
   std::vector<std::unique_ptr<EntityPassTarget>> entity_pass_targets_;
   std::vector<SaveLayerState> save_layer_state_;
