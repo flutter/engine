@@ -10,6 +10,7 @@
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
+#define ENABLE_EXPERIMENTAL_CANVAS true
 #endif                                            // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
@@ -103,11 +104,27 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     auto dl_builder = DisplayListBuilder();
     dl_builder.SetTransform(&surface_transformation_);
     slice_->render_into(&dl_builder);
+    auto display_list = dl_builder.Build();
 
+#if ENABLE_EXPERIMENTAL_CANVAS
+    FML_LOG(ERROR) << "Using experimental dl dispatcher Embedder";
+    impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
+                                            impeller::Matrix());
+    display_list->Dispatch(collector);
+    auto cull_rect = impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
+    impeller::ExperimentalDlDispatcher impeller_dispatcher(
+        aiks_context->GetContentContext(), *impeller_target, cull_rect);
+    display_list->Dispatch(impeller_dispatcher);
+    impeller_dispatcher.FinishRecording();
+    aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+    return true;
+#else
+    FML_LOG(ERROR) << "Using normal dl dispatcher Embedder";
     auto dispatcher = impeller::DlDispatcher();
-    dispatcher.drawDisplayList(dl_builder.Build(), 1);
+    dispatcher.drawDisplayList(display_list, 1);
     return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
                                 *impeller_target, /*reset_host_buffer=*/true);
+#endif
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
