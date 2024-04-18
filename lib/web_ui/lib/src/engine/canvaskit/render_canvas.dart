@@ -74,6 +74,7 @@ class RenderCanvas extends DisplayCanvas {
         EngineFlutterDisplay.instance.devicePixelRatio;
     final double logicalWidth = _pixelWidth / devicePixelRatio;
     final double logicalHeight = _pixelHeight / devicePixelRatio;
+    print('canvas logical size: $logicalWidth x $logicalHeight');
     final DomCSSStyleDeclaration style = canvasElement.style;
     style.width = '${logicalWidth}px';
     style.height = '${logicalHeight}px';
@@ -112,8 +113,8 @@ class RenderCanvas extends DisplayCanvas {
   void _ensureSize(ui.Size size) {
     // Check if the frame is the same size as before, and if so, we don't need
     // to resize the canvas.
-    if (size.width.ceil() == _pixelWidth &&
-        size.height.ceil() == _pixelHeight) {
+    if (size.width.round() == _pixelWidth &&
+        size.height.round() == _pixelHeight) {
       // The existing canvas doesn't need to be resized (unless the device pixel
       // ratio changed).
       if (EngineFlutterDisplay.instance.devicePixelRatio !=
@@ -127,8 +128,8 @@ class RenderCanvas extends DisplayCanvas {
     // the frame. We cannot allow the canvas to be larger than the screen
     // because then when we call `transferFromImageBitmap()` the bitmap will
     // be scaled to cover the entire canvas.
-    _pixelWidth = size.width.ceil();
-    _pixelHeight = size.height.ceil();
+    _pixelWidth = size.width.round();
+    _pixelHeight = size.height.round();
     canvasElement.width = _pixelWidth.toDouble();
     canvasElement.height = _pixelHeight.toDouble();
     _updateLogicalHtmlCanvasSize();

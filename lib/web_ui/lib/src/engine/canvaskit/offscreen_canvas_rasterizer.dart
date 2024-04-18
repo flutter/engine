@@ -49,6 +49,7 @@ class OffscreenCanvasViewRasterizer extends ViewRasterizer {
   @override
   Future<void> rasterizeToCanvas(
       DisplayCanvas canvas, List<CkPicture> pictures) async {
+    print('current frame size: $currentFrameSize');
     await rasterizer.offscreenSurface.rasterizeToCanvas(
       currentFrameSize,
       canvas as RenderCanvas,

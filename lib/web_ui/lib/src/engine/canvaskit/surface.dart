@@ -23,27 +23,6 @@ import 'util.dart';
 // removes the ability for disabling AA on Paint objects.
 const bool _kUsingMSAA = bool.fromEnvironment('flutter.canvaskit.msaa');
 
-typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
-
-/// A frame which contains a canvas to be drawn into.
-class SurfaceFrame {
-  SurfaceFrame(this.skiaSurface, this.submitCallback) : _submitted = false;
-
-  final CkSurface skiaSurface;
-  final SubmitCallback submitCallback;
-  final bool _submitted;
-
-  /// Submit this frame to be drawn.
-  bool submit() {
-    if (_submitted) {
-      return false;
-    }
-    return submitCallback(this, skiaCanvas);
-  }
-
-  CkCanvas get skiaCanvas => skiaSurface.getCanvas();
-}
-
 /// A surface which can be drawn into by the compositor.
 ///
 /// The underlying representation is a [CkSurface], which can be reused by
@@ -146,12 +125,24 @@ class Surface extends DisplayCanvas {
       } else {
         bitmapSource = _canvasElement! as JSObject;
       }
+
       final DomImageBitmap bitmap = await createImageBitmap(bitmapSource, (
         x: 0,
-        y: _pixelHeight - frameSize.height.toInt(),
-        width: frameSize.width.toInt(),
-        height: frameSize.height.toInt(),
+        y: _pixelHeight - frameSize.height.round(),
+        width: frameSize.width.round(),
+        height: frameSize.height.round(),
       ));
+      print(
+          'offscreen canvas size: ${_offscreenCanvas!.width} x ${_offscreenCanvas!.height}');
+      print('bitmap framesize: $frameSize');
+      print('full framesize: ${frameSize.width} x ${frameSize.height}');
+      print(
+          'bitmap size ceil: ${frameSize.width.ceil()} x ${frameSize.height.ceil()} (y: ${_pixelHeight - frameSize.height.ceil()})');
+      print(
+          'bitmap size round: ${frameSize.width.round()} x ${frameSize.height.round()} (y: ${_pixelHeight - frameSize.height.round()})');
+      print(
+          'bitmap size toInt: ${frameSize.width.toInt()} x ${frameSize.height.toInt()} (y: ${_pixelHeight - frameSize.height.toInt()})');
+      print('bitmap size: ${bitmap.width} x ${bitmap.height}');
       canvas.render(bitmap);
     } else {
       // If the browser doesn't support `createImageBitmap` (e.g. Safari 14)
@@ -164,21 +155,6 @@ class Surface extends DisplayCanvas {
       }
       canvas.renderWithNoBitmapSupport(imageSource, _pixelHeight, frameSize);
     }
-  }
-
-  /// Acquire a frame of the given [size] containing a drawable canvas.
-  ///
-  /// The given [size] is in physical pixels.
-  SurfaceFrame acquireFrame(ui.Size size) {
-    final CkSurface surface = createOrUpdateSurface(size);
-
-    // ignore: prefer_function_declarations_over_variables
-    final SubmitCallback submitCallback =
-        (SurfaceFrame surfaceFrame, CkCanvas canvas) {
-      return _presentSurface();
-    };
-
-    return SurfaceFrame(surface, submitCallback);
   }
 
   ui.Size? _currentCanvasPhysicalSize;
@@ -278,8 +254,10 @@ class Surface extends DisplayCanvas {
         final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
-        _pixelWidth = newSize.width.ceil();
-        _pixelHeight = newSize.height.ceil();
+        print('newsize: ${newSize.width} x ${newSize.height}');
+        _pixelWidth = newSize.width.round();
+        _pixelHeight = newSize.height.round();
+        print('pixel size: ${_pixelWidth} x ${_pixelHeight}');
         if (useOffscreenCanvas) {
           _offscreenCanvas!.width = _pixelWidth.toDouble();
           _offscreenCanvas!.height = _pixelHeight.toDouble();
@@ -371,8 +349,10 @@ class Surface extends DisplayCanvas {
 
     // If `physicalSize` is not precise, use a slightly bigger canvas. This way
     // we ensure that the rendred picture covers the entire browser window.
-    _pixelWidth = physicalSize.width.ceil();
-    _pixelHeight = physicalSize.height.ceil();
+    _pixelWidth = physicalSize.width.round();
+    _pixelHeight = physicalSize.height.round();
+    print('physicalsize: ${physicalSize.width} x ${physicalSize.height}');
+    print('pixel size: $_pixelWidth x $_pixelHeight');
     DomEventTarget htmlCanvas;
     if (useOffscreenCanvas) {
       final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(

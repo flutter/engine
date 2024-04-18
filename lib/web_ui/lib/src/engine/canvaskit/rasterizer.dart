@@ -50,6 +50,7 @@ abstract class ViewRasterizer {
       return;
     }
 
+    print('rasterizer current frame size: $frameSize');
     currentFrameSize = frameSize;
     prepareToDraw();
     viewEmbedder.frameSize = currentFrameSize;
