@@ -5,13 +5,9 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_MESSAGE_HANDLER_IOS_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_MESSAGE_HANDLER_IOS_H_
 
-#include <unordered_map>
-
-#include "flutter/common/task_runners.h"
 #include "flutter/fml/platform/darwin/scoped_block.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/task_runner.h"
 #include "flutter/shell/common/platform_message_handler.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 #import "flutter/shell/platform/darwin/ios/flutter_task_queue_dispatch.h"
 
 namespace flutter {
@@ -36,7 +32,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
                          NSObject<FlutterTaskQueue>* task_queue);
 
   struct HandlerInfo {
-    fml::scoped_nsprotocol<NSObject<FlutterTaskQueueDispatch>*> task_queue;
+    NSObject<FlutterTaskQueueDispatch>* task_queue;
     fml::ScopedBlock<FlutterBinaryMessageHandler> handler;
   };
 
