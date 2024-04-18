@@ -14,7 +14,7 @@ FLUTTER_ASSERT_ARC
 static uint64_t platform_message_counter = 1;
 
 @interface FLTSerialTaskQueue : NSObject <FlutterTaskQueueDispatch>
-@property(nonatomic, strong) dispatch_queue_t queue;
+@property(nonatomic, readonly) dispatch_queue_t queue;
 @end
 
 @implementation FLTSerialTaskQueue
