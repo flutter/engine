@@ -13,19 +13,13 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
-
-namespace {
-constexpr Point ClampToSrcRect(const Point& input, const Rect& src_rect) {
-  return Point{std::clamp(input.x, src_rect.GetLeft(), src_rect.GetRight()),
-               std::clamp(input.y, src_rect.GetTop(), src_rect.GetBottom())};
-}
-}  // namespace
 
 TextureContents::TextureContents() = default;
 
@@ -121,6 +115,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
   using FSExternal = TiledTextureFillExternalFragmentShader;
+  using FSStrict = TextureFillStrictSrcFragmentShader;
 
   if (destination_rect_.IsEmpty() || source_rect_.IsEmpty() ||
       texture_ == nullptr || texture_->GetSize().IsEmpty()) {
@@ -135,36 +130,14 @@ bool TextureContents::Render(const ContentContext& renderer,
       Rect::MakeSize(texture_->GetSize()).Project(source_rect);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-
-  if (strict_source_rect_enabled_) {
-    auto destination_rect =
-        capture.AddRect("Destination rect", destination_rect_);
-    // For a strict source rect, shrink the texture coordinate range by half a
-    // texel to ensure that linear filtering does not sample anything outside
-    // the source rect bounds.
-    Rect strict_texture_coords =
-        Rect::MakeSize(texture_->GetSize()).Project(source_rect.Expand(-0.5));
-    vertex_builder.AddVertices({
-        {destination_rect.GetLeftTop(),
-         ClampToSrcRect(texture_coords.GetLeftTop(), strict_texture_coords)},
-        {destination_rect.GetRightTop(),
-         ClampToSrcRect(texture_coords.GetRightTop(), strict_texture_coords)},
-        {destination_rect.GetLeftBottom(),
-         ClampToSrcRect(texture_coords.GetLeftBottom(), strict_texture_coords)},
-        {destination_rect.GetRightBottom(),
-         ClampToSrcRect(texture_coords.GetRightBottom(),
-                        strict_texture_coords)},
-    });
-  } else {
-    auto destination_rect =
-        capture.AddRect("Destination rect", destination_rect_);
-    vertex_builder.AddVertices({
-        {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
-        {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
-        {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
-        {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
-    });
-  }
+  auto destination_rect =
+      capture.AddRect("Destination rect", destination_rect_);
+  vertex_builder.AddVertices({
+      {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
+      {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
+      {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
+      {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
+  });
 
   auto& host_buffer = renderer.GetTransientsBuffer();
 
@@ -186,16 +159,21 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
 #ifdef IMPELLER_ENABLE_OPENGLES
   if (is_external_texture) {
-    pass.SetPipeline(
-        renderer.GetTiledTextureExternalPipeline(pipeline_options));
-  } else {
-    pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
+    pipeline = renderer.GetTiledTextureExternalPipeline(pipeline_options);
   }
-#else
-  pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
-#endif  // // IMPELLER_ENABLE_OPENGLES
+#endif  // IMPELLER_ENABLE_OPENGLES
+
+  if (!pipeline) {
+    if (strict_source_rect_enabled_) {
+      pipeline = renderer.GetTextureStrictSrcPipeline(pipeline_options);
+    } else {
+      pipeline = renderer.GetTexturePipeline(pipeline_options);
+    }
+  }
+  pass.SetPipeline(pipeline);
 
   pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
@@ -220,6 +198,21 @@ bool TextureContents::Render(const ContentContext& renderer,
         pass, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
             sampler_descriptor));
+  } else if (strict_source_rect_enabled_) {
+    // For a strict source rect, shrink the texture coordinate range by half a
+    // texel to ensure that linear filtering does not sample anything outside
+    // the source rect bounds.
+    auto strict_texture_coords =
+        Rect::MakeSize(texture_->GetSize()).Project(source_rect.Expand(-0.5));
+
+    FSStrict::FragInfo frag_info;
+    frag_info.source_rect = Vector4(strict_texture_coords.GetLTRB());
+    frag_info.alpha = capture.AddScalar("Alpha", GetOpacity());
+    FSStrict::BindFragInfo(pass, host_buffer.EmplaceUniform((frag_info)));
+    FSStrict::BindTextureSampler(
+        pass, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
   } else {
     FS::FragInfo frag_info;
     frag_info.alpha = capture.AddScalar("Alpha", GetOpacity());

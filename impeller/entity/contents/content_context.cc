@@ -401,6 +401,7 @@ ContentContext::ContentContext(
 
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   texture_pipelines_.CreateDefault(*context_, options);
+  texture_strict_src_pipelines_.CreateDefault(*context_, options);
   position_uv_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options);
   kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
