@@ -859,6 +859,13 @@ class ContentContext {
   /// RenderPipelineHandle<SolidFillVertexShader, SolidFillFragmentShader>
   /// instances for different blend modes. From them you can access the
   /// Pipeline.
+  ///
+  /// See also:
+  ///  - impeller::ContentContextOptions - options from which variants are
+  ///    created.
+  ///  - impeller::Pipeline::CreateVariant
+  ///  - impeller::RenderPipelineHandle<> - The type of objects this typically
+  ///    contains.
   template <class PipelineHandleT>
   class Variants {
    public:
@@ -878,8 +885,8 @@ class ContentContext {
     void CreateDefault(const Context& context,
                        const ContentContextOptions& options,
                        const std::initializer_list<Scalar>& constants = {}) {
-      auto desc =
-          PipelineHandleT::Builder::MakeDefaultPipelineDescriptor(context, constants);
+      auto desc = PipelineHandleT::Builder::MakeDefaultPipelineDescriptor(
+          context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
@@ -1045,7 +1052,7 @@ class ContentContext {
 
     RenderPipelineHandleT* default_handle = container.GetDefault();
 
-    // The prototype must always be initialized in the constructor.
+    // The default must always be initialized in the constructor.
     FML_CHECK(default_handle != nullptr);
 
     std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
