@@ -68,8 +68,17 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void save() override;
 
   // |flutter::DlOpReceiver|
+  void save(uint32_t total_content_depth) override;
+
+  // |flutter::DlOpReceiver|
   void saveLayer(const SkRect& bounds,
                  const flutter::SaveLayerOptions options,
+                 const flutter::DlImageFilter* backdrop) override;
+
+  // |flutter::DlOpReceiver|
+  void saveLayer(const SkRect& bounds,
+                 const flutter::SaveLayerOptions& options,
+                 uint32_t total_content_depth,
                  const flutter::DlImageFilter* backdrop) override;
 
   // |flutter::DlOpReceiver|

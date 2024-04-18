@@ -126,10 +126,11 @@ void ExperimentalCanvas::SetupRenderPass() {
   renderer_.GetRenderTargetCache()->Start();
 }
 
-void ExperimentalCanvas::Save() {
+void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
+  entry.clip_depth = current_depth_ + total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
   transform_stack_.emplace_back(entry);
@@ -139,7 +140,8 @@ void ExperimentalCanvas::SaveLayer(
     const Paint& paint,
     std::optional<Rect> bounds,
     const std::shared_ptr<ImageFilter>& backdrop_filter,
-    ContentBoundsPromise bounds_promise) {
+    ContentBoundsPromise bounds_promise,
+    uint32_t total_content_depth) {
   // Can we always guarantee that we get a bounds? Does a lack of bounds
   // indicate something?
   if (!bounds.has_value()) {
@@ -157,6 +159,7 @@ void ExperimentalCanvas::SaveLayer(
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
+  entry.clip_depth = current_depth_ + total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpass;
   transform_stack_.emplace_back(entry);
@@ -175,6 +178,9 @@ bool ExperimentalCanvas::Restore() {
     return false;
   }
 
+  FML_DCHECK(transform_stack_.back().clip_depth <= current_depth_);
+  current_depth_ = transform_stack_.back().clip_depth;
+
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
     auto inline_pass = std::move(inline_pass_contexts_.back());
@@ -192,7 +198,7 @@ bool ExperimentalCanvas::Restore() {
     inline_pass_contexts_.pop_back();
 
     Entity element_entity;
-    element_entity.SetClipDepth(GetClipHeight());
+    element_entity.SetClipDepth(++current_depth_);
     element_entity.SetContents(std::move(contents));
     element_entity.SetBlendMode(save_layer_state.paint.blend_mode);
     element_entity.SetTransform(Matrix::MakeTranslation(
@@ -231,13 +237,27 @@ void ExperimentalCanvas::DrawTextFrame(
   entity.SetContents(
       paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity), false);
 }
 
-void ExperimentalCanvas::AddEntityToCurrentPass(Entity entity) {
+void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
+                                                      bool reuse_depth) {
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+  if (!reuse_depth) {
+    ++current_depth_;
+  }
+  entity.SetClipDepth(current_depth_);
+  entity.Render(renderer_, *render_passes_.back());
+}
+
+void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
+  auto transform = entity.GetTransform();
+  entity.SetTransform(
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+  FML_DCHECK(current_depth_ < transform_stack_.back().clip_depth);
+  entity.SetClipDepth(transform_stack_.back().clip_depth);
   entity.Render(renderer_, *render_passes_.back());
 }
 

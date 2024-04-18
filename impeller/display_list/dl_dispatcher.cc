@@ -611,19 +611,32 @@ void DlDispatcherBase::setImageFilter(const flutter::DlImageFilter* filter) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::save() {
-  GetCanvas().Save();
+  FML_UNREACHABLE();
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::save(uint32_t total_content_depth) {
+  GetCanvas().Save(total_content_depth);
 }
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::saveLayer(const SkRect& bounds,
                                  const flutter::SaveLayerOptions options,
                                  const flutter::DlImageFilter* backdrop) {
+  FML_UNREACHABLE();
+}
+
+// |flutter::DlOpReceiver|
+void DlDispatcherBase::saveLayer(const SkRect& bounds,
+                                 const flutter::SaveLayerOptions& options,
+                                 uint32_t total_content_depth,
+                                 const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
   auto promise = options.content_is_clipped()
                      ? ContentBoundsPromise::kMayClipContents
                      : ContentBoundsPromise::kContainsContents;
   GetCanvas().SaveLayer(paint, skia_conversions::ToRect(bounds),
-                        ToImageFilter(backdrop), promise);
+                        ToImageFilter(backdrop), promise, total_content_depth);
 }
 
 // |flutter::DlOpReceiver|
