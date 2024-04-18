@@ -23,7 +23,9 @@ TEST(TessellatorTest, TessellateConvex) {
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), points,
         indices, 1.0);
 
-    std::vector<Point> expected = {{10, 0}, {10, 10}, {0, 10}, {0, 0}};
+    // Note: the origin point is repeated but not referenced in the indices
+    // below
+    std::vector<Point> expected = {{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}};
     std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
     EXPECT_EQ(points, expected);
     EXPECT_EQ(indices, expected_indices);
@@ -39,12 +41,33 @@ TEST(TessellatorTest, TessellateConvex) {
                                    .TakePath(),
                                points, indices, 1.0);
 
-    std::vector<Point> expected = {{10, 0},  {10, 10}, {0, 10},  {0, 0},
-                                   {30, 20}, {30, 30}, {20, 30}, {20, 20}};
-    std::vector<uint16_t> expected_indices = {0, 1, 3, 2, 2, 4, 4, 5, 7, 6};
+    std::vector<Point> expected = {{0, 0},   {10, 0},  {10, 10}, {0, 10},
+                                   {0, 0},   {20, 20}, {30, 20}, {30, 30},
+                                   {20, 30}, {20, 20}};
+    std::vector<uint16_t> expected_indices = {0, 1, 3, 2, 2, 5, 5, 6, 8, 7};
     EXPECT_EQ(points, expected);
     EXPECT_EQ(indices, expected_indices);
   }
+}
+
+// Filled Paths without an explicit close should still be closed
+TEST(TessellatorTest, TessellateConvexUnclosedPath) {
+  Tessellator t;
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+
+  // Create a rectangle that lacks an explicit close.
+  Path path = PathBuilder{}
+                  .LineTo({100, 0})
+                  .LineTo({100, 100})
+                  .LineTo({0, 100})
+                  .TakePath();
+  t.TessellateConvexInternal(path, points, indices, 1.0);
+
+  std::vector<Point> expected = {{0, 0}, {100, 0}, {100, 100}, {0, 100}};
+  std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
+  EXPECT_EQ(points, expected);
+  EXPECT_EQ(indices, expected_indices);
 }
 
 TEST(TessellatorTest, CircleVertexCounts) {

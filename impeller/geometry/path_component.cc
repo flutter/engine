@@ -23,9 +23,10 @@ void VertexWriter::EndContour() {
 
   auto start = contour_start_;
   auto end = points_.size() - 1;
-  // Some polygons will not self close and an additional triangle
-  // must be inserted, others will self close and we need to avoid
-  // inserting an extra triangle.
+  // All filled paths are drawn as if they are closed, but if
+  // there is an explicit close then a lineTo to the origin
+  // is inserted. This point isn't strictly necesary to
+  // correctly render the shape and can be dropped.
   if (points_[end] == points_[start]) {
     end--;
   }
