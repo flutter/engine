@@ -941,13 +941,14 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimes) {
 TEST_P(AiksTest, FormatWideGamut) {
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
             PixelFormat::kB10G10R10A10XR);
-  EXPECT_TRUE(IsAlphaClampedToOne(
-      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
 }
 
 TEST_P(AiksTest, FormatSRGB) {
-  EXPECT_TRUE(IsAlphaClampedToOne(
-      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+  PixelFormat pixel_format =
+      GetContext()->GetCapabilities()->GetDefaultColorFormat();
+  EXPECT_TRUE(pixel_format == PixelFormat::kR8G8B8A8UNormInt ||
+              pixel_format == PixelFormat::kB8G8R8A8UNormInt)
+      << "pixel format: " << PixelFormatToString(pixel_format);
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
@@ -2958,10 +2959,10 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
     if (auto* subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      actual.push_back(subpass->get()->GetNewClipDepth());
+      actual.push_back(subpass->get()->GetClipDepth());
     }
     if (Entity* entity = std::get_if<Entity>(&element)) {
-      actual.push_back(entity->GetNewClipDepth());
+      actual.push_back(entity->GetClipDepth());
     }
     return true;
   });
