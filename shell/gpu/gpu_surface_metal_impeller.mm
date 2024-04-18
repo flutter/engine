@@ -17,7 +17,7 @@
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
-#define ENABLE_EXPERIMENTAL_CANVAS true
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 namespace flutter {
 
@@ -165,7 +165,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
 #if ENABLE_EXPERIMENTAL_CANVAS
-        FML_LOG(ERROR) << "Using experimental dl dispatcher CAMetalLayer";
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
@@ -181,7 +180,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
               return true;
             }));
 #else
-        FML_LOG(ERROR) << "Using regular dl dispatcher CAMetalLayer";
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
@@ -283,7 +281,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         impeller::IRect cull_rect = surface->coverage();
         SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
 #if ENABLE_EXPERIMENTAL_CANVAS
-        FML_LOG(ERROR) << "Using experimental dl dispatcher MTLTexture";
         impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
                                                 impeller::Matrix());
         display_list->Dispatch(collector, sk_cull_rect);
@@ -299,7 +296,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
               return true;
             }));
 #else
-        FML_LOG(ERROR) << "Using regular dl dispatcher MTLTexture";
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();

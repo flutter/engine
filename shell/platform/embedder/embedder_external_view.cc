@@ -10,7 +10,7 @@
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "impeller/display_list/dl_dispatcher.h"  // nogncheck
-#define ENABLE_EXPERIMENTAL_CANVAS true
+#define ENABLE_EXPERIMENTAL_CANVAS false
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
@@ -107,7 +107,6 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     auto display_list = dl_builder.Build();
 
 #if ENABLE_EXPERIMENTAL_CANVAS
-    FML_LOG(ERROR) << "Using experimental dl dispatcher Embedder";
     auto cull_rect =
         impeller::IRect::MakeSize(impeller_target->GetRenderTargetSize());
     SkIRect sk_cull_rect =
@@ -125,7 +124,6 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
 
     return true;
 #else
-    FML_LOG(ERROR) << "Using normal dl dispatcher Embedder";
     auto dispatcher = impeller::DlDispatcher();
     dispatcher.drawDisplayList(display_list, 1);
     return aiks_context->Render(dispatcher.EndRecordingAsPicture(),
