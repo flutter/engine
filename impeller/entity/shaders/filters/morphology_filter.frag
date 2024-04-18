@@ -12,8 +12,8 @@ layout(constant_id = 0) const float supports_decal = 1.0;
 
 // These values must correspond to the order of the items in the
 // 'FilterContents::MorphType' enum class.
-const float kMorphTypeDilate = 0.0;
-const float kMorphTypeErode = 1.0;
+// const float kMorphTypeDilate = 0.0;
+// const float kMorphTypeErode = 1.0;
 
 uniform f16sampler2D texture_sampler;
 
@@ -30,8 +30,9 @@ in highp vec2 v_texture_coords;
 out f16vec4 frag_color;
 
 void main() {
-  f16vec4 result =
-      frag_info.morph_type == kMorphTypeDilate ? f16vec4(0.0) : f16vec4(1.0);
+  f16vec4 result = frag_info.morph_type == /*kMorphTypeDilate*/ 0.0
+                       ? f16vec4(0.0)
+                       : f16vec4(1.0);
   for (float16_t i = -frag_info.radius; i <= frag_info.radius; i++) {
     vec2 texture_coords = v_texture_coords + frag_info.uv_offset * i;
 
@@ -42,7 +43,7 @@ void main() {
       color = IPHalfSampleDecal(texture_sampler, texture_coords);
     }
 
-    if (frag_info.morph_type == kMorphTypeDilate) {
+    if (frag_info.morph_type == /*kMorphTypeDilate*/ 0.0) {
       result = max(color, result);
     } else {
       result = min(color, result);
