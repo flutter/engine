@@ -1191,9 +1191,7 @@ Canvas& ExperimentalDlDispatcher::GetCanvas() {
 
 TextFrameDispatcher::TextFrameDispatcher(const ContentContext& renderer,
                                          const Matrix& initial_matrix)
-    : renderer_(renderer), matrix_(initial_matrix) {
-  renderer.GetLazyGlyphAtlas()->ResetTextFrames();
-}
+    : renderer_(renderer), matrix_(initial_matrix) {}
 
 void TextFrameDispatcher::save() {
   stack_.emplace_back(matrix_);

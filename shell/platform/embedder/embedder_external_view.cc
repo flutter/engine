@@ -121,6 +121,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target,
     display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
     impeller_dispatcher.FinishRecording();
     aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+    aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
 
     return true;
 #else
