@@ -716,7 +716,7 @@ void Canvas::RestoreClip() {
   clip_restore->SetRestoreHeight(GetClipHeight());
   entity.SetContents(std::move(clip_restore));
 
-  AddClipEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawPoints(std::vector<Point> points,

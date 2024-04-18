@@ -1268,8 +1268,8 @@ void TextFrameDispatcher::drawTextFrame(
 void TextFrameDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list,
     SkScalar opacity) {
-  save();
   [[maybe_unused]] size_t stack_depth = stack_.size();
+  save();
   display_list->Dispatch(*this);
   restore();
   FML_DCHECK(stack_depth == stack_.size());
