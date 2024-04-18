@@ -255,6 +255,11 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
   if (!reuse_depth) {
     ++current_depth_;
   }
+  // We can render at a depth up to and including the depth of the currently
+  // active clips and we will still be clipped out, but we cannot render at
+  // a depth that is greater than the current clips or we will not be clipped.
+  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(current_depth_);
   entity.Render(renderer_, *render_passes_.back());
 }
@@ -263,7 +268,17 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
-  FML_DCHECK(current_depth_ < transform_stack_.back().clip_depth);
+  // Ideally the clip depth would be greater than the current rendering
+  // depth because any rendering calls that follow this clip operation will
+  // pre-increment the depth and then be rendering above our clip depth,
+  // but that case will be caught by the CHECK in AddRenderEntity above.
+  // In practice we sometimes have a clip set with no rendering after it
+  // and in such cases the current depth will equal the clip depth.
+  // Eventually the DisplayList should optimize these out, but it is hard
+  // to know if a clip will actually be used in advance of storing it in
+  // the DisplayList buffer.
+  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(transform_stack_.back().clip_depth);
   entity.Render(renderer_, *render_passes_.back());
 }
