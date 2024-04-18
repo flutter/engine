@@ -1020,11 +1020,6 @@ void DlDispatcherBase::drawDisplayList(
   // Save all values that must remain untouched after the operation.
   Paint saved_paint = paint_;
   Matrix saved_initial_matrix = initial_matrix_;
-  int restore_count = GetCanvas().GetSaveCount();
-
-  // The display list may alter the clip, which must be restored to the current
-  // clip at the end of playback.
-  GetCanvas().Save();
 
   // Establish a new baseline for interpreting the new DL.
   // Matrix and clip are left untouched, the current
@@ -1038,10 +1033,17 @@ void DlDispatcherBase::drawDisplayList(
   // opacity, this could also be handled by modulating all of its
   // attribute settings (for example, color), by the indicated
   // opacity.
+  int restore_count = GetCanvas().GetSaveCount();
   if (opacity < SK_Scalar1) {
     Paint save_paint;
     save_paint.color = Color(0, 0, 0, opacity);
-    GetCanvas().SaveLayer(save_paint);
+    GetCanvas().SaveLayer(
+        save_paint, skia_conversions::ToRect(display_list->bounds()), nullptr,
+        ContentBoundsPromise::kContainsContents, display_list->total_depth());
+  } else {
+    // The display list may alter the clip, which must be restored to the
+    // current clip at the end of playback.
+    GetCanvas().Save(display_list->total_depth());
   }
 
   // TODO(131445): Remove this restriction if we can correctly cull with

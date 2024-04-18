@@ -165,7 +165,10 @@ void Canvas::Initialize(std::optional<Rect> cull_rect) {
   base_pass_ = std::make_unique<EntityPass>();
   base_pass_->SetClipDepth(++current_depth_);
   current_pass_ = base_pass_.get();
-  transform_stack_.emplace_back(CanvasStackEntry{.cull_rect = cull_rect});
+  transform_stack_.emplace_back(CanvasStackEntry{
+      .cull_rect = cull_rect,
+      .clip_depth = kMaxDepth,
+  });
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
