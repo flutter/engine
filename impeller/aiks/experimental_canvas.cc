@@ -131,7 +131,9 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
-  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth);
+  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+      << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
+      << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
   transform_stack_.emplace_back(entry);
@@ -161,7 +163,9 @@ void ExperimentalCanvas::SaveLayer(
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
-  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth);
+  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+      << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
+      << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpass;
   transform_stack_.emplace_back(entry);
@@ -180,7 +184,8 @@ bool ExperimentalCanvas::Restore() {
     return false;
   }
 
-  FML_DCHECK(transform_stack_.back().clip_depth <= current_depth_);
+  FML_CHECK(transform_stack_.back().clip_depth >= current_depth_)
+      << transform_stack_.back().clip_depth << " >=? " << current_depth_;
   current_depth_ = transform_stack_.back().clip_depth;
 
   if (transform_stack_.back().rendering_mode ==

@@ -411,13 +411,14 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
     // Defer the alpha, blend mode, and image filter to a separate layer.
     SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
                .blend_mode = paint.blend_mode,
-               .image_filter = paint.image_filter});
+               .image_filter = paint.image_filter},
+              rect, nullptr, ContentBoundsPromise::kContainsContents, 1u);
     rrect_paint.color = rrect_color.WithAlpha(1);
   } else {
     rrect_paint.color = rrect_color;
     rrect_paint.blend_mode = paint.blend_mode;
     rrect_paint.image_filter = paint.image_filter;
-    Save();
+    Save(1u);
   }
 
   auto draw_blurred_rrect = [this, &rect, &corner_radii, &rrect_paint]() {

@@ -1152,7 +1152,7 @@ void DlDispatcherBase::drawShadow(const CacheablePath& cache,
                       GetCanvas().GetCurrentTransform().GetScale().y},
   };
 
-  GetCanvas().Save();
+  GetCanvas().Save(1u);
   GetCanvas().PreConcat(
       Matrix::MakeTranslation(Vector2(0, -occluder_z * light_position.y)));
 
