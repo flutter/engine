@@ -877,10 +877,10 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 #pragma mark - Framework-internal methods
 
 - (void)addViewController:(FlutterViewController*)controller {
-  NSCAssert(controller.engine == nil,
-            @"The FlutterViewController is unexpectedly attached to "
-            @"engine %@ before initialization.",
-            controller.engine);
+  NSAssert(controller.engine == nil,
+           @"The FlutterViewController is unexpectedly attached to "
+           @"engine %@ before initialization.",
+           controller.engine);
   [self registerViewController:controller forIdentifier:kFlutterImplicitViewId];
   NSAssert(controller.attached,
            @"The FlutterViewController unexpectedly stays unattached after being added. "
