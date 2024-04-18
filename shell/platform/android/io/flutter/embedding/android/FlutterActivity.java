@@ -1405,10 +1405,10 @@ public class FlutterActivity extends Activity
     try {
       Bundle metaData = getMetaData();
       boolean shouldHandleDeeplinking =
-          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : false;
+          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : true;
       return shouldHandleDeeplinking;
     } catch (PackageManager.NameNotFoundException e) {
-      return false;
+      return true;
     }
   }
 
