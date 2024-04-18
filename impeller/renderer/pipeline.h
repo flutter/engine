@@ -88,6 +88,12 @@ PipelineFuture<ComputePipelineDescriptor> CreatePipelineFuture(
     const Context& context,
     std::optional<ComputePipelineDescriptor> desc);
 
+/// Holds a reference to a Pipeline used for rendering while also maintaining
+/// the vertex shader and fragment shader types at compile-time.
+///
+/// See also:
+///   - impeller::ContentContext::Variants - the typical container for
+///     RenderPipelineHandles.
 template <class VertexShader_, class FragmentShader_>
 class RenderPipelineHandle {
   static_assert(

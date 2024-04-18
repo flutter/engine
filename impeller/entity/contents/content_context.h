@@ -1021,9 +1021,10 @@ class ContentContext {
     return pipeline->WaitAndGet();
   }
 
-  template <class TypedPipeline>
-  TypedPipeline* CreateIfNeeded(Variants<TypedPipeline>& container,
-                                ContentContextOptions opts) const {
+  template <class RenderPipelineHandleT>
+  RenderPipelineHandleT* CreateIfNeeded(
+      Variants<RenderPipelineHandleT>& container,
+      ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
     }
@@ -1032,11 +1033,11 @@ class ContentContext {
       opts.wireframe = true;
     }
 
-    if (TypedPipeline* found = container.Get(opts)) {
+    if (RenderPipelineHandleT* found = container.Get(opts)) {
       return found;
     }
 
-    TypedPipeline* prototype = container.GetDefault();
+    RenderPipelineHandleT* prototype = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
     FML_CHECK(prototype != nullptr);
@@ -1054,8 +1055,8 @@ class ContentContext {
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
         });
-    std::unique_ptr<TypedPipeline> variant =
-        std::make_unique<TypedPipeline>(std::move(variant_future));
+    std::unique_ptr<RenderPipelineHandleT> variant =
+        std::make_unique<RenderPipelineHandleT>(std::move(variant_future));
     container.Set(opts, std::move(variant));
     return container.Get(opts);
   }
