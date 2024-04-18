@@ -7,10 +7,10 @@ part of dart.ui;
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
 ///
-/// [!Warning]
-/// When changes are made to this class, the equivalent APIs in
-/// `lib/ui/semantics/semantics_node.h` and in each of the embedders
-/// *must* be updated.
+/// > [!Warning]
+/// > When changes are made to this class, the equivalent APIs in
+/// > `lib/ui/semantics/semantics_node.h` and in each of the embedders
+/// > *must* be updated.
 class SemanticsAction {
   const SemanticsAction._(this.index, this.name);
 
