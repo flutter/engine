@@ -853,18 +853,24 @@ class ContentContext {
                              RuntimeEffectPipelineKey::Equal>
       runtime_effect_pipelines_;
 
-  template <class PipelineT>
+  /// Holds multiple Pipelines associated with the same PipelineHandle types.
+  ///
+  /// For example, it may have multiple
+  /// RenderPipelineHandle<SolidFillVertexShader, SolidFillFragmentShader>
+  /// instances for different blend modes. From them you can access the
+  /// Pipeline.
+  template <class PipelineHandleT>
   class Variants {
    public:
     Variants() = default;
 
     void Set(const ContentContextOptions& options,
-             std::unique_ptr<PipelineT> pipeline) {
+             std::unique_ptr<PipelineHandleT> pipeline) {
       pipelines_[options] = std::move(pipeline);
     }
 
     void SetDefault(const ContentContextOptions& options,
-                    std::unique_ptr<PipelineT> pipeline) {
+                    std::unique_ptr<PipelineHandleT> pipeline) {
       default_options_ = options;
       Set(options, std::move(pipeline));
     }
@@ -873,23 +879,23 @@ class ContentContext {
                        const ContentContextOptions& options,
                        const std::initializer_list<Scalar>& constants = {}) {
       auto desc =
-          PipelineT::Builder::MakeDefaultPipelineDescriptor(context, constants);
+          PipelineHandleT::Builder::MakeDefaultPipelineDescriptor(context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
         return;
       }
       options.ApplyToPipelineDescriptor(*desc);
-      SetDefault(options, std::make_unique<PipelineT>(context, desc));
+      SetDefault(options, std::make_unique<PipelineHandleT>(context, desc));
     }
 
-    PipelineT* Get(const ContentContextOptions& options) const {
+    PipelineHandleT* Get(const ContentContextOptions& options) const {
       if (auto found = pipelines_.find(options); found != pipelines_.end()) {
         return found->second.get();
       }
       return nullptr;
     }
 
-    PipelineT* GetDefault() const {
+    PipelineHandleT* GetDefault() const {
       if (!default_options_.has_value()) {
         return nullptr;
       }
@@ -901,7 +907,7 @@ class ContentContext {
    private:
     std::optional<ContentContextOptions> default_options_;
     std::unordered_map<ContentContextOptions,
-                       std::unique_ptr<PipelineT>,
+                       std::unique_ptr<PipelineHandleT>,
                        ContentContextOptions::Hash,
                        ContentContextOptions::Equal>
         pipelines_;
@@ -1037,13 +1043,13 @@ class ContentContext {
       return found;
     }
 
-    RenderPipelineHandleT* prototype = container.GetDefault();
+    RenderPipelineHandleT* default_handle = container.GetDefault();
 
     // The prototype must always be initialized in the constructor.
-    FML_CHECK(prototype != nullptr);
+    FML_CHECK(default_handle != nullptr);
 
     std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
-        prototype->WaitAndGet();
+        default_handle->WaitAndGet();
     if (!pipeline) {
       return nullptr;
     }
