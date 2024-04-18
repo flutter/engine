@@ -1,0 +1,72 @@
+{
+    "builds": [
+        {
+            "archives": [
+                {
+                    "name": "host_debug_unopt",
+                    "base_path": "out/host_debug_unopt/zip_archives/",
+                    "type": "gcs",
+                    "include_paths": [
+                        "out/host_debug_unopt/zip_archives/dart-sdk-linux-x64.zip"
+                    ],
+                    "realm": "production"
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gn": [
+                "--unoptimized",
+                "--prebuilt-dart-sdk"
+            ],
+            "name": "host_debug_unopt",
+            "ninja": {
+                "config": "host_debug_unopt",
+                "targets": [
+                    "flutter/build/archives:dart_sdk_archive"
+                ]
+            }
+        }
+    ],
+    "tests": [
+        {
+            "name": "test: lint host_debug widgets",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "host_debug_unopt"
+            ],
+            "shard": "framework_tests",
+            "subshard": "widgets"
+        },
+        {
+            "name": "test: lint host_debug library",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "host_debug_unopt"
+            ],
+            "_comment": "shard/subshard strings are defined in framework test runner: dev/bots/test.dart, and are consistent with properties defined in framework .ciyaml targets",
+            "shard": "framework_tests",
+            "subshard": "libraries"
+        },
+        {
+            "name": "test: flutter analyze",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "host_debug_unopt"
+            ],
+            "_comment": "validation strings are consistent with properties defined in framework .ciyaml targets",
+            "validation": "analyze",
+            "validation_name": "Analyze"
+        }
+    ]
+}
