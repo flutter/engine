@@ -23,7 +23,7 @@ class MachThreads {
   MachThreads() = default;
 
   ~MachThreads() {
-    kern_return_t kernel_return_code = vm_deallocate(
+    [[maybe_unused]] kern_return_t kernel_return_code = vm_deallocate(
         mach_task_self(), reinterpret_cast<vm_offset_t>(threads), thread_count * sizeof(thread_t));
     FML_DCHECK(kernel_return_code == KERN_SUCCESS) << "Failed to deallocate thread infos.";
   }
