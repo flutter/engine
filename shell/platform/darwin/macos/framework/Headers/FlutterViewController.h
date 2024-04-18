@@ -84,13 +84,26 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic) FlutterMouseTrackingMode mouseTrackingMode;
 
 /**
- * Initializes a controller that will run the given project.
+ * Initializes this `FlutterViewController` for the implicit view of a new
+ * `FlutterEngine`.
  *
- * In this initializer, this controller creates an engine, and is attached to
- * that engine as the default controller. In this way, this controller can not
- * be set to other engines. This initializer is suitable for the first Flutter
- * view controller of the app. To use the controller with an existing engine,
- * use initWithEngine:nibName:bundle: instead.
+ * This initializer is a shorthand for creating an engine explicitly and
+ * initializing with `initWithEngine:nibName:bundle:`.
+ *
+ * Since the created engine is only referred by this view controller, once thie
+ * view controller is deallocated, the engine will be shut down, unless anther
+ * strong referrence to the engine is kept. It is recommended to use
+ * `initWithEngine:nibName:bundle:` if the app's implicit view might be closed
+ * at some point, such as running headlessly.
+ *
+ * The engine holds a weak reference to the view controller, while the view controller
+ * holds a strong reference to the engine.
+ *
+ * For an introduction to implicit views, see
+ * [PlatformDispatcher.implicitView](https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html).
+ *
+ * There isn't a way to create a `FlutterViewController` that's not attached
+ * to an engine.
  *
  * @param project The project to run in this view controller. If nil, a default `FlutterDartProject`
  *                will be used.
@@ -103,12 +116,11 @@ FLUTTER_DARWIN_EXPORT
     NS_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)initWithCoder:(nonnull NSCoder*)nibNameOrNil NS_DESIGNATED_INITIALIZER;
 /**
- * Initializes this FlutterViewController with an existing `FlutterEngine`.
+ * Initializes this FlutterViewController as attached to an existing
+ * `FlutterEngine`.
  *
- * The initialized view controller will add itself to the engine as part of this process.
- *
- * This initializer is suitable for both the first Flutter view controller and
- * the following ones of the app.
+ * The engine holds a weak reference to the view controller, while the view controller
+ * holds a strong reference to the engine.
  *
  * @param engine The `FlutterEngine` instance to attach to. Cannot be nil.
  * @param nibName The NIB name to initialize this controller with.
