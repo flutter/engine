@@ -129,8 +129,6 @@ using TexturePipeline =
 using TextureStrictSrcPipeline =
     RenderPipelineHandle<TextureFillVertexShader,
                          TextureFillStrictSrcFragmentShader>;
-using PositionUVPipeline = RenderPipelineHandle<TextureFillVertexShader,
-                                                TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
     RenderPipelineHandle<TextureUvFillVertexShader,
                          TiledTextureFillFragmentShader>;
@@ -470,11 +468,6 @@ class ContentContext {
     return GetPipeline(tiled_texture_external_pipelines_, opts);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(position_uv_pipelines_, opts);
-  }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
       ContentContextOptions opts) const {
@@ -919,7 +912,6 @@ class ContentContext {
   mutable Variants<TiledTextureExternalPipeline>
       tiled_texture_external_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
-  mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
   mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
