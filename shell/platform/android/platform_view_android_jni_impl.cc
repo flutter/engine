@@ -4,8 +4,12 @@
 
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
+#include <android/binder_ibinder_jni.h>
+#include <android/binder_parcel.h>
+#include <android/binder_parcel_jni.h>
 #include <android/hardware_buffer_jni.h>
 #include <android/native_window_jni.h>
+
 #include <dlfcn.h>
 #include <jni.h>
 #include <memory>
@@ -591,6 +595,27 @@ static void LoadLoadingUnitFailure(intptr_t loading_unit_id,
   // TODO(garyq): Implement
 }
 
+static void WaitOnParceledSyncFence(JNIEnv* env, jclass, jobject j_parcel) {
+  FML_LOG(ERROR) << "Hey ya";
+  if (env == nullptr || j_parcel == nullptr) {
+    return;
+  }
+  AParcel* parcel = AParcel_fromJavaParcel(env, j_parcel);
+  FML_LOG(ERROR) << "Got parcel";
+  AParcel_setDataPosition(parcel, 0);
+  bool value = false;
+  if (AParcel_readBool(parcel, &value) != 0) {
+    FML_LOG(ERROR) << "Failed to read bool";
+  }
+
+  // Read Sync Fence FD
+  int32_t fd = 0;
+  if (AParcel_readInt32(parcel, &fd) != 0) {
+    FML_LOG(ERROR) << "Failed to read fence fd";
+  }
+  FML_LOG(ERROR) << "Got fence fd: " << fd;
+}
+
 static void DeferredComponentInstallFailure(JNIEnv* env,
                                             jobject obj,
                                             jint jLoadingUnitId,
@@ -713,6 +738,12 @@ bool RegisterApi(JNIEnv* env) {
           .name = "nativeNotifyLowMemoryWarning",
           .signature = "(J)V",
           .fnPtr = reinterpret_cast<void*>(&NotifyLowMemoryWarning),
+      },
+      // Testing
+      {
+          .name = "nativeWaitOnParceledSyncFence",
+          .signature = "(Landroid/os/Parcel;)V",
+          .fnPtr = reinterpret_cast<void*>(&WaitOnParceledSyncFence),
       },
 
       // Start of methods from FlutterView

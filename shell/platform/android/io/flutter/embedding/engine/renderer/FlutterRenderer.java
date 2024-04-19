@@ -18,6 +18,7 @@ import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Parcel;
 import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
@@ -696,7 +697,13 @@ public class FlutterRenderer implements TextureRegistry {
     private void waitOnFence(Image image) {
       try {
         SyncFence fence = image.getFence();
-        fence.awaitForever();
+        // Testing: can I send sync fence to C++ ?
+        Parcel parcel = Parcel.obtain();
+        // Writes a bool then an int.
+        fence.writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        flutterJNI.WaitOnParceledSyncFence(parcel);
+        parcel.recycle();
       } catch (IOException e) {
         // Drop.
       }

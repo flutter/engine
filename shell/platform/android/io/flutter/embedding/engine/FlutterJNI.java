@@ -14,6 +14,7 @@ import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.os.Parcel;
 import android.util.DisplayMetrics;
 import android.util.Size;
 import android.util.TypedValue;
@@ -1492,6 +1493,14 @@ public class FlutterJNI {
           "Methods marked with @UiThread must be executed on the main thread. Current thread: "
               + Thread.currentThread().getName());
     }
+  }
+
+  // TESTING
+
+  private native void nativeWaitOnParceledSyncFence(Parcel parcel);
+
+  public void WaitOnParceledSyncFence(Parcel parcel) {
+    nativeWaitOnParceledSyncFence(parcel);
   }
 
   /**
