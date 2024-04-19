@@ -2644,6 +2644,11 @@
 ../../../flutter/third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/gl/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/gl/egl/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/gl/epoxy/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/gl/glx/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/gl/ios/BUILD.bazel
+../../../flutter/third_party/skia/include/gpu/ganesh/gl/mac/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/ganesh/vk/BUILD.bazel
 ../../../flutter/third_party/skia/include/gpu/gl/BUILD.bazel
@@ -3403,6 +3408,7 @@
 ../../../fuchsia/sdk/linux/pkg/driver_devfs_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_incoming_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_logging_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/driver_node_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_outgoing_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_runtime/meta.json
 ../../../fuchsia/sdk/linux/pkg/driver_runtime_cpp/meta.json
