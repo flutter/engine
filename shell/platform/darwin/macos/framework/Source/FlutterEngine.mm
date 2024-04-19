@@ -742,10 +742,14 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
                viewIdentifier:viewIdentifier
            threadSynchronizer:_threadSynchronizer];
   NSAssert(controller.viewIdentifier == viewIdentifier, @"Failed to assign view ID.");
-  NSAssert(controller.attached && controller.engine == self,
-           @"The FlutterViewController unexpectedly stays unattached after being added. "
-           @"In unit tests, this is likely because either the FlutterViewController or "
-           @"the FlutterEngine is mocked. Please subclass these classes instead.");
+  // Verify that the controller's property are updated accordingly. Failing the
+  // assertions is likely because either the FlutterViewController or the
+  // FlutterEngine is mocked. Please subclass these classes instead.
+  NSAssert(controller.attached, @"The FlutterViewController should switch to the attached mode "
+                                @"after it is added to a FlutterEngine.");
+  NSAssert(controller.engine == self,
+           @"The FlutterViewController was added to %@, but its engine unexpectedly became %@.",
+           self, controller.engine);
 
   if (controller.viewLoaded) {
     [self viewControllerViewDidLoad:controller];
@@ -781,8 +785,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 - (void)deregisterViewControllerForIdentifier:(FlutterViewIdentifier)viewIdentifier {
   FlutterViewController* controller = [self viewControllerForIdentifier:viewIdentifier];
-  // The controller might be nil, because the engine only stores a weak ref, and
-  // this method might have been called from the controller's dealloc.
+  // The controller can be nil. The engine stores only a weak ref, and this
+  // method could have been called from the controller's dealloc.
   if (controller != nil) {
     [controller detachFromEngine];
     NSAssert(!controller.attached,
