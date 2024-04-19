@@ -737,7 +737,7 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
                          foreground_color_, GetAbsorbOpacity(), GetAlpha());
   }
 
-  if (blend_mode <= Entity::kLastAdvancedBlendMode) {
+  if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
     if (inputs.size() == 1 && foreground_color_.has_value()) {
       return CreateForegroundAdvancedBlend(
           inputs[0], renderer, entity, coverage, foreground_color_.value(),
