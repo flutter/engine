@@ -562,13 +562,6 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
       }
     }
   }
-  // Detach all view controllers.
-  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
-  FlutterViewController* nextViewController;
-  while ((nextViewController = [viewControllerEnumerator nextObject])) {
-    [nextViewController detachFromEngine];
-  }
-  [_viewControllers removeAllObjects];
 
   // Clear any published values, just in case a plugin has created a retain cycle with the
   // registrar.
