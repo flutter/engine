@@ -13,7 +13,6 @@ static NSString* const kCanRedo = @"canRedo";
 
 @interface FlutterUndoManagerPlugin ()
 @property(nonatomic, weak, readonly) id<FlutterUndoManagerDelegate> undoManagerDelegate;
-@property(nonatomic, readonly) NSUndoManager* undoManager;
 @end
 
 @implementation FlutterUndoManagerPlugin
@@ -43,16 +42,12 @@ static NSString* const kCanRedo = @"canRedo";
   }
 }
 
-- (NSUndoManager*)undoManager {
-  return self.undoManagerDelegate.undoManager;
-}
-
 - (void)resetUndoManager {
-  [self.undoManager removeAllActionsWithTarget:self];
+  [self.undoManagerDelegate.undoManager removeAllActionsWithTarget:self];
 }
 
 - (void)registerUndoWithDirection:(FlutterUndoRedoDirection)direction {
-  NSUndoManager* undoManager = self.undoManager;
+  NSUndoManager* undoManager = self.undoManagerDelegate.undoManager;
   [undoManager beginUndoGrouping];
   [undoManager registerUndoWithTarget:self
                               handler:^(FlutterUndoManagerPlugin* target) {
@@ -69,7 +64,7 @@ static NSString* const kCanRedo = @"canRedo";
 }
 
 - (void)registerRedo {
-  NSUndoManager* undoManager = self.undoManager;
+  NSUndoManager* undoManager = self.undoManagerDelegate.undoManager;
   [undoManager beginUndoGrouping];
   [undoManager registerUndoWithTarget:self
                               handler:^(id target) {
@@ -81,7 +76,7 @@ static NSString* const kCanRedo = @"canRedo";
 }
 
 - (void)setUndoState:(NSDictionary*)dictionary {
-  NSUndoManager* undoManager = [self undoManager];
+  NSUndoManager* undoManager = self.undoManagerDelegate.undoManager;
   BOOL groupsByEvent = undoManager.groupsByEvent;
   undoManager.groupsByEvent = NO;
   BOOL canUndo = [dictionary[kCanUndo] boolValue];
