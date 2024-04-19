@@ -562,7 +562,6 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
       }
     }
   }
-
   // Clear any published values, just in case a plugin has created a retain cycle with the
   // registrar.
   for (NSString* pluginName in _pluginRegistrars) {
