@@ -125,16 +125,6 @@ using SweepGradientSSBOFillPipeline =
 using RRectBlurPipeline =
     RenderPipelineHandle<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using TexturePipeline =
-<<<<<<< HEAD
-    RenderPipelineT<TextureUvFillVertexShader, TextureFillFragmentShader>;
-using TextureStrictSrcPipeline =
-    RenderPipelineT<TextureUvFillVertexShader,
-                    TextureFillStrictSrcFragmentShader>;
-using PositionUVPipeline =
-    RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
-using TiledTexturePipeline =
-    RenderPipelineT<TextureUvFillVertexShader, TiledTextureFillFragmentShader>;
-=======
     RenderPipelineHandle<TextureFillVertexShader, TextureFillFragmentShader>;
 using TextureStrictSrcPipeline =
     RenderPipelineHandle<TextureFillVertexShader,
@@ -142,9 +132,8 @@ using TextureStrictSrcPipeline =
 using PositionUVPipeline = RenderPipelineHandle<TextureFillVertexShader,
                                                 TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
-    RenderPipelineHandle<TextureFillVertexShader,
+    RenderPipelineHandle<TextureUvFillVertexShader,
                          TiledTextureFillFragmentShader>;
->>>>>>> 55670b71eb00fbe80601b7227f68c1df4cae827b
 using KernelDecalPipeline =
     RenderPipelineHandle<KernelVertexShader, KernelDecalFragmentShader>;
 using KernelPipeline =
@@ -264,29 +253,12 @@ using FramebufferBlendSoftLightPipeline =
 
 /// Geometry Pipelines
 using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
-using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
 
 #ifdef IMPELLER_ENABLE_OPENGLES
-<<<<<<< HEAD
-using TextureExternalPipeline =
-    RenderPipelineT<TextureUvFillVertexShader,
-                    TextureFillExternalFragmentShader>;
-
 using TiledTextureExternalPipeline =
-    RenderPipelineT<TextureUvFillVertexShader,
-                    TiledTextureFillExternalFragmentShader>;
-=======
-using TiledTextureExternalPipeline =
-    RenderPipelineHandle<TextureFillVertexShader,
+    RenderPipelineHandle<TextureUvFillVertexShader,
                          TiledTextureFillExternalFragmentShader>;
->>>>>>> 55670b71eb00fbe80601b7227f68c1df4cae827b
 #endif  // IMPELLER_ENABLE_OPENGLES
-
-// A struct used to isolate command buffer storage from the content
-// context options to preserve const-ness.
-struct PendingCommandBuffers {
-  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
-};
 
 /// Pipeline state configuration.
 ///
@@ -1071,7 +1043,6 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
-  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

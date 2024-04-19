@@ -10,20 +10,16 @@ uniform FrameInfo {
   mat4 mvp;
   // A normlizing transform created from the texture bounds and effect transform
   mat4 uv_transform;
-  vec4 texture_coverage;
   float texture_sampler_y_coord_scale;
-  float16_t alpha;
 }
 frame_info;
 
 in vec2 position;
 
 out vec2 v_texture_coords;
-IMPELLER_MAYBE_FLAT out mediump float16_t v_alpha;
 
 void main() {
   gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
-  v_alpha = frame_info.alpha;
   vec2 texture_coords = (frame_info.uv_transform * vec4(position, 0.0, 1.0)).xy;
   v_texture_coords =
       IPRemapCoords(texture_coords, frame_info.texture_sampler_y_coord_scale);

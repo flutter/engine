@@ -6,8 +6,6 @@
 
 #include "fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/texture_fill.frag.h"
-#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
 #include "impeller/renderer/render_pass.h"
@@ -128,18 +126,11 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
 
-  bool uses_emulated_tile_mode =
-      UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
-
   VS::FrameInfo frame_info;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-<<<<<<< HEAD
-  frame_info.alpha = GetOpacityFactor();
   frame_info.uv_transform =
       Rect::MakeSize(texture_size).GetNormalizingTransform() *
       GetInverseEffectTransform();
-=======
->>>>>>> 55670b71eb00fbe80601b7227f68c1df4cae827b
 
   PipelineBuilderMethod pipeline_method;
 
@@ -147,9 +138,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   if (is_external_texture) {
     pipeline_method = &ContentContext::GetTiledTextureExternalPipeline;
   } else {
-    pipeline_method = uses_emulated_tile_mode
-                          ? &ContentContext::GetTiledTexturePipeline
-                          : &ContentContext::GetTexturePipeline;
+    pipeline_method = &ContentContext::GetTiledTexturePipeline;
   }
 #else
   pipeline_method = uses_emulated_tile_mode
@@ -163,15 +152,10 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       };
   return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
-      [this, &renderer, &is_external_texture,
-       &uses_emulated_tile_mode](RenderPass& pass) {
+      [this, &renderer, &is_external_texture](RenderPass& pass) {
         auto& host_buffer = renderer.GetTransientsBuffer();
 
-        if (uses_emulated_tile_mode) {
-          pass.SetCommandLabel("TiledTextureFill");
-        } else {
-          pass.SetCommandLabel("TextureFill");
-        }
+        pass.SetCommandLabel("TextureFill");
 
         if (is_external_texture) {
           FSExternal::FragInfo frag_info;
@@ -179,17 +163,12 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
           frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
           frag_info.alpha = GetOpacityFactor();
           FSExternal::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
-        } else if (uses_emulated_tile_mode) {
+        } else {
           FS::FragInfo frag_info;
           frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
           frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
           frag_info.alpha = GetOpacityFactor();
           FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
-        } else {
-          TextureFillFragmentShader::FragInfo frag_info;
-          frag_info.alpha = GetOpacityFactor();
-          TextureFillFragmentShader::BindFragInfo(
-              pass, host_buffer.EmplaceUniform(frag_info));
         }
 
         if (is_external_texture) {
