@@ -20,6 +20,6 @@ out f16vec4 frag_color;
 
 void main() {
   f16vec4 sampled =
-      texture(texture_sampler, v_texture_coords, kDefaultMipBiasHalf);
+      texture(texture_sampler, v_texture_coords, float16_t(kDefaultMipBiasHalf));
   frag_color = sampled * float16_t(frag_info.alpha);
 }
