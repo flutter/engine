@@ -1187,10 +1187,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Undo Manager Delegate
 
-- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
-         handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
+- (void)handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
   [_undoManagerChannel.get() invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
+}
+
+- (UIView<UITextInput>*)activeTextInputView {
+  return [[self textInputPlugin] textInputView];
+}
+
+- (NSUndoManager*)undoManager {
+  return self.viewController.undoManager;
 }
 
 #pragma mark - Screenshot Delegate

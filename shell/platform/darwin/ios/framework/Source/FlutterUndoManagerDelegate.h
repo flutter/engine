@@ -18,16 +18,28 @@ typedef NS_ENUM(NSInteger, FlutterUndoRedoDirection) {
   // NOLINTEND(readability-identifier-naming)
 };
 
-@class FlutterUndoManagerPlugin;
-
+/**
+ * Protocol for undo manager changes from the `FlutterUndoManagerPlugin`, typically a
+ * `FlutterEngine`.
+ */
 @protocol FlutterUndoManagerDelegate <NSObject>
 
-@property(nonatomic, weak) UIResponder* viewController;
+/**
+ * The `NSUndoManager` that should be managed by the `FlutterUndoManagerPlugin`.
+ * When the delegate is `FlutterEngine` this will be the `FlutterViewController`'s undo manager.
+ */
+@property(nonatomic, readonly, nullable) NSUndoManager* undoManager;
 
-- (FlutterTextInputPlugin*)textInputPlugin;
+/**
+ * Used to notify the active view when undo manager state (can redo/can undo)
+ * changes, in order to force keyboards to update undo/redo buttons.
+ */
+@property(nonatomic, readonly, nullable) UIView<UITextInput>* activeTextInputView;
 
-- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
-         handleUndoWithDirection:(FlutterUndoRedoDirection)direction;
+/**
+ * Pass changes to the framework through the undo manager channel.
+ */
+- (void)handleUndoWithDirection:(FlutterUndoRedoDirection)direction;
 
 @end
 NS_ASSUME_NONNULL_END
