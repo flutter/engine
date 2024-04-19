@@ -28,14 +28,7 @@ class Scrollable extends PrimaryRoleManager {
           PrimaryRole.scrollable,
           semanticsObject,
           labelRepresentation: LeafLabelRepresentation.ariaLabel,
-        ) {
-    _scrollOverflowElement.style
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0'
-      // Ignore pointer events since this is a dummy element.
-      ..pointerEvents = 'none';
-    append(_scrollOverflowElement);
-  }
+        );
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;
@@ -95,6 +88,20 @@ class Scrollable extends PrimaryRoleManager {
         }
       }
     }
+  }
+
+  @override
+  void initState() {
+    // Scrolling is controlled by setting overflow-y/overflow-x to 'scroll`. The
+    // default overflow = "visible" needs to be unset.
+    semanticsObject.element.style.overflow = '';
+
+    _scrollOverflowElement.style
+      ..position = 'absolute'
+      ..transformOrigin = '0 0 0'
+      // Ignore pointer events since this is a dummy element.
+      ..pointerEvents = 'none';
+    append(_scrollOverflowElement);
   }
 
   @override

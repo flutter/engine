@@ -475,7 +475,9 @@ abstract class PrimaryRoleManager {
   static DomElement _initElement(DomElement element, SemanticsObject semanticsObject) {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
-    element.style.position = 'absolute';
+    element.style
+      ..position = 'absolute'
+      ..overflow = 'visible';
     element.setAttribute('id', 'flt-semantic-node-${semanticsObject.id}');
 
     // The root node has some properties that other nodes do not.
@@ -501,6 +503,20 @@ abstract class PrimaryRoleManager {
     }
     return element;
   }
+
+  /// A lifecycle method called after the DOM [element] for this role manager
+  /// is initialized, and the association with the corresponding
+  /// [SemanticsObject] established.
+  ///
+  /// Override this method to implement expensive one-time initialization of a
+  /// role manager's state. It is more efficient to do such work in this method
+  /// compared to [update], because [update] can be called many times during the
+  /// lifecycle of the semantic node.
+  ///
+  /// It is safe to access [element], [semanticsObject], [secondaryRoleManagers]
+  /// and all helper methods that access these fields, such as [append],
+  /// [focusable], etc.
+  void initState() {}
 
   /// Sets the `role` ARIA attribute.
   void setAriaRole(String ariaRoleName) {
@@ -541,9 +557,13 @@ abstract class PrimaryRoleManager {
     addSecondaryRole(RouteName(semanticsObject, this));
   }
 
+  /// Convenience getter for the [LabelAndValue] role manager, if any.
+  LabelAndValue? get labelAndValue => _labelAndValue;
+  LabelAndValue? _labelAndValue;
+
   /// Adds generic label features.
   void addLabelAndValue({ required LeafLabelRepresentation labelRepresentation }) {
-    addSecondaryRole(LabelAndValue(semanticsObject, this, labelRepresentation: labelRepresentation));
+    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, labelRepresentation: labelRepresentation));
   }
 
   /// Adds generic functionality for handling taps and clicks.
@@ -624,7 +644,7 @@ final class GenericRole extends PrimaryRoleManager {
   GenericRole(SemanticsObject semanticsObject) : super.withBasics(
     PrimaryRole.generic,
     semanticsObject,
-    labelRepresentation: LeafLabelRepresentation.domText,
+    labelRepresentation: LeafLabelRepresentation.sizedSpan,
   ) {
     // Typically a tappable widget would have a more specific role, such as
     // "link", "button", "checkbox", etc. However, there are situations when a
@@ -639,13 +659,12 @@ final class GenericRole extends PrimaryRoleManager {
 
   @override
   void update() {
-    super.update();
-
     if (!semanticsObject.hasLabel) {
       // The node didn't get a more specific role, and it has no label. It is
       // likely that this node is simply there for positioning its children and
       // has no other role for the screen reader to be aware of. In this case,
       // the element does not need a `role` attribute at all.
+      super.update();
       return;
     }
 
@@ -673,8 +692,11 @@ final class GenericRole extends PrimaryRoleManager {
     } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
       setAriaRole('heading');
     } else {
-      setAriaRole('text');
+      removeAttribute('role');
     }
+
+    // Call super.update last.
+    super.update();
   }
 
   @override
@@ -1645,6 +1667,7 @@ class SemanticsObject {
     if (currentPrimaryRole == null) {
       currentPrimaryRole = _createPrimaryRole(roleId);
       primaryRole = currentPrimaryRole;
+      currentPrimaryRole.initState();
       currentPrimaryRole.update();
     }
 
