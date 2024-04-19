@@ -7,8 +7,6 @@
 
 #import <Foundation/Foundation.h>
 
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(NSInteger, FlutterUndoRedoDirection) {

@@ -4,8 +4,6 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
-
 #pragma mark - UndoManager channel method names.
 static NSString* const kSetUndoStateMethod = @"UndoManager.setUndoState";
 
