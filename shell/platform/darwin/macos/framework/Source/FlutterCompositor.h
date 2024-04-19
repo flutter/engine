@@ -40,22 +40,28 @@ class FlutterCompositor {
   // The view_provider is used to query FlutterViews from view IDs,
   // which are used for presenting and creating backing stores.
   // It must not be null, and is typically FlutterViewEngineProvider.
+  //
+  // The `main_queue` is the macOS main event queue, typically
+  // `dispatch_get_main_queue()`. It must match the queue given to
+  // `FlutterThreadSynchronizer`, and be the one that platform views can be
+  // rendered on.
   FlutterCompositor(id<FlutterViewProvider> view_provider,
                     FlutterTimeConverter* time_converter,
-                    FlutterPlatformViewController* platform_views_controller);
+                    FlutterPlatformViewController* platform_views_controller,
+                    dispatch_queue_t main_queue);
 
   ~FlutterCompositor() = default;
 
   // Allocate the resources for displaying a view.
   //
   // This method must be called when a view is added to FlutterEngine, and must be
-  // called on the main queue.
+  // called on the main_queue, or an assertion will be thrown.
   void AddView(FlutterViewId view_id);
 
   // Deallocate the resources for displaying a view.
   //
   // This method must be called when a view is removed from FlutterEngine, and
-  // must be called on the main queue.
+  // must be called on the main_queue, or an assertion will be thrown.
   void RemoveView(FlutterViewId view_id);
 
   // Creates a backing store and saves updates the backing_store_out data with
@@ -122,6 +128,8 @@ class FlutterCompositor {
 
   // The view presenters for views. Each key is a view ID.
   std::unordered_map<FlutterViewId, ViewPresenter> presenters_;
+
+  dispatch_queue_t main_queue_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterCompositor);
 };

@@ -34,18 +34,22 @@ std::vector<LayerVariant> CopyLayers(const FlutterLayer** layers, size_t layer_c
 
 FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
                                      FlutterTimeConverter* time_converter,
-                                     FlutterPlatformViewController* platform_view_controller)
+                                     FlutterPlatformViewController* platform_view_controller,
+                                     dispatch_queue_t main_queue)
     : view_provider_(view_provider),
       time_converter_(time_converter),
-      platform_view_controller_(platform_view_controller) {
+      platform_view_controller_(platform_view_controller),
+      main_queue_(main_queue) {
   FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
 }
 
 void FlutterCompositor::AddView(FlutterViewId view_id) {
+  dispatch_assert_queue(main_queue_);
   presenters_.try_emplace(view_id);
 }
 
 void FlutterCompositor::RemoveView(FlutterViewId view_id) {
+  dispatch_assert_queue(main_queue_);
   presenters_.erase(view_id);
 }
 
@@ -111,10 +115,10 @@ bool FlutterCompositor::Present(FlutterViewIdentifier view_id,
   [view.surfaceManager presentSurfaces:surfaces
                                 atTime:presentation_time
                                 notify:^{
-        // Accessing presenters_ here does not need a lock to avoid race
-        // condition with AddView and RemoveView, as long as the latter take
-        // place on the platform thread, because presenting must take place on
-        // the platform thread due to macOS's requirement.
+                                  // Accessing presenters_ here does not need a lock to avoid race
+                                  // condition with AddView and RemoveView, as long as the latter
+                                  // take place on the platform thread, because presenting must take
+                                  // place on the platform thread due to macOS's requirement.
                                   auto found_presenter = presenters_.find(view_id);
                                   if (found_presenter != presenters_.end()) {
                                     found_presenter->second.PresentPlatformViews(
