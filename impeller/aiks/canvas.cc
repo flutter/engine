@@ -408,11 +408,18 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       (paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kSolid &&
        (!rrect_color.IsOpaque() ||
         paint.blend_mode != BlendMode::kSourceOver))) {
+    Rect render_bounds = rect;
+    if (paint.mask_blur_descriptor->style !=
+        FilterContents::BlurStyle::kInner) {
+      render_bounds =
+          render_bounds.Expand(paint.mask_blur_descriptor->sigma.sigma * 4.0);
+    }
     // Defer the alpha, blend mode, and image filter to a separate layer.
     SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
                .blend_mode = paint.blend_mode,
                .image_filter = paint.image_filter},
-              rect, nullptr, ContentBoundsPromise::kContainsContents, 1u);
+              render_bounds, nullptr, ContentBoundsPromise::kContainsContents,
+              1u);
     rrect_paint.color = rrect_color.WithAlpha(1);
   } else {
     rrect_paint.color = rrect_color;
