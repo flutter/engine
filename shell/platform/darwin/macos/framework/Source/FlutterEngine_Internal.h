@@ -127,7 +127,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
  *
  * Since FlutterEngine can only handle the implicit view for now, the given
  * controller will always be assigned to the implicit view, if there isn't an
- * implicit view yet.  If the engine already has an implicit view, this call
+ * implicit view yet. If the engine already has an implicit view, this call
  * throws an assertion.
  *
  * The engine holds a weak reference to the attached view controller.
