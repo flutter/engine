@@ -6,7 +6,10 @@
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/paint_pass_delegate.h"
+#include "impeller/base/validation.h"
+#include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/text_contents.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
 
@@ -238,6 +241,21 @@ void ExperimentalCanvas::AddEntityToCurrentPass(Entity entity) {
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+
+  if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
+    if (renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+      auto src_contents = entity.GetContents();
+      auto contents = std::make_shared<FramebufferBlendContents>();
+      contents->SetChildContents(src_contents);
+      contents->SetBlendMode(entity.GetBlendMode());
+      entity.SetContents(std::move(contents));
+      entity.SetBlendMode(BlendMode::kSource);
+    } else {
+      VALIDATION_LOG << "Emulated advanced blends are currently unsupported.";
+      return;
+    }
+  }
+
   entity.Render(renderer_, *render_passes_.back());
 }
 
