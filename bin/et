@@ -11,17 +11,14 @@ unset CDPATH
 
 # Returns the canonical path for its argument, with any symlinks resolved.
 function canonical_path() {
-  case "$(uname -s)" in
-    Linux)
-      readlink -f -- "$1"
-      ;;
-    Darwin)
-      realpath -q -- "$1"
-      ;;
-    *)
-      echo "The host platform is not supported by this tool"
-      exit 1
-  esac
+  if [[ -x "$(which realpath)" ]]; then
+    realpath -q -- "$1"
+  elif [[ -x "$(which readlink)" ]]; then
+    readlink -f -- "$1"
+  else
+    echo "The host platform is not supported by this tool"
+    exit 1
+  fi
 }
 
 SCRIPT_DIR="$(dirname -- "$(canonical_path "${BASH_SOURCE[0]}")")"
