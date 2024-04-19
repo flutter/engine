@@ -1,0 +1,88 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/build/dart/rules.gni")
+
+dart_executable("engine_tool") {
+  main_dart = "bin/et.dart"
+  output = "$root_out_dir/et"
+}
+
+group("tests") {
+  testonly = true
+  public_deps = [
+    ":build_command_test",
+    ":entry_point_test",
+    ":fetch_command_test",
+    ":format_command_test",
+    ":gn_utils_test",
+    ":lint_command_test",
+    ":logger_test",
+    ":proc_utils_test",
+    ":query_command_test",
+    ":run_command_test",
+    ":test_command_test",
+    ":worker_pool_test",
+  ]
+}
+
+dart_executable("build_command_test") {
+  testonly = true
+  main_dart = "test/build_command_test.dart"
+}
+
+dart_executable("entry_point_test") {
+  testonly = true
+  main_dart = "test/entry_point_test.dart"
+}
+
+dart_executable("fetch_command_test") {
+  testonly = true
+  main_dart = "test/fetch_command_test.dart"
+}
+
+dart_executable("format_command_test") {
+  testonly = true
+  main_dart = "test/format_command_test.dart"
+}
+
+dart_executable("gn_utils_test") {
+  testonly = true
+  main_dart = "test/gn_utils_test.dart"
+}
+
+dart_executable("lint_command_test") {
+  testonly = true
+  main_dart = "test/lint_command_test.dart"
+}
+
+dart_executable("logger_test") {
+  testonly = true
+  main_dart = "test/logger_test.dart"
+}
+
+dart_executable("proc_utils_test") {
+  testonly = true
+  main_dart = "test/proc_utils_test.dart"
+}
+
+dart_executable("query_command_test") {
+  testonly = true
+  main_dart = "test/query_command_test.dart"
+}
+
+dart_executable("run_command_test") {
+  testonly = true
+  main_dart = "test/run_command_test.dart"
+}
+
+dart_executable("test_command_test") {
+  testonly = true
+  main_dart = "test/test_command_test.dart"
+}
+
+dart_executable("worker_pool_test") {
+  testonly = true
+  main_dart = "test/worker_pool_test.dart"
+}
