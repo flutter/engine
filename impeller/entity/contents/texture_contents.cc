@@ -120,7 +120,7 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;  // Nothing to render.
   }
 
-  bool is_external_texture =
+  [[maybe_unused]] bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
   FML_DCHECK(!is_external_texture);
 
