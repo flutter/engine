@@ -184,8 +184,21 @@ bool ExperimentalCanvas::Restore() {
     return false;
   }
 
-  FML_CHECK(transform_stack_.back().clip_depth >= current_depth_)
-      << transform_stack_.back().clip_depth << " >=? " << current_depth_;
+  // This check is important to make sure we didn't exceed the depth
+  // that the clips were rendered at while rendering any of the
+  // rendering ops. It is OK for the current depth to equal the
+  // outgoing clip depth because that means the clipping would have
+  // been successful up through the last rendering op, but it cannot
+  // be greater.
+  // Also, we bump the current rendering depth to the outgoing clip
+  // depth so that future rendering operations are not clipped by
+  // any of the pixels set by the expiring clips. It is OK for the
+  // estimates used to determine the clip depth in save/saveLayer
+  // to be overly conservative, but we need to jump the depth to
+  // the clip depth so that the next rendering op will get a
+  // larger depth (it will pre-increment the current_depth_ value).
+  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   current_depth_ = transform_stack_.back().clip_depth;
 
   if (transform_stack_.back().rendering_mode ==
@@ -277,6 +290,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   // Eventually the DisplayList should optimize these out, but it is hard
   // to know if a clip will actually be used in advance of storing it in
   // the DisplayList buffer.
+  // See https://github.com/flutter/flutter/issues/147021
   FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(transform_stack_.back().clip_depth);
