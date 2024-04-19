@@ -885,8 +885,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 #pragma mark - Framework-internal methods
 
 - (void)addViewController:(FlutterViewController*)controller {
-  // Adding a view controller when there is no implicit view should always
-  // assign it to the implicit view controller.
+  // FlutterEngine can only handle the implicit view for now. Adding more views
+  // throws an assertion.
   NSAssert(self.viewController == nil,
            @"The engine already has a view controller for the implicit view.");
   self.viewController = controller;
