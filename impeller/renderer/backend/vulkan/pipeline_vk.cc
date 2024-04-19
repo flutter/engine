@@ -212,6 +212,28 @@ fml::StatusOr<vk::UniqueDescriptorSetLayout> MakeDescriptorSetLayout(
 
   return fml::StatusOr<vk::UniqueDescriptorSetLayout>(std::move(descs_layout));
 }
+
+fml::StatusOr<vk::UniquePipelineLayout> MakePipelineLayout(
+    const PipelineDescriptor& desc,
+    const std::shared_ptr<DeviceHolderVK>& device_holder,
+    const vk::DescriptorSetLayout& descs_layout) {
+  vk::PipelineLayoutCreateInfo pipeline_layout_info;
+  pipeline_layout_info.setSetLayouts(descs_layout);
+  auto pipeline_layout = device_holder->GetDevice().createPipelineLayoutUnique(
+      pipeline_layout_info);
+  if (pipeline_layout.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create pipeline layout for pipeline "
+                   << desc.GetLabel() << ": "
+                   << vk::to_string(pipeline_layout.result);
+    return {fml::Status(fml::StatusCode::kUnknown,
+                        "Could not create pipeline layout for pipeline.")};
+  }
+
+  ContextVK::SetDebugName(device_holder->GetDevice(), *pipeline_layout.value,
+                          "Pipeline Layout " + desc.GetLabel());
+
+  return std::move(pipeline_layout.value);
+}
 }  // namespace
 
 std::unique_ptr<PipelineVK> PipelineVK::Create(
@@ -413,17 +435,12 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   //----------------------------------------------------------------------------
   /// Create the pipeline layout.
   ///
-  vk::PipelineLayoutCreateInfo pipeline_layout_info;
-  pipeline_layout_info.setSetLayouts(descs_layout.value().get());
-  auto pipeline_layout = device_holder->GetDevice().createPipelineLayoutUnique(
-      pipeline_layout_info);
-  if (pipeline_layout.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create pipeline layout for pipeline "
-                   << desc.GetLabel() << ": "
-                   << vk::to_string(pipeline_layout.result);
+  fml::StatusOr<vk::UniquePipelineLayout> pipeline_layout =
+      MakePipelineLayout(desc, device_holder, descs_layout.value().get());
+  if (!pipeline_layout.ok()) {
     return nullptr;
   }
-  pipeline_info.setLayout(pipeline_layout.value.get());
+  pipeline_info.setLayout(pipeline_layout.value().get());
 
   //----------------------------------------------------------------------------
   /// Create the depth stencil state.
@@ -458,20 +475,18 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
     ReportPipelineCreationFeedback(desc, feedback);
   }
 
-  ContextVK::SetDebugName(device_holder->GetDevice(), *pipeline_layout.value,
-                          "Pipeline Layout " + desc.GetLabel());
   ContextVK::SetDebugName(device_holder->GetDevice(), *pipeline,
                           "Pipeline " + desc.GetLabel());
 
   auto pipeline_vk = std::unique_ptr<PipelineVK>(new PipelineVK(
-      device_holder,                     //
-      library,                           //
-      desc,                              //
-      std::move(pipeline),               //
-      std::move(render_pass),            //
-      std::move(pipeline_layout.value),  //
-      std::move(descs_layout.value()),           //
-      std::move(immutable_sampler)       //
+      device_holder,                       //
+      library,                             //
+      desc,                                //
+      std::move(pipeline),                 //
+      std::move(render_pass),              //
+      std::move(pipeline_layout.value()),  //
+      std::move(descs_layout.value()),     //
+      std::move(immutable_sampler)         //
       ));
   if (!pipeline_vk->IsValid()) {
     VALIDATION_LOG << "Could not create a valid pipeline.";
