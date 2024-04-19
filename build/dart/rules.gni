@@ -470,6 +470,9 @@ template("dart_executable") {
       args = [ dart ]
       args += exe_vm_args
       args += [ rebase_path(main_dart) ]
+      metadata = {
+        action_type = [ "dart_executable" ]
+      }
     }
   } else {
     dart_action(target_name) {
@@ -485,6 +488,9 @@ template("dart_executable") {
       outputs = [ output ]
       vm_args = exe_vm_args
       args = []
+      metadata = {
+        action_type = [ "dart_executable" ]
+      }
     }
   }
 }
