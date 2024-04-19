@@ -141,9 +141,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     pipeline_method = &ContentContext::GetTiledTexturePipeline;
   }
 #else
-  pipeline_method = uses_emulated_tile_mode
-                        ? &ContentContext::GetTiledTexturePipeline
-                        : &ContentContext::GetTexturePipeline;
+  pipeline_method = &ContentContext::GetTiledTexturePipeline;
 #endif  // IMPELLER_ENABLE_OPENGLES
 
   PipelineBuilderCallback pipeline_callback =
