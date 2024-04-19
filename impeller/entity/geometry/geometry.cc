@@ -53,27 +53,6 @@ GeometryResult Geometry::ComputePositionGeometry(
   };
 }
 
-VertexBufferBuilder<TextureFillVertexShader::PerVertexData>
-ComputeUVGeometryCPU(
-    VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& input,
-    Point texture_origin,
-    Size texture_coverage,
-    Matrix effect_transform) {
-  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vertex_builder;
-  vertex_builder.Reserve(input.GetVertexCount());
-  input.IterateVertices(
-      [&vertex_builder, &texture_coverage, &effect_transform,
-       &texture_origin](SolidFillVertexShader::PerVertexData old_vtx) {
-        TextureFillVertexShader::PerVertexData data;
-        data.position = old_vtx.position;
-        data.texture_coords = effect_transform *
-                              (old_vtx.position - texture_origin) /
-                              texture_coverage;
-        vertex_builder.AppendVertex(data);
-      });
-  return vertex_builder;
-}
-
 GeometryResult::Mode Geometry::GetResultMode() const {
   return GeometryResult::Mode::kNormal;
 }
