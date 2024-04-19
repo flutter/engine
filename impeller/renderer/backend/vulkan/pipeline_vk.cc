@@ -251,6 +251,37 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
 
   const auto& pso_cache = PipelineLibraryVK::Cast(*library).GetPSOCache();
 
+  //----------------------------------------------------------------------------
+  /// Pipeline Layout a.k.a the descriptor sets and uniforms.
+  ///
+  fml::StatusOr<vk::UniqueDescriptorSetLayout> descs_layout =
+      MakeDescriptorSetLayout(desc, device_holder, immutable_sampler);
+  if (!descs_layout.ok()) {
+    return nullptr;
+  }
+
+  //----------------------------------------------------------------------------
+  /// Create the pipeline layout.
+  ///
+  fml::StatusOr<vk::UniquePipelineLayout> pipeline_layout =
+      MakePipelineLayout(desc, device_holder, descs_layout.value().get());
+  if (!pipeline_layout.ok()) {
+    return nullptr;
+  }
+
+  //----------------------------------------------------------------------------
+  /// Create the render pass.
+  ///
+  vk::UniqueRenderPass render_pass =
+      CreateCompatRenderPassForPipeline(device_holder->GetDevice(), desc);
+  if (!render_pass) {
+    VALIDATION_LOG << "Could not create render pass for pipeline.";
+    return nullptr;
+  }
+
+  //----------------------------------------------------------------------------
+  /// Create the pipeline.
+  ///
   vk::StructureChain<vk::GraphicsPipelineCreateInfo,
                      vk::PipelineCreationFeedbackCreateInfoEXT>
       chain;
@@ -264,6 +295,7 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   }
 
   auto& pipeline_info = chain.get<vk::GraphicsPipelineCreateInfo>();
+  pipeline_info.setLayout(pipeline_layout.value().get());
 
   //----------------------------------------------------------------------------
   /// Dynamic States
@@ -375,16 +407,6 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   blend_state.setAttachments(attachment_blend_state);
   pipeline_info.setPColorBlendState(&blend_state);
 
-  auto render_pass =
-      CreateCompatRenderPassForPipeline(device_holder->GetDevice(),  //
-                                        desc                         //
-      );
-
-  if (!render_pass) {
-    VALIDATION_LOG << "Could not create render pass for pipeline.";
-    return nullptr;
-  }
-
   // Convention wisdom says that the base acceleration pipelines are never used
   // by drivers for cache hits. Instead, the PSO cache is the preferred
   // mechanism.
@@ -422,25 +444,6 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   vertex_input_state.setVertexBindingDescriptions(buffer_descs);
 
   pipeline_info.setPVertexInputState(&vertex_input_state);
-
-  //----------------------------------------------------------------------------
-  /// Pipeline Layout a.k.a the descriptor sets and uniforms.
-  ///
-  fml::StatusOr<vk::UniqueDescriptorSetLayout> descs_layout =
-      MakeDescriptorSetLayout(desc, device_holder, immutable_sampler);
-  if (!descs_layout.ok()) {
-    return nullptr;
-  }
-
-  //----------------------------------------------------------------------------
-  /// Create the pipeline layout.
-  ///
-  fml::StatusOr<vk::UniquePipelineLayout> pipeline_layout =
-      MakePipelineLayout(desc, device_holder, descs_layout.value().get());
-  if (!pipeline_layout.ok()) {
-    return nullptr;
-  }
-  pipeline_info.setLayout(pipeline_layout.value().get());
 
   //----------------------------------------------------------------------------
   /// Create the depth stencil state.
