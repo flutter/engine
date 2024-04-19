@@ -101,7 +101,8 @@
                 "os=Linux"
             ],
             "dependencies": [
-                "host_debug_unopt"
+                "ci/android_debug",
+		"ci/host_debug"
             ],
             "shard": "framework_tests",
             "subshard": "widgets"
@@ -113,7 +114,8 @@
                 "os=Linux"
             ],
             "dependencies": [
-                "host_debug_unopt"
+                "ci/android_debug",
+		"ci/host_debug"
             ],
             "_comment": "shard/subshard strings are defined in framework test runner: dev/bots/test.dart, and are consistent with properties defined in framework .ciyaml targets",
             "shard": "framework_tests",
@@ -126,7 +128,8 @@
                 "os=Linux"
             ],
             "dependencies": [
-                "host_debug_unopt"
+                "ci/android_debug",
+		"ci/host_debug"
             ],
             "_comment": "validation strings are consistent with properties defined in framework .ciyaml targets",
             "validation": "analyze",
