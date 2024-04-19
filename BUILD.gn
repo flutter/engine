@@ -131,6 +131,7 @@ group("flutter") {
     public_deps += [
       "//flutter/shell/testing",
       "//flutter/tools/const_finder",
+      "//flutter/tools/engine_tool",
       "//flutter/tools/font_subset",
     ]
   }
