@@ -41,12 +41,17 @@ FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
   FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
 }
 
+void FlutterCompositor::AddView(FlutterViewId view_id) {
+  presenters_.try_emplace(view_id);
+}
+
+void FlutterCompositor::RemoveView(FlutterViewId view_id) {
+  presenters_.erase(view_id);
+}
+
 bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
                                            FlutterBackingStore* backing_store_out) {
-  // TODO(dkwingsmt): This class only supports single-view for now. As more
-  // classes are gradually converted to multi-view, it should get the view ID
-  // from somewhere.
-  FlutterView* view = [view_provider_ viewForIdentifier:kFlutterImplicitViewId];
+  FlutterView* view = [view_provider_ viewForIdentifier:config->view_id];
   if (!view) {
     return false;
   }
@@ -103,16 +108,25 @@ bool FlutterCompositor::Present(FlutterViewIdentifier view_id,
   // the layer information instead of passing the original pointers from embedder.
   auto layers_copy = std::make_shared<std::vector<LayerVariant>>(CopyLayers(layers, layers_count));
 
-  [view.surfaceManager
-      presentSurfaces:surfaces
-               atTime:presentation_time
-               notify:^{
-                 // Gets a presenter or create a new one for the view.
-                 ViewPresenter& presenter = presenters_[view_id];
-                 presenter.PresentPlatformViews(view, *layers_copy, platform_view_controller_);
-               }];
+  [view.surfaceManager presentSurfaces:surfaces
+                                atTime:presentation_time
+                                notify:^{
+        // Accessing presenters_ here does not need a lock to avoid race
+        // condition with AddView and RemoveView, as long as the latter take
+        // place on the platform thread, because presenting must take place on
+        // the platform thread due to macOS's requirement.
+                                  auto found_presenter = presenters_.find(view_id);
+                                  if (found_presenter != presenters_.end()) {
+                                    found_presenter->second.PresentPlatformViews(
+                                        view, *layers_copy, platform_view_controller_);
+                                  }
+                                }];
 
   return true;
+}
+
+size_t FlutterCompositor::DebugNumViews() {
+  return presenters_.size();
 }
 
 FlutterCompositor::ViewPresenter::ViewPresenter()
