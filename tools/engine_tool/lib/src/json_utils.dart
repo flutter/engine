@@ -117,3 +117,11 @@ List<String>? getListOfString(Map<String, Object?> map, String field) {
   }
   return (map[field]! as List<Object?>).cast<String>();
 }
+
+/// Returns the value in map[field] iff it is a Map<String, Object?>. null otherwise.
+Map<String, Object?>? getMap(Map<String, Object?> map, String field) {
+  if (map[field] case final Map<String, Object?> value) {
+    return value;
+  }
+  return null;
+}

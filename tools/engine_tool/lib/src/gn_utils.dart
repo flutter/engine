@@ -32,8 +32,13 @@ enum BuildTargetType {
   staticLibrary,
 }
 
-BuildTargetType? _buildTargetTypeFromString(String type) {
+BuildTargetType? _buildTargetTypeFromString(String type, Map<String, Object?>? metadata) {
   switch (type) {
+    case 'action':
+      if (_getActionType(metadata) == 'dart_executable') {
+        return BuildTargetType.executable;
+      }
+      return null;
     case 'executable':
       return BuildTargetType.executable;
     case 'shared_library':
@@ -44,6 +49,16 @@ BuildTargetType? _buildTargetTypeFromString(String type) {
       // We ignore a number of types here.
       return null;
   }
+}
+
+String? _getActionType(Map<String, Object?>? metadata) {
+  if (metadata != null) {
+    final List<String>? action_type = getListOfString(metadata, 'action_type');
+    if (action_type != null && action_type.isNotEmpty) {
+      return action_type[0];
+    }
+  }
+  return null;
 }
 
 // TODO(johnmccutchan): What should we do about source_sets and other
@@ -92,7 +107,8 @@ Future<Map<String, BuildTarget>> findTargets(
     if (typeString == null) {
       environment.logger.fatal('gn desc is missing target type: $properties');
     }
-    final BuildTargetType? type = _buildTargetTypeFromString(typeString!);
+    final Map<String, Object?>? metadata = getMap(properties, 'metadata');
+    final BuildTargetType? type = _buildTargetTypeFromString(typeString!, metadata);
     if (type == null) {
       // Target is a type that we don't support.
       continue;
