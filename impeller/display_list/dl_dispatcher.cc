@@ -610,20 +610,8 @@ void DlDispatcherBase::setImageFilter(const flutter::DlImageFilter* filter) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::save() {
-  FML_UNREACHABLE();
-}
-
-// |flutter::DlOpReceiver|
 void DlDispatcherBase::save(uint32_t total_content_depth) {
   GetCanvas().Save(total_content_depth);
-}
-
-// |flutter::DlOpReceiver|
-void DlDispatcherBase::saveLayer(const SkRect& bounds,
-                                 const flutter::SaveLayerOptions options,
-                                 const flutter::DlImageFilter* backdrop) {
-  FML_UNREACHABLE();
 }
 
 // |flutter::DlOpReceiver|
