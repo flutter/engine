@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 
 #include "flutter/fml/make_copyable.h"
+#include "flutter/fml/status_or.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/timing.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
@@ -163,6 +164,55 @@ static vk::UniqueRenderPass CreateCompatRenderPassForPipeline(
 
   return pass;
 }
+
+namespace {
+fml::StatusOr<vk::UniqueDescriptorSetLayout> MakeDescriptorSetLayout(
+    const PipelineDescriptor& desc,
+    const std::shared_ptr<DeviceHolderVK>& device_holder,
+    std::shared_ptr<SamplerVK> immutable_sampler) {
+  std::vector<vk::DescriptorSetLayoutBinding> set_bindings;
+
+  vk::Sampler vk_immutable_sampler =
+      immutable_sampler ? immutable_sampler->GetSampler()
+                        : static_cast<vk::Sampler>(VK_NULL_HANDLE);
+
+  for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
+    vk::DescriptorSetLayoutBinding set_binding;
+    set_binding.binding = layout.binding;
+    set_binding.descriptorCount = 1u;
+    set_binding.descriptorType = ToVKDescriptorType(layout.descriptor_type);
+    set_binding.stageFlags = ToVkShaderStage(layout.shader_stage);
+    // TODO(143719): This specifies the immutable sampler for all sampled
+    // images. This is incorrect. In cases where the shader samples from the
+    // multiple images, there is currently no way to tell which sampler needs to
+    // be immutable and which one needs a binding set in the render pass. Expect
+    // errors if the shader has more than on sampled image. The sampling from
+    // the one that is expected to be non-immutable will be incorrect.
+    if (vk_immutable_sampler &&
+        layout.descriptor_type == DescriptorType::kSampledImage) {
+      set_binding.setImmutableSamplers(vk_immutable_sampler);
+    }
+    set_bindings.push_back(set_binding);
+  }
+
+  vk::DescriptorSetLayoutCreateInfo desc_set_layout_info;
+  desc_set_layout_info.setBindings(set_bindings);
+
+  auto [descs_result, descs_layout] =
+      device_holder->GetDevice().createDescriptorSetLayoutUnique(
+          desc_set_layout_info);
+  if (descs_result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "unable to create uniform descriptors";
+    return {fml::Status(fml::StatusCode::kUnknown,
+                        "unable to create uniform descriptors")};
+  }
+
+  ContextVK::SetDebugName(device_holder->GetDevice(), descs_layout.get(),
+                          "Descriptor Set Layout " + desc.GetLabel());
+
+  return fml::StatusOr<vk::UniqueDescriptorSetLayout>(std::move(descs_layout));
+}
+}  // namespace
 
 std::unique_ptr<PipelineVK> PipelineVK::Create(
     const PipelineDescriptor& desc,
@@ -354,50 +404,17 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   //----------------------------------------------------------------------------
   /// Pipeline Layout a.k.a the descriptor sets and uniforms.
   ///
-  std::vector<vk::DescriptorSetLayoutBinding> set_bindings;
-
-  vk::Sampler vk_immutable_sampler =
-      immutable_sampler ? immutable_sampler->GetSampler()
-                        : static_cast<vk::Sampler>(VK_NULL_HANDLE);
-
-  for (auto layout : desc.GetVertexDescriptor()->GetDescriptorSetLayouts()) {
-    vk::DescriptorSetLayoutBinding set_binding;
-    set_binding.binding = layout.binding;
-    set_binding.descriptorCount = 1u;
-    set_binding.descriptorType = ToVKDescriptorType(layout.descriptor_type);
-    set_binding.stageFlags = ToVkShaderStage(layout.shader_stage);
-    // TODO(143719): This specifies the immutable sampler for all sampled
-    // images. This is incorrect. In cases where the shader samples from the
-    // multiple images, there is currently no way to tell which sampler needs to
-    // be immutable and which one needs a binding set in the render pass. Expect
-    // errors if the shader has more than on sampled image. The sampling from
-    // the one that is expected to be non-immutable will be incorrect.
-    if (vk_immutable_sampler &&
-        layout.descriptor_type == DescriptorType::kSampledImage) {
-      set_binding.setImmutableSamplers(vk_immutable_sampler);
-    }
-    set_bindings.push_back(set_binding);
-  }
-
-  vk::DescriptorSetLayoutCreateInfo desc_set_layout_info;
-  desc_set_layout_info.setBindings(set_bindings);
-
-  auto [descs_result, descs_layout] =
-      device_holder->GetDevice().createDescriptorSetLayoutUnique(
-          desc_set_layout_info);
-  if (descs_result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "unable to create uniform descriptors";
+  fml::StatusOr<vk::UniqueDescriptorSetLayout> descs_layout =
+      MakeDescriptorSetLayout(desc, device_holder, immutable_sampler);
+  if (!descs_layout.ok()) {
     return nullptr;
   }
-
-  ContextVK::SetDebugName(device_holder->GetDevice(), descs_layout.get(),
-                          "Descriptor Set Layout " + desc.GetLabel());
 
   //----------------------------------------------------------------------------
   /// Create the pipeline layout.
   ///
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
-  pipeline_layout_info.setSetLayouts(descs_layout.get());
+  pipeline_layout_info.setSetLayouts(descs_layout.value().get());
   auto pipeline_layout = device_holder->GetDevice().createPipelineLayoutUnique(
       pipeline_layout_info);
   if (pipeline_layout.result != vk::Result::eSuccess) {
@@ -453,7 +470,7 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
       std::move(pipeline),               //
       std::move(render_pass),            //
       std::move(pipeline_layout.value),  //
-      std::move(descs_layout),           //
+      std::move(descs_layout.value()),           //
       std::move(immutable_sampler)       //
       ));
   if (!pipeline_vk->IsValid()) {
