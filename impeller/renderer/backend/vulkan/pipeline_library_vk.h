@@ -36,6 +36,10 @@ class PipelineLibraryVK final
 
   const std::shared_ptr<fml::ConcurrentTaskRunner>& GetWorkerTaskRunner() const;
 
+  // |PipelineLibrary|
+  std::vector<PipelineFuture<PipelineDescriptor>> GetPipelines(
+      const std::vector<PipelineDescriptor>& descriptors) override;
+
  private:
   friend ContextVK;
 

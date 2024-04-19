@@ -504,6 +504,14 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   return pipeline_vk;
 }
 
+std::vector<std::unique_ptr<PipelineVK>> PipelineVK::Create(
+    const std::vector<PipelineDescriptor>& descs,
+    const std::shared_ptr<DeviceHolderVK>& device_holder,
+    const std::weak_ptr<PipelineLibrary>& weak_library) {
+  std::vector<std::unique_ptr<PipelineVK>> result;
+  return result;
+}
+
 PipelineVK::PipelineVK(std::weak_ptr<DeviceHolderVK> device_holder,
                        std::weak_ptr<PipelineLibrary> library,
                        const PipelineDescriptor& desc,

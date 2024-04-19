@@ -155,6 +155,62 @@ std::unique_ptr<ComputePipelineVK> PipelineLibraryVK::CreateComputePipeline(
   );
 }
 
+std::vector<PipelineFuture<PipelineDescriptor>> PipelineLibraryVK::GetPipelines(
+    const std::vector<PipelineDescriptor>& descriptors) {
+  std::vector<PipelineFuture<PipelineDescriptor>> result;
+  result.reserve(descriptors.size());
+
+  Lock lock(pipelines_mutex_);
+  if (!IsValid()) {
+    for (const PipelineDescriptor& descriptor : descriptors) {
+      result.push_back(
+          {descriptor,
+           RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
+               nullptr)});
+    }
+    return result;
+  }
+
+  std::vector<std::shared_ptr<
+      NoExceptionPromise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>>
+      promises;
+  promises.reserve(descriptors.size());
+  for (const PipelineDescriptor& descriptor : descriptors) {
+    auto promise = std::make_shared<
+        NoExceptionPromise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
+    auto pipeline_future =
+        PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
+    promises.emplace_back(std::move(promise));
+    pipelines_[descriptor] = pipeline_future;
+    result.emplace_back(std::move(pipeline_future));
+  }
+
+  auto weak_this = weak_from_this();
+
+  worker_task_runner_->PostTask([descriptors, weak_this,
+                                 promises = std::move(promises)]() {
+    auto thiz = weak_this.lock();
+    if (!thiz) {
+      for (const auto& promise : promises) {
+        promise->set_value(nullptr);
+      }
+      VALIDATION_LOG << "Pipeline library was collected before the pipelines "
+                        "could be created.";
+      return;
+    }
+
+    auto pipelines = PipelineVK::Create(
+        descriptors, PipelineLibraryVK::Cast(*thiz).device_holder_.lock(),
+        weak_this);
+    FML_DCHECK(pipelines.size() == promises.size());
+    for (size_t i = 0; i < pipelines.size(); ++i) {
+      promises[i]->set_value(std::move(pipelines[i]));
+    }
+  });
+
+  return result;
+}
+
 // |PipelineLibrary|
 PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor) {

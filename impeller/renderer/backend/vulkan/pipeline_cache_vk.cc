@@ -145,6 +145,26 @@ vk::UniquePipeline PipelineCacheVK::CreatePipeline(
   return std::move(pipeline);
 }
 
+fml::StatusOr<std::vector<vk::UniquePipeline>> PipelineCacheVK::CreatePipelines(
+    const std::vector<vk::GraphicsPipelineCreateInfo>& infos) {
+  std::shared_ptr<DeviceHolderVK> strong_device = device_holder_.lock();
+  if (!strong_device) {
+    return {
+        fml::Status(fml::StatusCode::kUnavailable, "The device is expired.")};
+  }
+
+  vk::ResultValue<std::vector<vk::UniquePipeline>> result =
+      strong_device->GetDevice().createGraphicsPipelinesUnique(*cache_, infos);
+  if (result.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create graphics pipelines: "
+                   << vk::to_string(result.result);
+    return {fml::Status(fml::StatusCode::kInvalidArgument,
+                        vk::to_string(result.result))};
+  }
+
+  return {std::move(result.value)};
+}
+
 std::shared_ptr<fml::Mapping> PipelineCacheVK::CopyPipelineCacheData() const {
   std::shared_ptr<DeviceHolderVK> strong_device = device_holder_.lock();
   if (!strong_device) {

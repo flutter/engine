@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_PIPELINE_CACHE_VK_H_
 
 #include "flutter/fml/file.h"
+#include "flutter/fml/status_or.h"
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/device_holder_vk.h"
@@ -29,6 +30,9 @@ class PipelineCacheVK {
   vk::UniquePipeline CreatePipeline(const vk::GraphicsPipelineCreateInfo& info);
 
   vk::UniquePipeline CreatePipeline(const vk::ComputePipelineCreateInfo& info);
+
+  fml::StatusOr<std::vector<vk::UniquePipeline>> CreatePipelines(
+      const std::vector<vk::GraphicsPipelineCreateInfo>& infos);
 
   const CapabilitiesVK* GetCapabilities() const;
 

@@ -48,6 +48,9 @@ class PipelineLibrary : public std::enable_shared_from_this<PipelineLibrary> {
   virtual void RemovePipelinesWithEntryPoint(
       std::shared_ptr<const ShaderFunction> function) = 0;
 
+  virtual std::vector<PipelineFuture<PipelineDescriptor>> GetPipelines(
+      const std::vector<PipelineDescriptor>& descriptors);
+
  protected:
   PipelineLibrary();
 

@@ -32,4 +32,14 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibrary::GetPipeline(
   return {descriptor, promise->get_future()};
 }
 
+std::vector<PipelineFuture<PipelineDescriptor>> PipelineLibrary::GetPipelines(
+    const std::vector<PipelineDescriptor>& descriptors) {
+  std::vector<PipelineFuture<PipelineDescriptor>> result;
+  result.reserve(descriptors.size());
+  for (const PipelineDescriptor& descriptor : descriptors) {
+    result.emplace_back(GetPipeline(descriptor));
+  }
+  return result;
+}
+
 }  // namespace impeller
