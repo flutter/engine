@@ -707,8 +707,7 @@ void DisplayListBuilder::SaveLayer(const SkRect* bounds,
 }
 
 void DisplayListBuilder::Translate(SkScalar tx, SkScalar ty) {
-  if (std::isfinite(tx) && std::isfinite(ty) &&
-      (tx != 0.0 || ty != 0.0)) {
+  if (std::isfinite(tx) && std::isfinite(ty) && (tx != 0.0 || ty != 0.0)) {
     checkForDeferredSave();
     Push<TranslateOp>(0, tx, ty);
     tracker_.translate(tx, ty);
@@ -718,8 +717,7 @@ void DisplayListBuilder::Translate(SkScalar tx, SkScalar ty) {
   }
 }
 void DisplayListBuilder::Scale(SkScalar sx, SkScalar sy) {
-  if (std::isfinite(sx) && std::isfinite(sy) &&
-      (sx != 1.0 || sy != 1.0)) {
+  if (std::isfinite(sx) && std::isfinite(sy) && (sx != 1.0 || sy != 1.0)) {
     checkForDeferredSave();
     Push<ScaleOp>(0, sx, sy);
     tracker_.scale(sx, sy);
@@ -739,8 +737,7 @@ void DisplayListBuilder::Rotate(SkScalar degrees) {
   }
 }
 void DisplayListBuilder::Skew(SkScalar sx, SkScalar sy) {
-  if (std::isfinite(sx) && std::isfinite(sy) &&
-      (sx != 0.0 || sy != 0.0)) {
+  if (std::isfinite(sx) && std::isfinite(sy) && (sx != 0.0 || sy != 0.0)) {
     checkForDeferredSave();
     Push<SkewOp>(0, sx, sy);
     tracker_.skew(sx, sy);
