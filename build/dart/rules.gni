@@ -410,14 +410,24 @@ template("application_snapshot") {
   }
 }
 
-# Generates a Dart executable using `dart compile exe`
+# Generates an executable from Dart code using `dart compile exe`.
+#
+# This rule is primarily intended to be used to compile test targets for use
+# by engine developers to build and run test code written in Dart in the engine
+# repo, in particular via the `et` tool. It is NOT intended for use in
+# generating production-ready user-facing binaries.
+#
+# See: //flutter/tools/engine_tool for more information on `et`.
 #
 # Arguments
 #  main_dart (required):
 #    The Dart entrypoint file.
 #
-#  package_config (required):
-#    The packages.json file for the app.
+#  package_config (optional):
+#    The packages.json file for the Dart package (if any). Required when
+#    building libraries that are part of packages with Dart dependencies.
+#    Not needed when building standalone Dart code that is not part of a
+#    package.
 #
 #  output (optional):
 #    The output executable name. By default, the target name. On Windows, an
@@ -432,22 +442,20 @@ template("dart_executable") {
 
   main_dart = invoker.main_dart
 
-  package_config = rebase_path(".dart_tool/package_config.json")
-  if (defined(invoker.package_config)) {
-    package_config = rebase_path(invoker.package_config)
-  }
   name = target_name
 
   extra_deps = []
   if (defined(invoker.deps)) {
     extra_deps += invoker.deps
   }
-
   extra_inputs = [ main_dart ]
   if (defined(invoker.inputs)) {
     extra_inputs += invoker.inputs
   }
-  extra_inputs += [ package_config ]
+  if (defined(invoker.package_config)) {
+    package_config = rebase_path(invoker.package_config)
+    extra_inputs += [ package_config ]
+  }
 
   ext = ""
   if (is_win) {
@@ -467,9 +475,11 @@ template("dart_executable") {
   exe_vm_args += [
     "compile",
     "exe",
-    "--packages=$package_config",
     "--output=$abs_output",
   ]
+  if (defined(package_config)) {
+    exe_vm_args += [ "--packages=$package_config" ]
+  }
 
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {

@@ -30,59 +30,71 @@ group("tests") {
 dart_executable("build_command_test") {
   testonly = true
   main_dart = "test/build_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("entry_point_test") {
   testonly = true
   main_dart = "test/entry_point_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("fetch_command_test") {
   testonly = true
   main_dart = "test/fetch_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("format_command_test") {
   testonly = true
   main_dart = "test/format_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("gn_utils_test") {
   testonly = true
   main_dart = "test/gn_utils_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("lint_command_test") {
   testonly = true
   main_dart = "test/lint_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("logger_test") {
   testonly = true
   main_dart = "test/logger_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("proc_utils_test") {
   testonly = true
   main_dart = "test/proc_utils_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("query_command_test") {
   testonly = true
   main_dart = "test/query_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("run_command_test") {
   testonly = true
   main_dart = "test/run_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("test_command_test") {
   testonly = true
   main_dart = "test/test_command_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
 
 dart_executable("worker_pool_test") {
   testonly = true
   main_dart = "test/worker_pool_test.dart"
+  package_config = ".dart_tool/package_config.json"
 }
