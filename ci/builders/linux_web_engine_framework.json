@@ -1,6 +1,39 @@
 {
     "builds": [
         {
+            "name": "web_tests/artifacts",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux",
+                "cores=32"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "download_emsdk": true
+            },
+            "gn": [
+                "--web",
+                "--runtime-mode=release",
+                "--no-goma"
+            ],
+            "ninja": {
+                "config": "wasm_release",
+                "targets": [
+                    "flutter/web_sdk:flutter_web_sdk_archive"
+                ]
+            },
+            "archives": [
+                {
+                    "name": "wasm_release",
+                    "base_path": "out/wasm_release/zip_archives/",
+                    "type": "gcs",
+                    "include_paths": [
+                        "out/wasm_release/zip_archives/flutter-web-sdk.zip"
+                    ]
+                }
+            ]
+        },
+        {
             "archives": [
                 {
                     "name": "ci/host_debug",
@@ -139,7 +172,7 @@
     ],
     "tests": [
         {
-            "name": "test: lint host_debug widgets",
+            "name": "web_tests-0",
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
@@ -147,45 +180,188 @@
             "dependencies": [
                 "ci/android_debug",
                 "ci/host_debug",
-                "ci/host_release"
-            ],
-            "shard": "framework_tests",
-            "subshard": "widgets"
-        },
-        {
-            "name": "test: lint host_debug library",
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "dependencies": [
-                "ci/android_debug",
-                "ci/host_debug",
-                "ci/host_release"
-            ],
-            "_comment": "shard/subshard strings are defined in framework test runner: dev/bots/test.dart, and are consistent with properties defined in framework .ciyaml targets",
-            "shard": "framework_tests",
-            "subshard": "libraries"
-        },
-        {
-            "name": "test: flutter analyze",
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "dependencies": [
-                "ci/android_debug",
-                "ci/host_debug",
-                "ci/host_release"
+                "ci/host_release",
+                "web_tests/artifacts"
             ],
             "test_dependencies": [
                 {
-                    "dependency": "ktlint",
-                    "version": "version_1_1_1"
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
                 }
             ],
-            "_comment": "validation strings are consistent with properties defined in framework .ciyaml targets",
-            "shard": "analyze"
+            "shard": "0"
+        },
+        {
+            "name": "web_tests-1",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "1"
+        },
+        {
+            "name": "web_tests-2",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "2"
+        },
+        {
+            "name": "web_tests-3",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "3"
+        },
+        {
+            "name": "web_tests-4",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "4"
+        },
+        {
+            "name": "web_tests-5",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "5"
+        },
+        {
+            "name": "web_tests-6",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "6"
+        },
+        {
+            "name": "web_tests-7_last",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [
+                "ci/android_debug",
+                "ci/host_debug",
+                "ci/host_release",
+                "web_tests/artifacts"
+            ],
+            "test_dependencies": [
+                {
+                    "dependency": "chrome_and_driver",
+                    "version": "version:119.0.6045.9"
+                },
+                {
+                    "dependency": "curl",
+                    "version": "version:7.64.0"
+                }
+            ],
+            "shard": "7_last"
         }
     ]
 }
