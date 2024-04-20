@@ -72,7 +72,7 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
 
     final List<BuildTarget> testTargets = <BuildTarget>[];
     for (final BuildTarget target in selectedTargets) {
-      if (target.testOnly && target.type == BuildTargetType.executable) {
+      if (_isTestExecutable(target)) {
         testTargets.add(target);
       }
       if (target.executable == null) {
@@ -101,5 +101,10 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
           target.label, environment, environment.engine.srcDir, commandLine));
     }
     return await workerPool.run(tasks) ? 0 : 1;
+  }
+
+  /// Returns true if `target` is a testonly executable.
+  static bool _isTestExecutable(BuildTarget target) {
+    return target.testOnly && target.type == BuildTargetType.executable;
   }
 }
