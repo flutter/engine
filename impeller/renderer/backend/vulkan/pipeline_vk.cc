@@ -234,54 +234,13 @@ fml::StatusOr<vk::UniquePipelineLayout> MakePipelineLayout(
 
   return std::move(pipeline_layout.value);
 }
-}  // namespace
 
-std::unique_ptr<PipelineVK> PipelineVK::Create(
+fml::StatusOr<vk::UniquePipeline> MakePipeline(
     const PipelineDescriptor& desc,
     const std::shared_ptr<DeviceHolderVK>& device_holder,
-    const std::weak_ptr<PipelineLibrary>& weak_library,
-    std::shared_ptr<SamplerVK> immutable_sampler) {
-  TRACE_EVENT0("flutter", "PipelineVK::Create");
-
-  auto library = weak_library.lock();
-
-  if (!device_holder || !library) {
-    return nullptr;
-  }
-
-  const auto& pso_cache = PipelineLibraryVK::Cast(*library).GetPSOCache();
-
-  //----------------------------------------------------------------------------
-  /// Pipeline Layout a.k.a the descriptor sets and uniforms.
-  ///
-  fml::StatusOr<vk::UniqueDescriptorSetLayout> descs_layout =
-      MakeDescriptorSetLayout(desc, device_holder, immutable_sampler);
-  if (!descs_layout.ok()) {
-    return nullptr;
-  }
-
-  //----------------------------------------------------------------------------
-  /// Create the pipeline layout.
-  ///
-  fml::StatusOr<vk::UniquePipelineLayout> pipeline_layout =
-      MakePipelineLayout(desc, device_holder, descs_layout.value().get());
-  if (!pipeline_layout.ok()) {
-    return nullptr;
-  }
-
-  //----------------------------------------------------------------------------
-  /// Create the render pass.
-  ///
-  vk::UniqueRenderPass render_pass =
-      CreateCompatRenderPassForPipeline(device_holder->GetDevice(), desc);
-  if (!render_pass) {
-    VALIDATION_LOG << "Could not create render pass for pipeline.";
-    return nullptr;
-  }
-
-  //----------------------------------------------------------------------------
-  /// Create the pipeline.
-  ///
+    const std::shared_ptr<PipelineCacheVK>& pso_cache,
+    const vk::PipelineLayout& pipeline_layout,
+    const vk::RenderPass& render_pass) {
   vk::StructureChain<vk::GraphicsPipelineCreateInfo,
                      vk::PipelineCreationFeedbackCreateInfoEXT>
       chain;
@@ -295,7 +254,7 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   }
 
   auto& pipeline_info = chain.get<vk::GraphicsPipelineCreateInfo>();
-  pipeline_info.setLayout(pipeline_layout.value().get());
+  pipeline_info.setLayout(pipeline_layout);
 
   //----------------------------------------------------------------------------
   /// Dynamic States
@@ -336,7 +295,8 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
     if (!stage.has_value()) {
       VALIDATION_LOG << "Unsupported shader type in pipeline: "
                      << desc.GetLabel();
-      return nullptr;
+      return {fml::Status(fml::StatusCode::kUnknown,
+                          "Unsupported shader type in pipeline.")};
     }
 
     std::vector<vk::SpecializationMapEntry>& entries =
@@ -412,7 +372,7 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   // mechanism.
   pipeline_info.setBasePipelineHandle(VK_NULL_HANDLE);
   pipeline_info.setSubpass(0u);
-  pipeline_info.setRenderPass(render_pass.get());
+  pipeline_info.setRenderPass(render_pass);
 
   //----------------------------------------------------------------------------
   /// Vertex Input Setup
@@ -471,7 +431,8 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   auto pipeline = pso_cache->CreatePipeline(pipeline_info);
   if (!pipeline) {
     VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
-    return nullptr;
+    return {fml::Status(fml::StatusCode::kUnknown,
+                        "Could not create graphics pipeline.")};
   }
 
   if (supports_pipeline_creation_feedback) {
@@ -481,11 +442,56 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   ContextVK::SetDebugName(device_holder->GetDevice(), *pipeline,
                           "Pipeline " + desc.GetLabel());
 
+  return std::move(pipeline);
+}
+}  // namespace
+
+std::unique_ptr<PipelineVK> PipelineVK::Create(
+    const PipelineDescriptor& desc,
+    const std::shared_ptr<DeviceHolderVK>& device_holder,
+    const std::weak_ptr<PipelineLibrary>& weak_library,
+    std::shared_ptr<SamplerVK> immutable_sampler) {
+  TRACE_EVENT0("flutter", "PipelineVK::Create");
+
+  auto library = weak_library.lock();
+
+  if (!device_holder || !library) {
+    return nullptr;
+  }
+
+  const auto& pso_cache = PipelineLibraryVK::Cast(*library).GetPSOCache();
+
+  fml::StatusOr<vk::UniqueDescriptorSetLayout> descs_layout =
+      MakeDescriptorSetLayout(desc, device_holder, immutable_sampler);
+  if (!descs_layout.ok()) {
+    return nullptr;
+  }
+
+  fml::StatusOr<vk::UniquePipelineLayout> pipeline_layout =
+      MakePipelineLayout(desc, device_holder, descs_layout.value().get());
+  if (!pipeline_layout.ok()) {
+    return nullptr;
+  }
+
+  vk::UniqueRenderPass render_pass =
+      CreateCompatRenderPassForPipeline(device_holder->GetDevice(), desc);
+  if (!render_pass) {
+    VALIDATION_LOG << "Could not create render pass for pipeline.";
+    return nullptr;
+  }
+
+  fml::StatusOr<vk::UniquePipeline> pipeline =
+      MakePipeline(desc, device_holder, pso_cache,
+                   pipeline_layout.value().get(), render_pass.get());
+  if (!pipeline.ok()) {
+    return nullptr;
+  }
+
   auto pipeline_vk = std::unique_ptr<PipelineVK>(new PipelineVK(
       device_holder,                       //
       library,                             //
       desc,                                //
-      std::move(pipeline),                 //
+      std::move(pipeline.value()),         //
       std::move(render_pass),              //
       std::move(pipeline_layout.value()),  //
       std::move(descs_layout.value()),     //
