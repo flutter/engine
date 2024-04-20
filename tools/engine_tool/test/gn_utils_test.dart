@@ -39,8 +39,18 @@ void main() {
   final List<CannedProcess> cannedProcesses = <CannedProcess>[
     CannedProcess((List<String> command) => command.contains('desc'),
         stdout: fixtures.gnDescOutput()),
-    CannedProcess((List<String> command) => command.contains('outputs'),
+    CannedProcess((List<String> command) =>
+        command.contains('outputs') && command.contains('//flutter/display_list:display_list_unittests'),
         stdout: 'display_list_unittests'),
+    CannedProcess((List<String> command) =>
+        command.contains('outputs') && command.contains('//flutter/flow:flow_unittests'),
+        stdout: 'flow_unittests'),
+    CannedProcess((List<String> command) =>
+        command.contains('outputs') && command.contains('//flutter/fml:fml_arc_unittests'),
+        stdout: 'fml_arc_unittests'),
+    CannedProcess((List<String> command) =>
+        command.contains('outputs') && command.contains('//flutter/tools/engine_tool:build_command_test'),
+        stdout: 'build_command_test'),
   ];
 
   test('find test targets', () async {
@@ -49,7 +59,7 @@ void main() {
     final Environment env = testEnvironment.environment;
     final Map<String, BuildTarget> testTargets =
         await findTargets(env, engine.outDir);
-    expect(testTargets.length, equals(3));
+    expect(testTargets.length, equals(4));
     expect(testTargets['//flutter/display_list:display_list_unittests'],
         notEquals(null));
     expect(
@@ -57,6 +67,11 @@ void main() {
             .executable!
             .path,
         endsWith('display_list_unittests'));
+    expect(
+        testTargets['//flutter/tools/engine_tool:build_command_test']!
+            .executable!
+            .path,
+        endsWith('build_command_test'));
   });
 
   test('process queue failure', () async {
@@ -65,7 +80,7 @@ void main() {
     final Environment env = testEnvironment.environment;
     final Map<String, BuildTarget> testTargets =
         await findTargets(env, engine.outDir);
-    expect(selectTargets(<String>['//...'], testTargets).length, equals(3));
+    expect(selectTargets(<String>['//...'], testTargets).length, equals(4));
     expect(
         selectTargets(<String>['//flutter/display_list'], testTargets).length,
         equals(0));

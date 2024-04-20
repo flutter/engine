@@ -316,6 +316,21 @@ String gnDescOutput() => '''
       "toolchain": "//build/toolchain/mac:clang_x64",
       "type": "executable",
       "visibility": [ "*" ]
-   }
+   },
+   "//flutter/tools/engine_tool:build_command_test": {
+       "args": [ "../../flutter/prebuilts/macos-x64/dart-sdk/bin/dart", "--deterministic", "compile", "exe", "--packages=/Users/chris/Developer/flutter/engine/src/flutter/tools/engine_tool/.dart_tool/package_config.json", "--output=/Users/chris/Developer/flutter/engine/src/out/host_debug/gen/flutter/tools/engine_tool/build_command_test", "/Users/chris/Developer/flutter/engine/src/flutter/tools/engine_tool/test/build_command_test.dart" ],
+       "deps": [  ],
+       "inputs": [ "//flutter/tools/engine_tool/test/build_command_test.dart", "//flutter/tools/engine_tool/.dart_tool/package_config.json" ],
+       "metadata": {
+          "action_type": [ "dart_executable" ]
+       },
+       "outputs": [ "//out/host_debug/gen/flutter/tools/engine_tool/build_command_test" ],
+       "public": "*",
+       "script": "//build/gn_run_binary.py",
+       "testonly": true,
+       "toolchain": "//build/toolchain/mac:clang_x64",
+       "type": "action",
+       "visibility": [ "*" ]
+    }
 }
 ''';

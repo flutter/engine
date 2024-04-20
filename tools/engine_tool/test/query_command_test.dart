@@ -162,7 +162,7 @@ void main() {
       expect(result, equals(0));
       expect(
         env.logger.testLogs.length,
-        equals(4),
+        equals(5),
       );
       expect(env.logger.testLogs[1].message,
           startsWith('//flutter/display_list:display_list_unittests'));

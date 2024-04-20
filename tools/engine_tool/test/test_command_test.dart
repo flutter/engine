@@ -42,11 +42,13 @@ void main() {
   final List<CannedProcess> cannedProcesses = <CannedProcess>[
     CannedProcess((List<String> command) => command.contains('desc'),
         stdout: fixtures.gnDescOutput()),
-    CannedProcess((List<String> command) => command.contains('outputs'),
+    CannedProcess((List<String> command) => command.contains('outputs') && command.contains('//flutter/display_list:display_list_unittests'),
         stdout: 'display_list_unittests'),
+    CannedProcess((List<String> command) => command.contains('outputs') && command.contains('//flutter/tools/engine_tool:build_command_test'),
+        stdout: 'build_command_test'),
   ];
 
-  test('test command executes test', () async {
+  test('test command executes executable test', () async {
     final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
     );
@@ -70,6 +72,30 @@ void main() {
     }
   });
 
+  test('test command executes dart_executable test', () async {
+    final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
+    );
+    try {
+      final Environment env = testEnvironment.environment;
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: env,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'test',
+        '//flutter/tools/engine_tool:build_command_test',
+      ]);
+      expect(result, equals(0));
+      expect(testEnvironment.processHistory.length, greaterThan(3));
+      final int offset = testEnvironment.processHistory.length - 1;
+      expect(testEnvironment.processHistory[offset].command[0],
+          endsWith('build_command_test'));
+    } finally {
+      testEnvironment.cleanup();
+    }
+  });
+
   test('test command skips non-testonly executables', () async {
     final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
@@ -85,7 +111,7 @@ void main() {
         '//third_party/protobuf:protoc',
       ]);
       expect(result, equals(1));
-      expect(testEnvironment.processHistory.length, lessThan(6));
+      expect(testEnvironment.processHistory.length, lessThan(7));
       expect(testEnvironment.processHistory.where((ExecutedProcess process) {
         return process.command[0].contains('protoc');
       }), isEmpty);
