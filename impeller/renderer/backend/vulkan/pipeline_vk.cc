@@ -169,7 +169,7 @@ namespace {
 fml::StatusOr<vk::UniqueDescriptorSetLayout> MakeDescriptorSetLayout(
     const PipelineDescriptor& desc,
     const std::shared_ptr<DeviceHolderVK>& device_holder,
-    std::shared_ptr<SamplerVK> immutable_sampler) {
+    const std::shared_ptr<SamplerVK>& immutable_sampler) {
   std::vector<vk::DescriptorSetLayoutBinding> set_bindings;
 
   vk::Sampler vk_immutable_sampler =
