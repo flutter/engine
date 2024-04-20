@@ -34,39 +34,7 @@
           ],
           "realm": "production"
         }
-      ],
-      "generators": {
-        "tasks": [
-          {
-            "name": "check licenses",
-            "parameters": [
-              "check-licenses"
-            ],
-            "scripts": [
-              "flutter/lib/web_ui/dev/felt"
-            ]
-          },
-          {
-            "name": "web engine analysis",
-            "parameters": [
-              "analyze"
-            ],
-            "scripts": [
-              "flutter/lib/web_ui/dev/felt"
-            ]
-          },
-          {
-            "name": "copy artifacts for web tests",
-            "parameters": [
-              "test",
-              "--copy-artifacts"
-            ],
-            "scripts": [
-              "flutter/lib/web_ui/dev/felt"
-            ]
-          }
-        ]
-      }
+      ]
     },
     {
       "name": "web_tests/test_bundles/dart2js-html-engine",
