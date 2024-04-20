@@ -179,8 +179,7 @@
                 "ci/host_release"
             ],
             "_comment": "validation strings are consistent with properties defined in framework .ciyaml targets",
-            "validation": "analyze",
-            "validation_name": "Analyze"
+            "shard": "analyze"
         }
     ]
 }
