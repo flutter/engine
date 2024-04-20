@@ -60,7 +60,7 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
  */
 - (void)setUpIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
 - (void)resetViewResponder;
-- (void)showEditMenu:(NSDictionary*)args API_AVAILABLE(ios(16.0));
+- (BOOL)showEditMenu:(NSDictionary*)args API_AVAILABLE(ios(16.0));
 - (void)hideEditMenu API_AVAILABLE(ios(16.0));
 
 @end

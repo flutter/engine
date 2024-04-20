@@ -161,12 +161,13 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
 }
 
 - (void)showSystemContextMenu:(NSDictionary*)args {
-  // Right now only text inputs support system context menu.
-  // However, it's possible to support it for non-text inputs too in the future.
-  // See: https://github.com/flutter/flutter/issues/143033
   if (@available(iOS 16.0, *)) {
     FlutterTextInputPlugin* textInputPlugin = [_engine.get() textInputPlugin];
-    [textInputPlugin showEditMenu:args];
+    BOOL shownEditMenu = [textInputPlugin showEditMenu:args];
+    if (!shownEditMenu) {
+      FML_LOG(ERROR) << "Only text input supports system context menu for now. See "
+                        "https://github.com/flutter/flutter/issues/143033.";
+    }
   }
 }
 

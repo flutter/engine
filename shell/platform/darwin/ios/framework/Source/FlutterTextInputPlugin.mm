@@ -2549,13 +2549,17 @@ static BOOL IsSelectionRectBoundaryCloserToPoint(CGPoint point,
   _keyboardViewContainer.frame = _keyboardRect;
 }
 
-- (void)showEditMenu:(NSDictionary*)args API_AVAILABLE(ios(16.0)) {
+- (BOOL)showEditMenu:(NSDictionary*)args API_AVAILABLE(ios(16.0)) {
+  if (!self.activeView.isFirstResponder) {
+    return NO;
+  }
   NSDictionary<NSString*, NSNumber*>* encodedTargetRect = args[@"targetRect"];
   CGRect globalTargetRect = CGRectMake(
       [encodedTargetRect[@"x"] doubleValue], [encodedTargetRect[@"y"] doubleValue],
       [encodedTargetRect[@"width"] doubleValue], [encodedTargetRect[@"height"] doubleValue]);
   CGRect localTargetRect = [self.hostView convertRect:globalTargetRect toView:self.activeView];
   [self.activeView showEditMenuWithTargetRect:localTargetRect];
+  return YES;
 }
 
 - (void)hideEditMenu {

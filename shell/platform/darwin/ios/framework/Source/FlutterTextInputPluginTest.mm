@@ -2856,6 +2856,15 @@ FLUTTER_ASSERT_ARC
   }
 }
 
+- (void)testEditMenu_shouldNotPresentEditMenuIfNotFirstResponder {
+  if (@available(iOS 16.0, *)) {
+    FlutterTextInputPlugin* myInputPlugin =
+        [[FlutterTextInputPlugin alloc] initWithDelegate:OCMClassMock([FlutterEngine class])];
+    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{}];
+    XCTAssertFalse(shownEditMenu, @"Should not show edit menu if not first responder.");
+  }
+}
+
 - (void)testEditMenu_shouldPresentEditMenuWithCorrectConfiguration {
   if (@available(iOS 16.0, *)) {
     FlutterTextInputPlugin* myInputPlugin =
@@ -2872,6 +2881,8 @@ FLUTTER_ASSERT_ARC
 
     FlutterTextInputView* myInputView = myInputPlugin.activeView;
     FlutterTextInputView* mockInputView = OCMPartialMock(myInputView);
+
+    OCMStub([mockInputView isFirstResponder]).andReturn(YES);
 
     XCTestExpectation* expectation = [[XCTestExpectation alloc]
         initWithDescription:@"presentEditMenuWithConfiguration must be called."];
@@ -2894,10 +2905,12 @@ FLUTTER_ASSERT_ARC
     NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
         @{@"x" : @(0), @"y" : @(0), @"width" : @(0), @"height" : @(0)};
 
-    [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect}];
+    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect}];
+    XCTAssertTrue(shownEditMenu, @"Should show edit menu with correct configuration.");
     [self waitForExpectations:@[ expectation ] timeout:1.0];
   }
 }
+
 - (void)testEditMenu_shouldPresentEditMenuWithCorectTargetRect {
   if (@available(iOS 16.0, *)) {
     FlutterTextInputPlugin* myInputPlugin =
@@ -2912,9 +2925,11 @@ FLUTTER_ASSERT_ARC
     [myInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
+
     FlutterTextInputView* myInputView = myInputPlugin.activeView;
 
     FlutterTextInputView* mockInputView = OCMPartialMock(myInputView);
+    OCMStub([mockInputView isFirstResponder]).andReturn(YES);
 
     XCTestExpectation* expectation = [[XCTestExpectation alloc]
         initWithDescription:@"presentEditMenuWithConfiguration must be called."];
@@ -2930,7 +2945,8 @@ FLUTTER_ASSERT_ARC
     NSDictionary<NSString*, NSNumber*>* encodedTargetRect =
         @{@"x" : @(100), @"y" : @(200), @"width" : @(300), @"height" : @(400)};
 
-    [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect}];
+    BOOL shownEditMenu = [myInputPlugin showEditMenu:@{@"targetRect" : encodedTargetRect}];
+    XCTAssertTrue(shownEditMenu, @"Should show edit menu with correct configuration.");
     [self waitForExpectations:@[ expectation ] timeout:1.0];
 
     CGRect targetRect =
