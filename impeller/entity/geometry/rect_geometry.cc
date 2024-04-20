@@ -35,10 +35,6 @@ GeometryResult RectGeometry::GetPositionUVBuffer(Rect texture_coverage,
                                   renderer, entity, pass);
 }
 
-GeometryVertexType RectGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
-}
-
 std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
 }

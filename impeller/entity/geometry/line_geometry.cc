@@ -160,10 +160,6 @@ GeometryResult LineGeometry::GetPositionUVBuffer(Rect texture_coverage,
   };
 }
 
-GeometryVertexType LineGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
-}
-
 std::optional<Rect> LineGeometry::GetCoverage(const Matrix& transform) const {
   Point corners[4];
   if (!ComputeCorners(corners, transform, cap_ != Cap::kButt)) {

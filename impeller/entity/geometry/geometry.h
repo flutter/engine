@@ -46,12 +46,6 @@ static const GeometryResult kEmptyResult = {
         },
 };
 
-enum GeometryVertexType {
-  kPosition,
-  kColor,
-  kUV,
-};
-
 /// @brief Compute UV geometry for a VBB that contains only position geometry.
 ///
 /// texture_origin should be set to 0, 0 for stroke and stroke based geometry,
@@ -129,8 +123,6 @@ class Geometry {
                                              RenderPass& pass) const = 0;
 
   virtual GeometryResult::Mode GetResultMode() const;
-
-  virtual GeometryVertexType GetVertexType() const = 0;
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
 

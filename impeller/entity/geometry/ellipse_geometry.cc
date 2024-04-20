@@ -36,10 +36,6 @@ GeometryResult EllipseGeometry::GetPositionUVBuffer(
       pass);
 }
 
-GeometryVertexType EllipseGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
-}
-
 std::optional<Rect> EllipseGeometry::GetCoverage(
     const Matrix& transform) const {
   return bounds_.TransformBounds(transform);
