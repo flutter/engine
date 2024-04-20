@@ -178,6 +178,9 @@
                 "ci/host_debug",
                 "ci/host_release"
             ],
+	    "test_dependencies": [
+                {"dependency": "ktlint", "version": "version_1_1_1"}
+            ],
             "_comment": "validation strings are consistent with properties defined in framework .ciyaml targets",
             "shard": "analyze"
         }
