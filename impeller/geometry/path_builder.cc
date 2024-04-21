@@ -43,9 +43,9 @@ PathBuilder& PathBuilder::Close() {
   // confuse the tessellator.
   if (subpath_start_ != current_) {
     LineTo(subpath_start_);
-    SetContourClosed(true);
-    AddContourComponent(current_);
   }
+  SetContourClosed(true);
+  AddContourComponent(current_);
   return *this;
 }
 
