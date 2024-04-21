@@ -3136,6 +3136,30 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+// https://github.com/flutter/flutter/issues/146648
+TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
+  Path path = PathBuilder{}
+                  .MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  // .CubicCurveTo({10, 10}, {-10, -10}, {4, 0})
+                  .LineTo({400, 0})
+                  // MoveTo implicitly adds a contour, ensure that close doesn't
+                  // add another nearly-empty contour.
+                  .MoveTo({0, 400})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.Translate({50, 50, 0});
+  canvas.DrawPath(path, {
+                            .color = Color::Red(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 }  // namespace testing
 }  // namespace impeller
 
