@@ -973,9 +973,9 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {
     if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
-      return CreateFramebufferAdvancedBlend(
-          inputs, renderer, entity, coverage, foreground_color_,
-          blend_mode_, GetAlpha(), GetAbsorbOpacity());
+      return CreateFramebufferAdvancedBlend(inputs, renderer, entity, coverage,
+                                            foreground_color_, blend_mode_,
+                                            GetAlpha(), GetAbsorbOpacity());
     }
     if (inputs.size() == 1 && foreground_color_.has_value()) {
       return CreateForegroundAdvancedBlend(
