@@ -207,7 +207,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "0"
+	    "shard": "web_tests",
+            "subshard": "0"
         },
         {
             "name": "web_tests-1",
@@ -231,7 +232,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "1"
+	    "shard": "web_tests",
+            "subshard": "1"
         },
         {
             "name": "web_tests-2",
@@ -255,7 +257,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "2"
+	    "shard": "web_tests",
+            "subshard": "2"
         },
         {
             "name": "web_tests-3",
@@ -279,7 +282,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "3"
+	    "shard": "web_tests",
+            "subshard": "3"
         },
         {
             "name": "web_tests-4",
@@ -303,7 +307,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "4"
+	    "shard": "web_tests",
+            "subshard": "4"
         },
         {
             "name": "web_tests-5",
@@ -327,7 +332,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "5"
+	    "shard": "web_tests",
+            "subshard": "5"
         },
         {
             "name": "web_tests-6",
@@ -351,7 +357,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "6"
+	    "shard": "web_tests",
+            "subshard": "6"
         },
         {
             "name": "web_tests-7_last",
@@ -375,7 +382,8 @@
                     "version": "version:7.64.0"
                 }
             ],
-            "shard": "7_last"
+	    "shard": "web_tests",
+            "subshard": "7_last"
         }
     ]
 }
