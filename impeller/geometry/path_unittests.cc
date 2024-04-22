@@ -454,6 +454,34 @@ TEST(PathTest, SimplePath) {
       });
 }
 
+TEST(PathTest, RepeatCloseDoesNotAddNewLines) {
+  PathBuilder builder;
+  auto path = builder.LineTo({0, 10})
+                  .LineTo({10, 10})
+                  .Close()  // Returns to (0, 0)
+                  .Close()  // No Op
+                  .Close()  // Still No op
+                  .TakePath();
+
+  EXPECT_EQ(path.GetComponentCount(), 5u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 3u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 2u);
+}
+
+TEST(PathTest, CloseAfterMoveDoesNotAddNewLines) {
+  PathBuilder builder;
+  auto path = builder.LineTo({0, 10})
+                  .LineTo({10, 10})
+                  .MoveTo({30, 30})  // Moves to (30, 30)
+                  .Close()           // No Op
+                  .Close()           // Still No op
+                  .TakePath();
+
+  EXPECT_EQ(path.GetComponentCount(), 4u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 2u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 2u);
+}
+
 TEST(PathTest, CanBeCloned) {
   PathBuilder builder;
   builder.MoveTo({10, 10});
