@@ -16,7 +16,8 @@ FLUTTER_ASSERT_ARC
 
 namespace flutter {
 
-static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>& context) {
+static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>& context)
+    __attribute__((cf_audited_transfer)) {
   return (IOSContextMetalSkia*)context.get();
 }
 
