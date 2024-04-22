@@ -165,7 +165,8 @@ static void SetStatusBarStyleForSharedApplication(UIStatusBarStyle style) {
     FlutterTextInputPlugin* textInputPlugin = [_engine.get() textInputPlugin];
     BOOL shownEditMenu = [textInputPlugin showEditMenu:args];
     if (!shownEditMenu) {
-      FML_LOG(ERROR) << "Only text input supports system context menu for now. See "
+      FML_LOG(ERROR) << "Only text input supports system context menu for now. Ensure the system "
+                        "context menu is shown with an active text input connection. See "
                         "https://github.com/flutter/flutter/issues/143033.";
     }
   }
