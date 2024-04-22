@@ -41,10 +41,9 @@ class FlutterCompositor {
   // which are used for presenting and creating backing stores.
   // It must not be null, and is typically FlutterViewEngineProvider.
   //
-  // The `main_queue` is the macOS main event queue, typically
-  // `dispatch_get_main_queue()`. It must match the queue given to
-  // `FlutterThreadSynchronizer`, and be the one that platform views can be
-  // rendered on.
+  // The `main_queue` must be the event queue given to `FlutterThreadSynchronizer`,
+  // which is where the views' `FlutterSurfaceManager` invokes the callback in
+  // `presentSurfaces:atTime:notify:`. Typically `dispatch_get_main_queue()`.
   FlutterCompositor(id<FlutterViewProvider> view_provider,
                     FlutterTimeConverter* time_converter,
                     FlutterPlatformViewController* platform_views_controller,

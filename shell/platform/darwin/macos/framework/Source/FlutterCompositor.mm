@@ -115,10 +115,13 @@ bool FlutterCompositor::Present(FlutterViewIdentifier view_id,
   [view.surfaceManager presentSurfaces:surfaces
                                 atTime:presentation_time
                                 notify:^{
-                                  // Accessing presenters_ here does not need a lock to avoid race
-                                  // condition with AddView and RemoveView, as long as the latter
-                                  // take place on the platform thread, because presenting must take
-                                  // place on the platform thread due to macOS's requirement.
+                                  // Accessing presenters_ here does not need a
+                                  // lock to avoid race condition against AddView
+                                  // and RemoveView, since all three take place
+                                  // on the platform thread. (The macOS API
+                                  // requires platform view presenting to take
+                                  // place on the platform thread.)
+                                  dispatch_assert_queue(main_queue_);
                                   auto found_presenter = presenters_.find(view_id);
                                   if (found_presenter != presenters_.end()) {
                                     found_presenter->second.PresentPlatformViews(
