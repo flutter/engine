@@ -13,21 +13,10 @@ enabled_branches:
 platform_properties:
   linux:
     properties:
-      build_host: "false"
-      build_fuchsia: "false"
-      build_android_debug: "false"
-      build_android_aot: "false"
-      build_android_vulkan: "false"
-      build_ios: "false"
-      build_android_jit_release: "false"
-      gcs_goldens_bucket: ""
-      ios_debug: "false"
-      ios_profile: "false"
-      ios_release: "false"
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
-          {"dependency": "open_jdk", "version": "version:11"},
+          {"dependency": "open_jdk", "version": "version:17"},
           {"dependency": "gradle_cache", "version": "none"}
         ]
       device_type: none
@@ -35,61 +24,77 @@ platform_properties:
       cores: "8"
   mac:
     properties:
-      build_host: "false"
-      build_fuchsia: "false"
-      build_android_debug: "false"
-      build_android_aot: "false"
-      build_android_vulkan: "false"
-      build_ios: "false"
-      build_android_jit_release: "false"
-      gcs_goldens_bucket: ""
-      ios_debug: "false"
-      ios_profile: "false"
-      ios_release: "false"
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
-          {"dependency": "open_jdk", "version": "version:11"}
+          {"dependency": "open_jdk", "version": "version:17"}
         ]
       device_type: none
-      cpu: x86
-      os: Mac-12
+      os: Mac-13
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
-    dimensions:
-      mac_model: "Macmini8,1|Macmini9,1"
   windows:
     properties:
-      build_host: "false"
-      build_fuchsia: "false"
-      build_android_debug: "false"
-      build_android_aot: "false"
-      build_android_vulkan: "false"
-      build_ios: "false"
-      build_android_jit_release: "false"
-      gcs_goldens_bucket: ""
-      ios_debug: "false"
-      ios_profile: "false"
-      ios_release: "false"
       # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
-          {"dependency": "open_jdk", "version": "version:11"}
+          {"dependency": "open_jdk", "version": "version:17"}
         ]
       device_type: none
       os: Windows-10
 
+# The current android emulator config names can be found here:
+# https://chromium.googlesource.com/chromium/src.git/+/HEAD/tools/android/avd/proto
+# You may use those names for the android_virtual_device version.
 targets:
+  - name: Linux local_engine_builds
+    enabled_branches:
+      - main
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: local_engine
+
   - name: Linux linux_android_emulator_tests
     enabled_branches:
       - main
-    recipe: engine_v2/builder
-    presubmit: false
+    recipe: engine_v2/engine_v2
     properties:
       config_name: linux_android_emulator
-    timeout: 60
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
+    timeout: 90
+    runIf:
+      - .ci.yaml
+      - ci/builders/linux_android_emulator.json
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+      - testing/scenario_app/**
+      - testing/skia_gold_client/**
+
+  - name: Linux linux_android_emulator_skia_tests
+    enabled_branches:
+      - main
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: linux_android_emulator_skia
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
+    timeout: 90
+    runIf:
+      - .ci.yaml
+      - ci/builders/linux_android_emulator.json
+      - DEPS
+      - lib/ui/**
+      - shell/platform/android/**
+      - testing/scenario_app/**
+      - testing/skia_gold_client/**
 
   - name: Linux builder_cache
     enabled_branches:
@@ -98,7 +103,6 @@ targets:
     presubmit: false
     properties:
       cache_name: "builder"
-      cache_root: "cache"
       cache_paths: >-
         [
           "builder",
@@ -118,7 +122,6 @@ targets:
     presubmit: false
     properties:
       cache_name: "builder"
-      cache_root: "cache"
       cache_paths: >-
         [
           "builder",
@@ -137,11 +140,15 @@ targets:
     presubmit: false
     properties:
       cache_name: "builder"
-      cache_root: "cache"
       cache_paths: >-
         [
           "builder",
           "git"
+        ]
+      ignore_cache_paths: >-
+        [
+          "builder/src/flutter/prebuilts/SDKs",
+          "builder/src/flutter/prebuilts/Library"
         ]
       gclient_variables: >-
         {
@@ -158,80 +165,33 @@ targets:
       config_name: linux_benchmarks
     timeout: 60
 
-  - name: Linux Fuchsia
-    recipe: engine/engine
-    properties:
-      add_recipes_cq: "true"
-      build_fuchsia: "true"
-      fuchsia_ctl_version: version:0.0.27
-      # ensure files from pre-production Fuchsia SDK tests are purged from cache
-      clobber: "true"
-    timeout: 90
-
-  - name: Linux Fuchsia FEMU
-    recipe: engine/femu_test
-    properties:
-      add_recipes_cq: "true"
-      build_fuchsia: "true"
-      fuchsia_ctl_version: version:0.0.27
-      # ensure files from pre-production Fuchsia SDK tests are purged from cache
-      clobber: "true"
-      emulator_arch: "x64"
-      enable_cso: "true"
-    timeout: 60
-
-  - name: Linux Fuchsia arm64 FEMU
-    recipe: engine/femu_test
-    properties:
-      build_fuchsia: "true"
-      fuchsia_ctl_version: version:0.0.27
-      # ensure files from pre-production Fuchsia SDK tests are purged from cache
-      clobber: "true"
-      emulator_arch: "arm64"
-      enable_cso: "true"
-    timeout: 60
-    bringup: true
-
-  - name: Linux Framework Smoke Tests
-    recipe: engine/framework_smoke
-    enabled_branches:
-      - main
-    timeout: 60
-
   - name: Linux linux_fuchsia
-    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
       release_build: "true"
       config_name: linux_fuchsia
+    # Do not remove(https://github.com/flutter/flutter/issues/144644)
+    # Scheduler will fail to get the platform
     drone_dimensions:
       - os=Linux
+    dimensions:
+      kvm: "1"
+    # TODO(https://github.com/flutter/flutter/issues/138559): Re-enable/delete.
+    # runIfNot:
+    #   - lib/web_ui/**
+    #   - shell/platform/android/**
+    #   - shell/platform/darwin/**
+    #   - shell/platform/glfw/**
+    #   - shell/platform/linux/**
+    #   - shell/platform/windows/**
+    #   - web_sdk/**
 
   - name: Linux linux_clang_tidy
     recipe: engine_v2/engine_v2
     timeout: 120
     properties:
       config_name: linux_clang_tidy
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - tools/clang_tidy/**
-      - ci/builders/**
-      - ci/clang_tidy.sh
-      - "**.h"
-      - "**.c"
-      - "**.cc"
-      - "**.fbs"
-      - "**.frag"
-      - "**.vert"
-
-  - name: Linux linux_clang_tidy_presubmit
-    bringup: true
-    recipe: engine_v2/engine_v2
-    timeout: 120
-    properties:
-      config_name: linux_clang_tidy_presubmit
     runIf:
       - DEPS
       - .ci.yaml
@@ -262,6 +222,10 @@ targets:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: linux_host_engine
+      dependencies: >-
+        [
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
+        ]
     drone_dimensions:
       - os=Linux
 
@@ -311,6 +275,19 @@ targets:
       config_name: linux_web_engine
     drone_dimensions:
       - os=Linux
+    runIf:
+      - DEPS
+      - .ci.yaml
+      - lib/web_ui/**
+      - web_sdk/**
+      - tools/**
+      - ci/**
+      - flutter_frontend_server/**
+
+  - name: Linux clangd
+    recipe: engine_v2/engine_v2
+    properties:
+      config_name: linux_unopt_debug_no_rbe
 
   - name: Linux linux_unopt
     recipe: engine_v2/engine_v2
@@ -329,10 +306,9 @@ targets:
         {"download_emsdk": true}
       dependencies: >-
         [
-          {"dependency": "chrome_and_driver", "version": "version:115.0"},
+          {"dependency": "chrome_and_driver", "version": "version:119.0.6045.9"},
           {"dependency": "curl", "version": "version:7.64.0"}
         ]
-      framework: "true"
       no_goma: "true"
       drone_dimensions: >
         ["device_type=none", "os=Linux"]
@@ -351,7 +327,7 @@ targets:
 
   - name: Linux mac_android_aot_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -379,30 +355,9 @@ targets:
       - "**.m"
       - "**.mm"
 
-  - name: Mac mac_clang_tidy_presubmit
-    bringup: true
-    recipe: engine_v2/engine_v2
-    timeout: 120
-    properties:
-      config_name: mac_clang_tidy_presubmit
-    runIf:
-      - DEPS
-      - .ci.yaml
-      - tools/clang_tidy/**
-      - ci/builders/**
-      - ci/clang_tidy.sh
-      - "**.h"
-      - "**.c"
-      - "**.cc"
-      - "**.fbs"
-      - "**.frag"
-      - "**.vert"
-      - "**.m"
-      - "**.mm"
-
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
@@ -410,16 +365,24 @@ targets:
       config_name: mac_host_engine
       dependencies: >-
         [
-          {"dependency": "goldctl", "version": "git_revision:f808dcff91b221ae313e540c09d79696cd08b8de"}
+          {"dependency": "goldctl", "version": "git_revision:720a542f6fe4f92922c3b8f0fdcc4d2ac6bb83cd"}
         ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
     drone_dimensions:
-      - os=Mac-12
+      - os=Mac-13
 
-  - name: Linux mac_unopt
+  - name: Linux mac_clangd
+    recipe: engine_v2/engine_v2
+    # Avoid using a Mac orchestrator to save ~5 minutes of Mac host time.
+    drone_dimensions:
+      - os=Linux
+    properties:
+      config_name: mac_unopt_debug_no_rbe
+
+  - name: Mac mac_unopt
     recipe: engine_v2/engine_v2
     properties:
       config_name: mac_unopt
@@ -428,21 +391,17 @@ targets:
 
   - name: Mac mac_ios_engine
     recipe: engine_v2/engine_v2
-    timeout: 120
+    timeout: 240
     properties:
       add_recipes_cq: "true"
       release_build: "true"
       config_name: mac_ios_engine
-      dependencies: >-
-        [
-          {"dependency": "jazzy", "version": "0.14.1"}
-        ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "14e300c"
+          "sdk_version": "15a240d"
         }
     drone_dimensions:
-      - os=Mac-12
+      - os=Mac-13
       - cpu=x86
 
   - name: Mac impeller-cmake-example

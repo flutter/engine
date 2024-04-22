@@ -13,7 +13,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
-FLUTTER_ASSERT_NOT_ARC
+FLUTTER_ASSERT_ARC
 
 namespace flutter {
 namespace {
@@ -23,6 +23,10 @@ class FakeDelegate : public PlatformView::Delegate {
   void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
+  void OnPlatformViewAddView(int64_t view_id,
+                             const ViewportMetrics& viewport_metrics,
+                             AddViewCallback callback) override {}
+  void OnPlatformViewRemoveView(int64_t view_id, RemoveViewCallback callback) override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics) override {}
   const flutter::Settings& OnPlatformViewGetSettings() const override { return settings_; }
@@ -65,6 +69,7 @@ flutter::FakeDelegate fake_delegate;
 - (void)setUp {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   auto thread_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  auto sync_switch = std::make_shared<fml::SyncSwitch>();
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
                                /*platform=*/thread_task_runner,
                                /*raster=*/thread_task_runner,
@@ -72,11 +77,13 @@ flutter::FakeDelegate fake_delegate;
                                /*io=*/thread_task_runner);
   platform_view = std::make_unique<flutter::PlatformViewIOS>(
       /*delegate=*/fake_delegate,
-      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*rendering_api=*/fake_delegate.settings_.enable_impeller
+          ? flutter::IOSRenderingAPI::kMetal
+          : flutter::IOSRenderingAPI::kSoftware,
       /*platform_views_controller=*/nil,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_sync_switch=*/sync_switch);
   weak_factory = std::make_unique<fml::WeakPtrFactory<flutter::PlatformView>>(platform_view.get());
 }
 
@@ -90,14 +97,20 @@ flutter::FakeDelegate fake_delegate;
 }
 
 - (void)testMsaaSampleCount {
-  // Default should be 1.
-  XCTAssertEqual(platform_view->GetIosContext()->GetMsaaSampleCount(), MsaaSampleCount::kNone);
+  if (fake_delegate.settings_.enable_impeller) {
+    // Default should be 4 for Impeller.
+    XCTAssertEqual(platform_view->GetIosContext()->GetMsaaSampleCount(), MsaaSampleCount::kFour);
+  } else {
+    // Default should be 1 for Skia.
+    XCTAssertEqual(platform_view->GetIosContext()->GetMsaaSampleCount(), MsaaSampleCount::kNone);
+  }
 
   // Verify the platform view creates a new context with updated msaa_samples.
   // Need to use Metal, since this is ignored for Software/GL.
   fake_delegate.settings_.msaa_samples = 4;
 
   auto thread_task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  auto sync_switch = std::make_shared<fml::SyncSwitch>();
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
                                /*platform=*/thread_task_runner,
                                /*raster=*/thread_task_runner,
@@ -109,7 +122,7 @@ flutter::FakeDelegate fake_delegate;
       /*platform_views_controller=*/nil,
       /*task_runners=*/runners,
       /*worker_task_runner=*/nil,
-      /*is_gpu_disabled_sync_switch=*/nil);
+      /*is_gpu_disabled_sync_switch=*/sync_switch);
 
   XCTAssertEqual(msaa_4x_platform_view->GetIosContext()->GetMsaaSampleCount(),
                  MsaaSampleCount::kFour);

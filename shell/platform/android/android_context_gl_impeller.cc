@@ -10,8 +10,12 @@
 #include "flutter/impeller/toolkit/egl/context.h"
 #include "flutter/impeller/toolkit/egl/surface.h"
 #include "impeller/entity/gles/entity_shaders_gles.h"
-#include "impeller/scene/shaders/gles/scene_shaders_gles.h"
+#include "impeller/entity/gles/framebuffer_blend_shaders_gles.h"
 
+#if IMPELLER_ENABLE_3D
+// This include was turned to an error since it breaks GN.
+#include "impeller/scene/shaders/gles/scene_shaders_gles.h"  // nogncheck
+#endif  // IMPELLER_ENABLE_3D
 namespace flutter {
 
 class AndroidContextGLImpeller::ReactorWorker final
@@ -46,7 +50,8 @@ class AndroidContextGLImpeller::ReactorWorker final
 };
 
 static std::shared_ptr<impeller::Context> CreateImpellerContext(
-    const std::shared_ptr<impeller::ReactorGLES::Worker>& worker) {
+    const std::shared_ptr<impeller::ReactorGLES::Worker>& worker,
+    bool enable_gpu_tracing) {
   auto proc_table = std::make_unique<impeller::ProcTableGLES>(
       impeller::egl::CreateProcAddressResolver());
 
@@ -60,11 +65,16 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
           impeller_entity_shaders_gles_data,
           impeller_entity_shaders_gles_length),
       std::make_shared<fml::NonOwnedMapping>(
+          impeller_framebuffer_blend_shaders_gles_data,
+          impeller_framebuffer_blend_shaders_gles_length),
+#if IMPELLER_ENABLE_3D
+      std::make_shared<fml::NonOwnedMapping>(
           impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
+#endif  // IMPELLER_ENABLE_3D
   };
 
-  auto context =
-      impeller::ContextGLES::Create(std::move(proc_table), shader_mappings);
+  auto context = impeller::ContextGLES::Create(
+      std::move(proc_table), shader_mappings, enable_gpu_tracing);
   if (!context) {
     FML_LOG(ERROR) << "Could not create OpenGLES Impeller Context.";
     return nullptr;
@@ -74,13 +84,14 @@ static std::shared_ptr<impeller::Context> CreateImpellerContext(
     FML_LOG(ERROR) << "Could not add reactor worker.";
     return nullptr;
   }
-  FML_LOG(ERROR) << "Using the Impeller rendering backend (OpenGLES).";
+  FML_LOG(IMPORTANT) << "Using the Impeller rendering backend (OpenGLES).";
   return context;
 }
 
 AndroidContextGLImpeller::AndroidContextGLImpeller(
-    std::unique_ptr<impeller::egl::Display> display)
-    : AndroidContext(AndroidRenderingAPI::kOpenGLES),
+    std::unique_ptr<impeller::egl::Display> display,
+    bool enable_gpu_tracing)
+    : AndroidContext(AndroidRenderingAPI::kImpellerOpenGLES),
       reactor_worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())),
       display_(std::move(display)) {
   if (!display_ || !display_->IsValid()) {
@@ -140,7 +151,8 @@ AndroidContextGLImpeller::AndroidContextGLImpeller(
     return;
   }
 
-  auto impeller_context = CreateImpellerContext(reactor_worker_);
+  auto impeller_context =
+      CreateImpellerContext(reactor_worker_, enable_gpu_tracing);
 
   if (!impeller_context) {
     FML_DLOG(ERROR) << "Could not create Impeller context.";

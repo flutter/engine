@@ -46,8 +46,9 @@ SkFontStyle MakeSkFontStyle(txt::FontWeight font_weight,
 
 ParagraphBuilderSkia::ParagraphBuilderSkia(
     const ParagraphStyle& style,
-    std::shared_ptr<FontCollection> font_collection)
-    : base_style_(style.GetTextStyle()) {
+    std::shared_ptr<FontCollection> font_collection,
+    const bool impeller_enabled)
+    : base_style_(style.GetTextStyle()), impeller_enabled_(impeller_enabled) {
   builder_ = skt::ParagraphBuilder::make(
       TxtToSkia(style), font_collection->CreateSktFontCollection());
 }
@@ -85,8 +86,8 @@ void ParagraphBuilderSkia::AddPlaceholder(PlaceholderRun& span) {
 }
 
 std::unique_ptr<Paragraph> ParagraphBuilderSkia::Build() {
-  return std::make_unique<ParagraphSkia>(builder_->Build(),
-                                         std::move(dl_paints_));
+  return std::make_unique<ParagraphSkia>(
+      builder_->Build(), std::move(dl_paints_), impeller_enabled_);
 }
 
 skt::ParagraphPainter::PaintID ParagraphBuilderSkia::CreatePaintID(
@@ -101,7 +102,7 @@ skt::ParagraphStyle ParagraphBuilderSkia::TxtToSkia(const ParagraphStyle& txt) {
 
   // Convert the default color of an SkParagraph text style into a DlPaint.
   flutter::DlPaint dl_paint;
-  dl_paint.setColor(text_style.getColor());
+  dl_paint.setColor(flutter::DlColor(text_style.getColor()));
   text_style.setForegroundPaintID(CreatePaintID(dl_paint));
 
   text_style.setFontStyle(MakeSkFontStyle(txt.font_weight, txt.font_style));
@@ -118,6 +119,7 @@ skt::ParagraphStyle ParagraphBuilderSkia::TxtToSkia(const ParagraphStyle& txt) {
   strut_style.setFontSize(SkDoubleToScalar(txt.strut_font_size));
   strut_style.setHeight(SkDoubleToScalar(txt.strut_height));
   strut_style.setHeightOverride(txt.strut_has_height_override);
+  strut_style.setHalfLeading(txt.strut_half_leading);
 
   std::vector<SkString> strut_fonts;
   std::transform(txt.strut_font_families.begin(), txt.strut_font_families.end(),
@@ -138,7 +140,7 @@ skt::ParagraphStyle ParagraphBuilderSkia::TxtToSkia(const ParagraphStyle& txt) {
 
   skia.turnHintingOff();
   skia.setReplaceTabCharacters(true);
-  skia.setApplyRoundingHack(txt.apply_rounding_hack);
+  skia.setApplyRoundingHack(false);
 
   return skia;
 }
@@ -177,7 +179,7 @@ skt::TextStyle ParagraphBuilderSkia::TxtToSkia(const TextStyle& txt) {
     skia.setForegroundPaintID(CreatePaintID(txt.foreground.value()));
   } else {
     flutter::DlPaint dl_paint;
-    dl_paint.setColor(txt.color);
+    dl_paint.setColor(flutter::DlColor(txt.color));
     skia.setForegroundPaintID(CreatePaintID(dl_paint));
   }
 

@@ -5,8 +5,10 @@
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
 
 #include "flutter/fml/trace_event.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
+#include "impeller/renderer/surface.h"
 
 namespace impeller {
 
@@ -47,6 +49,10 @@ std::shared_ptr<CommandBuffer> SurfaceContextVK::CreateCommandBuffer() const {
   return parent_->CreateCommandBuffer();
 }
 
+std::shared_ptr<CommandQueue> SurfaceContextVK::GetCommandQueue() const {
+  return parent_->GetCommandQueue();
+}
+
 const std::shared_ptr<const Capabilities>& SurfaceContextVK::GetCapabilities()
     const {
   return parent_->GetCapabilities();
@@ -56,10 +62,15 @@ void SurfaceContextVK::Shutdown() {
   parent_->Shutdown();
 }
 
-bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface) {
-  auto swapchain = SwapchainVK::Create(parent_, std::move(surface));
+bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface,
+                                        const ISize& size) {
+  auto swapchain = SwapchainVK::Create(parent_, std::move(surface), size);
   if (!swapchain) {
     VALIDATION_LOG << "Could not create swapchain.";
+    return false;
+  }
+  if (!swapchain->IsValid()) {
+    VALIDATION_LOG << "Could not create valid swapchain.";
     return false;
   }
   swapchain_ = std::move(swapchain);
@@ -69,16 +80,20 @@ bool SurfaceContextVK::SetWindowSurface(vk::UniqueSurfaceKHR surface) {
 std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
   TRACE_EVENT0("impeller", __FUNCTION__);
   auto surface = swapchain_ ? swapchain_->AcquireNextDrawable() : nullptr;
-  auto pipeline_library = parent_->GetPipelineLibrary();
-  if (surface && pipeline_library) {
+  if (!surface) {
+    return nullptr;
+  }
+  if (auto pipeline_library = parent_->GetPipelineLibrary()) {
     impeller::PipelineLibraryVK::Cast(*pipeline_library)
         .DidAcquireSurfaceFrame();
   }
-  auto allocator = parent_->GetResourceAllocator();
-  if (allocator) {
-    allocator->DidAcquireSurfaceFrame();
-  }
+  parent_->GetCommandPoolRecycler()->Dispose();
+  parent_->GetResourceAllocator()->DebugTraceMemoryStatistics();
   return surface;
+}
+
+void SurfaceContextVK::UpdateSurfaceSize(const ISize& size) const {
+  swapchain_->UpdateSurfaceSize(size);
 }
 
 #ifdef FML_OS_ANDROID
@@ -103,5 +118,17 @@ vk::UniqueSurfaceKHR SurfaceContextVK::CreateAndroidSurface(
 }
 
 #endif  // FML_OS_ANDROID
+
+const vk::Device& SurfaceContextVK::GetDevice() const {
+  return parent_->GetDevice();
+}
+
+void SurfaceContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
+  parent_->InitializeCommonlyUsedShadersIfNeeded();
+}
+
+const ContextVK& SurfaceContextVK::GetParent() const {
+  return *parent_;
+}
 
 }  // namespace impeller

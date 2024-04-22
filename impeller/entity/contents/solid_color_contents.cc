@@ -4,9 +4,9 @@
 
 #include "solid_color_contents.h"
 
-#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/renderer/render_pass.h"
 
@@ -24,6 +24,10 @@ Color SolidColorContents::GetColor() const {
   return color_.WithAlpha(color_.alpha * GetOpacityFactor());
 }
 
+bool SolidColorContents::IsSolidColor() const {
+  return true;
+}
+
 bool SolidColorContents::IsOpaque() const {
   return GetColor().IsOpaque();
 }
@@ -34,50 +38,32 @@ std::optional<Rect> SolidColorContents::GetCoverage(
     return std::nullopt;
   }
 
-  auto geometry = GetGeometry();
+  const std::shared_ptr<Geometry>& geometry = GetGeometry();
   if (geometry == nullptr) {
     return std::nullopt;
   }
-  return geometry->GetCoverage(entity.GetTransformation());
+  return geometry->GetCoverage(entity.GetTransform());
 };
 
 bool SolidColorContents::Render(const ContentContext& renderer,
                                 const Entity& entity,
                                 RenderPass& pass) const {
+  auto capture = entity.GetCapture().CreateChild("SolidColorContents");
   using VS = SolidFillPipeline::VertexShader;
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "Solid Fill");
-  cmd.stencil_reference = entity.GetStencilDepth();
-
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-
-  options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetSolidFillPipeline(options);
-  cmd.BindVertices(geometry_result.vertex_buffer);
-
   VS::FrameInfo frame_info;
-  frame_info.mvp = geometry_result.transform;
-  frame_info.color = GetColor().Premultiply();
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  frame_info.color = capture.AddColor("Color", GetColor()).Premultiply();
 
-  if (!pass.AddCommand(std::move(cmd))) {
-    return false;
-  }
-
-  if (geometry_result.prevent_overdraw) {
-    auto restore = ClipRestoreContents();
-    restore.SetRestoreCoverage(GetCoverage(entity));
-    return restore.Render(renderer, entity, pass);
-  }
-  return true;
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetSolidFillPipeline(options);
+      };
+  return ColorSourceContents::DrawGeometry<VS>(
+      renderer, entity, pass, pipeline_callback, frame_info,
+      [](RenderPass& pass) {
+        pass.SetCommandLabel("Solid Fill");
+        return true;
+      });
 }
 
 std::unique_ptr<SolidColorContents> SolidColorContents::Make(const Path& path,
@@ -92,7 +78,7 @@ std::optional<Color> SolidColorContents::AsBackgroundColor(
     const Entity& entity,
     ISize target_size) const {
   Rect target_rect = Rect::MakeSize(target_size);
-  return GetGeometry()->CoversArea(entity.GetTransformation(), target_rect)
+  return GetGeometry()->CoversArea(entity.GetTransform(), target_rect)
              ? GetColor()
              : std::optional<Color>();
 }

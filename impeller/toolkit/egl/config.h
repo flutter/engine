@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_CONFIG_H_
+#define FLUTTER_IMPELLER_TOOLKIT_EGL_CONFIG_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/toolkit/egl/egl.h"
@@ -67,8 +68,12 @@ class Config {
   const ConfigDescriptor desc_;
   EGLConfig config_ = nullptr;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Config);
+  Config(const Config&) = delete;
+
+  Config& operator=(const Config&) = delete;
 };
 
 }  // namespace egl
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TOOLKIT_EGL_CONFIG_H_

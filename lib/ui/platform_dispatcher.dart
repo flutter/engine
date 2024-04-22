@@ -73,7 +73,7 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 
 @pragma('vm:entry-point')
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
-    byteData == null ? null : UnmodifiableByteDataView(byteData);
+    byteData?.asUnmodifiableView();
 
 /// A token that represents a root isolate.
 class RootIsolateToken {
@@ -308,6 +308,71 @@ class PlatformDispatcher {
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
 
+  /// A callback invoked immediately after the focus is transitioned across [FlutterView]s.
+  ///
+  /// When the platform moves the focus from one [FlutterView] to another, this
+  /// callback is invoked indicating the new view that has focus and the direction
+  /// in which focus was received. For example, if focus is moved to the [FlutterView]
+  /// with ID 2 in the forward direction (could be the result of pressing tab)
+  /// the callback receives a [ViewFocusEvent] with [ViewFocusState.focused] and
+  /// [ViewFocusDirection.forward].
+  ///
+  /// Typically, receivers of this event respond by moving the focus to the first
+  /// focusable widget inside the [FlutterView] with ID 2. If a view receives
+  /// focus in the backward direction (could be the result of pressing shift + tab),
+  /// typically the last focusable widget inside that view is focused.
+  ///
+  /// The platform may remove focus from a [FlutterView]. For example, on the web,
+  /// the browser can move focus to another element, or to the browser's built-in UI.
+  /// On desktop, the operating system can switch to another window (e.g. using Alt + Tab on Windows).
+  /// In scenarios like these, [onViewFocusChange] will be invoked with [ViewFocusState.unfocused] and
+  /// [ViewFocusDirection.undefined].
+  ///
+  /// Receivers typically respond to this event by removing all focus indications
+  /// from the app.
+  ///
+  /// Apps can also programmatically request to move the focus to a desired
+  /// [FlutterView] by calling [requestViewFocusChange].
+  ///
+  /// The callback is invoked in the same zone in which the callback was set.
+  ///
+  /// See also:
+  ///
+  ///   * [requestViewFocusChange] to programmatically instruct the platform to move focus to a different [FlutterView].
+  ///   * [ViewFocusState] for a list of allowed focus transitions.
+  ///   * [ViewFocusDirection] for a list of allowed focus directions.
+  ///   * [ViewFocusEvent], which is the event object provided to the callback.
+  ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
+  ViewFocusChangeCallback? _onViewFocusChange;
+  // ignore: unused_field, field will be used when platforms other than web use these focus APIs.
+  Zone _onViewFocusChangeZone = Zone.root;
+  set onViewFocusChange(ViewFocusChangeCallback? callback) {
+    _onViewFocusChange = callback;
+    _onViewFocusChangeZone = Zone.current;
+  }
+
+  /// Requests a focus change of the [FlutterView] with ID [viewId].
+  ///
+  /// If an app would like to request the engine to move focus, in forward direction,
+  /// to the [FlutterView] with ID 1 it should call this method with [ViewFocusState.focused]
+  /// and [ViewFocusDirection.forward].
+  ///
+  /// There is no need to call this method if the view in question already has
+  /// focus as it won't have any effect.
+  ///
+  /// A call to this method will lead to the engine calling [onViewFocusChange]
+  /// if the request is successfully fulfilled.
+  ///
+  /// See also:
+  ///
+  ///  * [onViewFocusChange], a callback to subscribe to view focus change events.
+  void requestViewFocusChange({
+    required int viewId,
+    required ViewFocusState state,
+    required ViewFocusDirection direction,
+  }) {
+    // TODO(tugorez): implement this method. At the moment will be a no op call.
+  }
 
   /// A callback invoked when any view begins a frame.
   ///
@@ -382,12 +447,9 @@ class PlatformDispatcher {
     }
   }
 
-  // If this value changes, update the encoding code in the following files:
-  //
-  //  * pointer_data.cc
-  //  * pointer.dart
-  //  * AndroidTouchProcessor.java
-  static const int _kPointerDataFieldCount = 35;
+  // This value must match kPointerDataFieldCount in pointer_data.cc. (The
+  // pointer_data.cc also lists other locations that must be kept consistent.)
+  static const int _kPointerDataFieldCount = 36;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
@@ -398,7 +460,7 @@ class PlatformDispatcher {
     for (int i = 0; i < length; ++i) {
       int offset = i * _kPointerDataFieldCount;
       data.add(PointerData(
-        // TODO(goderbauer): Wire up viewId.
+        // The unpacking code must match the struct in pointer_data.h.
         embedderId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
         timeStamp: Duration(microseconds: packet.getInt64(kStride * offset++, _kFakeHostEndian)),
         change: PointerChange.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
@@ -434,6 +496,7 @@ class PlatformDispatcher {
         panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        viewId: packet.getInt64(kStride * offset++, _kFakeHostEndian),
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }
@@ -474,11 +537,9 @@ class PlatformDispatcher {
 
   // If this value changes, update the encoding code in the following files:
   //
-  //  * key_data.h
-  //  * key.dart (ui)
-  //  * key.dart (web_ui)
-  //  * HardwareKeyboard.java
-  static const int _kKeyDataFieldCount = 5;
+  //  * key_data.h (kKeyDataFieldCount)
+  //  * KeyData.java (KeyData.FIELD_COUNT)
+  static const int _kKeyDataFieldCount = 6;
 
   // The packet structure is described in `key_data_packet.h`.
   static KeyData _unpackKeyData(ByteData packet) {
@@ -740,10 +801,46 @@ class PlatformDispatcher {
   ///
   ///  * [SchedulerBinding], the Flutter framework class which manages the
   ///    scheduling of frames.
+  ///  * [scheduleWarmUpFrame], which should only be used to schedule warm up
+  ///    frames.
   void scheduleFrame() => _scheduleFrame();
 
   @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
+
+  /// Schedule a frame to run as soon as possible, rather than waiting for the
+  /// engine to request a frame in response to a system "Vsync" signal.
+  ///
+  /// The application can call this method as soon as it starts up so that the
+  /// first frame (which is likely to be quite expensive) can start a few extra
+  /// milliseconds earlier. Using it in other situations might lead to
+  /// unintended results, such as screen tearing. Depending on platforms and
+  /// situations, the warm up frame might or might not be actually rendered onto
+  /// the screen.
+  ///
+  /// For more introduction to the warm up frame, see
+  /// [SchedulerBinding.scheduleWarmUpFrame].
+  ///
+  /// This method uses the provided callbacks as the begin frame callback and
+  /// the draw frame callback instead of [onBeginFrame] and [onDrawFrame].
+  ///
+  /// See also:
+  ///
+  ///  * [SchedulerBinding.scheduleWarmUpFrame], which uses this method, and
+  ///    introduces the warm up frame in more details.
+  ///  * [scheduleFrame], which schedules the frame at the next appropriate
+  ///    opportunity and should be used to render regular frames.
+  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame}) {
+    // We use timers here to ensure that microtasks flush in between.
+    Timer.run(beginFrame);
+    Timer.run(() {
+      drawFrame();
+      _endWarmUpFrame();
+    });
+  }
+
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::EndWarmUpFrame')
+  external static void _endWarmUpFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
   AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;
@@ -1050,17 +1147,19 @@ class PlatformDispatcher {
     if (brieflyShowPassword != null) {
       _brieflyShowPassword = brieflyShowPassword;
     }
-    final Brightness platformBrightness =
-    data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
+    final Brightness platformBrightness = switch (data['platformBrightness']) {
+      'dark'              => Brightness.dark,
+      'light'             => Brightness.light,
+      final Object? value => throw StateError('$value is not a valid platformBrightness.'),
+    };
     final String? systemFontFamily = data['systemFontFamily'] as String?;
+    final int? configurationId = data['configurationId'] as int?;
     final _PlatformConfiguration previousConfiguration = _configuration;
     final bool platformBrightnessChanged = previousConfiguration.platformBrightness != platformBrightness;
     final bool textScaleFactorChanged = previousConfiguration.textScaleFactor != textScaleFactor;
-    final bool alwaysUse24HourFormatChanged =
-        previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
-    final bool systemFontFamilyChanged =
-        previousConfiguration.systemFontFamily != systemFontFamily;
-    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged) {
+    final bool alwaysUse24HourFormatChanged = previousConfiguration.alwaysUse24HourFormat != alwaysUse24HourFormat;
+    final bool systemFontFamilyChanged = previousConfiguration.systemFontFamily != systemFontFamily;
+    if (!platformBrightnessChanged && !textScaleFactorChanged && !alwaysUse24HourFormatChanged && !systemFontFamilyChanged && configurationId == null) {
       return;
     }
     _configuration = previousConfiguration.copyWith(
@@ -1068,9 +1167,11 @@ class PlatformDispatcher {
       alwaysUse24HourFormat: alwaysUse24HourFormat,
       platformBrightness: platformBrightness,
       systemFontFamily: systemFontFamily,
+      configurationId: configurationId,
     );
     _invoke(onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
     if (textScaleFactorChanged) {
+      _cachedFontSizes = null;
       _invoke(onTextScaleFactorChanged, _onTextScaleFactorChangedZone);
     }
     if (platformBrightnessChanged) {
@@ -1228,7 +1329,7 @@ class PlatformDispatcher {
   /// ## iOS
   ///
   /// On iOS, calling
-  /// [`FlutterViewController.setInitialRoute`](/objcdoc/Classes/FlutterViewController.html#/c:objc%28cs%29FlutterViewController%28im%29setInitialRoute:)
+  /// [`FlutterViewController.setInitialRoute`](/ios-embedder/interface_flutter_view_controller.html#a7f269c2da73312f856d42611cc12a33f)
   /// will set this value. The value must be set sufficiently early, i.e. before
   /// the [runApp] call is executed in Dart, for this to have any effect on the
   /// framework. The `application:didFinishLaunchingWithOptions:` method is a
@@ -1243,6 +1344,99 @@ class PlatformDispatcher {
 
   @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
+
+  /// Computes the scaled font size from the given `unscaledFontSize`, according
+  /// to the user's platform preferences.
+  ///
+  /// Many platforms allow users to scale text globally for better readability.
+  /// Given the font size the app developer specified in logical pixels, this
+  /// method converts it to the preferred font size (also in logical pixels) that
+  /// accounts for platform-wide text scaling. The return value is always
+  /// non-negative.
+  ///
+  /// The scaled value of the same font size input may change if the user changes
+  /// the text scaling preference (in system settings for example). The
+  /// [onTextScaleFactorChanged] callback can be used to monitor such changes.
+  ///
+  /// Instead of directly calling this method, applications should typically use
+  /// [MediaQuery.textScalerOf] to retrive the scaled font size in a widget tree,
+  /// so text in the app resizes properly when the text scaling preference
+  /// changes.
+  double scaleFontSize(double unscaledFontSize) {
+    assert(unscaledFontSize >= 0);
+    assert(unscaledFontSize.isFinite);
+
+    if (textScaleFactor == 1.0) {
+      return unscaledFontSize;
+    }
+
+    final int unscaledFloor = unscaledFontSize.floor();
+    final int unscaledCeil = unscaledFontSize.ceil();
+    if (unscaledFloor == unscaledCeil) {
+      // No need to interpolate if the input value is an integer.
+      return _scaleAndMemoize(unscaledFloor) ?? unscaledFontSize * textScaleFactor;
+    }
+    assert(unscaledCeil - unscaledFloor == 1, 'Unexpected interpolation range: $unscaledFloor - $unscaledCeil.');
+
+    return switch ((_scaleAndMemoize(unscaledFloor), _scaleAndMemoize(unscaledCeil))) {
+      (null, _) || (_, null)                   => unscaledFontSize * textScaleFactor,
+      (final double lower, final double upper) => lower + (upper - lower) * (unscaledFontSize - unscaledFloor),
+    };
+  }
+
+  // The cache is cleared when the text scale factor changes.
+  Map<int, double>? _cachedFontSizes;
+  // This method returns null if an error is encountered.
+  double? _scaleAndMemoize(int unscaledFontSize) {
+    final int? configurationId = _configuration.configurationId;
+    if (configurationId == null) {
+      // The platform uses linear scaling, or the platform hasn't sent us a
+      // configuration yet.
+      return null;
+    }
+    final double? cachedValue = _cachedFontSizes?[unscaledFontSize];
+    if (cachedValue != null) {
+      assert(cachedValue >= 0);
+      return cachedValue;
+    }
+
+    final double unscaledFontSizeDouble = unscaledFontSize.toDouble();
+    final double fontSize = PlatformDispatcher._getScaledFontSize(unscaledFontSizeDouble, configurationId);
+    if (fontSize >= 0) {
+      return (_cachedFontSizes ??= <int, double>{})[unscaledFontSize] = fontSize;
+    }
+    switch (fontSize) {
+      case -1:
+        // Invalid configuration id. This error can be unrecoverable as the
+        // _getScaledFontSize function can be destructive.
+        assert(false, 'Flutter Error: incorrect configuration id: $configurationId.');
+      case final double errorCode:
+        assert(false, 'Unknown error: GetScaledFontSize failed with $errorCode.');
+    }
+    return null;
+  }
+
+  // Calls the platform's text scaling implementation to scale the given
+  // `unscaledFontSize`.
+  //
+  // The `configurationId` parameter tells the embedder which platform
+  // configuration to use for computing the scaled font size. When the user
+  // changes the platform configuration, the configuration data will first be
+  // made available on the platform thread before being dispatched asynchronously
+  // to the Flutter UI thread. Since this call is synchronous, without this
+  // identifier, it could call into the embber who's using a newer configuration
+  // that Flutter has not received yet. The `configurationId` parameter must be
+  // the lastest configuration id received from the platform
+  // (`_configuration.configurationId`). Using an incorrect id could result in
+  // an unrecoverable error.
+  //
+  // Currently this is only implemented on newer versions of Android (SDK level
+  // 34, using the `TypedValue#applyDimension` API). Platforms that do not have
+  // the capability will never send a `configurationId` to [PlatformDispatcher],
+  // and should not call this method. This method returns -1 when the specified
+  // configurationId does not match any configuration.
+  @Native<Double Function(Double, Int)>(symbol: 'PlatformConfigurationNativeApi::GetScaledFontSize')
+  external static double _getScaledFontSize(double unscaledFontSize, int configurationId);
 }
 
 /// Configuration of the platform.
@@ -1258,6 +1452,7 @@ class _PlatformConfiguration {
     this.locales = const <Locale>[],
     this.defaultRouteName,
     this.systemFontFamily,
+    this.configurationId,
   });
 
   _PlatformConfiguration copyWith({
@@ -1269,6 +1464,7 @@ class _PlatformConfiguration {
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
+    int? configurationId,
   }) {
     return _PlatformConfiguration(
       accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
@@ -1279,6 +1475,7 @@ class _PlatformConfiguration {
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
+      configurationId: configurationId ?? this.configurationId,
     );
   }
 
@@ -1310,13 +1507,29 @@ class _PlatformConfiguration {
 
   /// The system-reported default font family.
   final String? systemFontFamily;
+
+  /// A unique identifier for this [_PlatformConfiguration].
+  ///
+  /// This unique identifier is optionally assigned by the platform embedder.
+  /// Dart code that runs on the Flutter UI thread and synchronously invokes
+  /// platform APIs can use this identifier to tell the embedder to use the
+  /// configuration that matches the current [_PlatformConfiguration] in
+  /// dart:ui. See the [_getScaledFontSize] function for an example.
+  ///
+  /// This field's nullability also indicates whether the platform supports
+  /// nonlinear text scaling (as it's the only feature that requires synchronous
+  /// invocation of platform APIs). This field is always null if the platform
+  /// does not use nonlinear text scaling, or when dart:ui has not received any
+  /// configuration updates from the embedder yet. The _getScaledFontSize
+  /// function should not be called in either case.
+  final int? configurationId;
 }
 
 /// An immutable view configuration.
 class _ViewConfiguration {
   const _ViewConfiguration({
     this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
+    this.size = Size.zero,
     this.viewInsets = ViewPadding.zero,
     this.viewPadding = ViewPadding.zero,
     this.systemGestureInsets = ViewPadding.zero,
@@ -1333,9 +1546,8 @@ class _ViewConfiguration {
   /// The pixel density of the output surface.
   final double devicePixelRatio;
 
-  /// The geometry requested for the view on the screen or within its parent
-  /// window, in logical pixels.
-  final Rect geometry;
+  /// The size requested for the view in physical pixels.
+  final Size size;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but over which the operating system will likely
@@ -1405,7 +1617,7 @@ class _ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[geometry: $geometry]';
+    return '$runtimeType[size: $size]';
   }
 }
 
@@ -1669,13 +1881,13 @@ enum AppLifecycleState {
   /// any host views.
   ///
   /// The application defaults to this state before it initializes, and can be
-  /// in this state (on Android and iOS only) after all views have been
+  /// in this state (applicable on Android, iOS, and web) after all views have been
   /// detached.
   ///
   /// When the application is in this state, the engine is running without a
   /// view.
   ///
-  /// This state is only entered on iOS and Android, although on all platforms
+  /// This state is only entered on iOS, Android, and web, although on all platforms
   /// it is the default state before the application begins running.
   detached,
 
@@ -1835,6 +2047,113 @@ class ViewPadding {
   'This feature was deprecated after v3.8.0-14.0.pre.',
 )
 typedef WindowPadding = ViewPadding;
+
+/// Immutable layout constraints for [FlutterView]s.
+///
+/// Similar to [BoxConstraints], a [Size] respects a [ViewConstraints] if, and
+/// only if, all of the following relations hold:
+///
+/// * [minWidth] <= [Size.width] <= [maxWidth]
+/// * [minHeight] <= [Size.height] <= [maxHeight]
+///
+/// The constraints themselves must satisfy these relations:
+///
+/// * 0.0 <= [minWidth] <= [maxWidth] <= [double.infinity]
+/// * 0.0 <= [minHeight] <= [maxHeight] <= [double.infinity]
+///
+/// For each constraint, [double.infinity] is a legal value.
+///
+/// For a generic class that represents these kind of constraints, see the
+/// [BoxConstraints] class.
+class ViewConstraints {
+  /// Creates view constraints with the given constraints.
+  const ViewConstraints({
+    this.minWidth = 0.0,
+    this.maxWidth = double.infinity,
+    this.minHeight = 0.0,
+    this.maxHeight = double.infinity,
+  });
+
+  /// Creates view constraints that is respected only by the given size.
+  ViewConstraints.tight(Size size)
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
+
+  /// The minimum width that satisfies the constraints.
+  final double minWidth;
+
+  /// The maximum width that satisfies the constraints.
+  ///
+  /// Might be [double.infinity].
+  final double maxWidth;
+
+  /// The minimum height that satisfies the constraints.
+  final double minHeight;
+
+  /// The maximum height that satisfies the constraints.
+  ///
+  /// Might be [double.infinity].
+  final double maxHeight;
+
+  /// Whether the given size satisfies the constraints.
+  bool isSatisfiedBy(Size size) {
+    return (minWidth <= size.width) && (size.width <= maxWidth) &&
+           (minHeight <= size.height) && (size.height <= maxHeight);
+  }
+
+  /// Whether there is exactly one size that satisfies the constraints.
+  bool get isTight => minWidth >= maxWidth && minHeight >= maxHeight;
+
+  /// Scales each constraint parameter by the inverse of the given factor.
+  ViewConstraints operator/(double factor) {
+    return ViewConstraints(
+      minWidth: minWidth / factor,
+      maxWidth: maxWidth / factor,
+      minHeight: minHeight / factor,
+      maxHeight: maxHeight / factor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is ViewConstraints
+        && other.minWidth == minWidth
+        && other.maxWidth == maxWidth
+        && other.minHeight == minHeight
+        && other.maxHeight == maxHeight;
+  }
+
+  @override
+  int get hashCode => Object.hash(minWidth, maxWidth, minHeight, maxHeight);
+
+  @override
+  String toString() {
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'ViewConstraints(biggest)';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity &&
+        minHeight == 0 && maxHeight == double.infinity) {
+      return 'ViewConstraints(unconstrained)';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'ViewConstraints($width, $height)';
+  }
+}
 
 /// Area of the display that may be obstructed by a hardware feature.
 ///
@@ -2334,4 +2653,81 @@ class SemanticsActionEvent {
       arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
     );
   }
+}
+
+/// Signature for [PlatformDispatcher.onViewFocusChange].
+typedef ViewFocusChangeCallback = void Function(ViewFocusEvent viewFocusEvent);
+
+/// An event for the engine to communicate view focus changes to the app.
+///
+/// This value will be typically passed to the [PlatformDispatcher.onViewFocusChange]
+/// callback.
+final class ViewFocusEvent {
+  /// Creates a [ViewFocusChange].
+  const ViewFocusEvent({
+    required this.viewId,
+    required this.state,
+    required this.direction,
+  });
+
+  /// The ID of the [FlutterView] that experienced a focus change.
+  final int viewId;
+
+  /// The state focus changed to.
+  final ViewFocusState state;
+
+  /// The direction focus changed to.
+  final ViewFocusDirection direction;
+
+  @override
+  String toString() {
+    return 'ViewFocusEvent(viewId: $viewId, state: $state, direction: $direction)';
+  }
+}
+
+/// Represents the focus state of a given [FlutterView].
+///
+/// When focus is lost, the view's focus state changes to [ViewFocusState.unfocused].
+///
+/// When focus is gained, the view's focus state changes to [ViewFocusState.focused].
+///
+/// Valid transitions within a view are:
+///
+/// - [ViewFocusState.focused] to [ViewFocusState.unfocused].
+/// - [ViewFocusState.unfocused] to [ViewFocusState.focused].
+///
+/// See also:
+///
+///   * [ViewFocusDirection], that specifies the focus direction.
+///   * [ViewFocusEvent], that conveys information about a [FlutterView] focus change.
+enum ViewFocusState {
+  /// Specifies that a view does not have platform focus.
+  unfocused,
+
+  /// Specifies that a view has platform focus.
+  focused,
+}
+
+/// Represents the direction in which the focus transitioned across [FlutterView]s.
+///
+/// See also:
+///
+///   * [ViewFocusState], that specifies the current focus state of a [FlutterView].
+///   * [ViewFocusEvent], that conveys information about a [FlutterView] focus change.
+enum ViewFocusDirection {
+  /// Indicates the focus transition did not have a direction.
+  ///
+  /// This is typically associated with focus being programmatically requested or
+  /// when focus is lost.
+  undefined,
+
+  /// Indicates the focus transition was performed in a forward direction.
+  ///
+  /// This is typically result of the user pressing tab.
+  forward,
+
+  /// Indicates the focus transition was performed in a backward direction.
+  ///
+  /// This is typically result of the user pressing shift + tab.
+  backward,
 }

@@ -11,6 +11,7 @@
 #include "flutter/common/constants.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/ptrace_check.h"
 #include "flutter/shell/common/engine.h"
@@ -48,16 +49,19 @@ static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& confi
 
   // set thread priority
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND: {
+    case fml::Thread::ThreadPriority::kBackground: {
+      pthread_set_qos_class_self_np(QOS_CLASS_BACKGROUND, 0);
       [[NSThread currentThread] setThreadPriority:0];
       break;
     }
-    case fml::Thread::ThreadPriority::NORMAL: {
+    case fml::Thread::ThreadPriority::kNormal: {
+      pthread_set_qos_class_self_np(QOS_CLASS_DEFAULT, 0);
       [[NSThread currentThread] setThreadPriority:0.5];
       break;
     }
-    case fml::Thread::ThreadPriority::RASTER:
-    case fml::Thread::ThreadPriority::DISPLAY: {
+    case fml::Thread::ThreadPriority::kRaster:
+    case fml::Thread::ThreadPriority::kDisplay: {
+      pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
       [[NSThread currentThread] setThreadPriority:1.0];
       sched_param param;
       int policy;
@@ -113,9 +117,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
-  std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterEngine>> _weakFactory;
 
-  fml::WeakPtr<FlutterViewController> _viewController;
+  fml::WeakNSObject<FlutterViewController> _viewController;
   fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
@@ -186,7 +190,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _allowHeadlessExecution = allowHeadlessExecution;
   _labelPrefix = [labelPrefix copy];
 
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
+  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterEngine>>(self);
 
   if (project == nil) {
     _dartProject.reset([[FlutterDartProject alloc] init]);
@@ -324,8 +328,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return *_shell;
 }
 
-- (fml::WeakPtr<FlutterEngine>)getWeakPtr {
-  return _weakFactory->GetWeakPtr();
+- (fml::WeakNSObject<FlutterEngine>)getWeakNSObject {
+  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
@@ -420,13 +424,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)setViewController:(FlutterViewController*)viewController {
   FML_DCHECK(self.iosPlatformView);
-  _viewController =
-      viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
+  _viewController = viewController ? [viewController getWeakNSObject]
+                                   : fml::WeakNSObject<FlutterViewController>();
   self.iosPlatformView->SetOwnerViewController(_viewController);
   [self maybeSetupPlatformViewChannels];
   [self updateDisplays];
   _textInputPlugin.get().viewController = viewController;
-  _undoManagerPlugin.get().viewController = viewController;
 
   if (viewController) {
     __block FlutterEngine* blockSelf = self;
@@ -461,7 +464,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)notifyViewControllerDeallocated {
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
   _textInputPlugin.get().viewController = nil;
-  _undoManagerPlugin.get().viewController = nil;
   if (!_allowHeadlessExecution) {
     [self destroyContext];
   } else if (_shell) {
@@ -581,7 +583,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)setUpChannels {
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
-  fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
   [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
                           binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
                             if (weakSelf) {
@@ -671,7 +673,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [[FlutterUndoManagerPlugin alloc] initWithDelegate:self];
   _undoManagerPlugin.reset(undoManagerPlugin);
 
-  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakPtr]]);
+  _platformPlugin.reset([[FlutterPlatformPlugin alloc] initWithEngine:[self getWeakNSObject]]);
 
   _restorationPlugin.reset([[FlutterRestorationPlugin alloc]
          initWithChannel:_restorationChannel.get()
@@ -716,7 +718,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       [platformPlugin handleMethodCall:call result:result];
     }];
 
-    fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
+    fml::WeakNSObject<FlutterEngine> weakSelf = [self getWeakNSObject];
     [_platformViewsChannel.get()
         setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
           if (weakSelf) {
@@ -789,11 +791,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
-  uint32_t threadHostType = flutter::ThreadHost::Type::UI | flutter::ThreadHost::Type::RASTER |
-                            flutter::ThreadHost::Type::IO;
+  uint32_t threadHostType = flutter::ThreadHost::Type::kUi | flutter::ThreadHost::Type::kRaster |
+                            flutter::ThreadHost::Type::kIo;
 
   if ([FlutterEngine isProfilerEnabled]) {
-    threadHostType = threadHostType | flutter::ThreadHost::Type::Profiler;
+    threadHostType = threadHostType | flutter::ThreadHost::Type::kProfiler;
   }
 
   flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
@@ -801,18 +803,18 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
   host_config.ui_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::UI, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::DISPLAY);
+                                    flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::kDisplay);
 
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::RASTER, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::RASTER);
+                                    flutter::ThreadHost::Type::kRaster, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::kRaster);
 
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::IO, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::NORMAL);
+                                    flutter::ThreadHost::Type::kIo, threadLabel.UTF8String),
+                                fml::Thread::ThreadPriority::kNormal);
 
   return (flutter::ThreadHost){host_config};
 }
@@ -1185,10 +1187,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Undo Manager Delegate
 
-- (void)flutterUndoManagerPlugin:(FlutterUndoManagerPlugin*)undoManagerPlugin
-         handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
+- (void)handleUndoWithDirection:(FlutterUndoRedoDirection)direction {
   NSString* action = (direction == FlutterUndoRedoDirectionUndo) ? @"undo" : @"redo";
   [_undoManagerChannel.get() invokeMethod:@"UndoManagerClient.handleUndo" arguments:@[ action ]];
+}
+
+- (UIView<UITextInput>*)activeTextInputView {
+  return [[self textInputPlugin] textInputView];
+}
+
+- (NSUndoManager*)undoManager {
+  return self.viewController.undoManager;
 }
 
 #pragma mark - Screenshot Delegate
@@ -1515,7 +1524,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }];
 }
 
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate {
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions") {
   id<UIApplicationDelegate> appDelegate = [[UIApplication sharedApplication] delegate];
   if ([appDelegate conformsToProtocol:@protocol(FlutterAppLifeCycleProvider)]) {
     id<FlutterAppLifeCycleProvider> lifeCycleProvider =

@@ -2,20 +2,37 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
 
 #include <cstddef>
 
-#include "flutter/fml/macros.h"
+#include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/geometry/size.h"
+#include "impeller/renderer/capabilities.h"
 
 namespace impeller {
 
 class ProcTableGLES;
 
-struct CapabilitiesGLES {
-  CapabilitiesGLES(const ProcTableGLES& gl);
+//------------------------------------------------------------------------------
+/// @brief      The Vulkan layers and extensions wrangler.
+///
+class CapabilitiesGLES final
+    : public Capabilities,
+      public BackendCast<CapabilitiesGLES, Capabilities> {
+ public:
+  explicit CapabilitiesGLES(const ProcTableGLES& gl);
+
+  CapabilitiesGLES(const CapabilitiesGLES&) = delete;
+
+  CapabilitiesGLES(CapabilitiesGLES&&) = delete;
+
+  CapabilitiesGLES& operator=(const CapabilitiesGLES&) = delete;
+
+  CapabilitiesGLES& operator=(CapabilitiesGLES&&) = delete;
 
   // Must be at least 8.
   size_t max_combined_texture_image_units = 8;
@@ -57,6 +74,63 @@ struct CapabilitiesGLES {
   size_t num_shader_binary_formats = 0;
 
   size_t GetMaxTextureUnits(ShaderStage stage) const;
+
+  bool IsANGLE() const;
+
+  // |Capabilities|
+  bool SupportsOffscreenMSAA() const override;
+
+  // |Capabilities|
+  bool SupportsImplicitResolvingMSAA() const override;
+
+  // |Capabilities|
+  bool SupportsSSBO() const override;
+
+  // |Capabilities|
+  bool SupportsBufferToTextureBlits() const override;
+
+  // |Capabilities|
+  bool SupportsTextureToTextureBlits() const override;
+
+  // |Capabilities|
+  bool SupportsFramebufferFetch() const override;
+
+  // |Capabilities|
+  bool SupportsCompute() const override;
+
+  // |Capabilities|
+  bool SupportsComputeSubgroups() const override;
+
+  // |Capabilities|
+  bool SupportsReadFromResolve() const override;
+
+  // |Capabilities|
+  bool SupportsDecalSamplerAddressMode() const override;
+
+  // |Capabilities|
+  bool SupportsDeviceTransientTextures() const override;
+
+  // |Capabilities|
+  PixelFormat GetDefaultColorFormat() const override;
+
+  // |Capabilities|
+  PixelFormat GetDefaultStencilFormat() const override;
+
+  // |Capabilities|
+  PixelFormat GetDefaultDepthStencilFormat() const override;
+
+  // |Capabilities|
+  PixelFormat GetDefaultGlyphAtlasFormat() const override;
+
+ private:
+  bool supports_framebuffer_fetch_ = false;
+  bool supports_decal_sampler_address_mode_ = false;
+  bool supports_offscreen_msaa_ = false;
+  bool supports_implicit_msaa_ = false;
+  bool is_angle_ = false;
+  PixelFormat default_glyph_atlas_format_ = PixelFormat::kUnknown;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_

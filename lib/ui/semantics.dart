@@ -6,12 +6,11 @@ part of dart.ui;
 
 /// The possible actions that can be conveyed from the operating system
 /// accessibility APIs to a semantics node.
-///
-/// \warning When changes are made to this class, the equivalent APIs in
-///         `lib/ui/semantics/semantics_node.h` and in each of the embedders
-///         *must* be updated.
-/// See also:
-///   - file://./../../lib/ui/semantics/semantics_node.h
+//
+// > [!Warning]
+// > When changes are made to this class, the equivalent APIs in
+// > `lib/ui/semantics/semantics_node.h` and in each of the embedders
+// > *must* be updated.
 class SemanticsAction {
   const SemanticsAction._(this.index, this.name);
 
@@ -730,6 +729,10 @@ abstract class SemanticsUpdateBuilder {
   /// [PlatformDispatcher.onSemanticsActionEvent] callback might be called with
   /// an action that is no longer possible.
   ///
+  /// The `identifier` is a string that describes the node for UI automation
+  /// tools that work by querying the accessibility hierarchy, such as Android
+  /// UI Automator, iOS XCUITest, or Appium. It's not exposed to users.
+  ///
   /// The `label` is a string that describes this node. The `value` property
   /// describes the current value of the node as a string. The `increasedValue`
   /// string will become the `value` string after a [SemanticsAction.increase]
@@ -738,8 +741,8 @@ abstract class SemanticsUpdateBuilder {
   /// string describes what result an action performed on this node has. The
   /// reading direction of all these strings is given by `textDirection`.
   ///
-  /// The `labelAttirbutes`, `valueAttirbutes`, `hintAttributes`,
-  /// `increasedValueAttirbutes`, and `decreasedValueAttributes` are the lists of
+  /// The `labelAttributes`, `valueAttributes`, `hintAttributes`,
+  /// `increasedValueAttributes`, and `decreasedValueAttributes` are the lists of
   /// [StringAttribute] carried by the `label`, `value`, `hint`, `increasedValue`,
   /// and `decreasedValue` respectively. Their contents must not be changed during
   /// the semantics update.
@@ -803,6 +806,7 @@ abstract class SemanticsUpdateBuilder {
     required double elevation,
     required double thickness,
     required Rect rect,
+    required String identifier,
     required String label,
     required List<StringAttribute> labelAttributes,
     required String value,
@@ -813,8 +817,8 @@ abstract class SemanticsUpdateBuilder {
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    String? tooltip,
-    TextDirection? textDirection,
+    required String tooltip,
+    required TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
@@ -848,9 +852,7 @@ abstract class SemanticsUpdateBuilder {
   SemanticsUpdate build();
 }
 
-@pragma('vm:entry-point')
 base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implements SemanticsUpdateBuilder {
-  @pragma('vm:entry-point')
   _NativeSemanticsUpdateBuilder() { _constructor(); }
 
   @Native<Void Function(Handle)>(symbol: 'SemanticsUpdateBuilder::Create')
@@ -874,6 +876,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required double elevation,
     required double thickness,
     required Rect rect,
+    required String identifier,
     required String label,
     required List<StringAttribute> labelAttributes,
     required String value,
@@ -884,8 +887,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required List<StringAttribute> decreasedValueAttributes,
     required String hint,
     required List<StringAttribute> hintAttributes,
-    String? tooltip,
-    TextDirection? textDirection,
+    required String tooltip,
+    required TextDirection? textDirection,
     required Float64List transform,
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
@@ -912,6 +915,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       rect.bottom,
       elevation,
       thickness,
+      identifier,
       label,
       labelAttributes,
       value,
@@ -922,7 +926,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       decreasedValueAttributes,
       hint,
       hintAttributes,
-      tooltip ?? '',
+      tooltip,
       textDirection != null ? textDirection.index + 1 : 0,
       transform,
       childrenInTraversalOrder,
@@ -963,6 +967,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Handle,
+          Handle,
           Int32,
           Handle,
           Handle,
@@ -988,6 +993,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       double bottom,
       double elevation,
       double thickness,
+      String? identifier,
       String label,
       List<StringAttribute> labelAttributes,
       String value,
@@ -1020,6 +1026,9 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
   }
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SemanticsUpdateBuilder::build')
   external void _build(_NativeSemanticsUpdate outSemanticsUpdate);
+
+  @override
+  String toString() => 'SemanticsUpdateBuilder';
 }
 
 /// An opaque object representing a batch of semantics updates.
@@ -1039,16 +1048,17 @@ abstract class SemanticsUpdate {
   void dispose();
 }
 
-@pragma('vm:entry-point')
 base class _NativeSemanticsUpdate extends NativeFieldWrapperClass1 implements SemanticsUpdate {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
   /// To create a SemanticsUpdate object, use a [SemanticsUpdateBuilder].
-  @pragma('vm:entry-point')
   _NativeSemanticsUpdate._();
 
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'SemanticsUpdate::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'SemanticsUpdate';
 }

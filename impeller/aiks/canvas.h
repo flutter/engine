@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_CANVAS_H_
+#define FLUTTER_IMPELLER_AIKS_CANVAS_H_
 
 #include <deque>
 #include <functional>
@@ -10,11 +11,12 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/aiks/image.h"
+#include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/core/sampler_descriptor.h"
+#include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
@@ -22,20 +24,19 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
 
-class Entity;
-
 struct CanvasStackEntry {
-  Matrix xformation;
+  Matrix transform;
   // |cull_rect| is conservative screen-space bounds of the clipped output area
   std::optional<Rect> cull_rect;
-  size_t stencil_depth = 0u;
-  bool is_subpass = false;
-  bool contains_clips = false;
+  uint32_t clip_depth = 0u;
+  size_t clip_height = 0u;
+  // The number of clips tracked for this canvas stack entry.
+  size_t num_clips = 0u;
+  Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
 };
 
 enum class PointStyle {
@@ -46,8 +47,19 @@ enum class PointStyle {
   kSquare,
 };
 
+/// Controls the behavior of the source rectangle given to DrawImageRect.
+enum class SourceRectConstraint {
+  /// @brief Faster, but may sample outside the bounds of the source rectangle.
+  kFast,
+
+  /// @brief Sample only within the source rectangle. May be slower.
+  kStrict,
+};
+
 class Canvas {
  public:
+  static constexpr uint32_t kMaxDepth = 1 << 24;
+
   struct DebugOptions {
     /// When enabled, layers that are rendered to an offscreen texture
     /// internally get a translucent checkerboard pattern painted over them.
@@ -62,31 +74,34 @@ class Canvas {
 
   explicit Canvas(IRect cull_rect);
 
-  ~Canvas();
+  virtual ~Canvas();
 
-  void Save();
+  virtual void Save(uint32_t total_content_depth = kMaxDepth);
 
-  void SaveLayer(const Paint& paint,
-                 std::optional<Rect> bounds = std::nullopt,
-                 const Paint::ImageFilterProc& backdrop_filter = nullptr);
+  virtual void SaveLayer(
+      const Paint& paint,
+      std::optional<Rect> bounds = std::nullopt,
+      const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
+      ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
+      uint32_t total_content_depth = kMaxDepth);
 
-  bool Restore();
+  virtual bool Restore();
 
   size_t GetSaveCount() const;
 
   void RestoreToCount(size_t count);
 
-  const Matrix& GetCurrentTransformation() const;
+  const Matrix& GetCurrentTransform() const;
 
   const std::optional<Rect> GetCurrentLocalCullingBounds() const;
 
   void ResetTransform();
 
-  void Transform(const Matrix& xformation);
+  void Transform(const Matrix& transform);
 
-  void Concat(const Matrix& xformation);
+  void Concat(const Matrix& transform);
 
-  void PreConcat(const Matrix& xformation);
+  void PreConcat(const Matrix& transform);
 
   void Translate(const Vector3& offset);
 
@@ -102,13 +117,19 @@ class Canvas {
 
   void DrawPaint(const Paint& paint);
 
-  void DrawRect(Rect rect, const Paint& paint);
+  void DrawLine(const Point& p0, const Point& p1, const Paint& paint);
 
-  void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint);
+  void DrawRect(const Rect& rect, const Paint& paint);
 
-  void DrawCircle(Point center, Scalar radius, const Paint& paint);
+  void DrawOval(const Rect& rect, const Paint& paint);
 
-  void DrawPoints(std::vector<Point>,
+  void DrawRRect(const Rect& rect,
+                 const Size& corner_radii,
+                 const Paint& paint);
+
+  void DrawCircle(const Point& center, Scalar radius, const Paint& paint);
+
+  void DrawPoints(std::vector<Point> points,
                   Scalar radius,
                   const Paint& paint,
                   PointStyle point_style);
@@ -118,11 +139,13 @@ class Canvas {
                  const Paint& paint,
                  SamplerDescriptor sampler = {});
 
-  void DrawImageRect(const std::shared_ptr<Image>& image,
-                     Rect source,
-                     Rect dest,
-                     const Paint& paint,
-                     SamplerDescriptor sampler = {});
+  void DrawImageRect(
+      const std::shared_ptr<Image>& image,
+      Rect source,
+      Rect dest,
+      const Paint& paint,
+      SamplerDescriptor sampler = {},
+      SourceRectConstraint src_rect_constraint = SourceRectConstraint::kFast);
 
   void ClipPath(
       const Path& path,
@@ -132,16 +155,18 @@ class Canvas {
       const Rect& rect,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void ClipRRect(
-      const Rect& rect,
-      Scalar corner_radius,
+  void ClipOval(
+      const Rect& bounds,
       Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawPicture(const Picture& picture);
+  void ClipRRect(
+      const Rect& rect,
+      const Size& corner_radii,
+      Entity::ClipOperation clip_op = Entity::ClipOperation::kIntersect);
 
-  void DrawTextFrame(const TextFrame& text_frame,
-                     Point position,
-                     const Paint& paint);
+  virtual void DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
+                             Point position,
+                             const Paint& paint);
 
   void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
@@ -158,37 +183,50 @@ class Canvas {
 
   Picture EndRecordingAsPicture();
 
- private:
-  std::unique_ptr<EntityPass> base_pass_;
-  EntityPass* current_pass_ = nullptr;
-  std::deque<CanvasStackEntry> xformation_stack_;
+ protected:
+  std::deque<CanvasStackEntry> transform_stack_;
   std::optional<Rect> initial_cull_rect_;
+  uint64_t current_depth_ = 0u;
+
+  size_t GetClipHeight() const;
 
   void Initialize(std::optional<Rect> cull_rect);
 
   void Reset();
 
+ private:
+  std::unique_ptr<EntityPass> base_pass_;
+  EntityPass* current_pass_ = nullptr;
+
   EntityPass& GetCurrentPass();
 
-  size_t GetStencilDepth() const;
+  virtual void AddRenderEntityToCurrentPass(Entity entity,
+                                            bool reuse_depth = false);
+  virtual void AddClipEntityToCurrentPass(Entity entity);
 
-  void ClipGeometry(std::unique_ptr<Geometry> geometry,
+  void ClipGeometry(const std::shared_ptr<Geometry>& geometry,
                     Entity::ClipOperation clip_op);
 
   void IntersectCulling(Rect clip_bounds);
   void SubtractCulling(Rect clip_bounds);
 
-  void Save(bool create_subpass,
-            BlendMode = BlendMode::kSourceOver,
-            EntityPass::BackdropFilterProc backdrop_filter = nullptr);
+  virtual void Save(
+      bool create_subpass,
+      uint32_t total_content_depth,
+      BlendMode = BlendMode::kSourceOver,
+      const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr);
 
   void RestoreClip();
 
   bool AttemptDrawBlurredRRect(const Rect& rect,
-                               Scalar corner_radius,
+                               Size corner_radii,
                                const Paint& paint);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
+  Canvas(const Canvas&) = delete;
+
+  Canvas& operator=(const Canvas&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_CANVAS_H_

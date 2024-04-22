@@ -61,13 +61,19 @@ Matrix FilterInput::GetLocalTransform(const Entity& entity) const {
 }
 
 std::optional<Rect> FilterInput::GetLocalCoverage(const Entity& entity) const {
-  Entity local_entity = entity;
-  local_entity.SetTransformation(GetLocalTransform(entity));
+  Entity local_entity = entity.Clone();
+  local_entity.SetTransform(GetLocalTransform(entity));
   return GetCoverage(local_entity);
 }
 
+std::optional<Rect> FilterInput::GetSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return output_limit;
+}
+
 Matrix FilterInput::GetTransform(const Entity& entity) const {
-  return entity.GetTransformation() * GetLocalTransform(entity);
+  return entity.GetTransform() * GetLocalTransform(entity);
 }
 
 void FilterInput::PopulateGlyphAtlas(
@@ -76,10 +82,18 @@ void FilterInput::PopulateGlyphAtlas(
 
 FilterInput::~FilterInput() = default;
 
+bool FilterInput::IsTranslationOnly() const {
+  return true;
+}
+
 bool FilterInput::IsLeaf() const {
   return true;
 }
 
 void FilterInput::SetLeafInputs(const FilterInput::Vector& inputs) {}
+
+void FilterInput::SetEffectTransform(const Matrix& matrix) {}
+
+void FilterInput::SetRenderingMode(Entity::RenderingMode rendering_mode) {}
 
 }  // namespace impeller

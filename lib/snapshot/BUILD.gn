@@ -3,11 +3,15 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//build/fuchsia/sdk.gni")
+import("//flutter/build/bin_to_obj.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/lib/ui/dart_ui.gni")
-import("//third_party/dart/utils/compile_platform.gni")
+import("$dart_src/utils/compile_platform.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 # Generates the Dart/Flutter core platform files and tools.
 #
@@ -38,8 +42,7 @@ group("generate_snapshot_bins") {
 
   # Build analyze_snapshot for 64-bit target CPUs.
   if (host_os == "linux" && (target_cpu == "x64" || target_cpu == "arm64")) {
-    deps +=
-        [ "//third_party/dart/runtime/bin:analyze_snapshot($host_toolchain)" ]
+    deps += [ "$dart_src/runtime/bin:analyze_snapshot($host_toolchain)" ]
   }
 }
 
@@ -64,10 +67,10 @@ compiled_action("generate_snapshot_bin") {
     # By default Dart will create a 32-bit gen_snapshot host binary if the target
     # platform is 32-bit.  Override this to create a 64-bit gen_snapshot for x86
     # targets because some host platforms may not support 32-bit binaries.
-    tool = "//third_party/dart/runtime/bin:gen_snapshot_host_targeting_host"
+    tool = "$dart_src/runtime/bin:gen_snapshot_host_targeting_host"
     toolchain = "//build/toolchain/$host_os:clang_x64"
   } else {
-    tool = "//third_party/dart/runtime/bin:gen_snapshot"
+    tool = "$dart_src/runtime/bin:gen_snapshot"
   }
 
   platform_kernel = "$root_out_dir/flutter_patched_sdk/platform_strong.dill"
@@ -107,103 +110,6 @@ compiled_action("generate_snapshot_bin") {
 
   metadata = {
     entitlement_file_path = [ "gen_snapshot" ]
-  }
-}
-
-# Generates an assembly file defining a given symbol with the bytes from a
-# binary file. Places the symbol in a text section if 'executable' is true,
-# otherwise places the symbol in a read-only data section.
-template("bin_to_assembly") {
-  assert(defined(invoker.deps), "Must define deps")
-  assert(defined(invoker.input), "Must define input binary file")
-  assert(defined(invoker.symbol), "Must define symbol name")
-  assert(defined(invoker.executable), "Must define boolean executable")
-
-  action(target_name) {
-    deps = invoker.deps
-    script = "//third_party/dart/runtime/tools/bin_to_assembly.py"
-    output = invoker.input + ".S"
-    args = [
-      "--input",
-      rebase_path(invoker.input),
-      "--output",
-      rebase_path(output),
-      "--symbol_name",
-      invoker.symbol,
-      "--target_os",
-      current_os,
-    ]
-    if (defined(invoker.size_symbol)) {
-      args += [
-        "--size_symbol_name",
-        invoker.size_symbol,
-        "--target_arch",
-        current_cpu,
-      ]
-    }
-    if (invoker.executable) {
-      args += [ "--executable" ]
-    }
-    inputs = [
-      script,
-      invoker.input,
-    ]
-    outputs = [ output ]
-  }
-}
-
-# Generates an object file defining a given symbol with the bytes from a
-# binary file. Places the symbol in the read-only data section.
-template("bin_to_coff") {
-  assert(defined(invoker.deps), "Must define deps")
-  assert(defined(invoker.input), "Must define input binary file")
-  assert(defined(invoker.symbol), "Must define symbol name")
-  assert(defined(invoker.executable), "Must define executable")
-
-  action(target_name) {
-    deps = invoker.deps
-    script = "//third_party/dart/runtime/tools/bin_to_coff.py"
-    output = invoker.input + ".o"
-    args = [
-      "--input",
-      rebase_path(invoker.input),
-      "--output",
-      rebase_path(output),
-      "--symbol_name",
-      invoker.symbol,
-    ]
-
-    if (defined(invoker.size_symbol)) {
-      args += [
-        "--size_symbol_name",
-        invoker.size_symbol,
-      ]
-    }
-
-    if (invoker.executable) {
-      args += [ "--executable" ]
-    }
-
-    args += [ "--arch=$current_cpu" ]
-    inputs = [ invoker.input ]
-    outputs = [ output ]
-  }
-}
-
-# Generates a linkable output file defining the specified symbol with the bytes
-# from the binary file. Emits a COFF object file when targeting Windows,
-# otherwise assembly.
-template("bin_to_linkable") {
-  assert(defined(invoker.deps), "Must define deps")
-  assert(defined(invoker.input), "Must define input binary file")
-  assert(defined(invoker.symbol), "Must define symbol name")
-  target_type = "bin_to_assembly"
-  if (is_win) {
-    target_type = "bin_to_coff"
-  }
-
-  target(target_type, target_name) {
-    forward_variables_from(invoker, "*")
   }
 }
 
@@ -255,9 +161,9 @@ if (host_os == "mac" && target_os != "mac" &&
   copy("create_arm_gen_snapshot") {
     # The toolchain-specific output directory. For cross-compiles, this is a
     # clang-x64 or clang-arm64 subdirectory of the top-level build directory.
-    host_output_dir = get_label_info(
-            "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
-            "root_out_dir")
+    host_output_dir =
+        get_label_info("$dart_src/runtime/bin:gen_snapshot($host_toolchain)",
+                       "root_out_dir")
 
     # Determine suffixed output gen_snapshot name.
     target_cpu_suffix = target_cpu
@@ -267,7 +173,7 @@ if (host_os == "mac" && target_os != "mac" &&
 
     sources = [ "${host_output_dir}/gen_snapshot" ]
     outputs = [ "${host_output_dir}/gen_snapshot_${target_cpu_suffix}" ]
-    deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+    deps = [ "$dart_src/runtime/bin:gen_snapshot($host_toolchain)" ]
     visibility = [ ":*" ]
   }
 }
@@ -283,13 +189,13 @@ if (host_os == "mac" && target_os == "mac") {
   copy("create_macos_gen_snapshots") {
     # The toolchain-specific output directory. For cross-compiles, this is a
     # clang-x64 or clang-arm64 subdirectory of the top-level build directory.
-    host_output_dir = get_label_info(
-            "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)",
-            "root_out_dir")
+    host_output_dir =
+        get_label_info("$dart_src/runtime/bin:gen_snapshot($host_toolchain)",
+                       "root_out_dir")
 
     sources = [ "${host_output_dir}/gen_snapshot" ]
     outputs = [ "${root_out_dir}/gen_snapshot_${target_cpu}" ]
-    deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+    deps = [ "$dart_src/runtime/bin:gen_snapshot($host_toolchain)" ]
   }
 }
 

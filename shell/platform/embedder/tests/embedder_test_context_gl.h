@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
-#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
+#ifndef FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_GL_H_
+#define FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_GL_H_
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 #include "flutter/testing/test_gl_surface.h"
@@ -62,6 +62,8 @@ class EmbedderTestContextGL : public EmbedderTestContext {
   void GLPopulateExistingDamage(const intptr_t id,
                                 FlutterDamage* existing_damage);
 
+  void* GLGetProcAddress(const char* name);
+
  protected:
   virtual void SetupCompositor() override;
 
@@ -88,12 +90,10 @@ class EmbedderTestContextGL : public EmbedderTestContext {
 
   bool GLMakeResourceCurrent();
 
-  void* GLGetProcAddress(const char* name);
-
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderTestContextGL);
 };
 
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_CONTEXT_GL_H_
+#endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_TEST_CONTEXT_GL_H_

@@ -1673,7 +1673,7 @@ void _paragraphTests() {
       expect(actual, within<double>(distance: actual / 100, from: expected));
     }
 
-    expectAlmost(paragraph.getAlphabeticBaseline(), 85.5);
+    expectAlmost(paragraph.getAlphabeticBaseline(), 78.6);
     expect(paragraph.didExceedMaxLines(), isFalse);
     expectAlmost(paragraph.getHeight(), 108);
     expectAlmost(paragraph.getIdeographicBaseline(), 108);
@@ -1699,7 +1699,7 @@ void _paragraphTests() {
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
-    expectAlmost(lineMetrics.baseline, 85.5);
+    expectAlmost(lineMetrics.baseline, 78.6);
     expectAlmost(lineMetrics.height, 108);
     expectAlmost(lineMetrics.left, 2.5);
     expectAlmost(lineMetrics.width, 263);
@@ -1847,8 +1847,8 @@ void _paragraphTests() {
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   group('getCanvasKitJsFileNames', () {
-    dynamic oldV8BreakIterator = v8BreakIterator;
-    dynamic oldIntlSegmenter = intlSegmenter;
+    JSAny? oldV8BreakIterator = v8BreakIterator;
+    JSAny? oldIntlSegmenter = intlSegmenter;
 
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
@@ -1861,8 +1861,8 @@ void _paragraphTests() {
     });
 
     test('in Chromium-based browsers', () {
-      v8BreakIterator = Object(); // Any non-null value.
-      intlSegmenter = Object(); // Any non-null value.
+      v8BreakIterator = Object().toJSBox; // Any non-null value.
+      intlSegmenter = Object().toJSBox; // Any non-null value.
       browserSupportsImageDecoder = true;
 
       expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
@@ -1874,7 +1874,7 @@ void _paragraphTests() {
     });
 
     test('in older versions of Chromium-based browsers', () {
-      v8BreakIterator = Object(); // Any non-null value.
+      v8BreakIterator = Object().toJSBox; // Any non-null value.
       intlSegmenter = null; // Older versions of Chromium didn't have the Intl.Segmenter API.
       browserSupportsImageDecoder = true;
 
@@ -1884,7 +1884,7 @@ void _paragraphTests() {
     });
 
     test('in other browsers', () {
-      intlSegmenter = Object(); // Any non-null value.
+      intlSegmenter = Object().toJSBox; // Any non-null value.
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = true;
@@ -1892,7 +1892,7 @@ void _paragraphTests() {
       expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
       expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
 
-      v8BreakIterator = Object();
+      v8BreakIterator = Object().toJSBox;
       browserSupportsImageDecoder = false;
       // TODO(mdebbar): we don't check image codecs for now.
       // https://github.com/flutter/flutter/issues/122331
@@ -1928,20 +1928,20 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final DomFinalizationRegistry registry = createDomFinalizationRegistry((String arg) {}.toJS);
-    registry.register(Object(), Object());
+    final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object().toJSWrapper, Object().toJSWrapper);
   });
 }
 
 
 @JS('window.Intl.v8BreakIterator')
-external dynamic get v8BreakIterator;
+external JSAny? get v8BreakIterator;
 
 @JS('window.Intl.v8BreakIterator')
-external set v8BreakIterator(dynamic x);
+external set v8BreakIterator(JSAny? x);
 
 @JS('window.Intl.Segmenter')
-external dynamic get intlSegmenter;
+external JSAny? get intlSegmenter;
 
 @JS('window.Intl.Segmenter')
-external set intlSegmenter(dynamic x);
+external set intlSegmenter(JSAny? x);

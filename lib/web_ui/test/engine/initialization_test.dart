@@ -15,13 +15,13 @@ external set _loader(JSAny? loader);
 set loader(Object? l) => _loader = l?.toJSAnyShallow;
 
 @JS('_flutter.loader.didCreateEngineInitializer')
-external set didCreateEngineInitializer(Object? callback);
+external set didCreateEngineInitializer(JSFunction? callback);
 
 void main() {
   // Prepare _flutter.loader.didCreateEngineInitializer, so it's ready in the page ASAP.
   loader = js_util.jsify(<String, Object>{
     'loader': <String, Object>{
-      'didCreateEngineInitializer': js_util.allowInterop(() { print('not mocked'); }),
+      'didCreateEngineInitializer': () { print('not mocked'); }.toJS,
     },
   });
   internalBootstrapBrowserTest(() => testMain);
@@ -29,14 +29,15 @@ void main() {
 
 void testMain() {
   test('bootstrapEngine calls _flutter.loader.didCreateEngineInitializer callback', () async {
-    Object? engineInitializer;
+    JSAny? engineInitializer;
 
-    void didCreateEngineInitializerMock(Object? obj) {
+    void didCreateEngineInitializerMock(JSAny? obj) {
+      print('obj: $obj');
       engineInitializer = obj;
     }
 
     // Prepare the DOM for: _flutter.loader.didCreateEngineInitializer
-    didCreateEngineInitializer = js_util.allowInterop(didCreateEngineInitializerMock);
+    didCreateEngineInitializer = didCreateEngineInitializerMock.toJS;
 
     // Reset the engine
     engine.debugResetEngineInitializationState();
@@ -76,6 +77,7 @@ void testMain() {
     expect(pluginsRegistered, isTrue, reason: 'Plugins should be immediately registered in autoStart mode.');
     expect(appRan, isTrue, reason: 'App should run immediately in autoStart mode');
   });
+
   // We cannot test anymore, because by now the engine has registered some stuff that can't be rewound back.
   // Like the `ext.flutter.disassemble` developer extension.
 }

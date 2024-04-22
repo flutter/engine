@@ -14,10 +14,10 @@
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/layers/layer_state_stack.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/stopwatch.h"
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/compiler_specific.h"
 #include "flutter/fml/logging.h"
@@ -49,14 +49,14 @@ class RasterCacheItem;
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
 // This should be an exact copy of the Clip enum in painting.dart.
-enum Clip { none, hardEdge, antiAlias, antiAliasWithSaveLayer };
+enum Clip { kNone, kHardEdge, kAntiAlias, kAntiAliasWithSaveLayer };
 
 struct PrerollContext {
   RasterCache* raster_cache;
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   LayerStateStack& state_stack;
-  SkColorSpace* dst_color_space;
+  sk_sp<SkColorSpace> dst_color_space;
   bool surface_needs_readback;
 
   // These allow us to paint in the end of subtree Preroll.
@@ -70,8 +70,6 @@ struct PrerollContext {
   // These allow us to track properties like elevation, opacity, and the
   // presence of a texture layer during Preroll.
   bool has_texture_layer = false;
-
-  bool impeller_enabled = false;
 
   // The list of flags that describe which rendering state attributes
   // (such as opacity, ColorFilter, ImageFilter) a given layer can
@@ -108,7 +106,7 @@ struct PaintContext {
   bool rendering_above_platform_view = false;
 
   GrDirectContext* gr_context;
-  SkColorSpace* dst_color_space;
+  sk_sp<SkColorSpace> dst_color_space;
   ExternalViewEmbedder* view_embedder;
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
@@ -268,7 +266,7 @@ class Layer {
   SkRect paint_bounds_;
   uint64_t unique_id_;
   uint64_t original_layer_id_;
-  bool subtree_has_platform_view_;
+  bool subtree_has_platform_view_ = false;
 
   static uint64_t NextUniqueID();
 

@@ -18,7 +18,6 @@ namespace testing {
     ASSERT_EQ(opposite->name(), !default_value);                             \
   }
 
-CAPABILITY_TEST(HasThreadingRestrictions, false);
 CAPABILITY_TEST(SupportsOffscreenMSAA, false);
 CAPABILITY_TEST(SupportsSSBO, false);
 CAPABILITY_TEST(SupportsBufferToTextureBlits, false);
@@ -26,10 +25,46 @@ CAPABILITY_TEST(SupportsTextureToTextureBlits, false);
 CAPABILITY_TEST(SupportsFramebufferFetch, false);
 CAPABILITY_TEST(SupportsCompute, false);
 CAPABILITY_TEST(SupportsComputeSubgroups, false);
-CAPABILITY_TEST(SupportsReadFromOnscreenTexture, false);
 CAPABILITY_TEST(SupportsReadFromResolve, false);
-CAPABILITY_TEST(SupportsDecalTileMode, false);
-CAPABILITY_TEST(SupportsMemorylessTextures, false);
+CAPABILITY_TEST(SupportsDecalSamplerAddressMode, false);
+CAPABILITY_TEST(SupportsDeviceTransientTextures, false);
+
+TEST(CapabilitiesTest, DefaultColorFormat) {
+  auto defaults = CapabilitiesBuilder().Build();
+  EXPECT_EQ(defaults->GetDefaultColorFormat(), PixelFormat::kUnknown);
+  auto mutated = CapabilitiesBuilder()
+                     .SetDefaultColorFormat(PixelFormat::kB10G10R10A10XR)
+                     .Build();
+  EXPECT_EQ(mutated->GetDefaultColorFormat(), PixelFormat::kB10G10R10A10XR);
+}
+
+TEST(CapabilitiesTest, DefaultStencilFormat) {
+  auto defaults = CapabilitiesBuilder().Build();
+  EXPECT_EQ(defaults->GetDefaultStencilFormat(), PixelFormat::kUnknown);
+  auto mutated = CapabilitiesBuilder()
+                     .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+                     .Build();
+  EXPECT_EQ(mutated->GetDefaultStencilFormat(), PixelFormat::kS8UInt);
+}
+
+TEST(CapabilitiesTest, DefaultDepthStencilFormat) {
+  auto defaults = CapabilitiesBuilder().Build();
+  EXPECT_EQ(defaults->GetDefaultDepthStencilFormat(), PixelFormat::kUnknown);
+  auto mutated = CapabilitiesBuilder()
+                     .SetDefaultDepthStencilFormat(PixelFormat::kD32FloatS8UInt)
+                     .Build();
+  EXPECT_EQ(mutated->GetDefaultDepthStencilFormat(),
+            PixelFormat::kD32FloatS8UInt);
+}
+
+TEST(CapabilitiesTest, DefaultGlyphAtlasFormat) {
+  auto defaults = CapabilitiesBuilder().Build();
+  EXPECT_EQ(defaults->GetDefaultGlyphAtlasFormat(), PixelFormat::kUnknown);
+  auto mutated = CapabilitiesBuilder()
+                     .SetDefaultGlyphAtlasFormat(PixelFormat::kA8UNormInt)
+                     .Build();
+  EXPECT_EQ(mutated->GetDefaultGlyphAtlasFormat(), PixelFormat::kA8UNormInt);
+}
 
 }  // namespace testing
 }  // namespace impeller

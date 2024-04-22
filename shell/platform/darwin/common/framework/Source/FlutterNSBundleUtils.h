@@ -2,19 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
-#define SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
 
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-// Finds a bundle with the named `bundleID` within `searchURL`.
+extern const NSString* kDefaultAssetPath;
+
+// Finds a bundle with the named `flutterFrameworkBundleID` within `searchURL`.
 //
 // Returns `nil` if the bundle cannot be found or if errors are encountered.
-NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
+NSBundle* FLTFrameworkBundleInternal(NSString* flutterFrameworkBundleID, NSURL* searchURL);
 
-// Finds a bundle with the named `bundleID`.
+// Finds a bundle with the named `flutterFrameworkBundleID`.
 //
 // `+[NSBundle bundleWithIdentifier:]` is slow, and can take in the order of
 // tens of milliseconds in a minimal flutter app, and closer to 100 milliseconds
@@ -28,8 +30,26 @@ NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
 // frameworks used by this file are placed. If the desired bundle cannot be
 // found here, the implementation falls back to
 // `+[NSBundle bundleWithIdentifier:]`.
-NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID);
+NSBundle* FLTFrameworkBundleWithIdentifier(NSString* flutterFrameworkBundleID);
+
+// Finds the bundle of the application.
+//
+// Returns [NSBundle mainBundle] if the current running process is the application.
+NSBundle* FLTGetApplicationBundle();
+
+// Gets the flutter assets path directory from `bundle`.
+//
+// Returns `kDefaultAssetPath` if unable to find asset path from info.plist in `bundle`.
+NSString* FLTAssetPath(NSBundle* bundle);
+
+// Finds the Flutter asset directory from `bundle`.
+//
+// The raw path can be set by the application via info.plist's `FLTAssetsPath` key.
+// If the key is not set, `flutter_assets` is used as the raw path value.
+//
+// If no valid asset is found under the raw path, returns nil.
+NSString* FLTAssetsPathFromBundle(NSBundle* bundle);
 
 NS_ASSUME_NONNULL_END
 
-#endif  // SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERNSBUNDLEUTILS_H_

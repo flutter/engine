@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_MATERIAL_H_
+#define FLUTTER_IMPELLER_SCENE_MATERIAL_H_
 
 #include <memory>
 
@@ -60,7 +61,7 @@ class Material {
 
   virtual void BindToCommand(const SceneContext& scene_context,
                              HostBuffer& buffer,
-                             Command& command) const = 0;
+                             RenderPass& pass) const = 0;
 
  protected:
   Scalar vertex_color_weight_ = 1;
@@ -87,7 +88,7 @@ class UnlitMaterial final : public Material {
   // |Material|
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
-                     Command& command) const override;
+                     RenderPass& pass) const override;
 
  private:
   Color color_ = Color::White();
@@ -120,7 +121,7 @@ class PhysicallyBasedMaterial final : public Material {
   // |Material|
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
-                     Command& command) const override;
+                     RenderPass& pass) const override;
 
  private:
   Color albedo_ = Color::White();
@@ -137,3 +138,5 @@ class PhysicallyBasedMaterial final : public Material {
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_MATERIAL_H_

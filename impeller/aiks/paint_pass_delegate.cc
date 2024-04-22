@@ -10,7 +10,6 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path_builder.h"
 
 namespace impeller {
 
@@ -47,6 +46,14 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
                                             effect_transform);
 }
 
+// |EntityPassDelgate|
+std::shared_ptr<FilterContents> PaintPassDelegate::WithImageFilter(
+    const FilterInput::Variant& input,
+    const Matrix& effect_transform) const {
+  return paint_.WithImageFilter(input, effect_transform,
+                                Entity::RenderingMode::kSubpass);
+}
+
 /// OpacityPeepholePassDelegate
 /// ----------------------------------------------
 
@@ -64,8 +71,9 @@ bool OpacityPeepholePassDelegate::CanElide() {
 // |EntityPassDelgate|
 bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     EntityPass* entity_pass) {
-  // Passes with absorbed clips can not be safely collapsed.
-  if (entity_pass->GetBoundsLimit().has_value()) {
+  // Passes with enforced bounds that clip the contents can not be safely
+  // collapsed.
+  if (entity_pass->GetBoundsLimitMightClipContent()) {
     return false;
   }
 
@@ -95,7 +103,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   std::vector<Rect> all_coverages;
   auto had_subpass = entity_pass->IterateUntilSubpass(
       [&all_coverages, &all_can_accept](Entity& entity) {
-        auto contents = entity.GetContents();
+        const auto& contents = entity.GetContents();
         if (!entity.CanInheritOpacity()) {
           all_can_accept = false;
           return false;
@@ -138,6 +146,14 @@ OpacityPeepholePassDelegate::CreateContentsForSubpassTarget(
 
   return paint_.WithFiltersForSubpassTarget(std::move(contents),
                                             effect_transform);
+}
+
+// |EntityPassDelgate|
+std::shared_ptr<FilterContents> OpacityPeepholePassDelegate::WithImageFilter(
+    const FilterInput::Variant& input,
+    const Matrix& effect_transform) const {
+  return paint_.WithImageFilter(input, effect_transform,
+                                Entity::RenderingMode::kSubpass);
 }
 
 }  // namespace impeller

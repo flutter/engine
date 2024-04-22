@@ -325,6 +325,16 @@ EGLBoolean _eglMakeCurrent(EGLDisplay dpy,
 
   return bool_success();
 }
+EGLBoolean _eglQueryContext(EGLDisplay display,
+                            EGLContext context,
+                            EGLint attribute,
+                            EGLint* value) {
+  if (attribute == EGL_CONTEXT_CLIENT_TYPE) {
+    *value = EGL_OPENGL_API;
+    return EGL_TRUE;
+  }
+  return EGL_FALSE;
+}
 
 EGLBoolean _eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
   if (!check_display(dpy) || !check_initialized(dpy)) {
@@ -334,9 +344,15 @@ EGLBoolean _eglSwapBuffers(EGLDisplay dpy, EGLSurface surface) {
   return bool_success();
 }
 
+static GLuint bound_texture_2d;
+
 static void _glBindFramebuffer(GLenum target, GLuint framebuffer) {}
 
-static void _glBindTexture(GLenum target, GLuint texture) {}
+static void _glBindTexture(GLenum target, GLuint texture) {
+  if (target == GL_TEXTURE_2D) {
+    bound_texture_2d = texture;
+  }
+}
 
 void _glDeleteFramebuffers(GLsizei n, const GLuint* framebuffers) {}
 
@@ -357,6 +373,12 @@ static void _glGenTextures(GLsizei n, GLuint* textures) {
 static void _glGenFramebuffers(GLsizei n, GLuint* framebuffers) {
   for (GLsizei i = 0; i < n; i++) {
     framebuffers[i] = 0;
+  }
+}
+
+static void _glGetIntegerv(GLenum pname, GLint* data) {
+  if (pname == GL_TEXTURE_BINDING_2D) {
+    *data = bound_texture_2d;
   }
 }
 
@@ -394,14 +416,15 @@ int epoxy_gl_version(void) {
 #define CONSTRUCT(_func) static void _func(void) __attribute__((constructor));
 #define DESTRUCT(_func) static void _func(void) __attribute__((destructor));
 #elif defined(_MSC_VER) && (_MSC_VER >= 1500)
-#define CONSTRUCT(_func)                                   \
-  static void _func(void);                                 \
-  static int _func##_wrapper(void) {                       \
-    _func();                                               \
-    return 0;                                              \
-  }                                                        \
-  __pragma(section(".CRT$XCU", read)) __declspec(allocate( \
-      ".CRT$XCU")) static int (*_array##_func)(void) = _func##_wrapper;
+#define CONSTRUCT(_func)                                                   \
+  static void _func(void);                                                 \
+  static int _func##_wrapper(void) {                                       \
+    _func();                                                               \
+    return 0;                                                              \
+  }                                                                        \
+  __pragma(section(".CRT$XCU", read))                                      \
+      __declspec(allocate(".CRT$XCU")) static int (*_array##_func)(void) = \
+          _func##_wrapper;
 
 #else
 #error "You will need constructor support for your compiler"
@@ -476,6 +499,7 @@ static void library_init() {
   epoxy_eglGetProcAddress = _eglGetProcAddress;
   epoxy_eglInitialize = _eglInitialize;
   epoxy_eglMakeCurrent = _eglMakeCurrent;
+  epoxy_eglQueryContext = _eglQueryContext;
   epoxy_eglSwapBuffers = _eglSwapBuffers;
 
   epoxy_glBindFramebuffer = _glBindFramebuffer;
@@ -485,6 +509,7 @@ static void library_init() {
   epoxy_glFramebufferTexture2D = _glFramebufferTexture2D;
   epoxy_glGenFramebuffers = _glGenFramebuffers;
   epoxy_glGenTextures = _glGenTextures;
+  epoxy_glGetIntegerv = _glGetIntegerv;
   epoxy_glTexParameterf = _glTexParameterf;
   epoxy_glTexParameteri = _glTexParameteri;
   epoxy_glTexImage2D = _glTexImage2D;

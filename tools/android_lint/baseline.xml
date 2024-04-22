@@ -1,71 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 7.2.0" type="baseline" client="" dependencies="true" name="" variant="all" version="7.2.0">
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_PORTRAIT`"
-        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
-            line="267"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_LANDSCAPE`"
-        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
-            line="271"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_FULL_USER`"
-        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_FULL_USER;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
-            line="275"
-            column="16"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 17 (current min is 16): `android.view.View#LAYOUT_DIRECTION_LTR`"
-        errorLine1="    return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="661"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 17 (current min is 16): `android.view.View#LAYOUT_DIRECTION_RTL`"
-        errorLine1="    return direction == View.LAYOUT_DIRECTION_LTR || direction == View.LAYOUT_DIRECTION_RTL;"
-        errorLine2="                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="661"
-            column="67"/>
-    </issue>
-
-    <issue
-        id="OldTargetApi"
-        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
-        errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;16&quot; android:targetSdkVersion=&quot;31&quot; />"
-        errorLine2="                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/AndroidManifest.xml"
-            line="8"
-            column="42"/>
-    </issue>
+<issues format="6" by="lint 8.1.0 [10406996] " type="baseline" client="" dependencies="true" name="" variant="all" version="8.1.0 [10406996] ">
 
     <issue
         id="HardcodedDebugMode"
@@ -85,7 +19,7 @@
         errorLine2="                 ~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java"
-            line="436"
+            line="445"
             column="18"/>
     </issue>
 
@@ -96,19 +30,8 @@
         errorLine2="                 ~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java"
-            line="911"
+            line="928"
             column="18"/>
     </issue>
-
-    <issue
-        id="UseSparseArrays"
-        message="Use `new SparseArray&lt;VirtualDisplayController>(...)` instead for better performance"
-        errorLine1="        vdControllers = new HashMap&lt;>();"
-        errorLine2="                        ~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="61"
-            column="25"/>
-</issue>
 
 </issues>

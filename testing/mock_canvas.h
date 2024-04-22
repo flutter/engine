@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TESTING_MOCK_CANVAS_H_
-#define TESTING_MOCK_CANVAS_H_
+#ifndef FLUTTER_TESTING_MOCK_CANVAS_H_
+#define FLUTTER_TESTING_MOCK_CANVAS_H_
 
 #include <ostream>
 #include <variant>
@@ -37,8 +37,8 @@ static constexpr SkRect kEmptyRect = SkRect::MakeEmpty();
 class MockCanvas final : public DlCanvas {
  public:
   enum ClipEdgeStyle {
-    kHard_ClipEdgeStyle,
-    kSoft_ClipEdgeStyle,
+    kHardClipEdgeStyle,
+    kSoftClipEdgeStyle,
   };
 
   struct SaveData {
@@ -273,6 +273,10 @@ class MockCanvas final : public DlCanvas {
                     SkScalar x,
                     SkScalar y,
                     const DlPaint& paint) override;
+  void DrawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y,
+                     const DlPaint& paint) override;
   void DrawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
@@ -360,4 +364,4 @@ extern std::ostream& operator<<(std::ostream& os,
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // TESTING_MOCK_CANVAS_H_
+#endif  // FLUTTER_TESTING_MOCK_CANVAS_H_

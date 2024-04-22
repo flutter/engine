@@ -51,6 +51,14 @@ TEST(SwitchesTest, SkiaTraceAllowlistFlag) {
 #endif
 }
 
+TEST(SwitchesTest, TraceToFile) {
+  fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+      {"command", "--trace-to-file=trace.binpb"});
+  EXPECT_TRUE(command_line.HasOption("trace-to-file"));
+  Settings settings = SettingsFromCommandLine(command_line);
+  EXPECT_EQ(settings.trace_to_file, "trace.binpb");
+}
+
 TEST(SwitchesTest, RouteParsedFlag) {
   fml::CommandLine command_line =
       fml::CommandLineFromInitializerList({"command", "--route=/animation"});
@@ -114,6 +122,16 @@ TEST(SwitchesTest, NoEnableImpeller) {
     EXPECT_EQ(settings.enable_impeller, false);
   }
 }
+
+#if !FLUTTER_RELEASE
+TEST(SwitchesTest, EnableAsserts) {
+  fml::CommandLine command_line = fml::CommandLineFromInitializerList(
+      {"command", "--dart-flags=--enable-asserts"});
+  Settings settings = SettingsFromCommandLine(command_line);
+  ASSERT_EQ(settings.dart_flags.size(), 1ul);
+  EXPECT_EQ(settings.dart_flags[0], "--enable-asserts");
+}
+#endif
 
 }  // namespace testing
 }  // namespace flutter

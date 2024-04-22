@@ -11,9 +11,9 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
+#include "flutter/flow/stopwatch.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/raster_thread_merger.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -23,37 +23,28 @@ namespace flutter {
 
 class LayerTree;
 
+// The result status of CompositorContext::ScopedFrame::Raster.
 enum class RasterStatus {
   // Frame has been successfully rasterized.
   kSuccess,
-  // Frame is submitted twice. This is only used on Android when
-  // switching the background surface to FlutterImageView.
+  // Frame has been submited, but must be submitted again. This is only used
+  // on Android when switching the background surface to FlutterImageView.
   //
   // On Android, the first frame doesn't make the image available
   // to the ImageReader right away. The second frame does.
   //
   // TODO(egarciad): https://github.com/flutter/flutter/issues/65652
   kResubmit,
-  // Frame is dropped and a new frame with the same layer tree is
+  // Frame has be dropped and a new frame with the same layer tree must be
   // attempted.
   //
   // This is currently used to wait for the thread merger to merge
   // the raster and platform threads.
   //
-  // Since the thread merger may be disabled,
+  // Since the thread merger may be disabled, the system will proceed
+  // with separate threads for rasterization and platform tasks,
+  // potentially leading to different performance characteristics.
   kSkipAndRetry,
-  // Frame has been successfully rasterized, but "there are additional items in
-  // the pipeline waiting to be consumed. This is currently
-  // only used when thread configuration change occurs.
-  kEnqueuePipeline,
-  // Failed to rasterize the frame.
-  kFailed,
-  // Layer tree was discarded due to LayerTreeDiscardCallback or inability to
-  // access the GPU.
-  kDiscarded,
-  // Drawing was yielded to allow the correct thread to draw as a result of the
-  // RasterThreadMerger.
-  kYielded,
 };
 
 class FrameDamage {

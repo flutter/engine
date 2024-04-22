@@ -9,6 +9,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
@@ -70,23 +71,33 @@ class MockPlatformHandler : public PlatformHandler {
 
   virtual ~MockPlatformHandler() = default;
 
-  MOCK_METHOD2(GetPlainText,
-               void(std::unique_ptr<MethodResult<rapidjson::Document>>,
-                    std::string_view key));
-  MOCK_METHOD1(GetHasStrings,
-               void(std::unique_ptr<MethodResult<rapidjson::Document>>));
-  MOCK_METHOD2(SetPlainText,
-               void(const std::string&,
-                    std::unique_ptr<MethodResult<rapidjson::Document>>));
-  MOCK_METHOD2(SystemSoundPlay,
-               void(const std::string&,
-                    std::unique_ptr<MethodResult<rapidjson::Document>>));
+  MOCK_METHOD(void,
+              GetPlainText,
+              (std::unique_ptr<MethodResult<rapidjson::Document>>,
+               std::string_view key),
+              (override));
+  MOCK_METHOD(void,
+              GetHasStrings,
+              (std::unique_ptr<MethodResult<rapidjson::Document>>),
+              (override));
+  MOCK_METHOD(void,
+              SetPlainText,
+              (const std::string&,
+               std::unique_ptr<MethodResult<rapidjson::Document>>),
+              (override));
+  MOCK_METHOD(void,
+              SystemSoundPlay,
+              (const std::string&,
+               std::unique_ptr<MethodResult<rapidjson::Document>>),
+              (override));
 
-  MOCK_METHOD4(QuitApplication,
-               void(std::optional<HWND> hwnd,
-                    std::optional<WPARAM> wparam,
-                    std::optional<LPARAM> lparam,
-                    UINT exit_code));
+  MOCK_METHOD(void,
+              QuitApplication,
+              (std::optional<HWND> hwnd,
+               std::optional<WPARAM> wparam,
+               std::optional<LPARAM> lparam,
+               UINT exit_code),
+              (override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockPlatformHandler);
@@ -132,20 +143,23 @@ class PlatformHandlerTest : public WindowsTest {
  protected:
   FlutterWindowsEngine* engine() { return engine_.get(); }
 
-  void use_headless_engine() {
+  void UseHeadlessEngine() {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     engine_ = builder.Build();
   }
 
-  void use_engine_with_view() {
+  void UseEngineWithView() {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     auto window = std::make_unique<NiceMock<MockWindowBindingHandler>>();
-    view_ = std::make_unique<FlutterWindowsView>(std::move(window));
-    engine_ = builder.Build();
 
-    engine_->SetView(view_.get());
+    engine_ = builder.Build();
+    view_ = std::make_unique<FlutterWindowsView>(kImplicitViewId, engine_.get(),
+                                                 std::move(window));
+
+    EngineModifier modifier{engine_.get()};
+    modifier.SetImplicitView(view_.get());
   }
 
  private:
@@ -156,7 +170,7 @@ class PlatformHandlerTest : public WindowsTest {
 };
 
 TEST_F(PlatformHandlerTest, GetClipboardData) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -180,7 +194,7 @@ TEST_F(PlatformHandlerTest, GetClipboardData) {
 }
 
 TEST_F(PlatformHandlerTest, GetClipboardDataRejectsUnknownContentType) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -193,7 +207,7 @@ TEST_F(PlatformHandlerTest, GetClipboardDataRejectsUnknownContentType) {
 }
 
 TEST_F(PlatformHandlerTest, GetClipboardDataRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -207,7 +221,7 @@ TEST_F(PlatformHandlerTest, GetClipboardDataRequiresView) {
 }
 
 TEST_F(PlatformHandlerTest, GetClipboardDataReportsOpenFailure) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -227,7 +241,7 @@ TEST_F(PlatformHandlerTest, GetClipboardDataReportsOpenFailure) {
 }
 
 TEST_F(PlatformHandlerTest, GetClipboardDataReportsGetDataFailure) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -251,7 +265,7 @@ TEST_F(PlatformHandlerTest, GetClipboardDataReportsGetDataFailure) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardHasStrings) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -272,7 +286,7 @@ TEST_F(PlatformHandlerTest, ClipboardHasStrings) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardHasStringsReturnsFalse) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -293,7 +307,7 @@ TEST_F(PlatformHandlerTest, ClipboardHasStringsReturnsFalse) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardHasStringsRejectsUnknownContentType) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -305,7 +319,7 @@ TEST_F(PlatformHandlerTest, ClipboardHasStringsRejectsUnknownContentType) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardHasStringsRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -320,7 +334,7 @@ TEST_F(PlatformHandlerTest, ClipboardHasStringsRequiresView) {
 
 // Regression test for https://github.com/flutter/flutter/issues/95817.
 TEST_F(PlatformHandlerTest, ClipboardHasStringsIgnoresPermissionErrors) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -340,7 +354,7 @@ TEST_F(PlatformHandlerTest, ClipboardHasStringsIgnoresPermissionErrors) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardHasStringsReportsErrors) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -360,7 +374,7 @@ TEST_F(PlatformHandlerTest, ClipboardHasStringsReportsErrors) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardSetData) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -387,7 +401,7 @@ TEST_F(PlatformHandlerTest, ClipboardSetData) {
 
 // Regression test for: https://github.com/flutter/flutter/issues/121976
 TEST_F(PlatformHandlerTest, ClipboardSetDataTextMustBeString) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -399,7 +413,7 @@ TEST_F(PlatformHandlerTest, ClipboardSetDataTextMustBeString) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardSetDataUnknownType) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -411,7 +425,7 @@ TEST_F(PlatformHandlerTest, ClipboardSetDataUnknownType) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardSetDataRequiresView) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine());
@@ -425,7 +439,7 @@ TEST_F(PlatformHandlerTest, ClipboardSetDataRequiresView) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardSetDataReportsOpenFailure) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -445,7 +459,7 @@ TEST_F(PlatformHandlerTest, ClipboardSetDataReportsOpenFailure) {
 }
 
 TEST_F(PlatformHandlerTest, ClipboardSetDataReportsSetDataFailure) {
-  use_engine_with_view();
+  UseEngineWithView();
 
   TestBinaryMessenger messenger;
   PlatformHandler platform_handler(&messenger, engine(), []() {
@@ -468,7 +482,7 @@ TEST_F(PlatformHandlerTest, ClipboardSetDataReportsSetDataFailure) {
 }
 
 TEST_F(PlatformHandlerTest, PlaySystemSound) {
-  use_headless_engine();
+  UseHeadlessEngine();
 
   TestBinaryMessenger messenger;
   MockPlatformHandler platform_handler(&messenger, engine());
@@ -486,7 +500,7 @@ TEST_F(PlatformHandlerTest, PlaySystemSound) {
 }
 
 TEST_F(PlatformHandlerTest, SystemExitApplicationRequired) {
-  use_headless_engine();
+  UseHeadlessEngine();
   UINT exit_code = 0;
 
   TestBinaryMessenger messenger([](const std::string& channel,
@@ -508,7 +522,7 @@ TEST_F(PlatformHandlerTest, SystemExitApplicationRequired) {
 }
 
 TEST_F(PlatformHandlerTest, SystemExitApplicationCancelableCancel) {
-  use_headless_engine();
+  UseHeadlessEngine();
   bool called_cancel = false;
 
   TestBinaryMessenger messenger(
@@ -529,7 +543,7 @@ TEST_F(PlatformHandlerTest, SystemExitApplicationCancelableCancel) {
 }
 
 TEST_F(PlatformHandlerTest, SystemExitApplicationCancelableExit) {
-  use_headless_engine();
+  UseHeadlessEngine();
   bool called_cancel = false;
   UINT exit_code = 0;
 

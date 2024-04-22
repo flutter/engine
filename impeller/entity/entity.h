@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_H_
+#define FLUTTER_IMPELLER_ENTITY_ENTITY_H_
 
-#include <variant>
+#include <cstdint>
+
+#include "impeller/core/capture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
-#include "impeller/image/decompressed_image.h"
 
 namespace impeller {
 
@@ -21,6 +22,19 @@ class Entity {
  public:
   static constexpr BlendMode kLastPipelineBlendMode = BlendMode::kModulate;
   static constexpr BlendMode kLastAdvancedBlendMode = BlendMode::kLuminosity;
+
+  static constexpr Scalar kDepthEpsilon = 1.0f / 262144.0;
+
+  enum class RenderingMode {
+    /// In direct mode, the Entity's transform is used as the current
+    /// local-to-screen transform matrix.
+    kDirect,
+    /// In subpass mode, the Entity passed through the filter is in screen space
+    /// rather than local space, and so some filters (namely,
+    /// MatrixFilterContents) need to interpret the given EffectTransform as the
+    /// current transform matrix.
+    kSubpass,
+  };
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
   /// typically defined range of the source of the colors (such as the
@@ -50,35 +64,48 @@ class Entity {
   };
 
   /// @brief  Create an entity that can be used to render a given snapshot.
-  static std::optional<Entity> FromSnapshot(
-      const std::optional<Snapshot>& snapshot,
-      BlendMode blend_mode = BlendMode::kSourceOver,
-      uint32_t stencil_depth = 0);
+  static Entity FromSnapshot(const Snapshot& snapshot,
+                             BlendMode blend_mode = BlendMode::kSourceOver);
 
   Entity();
 
   ~Entity();
 
-  const Matrix& GetTransformation() const;
+  Entity(Entity&&);
 
-  void SetTransformation(const Matrix& transformation);
+  /// @brief  Get the global transform matrix for this Entity.
+  const Matrix& GetTransform() const;
+
+  /// @brief  Get the vertex shader transform used for drawing this Entity.
+  Matrix GetShaderTransform(const RenderPass& pass) const;
+
+  /// @brief  Static utility that computes the vertex shader transform used for
+  ///         drawing an Entity with a given the clip depth and RenderPass size.
+  static Matrix GetShaderTransform(Scalar clip_depth,
+                                   const RenderPass& pass,
+                                   const Matrix& transform);
+
+  /// @brief  Set the global transform matrix for this Entity.
+  void SetTransform(const Matrix& transform);
 
   std::optional<Rect> GetCoverage() const;
 
-  Contents::StencilCoverage GetStencilCoverage(
-      const std::optional<Rect>& current_stencil_coverage) const;
+  Contents::ClipCoverage GetClipCoverage(
+      const std::optional<Rect>& current_clip_coverage) const;
 
-  bool ShouldRender(const std::optional<Rect>& stencil_coverage) const;
+  bool ShouldRender(const std::optional<Rect>& clip_coverage) const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 
   const std::shared_ptr<Contents>& GetContents() const;
 
-  void SetStencilDepth(uint32_t stencil_depth);
+  void SetClipDepth(uint32_t clip_depth);
 
-  void IncrementStencilDepth(uint32_t increment);
+  uint32_t GetClipDepth() const;
 
-  uint32_t GetStencilDepth() const;
+  float GetShaderClipDepth() const;
+
+  static float GetShaderClipDepth(uint32_t clip_depth);
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -96,11 +123,22 @@ class Entity {
 
   Scalar DeriveTextScale() const;
 
+  Capture& GetCapture() const;
+
+  void SetCapture(Capture capture) const;
+
+  Entity Clone() const;
+
  private:
-  Matrix transformation_;
+  Entity(const Entity&);
+
+  Matrix transform_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
-  uint32_t stencil_depth_ = 0u;
+  uint32_t clip_depth_ = 1u;
+  mutable Capture capture_;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_ENTITY_H_

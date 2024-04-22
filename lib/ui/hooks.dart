@@ -135,7 +135,7 @@ _ViewConfiguration _buildViewConfiguration(
 ) {
   return _ViewConfiguration(
     devicePixelRatio: devicePixelRatio,
-    geometry: Rect.fromLTWH(0.0, 0.0, width, height),
+    size: Size(width, height),
     viewPadding: ViewPadding._(
       top: viewPaddingTop,
       right: viewPaddingRight,
@@ -288,8 +288,7 @@ bool _onError(Object error, StackTrace? stackTrace) {
   return PlatformDispatcher.instance._dispatchError(error, stackTrace ?? StackTrace.empty);
 }
 
-// ignore: always_declare_return_types, prefer_generic_function_type_aliases
-typedef _ListStringArgFunction(List<String> args);
+typedef _ListStringArgFunction = Object? Function(List<String> args);
 
 @pragma('vm:entry-point')
 void _runMain(Function startMainIsolateFunction,

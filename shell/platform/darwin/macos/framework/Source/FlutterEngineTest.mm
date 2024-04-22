@@ -25,6 +25,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_engine.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/testing/stream_capture.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "gtest/gtest.h"
 
@@ -47,8 +48,9 @@ constexpr int64_t kImplicitViewId = 0ll;
 @end
 
 @implementation TestPlatformViewFactory
-- (nonnull NSView*)createWithViewIdentifier:(int64_t)viewId arguments:(nullable id)args {
-  return viewId == 42 ? [[NSView alloc] init] : nil;
+- (nonnull NSView*)createWithViewIdentifier:(FlutterViewIdentifier)viewIdentifier
+                                  arguments:(nullable id)args {
+  return viewIdentifier == 42 ? [[NSView alloc] init] : nil;
 }
 
 @end
@@ -117,12 +119,29 @@ constexpr int64_t kImplicitViewId = 0ll;
 
 #pragma mark -
 
+@interface MockableFlutterEngine : FlutterEngine
+@end
+
+@implementation MockableFlutterEngine
+- (NSArray<NSScreen*>*)screens {
+  id mockScreen = OCMClassMock([NSScreen class]);
+  OCMStub([mockScreen backingScaleFactor]).andReturn(2.0);
+  OCMStub([mockScreen deviceDescription]).andReturn(@{
+    @"NSScreenNumber" : [NSNumber numberWithInt:10]
+  });
+  OCMStub([mockScreen frame]).andReturn(NSMakeRect(10, 20, 30, 40));
+  return [NSArray arrayWithObject:mockScreen];
+}
+@end
+
+#pragma mark -
+
 namespace flutter::testing {
 
 TEST_F(FlutterEngineTest, CanLaunch) {
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 }
 
 TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
@@ -189,27 +208,22 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
                     CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
 
   // Replace stdout stream buffer with our own.
-  std::stringstream buffer;
-  std::streambuf* old_buffer = std::cout.rdbuf();
-  std::cout.rdbuf(buffer.rdbuf());
+  StreamCapture stdout_capture(&std::cout);
 
   // Launch the test entrypoint.
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"canLogToStdout"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   latch.Wait();
 
-  // Restore old stdout stream buffer.
-  std::cout.rdbuf(old_buffer);
+  stdout_capture.Stop();
 
   // Verify hello world was written to stdout.
-  std::string logs = buffer.str();
-  EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
+  EXPECT_TRUE(stdout_capture.GetOutput().find("Hello logging") != std::string::npos);
 }
 
-// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
-TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
+TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -227,7 +241,7 @@ TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
 
   // Launch the test entrypoint.
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -238,7 +252,6 @@ TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   latch.Wait();
 }
 
-// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
 TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
@@ -257,7 +270,7 @@ TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
 
   // Launch the test entrypoint.
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
@@ -479,7 +492,7 @@ TEST_F(FlutterEngineTest, NativeCallbacks) {
 
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
-  EXPECT_TRUE(engine.running);
+  ASSERT_TRUE(engine.running);
 
   latch.Wait();
   ASSERT_TRUE(latch_called);
@@ -496,6 +509,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                                                                                 nibName:nil
                                                                                  bundle:nil];
   [viewController loadView];
+  [viewController viewDidLoad];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
 
   EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
@@ -522,7 +536,56 @@ TEST_F(FlutterEngineTest, Compositor) {
   // TODO(gw280): add support for screenshot tests in this test harness
 
   [engine shutDownEngine];
-}  // namespace flutter::testing
+}
+
+TEST_F(FlutterEngineTest, CompositorIgnoresUnknownView) {
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_init = engine.embedderAPI.Initialize;
+  ::FlutterCompositor compositor;
+  engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
+      Initialize, ([&compositor, &original_init](
+                       size_t version, const FlutterRendererConfig* config,
+                       const FlutterProjectArgs* args, void* user_data, auto engine_out) {
+        compositor = *args->compositor;
+        return original_init(version, config, args, user_data, engine_out);
+      }));
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"empty"]);
+
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = FlutterSize{10, 10},
+  };
+  FlutterBackingStore backing_store = {};
+  EXPECT_NE(compositor.create_backing_store_callback, nullptr);
+  EXPECT_TRUE(
+      compositor.create_backing_store_callback(&config, &backing_store, compositor.user_data));
+
+  FlutterLayer layer{
+      .type = kFlutterLayerContentTypeBackingStore,
+      .backing_store = &backing_store,
+  };
+  std::vector<FlutterLayer*> layers = {&layer};
+
+  FlutterPresentViewInfo info = {
+      .struct_size = sizeof(FlutterPresentViewInfo),
+      .view_id = 123,
+      .layers = const_cast<const FlutterLayer**>(layers.data()),
+      .layers_count = 1,
+      .user_data = compositor.user_data,
+  };
+  EXPECT_NE(compositor.present_view_callback, nullptr);
+  EXPECT_FALSE(compositor.present_view_callback(&info));
+  EXPECT_TRUE(compositor.collect_backing_store_callback(&backing_store, compositor.user_data));
+
+  (void)viewController;
+  [engine shutDownEngine];
+}
 
 TEST_F(FlutterEngineTest, DartEntrypointArguments) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
@@ -606,6 +669,56 @@ TEST_F(FlutterEngineTest, FlutterTextureRegistryDoesNotReturnEngine) {
   // retained via the texture registry.
   EXPECT_NE(textureRegistry, nil);
   EXPECT_EQ(weakEngine, nil);
+}
+
+TEST_F(FlutterEngineTest, PublishedValueNilForUnknownPlugin) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
+                                                      project:project
+                                       allowHeadlessExecution:YES];
+
+  EXPECT_EQ([engine valuePublishedByPlugin:@"NoSuchPlugin"], nil);
+}
+
+TEST_F(FlutterEngineTest, PublishedValueNSNullIfNoPublishedValue) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
+                                                      project:project
+                                       allowHeadlessExecution:YES];
+  NSString* pluginName = @"MyPlugin";
+  // Request the registarar to register the plugin as existing.
+  [engine registrarForPlugin:pluginName];
+
+  // The documented behavior is that a plugin that exists but hasn't published
+  // anything returns NSNull, rather than nil, as on iOS.
+  EXPECT_EQ([engine valuePublishedByPlugin:pluginName], [NSNull null]);
+}
+
+TEST_F(FlutterEngineTest, PublishedValueReturnsLastPublished) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test"
+                                                      project:project
+                                       allowHeadlessExecution:YES];
+  NSString* pluginName = @"MyPlugin";
+  id<FlutterPluginRegistrar> registrar = [engine registrarForPlugin:pluginName];
+
+  NSString* firstValue = @"A published value";
+  NSArray* secondValue = @[ @"A different published value" ];
+
+  [registrar publish:firstValue];
+  EXPECT_EQ([engine valuePublishedByPlugin:pluginName], firstValue);
+
+  [registrar publish:secondValue];
+  EXPECT_EQ([engine valuePublishedByPlugin:pluginName], secondValue);
 }
 
 // If a channel overrides a previous channel with the same name, cleaning
@@ -775,7 +888,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(viewController1.viewIdentifier, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -792,7 +905,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ll);
+  EXPECT_EQ(viewController1.viewIdentifier, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -806,7 +919,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(viewController1.viewIdentifier, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -814,7 +927,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ll);
+    EXPECT_EQ(viewController2.viewIdentifier, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -823,7 +936,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ll);
+  EXPECT_EQ(viewController1.viewIdentifier, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
@@ -1048,6 +1161,85 @@ TEST_F(FlutterEngineTest, UnregistersPluginsOnEngineDestruction) {
   EXPECT_FALSE([fakeAppDelegate hasDelegate:plugin]);
 
   [NSApplication sharedApplication].delegate = previousDelegate;
+}
+
+TEST_F(FlutterEngineTest, RunWithEntrypointUpdatesDisplayConfig) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(updated);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:NSApplicationDidChangeScreenParametersNotification
+                    object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, NotificationsUpdateDisplays) {
+  BOOL updated = NO;
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_set_viewport_metrics = engine.embedderAPI.SendWindowMetricsEvent;
+  engine.embedderAPI.SendWindowMetricsEvent = MOCK_ENGINE_PROC(
+      SendWindowMetricsEvent,
+      ([&updated, &original_set_viewport_metrics](auto engine, auto* window_metrics) {
+        updated = YES;
+        return original_set_viewport_metrics(engine, window_metrics);
+      }));
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+
+  updated = NO;
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  // No VC.
+  EXPECT_FALSE(updated);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+
+  [[NSNotificationCenter defaultCenter] postNotificationName:NSWindowDidChangeScreenNotification
+                                                      object:nil];
+  EXPECT_TRUE(updated);
+}
+
+TEST_F(FlutterEngineTest, DisplaySizeIsInPhysicalPixel) {
+  NSString* fixtures = @(testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  project.rootIsolateCreateCallback = FlutterEngineTest::IsolateCreateCallback;
+  MockableFlutterEngine* engine = [[MockableFlutterEngine alloc] initWithName:@"foobar"
+                                                                      project:project
+                                                       allowHeadlessExecution:true];
+  BOOL updated = NO;
+  auto original_update_displays = engine.embedderAPI.NotifyDisplayUpdate;
+  engine.embedderAPI.NotifyDisplayUpdate = MOCK_ENGINE_PROC(
+      NotifyDisplayUpdate, ([&updated, &original_update_displays](
+                                auto engine, auto update_type, auto* displays, auto display_count) {
+        EXPECT_EQ(display_count, 1UL);
+        EXPECT_EQ(displays->display_id, 10UL);
+        EXPECT_EQ(displays->width, 60UL);
+        EXPECT_EQ(displays->height, 80UL);
+        EXPECT_EQ(displays->device_pixel_ratio, 2UL);
+        updated = YES;
+        return original_update_displays(engine, update_type, displays, display_count);
+      }));
+  EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
+  EXPECT_TRUE(updated);
+  [engine shutDownEngine];
+  engine = nil;
 }
 
 }  // namespace flutter::testing

@@ -7,6 +7,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../../common/test_initialization.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -14,7 +16,7 @@ void main() {
 void testMain() {
   group('Surface', () {
     setUpAll(() async {
-      await webOnlyInitializePlatform();
+      await bootstrapAndRunApp(withImplicitView: true);
     });
 
     setUp(() {
@@ -160,7 +162,7 @@ void testMain() {
       final SurfaceSceneBuilder builder1 = SurfaceSceneBuilder();
       final PersistedTransform a1 =
           builder1.pushTransform(
-              (Matrix4.identity()..scale(domWindow.devicePixelRatio)).toFloat64()) as PersistedTransform;
+              (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64()) as PersistedTransform;
       final PersistedOpacity b1 = builder1.pushOpacity(100) as PersistedOpacity;
       final PersistedTransform c1 =
           builder1.pushTransform(Matrix4.identity().toFloat64()) as PersistedTransform;
@@ -181,7 +183,7 @@ void testMain() {
       final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
       final PersistedTransform a2 =
           builder2.pushTransform(
-              (Matrix4.identity()..scale(domWindow.devicePixelRatio)).toFloat64(),
+              (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64(),
               oldLayer: a1) as PersistedTransform;
       final PersistedTransform c2 =
           builder2.pushTransform(Matrix4.identity().toFloat64(), oldLayer: c1) as PersistedTransform;

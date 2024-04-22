@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
-#define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_JNI_JNI_MOCK_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_JNI_JNI_MOCK_H_
 
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "gmock/gmock.h"
@@ -49,6 +49,11 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (JavaLocalRef surface_texture, int textureId),
               (override));
 
+  MOCK_METHOD(bool,
+              SurfaceTextureShouldUpdate,
+              (JavaLocalRef surface_texture),
+              (override));
+
   MOCK_METHOD(void,
               SurfaceTextureUpdateTexImage,
               (JavaLocalRef surface_texture),
@@ -60,7 +65,7 @@ class JNIMock final : public PlatformViewAndroidJNI {
               (override));
 
   MOCK_METHOD(JavaLocalRef,
-              ImageTextureEntryAcquireLatestImage,
+              ImageProducerTextureEntryAcquireLatestImage,
               (JavaLocalRef image_texture_entry),
               (override));
 
@@ -123,8 +128,13 @@ class JNIMock final : public PlatformViewAndroidJNI {
               RequestDartDeferredLibrary,
               (int loading_unit_id),
               (override));
+
+  MOCK_METHOD(double,
+              FlutterViewGetScaledFontSize,
+              (double font_size, int configuration_id),
+              (const, override));
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_JNI_MOCK_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_JNI_JNI_MOCK_H_

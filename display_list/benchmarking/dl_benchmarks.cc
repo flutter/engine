@@ -6,6 +6,7 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/dl_op_flags.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
+#include "flutter/display_list/testing/dl_test_snippets.h"
 
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -14,6 +15,7 @@
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrRecordingContext.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -21,23 +23,23 @@ namespace testing {
 DlPaint GetPaintForRun(unsigned attributes) {
   DlPaint paint;
 
-  if (attributes & kStrokedStyle_Flag && attributes & kFilledStyle_Flag) {
+  if (attributes & kStrokedStyle && attributes & kFilledStyle) {
     // Not currently exposed by Flutter, but we can probably benchmark this in
     // the future
     paint.setDrawStyle(DlDrawStyle::kStrokeAndFill);
-  } else if (attributes & kStrokedStyle_Flag) {
+  } else if (attributes & kStrokedStyle) {
     paint.setDrawStyle(DlDrawStyle::kStroke);
-  } else if (attributes & kFilledStyle_Flag) {
+  } else if (attributes & kFilledStyle) {
     paint.setDrawStyle(DlDrawStyle::kFill);
   }
 
-  if (attributes & kHairlineStroke_Flag) {
+  if (attributes & kHairlineStroke) {
     paint.setStrokeWidth(0.0f);
   } else {
     paint.setStrokeWidth(1.0f);
   }
 
-  paint.setAntiAlias(attributes & kAntiAliasing_Flag);
+  paint.setAntiAlias(attributes & kAntiAliasing);
   return paint;
 }
 
@@ -47,7 +49,7 @@ static void FlushSubmitCpuSync(const sk_sp<SkSurface>& surface) {
   }
   if (GrDirectContext* dContext =
           GrAsDirectContext(surface->recordingContext())) {
-    dContext->flushAndSubmit(surface, /*syncCpu=*/true);
+    dContext->flushAndSubmit(surface.get(), GrSyncCpu::kYes);
   }
 }
 
@@ -55,17 +57,15 @@ void AnnotateAttributes(unsigned attributes,
                         benchmark::State& state,
                         const DisplayListAttributeFlags flags) {
   if (flags.always_stroked()) {
-    state.counters["HairlineStroke"] =
-        attributes & kHairlineStroke_Flag ? 1 : 0;
+    state.counters["HairlineStroke"] = attributes & kHairlineStroke ? 1 : 0;
   }
   if (flags.applies_style()) {
-    state.counters["HairlineStroke"] =
-        attributes & kHairlineStroke_Flag ? 1 : 0;
-    state.counters["StrokedStyle"] = attributes & kStrokedStyle_Flag ? 1 : 0;
-    state.counters["FilledStyle"] = attributes & kFilledStyle_Flag ? 1 : 0;
+    state.counters["HairlineStroke"] = attributes & kHairlineStroke ? 1 : 0;
+    state.counters["StrokedStyle"] = attributes & kStrokedStyle ? 1 : 0;
+    state.counters["FilledStyle"] = attributes & kFilledStyle ? 1 : 0;
   }
   if (flags.applies_anti_alias()) {
-    state.counters["AntiAliasing"] = attributes & kAntiAliasing_Flag ? 1 : 0;
+    state.counters["AntiAliasing"] = attributes & kAntiAliasing ? 1 : 0;
   }
 }
 
@@ -709,15 +709,15 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
       // the center point C, this should create a triangle fan with vertices
       // C, O_0, O_1, O_2, O_3, ...
       vertices.push_back(center);
-      colors.push_back(SK_ColorCYAN);
+      colors.push_back(DlColor(SK_ColorCYAN));
       for (size_t i = 0; i <= outer_points.size(); i++) {
         vertices.push_back(outer_points[i % outer_points.size()]);
         if (i % 3 == 0) {
-          colors.push_back(SK_ColorRED);
+          colors.push_back(DlColor(SK_ColorRED));
         } else if (i % 3 == 1) {
-          colors.push_back(SK_ColorGREEN);
+          colors.push_back(DlColor(SK_ColorGREEN));
         } else {
-          colors.push_back(SK_ColorBLUE);
+          colors.push_back(DlColor(SK_ColorBLUE));
         }
       }
       break;
@@ -727,11 +727,11 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
       // vertices O_0, O_1, C, O_1, O_2, C, O_2, O_3, C, ...
       for (size_t i = 0; i < outer_vertex_count; i++) {
         vertices.push_back(outer_points[i % outer_points.size()]);
-        colors.push_back(SK_ColorRED);
+        colors.push_back(DlColor(SK_ColorRED));
         vertices.push_back(outer_points[(i + 1) % outer_points.size()]);
-        colors.push_back(SK_ColorGREEN);
+        colors.push_back(DlColor(SK_ColorGREEN));
         vertices.push_back(center);
-        colors.push_back(SK_ColorBLUE);
+        colors.push_back(DlColor(SK_ColorBLUE));
       }
       break;
     case DlVertexMode::kTriangleStrip:
@@ -740,10 +740,10 @@ std::shared_ptr<DlVertices> GetTestVertices(SkPoint center,
       // O_0, O_1, C, O_2, O_3, C, O_4, O_5, C, ...
       for (size_t i = 0; i <= outer_vertex_count; i++) {
         vertices.push_back(outer_points[i % outer_points.size()]);
-        colors.push_back(i % 2 ? SK_ColorRED : SK_ColorGREEN);
+        colors.push_back(i % 2 ? DlColor(SK_ColorRED) : DlColor(SK_ColorGREEN));
         if (i % 2 == 1) {
           vertices.push_back(center);
-          colors.push_back(SK_ColorBLUE);
+          colors.push_back(DlColor(SK_ColorBLUE));
         }
       }
       break;
@@ -1202,7 +1202,7 @@ void BM_DrawTextBlob(benchmark::State& state,
 
   for (size_t i = 0; i < draw_calls; i++) {
     character[0] = 'A' + (i % 26);
-    auto blob = SkTextBlob::MakeFromString(character, SkFont());
+    auto blob = SkTextBlob::MakeFromString(character, CreateTestFontOfSize(20));
     builder.DrawTextBlob(blob, 50.0f, 50.0f, paint);
   }
 
@@ -1269,7 +1269,8 @@ void BM_DrawShadow(benchmark::State& state,
 
   // We can hardcode dpr to 1.0f as we're varying elevation, and dpr is only
   // ever used in conjunction with elevation.
-  builder.DrawShadow(path, SK_ColorBLUE, elevation, transparent_occluder, 1.0f);
+  builder.DrawShadow(path, DlColor(SK_ColorBLUE), elevation,
+                     transparent_occluder, 1.0f);
   auto display_list = builder.Build();
 
   // We only want to time the actual rasterization.

@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_TESTING_SCENARIO_APP_IOS_SCENARIOS_SCENARIOSUITESTS_GOLDENIMAGE_H_
+#define FLUTTER_TESTING_SCENARIO_APP_IOS_SCENARIOS_SCENARIOSUITESTS_GOLDENIMAGE_H_
+
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -19,8 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 // Compare this GoldenImage to `image`.
 //
 // Return YES if the `image` of this GoldenImage have the same pixels of provided `image`.
-- (BOOL)compareGoldenToImage:(UIImage*)image;
+- (BOOL)compareGoldenToImage:(UIImage*)image rmesThreshold:(double)rmesThreshold;
 
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif  // FLUTTER_TESTING_SCENARIO_APP_IOS_SCENARIOS_SCENARIOSUITESTS_GOLDENIMAGE_H_

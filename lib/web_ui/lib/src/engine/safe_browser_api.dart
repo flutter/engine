@@ -20,12 +20,9 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'display.dart';
 import 'dom.dart';
-import 'platform_dispatcher.dart';
 import 'vector_math.dart';
-
-export 'package:js/js_util.dart' show allowInterop;
-
 
 /// Returns true if [object] has property [name], false otherwise.
 ///
@@ -196,20 +193,6 @@ bool get _defaultBrowserSupportsImageDecoder =>
 // enable it explicitly.
 bool get _isBrowserImageDecoderStable => browserEngine == BrowserEngine.blink;
 
-/// The signature of the function passed to the constructor of JavaScript `Promise`.
-typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
-
-/// Corresponds to JavaScript's `Promise`.
-///
-/// This type doesn't need any members. Instead, it should be first converted
-/// to Dart's [Future] using [promiseToFuture] then interacted with through the
-/// [Future] API.
-@JS('window.Promise')
-@staticInterop
-class JsPromise {
-  external factory JsPromise(JsPromiseCallback callback);
-}
-
 /// Corresponds to the browser's `ImageDecoder` type.
 ///
 /// See also:
@@ -228,7 +211,7 @@ extension ImageDecoderExtension on ImageDecoder {
   external JSBoolean get _complete;
   bool get complete => _complete.toDart;
 
-  external JsPromise decode(DecodeOptions options);
+  external JSPromise<JSAny?> decode(DecodeOptions options);
   external JSVoid close();
 }
 
@@ -302,8 +285,9 @@ extension VideoFrameExtension on VideoFrame {
   double allocationSize() => _allocationSize().toDartDouble;
 
   @JS('copyTo')
-  external JsPromise _copyTo(JSAny destination);
-  JsPromise copyTo(Object destination) => _copyTo(destination.toJSAnyShallow);
+  external JSPromise<JSAny?> _copyTo(JSAny destination);
+  JSPromise<JSAny?> copyTo(Object destination) =>
+      _copyTo(destination.toJSAnyShallow);
 
   @JS('format')
   external JSString? get _format;
@@ -344,7 +328,7 @@ extension VideoFrameExtension on VideoFrame {
 class ImageTrackList {}
 
 extension ImageTrackListExtension on ImageTrackList {
-  external JsPromise get ready;
+  external JSPromise<JSAny?> get ready;
   external ImageTrack? get selectedTrack;
 }
 
@@ -967,8 +951,8 @@ class OffScreenCanvas {
   static bool? _supported;
 
   void _updateCanvasCssSize(DomCanvasElement element) {
-    final double cssWidth = width / EnginePlatformDispatcher.browserDevicePixelRatio;
-    final double cssHeight = height / EnginePlatformDispatcher.browserDevicePixelRatio;
+    final double cssWidth = width / EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final double cssHeight = height / EngineFlutterDisplay.instance.browserDevicePixelRatio;
     element.style
       ..position = 'absolute'
       ..width = '${cssWidth}px'
@@ -1001,6 +985,12 @@ class OffScreenCanvas {
     return offScreenCanvas != null
         ? offScreenCanvas!.getContext('2d')
         : canvasElement!.getContext('2d');
+  }
+
+  DomCanvasRenderingContextBitmapRenderer? getBitmapRendererContext() {
+    return (offScreenCanvas != null
+        ? offScreenCanvas!.getContext('bitmaprenderer')
+        : canvasElement!.getContext('bitmaprenderer')) as DomCanvasRenderingContextBitmapRenderer?;
   }
 
   /// Feature detection for transferToImageBitmap on OffscreenCanvas.

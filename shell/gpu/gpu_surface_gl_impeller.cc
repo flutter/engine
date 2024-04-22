@@ -5,15 +5,17 @@
 #include "flutter/shell/gpu/gpu_surface_gl_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
-#include "flutter/impeller/renderer/backend/gles/surface_gles.h"
-#include "flutter/impeller/renderer/renderer.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/renderer/backend/gles/surface_gles.h"
+#include "impeller/renderer/renderer.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
 
 GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
     GPUSurfaceGLDelegate* delegate,
-    std::shared_ptr<impeller::Context> context)
+    std::shared_ptr<impeller::Context> context,
+    bool render_to_surface)
     : weak_factory_(this) {
   if (delegate == nullptr) {
     return;
@@ -28,7 +30,8 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
     return;
   }
 
-  auto aiks_context = std::make_shared<impeller::AiksContext>(context);
+  auto aiks_context = std::make_shared<impeller::AiksContext>(
+      context, impeller::TypographerContextSkia::Make());
 
   if (!aiks_context->IsValid()) {
     return;
@@ -36,6 +39,7 @@ GPUSurfaceGLImpeller::GPUSurfaceGLImpeller(
 
   delegate_ = delegate;
   impeller_context_ = std::move(context);
+  render_to_surface_ = render_to_surface;
   impeller_renderer_ = std::move(renderer);
   aiks_context_ = std::move(aiks_context);
   is_valid_ = true;
@@ -80,6 +84,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
     return nullptr;
   }
 
+  if (!render_to_surface_) {
+    return std::make_unique<SurfaceFrame>(
+        nullptr, SurfaceFrame::FramebufferInfo{.supports_readback = true},
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
+          return true;
+        },
+        size);
+  }
+
   GLFrameInfo frame_info = {static_cast<uint32_t>(size.width()),
                             static_cast<uint32_t>(size.height())};
   const GLFBOInfo fbo_info = delegate_->GLContextFBO(frame_info);
@@ -120,7 +133,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLImpeller::AcquireFrame(
             fml::MakeCopyable(
                 [aiks_context, picture = std::move(picture)](
                     impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
+                  return aiks_context->Render(picture, render_target,
+                                              /*reset_host_buffer=*/true);
                 }));
       });
 

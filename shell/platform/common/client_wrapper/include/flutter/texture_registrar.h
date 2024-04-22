@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <variant>
 
 namespace flutter {
@@ -28,7 +29,7 @@ class PixelBufferTexture {
   // take care of proper synchronization. It also needs to be ensured that the
   // returned buffer isn't released prior to unregistering this texture.
   explicit PixelBufferTexture(CopyBufferCallback copy_buffer_callback)
-      : copy_buffer_callback_(copy_buffer_callback) {}
+      : copy_buffer_callback_(std::move(copy_buffer_callback)) {}
 
   // Returns the callback-provided FlutterDesktopPixelBuffer that contains the
   // actual pixel data. The intended surface size is specified by |width| and
@@ -53,7 +54,7 @@ class GpuSurfaceTexture {
   GpuSurfaceTexture(FlutterDesktopGpuSurfaceType surface_type,
                     ObtainDescriptorCallback obtain_descriptor_callback)
       : surface_type_(surface_type),
-        obtain_descriptor_callback_(obtain_descriptor_callback) {}
+        obtain_descriptor_callback_(std::move(obtain_descriptor_callback)) {}
 
   // Returns the callback-provided FlutterDesktopGpuSurfaceDescriptor that
   // contains the surface handle. The intended surface size is specified by

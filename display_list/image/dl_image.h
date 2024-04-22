@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
-#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
+#ifndef FLUTTER_DISPLAY_LIST_IMAGE_DL_IMAGE_H_
+#define FLUTTER_DISPLAY_LIST_IMAGE_DL_IMAGE_H_
 
 #include <memory>
 #include <optional>
@@ -131,7 +131,9 @@ class DlImage : public SkRefCnt {
 
   bool Equals(const DlImage& other) const { return Equals(&other); }
 
-  bool Equals(sk_sp<const DlImage> other) const { return Equals(other.get()); }
+  bool Equals(const sk_sp<const DlImage>& other) const {
+    return Equals(other.get());
+  }
 
  protected:
   DlImage();
@@ -139,4 +141,4 @@ class DlImage : public SkRefCnt {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_IMAGE_H_
+#endif  // FLUTTER_DISPLAY_LIST_IMAGE_DL_IMAGE_H_

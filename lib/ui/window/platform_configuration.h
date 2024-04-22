@@ -25,6 +25,7 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class PlatformMessageHandler;
+class PlatformIsolateManager;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -66,10 +67,20 @@ class PlatformConfigurationClient {
   virtual void ScheduleFrame() = 0;
 
   //--------------------------------------------------------------------------
+  /// @brief    Called when a warm up frame has ended.
+  ///
+  ///           For more introduction, see `Animator::EndWarmUpFrame`.
+  ///
+  virtual void EndWarmUpFrame() = 0;
+
+  //--------------------------------------------------------------------------
   /// @brief      Updates the client's rendering on the GPU with the newly
   ///             provided Scene.
   ///
-  virtual void Render(Scene* scene) = 0;
+  virtual void Render(int64_t view_id,
+                      Scene* scene,
+                      double width,
+                      double height) = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Receives an updated semantics tree from the Framework.
@@ -207,6 +218,42 @@ class PlatformConfigurationClient {
   ///
   virtual void RequestDartDeferredLibrary(intptr_t loading_unit_id) = 0;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Invoked when a listener is registered on a platform channel.
+  ///
+  /// @param[in]  name             The name of the platform channel to which a
+  ///                              listener has been registered or cleared.
+  ///
+  /// @param[in]  listening        Whether the listener has been set (true) or
+  ///                              cleared (false).
+  ///
+  virtual void SendChannelUpdate(std::string name, bool listening) = 0;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Synchronously invokes platform-specific APIs to apply the
+  ///             system text scaling on the given unscaled font size.
+  ///
+  ///             Platforms that support this feature (currently it's only
+  ///             implemented for Android SDK level 34+) will send a valid
+  ///             configuration_id to potential callers, before this method can
+  ///             be called.
+  ///
+  /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+  ///                                 app developer. The value is in logical
+  ///                                 pixels, and is guaranteed to be finite and
+  ///                                 non-negative.
+  /// @param[in]  configuration_id    The unique id of the configuration to use
+  ///                                 for computing the scaled font size.
+  ///
+  /// @return     The scaled font size in logical pixels, or -1 if the given
+  ///             configuration_id did not match a valid configuration.
+  ///
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const = 0;
+
+  virtual std::shared_ptr<PlatformIsolateManager>
+  GetPlatformIsolateManager() = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -215,8 +262,7 @@ class PlatformConfigurationClient {
 /// @brief      A class for holding and distributing platform-level information
 ///             to and from the Dart code in Flutter's framework.
 ///
-///             It handles communication between the engine and the framework,
-///             and owns the main window.
+///             It handles communication between the engine and the framework.
 ///
 ///             It communicates with the RuntimeController through the use of a
 ///             PlatformConfigurationClient interface, which the
@@ -268,7 +314,9 @@ class PlatformConfiguration final {
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  /// @return     Whether the view was added.
+  ///
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the framework that a view is no longer available.
@@ -280,7 +328,9 @@ class PlatformConfiguration final {
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view was removed.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Update the view metrics for the specified view.
@@ -434,13 +484,13 @@ class PlatformConfiguration final {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
-  /// @brief      Retrieves the Window with the given ID managed by the
-  ///             `PlatformConfiguration`.
+  /// @brief      Retrieves the viewport metrics with the given ID managed by
+  ///             the `PlatformConfiguration`.
   ///
-  /// @param[in] window_id The id of the window to find and return.
+  /// @param[in]  view_id The id of the view's viewport metrics to return.
   ///
-  /// @return     a pointer to the Window. Returns nullptr if the ID is not
-  ///             found.
+  /// @return     a pointer to the ViewportMetrics. Returns nullptr if the ID is
+  ///             not found.
   ///
   const ViewportMetrics* GetMetrics(int view_id);
 
@@ -524,7 +574,12 @@ class PlatformConfigurationNativeApi {
 
   static void ScheduleFrame();
 
-  static void Render(Scene* scene);
+  static void EndWarmUpFrame();
+
+  static void Render(int64_t view_id,
+                     Scene* scene,
+                     double width,
+                     double height);
 
   static void UpdateSemantics(SemanticsUpdate* update);
 
@@ -548,6 +603,8 @@ class PlatformConfigurationNativeApi {
 
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
+
+  static void SendChannelUpdate(const std::string& name, bool listening);
 
   //--------------------------------------------------------------------------
   /// @brief      Requests the Dart VM to adjusts the GC heuristics based on
@@ -575,6 +632,9 @@ class PlatformConfigurationNativeApi {
   static int64_t GetRootIsolateToken();
 
   static void RegisterBackgroundIsolate(int64_t root_isolate_token);
+
+  static double GetScaledFontSize(double unscaled_font_size,
+                                  int configuration_id);
 
  private:
   static Dart_PerformanceMode current_performance_mode_;

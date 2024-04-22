@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/formats_mtl.h"
+#include <Metal/Metal.h>
 
 #include <memory>
 
@@ -94,19 +95,28 @@ MTLTextureDescriptor* ToMTLTextureDescriptor(const TextureDescriptor& desc) {
   mtl_desc.height = desc.size.height;
   mtl_desc.mipmapLevelCount = desc.mip_count;
   mtl_desc.usage = MTLTextureUsageUnknown;
-  if (desc.usage & static_cast<TextureUsageMask>(TextureUsage::kUnknown)) {
+  if (desc.usage & TextureUsage::kUnknown) {
     mtl_desc.usage |= MTLTextureUsageUnknown;
   }
-  if (desc.usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
+  if (desc.usage & TextureUsage::kShaderRead) {
     mtl_desc.usage |= MTLTextureUsageShaderRead;
   }
-  if (desc.usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
+  if (desc.usage & TextureUsage::kShaderWrite) {
     mtl_desc.usage |= MTLTextureUsageShaderWrite;
   }
-  if (desc.usage & static_cast<TextureUsageMask>(TextureUsage::kRenderTarget)) {
+  if (desc.usage & TextureUsage::kRenderTarget) {
     mtl_desc.usage |= MTLTextureUsageRenderTarget;
   }
   return mtl_desc;
+}
+
+MTLPixelFormat SafeMTLPixelFormatDepth24Unorm_Stencil8() {
+#if !FML_OS_IOS
+  if (@available(macOS 10.11, *)) {
+    return MTLPixelFormatDepth24Unorm_Stencil8;
+  }
+#endif  // FML_OS_IOS
+  return MTLPixelFormatInvalid;
 }
 
 MTLPixelFormat SafeMTLPixelFormatBGR10_XR_sRGB() {

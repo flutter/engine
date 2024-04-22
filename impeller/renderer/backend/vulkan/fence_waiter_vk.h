@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FENCE_WAITER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FENCE_WAITER_VK_H_
 
 #include <condition_variable>
 #include <memory>
@@ -12,7 +13,7 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
@@ -36,19 +37,25 @@ class FenceWaiterVK {
  private:
   friend class ContextVK;
 
-  std::weak_ptr<DeviceHolder> device_holder_;
+  std::weak_ptr<DeviceHolderVK> device_holder_;
   std::unique_ptr<std::thread> waiter_thread_;
   std::mutex wait_set_mutex_;
   std::condition_variable wait_set_cv_;
   WaitSet wait_set_;
   bool terminate_ = false;
-  bool is_valid_ = false;
 
-  explicit FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder);
+  explicit FenceWaiterVK(std::weak_ptr<DeviceHolderVK> device_holder);
 
   void Main();
 
-  FML_DISALLOW_COPY_AND_ASSIGN(FenceWaiterVK);
+  bool Wait();
+  void WaitUntilEmpty();
+
+  FenceWaiterVK(const FenceWaiterVK&) = delete;
+
+  FenceWaiterVK& operator=(const FenceWaiterVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FENCE_WAITER_VK_H_

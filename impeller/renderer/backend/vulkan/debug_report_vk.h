@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_DEBUG_REPORT_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_DEBUG_REPORT_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -38,7 +39,11 @@ class DebugReportVK {
       const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
       void* user_data);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DebugReportVK);
+  DebugReportVK(const DebugReportVK&) = delete;
+
+  DebugReportVK& operator=(const DebugReportVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_DEBUG_REPORT_VK_H_

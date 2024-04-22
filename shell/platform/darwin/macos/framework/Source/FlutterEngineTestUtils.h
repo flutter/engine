@@ -2,15 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINETESTUTILS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINETESTUTILS_H_
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
 #import <OCMock/OCMock.h>
+
+#include "flutter/testing/autoreleasepool_test.h"
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "gtest/gtest.h"
 
 namespace flutter::testing {
 
-class FlutterEngineTest : public ::testing::Test {
+class FlutterEngineTest : public AutoreleasePoolTest {
  public:
   FlutterEngineTest();
 
@@ -36,6 +41,32 @@ class FlutterEngineTest : public ::testing::Test {
 
 // Returns a mock FlutterEngine that is able to work in environments
 // without a real pasteboard.
+//
+// Callers MUST call [mockEngine shutDownEngine] when finished with the returned engine.
 id CreateMockFlutterEngine(NSString* pasteboardString);
 
+class MockFlutterEngineTest : public AutoreleasePoolTest {
+ public:
+  MockFlutterEngineTest();
+
+  void SetUp() override;
+  void TearDown() override;
+
+  id GetMockEngine() { return engine_mock_; }
+
+  void ShutDownEngine();
+
+  ~MockFlutterEngineTest() {
+    [engine_mock_ shutDownEngine];
+    [engine_mock_ stopMocking];
+  }
+
+ private:
+  id engine_mock_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterEngineTest);
+};
+
 }  // namespace flutter::testing
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERENGINETESTUTILS_H_

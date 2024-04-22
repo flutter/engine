@@ -1,6 +1,11 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 package io.flutter.plugin.platform;
 
 import static android.view.View.OnFocusChangeListener;
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -15,6 +20,7 @@ import android.view.View.OnFocusChangeListener;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
+import android.widget.FrameLayout;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
@@ -24,7 +30,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
 
-@TargetApi(31)
+@TargetApi(API_LEVELS.API_31)
 @RunWith(AndroidJUnit4.class)
 public class PlatformViewWrapperTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
@@ -41,10 +47,6 @@ public class PlatformViewWrapperTest {
   }
 
   @Test
-  @Config(
-      shadows = {
-        ShadowView.class,
-      })
   public void draw_withoutSurface() {
     final PlatformViewWrapper wrapper =
         new PlatformViewWrapper(ctx) {
@@ -191,6 +193,7 @@ public class PlatformViewWrapperTest {
   @Test
   @Config(
       shadows = {
+        ShadowFrameLayout.class,
         ShadowViewGroup.class,
       })
   public void ignoreAccessibilityEvents() {
@@ -209,6 +212,7 @@ public class PlatformViewWrapperTest {
   @Test
   @Config(
       shadows = {
+        ShadowFrameLayout.class,
         ShadowViewGroup.class,
       })
   public void sendAccessibilityEvents() {
@@ -230,14 +234,15 @@ public class PlatformViewWrapperTest {
     assertTrue(eventSent);
   }
 
-  @Implements(View.class)
-  public static class ShadowView {}
-
   @Implements(ViewGroup.class)
-  public static class ShadowViewGroup extends org.robolectric.shadows.ShadowView {
+  public static class ShadowViewGroup extends org.robolectric.shadows.ShadowViewGroup {
     @Implementation
-    public boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
+    protected boolean requestSendAccessibilityEvent(View child, AccessibilityEvent event) {
       return true;
     }
   }
+
+  @Implements(FrameLayout.class)
+  public static class ShadowFrameLayout
+      extends io.flutter.plugin.platform.PlatformViewWrapperTest.ShadowViewGroup {}
 }

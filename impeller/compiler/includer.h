@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_INCLUDER_H_
+#define FLUTTER_IMPELLER_COMPILER_INCLUDER_H_
 
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/compiler/include_dir.h"
 #include "shaderc/shaderc.hpp"
@@ -52,8 +52,12 @@ class Includer final : public shaderc::CompileOptions::IncluderInterface {
   std::unique_ptr<fml::FileMapping> FindFirstMapping(
       const char* requested_source);
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Includer);
+  Includer(const Includer&) = delete;
+
+  Includer& operator=(const Includer&) = delete;
 };
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_INCLUDER_H_

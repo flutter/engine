@@ -20,6 +20,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/runtime/dart_snapshot.h"
+#include "flutter/runtime/isolate_configuration.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 #include "third_party/tonic/dart_state.h"
 
@@ -91,6 +92,7 @@ class DartIsolate : public UIDartState {
   ///             isolate and start over.
   ///
   enum class Phase {
+    // NOLINTBEGIN(readability-identifier-naming)
     //--------------------------------------------------------------------------
     /// The initial phase of all Dart isolates. This is an internal phase and
     /// callers can never get a reference to a Dart isolate in this phase.
@@ -132,6 +134,7 @@ class DartIsolate : public UIDartState {
     /// reference to a Dart isolate in this phase.
     ///
     Shutdown,
+    // NOLINTEND(readability-identifier-naming)
   };
 
   //----------------------------------------------------------------------------
@@ -376,6 +379,25 @@ class DartIsolate : public UIDartState {
   ///
   fml::RefPtr<fml::TaskRunner> GetMessageHandlingTaskRunner() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Creates a new isolate in the same group as this isolate, which
+  ///             runs on the platform thread. This method can only be invoked
+  ///             on the root isolate.
+  ///
+  /// @param[in]  entry_point   The entrypoint to invoke once the isolate is
+  ///                           spawned. Will be run on the platform thread.
+  /// @param[out] error         If spawning fails inside the Dart VM, this is
+  ///                           set to the error string. The error should be
+  ///                           reported to the user. Otherwise it is set to
+  ///                           null. It's possible for spawning to fail, but
+  ///                           this error still be null. In that case the
+  ///                           failure should not be reported to the user.
+  ///
+  /// @return     The newly created isolate, or null if spawning failed.
+  ///
+  Dart_Isolate CreatePlatformIsolate(Dart_Handle entry_point,
+                                     char** error) override;
+
   bool LoadLoadingUnit(
       intptr_t loading_unit_id,
       std::unique_ptr<const fml::Mapping> snapshot_data,
@@ -388,6 +410,11 @@ class DartIsolate : public UIDartState {
   DartIsolateGroupData& GetIsolateGroupData();
 
   const DartIsolateGroupData& GetIsolateGroupData() const;
+
+  /// Returns the "main" entrypoint of the library contained in the kernel
+  /// data in `mapping`.
+  static Dart_Handle LoadLibraryFromKernel(
+      const std::shared_ptr<const fml::Mapping>& mapping);
 
  private:
   friend class IsolateConfiguration;
@@ -404,12 +431,14 @@ class DartIsolate : public UIDartState {
   friend class DartVM;
 
   Phase phase_ = Phase::Unknown;
-  std::vector<std::shared_ptr<const fml::Mapping>> kernel_buffers_;
   std::vector<std::unique_ptr<AutoFireClosure>> shutdown_callbacks_;
   std::unordered_set<fml::RefPtr<DartSnapshot>> loading_unit_snapshots_;
   fml::RefPtr<fml::TaskRunner> message_handling_task_runner_;
   const bool may_insecurely_connect_to_all_domains_;
+  const bool is_platform_isolate_;
+  const bool is_spawning_in_group_;
   std::string domain_network_policy_;
+  std::shared_ptr<PlatformIsolateManager> platform_isolate_manager_;
 
   static std::weak_ptr<DartIsolate> CreateRootIsolate(
       const Settings& settings,
@@ -423,7 +452,12 @@ class DartIsolate : public UIDartState {
 
   DartIsolate(const Settings& settings,
               bool is_root_isolate,
-              const UIDartState::Context& context);
+              const UIDartState::Context& context,
+              bool is_spawning_in_group = false);
+
+  DartIsolate(const Settings& settings,
+              const UIDartState::Context& context,
+              std::shared_ptr<PlatformIsolateManager> platform_isolate_manager);
 
   //----------------------------------------------------------------------------
   /// @brief      Initializes the given (current) isolate.
@@ -436,7 +470,8 @@ class DartIsolate : public UIDartState {
   ///
   [[nodiscard]] bool Initialize(Dart_Isolate dart_isolate);
 
-  void SetMessageHandlingTaskRunner(const fml::RefPtr<fml::TaskRunner>& runner);
+  void SetMessageHandlingTaskRunner(const fml::RefPtr<fml::TaskRunner>& runner,
+                                    bool post_directly_to_runner);
 
   bool LoadKernel(const std::shared_ptr<const fml::Mapping>& mapping,
                   bool last_piece);

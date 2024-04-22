@@ -9,6 +9,20 @@
 #import "ScreenBeforeFlutter.h"
 #import "TextPlatformView.h"
 
+// A UIViewController that sets YES for its preferedStatusBarHidden property.
+// StatusBar includes current time, which is non-deterministic. This ViewController
+// removes the StatusBar to make the screenshot deterministic.
+@interface NoStatusBarViewController : UIViewController
+
+@end
+
+@implementation NoStatusBarViewController
+- (BOOL)prefersStatusBarHidden {
+  return YES;
+}
+@end
+
+// The FlutterViewController version of NoStatusBarViewController
 @interface NoStatusBarFlutterViewController : FlutterViewController
 
 @end
@@ -38,6 +52,10 @@
         @"platform_view_one_overlay_two_intersecting_overlays",
     @"--platform-view-multiple-without-overlays" : @"platform_view_multiple_without_overlays",
     @"--platform-view-max-overlays" : @"platform_view_max_overlays",
+    @"--platform-view-surrounding-layers-fractional-coordinate" :
+        @"platform_view_surrounding_layers_fractional_coordinate",
+    @"--platform-view-partial-intersection-fractional-coordinate" :
+        @"platform_view_partial_intersection_fractional_coordinate",
     @"--platform-view-multiple" : @"platform_view_multiple",
     @"--platform-view-multiple-background-foreground" :
         @"platform_view_multiple_background_foreground",
@@ -66,6 +84,7 @@
         @"platform_view_gesture_accept_with_overlapping_platform_views",
     @"--tap-status-bar" : @"tap_status_bar",
     @"--animated-color-square" : @"animated_color_square",
+    @"--solid-blue" : @"solid_blue",
     @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture",
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",
@@ -76,6 +95,7 @@
     @"--two-platform-view-clip-rect" : @"two_platform_view_clip_rect",
     @"--two-platform-view-clip-rrect" : @"two_platform_view_clip_rrect",
     @"--two-platform-view-clip-path" : @"two_platform_view_clip_path",
+    @"--darwin-system-font" : @"darwin_system_font",
   };
   __block NSString* flutterViewControllerTestName = nil;
   [launchArgsMap
@@ -166,7 +186,7 @@
   UIViewController* rootViewController = flutterViewController;
   // Make Flutter View's origin x/y not 0.
   if ([scenarioIdentifier isEqualToString:@"non_full_screen_flutter_view_platform_view"]) {
-    rootViewController = [UIViewController new];
+    rootViewController = [[NoStatusBarViewController alloc] init];
     [rootViewController.view addSubview:flutterViewController.view];
     flutterViewController.view.frame = CGRectMake(150, 150, 500, 500);
   }

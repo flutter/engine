@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_
-#define SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_VIEW_IOS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_VIEW_IOS_H_
 
 #include <memory>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
-#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#include "flutter/fml/platform/darwin/weak_nsobject.h"
 #include "flutter/shell/common/platform_view.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
@@ -51,7 +51,7 @@ class PlatformViewIOS final : public PlatformView {
       const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
       const flutter::TaskRunners& task_runners,
       const std::shared_ptr<fml::ConcurrentTaskRunner>& worker_task_runner,
-      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
+      const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch);
 
   ~PlatformViewIOS() override;
 
@@ -59,14 +59,14 @@ class PlatformViewIOS final : public PlatformView {
    * Returns the `FlutterViewController` currently attached to the `FlutterEngine` owning
    * this PlatformViewIOS.
    */
-  fml::WeakPtr<FlutterViewController> GetOwnerViewController() const;
+  fml::WeakNSObject<FlutterViewController> GetOwnerViewController() const;
 
   /**
    * Updates the `FlutterViewController` currently attached to the `FlutterEngine` owning
    * this PlatformViewIOS. This should be updated when the `FlutterEngine`
    * is given a new `FlutterViewController`.
    */
-  void SetOwnerViewController(const fml::WeakPtr<FlutterViewController>& owner_controller);
+  void SetOwnerViewController(const fml::WeakNSObject<FlutterViewController>& owner_controller);
 
   /**
    * Called one time per `FlutterViewController` when the `FlutterViewController`'s
@@ -112,7 +112,7 @@ class PlatformViewIOS final : public PlatformView {
     ScopedObserver& operator=(const ScopedObserver&) = delete;
 
    private:
-    id<NSObject> observer_;
+    id<NSObject> observer_ = nil;
   };
 
   /// Wrapper that guarantees we communicate clearing Accessibility
@@ -133,7 +133,7 @@ class PlatformViewIOS final : public PlatformView {
     std::function<void(bool)> set_semantics_enabled_;
   };
 
-  fml::WeakPtr<FlutterViewController> owner_controller_;
+  fml::WeakNSObject<FlutterViewController> owner_controller_;
   // Since the `ios_surface_` is created on the platform thread but
   // used on the raster thread we need to protect it with a mutex.
   std::mutex ios_surface_mutex_;
@@ -142,7 +142,6 @@ class PlatformViewIOS final : public PlatformView {
   const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller_;
   AccessibilityBridgeManager accessibility_bridge_;
   fml::scoped_nsprotocol<FlutterTextInputPlugin*> text_input_plugin_;
-  fml::closure firstFrameCallback_;
   ScopedObserver dealloc_view_controller_observer_;
   std::vector<std::string> platform_resolved_locale_;
   std::shared_ptr<PlatformMessageHandlerIos> platform_message_handler_;
@@ -184,4 +183,4 @@ class PlatformViewIOS final : public PlatformView {
 
 }  // namespace flutter
 
-#endif  // SHELL_PLATFORM_IOS_PLATFORM_VIEW_IOS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_PLATFORM_VIEW_IOS_H_

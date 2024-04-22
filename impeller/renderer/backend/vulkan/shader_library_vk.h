@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_LIBRARY_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_LIBRARY_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/thread.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/shader_key.h"
 #include "impeller/renderer/shader_library.h"
@@ -24,14 +25,14 @@ class ShaderLibraryVK final : public ShaderLibrary {
 
  private:
   friend class ContextVK;
-  std::weak_ptr<DeviceHolder> device_holder_;
+  std::weak_ptr<DeviceHolderVK> device_holder_;
   const UniqueID library_id_;
   mutable RWMutex functions_mutex_;
   ShaderFunctionMap functions_ IPLR_GUARDED_BY(functions_mutex_);
   bool is_valid_ = false;
 
   ShaderLibraryVK(
-      std::weak_ptr<DeviceHolder> device_holder,
+      std::weak_ptr<DeviceHolderVK> device_holder,
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data);
 
   // |ShaderLibrary|
@@ -51,7 +52,11 @@ class ShaderLibraryVK final : public ShaderLibrary {
   // |ShaderLibrary|
   void UnregisterFunction(std::string name, ShaderStage stage) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ShaderLibraryVK);
+  ShaderLibraryVK(const ShaderLibraryVK&) = delete;
+
+  ShaderLibraryVK& operator=(const ShaderLibraryVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SHADER_LIBRARY_VK_H_

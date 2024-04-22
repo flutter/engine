@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine.loader;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
@@ -16,7 +18,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.DisplayMetrics;
-import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.BuildConfig;
@@ -45,6 +46,10 @@ public class FlutterLoader {
       "io.flutter.embedding.android.EnableVulkanValidation";
   private static final String IMPELLER_BACKEND_META_DATA_KEY =
       "io.flutter.embedding.android.ImpellerBackend";
+  private static final String IMPELLER_OPENGL_GPU_TRACING_DATA_KEY =
+      "io.flutter.embedding.android.EnableOpenGLGPUTracing";
+  private static final String IMPELLER_VULKAN_GPU_TRACING_DATA_KEY =
+      "io.flutter.embedding.android.EnableVulkanGPUTracing";
 
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
@@ -155,8 +160,7 @@ public class FlutterLoader {
       throw new IllegalStateException("startInitialization must be called on the main thread");
     }
 
-    TraceSection.begin("FlutterLoader#startInitialization");
-    try {
+    try (TraceSection e = TraceSection.scoped("FlutterLoader#startInitialization")) {
       // Ensure that the context is actually the application context.
       final Context appContext = applicationContext.getApplicationContext();
 
@@ -165,18 +169,9 @@ public class FlutterLoader {
       initStartTimestampMillis = SystemClock.uptimeMillis();
       flutterApplicationInfo = ApplicationInfoLoader.load(appContext);
 
-      VsyncWaiter waiter;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 /* 17 */) {
-        final DisplayManager dm =
-            (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
-        waiter = VsyncWaiter.getInstance(dm, flutterJNI);
-      } else {
-        float fps =
-            ((WindowManager) appContext.getSystemService(Context.WINDOW_SERVICE))
-                .getDefaultDisplay()
-                .getRefreshRate();
-        waiter = VsyncWaiter.getInstance(fps, flutterJNI);
-      }
+      final DisplayManager dm =
+          (DisplayManager) appContext.getSystemService(Context.DISPLAY_SERVICE);
+      VsyncWaiter waiter = VsyncWaiter.getInstance(dm, flutterJNI);
       waiter.init();
 
       // Use a background thread for initialization tasks that require disk access.
@@ -184,11 +179,43 @@ public class FlutterLoader {
           new Callable<InitResult>() {
             @Override
             public InitResult call() {
-              TraceSection.begin("FlutterLoader initTask");
-              try {
+              try (TraceSection e = TraceSection.scoped("FlutterLoader initTask")) {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
-                flutterJNI.loadLibrary();
+                try {
+                  flutterJNI.loadLibrary();
+                } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
+                  String couldntFindVersion = "couldn't find \"libflutter.so\"";
+                  String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
+
+                  if (unsatisfiedLinkError.toString().contains(couldntFindVersion)
+                      || unsatisfiedLinkError.toString().contains(notFoundVersion)) {
+                    // To gather more information for
+                    // https://github.com/flutter/flutter/issues/144291,
+                    // log the contents of the native libraries directory as well as the
+                    // cpu architecture.
+
+                    String cpuArch = System.getProperty("os.arch");
+                    File nativeLibsDir = new File(flutterApplicationInfo.nativeLibraryDir);
+                    String[] nativeLibsContents = nativeLibsDir.list();
+
+                    throw new UnsupportedOperationException(
+                        "Could not load libflutter.so this is possibly because the application"
+                            + " is running on an architecture that Flutter Android does not support (e.g. x86)"
+                            + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
+                            + " for more detail.\n"
+                            + "App is using cpu architecture: "
+                            + cpuArch
+                            + ", and the native libraries directory (with path "
+                            + nativeLibsDir.getAbsolutePath()
+                            + ") contains the following files: "
+                            + Arrays.toString(nativeLibsContents),
+                        unsatisfiedLinkError);
+                  }
+
+                  throw unsatisfiedLinkError;
+                }
+
                 flutterJNI.updateRefreshRate();
 
                 // Prefetch the default font manager as soon as possible on a background thread.
@@ -203,15 +230,18 @@ public class FlutterLoader {
                     PathUtils.getFilesDir(appContext),
                     PathUtils.getCacheDirectory(appContext),
                     PathUtils.getDataDirectory(appContext));
-              } finally {
-                TraceSection.end();
               }
             }
           };
       initResultFuture = executorService.submit(initTask);
-    } finally {
-      TraceSection.end();
     }
+  }
+
+  private static boolean areValidationLayersOnByDefault() {
+    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
+      return Build.SUPPORTED_ABIS[0].equals("arm64-v8a");
+    }
+    return false;
   }
 
   /**
@@ -236,8 +266,7 @@ public class FlutterLoader {
           "ensureInitializationComplete must be called after startInitialization");
     }
 
-    TraceSection.begin("FlutterLoader#ensureInitializationComplete");
-    try {
+    try (TraceSection e = TraceSection.scoped("FlutterLoader#ensureInitializationComplete")) {
       InitResult result = initResultFuture.get();
 
       List<String> shellArgs = new ArrayList<>();
@@ -324,8 +353,15 @@ public class FlutterLoader {
         if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
           shellArgs.add("--enable-impeller");
         }
-        if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
+        if (metaData.getBoolean(
+            ENABLE_VULKAN_VALIDATION_META_DATA_KEY, areValidationLayersOnByDefault())) {
           shellArgs.add("--enable-vulkan-validation");
+        }
+        if (metaData.getBoolean(IMPELLER_OPENGL_GPU_TRACING_DATA_KEY, false)) {
+          shellArgs.add("--enable-opengl-gpu-tracing");
+        }
+        if (metaData.getBoolean(IMPELLER_VULKAN_GPU_TRACING_DATA_KEY, false)) {
+          shellArgs.add("--enable-vulkan-gpu-tracing");
         }
         String backend = metaData.getString(IMPELLER_BACKEND_META_DATA_KEY);
         if (backend != null) {
@@ -350,8 +386,6 @@ public class FlutterLoader {
     } catch (Exception e) {
       Log.e(TAG, "Flutter initialization failed.", e);
       throw new RuntimeException(e);
-    } finally {
-      TraceSection.end();
     }
   }
 

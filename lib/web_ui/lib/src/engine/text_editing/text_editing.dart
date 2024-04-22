@@ -11,13 +11,15 @@ import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../dom.dart';
-import '../embedder.dart';
+import '../mouse/prevent_default.dart';
 import '../platform_dispatcher.dart';
 import '../safe_browser_api.dart';
 import '../semantics.dart';
 import '../services.dart';
 import '../text/paragraph.dart';
 import '../util.dart';
+import '../view_embedder/flutter_view_manager.dart';
+import '../window.dart';
 import 'autofill_hint.dart';
 import 'composition_aware_mixin.dart';
 import 'input_action.dart';
@@ -47,11 +49,6 @@ bool browserHasAutofillOverlay() =>
 const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
-
-/// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
-@visibleForTesting
-DomElement get defaultTextEditingRoot =>
-    flutterViewEmbedder.textEditingHostNode;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -146,6 +143,37 @@ void _styleAutofillElements(
   elementStyle.setProperty('caret-color', 'transparent');
 }
 
+void _ensureEditingElementInView(DomElement element, int viewId) {
+  final bool isAlreadyAppended = element.isConnected ?? false;
+  if (!isAlreadyAppended) {
+    // If the element is not already appended to a view, we don't need to move
+    // it anywhere.
+    return;
+  }
+
+  final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+  final EngineFlutterView? currentView = viewManager.findViewForElement(element);
+  if (currentView == null) {
+    // For some reason, the input element was in the DOM, but it wasn't part of
+    // any Flutter view. Should we throw?
+    return;
+  }
+
+  if (currentView.viewId != viewId) {
+    _insertEditingElementInView(element, viewId);
+  }
+}
+
+void _insertEditingElementInView(DomElement element, int viewId) {
+  final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+  final EngineFlutterView? view = viewManager[viewId];
+  assert(
+    view != null,
+    'Could not find View with id $viewId. This should never happen, please file a bug!',
+  );
+  view!.dom.textEditingHost.append(element);
+}
+
 /// Form that contains all the fields in the same AutofillGroup.
 ///
 /// An [EngineAutofillForm] will only be constructed when autofill is enabled
@@ -153,6 +181,7 @@ void _styleAutofillElements(
 /// static method.
 class EngineAutofillForm {
   EngineAutofillForm({
+    required this.viewId,
     required this.formElement,
     this.elements,
     this.items,
@@ -176,6 +205,9 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
+  /// The ID of the view that this form is rendered into.
+  final int viewId;
+
   /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
   /// framework `TextInputConfiguration` object.
   ///
@@ -188,6 +220,7 @@ class EngineAutofillForm {
   ///
   /// Returns null if autofill is disabled for the input field.
   static EngineAutofillForm? fromFrameworkMessage(
+    int viewId,
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
@@ -210,9 +243,7 @@ class EngineAutofillForm {
     formElement.noValidate = true;
     formElement.method = 'post';
     formElement.action = '#';
-    formElement.addEventListener('submit', createDomEventListener((DomEvent e) {
-      e.preventDefault();
-    }));
+    formElement.addEventListener('submit', preventDefaultListener);
 
     // We need to explicitly disable pointer events on the form in Safari Desktop,
     // so that we don't have pointer event collisions if users hover over or click
@@ -313,6 +344,7 @@ class EngineAutofillForm {
     insertionReferenceNode ??= submitButton;
 
     return EngineAutofillForm(
+      viewId: viewId,
       formElement: formElement,
       elements: elements,
       items: items,
@@ -322,8 +354,16 @@ class EngineAutofillForm {
   }
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
+    // Since we're disabling pointer events on the form to fix Safari autofill,
+    // we need to explicitly set pointer events on the active input element in
+    // order to calculate the correct pointer event offsets.
+    // See: https://github.com/flutter/flutter/issues/136006
+    if(textEditing.strategy is SafariDesktopTextEditingStrategy) {
+      mainTextEditingElement.style.pointerEvents = 'all';
+    }
+
     formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
-    defaultTextEditingRoot.append(formElement);
+    _insertEditingElementInView(formElement, viewId);
   }
 
   void storeForm() {
@@ -547,7 +587,7 @@ class TextEditingDeltaState {
     if (isTextBeingRemoved) {
       // When text is deleted outside of the composing region or is cut using the native toolbar,
       // we calculate the length of the deleted text by comparing the new and old editing state lengths.
-      // If the deletion is backward, the length is susbtracted from the [deltaEnd]
+      // If the deletion is backward, the length is subtracted from the [deltaEnd]
       // that we set when beforeinput was fired to determine the [deltaStart].
       // If the deletion is forward, [deltaStart] is set to the new editing state baseOffset
       // and [deltaEnd] is set to [deltaStart] incremented by the length of the deletion.
@@ -561,9 +601,10 @@ class TextEditingDeltaState {
         newTextEditingDeltaState.deltaEnd = newTextEditingDeltaState.deltaStart + deletedLength;
       }
     } else if (isTextBeingChangedAtActiveSelection) {
+      final bool isPreviousSelectionInverted = lastEditingState!.baseOffset! > lastEditingState.extentOffset!;
       // When a selection of text is replaced by a copy/paste operation we set the starting range
       // of the delta to be the beginning of the selection of the previous editing state.
-      newTextEditingDeltaState.deltaStart = lastEditingState!.baseOffset!;
+      newTextEditingDeltaState.deltaStart = isPreviousSelectionInverted ? lastEditingState.extentOffset! : lastEditingState.baseOffset!;
     }
 
     // If we are composing then set the delta range to the composing region we
@@ -769,17 +810,31 @@ class EditingState {
   factory EditingState.fromDomElement(DomHTMLElement? domElement) {
     if (domInstanceOfString(domElement, 'HTMLInputElement')) {
       final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
-      return EditingState(
-          text: element.value,
-          baseOffset: element.selectionStart?.toInt(),
-          extentOffset: element.selectionEnd?.toInt());
+      if (element.selectionDirection == 'backward') {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionEnd?.toInt(),
+            extentOffset: element.selectionStart?.toInt());
+      } else {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionStart?.toInt(),
+            extentOffset: element.selectionEnd?.toInt());
+        }
     } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
       final DomHTMLTextAreaElement element = domElement! as
           DomHTMLTextAreaElement;
-      return EditingState(
-          text: element.value,
-          baseOffset: element.selectionStart?.toInt(),
-          extentOffset: element.selectionEnd?.toInt());
+      if (element.selectionDirection == 'backward') {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionEnd?.toInt(),
+            extentOffset: element.selectionStart?.toInt());
+      } else {
+        return EditingState(
+            text: element.value,
+            baseOffset: element.selectionStart?.toInt(),
+            extentOffset: element.selectionEnd?.toInt());
+      }
     } else {
       throw UnsupportedError('Initialized with unsupported input type');
     }
@@ -922,6 +977,7 @@ class EditingState {
 /// This corresponds to Flutter's [TextInputConfiguration].
 class InputConfiguration {
   InputConfiguration({
+    required this.viewId,
     this.inputType = EngineInputType.text,
     this.inputAction = 'TextInputAction.done',
     this.obscureText = false,
@@ -936,9 +992,11 @@ class InputConfiguration {
 
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
-      : inputType = EngineInputType.fromName(
+      : viewId = flutterInputConfiguration.tryInt('viewId') ?? kImplicitViewId,
+        inputType = EngineInputType.fromName(
           flutterInputConfiguration.readJson('inputType').readString('name'),
           isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
+          isMultiline: flutterInputConfiguration.readJson('inputType').tryBool('isMultiline') ?? false,
         ),
         inputAction =
             flutterInputConfiguration.tryString('inputAction') ?? 'TextInputAction.done',
@@ -953,10 +1011,14 @@ class InputConfiguration {
                 flutterInputConfiguration.readJson('autofill'))
             : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
+          flutterInputConfiguration.tryInt('viewId') ?? kImplicitViewId,
           flutterInputConfiguration.tryJson('autofill'),
           flutterInputConfiguration.tryList('fields'),
         ),
         enableDeltaModel = flutterInputConfiguration.tryBool('enableDeltaModel') ?? false;
+
+  /// The ID of the view that contains the text field.
+  final int viewId;
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -1234,7 +1296,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      defaultTextEditingRoot.append(activeDomElement);
+      _insertEditingElementInView(activeDomElement, inputConfig.viewId);
       _appendedToForm = false;
     }
 
@@ -1258,7 +1320,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       activeDomElement.setAttribute('type', 'password');
     }
 
-    if (config.inputType == EngineInputType.none) {
+    if (config.inputType.inputmodeAttribute == 'none') {
       activeDomElement.setAttribute('inputmode', 'none');
     }
 
@@ -1270,6 +1332,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       autofill.applyToDomElement(activeDomElement, focusedElement: true);
     } else {
       activeDomElement.setAttribute('autocomplete', 'off');
+      // When the new input configuration contains a different view ID, we need
+      // to move the input element to the new view.
+      _ensureEditingElementInView(activeDomElement, inputConfiguration.viewId);
     }
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
@@ -1315,7 +1380,16 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   void updateElementPlacement(EditableTextGeometry textGeometry) {
     geometry = textGeometry;
     if (isEnabled) {
-      placeElement();
+      // On updates, we shouldn't go through the entire placeElement() flow if
+      // we are in the middle of IME composition, otherwise we risk interrupting it.
+      // Geometry updates occur when a multiline input expands or contracts. If
+      // we are in the middle of composition, we should just update the geometry.
+      // See: https://github.com/flutter/flutter/issues/98817
+      if (composingText != null) {
+        geometry?.applyToDomElement(activeDomElement);
+      } else {
+        placeElement();
+      }
     }
   }
 
@@ -1411,23 +1485,25 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     final String? inputType = getJsProperty<void>(event, 'inputType') as String?;
 
     if (inputType != null) {
+      final bool isSelectionInverted = lastEditingState!.baseOffset! > lastEditingState!.extentOffset!;
+      final int deltaOffset = isSelectionInverted ? lastEditingState!.baseOffset! : lastEditingState!.extentOffset!;
       if (inputType.contains('delete')) {
         // The deltaStart is set in handleChange because there is where we get access
         // to the new selection baseOffset which is our new deltaStart.
         editingDeltaState.deltaText = '';
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (inputType == 'insertLineBreak'){
         // event.data is null on a line break, so we manually set deltaText as a line break by setting it to '\n'.
         editingDeltaState.deltaText = '\n';
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       } else if (eventData != null) {
         // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
-        editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
-        editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
+        editingDeltaState.deltaStart = deltaOffset;
+        editingDeltaState.deltaEnd = deltaOffset;
       }
     }
   }
@@ -1482,18 +1558,18 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   /// see: https://bugs.chromium.org/p/chromium/issues/detail?id=119216#c11.
   void preventDefaultForMouseEvents() {
     subscriptions.add(
-        DomSubscription(activeDomElement, 'mousedown', (_) {
-      _.preventDefault();
+        DomSubscription(activeDomElement, 'mousedown', (DomEvent event) {
+      event.preventDefault();
     }));
 
     subscriptions.add(
-        DomSubscription(activeDomElement, 'mouseup', (_) {
-      _.preventDefault();
+        DomSubscription(activeDomElement, 'mouseup', (DomEvent event) {
+      event.preventDefault();
     }));
 
     subscriptions.add(
-        DomSubscription(activeDomElement, 'mousemove', (_) {
-      _.preventDefault();
+        DomSubscription(activeDomElement, 'mousemove', (DomEvent event) {
+      event.preventDefault();
     }));
   }
 }
@@ -1723,7 +1799,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      defaultTextEditingRoot.append(activeDomElement);
+      _insertEditingElementInView(activeDomElement, inputConfig.viewId);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(
         activeDomElement);
@@ -1915,19 +1991,19 @@ class TextInputSetClient extends TextInputCommand {
 /// Creates the text editing strategy used in non-a11y mode.
 DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing textEditing) {
   DefaultTextEditingStrategy strategy;
-  if (browserEngine == BrowserEngine.webkit &&
-      operatingSystem == OperatingSystem.iOs) {
+
+  if(operatingSystem == OperatingSystem.iOs) {
     strategy = IOSTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.webkit) {
-    strategy = SafariDesktopTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.blink &&
-      operatingSystem == OperatingSystem.android) {
+  } else if(operatingSystem == OperatingSystem.android) {
     strategy = AndroidTextEditingStrategy(textEditing);
-  } else if (browserEngine == BrowserEngine.firefox) {
+  } else if(browserEngine == BrowserEngine.webkit) {
+    strategy = SafariDesktopTextEditingStrategy(textEditing);
+  } else if(browserEngine == BrowserEngine.firefox) {
     strategy = FirefoxTextEditingStrategy(textEditing);
   } else {
     strategy = GloballyPositionedTextEditingStrategy(textEditing);
   }
+
   return strategy;
 }
 
@@ -2284,7 +2360,7 @@ class HybridTextEditing {
   /// Supplies the DOM element used for editing.
   late final DefaultTextEditingStrategy strategy =
     debugTextEditingStrategyOverride ??
-    (EngineSemanticsOwner.instance.semanticsEnabled
+    (EngineSemantics.instance.semanticsEnabled
       ? SemanticsTextEditingStrategy.ensureInitialized(this)
       : createDefaultTextEditingStrategy(this));
 

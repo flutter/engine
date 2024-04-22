@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_VERTEX_DESCRIPTOR_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_VERTEX_DESCRIPTOR_MTL_H_
 
 #include <Metal/Metal.h>
 
@@ -29,7 +30,11 @@ class VertexDescriptorMTL {
  private:
   MTLVertexDescriptor* descriptor_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(VertexDescriptorMTL);
+  VertexDescriptorMTL(const VertexDescriptorMTL&) = delete;
+
+  VertexDescriptorMTL& operator=(const VertexDescriptorMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_VERTEX_DESCRIPTOR_MTL_H_

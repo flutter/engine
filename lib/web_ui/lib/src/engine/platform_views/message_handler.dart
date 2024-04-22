@@ -5,9 +5,11 @@
 import 'dart:typed_data';
 
 import '../dom.dart';
+import '../platform_dispatcher.dart';
 import '../services.dart';
 import '../util.dart';
 import 'content_manager.dart';
+import 'slots.dart';
 
 /// The signature for a callback for a Platform Message. From the `ui` package.
 /// Copied here so there's no circular dependencies.
@@ -19,7 +21,7 @@ typedef PlatformViewContentHandler = void Function(DomElement);
 
 /// This class handles incoming framework messages to create/dispose Platform Views.
 ///
-/// (An instance of this class is connected to the `flutter/platform_views`
+/// (The instance of this class is connected to the `flutter/platform_views`
 /// Platform Channel in the [EnginePlatformDispatcher] class.)
 ///
 /// It uses a [PlatformViewManager] to handle the CRUD of the DOM of Platform Views.
@@ -27,85 +29,86 @@ typedef PlatformViewContentHandler = void Function(DomElement);
 /// all operations related to platform views (registration, rendering, etc...),
 /// regardless of the rendering backend.
 ///
-/// When the `contents` of a Platform View are created, a [PlatformViewContentHandler]
-/// function (passed from the outside) will decide where in the DOM to inject
-/// said content.
+/// Platform views are injected into the DOM when needed by the correct instance
+/// of the active renderer.
 ///
-/// The rendering/compositing of Platform Views can create the other "half" of a
+/// The rendering and compositing of Platform Views can create the other "half" of a
 /// Platform View: the `slot`, through the [createPlatformViewSlot] method.
 ///
 /// When a Platform View is disposed of, it is removed from the cache (and DOM)
 /// directly by the `contentManager`. The canvaskit rendering backend needs to do
 /// some extra cleanup of its internal state, but it can do it automatically. See
-/// [HtmlViewEmbedder.disposeViews]
+/// [HtmlViewEmbedder.disposeViews].
 class PlatformViewMessageHandler {
   PlatformViewMessageHandler({
     required PlatformViewManager contentManager,
-    PlatformViewContentHandler? contentHandler,
-  }) : _contentManager = contentManager,
-       _contentHandler = contentHandler;
+  }) : _contentManager = contentManager;
+
+  static const String channelName = 'flutter/platform_views';
+
+  /// The shared instance of PlatformViewMessageHandler.
+  ///
+  /// Unless configured differently, this connects to the shared instance of the
+  /// [PlatformViewManager].
+  static PlatformViewMessageHandler instance = PlatformViewMessageHandler(
+    contentManager: PlatformViewManager.instance,
+  );
 
   final MethodCodec _codec = const StandardMethodCodec();
   final PlatformViewManager _contentManager;
-  final PlatformViewContentHandler? _contentHandler;
 
   /// Handle a `create` Platform View message.
   ///
-  /// This will attempt to render the `contents` and of a Platform View, if its
+  /// This will attempt to render the `contents` of a Platform View, if its
   /// `viewType` has been registered previously.
   ///
-  /// (See [PlatformViewContentManager.registerFactory] for more details.)
-  ///
-  /// The `contents` are delegated to a [_contentHandler] function, so the
-  /// active rendering backend can inject them in the right place of the DOM.
+  /// (See [PlatformViewManager.registerFactory] for more details.)
   ///
   /// If all goes well, this function will `callback` with an empty success envelope.
   /// In case of error, this will `callback` with an error envelope describing the error.
+  ///
+  /// The `callback` signals when the contents of a given [platformViewId] have
+  /// been rendered. They're now accessible through `platformViewRegistry.getViewById`
+  /// from `dart:ui_web`. **(Not the DOM!)**
   void _createPlatformView(
-    MethodCall methodCall,
-    _PlatformMessageResponseCallback callback,
-  ) {
-    final Map<dynamic, dynamic> args = methodCall.arguments as Map<dynamic, dynamic>;
-    final int viewId = args.readInt('id');
-    final String viewType = args.readString('viewType');
-    final Object? params = args['params'];
-
-    if (!_contentManager.knowsViewType(viewType)) {
+    _PlatformMessageResponseCallback callback, {
+    required int platformViewId,
+    required String platformViewType,
+    required Object? params,
+  }) {
+    if (!_contentManager.knowsViewType(platformViewType)) {
       callback(_codec.encodeErrorEnvelope(
         code: 'unregistered_view_type',
         message: 'A HtmlElementView widget is trying to create a platform view '
-            'with an unregistered type: <$viewType>.',
+            'with an unregistered type: <$platformViewType>.',
         details: 'If you are the author of the PlatformView, make sure '
             '`registerViewFactory` is invoked.',
       ));
       return;
     }
 
-    if (_contentManager.knowsViewId(viewId)) {
+    if (_contentManager.knowsViewId(platformViewId)) {
       callback(_codec.encodeErrorEnvelope(
         code: 'recreating_view',
         message: 'trying to create an already created view',
-        details: 'view id: $viewId',
+        details: 'view id: $platformViewId',
       ));
       return;
     }
 
-    final DomElement content = _contentManager.renderContent(
-      viewType,
-      viewId,
+    _contentManager.renderContent(
+      platformViewType,
+      platformViewId,
       params,
     );
 
-    // For now, we don't need anything fancier. If needed, this can be converted
-    // to a PlatformViewStrategy class for each web-renderer backend?
-    _contentHandler?.call(content);
     callback(_codec.encodeSuccessEnvelope(null));
   }
 
   /// Handle a `dispose` Platform View message.
   ///
   /// This will clear the cached information that the framework has about a given
-  /// `viewId`, through the [_contentManager].
+  /// `platformViewId`, through the [_contentManager].
   ///
   /// Once that's done, the dispose call is delegated to the [_disposeHandler]
   /// function, so the active rendering backend can dispose of whatever resources
@@ -113,34 +116,39 @@ class PlatformViewMessageHandler {
   ///
   /// This function should always `callback` with an empty success envelope.
   void _disposePlatformView(
-    MethodCall methodCall,
-    _PlatformMessageResponseCallback callback,
-  ) {
-    final int viewId = methodCall.arguments as int;
-
+    _PlatformMessageResponseCallback callback, {
+    required int platformViewId,
+  }) {
     // The contentManager removes the slot and the contents from its internal
     // cache, and the DOM.
-    _contentManager.clearPlatformView(viewId);
+    _contentManager.clearPlatformView(platformViewId);
 
     callback(_codec.encodeSuccessEnvelope(null));
   }
 
-  /// Handles a PlatformViewCall to the `flutter/platform_views` channel.
+  /// Handles legacy PlatformViewCalls that don't contain a Flutter View ID.
   ///
-  /// This method handles two possible messages:
-  /// * `create`: See [_createPlatformView]
-  /// * `dispose`: See [_disposePlatformView]
+  /// This is transitional code to support the old platform view channel. As
+  /// soon as the framework code is updated to send the Flutter View ID, this
+  /// method can be removed.
   void handlePlatformViewCall(
-    ByteData? data,
+    String method,
+    dynamic arguments,
     _PlatformMessageResponseCallback callback,
   ) {
-    final MethodCall decoded = _codec.decodeMethodCall(data);
-    switch (decoded.method) {
+    switch (method) {
       case 'create':
-        _createPlatformView(decoded, callback);
+        arguments as Map<dynamic, dynamic>;
+        _createPlatformView(
+          callback,
+          platformViewId: arguments.readInt('id'),
+          platformViewType: arguments.readString('viewType'),
+          params: arguments['params'],
+        );
         return;
+      // TODO(web): Send `arguments` as a Map for `dispose` too!
       case 'dispose':
-        _disposePlatformView(decoded, callback);
+        _disposePlatformView(callback, platformViewId: arguments as int);
         return;
     }
     callback(null);

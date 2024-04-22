@@ -7,6 +7,8 @@ import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 
+import 'impeller_enabled.dart';
+
 const Color red = Color(0xFFAA0000);
 const Color green = Color(0xFF00AA00);
 
@@ -23,13 +25,6 @@ const List<double> grayscaleColorMatrix = <double>[
   0.2126, 0.7152, 0.0722, 0, 0,
   0.2126, 0.7152, 0.0722, 0, 0,
   0,      0,      0,      1, 0,
-];
-
-const List<double> identityColorMatrix = <double>[
-  1, 0, 0, 0, 0,
-  0, 1, 0, 0, 0,
-  0, 0, 1, 0, 0,
-  0, 0, 0, 1, 0,
 ];
 
 const List<double> constValueColorMatrix = <double>[
@@ -174,9 +169,13 @@ void main() {
   }
 
   test('ImageFilter - blur', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
     final Paint paint = Paint()
       ..color = green
-      ..imageFilter = makeBlur(1.0, 1.0);
+      ..imageFilter = makeBlur(1.0, 1.0, TileMode.decal);
 
     final Uint32List bytes = await getBytesForPaint(paint);
     checkBytes(bytes, greenCenterBlurred, greenSideBlurred, greenCornerBlurred);
@@ -201,6 +200,11 @@ void main() {
   });
 
   test('ImageFilter - matrix', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
+
     final Paint paint = Paint()
       ..color = green
       ..imageFilter = makeScale(2.0, 2.0, 1.5, 1.5);
@@ -227,6 +231,11 @@ void main() {
   });
 
   test('ImageFilter - from color filters', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
+
     final Paint paint = Paint()
       ..color = green
       ..imageFilter = const ColorFilter.matrix(constValueColorMatrix);
@@ -236,6 +245,11 @@ void main() {
   });
 
   test('ImageFilter - color filter composition', () async {
+    if (impellerEnabled) {
+      print('Disabled - see https://github.com/flutter/flutter/issues/135712');
+      return;
+    }
+
     final ImageFilter compOrder1 = ImageFilter.compose(
       outer: const ColorFilter.matrix(halvesBrightnessColorMatrix),
       inner: const ColorFilter.matrix(constValueColorMatrix),

@@ -9,6 +9,7 @@
 #import <os/log.h>
 #include <memory>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/platform_version.h"
@@ -58,6 +59,11 @@ typedef struct MouseState {
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
 @interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
+// TODO(dkwingsmt): Make the view ID property public once the iOS shell
+// supports multiple views.
+// https://github.com/flutter/flutter/issues/138168
+@property(nonatomic, readonly) int64_t viewIdentifier;
+
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -112,7 +118,7 @@ typedef struct MouseState {
 @end
 
 @implementation FlutterViewController {
-  std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
+  std::unique_ptr<fml::WeakNSObjectFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
 
   // We keep a separate reference to this and create it ahead of time because we want to be able to
@@ -148,6 +154,7 @@ typedef struct MouseState {
 
 @synthesize displayingFlutterUI = _displayingFlutterUI;
 @synthesize prefersStatusBarHidden = _flutterPrefersStatusBarHidden;
+@dynamic viewIdentifier;
 
 #pragma mark - Manage and override all designated initializers
 
@@ -171,7 +178,7 @@ typedef struct MouseState {
     _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine
                                                       opaque:self.isViewOpaque
                                              enableWideGamut:engine.project.isWideGamutEnabled]);
-    _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+    _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
     _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
     [self performCommonViewControllerInitialization];
@@ -232,7 +239,7 @@ typedef struct MouseState {
     project = [[[FlutterDartProject alloc] init] autorelease];
   }
   FlutterView.forceSoftwareRendering = project.settings.enable_software_rendering;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
+  _weakFactory = std::make_unique<fml::WeakNSObjectFactory<FlutterViewController>>(self);
   auto engine = fml::scoped_nsobject<FlutterEngine>{[[FlutterEngine alloc]
                 initWithName:@"io.flutter"
                      project:project
@@ -286,8 +293,8 @@ typedef struct MouseState {
   return _engine.get();
 }
 
-- (fml::WeakPtr<FlutterViewController>)getWeakPtr {
-  return _weakFactory->GetWeakPtr();
+- (fml::WeakNSObject<FlutterViewController>)getWeakNSObject {
+  return _weakFactory->GetWeakNSObject();
 }
 
 - (void)setUpNotificationCenterObservers {
@@ -617,7 +624,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
   }
 
   // Start on the platform thread.
-  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakPtr],
+  weakPlatformView->SetNextFrameCallback([weakSelf = [self getWeakNSObject],
                                           platformTaskRunner = [_engine.get() platformTaskRunner],
                                           rasterTaskRunner = [_engine.get() rasterTaskRunner]]() {
     FML_DCHECK(rasterTaskRunner->RunsTasksOnCurrentThread());
@@ -641,6 +648,12 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 #pragma mark - Properties
+
+- (int64_t)viewIdentifier {
+  // TODO(dkwingsmt): Fill the view ID property with the correct value once the
+  // iOS shell supports multiple views.
+  return flutter::kFlutterImplicitViewId;
+}
 
 - (UIView*)splashScreenView {
   if (!_splashScreenView) {
@@ -717,7 +730,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 }
 
 - (void)setFlutterViewDidRenderCallback:(void (^)(void))callback {
-  _flutterViewRenderedCallback.reset(callback, fml::OwnershipPolicy::Retain);
+  _flutterViewRenderedCallback.reset(callback, fml::scoped_policy::OwnershipPolicy::kRetain);
 }
 
 #pragma mark - Surface creation and teardown updates
@@ -800,7 +813,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
 
 - (void)addInternalPlugins {
   self.keyboardManager = [[[FlutterKeyboardManager alloc] init] autorelease];
-  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterViewController> weakSelf = [self getWeakNSObject];
   FlutterSendKeyEvent sendEvent =
       ^(const FlutterKeyEvent& event, FlutterKeyEventCallback callback, void* userData) {
         if (weakSelf) {
@@ -928,6 +941,7 @@ static void SendFakeTouchEvent(UIScreen* screen,
       pointer_data.change = flutter::PointerData::Change::kCancel;
       pointer_data.device = device.longLongValue;
       pointer_data.pointer_identifier = 0;
+      pointer_data.view_id = self.viewIdentifier;
 
       // Anything we put here will be arbitrary since there are no touches.
       pointer_data.physical_x = 0;
@@ -1035,10 +1049,15 @@ static void SendFakeTouchEvent(UIScreen* screen,
   if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
   }
-  [self goToApplicationLifecycle:@"AppLifecycleState.resumed"];
+  [self performSelector:@selector(goToApplicationLifecycle:)
+             withObject:@"AppLifecycleState.resumed"
+             afterDelay:0.0f];
 }
 
 - (void)appOrSceneWillResignActive {
+  [NSObject cancelPreviousPerformRequestsWithTarget:self
+                                           selector:@selector(goToApplicationLifecycle:)
+                                             object:@"AppLifecycleState.resumed"];
   [self goToApplicationLifecycle:@"AppLifecycleState.inactive"];
 }
 
@@ -1171,6 +1190,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     pointer_data.device = reinterpret_cast<int64_t>(touch);
 
+    pointer_data.view_id = self.viewIdentifier;
+
     // Pointer will be generated in pointer_data_packet_converter.cc.
     pointer_data.pointer_identifier = 0;
 
@@ -1300,7 +1321,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  double displayRefreshRate = DisplayLinkManager.displayRefreshRate;
   const double epsilon = 0.1;
   if (displayRefreshRate < 60.0 + epsilon) {  // displayRefreshRate <= 60.0
 
@@ -1697,7 +1718,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
 
-  fml::WeakPtr<FlutterViewController> weakSelf = [self getWeakPtr];
+  fml::WeakNSObject<FlutterViewController> weakSelf = [self getWeakNSObject];
   FlutterKeyboardAnimationCallback keyboardAnimationCallback = ^(
       fml::TimePoint keyboardAnimationTargetTime) {
     if (!weakSelf) {
@@ -1968,7 +1989,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #endif
       [self requestGeometryUpdateForWindowScenes:scenes];
     } else {
-      UIInterfaceOrientationMask currentInterfaceOrientation;
+      UIInterfaceOrientationMask currentInterfaceOrientation = 0;
       if (@available(iOS 13.0, *)) {
         UIWindowScene* windowScene = [self flutterWindowSceneIfViewLoaded];
         if (!windowScene) {
@@ -1978,7 +1999,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         }
         currentInterfaceOrientation = 1 << windowScene.interfaceOrientation;
       } else {
+#if APPLICATION_EXTENSION_API_ONLY
+        FML_LOG(ERROR) << "Application based status bar orentiation update is not supported in "
+                          "app extension. Orientation: "
+                       << currentInterfaceOrientation;
+#else
         currentInterfaceOrientation = 1 << [[UIApplication sharedApplication] statusBarOrientation];
+#endif
       }
       if (!(_orientationPreferences & currentInterfaceOrientation)) {
         [UIViewController attemptRotationToDeviceOrientation];
@@ -2077,6 +2104,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return flags;
 }
 
+- (BOOL)accessibilityPerformEscape {
+  FlutterMethodChannel* navigationChannel = [_engine.get() navigationChannel];
+  if (navigationChannel) {
+    [self popRoute];
+    return YES;
+  }
+  return NO;
+}
+
 + (BOOL)accessibilityIsOnOffSwitchLabelsEnabled {
   if (@available(iOS 13, *)) {
     return UIAccessibilityIsOnOffSwitchLabelsEnabled();
@@ -2103,6 +2139,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (CGFloat)textScaleFactor {
+#if APPLICATION_EXTENSION_API_ONLY
+  FML_LOG(WARNING) << "Dynamic content size update is not supported in app extension.";
+  return 1.0;
+#else
   UIContentSizeCategory category = [UIApplication sharedApplication].preferredContentSizeCategory;
   // The delta is computed by approximating Apple's typography guidelines:
   // https://developer.apple.com/ios/human-interface-guidelines/visual-design/typography/
@@ -2153,6 +2193,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     return 1.0;
   }
+#endif
 }
 
 - (BOOL)isAlwaysUse24HourFormat {
@@ -2377,12 +2418,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     pointer_data.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
     pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
     pointer_data.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
+    pointer_data.view_id = self.viewIdentifier;
 
     if (event.timestamp < _scrollInertiaEventAppKitDeadline) {
       // Only send the event if it occured before the expected natural end of gesture momentum.
       // If received after the deadline, it's not likely the event is from a user-initiated cancel.
       auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-      packet->SetPointerData(/*index=*/0, pointer_data);
+      packet->SetPointerData(/*i=*/0, pointer_data);
       [_engine.get() dispatchPointerDataPacket:std::move(packet)];
       _scrollInertiaEventAppKitDeadline = 0;
     }
@@ -2400,6 +2442,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kMouse;
+  pointer_data.view_id = self.viewIdentifier;
 
   switch (_hoverGestureRecognizer.state) {
     case UIGestureRecognizerStateBegan:
@@ -2433,17 +2476,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // is received with the same position as the previous one, it can only be from a finger
     // making or breaking contact with the trackpad surface.
     auto packet = std::make_unique<flutter::PointerDataPacket>(2);
-    packet->SetPointerData(/*index=*/0, pointer_data);
+    packet->SetPointerData(/*i=*/0, pointer_data);
     flutter::PointerData inertia_cancel = pointer_data;
     inertia_cancel.device = reinterpret_cast<int64_t>(_continuousScrollingPanGestureRecognizer);
     inertia_cancel.kind = flutter::PointerData::DeviceKind::kTrackpad;
     inertia_cancel.signal_kind = flutter::PointerData::SignalKind::kScrollInertiaCancel;
-    packet->SetPointerData(/*index=*/1, inertia_cancel);
+    inertia_cancel.view_id = self.viewIdentifier;
+    packet->SetPointerData(/*i=*/1, inertia_cancel);
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
     _scrollInertiaEventStartline = DBL_MAX;
   } else {
     auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-    packet->SetPointerData(/*index=*/0, pointer_data);
+    packet->SetPointerData(/*i=*/0, pointer_data);
     [_engine.get() dispatchPointerDataPacket:std::move(packet)];
   }
 }
@@ -2461,6 +2505,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kScroll;
   pointer_data.scroll_delta_x = (translation.x - _mouseState.last_translation.x);
   pointer_data.scroll_delta_y = -(translation.y - _mouseState.last_translation.y);
+  pointer_data.view_id = self.viewIdentifier;
 
   // The translation reported by UIPanGestureRecognizer is the total translation
   // generated by the pan gesture since the gesture began. We need to be able
@@ -2473,7 +2518,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
+  packet->SetPointerData(/*i=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
@@ -2484,6 +2529,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  pointer_data.view_id = self.viewIdentifier;
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
@@ -2524,7 +2570,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
+  packet->SetPointerData(/*i=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
@@ -2532,6 +2578,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
   pointer_data.device = reinterpret_cast<int64_t>(recognizer);
   pointer_data.kind = flutter::PointerData::DeviceKind::kTrackpad;
+  pointer_data.view_id = self.viewIdentifier;
   switch (recognizer.state) {
     case UIGestureRecognizerStateBegan:
       pointer_data.change = flutter::PointerData::Change::kPanZoomStart;
@@ -2553,7 +2600,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
+  packet->SetPointerData(/*i=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 

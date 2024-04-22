@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_
 
 #import <UIKit/UIKit.h>
 
@@ -18,6 +18,7 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 @class FlutterCustomAccessibilityAction;
 @class FlutterPlatformViewSemanticsContainer;
+@class FlutterTouchInterceptingView;
 
 /**
  * A node in the iOS semantics tree. This object is a wrapper over a native accessibiliy
@@ -171,7 +172,8 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
                            uid:(int32_t)uid
-                  platformView:(UIView*)platformView NS_DESIGNATED_INITIALIZER;
+                  platformView:(FlutterTouchInterceptingView*)platformView
+    NS_DESIGNATED_INITIALIZER;
 
 @end
 
@@ -233,4 +235,4 @@ constexpr float kScrollExtentMaxForInf = 1000;
 
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_SEMANTICS_OBJECT_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SEMANTICSOBJECT_H_

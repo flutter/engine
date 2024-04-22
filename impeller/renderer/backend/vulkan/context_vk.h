@@ -2,22 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_
 
 #include <memory>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
+#include "fml/thread.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/formats.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
+#include "impeller/renderer/backend/vulkan/driver_info_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/queue_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 namespace impeller {
@@ -26,10 +30,14 @@ bool HasValidationLayers();
 
 class CommandEncoderFactoryVK;
 class CommandEncoderVK;
+class CommandPoolRecyclerVK;
 class DebugReportVK;
 class FenceWaiterVK;
 class ResourceManagerVK;
 class SurfaceContextVK;
+class GPUTracerVK;
+class DescriptorPoolRecyclerVK;
+class CommandQueueVK;
 
 class ContextVK final : public Context,
                         public BackendCast<ContextVK, Context>,
@@ -40,11 +48,19 @@ class ContextVK final : public Context,
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
     bool enable_validation = false;
+    bool enable_gpu_tracing = false;
+    /// If validations are requested but cannot be enabled, log a fatal error.
+    bool fatal_missing_validations = false;
 
     Settings() = default;
 
     Settings(Settings&&) = default;
   };
+
+  /// Choose the number of worker threads the context_vk will create.
+  ///
+  /// Visible for testing.
+  static size_t ChooseThreadCountForWorkers(size_t hardware_concurrency);
 
   static std::shared_ptr<ContextVK> Create(Settings settings);
 
@@ -80,6 +96,9 @@ class ContextVK final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  const std::shared_ptr<YUVConversionLibraryVK>& GetYUVConversionLibrary()
+      const;
+
   // |Context|
   void Shutdown() override;
 
@@ -114,13 +133,15 @@ class ContextVK final : public Context,
     return true;
   }
 
-  std::shared_ptr<DeviceHolder> GetDeviceHolder() const {
+  std::shared_ptr<DeviceHolderVK> GetDeviceHolder() const {
     return device_holder_;
   }
 
   vk::Instance GetInstance() const;
 
   const vk::Device& GetDevice() const;
+
+  const std::unique_ptr<DriverInfoVK>& GetDriverInfo() const;
 
   const std::shared_ptr<fml::ConcurrentTaskRunner>
   GetConcurrentWorkerTaskRunner() const;
@@ -135,8 +156,20 @@ class ContextVK final : public Context,
 
   std::shared_ptr<ResourceManagerVK> GetResourceManager() const;
 
+  std::shared_ptr<CommandPoolRecyclerVK> GetCommandPoolRecycler() const;
+
+  std::shared_ptr<DescriptorPoolRecyclerVK> GetDescriptorPoolRecycler() const;
+
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
+
+  std::shared_ptr<GPUTracerVK> GetGPUTracer() const;
+
+  void RecordFrameEndTime() const;
+
+  void InitializeCommonlyUsedShadersIfNeeded() const override;
+
  private:
-  struct DeviceHolderImpl : public DeviceHolder {
+  struct DeviceHolderImpl : public DeviceHolderVK {
     // |DeviceHolder|
     const vk::Device& GetDevice() const override { return device.get(); }
     // |DeviceHolder|
@@ -150,17 +183,24 @@ class ContextVK final : public Context,
   };
 
   std::shared_ptr<DeviceHolderImpl> device_holder_;
+  std::unique_ptr<DriverInfoVK> driver_info_;
   std::unique_ptr<DebugReportVK> debug_report_;
   std::shared_ptr<Allocator> allocator_;
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  std::shared_ptr<YUVConversionLibraryVK> yuv_conversion_library_;
   QueuesVK queues_;
   std::shared_ptr<const Capabilities> device_capabilities_;
   std::shared_ptr<FenceWaiterVK> fence_waiter_;
   std::shared_ptr<ResourceManagerVK> resource_manager_;
+  std::shared_ptr<CommandPoolRecyclerVK> command_pool_recycler_;
   std::string device_name_;
   std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
+  std::shared_ptr<GPUTracerVK> gpu_tracer_;
+  std::shared_ptr<DescriptorPoolRecyclerVK> descriptor_pool_recycler_;
+  std::shared_ptr<CommandQueue> command_queue_vk_;
+
   const uint64_t hash_;
 
   bool is_valid_ = false;
@@ -172,7 +212,11 @@ class ContextVK final : public Context,
   std::unique_ptr<CommandEncoderFactoryVK> CreateGraphicsCommandEncoderFactory()
       const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
+  ContextVK(const ContextVK&) = delete;
+
+  ContextVK& operator=(const ContextVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_CONTEXT_VK_H_

@@ -3,9 +3,11 @@
 // found in the LICENSE file.
 
 #include "external_view_embedder.h"
+
 #include <algorithm>
 #include <cstdint>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -103,18 +105,18 @@ flutter::DlCanvas* ExternalViewEmbedder::CompositeEmbeddedView(
 }
 
 flutter::PostPrerollResult ExternalViewEmbedder::PostPrerollAction(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   return flutter::PostPrerollResult::kSuccess;
 }
 
 void ExternalViewEmbedder::BeginFrame(
-    SkISize frame_size,
     GrDirectContext* context,
-    double device_pixel_ratio,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
-  TRACE_EVENT0("flutter", "ExternalViewEmbedder::BeginFrame");
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {}
 
-  // Reset for new frame.
+// |ExternalViewEmbedder|
+void ExternalViewEmbedder::PrepareFlutterView(SkISize frame_size,
+                                              double device_pixel_ratio) {
+  // Reset for new view.
   Reset();
   frame_size_ = frame_size;
   frame_dpr_ = device_pixel_ratio;
@@ -128,15 +130,19 @@ void ExternalViewEmbedder::BeginFrame(
 
 void ExternalViewEmbedder::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   TRACE_EVENT0("flutter", "ExternalViewEmbedder::EndFrame");
 }
 
-void ExternalViewEmbedder::SubmitFrame(
+void ExternalViewEmbedder::SubmitFlutterView(
+    int64_t flutter_view_id,
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<flutter::SurfaceFrame> frame) {
-  TRACE_EVENT0("flutter", "ExternalViewEmbedder::SubmitFrame");
+  // Fuchsia only supports operating the implicit view for now.
+  FML_DCHECK(flutter_view_id == flutter::kFlutterImplicitViewId);
+
+  TRACE_EVENT0("flutter", "ExternalViewEmbedder::SubmitFlutterView");
   std::vector<std::unique_ptr<SurfaceProducerSurface>> frame_surfaces;
   std::unordered_map<EmbedderLayerId, size_t> frame_surface_indices;
 

@@ -99,7 +99,6 @@ class Color {
   /// For example, to get a fully opaque orange, you would use `const
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
-  @pragma('vm:entry-point')
   const Color(int value) : value = value & 0xFFFFFFFF;
 
   /// Construct a color from the lower 8 bits of four integers.
@@ -767,7 +766,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their saturation from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hue.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_saturation.png)
   ///
   /// See also:
   ///
@@ -1088,13 +1087,25 @@ enum Clip {
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
 /// to use for that operation.
-class Paint {
+final class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  Paint() {
-    if (enableDithering) {
-      _dither = true;
-    }
+  Paint();
+
+  /// Constructs a new [Paint] object with the same fields as [other].
+  ///
+  /// Any changes made to the object returned will not affect [other], and
+  /// changes to [other] will not affect the object returned.
+  ///
+  /// Backends (for example web versus native) may have different performance
+  /// characteristics. If the code is performance-sensitive, consider profiling
+  /// and falling back to reusing a single [Paint] object if necessary.
+  Paint.from(Paint other) {
+    // Every field on Paint is deeply immutable, so to create a copy of a Paint
+    // object, we copy the underlying data buffer and the list of objects (which
+    // are also deeply immutable).
+    _data.buffer.asUint32List().setAll(0, other._data.buffer.asUint32List());
+    _objects = other._objects?.toList();
   }
 
   // Paint objects are encoded in two buffers:
@@ -1128,7 +1139,6 @@ class Paint {
   static const int _kMaskFilterBlurStyleIndex = 10;
   static const int _kMaskFilterSigmaIndex = 11;
   static const int _kInvertColorIndex = 12;
-  static const int _kDitherIndex = 13;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
   static const int _kColorOffset = _kColorIndex << 2;
@@ -1143,9 +1153,9 @@ class Paint {
   static const int _kMaskFilterBlurStyleOffset = _kMaskFilterBlurStyleIndex << 2;
   static const int _kMaskFilterSigmaOffset = _kMaskFilterSigmaIndex << 2;
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
-  static const int _kDitherOffset = _kDitherIndex << 2;
+
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 56;
+  static const int _kDataByteCount = 52; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1480,30 +1490,6 @@ class Paint {
     _data.setInt32(_kInvertColorOffset, value ? 1 : 0, _kFakeHostEndian);
   }
 
-  bool get _dither {
-    return _data.getInt32(_kDitherOffset, _kFakeHostEndian) == 1;
-  }
-  set _dither(bool value) {
-    _data.setInt32(_kDitherOffset, value ? 1 : 0, _kFakeHostEndian);
-  }
-
-  /// Whether to dither the output when drawing images.
-  ///
-  /// If false, the default value, dithering will be enabled when the input
-  /// color depth is higher than the output color depth. For example,
-  /// drawing an RGB8 image onto an RGB565 canvas.
-  ///
-  /// This value also controls dithering of [shader]s, which can make
-  /// gradients appear smoother.
-  ///
-  /// Whether or not dithering affects the output is implementation defined.
-  /// Some implementations may choose to ignore this completely, if they're
-  /// unable to control dithering.
-  ///
-  /// To ensure that dithering is consistently enabled for your entire
-  /// application, set this to true before invoking any drawing related code.
-  static bool enableDithering = false;
-
   @override
   String toString() {
     if (const bool.fromEnvironment('dart.vm.product')) {
@@ -1531,7 +1517,7 @@ class Paint {
       }
       semicolon = '; ';
     }
-    if (isAntiAlias != true) {
+    if (!isAntiAlias) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
@@ -1565,9 +1551,6 @@ class Paint {
     }
     if (invertColors) {
       result.write('${semicolon}invert: $invertColors');
-    }
-    if (_dither) {
-      result.write('${semicolon}dither: $_dither');
     }
     result.write(')');
     return result.toString();
@@ -1960,16 +1943,20 @@ base class _Image extends NativeFieldWrapperClass1 {
   external int get height;
 
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
-    return _futurize((_Callback<ByteData> callback) {
-      return _toByteData(format.index, (Uint8List? encoded) {
-        callback(encoded!.buffer.asByteData());
+    return _futurizeWithError((_CallbackWithError<ByteData?> callback) {
+      return _toByteData(format.index, (Uint8List? encoded, String? error) {
+        if (error == null && encoded != null) {
+          callback(encoded.buffer.asByteData(), null);
+        } else {
+          callback(null, error);
+        }
       });
     });
   }
 
   /// Returns an error message on failure, null on success.
   @Native<Handle Function(Pointer<Void>, Int32, Handle)>(symbol: 'Image::toByteData')
-  external String? _toByteData(int format, _Callback<Uint8List?> callback);
+  external String? _toByteData(int format, void Function(Uint8List?, String?) callback);
 
   bool _disposed = false;
   void dispose() {
@@ -1997,6 +1984,11 @@ base class _Image extends NativeFieldWrapperClass1 {
 
   @override
   String toString() => '[$width\u00D7$height]';
+}
+
+@pragma('vm:entry-point')
+Image _wrapImage(_Image image) {
+  return Image._(image, image.width, image.height);
 }
 
 /// Callback signature for [decodeImageFromList].
@@ -2101,7 +2093,6 @@ abstract class Codec {
   void dispose();
 }
 
-@pragma('vm:entry-point')
 base class _NativeCodec extends NativeFieldWrapperClass1 implements Codec {
   //
   // This class is created by the engine, and should not be instantiated
@@ -2109,7 +2100,6 @@ base class _NativeCodec extends NativeFieldWrapperClass1 implements Codec {
   //
   // To obtain an instance of the [Codec] interface, see
   // [instantiateImageCodec].
-  @pragma('vm:entry-point')
   _NativeCodec._();
 
   int? _cachedFrameCount;
@@ -2157,6 +2147,9 @@ base class _NativeCodec extends NativeFieldWrapperClass1 implements Codec {
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Codec::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'Codec(${_cachedFrameCount == null ? "" : "$_cachedFrameCount frames"})';
 }
 
 /// Instantiates an image [Codec].
@@ -2577,11 +2570,9 @@ abstract class EngineLayer {
   void dispose();
 }
 
-@pragma('vm:entry-point')
 base class _NativeEngineLayer extends NativeFieldWrapperClass1 implements EngineLayer {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
-  @pragma('vm:entry-point')
   _NativeEngineLayer._();
 
   @override
@@ -2892,10 +2883,8 @@ abstract class Path {
   PathMetrics computeMetrics({bool forceClosed = false});
 }
 
-@pragma('vm:entry-point')
 base class _NativePath extends NativeFieldWrapperClass1 implements Path {
   /// Create a new empty [Path] object.
-  @pragma('vm:entry-point')
   _NativePath() { _constructor(); }
 
   /// Avoids creating a new native backing for the path for methods that will
@@ -3140,6 +3129,9 @@ base class _NativePath extends NativeFieldWrapperClass1 implements Path {
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return PathMetrics._(this, forceClosed);
   }
+
+  @override
+  String toString() => 'Path';
 }
 
 /// The geometric description of a tangent: the angle at a point.
@@ -3492,8 +3484,9 @@ class ColorFilter implements ImageFilter {
         _matrix = null,
         _type = _kTypeMode;
 
-  /// Construct a color filter that transforms a color by a 5x5 matrix, where
-  /// the fifth row is implicitly added in an identity configuration.
+  /// Construct a color filter from a 4x5 row-major matrix. The matrix is
+  /// interpreted as a 5x5 matrix, where the fifth row is the identity
+  /// configuration.
   ///
   /// Every pixel's color value, represented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
@@ -4200,7 +4193,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries).
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before `from` and after `to` is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
@@ -4242,7 +4239,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries).
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before and after the radius is described by the `tileMode`
   /// argument. For details, see the [TileMode] enum.
@@ -4304,7 +4305,11 @@ base class Gradient extends Shader {
   /// If `colorStops` is provided, `colorStops[i]` is a number from 0.0 to 1.0
   /// that specifies where `color[i]` begins in the gradient. If `colorStops` is
   /// not provided, then only two stops, at 0.0 and 1.0, are implied (and
-  /// `color` must therefore only have two entries).
+  /// `color` must therefore only have two entries). Stop values less than 0.0
+  /// will be rounded up to 0.0 and stop values greater than 1.0 will be rounded
+  /// down to 1.0. Each stop value must be greater than or equal to the previous
+  /// stop value. Stop values that do not meet this criteria will be rounded up
+  /// to the previous stop value.
   ///
   /// The behavior before `startAngle` and after `endAngle` is described by the
   /// `tileMode` argument. For details, see the [TileMode] enum.
@@ -4482,35 +4487,31 @@ base class FragmentProgram extends NativeFieldWrapperClass1 {
     // the same encoding here so that users can load assets with the same
     // key they have written in the pubspec.
     final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
-    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    final FragmentProgram? program = _shaderRegistry[encodedKey];
     if (program != null) {
       return Future<FragmentProgram>.value(program);
     }
     return Future<FragmentProgram>.microtask(() {
       final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
-      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      _shaderRegistry[encodedKey] = program;
       return program;
     });
   }
 
   // This is a cache of shaders that have been loaded by
-  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
-  // so that the case where an in-use program is requested again can be fast,
-  // but programs that are no longer referenced are not retained because of the
-  // cache.
-  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
-      <String, WeakReference<FragmentProgram>>{};
+  // FragmentProgram.fromAsset. It holds a strong reference to theFragmentPrograms
+  // The native engine will retain the resources associated with this shader
+  // program (PSO variants) until shutdown, so maintaining a strong reference
+  // here ensures we do not perform extra work if the dart object is continually
+  // re-initialized.
+  static final Map<String, FragmentProgram> _shaderRegistry =
+      <String, FragmentProgram>{};
 
   static void _reinitializeShader(String assetKey) {
     // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
-    final WeakReference<FragmentProgram>? programRef = _shaderRegistry[assetKey];
-    if (programRef == null) {
-      return;
-    }
-
-    final FragmentProgram? program = programRef.target;
+    final FragmentProgram? program = _shaderRegistry[assetKey];
     if (program == null) {
       return;
     }
@@ -5769,7 +5770,6 @@ abstract class Canvas {
 }
 
 base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
-  @pragma('vm:entry-point')
   _NativeCanvas(PictureRecorder recorder, [ Rect? cullRect ])  {
     if (recorder.isRecording) {
       throw ArgumentError('"recorder" must not already be associated with another Canvas.');
@@ -5791,6 +5791,18 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
   external void save();
+
+  static Rect _sorted(Rect rect) {
+    if (rect.isEmpty) {
+      rect = Rect.fromLTRB(
+        math.min(rect.left, rect.right),
+        math.min(rect.top, rect.bottom),
+        math.max(rect.left, rect.right),
+        math.max(rect.top, rect.bottom),
+      );
+    }
+    return rect;
+  }
 
   @override
   void saveLayer(Rect? bounds, Paint paint) {
@@ -5862,6 +5874,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
+    rect = _sorted(rect);
+    // Even if rect is still empty - which implies it has a zero dimension -
+    // we still need to perform the clipRect operation as it will effectively
+    // nullify any further rendering until the next restore call.
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
@@ -5934,7 +5950,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
@@ -5962,7 +5981,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
@@ -6238,6 +6260,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
   external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
+
+  @override
+  String toString() => 'Canvas(recording: ${_recorder != null})';
 }
 
 /// Signature for [Picture] lifecycle events.
@@ -6308,13 +6333,11 @@ abstract class Picture {
   int get approximateBytesUsed;
 }
 
-@pragma('vm:entry-point')
 base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
   /// This class is created by the engine, and should not be instantiated
   /// or extended directly.
   ///
   /// To create a [Picture], use a [PictureRecorder].
-  @pragma('vm:entry-point')
   _NativePicture._();
 
   @override
@@ -6383,6 +6406,9 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
   @override
   @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Picture::GetAllocationSize', isLeaf: true)
   external int get approximateBytesUsed;
+
+  @override
+  String toString() => 'Picture';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
@@ -6413,7 +6439,6 @@ abstract class PictureRecorder {
 }
 
 base class _NativePictureRecorder extends NativeFieldWrapperClass1 implements PictureRecorder {
-  @pragma('vm:entry-point')
   _NativePictureRecorder() { _constructor(); }
 
   @Native<Void Function(Handle)>(symbol: 'PictureRecorder::Create')
@@ -6441,6 +6466,9 @@ base class _NativePictureRecorder extends NativeFieldWrapperClass1 implements Pi
   external void _endRecording(_NativePicture outPicture);
 
   _NativeCanvas? _canvas;
+
+  @override
+  String toString() => 'PictureRecorder(recording: $isRecording)';
 }
 
 /// A single shadow.
@@ -6885,9 +6913,7 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
       targetHeight = height;
     } else if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (width / height)).round();
-      targetHeight = targetHeight;
     } else if (targetHeight == null && targetWidth != null) {
-      targetWidth = targetWidth;
       targetHeight = targetWidth ~/ (width / height);
     }
     assert(targetWidth != null);
@@ -6900,16 +6926,26 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
 
   @Native<Void Function(Pointer<Void>, Handle, Int32, Int32)>(symbol: 'ImageDescriptor::instantiateCodec')
   external void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight);
+
+  @override
+  String toString() => 'ImageDescriptor(width: ${_width ?? '?'}, height: ${_height ?? '?'}, bytes per pixel: ${_bytesPerPixel ?? '?'})';
 }
 
 /// Generic callback signature, used by [_futurize].
 typedef _Callback<T> = void Function(T result);
+
+/// Generic callback signature, used by [_futurizeWithError].
+typedef _CallbackWithError<T> = void Function(T result, String? error);
 
 /// Signature for a method that receives a [_Callback].
 ///
 /// Return value should be null on success, and a string error message on
 /// failure.
 typedef _Callbacker<T> = String? Function(_Callback<T?> callback);
+
+/// Signature for a method that receives a [_CallbackWithError].
+/// See also: [_Callbacker]
+typedef _CallbackerWithError<T> = String? Function(_CallbackWithError<T?> callback);
 
 // Converts a method that receives a value-returning callback to a method that
 // returns a Future.
@@ -6953,6 +6989,31 @@ Future<T> _futurize<T>(_Callbacker<T> callbacker) {
       }
     } else {
       completer.complete(t);
+    }
+  });
+  isSync = false;
+  if (error != null) {
+    throw Exception(error);
+  }
+  return completer.future;
+}
+
+/// A variant of `_futurize` that can communicate specific errors.
+Future<T> _futurizeWithError<T>(_CallbackerWithError<T> callbacker) {
+  final Completer<T> completer = Completer<T>.sync();
+  // If the callback synchronously throws an error, then synchronously
+  // rethrow that error instead of adding it to the completer. This
+  // prevents the Zone from receiving an uncaught exception.
+  bool isSync = true;
+  final String? error = callbacker((T? t, String? error) {
+    if (t != null) {
+      completer.complete(t);
+    } else {
+      if (isSync) {
+        throw Exception(error ?? 'operation failed');
+      } else {
+        completer.completeError(Exception(error ?? 'operation failed'));
+      }
     }
   });
   isSync = false;

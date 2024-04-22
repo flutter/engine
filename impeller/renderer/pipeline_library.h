@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_PIPELINE_LIBRARY_H_
+#define FLUTTER_IMPELLER_RENDERER_PIPELINE_LIBRARY_H_
 
 #include <optional>
 
@@ -51,7 +52,11 @@ class PipelineLibrary : public std::enable_shared_from_this<PipelineLibrary> {
   PipelineLibrary();
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibrary);
+  PipelineLibrary(const PipelineLibrary&) = delete;
+
+  PipelineLibrary& operator=(const PipelineLibrary&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_PIPELINE_LIBRARY_H_

@@ -28,16 +28,12 @@ pubspec.lock
 docs/doxygen/
 xcuserdata
 
-third_party/gn/
-third_party/ninja/ninja*
-
 # Miscellaneous
 *.class
 *.lock
 *.log
 *.pyc
 *.swp
-.DS_Store
 .atom/
 .buildlog/
 .history
@@ -79,7 +75,6 @@ unlinked_spec.ds
 **/android/gradlew
 **/android/gradlew.bat
 **/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
 *.jks
 
@@ -133,3 +128,20 @@ app.*.symbols
 
 # Prebuilt binaries.
 /prebuilts/
+
+# TODO(67373): This entry is temporarily disabled, but can be restored once the
+# buildmoot is completed.
+# GN build support for protobufs vended by Fuchsia.
+# /build/secondary/third_party/protobuf
+
+# Build tools vended from CIPD
+/buildtools
+
+# RBE support configurations and scripts vended from CIPD
+/build/rbe
+
+# The test-scripts from Chromium and managed by DEPS and gclient.
+/tools/fuchsia/test_scripts
+
+# The gn-sdk from Chromium and managed by DEPS and gclient.
+/tools/fuchsia/gn-sdk

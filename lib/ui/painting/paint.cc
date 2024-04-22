@@ -34,8 +34,9 @@ constexpr int kMaskFilterIndex = 9;
 constexpr int kMaskFilterBlurStyleIndex = 10;
 constexpr int kMaskFilterSigmaIndex = 11;
 constexpr int kInvertColorIndex = 12;
-constexpr int kDitherIndex = 13;
-constexpr size_t kDataByteCount = 56;  // 4 * (last index + 1)
+constexpr size_t kDataByteCount = 52;  // 4 * (last index + 1)
+static_assert(kDataByteCount == sizeof(uint32_t) * (kInvertColorIndex + 1),
+              "kDataByteCount must match the size of the data array.");
 
 // Indices for objects.
 constexpr int kShaderIndex = 0;
@@ -137,7 +138,7 @@ const DlPaint* Paint::paint(DlPaint& paint,
 
   if (flags.applies_alpha_or_color()) {
     uint32_t encoded_color = uint_data[kColorIndex];
-    paint.setColor(encoded_color ^ kColorDefault);
+    paint.setColor(DlColor(encoded_color ^ kColorDefault));
   }
 
   if (flags.applies_blend()) {
@@ -167,10 +168,6 @@ const DlPaint* Paint::paint(DlPaint& paint,
 
   if (flags.applies_color_filter()) {
     paint.setInvertColors(uint_data[kInvertColorIndex] != 0);
-  }
-
-  if (flags.applies_dither()) {
-    paint.setDither(uint_data[kDitherIndex] != 0);
   }
 
   if (flags.applies_path_effect()) {
@@ -248,7 +245,7 @@ void Paint::toDlPaint(DlPaint& paint) const {
   paint.setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
 
   uint32_t encoded_color = uint_data[kColorIndex];
-  paint.setColor(encoded_color ^ kColorDefault);
+  paint.setColor(DlColor(encoded_color ^ kColorDefault));
 
   uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
   uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
@@ -270,8 +267,6 @@ void Paint::toDlPaint(DlPaint& paint) const {
   paint.setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
 
   paint.setInvertColors(uint_data[kInvertColorIndex] != 0);
-
-  paint.setDither(uint_data[kDitherIndex] != 0);
 
   switch (uint_data[kMaskFilterIndex]) {
     case kNull:

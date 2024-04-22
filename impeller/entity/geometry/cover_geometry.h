@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_COVER_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_COVER_GEOMETRY_H_
 
 #include "impeller/entity/geometry/geometry.h"
 
@@ -10,20 +11,22 @@ namespace impeller {
 
 /// @brief A geometry that implements "drawPaint" like behavior by covering
 ///        the entire render pass area.
-class CoverGeometry : public Geometry {
+class CoverGeometry final : public Geometry {
  public:
   CoverGeometry();
 
-  ~CoverGeometry();
+  ~CoverGeometry() = default;
 
   // |Geometry|
   bool CoversArea(const Matrix& transform, const Rect& rect) const override;
+
+  bool CanApplyMaskFilter() const override;
 
  private:
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
-                                   RenderPass& pass) override;
+                                   RenderPass& pass) const override;
 
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
@@ -31,14 +34,13 @@ class CoverGeometry : public Geometry {
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                     Matrix effect_transform,
-                                     const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) override;
+  CoverGeometry(const CoverGeometry&) = delete;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CoverGeometry);
+  CoverGeometry& operator=(const CoverGeometry&) = delete;
 };
 
+static_assert(std::is_trivially_destructible<CoverGeometry>::value);
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_COVER_GEOMETRY_H_

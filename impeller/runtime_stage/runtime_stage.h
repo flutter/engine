@@ -2,22 +2,29 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
+#define FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_
 
+#include <map>
 #include <memory>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 
 #include "flutter/impeller/core/runtime_types.h"
+#include "runtime_stage_types_flatbuffers.h"
 
 namespace impeller {
 
 class RuntimeStage {
  public:
-  explicit RuntimeStage(std::shared_ptr<fml::Mapping> payload);
+  static const char* kVulkanUBOName;
 
+  using Map = std::map<RuntimeStageBackend, std::shared_ptr<RuntimeStage>>;
+  static Map DecodeRuntimeStages(const std::shared_ptr<fml::Mapping>& payload);
+
+  RuntimeStage(const fb::RuntimeStage* runtime_stage,
+               const std::shared_ptr<fml::Mapping>& payload);
   ~RuntimeStage();
   RuntimeStage(RuntimeStage&&);
   RuntimeStage& operator=(RuntimeStage&&);
@@ -34,23 +41,28 @@ class RuntimeStage {
 
   const std::shared_ptr<fml::Mapping>& GetCodeMapping() const;
 
-  const std::shared_ptr<fml::Mapping>& GetSkSLMapping() const;
-
   bool IsDirty() const;
 
   void SetClean();
 
  private:
-  RuntimeShaderStage stage_ = RuntimeShaderStage::kVertex;
   std::shared_ptr<fml::Mapping> payload_;
+  RuntimeShaderStage stage_ = RuntimeShaderStage::kVertex;
   std::string entrypoint_;
   std::shared_ptr<fml::Mapping> code_mapping_;
-  std::shared_ptr<fml::Mapping> sksl_mapping_;
   std::vector<RuntimeUniformDescription> uniforms_;
   bool is_valid_ = false;
   bool is_dirty_ = true;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RuntimeStage);
+  RuntimeStage(const RuntimeStage&) = delete;
+
+  static std::unique_ptr<RuntimeStage> RuntimeStageIfPresent(
+      const fb::RuntimeStage* runtime_stage,
+      const std::shared_ptr<fml::Mapping>& payload);
+
+  RuntimeStage& operator=(const RuntimeStage&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_H_

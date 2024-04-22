@@ -2,12 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_CONTEXT_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_CONTEXT_MTL_H_
 
 #include <Metal/Metal.h>
 
+#include <deque>
 #include <string>
-#include <vector>
 
 #include "flutter/fml/concurrent_message_loop.h"
 #include "flutter/fml/macros.h"
@@ -16,9 +17,11 @@
 #include "impeller/core/sampler.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
+#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/capabilities.h"
+#include "impeller/renderer/command_queue.h"
 #include "impeller/renderer/context.h"
 
 #if TARGET_OS_SIMULATOR
@@ -40,7 +43,8 @@ class ContextMTL final : public Context,
   static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
       std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
-      const std::string& label);
+      const std::string& label,
+      std::optional<PixelFormat> pixel_format_override = std::nullopt);
 
   static std::shared_ptr<ContextMTL> Create(
       id<MTLDevice> device,
@@ -79,7 +83,12 @@ class ContextMTL final : public Context,
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override;
+
+  // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
+
+  void SetCapabilities(const std::shared_ptr<const Capabilities>& capabilities);
 
   // |Context|
   bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
@@ -89,11 +98,26 @@ class ContextMTL final : public Context,
 
   id<MTLCommandBuffer> CreateMTLCommandBuffer(const std::string& label) const;
 
-  const std::shared_ptr<fml::ConcurrentTaskRunner> GetWorkerTaskRunner() const;
-
   std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch() const;
 
+#ifdef IMPELLER_DEBUG
+  std::shared_ptr<GPUTracerMTL> GetGPUTracer() const;
+#endif  // IMPELLER_DEBUG
+
+  // |Context|
+  void StoreTaskForGPU(const std::function<void()>& task) override;
+
  private:
+  class SyncSwitchObserver : public fml::SyncSwitch::Observer {
+   public:
+    explicit SyncSwitchObserver(ContextMTL& parent);
+    virtual ~SyncSwitchObserver() = default;
+    void OnSyncSwitchUpdate(bool new_value) override;
+
+   private:
+    ContextMTL& parent_;
+  };
+
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
@@ -101,20 +125,31 @@ class ContextMTL final : public Context,
   std::shared_ptr<SamplerLibrary> sampler_library_;
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<const Capabilities> device_capabilities_;
-  std::shared_ptr<fml::ConcurrentMessageLoop> raster_message_loop_;
   std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch_;
+#ifdef IMPELLER_DEBUG
+  std::shared_ptr<GPUTracerMTL> gpu_tracer_;
+#endif  // IMPELLER_DEBUG
+  std::deque<std::function<void()>> tasks_awaiting_gpu_;
+  std::unique_ptr<SyncSwitchObserver> sync_switch_observer_;
+  std::shared_ptr<CommandQueue> command_queue_ip_;
   bool is_valid_ = false;
 
-  ContextMTL(
-      id<MTLDevice> device,
-      id<MTLCommandQueue> command_queue,
-      NSArray<id<MTLLibrary>>* shader_libraries,
-      std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch);
+  ContextMTL(id<MTLDevice> device,
+             id<MTLCommandQueue> command_queue,
+             NSArray<id<MTLLibrary>>* shader_libraries,
+             std::shared_ptr<const fml::SyncSwitch> is_gpu_disabled_sync_switch,
+             std::optional<PixelFormat> pixel_format_override = std::nullopt);
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(ContextMTL);
+  void FlushTasksAwaitingGPU();
+
+  ContextMTL(const ContextMTL&) = delete;
+
+  ContextMTL& operator=(const ContextMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_CONTEXT_MTL_H_

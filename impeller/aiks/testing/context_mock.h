@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_
+#define FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gmock/gmock-function-mocker.h"
@@ -18,43 +20,48 @@ namespace testing {
 
 class CommandBufferMock : public CommandBuffer {
  public:
-  CommandBufferMock(std::weak_ptr<const Context> context)
-      : CommandBuffer(context) {}
+  explicit CommandBufferMock(std::weak_ptr<const Context> context)
+      : CommandBuffer(std::move(context)) {}
 
-  MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_METHOD(bool, IsValid, (), (const, override));
 
-  MOCK_CONST_METHOD1(SetLabel, void(const std::string& label));
+  MOCK_METHOD(void, SetLabel, (const std::string& label), (const, override));
 
-  MOCK_METHOD1(SubmitCommandsAsync,
-               bool(std::shared_ptr<RenderPass> render_pass));
-
-  MOCK_METHOD1(OnCreateRenderPass,
-               std::shared_ptr<RenderPass>(RenderTarget render_target));
+  MOCK_METHOD(std::shared_ptr<RenderPass>,
+              OnCreateRenderPass,
+              (RenderTarget render_target),
+              (override));
 
   static std::shared_ptr<RenderPass> ForwardOnCreateRenderPass(
       CommandBuffer* command_buffer,
-      RenderTarget render_target) {
+      const RenderTarget& render_target) {
     return command_buffer->OnCreateRenderPass(render_target);
   }
 
-  MOCK_METHOD0(OnCreateBlitPass, std::shared_ptr<BlitPass>());
+  MOCK_METHOD(std::shared_ptr<BlitPass>, OnCreateBlitPass, (), (override));
   static std::shared_ptr<BlitPass> ForwardOnCreateBlitPass(
       CommandBuffer* command_buffer) {
     return command_buffer->OnCreateBlitPass();
   }
 
-  MOCK_METHOD1(OnSubmitCommands, bool(CompletionCallback callback));
+  MOCK_METHOD(bool,
+              OnSubmitCommands,
+              (CompletionCallback callback),
+              (override));
   static bool ForwardOnSubmitCommands(CommandBuffer* command_buffer,
                                       CompletionCallback callback) {
-    return command_buffer->OnSubmitCommands(callback);
+    return command_buffer->OnSubmitCommands(std::move(callback));
   }
 
-  MOCK_METHOD0(OnWaitUntilScheduled, void());
+  MOCK_METHOD(void, OnWaitUntilScheduled, (), (override));
   static void ForwardOnWaitUntilScheduled(CommandBuffer* command_buffer) {
     return command_buffer->OnWaitUntilScheduled();
   }
 
-  MOCK_METHOD0(OnCreateComputePass, std::shared_ptr<ComputePass>());
+  MOCK_METHOD(std::shared_ptr<ComputePass>,
+              OnCreateComputePass,
+              (),
+              (override));
   static std::shared_ptr<ComputePass> ForwardOnCreateComputePass(
       CommandBuffer* command_buffer) {
     return command_buffer->OnCreateComputePass();
@@ -63,29 +70,61 @@ class CommandBufferMock : public CommandBuffer {
 
 class ContextMock : public Context {
  public:
-  MOCK_CONST_METHOD0(DescribeGpuModel, std::string());
+  MOCK_METHOD(std::string, DescribeGpuModel, (), (const, override));
 
-  MOCK_CONST_METHOD0(GetBackendType, Context::BackendType());
+  MOCK_METHOD(Context::BackendType, GetBackendType, (), (const, override));
 
-  MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_METHOD(bool, IsValid, (), (const, override));
 
-  MOCK_CONST_METHOD0(GetCapabilities,
-                     const std::shared_ptr<const Capabilities>&());
+  MOCK_METHOD(const std::shared_ptr<const Capabilities>&,
+              GetCapabilities,
+              (),
+              (const, override));
 
-  MOCK_METHOD1(UpdateOffscreenLayerPixelFormat, bool(PixelFormat format));
+  MOCK_METHOD(bool,
+              UpdateOffscreenLayerPixelFormat,
+              (PixelFormat format),
+              (override));
 
-  MOCK_CONST_METHOD0(GetResourceAllocator, std::shared_ptr<Allocator>());
+  MOCK_METHOD(std::shared_ptr<Allocator>,
+              GetResourceAllocator,
+              (),
+              (const, override));
 
-  MOCK_CONST_METHOD0(GetShaderLibrary, std::shared_ptr<ShaderLibrary>());
+  MOCK_METHOD(std::shared_ptr<ShaderLibrary>,
+              GetShaderLibrary,
+              (),
+              (const, override));
 
-  MOCK_CONST_METHOD0(GetSamplerLibrary, std::shared_ptr<SamplerLibrary>());
+  MOCK_METHOD(std::shared_ptr<SamplerLibrary>,
+              GetSamplerLibrary,
+              (),
+              (const, override));
 
-  MOCK_CONST_METHOD0(GetPipelineLibrary, std::shared_ptr<PipelineLibrary>());
+  MOCK_METHOD(std::shared_ptr<PipelineLibrary>,
+              GetPipelineLibrary,
+              (),
+              (const, override));
 
-  MOCK_CONST_METHOD0(CreateCommandBuffer, std::shared_ptr<CommandBuffer>());
+  MOCK_METHOD(std::shared_ptr<CommandBuffer>,
+              CreateCommandBuffer,
+              (),
+              (const, override));
 
-  MOCK_METHOD0(Shutdown, void());
+  MOCK_METHOD(std::shared_ptr<CommandQueue>,
+              GetCommandQueue,
+              (),
+              (const override));
+
+  MOCK_METHOD(void, Shutdown, (), (override));
+
+  MOCK_METHOD(void,
+              InitializeCommonlyUsedShadersIfNeeded,
+              (),
+              (const, override));
 };
 
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_AIKS_TESTING_CONTEXT_MOCK_H_

@@ -6,12 +6,15 @@ import 'dart:ui';
 
 import 'animated_color_square.dart';
 import 'bogus_font_text.dart';
+import 'darwin_app_extension_scenario.dart';
+import 'darwin_system_font.dart';
 import 'get_bitmap_scenario.dart';
 import 'initial_route_reply.dart';
 import 'locale_initialization.dart';
 import 'platform_view.dart';
 import 'poppable_screen.dart';
 import 'scenario.dart';
+import 'solid_blue.dart';
 import 'texture.dart';
 import 'touches_scenario.dart';
 
@@ -21,6 +24,7 @@ int _viewId = 0;
 
 Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'animated_color_square': (FlutterView view) => AnimatedColorSquareScenario(view),
+  'solid_blue': (FlutterView view) => SolidBlueScenario(view),
   'locale_initialization': (FlutterView view) => LocaleInitialization(view),
   'platform_view': (FlutterView view) => PlatformViewScenario(view, id: _viewId++),
   'platform_view_no_overlay_intersection': (FlutterView view) => PlatformViewNoOverlayIntersectionScenario(view, id: _viewId++),
@@ -30,6 +34,8 @@ Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'platform_view_one_overlay_two_intersecting_overlays': (FlutterView view) => PlatformViewOneOverlayTwoIntersectingOverlaysScenario(view, id: _viewId++),
   'platform_view_multiple_without_overlays': (FlutterView view) => MultiPlatformViewWithoutOverlaysScenario(view, firstId: _viewId++, secondId: _viewId++),
   'platform_view_max_overlays': (FlutterView view) => PlatformViewMaxOverlaysScenario(view, id: _viewId++),
+  'platform_view_surrounding_layers_fractional_coordinate': (FlutterView view) => PlatformViewSurroundingLayersFractionalCoordinateScenario(view, id: _viewId++),
+  'platform_view_partial_intersection_fractional_coordinate': (FlutterView view) => PlatformViewPartialIntersectionFractionalCoordinateScenario(view, id: _viewId++),
   'platform_view_cliprect': (FlutterView view) => PlatformViewClipRectScenario(view, id: _viewId++),
   'platform_view_cliprect_with_transform': (FlutterView view) => PlatformViewClipRectWithTransformScenario(view, id: _viewId++),
   'platform_view_cliprect_after_moved': (FlutterView view) => PlatformViewClipRectAfterMovedScenario(view, id: _viewId++),
@@ -66,6 +72,8 @@ Map<String, _ScenarioFactory> _scenarios = <String, _ScenarioFactory>{
   'pointer_events': (FlutterView view) => TouchesScenario(view),
   'display_texture': (FlutterView view) => DisplayTexture(view),
   'get_bitmap': (FlutterView view) => GetBitmapScenario(view),
+  'app_extension': (FlutterView view) => DarwinAppExtensionScenario(view),
+  'darwin_system_font': (FlutterView view) => DarwinSystemFont(view),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

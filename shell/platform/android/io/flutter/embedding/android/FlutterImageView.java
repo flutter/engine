@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -39,7 +41,6 @@ import java.util.Locale;
  * an {@link android.media.Image} and renders it to the {@link android.graphics.Canvas} in {@code
  * onDraw}.
  */
-@TargetApi(19)
 public class FlutterImageView extends View implements RenderSurface {
   private static final String TAG = "FlutterImageView";
 
@@ -99,7 +100,6 @@ public class FlutterImageView extends View implements RenderSurface {
     Log.w(TAG, String.format(Locale.US, format, args));
   }
 
-  @TargetApi(19)
   @SuppressLint("WrongConstant") // RGBA_8888 is a valid constant.
   @NonNull
   private static ImageReader createImageReader(int width, int height) {
@@ -111,7 +111,7 @@ public class FlutterImageView extends View implements RenderSurface {
       logW("ImageReader height must be greater than 0, but given height=%d, set height=1", height);
       height = 1;
     }
-    if (android.os.Build.VERSION.SDK_INT >= 29) {
+    if (android.os.Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       return ImageReader.newInstance(
           width,
           height,
@@ -179,11 +179,14 @@ public class FlutterImageView extends View implements RenderSurface {
     // Not supported.
   }
 
+  public void resume() {
+    // Not supported.
+  }
+
   /**
    * Acquires the next image to be drawn to the {@link android.graphics.Canvas}. Returns true if
    * there's an image available in the queue.
    */
-  @TargetApi(19)
   public boolean acquireLatestImage() {
     if (!isAttachedToFlutterRenderer) {
       return false;
@@ -250,9 +253,9 @@ public class FlutterImageView extends View implements RenderSurface {
     }
   }
 
-  @TargetApi(29)
+  @TargetApi(API_LEVELS.API_29)
   private void updateCurrentBitmap() {
-    if (android.os.Build.VERSION.SDK_INT >= 29) {
+    if (android.os.Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       final HardwareBuffer buffer = currentImage.getHardwareBuffer();
       currentBitmap = Bitmap.wrapHardwareBuffer(buffer, ColorSpace.get(ColorSpace.Named.SRGB));
       buffer.close();

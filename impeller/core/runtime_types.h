@@ -2,36 +2,33 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_
+#define FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_
 
 #include <cstddef>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace impeller {
 
+enum class RuntimeStageBackend {
+  kSkSL,
+  kMetal,
+  kOpenGLES,
+  kVulkan,
+};
+
 enum RuntimeUniformType {
-  kBoolean,
-  kSignedByte,
-  kUnsignedByte,
-  kSignedShort,
-  kUnsignedShort,
-  kSignedInt,
-  kUnsignedInt,
-  kSignedInt64,
-  kUnsignedInt64,
-  kHalfFloat,
   kFloat,
-  kDouble,
   kSampledImage,
+  kStruct,
 };
 
 enum class RuntimeShaderStage {
   kVertex,
   kFragment,
   kCompute,
-  kTessellationControl,
-  kTessellationEvaluation,
 };
 
 struct RuntimeUniformDimensions {
@@ -43,12 +40,16 @@ struct RuntimeUniformDescription {
   std::string name;
   size_t location = 0u;
   RuntimeUniformType type = RuntimeUniformType::kFloat;
-  RuntimeUniformDimensions dimensions;
-  size_t bit_width;
+  RuntimeUniformDimensions dimensions = {};
+  size_t bit_width = 0u;
   std::optional<size_t> array_elements;
+  std::vector<uint8_t> struct_layout = {};
+  size_t struct_float_count = 0u;
 
   /// @brief  Computes the total number of bytes that this uniform requires.
   size_t GetSize() const;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_RUNTIME_TYPES_H_

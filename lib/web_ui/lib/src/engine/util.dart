@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
@@ -14,6 +13,7 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
+import 'services.dart';
 import 'vector_math.dart';
 
 /// Generic callback signature, used by [_futurize].
@@ -526,6 +526,20 @@ int clampInt(int value, int min, int max) {
 /// to verify that warnings are printed under certain circumstances.
 void Function(String) printWarning = domWindow.console.warn;
 
+/// Converts a 4x4 matrix into a human-readable String.
+String matrixString(List<num> matrix) {
+  final StringBuffer sb = StringBuffer();
+  for (int i = 0; i < 16; i++) {
+    sb.write(matrix[i]);
+    if ((i + 1) % 4 == 0) {
+      sb.write('\n');
+    } else {
+      sb.write(' ');
+    }
+  }
+  return sb.toString();
+}
+
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
 /// Returns true if the lists are both null, or if they are both non-null, have
@@ -627,6 +641,27 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 }
 
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Throws if the view ID is not present or if [arguments] is not a map.
+int readViewId(Object? arguments) {
+  final int? viewId = tryViewId(arguments);
+  if (viewId == null) {
+    throw Exception('Could not find a `viewId` in the arguments: $arguments');
+  }
+  return viewId;
+}
+
+/// Extracts view ID from the [MethodCall.arguments] map.
+///
+/// Returns null if the view ID is not present or if [arguments] is not a map.
+int? tryViewId(Object? arguments) {
+  if (arguments is Map) {
+    return arguments.tryInt('viewId');
+  }
+  return null;
+}
+
 /// Prints a list of bytes in hex format.
 ///
 /// Bytes are separated by one space and are padded on the left to always show
@@ -637,15 +672,16 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///     Input: [0, 1, 2, 3]
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
-  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
+  return data
+      .map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}')
+      .join(' ');
 }
 
 /// Sets a style property on [element].
 ///
 /// [name] is the name of the property. [value] is the value of the property.
 /// If [value] is null, removes the style property.
-void setElementStyle(
-    DomElement element, String name, String? value) {
+void setElementStyle(DomElement element, String name, String? value) {
   if (value == null) {
     element.style.removeProperty(name);
   } else {
@@ -698,7 +734,8 @@ void drawEllipse(
     double startAngle,
     double endAngle,
     bool antiClockwise) {
-  _ellipseFeatureDetected ??= getJsProperty<Object?>(context, 'ellipse') != null;
+  _ellipseFeatureDetected ??=
+      getJsProperty<Object?>(context, 'ellipse') != null;
   if (_ellipseFeatureDetected!) {
     context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
         endAngle, antiClockwise);
@@ -750,7 +787,8 @@ class LruCache<K extends Object, V extends Object> {
   /// A doubly linked list of the objects in the cache.
   ///
   /// This makes it fast to move a recently used object to the front.
-  final DoubleLinkedQueue<_LruCacheEntry<K, V>> _itemQueue = DoubleLinkedQueue<_LruCacheEntry<K, V>>();
+  final DoubleLinkedQueue<_LruCacheEntry<K, V>> _itemQueue =
+      DoubleLinkedQueue<_LruCacheEntry<K, V>>();
 
   @visibleForTesting
   DoubleLinkedQueue<_LruCacheEntry<K, V>> get debugItemQueue => _itemQueue;
@@ -759,7 +797,8 @@ class LruCache<K extends Object, V extends Object> {
   ///
   /// This makes it fast to find the node in the queue when we need to
   /// move the object to the front of the queue.
-  final Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> _itemMap = <K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>>{};
+  final Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> _itemMap =
+      <K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>>{};
 
   @visibleForTesting
   Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> get itemMap => _itemMap;
@@ -783,7 +822,7 @@ class LruCache<K extends Object, V extends Object> {
   /// Returns the cached value associated with the [key].
   ///
   /// If the value is not in the cache, returns null.
-  V? operator[](K key) {
+  V? operator [](K key) {
     return _itemMap[key]?.element.value;
   }
 
@@ -830,5 +869,19 @@ class LruCache<K extends Object, V extends Object> {
     final bool didRemove = _itemMap.remove(_itemQueue.last.key) != null;
     assert(didRemove);
     _itemQueue.removeLast();
+  }
+}
+
+/// Returns the VM-compatible string for the tile mode.
+String tileModeString(ui.TileMode tileMode) {
+  switch (tileMode) {
+    case ui.TileMode.clamp:
+      return 'clamp';
+    case ui.TileMode.mirror:
+      return 'mirror';
+    case ui.TileMode.repeated:
+      return 'repeated';
+    case ui.TileMode.decal:
+      return 'decal';
   }
 }

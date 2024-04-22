@@ -19,7 +19,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
       : CacheableContainerLayer(),
         clip_shape_(clip_shape),
         clip_behavior_(clip_behavior) {
-    FML_DCHECK(clip_behavior != Clip::none);
+    FML_DCHECK(clip_behavior != Clip::kNone);
   }
 
   void Diff(DiffContext* context, const Layer* old_layer) override {
@@ -32,8 +32,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
         context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
       }
     }
-    if (UsesSaveLayer(context->impeller_enabled()) &&
-        context->has_raster_cache()) {
+    if (UsesSaveLayer() && context->has_raster_cache()) {
       context->WillPaintWithIntegralTransform();
     }
     if (context->PushCullRect(clip_shape_bounds())) {
@@ -43,7 +42,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
   }
 
   void Preroll(PrerollContext* context) override {
-    bool uses_save_layer = UsesSaveLayer(context->impeller_enabled);
+    bool uses_save_layer = UsesSaveLayer();
 
     // We can use the raster_cache for children only when the use_save_layer is
     // true so if use_save_layer is false we pass the layer_raster_item is
@@ -53,8 +52,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
                   context, context->state_stack.transform_3x3());
 
     Layer::AutoPrerollSaveLayerState save =
-        Layer::AutoPrerollSaveLayerState::Create(
-            context, UsesSaveLayer(context->impeller_enabled));
+        Layer::AutoPrerollSaveLayerState::Create(context, UsesSaveLayer());
 
     auto mutator = context->state_stack.save();
     ApplyClip(mutator);
@@ -80,7 +78,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
     auto mutator = context.state_stack.save();
     ApplyClip(mutator);
 
-    if (!UsesSaveLayer(context.impeller_enabled)) {
+    if (!UsesSaveLayer()) {
       PaintChildren(context);
       return;
     }
@@ -101,11 +99,8 @@ class ClipShapeLayer : public CacheableContainerLayer {
     PaintChildren(context);
   }
 
-  bool UsesSaveLayer(bool enable_impeller) const {
-    if (enable_impeller) {
-      return false;
-    }
-    return clip_behavior_ == Clip::antiAliasWithSaveLayer;
+  bool UsesSaveLayer() const {
+    return clip_behavior_ == Clip::kAntiAliasWithSaveLayer;
   }
 
  protected:

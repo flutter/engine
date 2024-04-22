@@ -87,6 +87,17 @@ void PlatformView::ScheduleFrame() {
   delegate_.OnPlatformViewScheduleFrame();
 }
 
+void PlatformView::AddView(int64_t view_id,
+                           const ViewportMetrics& viewport_metrics,
+                           AddViewCallback callback) {
+  delegate_.OnPlatformViewAddView(view_id, viewport_metrics,
+                                  std::move(callback));
+}
+
+void PlatformView::RemoveView(int64_t view_id, RemoveViewCallback callback) {
+  delegate_.OnPlatformViewRemoveView(view_id, std::move(callback));
+}
+
 sk_sp<GrDirectContext> PlatformView::CreateResourceContext() const {
   FML_DLOG(WARNING) << "This platform does not set up the resource "
                        "context on the IO thread for async texture uploads.";
@@ -113,6 +124,8 @@ void PlatformView::UpdateSemantics(
     SemanticsNodeUpdates update,  // NOLINT(performance-unnecessary-value-param)
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     CustomAccessibilityActionUpdates actions) {}
+
+void PlatformView::SendChannelUpdate(const std::string& name, bool listening) {}
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
@@ -197,6 +210,14 @@ PlatformView::GetPlatformMessageHandler() const {
 
 const Settings& PlatformView::GetSettings() const {
   return delegate_.OnPlatformViewGetSettings();
+}
+
+double PlatformView::GetScaledFontSize(double unscaled_font_size,
+                                       int configuration_id) const {
+  // Unreachable by default, as most platforms do not support nonlinear scaling
+  // and the Flutter application never invokes this method.
+  FML_UNREACHABLE();
+  return -1;
 }
 
 }  // namespace flutter

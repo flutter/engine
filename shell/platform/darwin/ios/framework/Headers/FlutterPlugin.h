@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERPLUGIN_H_
-#define FLUTTER_FLUTTERPLUGIN_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGIN_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGIN_H_
 
 #import <UIKit/UIKit.h>
 #import <UserNotifications/UNUserNotificationCenter.h>
@@ -250,6 +250,7 @@ typedef void (*FlutterPluginRegistrantCallback)(NSObject<FlutterPluginRegistry>*
  * Flutter Framework (e.g. When an interact-able widget is covering the platform view).
  */
 typedef enum {
+  // NOLINTBEGIN(readability-identifier-naming)
   /**
    * Flutter blocks all the UIGestureRecognizers on the platform view as soon as it
    * decides they should be blocked.
@@ -266,6 +267,7 @@ typedef enum {
    * but never recognizing the gesture (and never invoking actions).
    */
   FlutterPlatformViewGestureRecognizersBlockingPolicyWaitUntilTouchesEnded,
+  // NOLINTEND(readability-identifier-naming)
 } FlutterPlatformViewGestureRecognizersBlockingPolicy;
 
 #pragma mark -
@@ -353,7 +355,8 @@ typedef enum {
  *
  * @param delegate The receiving object, such as the plugin's main class.
  */
-- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate;
+- (void)addApplicationDelegate:(NSObject<FlutterPlugin>*)delegate
+    NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions");
 
 /**
  * Returns the file name for the given asset.
@@ -442,4 +445,4 @@ typedef enum {
 
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERPLUGIN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_HEADERS_FLUTTERPLUGIN_H_

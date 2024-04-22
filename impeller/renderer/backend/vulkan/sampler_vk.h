@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SAMPLER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SAMPLER_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
@@ -13,28 +14,37 @@
 namespace impeller {
 
 class SamplerLibraryVK;
+class YUVConversionVK;
 
 class SamplerVK final : public Sampler, public BackendCast<SamplerVK, Sampler> {
  public:
-  SamplerVK(SamplerDescriptor desc, vk::UniqueSampler sampler);
+  SamplerVK(const vk::Device& device,
+            SamplerDescriptor desc,
+            std::shared_ptr<YUVConversionVK> yuv_conversion = {});
 
   // |Sampler|
   ~SamplerVK() override;
 
   vk::Sampler GetSampler() const;
 
-  const std::shared_ptr<SharedObjectVKT<vk::Sampler>>& GetSharedSampler() const;
+  std::shared_ptr<SamplerVK> CreateVariantForConversion(
+      std::shared_ptr<YUVConversionVK> conversion) const;
+
+  const std::shared_ptr<YUVConversionVK>& GetYUVConversion() const;
 
  private:
   friend SamplerLibraryVK;
 
-  std::shared_ptr<SharedObjectVKT<vk::Sampler>> sampler_;
+  const vk::Device device_;
+  SharedHandleVK<vk::Sampler> sampler_;
+  std::shared_ptr<YUVConversionVK> yuv_conversion_;
   bool is_valid_ = false;
 
-  // |Sampler|
-  bool IsValid() const override;
+  SamplerVK(const SamplerVK&) = delete;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SamplerVK);
+  SamplerVK& operator=(const SamplerVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_SAMPLER_VK_H_

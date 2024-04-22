@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef COMMON_PLATFORM_VIEW_H_
-#define COMMON_PLATFORM_VIEW_H_
+#ifndef FLUTTER_SHELL_COMMON_PLATFORM_VIEW_H_
+#define FLUTTER_SHELL_COMMON_PLATFORM_VIEW_H_
 
 #include <functional>
 #include <memory>
@@ -51,6 +51,8 @@ namespace flutter {
 ///
 class PlatformView {
  public:
+  using AddViewCallback = std::function<void(bool added)>;
+  using RemoveViewCallback = std::function<void(bool removed)>;
   //----------------------------------------------------------------------------
   /// @brief      Used to forward events from the platform view to interested
   ///             subsystems. This forwarding is done by the shell which sets
@@ -58,6 +60,8 @@ class PlatformView {
   ///
   class Delegate {
    public:
+    using AddViewCallback = PlatformView::AddViewCallback;
+    using RemoveViewCallback = PlatformView::RemoveViewCallback;
     using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was created
@@ -83,6 +87,40 @@ class PlatformView {
     ///             frame to regenerate the layer tree and redraw the surface.
     ///
     virtual void OnPlatformViewScheduleFrame() = 0;
+
+    /// @brief  Allocate resources for a new non-implicit view and inform
+    ///         Dart about the view, and on success, schedules a new frame.
+    ///
+    ///         After the operation, |callback| should be invoked with whether
+    ///         the operation is successful.
+    ///
+    ///         Adding |kFlutterImplicitViewId| or an existing view ID should
+    ///         result in failure.
+    ///
+    /// @param[in]  view_id           The view ID of the new view.
+    /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+    /// @param[in]  callback          The callback that's invoked once the shell
+    ///                               has attempted to add the view.
+    ///
+    virtual void OnPlatformViewAddView(int64_t view_id,
+                                       const ViewportMetrics& viewport_metrics,
+                                       AddViewCallback callback) = 0;
+
+    /// @brief  Deallocate resources for a removed view and inform
+    ///         Dart about the removal.
+    ///
+    ///         After the operation, |callback| should be invoked with whether
+    ///         the operation is successful.
+    ///
+    ///         Removing |kFlutterImplicitViewId| or an non-existent view ID
+    ///         should result in failure.
+    ///
+    /// @param[in]  view_id     The view ID of the view to be removed.
+    /// @param[in]  callback    The callback that's invoked once the shell has
+    ///                         attempted to remove the view.
+    ///
+    virtual void OnPlatformViewRemoveView(int64_t view_id,
+                                          RemoveViewCallback callback) = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the specified callback needs to
@@ -466,6 +504,17 @@ class PlatformView {
                                CustomAccessibilityActionUpdates actions);
 
   //----------------------------------------------------------------------------
+  /// @brief      Used by the framework to tell the embedder that it has
+  ///             registered a listener on a given channel.
+  ///
+  /// @param[in]  name      The name of the channel on which the listener has
+  ///                       set or cleared a listener.
+  /// @param[in]  listening True if a listener has been set, false if it has
+  ///                       been cleared.
+  ///
+  virtual void SendChannelUpdate(const std::string& name, bool listening);
+
+  //----------------------------------------------------------------------------
   /// @brief      Used by embedders to specify the updated viewport metrics for
   ///             a view. In response to this call, on the raster thread, the
   ///             rasterizer may need to be reconfigured to the updated viewport
@@ -505,6 +554,57 @@ class PlatformView {
   ///             call, the framework may need to start generating a new frame.
   ///
   void ScheduleFrame();
+
+  /// @brief  Used by embedders to notify the shell of a new non-implicit view.
+  ///
+  ///         This method notifies the shell to allocate resources and inform
+  ///         Dart about the view, and on success, schedules a new frame.
+  ///         Finally, it invokes |callback| with whether the operation is
+  ///         successful.
+  ///
+  ///         This operation is asynchronous; avoid using the view until
+  ///         |callback| returns true. Callers should prepare resources for the
+  ///         view (if any) in advance but be ready to clean up on failure.
+  ///
+  ///         The callback is called on a different thread.
+  ///
+  ///         Do not use for implicit views, which are added internally during
+  ///         shell initialization. Adding |kFlutterImplicitViewId| or an
+  ///         existing view ID will fail, indicated by |callback| returning
+  ///         false.
+  ///
+  /// @param[in]  view_id           The view ID of the new view.
+  /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  /// @param[in]  callback          The callback that's invoked once the shell
+  ///                               has attempted to add the view.
+  ///
+  void AddView(int64_t view_id,
+               const ViewportMetrics& viewport_metrics,
+               AddViewCallback callback);
+
+  /// @brief  Used by embedders to notify the shell of a removed non-implicit
+  ///         view.
+  ///
+  ///         This method notifies the shell to deallocate resources and inform
+  ///         Dart about the removal. Finally, it invokes |callback| with
+  ///         whether the operation is successful.
+  ///
+  ///         This operation is asynchronous. The embedder should not deallocate
+  ///         resources until the |callback| is invoked.
+  ///
+  ///         The callback is called on a different thread.
+  ///
+  ///         Do not use for implicit views, which are never removed throughout
+  ///         the lifetime of the app.
+  ///         Removing |kFlutterImplicitViewId| or an
+  ///         non-existent view ID will fail, indicated by |callback| returning
+  ///         false.
+  ///
+  /// @param[in]  view_id     The view ID of the view to be removed.
+  /// @param[in]  callback    The callback that's invoked once the shell has
+  ///                         attempted to remove the view.
+  ///
+  void RemoveView(int64_t view_id, RemoveViewCallback callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Used by the shell to obtain a Skia GPU context that is capable
@@ -833,6 +933,28 @@ class PlatformView {
   ///
   const Settings& GetSettings() const;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Synchronously invokes platform-specific APIs to apply the
+  ///             system text scaling on the given unscaled font size.
+  ///
+  ///             Platforms that support this feature (currently it's only
+  ///             implemented for Android SDK level 34+) will send a valid
+  ///             configuration_id to potential callers, before this method can
+  ///             be called.
+  ///
+  /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+  ///                                 app developer. The value is in logical
+  ///                                 pixels, and is guaranteed to be finite and
+  ///                                 non-negative.
+  /// @param[in]  configuration_id    The unique id of the configuration to use
+  ///                                 for computing the scaled font size.
+  ///
+  /// @return     The scaled font size in logical pixels, or -1 if the given
+  ///             configuration_id did not match a valid configuration.
+  ///
+  virtual double GetScaledFontSize(double unscaled_font_size,
+                                   int configuration_id) const;
+
  protected:
   // This is the only method called on the raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface();
@@ -848,4 +970,4 @@ class PlatformView {
 
 }  // namespace flutter
 
-#endif  // COMMON_PLATFORM_VIEW_H_
+#endif  // FLUTTER_SHELL_COMMON_PLATFORM_VIEW_H_

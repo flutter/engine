@@ -23,17 +23,6 @@
 
 part of ui;
 
-/// Performs one-time initialization of the web environment that supports the
-/// Flutter framework.
-///
-/// This is only available on the Web, as native Flutter configures the
-/// environment in the native embedder.
-// TODO(mdebbar): Deprecate this and remove it.
-// https://github.com/flutter/flutter/issues/127395
-Future<void> webOnlyInitializePlatform() async {
-  await engine.initializeEngine();
-}
-
 // TODO(mdebbar): Deprecate this and remove it.
 // https://github.com/flutter/flutter/issues/127395
 Future<void> webOnlyWarmupEngine({

@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_TESTING_SCENARIO_APP_IOS_SCENARIOS_SCENARIOSUITESTS_GOLDENTESTMANAGER_H_
+#define FLUTTER_TESTING_SCENARIO_APP_IOS_SCENARIOS_SCENARIOSUITESTS_GOLDENTESTMANAGER_H_
+
 #import <Foundation/Foundation.h>
 #import <XCTest/XCTest.h>
 #import "GoldenImage.h"
@@ -9,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 extern NSDictionary* launchArgsMap;
+const extern double kDefaultRmseThreshold;
 
 // Manages a `GoldenPlatformViewTests`.
 //
@@ -27,8 +31,10 @@ extern NSDictionary* launchArgsMap;
 
 // Take a sceenshot of the test app and check it has the same pixels with
 // goldenImage inside the `GoldenTestManager`.
-- (void)checkGoldenForTest:(XCTestCase*)test;
+- (void)checkGoldenForTest:(XCTestCase*)test rmesThreshold:(double)rmesThreshold;
 
 @end
 
 NS_ASSUME_NONNULL_END
+
+#endif  // FLUTTER_TESTING_SCENARIO_APP_IOS_SCENARIOS_SCENARIOSUITESTS_GOLDENTESTMANAGER_H_

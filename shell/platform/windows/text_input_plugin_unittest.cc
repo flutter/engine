@@ -10,8 +10,12 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include "flutter/shell/platform/windows/testing/engine_modifier.h"
+#include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
-#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
+#include "flutter/shell/platform/windows/testing/windows_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -19,6 +23,8 @@ namespace flutter {
 namespace testing {
 
 namespace {
+using ::testing::Return;
+
 static constexpr char kScanCodeKey[] = "scanCode";
 static constexpr int kHandledScanCode = 20;
 static constexpr int kUnhandledScanCode = 21;
@@ -36,6 +42,8 @@ static constexpr char kSelectionAffinityKey[] = "selectionAffinity";
 static constexpr char kSelectionIsDirectionalKey[] = "selectionIsDirectional";
 static constexpr char kComposingBaseKey[] = "composingBase";
 static constexpr char kComposingExtentKey[] = "composingExtent";
+static constexpr char kUpdateEditingStateMethod[] =
+    "TextInputClient.updateEditingState";
 
 static std::unique_ptr<std::vector<uint8_t>> CreateResponse(bool handled) {
   auto response_doc =
@@ -95,21 +103,66 @@ static std::unique_ptr<rapidjson::Document> EncodedEditingState(
   return arguments;
 }
 
-class MockTextInputPluginDelegate : public TextInputPluginDelegate {
+class MockFlutterWindowsView : public FlutterWindowsView {
  public:
-  MockTextInputPluginDelegate() {}
-  virtual ~MockTextInputPluginDelegate() = default;
+  MockFlutterWindowsView(FlutterWindowsEngine* engine,
+                         std::unique_ptr<WindowBindingHandler> window)
+      : FlutterWindowsView(kImplicitViewId, engine, std::move(window)) {}
+  virtual ~MockFlutterWindowsView() = default;
 
-  MOCK_METHOD1(OnCursorRectUpdated, void(const Rect&));
-  MOCK_METHOD0(OnResetImeComposing, void());
+  MOCK_METHOD(void, OnCursorRectUpdated, (const Rect&), (override));
+  MOCK_METHOD(void, OnResetImeComposing, (), (override));
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(MockTextInputPluginDelegate);
+  FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
 };
 
 }  // namespace
 
-TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
+class TextInputPluginTest : public WindowsTest {
+ public:
+  TextInputPluginTest() = default;
+  virtual ~TextInputPluginTest() = default;
+
+ protected:
+  FlutterWindowsEngine* engine() { return engine_.get(); }
+  MockFlutterWindowsView* view() { return view_.get(); }
+  MockWindowBindingHandler* window() { return window_; }
+
+  void UseHeadlessEngine() {
+    FlutterWindowsEngineBuilder builder{GetContext()};
+
+    engine_ = builder.Build();
+  }
+
+  void UseEngineWithView() {
+    FlutterWindowsEngineBuilder builder{GetContext()};
+
+    auto window = std::make_unique<MockWindowBindingHandler>();
+
+    window_ = window.get();
+    EXPECT_CALL(*window_, SetView).Times(1);
+    EXPECT_CALL(*window, GetWindowHandle).WillRepeatedly(Return(nullptr));
+
+    engine_ = builder.Build();
+    view_ = std::make_unique<MockFlutterWindowsView>(engine_.get(),
+                                                     std::move(window));
+
+    EngineModifier modifier{engine_.get()};
+    modifier.SetImplicitView(view_.get());
+  }
+
+ private:
+  std::unique_ptr<FlutterWindowsEngine> engine_;
+  std::unique_ptr<MockFlutterWindowsView> view_;
+  MockWindowBindingHandler* window_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(TextInputPluginTest);
+};
+
+TEST_F(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
+  UseEngineWithView();
+
   auto handled_message = CreateResponse(true);
   auto unhandled_message = CreateResponse(false);
   int received_scancode = 0;
@@ -118,10 +171,9 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
       [&received_scancode, &handled_message, &unhandled_message](
           const std::string& channel, const uint8_t* message,
           size_t message_size, BinaryReply reply) {});
-  MockTextInputPluginDelegate delegate;
 
   int redispatch_scancode = 0;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
   handler.KeyboardHook(VK_RETURN, 100, WM_KEYDOWN, '\n', false, false);
   handler.ComposeBeginHook();
@@ -133,16 +185,17 @@ TEST(TextInputPluginTest, TextMethodsWorksWithEmptyModel) {
   // Passes if it did not crash
 }
 
-TEST(TextInputPluginTest, ClearClientResetsComposing) {
+TEST_F(TextInputPluginTest, ClearClientResetsComposing) {
+  UseEngineWithView();
+
   TestBinaryMessenger messenger([](const std::string& channel,
                                    const uint8_t* message, size_t message_size,
                                    BinaryReply reply) {});
   BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
 
-  MockTextInputPluginDelegate delegate;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
-  EXPECT_CALL(delegate, OnResetImeComposing());
+  EXPECT_CALL(*view(), OnResetImeComposing());
 
   auto& codec = JsonMethodCodec::GetInstance();
   auto message = codec.EncodeMethodCall({"TextInput.clearClient", nullptr});
@@ -150,9 +203,37 @@ TEST(TextInputPluginTest, ClearClientResetsComposing) {
                                   message->size(), reply_handler);
 }
 
+// Verify that clear client fails if in headless mode.
+TEST_F(TextInputPluginTest, ClearClientRequiresView) {
+  UseHeadlessEngine();
+
+  TestBinaryMessenger messenger([](const std::string& channel,
+                                   const uint8_t* message, size_t message_size,
+                                   BinaryReply reply) {});
+
+  std::string reply;
+  BinaryReply reply_handler = [&reply](const uint8_t* reply_bytes,
+                                       size_t reply_size) {
+    reply = std::string(reinterpret_cast<const char*>(reply_bytes), reply_size);
+  };
+
+  TextInputPlugin handler(&messenger, engine());
+
+  auto& codec = JsonMethodCodec::GetInstance();
+  auto message = codec.EncodeMethodCall({"TextInput.clearClient", nullptr});
+  messenger.SimulateEngineMessage(kChannelName, message->data(),
+                                  message->size(), reply_handler);
+
+  EXPECT_EQ(reply,
+            "[\"Internal Consistency Error\",\"Text input is not available in "
+            "Windows headless mode\",null]");
+}
+
 // Verify that the embedder sends state update messages to the framework during
 // IME composing.
-TEST(TextInputPluginTest, VerifyComposingSendStateUpdate) {
+TEST_F(TextInputPluginTest, VerifyComposingSendStateUpdate) {
+  UseEngineWithView();
+
   bool sent_message = false;
   TestBinaryMessenger messenger(
       [&sent_message](const std::string& channel, const uint8_t* message,
@@ -160,8 +241,7 @@ TEST(TextInputPluginTest, VerifyComposingSendStateUpdate) {
                       BinaryReply reply) { sent_message = true; });
   BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
 
-  MockTextInputPluginDelegate delegate;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
   auto& codec = JsonMethodCodec::GetInstance();
 
@@ -207,7 +287,9 @@ TEST(TextInputPluginTest, VerifyComposingSendStateUpdate) {
   EXPECT_TRUE(sent_message);
 }
 
-TEST(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
+TEST_F(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
+  UseEngineWithView();
+
   // Store messages as std::string for convenience.
   std::vector<std::string> messages;
 
@@ -220,8 +302,7 @@ TEST(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
       });
   BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
 
-  MockTextInputPluginDelegate delegate;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
   auto& codec = JsonMethodCodec::GetInstance();
 
@@ -243,7 +324,7 @@ TEST(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
   // Editing state should have been updated.
   auto encoded_arguments = EncodedEditingState("\n", TextRange(1));
   auto update_state_message = codec.EncodeMethodCall(
-      {"TextInputClient.updateEditingState", std::move(encoded_arguments)});
+      {kUpdateEditingStateMethod, std::move(encoded_arguments)});
 
   EXPECT_TRUE(std::equal(update_state_message->begin(),
                          update_state_message->end(),
@@ -264,7 +345,9 @@ TEST(TextInputPluginTest, VerifyInputActionNewlineInsertNewLine) {
 }
 
 // Regression test for https://github.com/flutter/flutter/issues/125879.
-TEST(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
+TEST_F(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
+  UseEngineWithView();
+
   std::vector<std::vector<uint8_t>> messages;
 
   TestBinaryMessenger messenger(
@@ -277,8 +360,7 @@ TEST(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
       });
   BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
 
-  MockTextInputPluginDelegate delegate;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
   auto& codec = JsonMethodCodec::GetInstance();
 
@@ -310,7 +392,9 @@ TEST(TextInputPluginTest, VerifyInputActionSendDoesNotInsertNewLine) {
                          messages.front().begin()));
 }
 
-TEST(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
+TEST_F(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
+  UseEngineWithView();
+
   auto handled_message = CreateResponse(true);
   auto unhandled_message = CreateResponse(false);
   int received_scancode = 0;
@@ -319,10 +403,9 @@ TEST(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
       [&received_scancode, &handled_message, &unhandled_message](
           const std::string& channel, const uint8_t* message,
           size_t message_size, BinaryReply reply) {});
-  MockTextInputPluginDelegate delegate;
 
   int redispatch_scancode = 0;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
   auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
   auto& allocator = args->GetAllocator();
@@ -366,7 +449,69 @@ TEST(TextInputPluginTest, TextEditingWorksWithDeltaModel) {
   // Passes if it did not crash
 }
 
-TEST(TextInputPluginTest, TransformCursorRect) {
+// Regression test for https://github.com/flutter/flutter/issues/123749
+TEST_F(TextInputPluginTest, CompositionCursorPos) {
+  UseEngineWithView();
+
+  int selection_base = -1;
+  TestBinaryMessenger messenger([&](const std::string& channel,
+                                    const uint8_t* message, size_t size,
+                                    BinaryReply reply) {
+    auto method = JsonMethodCodec::GetInstance().DecodeMethodCall(
+        std::vector<uint8_t>(message, message + size));
+    if (method->method_name() == kUpdateEditingStateMethod) {
+      const auto& args = *method->arguments();
+      const auto& editing_state = args[1];
+      auto base = editing_state.FindMember(kSelectionBaseKey);
+      auto extent = editing_state.FindMember(kSelectionExtentKey);
+      ASSERT_NE(base, editing_state.MemberEnd());
+      ASSERT_TRUE(base->value.IsInt());
+      ASSERT_NE(extent, editing_state.MemberEnd());
+      ASSERT_TRUE(extent->value.IsInt());
+      selection_base = base->value.GetInt();
+      EXPECT_EQ(extent->value.GetInt(), selection_base);
+    }
+  });
+
+  TextInputPlugin plugin(&messenger, engine());
+
+  auto args = std::make_unique<rapidjson::Document>(rapidjson::kArrayType);
+  auto& allocator = args->GetAllocator();
+  args->PushBack(123, allocator);  // client_id
+  rapidjson::Value client_config(rapidjson::kObjectType);
+  args->PushBack(client_config, allocator);
+  auto encoded = JsonMethodCodec::GetInstance().EncodeMethodCall(
+      MethodCall<rapidjson::Document>(kSetClientMethod, std::move(args)));
+  EXPECT_TRUE(messenger.SimulateEngineMessage(
+      kChannelName, encoded->data(), encoded->size(),
+      [](const uint8_t* reply, size_t reply_size) {}));
+
+  plugin.ComposeBeginHook();
+  EXPECT_EQ(selection_base, 0);
+  plugin.ComposeChangeHook(u"abc", 3);
+  EXPECT_EQ(selection_base, 3);
+
+  plugin.ComposeCommitHook();
+  plugin.ComposeEndHook();
+  EXPECT_EQ(selection_base, 3);
+
+  plugin.ComposeBeginHook();
+  plugin.ComposeChangeHook(u"1", 1);
+  EXPECT_EQ(selection_base, 4);
+
+  plugin.ComposeChangeHook(u"12", 2);
+  EXPECT_EQ(selection_base, 5);
+
+  plugin.ComposeChangeHook(u"12", 1);
+  EXPECT_EQ(selection_base, 4);
+
+  plugin.ComposeChangeHook(u"12", 2);
+  EXPECT_EQ(selection_base, 5);
+}
+
+TEST_F(TextInputPluginTest, TransformCursorRect) {
+  UseEngineWithView();
+
   // A position of `EditableText`.
   double view_x = 100;
   double view_y = 200;
@@ -389,12 +534,11 @@ TEST(TextInputPluginTest, TransformCursorRect) {
                                    BinaryReply reply) {});
   BinaryReply reply_handler = [](const uint8_t* reply, size_t reply_size) {};
 
-  MockTextInputPluginDelegate delegate;
-  TextInputPlugin handler(&messenger, &delegate);
+  TextInputPlugin handler(&messenger, engine());
 
   auto& codec = JsonMethodCodec::GetInstance();
 
-  EXPECT_CALL(delegate, OnCursorRectUpdated(Rect{{view_x, view_y}, {0, 0}}));
+  EXPECT_CALL(*view(), OnCursorRectUpdated(Rect{{view_x, view_y}, {0, 0}}));
 
   {
     auto arguments =
@@ -415,7 +559,7 @@ TEST(TextInputPluginTest, TransformCursorRect) {
                                     message->size(), reply_handler);
   }
 
-  EXPECT_CALL(delegate,
+  EXPECT_CALL(*view(),
               OnCursorRectUpdated(Rect{{view_x + ime_x, view_y + ime_y},
                                        {ime_width, ime_height}}));
 
@@ -434,6 +578,42 @@ TEST(TextInputPluginTest, TransformCursorRect) {
     messenger.SimulateEngineMessage(kChannelName, message->data(),
                                     message->size(), reply_handler);
   }
+}
+
+TEST_F(TextInputPluginTest, SetMarkedTextRectRequiresView) {
+  UseHeadlessEngine();
+
+  TestBinaryMessenger messenger([](const std::string& channel,
+                                   const uint8_t* message, size_t message_size,
+                                   BinaryReply reply) {});
+
+  std::string reply;
+  BinaryReply reply_handler = [&reply](const uint8_t* reply_bytes,
+                                       size_t reply_size) {
+    reply = std::string(reinterpret_cast<const char*>(reply_bytes), reply_size);
+  };
+
+  TextInputPlugin handler(&messenger, engine());
+
+  auto& codec = JsonMethodCodec::GetInstance();
+
+  auto arguments =
+      std::make_unique<rapidjson::Document>(rapidjson::kObjectType);
+  auto& allocator = arguments->GetAllocator();
+
+  arguments->AddMember("x", 0, allocator);
+  arguments->AddMember("y", 0, allocator);
+  arguments->AddMember("width", 0, allocator);
+  arguments->AddMember("height", 0, allocator);
+
+  auto message = codec.EncodeMethodCall(
+      {"TextInput.setMarkedTextRect", std::move(arguments)});
+  messenger.SimulateEngineMessage(kChannelName, message->data(),
+                                  message->size(), reply_handler);
+
+  EXPECT_EQ(reply,
+            "[\"Internal Consistency Error\",\"Text input is not available in "
+            "Windows headless mode\",null]");
 }
 
 }  // namespace testing

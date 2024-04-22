@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_BLIT_PASS_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_BLIT_PASS_MTL_H_
 
 #include <Metal/Metal.h>
 
@@ -62,7 +63,11 @@ class BlitPassMTL final : public BlitPass {
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(BlitPassMTL);
+  BlitPassMTL(const BlitPassMTL&) = delete;
+
+  BlitPassMTL& operator=(const BlitPassMTL&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_BLIT_PASS_MTL_H_

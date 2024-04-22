@@ -145,22 +145,17 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {WebOnlyImageCodecChunkCallback? chunkCallback}) {
+  Future<ui.Codec> instantiateImageCodecFromUrl(Uri uri, {ui_web.ImageCodecChunkCallback? chunkCallback}) {
     throw UnimplementedError('Skwasm not implemented on this platform.');
   }
 
   @override
-  void renderScene(ui.Scene scene) {
+  Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
     throw UnimplementedError('Skwasm not implemented on this platform.');
   }
 
   @override
   String get rendererTag => throw UnimplementedError('Skwasm not implemented on this platform.');
-
-  @override
-  void reset(FlutterViewEmbedder embedder) {
-    throw UnimplementedError('Skwasm not implemented on this platform.');
-  }
 
   @override
   void clearFragmentProgramCache() => _programs.clear();
@@ -189,4 +184,9 @@ class SkwasmRenderer implements Renderer {
     required double baseline,
     required int lineNumber
   }) => throw UnimplementedError('Skwasm not implemented on this platform.');
+
+  @override
+  ui.Image createImageFromImageBitmap(DomImageBitmap imageSource) {
+    throw UnimplementedError('Skwasm not implemented on this platform.');
+  }
 }

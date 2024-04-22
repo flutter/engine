@@ -8,8 +8,6 @@
 #include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/canvas.h"
-#include "flutter/lib/ui/text/line_metrics.h"
-#include "flutter/lib/ui/text/text_box.h"
 #include "flutter/third_party/txt/src/txt/paragraph.h"
 
 namespace flutter {
@@ -45,14 +43,22 @@ class Paragraph : public RefCountedDartWrappable<Paragraph> {
                                       unsigned boxWidthStyle);
   tonic::Float32List getRectsForPlaceholders();
   Dart_Handle getPositionForOffset(double dx, double dy);
+  Dart_Handle getGlyphInfoAt(unsigned utf16Offset,
+                             Dart_Handle constructor) const;
+  Dart_Handle getClosestGlyphInfo(double dx,
+                                  double dy,
+                                  Dart_Handle constructor) const;
   Dart_Handle getWordBoundary(unsigned offset);
   Dart_Handle getLineBoundary(unsigned offset);
-  tonic::Float64List computeLineMetrics();
+  tonic::Float64List computeLineMetrics() const;
+  Dart_Handle getLineMetricsAt(int lineNumber, Dart_Handle constructor) const;
+  size_t getNumberOfLines() const;
+  int getLineNumberAt(size_t utf16Offset) const;
 
   void dispose();
 
  private:
-  std::unique_ptr<txt::Paragraph> m_paragraph;
+  std::unique_ptr<txt::Paragraph> m_paragraph_;
 
   explicit Paragraph(std::unique_ptr<txt::Paragraph> paragraph);
 };

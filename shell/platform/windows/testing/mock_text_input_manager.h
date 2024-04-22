@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_H_
 
 #include <cstring>
 #include <optional>
@@ -21,9 +21,15 @@ class MockTextInputManager : public TextInputManager {
   MockTextInputManager();
   virtual ~MockTextInputManager();
 
-  MOCK_CONST_METHOD0(GetComposingString, std::optional<std::u16string>());
-  MOCK_CONST_METHOD0(GetResultString, std::optional<std::u16string>());
-  MOCK_CONST_METHOD0(GetComposingCursorPosition, long());
+  MOCK_METHOD(std::optional<std::u16string>,
+              GetComposingString,
+              (),
+              (const, override));
+  MOCK_METHOD(std::optional<std::u16string>,
+              GetResultString,
+              (),
+              (const, override));
+  MOCK_METHOD(long, GetComposingCursorPosition, (), (const, override));
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(MockTextInputManager);
@@ -32,4 +38,4 @@ class MockTextInputManager : public TextInputManager {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_H_

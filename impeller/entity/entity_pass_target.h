@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_TARGET_H_
+#define FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_TARGET_H_
 
 #include "fml/macros.h"
 #include "impeller/renderer/render_target.h"
@@ -14,7 +15,8 @@ class InlinePassContext;
 class EntityPassTarget {
  public:
   explicit EntityPassTarget(const RenderTarget& render_target,
-                            bool supports_read_from_resolve);
+                            bool supports_read_from_resolve,
+                            bool supports_implicit_msaa);
 
   /// @brief  Flips the backdrop and returns a readable texture that can be
   ///         bound/sampled to restore the previous pass.
@@ -34,10 +36,13 @@ class EntityPassTarget {
   std::shared_ptr<Texture> secondary_color_texture_;
 
   bool supports_read_from_resolve_;
+  bool supports_implicit_msaa_;
 
   friend InlinePassContext;
 
-  FML_DISALLOW_ASSIGN(EntityPassTarget);
+  EntityPassTarget& operator=(const EntityPassTarget&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_TARGET_H_

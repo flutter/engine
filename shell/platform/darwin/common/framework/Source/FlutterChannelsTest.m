@@ -3,14 +3,12 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
+#import "flutter/shell/platform/darwin/ios/flutter_task_queue_dispatch.h"
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
 FLUTTER_ASSERT_ARC
-
-@protocol FlutterTaskQueue <NSObject>
-@end
 
 @interface MockBinaryMessenger : NSObject <FlutterBinaryMessenger>
 @property(nonatomic, copy) NSString* channel;
@@ -147,7 +145,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testResize {
-  NSString* channelName = @"foo";
+  NSString* channelName = @"flutter/test";
   id binaryMessenger = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
   FlutterBasicMessageChannel* channel =
@@ -156,11 +154,39 @@ FLUTTER_ASSERT_ARC
                                                  codec:codec];
   XCTAssertNotNil(channel);
 
-  NSString* expectedMessageString =
-      [NSString stringWithFormat:@"resize\r%@\r%@", channelName, @100];
-  NSData* expectedMessage = [expectedMessageString dataUsingEncoding:NSUTF8StringEncoding];
+  // The expected content was created from the following Dart code:
+  //   MethodCall call = MethodCall('resize', ['flutter/test',3]);
+  //   StandardMethodCodec().encodeMethodCall(call).buffer.asUint8List();
+  const unsigned char bytes[] = {7,   6,   114, 101, 115, 105, 122, 101, 12,  2,
+                                 7,   12,  102, 108, 117, 116, 116, 101, 114, 47,
+                                 116, 101, 115, 116, 3,   3,   0,   0,   0};
+  NSData* expectedMessage = [NSData dataWithBytes:bytes length:sizeof(bytes)];
+
   OCMExpect([binaryMessenger sendOnChannel:@"dev.flutter/channel-buffers" message:expectedMessage]);
-  [channel resizeChannelBuffer:100];
+  [channel resizeChannelBuffer:3];
+  OCMVerifyAll(binaryMessenger);
+  [binaryMessenger stopMocking];
+}
+
+- (void)testSetWarnsOnOverflow {
+  NSString* channelName = @"flutter/test";
+  id binaryMessenger = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
+  id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
+  FlutterBasicMessageChannel* channel =
+      [[FlutterBasicMessageChannel alloc] initWithName:channelName
+                                       binaryMessenger:binaryMessenger
+                                                 codec:codec];
+  XCTAssertNotNil(channel);
+
+  // The expected content was created from the following Dart code:
+  //   MethodCall call = MethodCall('overflow',['flutter/test', true]);
+  //   StandardMethodCodec().encodeMethodCall(call).buffer.asUint8List();
+  const unsigned char bytes[] = {7,   8,   111, 118, 101, 114, 102, 108, 111, 119, 12,  2,   7, 12,
+                                 102, 108, 117, 116, 116, 101, 114, 47,  116, 101, 115, 116, 1};
+  NSData* expectedMessage = [NSData dataWithBytes:bytes length:sizeof(bytes)];
+
+  OCMExpect([binaryMessenger sendOnChannel:@"dev.flutter/channel-buffers" message:expectedMessage]);
+  [channel setWarnsOnOverflow:NO];
   OCMVerifyAll(binaryMessenger);
   [binaryMessenger stopMocking];
 }
@@ -215,7 +241,7 @@ FLUTTER_ASSERT_ARC
   FlutterBinaryMessengerConnection connection = 123;
   id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueueDispatch));
   FlutterBasicMessageChannel* channel =
       [[FlutterBasicMessageChannel alloc] initWithName:channelName
                                        binaryMessenger:binaryMessenger
@@ -243,7 +269,7 @@ FLUTTER_ASSERT_ARC
     FlutterBinaryMessengerConnection connection = 123;
     id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
     id codec = OCMProtocolMock(@protocol(FlutterMessageCodec));
-    id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+    id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueueDispatch));
     FlutterBasicMessageChannel* channel =
         [[FlutterBasicMessageChannel alloc] initWithName:channelName
                                          binaryMessenger:binaryMessenger
@@ -280,7 +306,7 @@ FLUTTER_ASSERT_ARC
   @autoreleasepool {
     id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
     id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-    id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+    id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueueDispatch));
     FlutterMethodChannel* channel = [[FlutterMethodChannel alloc] initWithName:channelName
                                                                binaryMessenger:binaryMessenger
                                                                          codec:codec
@@ -312,7 +338,7 @@ FLUTTER_ASSERT_ARC
   FlutterBinaryMessengerConnection connection = 123;
   id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueueDispatch));
   FlutterMethodChannel* channel = [[FlutterMethodChannel alloc] initWithName:channelName
                                                              binaryMessenger:binaryMessenger
                                                                        codec:codec
@@ -337,7 +363,7 @@ FLUTTER_ASSERT_ARC
   FlutterBinaryMessengerConnection connection = 123;
   id binaryMessenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
   id codec = OCMProtocolMock(@protocol(FlutterMethodCodec));
-  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
+  id taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueueDispatch));
   id handler = OCMProtocolMock(@protocol(FlutterStreamHandler));
   FlutterEventChannel* channel = [[FlutterEventChannel alloc] initWithName:channelName
                                                            binaryMessenger:binaryMessenger

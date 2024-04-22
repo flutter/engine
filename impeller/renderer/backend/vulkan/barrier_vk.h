@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BARRIER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BARRIER_VK_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -16,6 +17,13 @@ namespace impeller {
 ///             https://www.khronos.org/events/vulkan-how-to-use-synchronisation-validation-across-multiple-queues-and-command-buffers
 ///             and the Vulkan spec. The docs for the various member of this
 ///             class are based on verbiage in the spec.
+///
+///             A useful mnemonic for building a mental model of how to add
+///             these barriers is to build a sentence like so; "All commands
+///             before this barrier may continue till they encounter a <src
+///             access> in the <src pipeline stage>. And, all commands after
+///             this barrier may proceed till <dst access> in the <dst pipeline
+///             stage>."
 ///
 struct BarrierVK {
   vk::CommandBuffer cmd_buffer = {};
@@ -43,3 +51,5 @@ struct BarrierVK {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_BARRIER_VK_H_

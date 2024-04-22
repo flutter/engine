@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_SCENE_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_SCENE_CONTENTS_H_
+
+#if !IMPELLER_ENABLE_3D
+static_assert(false);
+#endif
 
 #include <memory>
 
@@ -35,3 +40,5 @@ class SceneContents final : public ColorSourceContents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_SCENE_CONTENTS_H_

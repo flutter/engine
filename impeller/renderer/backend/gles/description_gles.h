@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_DESCRIPTION_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_DESCRIPTION_GLES_H_
 
 #include <set>
 #include <string>
@@ -16,7 +17,7 @@ class ProcTableGLES;
 
 class DescriptionGLES {
  public:
-  DescriptionGLES(const ProcTableGLES& gl);
+  explicit DescriptionGLES(const ProcTableGLES& gl);
 
   ~DescriptionGLES();
 
@@ -26,9 +27,14 @@ class DescriptionGLES {
 
   std::string GetString() const;
 
+  Version GetGlVersion() const;
+
   bool HasExtension(const std::string& ext) const;
 
+  /// @brief      Returns whether GLES includes the debug extension.
   bool HasDebugExtension() const;
+
+  bool IsANGLE() const;
 
  private:
   Version gl_version_;
@@ -39,9 +45,14 @@ class DescriptionGLES {
   std::string gl_version_string_;
   std::string sl_version_string_;
   std::set<std::string> extensions_;
+  bool is_angle_ = false;
   bool is_valid_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DescriptionGLES);
+  DescriptionGLES(const DescriptionGLES&) = delete;
+
+  DescriptionGLES& operator=(const DescriptionGLES&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_DESCRIPTION_GLES_H_

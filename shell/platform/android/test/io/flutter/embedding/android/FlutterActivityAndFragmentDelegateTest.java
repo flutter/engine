@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.view.View;
+import android.window.BackEvent;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ApplicationProvider;
@@ -39,6 +40,7 @@ import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.systemchannels.AccessibilityChannel;
+import io.flutter.embedding.engine.systemchannels.BackGestureChannel;
 import io.flutter.embedding.engine.systemchannels.LifecycleChannel;
 import io.flutter.embedding.engine.systemchannels.LocalizationChannel;
 import io.flutter.embedding.engine.systemchannels.MouseCursorChannel;
@@ -65,7 +67,11 @@ public class FlutterActivityAndFragmentDelegateTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
   private FlutterEngine mockFlutterEngine;
   private FlutterActivityAndFragmentDelegate.Host mockHost;
+  private FlutterActivityAndFragmentDelegate.Host mockHost2;
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Before
   public void setup() {
     FlutterInjector.reset();
@@ -91,6 +97,24 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(mockHost.shouldDestroyEngineWithHost()).thenReturn(true);
     when(mockHost.shouldDispatchAppLifecycleState()).thenReturn(true);
     when(mockHost.attachToEngineAutomatically()).thenReturn(true);
+
+    mockHost2 = mock(FlutterActivityAndFragmentDelegate.Host.class);
+    when(mockHost2.getContext()).thenReturn(ctx);
+    when(mockHost2.getActivity()).thenReturn(Robolectric.setupActivity(Activity.class));
+    when(mockHost2.getLifecycle()).thenReturn(mock(Lifecycle.class));
+    when(mockHost2.getFlutterShellArgs()).thenReturn(new FlutterShellArgs(new String[] {}));
+    when(mockHost2.getDartEntrypointFunctionName()).thenReturn("main");
+    when(mockHost2.getDartEntrypointArgs()).thenReturn(null);
+    when(mockHost2.getAppBundlePath()).thenReturn("/fake/path");
+    when(mockHost2.getInitialRoute()).thenReturn("/");
+    when(mockHost2.getRenderMode()).thenReturn(RenderMode.surface);
+    when(mockHost2.getTransparencyMode()).thenReturn(TransparencyMode.transparent);
+    when(mockHost2.provideFlutterEngine(any(Context.class))).thenReturn(mockFlutterEngine);
+    when(mockHost2.shouldAttachEngineToActivity()).thenReturn(true);
+    when(mockHost2.shouldHandleDeeplinking()).thenReturn(false);
+    when(mockHost2.shouldDestroyEngineWithHost()).thenReturn(true);
+    when(mockHost2.shouldDispatchAppLifecycleState()).thenReturn(true);
+    when(mockHost2.attachToEngineAutomatically()).thenReturn(true);
   }
 
   @Test
@@ -402,6 +426,9 @@ public class FlutterActivityAndFragmentDelegateTest {
     verify(mockHost, times(1)).onFlutterSurfaceViewCreated(isNotNull());
   }
 
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void itGivesHostAnOpportunityToConfigureFlutterTextureView() {
     // ---- Test setup ----
@@ -644,6 +671,73 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel tried to send a message to Flutter.
     verify(mockFlutterEngine.getNavigationChannel(), times(1)).popRoute();
+  }
+
+  @Test
+  public void itForwardsStartBackGestureToFlutter() {
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(ctx);
+
+    // Emulate the host and inform our delegate of the start back gesture with a mocked BackEvent
+    BackEvent backEvent = mock(BackEvent.class);
+    delegate.startBackGesture(backEvent);
+
+    // Verify that the back gesture tried to send a message to Flutter.
+    verify(mockFlutterEngine.getBackGestureChannel(), times(1)).startBackGesture(backEvent);
+  }
+
+  @Test
+  public void itForwardsUpdateBackGestureProgressToFlutter() {
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(ctx);
+
+    // Emulate the host and inform our delegate of the back gesture progress with a mocked BackEvent
+    BackEvent backEvent = mock(BackEvent.class);
+    delegate.updateBackGestureProgress(backEvent);
+
+    // Verify that the back gesture tried to send a message to Flutter.
+    verify(mockFlutterEngine.getBackGestureChannel(), times(1))
+        .updateBackGestureProgress(backEvent);
+  }
+
+  @Test
+  public void itForwardsCommitBackGestureToFlutter() {
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(ctx);
+
+    // Emulate the host and inform our delegate when the back gesture is committed
+    delegate.commitBackGesture();
+
+    // Verify that the back gesture tried to send a message to Flutter.
+    verify(mockFlutterEngine.getBackGestureChannel(), times(1)).commitBackGesture();
+  }
+
+  @Test
+  public void itForwardsCancelBackGestureToFlutter() {
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is set up in onAttach().
+    delegate.onAttach(ctx);
+
+    // Emulate the host and inform our delegate of the back gesture cancellation
+    delegate.cancelBackGesture();
+
+    // Verify that the back gesture tried to send a message to Flutter.
+    verify(mockFlutterEngine.getBackGestureChannel(), times(1)).cancelBackGesture();
   }
 
   @Test
@@ -1269,6 +1363,72 @@ public class FlutterActivityAndFragmentDelegateTest {
     assertFalse(delegate.flutterView.isAttachedToFlutterEngine());
   }
 
+  @Test
+  public void itDoesNotDetachTwice() {
+    FlutterEngine cachedEngine = mockFlutterEngine();
+    FlutterEngineCache.getInstance().put("my_flutter_engine", cachedEngine);
+
+    // Engine is a cached singleton that isn't owned by either hosts.
+    when(mockHost.shouldDestroyEngineWithHost()).thenReturn(false);
+    when(mockHost2.shouldDestroyEngineWithHost()).thenReturn(false);
+
+    // Adjust fake hosts to request cached engine.
+    when(mockHost.getCachedEngineId()).thenReturn("my_flutter_engine");
+    when(mockHost2.getCachedEngineId()).thenReturn("my_flutter_engine");
+
+    // Create the real objects that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    FlutterActivityAndFragmentDelegate delegate2 =
+        new FlutterActivityAndFragmentDelegate(mockHost2);
+
+    // This test is written to recreate the following scenario:
+    // 1. We have a FlutterFragment_A attached to a singleton cached engine.
+    // 2. An intent arrives that spawns FlutterFragment_B.
+    // 3. FlutterFragment_B starts and steals the engine from FlutterFragment_A while attaching.
+    //    Via a call to FlutterActivityAndFragmentDelegate.detachFromFlutterEngine().
+    // 4. FlutterFragment_A is forcibly detached from the engine.
+    // 5. FlutterFragment_B is attached to the engine.
+    // 6. FlutterFragment_A is detached from the engine.
+    // Note that the second detach for FlutterFragment_A is done unconditionally when the Fragment
+    // is being
+    // torn down.
+
+    // At this point the engine's life cycle channel receives a message (triggered by
+    // FlutterFragment_A's second detach)
+    // that indicates the app is detached. This breaks FlutterFragment_B.
+
+    // Below is a sequence of calls that mimicks the calls that the above scenario would trigger
+    // without
+    // relying on an intent to trigger the behaviour.
+
+    // FlutterFragment_A is attached to the engine.
+    delegate.onAttach(ctx);
+
+    // NOTE: The following two calls happen in a slightly different order in reality. That is, via,
+    // a call to host.detachFromFlutterEngine, delegate2.onAttach ends up invoking
+    // delegate.onDetach.
+    // To keep this regression test simple, we call them directly.
+
+    // Detach FlutterFragment_A.
+    delegate.onDetach();
+
+    verify(cachedEngine.getLifecycleChannel(), times(1)).appIsDetached();
+
+    // Attaches to the engine FlutterFragment_B.
+    delegate2.onAttach(ctx);
+    delegate2.onResume();
+
+    verify(cachedEngine.getLifecycleChannel(), times(1)).appIsResumed();
+    verify(cachedEngine.getLifecycleChannel(), times(1)).appIsDetached();
+
+    // A second Detach of FlutterFragment_A happens when the Fragment is detached.
+    delegate.onDetach();
+
+    // IMPORTANT: The bug we fixed would have resulted in the engine thinking the app
+    // is detached twice instead of once.
+    verify(cachedEngine.getLifecycleChannel(), times(1)).appIsDetached();
+  }
+
   /**
    * Creates a mock {@link io.flutter.embedding.engine.FlutterEngine}.
    *
@@ -1287,6 +1447,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(fakeMessageBuilder.setPlatformBrightness(any(SettingsChannel.PlatformBrightness.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setTextScaleFactor(any(Float.class))).thenReturn(fakeMessageBuilder);
+    when(fakeMessageBuilder.setDisplayMetrics(any())).thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setNativeSpellCheckServiceDefined(any(Boolean.class)))
         .thenReturn(fakeMessageBuilder);
     when(fakeMessageBuilder.setBrieflyShowPassword(any(Boolean.class)))
@@ -1304,6 +1465,7 @@ public class FlutterActivityAndFragmentDelegateTest {
     when(engine.getLocalizationPlugin()).thenReturn(mock(LocalizationPlugin.class));
     when(engine.getMouseCursorChannel()).thenReturn(mock(MouseCursorChannel.class));
     when(engine.getNavigationChannel()).thenReturn(mock(NavigationChannel.class));
+    when(engine.getBackGestureChannel()).thenReturn(mock(BackGestureChannel.class));
     when(engine.getPlatformViewsController()).thenReturn(mock(PlatformViewsController.class));
 
     FlutterRenderer renderer = mock(FlutterRenderer.class);

@@ -7,14 +7,13 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/buffer.h"
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 
 namespace impeller {
 
-static bool DeviceSupportsMemorylessTargets(id<MTLDevice> device) {
+static bool DeviceSupportsDeviceTransientTargets(id<MTLDevice> device) {
   // Refer to the "Memoryless render targets" feature in the table below:
   // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
   if (@available(ios 13.0, tvos 13.0, macos 10.15, *)) {
@@ -95,7 +94,7 @@ AllocatorMTL::AllocatorMTL(id<MTLDevice> device, std::string label)
     return;
   }
 
-  supports_memoryless_targets_ = DeviceSupportsMemorylessTargets(device_);
+  supports_memoryless_targets_ = DeviceSupportsDeviceTransientTargets(device_);
   supports_uma_ = DeviceHasUnifiedMemoryArchitecture(device_);
   max_texture_supported_ = DeviceMaxTextureSizeSupported(device_);
 
@@ -217,7 +216,7 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
   if (!texture) {
     return nullptr;
   }
-  return std::make_shared<TextureMTL>(desc, texture);
+  return TextureMTL::Create(desc, texture);
 }
 
 uint16_t AllocatorMTL::MinimumBytesPerRow(PixelFormat format) const {

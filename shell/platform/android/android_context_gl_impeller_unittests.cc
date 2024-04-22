@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include "flutter/shell/platform/android/android_context_gl_impeller.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -18,8 +22,11 @@ using ::impeller::egl::ConfigDescriptor;
 namespace {
 class MockDisplay : public impeller::egl::Display {
  public:
-  MOCK_CONST_METHOD0(IsValid, bool());
-  MOCK_CONST_METHOD1(ChooseConfig, std::unique_ptr<Config>(ConfigDescriptor));
+  MOCK_METHOD(bool, IsValid, (), (const, override));
+  MOCK_METHOD(std::unique_ptr<Config>,
+              ChooseConfig,
+              (ConfigDescriptor),
+              (const, override));
 };
 }  // namespace
 
@@ -42,7 +49,8 @@ TEST(AndroidContextGLImpeller, MSAAFirstAttempt) {
       .WillOnce(Return(ByMove(std::move(second_result))));
   ON_CALL(*display, ChooseConfig(_))
       .WillByDefault(Return(ByMove(std::unique_ptr<Config>())));
-  auto context = std::make_unique<AndroidContextGLImpeller>(std::move(display));
+  auto context =
+      std::make_unique<AndroidContextGLImpeller>(std::move(display), true);
   ASSERT_TRUE(context);
 }
 
@@ -73,7 +81,8 @@ TEST(AndroidContextGLImpeller, FallbackForEmulator) {
       .WillOnce(Return(ByMove(std::move(third_result))));
   ON_CALL(*display, ChooseConfig(_))
       .WillByDefault(Return(ByMove(std::unique_ptr<Config>())));
-  auto context = std::make_unique<AndroidContextGLImpeller>(std::move(display));
+  auto context =
+      std::make_unique<AndroidContextGLImpeller>(std::move(display), true);
   ASSERT_TRUE(context);
 }
 }  // namespace testing

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_
+#define FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_
 
 #include "impeller/renderer/render_target.h"
 
@@ -24,22 +25,62 @@ class RenderTargetCache : public RenderTargetAllocator {
   // |RenderTargetAllocator|
   void End() override;
 
-  // |RenderTargetAllocator|
-  std::shared_ptr<Texture> CreateTexture(
-      const TextureDescriptor& desc) override;
+  RenderTarget CreateOffscreen(
+      const Context& context,
+      ISize size,
+      int mip_count,
+      const std::string& label = "Offscreen",
+      RenderTarget::AttachmentConfig color_attachment_config =
+          RenderTarget::kDefaultColorAttachmentConfig,
+      std::optional<RenderTarget::AttachmentConfig> stencil_attachment_config =
+          RenderTarget::kDefaultStencilAttachmentConfig,
+      const std::shared_ptr<Texture>& existing_color_texture = nullptr,
+      const std::shared_ptr<Texture>& existing_depth_stencil_texture =
+          nullptr) override;
+
+  RenderTarget CreateOffscreenMSAA(
+      const Context& context,
+      ISize size,
+      int mip_count,
+      const std::string& label = "Offscreen MSAA",
+      RenderTarget::AttachmentConfigMSAA color_attachment_config =
+          RenderTarget::kDefaultColorAttachmentConfigMSAA,
+      std::optional<RenderTarget::AttachmentConfig> stencil_attachment_config =
+          RenderTarget::kDefaultStencilAttachmentConfig,
+      const std::shared_ptr<Texture>& existing_color_msaa_texture = nullptr,
+      const std::shared_ptr<Texture>& existing_color_resolve_texture = nullptr,
+      const std::shared_ptr<Texture>& existing_depth_stencil_texture =
+          nullptr) override;
 
   // visible for testing.
   size_t CachedTextureCount() const;
 
  private:
-  struct TextureData {
+  struct RenderTargetData {
     bool used_this_frame;
-    std::shared_ptr<Texture> texture;
+    RenderTargetConfig config;
+    RenderTarget render_target;
   };
 
-  std::vector<TextureData> texture_data_;
+  std::vector<RenderTargetData> render_target_data_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(RenderTargetCache);
+  RenderTargetCache(const RenderTargetCache&) = delete;
+
+  RenderTargetCache& operator=(const RenderTargetCache&) = delete;
+
+ public:
+  /// Visible for testing.
+  std::vector<RenderTargetData>::const_iterator GetRenderTargetDataBegin()
+      const {
+    return render_target_data_.begin();
+  }
+
+  /// Visible for testing.
+  std::vector<RenderTargetData>::const_iterator GetRenderTargetDataEnd() const {
+    return render_target_data_.end();
+  }
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_RENDER_TARGET_CACHE_H_

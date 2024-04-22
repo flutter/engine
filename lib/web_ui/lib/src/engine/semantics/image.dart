@@ -23,6 +23,9 @@ class ImageRoleManager extends PrimaryRoleManager {
     addTappable();
   }
 
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
+
   /// The element with role="img" and aria-label could block access to all
   /// children elements, therefore create an auxiliary element and  describe the
   /// image in that if the semantic object have child nodes.
@@ -49,14 +52,14 @@ class ImageRoleManager extends PrimaryRoleManager {
             ..height = '${semanticsObject.rect!.height}px';
         }
         _auxiliaryImageElement!.style.fontSize = '6px';
-        semanticsObject.element.append(_auxiliaryImageElement!);
+        append(_auxiliaryImageElement!);
       }
 
       _auxiliaryImageElement!.setAttribute('role', 'img');
       _setLabel(_auxiliaryImageElement);
     } else if (semanticsObject.isVisualOnly) {
-      semanticsObject.setAriaRole('img');
-      _setLabel(semanticsObject.element);
+      setAriaRole('img');
+      _setLabel(element);
       _cleanUpAuxiliaryElement();
     } else {
       _cleanUpAuxiliaryElement();
@@ -78,7 +81,7 @@ class ImageRoleManager extends PrimaryRoleManager {
   }
 
   void _cleanupElement() {
-    semanticsObject.element.removeAttribute('aria-label');
+    removeAttribute('aria-label');
   }
 
   @override

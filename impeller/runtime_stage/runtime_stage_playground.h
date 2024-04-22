@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_PLAYGROUND_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/playground/playground_test.h"
@@ -19,7 +20,11 @@ class RuntimeStagePlayground : public PlaygroundTest {
   bool RegisterStage(const RuntimeStage& stage);
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(RuntimeStagePlayground);
+  RuntimeStagePlayground(const RuntimeStagePlayground&) = delete;
+
+  RuntimeStagePlayground& operator=(const RuntimeStagePlayground&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RUNTIME_STAGE_RUNTIME_STAGE_PLAYGROUND_H_

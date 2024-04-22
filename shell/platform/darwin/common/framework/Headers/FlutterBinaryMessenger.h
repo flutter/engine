@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERBINARYMESSENGER_H_
-#define FLUTTER_FLUTTERBINARYMESSENGER_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERBINARYMESSENGER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERBINARYMESSENGER_H_
 
 #import <Foundation/Foundation.h>
 
@@ -31,7 +31,8 @@ typedef void (^FlutterBinaryMessageHandler)(NSData* _Nullable message, FlutterBi
 
 typedef int64_t FlutterBinaryMessengerConnection;
 
-@protocol FlutterTaskQueue;
+@protocol FlutterTaskQueue <NSObject>
+@end
 
 /**
  * A facility for communicating with the Flutter side using asynchronous message
@@ -102,4 +103,4 @@ FLUTTER_DARWIN_EXPORT
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection;
 @end
 NS_ASSUME_NONNULL_END
-#endif  // FLUTTER_FLUTTERBINARYMESSENGER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERBINARYMESSENGER_H_

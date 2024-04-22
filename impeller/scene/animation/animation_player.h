@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_
+#define FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_
 
 #include <map>
 #include <memory>
@@ -45,8 +46,12 @@ class AnimationPlayer final {
 
   std::optional<TimePoint> previous_time_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(AnimationPlayer);
+  AnimationPlayer(const AnimationPlayer&) = delete;
+
+  AnimationPlayer& operator=(const AnimationPlayer&) = delete;
 };
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_

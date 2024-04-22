@@ -14,7 +14,7 @@ publish_to: none
 # relative to this directory into //third_party/dart
 
 environment:
-  sdk: '>=3.0.0-0 <4.0.0'
+  sdk: '>=3.2.0-0 <4.0.0'
 
 dependencies:
   async_helper: any
@@ -24,10 +24,10 @@ dependencies:
 
 dependency_overrides:
   async_helper:
-    path: ../../../third_party/dart/pkg/async_helper
+    path: ../../third_party/dart/pkg/async_helper
   expect:
-    path: ../../../third_party/dart/pkg/expect
+    path: ../../third_party/dart/pkg/expect
   meta:
-    path: ../../../third_party/dart/pkg/meta
+    path: ../../third_party/dart/pkg/meta
   smith:
-    path: ../../../third_party/dart/pkg/smith
+    path: ../../third_party/dart/pkg/smith

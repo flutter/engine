@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
 
 #include <memory>
 #include <optional>
@@ -50,24 +51,31 @@ class FilterInput {
       const std::string& label,
       const ContentContext& renderer,
       const Entity& entity,
-      std::optional<Rect> coverage_limit = std::nullopt) const = 0;
+      std::optional<Rect> coverage_limit = std::nullopt,
+      int32_t mip_count = 1) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
 
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
+
+  virtual std::optional<Rect> GetSourceCoverage(const Matrix& effect_transform,
+                                                const Rect& output_limit) const;
 
   /// @brief  Get the local transform of this filter input. This transform is
   ///         relative to the `Entity` transform space.
   virtual Matrix GetLocalTransform(const Entity& entity) const;
 
   /// @brief  Get the transform of this `FilterInput`. This is equivalent to
-  ///         calling `entity.GetTransformation() * GetLocalTransform()`.
+  ///         calling `entity.GetTransform() * GetLocalTransform()`.
   virtual Matrix GetTransform(const Entity& entity) const;
 
   /// @see    `Contents::PopulateGlyphAtlas`
   virtual void PopulateGlyphAtlas(
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
       Scalar scale);
+
+  /// @see  `FilterContents::HasBasisTransforms`
+  virtual bool IsTranslationOnly() const;
 
   /// @brief  Returns `true` unless this input is a `FilterInput`, which may
   ///         take other inputs.
@@ -77,6 +85,14 @@ class FilterInput {
   ///         of `inputs`.
   /// @see    `FilterInput::IsLeaf`
   virtual void SetLeafInputs(const FilterInput::Vector& inputs);
+
+  /// @brief  Sets the effect transform of filter inputs.
+  virtual void SetEffectTransform(const Matrix& matrix);
+
+  /// @brief  Turns on subpass mode for filter inputs.
+  virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_

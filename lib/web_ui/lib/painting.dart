@@ -5,18 +5,6 @@
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
 part of ui;
 
-// ignore: unused_element, Used in Shader assert.
-bool _offsetIsValid(Offset offset) {
-  assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
-  return true;
-}
-
-// ignore: unused_element, Used in Shader assert.
-bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
-  return true;
-}
-
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2) {
@@ -229,7 +217,35 @@ enum Clip {
 
 abstract class Paint {
   factory Paint() => engine.renderer.createPaint();
-  static bool enableDithering = false;
+
+  factory Paint.from(Paint other) {
+    // This is less efficient than copying the underlying buffer or object but
+    // it's a reasonable default, as if a user wanted to implement a copy of a
+    // paint object themselves they are unable to do much better than this.
+    //
+    // TODO(matanlurey): Web team, if important to optimize, could:
+    // 1. Add a `engine.renderer.copyPaint` method.
+    // 2. Use the below code as the default implementation.
+    // 3. Have renderer-specific implementations override with optimized code.
+    final Paint paint = Paint();
+    paint
+      ..blendMode = other.blendMode
+      ..color = other.color
+      ..colorFilter = other.colorFilter
+      ..filterQuality = other.filterQuality
+      ..imageFilter = other.imageFilter
+      ..invertColors = other.invertColors
+      ..isAntiAlias = other.isAntiAlias
+      ..maskFilter = other.maskFilter
+      ..shader = other.shader
+      ..strokeCap = other.strokeCap
+      ..strokeJoin = other.strokeJoin
+      ..strokeMiterLimit = other.strokeMiterLimit
+      ..strokeWidth = other.strokeWidth
+      ..style = other.style;
+    return paint;
+  }
+
   BlendMode get blendMode;
   set blendMode(BlendMode value);
   PaintingStyle get style;
@@ -533,9 +549,22 @@ class TargetImageSize {
   final int? height;
 }
 
-Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
-  {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
-  engine.renderer.instantiateImageCodecFromUrl(uri, chunkCallback: chunkCallback);
+// TODO(mdebbar): Deprecate this and remove it.
+// https://github.com/flutter/flutter/issues/127395
+Future<Codec> webOnlyInstantiateImageCodecFromUrl(
+  Uri uri, {
+  ui_web.ImageCodecChunkCallback? chunkCallback,
+}) {
+  assert(() {
+    engine.printWarning(
+      'The webOnlyInstantiateImageCodecFromUrl API is deprecated and will be '
+      'removed in a future release. Please use `createImageCodecFromUrl` from '
+      '`dart:ui_web` instead.',
+    );
+    return true;
+  }());
+  return ui_web.createImageCodecFromUrl(uri, chunkCallback: chunkCallback);
+}
 
 void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);

@@ -16,6 +16,7 @@
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h"
 
 static NSString* const kTextInputChannel = @"flutter/textinput";
 
@@ -66,9 +67,9 @@ static NSString* const kInputActionNewline = @"TextInputAction.newline";
 
 #pragma mark - Enums
 /**
- * The affinity of the current cursor position. If the cursor is at a position representing
- * a line break, the cursor may be drawn either at the end of the current line (upstream)
- * or at the beginning of the next (downstream).
+ * The affinity of the current cursor position. If the cursor is at a position
+ * representing a soft line break, the cursor may be drawn either at the end of
+ * the current line (upstream) or at the beginning of the next (downstream).
  */
 typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
   kFlutterTextAffinityUpstream,
@@ -342,6 +343,7 @@ static char markerKey;
   // The view needs an empty frame otherwise it is visible on dark background.
   // https://github.com/flutter/flutter/issues/118504
   self = [super initWithFrame:NSZeroRect];
+  self.clipsToBounds = YES;
   if (self != nil) {
     _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
@@ -383,10 +385,7 @@ static char markerKey;
 
 - (void)resignAndRemoveFromSuperview {
   if (self.superview != nil) {
-    // With accessiblity enabled TextInputPlugin is inside _client, so take the
-    // nextResponder from the _client.
-    NSResponder* nextResponder = _client != nil ? _client.nextResponder : self.nextResponder;
-    [self.window makeFirstResponder:nextResponder];
+    [self.window makeFirstResponder:_flutterViewController.flutterView];
     [self removeFromSuperview];
   }
 }
@@ -620,7 +619,15 @@ static char markerKey;
   // text command (indicated by calling doCommandBySelector) or might not (for example, Cmd+Q). In
   // the latter case, this command somehow has not been executed yet and Flutter must dispatch it to
   // the next responder. See https://github.com/flutter/flutter/issues/106354 .
-  if (event.isKeyEquivalent && !_eventProducedOutput) {
+  // The event is also not redispatched if there is IME composition active, because it might be
+  // handled by the IME. See https://github.com/flutter/flutter/issues/134699
+
+  // both NSEventModifierFlagNumericPad and NSEventModifierFlagFunction are set for arrow keys.
+  bool is_navigation = event.modifierFlags & NSEventModifierFlagFunction &&
+                       event.modifierFlags & NSEventModifierFlagNumericPad;
+  bool is_navigation_in_ime = is_navigation && self.hasMarkedText;
+
+  if (event.isKeyEquivalent && !is_navigation_in_ime && !_eventProducedOutput) {
     return NO;
   }
   return res;
@@ -845,19 +852,13 @@ static char markerKey;
 
   // Input string may be NSString or NSAttributedString.
   BOOL isAttributedString = [string isKindOfClass:[NSAttributedString class]];
-  std::string marked_text = isAttributedString ? [[string string] UTF8String] : [string UTF8String];
-  _activeModel->UpdateComposingText(marked_text);
-
-  // Update the selection within the marked text.
-  long signedLength = static_cast<long>(selectedRange.length);
-  long location = selectedRange.location + _activeModel->composing_range().base();
-  long textLength = _activeModel->text_range().end();
-
-  size_t base = std::clamp(location, 0L, textLength);
-  size_t extent = std::clamp(location + signedLength, 0L, textLength);
-  _activeModel->SetSelection(flutter::TextRange(base, extent));
+  const NSString* rawString = isAttributedString ? [string string] : string;
+  _activeModel->UpdateComposingText(
+      (const char16_t*)[rawString cStringUsingEncoding:NSUTF16StringEncoding],
+      flutter::TextRange(selectedRange.location, selectedRange.location + selectedRange.length));
 
   if (_enableDeltaModel) {
+    std::string marked_text = [rawString UTF8String];
     [self updateEditStateWithDelta:flutter::TextEditingDelta(textBeforeChange,
                                                              selectionBeforeChange.collapsed()
                                                                  ? composingBeforeChange

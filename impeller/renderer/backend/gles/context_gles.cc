@@ -3,22 +3,28 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/gles/context_gles.h"
+#include <memory>
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/gles/command_buffer_gles.h"
+#include "impeller/renderer/backend/gles/gpu_tracer_gles.h"
+#include "impeller/renderer/command_queue.h"
 
 namespace impeller {
 
 std::shared_ptr<ContextGLES> ContextGLES::Create(
     std::unique_ptr<ProcTableGLES> gl,
-    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries) {
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries,
+    bool enable_gpu_tracing) {
   return std::shared_ptr<ContextGLES>(
-      new ContextGLES(std::move(gl), shader_libraries));
+      new ContextGLES(std::move(gl), shader_libraries, enable_gpu_tracing));
 }
 
-ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
-                         const std::vector<std::shared_ptr<fml::Mapping>>&
-                             shader_libraries_mappings) {
+ContextGLES::ContextGLES(
+    std::unique_ptr<ProcTableGLES> gl,
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_mappings,
+    bool enable_gpu_tracing) {
   reactor_ = std::make_shared<ReactorGLES>(std::move(gl));
   if (!reactor_->IsValid()) {
     VALIDATION_LOG << "Could not create valid reactor.";
@@ -52,34 +58,17 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
     }
   }
 
+  device_capabilities_ = reactor_->GetProcTable().GetCapabilities();
+
   // Create the sampler library.
   {
     sampler_library_ =
-        std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
+        std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES(
+            device_capabilities_->SupportsDecalSamplerAddressMode()));
   }
-
-  // Create the device capabilities.
-  {
-    device_capabilities_ =
-        CapabilitiesBuilder()
-            .SetHasThreadingRestrictions(true)
-            .SetSupportsOffscreenMSAA(false)
-            .SetSupportsSSBO(false)
-            .SetSupportsBufferToTextureBlits(false)
-            .SetSupportsTextureToTextureBlits(
-                reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
-            .SetSupportsFramebufferFetch(false)
-            .SetDefaultColorFormat(PixelFormat::kR8G8B8A8UNormInt)
-            .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-            .SetSupportsCompute(false)
-            .SetSupportsComputeSubgroups(false)
-            .SetSupportsReadFromResolve(false)
-            .SetSupportsReadFromOnscreenTexture(false)
-            .SetSupportsDecalTileMode(false)
-            .SetSupportsMemorylessTextures(false)
-            .Build();
-  }
-
+  gpu_tracer_ = std::make_shared<GPUTracerGLES>(GetReactor()->GetProcTable(),
+                                                enable_gpu_tracing);
+  command_queue_ = std::make_shared<CommandQueue>();
   is_valid_ = true;
 }
 
@@ -149,6 +138,11 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
 const std::shared_ptr<const Capabilities>& ContextGLES::GetCapabilities()
     const {
   return device_capabilities_;
+}
+
+// |Context|
+std::shared_ptr<CommandQueue> ContextGLES::GetCommandQueue() const {
+  return command_queue_;
 }
 
 }  // namespace impeller

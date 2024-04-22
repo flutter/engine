@@ -7,8 +7,8 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/command_line.h"
 
-#ifndef SHELL_COMMON_SWITCHES_H_
-#define SHELL_COMMON_SWITCHES_H_
+#ifndef FLUTTER_SHELL_COMMON_SWITCHES_H_
+#define FLUTTER_SHELL_COMMON_SWITCHES_H_
 
 namespace flutter {
 
@@ -197,6 +197,11 @@ DEF_SWITCH(
     "Trace to the system tracer (instead of the timeline) on platforms where "
     "such a tracer is available. Currently only supported on Android and "
     "Fuchsia.")
+DEF_SWITCH(TraceToFile,
+           "trace-to-file",
+           "Write the timeline trace to a file at the specified path. The file "
+           "will be in Perfetto's proto format; it will be possible to load "
+           "the file into Perfetto's trace viewer.")
 DEF_SWITCH(UseTestFonts,
            "use-test-fonts",
            "Running tests that layout and measure text will not yield "
@@ -270,6 +275,14 @@ DEF_SWITCH(EnableVulkanValidation,
            "Enable loading Vulkan validation layers. The layers must be "
            "available to the application and loadable. On non-Vulkan backends, "
            "this flag does nothing.")
+DEF_SWITCH(EnableOpenGLGPUTracing,
+           "enable-opengl-gpu-tracing",
+           "Enable tracing of GPU execution time when using the Impeller "
+           "OpenGLES backend.")
+DEF_SWITCH(EnableVulkanGPUTracing,
+           "enable-vulkan-gpu-tracing",
+           "Enable tracing of GPU execution time when using the Impeller "
+           "Vulkan backend.")
 DEF_SWITCH(LeakVM,
            "leak-vm",
            "When the last shell shuts down, the shared VM is leaked by default "
@@ -285,6 +298,9 @@ DEF_SWITCH(
 DEF_SWITCH(EnableEmbedderAPI,
            "enable-embedder-api",
            "Enable the embedder api. Defaults to false. iOS only.")
+DEF_SWITCH(EnablePlatformIsolates,
+           "enable-platform-isolates",
+           "Enable support for isolates that run on the platform thread.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);
@@ -295,4 +311,4 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line);
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SWITCHES_H_
+#endif  // FLUTTER_SHELL_COMMON_SWITCHES_H_

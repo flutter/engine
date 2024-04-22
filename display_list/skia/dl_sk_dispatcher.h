@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CANVAS_DISPATCHER_H_
-#define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CANVAS_DISPATCHER_H_
+#ifndef FLUTTER_DISPLAY_LIST_SKIA_DL_SK_DISPATCHER_H_
+#define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_DISPATCHER_H_
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_op_receiver.h"
@@ -14,11 +14,9 @@
 namespace flutter {
 
 //------------------------------------------------------------------------------
-/// Can be fed to the dispatch() method of a DisplayList to feed the resulting
-/// rendering operations to an SkCanvas instance.
+/// @brief      Backend implementation of |DlOpReceiver| for |SkCanvas|.
 ///
-/// Receives all methods on Dispatcher and sends them to an SkCanvas
-///
+/// @see       DlOpReceiver
 class DlSkCanvasDispatcher : public virtual DlOpReceiver,
                              public DlSkPaintDispatchHelper {
  public:
@@ -31,7 +29,7 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
 
   void save() override;
   void restore() override;
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
 
@@ -100,6 +98,9 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override;
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
@@ -121,4 +122,4 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CANVAS_DISPATCHER_H_
+#endif  // FLUTTER_DISPLAY_LIST_SKIA_DL_SK_DISPATCHER_H_

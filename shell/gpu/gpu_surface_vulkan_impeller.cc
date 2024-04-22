@@ -5,12 +5,15 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 
 #include "flutter/fml/make_copyable.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
-#include "flutter/impeller/renderer/renderer.h"
+#include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
+#include "impeller/renderer/renderer.h"
 #include "impeller/renderer/surface.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 namespace flutter {
+
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
     std::shared_ptr<impeller::Context> context) {
@@ -23,7 +26,8 @@ GPUSurfaceVulkanImpeller::GPUSurfaceVulkanImpeller(
     return;
   }
 
-  auto aiks_context = std::make_shared<impeller::AiksContext>(context);
+  auto aiks_context = std::make_shared<impeller::AiksContext>(
+      context, impeller::TypographerContextSkia::Make());
   if (!aiks_context->IsValid()) {
     return;
   }
@@ -58,6 +62,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
   auto& context_vk = impeller::SurfaceContextVK::Cast(*impeller_context_);
   std::unique_ptr<impeller::Surface> surface = context_vk.AcquireNextSurface();
 
+  if (!surface) {
+    FML_LOG(ERROR) << "No surface available.";
+    return nullptr;
+  }
+
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
@@ -75,20 +84,43 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
 
         auto cull_rect =
             surface->GetTargetRenderPassDescriptor().GetRenderTargetSize();
-        impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
-        impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
-        display_list->Dispatch(
-            impeller_dispatcher,
-            SkIRect::MakeWH(cull_rect.width, cull_rect.height));
-        auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
         return renderer->Render(
             std::move(surface),
-            fml::MakeCopyable(
-                [aiks_context, picture = std::move(picture)](
-                    impeller::RenderTarget& render_target) -> bool {
-                  return aiks_context->Render(picture, render_target);
-                }));
+            fml::MakeCopyable([aiks_context, cull_rect, display_list](
+                                  impeller::RenderTarget& render_target)
+                                  -> bool {
+#if ENABLE_EXPERIMENTAL_CANVAS
+              impeller::TextFrameDispatcher collector(
+                  aiks_context->GetContentContext(), impeller::Matrix());
+              display_list->Dispatch(
+                  collector,
+                  SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+              impeller::ExperimentalDlDispatcher impeller_dispatcher(
+                  aiks_context->GetContentContext(), render_target,
+                  impeller::IRect::RoundOut(
+                      impeller::Rect::MakeSize(cull_rect)));
+              display_list->Dispatch(
+                  impeller_dispatcher,
+                  SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+              impeller_dispatcher.FinishRecording();
+              aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+              aiks_context->GetContentContext()
+                  .GetLazyGlyphAtlas()
+                  ->ResetTextFrames();
+              return true;
+#else
+              impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
+              impeller::DlDispatcher impeller_dispatcher(dl_cull_rect);
+              display_list->Dispatch(
+                  impeller_dispatcher,
+                  SkIRect::MakeWH(cull_rect.width, cull_rect.height));
+              auto picture = impeller_dispatcher.EndRecordingAsPicture();
+
+              return aiks_context->Render(picture, render_target,
+                                          /*reset_host_buffer=*/true);
+#endif
+            }));
       });
 
   return std::make_unique<SurfaceFrame>(

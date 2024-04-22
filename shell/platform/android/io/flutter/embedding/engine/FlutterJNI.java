@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -12,7 +14,9 @@ import android.graphics.ImageDecoder;
 import android.graphics.SurfaceTexture;
 import android.os.Build;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import androidx.annotation.Keep;
@@ -27,6 +31,7 @@ import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.embedding.engine.renderer.SurfaceTextureWrapper;
+import io.flutter.embedding.engine.systemchannels.SettingsChannel;
 import io.flutter.plugin.common.StandardMessageCodec;
 import io.flutter.plugin.localization.LocalizationPlugin;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -148,9 +153,10 @@ public class FlutterJNI {
   private static native void nativePrefetchDefaultFontManager();
 
   /**
-   * Prefetch the default font manager provided by SkFontMgr::RefDefault() which is a process-wide
-   * singleton owned by Skia. Note that, the first call to SkFontMgr::RefDefault() will take
-   * noticeable time, but later calls will return a reference to the preexisting font manager.
+   * Prefetch the default font manager provided by txt::GetDefaultFontManager() which is a
+   * process-wide singleton owned by Skia. Note that, the first call to txt::GetDefaultFontManager()
+   * will take noticeable time, but later calls will return a reference to the preexisting font
+   * manager.
    *
    * <p>This method should only be called once across all FlutterJNI instances.
    */
@@ -549,7 +555,7 @@ public class FlutterJNI {
   @VisibleForTesting
   @Nullable
   public static Bitmap decodeImage(@NonNull ByteBuffer buffer, long imageGeneratorAddress) {
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       ImageDecoder.Source source = ImageDecoder.createSource(buffer);
       try {
         return ImageDecoder.decodeBitmap(
@@ -737,6 +743,7 @@ public class FlutterJNI {
       int[] displayFeaturesBounds,
       int[] displayFeaturesType,
       int[] displayFeaturesState);
+
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
@@ -909,19 +916,19 @@ public class FlutterJNI {
    */
   @UiThread
   public void registerImageTexture(
-      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+      long textureId, @NonNull TextureRegistry.ImageConsumer imageTexture) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRegisterImageTexture(
         nativeShellHolderId,
         textureId,
-        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+        new WeakReference<TextureRegistry.ImageConsumer>(imageTexture));
   }
 
   private native void nativeRegisterImageTexture(
       long nativeShellHolderId,
       long textureId,
-      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
+      @NonNull WeakReference<TextureRegistry.ImageConsumer> imageTexture);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -938,6 +945,16 @@ public class FlutterJNI {
   }
 
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
+
+  /** Schedule the engine to draw a frame but does not invalidate the layout tree. */
+  @UiThread
+  public void scheduleFrame() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeScheduleFrame(nativeShellHolderId);
+  }
+
+  private native void nativeScheduleFrame(long nativeShellHolderId);
 
   /**
    * Unregisters a texture that was registered with {@link #registerTexture(long,
@@ -1269,22 +1286,17 @@ public class FlutterJNI {
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
       // Convert to Locales via LocaleBuilder if available (API 21+) to include scriptCode.
-      if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-        Locale.Builder localeBuilder = new Locale.Builder();
-        if (!languageCode.isEmpty()) {
-          localeBuilder.setLanguage(languageCode);
-        }
-        if (!countryCode.isEmpty()) {
-          localeBuilder.setRegion(countryCode);
-        }
-        if (!scriptCode.isEmpty()) {
-          localeBuilder.setScript(scriptCode);
-        }
-        supportedLocales.add(localeBuilder.build());
-      } else {
-        // Pre-API 21, we fall back on scriptCode-less locales.
-        supportedLocales.add(new Locale(languageCode, countryCode));
+      Locale.Builder localeBuilder = new Locale.Builder();
+      if (!languageCode.isEmpty()) {
+        localeBuilder.setLanguage(languageCode);
       }
+      if (!countryCode.isEmpty()) {
+        localeBuilder.setRegion(countryCode);
+      }
+      if (!scriptCode.isEmpty()) {
+        localeBuilder.setScript(scriptCode);
+      }
+      supportedLocales.add(localeBuilder.build());
     }
 
     Locale result = localizationPlugin.resolveNativeLocale(supportedLocales);
@@ -1295,15 +1307,25 @@ public class FlutterJNI {
     String[] output = new String[localeDataLength];
     output[0] = result.getLanguage();
     output[1] = result.getCountry();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-      output[2] = result.getScript();
-    } else {
-      output[2] = "";
-    }
+    output[2] = result.getScript();
     return output;
   }
 
   // ----- End Localization Support ----
+  @Nullable
+  public float getScaledFontSize(float fontSize, int configurationId) {
+    final DisplayMetrics metrics = SettingsChannel.getPastDisplayMetrics(configurationId);
+    if (metrics == null) {
+      Log.e(
+          TAG,
+          "getScaledFontSize called with configurationId "
+              + String.valueOf(configurationId)
+              + ", which can't be found.");
+      return -1f;
+    }
+    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, fontSize, metrics)
+        / metrics.density;
+  }
 
   // ----- Start Deferred Components Support ----
 

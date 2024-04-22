@@ -8,7 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
-import 'package:const_finder/const_finder.dart';
+import 'package:kernel/const_finder.dart';
 import 'package:path/path.dart' as path;
 
 void expect<T>(T value, T expected) {
@@ -45,7 +45,7 @@ void expectInstances(dynamic value, dynamic expected, Compiler compiler) {
 // This test is assuming the `dart` used to invoke the tests is compatible
 // with the version of package:kernel in //third-party/dart/pkg/kernel
 final String dart = Platform.resolvedExecutable;
-final String bat = Platform.isWindows ? '.bat' : '';
+final String dartaotruntime = path.join(path.dirname(Platform.resolvedExecutable), 'dartaotruntime');
 
 void _checkRecursion(String dillPath, Compiler compiler) {
   stdout.writeln('Checking recursive calls.');
@@ -444,7 +444,7 @@ class _Test {
   }
 
   void _compileAOTDill() {
-    checkProcessResult(Process.runSync(dart, <String>[
+    checkProcessResult(Process.runSync(dartaotruntime, <String>[
       frontendServer,
       '--sdk-root=$sdkRoot',
       '--target=flutter',

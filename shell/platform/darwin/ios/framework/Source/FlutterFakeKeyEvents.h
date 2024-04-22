@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTER_FAKE_KEY_EVENTS_H_
-#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTER_FAKE_KEY_EVENTS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERFAKEKEYEVENTS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERFAKEKEYEVENTS_H_
 
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
@@ -47,26 +47,29 @@ API_AVAILABLE(ios(13.4))
 @property(readwrite, nonatomic) NSString* dataCharactersIgnoringModifiers;
 @end
 
-FlutterUIPressProxy* keyDownEvent(UIKeyboardHIDUsage keyCode,
-                                  UIKeyModifierFlags modifierFlags = 0x0,
-                                  NSTimeInterval timestamp = 0.0f,
-                                  const char* characters = "",
-                                  const char* charactersIgnoringModifiers = "")
+namespace flutter {
+namespace testing {
+extern FlutterUIPressProxy* keyDownEvent(UIKeyboardHIDUsage keyCode,
+                                         UIKeyModifierFlags modifierFlags = 0x0,
+                                         NSTimeInterval timestamp = 0.0f,
+                                         const char* characters = "",
+                                         const char* charactersIgnoringModifiers = "")
     API_AVAILABLE(ios(13.4));
 
-FlutterUIPressProxy* keyUpEvent(UIKeyboardHIDUsage keyCode,
-                                UIKeyModifierFlags modifierFlags = 0x0,
-                                NSTimeInterval timestamp = 0.0f,
-                                const char* characters = "",
-                                const char* charactersIgnoringModifiers = "")
-    API_AVAILABLE(ios(13.4));
-
-FlutterUIPressProxy* keyEventWithPhase(UIPressPhase phase,
-                                       UIKeyboardHIDUsage keyCode,
+extern FlutterUIPressProxy* keyUpEvent(UIKeyboardHIDUsage keyCode,
                                        UIKeyModifierFlags modifierFlags = 0x0,
                                        NSTimeInterval timestamp = 0.0f,
                                        const char* characters = "",
                                        const char* charactersIgnoringModifiers = "")
     API_AVAILABLE(ios(13.4));
 
-#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTER_FAKE_KEY_EVENTS_H_
+extern FlutterUIPressProxy* keyEventWithPhase(UIPressPhase phase,
+                                              UIKeyboardHIDUsage keyCode,
+                                              UIKeyModifierFlags modifierFlags = 0x0,
+                                              NSTimeInterval timestamp = 0.0f,
+                                              const char* characters = "",
+                                              const char* charactersIgnoringModifiers = "")
+    API_AVAILABLE(ios(13.4));
+}  // namespace testing
+}  // namespace flutter
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERFAKEKEYEVENTS_H_

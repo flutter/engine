@@ -27,6 +27,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/ports/SkFontMgr_fuchsia.h"
 
 #include "../runtime/dart/utils/files.h"
@@ -107,16 +108,16 @@ void SetThreadConfig(
   // the role naming scheme.
   std::string role;
   switch (config.priority) {
-    case fml::Thread::ThreadPriority::BACKGROUND:
+    case fml::Thread::ThreadPriority::kBackground:
       role = name_prefix + ".thread.background";
       break;
-    case fml::Thread::ThreadPriority::DISPLAY:
+    case fml::Thread::ThreadPriority::kDisplay:
       role = name_prefix + ".thread.display";
       break;
-    case fml::Thread::ThreadPriority::RASTER:
+    case fml::Thread::ThreadPriority::kRaster:
       role = name_prefix + ".thread.raster";
       break;
-    case fml::Thread::ThreadPriority::NORMAL:
+    case fml::Thread::ThreadPriority::kNormal:
       role = name_prefix + ".thread.normal";
       break;
     default:
@@ -184,16 +185,16 @@ flutter::ThreadHost Engine::CreateThreadHost(
 
   thread_host_config.SetRasterConfig(
       {flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-           flutter::ThreadHost::Type::RASTER, name_prefix),
-       fml::Thread::ThreadPriority::RASTER});
+           flutter::ThreadHost::Type::kRaster, name_prefix),
+       fml::Thread::ThreadPriority::kRaster});
   thread_host_config.SetUIConfig(
       {flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-           flutter::ThreadHost::Type::UI, name_prefix),
-       fml::Thread::ThreadPriority::DISPLAY});
+           flutter::ThreadHost::Type::kUi, name_prefix),
+       fml::Thread::ThreadPriority::kDisplay});
   thread_host_config.SetIOConfig(
       {flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-           flutter::ThreadHost::Type::IO, name_prefix),
-       fml::Thread::ThreadPriority::NORMAL});
+           flutter::ThreadHost::Type::kIo, name_prefix),
+       fml::Thread::ThreadPriority::kNormal});
 
   return flutter::ThreadHost(thread_host_config);
 }
@@ -354,8 +355,6 @@ void Engine::Initialize(
        view_protocols = std::move(view_protocols),
        request = parent_viewport_watcher.NewRequest(),
        view_ref_pair = std::move(view_ref_pair),
-       max_frames_in_flight = product_config.get_max_frames_in_flight(),
-       vsync_offset = product_config.get_vsync_offset(),
        software_rendering = product_config.software_rendering()]() mutable {
         if (software_rendering) {
           surface_producer_ = std::make_shared<SoftwareSurfaceProducer>();
@@ -365,8 +364,7 @@ void Engine::Initialize(
 
         flatland_connection_ = std::make_shared<FlatlandConnection>(
             thread_label_, std::move(flatland),
-            std::move(session_error_callback), [](auto) {},
-            max_frames_in_flight, vsync_offset);
+            std::move(session_error_callback), [](auto) {});
 
         fuchsia::ui::views::ViewIdentityOnCreation view_identity = {
             .view_ref = std::move(view_ref_pair.second),
@@ -613,7 +611,7 @@ void Engine::Initialize(
     ZX_ASSERT(runner_services->Connect(
                   memory_pressure_provider_.NewRequest()) == ZX_OK);
 
-    FML_VLOG(-1) << "Registering memorypressure watcher";
+    FML_VLOG(1) << "Registering memorypressure watcher";
 
     // Register for changes, which will make the request for the initial
     // memory level.
@@ -649,12 +647,12 @@ void Engine::Initialize(
         FML_LOG(WARNING) << "Got intl Profile without locales";
       }
       auto message = MakeLocalizationPlatformMessage(profile);
-      FML_VLOG(-1) << "Sending LocalizationPlatformMessage";
+      FML_VLOG(1) << "Sending LocalizationPlatformMessage";
       weak->shell_->GetPlatformView()->DispatchPlatformMessage(
           std::move(message));
     };
 
-    FML_VLOG(-1) << "Requesting intl Profile";
+    FML_VLOG(1) << "Requesting intl Profile";
 
     // Make the initial request
     intl_property_provider_->GetProfile(get_profile_callback);
@@ -662,7 +660,7 @@ void Engine::Initialize(
     // And register for changes
     intl_property_provider_.events().OnChange = [this, runner_services,
                                                  get_profile_callback]() {
-      FML_VLOG(-1) << fuchsia::intl::PropertyProvider::Name_ << ": OnChange";
+      FML_VLOG(1) << fuchsia::intl::PropertyProvider::Name_ << ": OnChange";
       runner_services->Connect(intl_property_provider_.NewRequest());
       intl_property_provider_->GetProfile(get_profile_callback);
     };
@@ -947,7 +945,8 @@ void Engine::WarmupSkps(
             };
 
             surface_producer->gr_context()->flush(flush_info);
-            surface_producer->gr_context()->submit(synchronous);
+            surface_producer->gr_context()->submit(
+                synchronous ? GrSyncCpu::kYes : GrSyncCpu::kNo);
           }
         } else {
           if (i == count - 1) {

@@ -147,7 +147,7 @@ bool DlMatrixColorFilter::modifies_transparent_black() const {
   // equation ends up becoming A' = matrix_[19]. Negative results will be
   // clamped to the range [0,1] so we only care about positive values.
   // Non-finite values are clamped to a zero alpha.
-  return (SkScalarIsFinite(matrix_[19]) && matrix_[19] > 0);
+  return (std::isfinite(matrix_[19]) && matrix_[19] > 0);
 }
 
 bool DlMatrixColorFilter::can_commute_with_opacity() const {
@@ -190,11 +190,11 @@ bool DlMatrixColorFilter::can_commute_with_opacity() const {
 }
 
 const std::shared_ptr<DlSrgbToLinearGammaColorFilter>
-    DlSrgbToLinearGammaColorFilter::instance =
+    DlSrgbToLinearGammaColorFilter::kInstance =
         std::make_shared<DlSrgbToLinearGammaColorFilter>();
 
 const std::shared_ptr<DlLinearToSrgbGammaColorFilter>
-    DlLinearToSrgbGammaColorFilter::instance =
+    DlLinearToSrgbGammaColorFilter::kInstance =
         std::make_shared<DlLinearToSrgbGammaColorFilter>();
 
 }  // namespace flutter

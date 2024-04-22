@@ -14,6 +14,10 @@ const TextureDescriptor& TextureSourceVK::GetTextureDescriptor() const {
   return desc_;
 }
 
+std::shared_ptr<YUVConversionVK> TextureSourceVK::GetYUVConversion() const {
+  return nullptr;
+}
+
 vk::ImageLayout TextureSourceVK::GetLayout() const {
   ReaderLock lock(layout_mutex_);
   return layout_;
@@ -27,10 +31,10 @@ vk::ImageLayout TextureSourceVK::SetLayoutWithoutEncoding(
   return old_layout;
 }
 
-bool TextureSourceVK::SetLayout(const BarrierVK& barrier) const {
+fml::Status TextureSourceVK::SetLayout(const BarrierVK& barrier) const {
   const auto old_layout = SetLayoutWithoutEncoding(barrier.new_layout);
   if (barrier.new_layout == old_layout) {
-    return true;
+    return {};
   }
 
   vk::ImageMemoryBarrier image_barrier;
@@ -55,7 +59,25 @@ bool TextureSourceVK::SetLayout(const BarrierVK& barrier) const {
                                      image_barrier       // image barriers
   );
 
-  return true;
+  return {};
+}
+
+void TextureSourceVK::SetCachedFramebuffer(
+    const SharedHandleVK<vk::Framebuffer>& framebuffer) {
+  framebuffer_ = framebuffer;
+}
+
+void TextureSourceVK::SetCachedRenderPass(
+    const SharedHandleVK<vk::RenderPass>& render_pass) {
+  render_pass_ = render_pass;
+}
+
+SharedHandleVK<vk::Framebuffer> TextureSourceVK::GetCachedFramebuffer() const {
+  return framebuffer_;
+}
+
+SharedHandleVK<vk::RenderPass> TextureSourceVK::GetCachedRenderPass() const {
+  return render_pass_;
 }
 
 }  // namespace impeller

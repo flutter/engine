@@ -8,14 +8,15 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui;
+
+import '../common/test_initialization.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 Future<void> testMain() async {
-  await ui.webOnlyInitializePlatform();
+  await bootstrapAndRunApp();
 
   // Test successful HTTP roundtrips where the server returns a happy status
   // code and a payload.

@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_PAINT_DISPATCHER_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/skia/dl_sk_types.h"
 
 namespace flutter {
 
@@ -14,7 +15,7 @@ namespace flutter {
 // which can be accessed at any time via paint().
 class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
  public:
-  DlSkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
+  explicit DlSkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
       : current_color_(SK_ColorBLACK), opacity_(opacity) {
     if (opacity < SK_Scalar1) {
       paint_.setAlphaf(opacity);
@@ -22,7 +23,6 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   }
 
   void setAntiAlias(bool aa) override;
-  void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
   void setStrokeWidth(SkScalar width) override;
@@ -37,8 +37,23 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(const DlImageFilter* filter) override;
 
-  const SkPaint& paint() { return paint_; }
-
+  const SkPaint& paint(bool uses_shader = true) {
+    // On the Impeller backend, we will only support dithering of *gradients*,
+    // and it will be enabled by default (without the option to disable it).
+    // Until Skia support is completely removed, we only want to respect the
+    // dither flag for gradients (otherwise it will also apply to, for
+    // example, image ops and image sources, which are not dithered in
+    // Impeller) and only on those operations that use the color source.
+    //
+    // The color_source_gradient_ flag lets us know if the color source is
+    // a gradient and then the uses_shader flag passed in to this method by
+    // the rendering op lets us know if the color source is used (and is
+    // therefore the primary source of colors for the op).
+    //
+    // See https://github.com/flutter/flutter/issues/112498.
+    paint_.setDither(uses_shader && color_source_gradient_);
+    return paint_;
+  }
   /// Returns the current opacity attribute which is used to reduce
   /// the alpha of all setColor calls encountered in the streeam
   SkScalar opacity() { return opacity_; }
@@ -57,13 +72,14 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
 
  private:
   SkPaint paint_;
+  bool color_source_gradient_ = false;
   bool invert_colors_ = false;
   sk_sp<SkColorFilter> sk_color_filter_;
 
   sk_sp<SkColorFilter> makeColorFilter() const;
 
   struct SaveInfo {
-    SaveInfo(SkScalar opacity) : opacity(opacity) {}
+    explicit SaveInfo(SkScalar opacity) : opacity(opacity) {}
 
     SkScalar opacity;
   };
@@ -72,7 +88,7 @@ class DlSkPaintDispatchHelper : public virtual DlOpReceiver {
   void set_opacity(SkScalar opacity) {
     if (opacity_ != opacity) {
       opacity_ = opacity;
-      setColor(current_color_);
+      setColor(DlColor(current_color_));
     }
   }
 

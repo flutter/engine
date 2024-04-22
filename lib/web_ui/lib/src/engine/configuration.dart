@@ -51,9 +51,16 @@ import 'canvaskit/renderer.dart';
 import 'dom.dart';
 
 /// The Web Engine configuration for the current application.
-FlutterConfiguration get configuration =>
-  _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+FlutterConfiguration get configuration {
+  if (_debugConfiguration != null) {
+    return _debugConfiguration!;
+  }
+  return _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
+}
+
 FlutterConfiguration? _configuration;
+
+FlutterConfiguration? _debugConfiguration;
 
 /// Overrides the initial test configuration with new values coming from `newConfig`.
 ///
@@ -76,16 +83,9 @@ FlutterConfiguration? _configuration;
 @visibleForTesting
 void debugOverrideJsConfiguration(JsFlutterConfiguration? newConfig) {
   if (newConfig != null) {
-    final JSObject newJsConfig = objectConstructor.assign(
-      <String, Object>{}.jsify(),
-      _jsConfiguration.jsify(),
-      newConfig.jsify(),
-    );
-    _configuration = FlutterConfiguration()
-        ..setUserConfiguration(newJsConfig as JsFlutterConfiguration);
-    print('Overridden engine JS config to: ${newJsConfig.dartify()}');
+    _debugConfiguration = configuration.withOverrides(newConfig);
   } else {
-    _configuration = null;
+    _debugConfiguration = null;
   }
 }
 
@@ -107,17 +107,29 @@ class FlutterConfiguration {
     // Warn the user of the deprecated behavior.
     assert(() {
       if (config != null) {
-        domWindow.console.warn('window.flutterConfiguration is now deprecated.\n'
-          'Use engineInitializer.initializeEngine(config) instead.\n'
-          'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+        domWindow.console.warn(
+            'window.flutterConfiguration is now deprecated.\n'
+            'Use engineInitializer.initializeEngine(config) instead.\n'
+            'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
       }
       if (_requestedRendererType != null) {
         domWindow.console.warn('window.flutterWebRenderer is now deprecated.\n'
-          'Use engineInitializer.initializeEngine(config) instead.\n'
-          'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+            'Use engineInitializer.initializeEngine(config) instead.\n'
+            'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
       }
       return true;
     }());
+  }
+
+  FlutterConfiguration withOverrides(JsFlutterConfiguration? overrides) {
+    final JsFlutterConfiguration newJsConfig = objectConstructor.assign(
+      <String, Object>{}.jsify(),
+      _configuration.jsify(),
+      overrides.jsify(),
+    ) as JsFlutterConfiguration;
+    final FlutterConfiguration newConfig = FlutterConfiguration();
+    newConfig._configuration = newJsConfig;
+    return newConfig;
   }
 
   bool _usedLegacyConfigStyle = false;
@@ -133,14 +145,16 @@ class FlutterConfiguration {
   /// constructor.
   void setUserConfiguration(JsFlutterConfiguration? configuration) {
     if (configuration != null) {
-      assert(!_usedLegacyConfigStyle,
-        'Use engineInitializer.initializeEngine(config) only. '
-        'Using the (deprecated) window.flutterConfiguration and initializeEngine '
-        'configuration simultaneously is not supported.');
-      assert(_requestedRendererType == null || configuration.renderer == null,
-        'Use engineInitializer.initializeEngine(config) only. '
-        'Using the (deprecated) window.flutterWebRenderer and initializeEngine '
-        'configuration simultaneously is not supported.');
+      assert(
+          !_usedLegacyConfigStyle,
+          'Use engineInitializer.initializeEngine(config) only. '
+          'Using the (deprecated) window.flutterConfiguration and initializeEngine '
+          'configuration simultaneously is not supported.');
+      assert(
+          _requestedRendererType == null || configuration.renderer == null,
+          'Use engineInitializer.initializeEngine(config) only. '
+          'Using the (deprecated) window.flutterWebRenderer and initializeEngine '
+          'configuration simultaneously is not supported.');
       _configuration = configuration;
     }
   }
@@ -167,9 +181,7 @@ class FlutterConfiguration {
   /// true.
   ///
   /// Using flutter tools option "--web-render=html" would set the value to false.
-  static const bool useSkia =
-      bool.fromEnvironment('FLUTTER_WEB_USE_SKIA');
-
+  static const bool useSkia = bool.fromEnvironment('FLUTTER_WEB_USE_SKIA');
 
   // Runtime parameters.
   //
@@ -219,13 +231,14 @@ class FlutterConfiguration {
   ///
   /// Example:
   ///
-  /// ```
+  /// ```bash
   /// flutter run \
   ///   -d chrome \
   ///   --web-renderer=canvaskit \
   ///   --dart-define=FLUTTER_WEB_CANVASKIT_URL=https://example.com/custom-canvaskit-build/
   /// ```
-  String get canvasKitBaseUrl => _configuration?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
+  String get canvasKitBaseUrl =>
+      _configuration?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
     defaultValue: 'canvaskit/',
@@ -252,26 +265,23 @@ class FlutterConfiguration {
   ///
   /// This is mainly used for testing or for apps that want to ensure they
   /// run on devices which don't support WebGL.
-  bool get canvasKitForceCpuOnly => _configuration?.canvasKitForceCpuOnly ?? _defaultCanvasKitForceCpuOnly;
+  bool get canvasKitForceCpuOnly =>
+      _configuration?.canvasKitForceCpuOnly ?? _defaultCanvasKitForceCpuOnly;
   static const bool _defaultCanvasKitForceCpuOnly = bool.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_FORCE_CPU_ONLY',
   );
 
-  /// The maximum number of overlay surfaces that the CanvasKit renderer will use.
+  /// The maximum number of canvases to use when rendering in CanvasKit.
   ///
-  /// Overlay surfaces are extra WebGL `<canvas>` elements used to paint on top
-  /// of platform views. Too many platform views can cause the browser to run
-  /// out of resources (memory, CPU, GPU) to handle the content efficiently.
-  /// The number of overlay surfaces is therefore limited.
-  ///
-  /// This value can be specified using either the `FLUTTER_WEB_MAXIMUM_SURFACES`
-  /// environment variable, or using the runtime configuration.
-  int get canvasKitMaximumSurfaces =>
-      _configuration?.canvasKitMaximumSurfaces?.toInt() ?? _defaultCanvasKitMaximumSurfaces;
-  static const int _defaultCanvasKitMaximumSurfaces = int.fromEnvironment(
-    'FLUTTER_WEB_MAXIMUM_SURFACES',
-    defaultValue: 8,
-  );
+  /// Limits the amount of overlays that can be created.
+  int get canvasKitMaximumSurfaces {
+    final int maxSurfaces =
+        _configuration?.canvasKitMaximumSurfaces?.toInt() ?? 8;
+    if (maxSurfaces < 1) {
+      return 1;
+    }
+    return maxSurfaces;
+  }
 
   /// Set this flag to `true` to cause the engine to visualize the semantics tree
   /// on the screen for debugging.
@@ -281,10 +291,12 @@ class FlutterConfiguration {
   ///
   /// Example:
   ///
-  /// ```
+  /// ```bash
   /// flutter run -d chrome --profile --dart-define=FLUTTER_WEB_DEBUG_SHOW_SEMANTICS=true
   /// ```
-  bool get debugShowSemanticsNodes => _configuration?.debugShowSemanticsNodes ?? _defaultDebugShowSemanticsNodes;
+  bool get debugShowSemanticsNodes =>
+      _configuration?.debugShowSemanticsNodes ??
+      _defaultDebugShowSemanticsNodes;
   static const bool _defaultDebugShowSemanticsNodes = bool.fromEnvironment(
     'FLUTTER_WEB_DEBUG_SHOW_SEMANTICS',
   );
@@ -292,6 +304,16 @@ class FlutterConfiguration {
   /// Returns the [hostElement] in which the Flutter Application is supposed
   /// to render, or `null` if the user hasn't specified anything.
   DomElement? get hostElement => _configuration?.hostElement;
+
+  /// Sets Flutter Web in "multi-view" mode.
+  ///
+  /// Multi-view mode allows apps to:
+  ///
+  ///  * Start without a `hostElement`.
+  ///  * Add/remove views (`hostElements`) from JS while the application is running.
+  ///  * ...
+  ///  * PROFIT?
+  bool get multiViewEnabled => _configuration?.multiViewEnabled ?? false;
 
   /// Returns a `nonce` to allowlist the inline styles that Flutter web needs.
   ///
@@ -305,7 +327,16 @@ class FlutterConfiguration {
   /// `window.flutterWebRenderer`.
   ///
   /// This is used by the Renderer class to decide how to initialize the engine.
-  String? get requestedRendererType => _configuration?.renderer ?? _requestedRendererType;
+  String? get requestedRendererType =>
+      _configuration?.renderer ?? _requestedRendererType;
+
+  /// Returns the base URL to load fallback fonts from. Fallback fonts are
+  /// downloaded automatically when there is no font bundled with the app that
+  /// can show a glyph that is being rendered.
+  ///
+  /// Defaults to 'https://fonts.gstatic.com/s/'.
+  String get fontFallbackBaseUrl =>
+      _configuration?.fontFallbackBaseUrl ?? 'https://fonts.gstatic.com/s/';
 
   /// Whether to use color emojis or not.
   ///
@@ -319,8 +350,11 @@ external JsFlutterConfiguration? get _jsConfiguration;
 
 /// The JS bindings for the object that's set as `window.flutterConfiguration`.
 @JS()
+@anonymous
 @staticInterop
-class JsFlutterConfiguration {}
+class JsFlutterConfiguration {
+  external factory JsFlutterConfiguration();
+}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('assetBase')
@@ -341,13 +375,18 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
 
   @JS('canvasKitMaximumSurfaces')
   external JSNumber? get _canvasKitMaximumSurfaces;
-  double? get canvasKitMaximumSurfaces => _canvasKitMaximumSurfaces?.toDartDouble;
+  double? get canvasKitMaximumSurfaces =>
+      _canvasKitMaximumSurfaces?.toDartDouble;
 
   @JS('debugShowSemanticsNodes')
   external JSBoolean? get _debugShowSemanticsNodes;
   bool? get debugShowSemanticsNodes => _debugShowSemanticsNodes?.toDart;
 
   external DomElement? get hostElement;
+
+  @JS('multiViewEnabled')
+  external JSBoolean? get _multiViewEnabled;
+  bool? get multiViewEnabled => _multiViewEnabled?.toDart;
 
   @JS('nonce')
   external JSString? get _nonce;
@@ -356,6 +395,10 @@ extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   @JS('renderer')
   external JSString? get _renderer;
   String? get renderer => _renderer?.toDart;
+
+  @JS('fontFallbackBaseUrl')
+  external JSString? get _fontFallbackBaseUrl;
+  String? get fontFallbackBaseUrl => _fontFallbackBaseUrl?.toDart;
 
   @JS('useColorEmoji')
   external JSBoolean? get _useColorEmoji;

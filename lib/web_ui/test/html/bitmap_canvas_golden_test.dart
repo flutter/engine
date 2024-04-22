@@ -13,6 +13,10 @@ import 'package:web_engine_tester/golden_tester.dart';
 import '../common/test_initialization.dart';
 import 'paragraph/helper.dart';
 
+DomElement get sceneHost =>
+    EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost
+        .querySelector(DomManager.sceneHostTagName)!;
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -32,16 +36,17 @@ Future<void> testMain() async {
       testScene.style.transform = 'scale(0.3)';
     }
     testScene.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene-host')!.append(testScene);
+    sceneHost.append(testScene);
   }
 
   setUpUnitTests(
+    withImplicitView: true,
     emulateTesterEnvironment: false,
     setUpTestViewDimensions: false,
   );
 
   tearDown(() {
-    flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene')?.remove();
+    sceneHost.querySelector('flt-scene')?.remove();
   });
 
   /// Draws several lines, some aligned precisely with the pixel grid, and some
@@ -244,8 +249,8 @@ Future<void> testMain() async {
     );
 
     final SceneBuilder sb = SceneBuilder();
-    sb.pushTransform(Matrix4.diagonal3Values(EnginePlatformDispatcher.browserDevicePixelRatio,
-        EnginePlatformDispatcher.browserDevicePixelRatio, 1.0).toFloat64());
+    sb.pushTransform(Matrix4.diagonal3Values(EngineFlutterDisplay.instance.browserDevicePixelRatio,
+        EngineFlutterDisplay.instance.browserDevicePixelRatio, 1.0).toFloat64());
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).toFloat64());
     sb.pushOffset(0, -500);
     sb.pushClipRect(canvasSize);
@@ -263,7 +268,7 @@ Future<void> testMain() async {
     }
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene-host')!.append(sceneElement);
+    sceneHost.append(sceneElement);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',

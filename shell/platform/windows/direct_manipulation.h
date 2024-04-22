@@ -12,7 +12,7 @@
 
 namespace flutter {
 
-class Window;
+class FlutterWindow;
 class WindowBindingHandlerDelegate;
 
 class DirectManipulationEventHandler;
@@ -21,7 +21,7 @@ class DirectManipulationEventHandler;
 // DirectManipulation and WindowBindingHandlerDelegate.
 class DirectManipulationOwner {
  public:
-  explicit DirectManipulationOwner(Window* window);
+  explicit DirectManipulationOwner(FlutterWindow* window);
   virtual ~DirectManipulationOwner() = default;
   // Initialize a DirectManipulation viewport with specified width and height.
   // These should match the width and height of the application window.
@@ -47,7 +47,7 @@ class DirectManipulationOwner {
 
  private:
   // The window gesture input is occuring on.
-  Window* window_;
+  FlutterWindow* window_;
   // Cookie needed to register child event handler with viewport.
   DWORD viewportHandlerCookie_;
   // Object needed for operation of the DirectManipulation API.
@@ -86,24 +86,24 @@ class DirectManipulationEventHandler
   ULONG STDMETHODCALLTYPE Release() override;
 
   // |IDirectManipulationViewportEventHandler|
-  HRESULT STDMETHODCALLTYPE
-  OnViewportStatusChanged(IDirectManipulationViewport* viewport,
-                          DIRECTMANIPULATION_STATUS current,
-                          DIRECTMANIPULATION_STATUS previous) override;
+  HRESULT STDMETHODCALLTYPE OnViewportStatusChanged(
+      IDirectManipulationViewport* viewport,
+      DIRECTMANIPULATION_STATUS current,
+      DIRECTMANIPULATION_STATUS previous) override;
 
   // |IDirectManipulationViewportEventHandler|
-  HRESULT STDMETHODCALLTYPE
-  OnViewportUpdated(IDirectManipulationViewport* viewport) override;
+  HRESULT STDMETHODCALLTYPE OnViewportUpdated(
+      IDirectManipulationViewport* viewport) override;
 
   // |IDirectManipulationViewportEventHandler|
-  HRESULT STDMETHODCALLTYPE
-  OnContentUpdated(IDirectManipulationViewport* viewport,
-                   IDirectManipulationContent* content) override;
+  HRESULT STDMETHODCALLTYPE OnContentUpdated(
+      IDirectManipulationViewport* viewport,
+      IDirectManipulationContent* content) override;
 
   // |IDirectManipulationInteractionEventHandler|
-  HRESULT STDMETHODCALLTYPE
-  OnInteraction(IDirectManipulationViewport2* viewport,
-                DIRECTMANIPULATION_INTERACTION_TYPE interaction) override;
+  HRESULT STDMETHODCALLTYPE OnInteraction(
+      IDirectManipulationViewport2* viewport,
+      DIRECTMANIPULATION_INTERACTION_TYPE interaction) override;
 
  private:
   struct GestureData {

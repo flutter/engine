@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_
 
 #include <Metal/Metal.h>
 
 #include <optional>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
@@ -36,6 +38,10 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
       return PixelFormat::kR16G16B16A16Float;
     case MTLPixelFormatStencil8:
       return PixelFormat::kS8UInt;
+#if !FML_OS_IOS
+    case MTLPixelFormatDepth24Unorm_Stencil8:
+      return PixelFormat::kD24UnormS8Uint;
+#endif  // FML_OS_IOS
     case MTLPixelFormatDepth32Float_Stencil8:
       return PixelFormat::kD32FloatS8UInt;
     case MTLPixelFormatBGR10_XR_sRGB:
@@ -49,6 +55,11 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
   }
   return PixelFormat::kUnknown;
 }
+
+/// Safe accessor for MTLPixelFormatDepth24Unorm_Stencil8.
+/// Returns PixelFormat::kUnknown if MTLPixelFormatDepth24Unorm_Stencil8 isn't
+/// supported.
+MTLPixelFormat SafeMTLPixelFormatDepth24Unorm_Stencil8();
 
 /// Safe accessor for MTLPixelFormatBGR10_XR_sRGB.
 /// Returns PixelFormat::kUnknown if MTLPixelFormatBGR10_XR_sRGB isn't
@@ -87,6 +98,8 @@ constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {
       return MTLPixelFormatRGBA16Float;
     case PixelFormat::kS8UInt:
       return MTLPixelFormatStencil8;
+    case PixelFormat::kD24UnormS8Uint:
+      return SafeMTLPixelFormatDepth24Unorm_Stencil8();
     case PixelFormat::kD32FloatS8UInt:
       return MTLPixelFormatDepth32Float_Stencil8;
     case PixelFormat::kB10G10R10XRSRGB:
@@ -194,25 +207,22 @@ constexpr MTLBlendOperation ToMTLBlendOperation(BlendOperation type) {
   return MTLBlendOperationAdd;
 };
 
-constexpr MTLColorWriteMask ToMTLColorWriteMask(
-    std::underlying_type_t<ColorWriteMask> type) {
-  using UnderlyingType = decltype(type);
-
+constexpr MTLColorWriteMask ToMTLColorWriteMask(ColorWriteMask type) {
   MTLColorWriteMask mask = MTLColorWriteMaskNone;
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kRed)) {
+  if (type & ColorWriteMaskBits::kRed) {
     mask |= MTLColorWriteMaskRed;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kGreen)) {
+  if (type & ColorWriteMaskBits::kGreen) {
     mask |= MTLColorWriteMaskGreen;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kBlue)) {
+  if (type & ColorWriteMaskBits::kBlue) {
     mask |= MTLColorWriteMaskBlue;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kAlpha)) {
+  if (type & ColorWriteMaskBits::kAlpha) {
     mask |= MTLColorWriteMaskAlpha;
   }
 
@@ -387,3 +397,5 @@ MTLDepthStencilDescriptor* ToMTLDepthStencilDescriptor(
 MTLTextureDescriptor* ToMTLTextureDescriptor(const TextureDescriptor& desc);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_

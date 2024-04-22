@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERKEYPRIMARYRESPONDER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERKEYPRIMARYRESPONDER_H_
+
 #import <Cocoa/Cocoa.h>
 
 typedef void (^FlutterAsyncKeyCallback)(BOOL handled);
@@ -24,6 +27,15 @@ typedef void (^FlutterAsyncKeyCallback)(BOOL handled);
 @required
 - (void)handleEvent:(nonnull NSEvent*)event callback:(nonnull FlutterAsyncKeyCallback)callback;
 
+/**
+ * Synchronize the modifier flags if necessary. The new modifier flag would usually come from mouse
+ * event and may be out of sync with current keyboard state if the modifier flags have changed while
+ * window was not key.
+ */
+@required
+- (void)syncModifiersIfNeeded:(NSEventModifierFlags)modifierFlags
+                    timestamp:(NSTimeInterval)timestamp;
+
 /* A map from macOS key code to logical keyboard.
  *
  * The map is assigned on initialization, and updated when the user changes
@@ -34,3 +46,5 @@ typedef void (^FlutterAsyncKeyCallback)(BOOL handled);
 @property(nonatomic, nullable, strong) NSMutableDictionary<NSNumber*, NSNumber*>* layoutMap;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERKEYPRIMARYRESPONDER_H_

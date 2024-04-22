@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_SNAPSHOT_H_
+#define FLUTTER_IMPELLER_RENDERER_SNAPSHOT_H_
 
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
@@ -47,3 +47,5 @@ struct Snapshot {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_SNAPSHOT_H_

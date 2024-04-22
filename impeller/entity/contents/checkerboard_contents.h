@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CHECKERBOARD_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CHECKERBOARD_CONTENTS_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 
 namespace impeller {
@@ -35,7 +35,11 @@ class CheckerboardContents final : public Contents {
   Color color_ = Color::Red().WithAlpha(0.25);
   Scalar square_size_ = 12;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CheckerboardContents);
+  CheckerboardContents(const CheckerboardContents&) = delete;
+
+  CheckerboardContents& operator=(const CheckerboardContents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CHECKERBOARD_CONTENTS_H_

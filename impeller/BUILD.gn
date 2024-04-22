@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//third_party/glfw/glfw_args.gni")
+import("//flutter/third_party/glfw/glfw_args.gni")
 import("tools/impeller.gni")
 
 config("impeller_public_config") {
@@ -12,6 +12,10 @@ config("impeller_public_config") {
 
   if (impeller_debug) {
     defines += [ "IMPELLER_DEBUG=1" ]
+  }
+
+  if (impeller_capture) {
+    defines += [ "IMPELLER_ENABLE_CAPTURE=1" ]
   }
 
   if (impeller_supports_rendering) {
@@ -34,21 +38,20 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
   }
 
-  if (impeller_error_check_all_gl_calls) {
-    defines += [ "IMPELLER_ERROR_CHECK_ALL_GL_CALLS" ]
-  }
-
   if (is_win) {
     defines += [
       # TODO(dnfield): https://github.com/flutter/flutter/issues/50053
       "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
     ]
   }
+
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+  }
 }
 
 group("impeller") {
   public_deps = [
-    "archivist",
     "base",
     "geometry",
     "tessellator",
@@ -59,10 +62,9 @@ group("impeller") {
       "aiks",
       "display_list",
       "entity",
-      "image:image_skia_backend",
       "renderer",
       "renderer/backend",
-      "typographer",
+      "typographer/backends/skia:typographer_skia_backend",
     ]
   }
 }
@@ -73,15 +75,15 @@ impeller_component("impeller_unittests") {
   testonly = true
 
   deps = [
-    "archivist:archivist_unittests",
     "base:base_unittests",
-    "blobcat:blobcat_unittests",
     "compiler:compiler_unittests",
     "core:allocator_unittests",
     "display_list:skia_conversions_unittests",
     "geometry:geometry_unittests",
+    "renderer/backend/metal:metal_unittests",
     "runtime_stage:runtime_stage_unittests",
     "scene/importer:importer_unittests",
+    "shader_archive:shader_archive_unittests",
     "tessellator:tessellator_unittests",
   ]
 
@@ -90,10 +92,8 @@ impeller_component("impeller_unittests") {
       "aiks:aiks_unittests",
       "display_list:display_list_unittests",
       "entity:entity_unittests",
-      "entity:render_target_cache_unittests",
       "fixtures",
       "geometry:geometry_unittests",
-      "image:image_unittests",
       "playground",
       "renderer:renderer_unittests",
       "scene:scene_unittests",
@@ -105,10 +105,14 @@ impeller_component("impeller_unittests") {
     deps += [ "//flutter/impeller/renderer/backend/vulkan:vulkan_unittests" ]
   }
 
+  if (impeller_enable_opengles) {
+    deps += [ "//flutter/impeller/renderer/backend/gles:gles_unittests" ]
+  }
+
   if (glfw_vulkan_library != "") {
     deps += [
-      "//third_party/swiftshader",
-      "//third_party/vulkan-deps/vulkan-loader/src:libvulkan",
+      "//flutter/third_party/swiftshader",
+      "//flutter/third_party/vulkan-deps/vulkan-loader/src:libvulkan",
       "//third_party/vulkan_validation_layers",
       "//third_party/vulkan_validation_layers:vulkan_gen_json_files",
     ]

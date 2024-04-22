@@ -2,17 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMPUTE_PIPELINE_BUILDER_H_
+#define FLUTTER_IMPELLER_RENDERER_COMPUTE_PIPELINE_BUILDER_H_
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
-#include "impeller/core/formats.h"
 #include "impeller/renderer/compute_pipeline_descriptor.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/shader_library.h"
-#include "impeller/renderer/vertex_descriptor.h"
 
 namespace impeller {
 
@@ -83,3 +80,5 @@ struct ComputePipelineBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMPUTE_PIPELINE_BUILDER_H_

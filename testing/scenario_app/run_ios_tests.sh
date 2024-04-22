@@ -58,13 +58,34 @@ zip_and_upload_xcresult_to_luci () {
   exit 1
 }
 
+readonly DEVICE_NAME="iPhone SE (3rd generation)"
+readonly DEVICE=com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation
+readonly OS_RUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-17-0
+readonly OS="17.0"
+
+# Delete any existing devices named "iPhone SE (3rd generation)". Having more
+# than one may cause issues when builds target the device.
+echo "Deleting any existing devices names $DEVICE_NAME..."
+RESULT=0
+while [[ $RESULT == 0 ]]; do
+    xcrun simctl delete "$DEVICE_NAME" || RESULT=1
+    if [ $RESULT == 0 ]; then
+        echo "Deleted $DEVICE_NAME"
+    fi
+done
+echo ""
+
+echo "Creating $DEVICE_NAME $DEVICE $OS_RUNTIME ..."
+xcrun simctl create "$DEVICE_NAME" "$DEVICE" "$OS_RUNTIME"
+echo ""
+
 echo "Running simulator tests with Skia"
 echo ""
 
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
-  -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
+  -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
   echo "test success."
@@ -82,11 +103,36 @@ echo ""
 if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
   -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
-  -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
+  -destination "platform=iOS Simulator,OS=$OS,name=$DEVICE_NAME" \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
-  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont,ScenarioUITests/PlatformViewMutationLargeClipRRectWithTransformTests/testPlatformView,ScenarioUITests/MultiplePlatformViewsTest/testPlatformView,ScenarioUITests/PlatformViewWithOtherBackdropFilterTests/testPlatformView,ScenarioUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipPathTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectWithTransformTests/testPlatformView,ScenarioUITests/PlatformViewGestureRecognizerTests/testRejectPolicyUtilTouchesEnded,ScenarioUITests/NonFullScreenFlutterViewPlatformViewUITests/testPlatformView,ScenarioUITests/PlatformViewUITests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectAfterMovedTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRectTests/testPlatformView,ScenarioUITests/TwoPlatformViewClipPathTests/testPlatformView,ScenarioUITests/MultiplePlatformViewsBackgroundForegroundTest/testPlatformView,ScenarioUITests/PlatformViewMutationOpacityTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRRectTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipRRectWithTransformTests/testPlatformView,ScenarioUITests/PlatformViewMutationClipPathWithTransformTests/testPlatformView,ScenarioUITests/SpawnEngineTest/testSpawnEngineWorks,ScenarioUITests/PlatformViewRotation/testPlatformView,ScenarioUITests/TwoPlatformViewClipRRectTests/testPlatformView,ScenarioUITests/TwoPlatformViewClipRectTests/testPlatformView,ScenarioUITests/RenderingSelectionTest/testSoftwareRendering,ScenarioUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays,ScenarioUITests/UnobstructedPlatformViewTests/testNoOverlay,ScenarioUITests/PlatformViewMutationTransformTests/testPlatformView,ScenarioUITests/PlatformViewMutationLargeClipRRectTests/testPlatformView,ScenarioUITests/PlatformViewWithNegativeOtherBackDropFilterTests/testPlatformView" \
-  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
+  -skip-testing ScenariosUITests/MultiplePlatformViewsBackgroundForegroundTest/testPlatformView \
+  -skip-testing ScenariosUITests/MultiplePlatformViewsTest/testPlatformView \
+  -skip-testing ScenariosUITests/NonFullScreenFlutterViewPlatformViewUITests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipPathTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipPathWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRectAfterMovedTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRectWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationClipRRectWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationLargeClipRRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationLargeClipRRectWithTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationOpacityTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewMutationTransformTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewRotation/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewUITests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewWithNegativeOtherBackDropFilterTests/testPlatformView \
+  -skip-testing ScenariosUITests/PlatformViewWithOtherBackdropFilterTests/testPlatformView \
+  -skip-testing ScenariosUITests/RenderingSelectionTest/testSoftwareRendering \
+  -skip-testing ScenariosUITests/TwoPlatformViewClipPathTests/testPlatformView \
+  -skip-testing ScenariosUITests/TwoPlatformViewClipRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/TwoPlatformViewClipRRectTests/testPlatformView \
+  -skip-testing ScenariosUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView \
+  -skip-testing ScenariosUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays \
+  # Plist with FLTEnableImpeller=YES, all projects in the workspace requires this file.
+  # For example, FlutterAppExtensionTestHost has a dummy file under the below directory.
+  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then
   echo "test success."
 else
   echo "test failed."

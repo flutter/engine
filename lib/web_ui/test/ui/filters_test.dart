@@ -20,6 +20,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpUnitTests(
+    withImplicitView: true,
     setUpTestViewDimensions: false,
   );
 
@@ -78,6 +79,16 @@ Future<void> testMain() async {
     await matchGoldenFile('ui_filter_matrix_imagefilter.png', region: region);
   });
 
+  test('resizing matrix filter', () async {
+    await drawTestImageWithPaint(ui.Paint()
+      ..imageFilter = ui.ImageFilter.matrix(
+        Matrix4.diagonal3Values(0.5, 0.5, 1).toFloat64(),
+        filterQuality: ui.FilterQuality.high,
+      ));
+    await matchGoldenFile('ui_filter_matrix_imagefilter_scaled.png',
+        region: region);
+  });
+
   test('composed filters', () async {
     final ui.ImageFilter filter = ui.ImageFilter.compose(
       outer: ui.ImageFilter.matrix(
@@ -91,7 +102,7 @@ Future<void> testMain() async {
     );
     await drawTestImageWithPaint(ui.Paint()..imageFilter = filter);
     await matchGoldenFile('ui_filter_composed_imagefilters.png', region: region);
-  }, skip: !isSkwasm); // Only Skwasm implements composable filters right now.
+  }, skip: isHtml); // Only Skwasm and CanvasKit implement composable filters right now.
 
   test('compose with colorfilter', () async {
     final ui.ImageFilter filter = ui.ImageFilter.compose(
@@ -106,7 +117,7 @@ Future<void> testMain() async {
     );
     await drawTestImageWithPaint(ui.Paint()..imageFilter = filter);
     await matchGoldenFile('ui_filter_composed_colorfilter.png', region: region);
-  }, skip: !isSkwasm); // Only Skwasm implements composable filters right now.
+  }, skip: isHtml); // Only Skwasm and CanvasKit implements composable filters right now.
 
   test('color filter as image filter', () async {
     const ui.ColorFilter colorFilter = ui.ColorFilter.mode(

@@ -178,11 +178,16 @@ class BackdropFilterEngineLayer extends ContainerLayer
   @override
   void paint(PaintContext paintContext) {
     final CkPaint paint = CkPaint()..blendMode = _blendMode;
-    paintContext.internalNodesCanvas
-        .saveLayerWithFilter(paintBounds, _filter, paint);
+
+    // Only apply the backdrop filter to the current canvas. If we apply the
+    // backdrop filter to every canvas (i.e. by applying it to the
+    // [internalNodesCanvas]), then later when we compose the canvases into a
+    // single canvas, the backdrop filter will be applied multiple times.
+    final CkCanvas currentCanvas = paintContext.leafNodesCanvas!;
+    currentCanvas.saveLayerWithFilter(paintBounds, _filter, paint);
     paint.dispose();
     paintChildren(paintContext);
-    paintContext.internalNodesCanvas.restore();
+    currentCanvas.restore();
   }
 
   // TODO(dnfield): dispose of the _filter
@@ -400,10 +405,10 @@ class ImageFilterEngineLayer extends ContainerLayer
 
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
-    final Matrix4 transform =
-        (_filter as CkManagedSkImageFilterConvertible).transform;
-    final Matrix4 childMatrix = matrix.multiplied(transform);
-    prerollContext.mutatorsStack.pushTransform(transform);
+    final Matrix4 childMatrix = Matrix4.copy(matrix);
+    childMatrix.translate(_offset.dx, _offset.dy);
+    prerollContext.mutatorsStack
+        .pushTransform(Matrix4.translationValues(_offset.dx, _offset.dy, 0.0));
     final ui.Rect childPaintBounds =
         prerollChildren(prerollContext, childMatrix);
     (_filter as CkManagedSkImageFilterConvertible)

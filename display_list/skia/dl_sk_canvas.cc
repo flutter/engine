@@ -16,9 +16,10 @@ namespace flutter {
 
 class SkOptionalPaint {
  public:
+  // SkOptionalPaint is only valid for ops that do not use the ColorSource
   explicit SkOptionalPaint(const DlPaint* dl_paint) {
     if (dl_paint && !dl_paint->isDefault()) {
-      sk_paint_ = ToSk(*dl_paint);
+      sk_paint_ = ToNonShaderSk(*dl_paint);
       ptr_ = &sk_paint_;
     } else {
       ptr_ = nullptr;
@@ -187,13 +188,13 @@ void DlSkCanvasAdapter::DrawPaint(const DlPaint& paint) {
 }
 
 void DlSkCanvasAdapter::DrawColor(DlColor color, DlBlendMode mode) {
-  delegate_->drawColor(color, ToSk(mode));
+  delegate_->drawColor(ToSk(color), ToSk(mode));
 }
 
 void DlSkCanvasAdapter::DrawLine(const SkPoint& p0,
                                  const SkPoint& p1,
                                  const DlPaint& paint) {
-  delegate_->drawLine(p0, p1, ToSk(paint, true));
+  delegate_->drawLine(p0, p1, ToStrokedSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawRect(const SkRect& rect, const DlPaint& paint) {
@@ -236,7 +237,7 @@ void DlSkCanvasAdapter::DrawPoints(PointMode mode,
                                    uint32_t count,
                                    const SkPoint pts[],
                                    const DlPaint& paint) {
-  delegate_->drawPoints(ToSk(mode), count, pts, ToSk(paint, true));
+  delegate_->drawPoints(ToSk(mode), count, pts, ToStrokedSk(paint));
 }
 
 void DlSkCanvasAdapter::DrawVertices(const DlVertices* vertices,
@@ -323,6 +324,14 @@ void DlSkCanvasAdapter::DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                                      SkScalar y,
                                      const DlPaint& paint) {
   delegate_->drawTextBlob(blob, x, y, ToSk(paint));
+}
+
+void DlSkCanvasAdapter::DrawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y,
+    const DlPaint& paint) {
+  FML_CHECK(false);
 }
 
 void DlSkCanvasAdapter::DrawShadow(const SkPath& path,

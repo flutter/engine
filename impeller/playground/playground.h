@@ -2,19 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_
 
 #include <chrono>
 #include <memory>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/status.h"
 #include "flutter/fml/time/time_delta.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
-#include "impeller/image/compressed_image.h"
-#include "impeller/image/decompressed_image.h"
+#include "impeller/playground/image/compressed_image.h"
+#include "impeller/playground/image/decompressed_image.h"
 #include "impeller/playground/switches.h"
+#include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
@@ -28,6 +32,19 @@ enum class PlaygroundBackend {
   kVulkan,
 };
 
+constexpr inline RuntimeStageBackend PlaygroundBackendToRuntimeStageBackend(
+    PlaygroundBackend backend) {
+  switch (backend) {
+    case PlaygroundBackend::kMetal:
+      return RuntimeStageBackend::kMetal;
+    case PlaygroundBackend::kOpenGLES:
+      return RuntimeStageBackend::kOpenGLES;
+    case PlaygroundBackend::kVulkan:
+      return RuntimeStageBackend::kVulkan;
+  }
+  FML_UNREACHABLE();
+}
+
 std::string PlaygroundBackendToString(PlaygroundBackend backend);
 
 class Playground {
@@ -40,7 +57,8 @@ class Playground {
 
   static bool ShouldOpenNewPlaygrounds();
 
-  void SetupContext(PlaygroundBackend backend);
+  void SetupContext(PlaygroundBackend backend,
+                    const PlaygroundSwitches& switches);
 
   void SetupWindow();
 
@@ -57,6 +75,8 @@ class Playground {
   Scalar GetSecondsElapsed() const;
 
   std::shared_ptr<Context> GetContext() const;
+
+  std::shared_ptr<Context> MakeContext() const;
 
   bool OpenPlaygroundHere(const Renderer::RenderCallback& render_callback);
 
@@ -87,16 +107,22 @@ class Playground {
 
   virtual std::string GetWindowTitle() const = 0;
 
+  [[nodiscard]] fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities);
+
+  /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.
+  /// Returns true if `OpenPlaygroundHere` will actually render anything.
+  bool WillRenderSomething() const;
+
  protected:
   const PlaygroundSwitches switches_;
 
   virtual bool ShouldKeepRendering() const;
 
- private:
-  struct GLFWInitializer;
+  void SetWindowSize(ISize size);
 
+ private:
   fml::TimeDelta start_time_;
-  std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
   std::shared_ptr<Context> context_;
   std::unique_ptr<Renderer> renderer_;
@@ -105,9 +131,11 @@ class Playground {
 
   void SetCursorPosition(Point pos);
 
-  void SetWindowSize(ISize size);
+  Playground(const Playground&) = delete;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Playground);
+  Playground& operator=(const Playground&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_H_

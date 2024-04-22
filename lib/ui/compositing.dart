@@ -80,6 +80,9 @@ base class _NativeScene extends NativeFieldWrapperClass1 implements Scene {
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Scene::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'Scene';
 }
 
 // Lightweight wrapper of a native layer object.
@@ -574,7 +577,6 @@ abstract class SceneBuilder {
 
 base class _NativeSceneBuilder extends NativeFieldWrapperClass1 implements SceneBuilder {
   /// Creates an empty [SceneBuilder] object.
-  @pragma('vm:entry-point')
   _NativeSceneBuilder() {
     _constructor();
   }
@@ -952,4 +954,7 @@ base class _NativeSceneBuilder extends NativeFieldWrapperClass1 implements Scene
 
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SceneBuilder::build')
   external void _build(Scene outScene);
+
+  @override
+  String toString() => 'SceneBuilder';
 }

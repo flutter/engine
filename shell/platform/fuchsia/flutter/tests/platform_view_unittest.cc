@@ -45,15 +45,18 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   flutter::DlCanvas* GetRootCanvas() override { return nullptr; }
 
   void CancelFrame() override {}
-  void BeginFrame(
-      SkISize frame_size,
-      GrDirectContext* context,
-      double device_pixel_ratio,
-      fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+  void BeginFrame(GrDirectContext* context,
+                  const fml::RefPtr<fml::RasterThreadMerger>&
+                      raster_thread_merger) override {}
 
-  void SubmitFrame(GrDirectContext* context,
-                   const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override {}
+  void PrepareFlutterView(SkISize frame_size,
+                          double device_pixel_ratio) override {}
+
+  void SubmitFlutterView(
+      int64_t flutter_view_id,
+      GrDirectContext* context,
+      const std::shared_ptr<impeller::AiksContext>& aiks_context,
+      std::unique_ptr<flutter::SurfaceFrame> frame) override {}
 
   void PrerollCompositeEmbeddedView(
       int64_t view_id,
@@ -84,6 +87,13 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   void OnPlatformViewDestroyed() {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewScheduleFrame() {}
+  // |flutter::PlatformView::Delegate|
+  void OnPlatformViewAddView(int64_t view_id,
+                             const flutter::ViewportMetrics& viewport_metrics,
+                             AddViewCallback callback) override {}
+  // |flutter::PlatformView::Delegate|
+  void OnPlatformViewRemoveView(int64_t view_id,
+                                RemoveViewCallback callback) override {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {}
   // |flutter::PlatformView::Delegate|
@@ -176,8 +186,8 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
 
 class MockResponse : public flutter::PlatformMessageResponse {
  public:
-  MOCK_METHOD1(Complete, void(std::unique_ptr<fml::Mapping> data));
-  MOCK_METHOD0(CompleteEmpty, void());
+  MOCK_METHOD(void, Complete, (std::unique_ptr<fml::Mapping> data), (override));
+  MOCK_METHOD(void, CompleteEmpty, (), (override));
 };
 
 class TestPlatformMessageResponse : public flutter::PlatformMessageResponse {
@@ -800,14 +810,10 @@ TEST_F(PlatformViewTests, CreateViewTest) {
 
   // JSON for the message to be passed into the PlatformView.
   std::ostringstream create_view_message;
-  create_view_message << "{"
-                      << "  \"method\":\"View.create\","
-                      << "  \"args\":{"
-                      << "    \"viewId\":" << view_id << ","
-                      << "    \"hitTestable\":true,"
-                      << "    \"focusable\":true"
-                      << "  }"
-                      << "}";
+  create_view_message << "{" << "  \"method\":\"View.create\","
+                      << "  \"args\":{" << "    \"viewId\":" << view_id << ","
+                      << "    \"hitTestable\":true," << "    \"focusable\":true"
+                      << "  }" << "}";
 
   std::string create_view_call = create_view_message.str();
   std::unique_ptr<flutter::PlatformMessage> message =
@@ -825,11 +831,9 @@ TEST_F(PlatformViewTests, CreateViewTest) {
   // Platform view forwards the 'View.viewConnected' message on the
   // 'flutter/platform_views' channel when a view gets created.
   std::ostringstream view_connected_expected_out;
-  view_connected_expected_out << "{"
-                              << "\"method\":\"View.viewConnected\","
-                              << "\"args\":{"
-                              << "  \"viewId\":" << view_id << "  }"
-                              << "}";
+  view_connected_expected_out << "{" << "\"method\":\"View.viewConnected\","
+                              << "\"args\":{" << "  \"viewId\":" << view_id
+                              << "  }" << "}";
 
   ASSERT_NE(delegate.message(), nullptr);
   EXPECT_EQ(view_connected_expected_out.str(),
@@ -999,14 +1003,10 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
   EXPECT_TRUE(base_view);
 
   std::ostringstream create_message;
-  create_message << "{"
-                 << "    \"method\":\"View.create\","
-                 << "    \"args\": {"
-                 << "       \"viewId\":" << view_id << ","
+  create_message << "{" << "    \"method\":\"View.create\","
+                 << "    \"args\": {" << "       \"viewId\":" << view_id << ","
                  << "       \"hitTestable\":true,"
-                 << "       \"focusable\":true"
-                 << "    }"
-                 << "}";
+                 << "       \"focusable\":true" << "    }" << "}";
 
   auto create_response = FakePlatformMessageResponse::Create();
   base_view->HandlePlatformMessage(create_response->WithMessage(
@@ -1017,11 +1017,9 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
 
   // JSON for the message to be passed into the PlatformView.
   std::ostringstream dispose_message;
-  dispose_message << "{"
-                  << "    \"method\":\"View.dispose\","
-                  << "    \"args\": {"
-                  << "       \"viewId\":" << view_id << "    }"
-                  << "}";
+  dispose_message << "{" << "    \"method\":\"View.dispose\","
+                  << "    \"args\": {" << "       \"viewId\":" << view_id
+                  << "    }" << "}";
 
   std::string dispose_view_call = dispose_message.str();
   std::unique_ptr<flutter::PlatformMessage> message =
@@ -1039,11 +1037,9 @@ TEST_F(PlatformViewTests, DestroyViewTest) {
   // Platform view forwards the 'View.viewDisconnected' message on the
   // 'flutter/platform_views' channel when a view gets destroyed.
   std::ostringstream view_disconnected_expected_out;
-  view_disconnected_expected_out << "{"
-                                 << "\"method\":\"View.viewDisconnected\","
-                                 << "\"args\":{"
-                                 << "  \"viewId\":" << view_id << "  }"
-                                 << "}";
+  view_disconnected_expected_out
+      << "{" << "\"method\":\"View.viewDisconnected\"," << "\"args\":{"
+      << "  \"viewId\":" << view_id << "  }" << "}";
 
   ASSERT_NE(delegate.message(), nullptr);
   EXPECT_EQ(view_disconnected_expected_out.str(),
@@ -1152,14 +1148,10 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
   uint64_t view_id = 42;
 
   std::ostringstream create_message;
-  create_message << "{"
-                 << "    \"method\":\"View.create\","
-                 << "    \"args\": {"
-                 << "       \"viewId\":" << view_id << ","
+  create_message << "{" << "    \"method\":\"View.create\","
+                 << "    \"args\": {" << "       \"viewId\":" << view_id << ","
                  << "       \"hitTestable\":true,"
-                 << "       \"focusable\":true"
-                 << "    }"
-                 << "}";
+                 << "       \"focusable\":true" << "    }" << "}";
 
   // Dispatch the plaform message request.
   auto create_response = FakePlatformMessageResponse::Create();
@@ -1170,11 +1162,9 @@ TEST_F(PlatformViewTests, RequestFocusTest) {
 
   // JSON for the message to be passed into the PlatformView.
   std::ostringstream focus_message;
-  focus_message << "{"
-                << "    \"method\":\"View.focus.requestById\","
-                << "    \"args\": {"
-                << "       \"viewId\":" << view_id << "    }"
-                << "}";
+  focus_message << "{" << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {" << "       \"viewId\":" << view_id
+                << "    }" << "}";
 
   // Dispatch the plaform message request.
   auto focus_response = FakePlatformMessageResponse::Create();
@@ -1225,11 +1215,9 @@ TEST_F(PlatformViewTests, RequestFocusNeverCreatedTest) {
   uint64_t view_id = 42;
 
   std::ostringstream focus_message;
-  focus_message << "{"
-                << "    \"method\":\"View.focus.requestById\","
-                << "    \"args\": {"
-                << "       \"viewId\":" << view_id << "    }"
-                << "}";
+  focus_message << "{" << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {" << "       \"viewId\":" << view_id
+                << "    }" << "}";
 
   // Dispatch the plaform message request.
   auto focus_response = FakePlatformMessageResponse::Create();
@@ -1291,14 +1279,10 @@ TEST_F(PlatformViewTests, RequestFocusDisposedTest) {
 
   // Create a new view
   std::ostringstream create_message;
-  create_message << "{"
-                 << "    \"method\":\"View.create\","
-                 << "    \"args\": {"
-                 << "       \"viewId\":" << view_id << ","
+  create_message << "{" << "    \"method\":\"View.create\","
+                 << "    \"args\": {" << "       \"viewId\":" << view_id << ","
                  << "       \"hitTestable\":true,"
-                 << "       \"focusable\":true"
-                 << "    }"
-                 << "}";
+                 << "       \"focusable\":true" << "    }" << "}";
 
   auto create_response = FakePlatformMessageResponse::Create();
   base_view->HandlePlatformMessage(create_response->WithMessage(
@@ -1308,11 +1292,9 @@ TEST_F(PlatformViewTests, RequestFocusDisposedTest) {
   EXPECT_FALSE(destroy_view_called);
   // Dispose of the view
   std::ostringstream dispose_message;
-  dispose_message << "{"
-                  << "    \"method\":\"View.dispose\","
-                  << "    \"args\": {"
-                  << "       \"viewId\":" << view_id << "    }"
-                  << "}";
+  dispose_message << "{" << "    \"method\":\"View.dispose\","
+                  << "    \"args\": {" << "       \"viewId\":" << view_id
+                  << "    }" << "}";
 
   auto dispose_response = FakePlatformMessageResponse::Create();
   base_view->HandlePlatformMessage(dispose_response->WithMessage(
@@ -1322,11 +1304,9 @@ TEST_F(PlatformViewTests, RequestFocusDisposedTest) {
 
   // Request focus on newly disposed view
   std::ostringstream focus_message;
-  focus_message << "{"
-                << "    \"method\":\"View.focus.requestById\","
-                << "    \"args\": {"
-                << "       \"viewId\":" << view_id << "    }"
-                << "}";
+  focus_message << "{" << "    \"method\":\"View.focus.requestById\","
+                << "    \"args\": {" << "       \"viewId\":" << view_id
+                << "    }" << "}";
 
   auto focus_response = FakePlatformMessageResponse::Create();
   base_view->HandlePlatformMessage(focus_response->WithMessage(
@@ -1465,13 +1445,11 @@ TEST_F(PlatformViewTests, OnShaderWarmup) {
 
   // Create initial view for testing.
   std::ostringstream warmup_shaders_ostream;
-  warmup_shaders_ostream << "{"
-                         << "  \"method\":\"WarmupSkps\","
+  warmup_shaders_ostream << "{" << "  \"method\":\"WarmupSkps\","
                          << "  \"args\":{"
                          << "    \"shaders\":" << shaders_array_string << ","
                          << "    \"width\":" << width << ","
-                         << "    \"height\":" << height << "  }"
-                         << "}\n";
+                         << "    \"height\":" << height << "  }" << "}\n";
   std::string warmup_shaders_string = warmup_shaders_ostream.str();
 
   fml::RefPtr<TestPlatformMessageResponse> response(

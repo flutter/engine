@@ -18,18 +18,22 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
+#include "impeller/typographer/text_frame.h"
+
 namespace flutter {
 
-// The primary class used to express rendering operations in the
-// DisplayList ecosystem. This class is an API-only virtual class and
-// can be used to talk to a DisplayListBuilder to record a series of
-// rendering operations, or it could be the public facing API of an
-// adapter that forwards the calls to another rendering module, like
-// Skia.
-//
-// Developers familiar with Skia's SkCanvas API will be immediately
-// familiar with the methods below as they follow that API closely
-// but with DisplayList objects and values used as data instead.
+//------------------------------------------------------------------------------
+/// @brief    Developer-facing API for rendering anything *within* the engine.
+///
+/// |DlCanvas| should be used to render anything in the framework classes (i.e.
+/// `lib/ui`), flow and flow layers, embedders, shell, and elsewhere.
+///
+/// The only state carried by implementations of this interface are the clip
+/// and transform which are saved and restored by the |save|, |saveLayer|, and
+/// |restore| calls.
+///
+/// @note      The interface resembles closely the familiar |SkCanvas| interface
+///            used throughout the engine.
 class DlCanvas {
  public:
   enum class ClipOp {
@@ -81,8 +85,8 @@ class DlCanvas {
   virtual void TransformReset() = 0;
   virtual void Transform(const SkMatrix* matrix) = 0;
   virtual void Transform(const SkM44* matrix44) = 0;
-  virtual void Transform(const SkMatrix& matrix) { Transform(&matrix); }
-  virtual void Transform(const SkM44& matrix44) { Transform(&matrix44); }
+  void Transform(const SkMatrix& matrix) { Transform(&matrix); }
+  void Transform(const SkM44& matrix44) { Transform(&matrix44); }
   virtual void SetTransform(const SkMatrix* matrix) = 0;
   virtual void SetTransform(const SkM44* matrix44) = 0;
   virtual void SetTransform(const SkMatrix& matrix) { SetTransform(&matrix); }
@@ -150,7 +154,7 @@ class DlCanvas {
   virtual void DrawVertices(const DlVertices* vertices,
                             DlBlendMode mode,
                             const DlPaint& paint) = 0;
-  void DrawVertices(const std::shared_ptr<const DlVertices> vertices,
+  void DrawVertices(const std::shared_ptr<const DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) {
     DrawVertices(vertices.get(), mode, paint);
@@ -175,12 +179,11 @@ class DlCanvas {
       SrcRectConstraint constraint = SrcRectConstraint::kFast) {
     DrawImageRect(image, SkRect::Make(src), dst, sampling, paint, constraint);
   }
-  virtual void DrawImageRect(
-      const sk_sp<DlImage>& image,
-      const SkRect& dst,
-      DlImageSampling sampling,
-      const DlPaint* paint = nullptr,
-      SrcRectConstraint constraint = SrcRectConstraint::kFast) {
+  void DrawImageRect(const sk_sp<DlImage>& image,
+                     const SkRect& dst,
+                     DlImageSampling sampling,
+                     const DlPaint* paint = nullptr,
+                     SrcRectConstraint constraint = SrcRectConstraint::kFast) {
     DrawImageRect(image, image->bounds(), dst, sampling, paint, constraint);
   }
   virtual void DrawImageNine(const sk_sp<DlImage>& image,
@@ -199,6 +202,13 @@ class DlCanvas {
                          const DlPaint* paint = nullptr) = 0;
   virtual void DrawDisplayList(const sk_sp<DisplayList> display_list,
                                SkScalar opacity = SK_Scalar1) = 0;
+
+  virtual void DrawTextFrame(
+      const std::shared_ptr<impeller::TextFrame>& text_frame,
+      SkScalar x,
+      SkScalar y,
+      const DlPaint& paint) = 0;
+
   virtual void DrawTextBlob(const sk_sp<SkTextBlob>& blob,
                             SkScalar x,
                             SkScalar y,

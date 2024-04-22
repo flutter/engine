@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/profiling/sampling_profiler.h"
+#include <thread>
+
 #include "flutter/fml/message_loop_impl.h"
 #include "flutter/fml/thread.h"
+#include "flutter/shell/profiling/sampling_profiler.h"
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 
@@ -18,13 +20,17 @@ class MockTaskRunner : public fml::TaskRunner {
   inline static RefPtr<MockTaskRunner> Create() {
     return AdoptRef(new MockTaskRunner());
   }
-  MOCK_METHOD1(PostTask, void(const fml::closure& task));
-  MOCK_METHOD2(PostTaskForTime,
-               void(const fml::closure& task, fml::TimePoint target_time));
-  MOCK_METHOD2(PostDelayedTask,
-               void(const fml::closure& task, fml::TimeDelta delay));
-  MOCK_METHOD0(RunsTasksOnCurrentThread, bool());
-  MOCK_METHOD0(GetTaskQueueId, TaskQueueId());
+  MOCK_METHOD(void, PostTask, (const fml::closure& task), (override));
+  MOCK_METHOD(void,
+              PostTaskForTime,
+              (const fml::closure& task, fml::TimePoint target_time),
+              (override));
+  MOCK_METHOD(void,
+              PostDelayedTask,
+              (const fml::closure& task, fml::TimeDelta delay),
+              (override));
+  MOCK_METHOD(bool, RunsTasksOnCurrentThread, (), (override));
+  MOCK_METHOD(TaskQueueId, GetTaskQueueId, (), (override));
 
  private:
   MockTaskRunner() : TaskRunner(fml::RefPtr<MessageLoopImpl>()) {}

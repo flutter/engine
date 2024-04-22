@@ -55,10 +55,16 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
     return nullptr;
   }
 
+  if (desc.mip_count > desc.size.MipCount()) {
+    VALIDATION_LOG << "Requested mip_count " << desc.mip_count
+                   << " exceeds maximum supported for size " << desc.size;
+    TextureDescriptor corrected_desc = desc;
+    corrected_desc.mip_count = desc.size.MipCount();
+    return OnCreateTexture(corrected_desc);
+  }
+
   return OnCreateTexture(desc);
 }
-
-void Allocator::DidAcquireSurfaceFrame() {}
 
 uint16_t Allocator::MinimumBytesPerRow(PixelFormat format) const {
   return BytesPerPixelForPixelFormat(format);

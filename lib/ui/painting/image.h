@@ -29,6 +29,8 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
     return fml::MakeRefCounted<CanvasImage>();
   }
 
+  Dart_Handle CreateOuterWrapping();
+
   int width() { return image_ ? image_->width() : 0; }
 
   int height() { return image_ ? image_->height() : 0; }
@@ -39,7 +41,7 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
 
   sk_sp<DlImage> image() const { return image_; }
 
-  void set_image(sk_sp<DlImage> image) {
+  void set_image(const sk_sp<DlImage>& image) {
     FML_DCHECK(image->isUIThreadSafe());
     image_ = image;
   }

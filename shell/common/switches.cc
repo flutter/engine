@@ -17,7 +17,7 @@
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
 
-#undef SHELL_COMMON_SWITCHES_H_
+#undef FLUTTER_SHELL_COMMON_SWITCHES_H_
 
 struct SwitchDesc {
   flutter::Switch sw;
@@ -62,9 +62,8 @@ static const std::string kAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
-    "--null_assertions",
-    "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
+    "--enable-asserts",
 };
 // clang-format on
 
@@ -78,12 +77,11 @@ static const std::string kAllowedDartFlags[] = {
 // of the engine's own symbols on some older versions of Android.
 #if FML_OS_ANDROID
 extern uint8_t _binary_icudtl_dat_start[];
-extern uint8_t _binary_icudtl_dat_end[];
+extern size_t _binary_icudtl_dat_size;
 
 static std::unique_ptr<fml::Mapping> GetICUStaticMapping() {
-  return std::make_unique<fml::NonOwnedMapping>(
-      _binary_icudtl_dat_start,
-      _binary_icudtl_dat_end - _binary_icudtl_dat_start);
+  return std::make_unique<fml::NonOwnedMapping>(_binary_icudtl_dat_start,
+                                                _binary_icudtl_dat_size);
 }
 #endif
 
@@ -354,6 +352,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.trace_systrace =
       command_line.HasOption(FlagForSwitch(Switch::TraceSystrace));
 
+  command_line.GetOptionValue(FlagForSwitch(Switch::TraceToFile),
+                              &settings.trace_to_file);
+
   settings.skia_deterministic_rendering_on_cpu =
       command_line.HasOption(FlagForSwitch(Switch::SkiaDeterministicRendering));
 
@@ -457,13 +458,17 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     if (command_line.GetOptionValue(FlagForSwitch(Switch::ImpellerBackend),
                                     &impeller_backend_value)) {
       if (!impeller_backend_value.empty()) {
-        settings.impeller_backend = impeller_backend_value;
+        settings.requested_rendering_backend = impeller_backend_value;
       }
     }
   }
 
   settings.enable_vulkan_validation =
       command_line.HasOption(FlagForSwitch(Switch::EnableVulkanValidation));
+  settings.enable_opengl_gpu_tracing =
+      command_line.HasOption(FlagForSwitch(Switch::EnableOpenGLGPUTracing));
+  settings.enable_vulkan_gpu_tracing =
+      command_line.HasOption(FlagForSwitch(Switch::EnableVulkanGPUTracing));
 
   settings.enable_embedder_api =
       command_line.HasOption(FlagForSwitch(Switch::EnableEmbedderAPI));
@@ -476,7 +481,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                                   &all_dart_flags)) {
     // Assume that individual flags are comma separated.
     std::vector<std::string> flags = ParseCommaDelimited(all_dart_flags);
-    for (auto flag : flags) {
+    for (const auto& flag : flags) {
       if (!IsAllowedDartVMFlag(flag)) {
         FML_LOG(FATAL) << "Encountered disallowed Dart VM flag: " << flag;
       }
@@ -535,6 +540,9 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
                       << "' (expected 0, 1, 2, 4, 8, or 16).";
     }
   }
+
+  settings.enable_platform_isolates =
+      command_line.HasOption(FlagForSwitch(Switch::EnablePlatformIsolates));
 
   return settings;
 }

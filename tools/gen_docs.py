@@ -32,19 +32,15 @@ SECTIONS = {
             ]
         ),
     'linux':
-        Section(
-            'Linux Embedder', [
-                'shell/platform/linux',
-                'shell/platform/common',
-            ]
-        ),
+        Section('Linux Embedder', [
+            'shell/platform/linux',
+            'shell/platform/common',
+        ]),
     'windows':
-        Section(
-            'Windows Embedder', [
-                'shell/platform/windows',
-                'shell/platform/common',
-            ]
-        ),
+        Section('Windows Embedder', [
+            'shell/platform/windows',
+            'shell/platform/common',
+        ]),
     'impeller':
         Section('Impeller', [
             'impeller',
@@ -56,10 +52,8 @@ def generate_doxyfile(section, output_dir, log_file, doxy_file):
   doxyfile = open('docs/Doxyfile.template', 'r').read()
   doxyfile = doxyfile.replace('@@OUTPUT_DIRECTORY@@', output_dir)
   doxyfile = doxyfile.replace('@@LOG_FILE@@', log_file)
-  doxyfile = doxyfile.replace('@@INPUT_DIRECTORIES@@', ' '.join(section.inputs))
-  doxyfile = doxyfile.replace(
-      '@@PROJECT_NAME@@', 'Flutter {}'.format(section.title)
-  )
+  doxyfile = doxyfile.replace('@@INPUT_DIRECTORIES@@', '"{}"'.format('" "'.join(section.inputs)))
+  doxyfile = doxyfile.replace('@@PROJECT_NAME@@', 'Flutter {}'.format(section.title))
   doxyfile = doxyfile.replace(
       '@@DOCSET_FEEDNAME@@', 'Flutter {} Documentation'.format(section.title)
   )
@@ -73,6 +67,8 @@ def process_section(name, section, destination):
   zip_file = os.path.join(destination, '{}-docs.zip'.format(name))
   doxy_file = os.path.join(output_dir, 'Doxyfile')
   generate_doxyfile(section, output_dir, log_file, doxy_file)
+  # Update the Doxyfile format to the latest format.
+  subprocess.call(['doxygen', '-u'], cwd=output_dir)
   subprocess.call(['doxygen', doxy_file])
   html_dir = os.path.join(output_dir, 'html')
   with zipfile.ZipFile(zip_file, 'w') as zip:
@@ -96,7 +92,7 @@ def generate_docs(argv):
   destination = argv[1]
   script_path = os.path.realpath(__file__)
   src_path = os.path.dirname(os.path.dirname(os.path.dirname(script_path)))
-  # Run commands from the flutter root dir.
+  # Run commands from the Flutter root dir.
   os.chdir(os.path.join(src_path, 'flutter'))
   # If the argument isn't an absolute path, assume that it is relative to the src dir.
   if not os.path.isabs(destination):

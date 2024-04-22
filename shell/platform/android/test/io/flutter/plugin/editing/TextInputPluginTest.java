@@ -1,6 +1,8 @@
 package io.flutter.plugin.editing;
 
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalMatchers.aryEq;
@@ -118,6 +120,8 @@ public class TextInputPluginTest {
         (ByteBuffer) encodedMethodCall.flip(), mock(BinaryMessenger.BinaryReply.class));
   }
 
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
   @Test
   public void textInputPlugin_RequestsReattachOnCreation() throws JSONException {
     // Initialize a general TextInputPlugin.
@@ -992,6 +996,7 @@ public class TextInputPluginTest {
   // need the restart.
   // Update: many other keyboards need this too:
   // https://github.com/flutter/flutter/issues/78827
+  @SuppressWarnings("deprecation") // InputMethodSubtype
   @Test
   public void setTextInputEditingState_restartsIMEOnlyWhenFrameworkChangesComposingRegion() {
     // Initialize a TextInputPlugin that needs to be always restarted.
@@ -1126,6 +1131,41 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void clearTextInputClient_alwaysRestartsImm() {
+    // Initialize a general TextInputPlugin.
+    InputMethodSubtype inputMethodSubtype = mock(InputMethodSubtype.class);
+    TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
+    testImm.setCurrentInputMethodSubtype(inputMethodSubtype);
+    View testView = new View(ctx);
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            true,
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null));
+    // There's a pending restart since we initialized the text input client. Flush that now.
+    textInputPlugin.setTextInputEditingState(
+        testView, new TextInputChannel.TextEditState("", 0, 0, -1, -1));
+    assertEquals(1, testImm.getRestartCount(testView));
+
+    // A restart is always forced when calling clearTextInputClient().
+    textInputPlugin.clearTextInputClient();
+    assertEquals(2, testImm.getRestartCount(testView));
+  }
+
+  @Test
   public void destroy_clearTextInputMethodHandler() {
     View testView = new View(ctx);
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
@@ -1136,8 +1176,10 @@ public class TextInputPluginTest {
     verify(textInputChannel, times(1)).setTextInputMethodHandler(isNull());
   }
 
-  @Test
-  public void inputConnection_createsActionFromEnter() throws JSONException {
+  @SuppressWarnings("deprecation")
+  // DartExecutor.send is deprecated.
+  private void verifyInputConnection(TextInputChannel.TextInputType textInputType)
+      throws JSONException {
     TestImm testImm = Shadow.extract(ctx.getSystemService(Context.INPUT_METHOD_SERVICE));
     FlutterJNI mockFlutterJni = mock(FlutterJNI.class);
     View testView = new View(ctx);
@@ -1154,7 +1196,7 @@ public class TextInputPluginTest {
             true,
             false,
             TextInputChannel.TextCapitalization.NONE,
-            new TextInputChannel.InputType(TextInputChannel.TextInputType.TEXT, false, false),
+            new TextInputChannel.InputType(textInputType, false, false),
             null,
             null,
             null,
@@ -1193,10 +1235,18 @@ public class TextInputPluginTest {
   }
 
   @Test
+  public void inputConnection_createsActionFromEnter() throws JSONException {
+    verifyInputConnection(TextInputChannel.TextInputType.TEXT);
+  }
+
+  @Test
+  public void inputConnection_respondsToKeyEvents_textInputTypeNone() throws JSONException {
+    verifyInputConnection(TextInputChannel.TextInputType.NONE);
+  }
+
+  @SuppressWarnings("deprecation") // InputMethodSubtype
+  @Test
   public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
     ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
@@ -1269,7 +1319,7 @@ public class TextInputPluginTest {
     InputConnection connection =
         textInputPlugin.createInputConnection(
             testView, mock(KeyboardManager.class), new EditorInfo());
-    assertEquals(connection, null);
+    assertNotNull(connection);
   }
 
   @Test
@@ -1300,10 +1350,46 @@ public class TextInputPluginTest {
     assertEquals(testImm.isSoftInputVisible(), false);
   }
 
+  @Test
+  public void inputConnection_textInputTypeMultilineAndSuggestionsDisabled() {
+    // Regression test for https://github.com/flutter/flutter/issues/71679.
+    View testView = new View(ctx);
+    DartExecutor dartExecutor = mock(DartExecutor.class);
+    TextInputChannel textInputChannel = new TextInputChannel(dartExecutor);
+    TextInputPlugin textInputPlugin =
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    textInputPlugin.setTextInputClient(
+        0,
+        new TextInputChannel.Configuration(
+            false,
+            false,
+            false, // Disable suggestions.
+            true,
+            false,
+            TextInputChannel.TextCapitalization.NONE,
+            new TextInputChannel.InputType(TextInputChannel.TextInputType.MULTILINE, false, false),
+            null,
+            null,
+            null,
+            null,
+            null));
+
+    EditorInfo editorInfo = new EditorInfo();
+    InputConnection connection =
+        textInputPlugin.createInputConnection(testView, mock(KeyboardManager.class), editorInfo);
+
+    assertEquals(
+        editorInfo.inputType,
+        InputType.TYPE_CLASS_TEXT
+            | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            | InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+  }
+
   // -------- Start: Autofill Tests -------
   @Test
   public void autofill_enabledByDefault() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1363,7 +1449,7 @@ public class TextInputPluginTest {
 
   @Test
   public void autofill_canBeDisabled() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1400,7 +1486,7 @@ public class TextInputPluginTest {
 
   @Test
   public void autofill_hintText() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1441,13 +1527,14 @@ public class TextInputPluginTest {
     verify(children[0]).setHint("placeholder");
   }
 
+  @Config(minSdk = API_LEVELS.API_26)
+  @SuppressWarnings("deprecation")
   @Test
   public void autofill_onProvideVirtualViewStructure() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
-
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1531,13 +1618,15 @@ public class TextInputPluginTest {
     verify(children[1], times(0)).setHint(any());
   }
 
+  @SuppressWarnings("deprecation")
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_onProvideVirtualViewStructure_singular_textfield() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
-
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1582,14 +1671,15 @@ public class TextInputPluginTest {
     verify(children[0]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), gt(0), gt(0));
   }
 
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_testLifeCycle() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
 
     TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1716,14 +1806,16 @@ public class TextInputPluginTest {
     assertEquals("1".hashCode(), testAfm.exitId);
   }
 
+  @Config(minSdk = API_LEVELS.API_26)
+  @SuppressWarnings("deprecation")
   @Test
   public void autofill_testAutofillUpdatesTheFramework() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
 
     TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1812,9 +1904,10 @@ public class TextInputPluginTest {
     assertEquals(editState.text, "unfocused field");
   }
 
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_doesNotCrashAfterClearClientCall() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1860,14 +1953,15 @@ public class TextInputPluginTest {
         .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
   }
 
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_testSetTextIpnutClientUpdatesSideFields() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
 
     TestAfm testAfm = Shadow.extract(ctx.getSystemService(AutofillManager.class));
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    FlutterView testView = getTestView();
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
@@ -1939,6 +2033,14 @@ public class TextInputPluginTest {
   }
   // -------- End: Autofill Tests -------
 
+  @SuppressWarnings("deprecation")
+  private FlutterView getTestView() {
+    // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
+    return new FlutterView(Robolectric.setupActivity(Activity.class));
+  }
+
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void respondsToInputChannelMessages() {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -1966,6 +2068,8 @@ public class TextInputPluginTest {
     verify(mockHandler, times(1)).finishAutofillContext(false);
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void sendAppPrivateCommand_dataIsEmpty() throws JSONException {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -1995,6 +2099,8 @@ public class TextInputPluginTest {
         .sendAppPrivateCommand(any(View.class), eq("actionCommand"), eq(null));
   }
 
+  @SuppressWarnings("deprecation")
+  // setMessageHandler is deprecated.
   @Test
   public void sendAppPrivateCommand_hasData() throws JSONException {
     ArgumentCaptor<BinaryMessenger.BinaryMessageHandler> binaryMessageHandlerCaptor =
@@ -2027,10 +2133,13 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
+  @TargetApi(API_LEVELS.API_30)
+  @Config(sdk = API_LEVELS.API_30)
+  @SuppressWarnings("deprecation")
+  // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE.
+  // flutter#133074 tracks migration work.
   public void ime_windowInsetsSync_notLaidOutBehindNavigation_excludesNavigationBars() {
-    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    FlutterView testView = spy(getTestView());
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
@@ -2103,10 +2212,13 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
+  @TargetApi(API_LEVELS.API_30)
+  @Config(sdk = API_LEVELS.API_30)
+  @SuppressWarnings("deprecation")
+  // getWindowSystemUiVisibility
+  // flutter#133074 tracks migration work.
   public void ime_windowInsetsSync_laidOutBehindNavigation_includesNavigationBars() {
-    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    FlutterView testView = spy(getTestView());
     when(testView.getWindowSystemUiVisibility())
         .thenReturn(
             View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
@@ -2181,10 +2293,13 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
+  @TargetApi(API_LEVELS.API_30)
+  @Config(sdk = API_LEVELS.API_30)
+  @SuppressWarnings("deprecation")
+  // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE
+  // flutter#133074 tracks migration work.
   public void lastWindowInsets_updatedOnSecondOnProgressCall() {
-    FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
+    FlutterView testView = spy(getTestView());
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
@@ -2259,19 +2374,6 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-  }
-
-  @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
-  public void onConnectionClosed_imeInvisible() {
-    View testView = new View(ctx);
-    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
-    TextInputPlugin textInputPlugin =
-        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
-    ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
-    imeSyncCallback.getImeVisibleListener().onImeVisibleChanged(false);
-    verify(textInputChannel, times(1)).onConnectionClosed(anyInt());
   }
 
   interface EventHandler {
@@ -2380,7 +2482,7 @@ public class TextInputPluginTest {
     }
 
     public void notifyValueChanged(View view, int virtualId, AutofillValue value) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
         return;
       }
       changeVirtualId = virtualId;

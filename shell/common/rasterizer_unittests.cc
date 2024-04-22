@@ -17,6 +17,7 @@
 
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrTypes.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
 
 #include "gmock/gmock.h"
@@ -31,57 +32,97 @@ namespace flutter {
 namespace {
 
 constexpr float kDevicePixelRatio = 2.0f;
+constexpr int64_t kImplicitViewId = 0;
+
+std::vector<std::unique_ptr<LayerTreeTask>> SingleLayerTreeList(
+    int64_t view_id,
+    std::unique_ptr<LayerTree> layer_tree,
+    float pixel_ratio) {
+  std::vector<std::unique_ptr<LayerTreeTask>> tasks;
+  tasks.push_back(std::make_unique<LayerTreeTask>(
+      view_id, std::move(layer_tree), pixel_ratio));
+  return tasks;
+}
 
 class MockDelegate : public Rasterizer::Delegate {
  public:
-  MOCK_METHOD1(OnFrameRasterized, void(const FrameTiming& frame_timing));
-  MOCK_METHOD0(GetFrameBudget, fml::Milliseconds());
-  MOCK_CONST_METHOD0(GetLatestFrameTargetTime, fml::TimePoint());
-  MOCK_CONST_METHOD0(GetTaskRunners, const TaskRunners&());
-  MOCK_CONST_METHOD0(GetParentRasterThreadMerger,
-                     const fml::RefPtr<fml::RasterThreadMerger>());
-  MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
-                     std::shared_ptr<const fml::SyncSwitch>());
-  MOCK_CONST_METHOD0(GetSettings, const Settings&());
+  MOCK_METHOD(void,
+              OnFrameRasterized,
+              (const FrameTiming& frame_timing),
+              (override));
+  MOCK_METHOD(fml::Milliseconds, GetFrameBudget, (), (override));
+  MOCK_METHOD(fml::TimePoint, GetLatestFrameTargetTime, (), (const, override));
+  MOCK_METHOD(const TaskRunners&, GetTaskRunners, (), (const, override));
+  MOCK_METHOD(const fml::RefPtr<fml::RasterThreadMerger>,
+              GetParentRasterThreadMerger,
+              (),
+              (const, override));
+  MOCK_METHOD(std::shared_ptr<const fml::SyncSwitch>,
+              GetIsGpuDisabledSyncSwitch,
+              (),
+              (const, override));
+  MOCK_METHOD(const Settings&, GetSettings, (), (const, override));
+  MOCK_METHOD(bool,
+              ShouldDiscardLayerTree,
+              (int64_t, const flutter::LayerTree&),
+              (override));
 };
 
 class MockSurface : public Surface {
  public:
-  MOCK_METHOD0(IsValid, bool());
-  MOCK_METHOD1(AcquireFrame,
-               std::unique_ptr<SurfaceFrame>(const SkISize& size));
-  MOCK_CONST_METHOD0(GetRootTransformation, SkMatrix());
-  MOCK_METHOD0(GetContext, GrDirectContext*());
-  MOCK_METHOD0(GetExternalViewEmbedder, ExternalViewEmbedder*());
-  MOCK_METHOD0(MakeRenderContextCurrent, std::unique_ptr<GLContextResult>());
-  MOCK_METHOD0(ClearRenderContext, bool());
-  MOCK_CONST_METHOD0(AllowsDrawingWhenGpuDisabled, bool());
+  MOCK_METHOD(bool, IsValid, (), (override));
+  MOCK_METHOD(std::unique_ptr<SurfaceFrame>,
+              AcquireFrame,
+              (const SkISize& size),
+              (override));
+  MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
+  MOCK_METHOD(GrDirectContext*, GetContext, (), (override));
+  MOCK_METHOD(std::unique_ptr<GLContextResult>,
+              MakeRenderContextCurrent,
+              (),
+              (override));
+  MOCK_METHOD(bool, ClearRenderContext, (), (override));
+  MOCK_METHOD(bool, AllowsDrawingWhenGpuDisabled, (), (const, override));
 };
 
 class MockExternalViewEmbedder : public ExternalViewEmbedder {
  public:
-  MOCK_METHOD0(GetRootCanvas, DlCanvas*());
-  MOCK_METHOD0(CancelFrame, void());
-  MOCK_METHOD4(BeginFrame,
-               void(SkISize frame_size,
-                    GrDirectContext* context,
-                    double device_pixel_ratio,
-                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD2(PrerollCompositeEmbeddedView,
-               void(int64_t view_id,
-                    std::unique_ptr<EmbeddedViewParams> params));
-  MOCK_METHOD1(PostPrerollAction,
-               PostPrerollResult(
-                   fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD1(CompositeEmbeddedView, DlCanvas*(int64_t view_id));
-  MOCK_METHOD3(SubmitFrame,
-               void(GrDirectContext* context,
-                    const std::shared_ptr<impeller::AiksContext>& aiks_context,
-                    std::unique_ptr<SurfaceFrame> frame));
-  MOCK_METHOD2(EndFrame,
-               void(bool should_resubmit_frame,
-                    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger));
-  MOCK_METHOD0(SupportsDynamicThreadMerging, bool());
+  MOCK_METHOD(DlCanvas*, GetRootCanvas, (), (override));
+  MOCK_METHOD(void, CancelFrame, (), (override));
+  MOCK_METHOD(
+      void,
+      BeginFrame,
+      (GrDirectContext * context,
+       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
+      (override));
+  MOCK_METHOD(void,
+              PrepareFlutterView,
+              (SkISize frame_size, double device_pixel_ratio),
+              (override));
+  MOCK_METHOD(void,
+              PrerollCompositeEmbeddedView,
+              (int64_t view_id, std::unique_ptr<EmbeddedViewParams> params),
+              (override));
+  MOCK_METHOD(
+      PostPrerollResult,
+      PostPrerollAction,
+      (const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
+      (override));
+  MOCK_METHOD(DlCanvas*, CompositeEmbeddedView, (int64_t view_id), (override));
+  MOCK_METHOD(void,
+              SubmitFlutterView,
+              (int64_t flutter_view_id,
+               GrDirectContext* context,
+               const std::shared_ptr<impeller::AiksContext>& aiks_context,
+               std::unique_ptr<SurfaceFrame> frame),
+              (override));
+  MOCK_METHOD(
+      void,
+      EndFrame,
+      (bool should_resubmit_frame,
+       const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger),
+      (override));
+  MOCK_METHOD(bool, SupportsDynamicThreadMerging, (), (override));
 };
 }  // namespace
 
@@ -111,8 +152,9 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -128,8 +170,9 @@ TEST(RasterizerTest, drawEmptyPipeline) {
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    rasterizer->Draw(pipeline, nullptr);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -140,8 +183,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -163,7 +207,8 @@ TEST(RasterizerTest,
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -173,12 +218,17 @@ TEST(RasterizerTest,
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
   EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
-                         /*device_pixel_ratio=*/2.0,
+              BeginFrame(/*context=*/nullptr,
                          /*raster_thread_merger=*/
                          fml::RefPtr<fml::RasterThreadMerger>(nullptr)))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFrame).Times(1);
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(1);
   EXPECT_CALL(
       *external_view_embedder,
       EndFrame(/*should_resubmit_frame=*/false,
@@ -189,18 +239,19 @@ TEST(RasterizerTest,
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree =
         std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
                                     /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -212,8 +263,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -234,7 +286,8 @@ TEST(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -243,12 +296,16 @@ TEST(
   EXPECT_CALL(*surface, MakeRenderContextCurrent())
       .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
 
-  EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
-                         /*device_pixel_ratio=*/2.0,
-                         /*raster_thread_merger=*/_))
+  EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
+                                                  /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFrame).Times(0);
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(0);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -256,17 +313,18 @@ TEST(
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -278,8 +336,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
@@ -305,7 +364,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -316,28 +376,34 @@ TEST(
   EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
       .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
-                         /*device_pixel_ratio=*/2.0,
-                         /*raster_thread_merger=*/_))
+  EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
+                                                  /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFrame).Times(1);
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(1);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
 
   rasterizer->Setup(std::move(surface));
 
-  auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+  auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
                                                 /*frame_size=*/SkISize());
-  auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), CreateFinishedBuildRecorder(), kDevicePixelRatio);
+  auto layer_tree_item = std::make_unique<FrameItem>(
+      SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                          kDevicePixelRatio),
+      CreateFinishedBuildRecorder());
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
-  auto no_discard = [](int64_t, LayerTree&) { return false; };
-  rasterizer->Draw(pipeline, no_discard);
+  ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+  rasterizer->Draw(pipeline);
 }
 
 TEST(RasterizerTest,
@@ -345,8 +411,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   fml::MessageLoop::EnsureInitializedForCurrentThread();
   TaskRunners task_runners("test",
                            fml::MessageLoop::GetCurrent().GetTaskRunner(),
@@ -372,16 +439,18 @@ TEST(RasterizerTest,
   framebuffer_info.supports_readback = true;
 
   auto surface_frame1 = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   auto surface_frame2 = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, framebuffer_info,
+      /*surface=*/
+      nullptr, framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled())
       .WillRepeatedly(Return(true));
-  // Prepare two frames for Draw() and DrawLastLayerTree().
+  // Prepare two frames for Draw() and DrawLastLayerTrees().
   EXPECT_CALL(*surface, AcquireFrame(SkISize()))
       .WillOnce(Return(ByMove(std::move(surface_frame1))))
       .WillOnce(Return(ByMove(std::move(surface_frame2))));
@@ -390,43 +459,50 @@ TEST(RasterizerTest,
   EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
       .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
-                         /*device_pixel_ratio=*/2.0,
-                         /*raster_thread_merger=*/_))
+  EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
+                                                  /*raster_thread_merger=*/_))
       .Times(2);
-  EXPECT_CALL(*external_view_embedder, SubmitFrame).Times(2);
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
+      .Times(2);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(2);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(2);
 
   rasterizer->Setup(std::move(surface));
 
-  auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+  auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
   auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
                                                 /*frame_size=*/SkISize());
-  auto layer_tree_item = std::make_unique<LayerTreeItem>(
-      std::move(layer_tree), CreateFinishedBuildRecorder(), kDevicePixelRatio);
+  auto layer_tree_item = std::make_unique<FrameItem>(
+      SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                          kDevicePixelRatio),
+      CreateFinishedBuildRecorder());
   PipelineProduceResult result =
       pipeline->Produce().Complete(std::move(layer_tree_item));
   EXPECT_TRUE(result.success);
-  auto no_discard = [](int64_t, LayerTree&) { return false; };
 
-  // The Draw() will respectively call BeginFrame(), SubmitFrame() and
+  // The Draw() will respectively call BeginFrame(), SubmitFlutterView() and
   // EndFrame() one time.
-  rasterizer->Draw(pipeline, no_discard);
+  ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+  rasterizer->Draw(pipeline);
 
-  // The DrawLastLayerTree() will respectively call BeginFrame(), SubmitFrame()
-  // and EndFrame() one more time, totally 2 times.
-  rasterizer->DrawLastLayerTree(CreateFinishedBuildRecorder());
+  // The DrawLastLayerTrees() will respectively call BeginFrame(),
+  // SubmitFlutterView() and EndFrame() one more time, totally 2 times.
+  rasterizer->DrawLastLayerTrees(CreateFinishedBuildRecorder());
 }
 
 TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -451,17 +527,18 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
 
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -471,8 +548,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -482,6 +560,10 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
   EXPECT_CALL(delegate, GetTaskRunners())
       .WillRepeatedly(ReturnRef(task_runners));
+  auto is_gpu_disabled_sync_switch =
+      std::make_shared<const fml::SyncSwitch>(false);
+  ON_CALL(delegate, GetIsGpuDisabledSyncSwitch())
+      .WillByDefault(Return(is_gpu_disabled_sync_switch));
 
   auto rasterizer = std::make_unique<Rasterizer>(delegate);
   auto surface = std::make_unique<NiceMock<MockSurface>>();
@@ -493,10 +575,12 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   rasterizer->SetExternalViewEmbedder(external_view_embedder);
   rasterizer->Setup(std::move(surface));
 
-  EXPECT_CALL(*external_view_embedder,
-              BeginFrame(/*frame_size=*/SkISize(), /*context=*/nullptr,
-                         /*device_pixel_ratio=*/2.0,
-                         /*raster_thread_merger=*/_))
+  EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
+                                                  /*raster_thread_merger=*/_))
+      .Times(0);
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
       .Times(0);
   EXPECT_CALL(
       *external_view_embedder,
@@ -507,19 +591,22 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
 
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     // Always discard the layer tree.
-    auto discard_callback = [](int64_t, LayerTree&) { return true; };
-    RasterStatus status = rasterizer->Draw(pipeline, discard_callback);
-    EXPECT_EQ(status, RasterStatus::kDiscarded);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(true));
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
+    EXPECT_EQ(rasterizer->GetLastDrawStatus(kImplicitViewId),
+              DrawSurfaceStatus::kDiscarded);
     latch.Signal();
   });
   latch.Wait();
@@ -529,8 +616,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -560,10 +648,90 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenPipelineIsEmpty) {
 
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kFailed);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kPipelineEmpty);
+    latch.Signal();
+  });
+  latch.Wait();
+}
+
+TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  ThreadHost thread_host("io.flutter.test." + test_name + ".",
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  NiceMock<MockDelegate> delegate;
+  Settings settings;
+  ON_CALL(delegate, GetSettings()).WillByDefault(ReturnRef(settings));
+  EXPECT_CALL(delegate, GetTaskRunners())
+      .WillRepeatedly(ReturnRef(task_runners));
+  EXPECT_CALL(delegate, OnFrameRasterized(_));
+  auto rasterizer = std::make_unique<Rasterizer>(delegate);
+  auto surface = std::make_unique<NiceMock<MockSurface>>();
+  std::shared_ptr<NiceMock<MockExternalViewEmbedder>> external_view_embedder =
+      std::make_shared<NiceMock<MockExternalViewEmbedder>>();
+  rasterizer->SetExternalViewEmbedder(external_view_embedder);
+  EXPECT_CALL(*external_view_embedder, SupportsDynamicThreadMerging)
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
+  EXPECT_CALL(*surface, AcquireFrame(SkISize())).Times(2);
+  ON_CALL(*surface, AcquireFrame).WillByDefault([](const SkISize& size) {
+    SurfaceFrame::FramebufferInfo framebuffer_info;
+    framebuffer_info.supports_readback = true;
+    return std::make_unique<SurfaceFrame>(
+        /*surface=*/
+        nullptr, framebuffer_info,
+        /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
+        /*frame_size=*/SkISize::Make(800, 600));
+  });
+  EXPECT_CALL(*surface, MakeRenderContextCurrent())
+      .WillOnce(Return(ByMove(std::make_unique<GLContextDefaultResult>(true))));
+
+  EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
+                                                  /*raster_thread_merger=*/_))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/1.5))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/0, _, _, _))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/1, _, _, _))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
+                                                /*raster_thread_merger=*/_))
+      .Times(1);
+
+  rasterizer->Setup(std::move(surface));
+  fml::AutoResetWaitableEvent latch;
+  thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
+    std::vector<std::unique_ptr<LayerTreeTask>> tasks;
+    tasks.push_back(std::make_unique<LayerTreeTask>(
+        0, std::make_unique<LayerTree>(LayerTree::Config(), SkISize()), 1.5));
+    tasks.push_back(std::make_unique<LayerTreeTask>(
+        1, std::make_unique<LayerTree>(LayerTree::Config(), SkISize()), 2.0));
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        std::move(tasks), CreateFinishedBuildRecorder());
+    PipelineProduceResult result =
+        pipeline->Produce().Complete(std::move(layer_tree_item));
+    EXPECT_TRUE(result.success);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -574,8 +742,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -595,7 +764,8 @@ TEST(RasterizerTest,
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -610,17 +780,18 @@ TEST(RasterizerTest,
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
     latch.Signal();
   });
   latch.Wait();
@@ -632,8 +803,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -653,7 +825,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(true));
@@ -668,18 +841,19 @@ TEST(
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kSuccess);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
     latch.Signal();
   });
   latch.Wait();
@@ -691,8 +865,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -712,7 +887,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
@@ -726,18 +902,19 @@ TEST(
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kSuccess);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
     latch.Signal();
   });
   latch.Wait();
@@ -749,8 +926,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -770,7 +948,8 @@ TEST(
   framebuffer_info.supports_readback = true;
 
   auto surface_frame = std::make_unique<SurfaceFrame>(
-      /*surface=*/nullptr, /*framebuffer_info=*/framebuffer_info,
+      /*surface=*/
+      nullptr, /*framebuffer_info=*/framebuffer_info,
       /*submit_callback=*/[](const SurfaceFrame&, DlCanvas*) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   EXPECT_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillOnce(Return(false));
@@ -783,18 +962,19 @@ TEST(
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kDiscarded);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kGpuUnavailable);
     latch.Signal();
   });
   latch.Wait();
@@ -806,8 +986,9 @@ TEST(
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -839,18 +1020,21 @@ TEST(
   rasterizer->Setup(std::move(surface));
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                            kDevicePixelRatio),
+        CreateFinishedBuildRecorder());
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    RasterStatus status = rasterizer->Draw(pipeline, no_discard);
-    EXPECT_EQ(status, RasterStatus::kFailed);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    DrawStatus status = rasterizer->Draw(pipeline);
+    EXPECT_EQ(status, DrawStatus::kDone);
+    EXPECT_EQ(rasterizer->GetLastDrawStatus(kImplicitViewId),
+              DrawSurfaceStatus::kFailed);
     latch.Signal();
   });
   latch.Wait();
@@ -861,8 +1045,9 @@ TEST(RasterizerTest,
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -888,7 +1073,8 @@ TEST(RasterizerTest,
         SurfaceFrame::FramebufferInfo framebuffer_info;
         framebuffer_info.supports_readback = true;
         return std::make_unique<SurfaceFrame>(
-            /*surface=*/nullptr, framebuffer_info,
+            /*surface=*/
+            nullptr, framebuffer_info,
             /*submit_callback=*/
             [](const SurfaceFrame& frame, DlCanvas*) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
@@ -917,22 +1103,23 @@ TEST(RasterizerTest,
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
           /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-      auto layer_tree_item = std::make_unique<LayerTreeItem>(
-          std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]),
-          kDevicePixelRatio);
+      auto layer_tree_item = std::make_unique<FrameItem>(
+          SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                              kDevicePixelRatio),
+          CreateFinishedBuildRecorder(timestamps[i]));
       PipelineProduceResult result =
           pipeline->Produce().Complete(std::move(layer_tree_item));
       EXPECT_TRUE(result.success);
       EXPECT_EQ(result.is_first_item, i == 0);
     }
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
     // Although we only call 'Rasterizer::Draw' once, it will be called twice
     // finally because there are two items in the pipeline.
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
   count_down_latch.Wait();
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
@@ -946,8 +1133,9 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -990,7 +1178,7 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
 
   SkPaint paint;
   sk_surface->getCanvas()->drawPaint(paint);
-  context->flushAndSubmit(true);
+  context->flushAndSubmit(GrSyncCpu::kYes);
 
   EXPECT_EQ(context->getResourceCachePurgeableBytes(), 0ul);
 
@@ -1008,8 +1196,9 @@ TEST(RasterizerTest, TeardownNoSurface) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform |
+                             ThreadHost::Type::kRaster | ThreadHost::Type::kIo |
+                             ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1034,8 +1223,8 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+                             ThreadHost::Type::kIo | ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1088,22 +1277,23 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
           /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-      auto layer_tree_item = std::make_unique<LayerTreeItem>(
-          std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]),
-          kDevicePixelRatio);
+      auto layer_tree_item = std::make_unique<FrameItem>(
+          SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                             kDevicePixelRatio),
+          CreateFinishedBuildRecorder(timestamps[i]));
       PipelineProduceResult result =
           pipeline->Produce().Complete(std::move(layer_tree_item));
       EXPECT_TRUE(result.success);
       EXPECT_EQ(result.is_first_item, i == 0);
     }
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
     // Although we only call 'Rasterizer::Draw' once, it will be called twice
     // finally because there are two items in the pipeline.
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
 
   submit_latch.Wait();
@@ -1122,8 +1312,8 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   ThreadHost thread_host("io.flutter.test." + test_name + ".",
-                         ThreadHost::Type::Platform | ThreadHost::Type::RASTER |
-                             ThreadHost::Type::IO | ThreadHost::Type::UI);
+                         ThreadHost::Type::kPlatform | ThreadHost::Type::kRaster |
+                             ThreadHost::Type::kIo | ThreadHost::Type::kUi);
   TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
                            thread_host.raster_thread->GetTaskRunner(),
                            thread_host.ui_thread->GetTaskRunner(),
@@ -1171,18 +1361,19 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
 
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     rasterizer->Setup(std::move(surface));
-    auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
+    auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
         /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
-    auto layer_tree_item = std::make_unique<LayerTreeItem>(
-        std::move(layer_tree), CreateFinishedBuildRecorder(first_timestamp),
-        kDevicePixelRatio);
+    auto layer_tree_item = std::make_unique<FrameItem>(
+        SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
+                           kDevicePixelRatio),
+        CreateFinishedBuildRecorder(first_timestamp));
     PipelineProduceResult result =
         pipeline->Produce().Complete(std::move(layer_tree_item));
     EXPECT_TRUE(result.success);
     EXPECT_EQ(result.is_first_item, true);
-    auto no_discard = [](int64_t, LayerTree&) { return false; };
-    rasterizer->Draw(pipeline, no_discard);
+    ON_CALL(delegate, ShouldDiscardLayerTree).WillByDefault(Return(false));
+    rasterizer->Draw(pipeline);
   });
 
   submit_latch.Wait();

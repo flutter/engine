@@ -381,7 +381,7 @@ class PointerData {
   final double rotation;
 
   @override
-  String toString() => 'PointerData(x: $physicalX, y: $physicalY)';
+  String toString() => 'PointerData(viewId: $viewId, x: $physicalX, y: $physicalY)';
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
@@ -419,7 +419,8 @@ class PointerData {
              'panDeltaX: $panDeltaX, '
              'panDeltaY: $panDeltaY, '
              'scale: $scale, '
-             'rotation: $rotation'
+             'rotation: $rotation, '
+             'viewId: $viewId'
            ')';
   }
 }

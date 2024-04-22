@@ -19,6 +19,17 @@ Matrix LocalMatrixFilterContents::GetLocalTransform(
   return matrix_;
 }
 
+std::optional<Rect> LocalMatrixFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  auto matrix = matrix_.Basis();
+  if (matrix.GetDeterminant() == 0.0) {
+    return std::nullopt;
+  }
+  auto inverse = matrix.Invert();
+  return output_limit.TransformBounds(inverse);
+}
+
 std::optional<Entity> LocalMatrixFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
@@ -26,9 +37,12 @@ std::optional<Entity> LocalMatrixFilterContents::RenderFilter(
     const Matrix& effect_transform,
     const Rect& coverage,
     const std::optional<Rect>& coverage_hint) const {
-  return Entity::FromSnapshot(
-      inputs[0]->GetSnapshot("LocalMatrix", renderer, entity),
-      entity.GetBlendMode(), entity.GetStencilDepth());
+  std::optional<Snapshot> snapshot =
+      inputs[0]->GetSnapshot("LocalMatrix", renderer, entity);
+  if (!snapshot.has_value()) {
+    return std::nullopt;
+  }
+  return Entity::FromSnapshot(snapshot.value(), entity.GetBlendMode());
 }
 
 }  // namespace impeller

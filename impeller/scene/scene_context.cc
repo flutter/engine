@@ -4,6 +4,7 @@
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/host_buffer.h"
 #include "impeller/scene/material.h"
 #include "impeller/scene/shaders/skinned.vert.h"
 #include "impeller/scene/shaders/unlit.frag.h"
@@ -13,18 +14,19 @@ namespace impeller {
 namespace scene {
 
 void SceneContextOptions::ApplyToPipelineDescriptor(
+    const Capabilities& capabilities,
     PipelineDescriptor& desc) const {
   DepthAttachmentDescriptor depth;
   depth.depth_compare = CompareFunction::kLess;
   depth.depth_write_enabled = true;
   desc.SetDepthStencilAttachmentDescriptor(depth);
-  desc.SetDepthPixelFormat(PixelFormat::kD32FloatS8UInt);
+  desc.SetDepthPixelFormat(capabilities.GetDefaultDepthStencilFormat());
 
   StencilAttachmentDescriptor stencil;
   stencil.stencil_compare = CompareFunction::kAlways;
   stencil.depth_stencil_pass = StencilOperation::kKeep;
   desc.SetStencilAttachmentDescriptors(stencil);
-  desc.SetStencilPixelFormat(PixelFormat::kD32FloatS8UInt);
+  desc.SetStencilPixelFormat(capabilities.GetDefaultDepthStencilFormat());
 
   desc.SetSampleCount(sample_count);
   desc.SetPrimitiveType(primitive_type);
@@ -39,11 +41,24 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
     return;
   }
 
-  pipelines_[{PipelineKey{GeometryType::kUnskinned, MaterialType::kUnlit}}] =
+  auto unskinned_variant =
       MakePipelineVariants<UnskinnedVertexShader, UnlitFragmentShader>(
           *context_);
-  pipelines_[{PipelineKey{GeometryType::kSkinned, MaterialType::kUnlit}}] =
+  if (!unskinned_variant) {
+    FML_LOG(ERROR) << "Could not create unskinned pipeline variant.";
+    return;
+  }
+  pipelines_[{PipelineKey{GeometryType::kUnskinned, MaterialType::kUnlit}}] =
+      std::move(unskinned_variant);
+
+  auto skinned_variant =
       MakePipelineVariants<SkinnedVertexShader, UnlitFragmentShader>(*context_);
+  if (!skinned_variant) {
+    FML_LOG(ERROR) << "Could not create skinned pipeline variant.";
+    return;
+  }
+  pipelines_[{PipelineKey{GeometryType::kSkinned, MaterialType::kUnlit}}] =
+      std::move(skinned_variant);
 
   {
     impeller::TextureDescriptor texture_descriptor;
@@ -66,7 +81,7 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
       return;
     }
   }
-
+  host_buffer_ = HostBuffer::Create(GetContext()->GetResourceAllocator());
   is_valid_ = true;
 }
 
@@ -79,7 +94,7 @@ std::shared_ptr<Pipeline<PipelineDescriptor>> SceneContext::GetPipeline(
     return nullptr;
   }
   if (auto found = pipelines_.find(key); found != pipelines_.end()) {
-    return found->second->GetPipeline(opts);
+    return found->second->GetPipeline(*context_, opts);
   }
   return nullptr;
 }

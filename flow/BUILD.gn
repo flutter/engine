@@ -2,11 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 source_set("flow") {
   sources = [
@@ -18,8 +21,6 @@ source_set("flow") {
     "embedded_views.h",
     "frame_timings.cc",
     "frame_timings.h",
-    "instrumentation.cc",
-    "instrumentation.h",
     "layer_snapshot_store.cc",
     "layer_snapshot_store.h",
     "layers/backdrop_filter_layer.cc",
@@ -77,6 +78,12 @@ source_set("flow") {
     "raster_cache_util.cc",
     "raster_cache_util.h",
     "skia_gpu_object.h",
+    "stopwatch.cc",
+    "stopwatch.h",
+    "stopwatch_dl.cc",
+    "stopwatch_dl.h",
+    "stopwatch_sk.cc",
+    "stopwatch_sk.h",
     "surface.cc",
     "surface.h",
     "surface_frame.cc",
@@ -90,18 +97,23 @@ source_set("flow") {
     "//flutter/common/graphics",
     "//flutter/display_list",
     "//flutter/fml",
+    "//flutter/third_party/txt",
   ]
 
-  deps = [ "//third_party/skia" ]
+  deps = [ "//flutter/skia" ]
 
   if (impeller_supports_rendering) {
-    deps += [ "//flutter/impeller" ]
+    deps += [
+      "//flutter/impeller",
+      "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
+    ]
   }
 }
 
 if (enable_unittests) {
   test_fixtures("flow_fixtures") {
-    fixtures = []
+    fixtures =
+        [ "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf" ]
   }
 
   source_set("flow_testing") {
@@ -125,7 +137,7 @@ if (enable_unittests) {
 
     public_deps = [
       "//flutter/testing:skia",
-      "//third_party/googletest:gtest",
+      "//flutter/third_party/googletest:gtest",
     ]
 
     deps = [
@@ -145,7 +157,6 @@ if (enable_unittests) {
       "flow_test_utils.h",
       "frame_timings_recorder_unittests.cc",
       "gl_context_switch_unittests.cc",
-      "instrumentation_unittests.cc",
       "layers/backdrop_filter_layer_unittests.cc",
       "layers/checkerboard_layertree_unittests.cc",
       "layers/clip_path_layer_unittests.cc",
@@ -167,6 +178,8 @@ if (enable_unittests) {
       "mutators_stack_unittests.cc",
       "raster_cache_unittests.cc",
       "skia_gpu_object_unittests.cc",
+      "stopwatch_dl_unittests.cc",
+      "stopwatch_unittests.cc",
       "surface_frame_unittests.cc",
       "testing/mock_layer_unittests.cc",
       "testing/mock_texture_unittests.cc",
@@ -177,14 +190,15 @@ if (enable_unittests) {
       ":flow",
       ":flow_fixtures",
       ":flow_testing",
+      "$dart_src/runtime:libdart_jit",  # for tracing
       "//flutter/common/graphics",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/fml",
+      "//flutter/shell/common:base64",
+      "//flutter/skia",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",
-      "//third_party/dart/runtime:libdart_jit",  # for tracing
-      "//third_party/googletest:gtest",
-      "//third_party/skia",
+      "//flutter/third_party/googletest:gtest",
     ]
 
     if (!defined(defines)) {

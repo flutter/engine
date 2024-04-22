@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_COMPLEXITY_HELPER_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_COMPLEXITY_HELPER_H_
+#ifndef FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_HELPER_H_
+#define FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_HELPER_H_
 
 #include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/dl_blend_mode.h"
@@ -96,12 +96,11 @@ class ComplexityCalculatorHelper
       public virtual IgnoreClipDispatchHelper,
       public virtual IgnoreTransformDispatchHelper {
  public:
-  ComplexityCalculatorHelper(unsigned int ceiling)
-      : is_complex_(false), ceiling_(ceiling), complexity_score_(0) {}
+  explicit ComplexityCalculatorHelper(unsigned int ceiling)
+      : ceiling_(ceiling) {}
 
   virtual ~ComplexityCalculatorHelper() = default;
 
-  void setDither(bool dither) override {}
   void setInvertColors(bool invert) override {}
   void setStrokeCap(DlStrokeCap cap) override {}
   void setStrokeJoin(DlStrokeJoin join) override {}
@@ -222,8 +221,8 @@ class ComplexityCalculatorHelper
                                        unsigned int conic_verb_cost,
                                        unsigned int cubic_verb_cost) {
     int verb_count = path.countVerbs();
-    uint8_t verbs[verb_count];
-    path.getVerbs(verbs, verb_count);
+    std::vector<uint8_t> verbs(verb_count);
+    path.getVerbs(verbs.data(), verbs.size());
 
     unsigned int complexity = 0;
     for (int i = 0; i < verb_count; i++) {
@@ -261,12 +260,12 @@ class ComplexityCalculatorHelper
   // If we exceed the ceiling (defaults to the largest number representable
   // by unsigned int), then set the is_complex_ bool and we no longer
   // accumulate.
-  bool is_complex_;
+  bool is_complex_ = false;
   unsigned int ceiling_;
 
-  unsigned int complexity_score_;
+  unsigned int complexity_score_ = 0;
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_COMPLEXITY_HELPER_H_
+#endif  // FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_HELPER_H_

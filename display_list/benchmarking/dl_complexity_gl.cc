@@ -49,7 +49,7 @@ unsigned int DisplayListGLComplexityCalculator::GLHelper::BatchedComplexity() {
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::saveLayer(
-    const SkRect* bounds,
+    const SkRect& bounds,
     const SaveLayerOptions options,
     const DlImageFilter* backdrop) {
   if (IsComplex()) {
@@ -615,7 +615,8 @@ void DisplayListGLComplexityCalculator::GLHelper::drawDisplayList(
   }
   GLHelper helper(Ceiling() - CurrentComplexityScore());
   if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
-    helper.saveLayer(nullptr, SaveLayerOptions::kWithAttributes, nullptr);
+    auto bounds = display_list->bounds();
+    helper.saveLayer(bounds, SaveLayerOptions::kWithAttributes, nullptr);
   }
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());
@@ -636,6 +637,11 @@ void DisplayListGLComplexityCalculator::GLHelper::drawTextBlob(
   // Increment draw_text_blob_count_ and calculate the cost at the end.
   draw_text_blob_count_++;
 }
+
+void DisplayListGLComplexityCalculator::GLHelper::drawTextFrame(
+    const std::shared_ptr<impeller::TextFrame>& text_frame,
+    SkScalar x,
+    SkScalar y) {}
 
 void DisplayListGLComplexityCalculator::GLHelper::drawShadow(
     const SkPath& path,

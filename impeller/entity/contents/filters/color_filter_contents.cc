@@ -82,11 +82,12 @@ ColorFilterContents::ColorFilterContents() = default;
 
 ColorFilterContents::~ColorFilterContents() = default;
 
-void ColorFilterContents::SetAbsorbOpacity(bool absorb_opacity) {
+void ColorFilterContents::SetAbsorbOpacity(AbsorbOpacity absorb_opacity) {
   absorb_opacity_ = absorb_opacity;
 }
 
-bool ColorFilterContents::GetAbsorbOpacity() const {
+ColorFilterContents::AbsorbOpacity ColorFilterContents::GetAbsorbOpacity()
+    const {
   return absorb_opacity_;
 }
 
@@ -96,6 +97,12 @@ void ColorFilterContents::SetAlpha(Scalar alpha) {
 
 std::optional<Scalar> ColorFilterContents::GetAlpha() const {
   return alpha_;
+}
+
+std::optional<Rect> ColorFilterContents::GetFilterSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return output_limit;
 }
 
 }  // namespace impeller

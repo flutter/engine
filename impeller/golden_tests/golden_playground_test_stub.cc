@@ -4,9 +4,18 @@
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
+#include "impeller/aiks/picture.h"
+
 namespace impeller {
 
-GoldenPlaygroundTest::GoldenPlaygroundTest() {}
+GoldenPlaygroundTest::GoldenPlaygroundTest() = default;
+
+GoldenPlaygroundTest::~GoldenPlaygroundTest() = default;
+
+void GoldenPlaygroundTest::SetTypographerContext(
+    std::shared_ptr<TypographerContext> typographer_context) {
+  typographer_context_ = std::move(typographer_context);
+};
 
 void GoldenPlaygroundTest::TearDown() {}
 
@@ -18,12 +27,13 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
   return GetParam();
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
   return false;
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    const AiksPlaygroundCallback& callback) {
+    AiksPlaygroundCallback
+        callback) {  // NOLINT(performance-unnecessary-value-param)
   return false;
 }
 
@@ -32,10 +42,9 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     bool enable_mipmapping) const {
   return nullptr;
 }
-
-std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-  return nullptr;
+  return {};
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
@@ -52,6 +61,15 @@ Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
 
 ISize GoldenPlaygroundTest::GetWindowSize() const {
   return ISize();
+}
+
+void GoldenPlaygroundTest::SetWindowSize(ISize size) {}
+
+fml::Status GoldenPlaygroundTest::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
 }
 
 }  // namespace impeller

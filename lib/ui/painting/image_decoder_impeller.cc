@@ -333,13 +333,14 @@ static std::pair<sk_sp<DlImage>, std::string> UnsafeUploadTextureToPrivate(
     return std::make_pair(nullptr, decode_error);
   }
   blit_pass->SetLabel("Mipmap Blit Pass");
-  blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
+  blit_pass->AddCopy(impeller::DeviceBuffer::AsBufferView(buffer),
+                     dest_texture);
   if (texture_descriptor.size.MipCount() > 1) {
     blit_pass->GenerateMipmap(dest_texture);
   }
 
   blit_pass->EncodeCommands(context->GetResourceAllocator());
-  if (!command_buffer->SubmitCommands()) {
+  if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
     std::string decode_error("Failed to submit blit pass command buffer.");
     FML_DLOG(ERROR) << decode_error;
     return std::make_pair(nullptr, decode_error);
@@ -458,7 +459,7 @@ ImageDecoderImpeller::UploadTextureToStorage(
           blit_pass->GenerateMipmap(texture);
 
           blit_pass->EncodeCommands(context->GetResourceAllocator());
-          if (!command_buffer->SubmitCommands()) {
+          if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
             decode_error = "Failed to submit blit pass command buffer.";
             return;
           }
@@ -555,6 +556,9 @@ std::shared_ptr<impeller::DeviceBuffer> ImpellerAllocator::GetDeviceBuffer()
 }
 
 bool ImpellerAllocator::allocPixelRef(SkBitmap* bitmap) {
+  if (!bitmap) {
+    return false;
+  }
   const SkImageInfo& info = bitmap->info();
   if (kUnknown_SkColorType == info.colorType() || info.width() < 0 ||
       info.height() < 0 || !info.validRowBytes(bitmap->rowBytes())) {
@@ -570,6 +574,9 @@ bool ImpellerAllocator::allocPixelRef(SkBitmap* bitmap) {
       kShouldUseMallocDeviceBuffer
           ? std::make_shared<MallocDeviceBuffer>(descriptor)
           : allocator_->CreateBuffer(descriptor);
+  if (!device_buffer) {
+    return false;
+  }
 
   struct ImpellerPixelRef final : public SkPixelRef {
     ImpellerPixelRef(int w, int h, void* s, size_t r)

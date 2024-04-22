@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_
 
 #include <functional>
 #include <memory>
@@ -23,6 +24,7 @@ struct ContentContextOptions;
 class Entity;
 class Surface;
 class RenderPass;
+class FilterContents;
 
 ContentContextOptions OptionsFromPass(const RenderPass& pass);
 
@@ -35,7 +37,7 @@ class Contents {
   /// unpremultiplied color.
   using ColorFilterProc = std::function<Color(Color)>;
 
-  struct StencilCoverage {
+  struct ClipCoverage {
     enum class Type { kNoChange, kAppend, kRestore };
 
     Type type = Type::kNoChange;
@@ -65,7 +67,14 @@ class Contents {
                       RenderPass& pass) const = 0;
 
   //----------------------------------------------------------------------------
-  /// @brief Get the screen space bounding rectangle that this contents affects.
+  /// @brief   Get the area of the render pass that will be affected when this
+  ///          contents is rendered.
+  ///
+  ///          During rendering, coverage coordinates count pixels from the top
+  ///          left corner of the framebuffer.
+  ///
+  /// @return  The coverage rectangle. An `std::nullopt` result means that
+  ///          rendering this contents has no effect on the output color.
   ///
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
 
@@ -88,18 +97,21 @@ class Contents {
   virtual bool IsOpaque() const;
 
   //----------------------------------------------------------------------------
-  /// @brief Given the current screen space bounding rectangle of the stencil,
-  ///        return the expected stencil coverage after this draw call. This
-  ///        should only be implemented for contents that may write to the
-  ///        stencil buffer.
+  /// @brief Given the current pass space bounding rectangle of the clip
+  ///        buffer, return the expected clip coverage after this draw call.
+  ///        This should only be implemented for contents that may write to the
+  ///        clip buffer.
   ///
-  virtual StencilCoverage GetStencilCoverage(
+  ///        During rendering, coverage coordinates count pixels from the top
+  ///        left corner of the framebuffer.
+  ///
+  virtual ClipCoverage GetClipCoverage(
       const Entity& entity,
-      const std::optional<Rect>& current_stencil_coverage) const;
+      const std::optional<Rect>& current_clip_coverage) const;
 
   //----------------------------------------------------------------------------
   /// @brief Render this contents to a snapshot, respecting the entity's
-  ///        transform, path, stencil depth, and blend mode.
+  ///        transform, path, clip depth, and blend mode.
   ///        The result texture size is always the size of
   ///        `GetCoverage(entity)`.
   ///
@@ -109,10 +121,11 @@ class Contents {
       std::optional<Rect> coverage_limit = std::nullopt,
       const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true,
+      int32_t mip_count = 1,
       const std::string& label = "Snapshot") const;
 
   virtual bool ShouldRender(const Entity& entity,
-                            const std::optional<Rect>& stencil_coverage) const;
+                            const std::optional<Rect> clip_coverage) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Return the color source's intrinsic size, if available.
@@ -156,6 +169,12 @@ class Contents {
                                                  ISize target_size) const;
 
   //----------------------------------------------------------------------------
+  /// @brief Cast to a filter. Returns `nullptr` if this Contents is not a
+  ///        filter.
+  ///
+  virtual const FilterContents* AsFilter() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      If possible, applies a color filter to this contents inputs on
   ///             the CPU.
   ///
@@ -178,7 +197,11 @@ class Contents {
   std::optional<Rect> coverage_hint_;
   std::optional<Size> color_source_size_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Contents);
+  Contents(const Contents&) = delete;
+
+  Contents& operator=(const Contents&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CONTENTS_H_

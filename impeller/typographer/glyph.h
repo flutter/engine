@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_
 
 #include <cstdint>
 #include <functional>
@@ -48,7 +49,9 @@ static_assert(sizeof(Glyph) == 20);
 template <>
 struct std::hash<impeller::Glyph> {
   constexpr std::size_t operator()(const impeller::Glyph& g) const {
-    return fml::HashCombine(g.index, g.type);
+    static_assert(sizeof(g.index) == 2);
+    static_assert(sizeof(g.type) == 1);
+    return (static_cast<size_t>(g.type) << 16) | g.index;
   }
 };
 
@@ -67,3 +70,5 @@ struct std::less<impeller::Glyph> {
     return lhs.index < rhs.index;
   }
 };
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_H_

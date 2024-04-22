@@ -46,14 +46,14 @@ class DlBlurMaskFilter final : public DlMaskFilter {
       : style_(style), sigma_(sigma), respect_ctm_(respect_ctm) {}
   DlBlurMaskFilter(const DlBlurMaskFilter& filter)
       : DlBlurMaskFilter(filter.style_, filter.sigma_, filter.respect_ctm_) {}
-  DlBlurMaskFilter(const DlBlurMaskFilter* filter)
+  explicit DlBlurMaskFilter(const DlBlurMaskFilter* filter)
       : DlBlurMaskFilter(filter->style_, filter->sigma_, filter->respect_ctm_) {
   }
 
   static std::shared_ptr<DlMaskFilter> Make(DlBlurStyle style,
                                             SkScalar sigma,
                                             bool respect_ctm = true) {
-    if (SkScalarIsFinite(sigma) && sigma > 0) {
+    if (std::isfinite(sigma) && sigma > 0) {
       return std::make_shared<DlBlurMaskFilter>(style, sigma, respect_ctm);
     }
     return nullptr;

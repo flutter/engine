@@ -21,9 +21,7 @@ import tempfile
 
 # Path to the engine root checkout. This is used to calculate absolute
 # paths if relative ones are passed to the script.
-BUILD_ROOT_DIR = os.path.abspath(
-    os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
-)
+BUILD_ROOT_DIR = os.path.abspath(os.path.join(os.path.realpath(__file__), '..', '..', '..', '..'))
 
 
 def IsLinux():
@@ -103,9 +101,7 @@ def ProcessCIPDPackage(upload, cipd_yaml, engine_version, out_dir, target_arch):
   else:
     command = [
         'cipd', 'pkg-build', '-pkg-def', cipd_yaml, '-out',
-        os.path.join(
-            _packaging_dir, 'fuchsia-debug-symbols-%s.cipd' % target_arch
-        )
+        os.path.join(_packaging_dir, 'fuchsia-debug-symbols-%s.cipd' % target_arch)
     ]
 
   # Retry up to three times.  We've seen CIPD fail on verification in some
@@ -181,14 +177,8 @@ def main():
           'empty temp directory'
       )
   )
-  parser.add_argument(
-      '--target-arch', type=str, choices=['x64', 'arm64'], required=True
-  )
-  parser.add_argument(
-      '--engine-version',
-      required=True,
-      help='Specifies the flutter engine SHA.'
-  )
+  parser.add_argument('--target-arch', type=str, choices=['x64', 'arm64'], required=True)
+  parser.add_argument('--engine-version', required=True, help='Specifies the flutter engine SHA.')
 
   parser.add_argument('--upload', default=False, action='store_true')
 
@@ -214,7 +204,17 @@ def main():
 
   arch = args.target_arch
   cipd_def = WriteCIPDDefinition(arch, out_dir, internal_symbol_dirs)
-  ProcessCIPDPackage(args.upload, cipd_def, args.engine_version, out_dir, arch)
+
+  # Set revision to HEAD if empty and remove upload. This is to support
+  # presubmit workflows. An empty engine_version means this script is running
+  # on presubmit.
+  should_upload = args.upload
+  engine_version = args.engine_version
+  if not engine_version:
+    engine_version = 'HEAD'
+    should_upload = False
+
+  ProcessCIPDPackage(should_upload, cipd_def, engine_version, out_dir, arch)
   return 0
 
 

@@ -13,6 +13,10 @@
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #include "impeller/renderer/render_target.h"
 
+@protocol FlutterMetalDrawable <MTLDrawable>
+- (void)flutterPrepareForPresent:(nonnull id<MTLCommandBuffer>)commandBuffer;
+@end
+
 namespace impeller {
 
 #pragma GCC diagnostic push
@@ -54,7 +58,7 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
       VALIDATION_LOG << "Missing clip rectangle.";
       return std::nullopt;
     }
-    root_size = ISize(clip_rect->size.width, clip_rect->size.height);
+    root_size = ISize(clip_rect->GetWidth(), clip_rect->GetHeight());
   } else {
     root_size = {static_cast<ISize::Type>(texture.width),
                  static_cast<ISize::Type>(texture.height)};
@@ -63,8 +67,8 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   TextureDescriptor resolve_tex_desc;
   resolve_tex_desc.format = FromMTLPixelFormat(texture.pixelFormat);
   resolve_tex_desc.size = root_size;
-  resolve_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
-                           static_cast<uint64_t>(TextureUsage::kShaderRead);
+  resolve_tex_desc.usage =
+      TextureUsage::kRenderTarget | TextureUsage::kShaderRead;
   resolve_tex_desc.sample_count = SampleCount::kCount1;
   resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
 
@@ -79,7 +83,7 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
     resolve_tex_desc.compression_type = CompressionType::kLossy;
     resolve_tex = allocator.CreateTexture(resolve_tex_desc);
   } else {
-    resolve_tex = std::make_shared<TextureMTL>(resolve_tex_desc, texture);
+    resolve_tex = TextureMTL::Create(resolve_tex_desc, texture);
   }
 
   if (!resolve_tex) {
@@ -94,7 +98,7 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   msaa_tex_desc.sample_count = SampleCount::kCount4;
   msaa_tex_desc.format = resolve_tex->GetTextureDescriptor().format;
   msaa_tex_desc.size = resolve_tex->GetSize();
-  msaa_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+  msaa_tex_desc.usage = TextureUsage::kRenderTarget;
 
   auto msaa_tex = allocator.CreateTexture(msaa_tex_desc);
   if (!msaa_tex) {
@@ -207,7 +211,7 @@ bool SurfaceMTL::ShouldPerformPartialRepaint(std::optional<IRect> damage_rect) {
   }
   // If the damage rect is 0 in at least one dimension, partial repaint isn't
   // performed as we skip right to present.
-  if (damage_rect->size.width <= 0 || damage_rect->size.height <= 0) {
+  if (damage_rect->IsEmpty()) {
     return false;
   }
   return true;
@@ -240,21 +244,46 @@ bool SurfaceMTL::Present() const {
       return false;
     }
     blit_pass->AddCopy(source_texture_, destination_texture_, std::nullopt,
-                       clip_rect_->origin);
+                       clip_rect_->GetOrigin());
     blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!blit_command_buffer->SubmitCommands()) {
+    if (!context->GetCommandQueue()->Submit({blit_command_buffer}).ok()) {
       return false;
     }
   }
+#ifdef IMPELLER_DEBUG
+  ContextMTL::Cast(context.get())->GetGPUTracer()->MarkFrameEnd();
+#endif  // IMPELLER_DEBUG
 
   if (drawable_) {
-    TRACE_EVENT0("flutter", "waitUntilScheduled");
     id<MTLCommandBuffer> command_buffer =
         ContextMTL::Cast(context.get())
             ->CreateMTLCommandBuffer("Present Waiter Command Buffer");
-    [command_buffer commit];
-    [command_buffer waitUntilScheduled];
-    [drawable_ present];
+
+    id<CAMetalDrawable> metal_drawable =
+        reinterpret_cast<id<CAMetalDrawable>>(drawable_);
+    if ([metal_drawable conformsToProtocol:@protocol(FlutterMetalDrawable)]) {
+      [(id<FlutterMetalDrawable>)metal_drawable
+          flutterPrepareForPresent:command_buffer];
+    }
+
+    // If the threads have been merged, or there is a pending frame capture,
+    // then block on cmd buffer scheduling to ensure that the
+    // transaction/capture work correctly.
+    if ([[NSThread currentThread] isMainThread] ||
+        [[MTLCaptureManager sharedCaptureManager] isCapturing]) {
+      TRACE_EVENT0("flutter", "waitUntilScheduled");
+      [command_buffer commit];
+      [command_buffer waitUntilScheduled];
+      [drawable_ present];
+    } else {
+      // The drawable may come from a FlutterMetalLayer, so it can't be
+      // presented through the command buffer.
+      id<CAMetalDrawable> drawable = drawable_;
+      [command_buffer addScheduledHandler:^(id<MTLCommandBuffer> buffer) {
+        [drawable present];
+      }];
+      [command_buffer commit];
+    }
   }
 
   return true;

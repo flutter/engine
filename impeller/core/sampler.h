@@ -2,9 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_SAMPLER_H_
+#define FLUTTER_IMPELLER_CORE_SAMPLER_H_
 
-#include "flutter/fml/macros.h"
+#include <unordered_map>
+
+#include "impeller/base/comparable.h"
 #include "impeller/core/sampler_descriptor.h"
 
 namespace impeller {
@@ -12,8 +15,6 @@ namespace impeller {
 class Sampler {
  public:
   virtual ~Sampler();
-
-  virtual bool IsValid() const = 0;
 
   const SamplerDescriptor& GetDescriptor() const;
 
@@ -23,7 +24,16 @@ class Sampler {
   explicit Sampler(SamplerDescriptor desc);
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(Sampler);
+  Sampler(const Sampler&) = delete;
+
+  Sampler& operator=(const Sampler&) = delete;
 };
 
+using SamplerMap = std::unordered_map<SamplerDescriptor,
+                                      std::unique_ptr<const Sampler>,
+                                      ComparableHash<SamplerDescriptor>,
+                                      ComparableEqual<SamplerDescriptor>>;
+
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_SAMPLER_H_

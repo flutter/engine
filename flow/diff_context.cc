@@ -47,13 +47,7 @@ void DiffContext::EndSubtree() {
   state_stack_.pop_back();
 }
 
-DiffContext::State::State()
-    : dirty(false),
-      rect_index(0),
-      integral_transform(false),
-      clip_tracker_save_count(0),
-      has_filter_bounds_adjustment(false),
-      has_texture(false) {}
+DiffContext::State::State() {}
 
 void DiffContext::PushTransform(const SkMatrix& transform) {
   clip_tracker_.transform(transform);
@@ -67,11 +61,17 @@ void DiffContext::MakeCurrentTransformIntegral() {
   // TODO(knopp): This is duplicated from LayerStack. Maybe should be part of
   // clip tracker?
   if (clip_tracker_.using_4x4_matrix()) {
-    clip_tracker_.setTransform(
-        RasterCacheUtil::GetIntegralTransCTM(clip_tracker_.matrix_4x4()));
+    SkM44 integral;
+    if (RasterCacheUtil::ComputeIntegralTransCTM(clip_tracker_.matrix_4x4(),
+                                                 &integral)) {
+      clip_tracker_.setTransform(integral);
+    }
   } else {
-    clip_tracker_.setTransform(
-        RasterCacheUtil::GetIntegralTransCTM(clip_tracker_.matrix_3x3()));
+    SkMatrix integral;
+    if (RasterCacheUtil::ComputeIntegralTransCTM(clip_tracker_.matrix_3x3(),
+                                                 &integral)) {
+      clip_tracker_.setTransform(integral);
+    }
   }
 }
 
@@ -123,12 +123,16 @@ Damage DiffContext::ComputeDamage(const SkIRect& accumulated_buffer_damage,
   SkRect frame_damage(damage_);
 
   for (const auto& r : readbacks_) {
-    SkRect rect = SkRect::Make(r.rect);
-    if (rect.intersects(frame_damage)) {
-      frame_damage.join(rect);
-    }
-    if (rect.intersects(buffer_damage)) {
-      buffer_damage.join(rect);
+    SkRect paint_rect = SkRect::Make(r.paint_rect);
+    SkRect readback_rect = SkRect::Make(r.readback_rect);
+    // Changes either in readback or paint rect require repainting both readback
+    // and paint rect.
+    if (paint_rect.intersects(frame_damage) ||
+        readback_rect.intersects(frame_damage)) {
+      frame_damage.join(readback_rect);
+      frame_damage.join(paint_rect);
+      buffer_damage.join(readback_rect);
+      buffer_damage.join(paint_rect);
     }
   }
 
@@ -220,9 +224,11 @@ void DiffContext::AddExistingPaintRegion(const PaintRegion& region) {
   }
 }
 
-void DiffContext::AddReadbackRegion(const SkIRect& rect) {
+void DiffContext::AddReadbackRegion(const SkIRect& paint_rect,
+                                    const SkIRect& readback_rect) {
   Readback readback;
-  readback.rect = rect;
+  readback.paint_rect = paint_rect;
+  readback.readback_rect = readback_rect;
   readback.position = rects_->size();
   // Push empty rect as a placeholder for position in current subtree
   rects_->push_back(SkRect::MakeEmpty());

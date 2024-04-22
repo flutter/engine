@@ -8,19 +8,19 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:image/image.dart';
-import 'package:webdriver/io.dart' show WebDriver, createDriver;
+import 'package:webdriver/async_io.dart' show WebDriver, createDriver;
 
 import 'browser.dart';
 
 abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
-  late final int portNumber;
+  late int portNumber;
   late final Process _driverProcess;
 
   Future<Process> spawnDriverProcess();
   Uri get driverUri;
 
   /// Finds and returns an unused port on the test host in the local port range.
-  Future<int> _pickUnusedPort() async {
+  Future<int> pickUnusedPort() async {
     // Use bind to allocate an unused port, then unbind from that port to
     // make it available for use.
     final ServerSocket socket = await ServerSocket.bind('localhost', 0);
@@ -33,7 +33,7 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
 
   @override
   Future<void> prepare() async {
-    portNumber = await _pickUnusedPort();
+    portNumber = await pickUnusedPort();
 
     _driverProcess = await spawnDriverProcess();
 

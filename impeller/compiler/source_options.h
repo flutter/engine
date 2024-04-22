@@ -2,13 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_SOURCE_OPTIONS_H_
+#define FLUTTER_IMPELLER_COMPILER_SOURCE_OPTIONS_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/compiler/include_dir.h"
 #include "impeller/compiler/types.h"
@@ -33,6 +34,11 @@ struct SourceOptions {
   /// opengl semantics. Only used on metal targets.
   bool use_half_textures = false;
 
+  /// @brief Whether the GLSL framebuffer fetch extension will be required.
+  ///
+  /// Only used on OpenGLES targets.
+  bool require_framebuffer_fetch = false;
+
   SourceOptions();
 
   ~SourceOptions();
@@ -43,3 +49,5 @@ struct SourceOptions {
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_SOURCE_OPTIONS_H_

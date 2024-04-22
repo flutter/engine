@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
-#define SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#define FLUTTER_SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/surface.h"
@@ -18,7 +18,8 @@ namespace flutter {
 class GPUSurfaceGLImpeller final : public Surface {
  public:
   explicit GPUSurfaceGLImpeller(GPUSurfaceGLDelegate* delegate,
-                                std::shared_ptr<impeller::Context> context);
+                                std::shared_ptr<impeller::Context> context,
+                                bool render_to_surface);
 
   // |Surface|
   ~GPUSurfaceGLImpeller() override;
@@ -29,10 +30,11 @@ class GPUSurfaceGLImpeller final : public Surface {
  private:
   GPUSurfaceGLDelegate* delegate_ = nullptr;
   std::shared_ptr<impeller::Context> impeller_context_;
+  bool render_to_surface_ = true;
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   bool is_valid_ = false;
-  fml::WeakPtrFactory<GPUSurfaceGLImpeller> weak_factory_;
+  fml::TaskRunnerAffineWeakPtrFactory<GPUSurfaceGLImpeller> weak_factory_;
 
   // |Surface|
   std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
@@ -63,4 +65,4 @@ class GPUSurfaceGLImpeller final : public Surface {
 
 }  // namespace flutter
 
-#endif  // SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_

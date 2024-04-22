@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_GEOMETRY_H_
+#define FLUTTER_IMPELLER_SCENE_GEOMETRY_H_
 
 #include <memory>
 
@@ -14,6 +15,7 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/command.h"
+#include "impeller/renderer/render_pass.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
 #include "impeller/scene/pipeline_key.h"
 #include "impeller/scene/scene_context.h"
@@ -44,7 +46,7 @@ class Geometry {
   virtual void BindToCommand(const SceneContext& scene_context,
                              HostBuffer& buffer,
                              const Matrix& transform,
-                             Command& command) const = 0;
+                             RenderPass& pass) const = 0;
 
   virtual void SetJointsTexture(const std::shared_ptr<Texture>& texture);
 };
@@ -67,12 +69,14 @@ class CuboidGeometry final : public Geometry {
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
                      const Matrix& transform,
-                     Command& command) const override;
+                     RenderPass& pass) const override;
 
  private:
   Vector3 size_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CuboidGeometry);
+  CuboidGeometry(const CuboidGeometry&) = delete;
+
+  CuboidGeometry& operator=(const CuboidGeometry&) = delete;
 };
 
 class UnskinnedVertexBufferGeometry final : public Geometry {
@@ -93,12 +97,15 @@ class UnskinnedVertexBufferGeometry final : public Geometry {
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
                      const Matrix& transform,
-                     Command& command) const override;
+                     RenderPass& pass) const override;
 
  private:
   VertexBuffer vertex_buffer_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(UnskinnedVertexBufferGeometry);
+  UnskinnedVertexBufferGeometry(const UnskinnedVertexBufferGeometry&) = delete;
+
+  UnskinnedVertexBufferGeometry& operator=(
+      const UnskinnedVertexBufferGeometry&) = delete;
 };
 
 class SkinnedVertexBufferGeometry final : public Geometry {
@@ -119,7 +126,7 @@ class SkinnedVertexBufferGeometry final : public Geometry {
   void BindToCommand(const SceneContext& scene_context,
                      HostBuffer& buffer,
                      const Matrix& transform,
-                     Command& command) const override;
+                     RenderPass& pass) const override;
 
   // |Geometry|
   void SetJointsTexture(const std::shared_ptr<Texture>& texture) override;
@@ -128,8 +135,13 @@ class SkinnedVertexBufferGeometry final : public Geometry {
   VertexBuffer vertex_buffer_;
   std::shared_ptr<Texture> joints_texture_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(SkinnedVertexBufferGeometry);
+  SkinnedVertexBufferGeometry(const SkinnedVertexBufferGeometry&) = delete;
+
+  SkinnedVertexBufferGeometry& operator=(const SkinnedVertexBufferGeometry&) =
+      delete;
 };
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_GEOMETRY_H_

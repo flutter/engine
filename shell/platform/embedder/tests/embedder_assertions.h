@@ -15,6 +15,8 @@
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+// NOLINTBEGIN(google-objc-function-naming)
+
 //------------------------------------------------------------------------------
 // Equality
 //------------------------------------------------------------------------------
@@ -116,6 +118,23 @@ inline bool operator==(const FlutterSoftwareBackingStore2& a,
          a.pixel_format == b.pixel_format;
 }
 
+inline bool operator==(const FlutterRegion& a, const FlutterRegion& b) {
+  if (a.struct_size != b.struct_size || a.rects_count != b.rects_count) {
+    return false;
+  }
+  for (size_t i = 0; i < a.rects_count; i++) {
+    if (!(a.rects[i] == b.rects[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+inline bool operator==(const FlutterBackingStorePresentInfo& a,
+                       const FlutterBackingStorePresentInfo& b) {
+  return a.struct_size == b.struct_size && *a.paint_region == *b.paint_region;
+}
+
 inline bool operator==(const FlutterBackingStore& a,
                        const FlutterBackingStore& b) {
   if (!(a.struct_size == b.struct_size && a.user_data == b.user_data &&
@@ -183,7 +202,8 @@ inline bool operator==(const FlutterLayer& a, const FlutterLayer& b) {
 
   switch (a.type) {
     case kFlutterLayerContentTypeBackingStore:
-      return *a.backing_store == *b.backing_store;
+      return *a.backing_store == *b.backing_store &&
+             *a.backing_store_present_info == *b.backing_store_present_info;
     case kFlutterLayerContentTypePlatformView:
       return *a.platform_view == *b.platform_view;
   }
@@ -557,5 +577,7 @@ inline FlutterRoundedRect FlutterRoundedRectMake(const SkRRect& rect) {
       FlutterSizeMake(rect.radii(SkRRect::Corner::kLowerLeft_Corner));
   return r;
 }
+
+// NOLINTEND(google-objc-function-naming)
 
 #endif  // FLUTTER_SHELL_PLATFORM_EMBEDDER_TESTS_EMBEDDER_ASSERTIONS_H_

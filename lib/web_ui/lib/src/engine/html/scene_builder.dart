@@ -7,13 +7,13 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
+import '../../engine.dart' show FrameTimingRecorder, kProfileApplyFrame, kProfilePrerollFrame;
+import '../display.dart';
 import '../dom.dart';
 import '../picture.dart';
 import '../profiler.dart';
 import '../util.dart';
 import '../vector_math.dart';
-import '../window.dart';
 import 'backdrop_filter.dart';
 import 'clip.dart';
 import 'color_filter.dart';
@@ -113,8 +113,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       // scene to devicepixelratio. Use identity instead since CSS uses
       // logical device pixels.
       if (!ui_web.debugEmulateFlutterTesterEnvironment) {
-        assert(matrix4[0] == window.devicePixelRatio &&
-            matrix4[5] == window.devicePixelRatio);
+        assert(matrix4[0] == EngineFlutterDisplay.instance.devicePixelRatio &&
+            matrix4[5] == EngineFlutterDisplay.instance.devicePixelRatio);
       }
       matrix = Matrix4.identity().storage;
     } else {
@@ -329,7 +329,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// overlay or not.
   ///
   /// We use this to avoid spamming the console with redundant warning messages.
-  static bool _webOnlyDidWarnAboutPerformanceOverlay = false;
+  static bool _didWarnAboutPerformanceOverlay = false;
 
   void _addPerformanceOverlay(
     int enabledOptions,
@@ -338,8 +338,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     double top,
     double bottom,
   ) {
-    if (!_webOnlyDidWarnAboutPerformanceOverlay) {
-      _webOnlyDidWarnAboutPerformanceOverlay = true;
+    if (!_didWarnAboutPerformanceOverlay) {
+      _didWarnAboutPerformanceOverlay = true;
       printWarning("The performance overlay isn't supported on the web");
     }
   }
@@ -511,8 +511,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    frameTimingsOnBuildFinish();
-    frameTimingsOnRasterStart();
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    recorder?.recordBuildFinish();
+    recorder?.recordRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.
@@ -528,7 +529,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       }
       commitScene(_persistedScene);
       _lastFrameScene = _persistedScene;
-      return SurfaceScene(_persistedScene.rootElement);
+      return SurfaceScene(_persistedScene.rootElement, timingRecorder: recorder);
     });
   }
 

@@ -7,6 +7,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
+#include "flutter/testing/testing.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -37,8 +38,6 @@ constexpr float kStops[] = {
     0.5,
     1.0,
 };
-static std::vector<uint32_t> color_vector(kColors, kColors + 3);
-static std::vector<float> stops_vector(kStops, kStops + 3);
 
 // clang-format off
 constexpr float kRotateColorMatrix[20] = {
@@ -58,13 +57,13 @@ constexpr float kInvertColorMatrix[20] = {
 const SkScalar kTestDashes1[] = {4.0, 2.0};
 const SkScalar kTestDashes2[] = {1.0, 1.5};
 
-constexpr SkPoint TestPoints[] = {
+constexpr SkPoint kTestPoints[] = {
     {10, 10},
     {20, 20},
     {10, 20},
     {20, 10},
 };
-#define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
+#define TestPointCount sizeof(kTestPoints) / (sizeof(kTestPoints[0]))
 
 static DlImageSampling kNearestSampling = DlImageSampling::kNearestNeighbor;
 static DlImageSampling kLinearSampling = DlImageSampling::kLinear;
@@ -204,19 +203,19 @@ static const SkMatrix kTestMatrix2 = SkMatrix::RotateDeg(45);
 static std::shared_ptr<const DlVertices> TestVertices1 =
     DlVertices::Make(DlVertexMode::kTriangles,  //
                      3,
-                     TestPoints,
+                     kTestPoints,
                      nullptr,
                      kColors);
 static std::shared_ptr<const DlVertices> TestVertices2 =
     DlVertices::Make(DlVertexMode::kTriangleFan,  //
                      3,
-                     TestPoints,
+                     kTestPoints,
                      nullptr,
                      kColors);
 
 static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, SkColor color) {
   DisplayListBuilder builder;
-  builder.DrawRect(SkRect::MakeWH(w, h), DlPaint(color));
+  builder.DrawRect(SkRect::MakeWH(w, h), DlPaint(DlColor(color)));
   return builder.Build();
 }
 static sk_sp<DisplayList> TestDisplayList1 =
@@ -224,44 +223,48 @@ static sk_sp<DisplayList> TestDisplayList1 =
 static sk_sp<DisplayList> TestDisplayList2 =
     MakeTestDisplayList(25, 25, SK_ColorBLUE);
 
-static sk_sp<SkTextBlob> MakeTextBlob(std::string string) {
-  return SkTextBlob::MakeFromText(string.c_str(), string.size(), SkFont(),
-                                  SkTextEncoding::kUTF8);
-}
-static sk_sp<SkTextBlob> TestBlob1 = MakeTextBlob("TestBlob1");
-static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");
+SkFont CreateTestFontOfSize(SkScalar scalar);
+
+sk_sp<SkTextBlob> GetTestTextBlob(int index);
 
 struct DisplayListInvocation {
-  unsigned int op_count_;
+  // ----------------------------------
+  // Required fields for initialization
+  uint32_t op_count_;
   size_t byte_count_;
 
-  // in some cases, running the sequence through an SkCanvas will result
-  // in fewer ops/bytes. Attribute invocations are recorded in an SkPaint
-  // and not forwarded on, and SkCanvas culls unused save/restore/transforms.
-  int sk_op_count_;
-  size_t sk_byte_count_;
+  uint32_t depth_op_count_;
 
-  DlInvoker invoker;
-  bool supports_group_opacity_ = false;
+  DlInvoker invoker_;
+  // ----------------------------------
+
+  // ----------------------------------
+  // Optional fields for initialization
+  uint32_t additional_depth_ = 0u;
+  uint32_t render_op_cost_override_ = 0u;
+  // ----------------------------------
 
   bool is_empty() { return byte_count_ == 0; }
 
-  bool supports_group_opacity() { return supports_group_opacity_; }
-
-  unsigned int op_count() { return op_count_; }
+  uint32_t op_count() { return op_count_; }
   // byte count for the individual ops, no DisplayList overhead
   size_t raw_byte_count() { return byte_count_; }
   // byte count for the ops with DisplayList overhead, comparable
   // to |DisplayList.byte_count().
   size_t byte_count() { return sizeof(DisplayList) + byte_count_; }
 
-  void Invoke(DlOpReceiver& builder) { invoker(builder); }
+  uint32_t depth_accumulated(uint32_t depth_scale = 1u) {
+    return depth_op_count_ * depth_scale + additional_depth_;
+  }
+  uint32_t depth_op_count() { return depth_op_count_; }
+  uint32_t additional_depth() { return additional_depth_; }
+  uint32_t adjust_render_op_depth_cost(uint32_t previous_cost) {
+    return render_op_cost_override_ == 0u  //
+               ? previous_cost
+               : render_op_cost_override_;
+  }
 
-  // sk_sp<DisplayList> Build() {
-  //   DisplayListBuilder builder;
-  //   invoker(builder.asReceiver());
-  //   return builder.Build();
-  // }
+  void Invoke(DlOpReceiver& builder) { invoker_(builder); }
 };
 
 struct DisplayListInvocationGroup {

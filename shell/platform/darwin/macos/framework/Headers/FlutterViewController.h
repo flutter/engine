@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_
+
 #import <Cocoa/Cocoa.h>
 
 #import "FlutterEngine.h"
@@ -10,17 +13,38 @@
 #import "FlutterPluginRegistrarMacOS.h"
 
 /**
+ * A unique identifier for a view within which Flutter content is hosted.
+ *
+ * Identifiers are guaranteed to be unique for views owned by a given engine but
+ * may collide for views owned by different engines.
+ */
+typedef int64_t FlutterViewIdentifier;
+
+/**
  * Values for the `mouseTrackingMode` property.
  */
 typedef NS_ENUM(NSInteger, FlutterMouseTrackingMode) {
   // Hover events will never be sent to Flutter.
-  FlutterMouseTrackingModeNone = 0,
+  kFlutterMouseTrackingModeNone = 0,
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  FlutterMouseTrackingModeNone __attribute__((deprecated)) = kFlutterMouseTrackingModeNone,
+
   // Hover events will be sent to Flutter when the view is in the key window.
-  FlutterMouseTrackingModeInKeyWindow,
+  kFlutterMouseTrackingModeInKeyWindow = 1,
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  FlutterMouseTrackingModeInKeyWindow
+  __attribute__((deprecated)) = kFlutterMouseTrackingModeInKeyWindow,
+
   // Hover events will be sent to Flutter when the view is in the active app.
-  FlutterMouseTrackingModeInActiveApp,
+  kFlutterMouseTrackingModeInActiveApp = 2,
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  FlutterMouseTrackingModeInActiveApp
+  __attribute__((deprecated)) = kFlutterMouseTrackingModeInActiveApp,
+
   // Hover events will be sent to Flutter regardless of window and app focus.
-  FlutterMouseTrackingModeAlways,
+  kFlutterMouseTrackingModeAlways = 3,
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  FlutterMouseTrackingModeAlways __attribute__((deprecated)) = kFlutterMouseTrackingModeAlways,
 };
 
 /**
@@ -93,6 +117,17 @@ FLUTTER_DARWIN_EXPORT
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
+/**
+ * The identifier for this view controller, if it is attached.
+ *
+ * The identifier is assigned when the view controller is attached to a
+ * `FlutterEngine`.
+ *
+ * If the view controller is detached (see `FlutterViewController#attached`),
+ * reading this property throws an assertion.
+ */
+@property(nonatomic, readonly) FlutterViewIdentifier viewIdentifier;
 
 /**
  * Return YES if the view controller is attached to an engine.
@@ -175,3 +210,5 @@ FLUTTER_DARWIN_EXPORT
 @property(readwrite, nonatomic, nullable, copy) NSColor* backgroundColor;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_

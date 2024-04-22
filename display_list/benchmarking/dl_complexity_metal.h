@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_METAL_H_
-#define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_METAL_H_
+#ifndef FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_METAL_H_
+#define FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_METAL_H_
 
 #include "flutter/display_list/benchmarking/dl_complexity_helper.h"
 
@@ -32,12 +32,10 @@ class DisplayListMetalComplexityCalculator
  private:
   class MetalHelper : public ComplexityCalculatorHelper {
    public:
-    MetalHelper(unsigned int ceiling)
-        : ComplexityCalculatorHelper(ceiling),
-          save_layer_count_(0),
-          draw_text_blob_count_(0) {}
+    explicit MetalHelper(unsigned int ceiling)
+        : ComplexityCalculatorHelper(ceiling) {}
 
-    void saveLayer(const SkRect* bounds,
+    void saveLayer(const SkRect& bounds,
                    const SaveLayerOptions options,
                    const DlImageFilter* backdrop) override;
 
@@ -70,6 +68,9 @@ class DisplayListMetalComplexityCalculator
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
                       SkScalar y) override;
+    void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                       SkScalar x,
+                       SkScalar y) override;
     void drawShadow(const SkPath& path,
                     const DlColor color,
                     const SkScalar elevation,
@@ -85,8 +86,8 @@ class DisplayListMetalComplexityCalculator
     unsigned int BatchedComplexity() override;
 
    private:
-    unsigned int save_layer_count_;
-    unsigned int draw_text_blob_count_;
+    unsigned int save_layer_count_ = 0;
+    unsigned int draw_text_blob_count_ = 0;
   };
 
   DisplayListMetalComplexityCalculator()
@@ -98,4 +99,4 @@ class DisplayListMetalComplexityCalculator
 
 }  // namespace flutter
 
-#endif  // FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_METAL_H_
+#endif  // FLUTTER_DISPLAY_LIST_BENCHMARKING_DL_COMPLEXITY_METAL_H_

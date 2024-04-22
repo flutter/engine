@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_
 
 #include "flutter/fml/macros.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -20,9 +21,11 @@ class TextFrame {
  public:
   TextFrame();
 
+  TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color);
+
   ~TextFrame();
 
-  void CollectUniqueFontGlyphPairs(FontGlyphPair::Set& set, Scalar scale) const;
+  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map, Scalar scale) const;
 
   static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
 
@@ -30,9 +33,9 @@ class TextFrame {
   /// @brief      The conservative bounding box for this text frame.
   ///
   /// @return     The bounds rectangle. If there are no glyphs in this text
-  ///             frame, std::nullopt is returned.
+  ///             frame and empty Rectangle is returned instead.
   ///
-  std::optional<Rect> GetBounds() const;
+  Rect GetBounds() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The number of runs in this text frame.
@@ -40,15 +43,6 @@ class TextFrame {
   /// @return     The run count.
   ///
   size_t GetRunCount() const;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Adds a new text run to the text frame.
-  ///
-  /// @param[in]  run   The run
-  ///
-  /// @return     If the text run could be added to this frame.
-  ///
-  bool AddTextRun(const TextRun& run);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns a reference to all the text runs in this frame.
@@ -71,9 +65,16 @@ class TextFrame {
   /// @brief      The type of atlas this run should be emplaced in.
   GlyphAtlas::Type GetAtlasType() const;
 
+  TextFrame& operator=(TextFrame&& other) = default;
+
+  TextFrame(const TextFrame& other) = default;
+
  private:
   std::vector<TextRun> runs_;
+  Rect bounds_;
   bool has_color_ = false;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_

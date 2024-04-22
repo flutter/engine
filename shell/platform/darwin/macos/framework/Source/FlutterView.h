@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_
+
 #import <Cocoa/Cocoa.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
@@ -9,27 +12,20 @@
 
 #include <stdint.h>
 
-typedef int64_t FlutterViewId;
-
 /**
- * The view ID for APIs that don't support multi-view.
- *
- * Some single-view APIs will eventually be replaced by their multi-view
- * variant. During the deprecation period, the single-view APIs will coexist with
- * and work with the multi-view APIs as if the other views don't exist.  For
- * backward compatibility, single-view APIs will always operate on the view with
- * this ID. Also, the first view assigned to the engine will also have this ID.
+ * Delegate for FlutterView.
  */
-constexpr FlutterViewId kFlutterImplicitViewId = 0ll;
-
-/**
- * Listener for view resizing.
- */
-@protocol FlutterViewReshapeListener <NSObject>
+@protocol FlutterViewDelegate <NSObject>
 /**
  * Called when the view's backing store changes size.
  */
 - (void)viewDidReshape:(nonnull NSView*)view;
+
+/**
+ * Called to determine whether the view should accept first responder status.
+ */
+- (BOOL)viewShouldAcceptFirstResponder:(nonnull NSView*)view;
+
 @end
 
 /**
@@ -43,9 +39,10 @@ constexpr FlutterViewId kFlutterImplicitViewId = 0ll;
  */
 - (nullable instancetype)initWithMTLDevice:(nonnull id<MTLDevice>)device
                               commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                           reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
+                                  delegate:(nonnull id<FlutterViewDelegate>)delegate
                         threadSynchronizer:(nonnull FlutterThreadSynchronizer*)threadSynchronizer
-                                    viewId:(int64_t)viewId NS_DESIGNATED_INITIALIZER;
+                            viewIdentifier:(FlutterViewIdentifier)viewIdentifier
+    NS_DESIGNATED_INITIALIZER;
 
 - (nullable instancetype)initWithFrame:(NSRect)frameRect
                            pixelFormat:(nullable NSOpenGLPixelFormat*)format NS_UNAVAILABLE;
@@ -68,4 +65,13 @@ constexpr FlutterViewId kFlutterImplicitViewId = 0ll;
  */
 - (void)setBackgroundColor:(nonnull NSColor*)color;
 
+/**
+ * Called from the engine to notify the view that mouse cursor was updated while
+ * the mouse is over the view. The view is responsible from restoring the cursor
+ * when the mouse enters the view from another subview.
+ */
+- (void)didUpdateMouseCursor:(nonnull NSCursor*)cursor;
+
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERVIEW_H_

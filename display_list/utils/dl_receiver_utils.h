@@ -24,7 +24,6 @@ namespace flutter {
 class IgnoreAttributeDispatchHelper : public virtual DlOpReceiver {
  public:
   void setAntiAlias(bool aa) override {}
-  void setDither(bool dither) override {}
   void setInvertColors(bool invert) override {}
   void setStrokeCap(DlStrokeCap cap) override {}
   void setStrokeJoin(DlStrokeJoin join) override {}
@@ -79,7 +78,7 @@ class IgnoreTransformDispatchHelper : public virtual DlOpReceiver {
 class IgnoreDrawDispatchHelper : public virtual DlOpReceiver {
  public:
   void save() override {}
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override {}
   void restore() override {}
@@ -129,6 +128,9 @@ class IgnoreDrawDispatchHelper : public virtual DlOpReceiver {
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override {}
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override {}
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,

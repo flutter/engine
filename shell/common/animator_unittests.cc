@@ -23,22 +23,30 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kImplicitViewId = 0;
+
 class FakeAnimatorDelegate : public Animator::Delegate {
  public:
-  MOCK_METHOD2(OnAnimatorBeginFrame,
-               void(fml::TimePoint frame_target_time, uint64_t frame_number));
+  MOCK_METHOD(void,
+              OnAnimatorBeginFrame,
+              (fml::TimePoint frame_target_time, uint64_t frame_number),
+              (override));
 
   void OnAnimatorNotifyIdle(fml::TimeDelta deadline) override {
     notify_idle_called_ = true;
   }
 
-  MOCK_METHOD1(OnAnimatorUpdateLatestFrameTargetTime,
-               void(fml::TimePoint frame_target_time));
+  MOCK_METHOD(void,
+              OnAnimatorUpdateLatestFrameTargetTime,
+              (fml::TimePoint frame_target_time),
+              (override));
 
-  MOCK_METHOD1(OnAnimatorDraw,
-               void(std::shared_ptr<LayerTreePipeline> pipeline));
+  MOCK_METHOD(void,
+              OnAnimatorDraw,
+              (std::shared_ptr<FramePipeline> pipeline),
+              (override));
 
-  void OnAnimatorDrawLastLayerTree(
+  void OnAnimatorDrawLastLayerTrees(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
 
   bool notify_idle_called_ = false;
@@ -96,7 +104,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
   platform_task.wait();
   on_target_time_latch.Wait();
   const auto vsync_waiter_target_time =
-      ConstantFiringVsyncWaiter::frame_target_time;
+      ConstantFiringVsyncWaiter::kFrameTargetTime;
   ASSERT_EQ(vsync_waiter_target_time.ToEpochDelta().ToMicroseconds(),
             target_time);
 
@@ -152,20 +160,30 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
   latch.Wait();
   ASSERT_FALSE(delegate.notify_idle_called_);
 
+  fml::AutoResetWaitableEvent render_latch;
   // Validate it has not notified idle and try to render.
   task_runners.GetUITaskRunner()->PostDelayedTask(
       [&] {
         ASSERT_FALSE(delegate.notify_idle_called_);
-        auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
-                                                      SkISize::Make(600, 800));
-        animator->Render(std::move(layer_tree), 1.0);
+        EXPECT_CALL(delegate, OnAnimatorBeginFrame).WillOnce([&] {
+          auto layer_tree = std::make_unique<LayerTree>(
+              LayerTree::Config(), SkISize::Make(600, 800));
+          animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
+          render_latch.Signal();
+        });
+        // Request a frame that builds a layer tree and renders a frame.
+        // When the frame is rendered, render_latch will be signaled.
+        animator->RequestFrame(true);
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
       // See kNotifyIdleTaskWaitTime in animator.cc.
       fml::TimeDelta::FromMilliseconds(60));
   latch.Wait();
+  render_latch.Wait();
 
-  // Still hasn't notified idle because there has been no frame request.
+  // A frame has been rendered, and the next frame request will notify idle.
+  // But at the moment there isn't another frame request, therefore it still
+  // hasn't notified idle.
   task_runners.GetUITaskRunner()->PostTask([&] {
     ASSERT_FALSE(delegate.notify_idle_called_);
     // False to avoid getting cals to BeginFrame that will request more frames
@@ -218,11 +236,6 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
   });
 
   fml::AutoResetWaitableEvent begin_frame_latch;
-  EXPECT_CALL(delegate, OnAnimatorBeginFrame)
-      .WillRepeatedly(
-          [&](fml::TimePoint frame_target_time, uint64_t frame_number) {
-            begin_frame_latch.Signal();
-          });
   // It must always be called when the method 'Animator::Render' is called,
   // regardless of whether the pipeline is empty or not.
   EXPECT_CALL(delegate, OnAnimatorUpdateLatestFrameTargetTime).Times(2);
@@ -233,16 +246,16 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
 
   for (int i = 0; i < 2; i++) {
     task_runners.GetUITaskRunner()->PostTask([&] {
+      EXPECT_CALL(delegate, OnAnimatorBeginFrame).WillOnce([&] {
+        auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
+                                                      SkISize::Make(600, 800));
+        animator->Render(kImplicitViewId, std::move(layer_tree), 1.0);
+        begin_frame_latch.Signal();
+      });
       animator->RequestFrame();
       task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
     });
     begin_frame_latch.Wait();
-
-    PostTaskSync(task_runners.GetUITaskRunner(), [&] {
-      auto layer_tree = std::make_unique<LayerTree>(LayerTree::Config(),
-                                                    SkISize::Make(600, 800));
-      animator->Render(std::move(layer_tree), 1.0);
-    });
   }
 
   PostTaskSync(task_runners.GetUITaskRunner(), [&] { animator.reset(); });

@@ -13,6 +13,7 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "vulkan/vulkan_core.h"
 
 namespace flutter {
@@ -103,6 +104,7 @@ sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
     const VkImage image,
     const VkFormat format,
     const SkISize& size) {
+#ifdef SK_VULKAN
   GrVkImageInfo image_info = {
       .fImage = image,
       .fImageTiling = VK_IMAGE_TILING_OPTIMAL,
@@ -115,10 +117,8 @@ sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
       .fSampleCount = 1,
       .fLevelCount = 1,
   };
-  GrBackendTexture backend_texture(size.width(),   //
-                                   size.height(),  //
-                                   image_info      //
-  );
+  auto backend_texture =
+      GrBackendTextures::MakeVk(size.width(), size.height(), image_info);
 
   SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
 
@@ -131,6 +131,9 @@ sk_sp<SkSurface> GPUSurfaceVulkan::CreateSurfaceFromVulkanImage(
       SkColorSpace::MakeSRGB(),     // color space
       &surface_properties           // surface properties
   );
+#else
+  return nullptr;
+#endif  // SK_VULKAN
 }
 
 SkColorType GPUSurfaceVulkan::ColorTypeFromFormat(const VkFormat format) {

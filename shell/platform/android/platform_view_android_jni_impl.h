@@ -45,6 +45,8 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   void SurfaceTextureAttachToGLContext(JavaLocalRef surface_texture,
                                        int textureId) override;
 
+  bool SurfaceTextureShouldUpdate(JavaLocalRef surface_texture) override;
+
   void SurfaceTextureUpdateTexImage(JavaLocalRef surface_texture) override;
 
   void SurfaceTextureGetTransformMatrix(JavaLocalRef surface_texture,
@@ -52,7 +54,7 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void SurfaceTextureDetachFromGLContext(JavaLocalRef surface_texture) override;
 
-  JavaLocalRef ImageTextureEntryAcquireLatestImage(
+  JavaLocalRef ImageProducerTextureEntryAcquireLatestImage(
       JavaLocalRef image_texture_entry) override;
 
   JavaLocalRef ImageGetHardwareBuffer(JavaLocalRef image) override;
@@ -98,6 +100,9 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
   double GetDisplayDensity() override;
 
   bool RequestDartDeferredLibrary(int loading_unit_id) override;
+
+  double FlutterViewGetScaledFontSize(double unscaled_font_size,
+                                      int configuration_id) const override;
 
  private:
   // Reference to FlutterJNI object.

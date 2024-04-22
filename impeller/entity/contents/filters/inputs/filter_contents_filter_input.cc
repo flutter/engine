@@ -25,7 +25,8 @@ std::optional<Snapshot> FilterContentsFilterInput::GetSnapshot(
     const std::string& label,
     const ContentContext& renderer,
     const Entity& entity,
-    std::optional<Rect> coverage_limit) const {
+    std::optional<Rect> coverage_limit,
+    int32_t mip_count) const {
   if (!snapshot_.has_value()) {
     snapshot_ = filter_->RenderToSnapshot(
         renderer,        // renderer
@@ -33,6 +34,7 @@ std::optional<Snapshot> FilterContentsFilterInput::GetSnapshot(
         coverage_limit,  // coverage_limit
         std::nullopt,    // sampler_descriptor
         true,            // msaa_enabled
+        /*mip_count=*/mip_count,
         SPrintF("Filter to %s Filter Snapshot", label.c_str()));  // label
   }
   return snapshot_;
@@ -43,19 +45,29 @@ std::optional<Rect> FilterContentsFilterInput::GetCoverage(
   return filter_->GetCoverage(entity);
 }
 
+std::optional<Rect> FilterContentsFilterInput::GetSourceCoverage(
+    const Matrix& effect_transform,
+    const Rect& output_limit) const {
+  return filter_->GetSourceCoverage(effect_transform, output_limit);
+}
+
 Matrix FilterContentsFilterInput::GetLocalTransform(
     const Entity& entity) const {
-  return filter_->GetLocalTransform(entity.GetTransformation());
+  return filter_->GetLocalTransform(entity.GetTransform());
 }
 
 Matrix FilterContentsFilterInput::GetTransform(const Entity& entity) const {
-  return filter_->GetTransform(entity.GetTransformation());
+  return filter_->GetTransform(entity.GetTransform());
 }
 
 void FilterContentsFilterInput::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
   filter_->PopulateGlyphAtlas(lazy_glyph_atlas, scale);
+}
+
+bool FilterContentsFilterInput::IsTranslationOnly() const {
+  return filter_->IsTranslationOnly();
 }
 
 bool FilterContentsFilterInput::IsLeaf() const {
@@ -65,6 +77,15 @@ bool FilterContentsFilterInput::IsLeaf() const {
 void FilterContentsFilterInput::SetLeafInputs(
     const FilterInput::Vector& inputs) {
   filter_->SetLeafInputs(inputs);
+}
+
+void FilterContentsFilterInput::SetEffectTransform(const Matrix& matrix) {
+  filter_->SetEffectTransform(matrix);
+}
+
+void FilterContentsFilterInput::SetRenderingMode(
+    Entity::RenderingMode rendering_mode) {
+  filter_->SetRenderingMode(rendering_mode);
 }
 
 }  // namespace impeller

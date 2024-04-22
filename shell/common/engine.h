@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_COMMON_ENGINE_H_
-#define SHELL_COMMON_ENGINE_H_
+#ifndef FLUTTER_SHELL_COMMON_ENGINE_H_
+#define FLUTTER_SHELL_COMMON_ENGINE_H_
 
 #include <memory>
 #include <string>
@@ -29,7 +29,6 @@
 #include "flutter/shell/common/display_manager.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/pointer_data_dispatcher.h"
-#include "flutter/shell/common/rasterizer.h"
 #include "flutter/shell/common/run_configuration.h"
 #include "flutter/shell/common/shell_io_manager.h"
 
@@ -77,6 +76,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @brief      Indicates the result of the call to `Engine::Run`.
   ///
   enum class RunStatus {
+    // NOLINTBEGIN(readability-identifier-naming)
     //--------------------------------------------------------------------------
     /// The call to |Engine::Run| was successful and the root isolate is in the
     /// `DartIsolate::Phase::Running` phase with its entry-point invocation
@@ -126,6 +126,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///   AOT mode operation of the Dart VM.
     ///
     Failure,
+    // NOLINTEND(readability-identifier-naming)
   };
 
   //----------------------------------------------------------------------------
@@ -293,6 +294,39 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
     ///        Flutter to the host platform (and its responses).
     virtual const std::shared_ptr<PlatformMessageHandler>&
     GetPlatformMessageHandler() const = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Invoked when a listener is registered on a platform channel.
+    ///
+    /// @param[in]  name             The name of the platform channel to which a
+    ///                              listener has been registered or cleared.
+    ///
+    /// @param[in]  listening        Whether the listener has been set (true) or
+    ///                              cleared (false).
+    ///
+    virtual void OnEngineChannelUpdate(std::string name, bool listening) = 0;
+
+    //--------------------------------------------------------------------------
+    /// @brief      Synchronously invokes platform-specific APIs to apply the
+    ///             system text scaling on the given unscaled font size.
+    ///
+    ///             Platforms that support this feature (currently it's only
+    ///             implemented for Android SDK level 34+) will send a valid
+    ///             configuration_id to potential callers, before this method
+    ///             can be called.
+    ///
+    /// @param[in]  unscaled_font_size  The unscaled font size specified by the
+    ///                                 app developer. The value is in logical
+    ///                                 pixels, and is guaranteed to be finite
+    ///                                 and non-negative.
+    /// @param[in]  configuration_id    The unique id of the configuration to
+    ///                                 use for computing the scaled font size.
+    ///
+    /// @return     The scaled font size in logical pixels, or -1 when the given
+    ///             configuration_id did not match a valid configuration.
+    ///
+    virtual double GetScaledFontSize(double unscaled_font_size,
+                                     int configuration_id) const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -302,11 +336,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
-         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         const std::shared_ptr<fml::ConcurrentTaskRunner>&
+             image_decoder_task_runner,
          const TaskRunners& task_runners,
          const Settings& settings,
          std::unique_ptr<Animator> animator,
-         fml::WeakPtr<IOManager> io_manager,
+         const fml::WeakPtr<IOManager>& io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
          std::unique_ptr<RuntimeController> runtime_controller,
          const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
@@ -362,10 +397,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
-         fml::RefPtr<SkiaUnrefQueue> unref_queue,
+         const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
-         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
+         const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+         impeller::RuntimeStageBackend runtime_stage_type =
+             impeller::RuntimeStageBackend::kSkSL);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a Engine that shares as many resources as
@@ -684,8 +721,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  /// @param[in]  callback          Callback that will be invoked once
+  ///                               the engine attempts to add the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  void AddView(int64_t view_id,
+               const ViewportMetrics& view_metrics,
+               std::function<void(bool added)> callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the Flutter application that a view is no
@@ -698,7 +739,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view was removed.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for a view. The viewport metrics
@@ -795,11 +838,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void SetAccessibilityFeatures(int32_t flags);
 
   // |RuntimeDelegate|
-  void ScheduleFrame(bool regenerate_layer_tree) override;
+  void ScheduleFrame(bool regenerate_layer_trees) override;
 
   /// Schedule a frame with the default parameter of regenerating the layer
   /// tree.
   void ScheduleFrame() { ScheduleFrame(true); }
+
+  // |RuntimeDelegate|
+  void OnAllViewsRendered() override;
 
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
@@ -922,12 +968,19 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
+  //--------------------------------------------------------------------------
+  /// @brief      Shuts down all registered platform isolates. Must be called
+  ///             from the platform thread.
+  ///
+  void ShutdownPlatformIsolates();
+
  private:
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 
   // |RuntimeDelegate|
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree,
+  void Render(int64_t view_id,
+              std::unique_ptr<flutter::LayerTree> layer_tree,
               float device_pixel_ratio) override;
 
   // |RuntimeDelegate|
@@ -954,6 +1007,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   // |RuntimeDelegate|
   std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const override;
+
+  // |RuntimeDelegate|
+  void SendChannelUpdate(std::string name, bool listening) override;
+
+  // |RuntimeDelegate|
+  double GetScaledFontSize(double unscaled_font_size,
+                           int configuration_id) const override;
 
   void SetNeedsReportTimings(bool value) override;
 
@@ -997,4 +1057,4 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_ENGINE_H_
+#endif  // FLUTTER_SHELL_COMMON_ENGINE_H_

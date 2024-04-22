@@ -7,8 +7,14 @@
 #include "flutter/testing/testing.h"
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkData.h"
+#include "third_party/skia/include/core/SkFontMgr.h"
+#include "third_party/skia/include/core/SkTypeface.h"
+#include "txt/platform.h"
+
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 namespace impeller {
 
@@ -29,7 +35,7 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
     return true;
   }
 
-  AiksContext context(GetContext());
+  AiksContext context(GetContext(), TypographerContextSkia::Make());
   if (!context.IsValid()) {
     return false;
   }
@@ -43,34 +49,33 @@ bool DlPlayground::OpenPlaygroundHere(DisplayListPlaygroundCallback callback) {
 
         auto list = callback();
 
+#if ENABLE_EXPERIMENTAL_CANVAS
+        TextFrameDispatcher collector(context.GetContentContext(), Matrix());
+        list->Dispatch(collector);
+
+        ExperimentalDlDispatcher impeller_dispatcher(
+            context.GetContentContext(), render_target, IRect::MakeMaximum());
+        list->Dispatch(impeller_dispatcher);
+        impeller_dispatcher.FinishRecording();
+        context.GetContentContext().GetTransientsBuffer().Reset();
+        context.GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+        return true;
+#else
         DlDispatcher dispatcher;
         list->Dispatch(dispatcher);
         auto picture = dispatcher.EndRecordingAsPicture();
 
-        return context.Render(picture, render_target);
+        return context.Render(picture, render_target, true);
+#endif
       });
-}
-
-static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
-  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
-  if (!mapping) {
-    return nullptr;
-  }
-  auto data = SkData::MakeWithProc(
-      mapping->GetMapping(), mapping->GetSize(),
-      [](const void* ptr, void* context) {
-        delete reinterpret_cast<fml::Mapping*>(context);
-      },
-      mapping.get());
-  mapping.release();
-  return data;
 }
 
 SkFont DlPlayground::CreateTestFontOfSize(SkScalar scalar) {
   static constexpr const char* kTestFontFixture = "Roboto-Regular.ttf";
-  auto mapping = OpenFixtureAsSkData(kTestFontFixture);
+  auto mapping = flutter::testing::OpenFixtureAsSkData(kTestFontFixture);
   FML_CHECK(mapping);
-  return SkFont{SkTypeface::MakeFromData(mapping), scalar};
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  return SkFont{font_mgr->makeFromData(mapping), scalar};
 }
 
 SkFont DlPlayground::CreateTestFont() {

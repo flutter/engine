@@ -22,6 +22,14 @@
 
 namespace flutter {
 
+// The combination of targeted graphics API and Impeller support.
+enum class AndroidRenderingAPI {
+  kSoftware,
+  kImpellerOpenGLES,
+  kImpellerVulkan,
+  kSkiaOpenGLES
+};
+
 class FrameTiming {
  public:
   enum Phase {
@@ -90,6 +98,9 @@ using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
 
 class DartIsolate;
 
+// TODO(https://github.com/flutter/flutter/issues/138750): Re-order fields to
+// reduce padding.
+// NOLINTNEXTLINE(clang-analyzer-optin.performance.Padding)
 struct Settings {
   Settings();
 
@@ -146,6 +157,7 @@ struct Settings {
   std::optional<std::vector<std::string>> trace_skia_allowlist;
   bool trace_startup = false;
   bool trace_systrace = false;
+  std::string trace_to_file;
   bool enable_timeline_event_handler = true;
   bool dump_skp_on_shader_compilation = false;
   bool cache_sksl = false;
@@ -217,12 +229,26 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
-  // Requests a particular backend to be used (ex "opengles" or "vulkan")
-  std::optional<std::string> impeller_backend;
+  // Log a warning during shell initialization if Impeller is not enabled.
+  bool warn_on_impeller_opt_out = false;
+
+  // The selected Android rendering API.
+  AndroidRenderingAPI android_rendering_api =
+      AndroidRenderingAPI::kSkiaOpenGLES;
+
+  // Requests a specific rendering backend.
+  std::optional<std::string> requested_rendering_backend;
 
   // Enable Vulkan validation on backends that support it. The validation layers
   // must be available to the application.
   bool enable_vulkan_validation = false;
+
+  // Enable GPU tracing in GLES backends.
+  // Some devices claim to support the required APIs but crash on their usage.
+  bool enable_opengl_gpu_tracing = false;
+
+  // Enable GPU tracing in Vulkan backends.
+  bool enable_vulkan_gpu_tracing = false;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;
@@ -333,6 +359,11 @@ struct Settings {
   ///
   /// This is currently only used by iOS.
   bool enable_embedder_api = false;
+
+  /// Enable support for isolates that run on the platform thread.
+  ///
+  /// This is used by the runOnPlatformThread API.
+  bool enable_platform_isolates = false;
 };
 
 }  // namespace flutter

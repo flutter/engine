@@ -2,8 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_POOL_H_
+#define FLUTTER_IMPELLER_RENDERER_POOL_H_
 
+#include <cstdint>
 #include <memory>
 #include <mutex>
 
@@ -14,7 +16,7 @@ namespace impeller {
 template <typename T>
 class Pool {
  public:
-  Pool(uint32_t limit_bytes) : limit_bytes_(limit_bytes), size_(0) {}
+  explicit Pool(uint32_t limit_bytes) : limit_bytes_(limit_bytes) {}
 
   std::shared_ptr<T> Grab() {
     std::scoped_lock lock(mutex_);
@@ -46,9 +48,11 @@ class Pool {
  private:
   std::vector<std::shared_ptr<T>> pool_;
   const uint32_t limit_bytes_;
-  uint32_t size_;
+  uint32_t size_ = 0;
   // Note: This would perform better as a lockless ring buffer.
   mutable std::mutex mutex_;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_POOL_H_

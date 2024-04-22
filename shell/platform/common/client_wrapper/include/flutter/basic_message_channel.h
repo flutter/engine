@@ -7,11 +7,32 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 
 #include "binary_messenger.h"
 #include "message_codec.h"
 
 namespace flutter {
+
+namespace internal {
+// Internal helper functions used by BasicMessageChannel and MethodChannel.
+
+// Adjusts the number of messages that will get buffered when sending messages
+// to channels that aren't fully set up yet. For example, the engine isn't
+// running yet or the channel's message handler isn't set up on the Dart side
+// yet.
+void ResizeChannel(BinaryMessenger* messenger, std::string name, int new_size);
+
+// Defines whether the channel should show warning messages when discarding
+// messages due to overflow.
+//
+// When |warns| is false, the channel is expected to overflow and warning
+// messages will not be shown.
+void SetChannelWarnsOnOverflow(BinaryMessenger* messenger,
+                               std::string name,
+                               bool warns);
+
+}  // namespace internal
 
 class EncodableValue;
 
@@ -58,7 +79,8 @@ class BasicMessageChannel {
   void Send(const T& message, BinaryReply reply) {
     std::unique_ptr<std::vector<uint8_t>> raw_message =
         codec_->EncodeMessage(message);
-    messenger_->Send(name_, raw_message->data(), raw_message->size(), reply);
+    messenger_->Send(name_, raw_message->data(), raw_message->size(),
+                     std::move(reply));
   }
 
   // Registers a handler that should be called any time a message is
@@ -77,7 +99,7 @@ class BasicMessageChannel {
     BinaryMessageHandler binary_handler = [handler, codec, channel_name](
                                               const uint8_t* binary_message,
                                               const size_t binary_message_size,
-                                              BinaryReply binary_reply) {
+                                              const BinaryReply& binary_reply) {
       // Use this channel's codec to decode the message and build a reply
       // handler.
       std::unique_ptr<T> message =
@@ -97,6 +119,23 @@ class BasicMessageChannel {
       handler(*message, std::move(unencoded_reply));
     };
     messenger_->SetMessageHandler(name_, std::move(binary_handler));
+  }
+
+  // Adjusts the number of messages that will get buffered when sending messages
+  // to channels that aren't fully set up yet. For example, the engine isn't
+  // running yet or the channel's message handler isn't set up on the Dart side
+  // yet.
+  void Resize(int new_size) {
+    internal::ResizeChannel(messenger_, name_, new_size);
+  }
+
+  // Defines whether the channel should show warning messages when discarding
+  // messages due to overflow.
+  //
+  // When |warns| is false, the channel is expected to overflow and warning
+  // messages will not be shown.
+  void SetWarnsOnOverflow(bool warns) {
+    internal::SetChannelWarnsOnOverflow(messenger_, name_, warns);
   }
 
  private:

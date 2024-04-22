@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_IMPL_H_
+#define FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_IMPL_H_
 
 #include <memory>
 
@@ -32,13 +33,20 @@ class PlaygroundImpl {
 
   Vector2 GetContentScale() const;
 
+  virtual fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities) = 0;
+
  protected:
   const PlaygroundSwitches switches_;
 
   explicit PlaygroundImpl(PlaygroundSwitches switches);
 
  private:
-  FML_DISALLOW_COPY_AND_ASSIGN(PlaygroundImpl);
+  PlaygroundImpl(const PlaygroundImpl&) = delete;
+
+  PlaygroundImpl& operator=(const PlaygroundImpl&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_PLAYGROUND_PLAYGROUND_IMPL_H_

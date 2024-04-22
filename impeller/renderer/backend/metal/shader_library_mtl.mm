@@ -32,8 +32,6 @@ static MTLFunctionType ToMTLFunctionType(ShaderStage stage) {
     case ShaderStage::kFragment:
       return MTLFunctionTypeFragment;
     case ShaderStage::kUnknown:
-    case ShaderStage::kTessellationControl:
-    case ShaderStage::kTessellationEvaluation:
     case ShaderStage::kCompute:
       return MTLFunctionTypeKernel;
   }
@@ -55,6 +53,7 @@ std::shared_ptr<const ShaderFunction> ShaderLibraryMTL::GetFunction(
   ShaderKey key(name, stage);
 
   id<MTLFunction> function = nil;
+  id<MTLLibrary> library = nil;
 
   {
     ReaderLock lock(libraries_mutex_);
@@ -64,7 +63,8 @@ std::shared_ptr<const ShaderFunction> ShaderLibraryMTL::GetFunction(
     }
 
     for (size_t i = 0, count = [libraries_ count]; i < count; i++) {
-      function = [libraries_[i] newFunctionWithName:@(name.data())];
+      library = libraries_[i];
+      function = [library newFunctionWithName:@(name.data())];
       if (function) {
         break;
       }
@@ -81,7 +81,7 @@ std::shared_ptr<const ShaderFunction> ShaderLibraryMTL::GetFunction(
     }
 
     auto func = std::shared_ptr<ShaderFunctionMTL>(new ShaderFunctionMTL(
-        library_id_, function, {name.data(), name.size()}, stage));
+        library_id_, function, library, {name.data(), name.size()}, stage));
     functions_[key] = func;
 
     return func;

@@ -2,12 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_RUNNER_PRODUCT_CONFIGURATION_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_RUNNER_PRODUCT_CONFIGURATION_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLUTTER_RUNNER_PRODUCT_CONFIGURATION_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLUTTER_RUNNER_PRODUCT_CONFIGURATION_H_
 
 #include <string>
-
-#include "flutter/fml/time/time_delta.h"
 
 namespace flutter_runner {
 
@@ -16,8 +14,6 @@ class FlutterRunnerProductConfiguration {
   FlutterRunnerProductConfiguration() {}
   explicit FlutterRunnerProductConfiguration(std::string json_string);
 
-  fml::TimeDelta get_vsync_offset() { return vsync_offset_; }
-  uint64_t get_max_frames_in_flight() { return max_frames_in_flight_; }
   bool get_intercept_all_input() { return intercept_all_input_; }
   bool software_rendering() { return software_rendering_; }
   bool enable_shader_warmup() { return enable_shader_warmup_; }
@@ -26,8 +22,6 @@ class FlutterRunnerProductConfiguration {
   }
 
  private:
-  fml::TimeDelta vsync_offset_ = fml::TimeDelta::Zero();
-  uint64_t max_frames_in_flight_ = 3;
   bool intercept_all_input_ = false;
   bool software_rendering_ = false;
   bool enable_shader_warmup_ = false;
@@ -35,4 +29,4 @@ class FlutterRunnerProductConfiguration {
 };
 
 }  // namespace flutter_runner
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_RUNNER_PRODUCT_CONFIGURATION_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLUTTER_RUNNER_PRODUCT_CONFIGURATION_H_

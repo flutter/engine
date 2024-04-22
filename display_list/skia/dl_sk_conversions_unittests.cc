@@ -10,6 +10,7 @@
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
 #include "third_party/skia/include/core/SkTileMode.h"
 
@@ -24,6 +25,21 @@ TEST(DisplayListImageFilter, LocalImageSkiaNull) {
   // With sigmas set to zero on the blur filter, Skia will return a null filter.
   // The local matrix filter should return nullptr instead of crashing.
   ASSERT_EQ(ToSk(dl_local_matrix_filter), nullptr);
+}
+
+TEST(DisplayListSkConversions, ToSkColor) {
+  // Red
+  ASSERT_EQ(ToSk(DlColor::kRed()), SK_ColorRED);
+
+  // Green
+  ASSERT_EQ(ToSk(DlColor::kGreen()), SK_ColorGREEN);
+
+  // Blue
+  ASSERT_EQ(ToSk(DlColor::kBlue()), SK_ColorBLUE);
+
+  // Half transparent grey
+  auto const grey_hex_half_opaque = 0x7F999999;
+  ASSERT_EQ(ToSk(DlColor(grey_hex_half_opaque)), SkColor(grey_hex_half_opaque));
 }
 
 TEST(DisplayListSkConversions, ToSkTileMode) {
@@ -127,29 +143,37 @@ TEST(DisplayListSkConversions, ToSkSamplingOptions) {
   FUNC(kLastSeparableMode)             \
   FUNC(kLastMode)
 
-TEST(DisplayListSkConversions, ToSkBlendMode) {
+TEST(DisplayListSkConversions, ToSkBlendMode){
 #define CHECK_TO_SKENUM(V) ASSERT_EQ(ToSk(DlBlendMode::V), SkBlendMode::V);
-  FOR_EACH_BLEND_MODE_ENUM(CHECK_TO_SKENUM)
+    FOR_EACH_BLEND_MODE_ENUM(CHECK_TO_SKENUM)
 #undef CHECK_TO_SKENUM
 }
 
 TEST(DisplayListSkConversions, BlendColorFilterModifiesTransparency) {
   auto test_mode_color = [](DlBlendMode mode, DlColor color) {
     std::stringstream desc_str;
-    desc_str << "blend[" << static_cast<int>(mode) << ", " << color << "]";
+    desc_str << "blend[" << static_cast<int>(mode) << ", " << color.argb()
+             << "]";
     std::string desc = desc_str.str();
     DlBlendColorFilter filter(color, mode);
+    auto srgb = SkColorSpace::MakeSRGB();
     if (filter.modifies_transparent_black()) {
       auto dl_filter = DlBlendColorFilter::Make(color, mode);
       auto sk_filter = ToSk(filter);
       ASSERT_NE(dl_filter, nullptr) << desc;
       ASSERT_NE(sk_filter, nullptr) << desc;
-      ASSERT_TRUE(sk_filter->filterColor(0) != 0) << desc;
+      ASSERT_TRUE(sk_filter->filterColor4f(SkColors::kTransparent, srgb.get(),
+                                           srgb.get()) !=
+                  SkColors::kTransparent)
+          << desc;
     } else {
       auto dl_filter = DlBlendColorFilter::Make(color, mode);
       auto sk_filter = ToSk(filter);
       EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr) << desc;
-      ASSERT_TRUE(sk_filter == nullptr || sk_filter->filterColor(0) == 0)
+      ASSERT_TRUE(sk_filter == nullptr ||
+                  sk_filter->filterColor4f(SkColors::kTransparent, srgb.get(),
+                                           srgb.get()) ==
+                      SkColors::kTransparent)
           << desc;
     }
   };
@@ -250,9 +274,12 @@ TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
     DlMatrixColorFilter filter(matrix);
     auto dl_filter = DlMatrixColorFilter::Make(matrix);
     auto sk_filter = ToSk(filter);
+    auto srgb = SkColorSpace::MakeSRGB();
     EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr);
     EXPECT_EQ(filter.modifies_transparent_black(),
-              sk_filter && sk_filter->filterColor(0) != 0);
+              sk_filter && sk_filter->filterColor4f(SkColors::kTransparent,
+                                                    srgb.get(), srgb.get()) !=
+                               SkColors::kTransparent);
   };
 
   // Tests identity (matrix[0] already == 1 in an identity filter)
@@ -270,42 +297,32 @@ TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
   }
 }
 
-TEST(DisplayListSkConversions, ToSkDitheringDisabledForGradients) {
-  // Test that when using the utility method "ToSk", the resulting SkPaint
-  // does not have "isDither" set to true, even if it's requested by the
-  // Flutter (dart:ui) paint, because it's not a supported feature in the
-  // Impeller backend.
-
-  // Create a new DlPaint with isDither set to true.
-  //
-  // This mimics the behavior of ui.Paint.enableDithering = true.
-  DlPaint dl_paint;
-  dl_paint.setDither(true);
-
-  SkPaint sk_paint = ToSk(dl_paint);
-
-  EXPECT_FALSE(sk_paint.isDither());
-}
-
 TEST(DisplayListSkConversions, ToSkDitheringEnabledForGradients) {
   // Test that when using the utility method "ToSk", the resulting SkPaint
   // has "isDither" set to true, if the paint is a gradient, because it's
   // a supported feature in the Impeller backend.
 
-  // Create a new DlPaint with isDither set to true.
-  //
-  // This mimics the behavior of ui.Paint.enableDithering = true.
   DlPaint dl_paint;
-  dl_paint.setDither(true);
 
   // Set the paint to be a gradient.
   dl_paint.setColorSource(DlColorSource::MakeLinear(SkPoint::Make(0, 0),
                                                     SkPoint::Make(100, 100), 0,
                                                     0, 0, DlTileMode::kClamp));
 
-  SkPaint sk_paint = ToSk(dl_paint);
+  {
+    SkPaint sk_paint = ToSk(dl_paint);
+    EXPECT_TRUE(sk_paint.isDither());
+  }
 
-  EXPECT_TRUE(sk_paint.isDither());
+  {
+    SkPaint sk_paint = ToStrokedSk(dl_paint);
+    EXPECT_TRUE(sk_paint.isDither());
+  }
+
+  {
+    SkPaint sk_paint = ToNonShaderSk(dl_paint);
+    EXPECT_FALSE(sk_paint.isDither());
+  }
 }
 
 }  // namespace testing

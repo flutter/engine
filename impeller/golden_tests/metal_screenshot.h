@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_
+
+#include "flutter/impeller/golden_tests/screenshot.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreImage/CoreImage.h>
@@ -13,27 +16,31 @@
 namespace impeller {
 namespace testing {
 
-class MetalScreenshoter;
-
-/// A screenshot that was produced from `MetalScreenshoter`.
-class MetalScreenshot {
+/// A screenshot that was produced from `MetalScreenshotter`.
+class MetalScreenshot : public Screenshot {
  public:
+  explicit MetalScreenshot(CGImageRef cgImage);
+
   ~MetalScreenshot();
 
-  const UInt8* GetBytes() const;
+  const uint8_t* GetBytes() const override;
 
-  size_t GetHeight() const;
+  size_t GetHeight() const override;
 
-  size_t GetWidth() const;
+  size_t GetWidth() const override;
 
-  bool WriteToPNG(const std::string& path) const;
+  size_t GetBytesPerRow() const override;
+
+  bool WriteToPNG(const std::string& path) const override;
 
  private:
-  friend class MetalScreenshoter;
-  MetalScreenshot(CGImageRef cgImage);
-  FML_DISALLOW_COPY_AND_ASSIGN(MetalScreenshot);
-  CGImageRef cgImage_;
+  MetalScreenshot(const MetalScreenshot&) = delete;
+
+  MetalScreenshot& operator=(const MetalScreenshot&) = delete;
+  CGImageRef cg_image_;
   CFDataRef pixel_data_;
 };
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_METAL_SCREENSHOT_H_

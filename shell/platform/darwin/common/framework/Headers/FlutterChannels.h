@@ -2,13 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_FLUTTERCHANNELS_H_
-#define FLUTTER_FLUTTERCHANNELS_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERCHANNELS_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERCHANNELS_H_
 
 #import "FlutterBinaryMessenger.h"
 #import "FlutterCodecs.h"
-
-@protocol FlutterTaskQueue;
 
 NS_ASSUME_NONNULL_BEGIN
 /**
@@ -143,8 +141,45 @@ FLUTTER_DARWIN_EXPORT
  * Adjusts the number of messages that will get buffered when sending messages to
  * channels that aren't fully set up yet.  For example, the engine isn't running
  * yet or the channel's message handler isn't set up on the Dart side yet.
+ *
+ * @param name The channel name.
+ * @param messenger The binary messenger.
+ * @param newSize The number of messages that will get buffered.
+ */
++ (void)resizeChannelWithName:(NSString*)name
+              binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger
+                         size:(NSInteger)newSize;
+
+/**
+ * Adjusts the number of messages that will get buffered when sending messages to
+ * channels that aren't fully set up yet.  For example, the engine isn't running
+ * yet or the channel's message handler isn't set up on the Dart side yet.
+ *
+ * @param newSize The number of messages that will get buffered.
  */
 - (void)resizeChannelBuffer:(NSInteger)newSize;
+
+/**
+ * Defines whether the channel should show warning messages when discarding messages
+ * due to overflow.
+ *
+ * @param warns When false, the channel is expected to overflow and warning messages
+ *              will not be shown.
+ * @param name The channel name.
+ * @param messenger The binary messenger.
+ */
++ (void)setWarnsOnOverflow:(BOOL)warns
+        forChannelWithName:(NSString*)name
+           binaryMessenger:(NSObject<FlutterBinaryMessenger>*)messenger;
+
+/**
+ * Defines whether the channel should show warning messages when discarding messages
+ * due to overflow.
+ *
+ * @param warns When false, the channel is expected to overflow and warning messages
+ *              will not be shown.
+ */
+- (void)setWarnsOnOverflow:(BOOL)warns;
 
 @end
 
@@ -449,4 +484,4 @@ FLUTTER_DARWIN_EXPORT
 @end
 NS_ASSUME_NONNULL_END
 
-#endif  // FLUTTER_FLUTTERCHANNELS_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_HEADERS_FLUTTERCHANNELS_H_

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TESTING_DISPLAY_LIST_TESTING_H_
-#define TESTING_DISPLAY_LIST_TESTING_H_
+#ifndef FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
+#define FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
 
 #include <ostream>
 
@@ -17,16 +17,16 @@ bool DisplayListsEQ_Verbose(const DisplayList* a, const DisplayList* b);
 bool inline DisplayListsEQ_Verbose(const DisplayList& a, const DisplayList& b) {
   return DisplayListsEQ_Verbose(&a, &b);
 }
-bool inline DisplayListsEQ_Verbose(sk_sp<const DisplayList> a,
-                                   sk_sp<const DisplayList> b) {
+bool inline DisplayListsEQ_Verbose(const sk_sp<const DisplayList>& a,
+                                   const sk_sp<const DisplayList>& b) {
   return DisplayListsEQ_Verbose(a.get(), b.get());
 }
 bool DisplayListsNE_Verbose(const DisplayList* a, const DisplayList* b);
 bool inline DisplayListsNE_Verbose(const DisplayList& a, const DisplayList& b) {
   return DisplayListsNE_Verbose(&a, &b);
 }
-bool inline DisplayListsNE_Verbose(sk_sp<const DisplayList> a,
-                                   sk_sp<const DisplayList> b) {
+bool inline DisplayListsNE_Verbose(const sk_sp<const DisplayList>& a,
+                                   const sk_sp<const DisplayList>& b) {
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
@@ -52,13 +52,12 @@ extern std::ostream& operator<<(std::ostream& os, const DlImage* image);
 
 class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
-  DisplayListStreamDispatcher(std::ostream& os,
-                              int cur_indent = 2,
-                              int indent = 2)
+  explicit DisplayListStreamDispatcher(std::ostream& os,
+                                       int cur_indent = 2,
+                                       int indent = 2)
       : os_(os), cur_indent_(cur_indent), indent_(indent) {}
 
   void setAntiAlias(bool aa) override;
-  void setDither(bool dither) override;
   void setDrawStyle(DlDrawStyle style) override;
   void setColor(DlColor color) override;
   void setStrokeWidth(SkScalar width) override;
@@ -74,7 +73,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void setImageFilter(const DlImageFilter* filter) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
   void restore() override;
@@ -144,6 +143,9 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
+  void drawTextFrame(const std::shared_ptr<impeller::TextFrame>& text_frame,
+                     SkScalar x,
+                     SkScalar y) override;
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
@@ -174,4 +176,4 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // TESTING_DISPLAY_LIST_TESTING_H_
+#endif  // FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_

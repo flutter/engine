@@ -10,6 +10,7 @@
 #include "flutter/flow/flow_test_utils.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/layer_test.h"
+#include "flutter/shell/common/base64.h"
 #include "flutter/testing/mock_canvas.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -18,7 +19,6 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
-#include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {
 namespace testing {
@@ -38,9 +38,8 @@ static std::string GetGoldenFilePath(int refresh_rate, bool is_new) {
   std::stringstream ss;
   // This unit test should only be run on Linux (not even on Mac since it's a
   // golden test). Hence we don't have to worry about the "/" vs. "\".
-  ss << flutter::GetGoldenDir() << "/"
-     << "performance_overlay_gold_" << refresh_rate << "fps"
-     << (is_new ? "_new" : "") << ".png";
+  ss << flutter::GetGoldenDir() << "/" << "performance_overlay_gold_"
+     << refresh_rate << "fps" << (is_new ? "_new" : "") << ".png";
   return ss.str();
 }
 
@@ -111,17 +110,16 @@ static void TestPerformanceOverlayLayerGold(int refresh_rate) {
     wstream.write(snapshot_data->data(), snapshot_data->size());
     wstream.flush();
 
-    size_t b64_size =
-        SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), nullptr);
+    size_t b64_size = Base64::EncodedSize(snapshot_data->size());
     sk_sp<SkData> b64_data = SkData::MakeUninitialized(b64_size + 1);
     char* b64_char = static_cast<char*>(b64_data->writable_data());
-    SkBase64::Encode(snapshot_data->data(), snapshot_data->size(), b64_char);
+    Base64::Encode(snapshot_data->data(), snapshot_data->size(), b64_char);
     b64_char[b64_size] = 0;  // make it null terminated for printing
 
     EXPECT_TRUE(golden_data_matches)
-        << "Golden file mismatch. Please check "
-        << "the difference between " << golden_file_path << " and "
-        << new_golden_file_path << ", and  replace the former "
+        << "Golden file mismatch. Please check " << "the difference between "
+        << golden_file_path << " and " << new_golden_file_path
+        << ", and  replace the former "
         << "with the latter if the difference looks good.\nS\n"
         << "See also the base64 encoded " << new_golden_file_path << ":\n"
         << b64_char;
@@ -181,7 +179,7 @@ TEST_F(PerformanceOverlayLayerTest, SimpleRasterizerStatistics) {
       paint_context().raster_time, "Raster", "");
   auto overlay_text_data = overlay_text->serialize(SkSerialProcs{});
   // Historically SK_ColorGRAY (== 0xFF888888) was used here
-  DlPaint text_paint(0xFF888888);
+  DlPaint text_paint(DlColor(0xFF888888));
   SkPoint text_position = SkPoint::Make(16.0f, 22.0f);
 
   // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the

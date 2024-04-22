@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_DISPLAY_H_
+#define FLUTTER_IMPELLER_TOOLKIT_EGL_DISPLAY_H_
 
 #include <memory>
 #include <optional>
@@ -40,8 +41,12 @@ class Display {
  private:
   EGLDisplay display_ = EGL_NO_DISPLAY;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(Display);
+  Display(const Display&) = delete;
+
+  Display& operator=(const Display&) = delete;
 };
 
 }  // namespace egl
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TOOLKIT_EGL_DISPLAY_H_

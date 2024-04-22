@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 {
     include: [
-        "gtest_runner.shard.cml",
+        "sys/testing/gtest_runner.shard.cml",
         "sys/component/realm_builder_absolute.shard.cml",
 
         // This test needs both the vulkan facet and the hermetic-tier-2 facet,
@@ -25,6 +25,7 @@
             // Offer capabilities needed by components in this test realm.
             // Keep it minimal, describe only what's actually needed.
             protocol: [
+                "fuchsia.inspect.InspectSink",
                 "fuchsia.kernel.RootJobForInspect",
                 "fuchsia.kernel.Stats",
                 "fuchsia.logger.LogSink",
@@ -47,6 +48,12 @@
             directory: "pkg",
             subdir: "config",
             as: "config-data",
+            from: "framework",
+            to: "#realm_builder",
+        },
+        // See common.shard.cml.
+        {
+            directory: "tzdata-icu",
             from: "framework",
             to: "#realm_builder",
         },

@@ -10,6 +10,9 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendContext.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h"
 
 namespace flutter {
 
@@ -28,9 +31,12 @@ TestMetalContext::TestMetalContext() {
 
   [command_queue.get() setLabel:@"Flutter Test Queue"];
 
+  GrMtlBackendContext backendContext = {};
   // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
   // when the GrDirectContext is collected.
-  skia_context_ = GrDirectContext::MakeMetal([device.get() retain], [command_queue.get() retain]);
+  backendContext.fDevice.reset([device.get() retain]);
+  backendContext.fQueue.reset([command_queue.get() retain]);
+  skia_context_ = GrDirectContexts::MakeMetal(backendContext);
   if (!skia_context_) {
     FML_LOG(ERROR) << "Could not create the GrDirectContext from the Metal Device "
                       "and command queue.";
@@ -41,7 +47,7 @@ TestMetalContext::TestMetalContext() {
 }
 
 TestMetalContext::~TestMetalContext() {
-  std::scoped_lock lock(textures_mutex);
+  std::scoped_lock lock(textures_mutex_);
   textures_.clear();
   if (device_) {
     [(__bridge id)device_ release];
@@ -64,7 +70,7 @@ sk_sp<GrDirectContext> TestMetalContext::GetSkiaContext() const {
 }
 
 TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize& size) {
-  std::scoped_lock lock(textures_mutex);
+  std::scoped_lock lock(textures_mutex_);
   auto texture_descriptor = fml::scoped_nsobject{
       [[MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
                                                           width:size.width()
@@ -100,7 +106,7 @@ TestMetalContext::TextureInfo TestMetalContext::CreateMetalTexture(const SkISize
 
 // Don't remove the texture from the map here.
 bool TestMetalContext::Present(int64_t texture_id) {
-  std::scoped_lock lock(textures_mutex);
+  std::scoped_lock lock(textures_mutex_);
   if (textures_.find(texture_id) == textures_.end()) {
     return false;
   } else {
@@ -109,7 +115,7 @@ bool TestMetalContext::Present(int64_t texture_id) {
 }
 
 TestMetalContext::TextureInfo TestMetalContext::GetTextureInfo(int64_t texture_id) {
-  std::scoped_lock lock(textures_mutex);
+  std::scoped_lock lock(textures_mutex_);
   if (textures_.find(texture_id) == textures_.end()) {
     FML_CHECK(false) << "Invalid texture id: " << texture_id;
     return {.texture_id = -1, .texture = nullptr};

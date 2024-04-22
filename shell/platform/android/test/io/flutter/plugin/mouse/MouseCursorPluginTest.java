@@ -1,5 +1,6 @@
 package io.flutter.plugin.mouse;
 
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -25,12 +26,18 @@ import org.robolectric.annotation.Config;
 
 @Config(
     manifest = Config.NONE,
+    minSdk = API_LEVELS.API_24,
     shadows = {})
 @RunWith(AndroidJUnit4.class)
-@TargetApi(24)
+@TargetApi(API_LEVELS.API_24)
 public class MouseCursorPluginTest {
+
+  @SuppressWarnings("deprecation")
+  // Robolectric.setupActivity.
+  // TODO(reidbaker): https://github.com/flutter/flutter/issues/133151
   @Test
   public void mouseCursorPlugin_SetsSystemCursorOnRequest() throws JSONException {
+    // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
     // Initialize a general MouseCursorPlugin.
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     MouseCursorChannel mouseCursorChannel = new MouseCursorChannel(mock(DartExecutor.class));

@@ -8,12 +8,10 @@ namespace impeller {
 
 RectGeometry::RectGeometry(Rect rect) : rect_(rect) {}
 
-RectGeometry::~RectGeometry() = default;
-
 GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
-                                               RenderPass& pass) {
-  auto& host_buffer = pass.GetTransientsBuffer();
+                                               RenderPass& pass) const {
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
@@ -23,20 +21,8 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
-}
-
-// |Geometry|
-GeometryResult RectGeometry::GetPositionUVBuffer(Rect texture_coverage,
-                                                 Matrix effect_transform,
-                                                 const ContentContext& renderer,
-                                                 const Entity& entity,
-                                                 RenderPass& pass) {
-  return ComputeUVGeometryForRect(rect_, texture_coverage, effect_transform,
-                                  renderer, entity, pass);
 }
 
 GeometryVertexType RectGeometry::GetVertexType() const {
@@ -53,6 +39,10 @@ bool RectGeometry::CoversArea(const Matrix& transform, const Rect& rect) const {
   }
   Rect coverage = rect_.TransformBounds(transform);
   return coverage.Contains(rect);
+}
+
+bool RectGeometry::IsAxisAlignedRect() const {
+  return true;
 }
 
 }  // namespace impeller

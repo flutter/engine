@@ -11,6 +11,7 @@
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
+#include "flutter/lib/ui/painting/image_decoder_no_gl_unittests.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "flutter/lib/ui/painting/multi_frame_codec.h"
 #include "flutter/runtime/dart_vm.h"
@@ -22,6 +23,8 @@
 #include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
+#include "fml/logging.h"
+#include "impeller/renderer/command_queue.h"
 #include "third_party/skia/include/codec/SkCodecAnimation.h"
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -33,81 +36,6 @@
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
 namespace impeller {
-
-class TestImpellerTexture : public Texture {
- public:
-  explicit TestImpellerTexture(TextureDescriptor desc) : Texture(desc) {}
-
-  void SetLabel(std::string_view label) override {}
-  bool IsValid() const override { return true; }
-  ISize GetSize() const { return GetTextureDescriptor().size; }
-
-  bool OnSetContents(const uint8_t* contents, size_t length, size_t slice) {
-    return true;
-  }
-  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
-                     size_t slice) {
-    return true;
-  }
-};
-
-class TestImpellerDeviceBuffer : public DeviceBuffer {
- public:
-  explicit TestImpellerDeviceBuffer(DeviceBufferDescriptor desc)
-      : DeviceBuffer(desc) {
-    bytes_ = static_cast<uint8_t*>(malloc(desc.size));
-  }
-
-  ~TestImpellerDeviceBuffer() { free(bytes_); }
-
- private:
-  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
-                                     const TextureDescriptor& descriptor,
-                                     uint16_t row_bytes) const override {
-    return nullptr;
-  }
-
-  bool SetLabel(const std::string& label) override { return true; }
-
-  bool SetLabel(const std::string& label, Range range) override { return true; }
-
-  uint8_t* OnGetContents() const override { return bytes_; }
-
-  bool OnCopyHostBuffer(const uint8_t* source,
-                        Range source_range,
-                        size_t offset) override {
-    for (auto i = source_range.offset; i < source_range.length; i++, offset++) {
-      bytes_[offset] = source[i];
-    }
-    return true;
-  }
-
-  uint8_t* bytes_;
-};
-
-class TestImpellerAllocator : public impeller::Allocator {
- public:
-  TestImpellerAllocator() {}
-
-  ~TestImpellerAllocator() = default;
-
- private:
-  uint16_t MinimumBytesPerRow(PixelFormat format) const override { return 0; }
-
-  ISize GetMaxTextureSizeSupported() const override {
-    return ISize{2048, 2048};
-  }
-
-  std::shared_ptr<DeviceBuffer> OnCreateBuffer(
-      const DeviceBufferDescriptor& desc) override {
-    return std::make_shared<TestImpellerDeviceBuffer>(desc);
-  }
-
-  std::shared_ptr<Texture> OnCreateTexture(
-      const TextureDescriptor& desc) override {
-    return std::make_shared<TestImpellerTexture>(desc);
-  }
-};
 
 class TestImpellerContext : public impeller::Context {
  public:
@@ -137,6 +65,10 @@ class TestImpellerContext : public impeller::Context {
 
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
     return nullptr;
+  }
+
+  std::shared_ptr<CommandQueue> GetCommandQueue() const override {
+    FML_UNREACHABLE();
   }
 
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
@@ -240,36 +172,6 @@ class TestIOManager final : public IOManager {
   FML_DISALLOW_COPY_AND_ASSIGN(TestIOManager);
 };
 
-static sk_sp<SkData> OpenFixtureAsSkData(const char* name) {
-  auto fixtures_directory =
-      fml::OpenDirectory(GetFixturesPath(), false, fml::FilePermission::kRead);
-  if (!fixtures_directory.is_valid()) {
-    return nullptr;
-  }
-
-  auto fixture_mapping =
-      fml::FileMapping::CreateReadOnly(fixtures_directory, name);
-
-  if (!fixture_mapping) {
-    return nullptr;
-  }
-
-  SkData::ReleaseProc on_release = [](const void* ptr, void* context) -> void {
-    delete reinterpret_cast<fml::FileMapping*>(context);
-  };
-
-  auto data = SkData::MakeWithProc(fixture_mapping->GetMapping(),
-                                   fixture_mapping->GetSize(), on_release,
-                                   fixture_mapping.get());
-
-  if (!data) {
-    return nullptr;
-  }
-  // The data is now owned by Skia.
-  fixture_mapping.release();
-  return data;
-}
-
 class ImageDecoderFixtureTest : public FixtureTest {};
 
 TEST_F(ImageDecoderFixtureTest, CanCreateImageDecoder) {
@@ -342,7 +244,7 @@ TEST_F(ImageDecoderFixtureTest, InvalidImageResultsError) {
                                       manager.GetWeakIOManager(),
                                       std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("ThisDoesNotExist.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("ThisDoesNotExist.jpg");
     ASSERT_FALSE(data);
 
     fml::RefPtr<ImageDescriptor> image_descriptor =
@@ -383,7 +285,7 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
         settings, runners, loop->GetTaskRunner(),
         io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
@@ -416,24 +318,6 @@ TEST_F(ImageDecoderFixtureTest, ValidImageResultsInSuccess) {
   runners.GetIOTaskRunner()->PostTask(set_up_io_manager_and_decode);
   latch.Wait();
 }
-
-namespace {
-float HalfToFloat(uint16_t half) {
-  switch (half) {
-    case 0x7c00:
-      return std::numeric_limits<float>::infinity();
-    case 0xfc00:
-      return -std::numeric_limits<float>::infinity();
-  }
-  bool negative = half >> 15;
-  uint16_t exponent = (half >> 10) & 0x1f;
-  uint16_t fraction = half & 0x3ff;
-  float fExponent = exponent - 15.0f;
-  float fFraction = static_cast<float>(fraction) / 1024.f;
-  float pow_value = powf(2.0f, fExponent);
-  return (negative ? -1.f : 1.f) * pow_value * (1.0f + fFraction);
-}
-}  // namespace
 
 TEST_F(ImageDecoderFixtureTest, ImpellerUploadToSharedNoGpu) {
 #if !IMPELLER_SUPPORTS_RENDERING
@@ -491,57 +375,6 @@ TEST_F(ImageDecoderFixtureTest, ImpellerNullColorspace) {
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
-TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3) {
-  auto data = OpenFixtureAsSkData("DisplayP3Logo.png");
-  auto image = SkImages::DeferredFromEncodedData(data);
-  ASSERT_TRUE(image != nullptr);
-  ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
-
-  ImageGeneratorRegistry registry;
-  std::shared_ptr<ImageGenerator> generator =
-      registry.CreateCompatibleGenerator(data);
-  ASSERT_TRUE(generator);
-
-  auto descriptor = fml::MakeRefCounted<ImageDescriptor>(std::move(data),
-                                                         std::move(generator));
-
-#if IMPELLER_SUPPORTS_RENDERING
-  std::shared_ptr<impeller::Allocator> allocator =
-      std::make_shared<impeller::TestImpellerAllocator>();
-  std::optional<DecompressResult> wide_result =
-      ImageDecoderImpeller::DecompressTexture(
-          descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/true, allocator);
-  ASSERT_TRUE(wide_result.has_value());
-  ASSERT_EQ(wide_result->image_info.colorType(), kRGBA_F16_SkColorType);
-  ASSERT_TRUE(wide_result->image_info.colorSpace()->isSRGB());
-
-  const SkPixmap& wide_pixmap = wide_result->sk_bitmap->pixmap();
-  const uint16_t* half_ptr = static_cast<const uint16_t*>(wide_pixmap.addr());
-  bool found_deep_red = false;
-  for (int i = 0; i < wide_pixmap.width() * wide_pixmap.height(); ++i) {
-    float red = HalfToFloat(*half_ptr++);
-    float green = HalfToFloat(*half_ptr++);
-    float blue = HalfToFloat(*half_ptr++);
-    half_ptr++;  // alpha
-    if (fabsf(red - 1.0931f) < 0.01f && fabsf(green - -0.2268f) < 0.01f &&
-        fabsf(blue - -0.1501f) < 0.01f) {
-      found_deep_red = true;
-      break;
-    }
-  }
-
-  ASSERT_TRUE(found_deep_red);
-  std::optional<DecompressResult> narrow_result =
-      ImageDecoderImpeller::DecompressTexture(
-          descriptor.get(), SkISize::Make(100, 100), {100, 100},
-          /*supports_wide_gamut=*/false, allocator);
-
-  ASSERT_TRUE(narrow_result.has_value());
-  ASSERT_EQ(narrow_result->image_info.colorType(), kRGBA_8888_SkColorType);
-#endif  // IMPELLER_SUPPORTS_RENDERING
-}
-
 TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
   auto info = SkImageInfo::Make(10, 10, SkColorType::kRGBA_F32_SkColorType,
                                 SkAlphaType::kUnpremul_SkAlphaType);
@@ -570,18 +403,8 @@ TEST_F(ImageDecoderFixtureTest, ImpellerPixelConversion32F) {
 #endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
-namespace {
-float DecodeBGR10(uint32_t x) {
-  const float max = 1.25098f;
-  const float min = -0.752941f;
-  const float intercept = min;
-  const float slope = (max - min) / 1024.0f;
-  return (x * slope) + intercept;
-}
-}  // namespace
-
 TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
-  auto data = OpenFixtureAsSkData("DisplayP3Logo.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("DisplayP3Logo.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(100, 100), image->dimensions());
@@ -633,7 +456,7 @@ TEST_F(ImageDecoderFixtureTest, ImpellerWideGamutDisplayP3Opaque) {
 }
 
 TEST_F(ImageDecoderFixtureTest, ImpellerNonWideGamut) {
-  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(SkISize::Make(600, 200), image->dimensions());
@@ -684,7 +507,7 @@ TEST_F(ImageDecoderFixtureTest, ExifDataIsRespectedOnDecode) {
         settings, runners, loop->GetTaskRunner(),
         io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("Horizontal.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
 
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
@@ -745,7 +568,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
         settings, runners, loop->GetTaskRunner(),
         io_manager->GetWeakIOManager(), std::make_shared<fml::SyncSwitch>());
 
-    auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
+    auto data = flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
     ASSERT_TRUE(data);
     ASSERT_GE(data->size(), 0u);
@@ -780,9 +603,10 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
 }
 
 TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
-  const auto image_dimensions = SkImages::DeferredFromEncodedData(
-                                    OpenFixtureAsSkData("DashInNooglerHat.jpg"))
-                                    ->dimensions();
+  const auto image_dimensions =
+      SkImages::DeferredFromEncodedData(
+          flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg"))
+          ->dimensions();
 
   ASSERT_FALSE(image_dimensions.isEmpty());
 
@@ -818,7 +642,7 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
                           uint32_t target_height) -> SkISize {
     SkISize final_size = SkISize::MakeEmpty();
     runners.GetUITaskRunner()->PostTask([&]() {
-      auto data = OpenFixtureAsSkData("DashInNooglerHat.jpg");
+      auto data = flutter::testing::OpenFixtureAsSkData("DashInNooglerHat.jpg");
 
       ASSERT_TRUE(data);
       ASSERT_GE(data->size(), 0u);
@@ -859,8 +683,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
 // Flutter.
 TEST(ImageDecoderTest,
      VerifyCodecRepeatCountsForGifAndWebPAreConsistentWithLoopCounts) {
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
-  auto webp_mapping = OpenFixtureAsSkData("hello_loop_2.webp");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
+  auto webp_mapping =
+      flutter::testing::OpenFixtureAsSkData("hello_loop_2.webp");
 
   ASSERT_TRUE(gif_mapping);
   ASSERT_TRUE(webp_mapping);
@@ -879,7 +704,7 @@ TEST(ImageDecoderTest,
 }
 
 TEST(ImageDecoderTest, VerifySimpleDecoding) {
-  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
   auto image = SkImages::DeferredFromEncodedData(data);
   ASSERT_TRUE(image != nullptr);
   ASSERT_EQ(600, image->width());
@@ -916,7 +741,7 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
 }
 
 TEST(ImageDecoderTest, ImagesWithTransparencyArePremulAlpha) {
-  auto data = OpenFixtureAsSkData("heart_end.png");
+  auto data = flutter::testing::OpenFixtureAsSkData("heart_end.png");
   ASSERT_TRUE(data);
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -934,7 +759,7 @@ TEST(ImageDecoderTest, ImagesWithTransparencyArePremulAlpha) {
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
-  auto data = OpenFixtureAsSkData("Horizontal.jpg");
+  auto data = flutter::testing::OpenFixtureAsSkData("Horizontal.jpg");
 
   ImageGeneratorRegistry registry;
   std::shared_ptr<ImageGenerator> generator =
@@ -959,7 +784,7 @@ TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {
         fml::tracing::TraceFlow(""));
   };
 
-  auto expected_data = OpenFixtureAsSkData("Horizontal.png");
+  auto expected_data = flutter::testing::OpenFixtureAsSkData("Horizontal.png");
   ASSERT_TRUE(expected_data != nullptr);
   ASSERT_FALSE(expected_data->isEmpty());
 
@@ -992,7 +817,7 @@ TEST_F(ImageDecoderFixtureTest,
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
 
   ASSERT_TRUE(gif_mapping);
 
@@ -1061,7 +886,7 @@ TEST_F(ImageDecoderFixtureTest, MultiFrameCodecDidAccessGpuDisabledSyncSwitch) {
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
 
   ASSERT_TRUE(gif_mapping);
 
@@ -1145,7 +970,7 @@ TEST_F(ImageDecoderFixtureTest,
   auto vm_ref = DartVMRef::Create(settings);
   auto vm_data = vm_ref.GetVMData();
 
-  auto gif_mapping = OpenFixtureAsSkData("hello_loop_2.gif");
+  auto gif_mapping = flutter::testing::OpenFixtureAsSkData("hello_loop_2.gif");
 
   ASSERT_TRUE(gif_mapping);
 
@@ -1223,6 +1048,13 @@ TEST_F(ImageDecoderFixtureTest,
 
   // Destroy the IO manager
   PostTaskSync(runners.GetIOTaskRunner(), [&]() { io_manager.reset(); });
+}
+
+TEST_F(ImageDecoderFixtureTest, NullCheckBuffer) {
+  auto context = std::make_shared<impeller::TestImpellerContext>();
+  auto allocator = ImpellerAllocator(context->GetResourceAllocator());
+
+  EXPECT_FALSE(allocator.allocPixelRef(nullptr));
 }
 
 }  // namespace testing

@@ -11,10 +11,13 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/impeller/display_list/dl_dispatcher.h"
-#include "flutter/impeller/renderer/backend/metal/surface_mtl.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/renderer/backend/metal/surface_mtl.h"
+#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
+
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 namespace flutter {
 
@@ -35,7 +38,8 @@ GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delega
       render_target_type_(delegate->GetRenderTargetType()),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
-          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr)),
+          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr,
+                                                  impeller::TypographerContextSkia::Make())),
       render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
   NSNumber* disablePartialRepaint =
@@ -49,7 +53,7 @@ GPUSurfaceMetalImpeller::~GPUSurfaceMetalImpeller() = default;
 
 // |Surface|
 bool GPUSurfaceMetalImpeller::IsValid() {
-  return !!aiks_context_;
+  return !!aiks_context_ && aiks_context_->IsValid();
 }
 
 // |Surface|
@@ -97,17 +101,21 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
   auto drawable = impeller::SurfaceMTL::GetMetalDrawableAndValidate(
       impeller_renderer_->GetContext(), mtl_layer);
+  if (!drawable) {
+    return nullptr;
+  }
   if (Settings::kSurfaceDataAccessible) {
     last_texture_.reset([drawable.texture retain]);
   }
 
   id<MTLTexture> last_texture = static_cast<id<MTLTexture>>(last_texture_);
   SurfaceFrame::SubmitCallback submit_callback =
-      fml::MakeCopyable([this,                           //
-                         renderer = impeller_renderer_,  //
-                         aiks_context = aiks_context_,   //
-                         drawable,                       //
-                         last_texture                    //
+      fml::MakeCopyable([damage = damage_,
+                         disable_partial_repaint = disable_partial_repaint_,  //
+                         renderer = impeller_renderer_,                       //
+                         aiks_context = aiks_context_,                        //
+                         drawable,                                            //
+                         last_texture                                         //
   ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
           return false;
@@ -119,10 +127,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
           return false;
         }
 
-        if (!disable_partial_repaint_) {
+        if (!disable_partial_repaint && damage) {
           uintptr_t texture = reinterpret_cast<uintptr_t>(last_texture);
 
-          for (auto& entry : damage_) {
+          for (auto& entry : *damage) {
             if (entry.first != texture) {
               // Accumulate damage for other framebuffers
               if (surface_frame.submit_info().frame_damage) {
@@ -131,7 +139,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
             }
           }
           // Reset accumulated damage for current framebuffer
-          damage_[texture] = SkIRect::MakeEmpty();
+          (*damage)[texture] = SkIRect::MakeEmpty();
         }
 
         std::optional<impeller::IRect> clip_rect;
@@ -141,15 +149,38 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
                                                 buffer_damage->width(), buffer_damage->height());
         }
 
-        auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(
-            impeller_renderer_->GetContext(), drawable, clip_rect);
+        auto surface = impeller::SurfaceMTL::MakeFromMetalLayerDrawable(renderer->GetContext(),
+                                                                        drawable, clip_rect);
 
-        if (clip_rect && (clip_rect->size.width == 0 || clip_rect->size.height == 0)) {
+        // The surface may be null if we failed to allocate the onscreen render target
+        // due to running out of memory.
+        if (!surface) {
+          return false;
+        }
+
+        if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
         }
 
         impeller::IRect cull_rect = surface->coverage();
-        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
+#if ENABLE_EXPERIMENTAL_CANVAS
+        impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
+                                                impeller::Matrix());
+        display_list->Dispatch(collector, sk_cull_rect);
+        return renderer->Render(
+            std::move(surface),
+            fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
+                               &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
+              impeller::ExperimentalDlDispatcher impeller_dispatcher(
+                  aiks_context->GetContentContext(), render_target, cull_rect);
+              display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+              impeller_dispatcher.FinishRecording();
+              aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+              aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+              return true;
+            }));
+#else
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
@@ -158,8 +189,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
             std::move(surface),
             fml::MakeCopyable([aiks_context, picture = std::move(picture)](
                                   impeller::RenderTarget& render_target) -> bool {
-              return aiks_context->Render(picture, render_target);
+              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
             }));
+#endif
       });
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
@@ -169,8 +201,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
     // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
     // front buffer)
     uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.texture);
-    auto i = damage_.find(texture);
-    if (i != damage_.end()) {
+    auto i = damage_->find(texture);
+    if (i != damage_->end()) {
       framebuffer_info.existing_damage = i->second;
     }
     framebuffer_info.supports_partial_repaint = true;
@@ -200,7 +232,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
   }
 
   SurfaceFrame::SubmitCallback submit_callback =
-      fml::MakeCopyable([this,                           //
+      fml::MakeCopyable([disable_partial_repaint = disable_partial_repaint_,  //
+                         damage = damage_,
                          renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
                          texture_info,                   //
@@ -217,10 +250,10 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
           return false;
         }
 
-        if (!disable_partial_repaint_) {
+        if (!disable_partial_repaint && damage) {
           uintptr_t texture_ptr = reinterpret_cast<uintptr_t>(mtl_texture);
 
-          for (auto& entry : damage_) {
+          for (auto& entry : *damage) {
             if (entry.first != texture_ptr) {
               // Accumulate damage for other framebuffers
               if (surface_frame.submit_info().frame_damage) {
@@ -229,7 +262,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
             }
           }
           // Reset accumulated damage for current framebuffer
-          damage_[texture_ptr] = SkIRect::MakeEmpty();
+          (*damage)[texture_ptr] = SkIRect::MakeEmpty();
         }
 
         std::optional<impeller::IRect> clip_rect;
@@ -242,22 +275,40 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         auto surface =
             impeller::SurfaceMTL::MakeFromTexture(renderer->GetContext(), mtl_texture, clip_rect);
 
-        if (clip_rect && (clip_rect->size.width == 0 || clip_rect->size.height == 0)) {
+        if (clip_rect && clip_rect->IsEmpty()) {
           return surface->Present();
         }
 
         impeller::IRect cull_rect = surface->coverage();
-        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.size.width, cull_rect.size.height);
+        SkIRect sk_cull_rect = SkIRect::MakeWH(cull_rect.GetWidth(), cull_rect.GetHeight());
+#if ENABLE_EXPERIMENTAL_CANVAS
+        impeller::TextFrameDispatcher collector(aiks_context->GetContentContext(),
+                                                impeller::Matrix());
+        display_list->Dispatch(collector, sk_cull_rect);
+        bool render_result = renderer->Render(
+            std::move(surface),
+            fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
+                               &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
+              impeller::ExperimentalDlDispatcher impeller_dispatcher(
+                  aiks_context->GetContentContext(), render_target, cull_rect);
+              display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
+              impeller_dispatcher.FinishRecording();
+              aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+              aiks_context->GetContentContext().GetLazyGlyphAtlas()->ResetTextFrames();
+              return true;
+            }));
+#else
         impeller::DlDispatcher impeller_dispatcher(cull_rect);
         display_list->Dispatch(impeller_dispatcher, sk_cull_rect);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
-        bool render_result =
-            renderer->Render(std::move(surface),
-                             fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                                   impeller::RenderTarget& render_target) -> bool {
-                               return aiks_context->Render(picture, render_target);
-                             }));
+        bool render_result = renderer->Render(
+            std::move(surface),
+            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
+                                  impeller::RenderTarget& render_target) -> bool {
+              return aiks_context->Render(picture, render_target, /*reset_host_buffer=*/true);
+            }));
+#endif
         if (!render_result) {
           FML_LOG(ERROR) << "Failed to render Impeller frame";
           return false;
@@ -273,8 +324,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
     // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
     // front buffer)
     uintptr_t texture = reinterpret_cast<uintptr_t>(mtl_texture);
-    auto i = damage_.find(texture);
-    if (i != damage_.end()) {
+    auto i = damage_->find(texture);
+    if (i != damage_->end()) {
       framebuffer_info.existing_damage = i->second;
     }
     framebuffer_info.supports_partial_repaint = true;

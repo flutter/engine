@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_BUFFER_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_BUFFER_VK_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command_buffer.h"
@@ -55,7 +55,11 @@ class CommandBufferVK final
   // |CommandBuffer|
   std::shared_ptr<ComputePass> OnCreateComputePass() override;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferVK);
+  CommandBufferVK(const CommandBufferVK&) = delete;
+
+  CommandBufferVK& operator=(const CommandBufferVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_COMMAND_BUFFER_VK_H_

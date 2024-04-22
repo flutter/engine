@@ -1,7 +1,8 @@
 package io.flutter.plugin.platform;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
-import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.hardware.HardwareBuffer;
 import android.media.Image;
@@ -9,15 +10,17 @@ import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
 import android.view.Surface;
+import io.flutter.Log;
 import io.flutter.view.TextureRegistry.ImageTextureEntry;
 
-@TargetApi(29)
+@TargetApi(API_LEVELS.API_29)
 public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTarget {
   private ImageTextureEntry textureEntry;
   private ImageReader reader;
   private int bufferWidth = 0;
   private int bufferHeight = 0;
   private static final String TAG = "ImageReaderPlatformViewRenderTarget";
+  private static final int MAX_IMAGES = 4;
 
   private void closeReader() {
     if (this.reader != null) {
@@ -34,7 +37,12 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
       new ImageReader.OnImageAvailableListener() {
         @Override
         public void onImageAvailable(ImageReader reader) {
-          final Image image = reader.acquireLatestImage();
+          Image image = null;
+          try {
+            image = reader.acquireLatestImage();
+          } catch (IllegalStateException e) {
+            Log.e(TAG, "onImageAvailable acquireLatestImage failed: " + e.toString());
+          }
           if (image == null) {
             return;
           }
@@ -42,18 +50,17 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
         }
       };
 
-  @TargetApi(33)
+  @TargetApi(API_LEVELS.API_33)
   protected ImageReader createImageReader33() {
     final ImageReader.Builder builder = new ImageReader.Builder(bufferWidth, bufferHeight);
     // Allow for double buffering.
-    builder.setMaxImages(3);
+    builder.setMaxImages(MAX_IMAGES);
     // Use PRIVATE image format so that we can support video decoding.
-    // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our
-    // ability to read back texture data. If we don't always want to use it, how do we
-    // decide when to use it or not? Perhaps PlatformViews can indicate if they may contain
-    // DRM'd content.
-    // I need to investigate how PRIVATE impacts our ability to take screenshots or capture
-    // the output of Flutter application.
+    // TODO(johnmccutchan): Should we always use PRIVATE here? It may impact our ability to read
+    // back texture data. If we don't always want to use it, how do we decide when to use it or not?
+    // Perhaps PlatformViews can indicate if they may contain DRM'd content. I need to investigate
+    // how PRIVATE impacts our ability to take screenshots or capture the output of Flutter
+    // application.
     builder.setImageFormat(ImageFormat.PRIVATE);
     // Hint that consumed images will only be read by GPU.
     builder.setUsage(HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
@@ -62,23 +69,23 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
     return reader;
   }
 
-  @TargetApi(29)
+  @TargetApi(API_LEVELS.API_29)
   protected ImageReader createImageReader29() {
     final ImageReader reader =
         ImageReader.newInstance(
             bufferWidth,
             bufferHeight,
             ImageFormat.PRIVATE,
-            2,
+            MAX_IMAGES,
             HardwareBuffer.USAGE_GPU_SAMPLED_IMAGE);
     reader.setOnImageAvailableListener(this.onImageAvailableListener, onImageAvailableHandler);
     return reader;
   }
 
   protected ImageReader createImageReader() {
-    if (Build.VERSION.SDK_INT >= 33) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
       return createImageReader33();
-    } else if (Build.VERSION.SDK_INT >= 29) {
+    } else if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       return createImageReader29();
     }
     throw new UnsupportedOperationException(
@@ -86,7 +93,7 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
   }
 
   public ImageReaderPlatformViewRenderTarget(ImageTextureEntry textureEntry) {
-    if (Build.VERSION.SDK_INT < 29) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_29) {
       throw new UnsupportedOperationException(
           "ImageReaderPlatformViewRenderTarget requires API version 29+");
     }
@@ -110,14 +117,6 @@ public class ImageReaderPlatformViewRenderTarget implements PlatformViewRenderTa
 
   public int getHeight() {
     return this.bufferHeight;
-  }
-
-  public Canvas lockHardwareCanvas() {
-    return getSurface().lockHardwareCanvas();
-  }
-
-  public void unlockCanvasAndPost(Canvas canvas) {
-    getSurface().unlockCanvasAndPost(canvas);
   }
 
   public long getId() {

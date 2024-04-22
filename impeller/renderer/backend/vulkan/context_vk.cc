@@ -4,6 +4,11 @@
 
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
+#include "fml/concurrent_message_loop.h"
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/render_pass_builder_vk.h"
+#include "impeller/renderer/render_target.h"
+
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
 #include <sys/resource.h>
@@ -13,11 +18,10 @@
 #include <map>
 #include <memory>
 #include <optional>
-#include <set>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/build_config.h"
+#include "flutter/fml/cpu_affinity.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
@@ -25,10 +29,13 @@
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/command_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/debug_report_vk.h"
 #include "impeller/renderer/backend/vulkan/fence_waiter_vk.h"
+#include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
+#include "impeller/renderer/backend/vulkan/yuv_conversion_library_vk.h"
 #include "impeller/renderer/capabilities.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -99,6 +106,13 @@ std::shared_ptr<ContextVK> ContextVK::Create(Settings settings) {
   return context;
 }
 
+// static
+size_t ContextVK::ChooseThreadCountForWorkers(size_t hardware_concurrency) {
+  // Never create more than 4 worker threads. Attempt to use up to
+  // half of the available concurrency.
+  return std::clamp(hardware_concurrency / 2ull, /*lo=*/1ull, /*hi=*/4ull);
+}
+
 namespace {
 thread_local uint64_t tls_context_count = 0;
 uint64_t CalculateHash(void* ptr) {
@@ -114,7 +128,7 @@ ContextVK::~ContextVK() {
   if (device_holder_ && device_holder_->device) {
     [[maybe_unused]] auto result = device_holder_->device->waitIdle();
   }
-  CommandPoolVK::ClearAllPools(this);
+  CommandPoolRecyclerVK::DestroyThreadLocalPools(this);
 }
 
 Context::BackendType ContextVK::GetBackendType() const {
@@ -129,14 +143,17 @@ void ContextVK::Setup(Settings settings) {
   }
 
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-      std::min(4u, std::thread::hardware_concurrency()));
-#ifdef FML_OS_ANDROID
+      ChooseThreadCountForWorkers(std::thread::hardware_concurrency()));
   raster_message_loop_->PostTaskToAllWorkers([]() {
+    // Currently we only use the worker task pool for small parts of a frame
+    // workload, if this changes this setting may need to be adjusted.
+    fml::RequestAffinity(fml::CpuAffinity::kNotPerformance);
+#ifdef FML_OS_ANDROID
     if (::setpriority(PRIO_PROCESS, gettid(), -5) != 0) {
       FML_LOG(ERROR) << "Failed to set Workers task runner priority";
     }
-  });
 #endif  // FML_OS_ANDROID
+  });
 
   auto& dispatcher = VULKAN_HPP_DEFAULT_DISPATCHER;
   dispatcher.init(settings.proc_address_callback);
@@ -151,8 +168,8 @@ void ContextVK::Setup(Settings settings) {
   enable_validation = true;
 #endif
 
-  auto caps =
-      std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
+  auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(
+      enable_validation, settings.fatal_missing_validations));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -307,9 +324,9 @@ void ContextVK::Setup(Settings settings) {
 
   vk::DeviceCreateInfo device_info;
 
+  device_info.setPNext(&enabled_features.value().get());
   device_info.setQueueCreateInfos(queue_create_infos);
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
-  device_info.setPEnabledFeatures(&enabled_features.value());
   // Device layers are deprecated and ignored.
 
   {
@@ -331,14 +348,12 @@ void ContextVK::Setup(Settings settings) {
   /// Create the allocator.
   ///
   auto allocator = std::shared_ptr<AllocatorVK>(new AllocatorVK(
-      weak_from_this(),                  //
-      application_info.apiVersion,       //
-      device_holder->physical_device,    //
-      device_holder,                     //
-      device_holder->instance.get(),     //
-      dispatcher.vkGetInstanceProcAddr,  //
-      dispatcher.vkGetDeviceProcAddr,    //
-      *caps                              //
+      weak_from_this(),                //
+      application_info.apiVersion,     //
+      device_holder->physical_device,  //
+      device_holder,                   //
+      device_holder->instance.get(),   //
+      *caps                            //
       ));
 
   if (!allocator->IsValid()) {
@@ -379,17 +394,27 @@ void ContextVK::Setup(Settings settings) {
   ///
   auto fence_waiter =
       std::shared_ptr<FenceWaiterVK>(new FenceWaiterVK(device_holder));
-  if (!fence_waiter->IsValid()) {
-    VALIDATION_LOG << "Could not create fence waiter.";
-    return;
-  }
 
   //----------------------------------------------------------------------------
-  /// Create the resource manager.
+  /// Create the resource manager and command pool recycler.
   ///
   auto resource_manager = ResourceManagerVK::Create();
   if (!resource_manager) {
     VALIDATION_LOG << "Could not create resource manager.";
+    return;
+  }
+
+  auto command_pool_recycler =
+      std::make_shared<CommandPoolRecyclerVK>(weak_from_this());
+  if (!command_pool_recycler) {
+    VALIDATION_LOG << "Could not create command pool recycler.";
+    return;
+  }
+
+  auto descriptor_pool_recycler =
+      std::make_shared<DescriptorPoolRecyclerVK>(weak_from_this());
+  if (!descriptor_pool_recycler) {
+    VALIDATION_LOG << "Could not create descriptor pool recycler.";
     return;
   }
 
@@ -414,17 +439,30 @@ void ContextVK::Setup(Settings settings) {
   /// All done!
   ///
   device_holder_ = std::move(device_holder);
+  driver_info_ =
+      std::make_unique<DriverInfoVK>(device_holder_->physical_device);
   debug_report_ = std::move(debug_report);
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
   pipeline_library_ = std::move(pipeline_library);
+  yuv_conversion_library_ = std::shared_ptr<YUVConversionLibraryVK>(
+      new YUVConversionLibraryVK(device_holder_));
   queues_ = std::move(queues);
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
   resource_manager_ = std::move(resource_manager);
+  command_pool_recycler_ = std::move(command_pool_recycler);
+  descriptor_pool_recycler_ = std::move(descriptor_pool_recycler);
   device_name_ = std::string(physical_device_properties.deviceName);
+  command_queue_vk_ = std::make_shared<CommandQueueVK>(weak_from_this());
   is_valid_ = true;
+
+  // Create the GPU Tracer later because it depends on state from
+  // the ContextVK.
+  gpu_tracer_ = std::make_shared<GPUTracerVK>(weak_from_this(),
+                                              settings.enable_gpu_tracing);
+  gpu_tracer_->InitializeQueryPool(*this);
 
   //----------------------------------------------------------------------------
   /// Label all the relevant objects. This happens after setup so that the
@@ -483,6 +521,14 @@ ContextVK::GetConcurrentWorkerTaskRunner() const {
 }
 
 void ContextVK::Shutdown() {
+  // There are multiple objects, for example |CommandPoolVK|, that in their
+  // destructors make a strong reference to |ContextVK|. Resetting these shared
+  // pointers ensures that cleanup happens in a correct order.
+  //
+  // tl;dr: Without it, we get thread::join failures on shutdown.
+  fence_waiter_.reset();
+  resource_manager_.reset();
+
   raster_message_loop_->Terminate();
 }
 
@@ -510,9 +556,75 @@ std::shared_ptr<ResourceManagerVK> ContextVK::GetResourceManager() const {
   return resource_manager_;
 }
 
+std::shared_ptr<CommandPoolRecyclerVK> ContextVK::GetCommandPoolRecycler()
+    const {
+  return command_pool_recycler_;
+}
+
 std::unique_ptr<CommandEncoderFactoryVK>
 ContextVK::CreateGraphicsCommandEncoderFactory() const {
   return std::make_unique<CommandEncoderFactoryVK>(weak_from_this());
+}
+
+std::shared_ptr<GPUTracerVK> ContextVK::GetGPUTracer() const {
+  return gpu_tracer_;
+}
+
+std::shared_ptr<DescriptorPoolRecyclerVK> ContextVK::GetDescriptorPoolRecycler()
+    const {
+  return descriptor_pool_recycler_;
+}
+
+std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
+  return command_queue_vk_;
+}
+
+// Creating a render pass is observed to take an additional 6ms on a Pixel 7
+// device as the driver will lazily bootstrap and compile shaders to do so.
+// The render pass does not need to be begun or executed.
+void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
+  RenderTargetAllocator rt_allocator(GetResourceAllocator());
+  RenderTarget render_target =
+      rt_allocator.CreateOffscreenMSAA(*this, {1, 1}, 1);
+
+  RenderPassBuilderVK builder;
+  for (const auto& [bind_point, color] : render_target.GetColorAttachments()) {
+    builder.SetColorAttachment(
+        bind_point,                                          //
+        color.texture->GetTextureDescriptor().format,        //
+        color.texture->GetTextureDescriptor().sample_count,  //
+        color.load_action,                                   //
+        color.store_action                                   //
+    );
+  }
+
+  if (auto depth = render_target.GetDepthAttachment(); depth.has_value()) {
+    builder.SetDepthStencilAttachment(
+        depth->texture->GetTextureDescriptor().format,        //
+        depth->texture->GetTextureDescriptor().sample_count,  //
+        depth->load_action,                                   //
+        depth->store_action                                   //
+    );
+  } else if (auto stencil = render_target.GetStencilAttachment();
+             stencil.has_value()) {
+    builder.SetStencilAttachment(
+        stencil->texture->GetTextureDescriptor().format,        //
+        stencil->texture->GetTextureDescriptor().sample_count,  //
+        stencil->load_action,                                   //
+        stencil->store_action                                   //
+    );
+  }
+
+  auto pass = builder.Build(GetDevice());
+}
+
+const std::shared_ptr<YUVConversionLibraryVK>&
+ContextVK::GetYUVConversionLibrary() const {
+  return yuv_conversion_library_;
+}
+
+const std::unique_ptr<DriverInfoVK>& ContextVK::GetDriverInfo() const {
+  return driver_info_;
 }
 
 }  // namespace impeller

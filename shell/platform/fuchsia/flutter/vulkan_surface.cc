@@ -9,6 +9,7 @@
 
 #include <algorithm>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "runtime/dart/utils/inlines.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -18,6 +19,7 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "vulkan/vulkan_core.h"
 #include "vulkan/vulkan_fuchsia.h"
 
@@ -408,8 +410,8 @@ bool VulkanSurface::SetupSkiaSurface(sk_sp<GrDirectContext> context,
   image_info.fSampleCount = 1;
   image_info.fLevelCount = image_create_info.mipLevels;
 
-  GrBackendRenderTarget sk_render_target(size.width(), size.height(),
-                                         image_info);
+  auto sk_render_target =
+      GrBackendRenderTargets::MakeVk(size.width(), size.height(), image_info);
 
   SkSurfaceProps sk_surface_props(0, kUnknown_SkPixelGeometry);
 
@@ -489,10 +491,10 @@ void VulkanSurface::SignalWritesFinished(
     return;
   }
 
-  dart_utils::Check(pending_on_writes_committed_ == nullptr,
-                    "Attempted to signal a write on the surface when the "
-                    "previous write has not yet been acknowledged by the "
-                    "compositor.");
+  FML_CHECK(pending_on_writes_committed_ == nullptr)
+      << "Attempted to signal a write on the surface when the "
+         "previous write has not yet been acknowledged by the "
+         "compositor.";
 
   pending_on_writes_committed_ = on_writes_committed;
 }
@@ -507,7 +509,7 @@ void VulkanSurface::Reset() {
   VkFence fence = command_buffer_fence_;
 
   if (command_buffer_) {
-    VK_CALL_LOG_ERROR(vulkan_provider_.vk().WaitForFences(
+    VK_CALL_LOG_FATAL(vulkan_provider_.vk().WaitForFences(
         vulkan_provider_.vk_device(), 1, &fence, VK_TRUE, UINT64_MAX));
     command_buffer_.reset();
   }

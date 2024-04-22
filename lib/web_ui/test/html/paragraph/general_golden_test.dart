@@ -21,6 +21,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpUnitTests(
+    withImplicitView: true,
     emulateTesterEnvironment: false,
     setUpTestViewDimensions: false,
   );
@@ -335,6 +336,28 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, Offset.zero);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_letter_spacing');
+  });
+
+  test('letter-spacing Thai', () {
+    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+
+    const String yes = '\u0e43\u0e0a\u0e48';
+    const String no = '\u0e44\u0e21\u0e48';
+
+    final CanvasParagraph paragraph = rich(
+      EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 36),
+      (CanvasParagraphBuilder builder) {
+        builder.pushStyle(EngineTextStyle.only(color: blue));
+        builder.addText('$yes $no ');
+        builder.pushStyle(EngineTextStyle.only(color: green, letterSpacing: 1));
+        builder.addText('$yes $no ');
+        builder.pushStyle(EngineTextStyle.only(color: red, letterSpacing: 3));
+        builder.addText('$yes $no');
+      },
+    )..layout(constrain(double.infinity));
+    canvas.drawParagraph(paragraph, const Offset(20, 20));
+
+    return takeScreenshot(canvas, bounds, 'canvas_paragraph_letter_spacing_thai');
   });
 
   test('draws text decorations', () {
