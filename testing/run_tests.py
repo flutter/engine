@@ -1092,11 +1092,13 @@ def run_impeller_golden_tests(build_dir: str):
       # On CI, we never want to be running golden tests without Skia Gold.
       is_luci = 'LUCI_CONTEXT' in os.environ
       if is_luci:
-        raise RuntimeError("""
+        raise RuntimeError(
+            """
 The GOLDCTL environment variable is not set. This is required for Skia Gold tests.
-See https://github.com/flutter/engine/tree/main/testing/skia_gold_client#configuring-ci 
+See https://github.com/flutter/engine/tree/main/testing/skia_gold_client#configuring-ci
 for more information.
-""")
+"""
+        )
 
       print_divider('<')
       print(
