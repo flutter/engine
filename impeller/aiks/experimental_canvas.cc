@@ -6,9 +6,22 @@
 #include "fml/logging.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/paint_pass_delegate.h"
+#include "impeller/base/validation.h"
+#include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/contents/text_contents.h"
+#include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
+
+static void ApplyFramebufferBlend(Entity& entity) {
+  auto src_contents = entity.GetContents();
+  auto contents = std::make_shared<FramebufferBlendContents>();
+  contents->SetChildContents(src_contents);
+  contents->SetBlendMode(entity.GetBlendMode());
+  entity.SetContents(std::move(contents));
+  entity.SetBlendMode(BlendMode::kSource);
+}
 
 static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
     RenderTarget::AttachmentConfig{
@@ -126,10 +139,14 @@ void ExperimentalCanvas::SetupRenderPass() {
   renderer_.GetRenderTargetCache()->Start();
 }
 
-void ExperimentalCanvas::Save() {
+void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
+  entry.clip_depth = current_depth_ + total_content_depth;
+  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+      << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
+      << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
   transform_stack_.emplace_back(entry);
@@ -139,7 +156,8 @@ void ExperimentalCanvas::SaveLayer(
     const Paint& paint,
     std::optional<Rect> bounds,
     const std::shared_ptr<ImageFilter>& backdrop_filter,
-    ContentBoundsPromise bounds_promise) {
+    ContentBoundsPromise bounds_promise,
+    uint32_t total_content_depth) {
   // Can we always guarantee that we get a bounds? Does a lack of bounds
   // indicate something?
   if (!bounds.has_value()) {
@@ -157,6 +175,10 @@ void ExperimentalCanvas::SaveLayer(
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
+  entry.clip_depth = current_depth_ + total_content_depth;
+  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+      << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
+      << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kSubpass;
   transform_stack_.emplace_back(entry);
@@ -175,6 +197,23 @@ bool ExperimentalCanvas::Restore() {
     return false;
   }
 
+  // This check is important to make sure we didn't exceed the depth
+  // that the clips were rendered at while rendering any of the
+  // rendering ops. It is OK for the current depth to equal the
+  // outgoing clip depth because that means the clipping would have
+  // been successful up through the last rendering op, but it cannot
+  // be greater.
+  // Also, we bump the current rendering depth to the outgoing clip
+  // depth so that future rendering operations are not clipped by
+  // any of the pixels set by the expiring clips. It is OK for the
+  // estimates used to determine the clip depth in save/saveLayer
+  // to be overly conservative, but we need to jump the depth to
+  // the clip depth so that the next rendering op will get a
+  // larger depth (it will pre-increment the current_depth_ value).
+  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
+  current_depth_ = transform_stack_.back().clip_depth;
+
   if (transform_stack_.back().rendering_mode ==
       Entity::RenderingMode::kSubpass) {
     auto inline_pass = std::move(inline_pass_contexts_.back());
@@ -192,11 +231,21 @@ bool ExperimentalCanvas::Restore() {
     inline_pass_contexts_.pop_back();
 
     Entity element_entity;
-    element_entity.SetClipDepth(GetClipHeight());
+    element_entity.SetClipDepth(++current_depth_);
     element_entity.SetContents(std::move(contents));
     element_entity.SetBlendMode(save_layer_state.paint.blend_mode);
     element_entity.SetTransform(Matrix::MakeTranslation(
         Vector3(save_layer_state.coverage.GetOrigin())));
+
+    if (element_entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
+      if (renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+        ApplyFramebufferBlend(element_entity);
+      } else {
+        VALIDATION_LOG << "Emulated advanced blends are currently unsupported.";
+        element_entity.SetBlendMode(BlendMode::kSourceOver);
+      }
+    }
+
     element_entity.Render(renderer_, *render_passes_.back());
   }
 
@@ -231,13 +280,53 @@ void ExperimentalCanvas::DrawTextFrame(
   entity.SetContents(
       paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity), false);
 }
 
-void ExperimentalCanvas::AddEntityToCurrentPass(Entity entity) {
+void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
+                                                      bool reuse_depth) {
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+  if (!reuse_depth) {
+    ++current_depth_;
+  }
+  // We can render at a depth up to and including the depth of the currently
+  // active clips and we will still be clipped out, but we cannot render at
+  // a depth that is greater than the current clips or we will not be clipped.
+  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
+  entity.SetClipDepth(current_depth_);
+
+  if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
+    if (renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
+      ApplyFramebufferBlend(entity);
+    } else {
+      VALIDATION_LOG << "Emulated advanced blends are currently unsupported.";
+      return;
+    }
+  }
+
+  entity.Render(renderer_, *render_passes_.back());
+}
+
+void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
+  auto transform = entity.GetTransform();
+  entity.SetTransform(
+      Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
+  // Ideally the clip depth would be greater than the current rendering
+  // depth because any rendering calls that follow this clip operation will
+  // pre-increment the depth and then be rendering above our clip depth,
+  // but that case will be caught by the CHECK in AddRenderEntity above.
+  // In practice we sometimes have a clip set with no rendering after it
+  // and in such cases the current depth will equal the clip depth.
+  // Eventually the DisplayList should optimize these out, but it is hard
+  // to know if a clip will actually be used in advance of storing it in
+  // the DisplayList buffer.
+  // See https://github.com/flutter/flutter/issues/147021
+  FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
+      << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
+  entity.SetClipDepth(transform_stack_.back().clip_depth);
   entity.Render(renderer_, *render_passes_.back());
 }
 
