@@ -739,7 +739,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
         TextureDescriptor desc;
         desc.size = {1, 1};
         desc.format = PixelFormat::kR8G8B8A8UNormInt;
-        desc.storage_mode = StorageMode::kDevicePrivate;
+        desc.storage_mode = StorageMode::kHostVisible;
         src_texture =
             renderer.GetContext()->GetResourceAllocator()->CreateTexture(desc);
         if (!src_texture) {
