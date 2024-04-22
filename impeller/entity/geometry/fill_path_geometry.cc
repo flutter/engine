@@ -36,8 +36,15 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     };
   }
 
-  VertexBuffer vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-      path_, host_buffer, entity.GetTransform().GetMaxBasisLength());
+  VertexBuffer vertex_buffer;
+
+  auto points = renderer.GetTessellator()->TessellateConvex(
+      path_, entity.GetTransform().GetMaxBasisLength());
+
+  vertex_buffer.vertex_buffer = host_buffer.Emplace(
+      points.data(), points.size() * sizeof(Point), alignof(Point));
+  vertex_buffer.index_buffer = {}, vertex_buffer.vertex_count = points.size();
+  vertex_buffer.index_type = IndexType::kNone;
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
