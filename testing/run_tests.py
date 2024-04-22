@@ -1090,6 +1090,7 @@ def run_impeller_golden_tests(build_dir: str):
     # throw. Skip this step in those cases and log a notice.
     if 'GOLDCTL' not in os.environ:
       # On CI, we never want to be running golden tests without Skia Gold.
+      # See https://github.com/flutter/flutter/issues/147180 as an example.
       is_luci = 'LUCI_CONTEXT' in os.environ
       if is_luci:
         raise RuntimeError(
