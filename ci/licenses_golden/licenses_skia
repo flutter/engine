@@ -1,4 +1,4 @@
-Signature: 8d9aac117472f0f8ac86adee2c617efe
+Signature: 315a88f932318a30dc57d933e5679d95
 
 ====================================================================================================
 LIBRARY: etc1
@@ -399,6 +399,7 @@ FILE: ../../../flutter/third_party/skia/modules/skparagraph/test.html
 FILE: ../../../flutter/third_party/skia/package-lock.json
 FILE: ../../../flutter/third_party/skia/relnotes/ArrayASAN.md
 FILE: ../../../flutter/third_party/skia/relnotes/SkFloatBits.md
+FILE: ../../../flutter/third_party/skia/relnotes/SkScalarIsFiniteOrNaN.md
 FILE: ../../../flutter/third_party/skia/relnotes/ios_gl.md
 FILE: ../../../flutter/third_party/skia/relnotes/mac_gl.md
 FILE: ../../../flutter/third_party/skia/relnotes/moved_interfaces.md
