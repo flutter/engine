@@ -21,7 +21,8 @@ namespace impeller {
 class VertexWriter {
  public:
   explicit VertexWriter(std::vector<Point>& points,
-                        std::vector<uint16_t>& indices);
+                        std::vector<uint16_t>& indices,
+                        std::optional<Matrix> uv_transform);
 
   ~VertexWriter() = default;
 
@@ -34,6 +35,7 @@ class VertexWriter {
   size_t contour_start_ = 0u;
   std::vector<Point>& points_;
   std::vector<uint16_t>& indices_;
+  std::optional<Matrix> uv_transform_;
 };
 
 struct LinearPathComponent {

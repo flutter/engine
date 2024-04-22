@@ -33,10 +33,12 @@ Path::Polyline Tessellator::CreateTempPolyline(const Path& path,
 
 VertexBuffer Tessellator::TessellateConvex(const Path& path,
                                            HostBuffer& host_buffer,
-                                           Scalar tolerance) {
+                                           Scalar tolerance,
+                                           std::optional<Matrix> uv_transform) {
   FML_DCHECK(point_buffer_);
   FML_DCHECK(index_buffer_);
-  TessellateConvexInternal(path, *point_buffer_, *index_buffer_, tolerance);
+  TessellateConvexInternal(path, *point_buffer_, *index_buffer_, tolerance,
+                           uv_transform);
 
   if (point_buffer_->empty()) {
     return VertexBuffer{
@@ -66,11 +68,12 @@ VertexBuffer Tessellator::TessellateConvex(const Path& path,
 void Tessellator::TessellateConvexInternal(const Path& path,
                                            std::vector<Point>& point_buffer,
                                            std::vector<uint16_t>& index_buffer,
-                                           Scalar tolerance) {
+                                           Scalar tolerance,
+                                           std::optional<Matrix> uv_transform) {
   index_buffer_->clear();
   point_buffer_->clear();
 
-  VertexWriter writer(point_buffer, index_buffer);
+  VertexWriter writer(point_buffer, index_buffer, uv_transform);
 
   path.WritePolyline(tolerance, writer);
   writer.EndContour();
