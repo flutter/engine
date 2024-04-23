@@ -7,15 +7,26 @@
 
 #include <functional>
 #include <list>
+#include <unordered_map>
+#include <variant>
 
 #include "flutter/fml/macros.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTimeConverter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @class FlutterMutatorView;
+@class FlutterCursorCoordinator;
 
 namespace flutter {
+
+struct BackingStoreLayer {
+  std::vector<FlutterRect> paint_region;
+};
+
+using LayerVariant = std::variant<PlatformViewLayer, BackingStoreLayer>;
 
 // FlutterCompositor creates and manages the backing stores used for
 // rendering Flutter content and presents Flutter content and Platform views.
@@ -29,8 +40,9 @@ class FlutterCompositor {
   // The view_provider is used to query FlutterViews from view IDs,
   // which are used for presenting and creating backing stores.
   // It must not be null, and is typically FlutterViewEngineProvider.
-  explicit FlutterCompositor(id<FlutterViewProvider> view_provider,
-                             FlutterPlatformViewController* platform_views_controller);
+  FlutterCompositor(id<FlutterViewProvider> view_provider,
+                    FlutterTimeConverter* time_converter,
+                    FlutterPlatformViewController* platform_views_controller);
 
   ~FlutterCompositor() = default;
 
@@ -50,29 +62,48 @@ class FlutterCompositor {
                           FlutterBackingStore* backing_store_out);
 
   // Presents the FlutterLayers by updating the FlutterView specified by
-  // `view_id` using the layer content. Sets frame_started_ to false.
-  bool Present(FlutterViewId view_id, const FlutterLayer** layers, size_t layers_count);
+  // `view_id` using the layer content.
+  bool Present(FlutterViewIdentifier view_id, const FlutterLayer** layers, size_t layers_count);
 
  private:
-  void PresentPlatformViews(FlutterView* default_base_view,
-                            const FlutterLayer** layers,
-                            size_t layers_count);
+  // A class that contains the information for a view to be presented.
+  class ViewPresenter {
+   public:
+    ViewPresenter();
 
-  // Presents the platform view layer represented by `layer`. `layer_index` is
-  // used to position the layer in the z-axis. If the layer does not have a
-  // superview, it will become subview of `default_base_view`.
-  FlutterMutatorView* PresentPlatformView(FlutterView* default_base_view,
-                                          const FlutterLayer* layer,
-                                          size_t layer_position);
+    void PresentPlatformViews(FlutterView* default_base_view,
+                              const std::vector<LayerVariant>& layers,
+                              const FlutterPlatformViewController* platform_views_controller);
+
+   private:
+    // Platform view to FlutterMutatorView that contains it.
+    NSMapTable<NSView*, FlutterMutatorView*>* mutator_views_;
+
+    // Coordinates mouse cursor changes between platform views and overlays.
+    FlutterCursorCoordinator* cursor_coordinator_;
+
+    // Presents the platform view layer represented by `layer`. `layer_index` is
+    // used to position the layer in the z-axis. If the layer does not have a
+    // superview, it will become subview of `default_base_view`.
+    FlutterMutatorView* PresentPlatformView(
+        FlutterView* default_base_view,
+        const PlatformViewLayer& layer,
+        size_t layer_position,
+        const FlutterPlatformViewController* platform_views_controller);
+
+    FML_DISALLOW_COPY_AND_ASSIGN(ViewPresenter);
+  };
 
   // Where the compositor can query FlutterViews. Must not be null.
   id<FlutterViewProvider> const view_provider_;
 
+  // Converts between engine time and core animation media time.
+  FlutterTimeConverter* const time_converter_;
+
   // The controller used to manage creation and deletion of platform views.
   const FlutterPlatformViewController* platform_view_controller_;
 
-  // Platform view to FlutterMutatorView that contains it.
-  NSMapTable<NSView*, FlutterMutatorView*>* mutator_views_;
+  std::unordered_map<int64_t, ViewPresenter> presenters_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterCompositor);
 };

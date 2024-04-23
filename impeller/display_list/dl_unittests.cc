@@ -1520,8 +1520,9 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
   std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 
   auto vertices = flutter::DlVertices::Make(
-      flutter::DlVertexMode::kTriangles, 6, positions.data(),
-      /*texture_coordinates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
+      flutter::DlVertexMode::kTriangles, positions.size(), positions.data(),
+      /*texture_coordinates=*/nullptr, /*colors=*/nullptr, indices.size(),
+      indices.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1541,8 +1542,9 @@ TEST_P(DisplayListTest, DrawVerticesPremultipliesColors) {
   std::vector<flutter::DlColor> colors = {color, color, color, color};
 
   auto vertices = flutter::DlVertices::Make(
-      flutter::DlVertexMode::kTriangles, 6, positions.data(),
-      /*texture_coordinates=*/nullptr, colors.data(), 6, indices.data());
+      flutter::DlVertexMode::kTriangles, positions.size(), positions.data(),
+      /*texture_coordinates=*/nullptr, colors.data(), indices.size(),
+      indices.data());
 
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
@@ -1831,6 +1833,76 @@ TEST_P(DisplayListTest, SceneColorSource) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 #endif
+
+TEST_P(DisplayListTest, DrawPaintIgnoresMaskFilter) {
+  flutter::DisplayListBuilder builder;
+  builder.DrawPaint(flutter::DlPaint().setColor(flutter::DlColor::kWhite()));
+
+  auto filter = flutter::DlBlurMaskFilter(flutter::DlBlurStyle::kNormal, 10.0f);
+  builder.DrawCircle({300, 300}, 200,
+                     flutter::DlPaint().setMaskFilter(&filter));
+
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kGreen()};
+  const float stops[2] = {0.0, 1.0};
+  auto linear = flutter::DlColorSource::MakeLinear(
+      {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
+      flutter::DlTileMode::kRepeat);
+  flutter::DlPaint blend_paint =
+      flutter::DlPaint()           //
+          .setColorSource(linear)  //
+          .setBlendMode(flutter::DlBlendMode::kScreen);
+  builder.DrawPaint(blend_paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawMaskBlursThatMightUseSaveLayers) {
+  flutter::DisplayListBuilder builder;
+  builder.DrawColor(flutter::DlColor::kWhite(), flutter::DlBlendMode::kSrc);
+  Vector2 scale = GetContentScale();
+  builder.Scale(scale.x, scale.y);
+
+  builder.Save();
+  // We need a small transform op to avoid a deferred save
+  builder.Translate(1.0f, 1.0f);
+  auto solid_filter =
+      flutter::DlBlurMaskFilter::Make(flutter::DlBlurStyle::kSolid, 5.0f);
+  flutter::DlPaint solid_alpha_paint =
+      flutter::DlPaint()                        //
+          .setMaskFilter(solid_filter)          //
+          .setColor(flutter::DlColor::kBlue())  //
+          .setAlpha(0x7f);
+  for (int x = 1; x <= 4; x++) {
+    for (int y = 1; y <= 4; y++) {
+      builder.DrawRect(SkRect::MakeXYWH(x * 100, y * 100, 80, 80),
+                       solid_alpha_paint);
+    }
+  }
+  builder.Restore();
+
+  builder.Save();
+  builder.Translate(500.0f, 0.0f);
+  auto normal_filter =
+      flutter::DlBlurMaskFilter::Make(flutter::DlBlurStyle::kNormal, 5.0f);
+  auto rotate_if = flutter::DlMatrixImageFilter::Make(
+      SkMatrix::RotateDeg(10), flutter::DlImageSampling::kLinear);
+  flutter::DlPaint normal_if_paint =
+      flutter::DlPaint()                         //
+          .setMaskFilter(solid_filter)           //
+          .setImageFilter(rotate_if)             //
+          .setColor(flutter::DlColor::kGreen())  //
+          .setAlpha(0x7f);
+  for (int x = 1; x <= 4; x++) {
+    for (int y = 1; y <= 4; y++) {
+      builder.DrawRect(SkRect::MakeXYWH(x * 100, y * 100, 80, 80),
+                       normal_if_paint);
+    }
+  }
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
 
 }  // namespace testing
 }  // namespace impeller

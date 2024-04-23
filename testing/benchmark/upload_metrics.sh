@@ -30,23 +30,38 @@ function follow_links() (
   echo "$file"
 )
 
+function dart_bin() {
+  dart_path="$1/flutter/third_party/dart/tools/sdks/dart-sdk/bin"
+  if [[ ! -e "$dart_path" ]]; then
+    dart_path="$1/third_party/dart/tools/sdks/dart-sdk/bin"
+  fi
+  echo "$dart_path"
+}
+
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../../.."; pwd -P)"
-DART_SDK_DIR="${SRC_DIR}/third_party/dart/tools/sdks/dart-sdk"
-DART="${DART_SDK_DIR}/bin/dart"
+DART_BIN=$(dart_bin "$SRC_DIR")
+DART="${DART_BIN}/dart"
+
+VARIANT=$1
+shift 1
 
 cd "$SCRIPT_DIR"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/txt_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/txt_benchmarks.json "$@"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/fml_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/fml_benchmarks.json "$@"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/shell_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/shell_benchmarks.json "$@"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/ui_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/ui_benchmarks.json "$@"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/display_list_builder_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/display_list_builder_benchmarks.json "$@"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/geometry_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/display_list_region_benchmarks.json "$@"
 "$DART" --disable-dart-dev bin/parse_and_send.dart \
-  --json $ENGINE_PATH/src/out/host_release/canvas_benchmarks.json "$@"
+  --json $ENGINE_PATH/src/out/${VARIANT}/display_list_transform_benchmarks.json "$@"
+"$DART" --disable-dart-dev bin/parse_and_send.dart \
+  --json $ENGINE_PATH/src/out/${VARIANT}/geometry_benchmarks.json "$@"
+"$DART" --disable-dart-dev bin/parse_and_send.dart \
+  --json $ENGINE_PATH/src/out/${VARIANT}/canvas_benchmarks.json "$@"

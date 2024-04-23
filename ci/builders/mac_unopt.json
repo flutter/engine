@@ -1,14 +1,6 @@
 {
     "builds": [
         {
-            "archives": [
-                {
-                    "base_path": "out/host_debug_unopt/zip_archives/",
-                    "type": "gcs",
-                    "include_paths": [],
-                    "name": "host_debug_unopt"
-                }
-            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-13",
@@ -20,6 +12,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/host_debug_unopt",
                 "--runtime-mode",
                 "debug",
                 "--unoptimized",
@@ -30,9 +24,10 @@
                 "--no-goma",
                 "--xcode-symlinks"
             ],
-            "name": "host_debug_unopt",
+            "name": "ci/host_debug_unopt",
+            "description": "Builds a debug mode unopt x64 macOS engine and runs host-side tests.",
             "ninja": {
-                "config": "host_debug_unopt",
+                "config": "ci/host_debug_unopt",
                 "targets": []
             },
             "properties": {
@@ -47,23 +42,20 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "host_debug_unopt",
+                        "ci/host_debug_unopt",
                         "--type",
                         "dart,dart-host,engine",
                         "--engine-capture-core-dump"
                     ]
+                },
+                {
+                    "name": "Tests of tools/gn",
+                    "language": "python3",
+                    "script": "flutter/tools/gn_test.py"
                 }
             ]
         },
         {
-            "archives": [
-                {
-                    "base_path": "out/ios_debug_sim/zip_archives/",
-                    "type": "gcs",
-                    "include_paths": [],
-                    "name": "ios_debug_sim"
-                }
-            ],
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
@@ -89,11 +81,14 @@
                 "--no-lto",
                 "--rbe",
                 "--no-goma",
-                "--xcode-symlinks"
+                "--xcode-symlinks",
+                "--target-dir",
+                "ci/ios_debug_unopt_sim"
             ],
-            "name": "ios_debug_sim",
+            "name": "ci/ios_debug_unopt_sim",
+            "description": "Builds a debug mode engine for x64 iOS simulator. Runs unit tests and the scenario app tests.",
             "ninja": {
-                "config": "ios_debug_sim",
+                "config": "ci/ios_debug_unopt_sim",
                 "targets": [
                     "flutter/testing/scenario_app",
                     "flutter/shell/platform/darwin/ios:ios_test_flutter"
@@ -102,37 +97,28 @@
             "tests": [
                 {
                     "language": "python3",
-                    "name": "Tests for ios_debug_sim",
+                    "name": "Tests for ios_debug_unopt_sim",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "ios_debug_sim",
+                        "ci/ios_debug_unopt_sim",
                         "--type",
                         "objc",
                         "--engine-capture-core-dump",
                         "--ios-variant",
-                        "ios_debug_sim"
+                        "ci/ios_debug_unopt_sim"
                     ]
                 },
                 {
                     "name": "Scenario App Integration Tests",
                     "parameters": [
-                        "ios_debug_sim"
+                        "ci/ios_debug_unopt_sim"
                     ],
                     "script": "flutter/testing/scenario_app/run_ios_tests.sh"
                 }
             ]
         },
         {
-            "archives": [
-                {
-                    "base_path": "out/host_debug_unopt_arm64/zip_archives/",
-                    "type": "gcs",
-                    "include_paths": [
-                    ],
-                    "name": "host_debug_unopt_arm64"
-                }
-            ],
             "drone_dimensions": [
                 "device_type=none",
                 "os=Mac-13",
@@ -143,21 +129,25 @@
                 "use_rbe": true
             },
             "gn": [
-               "--runtime-mode",
-               "debug",
-               "--unoptimized",
-               "--no-lto",
-               "--prebuilt-dart-sdk",
-               "--force-mac-arm64",
-               "--mac-cpu",
-               "arm64",
-               "--rbe",
-               "--no-goma",
-               "--xcode-symlinks"
+                "--target-dir",
+                "ci/host_debug_unopt_arm64",
+                "--runtime-mode",
+                "debug",
+                "--unoptimized",
+                "--no-lto",
+                "--prebuilt-dart-sdk",
+                "--force-mac-arm64",
+                "--mac-cpu",
+                "arm64",
+                "--rbe",
+                "--no-goma",
+                "--xcode-symlinks",
+                "--use-glfw-swiftshader"
             ],
-            "name": "host_debug_unopt_arm64",
+            "name": "ci/host_debug_unopt_arm64",
+            "description": "Builds a debug mode unopt arm64 macOS engine and runs host-side tests.",
             "ninja": {
-                "config": "host_debug_unopt_arm64",
+                "config": "ci/host_debug_unopt_arm64",
                 "targets": [
                 ]
             },
@@ -165,18 +155,24 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            }
+            },
+            "tests": [
+                {
+                    "language": "python3",
+                    "name": "Host Tests for host_debug_unopt_arm64",
+                    "script": "flutter/testing/run_tests.py",
+                    "parameters": [
+                        "--variant",
+                        "ci/host_debug_unopt_arm64",
+                        "--type",
+                        "dart,dart-host,engine,impeller-golden",
+                        "--engine-capture-core-dump",
+                        "--no-skia-gold"
+                    ]
+                }
+            ]
         },
         {
-            "archives": [
-                {
-                    "base_path": "out/ios_debug_sim_arm64/zip_archives/",
-                    "type": "gcs",
-                    "include_paths": [
-                    ],
-                    "name": "ios_debug_sim_arm64"
-                }
-            ],
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
@@ -205,11 +201,14 @@
                 "arm64",
                 "--rbe",
                 "--no-goma",
-                "--xcode-symlinks"
+                "--xcode-symlinks",
+                "--target-dir",
+                "ci/ios_debug_unopt_sim_arm64"
             ],
-            "name": "ios_debug_sim_arm64",
+            "name": "ci/ios_debug_unopt_sim_arm64",
+            "description": "Builds a debug mode engine for arm64 iOS simulator. Runs unit tests and the scenario app tests.",
             "ninja": {
-                "config": "ios_debug_sim_arm64",
+                "config": "ci/ios_debug_unopt_sim_arm64",
                 "targets": [
                     "flutter/testing/scenario_app",
                     "flutter/shell/platform/darwin/ios:ios_test_flutter"
@@ -218,22 +217,22 @@
             "tests": [
                 {
                     "language": "python3",
-                    "name": "Tests for ios_debug_sim_arm64",
+                    "name": "Tests for ios_debug_unopt_sim_arm64",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "ios_debug_sim_arm64",
+                        "ci/ios_debug_unopt_sim_arm64",
                         "--type",
                         "objc",
                         "--engine-capture-core-dump",
                         "--ios-variant",
-                        "ios_debug_sim_arm64"
+                        "ci/ios_debug_unopt_sim_arm64"
                     ]
                 },
                 {
                     "name": "Scenario App Integration Tests",
                     "parameters": [
-                        "ios_debug_sim_arm64"
+                        "ci/ios_debug_unopt_sim_arm64"
                     ],
                     "script": "flutter/testing/scenario_app/run_ios_tests.sh"
                 }
@@ -241,15 +240,6 @@
             ]
         },
         {
-            "archives": [
-                {
-                    "base_path": "out/ios_debug_sim_arm64_extension_safe/zip_archives/",
-                    "type": "gcs",
-                    "include_paths": [
-                    ],
-                    "name": "ios_debug_sim_arm64_extension_safe"
-                }
-            ],
             "properties": {
                 "$flutter/osx_sdk": {
                     "runtime_versions": [
@@ -279,11 +269,14 @@
                 "--darwin-extension-safe",
                 "--rbe",
                 "--no-goma",
-                "--xcode-symlinks"
+                "--xcode-symlinks",
+                "--target-dir",
+                "ci/ios_debug_unopt_sim_arm64_extension_safe"
             ],
-            "name": "ios_debug_sim_arm64_extension_safe",
+            "name": "ci/ios_debug_unopt_sim_arm64_extension_safe",
+            "description": "Builds an extension safe debug mode engine for arm64 iOS simulator. Runs unit tests and the scenario app tests.",
             "ninja": {
-                "config": "ios_debug_sim_arm64_extension_safe",
+                "config": "ci/ios_debug_unopt_sim_arm64_extension_safe",
                 "targets": [
                     "flutter/testing/scenario_app",
                     "flutter/shell/platform/darwin/ios:ios_test_flutter"
@@ -292,26 +285,25 @@
             "tests": [
                 {
                     "language": "python3",
-                    "name": "Tests for ios_debug_sim_arm64_extension_safe",
+                    "name": "Tests for ios_debug_unopt_sim_arm64_extension_safe",
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "ios_debug_sim_arm64_extension_safe",
+                        "ci/ios_debug_unopt_sim_arm64_extension_safe",
                         "--type",
                         "objc",
                         "--engine-capture-core-dump",
                         "--ios-variant",
-                        "ios_debug_sim_arm64_extension_safe"
+                        "ci/ios_debug_unopt_sim_arm64_extension_safe"
                     ]
                 },
                 {
                     "name": "Scenario App Integration Tests",
                     "parameters": [
-                        "ios_debug_sim_arm64_extension_safe"
+                        "ci/ios_debug_unopt_sim_arm64_extension_safe"
                     ],
                     "script": "flutter/testing/scenario_app/run_ios_tests.sh"
                 }
-
             ]
         }
     ]

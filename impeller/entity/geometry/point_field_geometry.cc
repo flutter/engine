@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
@@ -29,8 +30,7 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
@@ -57,8 +57,7 @@ GeometryResult PointFieldGeometry::GetPositionUVBuffer(
   return {
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = uv_vtx_builder.CreateVertexBuffer(host_buffer),
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 
@@ -159,7 +158,8 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
                           DefaultUniformAlignment());
 
   BufferView geometry_buffer =
-      host_buffer.Emplace(nullptr, total * sizeof(Point), alignof(Point));
+      host_buffer.Emplace(nullptr, total * sizeof(Point),
+                          std::max(DefaultUniformAlignment(), alignof(Point)));
 
   BufferView output;
   {
@@ -187,8 +187,9 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   }
 
   if (texture_coverage.has_value() && effect_transform.has_value()) {
-    BufferView geometry_uv_buffer =
-        host_buffer.Emplace(nullptr, total * sizeof(Vector4), alignof(Vector4));
+    BufferView geometry_uv_buffer = host_buffer.Emplace(
+        nullptr, total * sizeof(Vector4),
+        std::max(DefaultUniformAlignment(), alignof(Vector4)));
 
     using UV = UvComputeShader;
 
@@ -215,15 +216,19 @@ GeometryResult PointFieldGeometry::GetPositionBufferGPU(
   if (!compute_pass->EncodeCommands()) {
     return {};
   }
-  renderer.RecordCommandBuffer(std::move(cmd_buffer));
+  if (!renderer.GetContext()
+           ->GetCommandQueue()
+           ->Submit({std::move(cmd_buffer)})
+           .ok()) {
+    return {};
+  }
 
   return {
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = {.vertex_buffer = std::move(output),
                         .vertex_count = total,
                         .index_type = IndexType::kNone},
-      .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
 }
 

@@ -68,6 +68,7 @@ class CompositorOpenGLTest : public WindowsTest {
 
  protected:
   FlutterWindowsEngine* engine() { return engine_.get(); }
+  FlutterWindowsView* view() { return view_.get(); }
   egl::MockManager* egl_manager() { return egl_manager_; }
   egl::MockContext* render_context() { return render_context_.get(); }
   egl::MockWindowSurface* surface() { return surface_; }
@@ -84,7 +85,7 @@ class CompositorOpenGLTest : public WindowsTest {
     FlutterWindowsEngineBuilder builder{GetContext()};
 
     engine_ = builder.Build();
-    EngineModifier modifier(engine_.get());
+    EngineModifier modifier{engine_.get()};
     modifier.SetEGLManager(std::move(egl_manager));
   }
 
@@ -95,7 +96,8 @@ class CompositorOpenGLTest : public WindowsTest {
     EXPECT_CALL(*window.get(), SetView).Times(1);
     EXPECT_CALL(*window.get(), GetWindowHandle).WillRepeatedly(Return(nullptr));
 
-    view_ = std::make_unique<FlutterWindowsView>(std::move(window));
+    view_ = std::make_unique<FlutterWindowsView>(kImplicitViewId, engine_.get(),
+                                                 std::move(window));
 
     if (add_surface) {
       auto surface = std::make_unique<egl::MockWindowSurface>();
@@ -106,8 +108,6 @@ class CompositorOpenGLTest : public WindowsTest {
       ViewModifier modifier{view_.get()};
       modifier.SetSurface(std::move(surface));
     }
-
-    engine_->SetView(view_.get());
   }
 
  private:
@@ -166,7 +166,7 @@ TEST_F(CompositorOpenGLTest, Present) {
   EXPECT_CALL(*surface(), IsValid).WillRepeatedly(Return(true));
   EXPECT_CALL(*surface(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface(), SwapBuffers).WillOnce(Return(true));
-  EXPECT_TRUE(compositor.Present(&layer_ptr, 1));
+  EXPECT_TRUE(compositor.Present(view(), &layer_ptr, 1));
 
   ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
 }
@@ -182,28 +182,7 @@ TEST_F(CompositorOpenGLTest, PresentEmpty) {
   EXPECT_CALL(*surface(), IsValid).WillRepeatedly(Return(true));
   EXPECT_CALL(*surface(), MakeCurrent).WillOnce(Return(true));
   EXPECT_CALL(*surface(), SwapBuffers).WillOnce(Return(true));
-  EXPECT_TRUE(compositor.Present(nullptr, 0));
-}
-
-TEST_F(CompositorOpenGLTest, HeadlessPresentIgnored) {
-  UseHeadlessEngine();
-
-  auto compositor = CompositorOpenGL{engine(), kMockResolver};
-
-  FlutterBackingStoreConfig config = {};
-  FlutterBackingStore backing_store = {};
-
-  EXPECT_CALL(*render_context(), MakeCurrent).WillOnce(Return(true));
-  ASSERT_TRUE(compositor.CreateBackingStore(config, &backing_store));
-
-  FlutterLayer layer = {};
-  layer.type = kFlutterLayerContentTypeBackingStore;
-  layer.backing_store = &backing_store;
-  const FlutterLayer* layer_ptr = &layer;
-
-  EXPECT_FALSE(compositor.Present(&layer_ptr, 1));
-
-  ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
+  EXPECT_TRUE(compositor.Present(view(), nullptr, 0));
 }
 
 TEST_F(CompositorOpenGLTest, NoSurfaceIgnored) {
@@ -222,7 +201,9 @@ TEST_F(CompositorOpenGLTest, NoSurfaceIgnored) {
   layer.backing_store = &backing_store;
   const FlutterLayer* layer_ptr = &layer;
 
-  EXPECT_FALSE(compositor.Present(&layer_ptr, 1));
+  EXPECT_FALSE(compositor.Present(view(), &layer_ptr, 1));
+
+  ASSERT_TRUE(compositor.CollectBackingStore(&backing_store));
 }
 
 }  // namespace testing

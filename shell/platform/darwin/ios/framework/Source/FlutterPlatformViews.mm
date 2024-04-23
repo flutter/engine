@@ -2,21 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <Metal/Metal.h>
-#import <UIKit/UIGestureRecognizerSubclass.h>
-
-#include <list>
-#include <map>
-#include <memory>
-#include <string>
-
-#include "flutter/common/graphics/persistent_cache.h"
-#include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+
+#include <Metal/Metal.h>
+
+#include "flutter/fml/platform/darwin/scoped_nsobject.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
 @implementation UIView (FirstResponder)
@@ -171,11 +163,11 @@ void FlutterPlatformViewsController::SetFlutterView(UIView* flutter_view) {
 }
 
 void FlutterPlatformViewsController::SetFlutterViewController(
-    UIViewController* flutter_view_controller) {
+    UIViewController<FlutterViewResponder>* flutter_view_controller) {
   flutter_view_controller_.reset([flutter_view_controller retain]);
 }
 
-UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
+UIViewController<FlutterViewResponder>* FlutterPlatformViewsController::getFlutterViewController() {
   return flutter_view_controller_.get();
 }
 
@@ -695,6 +687,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   auto did_submit = true;
   auto num_platform_views = composition_order_.size();
 
+  // TODO(hellohuanlin) this double for-loop is expensive with wasted computations.
+  // See: https://github.com/flutter/flutter/issues/145802
   for (size_t i = 0; i < num_platform_views; i++) {
     int64_t platform_view_id = composition_order_[i];
     EmbedderViewSlice* slice = slices_[platform_view_id].get();
@@ -706,6 +700,27 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       int64_t current_platform_view_id = composition_order_[j - 1];
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
       std::vector<SkIRect> intersection_rects = slice->region(platform_view_rect).getRects();
+      const SkIRect rounded_in_platform_view_rect = platform_view_rect.roundIn();
+      // Ignore intersections of single width/height on the edge of the platform view.
+      // This is to address the following performance issue when interleaving adjacent
+      // platform views and layers:
+      // Since we `roundOut` both platform view rects and the layer rects, as long as
+      // the coordinate is fractional, there will be an intersection of a single pixel width
+      // (or height) after rounding out, even if they do not intersect before rounding out.
+      // We have to round out both platform view rect and the layer rect.
+      // Rounding in platform view rect will result in missing pixel on the intersection edge.
+      // Rounding in layer rect will result in missing pixel on the edge of the layer on top
+      // of the platform view.
+      for (auto it = intersection_rects.begin(); it != intersection_rects.end(); /*no-op*/) {
+        // If intersection_rect does not intersect with the *rounded in* platform
+        // view rect, then the intersection must be a single pixel width (or height) on edge.
+        if (!SkIRect::Intersects(*it, rounded_in_platform_view_rect)) {
+          it = intersection_rects.erase(it);
+        } else {
+          ++it;
+        }
+      }
+
       auto allocation_size = intersection_rects.size();
 
       // For testing purposes, the overlay id is used to find the overlay view.
@@ -1124,7 +1139,7 @@ void FlutterPlatformViewsController::ResetFrameState() {
   // This gesture recognizer retains the `FlutterViewController` until the
   // end of a gesture sequence, that is all the touches in touchesBegan are concluded
   // with |touchesCancelled| or |touchesEnded|.
-  fml::scoped_nsobject<UIViewController> _flutterViewController;
+  fml::scoped_nsobject<UIViewController<FlutterViewResponder>> _flutterViewController;
 }
 
 - (instancetype)initWithTarget:(id)target
@@ -1175,7 +1190,7 @@ void FlutterPlatformViewsController::ResetFrameState() {
   // Flutter needs all the cancelled touches to be "cancelled" change types in order to correctly
   // handle gesture sequence.
   // We always override the change type to "cancelled".
-  [((FlutterViewController*)_flutterViewController.get()) forceTouchesCancelled:touches];
+  [_flutterViewController.get() forceTouchesCancelled:touches];
   _currentTouchPointersCount -= touches.count;
   if (_currentTouchPointersCount == 0) {
     self.state = UIGestureRecognizerStateFailed;

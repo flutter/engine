@@ -59,18 +59,16 @@ void ConfigureBlending(const ProcTableGLES& gl,
   }
 
   {
-    const auto is_set = [](std::underlying_type_t<ColorWriteMask> mask,
+    const auto is_set = [](ColorWriteMask mask,
                            ColorWriteMask check) -> GLboolean {
-      using RawType = decltype(mask);
-      return (static_cast<RawType>(mask) & static_cast<RawType>(check))
-                 ? GL_TRUE
-                 : GL_FALSE;
+      return (mask & check) ? GL_TRUE : GL_FALSE;
     };
 
-    gl.ColorMask(is_set(color->write_mask, ColorWriteMask::kRed),    // red
-                 is_set(color->write_mask, ColorWriteMask::kGreen),  // green
-                 is_set(color->write_mask, ColorWriteMask::kBlue),   // blue
-                 is_set(color->write_mask, ColorWriteMask::kAlpha)   // alpha
+    gl.ColorMask(
+        is_set(color->write_mask, ColorWriteMaskBits::kRed),    // red
+        is_set(color->write_mask, ColorWriteMaskBits::kGreen),  // green
+        is_set(color->write_mask, ColorWriteMaskBits::kBlue),   // blue
+        is_set(color->write_mask, ColorWriteMaskBits::kAlpha)   // alpha
     );
   }
 }
@@ -172,19 +170,22 @@ struct RenderPassData {
     }
   });
 
-  const auto is_default_fbo =
-      TextureGLES::Cast(*pass_data.color_attachment).IsWrapped();
+  TextureGLES& color_gles = TextureGLES::Cast(*pass_data.color_attachment);
+  const bool is_default_fbo = color_gles.IsWrapped();
 
-  if (!is_default_fbo) {
+  if (is_default_fbo) {
+    if (color_gles.GetFBO().has_value()) {
+      // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+      gl.BindFramebuffer(GL_FRAMEBUFFER, *color_gles.GetFBO());
+    }
+  } else {
     // Create and bind an offscreen FBO.
     gl.GenFramebuffers(1u, &fbo);
     gl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    if (auto color = TextureGLES::Cast(pass_data.color_attachment.get())) {
-      if (!color->SetAsFramebufferAttachment(
-              GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
-        return false;
-      }
+    if (!color_gles.SetAsFramebufferAttachment(
+            GL_FRAMEBUFFER, TextureGLES::AttachmentType::kColor0)) {
+      return false;
     }
 
     if (auto depth = TextureGLES::Cast(pass_data.depth_attachment.get())) {
@@ -214,12 +215,11 @@ struct RenderPassData {
                 pass_data.clear_color.alpha   // alpha
   );
   if (pass_data.depth_attachment) {
-    // TODO(bdero): Desktop GL for Apple requires glClearDepth. glClearDepthf
-    //              throws GL_INVALID_OPERATION.
-    //              https://github.com/flutter/flutter/issues/136322
-#if !FML_OS_MACOSX
-    gl.ClearDepthf(pass_data.clear_depth);
-#endif
+    if (gl.DepthRangef.IsAvailable()) {
+      gl.ClearDepthf(pass_data.clear_depth);
+    } else {
+      gl.ClearDepth(pass_data.clear_depth);
+    }
   }
   if (pass_data.stencil_attachment) {
     gl.ClearStencil(pass_data.clear_stencil);
@@ -242,6 +242,9 @@ struct RenderPassData {
   gl.Disable(GL_CULL_FACE);
   gl.Disable(GL_BLEND);
   gl.ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+  gl.DepthMask(GL_TRUE);
+  gl.StencilMaskSeparate(GL_FRONT, 0xFFFFFFFF);
+  gl.StencilMaskSeparate(GL_BACK, 0xFFFFFFFF);
 
   gl.Clear(clear_bits);
 
@@ -315,12 +318,11 @@ struct RenderPassData {
                 viewport.rect.GetHeight()       // height
     );
     if (pass_data.depth_attachment) {
-      // TODO(bdero): Desktop GL for Apple requires glDepthRange. glDepthRangef
-      //              throws GL_INVALID_OPERATION.
-      //              https://github.com/flutter/flutter/issues/136322
-#if !FML_OS_MACOSX
-      gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
-#endif
+      if (gl.DepthRangef.IsAvailable()) {
+        gl.DepthRangef(viewport.depth_range.z_near, viewport.depth_range.z_far);
+      } else {
+        gl.DepthRange(viewport.depth_range.z_near, viewport.depth_range.z_far);
+      }
     }
 
     //--------------------------------------------------------------------------

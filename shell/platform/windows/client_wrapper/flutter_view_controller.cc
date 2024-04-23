@@ -12,7 +12,7 @@ namespace flutter {
 FlutterViewController::FlutterViewController(int width,
                                              int height,
                                              const DartProject& project) {
-  engine_ = std::make_unique<FlutterEngine>(project);
+  engine_ = std::make_shared<FlutterEngine>(project);
   controller_ = FlutterDesktopViewControllerCreate(width, height,
                                                    engine_->RelinquishEngine());
   if (!controller_) {
@@ -27,6 +27,12 @@ FlutterViewController::~FlutterViewController() {
   if (controller_) {
     FlutterDesktopViewControllerDestroy(controller_);
   }
+}
+
+FlutterViewId FlutterViewController::view_id() const {
+  auto view_id = FlutterDesktopViewControllerGetViewId(controller_);
+
+  return static_cast<FlutterViewId>(view_id);
 }
 
 void FlutterViewController::ForceRedraw() {

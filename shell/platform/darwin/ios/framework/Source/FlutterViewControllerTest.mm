@@ -305,18 +305,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  FlutterMethodCall* setClientCall =
-      [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
-                                        arguments:@[ @(123), @{@"autocorrect" : @YES} ]];
-  [engine.textInputPlugin handleMethodCall:setClientCall
-                                    result:^(id _Nullable result){
-                                    }];
-
-  // Check if FlutterTextInputViewAccessibilityHider exists.
-  FlutterTextInputPlugin* textInputPlugin = engine.textInputPlugin;
-  UIView* textInputHider = [[textInputPlugin textInputView] superview];
-  XCTAssertNotNil(textInputHider);
-
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
   UIScreen* screen = [self setUpMockScreen];
   CGRect viewFrame = screen.bounds;
@@ -1377,6 +1365,22 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) != 0);
 }
 
+- (void)testAccessibilityPerformEscapePopsRoute {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  id mockNavigationChannel = OCMClassMock([FlutterMethodChannel class]);
+  OCMStub([mockEngine navigationChannel]).andReturn(mockNavigationChannel);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  XCTAssertTrue([viewController accessibilityPerformEscape]);
+
+  OCMVerify([mockNavigationChannel invokeMethod:@"popRoute" arguments:nil]);
+
+  [mockNavigationChannel stopMocking];
+}
+
 - (void)testPerformOrientationUpdateForcesOrientationChange {
   [self orientationTestWithOrientationUpdate:UIInterfaceOrientationMaskPortrait
                           currentOrientation:UIInterfaceOrientationLandscapeLeft
@@ -2200,46 +2204,18 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertNil(viewController.keyboardAnimationVSyncClient);
 }
 
-- (void)testAvoidKeyboardAnimationWhenFlutterTextInputViewAccessibilityHiderIsNil {
+- (void)testSupportsShowingSystemContextMenuForIOS16AndAbove {
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine runWithEntrypoint:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-
-  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
-  UIScreen* screen = [self setUpMockScreen];
-  CGRect viewFrame = screen.bounds;
-  [self setUpMockView:viewControllerMock
-               screen:screen
-            viewFrame:viewFrame
-       convertedFrame:viewFrame];
-
-  CGFloat screenHeight = screen.bounds.size.height;
-  CGFloat screenWidth = screen.bounds.size.height;
-
-  // Check if FlutterTextInputViewAccessibilityHider is nil.
-  FlutterTextInputPlugin* textInputPlugin = engine.textInputPlugin;
-  UIView* textInputHider = [[textInputPlugin textInputView] superview];
-  XCTAssertNil(textInputHider);
-
-  // Start show keyboard animation.
-  CGRect showKeyboardBeginFrame = CGRectMake(0, screenHeight, screenWidth, 250);
-  CGRect showKeyboardEndFrame = CGRectMake(0, screenHeight - 250, screenWidth, 250);
-  NSNotification* fakeNotification =
-      [NSNotification notificationWithName:UIKeyboardWillChangeFrameNotification
-                                    object:nil
-                                  userInfo:@{
-                                    @"UIKeyboardFrameBeginUserInfoKey" : @(showKeyboardBeginFrame),
-                                    @"UIKeyboardFrameEndUserInfoKey" : @(showKeyboardEndFrame),
-                                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
-                                    @"UIKeyboardIsLocalUserInfoKey" : @(YES)
-                                  }];
-
-  viewControllerMock.targetViewInsetBottom = 0;
-  [viewControllerMock handleKeyboardNotification:fakeNotification];
-  BOOL isShowingAnimation = viewControllerMock.keyboardAnimationIsShowing;
-  XCTAssertFalse(isShowingAnimation);
+  BOOL supportsShowingSystemContextMenu = [viewController supportsShowingSystemContextMenu];
+  if (@available(iOS 16.0, *)) {
+    XCTAssertTrue(supportsShowingSystemContextMenu);
+  } else {
+    XCTAssertFalse(supportsShowingSystemContextMenu);
+  }
 }
 
 @end

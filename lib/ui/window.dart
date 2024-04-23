@@ -42,6 +42,8 @@ class Display {
 /// Each [FlutterView] has its own layer tree that is rendered
 /// whenever [render] is called on it with a [Scene].
 ///
+/// References to [FlutterView] objects are obtained via the [PlatformDispatcher].
+///
 /// ## Insets and Padding
 ///
 /// {@animation 300 300 https://flutter.github.io/assets-for-api-docs/assets/widgets/window_padding.mp4}
@@ -558,6 +560,13 @@ class SingletonFlutterWindow extends FlutterView {
   /// [SpellCheckConfiguration] when spell check is enabled, but no spell check
   /// service is specified.
   bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
+
+  /// Whether the spell check service is supported on the current platform.
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when a default spell check service
+  /// is requested.
+  bool get supportsShowingSystemContextMenu => platformDispatcher.supportsShowingSystemContextMenu;
 
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.

@@ -71,7 +71,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
       [&renderer](ContentContextOptions options) {
         return renderer.GetConicalGradientSSBOFillPipeline(options);
       };
-  return ColorSourceContents::DrawPositions<VS>(
+  return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer](RenderPass& pass) {
         FS::FragInfo frag_info;
@@ -118,9 +118,6 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
     return false;
   }
 
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
   VS::FrameInfo frame_info;
   frame_info.matrix = GetInverseEffectTransform();
 
@@ -128,7 +125,7 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
       [&renderer](ContentContextOptions options) {
         return renderer.GetConicalGradientFillPipeline(options);
       };
-  return ColorSourceContents::DrawPositions<VS>(
+  return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer, &gradient_texture](RenderPass& pass) {
         FS::FragInfo frag_info;

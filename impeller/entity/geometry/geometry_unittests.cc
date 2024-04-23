@@ -2,11 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
 #include "flutter/testing/testing.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/renderer/testing/mocks.h"
 
 inline ::testing::AssertionResult SolidVerticesNear(
     std::vector<impeller::SolidFillVertexShader::PerVertexData> a,
@@ -169,6 +172,26 @@ TEST(EntityGeometryTest, StrokePathGeometryTransformOfLine) {
     auto uv_vertices =
         ImpellerEntityUnitTestAccessor::GenerateSolidStrokeVerticesUV(
             polyline, 10.0f, 10.0f, Join::kBevel, Cap::kButt, 1.0,  //
+            Point(50.0f, 40.0f), Size(20.0f, 40.0f), Matrix());
+    // uvx = (x - 50) / 20
+    // uvy = (y - 40) / 40
+    auto uv = [](const Point& p) {
+      return Point((p.x - 50.0f) / 20.0f,  //
+                   (p.y - 40.0f) / 40.0f);
+    };
+    std::vector<TextureFillVertexShader::PerVertexData> uv_expected;
+    for (size_t i = 0; i < expected.size(); i++) {
+      auto p = expected[i].position;
+      uv_expected.push_back({.position = p, .texture_coords = uv(p)});
+    }
+
+    EXPECT_TEXTURE_VERTICES_NEAR(uv_vertices, uv_expected);
+  }
+
+  {
+    auto uv_vertices =
+        ImpellerEntityUnitTestAccessor::GenerateSolidStrokeVerticesUV(
+            polyline, 10.0f, 10.0f, Join::kBevel, Cap::kButt, 1.0,  //
             Point(50.0f, 40.0f), Size(20.0f, 40.0f),
             Matrix::MakeScale({8.0f, 4.0f, 1.0f}));
     // uvx = ((x * 8) - 50) / 20
@@ -206,6 +229,13 @@ TEST(EntityGeometryTest, StrokePathGeometryTransformOfLine) {
 
     EXPECT_TEXTURE_VERTICES_NEAR(uv_vertices, uv_expected);
   }
+}
+
+TEST(EntityGeometryTest, GeometryResultHasReasonableDefaults) {
+  GeometryResult result;
+  EXPECT_EQ(result.type, PrimitiveType::kTriangleStrip);
+  EXPECT_EQ(result.transform, Matrix());
+  EXPECT_EQ(result.mode, GeometryResult::Mode::kNormal);
 }
 
 }  // namespace testing

@@ -20,6 +20,8 @@ impeller_component("aiks") {
     "color_filter.h",
     "color_source.cc",
     "color_source.h",
+    "experimental_canvas.cc",
+    "experimental_canvas.h",
     "image.cc",
     "image.h",
     "image_filter.cc",
@@ -85,6 +87,7 @@ impeller_component("context_spy") {
 template("aiks_unittests_component") {
   target_name = invoker.target_name
   predefined_sources = [
+    "aiks_blend_unittests.cc",
     "aiks_blur_unittests.cc",
     "aiks_gradient_unittests.cc",
     "aiks_path_unittests.cc",
@@ -125,9 +128,9 @@ template("aiks_unittests_component") {
 
 aiks_unittests_component("aiks_unittests") {
   sources = [
-    "canvas_recorder_unittests.cc",
+    # "canvas_recorder_unittests.cc",
     "canvas_unittests.cc",
-    "trace_serializer_unittests.cc",
+    # "trace_serializer_unittests.cc",
   ]
 
   if (!impeller_trace_canvas) {

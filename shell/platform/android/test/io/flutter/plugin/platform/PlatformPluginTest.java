@@ -6,6 +6,7 @@ package io.flutter.plugin.platform;
 
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
 import static android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS;
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -69,23 +70,6 @@ public class PlatformPluginTest {
     clipboardManager = spy(ctx.getSystemService(ClipboardManager.class));
     when(mockActivity.getSystemService(Context.CLIPBOARD_SERVICE)).thenReturn(clipboardManager);
     clipboardFormat = ClipboardContentFormat.PLAIN_TEXT;
-  }
-
-  @Config(sdk = Build.VERSION_CODES.KITKAT)
-  @Test
-  public void itIgnoresNewHapticEventsOnOldAndroidPlatforms() {
-    View fakeDecorView = mock(View.class);
-    Window fakeWindow = mock(Window.class);
-    Activity mockActivity = mock(Activity.class);
-    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
-    when(mockActivity.getWindow()).thenReturn(fakeWindow);
-    PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
-
-    // HEAVY_IMPACT haptic response is only available on "M" (23) and later.
-    platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.HEAVY_IMPACT);
-
-    // SELECTION_CLICK haptic response is only available on "LOLLIPOP" (21) and later.
-    platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
   @Test
@@ -227,7 +211,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // ClipboardManager.getText
-  @Config(sdk = Build.VERSION_CODES.P)
+  @Config(sdk = API_LEVELS.API_28)
   @Test
   public void platformPlugin_hasStrings() {
     View fakeDecorView = mock(View.class);
@@ -267,7 +251,7 @@ public class PlatformPluginTest {
     clipboardManager.setPrimaryClip(clip);
     assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
 
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       // Empty clipboard
       clipboardManager.clearPrimaryClip();
       assertFalse(platformPlugin.mPlatformMessageHandler.clipboardHasStrings());
@@ -278,7 +262,7 @@ public class PlatformPluginTest {
     verify(clipboardManager, never()).getText();
   }
 
-  @Config(sdk = Build.VERSION_CODES.Q)
+  @Config(sdk = API_LEVELS.API_29)
   @Test
   public void setNavigationBarDividerColor() {
     View fakeDecorView = mock(View.class);
@@ -288,7 +272,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       // Default style test
       SystemChromeStyle style =
           new SystemChromeStyle(
@@ -352,7 +336,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = Build.VERSION_CODES.R)
+  @Config(sdk = API_LEVELS.API_30)
   @Test
   public void setNavigationBarIconBrightness() {
     View fakeDecorView = mock(View.class);
@@ -362,7 +346,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 30) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
       WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
@@ -399,7 +383,7 @@ public class PlatformPluginTest {
     }
   }
 
-  @Config(sdk = Build.VERSION_CODES.R)
+  @Config(sdk = API_LEVELS.API_30)
   @Test
   public void setStatusBarIconBrightness() {
     View fakeDecorView = mock(View.class);
@@ -409,7 +393,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 30) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
       WindowInsetsController fakeWindowInsetsController = mock(WindowInsetsController.class);
       when(fakeWindow.getInsetsController()).thenReturn(fakeWindowInsetsController);
 
@@ -446,7 +430,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_*, setSystemUiVisibility
-  @Config(sdk = Build.VERSION_CODES.Q)
+  @Config(sdk = API_LEVELS.API_29)
   @Test
   public void setSystemUiMode() {
     View fakeDecorView = mock(View.class);
@@ -456,7 +440,7 @@ public class PlatformPluginTest {
     when(mockActivity.getWindow()).thenReturn(fakeWindow);
     PlatformPlugin platformPlugin = new PlatformPlugin(mockActivity, mockPlatformChannel);
 
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.LEAN_BACK);
       verify(fakeDecorView)
@@ -490,7 +474,7 @@ public class PlatformPluginTest {
                   | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
-    if (Build.VERSION.SDK_INT >= 29) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_29) {
       platformPlugin.mPlatformMessageHandler.showSystemUiMode(
           PlatformChannel.SystemUiMode.EDGE_TO_EDGE);
       verify(fakeDecorView)
@@ -559,7 +543,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // SYSTEM_UI_FLAG_*, setSystemUiVisibility
-  @Config(sdk = Build.VERSION_CODES.P)
+  @Config(sdk = API_LEVELS.API_28)
   @Test
   public void doNotEnableEdgeToEdgeOnOlderSdk() {
     View fakeDecorView = mock(View.class);
@@ -580,7 +564,7 @@ public class PlatformPluginTest {
 
   @SuppressWarnings("deprecation")
   // FLAG_TRANSLUCENT_STATUS, FLAG_TRANSLUCENT_NAVIGATION
-  @Config(sdk = Build.VERSION_CODES.Q)
+  @Config(sdk = API_LEVELS.API_29)
   @Test
   public void verifyWindowFlagsSetToStyleOverlays() {
     View fakeDecorView = mock(View.class);

@@ -5,6 +5,7 @@
 #include "flutter/shell/platform/windows/compositor_opengl.h"
 
 #include "GLES3/gl3.h"
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 namespace flutter {
@@ -91,12 +92,10 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
   return true;
 }
 
-bool CompositorOpenGL::Present(const FlutterLayer** layers,
+bool CompositorOpenGL::Present(FlutterWindowsView* view,
+                               const FlutterLayer** layers,
                                size_t layers_count) {
-  FlutterWindowsView* view = engine_->view();
-  if (!view) {
-    return false;
-  }
+  FML_DCHECK(view != nullptr);
 
   // Clear the view if there are no layers to present.
   if (layers_count == 0) {

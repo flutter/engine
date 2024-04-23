@@ -37,12 +37,10 @@ struct AutoErrorCheck {
       }
       if (GLErrorIsFatal(error)) {
         FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
-                       << error << ")"
-                       << " encountered on call to " << name;
+                       << error << ")" << " encountered on call to " << name;
       } else {
         FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
-                       << ")"
-                       << " encountered on call to " << name;
+                       << ")" << " encountered on call to " << name;
       }
     }
   }
@@ -115,7 +113,6 @@ struct GLProc {
   PROC(CheckFramebufferStatus);              \
   PROC(Clear);                               \
   PROC(ClearColor);                          \
-  PROC(ClearDepthf);                         \
   PROC(ClearStencil);                        \
   PROC(ColorMask);                           \
   PROC(CompileShader);                       \
@@ -130,7 +127,6 @@ struct GLProc {
   PROC(DeleteTextures);                      \
   PROC(DepthFunc);                           \
   PROC(DepthMask);                           \
-  PROC(DepthRangef);                         \
   PROC(DetachShader);                        \
   PROC(Disable);                             \
   PROC(DisableVertexAttribArray);            \
@@ -188,6 +184,22 @@ struct GLProc {
   PROC(GetShaderSource);                     \
   PROC(ReadPixels);
 
+// Calls specific to OpenGLES.
+void(glClearDepthf)(GLfloat depth);
+void(glDepthRangef)(GLfloat n, GLfloat f);
+
+#define FOR_EACH_IMPELLER_ES_ONLY_PROC(PROC) \
+  PROC(ClearDepthf);                         \
+  PROC(DepthRangef);
+
+// Calls specific to desktop GL.
+void(glClearDepth)(GLdouble depth);
+void(glDepthRange)(GLdouble n, GLdouble f);
+
+#define FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(PROC) \
+  PROC(ClearDepth);                               \
+  PROC(DepthRange);
+
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
 #define FOR_EACH_IMPELLER_EXT_PROC(PROC)    \
@@ -226,6 +238,8 @@ class ProcTableGLES {
   GLProc<decltype(gl##name)> name = {"gl" #name, nullptr};
 
   FOR_EACH_IMPELLER_PROC(IMPELLER_PROC);
+  FOR_EACH_IMPELLER_ES_ONLY_PROC(IMPELLER_PROC);
+  FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 

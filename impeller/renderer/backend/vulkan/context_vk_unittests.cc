@@ -5,12 +5,26 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/testing/testing.h"  // IWYU pragma: keep
 #include "impeller/base/validation.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/test/mock_vulkan.h"
 
 namespace impeller {
 namespace testing {
+
+TEST(ContextVKTest, CommonHardwareConcurrencyConfigurations) {
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(100u), 4u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(9u), 4u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(8u), 4u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(7u), 3u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(6u), 3u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(5u), 2u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(4u), 2u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(3u), 1u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(2u), 1u);
+  EXPECT_EQ(ContextVK::ChooseThreadCountForWorkers(1u), 1u);
+}
 
 TEST(ContextVKTest, DeletesCommandPools) {
   std::weak_ptr<ContextVK> weak_context;
@@ -153,7 +167,7 @@ TEST(CapabilitiesVKTest, ContextInitializesWithNoStencilFormat) {
           .SetPhysicalDeviceFormatPropertiesCallback(
               [](VkPhysicalDevice physicalDevice, VkFormat format,
                  VkFormatProperties* pFormatProperties) {
-                if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+                if (format == VK_FORMAT_R8G8B8A8_UNORM) {
                   pFormatProperties->optimalTilingFeatures =
                       static_cast<VkFormatFeatureFlags>(
                           vk::FormatFeatureFlagBits::eColorAttachment);
@@ -186,7 +200,7 @@ TEST(CapabilitiesVKTest,
           .SetPhysicalDeviceFormatPropertiesCallback(
               [](VkPhysicalDevice physicalDevice, VkFormat format,
                  VkFormatProperties* pFormatProperties) {
-                if (format == VK_FORMAT_B8G8R8A8_UNORM) {
+                if (format == VK_FORMAT_R8G8B8A8_UNORM) {
                   pFormatProperties->optimalTilingFeatures =
                       static_cast<VkFormatFeatureFlags>(
                           vk::FormatFeatureFlagBits::eColorAttachment);
@@ -195,6 +209,36 @@ TEST(CapabilitiesVKTest,
               })
           .Build();
   ASSERT_EQ(context, nullptr);
+}
+
+TEST(ContextVKTest, WarmUpFunctionCreatesRenderPass) {
+  const std::shared_ptr<ContextVK> context = MockVulkanContextBuilder().Build();
+
+  context->SetOffscreenFormat(PixelFormat::kR8G8B8A8UNormInt);
+  context->InitializeCommonlyUsedShadersIfNeeded();
+
+  auto functions = GetMockVulkanFunctions(context->GetDevice());
+  ASSERT_TRUE(std::find(functions->begin(), functions->end(),
+                        "vkCreateRenderPass") != functions->end());
+}
+
+TEST(ContextVKTest, FatalMissingValidations) {
+  EXPECT_DEATH(const std::shared_ptr<ContextVK> context =
+                   MockVulkanContextBuilder()
+                       .SetSettingsCallback([](ContextVK::Settings& settings) {
+                         settings.enable_validation = true;
+                         settings.fatal_missing_validations = true;
+                       })
+                       .Build(),
+               "");
+}
+
+TEST(ContextVKTest, HasDefaultColorFormat) {
+  std::shared_ptr<ContextVK> context = MockVulkanContextBuilder().Build();
+
+  const CapabilitiesVK* capabilites_vk =
+      reinterpret_cast<const CapabilitiesVK*>(context->GetCapabilities().get());
+  ASSERT_NE(capabilites_vk->GetDefaultColorFormat(), PixelFormat::kUnknown);
 }
 
 }  // namespace testing

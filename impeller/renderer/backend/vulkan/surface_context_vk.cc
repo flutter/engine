@@ -7,7 +7,7 @@
 #include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
-#include "impeller/renderer/backend/vulkan/swapchain_vk.h"
+#include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
@@ -88,6 +88,7 @@ std::unique_ptr<Surface> SurfaceContextVK::AcquireNextSurface() {
         .DidAcquireSurfaceFrame();
   }
   parent_->GetCommandPoolRecycler()->Dispose();
+  parent_->GetResourceAllocator()->DebugTraceMemoryStatistics();
   return surface;
 }
 
@@ -120,6 +121,14 @@ vk::UniqueSurfaceKHR SurfaceContextVK::CreateAndroidSurface(
 
 const vk::Device& SurfaceContextVK::GetDevice() const {
   return parent_->GetDevice();
+}
+
+void SurfaceContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
+  parent_->InitializeCommonlyUsedShadersIfNeeded();
+}
+
+const ContextVK& SurfaceContextVK::GetParent() const {
+  return *parent_;
 }
 
 }  // namespace impeller

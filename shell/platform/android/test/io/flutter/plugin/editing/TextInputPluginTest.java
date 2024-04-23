@@ -1,5 +1,6 @@
 package io.flutter.plugin.editing;
 
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -1246,9 +1247,6 @@ public class TextInputPluginTest {
   @SuppressWarnings("deprecation") // InputMethodSubtype
   @Test
   public void inputConnection_finishComposingTextUpdatesIMM() throws JSONException {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-      return;
-    }
     ShadowBuild.setManufacturer("samsung");
     InputMethodSubtype inputMethodSubtype =
         new InputMethodSubtype(0, 0, /*locale=*/ "en", "", "", false, false);
@@ -1391,7 +1389,7 @@ public class TextInputPluginTest {
   // -------- Start: Autofill Tests -------
   @Test
   public void autofill_enabledByDefault() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1451,7 +1449,7 @@ public class TextInputPluginTest {
 
   @Test
   public void autofill_canBeDisabled() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1488,7 +1486,7 @@ public class TextInputPluginTest {
 
   @Test
   public void autofill_hintText() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1529,11 +1527,11 @@ public class TextInputPluginTest {
     verify(children[0]).setHint("placeholder");
   }
 
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = API_LEVELS.API_26)
   @SuppressWarnings("deprecation")
   @Test
   public void autofill_onProvideVirtualViewStructure() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = getTestView();
@@ -1621,10 +1619,10 @@ public class TextInputPluginTest {
   }
 
   @SuppressWarnings("deprecation")
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_onProvideVirtualViewStructure_singular_textfield() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     // Migrate to ActivityScenario by following https://github.com/robolectric/robolectric/pull/4736
@@ -1673,10 +1671,10 @@ public class TextInputPluginTest {
     verify(children[0]).setDimens(anyInt(), anyInt(), anyInt(), anyInt(), gt(0), gt(0));
   }
 
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_testLifeCycle() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
 
@@ -1808,11 +1806,11 @@ public class TextInputPluginTest {
     assertEquals("1".hashCode(), testAfm.exitId);
   }
 
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = API_LEVELS.API_26)
   @SuppressWarnings("deprecation")
   @Test
   public void autofill_testAutofillUpdatesTheFramework() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
 
@@ -1906,10 +1904,10 @@ public class TextInputPluginTest {
     assertEquals(editState.text, "unfocused field");
   }
 
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_doesNotCrashAfterClearClientCall() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
     FlutterView testView = new FlutterView(ctx);
@@ -1955,10 +1953,10 @@ public class TextInputPluginTest {
         .updateEditingState(anyInt(), any(), anyInt(), anyInt(), anyInt(), anyInt());
   }
 
-  @Config(minSdk = Build.VERSION_CODES.O)
+  @Config(minSdk = API_LEVELS.API_26)
   @Test
   public void autofill_testSetTextIpnutClientUpdatesSideFields() {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
       return;
     }
 
@@ -2135,8 +2133,8 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
+  @TargetApi(API_LEVELS.API_30)
+  @Config(sdk = API_LEVELS.API_30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE.
   // flutter#133074 tracks migration work.
@@ -2214,8 +2212,8 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
+  @TargetApi(API_LEVELS.API_30)
+  @Config(sdk = API_LEVELS.API_30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility
   // flutter#133074 tracks migration work.
@@ -2295,8 +2293,8 @@ public class TextInputPluginTest {
   }
 
   @Test
-  @TargetApi(30)
-  @Config(sdk = 30)
+  @TargetApi(API_LEVELS.API_30)
+  @Config(sdk = API_LEVELS.API_30)
   @SuppressWarnings("deprecation")
   // getWindowSystemUiVisibility, SYSTEM_UI_FLAG_LAYOUT_STABLE
   // flutter#133074 tracks migration work.
@@ -2484,7 +2482,7 @@ public class TextInputPluginTest {
     }
 
     public void notifyValueChanged(View view, int virtualId, AutofillValue value) {
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+      if (Build.VERSION.SDK_INT < API_LEVELS.API_26) {
         return;
       }
       changeVirtualId = virtualId;

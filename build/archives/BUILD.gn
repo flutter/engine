@@ -72,7 +72,7 @@ if (build_engine_artifacts && !is_android) {
       }
       files += [
         {
-          source = "//third_party/icu/flutter/icudtl.dat"
+          source = "//flutter/third_party/icu/flutter/icudtl.dat"
           destination = "icudtl.dat"
         },
         {
@@ -86,6 +86,10 @@ if (build_engine_artifacts && !is_android) {
         {
           source = "//flutter/impeller/compiler/shader_lib"
           destination = "shader_lib"
+        },
+        {
+          source = "//flutter/lib/gpu"
+          destination = "flutter_gpu"
         },
         {
           source = "$root_out_dir/${lib_prefix}path_ops$dll"
@@ -104,8 +108,8 @@ if (build_engine_artifacts && !is_android) {
           destination = "vm_isolate_snapshot.bin"
         },
         {
-          source = "$root_gen_dir/frontend_server.dart.snapshot"
-          destination = "frontend_server.dart.snapshot"
+          source = "$root_gen_dir/frontend_server_aot.dart.snapshot"
+          destination = "frontend_server_aot.dart.snapshot"
         },
       ]
     }

@@ -10,6 +10,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
+#include "impeller/renderer/backend/vulkan/sampler_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_source_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
@@ -40,9 +41,12 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   // |Texture|
   ISize GetSize() const override;
 
-  void SetMipMapGenerated() { mipmap_generated_ = true; }
+  void SetMipMapGenerated();
 
-  bool IsSwapchainImage() const { return source_->IsSwapchainImage(); }
+  bool IsSwapchainImage() const;
+
+  std::shared_ptr<SamplerVK> GetImmutableSamplerVariant(
+      const SamplerVK& sampler) const;
 
   // These methods should only be used by render_pass_vk.h
 
@@ -51,30 +55,28 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   /// This field is only set if this texture is used as the resolve texture
   /// of a render pass. By construction, this framebuffer should be compatible
   /// with any future render passes.
-  void SetFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer);
+  void SetCachedFramebuffer(const SharedHandleVK<vk::Framebuffer>& framebuffer);
 
   /// Store the last render pass object used with this texture.
   ///
   /// This field is only set if this texture is used as the resolve texture
   /// of a render pass. By construction, this framebuffer should be compatible
   /// with any future render passes.
-  void SetRenderPass(const SharedHandleVK<vk::RenderPass>& render_pass);
+  void SetCachedRenderPass(const SharedHandleVK<vk::RenderPass>& render_pass);
 
   /// Retrieve the last framebuffer object used with this texture.
   ///
   /// May be nullptr if no previous framebuffer existed.
-  SharedHandleVK<vk::Framebuffer> GetFramebuffer() const;
+  SharedHandleVK<vk::Framebuffer> GetCachedFramebuffer() const;
 
   /// Retrieve the last render pass object used with this texture.
   ///
   /// May be nullptr if no previous render pass existed.
-  SharedHandleVK<vk::RenderPass> GetRenderPass() const;
+  SharedHandleVK<vk::RenderPass> GetCachedRenderPass() const;
 
  private:
   std::weak_ptr<Context> context_;
   std::shared_ptr<TextureSourceVK> source_;
-  SharedHandleVK<vk::Framebuffer> framebuffer_ = nullptr;
-  SharedHandleVK<vk::RenderPass> render_pass_ = nullptr;
 
   // |Texture|
   void SetLabel(std::string_view label) override;

@@ -6,6 +6,8 @@
 
 #include "fml/concurrent_message_loop.h"
 #include "impeller/renderer/backend/vulkan/command_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/render_pass_builder_vk.h"
+#include "impeller/renderer/render_target.h"
 
 #ifdef FML_OS_ANDROID
 #include <pthread.h>
@@ -33,6 +35,7 @@
 #include "impeller/renderer/backend/vulkan/gpu_tracer_vk.h"
 #include "impeller/renderer/backend/vulkan/resource_manager_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_context_vk.h"
+#include "impeller/renderer/backend/vulkan/yuv_conversion_library_vk.h"
 #include "impeller/renderer/capabilities.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
@@ -103,6 +106,13 @@ std::shared_ptr<ContextVK> ContextVK::Create(Settings settings) {
   return context;
 }
 
+// static
+size_t ContextVK::ChooseThreadCountForWorkers(size_t hardware_concurrency) {
+  // Never create more than 4 worker threads. Attempt to use up to
+  // half of the available concurrency.
+  return std::clamp(hardware_concurrency / 2ull, /*lo=*/1ull, /*hi=*/4ull);
+}
+
 namespace {
 thread_local uint64_t tls_context_count = 0;
 uint64_t CalculateHash(void* ptr) {
@@ -133,7 +143,7 @@ void ContextVK::Setup(Settings settings) {
   }
 
   raster_message_loop_ = fml::ConcurrentMessageLoop::Create(
-      std::min(4u, std::thread::hardware_concurrency()));
+      ChooseThreadCountForWorkers(std::thread::hardware_concurrency()));
   raster_message_loop_->PostTaskToAllWorkers([]() {
     // Currently we only use the worker task pool for small parts of a frame
     // workload, if this changes this setting may need to be adjusted.
@@ -158,8 +168,8 @@ void ContextVK::Setup(Settings settings) {
   enable_validation = true;
 #endif
 
-  auto caps =
-      std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(enable_validation));
+  auto caps = std::shared_ptr<CapabilitiesVK>(new CapabilitiesVK(
+      enable_validation, settings.fatal_missing_validations));
 
   if (!caps->IsValid()) {
     VALIDATION_LOG << "Could not determine device capabilities.";
@@ -314,9 +324,9 @@ void ContextVK::Setup(Settings settings) {
 
   vk::DeviceCreateInfo device_info;
 
+  device_info.setPNext(&enabled_features.value().get());
   device_info.setQueueCreateInfos(queue_create_infos);
   device_info.setPEnabledExtensionNames(enabled_device_extensions_c);
-  device_info.setPEnabledFeatures(&enabled_features.value());
   // Device layers are deprecated and ignored.
 
   {
@@ -429,11 +439,15 @@ void ContextVK::Setup(Settings settings) {
   /// All done!
   ///
   device_holder_ = std::move(device_holder);
+  driver_info_ =
+      std::make_unique<DriverInfoVK>(device_holder_->physical_device);
   debug_report_ = std::move(debug_report);
   allocator_ = std::move(allocator);
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
   pipeline_library_ = std::move(pipeline_library);
+  yuv_conversion_library_ = std::shared_ptr<YUVConversionLibraryVK>(
+      new YUVConversionLibraryVK(device_holder_));
   queues_ = std::move(queues);
   device_capabilities_ = std::move(caps);
   fence_waiter_ = std::move(fence_waiter);
@@ -563,6 +577,54 @@ std::shared_ptr<DescriptorPoolRecyclerVK> ContextVK::GetDescriptorPoolRecycler()
 
 std::shared_ptr<CommandQueue> ContextVK::GetCommandQueue() const {
   return command_queue_vk_;
+}
+
+// Creating a render pass is observed to take an additional 6ms on a Pixel 7
+// device as the driver will lazily bootstrap and compile shaders to do so.
+// The render pass does not need to be begun or executed.
+void ContextVK::InitializeCommonlyUsedShadersIfNeeded() const {
+  RenderTargetAllocator rt_allocator(GetResourceAllocator());
+  RenderTarget render_target =
+      rt_allocator.CreateOffscreenMSAA(*this, {1, 1}, 1);
+
+  RenderPassBuilderVK builder;
+  for (const auto& [bind_point, color] : render_target.GetColorAttachments()) {
+    builder.SetColorAttachment(
+        bind_point,                                          //
+        color.texture->GetTextureDescriptor().format,        //
+        color.texture->GetTextureDescriptor().sample_count,  //
+        color.load_action,                                   //
+        color.store_action                                   //
+    );
+  }
+
+  if (auto depth = render_target.GetDepthAttachment(); depth.has_value()) {
+    builder.SetDepthStencilAttachment(
+        depth->texture->GetTextureDescriptor().format,        //
+        depth->texture->GetTextureDescriptor().sample_count,  //
+        depth->load_action,                                   //
+        depth->store_action                                   //
+    );
+  } else if (auto stencil = render_target.GetStencilAttachment();
+             stencil.has_value()) {
+    builder.SetStencilAttachment(
+        stencil->texture->GetTextureDescriptor().format,        //
+        stencil->texture->GetTextureDescriptor().sample_count,  //
+        stencil->load_action,                                   //
+        stencil->store_action                                   //
+    );
+  }
+
+  auto pass = builder.Build(GetDevice());
+}
+
+const std::shared_ptr<YUVConversionLibraryVK>&
+ContextVK::GetYUVConversionLibrary() const {
+  return yuv_conversion_library_;
+}
+
+const std::unique_ptr<DriverInfoVK>& ContextVK::GetDriverInfo() const {
+  return driver_info_;
 }
 
 }  // namespace impeller

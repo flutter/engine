@@ -77,7 +77,7 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
       [&renderer](ContentContextOptions options) {
         return renderer.GetRadialGradientSSBOFillPipeline(options);
       };
-  return ColorSourceContents::DrawPositions<VS>(
+  return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer](RenderPass& pass) {
         FS::FragInfo frag_info;
@@ -120,14 +120,11 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   VS::FrameInfo frame_info;
   frame_info.matrix = GetInverseEffectTransform();
 
-  VS::BindFrameInfo(pass,
-                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
-
   PipelineBuilderCallback pipeline_callback =
       [&renderer](ContentContextOptions options) {
         return renderer.GetRadialGradientFillPipeline(options);
       };
-  return ColorSourceContents::DrawPositions<VS>(
+  return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer, &gradient_texture](RenderPass& pass) {
         FS::FragInfo frag_info;

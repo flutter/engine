@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/backend/gles/proc_table_gles.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/compositor.h"
@@ -28,7 +29,9 @@ class CompositorOpenGL : public Compositor {
   bool CollectBackingStore(const FlutterBackingStore* store) override;
 
   /// |Compositor|
-  bool Present(const FlutterLayer** layers, size_t layers_count) override;
+  bool Present(FlutterWindowsView* view,
+               const FlutterLayer** layers,
+               size_t layers_count) override;
 
  private:
   // The Flutter engine that manages the views to render.
@@ -54,6 +57,8 @@ class CompositorOpenGL : public Compositor {
 
   // Clear the view's surface and removes any previously presented layers.
   bool Clear(FlutterWindowsView* view);
+
+  FML_DISALLOW_COPY_AND_ASSIGN(CompositorOpenGL);
 };
 
 }  // namespace flutter

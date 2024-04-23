@@ -15,48 +15,42 @@ import sys
 import json
 
 
+def GetDartPath(buildroot):
+  dart_path = path.join(buildroot, 'flutter', 'third_party', 'dart')
+  if not path.exists(dart_path):
+    dart_path = path.join(buildroot, 'third_party', 'dart')
+  return dart_path
+
+
 def GetDartSdkGitRevision(buildroot):
-  project_root = path.join(buildroot, 'third_party', 'dart')
-  return subprocess.check_output([
-      'git', '-C', project_root, 'rev-parse', 'HEAD'
-  ]).strip()
+  return subprocess.check_output(['git', '-C', GetDartPath(buildroot), 'rev-parse', 'HEAD']).strip()
 
 
 def GetDartSdkSemanticVersion(buildroot):
   project_root = path.join(buildroot, 'third_party', 'dart')
-  return subprocess.check_output([
-      'git', '-C', project_root, 'describe', '--abbrev=0'
-  ]).strip()
+  return subprocess.check_output(['git', '-C',
+                                  GetDartPath(buildroot), 'describe', '--abbrev=0']).strip()
 
 
 def GetFlutterEngineGitRevision(buildroot):
   project_root = path.join(buildroot, 'flutter')
-  return subprocess.check_output([
-      'git', '-C', project_root, 'rev-parse', 'HEAD'
-  ]).strip()
+  return subprocess.check_output(['git', '-C', project_root, 'rev-parse', 'HEAD']).strip()
 
 
 def GetFuchsiaSdkVersion(buildroot):
   with open(path.join(buildroot, 'fuchsia', 'sdk',
-                      'linux' if sys.platform.startswith('linux') else 'mac',
-                      'meta', 'manifest.json'), 'r') as fuchsia_sdk_manifest:
+                      'linux' if sys.platform.startswith('linux') else 'mac', 'meta',
+                      'manifest.json'), 'r') as fuchsia_sdk_manifest:
     return json.load(fuchsia_sdk_manifest)['id']
 
 
 def main():
   # Parse arguments.
   parser = ArgumentParser()
+  parser.add_argument('--input', action='store', help='input file path', required=True)
+  parser.add_argument('--output', action='store', help='output file path', required=True)
   parser.add_argument(
-      '--input', action='store', help='input file path', required=True
-  )
-  parser.add_argument(
-      '--output', action='store', help='output file path', required=True
-  )
-  parser.add_argument(
-      '--buildroot',
-      action='store',
-      help='path to the flutter engine buildroot',
-      required=True
+      '--buildroot', action='store', help='path to the flutter engine buildroot', required=True
   )
   args = parser.parse_args()
 
@@ -72,9 +66,7 @@ def main():
         ).replace(
             '{{FLUTTER_ENGINE_GIT_REVISION}}',
             GetFlutterEngineGitRevision(args.buildroot).decode('utf-8')
-        ).replace(
-            '{{FUCHSIA_SDK_VERSION}}', GetFuchsiaSdkVersion(args.buildroot)
-        )
+        ).replace('{{FUCHSIA_SDK_VERSION}}', GetFuchsiaSdkVersion(args.buildroot))
     )
 
 

@@ -5,12 +5,6 @@
 #ifndef FLUTTER_IMPELLER_BASE_VALIDATION_H_
 #define FLUTTER_IMPELLER_BASE_VALIDATION_H_
 
-#ifndef IMPELLER_ENABLE_VALIDATION
-#ifdef IMPELLER_DEBUG
-#define IMPELLER_ENABLE_VALIDATION 1
-#endif
-#endif
-
 #include <sstream>
 
 namespace impeller {
@@ -39,6 +33,8 @@ void ImpellerValidationBreak(const char* message);
 
 void ImpellerValidationErrorsSetFatal(bool fatal);
 
+bool ImpellerValidationErrorsAreFatal();
+
 struct ScopedValidationDisable {
   ScopedValidationDisable();
 
@@ -47,6 +43,16 @@ struct ScopedValidationDisable {
   ScopedValidationDisable(const ScopedValidationDisable&) = delete;
 
   ScopedValidationDisable& operator=(const ScopedValidationDisable&) = delete;
+};
+
+struct ScopedValidationFatal {
+  ScopedValidationFatal();
+
+  ~ScopedValidationFatal();
+
+  ScopedValidationFatal(const ScopedValidationFatal&) = delete;
+
+  ScopedValidationFatal& operator=(const ScopedValidationFatal&) = delete;
 };
 
 }  // namespace impeller

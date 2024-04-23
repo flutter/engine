@@ -1321,7 +1321,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  double displayRefreshRate = DisplayLinkManager.displayRefreshRate;
   const double epsilon = 0.1;
   if (displayRefreshRate < 60.0 + epsilon) {  // displayRefreshRate <= 60.0
 
@@ -1519,15 +1519,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   BOOL keyboardWillShow = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
   BOOL keyboardAnimationIsCompounding =
       self.keyboardAnimationIsShowing == keyboardWillShow && _keyboardAnimationVSyncClient != nil;
-
-  // Avoid triggering startKeyBoardAnimation when keyboard notifications are triggered
-  // by the dismissal of password autofill prompt. When this happens, there is
-  // no keyboard on the screen and FlutterTextInputViewAccessibilityHider is nil.
-  FlutterTextInputPlugin* textInputPlugin = self.engine.textInputPlugin;
-  UIView* textInputHider = [[textInputPlugin textInputView] superview];
-  if (keyboardWillShow && textInputHider == nil) {
-    return;
-  }
 
   // Mark keyboard as showing or hiding.
   self.keyboardAnimationIsShowing = keyboardWillShow;
@@ -2113,6 +2104,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   return flags;
 }
 
+- (BOOL)accessibilityPerformEscape {
+  FlutterMethodChannel* navigationChannel = [_engine.get() navigationChannel];
+  if (navigationChannel) {
+    [self popRoute];
+    return YES;
+  }
+  return NO;
+}
+
 + (BOOL)accessibilityIsOnOffSwitchLabelsEnabled {
   if (@available(iOS 13, *)) {
     return UIAccessibilityIsOnOffSwitchLabelsEnabled();
@@ -2134,7 +2134,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
     @"platformContrast" : [self contrastMode],
-    @"nativeSpellCheckServiceDefined" : @true
+    @"nativeSpellCheckServiceDefined" : @true,
+    @"supportsShowingSystemContextMenu" : @([self supportsShowingSystemContextMenu])
   }];
 }
 
@@ -2194,6 +2195,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return 1.0;
   }
 #endif
+}
+
+- (BOOL)supportsShowingSystemContextMenu {
+  if (@available(iOS 16.0, *)) {
+    return YES;
+  } else {
+    return NO;
+  }
 }
 
 - (BOOL)isAlwaysUse24HourFormat {

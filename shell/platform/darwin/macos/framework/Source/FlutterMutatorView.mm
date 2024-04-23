@@ -3,14 +3,91 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 #include <QuartzCore/QuartzCore.h>
-#include <vector>
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/NSView+ClipsToBounds.h"
+
+namespace flutter {
+PlatformViewLayer::PlatformViewLayer(const FlutterLayer* layer) {
+  FML_CHECK(layer->type == kFlutterLayerContentTypePlatformView);
+  const auto* platform_view = layer->platform_view;
+  identifier_ = platform_view->identifier;
+  for (size_t i = 0; i < platform_view->mutations_count; i++) {
+    mutations_.push_back(*platform_view->mutations[i]);
+  }
+  offset_ = layer->offset;
+  size_ = layer->size;
+}
+PlatformViewLayer::PlatformViewLayer(FlutterPlatformViewIdentifier identifier,
+                                     const std::vector<FlutterPlatformViewMutation>& mutations,
+                                     FlutterPoint offset,
+                                     FlutterSize size)
+    : identifier_(identifier), mutations_(mutations), offset_(offset), size_(size) {}
+}  // namespace flutter
+
+@implementation FlutterCursorCoordinator {
+  __weak FlutterView* _flutterView;
+  BOOL _cleanupScheduled;
+  BOOL _mouseMoveHandled;
+}
+
+- (FlutterCursorCoordinator*)initWithFlutterView:(FlutterView*)flutterView {
+  if (self = [super init]) {
+    _flutterView = flutterView;
+  }
+  return self;
+}
+
+- (void)frameCleanup {
+  _cleanupScheduled = NO;
+  _mouseMoveHandled = NO;
+}
+
+- (BOOL)cleanupScheduled {
+  return _cleanupScheduled;
+}
+
+// Processes the mouse event from given mutator view. This is called for each mutator view, in
+// z-order, from the top most down.
+- (void)processMouseMoveEvent:(NSEvent*)event
+               forMutatorView:(FlutterMutatorView*)view
+                overlayRegion:(const std::vector<CGRect>&)region {
+  // [self frameCleanup] will be called once after current run loop turn.
+  if (!_cleanupScheduled) {
+    [[NSRunLoop mainRunLoop] performBlock:^{
+      [self frameCleanup];
+    }];
+    _cleanupScheduled = YES;
+  }
+
+  // Mouse move was already handled by a mutator view above.
+  if (_mouseMoveHandled) {
+    return;
+  }
+
+  NSPoint point = [view convertPoint:event.locationInWindow fromView:nil];
+
+  // If the mouse is above overlay region restore current Flutter cursor.
+  for (const auto& r : region) {
+    if (CGRectContainsPoint(r, point)) {
+      [_flutterView cursorUpdate:event];
+      _mouseMoveHandled = YES;
+      return;
+    }
+  }
+  NSView* platformView = view.platformView;
+  // It is possible that Flutter changed mouse cursor while the mouse was inside
+  // cursor rect. Unfocused NSTextField uses legacy cursor rects for changing
+  // its cursor.
+  [platformView.window invalidateCursorRectsForView:platformView];
+  _mouseMoveHandled = YES;
+}
+@end
 
 @interface FlutterMutatorView () {
   // Each of these views clips to a CGPathRef. These views, if present,
@@ -23,6 +100,18 @@
   NSView* _platformViewContainer;
 
   NSView* _platformView;
+
+  FlutterCursorCoordinator* _cursorCoordinator;
+
+  // Container view that hosts the tracking area. Must be above platform view
+  // so that it gets the mouseMove event first.
+  NSView* _trackingAreaContainer;
+
+  // Tracking area used to update cursor when moving over overlay region.
+  NSTrackingArea* _trackingArea;
+
+  // Region of the overlay that should be ignored for hit testing.
+  std::vector<CGRect> _hitTestIgnoreRegion;
 }
 
 @end
@@ -32,6 +121,11 @@
 @end
 
 @implementation FlutterPlatformViewContainer
+
+- (NSView*)hitTest:(NSPoint)point {
+  NSView* res = [super hitTest:point];
+  return res != self ? res : nil;
+}
 
 - (BOOL)isFlipped {
   // Flutter transforms assume a coordinate system with an upper-left corner origin, with y
@@ -63,6 +157,11 @@
   // coordinate values increasing downwards. This affects the view, view transforms, and
   // sublayerTransforms.
   return YES;
+}
+
+- (NSView*)hitTest:(NSPoint)point {
+  NSView* res = [super hitTest:point];
+  return res != self ? res : nil;
 }
 
 /// Clip the view to the given path. Offset top left corner of platform view
@@ -230,19 +329,16 @@ using MutationVector = std::vector<FlutterPlatformViewMutation>;
 /// The transforms sent from the engine include a transform from logical to physical coordinates.
 /// Since Cocoa deals only in logical points, this function prepends a scale transform that scales
 /// back from physical to logical coordinates to compensate.
-MutationVector MutationsForPlatformView(const FlutterPlatformView* view, float scale) {
-  MutationVector mutations;
-  mutations.reserve(view->mutations_count + 1);
-  mutations.push_back({
-      .type = kFlutterPlatformViewMutationTypeTransformation,
-      .transformation{
-          .scaleX = 1.0 / scale,
-          .scaleY = 1.0 / scale,
-      },
-  });
-  for (size_t i = 0; i < view->mutations_count; ++i) {
-    mutations.push_back(*view->mutations[i]);
-  }
+MutationVector MutationsForPlatformView(const MutationVector& mutationsIn, float scale) {
+  MutationVector mutations(mutationsIn);
+
+  mutations.insert(mutations.begin(), {
+                                          .type = kFlutterPlatformViewMutationTypeTransformation,
+                                          .transformation{
+                                              .scaleX = 1.0 / scale,
+                                              .scaleY = 1.0 / scale,
+                                          },
+                                      });
   return mutations;
 }
 
@@ -377,6 +473,15 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
 }
 }  // namespace
 
+@interface FlutterTrackingAreaContainer : NSView
+@end
+
+@implementation FlutterTrackingAreaContainer
+- (NSView*)hitTest:(NSPoint)point {
+  return nil;
+}
+@end
+
 @implementation FlutterMutatorView
 
 - (NSView*)platformView {
@@ -392,17 +497,56 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
 }
 
 - (instancetype)initWithPlatformView:(NSView*)platformView {
+  return [self initWithPlatformView:platformView cursorCoordiator:nil];
+}
+
+- (instancetype)initWithPlatformView:(NSView*)platformView
+                    cursorCoordiator:(FlutterCursorCoordinator*)coordinator {
   if (self = [super initWithFrame:NSZeroRect]) {
     _platformView = platformView;
     _pathClipViews = [NSMutableArray array];
+    _cursorCoordinator = coordinator;
     self.wantsLayer = YES;
     self.clipsToBounds = YES;
+
+    _trackingAreaContainer = [[FlutterTrackingAreaContainer alloc] initWithFrame:NSZeroRect];
+    [self addSubview:_trackingAreaContainer];
+
+    NSTrackingAreaOptions options = NSTrackingMouseMoved | NSTrackingInVisibleRect |
+                                    NSTrackingEnabledDuringMouseDrag | NSTrackingActiveAlways;
+    _trackingArea = [[NSTrackingArea alloc] initWithRect:NSZeroRect
+                                                 options:options
+                                                   owner:self
+                                                userInfo:nil];
+    [_trackingAreaContainer addTrackingArea:_trackingArea];
   }
   return self;
 }
 
+- (void)resetHitTestRegion {
+  self->_hitTestIgnoreRegion.clear();
+}
+
+- (void)addHitTestIgnoreRegion:(CGRect)region {
+  self->_hitTestIgnoreRegion.push_back(region);
+}
+
+- (void)mouseMoved:(NSEvent*)event {
+  [_cursorCoordinator processMouseMoveEvent:event
+                             forMutatorView:self
+                              overlayRegion:_hitTestIgnoreRegion];
+}
+
 - (NSView*)hitTest:(NSPoint)point {
-  return nil;
+  CGPoint localPoint = point;
+  localPoint.x -= self.frame.origin.x;
+  localPoint.y -= self.frame.origin.y;
+  for (const auto& region : _hitTestIgnoreRegion) {
+    if (CGRectContainsPoint(region, localPoint)) {
+      return nil;
+    }
+  }
+  return [super hitTest:point];
 }
 
 - (BOOL)isFlipped {
@@ -458,9 +602,18 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
   [containerSuperview addSubview:_platformViewContainer];
   _platformViewContainer.frame = self.bounds;
 
-  // Nest the platform view in the PlatformViewContainer.
-  [_platformViewContainer addSubview:_platformView];
-  _platformView.frame = untransformedBounds;
+  // Nest the platform view in the PlatformViewContainer, but only if the view doesn't have a
+  // superview yet. Sometimes the platform view reparents itself (WKWebView entering FullScreen)
+  // in which case do not forcefully move it back.
+  if (_platformView.superview == nil) {
+    [_platformViewContainer addSubview:_platformView];
+  }
+
+  // Originally first subview would be the _platformView. However during WKWebView full screen
+  // the platform view gets replaced with a placeholder. Given that _platformViewContainer does
+  // not contain any other views it is safe to assume that any subview found can be treated
+  // as the platform view.
+  _platformViewContainer.subviews.firstObject.frame = untransformedBounds;
 
   // Transform for the platform view is finalTransform adjusted for bounding rect origin.
   CATransform3D translation =
@@ -471,8 +624,10 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
   // By default NSView clips children to frame. If masterClip is tighter than mutator view frame,
   // the frame is set to masterClip and child offset adjusted to compensate for the difference.
   if (!CGRectEqualToRect(clipRect, transformedBounds)) {
-    FML_DCHECK(self.subviews.count == 1);
-    auto subview = self.subviews.firstObject;
+    NSMutableArray<NSView*>* subviews = [NSMutableArray arrayWithArray:self.subviews];
+    [subviews removeObject:_trackingAreaContainer];
+    FML_DCHECK(subviews.count == 1);
+    auto subview = subviews.firstObject;
     FML_DCHECK(subview.frame.origin.x == 0 && subview.frame.origin.y == 0);
     subview.frame = CGRectMake(transformedBounds.origin.x - clipRect.origin.x,
                                transformedBounds.origin.y - clipRect.origin.y,
@@ -484,18 +639,18 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
 /// Whenever possible view will be clipped using layer bounds.
 /// If clipping to path is needed, CAShapeLayer(s) will be used as mask.
 /// Clipping to round rect only clips to path if round corners are intersected.
-- (void)applyFlutterLayer:(const FlutterLayer*)layer {
+- (void)applyFlutterLayer:(const flutter::PlatformViewLayer*)layer {
   // Compute the untransformed bounding rect for the platform view in logical pixels.
   // FlutterLayer.size is in physical pixels but Cocoa uses logical points.
   CGFloat scale = [self contentsScale];
-  MutationVector mutations = MutationsForPlatformView(layer->platform_view, scale);
+  MutationVector mutations = MutationsForPlatformView(layer->mutations(), scale);
 
   CATransform3D finalTransform = CATransformFromMutations(mutations);
 
   // Compute the untransformed bounding rect for the platform view in logical pixels.
   // FlutterLayer.size is in physical pixels but Cocoa uses logical points.
   CGRect untransformedBoundingRect =
-      CGRectMake(0, 0, layer->size.width / scale, layer->size.height / scale);
+      CGRectMake(0, 0, layer->size().width / scale, layer->size().height / scale);
   CGRect finalBoundingRect = CGRectApplyAffineTransform(
       untransformedBoundingRect, CATransform3DGetAffineTransform(finalTransform));
   self.frame = finalBoundingRect;
@@ -520,6 +675,9 @@ NSMutableArray* ClipPathFromMutations(CGRect master_clip, const MutationVector& 
                    transformedBounds:finalBoundingRect
                            transform:finalTransform
                             clipRect:masterClip];
+
+  [self addSubview:_trackingAreaContainer positioned:(NSWindowAbove)relativeTo:nil];
+  _trackingAreaContainer.frame = self.bounds;
 }
 
 @end

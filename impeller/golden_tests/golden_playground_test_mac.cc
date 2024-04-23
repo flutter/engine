@@ -12,13 +12,12 @@
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
+#include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
-
-#include "third_party/abseil-cpp/absl/base/no_destructor.h"
 
 namespace impeller {
 
@@ -70,8 +69,6 @@ static const std::vector<std::string> kSkipTests = {
     "impeller_Play_AiksTest_CanRenderClippedRuntimeEffects_Vulkan",
 };
 
-static const std::vector<std::string> kVulkanDenyValidationTests = {};
-
 namespace {
 std::string GetTestName() {
   std::string suite_name =
@@ -107,12 +104,6 @@ bool SaveScreenshot(std::unique_ptr<testing::Screenshot> screenshot) {
   return true;
 }
 
-bool ShouldTestHaveVulkanValidations() {
-  std::string test_name = GetTestName();
-  return std::find(kVulkanDenyValidationTests.begin(),
-                   kVulkanDenyValidationTests.end(),
-                   test_name) == kVulkanDenyValidationTests.end();
-}
 }  // namespace
 
 struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
@@ -137,6 +128,16 @@ void GoldenPlaygroundTest::TearDown() {
   ASSERT_FALSE(dlopen("/usr/local/lib/libMoltenVK.dylib", RTLD_NOLOAD));
 }
 
+namespace {
+bool DoesSupportWideGamutTests() {
+#ifdef __arm64__
+  return true;
+#else
+  return false;
+#endif
+}
+}  // namespace
+
 void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path testing_assets_path =
       flutter::testing::GetTestingAssetsPath();
@@ -147,19 +148,31 @@ void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path icd_path = target_path / "vk_swiftshader_icd.json";
   setenv("VK_ICD_FILENAMES", icd_path.c_str(), 1);
 
-  bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+  std::string test_name = GetTestName();
+  bool enable_wide_gamut = test_name.find("WideGamut_") != std::string::npos;
   switch (GetParam()) {
     case PlaygroundBackend::kMetal:
-      pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
+      if (!DoesSupportWideGamutTests()) {
+        GTEST_SKIP_(
+            "This metal device doesn't support wide gamut golden tests.");
+      }
+      pimpl_->screenshotter =
+          std::make_unique<testing::MetalScreenshotter>(enable_wide_gamut);
       break;
     case PlaygroundBackend::kVulkan: {
+      if (enable_wide_gamut) {
+        GTEST_SKIP_("Vulkan doesn't support wide gamut golden tests.");
+      }
       const std::unique_ptr<PlaygroundImpl>& playground =
-          GetSharedVulkanPlayground(enable_vulkan_validations);
+          GetSharedVulkanPlayground(/*enable_validations=*/true);
       pimpl_->screenshotter =
           std::make_unique<testing::VulkanScreenshotter>(playground);
       break;
     }
     case PlaygroundBackend::kOpenGLES: {
+      if (enable_wide_gamut) {
+        GTEST_SKIP_("OpenGLES doesn't support wide gamut golden tests.");
+      }
       FML_CHECK(::glfwInit() == GLFW_TRUE);
       PlaygroundSwitches playground_switches;
       playground_switches.use_angle = true;
@@ -170,16 +183,7 @@ void GoldenPlaygroundTest::SetUp() {
       break;
     }
   }
-  if (GetParam() == PlaygroundBackend::kMetal) {
-    pimpl_->screenshotter = std::make_unique<testing::MetalScreenshotter>();
-  } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    const std::unique_ptr<PlaygroundImpl>& playground =
-        GetSharedVulkanPlayground(enable_vulkan_validations);
-    pimpl_->screenshotter =
-        std::make_unique<testing::VulkanScreenshotter>(playground);
-  }
 
-  std::string test_name = GetTestName();
   if (std::find(kSkipTests.begin(), kSkipTests.end(), test_name) !=
       kSkipTests.end()) {
     GTEST_SKIP_(
@@ -260,7 +264,7 @@ std::shared_ptr<Context> GoldenPlaygroundTest::MakeContext() const {
     /// On Metal we create a context for each test.
     return GetContext();
   } else if (GetParam() == PlaygroundBackend::kVulkan) {
-    bool enable_vulkan_validations = ShouldTestHaveVulkanValidations();
+    bool enable_vulkan_validations = true;
     FML_CHECK(!pimpl_->test_vulkan_playground)
         << "We don't support creating multiple contexts for one test";
     pimpl_->test_vulkan_playground =

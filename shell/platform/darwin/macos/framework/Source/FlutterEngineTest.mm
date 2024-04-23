@@ -48,8 +48,9 @@ constexpr int64_t kImplicitViewId = 0ll;
 @end
 
 @implementation TestPlatformViewFactory
-- (nonnull NSView*)createWithViewIdentifier:(int64_t)viewId arguments:(nullable id)args {
-  return viewId == 42 ? [[NSView alloc] init] : nil;
+- (nonnull NSView*)createWithViewIdentifier:(FlutterViewIdentifier)viewIdentifier
+                                  arguments:(nullable id)args {
+  return viewIdentifier == 42 ? [[NSView alloc] init] : nil;
 }
 
 @end
@@ -222,8 +223,7 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(stdout_capture.GetOutput().find("Hello logging") != std::string::npos);
 }
 
-// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
-TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
+TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
@@ -252,7 +252,6 @@ TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   latch.Wait();
 }
 
-// TODO(cbracken): Needs deflaking. https://github.com/flutter/flutter/issues/124677
 TEST_F(FlutterEngineTest, DISABLED_CanOverrideBackgroundColor) {
   FlutterEngine* engine = GetFlutterEngine();
 
@@ -510,6 +509,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                                                                                 nibName:nil
                                                                                  bundle:nil];
   [viewController loadView];
+  [viewController viewDidLoad];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
 
   EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
@@ -536,7 +536,56 @@ TEST_F(FlutterEngineTest, Compositor) {
   // TODO(gw280): add support for screenshot tests in this test harness
 
   [engine shutDownEngine];
-}  // namespace flutter::testing
+}
+
+TEST_F(FlutterEngineTest, CompositorIgnoresUnknownView) {
+  FlutterEngine* engine = GetFlutterEngine();
+  auto original_init = engine.embedderAPI.Initialize;
+  ::FlutterCompositor compositor;
+  engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
+      Initialize, ([&compositor, &original_init](
+                       size_t version, const FlutterRendererConfig* config,
+                       const FlutterProjectArgs* args, void* user_data, auto engine_out) {
+        compositor = *args->compositor;
+        return original_init(version, config, args, user_data, engine_out);
+      }));
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  [viewController loadView];
+
+  EXPECT_TRUE([engine runWithEntrypoint:@"empty"]);
+
+  FlutterBackingStoreConfig config = {
+      .struct_size = sizeof(FlutterBackingStoreConfig),
+      .size = FlutterSize{10, 10},
+  };
+  FlutterBackingStore backing_store = {};
+  EXPECT_NE(compositor.create_backing_store_callback, nullptr);
+  EXPECT_TRUE(
+      compositor.create_backing_store_callback(&config, &backing_store, compositor.user_data));
+
+  FlutterLayer layer{
+      .type = kFlutterLayerContentTypeBackingStore,
+      .backing_store = &backing_store,
+  };
+  std::vector<FlutterLayer*> layers = {&layer};
+
+  FlutterPresentViewInfo info = {
+      .struct_size = sizeof(FlutterPresentViewInfo),
+      .view_id = 123,
+      .layers = const_cast<const FlutterLayer**>(layers.data()),
+      .layers_count = 1,
+      .user_data = compositor.user_data,
+  };
+  EXPECT_NE(compositor.present_view_callback, nullptr);
+  EXPECT_FALSE(compositor.present_view_callback(&info));
+  EXPECT_TRUE(compositor.collect_backing_store_callback(&backing_store, compositor.user_data));
+
+  (void)viewController;
+  [engine shutDownEngine];
+}
 
 TEST_F(FlutterEngineTest, DartEntrypointArguments) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
@@ -839,7 +888,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(viewController1.viewIdentifier, 0ll);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -856,7 +905,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ll);
+  EXPECT_EQ(viewController1.viewIdentifier, 0ll);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -870,7 +919,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.viewId, 0ll);
+    EXPECT_EQ(viewController1.viewIdentifier, 0ll);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -878,7 +927,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.viewId, 0ll);
+    EXPECT_EQ(viewController2.viewIdentifier, 0ll);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -887,7 +936,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.viewId, 0ll);
+  EXPECT_EQ(viewController1.viewIdentifier, 0ll);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {

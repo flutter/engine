@@ -184,6 +184,9 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::CollectView(int64_t view_id) {
+  if (external_view_embedder_) {
+    external_view_embedder_->CollectView(view_id);
+  }
   view_records_.erase(view_id);
 }
 
@@ -261,6 +264,7 @@ DrawStatus Rasterizer::Draw(const std::shared_ptr<FramePipeline>& pipeline) {
 
   bool should_resubmit_frame = ShouldResubmitFrame(draw_result);
   if (should_resubmit_frame) {
+    FML_CHECK(draw_result.resubmitted_item);
     auto front_continuation = pipeline->ProduceIfEmpty();
     PipelineProduceResult pipeline_result =
         front_continuation.Complete(std::move(draw_result.resubmitted_item));
@@ -662,8 +666,8 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
 
   DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
-    external_view_embedder_->PrepareFlutterView(
-        view_id, layer_tree.frame_size(), device_pixel_ratio);
+    external_view_embedder_->PrepareFlutterView(layer_tree.frame_size(),
+                                                device_pixel_ratio);
     // TODO(dkwingsmt): Add view ID here.
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
@@ -751,7 +755,8 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
         (!raster_thread_merger_ || raster_thread_merger_->IsMerged())) {
       FML_DCHECK(!frame->IsSubmitted());
       external_view_embedder_->SubmitFlutterView(
-          surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
+          view_id, surface_->GetContext(), surface_->GetAiksContext(),
+          std::move(frame));
     } else {
       frame->Submit();
     }

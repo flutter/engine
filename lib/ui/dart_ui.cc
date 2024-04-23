@@ -38,6 +38,7 @@
 #include "flutter/lib/ui/text/paragraph.h"
 #include "flutter/lib/ui/text/paragraph_builder.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
+#include "flutter/lib/ui/window/platform_isolate.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_error.h"
@@ -98,6 +99,7 @@ typedef CanvasPath Path;
   V(NativeStringAttribute::initSpellOutStringAttribute)            \
   V(PlatformConfigurationNativeApi::DefaultRouteName)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame)                 \
+  V(PlatformConfigurationNativeApi::EndWarmUpFrame)                \
   V(PlatformConfigurationNativeApi::Render)                        \
   V(PlatformConfigurationNativeApi::UpdateSemantics)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings)         \
@@ -112,6 +114,8 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::SendPortPlatformMessage)       \
   V(PlatformConfigurationNativeApi::SendChannelUpdate)             \
   V(PlatformConfigurationNativeApi::GetScaledFontSize)             \
+  V(PlatformIsolateNativeApi::IsRunningOnPlatformThread)           \
+  V(PlatformIsolateNativeApi::Spawn)                               \
   V(DartRuntimeHooks::Logger_PrintDebugString)                     \
   V(DartRuntimeHooks::Logger_PrintString)                          \
   V(DartRuntimeHooks::ScheduleMicrotask)                           \
@@ -377,6 +381,14 @@ void DartUI::InitForIsolate(const Settings& settings) {
 
   if (settings.enable_impeller) {
     result = Dart_SetField(dart_ui, ToDart("_impellerEnabled"), Dart_True());
+    if (Dart_IsError(result)) {
+      Dart_PropagateError(result);
+    }
+  }
+
+  if (settings.enable_platform_isolates) {
+    result =
+        Dart_SetField(dart_ui, ToDart("_platformIsolatesEnabled"), Dart_True());
     if (Dart_IsError(result)) {
       Dart_PropagateError(result);
     }
