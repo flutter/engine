@@ -70,8 +70,8 @@ void Tessellator::TessellateConvexInternal(const Path& path,
                                            std::vector<uint16_t>& index_buffer,
                                            Scalar tolerance,
                                            std::optional<Matrix> uv_transform) {
-  index_buffer_->clear();
-  point_buffer_->clear();
+  point_buffer.clear();
+  index_buffer.clear();
 
   VertexWriter writer(point_buffer, index_buffer, uv_transform);
 

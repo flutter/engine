@@ -188,7 +188,7 @@ class Tessellator {
   ///
   /// This method only exists for the ease of benchmarking without using the
   /// real allocator needed by the [host_buffer].
-  void TessellateConvexInternal(
+  static void TessellateConvexInternal(
       const Path& path,
       std::vector<Point>& point_buffer,
       std::vector<uint16_t>& index_buffer,
