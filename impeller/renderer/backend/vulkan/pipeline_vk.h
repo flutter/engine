@@ -8,6 +8,7 @@
 #include <future>
 #include <memory>
 
+#include "fml/status_or.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/base/thread.h"
 #include "impeller/core/texture.h"
@@ -35,7 +36,7 @@ class PipelineVK final
       const std::weak_ptr<PipelineLibrary>& weak_library,
       std::shared_ptr<SamplerVK> immutable_sampler = {});
 
-  static std::vector<std::unique_ptr<PipelineVK>> Create(
+  static fml::StatusOr<std::vector<std::unique_ptr<PipelineVK>>> Create(
       const std::vector<PipelineDescriptor>& descs,
       const std::shared_ptr<DeviceHolderVK>& device_holder,
       const std::weak_ptr<PipelineLibrary>& weak_library);

@@ -547,11 +547,68 @@ std::unique_ptr<PipelineVK> PipelineVK::Create(
   return pipeline_vk;
 }
 
-std::vector<std::unique_ptr<PipelineVK>> PipelineVK::Create(
+fml::StatusOr<std::vector<std::unique_ptr<PipelineVK>>> PipelineVK::Create(
     const std::vector<PipelineDescriptor>& descs,
     const std::shared_ptr<DeviceHolderVK>& device_holder,
     const std::weak_ptr<PipelineLibrary>& weak_library) {
+  TRACE_EVENT0("flutter", "PipelineVK::Create");
+
+  auto library = weak_library.lock();
+
+  if (!device_holder || !library) {
+    return fml::Status(fml::StatusCode::kFailedPrecondition,
+                       "No device_holder and library.");
+  }
+
+  const auto& pso_cache = PipelineLibraryVK::Cast(*library).GetPSOCache();
+
+  std::vector<std::unique_ptr<PipelineVKCreateInfo>> infovks;
+  infovks.reserve(descs.size());
+  std::vector<vk::GraphicsPipelineCreateInfo> info_pipelines;
+  info_pipelines.reserve(descs.size());
+
+  for (const PipelineDescriptor& desc : descs) {
+    fml::StatusOr<std::unique_ptr<PipelineVKCreateInfo>> infovk =
+        MakePipelineCreateInfo(desc, device_holder, pso_cache, {});
+    if (infovk.ok()) {
+      info_pipelines.push_back(
+          infovk.value()->chain.get<vk::GraphicsPipelineCreateInfo>());
+      infovks.emplace_back(std::move(infovk.value()));
+    } else {
+      return infovk.status();
+    }
+  }
+
+  fml::StatusOr<std::vector<vk::UniquePipeline>> pipelines =
+      pso_cache->CreatePipelines(info_pipelines);
+
+  if (!pipelines.ok()) {
+    return pipelines.status();
+  }
+
+  FML_DCHECK(pipelines.value().size() == infovks.size());
+  FML_DCHECK(descs.size() == infovks.size());
+
   std::vector<std::unique_ptr<PipelineVK>> result;
+  for (size_t i = 0; i < pipelines.value().size(); ++i) {
+    auto pipeline_vk = std::unique_ptr<PipelineVK>(new PipelineVK(
+        device_holder,                           //
+        library,                                 //
+        descs[i],                                //
+        std::move(pipelines.value()[i]),         //
+        std::move(infovks[i]->render_pass),      //
+        std::move(infovks[i]->pipeline_layout),  //
+        std::move(infovks[i]->descs_layout),     //
+        {}                                       //
+        ));
+    if (!pipeline_vk->IsValid()) {
+      VALIDATION_LOG << "Could not create a valid pipeline.";
+      return fml::Status(fml::StatusCode::kUnknown,
+                         "Could not create a valid pipeline.");
+    }
+    result.emplace_back(std::move(pipeline_vk));
+  }
+
   return result;
 }
 

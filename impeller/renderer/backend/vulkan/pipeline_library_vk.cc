@@ -202,9 +202,12 @@ std::vector<PipelineFuture<PipelineDescriptor>> PipelineLibraryVK::GetPipelines(
     auto pipelines = PipelineVK::Create(
         descriptors, PipelineLibraryVK::Cast(*thiz).device_holder_.lock(),
         weak_this);
-    FML_DCHECK(pipelines.size() == promises.size());
-    for (size_t i = 0; i < pipelines.size(); ++i) {
-      promises[i]->set_value(std::move(pipelines[i]));
+    if (!pipelines.ok()) {
+      return;
+    }
+    FML_DCHECK(pipelines.value().size() == promises.size());
+    for (size_t i = 0; i < pipelines.value().size(); ++i) {
+      promises[i]->set_value(std::move(pipelines.value()[i]));
     }
   });
 
