@@ -38,7 +38,7 @@ f16vec4 Sample(f16sampler2D texture_sampler,
   if (supports_decal > 0.0) {
     return texture(texture_sampler, texture_coords);
   }
-  return IPHalfSampleDecal(texture_sampler, texture_coords, tmx, tmy);
+  return IPHalfSampleWithTileMode(texture_sampler, texture_coords, tmx, tmy);
 }
 
 void main() {
