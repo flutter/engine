@@ -287,11 +287,22 @@ bool ExperimentalCanvas::Restore() {
     }
 
     element_entity.Render(renderer_, *render_passes_.back());
-
     clip_coverage_stack_.PopSubpass();
   }
 
   transform_stack_.pop_back();
+
+  // Restore any clip coverage.
+  if (transform_stack_.back().num_clips > 0) {
+    Entity entity;
+    entity.SetTransform(GetCurrentTransform());
+    // This path is empty because ClipRestoreContents just generates a quad that
+    // takes up the full render target.
+    auto clip_restore = std::make_shared<ClipRestoreContents>();
+    clip_restore->SetRestoreHeight(GetClipHeight());
+    entity.SetContents(std::move(clip_restore));
+    AddClipEntityToCurrentPass(std::move(entity));
+  }
 
   return true;
 }
@@ -383,14 +394,6 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
     clip_coverage.coverage =
         clip_coverage.coverage->Shift(GetGlobalPassPosition());
   }
-
-  // The coverage hint tells the rendered Contents which portion of the
-  // rendered output will actually be used, and so we set this to the current
-  // clip coverage (which is the max clip bounds). The contents may
-  // optionally use this hint to avoid unnecessary rendering work.
-  auto element_coverage_hint = entity.GetContents()->GetCoverageHint();
-  entity.GetContents()->SetCoverageHint(
-      Rect::Intersection(element_coverage_hint, current_clip_coverage));
 
   EntityPassClipStack::ClipStateResult clip_state_result =
       clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
