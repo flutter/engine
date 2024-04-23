@@ -286,8 +286,15 @@ ContentContext::ContentContext(
   // InitializeCommonlyUsedShadersIfNeeded. Their order matches the order in
   // InitializeCommonlyUsedShadersIfNeeded.
   {
-    solid_fill_pipelines_.CreateDefault(*context_, options);
-    texture_pipelines_.CreateDefault(*context_, options);
+    std::vector<PipelineDescriptor> pipeline_descs;
+    pipeline_descs.push_back(
+        solid_fill_pipelines_.GetDefaultPipelineDescriptor(*context_, options));
+    pipeline_descs.push_back(
+        texture_pipelines_.GetDefaultPipelineDescriptor(*context_, options));
+    std::vector<PipelineFuture<PipelineDescriptor>> pipeline_futures =
+        context_->GetPipelineLibrary()->GetPipelines(pipeline_descs);
+    solid_fill_pipelines_.SetDefault(options, std::move(pipeline_futures[0]));
+    texture_pipelines_.SetDefault(options, std::move(pipeline_futures[1]));
 
     if (context_->GetCapabilities()->SupportsSSBO()) {
       linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);

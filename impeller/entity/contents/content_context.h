@@ -882,16 +882,30 @@ class ContentContext {
       Set(options, std::move(pipeline));
     }
 
-    void CreateDefault(const Context& context,
-                       const ContentContextOptions& options,
-                       const std::initializer_list<Scalar>& constants = {}) {
+    void SetDefault(const ContentContextOptions& options,
+                    PipelineFuture<PipelineDescriptor> future) {
+      default_options_ = options;
+      Set(options, std::make_unique<PipelineHandleT>(std::move(future)));
+    }
+
+    static PipelineDescriptor GetDefaultPipelineDescriptor(
+        const Context& context,
+        const ContentContextOptions& options,
+        const std::initializer_list<Scalar>& constants = {}) {
       auto desc = PipelineHandleT::Builder::MakeDefaultPipelineDescriptor(
           context, constants);
       if (!desc.has_value()) {
         VALIDATION_LOG << "Failed to create default pipeline.";
-        return;
+        return {};
       }
       options.ApplyToPipelineDescriptor(*desc);
+      return desc.value();
+    }
+
+    void CreateDefault(const Context& context,
+                       const ContentContextOptions& options,
+                       const std::initializer_list<Scalar>& constants = {}) {
+      auto desc = GetDefaultPipelineDescriptor(context, options, constants);
       SetDefault(options, std::make_unique<PipelineHandleT>(context, desc));
     }
 
