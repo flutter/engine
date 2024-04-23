@@ -16,7 +16,6 @@ class PreRebaseCommand extends Command<bool> {
 
   @override
   Future<bool> run() async {
-    printGclientSyncReminder(name);
     // Returning false here will block the rebase.
     return true;
   }
