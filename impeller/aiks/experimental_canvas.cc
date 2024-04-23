@@ -295,13 +295,45 @@ bool ExperimentalCanvas::Restore() {
   // Restore any clip coverage.
   if (transform_stack_.back().num_clips > 0) {
     Entity entity;
-    entity.SetTransform(GetCurrentTransform());
+    entity.SetTransform(
+        Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
+        GetCurrentTransform());
     // This path is empty because ClipRestoreContents just generates a quad that
     // takes up the full render target.
     auto clip_restore = std::make_shared<ClipRestoreContents>();
     clip_restore->SetRestoreHeight(GetClipHeight());
     entity.SetContents(std::move(clip_restore));
-    AddClipEntityToCurrentPass(std::move(entity));
+
+    auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+    if (current_clip_coverage.has_value()) {
+      // Entity transforms are relative to the current pass position, so we need
+      // to check clip coverage in the same space.
+      current_clip_coverage =
+          current_clip_coverage->Shift(-GetGlobalPassPosition());
+    }
+
+    auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
+    if (clip_coverage.coverage.has_value()) {
+      clip_coverage.coverage =
+          clip_coverage.coverage->Shift(GetGlobalPassPosition());
+    }
+
+    EntityPassClipStack::ClipStateResult clip_state_result =
+        clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
+                                            0, // ?
+                                            GetGlobalPassPosition());
+
+    if (clip_state_result.clip_did_change) {
+      // We only need to update the pass scissor if the clip state has changed.
+      SetClipScissor(clip_coverage_stack_.CurrentClipCoverage(),
+                     *render_passes_.back(), GetGlobalPassPosition());
+    }
+
+    if (!clip_state_result.should_render) {
+      return true;
+    }
+
+    entity.Render(renderer_, *render_passes_.back());
   }
 
   return true;
@@ -397,7 +429,7 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
 
   EntityPassClipStack::ClipStateResult clip_state_result =
       clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
-                                          transform_stack_.back().clip_depth,
+                                          0, // ?
                                           GetGlobalPassPosition());
 
   if (clip_state_result.clip_did_change) {
