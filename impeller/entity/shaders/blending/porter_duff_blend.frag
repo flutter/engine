@@ -42,7 +42,7 @@ f16vec4 Sample(f16sampler2D texture_sampler,
 }
 
 void main() {
-  f16vec4 dst = texture(texture_sampler_dst, v_texture_coords, frag_info.tmx,
+  f16vec4 dst = Sample(texture_sampler_dst, v_texture_coords, frag_info.tmx,
                         frag_info.tmy) *
                 frag_info.input_alpha;
   f16vec4 src = v_color;
