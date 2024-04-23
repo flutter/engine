@@ -79,9 +79,12 @@ class BlendFilterContents : public ColorFilterContents {
       ColorFilterContents::AbsorbOpacity absorb_opacity) const;
 
   /// @brief Implements the advanced blends filters in terms of the framebuffer
-  /// blend filters.
+  ///        blend filters.
   ///
-  /// This allows a substantial reduction in the number of bootstrapped filters.
+  ///        This requires device support for frameuffer fetch,
+  ///        `Capabilities::SupportsFramebufferFetch` must be true
+  ///        This allows a substantial reduction in the number of bootstrapped
+  ///        shaders.
   std::optional<Entity> CreateFramebufferAdvancedBlend(
       const FilterInput::Vector& inputs,
       const ContentContext& renderer,

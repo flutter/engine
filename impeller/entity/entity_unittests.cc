@@ -2685,12 +2685,6 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
       << "The ColorBurned texture wasn't allocated (100x100 scales up 2x)";
 }
 
-// glyph_atlas_pipelines_.CreateDefault(
-//     *context_, options,
-//     {static_cast<Scalar>(
-//         GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
-//         PixelFormat::kA8UNormInt)});
-
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
   auto content_context = GetContentContext();
 

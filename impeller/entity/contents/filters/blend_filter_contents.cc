@@ -8,7 +8,7 @@
 #include <memory>
 #include <optional>
 
-#include "fml/logging.h"
+#include "flutter/fml/logging.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
@@ -746,7 +746,7 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
           return false;
         }
 
-        if (!src_texture->SetContents(foreground_color->ToR8G8B8A8().data(),
+        if (!src_texture->SetContents(foreground_color->Premultiply().ToR8G8B8A8().data(),
                                       4u)) {
           return false;
         }
