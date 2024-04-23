@@ -467,7 +467,7 @@ Future<void> testMain() async {
     final DomElement host = createDomHTMLDivElement();
     final EngineFlutterView view = EngineFlutterView(dispatcher, host);
 
-    expect(host.getAttribute('flt-renderer'), 'html (requested explicitly)');
+    expect(host.getAttribute('flt-renderer'), 'html');
     expect(host.getAttribute('flt-build-mode'), 'debug');
 
     view.dispose();

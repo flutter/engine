@@ -215,10 +215,6 @@ class Dart2JSCompiler extends TestCompiler {
       '--disable-inlining',
       '--enable-asserts',
 
-      // We do not want to auto-select a renderer in tests. As of today, tests
-      // are designed to run in one specific mode. So instead, we specify the
-      // renderer explicitly.
-      '-DFLUTTER_WEB_AUTO_DETECT=false',
       '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvaskit}',
       '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
 
@@ -279,10 +275,6 @@ class Dart2WasmCompiler extends TestCompiler {
       '--dart-sdk=${environment.dartSdkDir.path}',
       '--enable-asserts',
 
-      // We do not want to auto-select a renderer in tests. As of today, tests
-      // are designed to run in one specific mode. So instead, we specify the
-      // renderer explicitly.
-      '-DFLUTTER_WEB_AUTO_DETECT=false',
       '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvaskit}',
       '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
 
