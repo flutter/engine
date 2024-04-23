@@ -243,7 +243,6 @@ void VerticesSimpleBlendContents::SetAlpha(Scalar alpha) {
 }
 
 void VerticesSimpleBlendContents::SetBlendMode(BlendMode blend_mode) {
-  FML_DCHECK(blend_mode <= BlendMode::kModulate);
   blend_mode_ = blend_mode;
 }
 
