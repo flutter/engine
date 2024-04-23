@@ -95,7 +95,9 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
         TextureFillVertexShader::FrameInfo frame_info;
         frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
         frame_info.texture_sampler_y_coord_scale = 1.0;
-        frame_info.alpha = 1.0;
+
+        TextureFillFragmentShader::FragInfo frag_info;
+        frag_info.alpha = 1.0;
 
         BindVertices<TextureFillVertexShader>(pass, host_buffer,
                                               {
@@ -111,6 +113,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
         TextureFillVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
+        TextureFillFragmentShader::BindFragInfo(
+            pass, host_buffer.EmplaceUniform(frag_info));
         TextureFillFragmentShader::BindTextureSampler(
             pass, input_texture,
             renderer.GetContext()->GetSamplerLibrary()->GetSampler(
@@ -226,10 +230,10 @@ Entity ApplyClippedBlurStyle(Entity::ClipOperation clip_operation,
        blur_transform](const ContentContext& renderer, const Entity& entity,
                        RenderPass& pass) mutable {
         bool result = true;
-        clipper.SetNewClipDepth(entity.GetNewClipDepth());
+        clipper.SetClipDepth(entity.GetClipDepth());
         clipper.SetTransform(entity.GetTransform() * entity_transform);
         result = clipper.Render(renderer, pass) && result;
-        blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
+        blur_entity.SetClipDepth(entity.GetClipDepth());
         blur_entity.SetTransform(entity.GetTransform() * blur_transform);
         result = blur_entity.Render(renderer, pass) && result;
         return result;
@@ -264,8 +268,8 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                                    input, input_snapshot,
                                    std::move(blur_entity), geometry);
     case FilterContents::BlurStyle::kSolid: {
-      Entity snapshot_entity = Entity::FromSnapshot(
-          input_snapshot, entity.GetBlendMode(), entity.GetClipDepth());
+      Entity snapshot_entity =
+          Entity::FromSnapshot(input_snapshot, entity.GetBlendMode());
       Entity result;
       Matrix blurred_transform = blur_entity.GetTransform();
       Matrix snapshot_transform = snapshot_entity.GetTransform();
@@ -277,12 +281,12 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                                 const Entity& entity,
                                 RenderPass& pass) mutable {
             bool result = true;
-            blur_entity.SetNewClipDepth(entity.GetNewClipDepth());
+            blur_entity.SetClipDepth(entity.GetClipDepth());
             blur_entity.SetTransform(entity.GetTransform() * blurred_transform);
             result = result && blur_entity.Render(renderer, pass);
             snapshot_entity.SetTransform(entity.GetTransform() *
                                          snapshot_transform);
-            snapshot_entity.SetNewClipDepth(entity.GetNewClipDepth());
+            snapshot_entity.SetClipDepth(entity.GetClipDepth());
             result = result && snapshot_entity.Render(renderer, pass);
             return result;
           }),
@@ -423,8 +427,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
-    return Entity::FromSnapshot(input_snapshot.value(), entity.GetBlendMode(),
-                                entity.GetClipDepth());  // No blur to render.
+    return Entity::FromSnapshot(input_snapshot.value(),
+                                entity.GetBlendMode());  // No blur to render.
   }
 
   // In order to avoid shimmering in downsampling step, we should have mips.
@@ -559,7 +563,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                             Matrix::MakeScale(1 / effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
-      entity.GetBlendMode(), entity.GetClipDepth());
+      entity.GetBlendMode());
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
                         input_snapshot.value(), std::move(blur_output_entity),

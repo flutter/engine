@@ -163,16 +163,17 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   pass.SetPipeline(renderer.GetTexturePipeline(opts));
-  pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale =
       snapshot->texture->GetYCoordScale();
-  frame_info.alpha = alpha_ * snapshot->opacity;
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 
+  FS::FragInfo frag_info;
+  frag_info.alpha = alpha_ * snapshot->opacity;
+  FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(pass, snapshot->texture,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
                              snapshot->sampler_descriptor));
@@ -212,7 +213,6 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   pass.SetPipeline(renderer.GetGeometryColorPipeline(opts));
-  pass.SetStencilReference(entity.GetClipDepth());
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
 
   VS::FrameInfo frame_info;
@@ -294,7 +294,6 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
                                BlendModeToString(blend_mode_)));
 #endif  // IMPELLER_DEBUG
   pass.SetVertexBuffer(std::move(geometry_result.vertex_buffer));
-  pass.SetStencilReference(entity.GetClipDepth());
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   options.primitive_type = geometry_result.type;

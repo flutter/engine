@@ -124,8 +124,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
     case BlendMode::kPlus:
-      // The kPlusAdvanced should be used instead.
-      FML_DCHECK(IsAlphaClampedToOne(color_attachment_pixel_format));
       color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
@@ -284,18 +282,48 @@ ContentContext::ContentContext(
   checkerboard_pipelines_.CreateDefault(*context_, options);
 #endif  // IMPELLER_DEBUG
 
-  solid_fill_pipelines_.CreateDefault(*context_, options);
+  // These pipelines are created first since they are immediately used by
+  // InitializeCommonlyUsedShadersIfNeeded. Their order matches the order in
+  // InitializeCommonlyUsedShadersIfNeeded.
+  {
+    solid_fill_pipelines_.CreateDefault(*context_, options);
+    texture_pipelines_.CreateDefault(*context_, options);
 
-  if (context_->GetCapabilities()->SupportsSSBO()) {
-    linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-  } else {
-    linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
-    radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
-    conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
-    sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    if (context_->GetCapabilities()->SupportsSSBO()) {
+      linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+    } else {
+      linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    }
+
+    /// Setup default clip pipeline.
+
+    auto clip_pipeline_descriptor =
+        ClipPipeline::Builder::MakeDefaultPipelineDescriptor(*context_);
+    if (!clip_pipeline_descriptor.has_value()) {
+      return;
+    }
+    ContentContextOptions{
+        .sample_count = SampleCount::kCount4,
+        .color_attachment_pixel_format =
+            context_->GetCapabilities()->GetDefaultColorFormat()}
+        .ApplyToPipelineDescriptor(*clip_pipeline_descriptor);
+    // Disable write to all color attachments.
+    auto clip_color_attachments =
+        clip_pipeline_descriptor->GetColorAttachmentDescriptors();
+    for (auto& color_attachment : clip_color_attachments) {
+      color_attachment.second.write_mask = ColorWriteMaskBits::kNone;
+    }
+    clip_pipeline_descriptor->SetColorAttachmentDescriptors(
+        std::move(clip_color_attachments));
+    clip_pipelines_.SetDefault(
+        options,
+        std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
   }
 
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
@@ -326,10 +354,6 @@ ContentContext::ContentContext(
     framebuffer_blend_lighten_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
-    framebuffer_blend_plus_advanced_pipelines_.CreateDefault(
-        *context_, options_trianglestrip,
-        {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced),
-         supports_decal});
     framebuffer_blend_luminosity_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
@@ -377,9 +401,6 @@ ContentContext::ContentContext(
   blend_lighten_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
-  blend_plus_advanced_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kPlusAdvanced), supports_decal});
   blend_luminosity_pipelines_.CreateDefault(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
@@ -400,8 +421,6 @@ ContentContext::ContentContext(
       {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
 
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  texture_blend_pipelines_.CreateDefault(*context_, options);
-  texture_pipelines_.CreateDefault(*context_, options);
   texture_strict_src_pipelines_.CreateDefault(*context_, options);
   position_uv_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options);
@@ -429,9 +448,6 @@ ContentContext::ContentContext(
   // GLES only shader that is unsupported on macOS.
 #if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
-    texture_external_pipelines_.CreateDefault(*context_, options);
-  }
-  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
@@ -446,29 +462,6 @@ ContentContext::ContentContext(
     uv_compute_pipelines_ =
         context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
   }
-
-  /// Setup default clip pipeline.
-
-  auto clip_pipeline_descriptor =
-      ClipPipeline::Builder::MakeDefaultPipelineDescriptor(*context_);
-  if (!clip_pipeline_descriptor.has_value()) {
-    return;
-  }
-  ContentContextOptions{
-      .sample_count = SampleCount::kCount4,
-      .color_attachment_pixel_format =
-          context_->GetCapabilities()->GetDefaultColorFormat()}
-      .ApplyToPipelineDescriptor(*clip_pipeline_descriptor);
-  // Disable write to all color attachments.
-  auto clip_color_attachments =
-      clip_pipeline_descriptor->GetColorAttachmentDescriptors();
-  for (auto& color_attachment : clip_color_attachments) {
-    color_attachment.second.write_mask = ColorWriteMaskBits::kNone;
-  }
-  clip_pipeline_descriptor->SetColorAttachmentDescriptors(
-      std::move(clip_color_attachments));
-  clip_pipelines_.SetDefault(options, std::make_unique<ClipPipeline>(
-                                          *context_, clip_pipeline_descriptor));
 
   is_valid_ = true;
   InitializeCommonlyUsedShadersIfNeeded();
@@ -615,6 +608,8 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
       .color_attachment_pixel_format =
           context_->GetCapabilities()->GetDefaultColorFormat()};
 
+  // Note: When editing this, check the order the default pipelines are created.
+  // These should be first.
   for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
     for (const auto geometry :
          {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {

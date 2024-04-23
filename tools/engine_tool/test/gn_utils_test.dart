@@ -39,6 +39,8 @@ void main() {
   final List<CannedProcess> cannedProcesses = <CannedProcess>[
     CannedProcess((List<String> command) => command.contains('desc'),
         stdout: fixtures.gnDescOutput()),
+    CannedProcess((List<String> command) => command.contains('outputs'),
+        stdout: 'display_list_unittests'),
   ];
 
   test('find test targets', () async {
@@ -84,7 +86,7 @@ void main() {
     );
     try {
       final Environment env = testEnv.environment;
-      final List<Build> builds = runnableBuilds(env, configs);
+      final List<Build> builds = runnableBuilds(env, configs, true);
       final Build? build = builds.where(
         (Build build) => build.name == 'linux/host_debug',
       ).firstOrNull;
@@ -104,7 +106,7 @@ void main() {
     );
     try {
       final Environment env = testEnv.environment;
-      final List<Build> builds = runnableBuilds(env, configs);
+      final List<Build> builds = runnableBuilds(env, configs, true);
       final Build? build = builds.where(
         (Build build) => build.name == 'linux/host_debug',
       ).firstOrNull;
