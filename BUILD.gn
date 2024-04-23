@@ -76,6 +76,7 @@ group("flutter") {
   # Compile the engine.
   public_deps = [
     ":unittests",
+    "//flutter/impeller/toolkit/wasm(//build/toolchain/wasm)",
     "//flutter/shell/platform/embedder:flutter_engine",
     "//flutter/sky",
   ]

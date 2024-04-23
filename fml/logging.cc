@@ -197,6 +197,8 @@ LogMessage::~LogMessage() {
       }
     }
     buffer.FlushRecord();
+#elif defined(FML_OS_WASM)
+    printf("%s\n", stream_.str().c_str());
 #else
     // Don't use std::cerr here, because it may not be initialized properly yet.
     fprintf(stderr, "%s", stream_.str().c_str());
