@@ -746,8 +746,8 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
           return false;
         }
 
-        if (!src_texture->SetContents(foreground_color->Premultiply().ToR8G8B8A8().data(),
-                                      4u)) {
+        if (!src_texture->SetContents(
+                foreground_color->Premultiply().ToR8G8B8A8().data(), 4u)) {
           return false;
         }
       } else {
