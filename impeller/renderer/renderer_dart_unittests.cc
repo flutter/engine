@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "impeller/renderer/vertex_buffer_builder.h"
+#include "lib/gpu/texture.h"
+#include "testing/test_dart_native_resolver.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <memory>
@@ -16,7 +19,10 @@
 #include "flutter/testing/dart_isolate_runner.h"
 #include "flutter/testing/testing.h"
 #include "fml/memory/ref_ptr.h"
+#include "impeller/fixtures/texture.frag.h"
+#include "impeller/fixtures/texture.vert.h"
 #include "impeller/playground/playground_test.h"
+#include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
 
 #include "gtest/gtest.h"
@@ -58,6 +64,138 @@ class RendererDartTest : public PlaygroundTest,
     return isolate_.get();
   }
 
+  /// @brief  Run a Dart function that's expected to create a texture and pass
+  ///         it back for rendering via `drawToPlayground`.
+  std::shared_ptr<Texture> GetRenderedTextureFromDart(
+      const char* dart_function_name) {
+    std::shared_ptr<Texture> result;
+
+    // Note: The Dart isolate is configured (by
+    //       `RendererDartTest::CreateDartIsolate`) to use the main thread, so
+    //       there's no need to synchronize with a latch here.
+    auto draw_to_playground_surface = [&result](Dart_NativeArguments args) {
+      flutter::gpu::Texture* texture =
+          tonic::DartConverter<flutter::gpu::Texture*>::FromDart(
+              Dart_GetNativeArgument(args, 0));
+      assert(texture != nullptr);  // Should always be a valid pointer.
+      result = texture->GetTexture();
+    };
+    AddNativeCallback("DrawToPlaygroundSurface",
+                      CREATE_NATIVE_ENTRY(draw_to_playground_surface));
+
+    bool success =
+        GetIsolate()->RunInIsolateScope([&dart_function_name]() -> bool {
+          if (tonic::CheckAndHandleError(::Dart_Invoke(
+                  Dart_RootLibrary(), tonic::ToDart(dart_function_name), 0,
+                  nullptr))) {
+            return false;
+          }
+          return true;
+        });
+    if (!success) {
+      FML_LOG(ERROR) << "Failed to invoke dart test function:"
+                     << dart_function_name;
+      return nullptr;
+    }
+    if (!result) {
+      FML_LOG(ERROR) << "Dart test function `" << dart_function_name
+                     << "` did not invoke `drawToPlaygroundSurface`.";
+      return nullptr;
+    }
+    return result;
+  }
+
+  /// @brief  Call a dart function that produces a texture and render the result
+  ///         in the playground.
+  bool RenderDartToPlayground(const char* dart_function_name) {
+    auto context = GetContext();
+    assert(context != nullptr);
+
+    //------------------------------------------------------------------------------
+    /// Prepare pipeline.
+    ///
+
+    using TextureVS = TextureVertexShader;
+    using TextureFS = TextureFragmentShader;
+    using TexturePipelineBuilder = PipelineBuilder<TextureVS, TextureFS>;
+
+    auto pipeline_desc =
+        TexturePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
+    if (!pipeline_desc.has_value()) {
+      FML_LOG(ERROR) << "Failed to create default pipeline descriptor.";
+      return false;
+    }
+    pipeline_desc->SetSampleCount(SampleCount::kCount4);
+    pipeline_desc->SetStencilAttachmentDescriptors(std::nullopt);
+
+    auto pipeline =
+        context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
+    if (!pipeline || !pipeline->IsValid()) {
+      FML_LOG(ERROR) << "Failed to create default pipeline.";
+      return false;
+    }
+
+    //------------------------------------------------------------------------------
+    /// Prepare vertex data.
+    ///
+
+    Size size = Size(GetWindowSize());
+
+    VertexBufferBuilder<TextureVS::PerVertexData> texture_vtx_builder;
+
+    // Always stretch out the texture to fit the screen.
+
+    // clang-format off
+    texture_vtx_builder.AddVertices({
+        {{0.0,        0.0,         0.0}, {0.0, 0.0}},  // 1
+        {{size.width, 0.0,         0.0}, {1.0, 0.0}},  // 2
+        {{size.width, size.height, 0.0}, {1.0, 1.0}},  // 3
+        {{0.0,        0.0,         0.0}, {0.0, 0.0}},  // 1
+        {{size.width, size.height, 0.0}, {1.0, 1.0}},  // 3
+        {{0.0,        size.height, 0.0}, {0.0, 1.0}},  // 4
+    });
+    // clang-format on
+
+    //------------------------------------------------------------------------------
+    /// Prepare sampler.
+    ///
+
+    const auto& sampler = context->GetSamplerLibrary()->GetSampler({});
+    if (!sampler) {
+      FML_LOG(ERROR) << "Failed to create default sampler.";
+      return false;
+    }
+
+    //------------------------------------------------------------------------------
+    /// Render to playground.
+    ///
+
+    SinglePassCallback callback = [&](RenderPass& pass) {
+      auto texture = GetRenderedTextureFromDart(dart_function_name);
+      if (!texture) {
+        return false;
+      }
+
+      auto buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+      pass.SetPipeline(pipeline);
+      pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
+          *context->GetResourceAllocator()));
+
+      TextureVS::UniformBuffer uniforms;
+      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                     Matrix::MakeScale(GetContentScale());
+      TextureVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
+      TextureFS::BindTextureContents(pass, texture, sampler);
+
+      if (!pass.Draw().ok()) {
+        return false;
+      }
+      return true;
+    };
+    return OpenPlaygroundHere(callback);
+  }
+
  private:
   std::unique_ptr<flutter::testing::AutoIsolateShutdown> CreateDartIsolate() {
     const auto settings = CreateSettingsForFixture();
@@ -80,6 +218,10 @@ class RendererDartTest : public PlaygroundTest,
 
 INSTANTIATE_PLAYGROUND_SUITE(RendererDartTest);
 
+TEST_P(RendererDartTest, canCreateRenderPassAndSubmit) {
+  ASSERT_TRUE(RenderDartToPlayground("canCreateRenderPassAndSubmit"));
+}
+
 TEST_P(RendererDartTest, CanRunDartInPlaygroundFrame) {
   auto isolate = GetIsolate();
 
@@ -97,7 +239,7 @@ TEST_P(RendererDartTest, CanRunDartInPlaygroundFrame) {
       return true;
     });
   };
-  OpenPlaygroundHere(callback);
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
@@ -134,7 +276,7 @@ DART_TEST_CASE(canCreateShaderLibrary);
 DART_TEST_CASE(canReflectUniformStructs);
 DART_TEST_CASE(uniformBindFailsForInvalidHostBufferOffset);
 
-DART_TEST_CASE(canCreateRenderPassAndSubmit);
+// DART_TEST_CASE(canCreateRenderPassAndSubmit);
 
 }  // namespace testing
 }  // namespace impeller
