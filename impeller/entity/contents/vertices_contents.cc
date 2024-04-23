@@ -320,7 +320,7 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
 
   BlendMode inverted_blend_mode =
       InvertPorterDuffBlend(blend_mode_).value_or(BlendMode::kSource);
-  if (geometry_->HasVertexColors()) {
+  if (!geometry_->HasVertexColors()) {
     inverted_blend_mode = BlendMode::kSource;
   }
   auto blend_coefficients =
