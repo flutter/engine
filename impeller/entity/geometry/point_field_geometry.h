@@ -15,8 +15,6 @@ class PointFieldGeometry final : public Geometry {
 
   ~PointFieldGeometry() = default;
 
-  static size_t ComputeCircleDivisions(Scalar scaled_radius, bool round);
-
  private:
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
