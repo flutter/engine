@@ -228,7 +228,7 @@ void ExperimentalCanvas::SaveLayer(
   // save layers may transform the subpass texture after it's rendered,
   // causing parent clip coverage to get misaligned with the actual area that
   // the subpass will affect in the parent pass.
-  clip_coverage_stack_.PushSubpass(subpass_coverage, 0);  // TODO
+  clip_coverage_stack_.PushSubpass(subpass_coverage, GetClipHeight());
 }
 
 bool ExperimentalCanvas::Restore() {
@@ -320,7 +320,7 @@ bool ExperimentalCanvas::Restore() {
 
     EntityPassClipStack::ClipStateResult clip_state_result =
         clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
-                                            0, // ?
+                                            GetClipHeightFloor(),
                                             GetGlobalPassPosition());
 
     if (clip_state_result.clip_did_change) {
@@ -428,9 +428,8 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   }
 
   EntityPassClipStack::ClipStateResult clip_state_result =
-      clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
-                                          0, // ?
-                                          GetGlobalPassPosition());
+      clip_coverage_stack_.ApplyClipState(
+          clip_coverage, entity, GetClipHeightFloor(), GetGlobalPassPosition());
 
   if (clip_state_result.clip_did_change) {
     // We only need to update the pass scissor if the clip state has changed.

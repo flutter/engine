@@ -63,6 +63,14 @@ class ExperimentalCanvas : public Canvas {
   };
 
  private:
+  // clip depth of the previous save or 0.
+  size_t GetClipHeightFloor() const {
+    if (transform_stack_.size() > 1) {
+      return transform_stack_[transform_stack_.size() - 2].clip_height;
+    }
+    return 0;
+  }
+
   ContentContext& renderer_;
   RenderTarget& render_target_;
   EntityPassClipStack clip_coverage_stack_;
