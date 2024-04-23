@@ -12,6 +12,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/size.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -120,7 +121,8 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
           dst_sampler_descriptor);
 
   GeometryResult geometry_result = geometry_->GetPositionUVColorBuffer(
-      (!!texture) ? Rect::MakeSize(texture->GetSize()) : Rect{},
+      (!!texture) ? Rect::MakeSize(texture->GetSize())
+                  : Rect::MakeSize(ISize{1, 1}),
       inverse_matrix_, renderer, entity, pass);
   if (geometry_result.vertex_buffer.vertex_count == 0) {
     return true;
