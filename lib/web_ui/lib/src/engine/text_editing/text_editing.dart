@@ -332,7 +332,8 @@ class EngineAutofillForm {
 
     // In order to submit the form when Framework sends a `TextInput.commit`
     // message, we add a submit button to the form.
-    final DomHTMLInputElement submitButton = createDomHTMLInputElement();
+    // The -1 tab index value makes this element not reachable by keyboard.
+    final DomHTMLInputElement submitButton = createDomHTMLInputElement()..tabIndex = -1;
     _styleAutofillElements(submitButton, isOffScreen: true);
     submitButton.className = 'submitBtn';
     submitButton.type = 'submit';
@@ -1285,7 +1286,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }) {
     assert(!isEnabled);
 
-    domElement = inputConfig.inputType.createDomElement();
+    // The -1 tab index value makes this element not reachable by keyboard.
+    domElement = inputConfig.inputType.createDomElement()..tabIndex = -1;
     applyConfiguration(inputConfig);
 
     _setStaticStyleAttributes(activeDomElement);
