@@ -933,25 +933,22 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     return;
   }
 
-  // If there is an image, and the blend mode is simple we can draw without a
-  // sub-renderpass. per-vertex colors aren't required but are supported.
-  if (blend_mode <= BlendMode::kModulate) {
-    if (std::optional<ImageData> maybe_image_data =
-            GetImageColorSourceData(paint.color_source)) {
-      const ImageData& image_data = maybe_image_data.value();
-      auto contents = std::make_shared<VerticesSimpleBlendContents>();
-      contents->SetBlendMode(blend_mode);
-      contents->SetAlpha(paint.color.alpha);
-      contents->SetGeometry(vertices);
+  // If there is are per-vertex colors, an image, and the blend mode
+  // is simple we can draw without a sub-renderpass.
+  if (std::optional<ImageData> maybe_image_data =
+          GetImageColorSourceData(paint.color_source)) {
+    const ImageData& image_data = maybe_image_data.value();
+    auto contents = std::make_shared<VerticesSimpleBlendContents>();
+    contents->SetBlendMode(blend_mode);
+    contents->SetAlpha(paint.color.alpha);
+    contents->SetGeometry(vertices);
+    contents->SetEffectTransform(image_data.effect_transform);
+    contents->SetTexture(image_data.texture);
+    contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
 
-      contents->SetEffectTransform(image_data.effect_transform);
-      contents->SetTexture(image_data.texture);
-      contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
-
-      entity.SetContents(paint.WithFilters(std::move(contents)));
-      AddRenderEntityToCurrentPass(std::move(entity));
-      return;
-    }
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    AddRenderEntityToCurrentPass(std::move(entity));
+    return;
   }
 
   auto src_paint = paint;
