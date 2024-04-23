@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "flutter/testing/testing.h"
+#include "gtest/gtest.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
@@ -2348,6 +2349,10 @@ TEST_P(AiksTest, DrawPaintTransformsBounds) {
 }
 
 TEST_P(AiksTest, CanDrawPoints) {
+  if (GetBackend() == PlaygroundBackend::kMetal) {
+    // https://github.com/flutter/flutter/issues/147184
+    GTEST_SKIP() << "Draw Points is currently broken on the metal m1 backend.";
+  }
   std::vector<Point> points = {
       {0, 0},      //
       {100, 100},  //
@@ -2442,6 +2447,10 @@ TEST_P(AiksTest, DrawAtlasAdvancedAndTransform) {
 }
 
 TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
+  if (GetBackend() == PlaygroundBackend::kMetal) {
+    // https://github.com/flutter/flutter/issues/147184
+    GTEST_SKIP() << "Draw Points is currently broken on the metal m1 backend.";
+  }
   auto texture = CreateTextureForFixture("table_mountain_nx.png",
                                          /*enable_mipmapping=*/true);
 
@@ -2959,10 +2968,10 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
     if (auto* subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      actual.push_back(subpass->get()->GetNewClipDepth());
+      actual.push_back(subpass->get()->GetClipDepth());
     }
     if (Entity* entity = std::get_if<Entity>(&element)) {
-      actual.push_back(entity->GetNewClipDepth());
+      actual.push_back(entity->GetClipDepth());
     }
     return true;
   });
@@ -3133,6 +3142,29 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   canvas.DrawAtlas(atlas, transforms, texture_coordinates, colors,
                    BlendMode::kPlus, {}, std::nullopt, {});
 
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// https://github.com/flutter/flutter/issues/146648
+TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
+  Path path = PathBuilder{}
+                  .MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  .LineTo({400, 0})
+                  // MoveTo implicitly adds a contour, ensure that close doesn't
+                  // add another nearly-empty contour.
+                  .MoveTo({0, 400})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.Translate({50, 50, 0});
+  canvas.DrawPath(path, {
+                            .color = Color::Blue(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
