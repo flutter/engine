@@ -4,7 +4,8 @@
 
 #include "impeller/entity/geometry/point_field_geometry.h"
 
-#include "impeller/geometry/color.h"
+#include "impeller/core/vertex_buffer.h"
+#include "impeller/entity/geometry/geometry.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
@@ -18,40 +19,19 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) const {
-  if (renderer.GetDeviceCapabilities().SupportsCompute()) {
-    return GetPositionBufferGPU(renderer, entity, pass);
-  }
-  auto vtx_builder = GetPositionBufferCPU(renderer, entity, pass);
-  if (!vtx_builder.has_value()) {
+  if (radius_ < 0.0) {
     return {};
   }
-
-  auto& host_buffer = renderer.GetTransientsBuffer();
-  return {
-      .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = vtx_builder->CreateVertexBuffer(host_buffer),
-      .transform = entity.GetShaderTransform(pass),
-  };
-}
-
-std::optional<VertexBufferBuilder<SolidFillVertexShader::PerVertexData>>
-PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
-                                         const Entity& entity,
-                                         RenderPass& pass) const {
-  if (radius_ < 0.0) {
-    return std::nullopt;
-  }
-  auto transform = entity.GetTransform();
-  auto determinant = transform.GetDeterminant();
+  Matrix transform = entity.GetTransform();
+  Scalar determinant = transform.GetDeterminant();
   if (determinant == 0) {
-    return std::nullopt;
+    return {};
   }
 
   Scalar min_size = 1.0f / sqrt(std::abs(determinant));
   Scalar radius = std::max(radius_, min_size);
 
-  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
-
+  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
   if (round_) {
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
@@ -65,141 +45,67 @@ PointFieldGeometry::GetPositionBufferCPU(const ContentContext& renderer,
     });
     FML_DCHECK(circle_vertices.size() == generator.GetVertexCount());
 
-    vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
-    for (auto& center : points_) {
-      if (vtx_builder.HasVertices()) {
-        vtx_builder.AppendVertex(vtx_builder.Last());
-        vtx_builder.AppendVertex({center + circle_vertices[0]});
-      }
+    size_t vertex_count = ((circle_vertices.size() + 2) * points_.size() - 2);
+    BufferView vertex_data =
+        host_buffer.Emplace(vertex_count, alignof(Point), [&](uint8_t* data) {
+          Point* output = reinterpret_cast<Point*>(data);
+          size_t offset = 0;
 
-      for (auto& vertex : circle_vertices) {
-        vtx_builder.AppendVertex({center + vertex});
-      }
-    }
-  } else {
-    vtx_builder.Reserve(6 * points_.size() - 2);
-    for (auto& point : points_) {
-      auto first = Point(point.x - radius, point.y - radius);
+          for (auto& vertex : circle_vertices) {
+            output[offset++] = vertex + points_[0];
+          }
 
-      if (vtx_builder.HasVertices()) {
-        vtx_builder.AppendVertex(vtx_builder.Last());
-        vtx_builder.AppendVertex({first});
-      }
+          for (auto i = 1u; i < vertex_count; i++) {
+            output[offset++] = output[offset];
+            output[offset++] = circle_vertices[0] + points_[i];
+            for (auto& vertex : circle_vertices) {
+              output[offset++] = vertex + points_[i];
+            }
+          }
+        });
 
-      // Z pattern from UL -> UR -> LL -> LR
-      vtx_builder.AppendVertex({first});
-      vtx_builder.AppendVertex({{point.x + radius, point.y - radius}});
-      vtx_builder.AppendVertex({{point.x - radius, point.y + radius}});
-      vtx_builder.AppendVertex({{point.x + radius, point.y + radius}});
-    }
+    return GeometryResult{
+        .type = PrimitiveType::kTriangleStrip,
+        .vertex_buffer = VertexBuffer{.vertex_buffer = std::move(vertex_data),
+                                      .index_buffer = {},
+                                      .vertex_count = vertex_count,
+                                      .index_type = IndexType::kNone},
+        .transform = entity.GetShaderTransform(pass),
+    };
   }
 
-  return vtx_builder;
-}
+  size_t vertex_count = 6 * points_.size() - 2;
+  BufferView vertex_data =
+      host_buffer.Emplace(vertex_count, alignof(Point), [&](uint8_t* data) {
+        Point* output = reinterpret_cast<Point*>(data);
+        size_t offset = 0;
+        bool has_vertices = false;
 
-GeometryResult PointFieldGeometry::GetPositionBufferGPU(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  FML_DCHECK(renderer.GetDeviceCapabilities().SupportsCompute());
-  if (radius_ < 0.0) {
-    return {};
-  }
-  Scalar determinant = entity.GetTransform().GetDeterminant();
-  if (determinant == 0) {
-    return {};
-  }
+        for (auto& point : points_) {
+          Point first = Point(point.x - radius, point.y - radius);
 
-  Scalar min_size = 1.0f / sqrt(std::abs(determinant));
-  Scalar radius = std::max(radius_, min_size);
+          if (has_vertices) {
+            output[offset++] = output[offset];
+            output[offset++] = first;
+          }
 
-  size_t vertices_per_geom = ComputeCircleDivisions(
-      entity.GetTransform().GetMaxBasisLength() * radius, round_);
+          // Z pattern from UL -> UR -> LL -> LR
+          output[offset++] = first;
+          output[offset++] = Point{point.x + radius, point.y - radius};
+          output[offset++] = Point{point.x - radius, point.y + radius};
+          output[offset++] = Point{point.x + radius, point.y + radius};
+          has_vertices = true;
+        }
+      });
 
-  size_t points_per_circle = 3 + (vertices_per_geom - 3) * 3;
-  size_t total = points_per_circle * points_.size();
-
-  std::shared_ptr<CommandBuffer> cmd_buffer =
-      renderer.GetContext()->CreateCommandBuffer();
-  std::shared_ptr<ComputePass> compute_pass = cmd_buffer->CreateComputePass();
-  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
-
-  BufferView points_data =
-      host_buffer.Emplace(points_.data(), points_.size() * sizeof(Point),
-                          DefaultUniformAlignment());
-
-  BufferView geometry_buffer =
-      host_buffer.Emplace(nullptr, total * sizeof(Point),
-                          std::max(DefaultUniformAlignment(), alignof(Point)));
-
-  BufferView output;
-  {
-    using PS = PointsComputeShader;
-
-    compute_pass->SetPipeline(renderer.GetPointComputePipeline());
-    compute_pass->SetCommandLabel("Points Geometry");
-
-    PS::FrameInfo frame_info;
-    frame_info.count = points_.size();
-    frame_info.radius = round_ ? radius : radius * kSqrt2;
-    frame_info.radian_start = round_ ? 0.0f : kPiOver4;
-    frame_info.radian_step = k2Pi / vertices_per_geom;
-    frame_info.points_per_circle = points_per_circle;
-    frame_info.divisions_per_circle = vertices_per_geom;
-
-    PS::BindFrameInfo(*compute_pass, host_buffer.EmplaceUniform(frame_info));
-    PS::BindGeometryData(*compute_pass, geometry_buffer);
-    PS::BindPointData(*compute_pass, points_data);
-
-    if (!compute_pass->Compute(ISize(total, 1)).ok()) {
-      return {};
-    }
-    output = geometry_buffer;
-  }
-
-  if (!compute_pass->EncodeCommands()) {
-    return {};
-  }
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit({std::move(cmd_buffer)})
-           .ok()) {
-    return {};
-  }
-
-  return {
-      .type = PrimitiveType::kTriangle,
-      .vertex_buffer = {.vertex_buffer = std::move(output),
-                        .vertex_count = total,
-                        .index_type = IndexType::kNone},
+  return GeometryResult{
+      .type = PrimitiveType::kTriangleStrip,
+      .vertex_buffer = VertexBuffer{.vertex_buffer = std::move(vertex_data),
+                                    .index_buffer = {},
+                                    .vertex_count = vertex_count,
+                                    .index_type = IndexType::kNone},
       .transform = entity.GetShaderTransform(pass),
   };
-}
-
-/// @brief Compute the number of vertices to divide each circle into.
-///
-/// @return the number of vertices.
-size_t PointFieldGeometry::ComputeCircleDivisions(Scalar scaled_radius,
-                                                  bool round) {
-  if (!round) {
-    return 4;
-  }
-
-  // Note: these values are approximated based on the values returned from
-  // the decomposition of 4 cubics performed by Path::CreatePolyline.
-  if (scaled_radius < 1.0) {
-    return 4;
-  }
-  if (scaled_radius < 2.0) {
-    return 8;
-  }
-  if (scaled_radius < 12.0) {
-    return 24;
-  }
-  if (scaled_radius < 22.0) {
-    return 34;
-  }
-  return std::min(scaled_radius, 140.0f);
 }
 
 // |Geometry|
