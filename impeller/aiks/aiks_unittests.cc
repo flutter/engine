@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "flutter/testing/testing.h"
+#include "gtest/gtest.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
@@ -2348,6 +2349,10 @@ TEST_P(AiksTest, DrawPaintTransformsBounds) {
 }
 
 TEST_P(AiksTest, CanDrawPoints) {
+  if (GetBackend() == PlaygroundBackend::kMetal) {
+    // https://github.com/flutter/flutter/issues/147184
+    GTEST_SKIP() << "Draw Points is currently broken on the metal m1 backend.";
+  }
   std::vector<Point> points = {
       {0, 0},      //
       {100, 100},  //
@@ -2442,6 +2447,10 @@ TEST_P(AiksTest, DrawAtlasAdvancedAndTransform) {
 }
 
 TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
+  if (GetBackend() == PlaygroundBackend::kMetal) {
+    // https://github.com/flutter/flutter/issues/147184
+    GTEST_SKIP() << "Draw Points is currently broken on the metal m1 backend.";
+  }
   auto texture = CreateTextureForFixture("table_mountain_nx.png",
                                          /*enable_mipmapping=*/true);
 
@@ -2761,6 +2770,38 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
       Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
 
   canvas.DrawVertices(geometry, BlendMode::kDestinationOver, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
+  Canvas canvas;
+  Paint paint;
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+  paint.color_source =
+      ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
+                             Entity::TileMode::kClamp, {}, Matrix());
+
+  auto vertices = {
+      Point(0, 0),
+      Point(texture->GetSize().width, 0),
+      Point(0, texture->GetSize().height),
+      Point(texture->GetSize().width, 0),
+      Point(0, 0),
+      Point(texture->GetSize().width, texture->GetSize().height),
+  };
+  std::vector<uint16_t> indices = {};
+  std::vector<Point> texture_coordinates = {};
+  std::vector<Color> vertex_colors = {
+      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
+      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
+      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
+  };
+  auto geometry = std::make_shared<VerticesGeometry>(
+      vertices, indices, texture_coordinates, vertex_colors,
+      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
+
+  canvas.DrawVertices(geometry, BlendMode::kColorBurn, paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
@@ -3133,6 +3174,29 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   canvas.DrawAtlas(atlas, transforms, texture_coordinates, colors,
                    BlendMode::kPlus, {}, std::nullopt, {});
 
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// https://github.com/flutter/flutter/issues/146648
+TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
+  Path path = PathBuilder{}
+                  .MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  .LineTo({400, 0})
+                  // MoveTo implicitly adds a contour, ensure that close doesn't
+                  // add another nearly-empty contour.
+                  .MoveTo({0, 400})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.Translate({50, 50, 0});
+  canvas.DrawPath(path, {
+                            .color = Color::Blue(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
