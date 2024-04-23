@@ -275,7 +275,6 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
                                          const Entity& entity,
                                          RenderPass& pass) const {
   FML_DCHECK(texture_);
-  FML_DCHECK(geometry_->HasVertexColors());
 
   // Simple Porter-Duff blends can be accomplished without a sub renderpass.
   using VS = PorterDuffBlendPipeline::VertexShader;
@@ -319,8 +318,11 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   frag_info.output_alpha = alpha_;
   frag_info.input_alpha = 1.0;
 
-  auto inverted_blend_mode =
+  BlendMode inverted_blend_mode =
       InvertPorterDuffBlend(blend_mode_).value_or(BlendMode::kSource);
+  if (geometry_->HasVertexColors()) {
+    inverted_blend_mode = BlendMode::kSource;
+  }
   auto blend_coefficients =
       kPorterDuffCoefficients[static_cast<int>(inverted_blend_mode)];
   frag_info.src_coeff = blend_coefficients[0];

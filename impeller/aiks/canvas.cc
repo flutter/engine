@@ -926,16 +926,16 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  // If there are no vertex color or texture coordinates.
+  // If there are no vertex colors.
   if (UseColorSourceContents(vertices, paint)) {
     entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
     AddRenderEntityToCurrentPass(std::move(entity));
     return;
   }
 
-  // If there is are per-vertex colors, an image, and the blend mode
-  // is simple we can draw without a sub-renderpass.
-  if (blend_mode <= BlendMode::kModulate && vertices->HasVertexColors()) {
+  // If there is an image, and the blend mode is simple we can draw without a
+  // sub-renderpass. per-vertex colors aren't required but are supported.
+  if (blend_mode <= BlendMode::kModulate) {
     if (std::optional<ImageData> maybe_image_data =
             GetImageColorSourceData(paint.color_source)) {
       const ImageData& image_data = maybe_image_data.value();
