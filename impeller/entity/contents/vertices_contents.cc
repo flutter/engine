@@ -333,7 +333,8 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
     frag_info.dst_coeff = blend_coefficients[2];
     frag_info.dst_coeff_src_alpha = blend_coefficients[3];
     frag_info.dst_coeff_src_color = blend_coefficients[4];
-    // Only used on devices that do not natively support advanced blends.
+
+    // These values are ignored if the platform supports native decal mode.
     frag_info.tmx = static_cast<int>(tile_mode_x_);
     frag_info.tmy = static_cast<int>(tile_mode_y_);
 

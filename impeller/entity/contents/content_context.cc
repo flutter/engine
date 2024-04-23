@@ -443,7 +443,7 @@ ContentContext::ContentContext(
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
-  vertices_uber_shader_.CreateDefault(*context_, options);
+  vertices_uber_shader_.CreateDefault(*context_, options, {supports_decal});
   // GLES only shader that is unsupported on macOS.
 #if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
