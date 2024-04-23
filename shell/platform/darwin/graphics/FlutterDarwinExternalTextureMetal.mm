@@ -133,8 +133,11 @@ FLUTTER_ASSERT_ARC
   if (_pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
       _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
     image = [self wrapNV12ExternalPixelBuffer:pixelBuffer context:context];
-  } else {
+  } else if (_pixelFormat == kCVPixelFormatType_32BGRA) {
     image = [self wrapRGBAExternalPixelBuffer:pixelBuffer context:context];
+  } else {
+    FML_LOG(ERROR) << "Unsupported pixel format: " << _pixelFormat;
+    return nullptr;
   }
 
   if (!image) {
