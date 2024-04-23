@@ -453,7 +453,7 @@ template("dart_executable") {
     extra_inputs += invoker.inputs
   }
   if (defined(invoker.package_config)) {
-    package_config = rebase_path(invoker.package_config)
+    package_config = rebase_path(invoker.package_config, root_build_dir)
     extra_inputs += [ package_config ]
   }
 
@@ -471,7 +471,7 @@ template("dart_executable") {
     exe_vm_args += invoker.vm_args
   }
 
-  abs_output = rebase_path(output)
+  abs_output = rebase_path(output, root_build_dir)
   exe_vm_args += [
     "compile",
     "exe",
