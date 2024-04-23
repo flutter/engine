@@ -365,6 +365,7 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frame_info.mvp = geometry_result.transform;
   frag_info.alpha = alpha_;
+  frag_info.blend_mode = static_cast<int>(blend_mode);
 
   auto& host_buffer = renderer.GetTransientsBuffer();
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
