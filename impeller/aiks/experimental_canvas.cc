@@ -325,50 +325,6 @@ void ExperimentalCanvas::DrawTextFrame(
   AddRenderEntityToCurrentPass(std::move(entity), false);
 }
 
-/**
- * @brief
-  auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
-  if (current_clip_coverage.has_value()) {
-    // Entity transforms are relative to the current pass position, so we need
-    // to check clip coverage in the same space.
-    current_clip_coverage =
-        current_clip_coverage->Shift(-GetGlobalPassPosition());
-  }
-
-  auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
-  if (clip_coverage.coverage.has_value()) {
-    clip_coverage.coverage =
-        clip_coverage.coverage->Shift(GetGlobalPassPosition());
-  }
-
-  // The coverage hint tells the rendered Contents which portion of the
-  // rendered output will actually be used, and so we set this to the current
-  // clip coverage (which is the max clip bounds). The contents may
-  // optionally use this hint to avoid unnecessary rendering work.
-  auto element_coverage_hint = entity.GetContents()->GetCoverageHint();
-  entity.GetContents()->SetCoverageHint(
-      Rect::Intersection(element_coverage_hint, current_clip_coverage));
-
-  EntityPassClipStack::ClipStateResult clip_state_result =
-      clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
-                                          0,  // TODO
-                                          GetGlobalPassPosition());
-
-  if (clip_state_result.clip_did_change) {
-    // We only need to update the pass scissor if the clip state has changed.
-    SetClipScissor(clip_coverage_stack_.CurrentClipCoverage(),
-                   *render_passes_.back(), GetGlobalPassPosition());
-  }
-
-  if (!clip_state_result.should_render) {
-    return;
-  }
-
- *
- * @param entity
- * @param reuse_depth
- */
-
 void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
                                                       bool reuse_depth) {
   auto transform = entity.GetTransform();
@@ -413,6 +369,44 @@ void ExperimentalCanvas::AddClipEntityToCurrentPass(Entity entity) {
   FML_CHECK(current_depth_ <= transform_stack_.back().clip_depth)
       << current_depth_ << " <=? " << transform_stack_.back().clip_depth;
   entity.SetClipDepth(transform_stack_.back().clip_depth);
+
+  auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+  if (current_clip_coverage.has_value()) {
+    // Entity transforms are relative to the current pass position, so we need
+    // to check clip coverage in the same space.
+    current_clip_coverage =
+        current_clip_coverage->Shift(-GetGlobalPassPosition());
+  }
+
+  auto clip_coverage = entity.GetClipCoverage(current_clip_coverage);
+  if (clip_coverage.coverage.has_value()) {
+    clip_coverage.coverage =
+        clip_coverage.coverage->Shift(GetGlobalPassPosition());
+  }
+
+  // The coverage hint tells the rendered Contents which portion of the
+  // rendered output will actually be used, and so we set this to the current
+  // clip coverage (which is the max clip bounds). The contents may
+  // optionally use this hint to avoid unnecessary rendering work.
+  auto element_coverage_hint = entity.GetContents()->GetCoverageHint();
+  entity.GetContents()->SetCoverageHint(
+      Rect::Intersection(element_coverage_hint, current_clip_coverage));
+
+  EntityPassClipStack::ClipStateResult clip_state_result =
+      clip_coverage_stack_.ApplyClipState(clip_coverage, entity,
+                                          transform_stack_.back().clip_depth,
+                                          GetGlobalPassPosition());
+
+  if (clip_state_result.clip_did_change) {
+    // We only need to update the pass scissor if the clip state has changed.
+    SetClipScissor(clip_coverage_stack_.CurrentClipCoverage(),
+                   *render_passes_.back(), GetGlobalPassPosition());
+  }
+
+  if (!clip_state_result.should_render) {
+    return;
+  }
+
   entity.Render(renderer_, *render_passes_.back());
 }
 
