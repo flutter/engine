@@ -165,7 +165,8 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
     frag_info.dst_coeff = blend_coefficients[2];
     frag_info.dst_coeff_src_alpha = blend_coefficients[3];
     frag_info.dst_coeff_src_color = blend_coefficients[4];
-    // Only used on devices that do not natively support advanced blends.
+
+    // These values are ignored if the platform supports native decal mode.
     frag_info.tmx = static_cast<int>(tile_mode_x_);
     frag_info.tmy = static_cast<int>(tile_mode_y_);
 
@@ -201,6 +202,10 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   frame_info.mvp = geometry_result.transform;
   frag_info.alpha = alpha_;
   frag_info.blend_mode = static_cast<int>(blend_mode);
+
+  // These values are ignored if the platform supports native decal mode.
+  frag_info.tmx = static_cast<int>(tile_mode_x_);
+  frag_info.tmy = static_cast<int>(tile_mode_y_);
 
   auto& host_buffer = renderer.GetTransientsBuffer();
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));

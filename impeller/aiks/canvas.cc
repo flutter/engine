@@ -902,14 +902,12 @@ static bool UseColorSourceContents(
     const std::shared_ptr<VerticesGeometry>& vertices,
     const Paint& paint) {
   // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image or
-  // a solid color.
+  // are vertex coordinates but its just a color.
   if (vertices->HasVertexColors()) {
     return false;
   }
   if (vertices->HasTextureCoordinates() &&
-      (paint.color_source.GetType() == ColorSource::Type::kImage ||
-       paint.color_source.GetType() == ColorSource::Type::kColor)) {
+      (paint.color_source.GetType() == ColorSource::Type::kColor)) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
@@ -929,8 +927,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image.
+  // If there are no vertex colors.
   if (UseColorSourceContents(vertices, paint)) {
     entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
     AddRenderEntityToCurrentPass(std::move(entity));
@@ -957,7 +954,6 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     contents->SetBlendMode(blend_mode);
     contents->SetAlpha(paint.color.alpha);
     contents->SetGeometry(vertices);
-
     contents->SetEffectTransform(image_data.effect_transform);
     contents->SetTexture(image_data.texture);
     contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
