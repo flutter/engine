@@ -3,19 +3,8 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include <Metal/Metal.h>
 
-#include "flutter/common/settings.h"
-#include "flutter/common/task_runners.h"
-#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/common/rasterizer.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
-#include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
@@ -122,11 +111,7 @@ static void PrintWideGamutWarningOnce() {
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
       CFRelease(srgb);
-      // MTLPixelFormatRGBA16Float was chosen since it is compatible with
-      // impeller's offscreen buffers which need to have transparency.  Also,
-      // F16 was chosen over BGRA10_XR since Skia does not support decoding
-      // BGRA10_XR.
-      layer.pixelFormat = MTLPixelFormatRGBA16Float;
+      layer.pixelFormat = MTLPixelFormatBGRA10_XR;
     } else if (_isWideGamutEnabled && !isWideGamutSupported) {
       PrintWideGamutWarningOnce();
     }

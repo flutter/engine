@@ -11,12 +11,16 @@ uniform FrameInfo {
 }
 frame_info;
 
-in vec2 position;
+in vec2 vertices;
+in vec2 texture_coords;
+in vec4 color;
 
 out vec2 v_texture_coords;
+out mediump f16vec4 v_color;
 
 void main() {
-  gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
+  gl_Position = frame_info.mvp * vec4(vertices, 0.0, 1.0);
+  v_color = f16vec4(color);
   v_texture_coords =
-      IPRemapCoords(position, frame_info.texture_sampler_y_coord_scale);
+      IPRemapCoords(texture_coords, frame_info.texture_sampler_y_coord_scale);
 }
