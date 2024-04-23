@@ -256,6 +256,7 @@ struct PipelineVKCreateInfo {
   vk::PipelineVertexInputStateCreateInfo vertex_input_state;
   vk::PipelineDepthStencilStateCreateInfo depth_stencil_state;
   vk::PipelineCreationFeedbackEXT pipeline_feedback;
+  std::vector<vk::PipelineCreationFeedbackEXT> stage_feedbacks;
   vk::UniqueRenderPass render_pass;
   vk::UniqueDescriptorSetLayout descs_layout;
   vk::UniquePipelineLayout pipeline_layout;
@@ -465,9 +466,8 @@ fml::StatusOr<std::unique_ptr<PipelineVKCreateInfo>> MakePipelineCreateInfo(
   infovk->pipeline_feedback = EmptyFeedback();
   feedback.setPPipelineCreationFeedback(&infovk->pipeline_feedback);
   {
-    std::vector<vk::PipelineCreationFeedbackEXT> stage_feedbacks(
-        pipeline_info.stageCount, EmptyFeedback());
-    feedback.setPipelineStageCreationFeedbacks(stage_feedbacks);
+    infovk->stage_feedbacks.resize(pipeline_info.stageCount, EmptyFeedback());
+    feedback.setPipelineStageCreationFeedbacks(infovk->stage_feedbacks);
   }
 
   infovk->label = desc.GetLabel();
