@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <impeller/blending.glsl>
+#include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 #include "blend_select.glsl"
 
