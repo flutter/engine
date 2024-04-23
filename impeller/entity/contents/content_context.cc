@@ -245,6 +245,31 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
   return std::make_unique<PipelineT>(context, desc);
 }
 
+namespace {
+template <typename... Pipelines>
+void BatchCreateDefaultPipelines(const std::shared_ptr<Context>& context,
+                                 const ContentContextOptions& options,
+                                 Pipelines&... pipelines) {
+  auto pipeline_tuple = std::tie(pipelines...);
+  std::vector<PipelineDescriptor> pipeline_descs;
+  std::apply(
+      [&](auto&... args) {
+        (pipeline_descs.push_back(
+             args.GetDefaultPipelineDescriptor(*context, options)),
+         ...);
+      },
+      pipeline_tuple);
+  auto pipeline_futures =
+      context->GetPipelineLibrary()->GetPipelines(pipeline_descs);
+  int index = 0;
+  std::apply(
+      [&](auto&... args) {
+        ((args.SetDefault(options, std::move(pipeline_futures[index++])), ...));
+      },
+      pipeline_tuple);
+}
+}  // namespace
+
 ContentContext::ContentContext(
     std::shared_ptr<Context> context,
     std::shared_ptr<TypographerContext> typographer_context,
@@ -286,26 +311,20 @@ ContentContext::ContentContext(
   // InitializeCommonlyUsedShadersIfNeeded. Their order matches the order in
   // InitializeCommonlyUsedShadersIfNeeded.
   {
-    std::vector<PipelineDescriptor> pipeline_descs;
-    pipeline_descs.push_back(
-        solid_fill_pipelines_.GetDefaultPipelineDescriptor(*context_, options));
-    pipeline_descs.push_back(
-        texture_pipelines_.GetDefaultPipelineDescriptor(*context_, options));
-    std::vector<PipelineFuture<PipelineDescriptor>> pipeline_futures =
-        context_->GetPipelineLibrary()->GetPipelines(pipeline_descs);
-    solid_fill_pipelines_.SetDefault(options, std::move(pipeline_futures[0]));
-    texture_pipelines_.SetDefault(options, std::move(pipeline_futures[1]));
+    BatchCreateDefaultPipelines(context_, options, solid_fill_pipelines_,
+                                texture_pipelines_);
 
     if (context_->GetCapabilities()->SupportsSSBO()) {
-      linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-      radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-      conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-      sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      BatchCreateDefaultPipelines(context_, options,
+                                  linear_gradient_ssbo_fill_pipelines_,
+                                  radial_gradient_ssbo_fill_pipelines_,
+                                  conical_gradient_ssbo_fill_pipelines_,
+                                  sweep_gradient_ssbo_fill_pipelines_);
     } else {
-      linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
-      radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
-      conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
-      sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      BatchCreateDefaultPipelines(
+          context_, options, linear_gradient_fill_pipelines_,
+          radial_gradient_fill_pipelines_, conical_gradient_fill_pipelines_,
+          sweep_gradient_fill_pipelines_);
     }
 
     /// Setup default clip pipeline.
@@ -427,30 +446,24 @@ ContentContext::ContentContext(
       *context_, options_trianglestrip,
       {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
 
-  rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  texture_blend_pipelines_.CreateDefault(*context_, options);
-  texture_strict_src_pipelines_.CreateDefault(*context_, options);
-  position_uv_pipelines_.CreateDefault(*context_, options);
-  tiled_texture_pipelines_.CreateDefault(*context_, options);
-  kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
-                                             {supports_decal});
-  color_matrix_color_filter_pipelines_.CreateDefault(*context_,
-                                                     options_trianglestrip);
-  linear_to_srgb_filter_pipelines_.CreateDefault(*context_,
-                                                 options_trianglestrip);
-  srgb_to_linear_filter_pipelines_.CreateDefault(*context_,
-                                                 options_trianglestrip);
+  BatchCreateDefaultPipelines(context_, options, texture_blend_pipelines_,
+                              texture_strict_src_pipelines_,
+                              position_uv_pipelines_, tiled_texture_pipelines_,
+                              glyph_atlas_color_pipelines_,
+                              geometry_color_pipelines_);
+
+  BatchCreateDefaultPipelines(
+      context_, options_trianglestrip, rrect_blur_pipelines_,
+      kernel_decal_pipelines_, kernel_nodecal_pipelines_,
+      border_mask_blur_pipelines_, morphology_filter_pipelines_,
+      color_matrix_color_filter_pipelines_, linear_to_srgb_filter_pipelines_,
+      srgb_to_linear_filter_pipelines_, yuv_to_rgb_filter_pipelines_);
+
   glyph_atlas_pipelines_.CreateDefault(
       *context_, options,
       {static_cast<Scalar>(
           GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
           PixelFormat::kA8UNormInt)});
-  glyph_atlas_color_pipelines_.CreateDefault(*context_, options);
-  geometry_color_pipelines_.CreateDefault(*context_, options);
-  yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
   // GLES only shader that is unsupported on macOS.
