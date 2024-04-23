@@ -25,6 +25,9 @@ EnginePlatformDispatcher get dispatcher => EnginePlatformDispatcher.instance;
 DomElement get defaultTextEditingRoot =>
     dispatcher.implicitView!.dom.textEditingHost;
 
+DomElement get implicitViewRootElement =>
+    dispatcher.implicitView!.dom.rootElement;
+
 /// Add unit tests for [FirefoxTextEditingStrategy].
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/46891
 
@@ -67,6 +70,10 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false
   );
 
+  setUp(() {
+    domDocument.activeElement?.blur();
+  });
+
   tearDown(() {
     lastEditingState = null;
     editingDeltaState = null;
@@ -74,7 +81,6 @@ Future<void> testMain() async {
     cleanTextEditingStrategy();
     cleanTestFlags();
     clearBackUpDomElementIfExists();
-    domDocument.activeElement?.blur();
   });
 
   group('$GloballyPositionedTextEditingStrategy', () {
@@ -92,8 +98,11 @@ Future<void> testMain() async {
         domDocument.getElementsByTagName('input'),
         hasLength(0),
       );
-      // The focus initially is on the body.
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        domDocument.body,
+        reason: 'The focus should initially be on the body',
+      );
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
           domDocument.body);
 
@@ -110,12 +119,12 @@ Future<void> testMain() async {
       final DomElement input = defaultTextEditingRoot.querySelector('input')!;
       // Now the editing element should have focus.
 
-      expect(input.tabIndex, -1, reason: 'The input should not be reachable by keyboard');
       expect(domDocument.activeElement, input);
       expect(defaultTextEditingRoot.ownerDocument?.activeElement, input);
 
       expect(editingStrategy!.domElement, input);
       expect(input.getAttribute('type'), null);
+      expect(input.tabIndex, -1, reason: 'The input should not be reachable by keyboard');
 
       // Input is appended to the right point of the DOM.
       expect(defaultTextEditingRoot.contains(editingStrategy!.domElement), isTrue);
@@ -125,10 +134,10 @@ Future<void> testMain() async {
         defaultTextEditingRoot.querySelectorAll('input'),
         hasLength(0),
       );
-      // The focus is back to the body.
-      expect(domDocument.activeElement, domDocument.body);
+      // The focus is back to the flutter view.
+      expect(domDocument.activeElement, implicitViewRootElement);
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
-          domDocument.body);
+          implicitViewRootElement);
     });
 
     test('inserts element in the correct view', () {
@@ -339,11 +348,15 @@ Future<void> testMain() async {
       checkTextAreaEditingState(textarea, 'bar\nbaz', 2, 7);
 
       editingStrategy!.disable();
+
       // The textarea should be cleaned up.
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
-      // The focus is back to the body.
-      expect(defaultTextEditingRoot.ownerDocument?.activeElement,
-          domDocument.body);
+
+      expect(
+        defaultTextEditingRoot.ownerDocument?.activeElement,
+        implicitViewRootElement,
+        reason: 'The focus should be back to the body',
+      );
 
       // There should be no input action.
       expect(lastInputAction, isNull);
@@ -725,8 +738,11 @@ Future<void> testMain() async {
       const MethodCall hide = MethodCall('TextInput.hide');
       sendFrameworkMessage(codec.encodeMethodCall(hide));
 
-      // Text editing should've stopped.
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        implicitViewRootElement,
+        reason: 'Text editing should have stopped',
+      );
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
@@ -745,8 +761,11 @@ Future<void> testMain() async {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-      // Editing shouldn't have started yet.
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        domDocument.body,
+        reason: 'Editing should not have started yet',
+      );
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -768,7 +787,11 @@ Future<void> testMain() async {
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
 
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        implicitViewRootElement,
+        reason: 'Text editing should have stopped',
+      );
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
@@ -865,9 +888,11 @@ Future<void> testMain() async {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-      // Editing shouldn't have started yet.
-      expect(defaultTextEditingRoot.ownerDocument?.activeElement,
-          domDocument.body);
+      expect(
+        defaultTextEditingRoot.ownerDocument?.activeElement,
+        domDocument.body,
+        reason: 'Editing should not have started yet',
+      );
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -887,12 +912,10 @@ Future<void> testMain() async {
           textEditing!.strategy.domElement, 'abcd', 2, 3);
       expect(textEditing!.isEditing, isTrue);
 
-      // DOM element is blurred.
-      textEditing!.strategy.domElement!.blur();
-
       // No connection close message sent.
       expect(spy.messages, hasLength(0));
       await Future<void>.delayed(Duration.zero);
+
       // DOM element still keeps the focus.
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
           textEditing!.strategy.domElement);
@@ -1234,8 +1257,11 @@ Future<void> testMain() async {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
 
-      // Editing shouldn't have started yet.
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        domDocument.body,
+        reason: 'Editing should not have started yet.',
+      );
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -1258,9 +1284,11 @@ Future<void> testMain() async {
           'TextInput.setClient', <dynamic>[567, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient2));
 
-      // Receiving another client via setClient should stop editing, hence
-      // should remove the previous active element.
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        implicitViewRootElement,
+        reason: 'Receiving another client via setClient should stop editing, hence should remove the previous active element.',
+      );
 
       // Confirm that [HybridTextEditing] didn't send any messages.
       expect(spy.messages, isEmpty);
@@ -2170,9 +2198,11 @@ Future<void> testMain() async {
           'TextInput.setClient', <dynamic>[123, flutterMultilineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient));
 
-      // Editing shouldn't have started yet.
-      expect(defaultTextEditingRoot.ownerDocument?.activeElement,
-          domDocument.body);
+      expect(
+        defaultTextEditingRoot.ownerDocument?.activeElement,
+        domDocument.body,
+        reason: 'Editing should have not started yet',
+      );
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
@@ -2255,8 +2285,11 @@ Future<void> testMain() async {
       const MethodCall hide = MethodCall('TextInput.hide');
       sendFrameworkMessage(codec.encodeMethodCall(hide));
 
-      // Text editing should've stopped.
-      expect(domDocument.activeElement, domDocument.body);
+      expect(
+        domDocument.activeElement,
+        implicitViewRootElement,
+        reason: 'Text editing should have stopped',
+      );
 
       // Confirm that [HybridTextEditing] didn't send any more messages.
       expect(spy.messages, isEmpty);
@@ -2842,7 +2875,6 @@ Future<void> testMain() async {
           DomHTMLInputElement;
       expect(inputElement.type, 'submit');
       expect(inputElement.tabIndex, -1, reason: 'The input should not be reachable by keyboard');
-
 
       // The submit button should have class `submitBtn`.
       expect(inputElement.className, 'submitBtn');
@@ -3498,6 +3530,8 @@ Future<void> testMain() async {
       );
 
       final DomHTMLElement input = editingStrategy!.activeDomElement;
+      expect(domDocument.activeElement, input, reason: 'the input element should be focused');
+
       expect(input.style.color, contains('transparent'));
       if (isSafari) {
         // macOS 13 returns different values than macOS 12.

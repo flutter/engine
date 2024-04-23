@@ -1249,6 +1249,19 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     return domElement!;
   }
 
+  /// The [FlutterView] in which [activeDomElement] is contained.
+  EngineFlutterView get activeDomElementView {
+    final EngineFlutterView? view = EnginePlatformDispatcher
+      .instance
+      .viewManager
+      .findViewForElement(activeDomElement);
+    assert(
+      view != null,
+      'The DOM element of this text editing strategy is not in a flutter view.',
+    );
+    return view!;
+  }
+
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
 
@@ -1418,14 +1431,13 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
     subscriptions.clear();
     removeCompositionEventHandlers(activeDomElement);
+    _moveFocusToFlutterView();
 
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
     // More details on `TextInput.finishAutofillContext` call.
     if (_appendedToForm &&
         inputConfiguration.autofillGroup?.formElement != null) {
-      // Subscriptions are removed, listeners won't be triggered.
-      activeDomElement.blur();
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
     } else {
@@ -1573,6 +1585,13 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         DomSubscription(activeDomElement, 'mousemove', (DomEvent event) {
       event.preventDefault();
     }));
+  }
+
+  /// Moves the focus to the parent [EngineFlutterView].
+  void _moveFocusToFlutterView() {
+    if (activeDomElement == domDocument.activeElement) {
+      activeDomElementView.dom.rootElement.focus();
+    }
   }
 }
 
