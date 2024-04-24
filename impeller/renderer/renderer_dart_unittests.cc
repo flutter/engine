@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/renderer/vertex_buffer_builder.h"
-#include "lib/gpu/texture.h"
-#include "testing/test_dart_native_resolver.h"
 #define FML_USED_ON_EMBEDDER
 
 #include <memory>
@@ -13,10 +10,12 @@
 #include "flutter/common/task_runners.h"
 #include "flutter/lib/gpu/context.h"
 #include "flutter/lib/gpu/shader_library.h"
+#include "flutter/lib/gpu/texture.h"
 #include "flutter/runtime/dart_isolate.h"
 #include "flutter/runtime/dart_vm_lifecycle.h"
 #include "flutter/testing/dart_fixture.h"
 #include "flutter/testing/dart_isolate_runner.h"
+#include "flutter/testing/test_dart_native_resolver.h"
 #include "flutter/testing/testing.h"
 #include "fml/memory/ref_ptr.h"
 #include "impeller/fixtures/texture.frag.h"
@@ -24,6 +23,7 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 #include "gtest/gtest.h"
 #include "third_party/imgui/imgui.h"
