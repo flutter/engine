@@ -303,7 +303,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
       desc.SetDepthPixelFormat(stencil_attachment_format);
 
       options.ApplyToPipelineDescriptor(desc);
-      auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+      auto pipeline = context->GetPipelineLibrary()
+                          ->GetPipeline(desc, /*async=*/false)
+                          .Get();
       if (!pipeline) {
         VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
         return nullptr;
