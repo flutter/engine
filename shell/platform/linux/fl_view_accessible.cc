@@ -15,6 +15,9 @@ struct _FlViewAccessible {
 
   // Semantics nodes keyed by ID
   GHashTable* semantics_nodes_by_id;
+
+  // Flag to track when root node is created.
+  gboolean root_node_created;
 };
 
 enum { kProp0, kPropEngine, kPropLast };
@@ -66,11 +69,16 @@ static FlAccessibleNode* get_node(FlViewAccessible* self,
   node = create_node(self, semantics);
   if (semantics->id == 0) {
     fl_accessible_node_set_parent(node, ATK_OBJECT(self), 0);
-    g_signal_emit_by_name(self, "children-changed::add", 0, node, nullptr);
   }
   g_hash_table_insert(self->semantics_nodes_by_id,
                       GINT_TO_POINTER(semantics->id),
                       reinterpret_cast<gpointer>(node));
+
+  // Update when root node is created.
+  if (!self->root_node_created && semantics->id == 0) {
+    g_signal_emit_by_name(self, "children-changed::add", 0, node, nullptr);
+    self->root_node_created = true;
+  }
 
   return node;
 }
