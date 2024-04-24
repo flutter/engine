@@ -581,7 +581,6 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
   GetContext()->InitializeCommonlyUsedShadersIfNeeded();
 
-
   // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
   // observed to take 10s of ms as an internal shader is compiled to perform
   // the operation. Similarly, the initial render pass can also take 10s of ms
