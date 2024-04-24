@@ -145,6 +145,10 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
 
     if (texture) {
       FS::BindTextureSamplerDst(pass, texture, dst_sampler);
+    } else {
+      // We need to bind something so validation layers doesn't complain.
+      FML_DCHECK(blend_mode == BlendMode::kDestination);
+      FS::BindTextureSamplerDst(pass, renderer.GetEmptyTexture(), dst_sampler);
     }
 
     VS::FrameInfo frame_info;
@@ -193,6 +197,10 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   pass.SetPipeline(renderer.GetDrawVerticesUberShader(options));
   if (texture) {
     FS::BindTextureSampler(pass, texture, dst_sampler);
+  } else {
+    // We need to bind something so validation layers doesn't complain.
+    FML_DCHECK(blend_mode == BlendMode::kDestination);
+    FS::BindTextureSampler(pass, renderer.GetEmptyTexture(), dst_sampler);
   }
 
   VS::FrameInfo frame_info;

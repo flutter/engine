@@ -11,6 +11,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
@@ -265,6 +266,18 @@ ContentContext::ContentContext(
     return;
   }
 
+  {
+    TextureDescriptor desc;
+    desc.storage_mode = StorageMode::kHostVisible;
+    desc.format = PixelFormat::kR8G8B8A8UNormInt;
+    desc.size = ISize{1, 1};
+    empty_texture_ = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+    auto data = Color::BlackTransparent().ToR8G8B8A8();
+    if (!empty_texture_->SetContents(data.data(), 4)) {
+      VALIDATION_LOG << "Failed to create empty texture.";
+    }
+  }
+
   auto options = ContentContextOptions{
       .sample_count = SampleCount::kCount4,
       .color_attachment_pixel_format =
@@ -465,6 +478,10 @@ ContentContext::~ContentContext() = default;
 
 bool ContentContext::IsValid() const {
   return is_valid_;
+}
+
+std::shared_ptr<Texture> ContentContext::GetEmptyTexture() const {
+  return empty_texture_;
 }
 
 fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
