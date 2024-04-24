@@ -106,6 +106,8 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
     } else {
       texture = texture_;
     }
+  } else {
+    texture = renderer.GetEmptyTexture();
   }
 
   auto dst_sampler_descriptor = descriptor_;
@@ -143,20 +145,12 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
     options.primitive_type = geometry_result.type;
     pass.SetPipeline(renderer.GetPorterDuffBlendPipeline(options));
 
-    if (texture) {
-      FS::BindTextureSamplerDst(pass, texture, dst_sampler);
-    } else {
-      // We need to bind something so validation layers doesn't complain.
-      FML_DCHECK(blend_mode == BlendMode::kDestination);
-      FS::BindTextureSamplerDst(pass, renderer.GetEmptyTexture(), dst_sampler);
-    }
+    FS::BindTextureSamplerDst(pass, texture, dst_sampler);
 
     VS::FrameInfo frame_info;
     FS::FragInfo frag_info;
 
-    if (texture) {
-      frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
-    }
+    frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
     frame_info.mvp = geometry_result.transform;
 
     frag_info.output_alpha = alpha_;
@@ -195,20 +189,13 @@ bool VerticesSimpleBlendContents::Render(const ContentContext& renderer,
   auto options = OptionsFromPassAndEntity(pass, entity);
   options.primitive_type = geometry_result.type;
   pass.SetPipeline(renderer.GetDrawVerticesUberShader(options));
-  if (texture) {
-    FS::BindTextureSampler(pass, texture, dst_sampler);
-  } else {
-    // We need to bind something so validation layers doesn't complain.
-    FML_DCHECK(blend_mode == BlendMode::kDestination);
-    FS::BindTextureSampler(pass, renderer.GetEmptyTexture(), dst_sampler);
-  }
+
+  FS::BindTextureSampler(pass, texture, dst_sampler);
 
   VS::FrameInfo frame_info;
   FS::FragInfo frag_info;
 
-  if (texture) {
-    frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
-  }
+  frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frame_info.mvp = geometry_result.transform;
   frag_info.alpha = alpha_;
   frag_info.blend_mode = static_cast<int>(blend_mode);

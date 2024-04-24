@@ -725,8 +725,10 @@ class ContentContext {
     return point_field_compute_pipelines_;
   }
 
-  // An empty 1x1 texture for binding drawVertices/drawAtlas or other cases
-  // that don't always have a texture (due to blending).
+  /// A 1x1 RGBA transparent black texture.
+  ///
+  /// Used for binding drawVertices/drawAtlas or other cases that don't always
+  /// have a texture (due to blending).
   std::shared_ptr<Texture> GetEmptyTexture() const;
 
   std::shared_ptr<Context> GetContext() const;
