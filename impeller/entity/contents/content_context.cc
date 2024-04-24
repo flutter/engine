@@ -194,25 +194,15 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kLegacyClipRestore:
-        front_stencil.stencil_compare = CompareFunction::kLess;
-        front_stencil.depth_stencil_pass =
-            StencilOperation::kSetToReferenceValue;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kLegacyClipIncrement:
+      case StencilMode::kOverdrawPreventionIncrement:
         front_stencil.stencil_compare = CompareFunction::kEqual;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementClamp;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kLegacyClipDecrement:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kDecrementClamp;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kLegacyClipCompare:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+      case StencilMode::kOverdrawPreventionRestore:
+        front_stencil.stencil_compare = CompareFunction::kLess;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
     }
@@ -294,9 +284,6 @@ ContentContext::ContentContext(
   checkerboard_pipelines_.CreateDefault(*context_, options);
 #endif  // IMPELLER_DEBUG
 
-  // These pipelines are created first since they are immediately used by
-  // InitializeCommonlyUsedShadersIfNeeded. Their order matches the order in
-  // InitializeCommonlyUsedShadersIfNeeded.
   {
     solid_fill_pipelines_.CreateDefault(*context_, options);
     texture_pipelines_.CreateDefault(*context_, options);
@@ -435,8 +422,8 @@ ContentContext::ContentContext(
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   texture_strict_src_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options, {supports_decal});
-  kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                         {supports_decal});
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
@@ -597,49 +584,6 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
   GetContext()->InitializeCommonlyUsedShadersIfNeeded();
-
-  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
-    // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
-    // runs.
-    return;
-  }
-
-  // Initialize commonly used shaders that aren't defaults. These settings were
-  // chosen based on the knowledge that we mix and match triangle and
-  // triangle-strip geometry, and also have fairly agressive srcOver to src
-  // blend mode conversions.
-  auto options = ContentContextOptions{
-      .sample_count = SampleCount::kCount4,
-      .color_attachment_pixel_format =
-          context_->GetCapabilities()->GetDefaultColorFormat()};
-
-  // Note: When editing this, check the order the default pipelines are created.
-  // These should be first.
-  for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
-    for (const auto geometry :
-         {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
-      options.blend_mode = mode;
-      options.primitive_type = geometry;
-      CreateIfNeeded(solid_fill_pipelines_, options);
-      CreateIfNeeded(texture_pipelines_, options);
-      if (GetContext()->GetCapabilities()->SupportsSSBO()) {
-        CreateIfNeeded(linear_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(radial_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(sweep_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(conical_gradient_ssbo_fill_pipelines_, options);
-      }
-    }
-  }
-
-  options.blend_mode = BlendMode::kDestination;
-  options.primitive_type = PrimitiveType::kTriangleStrip;
-  for (const auto stencil_mode :
-       {ContentContextOptions::StencilMode::kLegacyClipIncrement,
-        ContentContextOptions::StencilMode::kLegacyClipDecrement,
-        ContentContextOptions::StencilMode::kLegacyClipRestore}) {
-    options.stencil_mode = stencil_mode;
-    CreateIfNeeded(clip_pipelines_, options);
-  }
 }
 
 }  // namespace impeller
