@@ -581,11 +581,6 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
   GetContext()->InitializeCommonlyUsedShadersIfNeeded();
 
-  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
-    // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
-    // runs.
-    return;
-  }
 
   // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
   // observed to take 10s of ms as an internal shader is compiled to perform
