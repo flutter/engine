@@ -646,22 +646,6 @@ void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
     options.stencil_mode = stencil_mode;
     CreateIfNeeded(clip_pipelines_, options);
   }
-
-  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
-  // observed to take 10s of ms as an internal shader is compiled to perform
-  // the operation. Similarly, the initial render pass can also take 10s of ms
-  // for a similar reason. Because the context object is initialized far
-  // before the first frame, create a trivial texture and render pass to force
-  // the driver to compiler these shaders before the frame begins.
-  TextureDescriptor desc;
-  desc.size = {1, 1};
-  desc.storage_mode = StorageMode::kHostVisible;
-  desc.format = PixelFormat::kR8G8B8A8UNormInt;
-  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
-  uint32_t color = 0;
-  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
-    VALIDATION_LOG << "Failed to set bootstrap texture.";
-  }
 }
 
 }  // namespace impeller
