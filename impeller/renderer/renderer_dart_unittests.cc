@@ -59,15 +59,15 @@ class RendererDartTest : public PlaygroundTest,
     //       `RendererDartTest::CreateDartIsolate`) to use the main thread, so
     //       there's no need for additional synchronization.
     {
-      auto draw_to_playground_surface = [this](Dart_NativeArguments args) {
+      auto set_display_texture = [this](Dart_NativeArguments args) {
         flutter::gpu::Texture* texture =
             tonic::DartConverter<flutter::gpu::Texture*>::FromDart(
                 Dart_GetNativeArgument(args, 0));
         assert(texture != nullptr);  // Should always be a valid pointer.
         received_texture_ = texture->GetTexture();
       };
-      AddNativeCallback("DrawToPlaygroundSurface",
-                        CREATE_NATIVE_ENTRY(draw_to_playground_surface));
+      AddNativeCallback("SetDisplayTexture",
+                        CREATE_NATIVE_ENTRY(set_display_texture));
     }
   }
 

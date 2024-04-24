@@ -14,11 +14,8 @@ void sayHi() {
 }
 
 /// Pass a texture back to the playground for rendering to the surface.
-///
-/// This callback only works for playground tests that invoke Dart via the
-/// `RendererDartTest::RenderToSurfacePlaygroundCase` method.
-@pragma('vm:external-name', 'DrawToPlaygroundSurface')
-external void drawToPlaygroundSurface(gpu.Texture texture);
+@pragma('vm:external-name', 'SetDisplayTexture')
+external void setDisplayTexture(gpu.Texture texture);
 
 @pragma('vm:entry-point')
 void instantiateDefaultContext() {
@@ -150,5 +147,5 @@ void canCreateRenderPassAndSubmit(int width, int height) {
 
   commandBuffer.submit();
 
-  drawToPlaygroundSurface(renderTexture);
+  setDisplayTexture(renderTexture);
 }
