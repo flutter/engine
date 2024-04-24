@@ -690,15 +690,17 @@ public class FlutterFragmentActivity extends FragmentActivity
    * <p>The default implementation looks {@code <meta-data>} called {@link
    * FlutterActivityLaunchConfigs#HANDLE_DEEPLINKING_META_DATA_KEY} within the Android manifest
    * definition for this {@code FlutterFragmentActivity}.
+   * 
+   * <p>Defaults to {@code true}.
    */
   @VisibleForTesting
   protected boolean shouldHandleDeeplinking() {
-    try {
-      Bundle metaData = getMetaData();
-      boolean shouldHandleDeeplinking =
-          metaData != null ? metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY) : true;
-      return shouldHandleDeeplinking;
-    } catch (PackageManager.NameNotFoundException e) {
+    Bundle metaData = getMetaData();
+    // Check if metadata is not null and contains the HANDLE_DEEPLINKING_META_DATA_KEY.
+    if (metaData != null && metaData.containsKey(HANDLE_DEEPLINKING_META_DATA_KEY)) {
+      return metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY);
+    } else {
+      // Return true if the deep linking flag is not found in metadata.
       return true;
     }
   }
