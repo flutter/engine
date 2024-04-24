@@ -52,6 +52,22 @@ class RendererDartTest : public PlaygroundTest,
     isolate_ = CreateDartIsolate();
     assert(isolate_);
     assert(isolate_->get()->GetPhase() == flutter::DartIsolate::Phase::Running);
+
+    // Set up native callbacks.
+    //
+    // Note: The Dart isolate is configured (by
+    //       `RendererDartTest::CreateDartIsolate`) to use the main thread, so
+    //       there's no need for additional synchronization.
+
+    auto draw_to_playground_surface = [this](Dart_NativeArguments args) {
+      flutter::gpu::Texture* texture =
+          tonic::DartConverter<flutter::gpu::Texture*>::FromDart(
+              Dart_GetNativeArgument(args, 0));
+      assert(texture != nullptr);  // Should always be a valid pointer.
+      received_texture_ = texture->GetTexture();
+    };
+    AddNativeCallback("DrawToPlaygroundSurface",
+                      CREATE_NATIVE_ENTRY(draw_to_playground_surface));
   }
 
   flutter::testing::AutoIsolateShutdown* GetIsolate() {
@@ -68,21 +84,6 @@ class RendererDartTest : public PlaygroundTest,
   ///         it back for rendering via `drawToPlayground`.
   std::shared_ptr<Texture> GetRenderedTextureFromDart(
       const char* dart_function_name) {
-    std::shared_ptr<Texture> result;
-
-    // Note: The Dart isolate is configured (by
-    //       `RendererDartTest::CreateDartIsolate`) to use the main thread, so
-    //       there's no need to synchronize with a latch here.
-    auto draw_to_playground_surface = [&result](Dart_NativeArguments args) {
-      flutter::gpu::Texture* texture =
-          tonic::DartConverter<flutter::gpu::Texture*>::FromDart(
-              Dart_GetNativeArgument(args, 0));
-      assert(texture != nullptr);  // Should always be a valid pointer.
-      result = texture->GetTexture();
-    };
-    AddNativeCallback("DrawToPlaygroundSurface",
-                      CREATE_NATIVE_ENTRY(draw_to_playground_surface));
-
     bool success =
         GetIsolate()->RunInIsolateScope([&dart_function_name]() -> bool {
           if (tonic::CheckAndHandleError(::Dart_Invoke(
@@ -97,17 +98,41 @@ class RendererDartTest : public PlaygroundTest,
                      << dart_function_name;
       return nullptr;
     }
-    if (!result) {
+    if (!received_texture_) {
       FML_LOG(ERROR) << "Dart test function `" << dart_function_name
                      << "` did not invoke `drawToPlaygroundSurface`.";
       return nullptr;
     }
-    return result;
+    return received_texture_;
+  }
+
+  /// @brief  Invokes a Dart function.
+  ///
+  ///         Returns false if invoking the function failed or if any unhandled
+  ///         exceptions were thrown.
+  bool RunDartFunction(const char* dart_function_name) {
+    return GetIsolate()->RunInIsolateScope([&dart_function_name]() -> bool {
+      if (tonic::CheckAndHandleError(
+              ::Dart_Invoke(Dart_RootLibrary(),
+                            tonic::ToDart(dart_function_name), 0, nullptr))) {
+        return false;
+      }
+      return true;
+    });
   }
 
   /// @brief  Call a dart function that produces a texture and render the result
   ///         in the playground.
+  ///
+  ///         If the playground isn't enabled, the function is simply run once
+  ///         in order to verify that it doesn't throw any unhandled exceptions.
   bool RenderDartToPlayground(const char* dart_function_name) {
+    if (!IsPlaygroundEnabled()) {
+      // If the playground is not enabled, run the function instead to at least
+      // verify that it doesn't crash.
+      return RunDartFunction(dart_function_name);
+    }
+
     auto context = GetContext();
     assert(context != nullptr);
 
@@ -214,69 +239,46 @@ class RendererDartTest : public PlaygroundTest,
   flutter::DartVMRef vm_ref_;
   fml::RefPtr<fml::TaskRunner> current_task_runner_;
   std::unique_ptr<flutter::testing::AutoIsolateShutdown> isolate_;
+
+  std::shared_ptr<Texture> received_texture_;
 };
 
 INSTANTIATE_PLAYGROUND_SUITE(RendererDartTest);
 
-TEST_P(RendererDartTest, canCreateRenderPassAndSubmit) {
-  ASSERT_TRUE(RenderDartToPlayground("canCreateRenderPassAndSubmit"));
-}
-
 TEST_P(RendererDartTest, CanRunDartInPlaygroundFrame) {
-  auto isolate = GetIsolate();
-
   SinglePassCallback callback = [&](RenderPass& pass) {
     ImGui::Begin("Dart test", nullptr);
     ImGui::Text(
         "This test executes Dart code during the playground frame callback.");
     ImGui::End();
 
-    return isolate->RunInIsolateScope([]() -> bool {
-      if (tonic::CheckAndHandleError(::Dart_Invoke(
-              Dart_RootLibrary(), tonic::ToDart("sayHi"), 0, nullptr))) {
-        return false;
-      }
-      return true;
-    });
+    return RunDartFunction("sayHi");
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
-  auto isolate = GetIsolate();
-  bool result = isolate->RunInIsolateScope([]() -> bool {
-    if (tonic::CheckAndHandleError(::Dart_Invoke(
-            Dart_RootLibrary(), tonic::ToDart("instantiateDefaultContext"), 0,
-            nullptr))) {
-      return false;
-    }
-    return true;
-  });
-
-  ASSERT_TRUE(result);
-}
-
-#define DART_TEST_CASE(name)                                            \
-  TEST_P(RendererDartTest, name) {                                      \
-    auto isolate = GetIsolate();                                        \
-    bool result = isolate->RunInIsolateScope([]() -> bool {             \
-      if (tonic::CheckAndHandleError(::Dart_Invoke(                     \
-              Dart_RootLibrary(), tonic::ToDart(#name), 0, nullptr))) { \
-        return false;                                                   \
-      }                                                                 \
-      return true;                                                      \
-    });                                                                 \
-    ASSERT_TRUE(result);                                                \
-  }
-
 /// These test entries correspond to Dart functions located in
 /// `flutter/impeller/fixtures/dart_tests.dart`
 
-DART_TEST_CASE(canCreateShaderLibrary);
-DART_TEST_CASE(canReflectUniformStructs);
-DART_TEST_CASE(uniformBindFailsForInvalidHostBufferOffset);
+TEST_P(RendererDartTest, CanInstantiateFlutterGPUContext) {
+  ASSERT_TRUE(RunDartFunction("instantiateDefaultContext"));
+}
 
-// DART_TEST_CASE(canCreateRenderPassAndSubmit);
+TEST_P(RendererDartTest, CanCreateShaderLibrary) {
+  ASSERT_TRUE(RunDartFunction("canCreateShaderLibrary"));
+}
+
+TEST_P(RendererDartTest, CanReflectUniformStructs) {
+  ASSERT_TRUE(RunDartFunction("canReflectUniformStructs"));
+}
+
+TEST_P(RendererDartTest, UniformBindFailsForInvalidHostBufferOffset) {
+  ASSERT_TRUE(RunDartFunction("uniformBindFailsForInvalidHostBufferOffset"));
+}
+
+TEST_P(RendererDartTest, canCreateRenderPassAndSubmit) {
+  ASSERT_TRUE(RenderDartToPlayground("canCreateRenderPassAndSubmit"));
+}
 
 }  // namespace testing
 }  // namespace impeller
