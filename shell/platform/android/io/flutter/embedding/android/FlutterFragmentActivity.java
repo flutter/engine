@@ -695,13 +695,17 @@ public class FlutterFragmentActivity extends FragmentActivity
    */
   @VisibleForTesting
   protected boolean shouldHandleDeeplinking() {
-    Bundle metaData = getMetaData();
-    // Check if metadata is not null and contains the HANDLE_DEEPLINKING_META_DATA_KEY.
-    if (metaData != null && metaData.containsKey(HANDLE_DEEPLINKING_META_DATA_KEY)) {
-      return metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY);
-    } else {
-      // Return true if the deep linking flag is not found in metadata.
-      return true;
+    try {
+      Bundle metaData = getMetaData();
+      // Check if metadata is not null and contains the HANDLE_DEEPLINKING_META_DATA_KEY.
+      if (metaData != null && metaData.containsKey(HANDLE_DEEPLINKING_META_DATA_KEY)) {
+        return metaData.getBoolean(HANDLE_DEEPLINKING_META_DATA_KEY);
+      } else {
+        // Return true if the deep linking flag is not found in metadata.
+        return true;
+      }
+    } catch (PackageManager.NameNotFoundException e) {
+      return false;
     }
   }
 
