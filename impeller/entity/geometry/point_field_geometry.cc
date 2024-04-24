@@ -32,6 +32,8 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
   Scalar radius = std::max(radius_, min_size);
 
   HostBuffer& host_buffer = renderer.GetTransientsBuffer();
+  VertexBufferBuilder<SolidFillVertexShader::PerVertexData> vtx_builder;
+
   if (round_) {
     // Get triangulation relative to {0, 0} so we can translate it to each
     // point in turn.
@@ -45,65 +47,38 @@ GeometryResult PointFieldGeometry::GetPositionBuffer(
     });
     FML_DCHECK(circle_vertices.size() == generator.GetVertexCount());
 
-    size_t vertex_count = ((circle_vertices.size() + 2) * points_.size() - 2);
-    BufferView vertex_data =
-        host_buffer.Emplace(vertex_count, alignof(Point), [&](uint8_t* data) {
-          Point* output = reinterpret_cast<Point*>(data);
-          size_t offset = 0;
+    vtx_builder.Reserve((circle_vertices.size() + 2) * points_.size() - 2);
+    for (auto& center : points_) {
+      if (vtx_builder.HasVertices()) {
+        vtx_builder.AppendVertex(vtx_builder.Last());
+        vtx_builder.AppendVertex({center + circle_vertices[0]});
+      }
 
-          for (auto& vertex : circle_vertices) {
-            output[offset++] = vertex + points_[0];
-          }
+      for (auto& vertex : circle_vertices) {
+        vtx_builder.AppendVertex({center + vertex});
+      }
+    }
+  } else {
+    vtx_builder.Reserve(6 * points_.size() - 2);
+    for (auto& point : points_) {
+      auto first = Point(point.x - radius, point.y - radius);
 
-          for (auto i = 1u; i < vertex_count; i++) {
-            output[offset++] = output[offset];
-            output[offset++] = circle_vertices[0] + points_[i];
-            for (auto& vertex : circle_vertices) {
-              output[offset++] = vertex + points_[i];
-            }
-          }
-        });
+      if (vtx_builder.HasVertices()) {
+        vtx_builder.AppendVertex(vtx_builder.Last());
+        vtx_builder.AppendVertex({first});
+      }
 
-    return GeometryResult{
-        .type = PrimitiveType::kTriangleStrip,
-        .vertex_buffer = VertexBuffer{.vertex_buffer = std::move(vertex_data),
-                                      .index_buffer = {},
-                                      .vertex_count = vertex_count,
-                                      .index_type = IndexType::kNone},
-        .transform = entity.GetShaderTransform(pass),
-    };
+      // Z pattern from UL -> UR -> LL -> LR
+      vtx_builder.AppendVertex({first});
+      vtx_builder.AppendVertex({{point.x + radius, point.y - radius}});
+      vtx_builder.AppendVertex({{point.x - radius, point.y + radius}});
+      vtx_builder.AppendVertex({{point.x + radius, point.y + radius}});
+    }
   }
-
-  size_t vertex_count = 6 * points_.size() - 2;
-  BufferView vertex_data =
-      host_buffer.Emplace(vertex_count, alignof(Point), [&](uint8_t* data) {
-        Point* output = reinterpret_cast<Point*>(data);
-        size_t offset = 0;
-        bool has_vertices = false;
-
-        for (auto& point : points_) {
-          Point first = Point(point.x - radius, point.y - radius);
-
-          if (has_vertices) {
-            output[offset++] = output[offset];
-            output[offset++] = first;
-          }
-
-          // Z pattern from UL -> UR -> LL -> LR
-          output[offset++] = first;
-          output[offset++] = Point{point.x + radius, point.y - radius};
-          output[offset++] = Point{point.x - radius, point.y + radius};
-          output[offset++] = Point{point.x + radius, point.y + radius};
-          has_vertices = true;
-        }
-      });
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = VertexBuffer{.vertex_buffer = std::move(vertex_data),
-                                    .index_buffer = {},
-                                    .vertex_count = vertex_count,
-                                    .index_type = IndexType::kNone},
+      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
       .transform = entity.GetShaderTransform(pass),
   };
 }
