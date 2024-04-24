@@ -23,6 +23,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import io.flutter.FlutterInjector;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
+import io.flutter.embedding.android.FlutterFragmentActivityTest.FlutterFragmentActivityWithProvidedEngine;
+import io.flutter.embedding.android.FlutterFragmentActivityTest.FlutterFragmentActivityWithRootLayout.CustomLayout;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.embedding.engine.loader.FlutterLoader;
@@ -180,8 +182,8 @@ public class FlutterFragmentActivityTest {
     Bundle bundle = new Bundle();
     FlutterFragmentActivity spyFlutterActivity = spy(activity);
     when(spyFlutterActivity.getMetaData()).thenReturn(bundle);
-    // Empty bundle should return false.
-    assertFalse(spyFlutterActivity.shouldHandleDeeplinking());
+    // Empty bundle should return true.
+    assertTrue(spyFlutterActivity.shouldHandleDeeplinking());
   }
 
   @Test

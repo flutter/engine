@@ -84,8 +84,10 @@ FLUTTER_ASSERT_ARC
       [self.appDelegate application:[UIApplication sharedApplication]
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                             options:@{}];
-  XCTAssertFalse(result);
-  OCMReject([self.mockNavigationChannel invokeMethod:OCMOCK_ANY arguments:OCMOCK_ANY]);
+  XCTAssertTrue(result);
+  OCMVerify([self.mockNavigationChannel
+      invokeMethod:@"pushRouteInformation"
+         arguments:@{@"location" : @"http://myApp/custom/route?query=test"}]);
 }
 
 - (void)testLaunchUrlWithDeepLinkingDisabled {
