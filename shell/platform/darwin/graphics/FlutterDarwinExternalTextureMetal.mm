@@ -134,7 +134,7 @@ FLUTTER_ASSERT_ARC
       _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
     image = [self wrapNV12ExternalPixelBuffer:pixelBuffer context:context];
   } else if (_pixelFormat == kCVPixelFormatType_32BGRA) {
-    image = [self wrapRGBAExternalPixelBuffer:pixelBuffer context:context];
+    image = [self wrapBGRAExternalPixelBuffer:pixelBuffer context:context];
   } else {
     FML_LOG(ERROR) << "Unsupported pixel format: " << _pixelFormat;
     return nullptr;
@@ -238,7 +238,7 @@ FLUTTER_ASSERT_ARC
   return flutter::DlImage::Make(skImage);
 }
 
-- (sk_sp<flutter::DlImage>)wrapRGBAExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
+- (sk_sp<flutter::DlImage>)wrapBGRAExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
                                                context:(flutter::Texture::PaintContext&)context {
   SkISize textureSize =
       SkISize::Make(CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer));
