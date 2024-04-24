@@ -1399,6 +1399,7 @@ public class FlutterActivity extends Activity
    * <p>The default implementation looks {@code <meta-data>} called {@link
    * FlutterActivityLaunchConfigs#HANDLE_DEEPLINKING_META_DATA_KEY} within the Android manifest
    * definition for this {@code FlutterActivity}.
+   *
    * <p>Defaults to {@code true}.
    */
   @VisibleForTesting

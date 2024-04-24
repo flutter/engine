@@ -690,7 +690,7 @@ public class FlutterFragmentActivity extends FragmentActivity
    * <p>The default implementation looks {@code <meta-data>} called {@link
    * FlutterActivityLaunchConfigs#HANDLE_DEEPLINKING_META_DATA_KEY} within the Android manifest
    * definition for this {@code FlutterFragmentActivity}.
-   * 
+   *
    * <p>Defaults to {@code true}.
    */
   @VisibleForTesting
