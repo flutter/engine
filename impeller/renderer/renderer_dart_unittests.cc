@@ -58,16 +58,17 @@ class RendererDartTest : public PlaygroundTest,
     // Note: The Dart isolate is configured (by
     //       `RendererDartTest::CreateDartIsolate`) to use the main thread, so
     //       there's no need for additional synchronization.
-
-    auto draw_to_playground_surface = [this](Dart_NativeArguments args) {
-      flutter::gpu::Texture* texture =
-          tonic::DartConverter<flutter::gpu::Texture*>::FromDart(
-              Dart_GetNativeArgument(args, 0));
-      assert(texture != nullptr);  // Should always be a valid pointer.
-      received_texture_ = texture->GetTexture();
-    };
-    AddNativeCallback("DrawToPlaygroundSurface",
-                      CREATE_NATIVE_ENTRY(draw_to_playground_surface));
+    {
+      auto draw_to_playground_surface = [this](Dart_NativeArguments args) {
+        flutter::gpu::Texture* texture =
+            tonic::DartConverter<flutter::gpu::Texture*>::FromDart(
+                Dart_GetNativeArgument(args, 0));
+        assert(texture != nullptr);  // Should always be a valid pointer.
+        received_texture_ = texture->GetTexture();
+      };
+      AddNativeCallback("DrawToPlaygroundSurface",
+                        CREATE_NATIVE_ENTRY(draw_to_playground_surface));
+    }
   }
 
   flutter::testing::AutoIsolateShutdown* GetIsolate() {
@@ -85,10 +86,12 @@ class RendererDartTest : public PlaygroundTest,
   std::shared_ptr<Texture> GetRenderedTextureFromDart(
       const char* dart_function_name) {
     bool success =
-        GetIsolate()->RunInIsolateScope([&dart_function_name]() -> bool {
-          if (tonic::CheckAndHandleError(::Dart_Invoke(
-                  Dart_RootLibrary(), tonic::ToDart(dart_function_name), 0,
-                  nullptr))) {
+        GetIsolate()->RunInIsolateScope([this, &dart_function_name]() -> bool {
+          Dart_Handle args[] = {tonic::ToDart(GetWindowSize().width),
+                                tonic::ToDart(GetWindowSize().height)};
+          if (tonic::CheckAndHandleError(
+                  ::Dart_Invoke(Dart_RootLibrary(),
+                                tonic::ToDart(dart_function_name), 2, args))) {
             return false;
           }
           return true;
@@ -121,6 +124,25 @@ class RendererDartTest : public PlaygroundTest,
     });
   }
 
+  /// @brief  Invokes a Dart function with the window's width and height as
+  ///         arguments.
+  ///
+  ///         Returns false if invoking the function failed or if any unhandled
+  ///         exceptions were thrown.
+  bool RunDartFunctionWithWindowSize(const char* dart_function_name) {
+    return GetIsolate()->RunInIsolateScope(
+        [this, &dart_function_name]() -> bool {
+          Dart_Handle args[] = {tonic::ToDart(GetWindowSize().width),
+                                tonic::ToDart(GetWindowSize().height)};
+          if (tonic::CheckAndHandleError(
+                  ::Dart_Invoke(Dart_RootLibrary(),
+                                tonic::ToDart(dart_function_name), 2, args))) {
+            return false;
+          }
+          return true;
+        });
+  }
+
   /// @brief  Call a dart function that produces a texture and render the result
   ///         in the playground.
   ///
@@ -130,7 +152,7 @@ class RendererDartTest : public PlaygroundTest,
     if (!IsPlaygroundEnabled()) {
       // If the playground is not enabled, run the function instead to at least
       // verify that it doesn't crash.
-      return RunDartFunction(dart_function_name);
+      return RunDartFunctionWithWindowSize(dart_function_name);
     }
 
     auto context = GetContext();
@@ -152,6 +174,9 @@ class RendererDartTest : public PlaygroundTest,
     }
     pipeline_desc->SetSampleCount(SampleCount::kCount4);
     pipeline_desc->SetStencilAttachmentDescriptors(std::nullopt);
+    pipeline_desc->SetDepthStencilAttachmentDescriptor(std::nullopt);
+    pipeline_desc->SetStencilPixelFormat(PixelFormat::kUnknown);
+    pipeline_desc->SetDepthPixelFormat(PixelFormat::kUnknown);
 
     auto pipeline =
         context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
@@ -164,20 +189,18 @@ class RendererDartTest : public PlaygroundTest,
     /// Prepare vertex data.
     ///
 
-    Size size = Size(GetWindowSize());
-
     VertexBufferBuilder<TextureVS::PerVertexData> texture_vtx_builder;
 
-    // Always stretch out the texture to fit the screen.
+    // Always stretch out the texture to fill the screen.
 
     // clang-format off
     texture_vtx_builder.AddVertices({
-        {{0.0,        0.0,         0.0}, {0.0, 0.0}},  // 1
-        {{size.width, 0.0,         0.0}, {1.0, 0.0}},  // 2
-        {{size.width, size.height, 0.0}, {1.0, 1.0}},  // 3
-        {{0.0,        0.0,         0.0}, {0.0, 0.0}},  // 1
-        {{size.width, size.height, 0.0}, {1.0, 1.0}},  // 3
-        {{0.0,        size.height, 0.0}, {0.0, 1.0}},  // 4
+        {{-0.5, -0.5, 0.0}, {0.0, 0.0}},  // 1
+        {{ 0.5, -0.5, 0.0}, {1.0, 0.0}},  // 2
+        {{ 0.5,  0.5, 0.0}, {1.0, 1.0}},  // 3
+        {{-0.5, -0.5, 0.0}, {0.0, 0.0}},  // 1
+        {{ 0.5,  0.5, 0.0}, {1.0, 1.0}},  // 3
+        {{-0.5,  0.5, 0.0}, {0.0, 1.0}},  // 4
     });
     // clang-format on
 
@@ -203,15 +226,15 @@ class RendererDartTest : public PlaygroundTest,
 
       auto buffer = HostBuffer::Create(context->GetResourceAllocator());
 
-      pass.SetPipeline(pipeline);
       pass.SetVertexBuffer(texture_vtx_builder.CreateVertexBuffer(
           *context->GetResourceAllocator()));
 
       TextureVS::UniformBuffer uniforms;
-      uniforms.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                     Matrix::MakeScale(GetContentScale());
+      uniforms.mvp = Matrix();
       TextureVS::BindUniformBuffer(pass, buffer->EmplaceUniform(uniforms));
       TextureFS::BindTextureContents(pass, texture, sampler);
+
+      pass.SetPipeline(pipeline);
 
       if (!pass.Draw().ok()) {
         return false;
@@ -276,7 +299,7 @@ TEST_P(RendererDartTest, UniformBindFailsForInvalidHostBufferOffset) {
   ASSERT_TRUE(RunDartFunction("uniformBindFailsForInvalidHostBufferOffset"));
 }
 
-TEST_P(RendererDartTest, canCreateRenderPassAndSubmit) {
+TEST_P(RendererDartTest, CanCreateRenderPassAndSubmit) {
   ASSERT_TRUE(RenderDartToPlayground("canCreateRenderPassAndSubmit"));
 }
 
