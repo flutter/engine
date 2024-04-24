@@ -361,10 +361,20 @@ public class FlutterFragmentTest {
     TestDelegateFactory delegateFactory = new TestDelegateFactory(mockDelegate);
     fragment.setDelegateFactory(delegateFactory);
 
+    assertTrue(callback.isEnabled());
+
     assertTrue(fragment.popSystemNavigator());
 
     verify(mockDelegate, never()).onBackPressed();
     assertTrue(onBackPressedCalled.get());
+    assertTrue(callback.isEnabled());
+
+    callback.setEnabled(false);
+    assertFalse(callback.isEnabled());
+    assertTrue(fragment.popSystemNavigator());
+
+    verify(mockDelegate, never()).onBackPressed();
+    assertFalse(callback.isEnabled());
   }
 
   @Test
