@@ -193,25 +193,15 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kLegacyClipRestore:
-        front_stencil.stencil_compare = CompareFunction::kLess;
-        front_stencil.depth_stencil_pass =
-            StencilOperation::kSetToReferenceValue;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kLegacyClipIncrement:
+      case StencilMode::kOverdrawPreventionIncrement:
         front_stencil.stencil_compare = CompareFunction::kEqual;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementClamp;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kLegacyClipDecrement:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kDecrementClamp;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kLegacyClipCompare:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+      case StencilMode::kOverdrawPreventionRestore:
+        front_stencil.stencil_compare = CompareFunction::kLess;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
     }
@@ -419,8 +409,8 @@ ContentContext::ContentContext(
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   texture_strict_src_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options, {supports_decal});
-  kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                         {supports_decal});
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
