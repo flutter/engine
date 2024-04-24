@@ -281,9 +281,6 @@ ContentContext::ContentContext(
   checkerboard_pipelines_.CreateDefault(*context_, options);
 #endif  // IMPELLER_DEBUG
 
-  // These pipelines are created first since they are immediately used by
-  // InitializeCommonlyUsedShadersIfNeeded. Their order matches the order in
-  // InitializeCommonlyUsedShadersIfNeeded.
   {
     solid_fill_pipelines_.CreateDefault(*context_, options);
     texture_pipelines_.CreateDefault(*context_, options);
