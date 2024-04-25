@@ -46,7 +46,6 @@
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/porter_duff_blend.vert.h"
-#include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
