@@ -3,12 +3,22 @@
 // found in the LICENSE file.
 
 #include <emscripten.h>
-#include "flutter/fml/logging.h"
+
+#include <memory>
+
 #include "flutter/fml/message_loop.h"
+#include "impeller/toolkit/wasm/context.h"
+#include "impeller/toolkit/wasm/swapchain.h"
+
+static std::shared_ptr<impeller::wasm::Swapchain> gSwapchain;
+static std::shared_ptr<impeller::wasm::Context> gContext;
 
 int main(int argc, char const* argv[]) {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
-  fml::MessageLoop::GetCurrent().GetTaskRunner()->PostTask(
-      []() { FML_LOG(IMPORTANT) << "This is a message."; });
+  gContext = std::make_shared<impeller::wasm::Context>();
+  FML_CHECK(gContext->IsValid());
+  gSwapchain = std::make_shared<impeller::wasm::Swapchain>(
+      []() { return gContext->RenderFrame(); });
+
   return 0;
 }

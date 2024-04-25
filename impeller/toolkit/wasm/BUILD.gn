@@ -4,9 +4,21 @@
 
 executable("wasm") {
   output_name = "wasm.html"
-  sources = [ "wasm_main.cc" ]
+  sources = [
+    "context.cc",
+    "context.h",
+    "stubs.cc",
+    "swapchain.cc",
+    "swapchain.h",
+    "wasm_main.cc",
+  ]
   deps = [
     "//flutter/fml",
     "//flutter/impeller/renderer",
+    "//flutter/impeller/toolkit/egl",
+  ]
+  libs = [
+    "EGL",
+    "GLESv2",
   ]
 }
