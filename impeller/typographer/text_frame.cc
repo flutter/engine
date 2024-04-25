@@ -69,7 +69,7 @@ Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
   // reduce fidelity but is preferable to the alternative of failing to render.
   constexpr Scalar kMaximumTextScale = 128;
   Scalar result = std::round(scale * 100) / 100;
-  return std::clamp(result, 1.0f, kMaximumTextScale);
+  return std::clamp(result, 0.01f, kMaximumTextScale);
 }
 
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
