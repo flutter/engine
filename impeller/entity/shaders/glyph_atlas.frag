@@ -24,26 +24,10 @@ out f16vec4 frag_color;
 void main() {
   f16vec4 value = texture(glyph_atlas_sampler, v_uv);
 
-  if (frag_info.is_color_glyph == 1.0) {
-    if (frag_info.use_text_color == 1.0f) {
-      frag_color = value.aaaa * frag_info.text_color;
-    } else {
-      frag_color = value * frag_info.text_color.aaaa;
-    }
-  } else {
-    if (use_alpha_color_channel == 1.0) {
-      frag_color = value.aaaa * frag_info.text_color;
-    } else {
-      frag_color = value.rrrr * frag_info.text_color;
-    }
-  }
-}
-
-/*
   frag_color =
       mix(mix(value.rrrr * frag_info.text_color,
               value.aaaa * frag_info.text_color, use_alpha_color_channel),
           mix(value * frag_info.text_color.aaaa,
               value.aaaa * frag_info.text_color, frag_info.use_text_color),
           frag_info.is_color_glyph);
-*/
+}
