@@ -15,7 +15,6 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 
 #include "impeller/core/runtime_types.h"
-#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
