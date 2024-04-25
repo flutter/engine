@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <EGL/EGL.h>
+#include <EGL/egl.h>
 
 EGLSurface eglCreatePbufferSurface(EGLDisplay display,
                                    EGLConfig config,

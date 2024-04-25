@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_TOOLKIT_WASM_CONTEXT_H_
 #define FLUTTER_IMPELLER_TOOLKIT_WASM_CONTEXT_H_
 
+#include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/toolkit/egl/context.h"
 #include "impeller/toolkit/egl/display.h"
 #include "impeller/toolkit/egl/surface.h"
@@ -27,9 +28,12 @@ class Context {
 
  private:
   egl::Display display_;
-  std::unique_ptr<egl::Context> context_;
-  std::unique_ptr<egl::Surface> surface_;
+  std::shared_ptr<egl::Context> context_;
+  std::shared_ptr<egl::Surface> surface_;
+  std::shared_ptr<ContextGLES> renderer_context_;
   bool is_valid_ = false;
+
+  ISize GetWindowSize() const;
 };
 
 }  // namespace impeller::wasm

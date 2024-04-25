@@ -15,10 +15,15 @@ executable("wasm") {
   deps = [
     "//flutter/fml",
     "//flutter/impeller/renderer",
+    "//flutter/impeller/renderer/backend/gles",
     "//flutter/impeller/toolkit/egl",
   ]
   libs = [
     "EGL",
     "GLESv2",
+  ]
+  ldflags = [
+    "-s",
+    "USE_WEBGL2=1",
   ]
 }
