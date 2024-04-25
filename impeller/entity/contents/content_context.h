@@ -45,7 +45,6 @@
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/porter_duff_blend.vert.h"
-#include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -58,7 +57,6 @@
 #include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/texture_uv_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 
 #include "impeller/typographer/glyph_atlas.h"
@@ -155,9 +153,6 @@ using PorterDuffBlendPipeline =
     RenderPipelineHandle<PorterDuffBlendVertexShader,
                          PorterDuffBlendFragmentShader>;
 using ClipPipeline = RenderPipelineHandle<ClipVertexShader, ClipFragmentShader>;
-
-using GeometryColorPipeline =
-    RenderPipelineHandle<PositionColorVertexShader, VerticesFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline = RenderPipelineHandle<AdvancedBlendVertexShader,
@@ -517,11 +512,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
@@ -920,7 +910,6 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-  mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
