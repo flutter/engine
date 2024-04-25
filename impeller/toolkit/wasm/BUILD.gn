@@ -7,6 +7,8 @@ executable("wasm") {
   sources = [
     "context.cc",
     "context.h",
+    "reactor_worker.cc",
+    "reactor_worker.h",
     "stubs.cc",
     "swapchain.cc",
     "swapchain.h",

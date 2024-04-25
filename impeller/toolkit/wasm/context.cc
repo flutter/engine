@@ -89,9 +89,17 @@ Context::Context() {
     return;
   }
 
+  auto worker = std::make_shared<ReactorWorker>();
+
+  if (!renderer_context->AddReactorWorker(worker).has_value()) {
+    VALIDATION_LOG << "Could not add reactor worker.";
+    return;
+  }
+
   surface_ = std::move(surface);
   context_ = std::move(context);
   renderer_context_ = std::move(renderer_context);
+  reactor_worker_ = std::move(worker);
   is_valid_ = true;
 }
 
@@ -125,6 +133,11 @@ bool Context::RenderFrame() {
 
   if (!surface || !surface->IsValid()) {
     VALIDATION_LOG << "Could not warp onscreen surface.";
+    return false;
+  }
+
+  if (!renderer_context_->GetReactor()->React()) {
+    VALIDATION_LOG << "Could not complete reactions.";
     return false;
   }
 

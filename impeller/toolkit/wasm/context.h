@@ -9,6 +9,7 @@
 #include "impeller/toolkit/egl/context.h"
 #include "impeller/toolkit/egl/display.h"
 #include "impeller/toolkit/egl/surface.h"
+#include "reactor_worker.h"
 
 namespace impeller::wasm {
 
@@ -31,6 +32,7 @@ class Context {
   std::shared_ptr<egl::Context> context_;
   std::shared_ptr<egl::Surface> surface_;
   std::shared_ptr<ContextGLES> renderer_context_;
+  std::shared_ptr<ReactorWorker> reactor_worker_;
   bool is_valid_ = false;
 
   ISize GetWindowSize() const;
