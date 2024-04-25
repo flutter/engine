@@ -94,6 +94,7 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
       RuntimeUniformDescription desc;
       desc.name = i->name()->str();
       desc.location = i->location();
+      desc.binding = i->binding();
       desc.type = ToType(i->type());
       desc.dimensions = RuntimeUniformDimensions{
           static_cast<size_t>(i->rows()), static_cast<size_t>(i->columns())};
@@ -125,7 +126,7 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
       });
     } else if (uniform.type == kSampledImage) {
       descriptor_set_layouts_.push_back(DescriptorSetLayout{
-          uniform.binding,
+          static_cast<uint32_t>(uniform.binding),
           DescriptorType::kSampledImage,
           ShaderStage::kFragment,
       });

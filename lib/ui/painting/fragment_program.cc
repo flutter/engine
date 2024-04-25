@@ -57,8 +57,10 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
            std::string("' does not contain any shader data.");
   }
 
-  auto backend = ui_dart_state->GetRuntimeStageBackend();
-  auto runtime_stage = runtime_stages[backend];
+  impeller::RuntimeStageBackend backend =
+      ui_dart_state->GetRuntimeStageBackend();
+  std::shared_ptr<impeller::RuntimeStage> runtime_stage =
+      runtime_stages[backend];
   if (!runtime_stage) {
     std::ostringstream stream;
     stream << "Asset '" << asset_name
@@ -74,14 +76,27 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     return stream.str();
   }
 
+  int sampled_image_count = 0;
+  size_t other_uniforms_bytes = 0;
+  for (const auto& uniform_description : runtime_stage->GetUniforms()) {
+    if (uniform_description.type ==
+        impeller::RuntimeUniformType::kSampledImage) {
+      sampled_image_count++;
+    } else {
+      other_uniforms_bytes += uniform_description.GetSize();
+    }
+  }
+
   if (UIDartState::Current()->IsImpellerEnabled()) {
     // Spawn (but do not block on) a task that will load the runtime stage and
     // populate an initial shader variant.
+    auto snapshot_controller = UIDartState::Current()->GetSnapshotDelegate();
     ui_dart_state->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-        [runtime_stage]() {
-          impeller::RuntimeEffectContents runtime_effect;
-          runtime_effect.SetRuntimeStage(runtime_stage);
-          runtime_effect.BootstrapShader(/*context goes here*/);
+        [runtime_stage, snapshot_controller]() {
+          if (!snapshot_controller) {
+            return;
+          }
+          snapshot_controller->CacheRuntimeStage(runtime_stage);
         });
     runtime_effect_ = DlRuntimeEffect::MakeImpeller(std::move(runtime_stage));
   } else {
@@ -102,17 +117,6 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   Dart_Handle ths = Dart_HandleFromWeakPersistent(dart_wrapper());
   if (Dart_IsError(ths)) {
     Dart_PropagateError(ths);
-  }
-
-  int sampled_image_count = 0;
-  size_t other_uniforms_bytes = 0;
-  for (const auto& uniform_description : runtime_stage->GetUniforms()) {
-    if (uniform_description.type ==
-        impeller::RuntimeUniformType::kSampledImage) {
-      sampled_image_count++;
-    } else {
-      other_uniforms_bytes += uniform_description.GetSize();
-    }
   }
 
   Dart_Handle result = Dart_SetField(ths, tonic::ToDart("_samplerCount"),
