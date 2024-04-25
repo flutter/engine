@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io show Directory, File, Platform, stderr;
+import 'dart:io' as io show Directory, File, Platform, ProcessSignal, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
@@ -609,6 +609,25 @@ Future<int> main(List<String> args) async {
         'file': 'unused',
     });
     expect(command.tidyArgs.trim(), 'filename');
+  });
+
+  test('Files that cause clang-tidy to segfault are skipped', () async {
+    final Fixture fixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintTarget: const LintRegex(r'.*renderer_unittests\.cc$'),
+      ),
+      processManager: FakeProcessManager(
+        onStart: (List<String> command) {
+          if (command.first.endsWith('clang-tidy')) {
+            return FakeProcess(exitCode: -io.ProcessSignal.sigsegv.signalNumber);
+          }
+          return FakeProcessManager.unhandledStart(command);
+        },
+      ),
+    );
+    final int result = await fixture.tool.run();
+    expect(result, 0);
   });
 
   return 0;
