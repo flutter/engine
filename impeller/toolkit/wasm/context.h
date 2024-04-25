@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_TOOLKIT_WASM_CONTEXT_H_
 
 #include "impeller/renderer/backend/gles/context_gles.h"
+#include "impeller/renderer/renderer.h"
 #include "impeller/toolkit/egl/context.h"
 #include "impeller/toolkit/egl/display.h"
 #include "impeller/toolkit/egl/surface.h"
@@ -33,9 +34,12 @@ class Context {
   std::shared_ptr<egl::Surface> surface_;
   std::shared_ptr<ContextGLES> renderer_context_;
   std::shared_ptr<ReactorWorker> reactor_worker_;
+  std::shared_ptr<Renderer> renderer_;
   bool is_valid_ = false;
 
   ISize GetWindowSize() const;
+
+  bool Render(RenderTarget& target);
 };
 
 }  // namespace impeller::wasm

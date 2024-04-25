@@ -13,9 +13,9 @@
 
 namespace impeller::wasm {
 
-static void ClearDepthEmulated(GLdouble depth) {}
+static void ClearDepthEmulated(float depth) {}
 
-static void DepthRangeEmulated(GLclampf nearVal, GLclampf farVal) {}
+static void DepthRangeEmulated(float nearVal, float farVal) {}
 
 Context::Context() {
   if (!display_.IsValid()) {
@@ -96,9 +96,16 @@ Context::Context() {
     return;
   }
 
+  auto renderer = std::make_shared<Renderer>(renderer_context);
+  if (!renderer || !renderer->IsValid()) {
+    VALIDATION_LOG << "Could not create renderer.";
+    return;
+  }
+
   surface_ = std::move(surface);
   context_ = std::move(context);
   renderer_context_ = std::move(renderer_context);
+  renderer_ = std::move(renderer);
   reactor_worker_ = std::move(worker);
   is_valid_ = true;
 }
@@ -120,7 +127,12 @@ bool Context::RenderFrame() {
     return false;
   }
 
-  SurfaceGLES::SwapCallback swap_callback = [surface = surface_]() -> bool {
+  SurfaceGLES::SwapCallback swap_callback =
+      [surface = surface_, renderer_context = renderer_context_]() -> bool {
+    if (!renderer_context->GetReactor()->React()) {
+      VALIDATION_LOG << "Could not commit reactions.";
+      return false;
+    }
     return surface->Present();
   };
   auto surface =
@@ -136,13 +148,11 @@ bool Context::RenderFrame() {
     return false;
   }
 
-  if (!renderer_context_->GetReactor()->React()) {
-    VALIDATION_LOG << "Could not complete reactions.";
-    return false;
-  }
-
-  if (!surface->Present()) {
-    VALIDATION_LOG << "Could not present the surface.";
+  if (!renderer_->Render(std::move(surface),
+                         [&](RenderTarget& render_target) -> bool {
+                           return Render(render_target);
+                         })) {
+    VALIDATION_LOG << "Could not render.";
     return false;
   }
 
@@ -156,6 +166,22 @@ ISize Context::GetWindowSize() const {
   emscripten_get_canvas_size(&width, &height, &fullscreen);
   return ISize::MakeWH(std::max<uint32_t>(0u, width),
                        std::max<uint32_t>(0u, height));
+}
+
+bool Context::Render(RenderTarget& target) {
+  auto context = renderer_->GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto pass = cmd_buffer->CreateRenderPass(target);
+  pass->SetLabel("Root Render Pass");
+  if (!pass->EncodeCommands()) {
+    VALIDATION_LOG << "Could not encode commands.";
+    return false;
+  }
+  if (!context->GetCommandQueue()->Submit({cmd_buffer}).ok()) {
+    VALIDATION_LOG << "Could not submit command queue.";
+    return false;
+  }
+  return true;
 }
 
 }  // namespace impeller::wasm
