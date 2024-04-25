@@ -41,7 +41,9 @@ class RuntimeEffectContents final : public ColorSourceContents {
  private:
   bool RegisterShader(const ContentContext& renderer) const;
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> CreatePipeline(const ContentContext& renderer, ContentContextOptions options) const;
+  std::shared_ptr<Pipeline<PipelineDescriptor>> CreatePipeline(
+      const ContentContext& renderer,
+      ContentContextOptions options) const;
 
   std::shared_ptr<RuntimeStage> runtime_stage_;
   std::shared_ptr<std::vector<uint8_t>> uniform_data_;

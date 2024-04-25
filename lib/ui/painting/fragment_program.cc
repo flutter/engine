@@ -75,13 +75,14 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   }
 
   if (UIDartState::Current()->IsImpellerEnabled()) {
-    // Spawn (but do not block on) a task that will load the runtime stage and populate
-    // an initial shader variant.
-    ui_dart_state->GetTaskRunners().GetRasterTaskRunner()->PostTask([runtime_stage]() {
-      impeller::RuntimeEffectContents runtime_effect;
-      runtime_effect.SetRuntimeStage(runtime_stage);
-      runtime_effect.BootstrapShader(/*context goes here*/);
-    });
+    // Spawn (but do not block on) a task that will load the runtime stage and
+    // populate an initial shader variant.
+    ui_dart_state->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [runtime_stage]() {
+          impeller::RuntimeEffectContents runtime_effect;
+          runtime_effect.SetRuntimeStage(runtime_stage);
+          runtime_effect.BootstrapShader(/*context goes here*/);
+        });
     runtime_effect_ = DlRuntimeEffect::MakeImpeller(std::move(runtime_stage));
   } else {
     const auto& code_mapping = runtime_stage->GetCodeMapping();
