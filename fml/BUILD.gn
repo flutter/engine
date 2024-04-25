@@ -266,6 +266,13 @@ source_set("fml") {
       "platform/posix/process_posix.cc",
     ]
   }
+
+  if (is_wasm) {
+    sources += [
+      "platform/emscripten/message_loop_emscripten.cc",
+      "platform/emscripten/message_loop_emscripten.h",
+    ]
+  }
 }
 
 source_set("build_config") {

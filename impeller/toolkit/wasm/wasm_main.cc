@@ -2,9 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <emscripten.h>
 #include "flutter/fml/logging.h"
+#include "flutter/fml/message_loop.h"
 
 int main(int argc, char const* argv[]) {
-  FML_LOG(IMPORTANT) << "Boo";
+  fml::MessageLoop::EnsureInitializedForCurrentThread();
+  fml::MessageLoop::GetCurrent().GetTaskRunner()->PostTask(
+      []() { FML_LOG(IMPORTANT) << "This is a message."; });
   return 0;
 }
