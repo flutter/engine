@@ -438,11 +438,6 @@ ContentContext::ContentContext(
       {static_cast<Scalar>(
           GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
           PixelFormat::kA8UNormInt)});
-<<<<<<< HEAD
-  geometry_color_pipelines_.CreateDefault(*context_, options);
-=======
-  glyph_atlas_color_pipelines_.CreateDefault(*context_, options);
->>>>>>> 3768ca0c02da70886a584b0945246ebe938b6720
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
