@@ -67,7 +67,7 @@ Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
   // An arbitrarily chosen maximum text scale to ensure that regardless of the
   // CTM, a glyph will fit in the atlas. If we clamp significantly, this may
   // reduce fidelity but is preferable to the alternative of failing to render.
-  constexpr Scalar kMaximumTextScale = 128;
+  constexpr Scalar kMaximumTextScale = 48;
   Scalar result = std::round(scale * 100) / 100;
   return std::clamp(result, 0.01f, kMaximumTextScale);
 }
