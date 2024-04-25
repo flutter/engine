@@ -11,10 +11,29 @@
 #include <vector>
 
 #include "impeller/geometry/point.h"
-#include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 
 namespace impeller {
+
+/// @brief An interface for generating a multi contour polyline as a triangle
+///        strip.
+class VertexWriter {
+ public:
+  explicit VertexWriter(std::vector<Point>& points,
+                        std::vector<uint16_t>& indices);
+
+  ~VertexWriter() = default;
+
+  void EndContour();
+
+  void Write(Point point);
+
+ private:
+  bool previous_contour_odd_points_ = false;
+  size_t contour_start_ = 0u;
+  std::vector<Point>& points_;
+  std::vector<uint16_t>& indices_;
+};
 
 struct LinearPathComponent {
   Point p1;
@@ -64,6 +83,8 @@ struct QuadraticPathComponent {
 
   void ToLinearPathComponents(Scalar scale_factor, const PointProc& proc) const;
 
+  void ToLinearPathComponents(Scalar scale, VertexWriter& writer) const;
+
   std::vector<Point> Extrema() const;
 
   bool operator==(const QuadraticPathComponent& other) const {
@@ -108,6 +129,8 @@ struct CubicPathComponent {
   using PointProc = std::function<void(const Point& point)>;
 
   void ToLinearPathComponents(Scalar scale, const PointProc& proc) const;
+
+  void ToLinearPathComponents(Scalar scale, VertexWriter& writer) const;
 
   CubicPathComponent Subsegment(Scalar t0, Scalar t1) const;
 

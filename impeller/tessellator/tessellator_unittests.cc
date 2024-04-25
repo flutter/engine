@@ -83,27 +83,58 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
 TEST(TessellatorTest, TessellateConvex) {
   {
     Tessellator t;
+    std::vector<Point> points;
+    std::vector<uint16_t> indices;
     // Sanity check simple rectangle.
-    auto pts = t.TessellateConvex(
-        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), 1.0);
+    t.TessellateConvexInternal(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), points,
+        indices, 1.0);
 
-    std::vector<Point> expected = {{0, 0}, {10, 0}, {0, 10}, {10, 10}};
-    EXPECT_EQ(pts, expected);
+    // Note: the origin point is repeated but not referenced in the indices
+    // below
+    std::vector<Point> expected = {{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}};
+    std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
+    EXPECT_EQ(points, expected);
+    EXPECT_EQ(indices, expected_indices);
   }
 
   {
     Tessellator t;
-    auto pts = t.TessellateConvex(PathBuilder{}
-                                      .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                                      .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                                      .TakePath(),
-                                  1.0);
+    std::vector<Point> points;
+    std::vector<uint16_t> indices;
+    t.TessellateConvexInternal(PathBuilder{}
+                                   .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+                                   .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+                                   .TakePath(),
+                               points, indices, 1.0);
 
-    std::vector<Point> expected = {{0, 0},   {10, 0},  {0, 10},  {10, 10},
-                                   {10, 10}, {20, 20}, {20, 20}, {30, 20},
-                                   {20, 30}, {30, 30}};
-    EXPECT_EQ(pts, expected);
+    std::vector<Point> expected = {{0, 0},   {10, 0},  {10, 10}, {0, 10},
+                                   {0, 0},   {20, 20}, {30, 20}, {30, 30},
+                                   {20, 30}, {20, 20}};
+    std::vector<uint16_t> expected_indices = {0, 1, 3, 2, 2, 5, 5, 6, 8, 7};
+    EXPECT_EQ(points, expected);
+    EXPECT_EQ(indices, expected_indices);
   }
+}
+
+// Filled Paths without an explicit close should still be closed
+TEST(TessellatorTest, TessellateConvexUnclosedPath) {
+  Tessellator t;
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+
+  // Create a rectangle that lacks an explicit close.
+  Path path = PathBuilder{}
+                  .LineTo({100, 0})
+                  .LineTo({100, 100})
+                  .LineTo({0, 100})
+                  .TakePath();
+  t.TessellateConvexInternal(path, points, indices, 1.0);
+
+  std::vector<Point> expected = {{0, 0}, {100, 0}, {100, 100}, {0, 100}};
+  std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
+  EXPECT_EQ(points, expected);
+  EXPECT_EQ(indices, expected_indices);
 }
 
 TEST(TessellatorTest, CircleVertexCounts) {
@@ -474,7 +505,10 @@ TEST(TessellatorTest, EarlyReturnEmptyConvexShape) {
   builder.MoveTo({0, 0});
   builder.MoveTo({10, 10}, /*relative=*/true);
 
-  auto points = tessellator->TessellateConvex(builder.TakePath(), 3.0);
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+  tessellator->TessellateConvexInternal(builder.TakePath(), points, indices,
+                                        3.0);
 
   EXPECT_TRUE(points.empty());
 }
