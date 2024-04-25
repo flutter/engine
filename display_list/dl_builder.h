@@ -486,10 +486,13 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void checkForDeferredSave();
 
   DisplayListStorage storage_;
-  size_t used_ = 0;
-  size_t allocated_ = 0;
-  uint32_t render_op_count_ = 0;
-  uint32_t depth_ = 0;
+  size_t used_ = 0u;
+  size_t allocated_ = 0u;
+  uint32_t render_op_count_ = 0u;
+  uint32_t depth_ = 0u;
+  // Most rendering ops will use 1 depth value, but some attributes may
+  // require an additional depth value (due to implicit saveLayers)
+  uint32_t render_op_depth_cost_ = 1u;
   int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
@@ -506,7 +509,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
   static bool mask_sigma_valid(SkScalar sigma) {
-    return SkScalarIsFinite(sigma) && sigma > 0.0;
+    return std::isfinite(sigma) && sigma > 0.0;
   }
 
   class SaveInfo {

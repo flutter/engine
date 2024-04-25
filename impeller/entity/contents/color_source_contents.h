@@ -118,10 +118,7 @@ class ColorSourceContents : public Contents {
                     RenderPass& pass,
                     const PipelineBuilderCallback& pipeline_callback,
                     typename VertexShaderT::FrameInfo frame_info,
-                    const BindFragmentCallback& bind_fragment_callback,
-                    bool enable_uvs = false,
-                    Rect texture_coverage = {},
-                    const Matrix& effect_transform = {}) const {
+                    const BindFragmentCallback& bind_fragment_callback) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
 
     GeometryResult::Mode geometry_mode = GetGeometry()->GetResultMode();
@@ -181,10 +178,7 @@ class ColorSourceContents : public Contents {
     }
 
     GeometryResult geometry_result =
-        enable_uvs
-            ? geometry.GetPositionUVBuffer(texture_coverage, effect_transform,
-                                           renderer, entity, pass)
-            : geometry.GetPositionBuffer(renderer, entity, pass);
+        geometry.GetPositionBuffer(renderer, entity, pass);
     if (geometry_result.vertex_buffer.vertex_count == 0u) {
       return true;
     }
@@ -201,7 +195,7 @@ class ColorSourceContents : public Contents {
     // the stencil buffer (happens below in this method).
     if (geometry_result.mode == GeometryResult::Mode::kPreventOverdraw) {
       options.stencil_mode =
-          ContentContextOptions::StencilMode::kLegacyClipIncrement;
+          ContentContextOptions::StencilMode::kOverdrawPreventionIncrement;
     }
     pass.SetStencilReference(0);
 

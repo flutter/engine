@@ -400,6 +400,9 @@ final class EngineFlutterWindow extends EngineFlutterView
       platformDispatcher.nativeSpellCheckServiceDefined;
 
   @override
+  bool get supportsShowingSystemContextMenu => platformDispatcher.supportsShowingSystemContextMenu;
+
+  @override
   bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;
 
   @override

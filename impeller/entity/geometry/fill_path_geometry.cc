@@ -36,44 +36,15 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     };
   }
 
-  VertexBuffer vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-      path_, host_buffer, entity.GetTransform().GetMaxBasisLength());
+  VertexBuffer vertex_buffer;
 
-  return GeometryResult{
-      .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = vertex_buffer,
-      .transform = entity.GetShaderTransform(pass),
-      .mode = GetResultMode(),
-  };
-}
+  auto points = renderer.GetTessellator()->TessellateConvex(
+      path_, entity.GetTransform().GetMaxBasisLength());
 
-// |Geometry|
-GeometryResult FillPathGeometry::GetPositionUVBuffer(
-    Rect texture_coverage,
-    Matrix effect_transform,
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  const auto& bounding_box = path_.GetBoundingBox();
-  if (bounding_box.has_value() && bounding_box->IsEmpty()) {
-    return GeometryResult{
-        .type = PrimitiveType::kTriangle,
-        .vertex_buffer =
-            VertexBuffer{
-                .vertex_buffer = {},
-                .vertex_count = 0,
-                .index_type = IndexType::k16bit,
-            },
-        .transform = pass.GetOrthographicTransform() * entity.GetTransform(),
-    };
-  }
-
-  auto uv_transform =
-      texture_coverage.GetNormalizingTransform() * effect_transform;
-
-  VertexBuffer vertex_buffer = renderer.GetTessellator()->TessellateConvex(
-      path_, renderer.GetTransientsBuffer(),
-      entity.GetTransform().GetMaxBasisLength(), uv_transform);
+  vertex_buffer.vertex_buffer = host_buffer.Emplace(
+      points.data(), points.size() * sizeof(Point), alignof(Point));
+  vertex_buffer.index_buffer = {}, vertex_buffer.vertex_count = points.size();
+  vertex_buffer.index_type = IndexType::kNone;
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
@@ -98,10 +69,6 @@ GeometryResult::Mode FillPathGeometry::GetResultMode() const {
   }
 
   FML_UNREACHABLE();
-}
-
-GeometryVertexType FillPathGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
 }
 
 std::optional<Rect> FillPathGeometry::GetCoverage(
