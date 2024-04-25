@@ -25,7 +25,7 @@ void main() {
   f16vec4 value = texture(glyph_atlas_sampler, v_uv);
 
   if (frag_info.is_color_glyph == 1.0) {
-    if (frag_info.use_text_color == 1.0f) {
+    if (frag_info.use_text_color == 1.0) {
       frag_color = value.aaaa * frag_info.text_color;
     } else {
       frag_color = value * frag_info.text_color.aaaa;
