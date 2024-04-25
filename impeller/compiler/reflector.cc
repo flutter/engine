@@ -352,6 +352,8 @@ std::shared_ptr<RuntimeStageData::Shader> Reflector::GenerateRuntimeStageData()
     uniform_description.rows = spir_type.vecsize;
     uniform_description.columns = spir_type.columns;
     uniform_description.bit_width = spir_type.width;
+    uniform_description.binding =
+        compiler_->get_decoration(var.self, spv::Decoration::DecorationBinding);
     uniform_description.array_elements = GetArrayElements(spir_type);
     FML_CHECK(data->backend != RuntimeStageBackend::kVulkan ||
               spir_type.basetype ==

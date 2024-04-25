@@ -10,6 +10,7 @@
 #include "fml/mapping.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/runtime_types.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/runtime_stage/runtime_stage_flatbuffers.h"
 #include "runtime_stage_types_flatbuffers.h"
 
@@ -103,8 +104,9 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
           desc.struct_layout.push_back(static_cast<uint8_t>(byte_type));
         }
       }
+      desc.binding = i->binding();
       desc.struct_float_count = i->struct_float_count();
-      uniforms_.emplace_back(std::move(desc));
+      uniforms_.push_back(std::move(desc));
     }
   }
 
@@ -113,6 +115,22 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
       runtime_stage->shader()->size(),     //
       [payload = payload_](auto, auto) {}  //
   );
+
+  for (const auto& uniform : GetUniforms()) {
+    if (uniform.type == kStruct) {
+      descriptor_set_layouts_.push_back(DescriptorSetLayout{
+          static_cast<uint32_t>(uniform.location),
+          DescriptorType::kUniformBuffer,
+          ShaderStage::kFragment,
+      });
+    } else if (uniform.type == kSampledImage) {
+      descriptor_set_layouts_.push_back(DescriptorSetLayout{
+          uniform.binding,
+          DescriptorType::kSampledImage,
+          ShaderStage::kFragment,
+      });
+    }
+  }
 
   is_valid_ = true;
 }
@@ -158,6 +176,11 @@ bool RuntimeStage::IsDirty() const {
 
 void RuntimeStage::SetClean() {
   is_dirty_ = false;
+}
+
+const std::vector<DescriptorSetLayout>& RuntimeStage::GetDescriptorSetLayouts()
+    const {
+  return descriptor_set_layouts_;
 }
 
 }  // namespace impeller
