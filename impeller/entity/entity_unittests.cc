@@ -2027,69 +2027,6 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(EntityTest, AtlasContentsSubAtlas) {
-  auto boston = CreateTextureForFixture("boston.jpg");
-
-  {
-    auto contents = std::make_shared<AtlasContents>();
-    contents->SetBlendMode(BlendMode::kSourceOver);
-    contents->SetTexture(boston);
-    contents->SetColors({
-        Color::Red(),
-        Color::Red(),
-        Color::Red(),
-    });
-    contents->SetTextureCoordinates({
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-    });
-    contents->SetTransforms({
-        Matrix::MakeTranslation(Vector2(0, 0)),
-        Matrix::MakeTranslation(Vector2(100, 100)),
-        Matrix::MakeTranslation(Vector2(200, 200)),
-    });
-
-    // Since all colors and sample rects are the same, there should
-    // only be a single entry in the sub atlas.
-    auto subatlas = contents->GenerateSubAtlas();
-    ASSERT_EQ(subatlas->sub_texture_coords.size(), 1u);
-  }
-
-  {
-    auto contents = std::make_shared<AtlasContents>();
-    contents->SetBlendMode(BlendMode::kSourceOver);
-    contents->SetTexture(boston);
-    contents->SetColors({
-        Color::Red(),
-        Color::Green(),
-        Color::Blue(),
-    });
-    contents->SetTextureCoordinates({
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-    });
-    contents->SetTransforms({
-        Matrix::MakeTranslation(Vector2(0, 0)),
-        Matrix::MakeTranslation(Vector2(100, 100)),
-        Matrix::MakeTranslation(Vector2(200, 200)),
-    });
-
-    // Since all colors are different, there are three entires.
-    auto subatlas = contents->GenerateSubAtlas();
-    ASSERT_EQ(subatlas->sub_texture_coords.size(), 3u);
-
-    // The translations are kept but the sample rects point into
-    // different parts of the sub atlas.
-    ASSERT_EQ(subatlas->result_texture_coords[0], Rect::MakeXYWH(0, 0, 10, 10));
-    ASSERT_EQ(subatlas->result_texture_coords[1],
-              Rect::MakeXYWH(11, 0, 10, 10));
-    ASSERT_EQ(subatlas->result_texture_coords[2],
-              Rect::MakeXYWH(22, 0, 10, 10));
-  }
-}
-
 static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {
   Vector3 yuv;
   switch (yuv_color_space) {
@@ -2582,24 +2519,6 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
-TEST_P(EntityTest, PointFieldGeometryDivisions) {
-  // Square always gives 4 divisions.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
-
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(12.5, true), 34u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(22.3, true), 22u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(40.5, true), 40u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(100.0, true), 100u);
-  // Caps at 140.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
-}
-
 TEST_P(EntityTest, PointFieldGeometryCoverage) {
   std::vector<Point> points = {{10, 20}, {100, 200}};
   auto geometry = Geometry::MakePointField(points, 5.0, false);
@@ -2688,22 +2607,23 @@ TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
 TEST_P(EntityTest, SpecializationConstantsAreAppliedToVariants) {
   auto content_context = GetContentContext();
 
-  auto default_color_burn = content_context->GetBlendColorBurnPipeline({
+  auto default_gyph = content_context->GetGlyphAtlasPipeline({
       .color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
       .has_depth_stencil_attachments = false,
   });
-  auto alt_color_burn = content_context->GetBlendColorBurnPipeline(
+  auto alt_gyph = content_context->GetGlyphAtlasPipeline(
       {.color_attachment_pixel_format = PixelFormat::kR8G8B8A8UNormInt,
        .has_depth_stencil_attachments = true});
 
-  ASSERT_NE(default_color_burn, alt_color_burn);
-  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
-            alt_color_burn->GetDescriptor().GetSpecializationConstants());
+  EXPECT_NE(default_gyph, alt_gyph);
+  EXPECT_EQ(default_gyph->GetDescriptor().GetSpecializationConstants(),
+            alt_gyph->GetDescriptor().GetSpecializationConstants());
 
-  auto decal_supported = static_cast<Scalar>(
-      GetContext()->GetCapabilities()->SupportsDecalSamplerAddressMode());
-  std::vector<Scalar> expected_constants = {5, decal_supported};
-  ASSERT_EQ(default_color_burn->GetDescriptor().GetSpecializationConstants(),
+  auto use_a8 = GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
+                PixelFormat::kA8UNormInt;
+
+  std::vector<Scalar> expected_constants = {static_cast<Scalar>(use_a8)};
+  EXPECT_EQ(default_gyph->GetDescriptor().GetSpecializationConstants(),
             expected_constants);
 }
 

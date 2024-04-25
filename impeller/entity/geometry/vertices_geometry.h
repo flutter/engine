@@ -27,10 +27,6 @@ class VerticesGeometry final : public Geometry {
 
   ~VerticesGeometry() = default;
 
-  GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
-                                        const Entity& entity,
-                                        RenderPass& pass) const;
-
   GeometryResult GetPositionUVColorBuffer(Rect texture_coverage,
                                           Matrix effect_transform,
                                           const ContentContext& renderer,
@@ -44,9 +40,6 @@ class VerticesGeometry final : public Geometry {
 
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
-
-  // |Geometry|
-  GeometryVertexType GetVertexType() const override;
 
   bool HasVertexColors() const;
 

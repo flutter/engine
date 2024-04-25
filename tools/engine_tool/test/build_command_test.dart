@@ -68,7 +68,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -91,7 +90,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -114,7 +112,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -140,7 +137,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -163,7 +159,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -190,7 +185,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -219,7 +213,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -293,7 +286,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -327,7 +319,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: env,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -351,7 +342,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -360,13 +350,12 @@ void main() {
         '//flutter/fml:fml_arc_unittests',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory.length, greaterThan(6));
-      expect(testEnv.processHistory[6].command[0], contains('ninja'));
-      expect(testEnv.processHistory[6].command[2], endsWith('/host_debug'));
-      expect(
-        testEnv.processHistory[6].command[5],
-        equals('flutter/fml:fml_arc_unittests'),
-      );
+      expect(testEnv.processHistory, containsCommand((List<String> command) {
+        return command.length > 5 &&
+            command[0].contains('ninja') &&
+            command[2].endsWith('/host_debug') &&
+            command[5] == 'flutter/fml:fml_arc_unittests';
+      }));
     } finally {
       testEnv.cleanup();
     }
@@ -380,7 +369,6 @@ void main() {
       final ToolCommandRunner runner = ToolCommandRunner(
         environment: testEnv.environment,
         configs: configs,
-        verbose: true,
       );
       final int result = await runner.run(<String>[
         'build',
@@ -389,21 +377,14 @@ void main() {
         '//flutter/...',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory.length, greaterThan(6));
-      expect(testEnv.processHistory[6].command[0], contains('ninja'));
-      expect(testEnv.processHistory[6].command[2], endsWith('/host_debug'));
-      expect(
-        testEnv.processHistory[6].command[5],
-        equals('flutter/display_list:display_list_unittests'),
-      );
-      expect(
-        testEnv.processHistory[6].command[6],
-        equals('flutter/flow:flow_unittests'),
-      );
-      expect(
-        testEnv.processHistory[6].command[7],
-        equals('flutter/fml:fml_arc_unittests'),
-      );
+      expect(testEnv.processHistory, containsCommand((List<String> command) {
+        return command.length > 7 &&
+            command[0].contains('ninja') &&
+            command[2].endsWith('/host_debug') &&
+            command[5] == 'flutter/display_list:display_list_unittests' &&
+            command[6] == 'flutter/flow:flow_unittests' &&
+            command[7] == 'flutter/fml:fml_arc_unittests';
+      }));
     } finally {
       testEnv.cleanup();
     }
@@ -421,6 +402,7 @@ void main() {
             environment: testEnv.environment,
             configs: configs,
             verbose: true,
+            help: true,
           );
           final int result = await runner.run(<String>[
             'help', 'build',
@@ -438,6 +420,38 @@ void main() {
     );
     for (final String line in prints) {
       expect(line.length, lessThanOrEqualTo(100));
+    }
+  });
+
+  test('non-verbose "et help build" does not contain ci builds', () async {
+    final List<String> prints = <String>[];
+    await runZoned(
+      () async {
+        final TestEnvironment testEnv = TestEnvironment.withTestEngine(
+          cannedProcesses: cannedProcesses,
+        );
+        try {
+          final ToolCommandRunner runner = ToolCommandRunner(
+            environment: testEnv.environment,
+            configs: configs,
+            help: true,
+          );
+          final int result = await runner.run(<String>[
+            'help', 'build',
+          ]);
+          expect(result, equals(0));
+        } finally {
+          testEnv.cleanup();
+        }
+      },
+      zoneSpecification: ZoneSpecification(
+        print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+          prints.addAll(line.split('\n'));
+        },
+      ),
+    );
+    for (final String line in prints) {
+      expect(line.contains('[ci/'), isFalse);
     }
   });
 }
