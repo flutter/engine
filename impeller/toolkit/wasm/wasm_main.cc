@@ -7,18 +7,22 @@
 #include <memory>
 
 #include "flutter/fml/message_loop.h"
+#include "impeller/toolkit/wasm/box_scene.h"
+#include "impeller/toolkit/wasm/impeller_scene.h"
 #include "impeller/toolkit/wasm/swapchain.h"
 #include "impeller/toolkit/wasm/window.h"
 
 static std::shared_ptr<impeller::wasm::Swapchain> gSwapchain;
-static std::shared_ptr<impeller::wasm::Window> gContext;
+static std::shared_ptr<impeller::wasm::Window> gWindow;
 
 int main(int argc, char const* argv[]) {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
-  gContext = std::make_shared<impeller::wasm::Window>();
-  FML_CHECK(gContext->IsValid());
+  gWindow = std::make_shared<impeller::wasm::Window>();
+  FML_CHECK(gWindow->IsValid());
+  gWindow->SetScene(std::make_unique<impeller::wasm::ImpellerScene>());
+  // gWindow->SetScene(std::make_unique<impeller::wasm::BoxScene>());
   gSwapchain = std::make_shared<impeller::wasm::Swapchain>(
-      []() { return gContext->RenderFrame(); });
+      []() { return gWindow->RenderFrame(); });
 
   return 0;
 }

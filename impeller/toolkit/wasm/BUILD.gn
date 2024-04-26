@@ -5,8 +5,14 @@
 executable("wasm") {
   output_name = "wasm.html"
   sources = [
+    "box_scene.cc",
+    "box_scene.h",
+    "impeller_scene.cc",
+    "impeller_scene.h",
     "reactor_worker.cc",
     "reactor_worker.h",
+    "scene.cc",
+    "scene.h",
     "stubs.cc",
     "swapchain.cc",
     "swapchain.h",

@@ -323,7 +323,8 @@ Compiler::Compiler(const std::shared_ptr<const fml::Mapping>& source_mapping,
       target.env = shaderc_target_env::shaderc_target_env_opengl;
       target.version = shaderc_env_version::shaderc_env_version_opengl_4_5;
       target.spirv_version = shaderc_spirv_version::shaderc_spirv_version_1_0;
-
+      spirv_options.optimization_level =
+          shaderc_optimization_level::shaderc_optimization_level_zero;
       spirv_options.target = target;
       spirv_options.macro_definitions.push_back("IMPELLER_GRAPHICS_BACKEND");
     } break;

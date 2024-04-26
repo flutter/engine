@@ -195,7 +195,34 @@ bool Window::Render(RenderTarget& target) {
     VALIDATION_LOG << "Could not submit command queue.";
     return false;
   }
+
+  if (scene_ && !scene_->Render(*context, *pass)) {
+    VALIDATION_LOG << "Could not render scene.";
+    return false;
+  }
+
   return true;
+}
+
+void Window::SetScene(std::unique_ptr<Scene> new_scene) {
+  if (!IsValid()) {
+    VALIDATION_LOG << "Could not set a scene on an invalid window.";
+    return;
+  }
+  auto old_scene = std::move(scene_);
+  if (old_scene) {
+    if (!old_scene->Teardown(*renderer_->GetContext())) {
+      VALIDATION_LOG << "Could not tear down old scene.";
+      return;
+    }
+  }
+  if (new_scene) {
+    if (!new_scene->Setup(*renderer_->GetContext())) {
+      VALIDATION_LOG << "Could not setup new scene.";
+      return;
+    }
+    scene_ = std::move(new_scene);
+  }
 }
 
 }  // namespace impeller::wasm
