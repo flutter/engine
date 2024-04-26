@@ -16,6 +16,7 @@ executable("wasm") {
   ]
   deps = [
     "//flutter/fml",
+    "//flutter/impeller/fixtures:shader_fixtures",
     "//flutter/impeller/renderer",
     "//flutter/impeller/renderer/backend/gles",
     "//flutter/impeller/toolkit/egl",

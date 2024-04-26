@@ -9,6 +9,7 @@
 #include <emscripten.h>
 
 #include "impeller/base/validation.h"
+#include "impeller/fixtures/gles/fixtures_shaders_gles.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
 
 namespace impeller::wasm {
@@ -16,6 +17,15 @@ namespace impeller::wasm {
 static void ClearDepthEmulated(float depth) {}
 
 static void DepthRangeEmulated(float nearVal, float farVal) {}
+
+static std::vector<std::shared_ptr<fml::Mapping>>
+ShaderLibraryMappingsForPlayground() {
+  return {
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_fixtures_shaders_gles_data,
+          impeller_fixtures_shaders_gles_length),
+  };
+}
 
 Window::Window() {
   if (!egl_display_.IsValid()) {
@@ -83,9 +93,10 @@ Window::Window() {
     return;
   }
 
-  auto context = ContextGLES::Create(std::move(gl),  // proc table
-                                     {},             // shader libraries
-                                     false           // enable tracing
+  auto context = ContextGLES::Create(
+      std::move(gl),                         // proc table
+      ShaderLibraryMappingsForPlayground(),  // shader libraries
+      false                                  // enable tracing
   );
   if (!context) {
     VALIDATION_LOG << "Could not create GL context.";
