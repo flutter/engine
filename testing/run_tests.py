@@ -385,6 +385,10 @@ shuffle_flags = [
     '--gtest_shuffle',
 ]
 
+repeat_flags = [
+    '--repeat=2',
+]
+
 
 def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
   logger.info('Running Engine Unit-tests.')
@@ -392,10 +396,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
   if capture_core_dump and is_linux():
     import resource  # pylint: disable=import-outside-toplevel
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
-
-  repeat_flags = [
-      '--repeat=2',
-  ]
 
   def make_test(name, flags=None, extra_env=None):
     if flags is None:
@@ -507,9 +507,10 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
       )
     extra_env = metal_validation_env()
     extra_env.update(vulkan_validation_env(build_dir))
-    mac_impeller_unittests_flags = shuffle_flags + [
+    mac_impeller_unittests_flags = repeat_flags + [
+        '--gtest_filter=-*OpenGLES',  # These are covered in the golden tests.
+        '--',
         '--enable_vulkan_validation',
-        '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
     ]
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
@@ -519,6 +520,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         mac_impeller_unittests_flags,
         coverage=coverage,
         extra_env=extra_env,
+        gtest=True,
         # TODO(https://github.com/flutter/flutter/issues/123733): Remove this allowlist.
         # See also https://github.com/flutter/flutter/issues/114872.
         allowed_failure_output=[
@@ -1051,7 +1053,7 @@ class DirectoryChange():
     os.chdir(self.old_cwd)
 
 
-def run_impeller_golden_tests(build_dir: str):
+def run_impeller_golden_tests(build_dir: str, require_skia_gold: bool = False):
   """
   Executes the impeller golden image tests from in the `variant` build.
   """
@@ -1083,10 +1085,27 @@ def run_impeller_golden_tests(build_dir: str):
       print(diff_result.stdout.decode())
       raise RuntimeError('impeller_golden_tests diff failure')
 
+    if not require_skia_gold:
+      print_divider('<')
+      print('Skipping any SkiaGoldClient invocation as the --no-skia-gold flag was set.')
+      return
+
     # On release builds and local builds, we typically do not have GOLDCTL set,
     # which on other words means that this invoking the SkiaGoldClient would
     # throw. Skip this step in those cases and log a notice.
     if 'GOLDCTL' not in os.environ:
+      # On CI, we never want to be running golden tests without Skia Gold.
+      # See https://github.com/flutter/flutter/issues/147180 as an example.
+      is_luci = 'LUCI_CONTEXT' in os.environ
+      if is_luci:
+        raise RuntimeError(
+            """
+The GOLDCTL environment variable is not set. This is required for Skia Gold tests.
+See https://github.com/flutter/engine/tree/main/testing/skia_gold_client#configuring-ci
+for more information.
+"""
+        )
+
       print_divider('<')
       print(
           'Skipping the SkiaGoldClient invocation as the GOLDCTL environment variable is not set.'
@@ -1221,6 +1240,13 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       type=str,
       help='The directory that verbose logs will be copied to in --quiet mode.',
   )
+  parser.add_argument(
+      '--no-skia-gold',
+      dest='no_skia_gold',
+      action='store_true',
+      default=False,
+      help='Do not compare golden images with Skia Gold.',
+  )
 
   args = parser.parse_args()
 
@@ -1272,9 +1298,10 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
           build_dir,
           'impeller_unittests',
           engine_filter,
-          shuffle_flags,
+          repeat_flags,
           coverage=args.coverage,
-          extra_env=extra_env
+          extra_env=extra_env,
+          gtest=True
       )
     finally:
       xvfb.stop_virtual_x(build_name)
@@ -1338,7 +1365,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     run_cmd(cmd, cwd=FONT_SUBSET_DIR)
 
   if 'impeller-golden' in types:
-    run_impeller_golden_tests(build_dir)
+    run_impeller_golden_tests(build_dir, require_skia_gold=not args.no_skia_gold)
 
   if args.quiet and args.logs_dir:
     shutil.copy(LOG_FILE, os.path.join(args.logs_dir, 'run_tests.log'))

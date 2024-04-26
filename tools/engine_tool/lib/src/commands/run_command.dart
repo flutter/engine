@@ -18,13 +18,19 @@ final class RunCommand extends CommandBase {
   RunCommand({
     required super.environment,
     required Map<String, BuilderConfig> configs,
+    super.verbose = false,
+    super.help = false,
+    super.usageLineLength,
   }) {
-    builds = runnableBuilds(environment, configs);
+    // When printing the help/usage for this command, only list all builds
+    // when the --verbose flag is supplied.
+    final bool includeCiBuilds = verbose || !help;
+    builds = runnableBuilds(environment, configs, includeCiBuilds);
     debugCheckBuilds(builds);
     // We default to nothing in order to automatically detect attached devices
     // and select an appropriate target from them.
     addConfigOption(
-      environment, argParser, runnableBuilds(environment, configs),
+      environment, argParser, builds,
       defaultsTo: '',
     );
     argParser.addFlag(

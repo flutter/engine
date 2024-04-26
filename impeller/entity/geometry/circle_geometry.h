@@ -34,17 +34,7 @@ class CircleGeometry final : public Geometry {
                                    RenderPass& pass) const override;
 
   // |Geometry|
-  GeometryVertexType GetVertexType() const override;
-
-  // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                     Matrix effect_transform,
-                                     const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) const override;
 
   Point center_;
   Scalar radius_;

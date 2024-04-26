@@ -486,31 +486,36 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void checkForDeferredSave();
 
   DisplayListStorage storage_;
-  size_t used_ = 0;
-  size_t allocated_ = 0;
-  int render_op_count_ = 0;
+  size_t used_ = 0u;
+  size_t allocated_ = 0u;
+  uint32_t render_op_count_ = 0u;
+  uint32_t depth_ = 0u;
+  // Most rendering ops will use 1 depth value, but some attributes may
+  // require an additional depth value (due to implicit saveLayers)
+  uint32_t render_op_depth_cost_ = 1u;
   int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
-  int nested_op_count_ = 0;
+  uint32_t nested_op_count_ = 0;
 
   bool is_ui_thread_safe_ = true;
 
   template <typename T, typename... Args>
-  void* Push(size_t extra, int op_inc, Args&&... args);
+  void* Push(size_t extra, Args&&... args);
 
   void intersect(const SkRect& rect);
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
   static bool mask_sigma_valid(SkScalar sigma) {
-    return SkScalarIsFinite(sigma) && sigma > 0.0;
+    return std::isfinite(sigma) && sigma > 0.0;
   }
 
   class SaveInfo {
    public:
-    explicit SaveInfo(size_t save_offset = 0) : save_offset_(save_offset) {}
+    explicit SaveInfo(size_t save_offset = 0, uint32_t start_depth = 0)
+        : save_offset_(save_offset), start_depth_(start_depth) {}
 
     // The offset into the memory buffer where the save DLOp record
     // for this save() call is placed. This may be needed if the
@@ -587,6 +592,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
    private:
     size_t save_offset_;
+    uint32_t start_depth_;
     bool is_save_layer_ = false;
     bool cannot_inherit_opacity_ = false;
     bool has_compatible_op_ = false;

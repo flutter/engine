@@ -229,6 +229,30 @@ void _testEngineSemanticsOwner() {
     expect(semantics().mode, AccessibilityMode.unknown);
   });
 
+  // Expecting the following DOM structure by default:
+  //
+  // <body>
+  //   <flt-announcement-host>
+  //     <flt-announcement-polite></flt-announcement-polite>
+  //     <flt-announcement-assertive></flt-announcement-assertive>
+  //   </flt-announcement-host>
+  // </body>
+  test('places accessibility announcements in the <body> tag', () {
+    final AccessibilityAnnouncements accessibilityAnnouncements = semantics().accessibilityAnnouncements;
+    final DomElement politeElement = accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite);
+    final DomElement assertiveElement = accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive);
+    final DomElement announcementHost = politeElement.parent!;
+
+    // Polite and assertive elements share the same host.
+    expect(
+      assertiveElement.parent,
+      announcementHost,
+    );
+
+    // The host is a direct child of <body>
+    expect(announcementHost.parent, domDocument.body);
+  });
+
   test('accessibilityFeatures copyWith function works', () {
     const EngineAccessibilityFeatures original = EngineAccessibilityFeatures(0);
     EngineAccessibilityFeatures copy =
@@ -1744,12 +1768,24 @@ void _testTextField() {
     );
 
     owner().updateSemantics(builder.build());
+
     expectSemanticsTree(owner(), '''
 <sem style="$rootSemanticStyle">
-  <input value="hello" />
+  <input />
 </sem>''');
 
+
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
+
+    // TODO(yjbanov): this used to attempt to test that value="hello" but the
+    //                test was a false positive. We should revise this test and
+    //                make sure it tests the right things:
+    //                https://github.com/flutter/flutter/issues/147200
+    expect(
+      (node.element as DomHTMLInputElement).value,
+      isNull,
+    );
+
     expect(node.primaryRole?.role, PrimaryRole.textField);
     expect(
       reason: 'Text fields use custom focus management',

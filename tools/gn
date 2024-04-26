@@ -212,6 +212,13 @@ def buildtools_dir():
   return '%s-%s' % (host_os, host_cpu)
 
 
+def get_dart_path():
+  new_dart_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'dart')
+  if os.path.exists(new_dart_path):
+    return new_dart_path
+  return os.path.join(SRC_ROOT, 'third_party', 'dart')
+
+
 def setup_rbe(args):
   rbe_gn_args = {}
   # RBE is default-off. If it is not asked for, then silently keep all default
@@ -380,8 +387,7 @@ def setup_git_versions():
   skia_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'skia')
   revision_args['skia_version'] = get_repository_version(skia_path)
 
-  dart_path = os.path.join(SRC_ROOT, 'third_party', 'dart')
-  revision_args['dart_version'] = get_repository_version(dart_path)
+  revision_args['dart_version'] = get_repository_version(get_dart_path())
 
   return revision_args
 
@@ -570,11 +576,12 @@ def to_gn_args(args):
   if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
-  if gn_args['target_os'] == 'ios':
-    gn_args['use_ios_simulator'] = args.simulator
-    gn_args.update(setup_apple_sdks())
-  elif get_host_os() == 'mac':
-    gn_args['use_ios_simulator'] = False
+  if gn_args['target_os'] == 'ios' or get_host_os() == 'mac':
+    if gn_args['target_os'] == 'ios':
+      gn_args['use_ios_simulator'] = args.simulator
+    else:
+      gn_args['use_ios_simulator'] = False
+    gn_args['ios_use_simulator'] = gn_args['use_ios_simulator']
     gn_args.update(setup_apple_sdks())
 
   if args.dart_debug:
@@ -609,7 +616,7 @@ def to_gn_args(args):
   # Hardcoding this avoids invoking a relatively expensive python script from
   # GN, but removes the ability to use git-worktrees in the Dart checkout from
   # within the Engine repo, but it's unlikely anyone is using that.
-  gn_args['default_git_folder'] = os.path.join(SRC_ROOT, 'third_party', 'dart', '.git')
+  gn_args['default_git_folder'] = os.path.join(get_dart_path(), '.git')
 
   # By default, the Dart GN build will invoke a relatively expensive python
   # script to calculate an SDK "hash" that ensures compatibility between the
@@ -875,7 +882,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_gl_standard'] = 'webgl'
   gn_args['skia_enable_ganesh'] = True
   gn_args['skia_enable_skottie'] = False
-  gn_args['skia_enable_sksl_tracing'] = False
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
   gn_args['skia_use_harfbuzz'] = True
@@ -911,8 +917,6 @@ def run_impeller_cmake(args):
   if not os.path.isdir(os.path.join(SRC_ROOT, impeller_cmake_dir)):
     print('The Impeller cmake example directory "{}" does not exist'.format(impeller_cmake_dir))
     return 1
-  goma_gn_args = setup_goma(args)
-  goma_dir = goma_gn_args['goma_dir']
   cmake_cmd = [
       'python3',
       os.path.join(SRC_ROOT, 'flutter', 'ci', 'impeller_cmake_build_test.py'),
@@ -920,8 +924,6 @@ def run_impeller_cmake(args):
       impeller_cmake_dir,
       '--cmake',
   ]
-  if goma_dir is not None:
-    cmake_cmd = cmake_cmd + ['--goma-dir', goma_dir]
   if args.xcode_symlinks:
     cmake_cmd = cmake_cmd + ['--xcode-symlinks']
   try:

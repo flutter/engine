@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "flutter/testing/testing.h"
+#include "gtest/gtest.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
@@ -938,19 +939,17 @@ TEST_P(AiksTest, CanDrawPaintMultipleTimes) {
 }
 
 // This makes sure the WideGamut named tests use 16bit float pixel format.
-TEST_P(AiksTest, F16WideGamut) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
-  }
+TEST_P(AiksTest, FormatWideGamut) {
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
-            PixelFormat::kR16G16B16A16Float);
-  EXPECT_FALSE(IsAlphaClampedToOne(
-      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+            PixelFormat::kB10G10R10A10XR);
 }
 
-TEST_P(AiksTest, NotF16) {
-  EXPECT_TRUE(IsAlphaClampedToOne(
-      GetContext()->GetCapabilities()->GetDefaultColorFormat()));
+TEST_P(AiksTest, FormatSRGB) {
+  PixelFormat pixel_format =
+      GetContext()->GetCapabilities()->GetDefaultColorFormat();
+  EXPECT_TRUE(pixel_format == PixelFormat::kR8G8B8A8UNormInt ||
+              pixel_format == PixelFormat::kB8G8R8A8UNormInt)
+      << "pixel format: " << PixelFormatToString(pixel_format);
 }
 
 TEST_P(AiksTest, TransformMultipliesCorrectly) {
@@ -2766,6 +2765,38 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
+  Canvas canvas;
+  Paint paint;
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+  paint.color_source =
+      ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
+                             Entity::TileMode::kClamp, {}, Matrix());
+
+  auto vertices = {
+      Point(0, 0),
+      Point(texture->GetSize().width, 0),
+      Point(0, texture->GetSize().height),
+      Point(texture->GetSize().width, 0),
+      Point(0, 0),
+      Point(texture->GetSize().width, texture->GetSize().height),
+  };
+  std::vector<uint16_t> indices = {};
+  std::vector<Point> texture_coordinates = {};
+  std::vector<Color> vertex_colors = {
+      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
+      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
+      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
+  };
+  auto geometry = std::make_shared<VerticesGeometry>(
+      vertices, indices, texture_coordinates, vertex_colors,
+      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
+
+  canvas.DrawVertices(geometry, BlendMode::kColorBurn, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, MatrixImageFilterMagnify) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -2961,10 +2992,10 @@ TEST_P(AiksTest, CorrectClipDepthAssignedToEntities) {
 
   picture.pass->IterateAllElements([&](EntityPass::Element& element) -> bool {
     if (auto* subpass = std::get_if<std::unique_ptr<EntityPass>>(&element)) {
-      actual.push_back(subpass->get()->GetNewClipDepth());
+      actual.push_back(subpass->get()->GetClipDepth());
     }
     if (Entity* entity = std::get_if<Entity>(&element)) {
-      actual.push_back(entity->GetNewClipDepth());
+      actual.push_back(entity->GetClipDepth());
     }
     return true;
   });
@@ -3107,12 +3138,8 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
 }
 
 TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
-  }
-
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
-            PixelFormat::kR16G16B16A16Float);
+            PixelFormat::kB10G10R10A10XR);
 
   // Draws the image as four squares stiched together.
   auto atlas =
@@ -3139,6 +3166,47 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   canvas.DrawAtlas(atlas, transforms, texture_coordinates, colors,
                    BlendMode::kPlus, {}, std::nullopt, {});
 
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// https://github.com/flutter/flutter/issues/146648
+TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
+  Path path = PathBuilder{}
+                  .MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  .LineTo({400, 0})
+                  // MoveTo implicitly adds a contour, ensure that close doesn't
+                  // add another nearly-empty contour.
+                  .MoveTo({0, 400})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.Translate({50, 50, 0});
+  canvas.DrawPath(path, {
+                            .color = Color::Blue(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
+  // Verifies that text scales are clamped to work around
+  // https://github.com/flutter/flutter/issues/136112 .
+
+  Canvas canvas;
+  Paint save_paint;
+  canvas.SaveLayer(save_paint);
+  canvas.Transform(Matrix(2000, 0, 0, 0,   //
+                          0, 2000, 0, 0,   //
+                          0, 0, -1, 9000,  //
+                          0, 0, -1, 7000   //
+                          ));
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
+                                     "Roboto-Regular.ttf"));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
