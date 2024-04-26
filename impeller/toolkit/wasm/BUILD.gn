@@ -5,14 +5,14 @@
 executable("wasm") {
   output_name = "wasm.html"
   sources = [
-    "context.cc",
-    "context.h",
     "reactor_worker.cc",
     "reactor_worker.h",
     "stubs.cc",
     "swapchain.cc",
     "swapchain.h",
     "wasm_main.cc",
+    "window.cc",
+    "window.h",
   ]
   deps = [
     "//flutter/fml",

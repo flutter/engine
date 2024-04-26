@@ -14,26 +14,26 @@
 
 namespace impeller::wasm {
 
-class Context {
+class Window {
  public:
-  Context();
+  Window();
 
-  ~Context();
+  ~Window();
 
-  Context(const Context&) = delete;
+  Window(const Window&) = delete;
 
-  Context& operator=(const Context&) = delete;
+  Window& operator=(const Window&) = delete;
 
   bool IsValid() const;
 
   bool RenderFrame();
 
  private:
-  egl::Display display_;
-  std::shared_ptr<egl::Context> context_;
-  std::shared_ptr<egl::Surface> surface_;
-  std::shared_ptr<ContextGLES> renderer_context_;
-  std::shared_ptr<ReactorWorker> reactor_worker_;
+  egl::Display egl_display_;
+  std::shared_ptr<egl::Context> egl_context_;
+  std::shared_ptr<egl::Surface> egl_surface_;
+  std::shared_ptr<ContextGLES> context_;
+  std::shared_ptr<ReactorWorker> worker_;
   std::shared_ptr<Renderer> renderer_;
   bool is_valid_ = false;
 

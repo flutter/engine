@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/impeller/toolkit/wasm/context.h"
+#include "flutter/impeller/toolkit/wasm/window.h"
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -17,41 +17,44 @@ static void ClearDepthEmulated(float depth) {}
 
 static void DepthRangeEmulated(float nearVal, float farVal) {}
 
-Context::Context() {
-  if (!display_.IsValid()) {
+Window::Window() {
+  if (!egl_display_.IsValid()) {
     VALIDATION_LOG << "Could not create EGL display connection.";
     return;
   }
 
-  egl::ConfigDescriptor desc;
-  desc.api = egl::API::kOpenGLES2;
-  desc.samples = egl::Samples::kOne;
-  desc.color_format = egl::ColorFormat::kRGBA8888;
-  desc.stencil_bits = egl::StencilBits::kZero;
-  desc.depth_bits = egl::DepthBits::kZero;
-  desc.surface_type = egl::SurfaceType::kWindow;
+  emscripten_set_window_title("Impeller on Wasm");
+  emscripten_set_canvas_size(1280, 800);
 
-  auto config = display_.ChooseConfig(desc);
-  if (!config) {
+  egl::ConfigDescriptor egl_desc;
+  egl_desc.api = egl::API::kOpenGLES2;
+  egl_desc.samples = egl::Samples::kOne;
+  egl_desc.color_format = egl::ColorFormat::kRGBA8888;
+  egl_desc.stencil_bits = egl::StencilBits::kZero;
+  egl_desc.depth_bits = egl::DepthBits::kZero;
+  egl_desc.surface_type = egl::SurfaceType::kWindow;
+
+  auto egl_config = egl_display_.ChooseConfig(egl_desc);
+  if (!egl_config) {
     VALIDATION_LOG << "Could not choose an EGL config.";
     return;
   }
 
-  auto context = display_.CreateContext(*config, nullptr);
-  if (!context) {
+  auto egl_context = egl_display_.CreateContext(*egl_config, nullptr);
+  if (!egl_context) {
     VALIDATION_LOG << "Could not create EGL context.";
     return;
   }
 
   // The native window type is NULL for emscripten as documented in
   // https://emscripten.org/docs/porting/multimedia_and_graphics/EGL-Support-in-Emscripten.html
-  auto surface = display_.CreateWindowSurface(*config, NULL);
-  if (!surface) {
+  auto egl_surface = egl_display_.CreateWindowSurface(*egl_config, NULL);
+  if (!egl_surface) {
     VALIDATION_LOG << "Could not create EGL surface.";
     return;
   }
 
-  if (!context->MakeCurrent(*surface)) {
+  if (!egl_context->MakeCurrent(*egl_surface)) {
     VALIDATION_LOG << "Could not make context current.";
     return;
   }
@@ -80,55 +83,55 @@ Context::Context() {
     return;
   }
 
-  auto renderer_context = ContextGLES::Create(std::move(gl),  // proc table
-                                              {},    // shader libraries
-                                              false  // enable tracing
+  auto context = ContextGLES::Create(std::move(gl),  // proc table
+                                     {},             // shader libraries
+                                     false           // enable tracing
   );
-  if (!renderer_context) {
+  if (!context) {
     VALIDATION_LOG << "Could not create GL context.";
     return;
   }
 
   auto worker = std::make_shared<ReactorWorker>();
 
-  if (!renderer_context->AddReactorWorker(worker).has_value()) {
+  if (!context->AddReactorWorker(worker).has_value()) {
     VALIDATION_LOG << "Could not add reactor worker.";
     return;
   }
 
-  auto renderer = std::make_shared<Renderer>(renderer_context);
+  auto renderer = std::make_shared<Renderer>(context);
   if (!renderer || !renderer->IsValid()) {
     VALIDATION_LOG << "Could not create renderer.";
     return;
   }
 
-  surface_ = std::move(surface);
+  egl_surface_ = std::move(egl_surface);
+  egl_context_ = std::move(egl_context);
   context_ = std::move(context);
-  renderer_context_ = std::move(renderer_context);
   renderer_ = std::move(renderer);
-  reactor_worker_ = std::move(worker);
+  worker_ = std::move(worker);
   is_valid_ = true;
 }
 
-Context::~Context() = default;
+Window::~Window() = default;
 
-bool Context::IsValid() const {
+bool Window::IsValid() const {
   return is_valid_;
 }
 
-bool Context::RenderFrame() {
+bool Window::RenderFrame() {
   if (!IsValid()) {
     VALIDATION_LOG << "Context was invalid.";
     return false;
   }
 
-  if (!context_->MakeCurrent(*surface_)) {
+  if (!egl_context_->MakeCurrent(*egl_surface_)) {
     VALIDATION_LOG << "Could not make the context current.";
     return false;
   }
 
   SurfaceGLES::SwapCallback swap_callback =
-      [surface = surface_, renderer_context = renderer_context_]() -> bool {
+      [surface = egl_surface_, renderer_context = context_]() -> bool {
     if (!renderer_context->GetReactor()->React()) {
       VALIDATION_LOG << "Could not commit reactions.";
       return false;
@@ -136,7 +139,7 @@ bool Context::RenderFrame() {
     return surface->Present();
   };
   auto surface =
-      SurfaceGLES::WrapFBO(renderer_context_,               // context
+      SurfaceGLES::WrapFBO(context_,                        // context
                            swap_callback,                   // swap callback
                            0u,                              // fbo
                            PixelFormat::kR8G8B8A8UNormInt,  // pixel format
@@ -159,7 +162,7 @@ bool Context::RenderFrame() {
   return true;
 }
 
-ISize Context::GetWindowSize() const {
+ISize Window::GetWindowSize() const {
   int width = 0;
   int height = 0;
   int fullscreen = 0;
@@ -168,7 +171,7 @@ ISize Context::GetWindowSize() const {
                        std::max<uint32_t>(0u, height));
 }
 
-bool Context::Render(RenderTarget& target) {
+bool Window::Render(RenderTarget& target) {
   auto context = renderer_->GetContext();
   auto cmd_buffer = context->CreateCommandBuffer();
   auto pass = cmd_buffer->CreateRenderPass(target);
