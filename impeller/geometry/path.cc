@@ -107,6 +107,7 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
   auto& path_components = data_->components;
   auto& path_points = data_->points;
   bool started_contour = false;
+  bool first_point = true;
 
   for (size_t component_i = 0; component_i < path_components.size();
        component_i++) {
@@ -116,6 +117,10 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
         const LinearPathComponent* linear =
             reinterpret_cast<const LinearPathComponent*>(
                 &path_points[path_component.index]);
+        if (first_point) {
+          writer.Write(linear->p1);
+          first_point = false;
+        }
         writer.Write(linear->p2);
         break;
       }
@@ -123,6 +128,10 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
         const QuadraticPathComponent* quad =
             reinterpret_cast<const QuadraticPathComponent*>(
                 &path_points[path_component.index]);
+        if (first_point) {
+          writer.Write(quad->p1);
+          first_point = false;
+        }
         quad->ToLinearPathComponents(scale, writer);
         break;
       }
@@ -130,6 +139,10 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
         const CubicPathComponent* cubic =
             reinterpret_cast<const CubicPathComponent*>(
                 &path_points[path_component.index]);
+        if (first_point) {
+          writer.Write(cubic->p1);
+          first_point = false;
+        }
         cubic->ToLinearPathComponents(scale, writer);
         break;
       }
@@ -148,8 +161,7 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
           writer.EndContour();
         }
         started_contour = true;
-        const ContourComponent& component = data_->contours[component_i];
-        writer.Write(component.destination);
+        first_point = false;
     }
   }
   if (started_contour) {
