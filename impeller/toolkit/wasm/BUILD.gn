@@ -6,8 +6,8 @@ executable("wasm") {
   testonly = true
   output_name = "wasm.html"
   sources = [
-    "box_scene.cc",
-    "box_scene.h",
+    "compressed_image.cc",
+    "compressed_image.h",
     "fixtures_store.cc",
     "fixtures_store.h",
     "impeller_scene.cc",
@@ -41,4 +41,5 @@ executable("wasm") {
     "-s",
     "FETCH",
   ]
+  include_dirs = [ "//flutter/third_party/stb" ]
 }

@@ -41,9 +41,11 @@ class ImpellerScene final : public Scene {
 
   Scalar GetSecondsElapsed() const;
 
-  std::shared_ptr<Texture> CreateTextureForFixture(const char* fixture) const;
+  std::shared_ptr<Texture> CreateTextureForFixture(const Context& context,
+                                                   const char* fixture) const;
 
   std::shared_ptr<Texture> CreateTextureCubeForFixture(
+      const Context& context,
       std::array<const char*, 6> fixture_names) const;
 };
 

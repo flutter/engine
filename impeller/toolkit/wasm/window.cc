@@ -187,6 +187,10 @@ bool Window::Render(RenderTarget& target) {
   auto cmd_buffer = context->CreateCommandBuffer();
   auto pass = cmd_buffer->CreateRenderPass(target);
   pass->SetLabel("Root Render Pass");
+  if (scene_ && !scene_->Render(*context, *pass)) {
+    VALIDATION_LOG << "Could not render scene.";
+    return false;
+  }
   if (!pass->EncodeCommands()) {
     VALIDATION_LOG << "Could not encode commands.";
     return false;
@@ -195,12 +199,6 @@ bool Window::Render(RenderTarget& target) {
     VALIDATION_LOG << "Could not submit command queue.";
     return false;
   }
-
-  if (scene_ && !scene_->Render(*context, *pass)) {
-    VALIDATION_LOG << "Could not render scene.";
-    return false;
-  }
-
   return true;
 }
 

@@ -10,6 +10,7 @@
 #include "impeller/fixtures/impeller.vert.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
+#include "impeller/toolkit/wasm/compressed_image.h"
 #include "impeller/toolkit/wasm/fixtures_store.h"
 
 namespace impeller::wasm {
@@ -31,12 +32,13 @@ bool ImpellerScene::Setup(const Context& context) {
       context.GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   FML_CHECK(pipeline && pipeline->IsValid());
   pipeline_ = pipeline;
-  blue_noise_ = CreateTextureForFixture("blue_noise.png");
+  blue_noise_ = CreateTextureForFixture(context, "blue_noise.png");
   cube_map_ = CreateTextureCubeForFixture(
-      {"table_mountain_px.png", "table_mountain_nx.png",
-       "table_mountain_py.png", "table_mountain_ny.png",
-       "table_mountain_pz.png", "table_mountain_nz.png"});
-  FML_CHECK(blue_noise_ && cube_map_);
+      context, {"table_mountain_px.png", "table_mountain_nx.png",
+                "table_mountain_py.png", "table_mountain_ny.png",
+                "table_mountain_pz.png", "table_mountain_nz.png"});
+  FML_CHECK(blue_noise_);
+  FML_CHECK(cube_map_);
   return true;
 }
 
@@ -89,22 +91,59 @@ Scalar ImpellerScene::GetSecondsElapsed() const {
 }
 
 std::shared_ptr<Texture> ImpellerScene::CreateTextureCubeForFixture(
+    const Context& context,
     std::array<const char*, 6> fixture_names) const {
-  return nullptr;
+  std::vector<DecompressedImage> images;
+  for (const auto& image_name : fixture_names) {
+    auto compressed_image = GetDefaultStore()->GetMapping(image_name);
+    if (!compressed_image) {
+      VALIDATION_LOG << "Could not load compressed image: " << image_name;
+      return nullptr;
+    }
+    auto decompressed = CreateDecompressedTextureMapping(*compressed_image);
+    if (!decompressed.mapping) {
+      VALIDATION_LOG << "Could not decompress image: " << image_name;
+      return nullptr;
+    }
+    images.emplace_back(decompressed);
+  }
+
+  auto texture_descriptor = TextureDescriptor{};
+  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  texture_descriptor.type = TextureType::kTextureCube;
+  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_descriptor.size = images[0].size;
+  texture_descriptor.mip_count = 1u;
+
+  auto texture =
+      context.GetResourceAllocator()->CreateTexture(texture_descriptor);
+  if (!texture) {
+    VALIDATION_LOG << "Could not allocate texture cube.";
+    return nullptr;
+  }
+  texture->SetLabel("Texture cube");
+
+  for (size_t i = 0; i < fixture_names.size(); i++) {
+    auto uploaded = texture->SetContents(images[i].mapping->GetMapping(),
+                                         images[i].mapping->GetSize(), i);
+    if (!uploaded) {
+      VALIDATION_LOG << "Could not upload texture to device memory.";
+      return nullptr;
+    }
+  }
+
+  return texture;
 }
 
 std::shared_ptr<Texture> ImpellerScene::CreateTextureForFixture(
+    const Context& context,
     const char* fixture) const {
   std::shared_ptr<fml::Mapping> mapping =
       GetDefaultStore()->GetMapping(fixture);
-  FML_CHECK(mapping);
-  return nullptr;
-  // auto result = Playground::CreateTextureForMapping(GetContext(), mapping,
-  //                                                   enable_mipmapping);
-  // if (result) {
-  //   result->SetLabel(fixture_name);
-  // }
-  // return result;
+  if (!mapping) {
+    return nullptr;
+  }
+  return CreateTextureFromCompressedImageData(context, *mapping);
 }
 
 }  // namespace impeller::wasm
