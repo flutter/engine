@@ -3,10 +3,13 @@
 # found in the LICENSE file.
 
 executable("wasm") {
+  testonly = true
   output_name = "wasm.html"
   sources = [
     "box_scene.cc",
     "box_scene.h",
+    "fixtures_store.cc",
+    "fixtures_store.h",
     "impeller_scene.cc",
     "impeller_scene.h",
     "reactor_worker.cc",
@@ -22,6 +25,7 @@ executable("wasm") {
   ]
   deps = [
     "//flutter/fml",
+    "//flutter/impeller/fixtures:file_fixtures",
     "//flutter/impeller/fixtures:shader_fixtures",
     "//flutter/impeller/renderer",
     "//flutter/impeller/renderer/backend/gles",
@@ -34,5 +38,7 @@ executable("wasm") {
   ldflags = [
     "-s",
     "USE_WEBGL2=1",
+    "-s",
+    "FETCH",
   ]
 }

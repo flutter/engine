@@ -10,6 +10,7 @@
 #include "impeller/fixtures/impeller.vert.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
+#include "impeller/toolkit/wasm/fixtures_store.h"
 
 namespace impeller::wasm {
 
@@ -94,7 +95,16 @@ std::shared_ptr<Texture> ImpellerScene::CreateTextureCubeForFixture(
 
 std::shared_ptr<Texture> ImpellerScene::CreateTextureForFixture(
     const char* fixture) const {
+  std::shared_ptr<fml::Mapping> mapping =
+      GetDefaultStore()->GetMapping(fixture);
+  FML_CHECK(mapping);
   return nullptr;
+  // auto result = Playground::CreateTextureForMapping(GetContext(), mapping,
+  //                                                   enable_mipmapping);
+  // if (result) {
+  //   result->SetLabel(fixture_name);
+  // }
+  // return result;
 }
 
 }  // namespace impeller::wasm

@@ -8,6 +8,7 @@
 
 #include "flutter/fml/message_loop.h"
 #include "impeller/toolkit/wasm/box_scene.h"
+#include "impeller/toolkit/wasm/fixtures_store.h"
 #include "impeller/toolkit/wasm/impeller_scene.h"
 #include "impeller/toolkit/wasm/swapchain.h"
 #include "impeller/toolkit/wasm/window.h"
@@ -17,12 +18,15 @@ static std::shared_ptr<impeller::wasm::Window> gWindow;
 
 int main(int argc, char const* argv[]) {
   fml::MessageLoop::EnsureInitializedForCurrentThread();
-  gWindow = std::make_shared<impeller::wasm::Window>();
-  FML_CHECK(gWindow->IsValid());
-  gWindow->SetScene(std::make_unique<impeller::wasm::ImpellerScene>());
-  // gWindow->SetScene(std::make_unique<impeller::wasm::BoxScene>());
-  gSwapchain = std::make_shared<impeller::wasm::Swapchain>(
-      []() { return gWindow->RenderFrame(); });
-
+  static std::shared_ptr<impeller::wasm::FixturesStore> gStore =
+      std::make_shared<impeller::wasm::FixturesStore>([]() {
+        impeller::wasm::SetDefaultStore(gStore);
+        gWindow = std::make_shared<impeller::wasm::Window>();
+        FML_CHECK(gWindow->IsValid());
+        gWindow->SetScene(std::make_unique<impeller::wasm::ImpellerScene>());
+        // gWindow->SetScene(std::make_unique<impeller::wasm::BoxScene>());
+        gSwapchain = std::make_shared<impeller::wasm::Swapchain>(
+            []() { return gWindow->RenderFrame(); });
+      });
   return 0;
 }
