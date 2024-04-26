@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io show Directory, File, Platform, ProcessSignal, stderr;
 import 'dart:convert' show jsonEncode;
+import 'dart:io' as io show Directory, File, Platform, ProcessSignal, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
@@ -621,7 +621,7 @@ Future<int> main(List<String> args) async {
     );
     final String firstFilePath = (await fileListFixture.tool.computeFilesOfInterest()).first.path;
 
-    FakeProcessManager fakeProcessManager = FakeProcessManager(
+    final FakeProcessManager fakeProcessManager = FakeProcessManager(
       onStart: (List<String> command) {
         if (command.first.endsWith('clang-tidy')) {
           return FakeProcess(exitCode: -io.ProcessSignal.sigsegv.signalNumber);
@@ -638,7 +638,7 @@ Future<int> main(List<String> args) async {
       },
     ];
 
-    io.File commands = io.File(path.join(
+    final io.File commands = io.File(path.join(
         io.Directory.systemTemp.path, 'test_compile_commands.json'));
     int result;
     try {
