@@ -40,6 +40,8 @@ executable("wasm") {
     "USE_WEBGL2=1",
     "-s",
     "FETCH",
+    "--shell-file",
+    rebase_path("shell_minimal.html"),
   ]
   include_dirs = [ "//flutter/third_party/stb" ]
 }

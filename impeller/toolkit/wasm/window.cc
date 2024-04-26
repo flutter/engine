@@ -34,7 +34,7 @@ Window::Window() {
   }
 
   emscripten_set_window_title("Impeller on Wasm");
-  emscripten_set_canvas_size(1280, 800);
+  emscripten_set_canvas_size(1920, 1080);
 
   egl::ConfigDescriptor egl_desc;
   egl_desc.api = egl::API::kOpenGLES2;
