@@ -927,7 +927,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       hint,
       hintAttributes,
       tooltip,
-      textDirection != null ? textDirection.index + 1 : 0,
+      textDirection.index + 1,
       transform,
       childrenInTraversalOrder,
       childrenInHitTestOrder,
