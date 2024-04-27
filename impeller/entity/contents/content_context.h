@@ -39,14 +39,12 @@
 #include "impeller/entity/gaussian.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/porter_duff_blend.vert.h"
-#include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -59,7 +57,6 @@
 #include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/texture_uv_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 
 #include "impeller/typographer/glyph_atlas.h"
@@ -151,15 +148,11 @@ using YUVToRGBFilterPipeline =
 
 using GlyphAtlasPipeline =
     RenderPipelineHandle<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
-using GlyphAtlasColorPipeline =
-    RenderPipelineHandle<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
+
 using PorterDuffBlendPipeline =
     RenderPipelineHandle<PorterDuffBlendVertexShader,
                          PorterDuffBlendFragmentShader>;
 using ClipPipeline = RenderPipelineHandle<ClipVertexShader, ClipFragmentShader>;
-
-using GeometryColorPipeline =
-    RenderPipelineHandle<PositionColorVertexShader, VerticesFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline = RenderPipelineHandle<AdvancedBlendVertexShader,
@@ -269,10 +262,11 @@ using TiledTextureExternalPipeline =
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
   enum class StencilMode : uint8_t {
-    /// Turn the stencil test off. Used when drawing without stencil-then-cover.
+    /// Turn the stencil test off. Used when drawing without stencil-then-cover
+    /// or overdraw prevention.
     kIgnore,
 
-    // Operations used for stencil-then-cover
+    // Operations used for stencil-then-cover.
 
     /// Draw the stencil for the NonZero fill path rule.
     ///
@@ -298,24 +292,31 @@ struct ContentContextOptions {
     /// The stencil ref should always be 0 on commands using this mode.
     kCoverCompareInverted,
 
-    // Operations to control the legacy clip implementation, which forms a
-    // heightmap on the stencil buffer.
+    // Operations used for the "overdraw prevention" mechanism. This is used for
+    // drawing strokes.
 
-    /// Slice the clip heightmap to a new maximum height.
-    kLegacyClipRestore,
-    /// Increment the stencil heightmap.
-    kLegacyClipIncrement,
-    /// Decrement the stencil heightmap (used for difference clipping only).
-    kLegacyClipDecrement,
-    /// Used for applying clips to all non-clip draw calls.
-    kLegacyClipCompare,
+    /// For each fragment, increment the stencil value if it's currently zero.
+    /// Discard fragments when the value is non-zero. This prevents
+    /// self-overlapping strokes from drawing over themselves.
+    ///
+    /// Note that this is done for rendering correctness, not performance. If a
+    /// stroke is drawn with a backdrop-reliant blend and self-intersects, then
+    /// the intersected geometry will render incorrectly when overdrawn because
+    /// we don't adjust the geometry prevent self-intersection.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kOverdrawPreventionIncrement,
+    /// Reset the stencil to a new maximum value specified by the ref (currently
+    /// always 0).
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kOverdrawPreventionRestore,
   };
 
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction depth_compare = CompareFunction::kAlways;
-  StencilMode stencil_mode =
-      ContentContextOptions::StencilMode::kLegacyClipCompare;
+  StencilMode stencil_mode = ContentContextOptions::StencilMode::kIgnore;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_depth_stencil_attachments = true;
@@ -513,16 +514,6 @@ class ContentContext {
     return GetPipeline(glyph_atlas_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(glyph_atlas_color_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_color_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
@@ -705,6 +696,10 @@ class ContentContext {
       ContentContextOptions opts) const {
     return GetPipeline(vertices_uber_shader_, opts);
   }
+
+  // An empty 1x1 texture for binding drawVertices/drawAtlas or other cases
+  // that don't always have a texture (due to blending).
+  std::shared_ptr<Texture> GetEmptyTexture() const;
 
   std::shared_ptr<Context> GetContext() const;
 
@@ -915,8 +910,6 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-  mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
-  mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
@@ -1026,6 +1019,7 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
+  std::shared_ptr<Texture> empty_texture_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;
