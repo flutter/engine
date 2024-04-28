@@ -55,7 +55,7 @@ class Checkable extends PrimaryRoleManager {
         super.withBasics(
           PrimaryRole.checkable,
           semanticsObject,
-          labelRepresentation: LabelRepresentation.ariaLabel,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         ) {
     addTappable();
   }

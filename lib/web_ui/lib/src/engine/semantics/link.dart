@@ -10,7 +10,7 @@ class Link extends PrimaryRoleManager {
   Link(SemanticsObject semanticsObject) : super.withBasics(
     PrimaryRole.link,
     semanticsObject,
-    labelRepresentation: LabelRepresentation.domText,
+    preferredLabelRepresentation: LabelRepresentation.domText,
   ) {
     addTappable();
   }

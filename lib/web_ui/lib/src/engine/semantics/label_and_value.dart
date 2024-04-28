@@ -246,10 +246,9 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 /// interactive controls. In such case the value is reported via that element's
 /// `value` attribute rather than rendering it separately.
 class LabelAndValue extends RoleManager {
-  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.labelRepresentation })
+  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.preferredRepresentation })
       : super(Role.labelAndValue, semanticsObject, owner);
 
-  // TODO(yjbanov): rename to `preferredRepresentation` because it's not guaranteed.
   /// The preferred representation of the label in the DOM.
   ///
   /// This value may be changed. Calling [update] after changing it will apply
@@ -257,7 +256,7 @@ class LabelAndValue extends RoleManager {
   ///
   /// If the node contains children, [LabelRepresentation.ariaLabel] is used
   /// instead.
-  LabelRepresentation labelRepresentation;
+  LabelRepresentation preferredRepresentation;
 
   @override
   void update() {
@@ -283,7 +282,7 @@ class LabelAndValue extends RoleManager {
   LabelRepresentationBehavior _getEffectiveRepresentation() {
     final LabelRepresentation effectiveRepresentation = semanticsObject.hasChildren
       ? LabelRepresentation.ariaLabel
-      : labelRepresentation;
+      : preferredRepresentation;
 
     LabelRepresentationBehavior? representation = _representation;
     if (representation == null || representation.runtimeType != effectiveRepresentation.runtimeType) {

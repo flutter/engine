@@ -434,12 +434,12 @@ abstract class PrimaryRoleManager {
   ///
   /// If `labelRepresentation` is true, configures the [LabelAndValue] role with
   /// [LabelAndValue.labelRepresentation] set to true.
-  PrimaryRoleManager.withBasics(this.role, this.semanticsObject, { required LabelRepresentation labelRepresentation }) {
+  PrimaryRoleManager.withBasics(this.role, this.semanticsObject, { required LabelRepresentation preferredLabelRepresentation }) {
     element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
     addRouteName();
-    addLabelAndValue(labelRepresentation: labelRepresentation);
+    addLabelAndValue(preferredRepresentation: preferredLabelRepresentation);
   }
 
   /// Initializes a blank role for a [semanticsObject].
@@ -562,8 +562,8 @@ abstract class PrimaryRoleManager {
   LabelAndValue? _labelAndValue;
 
   /// Adds generic label features.
-  void addLabelAndValue({ required LabelRepresentation labelRepresentation }) {
-    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, labelRepresentation: labelRepresentation));
+  void addLabelAndValue({ required LabelRepresentation preferredRepresentation }) {
+    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, preferredRepresentation: preferredRepresentation));
   }
 
   /// Adds generic functionality for handling taps and clicks.
@@ -647,7 +647,7 @@ final class GenericRole extends PrimaryRoleManager {
     // Prefer sized span because if this is a leaf it is frequently a Text widget.
     // But if it turns out to be a container, then LabelAndValue will automatically
     // switch to `aria-label`.
-    labelRepresentation: LabelRepresentation.sizedSpan,
+    preferredLabelRepresentation: LabelRepresentation.sizedSpan,
   ) {
     // Typically a tappable widget would have a more specific role, such as
     // "link", "button", "checkbox", etc. However, there are situations when a
@@ -683,13 +683,13 @@ final class GenericRole extends PrimaryRoleManager {
     //   it. Previously, role="text" was used, but it was only supported by
     //   Safari, and it was removed starting Safari 17.
     if (semanticsObject.hasChildren) {
-      labelAndValue!.labelRepresentation = LabelRepresentation.ariaLabel;
+      labelAndValue!.preferredRepresentation = LabelRepresentation.ariaLabel;
       setAriaRole('group');
     } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
-      labelAndValue!.labelRepresentation = LabelRepresentation.domText;
+      labelAndValue!.preferredRepresentation = LabelRepresentation.domText;
       setAriaRole('heading');
     } else {
-      labelAndValue!.labelRepresentation = LabelRepresentation.sizedSpan;
+      labelAndValue!.preferredRepresentation = LabelRepresentation.sizedSpan;
       removeAttribute('role');
     }
 

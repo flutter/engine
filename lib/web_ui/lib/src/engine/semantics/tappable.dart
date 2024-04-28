@@ -10,7 +10,7 @@ class Button extends PrimaryRoleManager {
   Button(SemanticsObject semanticsObject) : super.withBasics(
     PrimaryRole.button,
     semanticsObject,
-    labelRepresentation: LabelRepresentation.domText,
+    preferredLabelRepresentation: LabelRepresentation.domText,
   ) {
     addTappable();
     setAriaRole('button');

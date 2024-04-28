@@ -25,7 +25,7 @@ class PlatformViewRoleManager extends PrimaryRoleManager {
       : super.withBasics(
           PrimaryRole.platformView,
           semanticsObject,
-          labelRepresentation: LabelRepresentation.ariaLabel,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         );
 
   @override

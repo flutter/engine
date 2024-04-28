@@ -28,7 +28,7 @@ class Incrementable extends PrimaryRoleManager {
     // the one being focused on, but the internal `<input>` element.
     addLiveRegion();
     addRouteName();
-    addLabelAndValue(labelRepresentation: LabelRepresentation.ariaLabel);
+    addLabelAndValue(preferredRepresentation: LabelRepresentation.ariaLabel);
 
     append(_element);
     _element.type = 'range';

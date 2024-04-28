@@ -27,7 +27,7 @@ class Scrollable extends PrimaryRoleManager {
       : super.withBasics(
           PrimaryRole.scrollable,
           semanticsObject,
-          labelRepresentation: LabelRepresentation.ariaLabel,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
         );
 
   /// Disables browser-driven scrolling in the presence of pointer events.
