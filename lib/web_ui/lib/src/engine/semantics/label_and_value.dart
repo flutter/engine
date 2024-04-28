@@ -285,7 +285,7 @@ class LabelAndValue extends RoleManager {
       : preferredRepresentation;
 
     LabelRepresentationBehavior? representation = _representation;
-    if (representation == null || representation.runtimeType != effectiveRepresentation.runtimeType) {
+    if (representation == null || representation.runtimeType != effectiveRepresentation.implementation) {
       representation?.cleanUp();
       _representation = representation = switch (effectiveRepresentation) {
         LabelRepresentation.ariaLabel => AriaLabelRepresentation._(owner),
