@@ -434,7 +434,7 @@ abstract class PrimaryRoleManager {
   ///
   /// If `labelRepresentation` is true, configures the [LabelAndValue] role with
   /// [LabelAndValue.labelRepresentation] set to true.
-  PrimaryRoleManager.withBasics(this.role, this.semanticsObject, { required LeafLabelRepresentation labelRepresentation }) {
+  PrimaryRoleManager.withBasics(this.role, this.semanticsObject, { required LabelRepresentation labelRepresentation }) {
     element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
@@ -562,7 +562,7 @@ abstract class PrimaryRoleManager {
   LabelAndValue? _labelAndValue;
 
   /// Adds generic label features.
-  void addLabelAndValue({ required LeafLabelRepresentation labelRepresentation }) {
+  void addLabelAndValue({ required LabelRepresentation labelRepresentation }) {
     addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, labelRepresentation: labelRepresentation));
   }
 
@@ -644,7 +644,10 @@ final class GenericRole extends PrimaryRoleManager {
   GenericRole(SemanticsObject semanticsObject) : super.withBasics(
     PrimaryRole.generic,
     semanticsObject,
-    labelRepresentation: LeafLabelRepresentation.sizedSpan,
+    // Prefer sized span because if this is a leaf it is frequently a Text widget.
+    // But if it turns out to be a container, then LabelAndValue will automatically
+    // switch to `aria-label`.
+    labelRepresentation: LabelRepresentation.sizedSpan,
   ) {
     // Typically a tappable widget would have a more specific role, such as
     // "link", "button", "checkbox", etc. However, there are situations when a
@@ -668,34 +671,30 @@ final class GenericRole extends PrimaryRoleManager {
       return;
     }
 
-    // Assign one of three roles to the element: heading, group, text.
+    // Assign one of three roles to the element: group, heading, text.
     //
     // - "group" is used when the node has children, irrespective of whether the
     //   node is marked as a header or not. This is because marking a group
     //   as a "heading" will prevent the AT from reaching its children.
     // - "heading" is used when the framework explicitly marks the node as a
     //   heading and the node does not have children.
-    // - "text" is used by default.
-    //
-    // As of October 24, 2022, "text" only has effect on Safari. Other browsers
-    // ignore it. Setting role="text" prevents Safari from treating the element
-    // as a "group" or "empty group". Other browsers still announce it as
-    // "group" or "empty group". However, other options considered produced even
-    // worse results, such as:
-    //
-    // - Ignore the size of the element and size the focus ring to the text
-    //   content, which is wrong. The HTML text size is irrelevant because
-    //   Flutter renders into canvas, so the focus ring looks wrong.
-    // - Read out the same label multiple times.
+    // - If a node has a label and no children, assume is a paragraph of text.
+    //   In HTML text has no ARIA role. It's just a DOM node with text inside
+    //   it. Previously, role="text" was used, but it was only supported by
+    //   Safari, and it was removed starting Safari 17.
     if (semanticsObject.hasChildren) {
+      labelAndValue!.labelRepresentation = LabelRepresentation.ariaLabel;
       setAriaRole('group');
     } else if (semanticsObject.hasFlag(ui.SemanticsFlag.isHeader)) {
+      labelAndValue!.labelRepresentation = LabelRepresentation.domText;
       setAriaRole('heading');
     } else {
+      labelAndValue!.labelRepresentation = LabelRepresentation.sizedSpan;
       removeAttribute('role');
     }
 
-    // Call super.update last.
+    // Call super.update last so the role is established before applying
+    // specific behaviors.
     super.update();
   }
 
@@ -726,6 +725,7 @@ final class GenericRole extends PrimaryRoleManager {
     // See also:
     //
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex
+    // TODO(yjbanov): if <span> is used, it should be focused, not the parent element
     element.tabIndex = -1;
     element.focus();
     return true;

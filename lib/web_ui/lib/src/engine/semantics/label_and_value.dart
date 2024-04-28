@@ -16,9 +16,7 @@ import 'semantics.dart';
 /// respect the `aria-label` without a [DomText] node. Crawlers typically do not
 /// need this information, as they primarily scan visible text, which is
 /// communicated in semantics as leaf text and heading nodes.
-// TODO(yjbanov): rename to just LabelRepresentation because ariaLabel is used
-//                for container nodes as well.
-enum LeafLabelRepresentation {
+enum LabelRepresentation {
   /// Represents the label as an `aria-label` attribute.
   ///
   /// This representation is the most efficient as all it does is pass a string
@@ -49,13 +47,13 @@ enum LeafLabelRepresentation {
   /// the implicit "generic" role used for plain text (not headings).
   sizedSpan(SizedSpanRepresentation);
 
-  const LeafLabelRepresentation(this.implementation);
+  const LabelRepresentation(this.implementation);
 
   /// The type used to implement this representation.
   final Type implementation;
 }
 
-/// Base class for all implementations of [LeafLabelRepresentation] behaviors.
+/// Provides a DOM behavior for a [LabelRepresentation].
 abstract final class LabelRepresentationBehavior {
   LabelRepresentationBehavior(this.owner);
 
@@ -68,7 +66,9 @@ abstract final class LabelRepresentationBehavior {
   void cleanUp();
 }
 
-/// Sets the label as `aria-label`:
+/// Sets the label as `aria-label`.
+///
+/// Example:
 ///
 ///     <flt-semantics aria-label="Hello, World!"></flt-semantics>
 final class AriaLabelRepresentation extends LabelRepresentationBehavior {
@@ -90,7 +90,7 @@ final class AriaLabelRepresentation extends LabelRepresentationBehavior {
   }
 }
 
-/// Sets the label as plain DOM Text node (i.e. https://developer.mozilla.org/en-US/docs/Web/API/Text).
+/// Sets the label as text inside the DOM element.
 ///
 /// Example:
 ///
@@ -250,8 +250,14 @@ class LabelAndValue extends RoleManager {
       : super(Role.labelAndValue, semanticsObject, owner);
 
   // TODO(yjbanov): rename to `preferredRepresentation` because it's not guaranteed.
-  /// Configures the representation of the label in the DOM.
-  final LeafLabelRepresentation labelRepresentation;
+  /// The preferred representation of the label in the DOM.
+  ///
+  /// This value may be changed. Calling [update] after changing it will apply
+  /// the new preference.
+  ///
+  /// If the node contains children, [LabelRepresentation.ariaLabel] is used
+  /// instead.
+  LabelRepresentation labelRepresentation;
 
   @override
   void update() {
@@ -275,17 +281,17 @@ class LabelAndValue extends RoleManager {
   /// screen reader. If the are no children, use the representation preferred
   /// by the primary role manager.
   LabelRepresentationBehavior _getEffectiveRepresentation() {
-    final LeafLabelRepresentation effectiveRepresentation = semanticsObject.hasChildren
-      ? LeafLabelRepresentation.ariaLabel
+    final LabelRepresentation effectiveRepresentation = semanticsObject.hasChildren
+      ? LabelRepresentation.ariaLabel
       : labelRepresentation;
 
     LabelRepresentationBehavior? representation = _representation;
     if (representation == null || representation.runtimeType != effectiveRepresentation.runtimeType) {
       representation?.cleanUp();
       _representation = representation = switch (effectiveRepresentation) {
-        LeafLabelRepresentation.ariaLabel => AriaLabelRepresentation._(owner),
-        LeafLabelRepresentation.domText => DomTextRepresentation._(owner),
-        LeafLabelRepresentation.sizedSpan => SizedSpanRepresentation._(owner),
+        LabelRepresentation.ariaLabel => AriaLabelRepresentation._(owner),
+        LabelRepresentation.domText => DomTextRepresentation._(owner),
+        LabelRepresentation.sizedSpan => SizedSpanRepresentation._(owner),
       };
     }
     return representation;
