@@ -8,6 +8,8 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_value.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
+static constexpr int32_t kRootSemanticsNodeId = 0;
+
 struct _FlViewAccessible {
   AtkPlug parent_instance;
 
@@ -48,7 +50,7 @@ static FlAccessibleNode* get_node(FlViewAccessible* self,
   }
 
   node = create_node(self, semantics);
-  if (semantics->id == 0) {
+  if (semantics->id == kRootSemanticsNodeId) {
     fl_accessible_node_set_parent(node, ATK_OBJECT(self), 0);
   }
   g_hash_table_insert(self->semantics_nodes_by_id,
@@ -56,7 +58,7 @@ static FlAccessibleNode* get_node(FlViewAccessible* self,
                       reinterpret_cast<gpointer>(node));
 
   // Update when root node is created.
-  if (!self->root_node_created && semantics->id == 0) {
+  if (!self->root_node_created && semantics->id == kRootSemanticsNodeId) {
     g_signal_emit_by_name(self, "children-changed::add", 0, node, nullptr);
     self->root_node_created = true;
   }
