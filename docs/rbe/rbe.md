@@ -158,7 +158,7 @@ builds.
 The status of the local RBE proxy can be queried with the following command
 
 ```
-buildtools/mac-arm64/reclient/reclientreport
+buildtools/mac-arm64/reclient/reproxystatus
 ```
 
 It will give output describing the number of actions completed and in progress,
