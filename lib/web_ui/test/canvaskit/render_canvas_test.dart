@@ -77,12 +77,12 @@ void testMain() {
 
       await renderScene(scene);
 
-      final DomElement renderCanvas =
-          implicitView.dom.sceneHost.querySelector('canvas')!;
-      expect(renderCanvas.getAttribute('width'), '200');
-      expect(renderCanvas.getAttribute('height'), '200');
-      expect(renderCanvas.style.width, '200px');
-      expect(renderCanvas.style.height, '200px');
+      expect(
+        CanvasKitRenderer.instance
+            .debugGetRasterizerForView(implicitView)!
+            .currentFrameSize,
+        const ui.Size(200, 200),
+      );
 
       implicitView.debugPhysicalSizeOverride = null;
       implicitView.debugForceResize();
