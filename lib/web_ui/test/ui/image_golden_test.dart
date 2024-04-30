@@ -86,17 +86,23 @@ Future<void> testMain() async {
   // `imageGenerator` should produce an image that is 150x150 pixels.
   void emitImageTests(String name, Future<ui.Image> Function() imageGenerator) {
     group(name, () {
-      late ui.Image image;
-      setUp(() async {
-        image = await imageGenerator();
-      });
+      final List<ui.Image> images = <ui.Image>[];
+
+      Future<ui.Image> generateImage() async {
+        final ui.Image image = await imageGenerator();
+        images.add(image);
+        return image;
+      }
 
       tearDown(() {
-        image.dispose();
+        for (final ui.Image image in images) {
+          image.dispose();
+        }
+        images.clear();
       });
 
       test('drawImage', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
@@ -111,7 +117,7 @@ Future<void> testMain() async {
       });
 
       test('drawImageRect', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
@@ -147,7 +153,7 @@ Future<void> testMain() async {
       });
 
       test('drawImageNine', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
@@ -168,7 +174,7 @@ Future<void> testMain() async {
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
         final Float64List matrix = Matrix4.rotationZ(pi / 6).toFloat64();
         Future<void> drawOvalWithShader(ui.Rect rect, ui.FilterQuality quality) async {
-          final ui.Image image = await imageGenerator();
+          final ui.Image image = await generateImage();
           final ui.ImageShader shader = ui.ImageShader(
             image,
             ui.TileMode.repeated,
@@ -199,7 +205,7 @@ Future<void> testMain() async {
       });
 
       test('fragment_shader_sampler', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final ui.FragmentProgram program = await renderer.createFragmentProgram('glitch_shader');
         final ui.FragmentShader shader = program.fragmentShader();
@@ -224,7 +230,7 @@ Future<void> testMain() async {
       }, skip: isHtml); // HTML doesn't support fragment shaders
 
       test('drawVertices with image shader', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final Float64List matrix = Matrix4.rotationZ(pi / 6).toFloat64();
         final ui.ImageShader shader = ui.ImageShader(
@@ -270,7 +276,7 @@ Future<void> testMain() async {
       });
 
       test('toByteData_rgba', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final ByteData? rgbaData = await image.toByteData();
         expect(rgbaData, isNotNull);
@@ -278,7 +284,7 @@ Future<void> testMain() async {
       });
 
       test('toByteData_png', () async {
-        final ui.Image image = await imageGenerator();
+        final ui.Image image = await generateImage();
 
         final ByteData? pngData = await image.toByteData(format: ui.ImageByteFormat.png);
         expect(pngData, isNotNull);
