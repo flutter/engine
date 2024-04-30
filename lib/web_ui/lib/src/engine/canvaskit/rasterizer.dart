@@ -44,13 +44,28 @@ abstract class ViewRasterizer {
   /// Draws the [layerTree] to the screen for the view associated with this
   /// rasterizer.
   Future<void> draw(LayerTree layerTree) async {
-    final ui.Size frameSize = view.physicalSize;
+    ui.Size frameSize = view.physicalSize;
     if (frameSize.isEmpty) {
       // Available drawing area is empty. Skip drawing.
       return;
     }
 
-    print('rasterizer current frame size: $frameSize');
+    // The [frameSize] may be slightly imprecise if the `devicePixelRatio` isn't
+    // an integer. For example, is you zoom to 110% in Chrome on a Macbook, the
+    // `devicePixelRatio` is `2.200000047683716`, so when the physical size is
+    // computed by multiplying the logical size by the devie pixel ratio, the
+    // result is slightly imprecise as well. Nevertheless, the number should
+    // be close to an integer, so round the frame size to be more precice.
+    bool isCloseToIntegerSize(ui.Size size) {
+      return (size.width - size.width.roundToDouble()).abs() < 0.001 &&
+          (size.height - size.height.roundToDouble()).abs() < 0.001;
+    }
+
+    assert(isCloseToIntegerSize(frameSize),
+        'Physical size is in fractional pixels.');
+    frameSize = ui.Size(
+        frameSize.width.roundToDouble(), frameSize.height.roundToDouble());
+
     currentFrameSize = frameSize;
     prepareToDraw();
     viewEmbedder.frameSize = currentFrameSize;
