@@ -10,11 +10,9 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/core/allocator.h"
-#include "flutter/impeller/core/texture.h"
 #include "flutter/impeller/display_list/dl_image_impeller.h"
 #include "flutter/impeller/renderer/command_buffer.h"
 #include "flutter/impeller/renderer/context.h"
-#include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "impeller/base/strings.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/display_list/skia_conversions.h"
@@ -489,6 +487,9 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           result(nullptr, bitmap_result.decode_error);
           return;
         }
+
+        sk_sp<DlImage> image;
+        std::string decode_error;
         auto upload_texture_and_invoke_result = [result, context, bitmap_result,
                                                  gpu_disabled_switch]() {
           sk_sp<DlImage> image;
@@ -506,12 +507,12 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
             result(image, decode_error);
           }
         };
-        // TODO(jonahwilliams):
-        // https://github.com/flutter/flutter/issues/123058 Technically we
-        // don't need to post tasks to the io runner, but without this
-        // forced serialization we can end up overloading the GPU and/or
-        // competing with raster workloads.
-        io_runner->PostTask(upload_texture_and_invoke_result);
+        if (context->GetBackendType() ==
+            impeller::Context::BackendType::kOpenGLES) {
+          io_runner->PostTask(upload_texture_and_invoke_result);
+        } else {
+          upload_texture_and_invoke_result();
+        }
       });
 }
 
