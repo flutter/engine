@@ -596,7 +596,109 @@ public class FlutterRendererTest {
     // Acquire the new image.
     assertNotNull(texture.acquireLatestImage());
 
-    // We will have no pending readers to close.
-    assertEquals(0, texture.readersToCloseSize());
+    // Returns null image when no more images are queued.
+    assertNull(texture.acquireLatestImage());
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(0, texture.numImages());
+  }
+
+  @Test
+  public void ImageReaderSurfaceProducerTrimMemoryCallback() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+    texture.disableFenceForTest();
+
+    // Returns a null image when one hasn't been produced.
+    assertNull(texture.acquireLatestImage());
+
+    // Give the texture an initial size.
+    texture.setSize(1, 1);
+
+    // Grab the surface so we can render a frame at 1x1 after resizing.
+    Surface surface = texture.getSurface();
+    assertNotNull(surface);
+    Canvas canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run, this will produce a single frame.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(1, texture.numImages());
+
+    // Invoke the onTrimMemory callback with level 0.
+    // This should do nothing.
+    texture.onTrimMemory(0);
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(1, texture.numImages());
+    assertEquals(0, texture.numTrims());
+
+    // Invoke the onTrimMemory callback with level 40.
+    // This should result in a trim.
+    texture.onTrimMemory(40);
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(0, texture.numImageReaders());
+    assertEquals(0, texture.numImages());
+    assertEquals(1, texture.numTrims());
+
+    // Request the surface, this should result in a new image reader.
+    surface = texture.getSurface();
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(0, texture.numImages());
+    assertEquals(1, texture.numTrims());
+
+    // Render an image.
+    canvas = surface.lockHardwareCanvas();
+    canvas.drawARGB(255, 255, 0, 0);
+    surface.unlockCanvasAndPost(canvas);
+
+    // Let callbacks run, this will produce a single frame.
+    shadowOf(Looper.getMainLooper()).idle();
+
+    assertEquals(1, texture.numImageReaders());
+    assertEquals(1, texture.numImages());
+    assertEquals(1, texture.numTrims());
+  }
+
+  // A 0x0 ImageReader is a runtime error.
+  @Test
+  public void ImageReaderSurfaceProducerClampsWidthAndHeightTo1() {
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    FlutterRenderer.ImageReaderSurfaceProducer texture =
+        flutterRenderer.new ImageReaderSurfaceProducer(0);
+
+    // Default values.
+    assertEquals(texture.getWidth(), 1);
+    assertEquals(texture.getHeight(), 1);
+
+    // Try setting width and height to 0.
+    texture.setSize(0, 0);
+
+    // Ensure we can still create/get a surface without an exception being raised.
+    assertNotNull(texture.getSurface());
+
+    // Expect clamp to 1.
+    assertEquals(texture.getWidth(), 1);
+    assertEquals(texture.getHeight(), 1);
+  }
+
+  @Test
+  public void SurfaceTextureSurfaceProducerCreatesAConnectedTexture() {
+    // Force creating a SurfaceTextureSurfaceProducer regardless of Android API version.
+    FlutterRenderer.debugForceSurfaceProducerGlTextures = true;
+
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+    TextureRegistry.SurfaceProducer producer = flutterRenderer.createSurfaceProducer();
+
+    flutterRenderer.startRenderingToSurface(fakeSurface, false);
+
+    // Verify behavior under test.
+    assertEquals(producer.id(), 0);
+    verify(fakeFlutterJNI, times(1)).registerTexture(eq(producer.id()), any());
   }
 }

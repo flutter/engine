@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.renderer;
 
 import android.annotation.TargetApi;
+import android.content.ComponentCallbacks2;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
@@ -361,15 +362,44 @@ public class FlutterRenderer implements TextureRegistry {
   final class ImageReaderSurfaceProducer
       implements TextureRegistry.SurfaceProducer, TextureRegistry.ImageConsumer {
     private static final String TAG = "ImageReaderSurfaceProducer";
-    private static final int MAX_IMAGES = 4;
+    private static final int MAX_IMAGES = 5;
+
+    // Flip when debugging to see verbose logs.
+    private static final boolean VERBOSE_LOGS = false;
+
+    // We must always cleanup on memory pressure on Android 14 due to a bug in Android.
+    // It is safe to do on all versions so we unconditionally have this set to true.
+    private static final boolean CLEANUP_ON_MEMORY_PRESSURE = true;
 
     private final long id;
 
     private boolean released;
     private boolean ignoringFence = false;
 
-    private int requestedWidth = 0;
-    private int requestedHeight = 0;
+    private boolean trimOnMemoryPressure = CLEANUP_ON_MEMORY_PRESSURE;
+
+    // The requested width and height are updated by setSize.
+    private int requestedWidth = 1;
+    private int requestedHeight = 1;
+    // Whenever the requested width and height change we set this to be true so we
+    // create a new ImageReader (inside getSurface) with the correct width and height.
+    // We use this flag so that we lazily create the ImageReader only when a frame
+    // will be produced at that size.
+    private boolean createNewReader = true;
+
+    // State held to track latency of various stages.
+    private long lastDequeueTime = 0;
+    private long lastQueueTime = 0;
+    private long lastScheduleTime = 0;
+    private int numTrims = 0;
+
+    private Object lock = new Object();
+    // REQUIRED: The following fields must only be accessed when lock is held.
+    private final ArrayDeque<PerImageReader> imageReaderQueue = new ArrayDeque<PerImageReader>();
+    private final HashMap<ImageReader, PerImageReader> perImageReaders =
+        new HashMap<ImageReader, PerImageReader>();
+    private PerImage lastDequeuedImage = null;
+    private PerImageReader lastReaderDequeuedFrom = null;
 
     /** Internal class: state held per image produced by image readers. */
     private class PerImage {
@@ -528,39 +558,44 @@ public class FlutterRenderer implements TextureRegistry {
       reader.close();
     }
 
-    private void maybeCreateReader() {
-      synchronized (this) {
-        if (this.activeReader != null) {
-          return;
-        }
-        this.activeReader = createImageReader();
-      }
-    }
-
-    /** Invoked for each method that is available. */
-    private void onImage(PerImage image) {
-      if (released) {
+    @Override
+    public void onTrimMemory(int level) {
+      if (!trimOnMemoryPressure) {
         return;
       }
-      PerImage toClose;
-      synchronized (this) {
-        if (this.readersToClose.contains(image.reader)) {
-          Log.i(TAG, "Skipped frame because resize is in flight.");
-          image.close();
-          return;
+      if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+        return;
+      }
+      synchronized (lock) {
+        numTrims++;
+      }
+      cleanup();
+      createNewReader = true;
+    }
+
+    private void releaseInternal() {
+      cleanup();
+      released = true;
+    }
+
+    private void cleanup() {
+      synchronized (lock) {
+        for (PerImageReader pir : perImageReaders.values()) {
+          if (lastReaderDequeuedFrom == pir) {
+            lastReaderDequeuedFrom = null;
+          }
+          pir.close();
         }
-        toClose = this.lastProducedImage;
-        this.lastProducedImage = image;
-      }
-      // Close the previously pushed buffer.
-      if (toClose != null) {
-        Log.i(TAG, "Dropping rendered frame that was not acquired in time.");
-        toClose.close();
-      }
-      if (image != null) {
-        // Mark that we have a new frame available. Eventually the raster thread will
-        // call acquireLatestImage.
-        markTextureFrameAvailable(id);
+        perImageReaders.clear();
+        if (lastDequeuedImage != null) {
+          lastDequeuedImage.image.close();
+          lastDequeuedImage = null;
+        }
+        if (lastReaderDequeuedFrom != null) {
+          lastReaderDequeuedFrom.close();
+          lastReaderDequeuedFrom = null;
+        }
+        imageReaderQueue.clear();
       }
     }
 
@@ -662,8 +697,28 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @VisibleForTesting
-    public int readersToCloseSize() {
-      return readersToClose.size();
+    public int numImageReaders() {
+      synchronized (lock) {
+        return imageReaderQueue.size();
+      }
+    }
+
+    @VisibleForTesting
+    public int numTrims() {
+      synchronized (lock) {
+        return numTrims;
+      }
+    }
+
+    @VisibleForTesting
+    public int numImages() {
+      int r = 0;
+      synchronized (lock) {
+        for (PerImageReader reader : imageReaderQueue) {
+          r += reader.imageQueue.size();
+        }
+      }
+      return r;
     }
   }
 
