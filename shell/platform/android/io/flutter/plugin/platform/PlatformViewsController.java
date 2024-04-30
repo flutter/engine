@@ -8,6 +8,7 @@ import static android.view.MotionEvent.PointerCoords;
 import static android.view.MotionEvent.PointerProperties;
 
 import android.annotation.TargetApi;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.os.Build;
@@ -1053,6 +1054,24 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final int viewId = platformViews.keyAt(0);
       // Dispose deletes the entry from platformViews and clears associated resources.
       channelHandler.dispose(viewId);
+    }
+  }
+
+  // Invoked when the Android system is requesting we reduce memory usage.
+  public void onTrimMemory(int level) {
+    if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+      return;
+    }
+    for (VirtualDisplayController vdc : vdControllers.values()) {
+      vdc.clearSurface();
+    }
+  }
+
+  // Called after the application has been resumed.
+  // This is where we undo whatever may have been done in onTrimMemory.
+  public void onResume() {
+    for (VirtualDisplayController vdc : vdControllers.values()) {
+      vdc.resetSurface();
     }
   }
 

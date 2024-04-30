@@ -5,6 +5,7 @@
 package io.flutter.embedding.engine.renderer;
 
 import android.annotation.TargetApi;
+import android.content.ComponentCallbacks2;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
@@ -361,17 +362,47 @@ public class FlutterRenderer implements TextureRegistry {
   final class ImageReaderSurfaceProducer
       implements TextureRegistry.SurfaceProducer, TextureRegistry.ImageConsumer {
     private static final String TAG = "ImageReaderSurfaceProducer";
-    private static final int MAX_IMAGES = 4;
+    private static final int MAX_IMAGES = 5;
+
+    // Flip when debugging to see verbose logs.
+    private static final boolean VERBOSE_LOGS = false;
+
+    // We must always cleanup on memory pressure on Android 14 due to a bug in Android.
+    // It is safe to do on all versions so we unconditionally have this set to true.
+    private static final boolean CLEANUP_ON_MEMORY_PRESSURE = true;
 
     private final long id;
 
     private boolean released;
     private boolean ignoringFence = false;
 
-    private int requestedWidth = 0;
-    private int requestedHeight = 0;
-
     /** Internal class: state held per image produced by image readers. */
+    private boolean trimOnMemoryPressure = CLEANUP_ON_MEMORY_PRESSURE;
+
+    // The requested width and height are updated by setSize.
+    private int requestedWidth = 1;
+    private int requestedHeight = 1;
+    // Whenever the requested width and height change we set this to be true so we
+    // create a new ImageReader (inside getSurface) with the correct width and height.
+    // We use this flag so that we lazily create the ImageReader only when a frame
+    // will be produced at that size.
+    private boolean createNewReader = true;
+
+    // State held to track latency of various stages.
+    private long lastDequeueTime = 0;
+    private long lastQueueTime = 0;
+    private long lastScheduleTime = 0;
+    private int numTrims = 0;
+
+    private Object lock = new Object();
+    // REQUIRED: The following fields must only be accessed when lock is held.
+    private final ArrayDeque<PerImageReader> imageReaderQueue = new ArrayDeque<PerImageReader>();
+    private final HashMap<ImageReader, PerImageReader> perImageReaders =
+        new HashMap<ImageReader, PerImageReader>();
+    private PerImage lastDequeuedImage = null;
+    private PerImageReader lastReaderDequeuedFrom = null;
+
+    /** Internal class: state held per Image produced by ImageReaders. */
     private class PerImage {
       public final ImageReader reader;
       public final Image image;
@@ -414,8 +445,183 @@ public class FlutterRenderer implements TextureRegistry {
               return;
             }
             onImage(new PerImage(reader, image));
-          }
+          };
         };
+
+    PerImage dequeueImage() {
+      if (imageQueue.size() == 0) {
+        return null;
+      }
+      PerImage r = imageQueue.removeFirst();
+      return r;
+    }
+
+    /** returns true if we can prune this reader */
+    boolean canPrune() {
+      return imageQueue.size() == 0 && lastReaderDequeuedFrom != this;
+    }
+
+    void close() {
+      closed = true;
+      if (VERBOSE_LOGS) {
+        Log.i(TAG, "Closing reader=" + reader.hashCode());
+      }
+      reader.close();
+      imageQueue.clear();
+    }
+
+    double deltaMillis(long deltaNanos) {
+      double ms = (double) deltaNanos / (double) 1000000.0;
+      return ms;
+    }
+
+    PerImageReader getOrCreatePerImageReader(ImageReader reader) {
+      PerImageReader r = perImageReaders.get(reader);
+      if (r == null) {
+        r = new PerImageReader(reader);
+        perImageReaders.put(reader, r);
+        imageReaderQueue.add(r);
+        if (VERBOSE_LOGS) {
+          Log.i(TAG, "imageReaderQueue#=" + imageReaderQueue.size());
+        }
+      }
+      return r;
+    }
+
+    void pruneImageReaderQueue() {
+      boolean change = false;
+      // Prune nodes from the head of the ImageReader queue.
+      while (imageReaderQueue.size() > 1) {
+        PerImageReader r = imageReaderQueue.peekFirst();
+        if (!r.canPrune()) {
+          // No more ImageReaders can be pruned this round.
+          break;
+        }
+        imageReaderQueue.removeFirst();
+        perImageReaders.remove(r.reader);
+        r.close();
+        change = true;
+      }
+      if (change && VERBOSE_LOGS) {
+        Log.i(TAG, "Pruned image reader queue length=" + imageReaderQueue.size());
+      }
+    }
+
+    void onImage(ImageReader reader, Image image) {
+      PerImage queuedImage = null;
+      synchronized (lock) {
+        PerImageReader perReader = getOrCreatePerImageReader(reader);
+        queuedImage = perReader.queueImage(image);
+      }
+      if (queuedImage == null) {
+        // We got a late image.
+        return;
+      }
+      if (VERBOSE_LOGS) {
+        if (lastQueueTime != 0) {
+          long now = System.nanoTime();
+          long queueDelta = now - lastQueueTime;
+          Log.i(
+              TAG,
+              ""
+                  + reader.hashCode()
+                  + " enqueued image="
+                  + queuedImage.image.hashCode()
+                  + " queueDelta="
+                  + deltaMillis(queueDelta));
+          lastQueueTime = now;
+        } else {
+          lastQueueTime = System.nanoTime();
+        }
+      }
+      scheduleEngineFrame();
+    }
+
+    public PerImageReader(ImageReader reader) {
+        this.reader = reader;
+        reader.setOnImageAvailableListener(
+            onImageAvailableListener, new Handler(Looper.getMainLooper()));
+    }
+
+    PerImage queueImage(Image image) {
+      if (closed) {
+        return null;
+      }
+      PerImage perImage = new PerImage(image, System.nanoTime());
+      imageQueue.add(perImage);
+      // If we fall too far behind we will skip some frames.
+      while (imageQueue.size() > 2) {
+        PerImage r = imageQueue.removeFirst();
+        if (VERBOSE_LOGS) {
+          Log.i(TAG, "" + reader.hashCode() + " force closed image=" + r.image.hashCode());
+        }
+        r.image.close();
+      }
+      return perImage;
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+      if (!trimOnMemoryPressure) {
+        return;
+      }
+      if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+        return;
+      }
+      synchronized (lock) {
+        numTrims++;
+      }
+      cleanup();
+      createNewReader = true;
+    }
+
+    private void cleanup() {
+      synchronized (lock) {
+        for (PerImageReader pir : perImageReaders.values()) {
+          if (lastReaderDequeuedFrom == pir) {
+            lastReaderDequeuedFrom = null;
+          }
+          pir.close();
+        }
+        perImageReaders.clear();
+        if (lastDequeuedImage != null) {
+          lastDequeuedImage.image.close();
+          lastDequeuedImage = null;
+        }
+        if (lastReaderDequeuedFrom != null) {
+          lastReaderDequeuedFrom.close();
+          lastReaderDequeuedFrom = null;
+        }
+        imageReaderQueue.clear();
+      }
+    }
+
+    @TargetApi(API_LEVELS.API_33)
+    private void waitOnFence(Image image) {
+      try {
+        SyncFence fence = image.getFence();
+        fence.awaitForever();
+      } catch (IOException e) {
+        // Drop.
+      }
+    }
+
+    private void maybeWaitOnFence(Image image) {
+      if (image == null) {
+        return;
+      }
+      if (ignoringFence) {
+        return;
+      }
+      if (Build.VERSION.SDK_INT >= API_LEVELS.API_33) {
+        // The fence API is only available on Android >= 33.
+        waitOnFence(image);
+        return;
+      }
+      // Log once per ImageTextureEntry.
+      ignoringFence = true;
+      Log.w(TAG, "ImageTextureEntry can't wait on the fence on Android < 33");
+    }
 
     ImageReaderSurfaceProducer(long id) {
       this.id = id;
@@ -662,8 +868,28 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @VisibleForTesting
-    public int readersToCloseSize() {
-      return readersToClose.size();
+    public int numImageReaders() {
+      synchronized (lock) {
+        return imageReaderQueue.size();
+      }
+    }
+
+    @VisibleForTesting
+    public int numTrims() {
+      synchronized (lock) {
+        return numTrims;
+      }
+    }
+
+    @VisibleForTesting
+    public int numImages() {
+      int r = 0;
+      synchronized (lock) {
+        for (PerImageReader reader : imageReaderQueue) {
+          r += reader.imageQueue.size();
+        }
+      }
+      return r;
     }
   }
 
