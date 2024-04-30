@@ -381,8 +381,8 @@ embedding_dependencies_jars = [
   "//third_party/android_embedding_dependencies/lib/tracing-1.0.0.jar",
   "//third_party/android_embedding_dependencies/lib/versionedparcelable-1.1.1.jar",
   "//third_party/android_embedding_dependencies/lib/viewpager-1.0.0.jar",
-  "//third_party/android_embedding_dependencies/lib/window-1.0.0-beta04.jar",
-  "//third_party/android_embedding_dependencies/lib/window-java-1.0.0-beta04.jar",
+  "//third_party/android_embedding_dependencies/lib/window-1.0.0.jar",
+  "//third_party/android_embedding_dependencies/lib/window-java-1.0.0.jar",
 ]
 
 action("check_imports") {
