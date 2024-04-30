@@ -15,17 +15,35 @@
 
 namespace flutter {
 
-sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
+void SnapshotControllerImpeller::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
-    SkISize size) {
+    SkISize picture_size,
+    std::function<void(sk_sp<DlImage>)> callback) {
   sk_sp<DlImage> result;
   GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&] {
             // Do nothing.
           })
-          .SetIfFalse(
-              [&] { result = DoMakeRasterSnapshot(display_list, size); }));
+          .SetIfFalse([&] {
+            result = DoMakeRasterSnapshot(display_list, picture_size);
+          }));
+
+  callback(result);
+}
+
+sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshotSync(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size) {
+  sk_sp<DlImage> result;
+  GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&] {
+            // Do nothing.
+          })
+          .SetIfFalse([&] {
+            result = DoMakeRasterSnapshot(display_list, picture_size);
+          }));
 
   return result;
 }
