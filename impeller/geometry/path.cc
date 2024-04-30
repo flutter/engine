@@ -161,7 +161,7 @@ void Path::WritePolyline(Scalar scale, VertexWriter& writer) const {
           writer.EndContour();
         }
         started_contour = true;
-        first_point = false;
+        first_point = true;
     }
   }
   if (started_contour) {
