@@ -238,7 +238,6 @@ Future<void> testMain() async {
           ui.TileMode.decal,
           ui.TileMode.decal,
           matrix,
-          filterQuality: ui.FilterQuality.medium,
         );
 
         // Draw an octagon
