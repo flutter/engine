@@ -61,10 +61,10 @@ abstract class ViewRasterizer {
           (size.height - size.height.roundToDouble()).abs() < 0.001;
     }
 
-    assert(isCloseToIntegerSize(frameSize),
-        'Physical size is in fractional pixels.');
-    frameSize = ui.Size(
-        frameSize.width.roundToDouble(), frameSize.height.roundToDouble());
+    if (isCloseToIntegerSize(frameSize)) {
+      frameSize = ui.Size(
+          frameSize.width.roundToDouble(), frameSize.height.roundToDouble());
+    }
 
     currentFrameSize = frameSize;
     prepareToDraw();
