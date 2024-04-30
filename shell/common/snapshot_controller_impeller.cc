@@ -23,13 +23,23 @@ void SnapshotControllerImpeller::MakeRasterSnapshot(
   GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&] {
-            // Do nothing.
+            std::shared_ptr<impeller::AiksContext> context =
+                GetDelegate().GetAiksContext();
+            if (context) {
+              context->GetContext()->StoreTaskForGPU(
+                  [this /*not safe, don't commit*/,
+                   display_list = std::move(display_list), picture_size,
+                   callback = std::move(callback)] {
+                    callback(
+                        MakeRasterSnapshotSync(display_list, picture_size));
+                  });
+            } else {
+              callback(nullptr);
+            }
           })
           .SetIfFalse([&] {
-            result = DoMakeRasterSnapshot(display_list, picture_size);
+            callback(DoMakeRasterSnapshot(display_list, picture_size));
           }));
-
-  callback(result);
 }
 
 sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshotSync(
