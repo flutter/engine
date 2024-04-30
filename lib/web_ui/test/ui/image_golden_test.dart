@@ -273,7 +273,7 @@ Future<void> testMain() async {
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
         await matchGoldenFile('${name}_drawVertices_imageShader.png', region: drawRegion);
-      });
+      }, skip: isHtml); // https://github.com/flutter/flutter/issues/127454;
 
       test('toByteData_rgba', () async {
         final ui.Image image = await generateImage();
