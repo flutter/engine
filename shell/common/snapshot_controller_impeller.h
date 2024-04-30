@@ -30,9 +30,6 @@ class SnapshotControllerImpeller : public SnapshotController {
       const std::shared_ptr<impeller::RuntimeStage>& runtime_stage) override;
 
  private:
-  sk_sp<DlImage> DoMakeRasterSnapshot(const sk_sp<DisplayList>& display_list,
-                                      SkISize size);
-
   FML_DISALLOW_COPY_AND_ASSIGN(SnapshotControllerImpeller);
 };
 

@@ -15,57 +15,15 @@
 
 namespace flutter {
 
-void SnapshotControllerImpeller::MakeRasterSnapshot(
-    sk_sp<DisplayList> display_list,
-    SkISize picture_size,
-    std::function<void(sk_sp<DlImage>)> callback) {
-  sk_sp<DlImage> result;
-  GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
-      fml::SyncSwitch::Handlers()
-          .SetIfTrue([&] {
-            std::shared_ptr<impeller::AiksContext> context =
-                GetDelegate().GetAiksContext();
-            if (context) {
-              context->GetContext()->StoreTaskForGPU(
-                  [this /*not safe, don't commit*/,
-                   display_list = std::move(display_list), picture_size,
-                   callback = std::move(callback)] {
-                    callback(
-                        MakeRasterSnapshotSync(display_list, picture_size));
-                  });
-            } else {
-              callback(nullptr);
-            }
-          })
-          .SetIfFalse([&] {
-            callback(DoMakeRasterSnapshot(display_list, picture_size));
-          }));
-}
-
-sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshotSync(
-    sk_sp<DisplayList> display_list,
-    SkISize picture_size) {
-  sk_sp<DlImage> result;
-  GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
-      fml::SyncSwitch::Handlers()
-          .SetIfTrue([&] {
-            // Do nothing.
-          })
-          .SetIfFalse([&] {
-            result = DoMakeRasterSnapshot(display_list, picture_size);
-          }));
-
-  return result;
-}
-
-sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
+namespace {
+sk_sp<DlImage> DoMakeRasterSnapshot(
     const sk_sp<DisplayList>& display_list,
-    SkISize size) {
+    SkISize size,
+    const std::shared_ptr<impeller::AiksContext>& context) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   impeller::DlDispatcher dispatcher;
   display_list->Dispatch(dispatcher);
   impeller::Picture picture = dispatcher.EndRecordingAsPicture();
-  auto context = GetDelegate().GetAiksContext();
   if (context) {
     auto max_size = context->GetContext()
                         ->GetResourceAllocator()
@@ -96,6 +54,52 @@ sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
   }
 
   return nullptr;
+}
+}  // namespace
+
+void SnapshotControllerImpeller::MakeRasterSnapshot(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size,
+    std::function<void(sk_sp<DlImage>)> callback) {
+  sk_sp<DlImage> result;
+  GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&] {
+            std::shared_ptr<impeller::AiksContext> context =
+                GetDelegate().GetAiksContext();
+            if (context) {
+              context->GetContext()->StoreTaskForGPU(
+                  [this /*not safe, don't commit*/,
+                   display_list = std::move(display_list), picture_size,
+                   callback = std::move(callback)] {
+                    callback(
+                        MakeRasterSnapshotSync(display_list, picture_size));
+                  });
+            } else {
+              callback(nullptr);
+            }
+          })
+          .SetIfFalse([&] {
+            callback(DoMakeRasterSnapshot(display_list, picture_size,
+                                          GetDelegate().GetAiksContext()));
+          }));
+}
+
+sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshotSync(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size) {
+  sk_sp<DlImage> result;
+  GetDelegate().GetIsGpuDisabledSyncSwitch()->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&] {
+            // Do nothing.
+          })
+          .SetIfFalse([&] {
+            result = DoMakeRasterSnapshot(display_list, picture_size,
+                                          GetDelegate().GetAiksContext());
+          }));
+
+  return result;
 }
 
 void SnapshotControllerImpeller::CacheRuntimeStage(
