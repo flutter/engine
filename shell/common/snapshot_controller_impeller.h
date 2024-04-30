@@ -19,7 +19,7 @@ class SnapshotControllerImpeller : public SnapshotController {
   void MakeRasterSnapshot(
       sk_sp<DisplayList> display_list,
       SkISize picture_size,
-      std::function<void(sk_sp<DlImage>)> callback) override;
+      std::function<void(const sk_sp<DlImage>&)> callback) override;
 
   sk_sp<DlImage> MakeRasterSnapshotSync(sk_sp<DisplayList> display_list,
                                         SkISize picture_size) override;

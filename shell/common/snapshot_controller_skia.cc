@@ -52,7 +52,7 @@ sk_sp<SkImage> DrawSnapshot(
 void SnapshotControllerSkia::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize picture_size,
-    std::function<void(sk_sp<DlImage>)> callback) {
+    std::function<void(const sk_sp<DlImage>&)> callback) {
   callback(MakeRasterSnapshotSync(display_list, picture_size));
 }
 

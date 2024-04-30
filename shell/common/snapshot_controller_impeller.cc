@@ -78,7 +78,7 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
 void SnapshotControllerImpeller::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize picture_size,
-    std::function<void(sk_sp<DlImage>)> callback) {
+    std::function<void(const sk_sp<DlImage>&)> callback) {
   sk_sp<DlImage> result;
   std::shared_ptr<const fml::SyncSwitch> sync_switch =
       GetDelegate().GetIsGpuDisabledSyncSwitch();

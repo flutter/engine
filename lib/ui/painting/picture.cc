@@ -213,7 +213,7 @@ Dart_Handle Picture::DoRasterizeToImage(const sk_sp<DisplayList>& display_list,
         }
         snapshot_delegate->MakeRasterSnapshot(
             snapshot_display_list, picture_bounds,
-            [ui_task_runner, ui_task](sk_sp<DlImage> image) {
+            [ui_task_runner, ui_task](const sk_sp<DlImage>& image) {
               fml::TaskRunner::RunNowOrPostTask(
                   ui_task_runner, [ui_task, image]() { ui_task(image); });
             });

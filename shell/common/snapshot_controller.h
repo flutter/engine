@@ -39,7 +39,7 @@ class SnapshotController {
   virtual void MakeRasterSnapshot(
       sk_sp<DisplayList> display_list,
       SkISize picture_size,
-      std::function<void(sk_sp<DlImage>)> callback) = 0;
+      std::function<void(const sk_sp<DlImage>&)> callback) = 0;
 
   // Note that this image is not guaranteed to be UIThreadSafe and must
   // be converted to a DlImageGPU if it is to be handed back to the UI
