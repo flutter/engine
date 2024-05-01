@@ -108,7 +108,7 @@ static void BM_Convex(benchmark::State& state, Args&&... args) {
   while (state.KeepRunning()) {
     points->clear();
     indices->clear();
-    tess.TessellateConvexInternal(path, *points, *indices, 1.0f);
+    Tessellator::TessellateConvexInternal(path, *points, *indices, 1.0f);
     single_point_count = indices->size();
     point_count += indices->size();
   }
