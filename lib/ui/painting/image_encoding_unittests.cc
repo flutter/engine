@@ -232,8 +232,7 @@ std::shared_ptr<impeller::Context> MakeConvertDlImageToSkImageContext(
 
 TEST_F(ShellTest, EncodeImageRetries) {
 #ifndef FML_OS_MACOSX
-  // Only works on macos currently.
-  GTEST_SKIP();
+  GTEST_SKIP() << "Only works on macos currently.";
 #endif
   Settings settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
@@ -281,8 +280,7 @@ TEST_F(ShellTest, EncodeImageRetries) {
 
 TEST_F(ShellTest, ToImageRetries) {
 #ifndef FML_OS_MACOSX
-  // Only works on macos currently.
-  GTEST_SKIP();
+  GTEST_SKIP() << "Only works on macos currently.";
 #endif
   Settings settings = CreateSettingsForFixture();
   settings.enable_impeller = true;
