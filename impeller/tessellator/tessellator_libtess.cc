@@ -58,7 +58,7 @@ TessellatorLibtess::Result TessellatorLibtess::Tessellate(
     Scalar tolerance,
     const BuilderCallback& callback) {
   if (!callback) {
-    return Result::kInputError;
+    return TessellatorLibtess::Result::kInputError;
   }
 
   std::unique_ptr<std::vector<Point>> point_buffer =
@@ -68,12 +68,12 @@ TessellatorLibtess::Result TessellatorLibtess::Tessellate(
   auto fill_type = path.GetFillType();
 
   if (polyline.points->empty()) {
-    return Result::kInputError;
+    return TessellatorLibtess::Result::kInputError;
   }
 
   auto tessellator = c_tessellator_.get();
   if (!tessellator) {
-    return Result::kTessellationError;
+    return TessellatorLibtess::Result::kTessellationError;
   }
 
   constexpr int kVertexSize = 2;
@@ -109,7 +109,7 @@ TessellatorLibtess::Result TessellatorLibtess::Tessellate(
   );
 
   if (result != 1) {
-    return Result::kTessellationError;
+    return TessellatorLibtess::Result::kTessellationError;
   }
 
   int element_item_count = tessGetElementCount(tessellator) * kPolygonSize;
@@ -132,7 +132,7 @@ TessellatorLibtess::Result TessellatorLibtess::Tessellate(
     }
     if (!callback(vertices, vertex_item_count, indices.data(),
                   element_item_count)) {
-      return Result::kInputError;
+      return TessellatorLibtess::Result::kInputError;
     }
   } else {
     std::vector<Point> points;
@@ -153,11 +153,11 @@ TessellatorLibtess::Result TessellatorLibtess::Tessellate(
       data.emplace_back(points[elements[i]].y);
     }
     if (!callback(data.data(), element_item_count, nullptr, 0u)) {
-      return Result::kInputError;
+      return TessellatorLibtess::Result::kInputError;
     }
   }
 
-  return Result::kSuccess;
+  return TessellatorLibtess::Result::kSuccess;
 }
 
 void DestroyTessellator(TESStesselator* tessellator) {
