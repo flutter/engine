@@ -31,27 +31,28 @@ void VertexWriter::EndContour() {
   }
 
   // Triangle strip break.
-  indices_.emplace_back(indices_.back());
-  indices_.emplace_back(start);
-  indices_.emplace_back(start);
+  auto back = indices_.back();
+  indices_.push_back(back);
+  indices_.push_back(start);
+  indices_.push_back(start);
 
   // If the contour has an odd number of points, insert an extra point when
   // bridging to the next contour to preserve the correct triangle winding
   // order.
   if (previous_contour_odd_points_) {
-    indices_.emplace_back(start);
+    indices_.push_back(start);
   }
 
   size_t a = start + 1;
   size_t b = end;
   while (a < b) {
-    indices_.emplace_back(a);
-    indices_.emplace_back(b);
+    indices_.push_back(a);
+    indices_.push_back(b);
     a++;
     b--;
   }
   if (a == b) {
-    indices_.emplace_back(a);
+    indices_.push_back(a);
     previous_contour_odd_points_ = false;
   } else {
     previous_contour_odd_points_ = true;
@@ -60,7 +61,7 @@ void VertexWriter::EndContour() {
 }
 
 void VertexWriter::Write(Point point) {
-  points_.emplace_back(point);
+  points_.push_back(point);
 }
 
 /*

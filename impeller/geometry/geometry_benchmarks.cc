@@ -9,7 +9,6 @@
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/tessellator/tessellator.h"
 #include "impeller/tessellator/tessellator_libtess.h"
 
 namespace impeller {
