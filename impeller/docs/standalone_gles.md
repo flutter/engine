@@ -27,7 +27,7 @@ First create an EGL display connection:
 egl::Display display;
 ```
 
-Ask the display for a valid EGL configuration. Impeller needs and OpenGL ES 2.0 configuration.
+Ask the display for a valid EGL configuration. Impeller needs an OpenGL ES 2.0 configuration.
 
 ```c++
 egl::ConfigDescriptor egl_desc;
@@ -41,14 +41,14 @@ egl_desc.surface_type = egl::SurfaceType::kWindow;
 auto config = display.ChooseConfig(egl_desc);
 ```
 
-Once a valid config has been obtained, create a context and window surface. Creating the window surface requires a native window handle. Get the appropriate one for your platform. For instance, on Android, this is an `ANativeWindow`.
+Once a valid config has been obtained, create a context and window surface. Creating the window surface requires a native window handle. Get the appropriate one for your platform. For instance, on Android this is an `ANativeWindow`.
 
 ```c++
-auto context = display.CreateContext(*config, nullptr /* sharegroup */ );
+auto context = display.CreateContext(*config, /* sharegroup= */ nullptr );
 auto surface = display.CreateWindowSurface(*config, native_window_handle);
 ```
 
-Now that we have context, make it current on the calling thread. This should be fully setup WSI.
+Now that we have a context, make it current on the calling thread. This will complete the setup of WSI.
 
 ```c++
 context->MakeCurrent(*surface);
@@ -56,7 +56,7 @@ context->MakeCurrent(*surface);
 
 ## Creating the OpenGL ES Context
 
-Impeller doesn't statically link against OpenGL ES. You need to give it a callback the return the appropriate OpenGL ES function for given name. With EGL, this can be something as simple as:
+Impeller doesn't statically link against OpenGL ES. You need to give it a callback the returns the appropriate OpenGL ES function for given name. With EGL, this can be something as simple as:
 
 ```c++
 auto resolver = [](const char* name) -> void* {
@@ -66,7 +66,7 @@ auto resolver = [](const char* name) -> void* {
 
 Adjust as necessary.
 
-Once you have the resolver, you need to create an OpenGL ES proc table. The proc table contains the table of OpenGL ES procs that Impeller will need at runtime.
+Once you have the resolver, you need to create an OpenGL ES proc table. The proc table contains the function pointers for the subset of the OpenGL ES API used by Impeller.
 
 ```c++
 auto gl = std::make_unique<ProcTableGLES>(resolver);
