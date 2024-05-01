@@ -1,6 +1,5 @@
 package io.flutter.embedding.android;
 
-import static io.flutter.Build.API_LEVELS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -23,7 +22,7 @@ import org.robolectric.annotation.Config;
 
 @Config(manifest = Config.NONE)
 @RunWith(AndroidJUnit4.class)
-@TargetApi(API_LEVELS.API_30)
+@TargetApi(30)
 public class FlutterTextureViewTest {
   @Test
   public void surfaceTextureListenerReleasesRenderer() {
