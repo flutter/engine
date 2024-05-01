@@ -981,10 +981,6 @@ void FlutterPlatformViewsController::ResetFrameState() {
   fml::scoped_nsobject<DelayingGestureRecognizer> _delayingRecognizer;
   FlutterPlatformViewGestureRecognizersBlockingPolicy _blockingPolicy;
   UIView* _embeddedView;
-  // The used as the accessiblityContainer.
-  // The `accessiblityContainer` is used in UIKit to determine the parent of this accessibility
-  // node.
-  NSObject* _flutterAccessibilityContainer;
 }
 - (instancetype)initWithEmbeddedView:(UIView*)embeddedView
              platformViewsController:
@@ -1061,10 +1057,6 @@ void FlutterPlatformViewsController::ResetFrameState() {
 }
 
 - (void)touchesEnded:(NSSet*)touches withEvent:(UIEvent*)event {
-}
-
-- (void)setFlutterAccessibilityContainer:(NSObject*)flutterAccessibilityContainer {
-  _flutterAccessibilityContainer = flutterAccessibilityContainer;
 }
 
 - (id)accessibilityContainer {
