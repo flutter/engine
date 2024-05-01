@@ -1,6 +1,6 @@
 # Using Impeller as a Standalone Rendering Library (with OpenGL ES)
 
-This guide describes how to use Impeller as a standalone rendering library using OpenGL ES. Additionally, some form of WSI (Window System Integration) is essential. Since EGL is the most the most popular form of performing WSI on platforms with OpenGL ES, Impeller has a toolkit that assists in working with EGL. This guide will use that toolkit.
+This guide describes how to use Impeller as a standalone rendering library using OpenGL ES. Additionally, some form of WSI (Window System Integration) is essential. Since EGL is the most popular form of performing WSI on platforms with OpenGL ES, Impeller has a toolkit that assists in working with EGL. This guide will use that toolkit.
 
 While this guide focuses on OpenGL ES with EGL, the steps to setup rendering with another client rendering API (Metal and Vulkan) are fairly similar and you should be able to follow the same pattern for other backends.
 
@@ -156,7 +156,7 @@ Rendering frames is a matter of:
 
 ## Wrap the Onscreen Surface
 
-Per frame, the onscreen surface can be wrapped using SurfaceGLES::WrapFBO where the default framebuffer in our case if FBO 0. Take care to to ensure that the pixel format matches the one we used to choose the EGL config. Figuring out the pixel size is left as an exercise for the reader.
+Per frame, the onscreen surface can be wrapped using SurfaceGLES::WrapFBO where the default framebuffer in our case is FBO 0. Take care to ensure that the pixel format matches the one we used to choose the EGL config. Figuring out the pixel size is left as an exercise for the reader.
 
 ```c++
 auto surface =
@@ -182,7 +182,7 @@ SurfaceGLES::SwapCallback swap_callback =
 
 ## Render to the Surface
 
-Give the surface to the rendere along with a callback that details how you will populate the render target the renderer sets up that is directed at that surface.
+Give the surface to the renderer along with a callback that details how you will populate the render target the renderer sets up that is directed at that surface.
 
 ```c++
 renderer_->Render(std::move(surface),
@@ -192,4 +192,4 @@ renderer_->Render(std::move(surface),
                  });
 ```
 
-And that's it. Now you have functional WSI and render loop. Higher level frameworks like Aiks and DisplayList that use the render target to render their rendering into to the surface.
+And that's it. Now you have a functional WSI and render loop. Higher level frameworks like Aiks and DisplayList use the render target to render their rendering intent onto to the surface.
