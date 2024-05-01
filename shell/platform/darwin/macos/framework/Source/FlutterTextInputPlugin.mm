@@ -438,7 +438,6 @@ static char markerKey;
       _activeModel->EndComposing();
     }
     [_textInputContext discardMarkedText];
-
     _clientID = nil;
     _inputAction = nil;
     _enableDeltaModel = NO;
@@ -776,6 +775,10 @@ static char markerKey;
     IMP imp = [self methodForSelector:selector];
     void (*func)(id, SEL, id) = reinterpret_cast<void (*)(id, SEL, id)>(imp);
     func(self, selector, nil);
+  }
+  if (self.clientID == nil) {
+    // The macOS may still call selector even if it is no longer a first responder.
+    return;
   }
 
   if (selector == @selector(insertNewline:)) {
