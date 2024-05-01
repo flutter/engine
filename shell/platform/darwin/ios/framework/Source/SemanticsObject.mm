@@ -876,7 +876,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
                            uid:(int32_t)uid
                   platformView:(nonnull FlutterTouchInterceptingView*)platformView {
   if (self = [super initWithBridge:bridge uid:uid]) {
-    _platformView  = platformView;
+    _platformView = platformView;
     [platformView setFlutterAccessibilityContainer:self];
   }
   return self;
