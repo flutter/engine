@@ -32,7 +32,7 @@ static const TESSalloc kAlloc = {
 };
 
 TessellatorLibtess::TessellatorLibtess()
-    : Tessellator(), c_tessellator_(nullptr, &DestroyTessellator) {
+    : c_tessellator_(nullptr, &DestroyTessellator) {
   TESSalloc alloc = kAlloc;
   {
     // libTess2 copies the TESSalloc despite the non-const argument.
@@ -61,12 +61,9 @@ TessellatorLibtess::Result TessellatorLibtess::Tessellate(
     return Result::kInputError;
   }
 
-  point_buffer_->clear();
-  auto polyline =
-      path.CreatePolyline(tolerance, std::move(point_buffer_),
-                          [this](Path::Polyline::PointBufferPtr point_buffer) {
-                            point_buffer_ = std::move(point_buffer);
-                          });
+  std::unique_ptr<std::vector<Point>> point_buffer =
+      std::make_unique<std::vector<Point>>();
+  auto polyline = path.CreatePolyline(tolerance, std::move(point_buffer));
 
   auto fill_type = path.GetFillType();
 
