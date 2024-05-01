@@ -30,16 +30,20 @@ void VertexWriter::EndContour() {
     end--;
   }
 
-  // Triangle strip break.
-  auto back = indices_.back();
-  indices_.push_back(back);
-  indices_.push_back(start);
-  indices_.push_back(start);
+  // Triangle strip break for subsequent contours
+  if (contour_start_ != 0) {
+    auto back = indices_.back();
+    indices_.push_back(back);
+    indices_.push_back(start);
+    indices_.push_back(start);
 
-  // If the contour has an odd number of points, insert an extra point when
-  // bridging to the next contour to preserve the correct triangle winding
-  // order.
-  if (previous_contour_odd_points_) {
+    // If the contour has an odd number of points, insert an extra point when
+    // bridging to the next contour to preserve the correct triangle winding
+    // order.
+    if (previous_contour_odd_points_) {
+      indices_.push_back(start);
+    }
+  } else {
     indices_.push_back(start);
   }
 
