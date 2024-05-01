@@ -61,7 +61,7 @@ class TextureGLES final : public Texture,
   std::optional<GLuint> GetFBO() const { return wrapped_fbo_; }
 
  private:
-  friend class AllocatorMTL;
+  friend struct BlitCopyBufferToTextureCommandGLES;
 
   ReactorGLES::Ref reactor_;
   const Type type_;

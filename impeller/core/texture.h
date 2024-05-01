@@ -20,15 +20,6 @@ class Texture {
 
   virtual void SetLabel(std::string_view label) = 0;
 
-  [[nodiscard]] bool SetContents(const uint8_t* contents,
-                                 size_t length,
-                                 size_t slice = 0,
-                                 bool is_opaque = false);
-
-  [[nodiscard]] bool SetContents(std::shared_ptr<const fml::Mapping> mapping,
-                                 size_t slice = 0,
-                                 bool is_opaque = false);
-
   virtual bool IsValid() const = 0;
 
   virtual ISize GetSize() const = 0;
@@ -64,6 +55,8 @@ class Texture {
   bool mipmap_generated_ = false;
 
  private:
+  friend struct BlitCopyBufferToTextureCommandGLES;
+
   TextureCoordinateSystem coordinate_system_ =
       TextureCoordinateSystem::kRenderToTexture;
   const TextureDescriptor desc_;

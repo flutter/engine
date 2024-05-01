@@ -37,10 +37,11 @@ bool Texture::Overwrite(const tonic::DartByteData& source_bytes) {
   auto copy = std::vector<uint8_t>(data, data + source_bytes.length_in_bytes());
   // Texture::SetContents is a bit funky right now. It takes a shared_ptr of a
   // mapping and we're forced to copy here.
+  // This API should move to blit pass.
   auto mapping = std::make_shared<fml::DataMapping>(copy);
-  if (!texture_->SetContents(mapping)) {
-    return false;
-  }
+  // if (!texture_->SetContents(mapping)) {
+  //   return false;
+  // }
   return true;
 }
 

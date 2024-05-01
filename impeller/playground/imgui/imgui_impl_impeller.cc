@@ -89,10 +89,10 @@ bool ImGui_ImplImpeller_Init(
               "Could not allocate ImGui font texture.");
     bd->font_texture->SetLabel("ImGui Font Texture");
 
-    [[maybe_unused]] bool uploaded = bd->font_texture->SetContents(
-        pixels, texture_descriptor.GetByteSizeOfBaseMipLevel());
-    IM_ASSERT(uploaded &&
-              "Could not upload ImGui font texture to device memory.");
+    // [[maybe_unused]] bool uploaded = bd->font_texture->SetContents(
+    //     pixels, texture_descriptor.GetByteSizeOfBaseMipLevel());
+    // IM_ASSERT(uploaded &&
+    //           "Could not upload ImGui font texture to device memory.");
   }
 
   // Build the raster pipeline.

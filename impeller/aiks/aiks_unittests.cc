@@ -22,6 +22,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
@@ -3118,12 +3119,13 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
   auto texture =
       GetContext()->GetResourceAllocator()->CreateTexture(texture_descriptor);
 
-  ASSERT_TRUE(!!texture);
-  ASSERT_TRUE(texture->SetContents(mapping));
-
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
   auto command_buffer = GetContext()->CreateCommandBuffer();
   auto blit_pass = command_buffer->CreateBlitPass();
 
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(std::move(device_buffer)),
+                     texture);
   blit_pass->GenerateMipmap(texture);
   EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
   EXPECT_TRUE(GetContext()->GetCommandQueue()->Submit({command_buffer}).ok());
