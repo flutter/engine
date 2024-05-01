@@ -9,6 +9,7 @@
 #include <type_traits>
 #include <variant>
 #include <vector>
+#include <optional>
 
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
