@@ -438,6 +438,7 @@ static char markerKey;
       _activeModel->EndComposing();
     }
     [_textInputContext discardMarkedText];
+
     _clientID = nil;
     _inputAction = nil;
     _enableDeltaModel = NO;

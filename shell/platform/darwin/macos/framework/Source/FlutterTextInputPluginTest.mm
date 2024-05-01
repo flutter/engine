@@ -1821,15 +1821,9 @@
   NSString* runLoopMode = @"FlutterTestRunLoopMode";
   plugin.customRunLoopMode = runLoopMode;
 
-  // Ensure both selectors are grouped in one platform channel call.
+  // Call selectors without setting a client.
   [plugin doCommandBySelector:@selector(moveUp:)];
   [plugin doCommandBySelector:@selector(moveRightAndModifySelection:)];
-
-  // Clear the client before the CFRunLoop is run.
-  [plugin handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"TextInput.clearClient"
-                                                             arguments:@[]]
-                    result:^(id){
-                    }];
 
   __block bool done = false;
   CFRunLoopPerformBlock(CFRunLoopGetMain(), (__bridge CFStringRef)runLoopMode, ^{
@@ -1837,7 +1831,6 @@
   });
 
   while (!done) {
-    // Each invocation will handle one source.
     CFRunLoopRunInMode((__bridge CFStringRef)runLoopMode, 0, true);
   }
   // At this point the selectors should be dropped; otherwise, OCMReject will throw.
