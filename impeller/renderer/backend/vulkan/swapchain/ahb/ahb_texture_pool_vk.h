@@ -45,7 +45,7 @@ class AHBTexturePoolVK {
   explicit AHBTexturePoolVK(
       std::weak_ptr<Context> context,
       android::HardwareBufferDescriptor desc,
-      size_t max_entries = 2u,
+      size_t max_entries = 3u,
       std::chrono::milliseconds max_extry_age = std::chrono::seconds{1});
 
   ~AHBTexturePoolVK();
