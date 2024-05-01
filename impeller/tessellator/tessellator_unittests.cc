@@ -83,11 +83,10 @@ TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
 
 TEST(TessellatorTest, TessellateConvex) {
   {
-    Tessellator t;
     std::vector<Point> points;
     std::vector<uint16_t> indices;
     // Sanity check simple rectangle.
-    t.TessellateConvexInternal(
+    Tessellator::TessellateConvexInternal(
         PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), points,
         indices, 1.0);
 
@@ -100,14 +99,14 @@ TEST(TessellatorTest, TessellateConvex) {
   }
 
   {
-    Tessellator t;
     std::vector<Point> points;
     std::vector<uint16_t> indices;
-    t.TessellateConvexInternal(PathBuilder{}
-                                   .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                                   .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                                   .TakePath(),
-                               points, indices, 1.0);
+    Tessellator::TessellateConvexInternal(
+        PathBuilder{}
+            .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+            .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+            .TakePath(),
+        points, indices, 1.0);
 
     std::vector<Point> expected = {{0, 0},   {10, 0},  {10, 10}, {0, 10},
                                    {0, 0},   {20, 20}, {30, 20}, {30, 30},
@@ -120,7 +119,6 @@ TEST(TessellatorTest, TessellateConvex) {
 
 // Filled Paths without an explicit close should still be closed
 TEST(TessellatorTest, TessellateConvexUnclosedPath) {
-  Tessellator t;
   std::vector<Point> points;
   std::vector<uint16_t> indices;
 
@@ -130,7 +128,7 @@ TEST(TessellatorTest, TessellateConvexUnclosedPath) {
                   .LineTo({100, 100})
                   .LineTo({0, 100})
                   .TakePath();
-  t.TessellateConvexInternal(path, points, indices, 1.0);
+  Tessellator::TessellateConvexInternal(path, points, indices, 1.0);
 
   std::vector<Point> expected = {{0, 0}, {100, 0}, {100, 100}, {0, 100}};
   std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
@@ -501,14 +499,13 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
 TEST(TessellatorTest, EarlyReturnEmptyConvexShape) {
   // This path is not technically empty (it has a size in one dimension),
   // but is otherwise completely flat.
-  auto tessellator = std::make_shared<Tessellator>();
   PathBuilder builder;
   builder.MoveTo({0, 0});
   builder.MoveTo({10, 10}, /*relative=*/true);
 
   std::vector<Point> points;
   std::vector<uint16_t> indices;
-  tessellator->TessellateConvexInternal(builder.TakePath(), points, indices,
+  Tessellator::TessellateConvexInternal(builder.TakePath(), points, indices,
                                         3.0);
 
   EXPECT_TRUE(points.empty());
