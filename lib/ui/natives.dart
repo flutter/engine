@@ -108,8 +108,9 @@ typedef _ScheduleImmediateClosure = void Function(void Function());
 @pragma('vm:entry-point')
 _ScheduleImmediateClosure _getScheduleMicrotaskClosure() => _scheduleMicrotask;
 
-// Used internally to indicate whether the Engine is using Impeller for
-// rendering.
+/// Whether the Engine is using the Impeller rendering engine.
+bool get isImpellerEnabled => _impellerEnabled;
+
 @pragma('vm:entry-point')
 bool _impellerEnabled = false;
 
