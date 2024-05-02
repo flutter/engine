@@ -81,7 +81,7 @@ void testMain() {
         CanvasKitRenderer.instance
             .debugGetRasterizerForView(implicitView)!
             .currentFrameSize,
-        const ui.Size(200, 200),
+        const BitmapSize(200, 200),
       );
 
       implicitView.debugPhysicalSizeOverride = null;

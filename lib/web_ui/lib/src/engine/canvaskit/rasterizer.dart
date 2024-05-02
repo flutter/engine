@@ -27,7 +27,7 @@ abstract class ViewRasterizer {
   final RenderQueue queue = RenderQueue();
 
   /// The size of the current frame being rasterized.
-  ui.Size currentFrameSize = ui.Size.zero;
+  BitmapSize currentFrameSize = BitmapSize.zero;
 
   /// The context which is persisted between frames.
   final CompositorContext context = CompositorContext();
@@ -56,21 +56,13 @@ abstract class ViewRasterizer {
     // computed by multiplying the logical size by the devie pixel ratio, the
     // result is slightly imprecise as well. Nevertheless, the number should
     // be close to an integer, so round the frame size to be more precice.
-    bool isCloseToIntegerSize(ui.Size size) {
-      return (size.width - size.width.roundToDouble()).abs() < 0.001 &&
-          (size.height - size.height.roundToDouble()).abs() < 0.001;
-    }
+    final BitmapSize bitmapSize = BitmapSize.fromSize(frameSize);
 
-    if (isCloseToIntegerSize(frameSize)) {
-      frameSize = ui.Size(
-          frameSize.width.roundToDouble(), frameSize.height.roundToDouble());
-    }
-
-    currentFrameSize = frameSize;
+    currentFrameSize = bitmapSize;
     prepareToDraw();
     viewEmbedder.frameSize = currentFrameSize;
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize);
+    pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize.toSize());
     final Frame compositorFrame =
         context.acquireFrame(pictureRecorder.recordingCanvas!, viewEmbedder);
 
