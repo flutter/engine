@@ -4,8 +4,6 @@
 
 import 'dart:js_interop';
 
-import 'package:ui/ui.dart' as ui;
-
 import '../display.dart';
 import '../dom.dart';
 import '../util.dart';
