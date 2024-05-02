@@ -7,13 +7,12 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'dom.dart';
 
-/// A flag to check if the current [operatingSystem] is a laptop/desktop
-/// operating system.
+/// A flag to check if the current browser is running on a laptop/desktop device.
 bool get isDesktop => ui_web.browser.isDesktop;
 
 /// A flag to check if the current browser is running on a mobile device.
 ///
-/// Flutter web considers "mobile" everything that not [isDesktop].
+/// Flutter web considers "mobile" everything that's not [isDesktop].
 bool get isMobile => ui_web.browser.isMobile;
 
 /// Whether the current [browserEngine] is [BrowserEngine.blink] (Chrom(e|ium)).
@@ -77,7 +76,7 @@ bool get isChrome110OrOlder {
 // since we check this on every frame.
 bool? _cachedIsChrome110OrOlder;
 
-/// Use in tests to simulated the detection of Chrome 110 or older on Windows.
+/// Used in tests to simulate the detection of Chrome 110 or older on Windows.
 bool? debugIsChrome110OrOlder;
 
 /// Returns true if the browser is iOS Safari, false otherwise.
