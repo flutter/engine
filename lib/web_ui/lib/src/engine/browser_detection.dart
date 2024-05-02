@@ -15,13 +15,13 @@ bool get isDesktop => ui_web.browser.isDesktop;
 /// Flutter web considers "mobile" everything that's not [isDesktop].
 bool get isMobile => ui_web.browser.isMobile;
 
-/// Whether the current [browserEngine] is [BrowserEngine.blink] (Chrom(e|ium)).
+/// Whether the current browser is [ui_web.BrowserEngine.blink] (Chrom(e|ium)).
 bool get isChromium => ui_web.browser.isChromium;
 
-/// Whether the current [browserEngine] is [BrowserEngine.webkit] (Safari).
+/// Whether the current browser is [ui_web.BrowserEngine.webkit] (Safari).
 bool get isSafari => ui_web.browser.isSafari;
 
-/// Whether the current [browserEngine] is [BrowserEngine.firefox].
+/// Whether the current browser is [ui_web.BrowserEngine.firefox].
 bool get isFirefox => ui_web.browser.isFirefox;
 
 /// Whether the current browser is Edge.
