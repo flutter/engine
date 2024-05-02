@@ -1063,6 +1063,11 @@ void FlutterPlatformViewsController::ResetFrameState() {
   return _flutterAccessibilityContainer;
 }
 
+- (void)dealloc {
+  [_flutterAccessibilityContainer release];
+  [super dealloc];
+}
+
 @end
 
 @implementation DelayingGestureRecognizer {

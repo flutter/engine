@@ -867,7 +867,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @end
 
 @interface FlutterPlatformViewSemanticsContainer ()
-@property(nonatomic, retain) UIView* platformView;
+@property(nonatomic, assign) UIView* platformView;
 @end
 
 @implementation FlutterPlatformViewSemanticsContainer
