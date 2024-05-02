@@ -395,7 +395,8 @@ class HtmlViewEmbedder {
         0,
         _frameSize.width.toDouble(),
         _frameSize.height.toDouble(),
-      ));
+        ),
+      );
       final CkPaint platformViewBoundsPaint = CkPaint()
         ..color = const ui.Color.fromARGB(100, 0, 255, 0);
       final CkPaint pictureBoundsPaint = CkPaint()
