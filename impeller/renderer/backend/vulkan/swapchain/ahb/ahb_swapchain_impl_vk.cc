@@ -184,7 +184,7 @@ std::shared_ptr<ExternalFenceVK> AHBSwapchainImplVK::SubmitCompletionSignal(
 
   BarrierVK barrier;
   barrier.cmd_buffer = command_encoder_vk;
-  barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
+  barrier.new_layout = vk::ImageLayout::eGeneral;
   barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
   barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
   barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
