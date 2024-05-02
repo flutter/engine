@@ -266,7 +266,8 @@ static TextureType ToTextureType(const AHardwareBuffer_Desc& ahb_desc) {
 }
 
 static TextureDescriptor ToTextureDescriptor(
-    const AHardwareBuffer_Desc& ahb_desc) {
+    const AHardwareBuffer_Desc& ahb_desc,
+    bool is_swapchain_image) {
   const auto ahb_size = ISize{ahb_desc.width, ahb_desc.height};
   TextureDescriptor desc;
   // We are not going to touch hardware buffers on the CPU or use them as
@@ -281,14 +282,19 @@ static TextureDescriptor ToTextureDescriptor(
   desc.mip_count = (ahb_desc.usage & AHARDWAREBUFFER_USAGE_GPU_MIPMAP_COMPLETE)
                        ? ahb_size.MipCount()
                        : 1u;
+  if (is_swapchain_image) {
+    desc.usage = TextureUsage::kRenderTarget;
+  }
+
   return desc;
 }
 
 AHBTextureSourceVK::AHBTextureSourceVK(
     const std::shared_ptr<Context>& p_context,
     struct AHardwareBuffer* ahb,
-    const AHardwareBuffer_Desc& ahb_desc)
-    : TextureSourceVK(ToTextureDescriptor(ahb_desc)) {
+    const AHardwareBuffer_Desc& ahb_desc,
+    bool is_swapchain_image)
+    : TextureSourceVK(ToTextureDescriptor(ahb_desc, is_swapchain_image)) {
   if (!p_context) {
     return;
   }
@@ -371,7 +377,8 @@ AHBTextureSourceVK::AHBTextureSourceVK(
     bool is_swapchain_image)
     : AHBTextureSourceVK(context,
                          backing_store->GetHandle(),
-                         backing_store->GetAndroidDescriptor()) {
+                         backing_store->GetAndroidDescriptor(),
+                         is_swapchain_image) {
   backing_store_ = std::move(backing_store);
   is_swapchain_image_ = is_swapchain_image;
 }

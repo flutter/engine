@@ -24,16 +24,7 @@ std::unique_ptr<SurfaceVK> SurfaceVK::WrapSwapchainImage(
   }
 
   const auto enable_msaa = transients->IsMSAAEnabled();
-
   const auto swapchain_tex_desc = swapchain_image->GetTextureDescriptor();
-
-  TextureDescriptor resolve_tex_desc;
-  resolve_tex_desc.type = TextureType::kTexture2D;
-  resolve_tex_desc.format = swapchain_tex_desc.format;
-  resolve_tex_desc.size = swapchain_tex_desc.size;
-  resolve_tex_desc.usage = TextureUsage::kRenderTarget;
-  resolve_tex_desc.sample_count = SampleCount::kCount1;
-  resolve_tex_desc.storage_mode = StorageMode::kDevicePrivate;
 
   std::shared_ptr<Texture> resolve_tex =
       std::make_shared<TextureVK>(context,         //

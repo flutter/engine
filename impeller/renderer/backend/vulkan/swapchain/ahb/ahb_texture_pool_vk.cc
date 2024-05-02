@@ -8,14 +8,10 @@
 
 namespace impeller {
 
-AHBTexturePoolVK::AHBTexturePoolVK(std::weak_ptr<Context> context,
+AHBTexturePoolVK::AHBTexturePoolVK(const std::weak_ptr<Context>& context,
                                    android::HardwareBufferDescriptor desc,
-                                   size_t max_entries,
-                                   std::chrono::milliseconds max_extry_age)
-    : context_(std::move(context)),
-      desc_(desc),
-      max_entries_(max_entries),
-      max_extry_age_(max_extry_age) {
+                                   size_t max_entries)
+    : context_(std::move(context)), desc_(desc), max_entries_(max_entries) {
   if (!desc_.IsAllocatable()) {
     VALIDATION_LOG << "Swapchain image is not allocatable.";
     return;
@@ -29,20 +25,21 @@ std::shared_ptr<AHBTextureSourceVK> AHBTexturePoolVK::Pop() {
   {
     Lock lock(pool_mutex_);
     if (!pool_.empty()) {
-      auto texture = pool_.back().item;
-      pool_.pop_back();
+      auto texture = pool_.front().item;
+      pool_.pop_front();
       return texture;
     }
   }
   return CreateTexture();
 }
 
-void AHBTexturePoolVK::Push(std::shared_ptr<AHBTextureSourceVK> texture) {
+void AHBTexturePoolVK::Push(
+    const std::shared_ptr<AHBTextureSourceVK>& texture) {
   if (!texture) {
     return;
   }
   Lock lock(pool_mutex_);
-  pool_.push_back(PoolEntry{std::move(texture)});
+  pool_.push_back(PoolEntry{texture});
   PerformGCLocked();
 }
 
@@ -61,8 +58,8 @@ std::shared_ptr<AHBTextureSourceVK> AHBTexturePoolVK::CreateTexture() const {
     return nullptr;
   }
 
-  auto ahb_texture_source =
-      std::make_shared<AHBTextureSourceVK>(context, std::move(ahb), true);
+  auto ahb_texture_source = std::make_shared<AHBTextureSourceVK>(
+      context, std::move(ahb), /*is_swapchain_image=*/true);
   if (!ahb_texture_source->IsValid()) {
     VALIDATION_LOG << "Could not create hardware buffer texture source for "
                       "swapchain image of size: "
@@ -79,12 +76,7 @@ void AHBTexturePoolVK::PerformGC() {
 }
 
 void AHBTexturePoolVK::PerformGCLocked() {
-  // Push-Pop operations happen at the back of the deque so the front ages as
-  // much as possible. So that's where we collect entries.
-  auto now = Clock::now();
-  while (!pool_.empty() &&
-         (pool_.size() > max_entries_ ||
-          now - pool_.front().last_access_time > max_extry_age_)) {
+  while (!pool_.empty() && pool_.size() > max_entries_) {
     pool_.pop_front();
   }
 }

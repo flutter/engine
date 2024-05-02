@@ -36,7 +36,8 @@ class AHBTextureSourceVK final : public TextureSourceVK {
  public:
   AHBTextureSourceVK(const std::shared_ptr<Context>& context,
                      struct AHardwareBuffer* hardware_buffer,
-                     const AHardwareBuffer_Desc& hardware_buffer_desc);
+                     const AHardwareBuffer_Desc& hardware_buffer_desc,
+                     bool is_swapchain_image = false);
 
   AHBTextureSourceVK(const std::shared_ptr<Context>& context,
                      std::unique_ptr<android::HardwareBuffer> backing_store,

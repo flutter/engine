@@ -49,7 +49,7 @@ class AHBSwapchainImplVK final
   ///
   static std::shared_ptr<AHBSwapchainImplVK> Create(
       const std::weak_ptr<Context>& context,
-      std::weak_ptr<android::SurfaceControl> surface_control,
+      const std::weak_ptr<android::SurfaceControl>& surface_control,
       const ISize& size,
       bool enable_msaa);
 
@@ -105,7 +105,7 @@ class AHBSwapchainImplVK final
 
   explicit AHBSwapchainImplVK(
       const std::weak_ptr<Context>& context,
-      std::weak_ptr<android::SurfaceControl> surface_control,
+      const std::weak_ptr<android::SurfaceControl>& surface_control,
       const ISize& size,
       bool enable_msaa);
 
@@ -117,7 +117,7 @@ class AHBSwapchainImplVK final
 
   void OnTextureSetOnSurfaceControl(
       const AutoSemaSignaler& signaler,
-      std::shared_ptr<AHBTextureSourceVK> texture);
+      const std::shared_ptr<AHBTextureSourceVK>& texture);
 };
 
 }  // namespace impeller

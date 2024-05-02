@@ -37,17 +37,17 @@ static TextureDescriptor ToSwapchainTextureDescriptor(
 
 std::shared_ptr<AHBSwapchainImplVK> AHBSwapchainImplVK::Create(
     const std::weak_ptr<Context>& context,
-    std::weak_ptr<android::SurfaceControl> surface_control,
+    const std::weak_ptr<android::SurfaceControl>& surface_control,
     const ISize& size,
     bool enable_msaa) {
-  auto impl = std::shared_ptr<AHBSwapchainImplVK>(new AHBSwapchainImplVK(
-      context, std::move(surface_control), size, enable_msaa));
+  auto impl = std::shared_ptr<AHBSwapchainImplVK>(
+      new AHBSwapchainImplVK(context, surface_control, size, enable_msaa));
   return impl->IsValid() ? impl : nullptr;
 }
 
 AHBSwapchainImplVK::AHBSwapchainImplVK(
     const std::weak_ptr<Context>& context,
-    std::weak_ptr<android::SurfaceControl> surface_control,
+    const std::weak_ptr<android::SurfaceControl>& surface_control,
     const ISize& size,
     bool enable_msaa)
     : surface_control_(std::move(surface_control)),
@@ -179,7 +179,7 @@ std::shared_ptr<ExternalFenceVK> AHBSwapchainImplVK::SubmitCompletionSignal(
 
   BarrierVK barrier;
   barrier.cmd_buffer = command_encoder_vk;
-  barrier.new_layout = vk::ImageLayout::eGeneral;
+  barrier.new_layout = vk::ImageLayout::ePresentSrcKHR;
   barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
   barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite;
   barrier.dst_stage = vk::PipelineStageFlagBits::eBottomOfPipe;
@@ -208,7 +208,7 @@ std::shared_ptr<ExternalFenceVK> AHBSwapchainImplVK::SubmitCompletionSignal(
 
 void AHBSwapchainImplVK::OnTextureSetOnSurfaceControl(
     const AutoSemaSignaler& signaler,
-    std::shared_ptr<AHBTextureSourceVK> texture) {
+    const std::shared_ptr<AHBTextureSourceVK>& texture) {
   signaler->Reset();
   // The transaction completion indicates that the surface control now
   // references the hardware buffer. We can recycle the previous set buffer

@@ -42,11 +42,9 @@ class AHBTexturePoolVK {
   /// @param[in]  max_extry_age  The maximum duration an entry will remain
   ///                            cached in the pool.
   ///
-  explicit AHBTexturePoolVK(
-      std::weak_ptr<Context> context,
-      android::HardwareBufferDescriptor desc,
-      size_t max_entries = 2u,
-      std::chrono::milliseconds max_extry_age = std::chrono::seconds{1});
+  explicit AHBTexturePoolVK(const std::weak_ptr<Context>& context,
+                            android::HardwareBufferDescriptor desc,
+                            size_t max_entries = 2u);
 
   ~AHBTexturePoolVK();
 
@@ -86,7 +84,7 @@ class AHBTexturePoolVK {
   ///
   /// @param[in]  texture  The texture to be returned to the pool.
   ///
-  void Push(std::shared_ptr<AHBTextureSourceVK> texture);
+  void Push(const std::shared_ptr<AHBTextureSourceVK>& texture);
 
   //----------------------------------------------------------------------------
   /// @brief      Perform an explicit GC of the pool items. This happens
@@ -98,17 +96,15 @@ class AHBTexturePoolVK {
 
  private:
   struct PoolEntry {
-    TimePoint last_access_time;
     std::shared_ptr<AHBTextureSourceVK> item;
 
     explicit PoolEntry(std::shared_ptr<AHBTextureSourceVK> p_item)
-        : last_access_time(Clock::now()), item(std::move(p_item)) {}
+        : item(std::move(p_item)) {}
   };
 
   const std::weak_ptr<Context> context_;
   const android::HardwareBufferDescriptor desc_;
   const size_t max_entries_;
-  const std::chrono::milliseconds max_extry_age_;
   bool is_valid_ = false;
   Mutex pool_mutex_;
   std::deque<PoolEntry> pool_ IPLR_GUARDED_BY(pool_mutex_);
