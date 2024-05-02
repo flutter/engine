@@ -4,8 +4,6 @@
 
 package io.flutter.plugin.platform;
 
-import static android.view.MotionEvent.PointerCoords;
-import static android.view.MotionEvent.PointerProperties;
 import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
@@ -668,6 +666,24 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return textureId;
   }
 
+  /**
+   * Translates an original touch event to have the same locations as the ones that Flutter
+   * calculates (because original + flutter's - original = flutter's).
+   * @param originalEvent The saved original input event.
+   * @param pointerCoords The coordinates that Flutter thinks the touch is happening at.
+   */
+  private void translateNonVirtualDisplayMotionEvent(
+          MotionEvent originalEvent, PointerCoords[] pointerCoords) {
+    if (pointerCoords.length < 1) {
+      return;
+    }
+
+    float xOffset = pointerCoords[0].x-originalEvent.getX();
+    float yOffset = pointerCoords[0].y-originalEvent.getY();
+
+    originalEvent.offsetLocation(xOffset, yOffset);
+  }
+
   @VisibleForTesting
   public MotionEvent toMotionEvent(
       float density, PlatformViewsChannel.PlatformViewTouch touch, boolean usingVirtualDiplay) {
@@ -675,9 +691,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
 
+    // Compute this early so it can be used as input to translateNonVirtualDisplayMotionEvent.
+    PointerCoords[] pointerCoords =
+            parsePointerCoordsList(touch.rawPointerCoords, density)
+                    .toArray(new PointerCoords[touch.pointerCount]);
+
     if (!usingVirtualDiplay && trackedEvent != null) {
-      // We have the original event, deliver it as it will pass the verifiable
+      // We have the original event, deliver it after offsetting as it will pass the verifiable
       // input check.
+      translateNonVirtualDisplayMotionEvent(trackedEvent, pointerCoords);
       return trackedEvent;
     }
     // We are in virtual display mode or don't have a reference to the original MotionEvent.
@@ -689,11 +711,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // motion events operate on local coords, we need to replace these in the tracked
     // event with their local counterparts.
     PointerProperties[] pointerProperties =
-        parsePointerPropertiesList(touch.rawPointerPropertiesList)
-            .toArray(new PointerProperties[touch.pointerCount]);
-    PointerCoords[] pointerCoords =
-        parsePointerCoordsList(touch.rawPointerCoords, density)
-            .toArray(new PointerCoords[touch.pointerCount]);
+            parsePointerPropertiesList(touch.rawPointerPropertiesList)
+                    .toArray(new PointerProperties[touch.pointerCount]);
 
     // TODO (kaushikiska) : warn that we are potentially using an untracked
     // event in the platform views.
