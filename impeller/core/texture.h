@@ -44,14 +44,6 @@ class Texture {
  protected:
   explicit Texture(TextureDescriptor desc);
 
-  [[nodiscard]] virtual bool OnSetContents(const uint8_t* contents,
-                                           size_t length,
-                                           size_t slice) = 0;
-
-  [[nodiscard]] virtual bool OnSetContents(
-      std::shared_ptr<const fml::Mapping> mapping,
-      size_t slice) = 0;
-
   bool mipmap_generated_ = false;
 
  private:

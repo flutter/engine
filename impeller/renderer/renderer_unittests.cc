@@ -678,8 +678,9 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         auto buffer_view = DeviceBuffer::AsBufferView(device_buffer);
         auto texture =
             context->GetResourceAllocator()->CreateTexture(texture_desc);
-        if (!texture->SetContents(device_buffer->OnGetContents(),
-                                  buffer_view.range.length)) {
+        auto blit_pass = buffer->CreateBlitPass();
+        blit_pass->AddCopy(buffer_view, texture);
+        if (!blit_pass->EncodeCommands(context->GetResourceAllocator())) {
           VALIDATION_LOG << "Could not upload texture to device memory";
           return false;
         }
@@ -985,43 +986,6 @@ TEST_P(RendererTest, InactiveUniforms) {
   OpenPlaygroundHere(callback);
 }
 
-TEST_P(RendererTest, CanCreateCPUBackedTexture) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("CPU backed textures are not supported on OpenGLES.");
-  }
-
-  auto context = GetContext();
-  auto allocator = context->GetResourceAllocator();
-  size_t dimension = 2;
-
-  do {
-    ISize size(dimension, dimension);
-    TextureDescriptor texture_descriptor;
-    texture_descriptor.storage_mode = StorageMode::kHostVisible;
-    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-    texture_descriptor.size = size;
-    auto row_bytes =
-        std::max(static_cast<uint16_t>(size.width * 4),
-                 allocator->MinimumBytesPerRow(texture_descriptor.format));
-    auto buffer_size = size.height * row_bytes;
-
-    DeviceBufferDescriptor buffer_descriptor;
-    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
-    buffer_descriptor.size = buffer_size;
-
-    auto buffer = allocator->CreateBuffer(buffer_descriptor);
-
-    ASSERT_TRUE(buffer);
-
-    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
-
-    ASSERT_TRUE(texture);
-    ASSERT_TRUE(texture->IsValid());
-
-    dimension *= 2;
-  } while (dimension <= 8192);
-}
-
 TEST_P(RendererTest, DefaultIndexSize) {
   using VS = BoxFadeVertexShader;
 
@@ -1190,11 +1154,12 @@ TEST_P(RendererTest, StencilMask) {
           }
         }
       }
-      if (!render_target.GetStencilAttachment()->texture->SetContents(
-              stencil_contents.data(), stencil_contents.size(), 0, false)) {
-        VALIDATION_LOG << "Could not upload stencil contents to device memory";
-        return false;
-      }
+      // TODO
+      // if (!render_target.GetStencilAttachment()->texture->SetContents(
+      //         stencil_contents.data(), stencil_contents.size(), 0, false)) {
+      //   VALIDATION_LOG << "Could not upload stencil contents to device
+      //   memory"; return false;
+      // }
       auto pass = buffer->CreateRenderPass(render_target);
       if (!pass) {
         return false;

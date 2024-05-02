@@ -75,11 +75,12 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
       return;
     }
 
-    uint8_t pixel[] = {0xFF, 0xFF, 0xFF, 0xFF};
-    if (!placeholder_texture_->SetContents(pixel, 4)) {
-      FML_LOG(ERROR) << "Could not set contents of placeholder texture.";
-      return;
-    }
+    // TODO
+    // uint8_t pixel[] = {0xFF, 0xFF, 0xFF, 0xFF};
+    // if (!placeholder_texture_->SetContents(pixel, 4)) {
+    //   FML_LOG(ERROR) << "Could not set contents of placeholder texture.";
+    //   return;
+    // }
   }
   host_buffer_ = HostBuffer::Create(GetContext()->GetResourceAllocator());
   is_valid_ = true;

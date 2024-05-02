@@ -10,7 +10,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
-#include "impeller/base/allocation.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -18,112 +17,7 @@
 
 namespace impeller {
 
-static bool IsDepthStencilFormat(PixelFormat format) {
-  switch (format) {
-    case PixelFormat::kS8UInt:
-    case PixelFormat::kD24UnormS8Uint:
-    case PixelFormat::kD32FloatS8UInt:
-      return true;
-    case PixelFormat::kUnknown:
-    case PixelFormat::kA8UNormInt:
-    case PixelFormat::kR8UNormInt:
-    case PixelFormat::kR8G8UNormInt:
-    case PixelFormat::kR8G8B8A8UNormInt:
-    case PixelFormat::kR8G8B8A8UNormIntSRGB:
-    case PixelFormat::kB8G8R8A8UNormInt:
-    case PixelFormat::kB8G8R8A8UNormIntSRGB:
-    case PixelFormat::kR32G32B32A32Float:
-    case PixelFormat::kR16G16B16A16Float:
-    case PixelFormat::kB10G10R10XR:
-    case PixelFormat::kB10G10R10XRSRGB:
-    case PixelFormat::kB10G10R10A10XR:
-      return false;
-  }
-  FML_UNREACHABLE();
-}
-
-static TextureGLES::Type GetTextureTypeFromDescriptor(
-    const TextureDescriptor& desc) {
-  const auto usage = static_cast<TextureUsageMask>(desc.usage);
-  const auto render_target = TextureUsage::kRenderTarget;
-  const auto is_msaa = desc.sample_count == SampleCount::kCount4;
-  if (usage == render_target && IsDepthStencilFormat(desc.format)) {
-    return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
-                   : TextureGLES::Type::kRenderBuffer;
-  }
-  return is_msaa ? TextureGLES::Type::kTextureMultisampled
-                 : TextureGLES::Type::kTexture;
-}
-
-HandleType ToHandleType(TextureGLES::Type type) {
-  switch (type) {
-    case TextureGLES::Type::kTexture:
-    case TextureGLES::Type::kTextureMultisampled:
-      return HandleType::kTexture;
-    case TextureGLES::Type::kRenderBuffer:
-    case TextureGLES::Type::kRenderBufferMultisampled:
-      return HandleType::kRenderBuffer;
-  }
-  FML_UNREACHABLE();
-}
-
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
-
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
-                         TextureDescriptor desc,
-                         enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
-
-std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
-                                                  TextureDescriptor desc,
-                                                  GLuint fbo) {
-  return std::shared_ptr<TextureGLES>(
-      new TextureGLES(std::move(reactor), desc, true, fbo));
-}
-
-TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
-                         TextureDescriptor desc,
-                         bool is_wrapped,
-                         std::optional<GLuint> fbo)
-    : Texture(desc),
-      reactor_(std::move(reactor)),
-      type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
-      handle_(reactor_->CreateHandle(ToHandleType(type_))),
-      is_wrapped_(is_wrapped),
-      wrapped_fbo_(fbo) {
-  // Ensure the texture descriptor itself is valid.
-  if (!GetTextureDescriptor().IsValid()) {
-    VALIDATION_LOG << "Invalid texture descriptor.";
-    return;
-  }
-  // Ensure the texture doesn't exceed device capabilities.
-  const auto tex_size = GetTextureDescriptor().size;
-  const auto max_size =
-      reactor_->GetProcTable().GetCapabilities()->max_texture_size;
-  if (tex_size.Max(max_size) != max_size) {
-    VALIDATION_LOG << "Texture of size " << tex_size
-                   << " would exceed max supported size of " << max_size << ".";
-    return;
-  }
-
-  is_valid_ = true;
-}
-
-// |Texture|
-TextureGLES::~TextureGLES() {
-  reactor_->CollectHandle(handle_);
-}
-
-// |Texture|
-bool TextureGLES::IsValid() const {
-  return is_valid_;
-}
-
-// |Texture|
-void TextureGLES::SetLabel(std::string_view label) {
-  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
-}
+namespace {
 
 struct TexImage2DData {
   GLint internal_format = 0;
@@ -195,118 +89,113 @@ struct TexImage2DData {
   bool is_valid_ = false;
 };
 
-// |Texture|
-bool TextureGLES::OnSetContents(const uint8_t* contents,
-                                size_t length,
-                                size_t slice) {
-  return OnSetContents(CreateMappingWithCopy(contents, length), slice);
+static bool IsDepthStencilFormat(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    case PixelFormat::kUnknown:
+    case PixelFormat::kA8UNormInt:
+    case PixelFormat::kR8UNormInt:
+    case PixelFormat::kR8G8UNormInt:
+    case PixelFormat::kR8G8B8A8UNormInt:
+    case PixelFormat::kR8G8B8A8UNormIntSRGB:
+    case PixelFormat::kB8G8R8A8UNormInt:
+    case PixelFormat::kB8G8R8A8UNormIntSRGB:
+    case PixelFormat::kR32G32B32A32Float:
+    case PixelFormat::kR16G16B16A16Float:
+    case PixelFormat::kB10G10R10XR:
+    case PixelFormat::kB10G10R10XRSRGB:
+    case PixelFormat::kB10G10R10A10XR:
+      return false;
+  }
+  FML_UNREACHABLE();
+}
+
+static TextureGLES::Type GetTextureTypeFromDescriptor(
+    const TextureDescriptor& desc) {
+  const auto usage = static_cast<TextureUsageMask>(desc.usage);
+  const auto render_target = TextureUsage::kRenderTarget;
+  const auto is_msaa = desc.sample_count == SampleCount::kCount4;
+  if (usage == render_target && IsDepthStencilFormat(desc.format)) {
+    return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
+                   : TextureGLES::Type::kRenderBuffer;
+  }
+  return is_msaa ? TextureGLES::Type::kTextureMultisampled
+                 : TextureGLES::Type::kTexture;
+}
+
+}  // namespace
+
+HandleType ToHandleType(TextureGLES::Type type) {
+  switch (type) {
+    case TextureGLES::Type::kTexture:
+    case TextureGLES::Type::kTextureMultisampled:
+      return HandleType::kTexture;
+    case TextureGLES::Type::kRenderBuffer:
+    case TextureGLES::Type::kRenderBufferMultisampled:
+      return HandleType::kRenderBuffer;
+  }
+  FML_UNREACHABLE();
+}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
+    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+                         TextureDescriptor desc,
+                         enum IsWrapped wrapped)
+    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
+
+std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
+                                                  TextureDescriptor desc,
+                                                  GLuint fbo) {
+  return std::shared_ptr<TextureGLES>(
+      new TextureGLES(std::move(reactor), desc, true, fbo));
+}
+
+TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+                         TextureDescriptor desc,
+                         bool is_wrapped,
+                         std::optional<GLuint> fbo)
+    : Texture(desc),
+      reactor_(std::move(reactor)),
+      type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
+      handle_(reactor_->CreateHandle(ToHandleType(type_))),
+      is_wrapped_(is_wrapped),
+      wrapped_fbo_(fbo) {
+  // Ensure the texture descriptor itself is valid.
+  if (!GetTextureDescriptor().IsValid()) {
+    VALIDATION_LOG << "Invalid texture descriptor.";
+    return;
+  }
+  // Ensure the texture doesn't exceed device capabilities.
+  const auto tex_size = GetTextureDescriptor().size;
+  const auto max_size =
+      reactor_->GetProcTable().GetCapabilities()->max_texture_size;
+  if (tex_size.Max(max_size) != max_size) {
+    VALIDATION_LOG << "Texture of size " << tex_size
+                   << " would exceed max supported size of " << max_size << ".";
+    return;
+  }
+
+  is_valid_ = true;
 }
 
 // |Texture|
-bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
-                                size_t slice) {
-  if (!mapping) {
-    return false;
-  }
+TextureGLES::~TextureGLES() {
+  reactor_->CollectHandle(handle_);
+}
 
-  if (mapping->GetSize() == 0u) {
-    return true;
-  }
+// |Texture|
+bool TextureGLES::IsValid() const {
+  return is_valid_;
+}
 
-  if (mapping->GetMapping() == nullptr) {
-    return false;
-  }
-
-  if (GetType() != Type::kTexture) {
-    VALIDATION_LOG << "Incorrect texture usage flags for setting contents on "
-                      "this texture object.";
-    return false;
-  }
-
-  if (is_wrapped_) {
-    VALIDATION_LOG << "Cannot set the contents of a wrapped texture.";
-    return false;
-  }
-
-  const auto& tex_descriptor = GetTextureDescriptor();
-
-  if (tex_descriptor.size.IsEmpty()) {
-    return true;
-  }
-
-  if (!tex_descriptor.IsValid()) {
-    return false;
-  }
-
-  if (mapping->GetSize() < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
-    return false;
-  }
-
-  GLenum texture_type;
-  GLenum texture_target;
-  switch (tex_descriptor.type) {
-    case TextureType::kTexture2D:
-      texture_type = GL_TEXTURE_2D;
-      texture_target = GL_TEXTURE_2D;
-      break;
-    case TextureType::kTexture2DMultisample:
-      VALIDATION_LOG << "Multisample texture uploading is not supported for "
-                        "the OpenGLES backend.";
-      return false;
-    case TextureType::kTextureCube:
-      texture_type = GL_TEXTURE_CUBE_MAP;
-      texture_target = GL_TEXTURE_CUBE_MAP_POSITIVE_X + slice;
-      break;
-    case TextureType::kTextureExternalOES:
-      texture_type = GL_TEXTURE_EXTERNAL_OES;
-      texture_target = GL_TEXTURE_EXTERNAL_OES;
-      break;
-  }
-
-  auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
-                                               std::move(mapping));
-  if (!data || !data->IsValid()) {
-    VALIDATION_LOG << "Invalid texture format.";
-    return false;
-  }
-
-  ReactorGLES::Operation texture_upload = [handle = handle_,            //
-                                           data,                        //
-                                           size = tex_descriptor.size,  //
-                                           texture_type,                //
-                                           texture_target               //
-  ](const auto& reactor) {
-    auto gl_handle = reactor.GetGLHandle(handle);
-    if (!gl_handle.has_value()) {
-      VALIDATION_LOG
-          << "Texture was collected before it could be uploaded to the GPU.";
-      return;
-    }
-    const auto& gl = reactor.GetProcTable();
-    gl.BindTexture(texture_type, gl_handle.value());
-    const GLvoid* tex_data = nullptr;
-    if (data->data) {
-      tex_data = data->data->GetMapping();
-    }
-
-    {
-      TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
-                   std::to_string(data->data->GetSize()).c_str());
-      gl.TexImage2D(texture_target,         // target
-                    0u,                     // LOD level
-                    data->internal_format,  // internal format
-                    size.width,             // width
-                    size.height,            // height
-                    0u,                     // border
-                    data->external_format,  // external format
-                    data->type,             // type
-                    tex_data                // data
-      );
-    }
-  };
-
-  contents_initialized_ = reactor_->AddOperation(texture_upload);
-  return contents_initialized_;
+// |Texture|
+void TextureGLES::SetLabel(std::string_view label) {
+  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
 }
 
 // |Texture|

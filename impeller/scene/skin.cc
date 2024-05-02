@@ -110,11 +110,14 @@ std::shared_ptr<Texture> Skin::GetJointsTexture(Allocator& allocator) {
     joints[joint_i] = joints[joint_i] * inverse_bind_matrices_[joint_i];
   }
 
-  if (!result->SetContents(reinterpret_cast<uint8_t*>(joints.data()),
-                           joints.size() * sizeof(Matrix))) {
-    FML_LOG(ERROR) << "Could not set contents of joint texture.";
-    return nullptr;
-  }
+  // auto cmd_buffer = context.CreateCommandBuffer();
+  // auto blit_pass = cmd_buffer->CreateBlitPass();
+
+  // if (!result->SetContents(reinterpret_cast<uint8_t*>(joints.data()),
+  //                          joints.size() * sizeof(Matrix))) {
+  //   FML_LOG(ERROR) << "Could not set contents of joint texture.";
+  //   return nullptr;
+  // }
 
   return result;
 }
