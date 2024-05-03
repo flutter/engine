@@ -288,12 +288,18 @@ bool ExperimentalCanvas::Restore() {
 
     element_entity.Render(renderer_, *render_passes_.back());
     clip_coverage_stack_.PopSubpass();
+    transform_stack_.pop_back();
+
+    // We don't need to restore clips if a saveLayer was performed, as the clip
+    // state is per render target, and no more rendering operations will be
+    // performed as the render target workloaded is completed in the restore.
+    return true;
   }
 
+  size_t num_clips = transform_stack_.back().num_clips;
   transform_stack_.pop_back();
 
-  // Restore any clip coverage.
-  if (transform_stack_.back().num_clips > 0) {
+  if (num_clips > 0) {
     Entity entity;
     entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) *
