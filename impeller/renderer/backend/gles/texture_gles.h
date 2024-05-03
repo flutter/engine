@@ -62,6 +62,8 @@ class TextureGLES final : public Texture,
 
   void MarkContentsInitialized() const;
 
+  bool IsInitialized() const { return contents_initialized_; }
+
  private:
   ReactorGLES::Ref reactor_;
   const Type type_;
