@@ -144,7 +144,13 @@ MultiFrameCodec::State::GetNextFrameImage(
 
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled_) {
-    // TODO;
+    // This is safe regardless of whether the GPU is available or not because
+    // without mipmap creation there is no command buffer encoding done.
+    return ImageDecoderImpeller::UploadTextureToStorage(
+        impeller_context, std::make_shared<SkBitmap>(bitmap),
+        std::make_shared<fml::SyncSwitch>(),
+        impeller::StorageMode::kHostVisible,
+        /*create_mips=*/false);
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
 

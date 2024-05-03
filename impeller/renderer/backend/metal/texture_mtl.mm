@@ -68,6 +68,42 @@ void TextureMTL::SetLabel(std::string_view label) {
   [aquire_proc_() setLabel:@(label.data())];
 }
 
+// |Texture|
+bool TextureMTL::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                               size_t slice) {
+  // Metal has no threading restrictions. So we can pass this data along to the
+  // client rendering API immediately.
+  return OnSetContents(mapping->GetMapping(), mapping->GetSize(), slice);
+}
+
+// |Texture|
+bool TextureMTL::OnSetContents(const uint8_t* contents,
+                               size_t length,
+                               size_t slice) {
+  if (!IsValid() || !contents || is_wrapped_ || is_drawable_) {
+    return false;
+  }
+
+  const auto& desc = GetTextureDescriptor();
+
+  // Out of bounds access.
+  if (length != desc.GetByteSizeOfBaseMipLevel()) {
+    return false;
+  }
+
+  const auto region =
+      MTLRegionMake2D(0u, 0u, desc.size.width, desc.size.height);
+  [aquire_proc_() replaceRegion:region                            //
+                    mipmapLevel:0u                                //
+                          slice:slice                             //
+                      withBytes:contents                          //
+                    bytesPerRow:desc.GetBytesPerRow()             //
+                  bytesPerImage:desc.GetByteSizeOfBaseMipLevel()  //
+  ];
+
+  return true;
+}
+
 ISize TextureMTL::GetSize() const {
   if (is_drawable_) {
     return GetTextureDescriptor().size;

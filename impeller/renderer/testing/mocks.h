@@ -83,8 +83,7 @@ class MockBlitPass : public BlitPass {
               (BufferView source,
                std::shared_ptr<Texture> destination,
                IPoint destination_origin,
-               std::string label,
-               uint32_t slice),
+               std::string label),
               (override));
   MOCK_METHOD(bool,
               OnGenerateMipmapCommand,
@@ -179,6 +178,14 @@ class MockTexture : public Texture {
   MOCK_METHOD(void, SetLabel, (std::string_view label), (override));
   MOCK_METHOD(bool, IsValid, (), (const, override));
   MOCK_METHOD(ISize, GetSize, (), (const, override));
+  MOCK_METHOD(bool,
+              OnSetContents,
+              (const uint8_t* contents, size_t length, size_t slice),
+              (override));
+  MOCK_METHOD(bool,
+              OnSetContents,
+              (std::shared_ptr<const fml::Mapping> mapping, size_t slice),
+              (override));
 };
 
 class MockCapabilities : public Capabilities {
@@ -186,6 +193,7 @@ class MockCapabilities : public Capabilities {
   MOCK_METHOD(bool, SupportsOffscreenMSAA, (), (const, override));
   MOCK_METHOD(bool, SupportsImplicitResolvingMSAA, (), (const, override));
   MOCK_METHOD(bool, SupportsSSBO, (), (const, override));
+  MOCK_METHOD(bool, SupportsBufferToTextureBlits, (), (const, override));
   MOCK_METHOD(bool, SupportsTextureToTextureBlits, (), (const, override));
   MOCK_METHOD(bool, SupportsFramebufferFetch, (), (const, override));
   MOCK_METHOD(bool, SupportsCompute, (), (const, override));

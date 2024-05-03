@@ -24,6 +24,14 @@ class TestImpellerTexture : public Texture {
   void SetLabel(std::string_view label) override {}
   bool IsValid() const override { return true; }
   ISize GetSize() const { return GetTextureDescriptor().size; }
+
+  bool OnSetContents(const uint8_t* contents, size_t length, size_t slice) {
+    return true;
+  }
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) {
+    return true;
+  }
 };
 
 class TestImpellerDeviceBuffer : public DeviceBuffer {
@@ -36,6 +44,12 @@ class TestImpellerDeviceBuffer : public DeviceBuffer {
   ~TestImpellerDeviceBuffer() { free(bytes_); }
 
  private:
+  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
+                                     const TextureDescriptor& descriptor,
+                                     uint16_t row_bytes) const override {
+    return nullptr;
+  }
+
   bool SetLabel(const std::string& label) override { return true; }
 
   bool SetLabel(const std::string& label, Range range) override { return true; }

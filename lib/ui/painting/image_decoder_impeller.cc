@@ -5,7 +5,6 @@
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
 
 #include <memory>
-#include <utility>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/make_copyable.h"
@@ -343,9 +342,105 @@ ImageDecoderImpeller::UploadTextureToPrivate(
           })
           .SetIfTrue([&result, context, bitmap, gpu_disabled_switch] {
             // create_mips is false because we already know the GPU is disabled.
-            result = std::make_pair(nullptr, "failed");
+            result =
+                UploadTextureToStorage(context, bitmap, gpu_disabled_switch,
+                                       impeller::StorageMode::kHostVisible,
+                                       /*create_mips=*/false);
           }));
   return result;
+}
+
+std::pair<sk_sp<DlImage>, std::string>
+ImageDecoderImpeller::UploadTextureToStorage(
+    const std::shared_ptr<impeller::Context>& context,
+    std::shared_ptr<SkBitmap> bitmap,
+    const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
+    impeller::StorageMode storage_mode,
+    bool create_mips) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+  if (!context) {
+    return std::make_pair(nullptr, "No Impeller context is available");
+  }
+  if (!bitmap) {
+    return std::make_pair(nullptr, "No texture bitmap is available");
+  }
+  const auto image_info = bitmap->info();
+  const auto pixel_format =
+      impeller::skia_conversions::ToPixelFormat(image_info.colorType());
+  if (!pixel_format) {
+    std::string decode_error(impeller::SPrintF(
+        "Unsupported pixel format (SkColorType=%d)", image_info.colorType()));
+    FML_DLOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
+  }
+
+  impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = storage_mode;
+  texture_descriptor.format = pixel_format.value();
+  texture_descriptor.size = {image_info.width(), image_info.height()};
+  texture_descriptor.mip_count =
+      create_mips ? texture_descriptor.size.MipCount() : 1;
+
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
+  if (!texture) {
+    std::string decode_error("Could not create Impeller texture.");
+    FML_DLOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
+  }
+
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
+      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
+  );
+
+  if (!texture->SetContents(mapping)) {
+    std::string decode_error("Could not copy contents into Impeller texture.");
+    FML_DLOG(ERROR) << decode_error;
+    return std::make_pair(nullptr, decode_error);
+  }
+
+  texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
+
+  if (texture_descriptor.mip_count > 1u && create_mips) {
+    std::optional<std::string> decode_error;
+
+    // The only platform that needs mipmapping unconditionally is GL.
+    // GL based platforms never disable GPU access.
+    // This is only really needed for iOS.
+    gpu_disabled_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
+        [context, &texture, &decode_error] {
+          auto command_buffer = context->CreateCommandBuffer();
+          if (!command_buffer) {
+            decode_error =
+                "Could not create command buffer for mipmap generation.";
+            return;
+          }
+          command_buffer->SetLabel("Mipmap Command Buffer");
+
+          auto blit_pass = command_buffer->CreateBlitPass();
+          if (!blit_pass) {
+            decode_error = "Could not create blit pass for mipmap generation.";
+            return;
+          }
+          blit_pass->SetLabel("Mipmap Blit Pass");
+          blit_pass->GenerateMipmap(texture);
+          blit_pass->EncodeCommands(context->GetResourceAllocator());
+          if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
+            decode_error = "Failed to submit blit pass command buffer.";
+            return;
+          }
+          command_buffer->WaitUntilScheduled();
+        }));
+    if (decode_error.has_value()) {
+      FML_DLOG(ERROR) << decode_error.value();
+      return std::make_pair(nullptr, decode_error.value());
+    }
+  }
+
+  return std::make_pair(impeller::DlImageImpeller::Make(std::move(texture)),
+                        std::string());
 }
 
 // |ImageDecoder|
@@ -399,10 +494,18 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
                                                  gpu_disabled_switch]() {
           sk_sp<DlImage> image;
           std::string decode_error;
-          std::tie(image, decode_error) = UploadTextureToPrivate(
-              context, bitmap_result.device_buffer, bitmap_result.image_info,
-              bitmap_result.sk_bitmap, gpu_disabled_switch);
-          result(image, decode_error);
+          if (context->GetCapabilities()->SupportsBufferToTextureBlits()) {
+            std::tie(image, decode_error) = UploadTextureToPrivate(
+                context, bitmap_result.device_buffer, bitmap_result.image_info,
+                bitmap_result.sk_bitmap, gpu_disabled_switch);
+            result(image, decode_error);
+          } else {
+            std::tie(image, decode_error) = UploadTextureToStorage(
+                context, bitmap_result.sk_bitmap, gpu_disabled_switch,
+                impeller::StorageMode::kDevicePrivate,
+                /*create_mips=*/true);
+            result(image, decode_error);
+          }
         };
         if (context->GetBackendType() ==
             impeller::Context::BackendType::kOpenGLES) {

@@ -35,7 +35,6 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator_libtess.h"
 #include "third_party/imgui/imgui.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -389,25 +388,14 @@ TEST_P(RendererTest, CanRenderInstanced) {
   using FS = InstancedDrawFragmentShader;
 
   VertexBufferBuilder<VS::PerVertexData> builder;
-
-  ASSERT_EQ(Tessellator::Result::kSuccess,
-            TessellatorLibtess{}.Tessellate(
-                PathBuilder{}
-                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath(FillType::kOdd),
-                1.0f,
-                [&builder](const float* vertices, size_t vertices_count,
-                           const uint16_t* indices, size_t indices_count) {
-                  for (auto i = 0u; i < vertices_count * 2; i += 2) {
-                    VS::PerVertexData data;
-                    data.vtx = {vertices[i], vertices[i + 1]};
-                    builder.AppendVertex(data);
-                  }
-                  for (auto i = 0u; i < indices_count; i++) {
-                    builder.AppendIndex(indices[i]);
-                  }
-                  return true;
-                }));
+  builder.AddVertices({
+      VS::PerVertexData{Point{10, 10}},
+      VS::PerVertexData{Point{10, 110}},
+      VS::PerVertexData{Point{110, 10}},
+      VS::PerVertexData{Point{10, 110}},
+      VS::PerVertexData{Point{110, 10}},
+      VS::PerVertexData{Point{110, 110}},
+  });
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -678,9 +666,8 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
         auto buffer_view = DeviceBuffer::AsBufferView(device_buffer);
         auto texture =
             context->GetResourceAllocator()->CreateTexture(texture_desc);
-        auto blit_pass = buffer->CreateBlitPass();
-        blit_pass->AddCopy(buffer_view, texture);
-        if (!blit_pass->EncodeCommands(context->GetResourceAllocator())) {
+        if (!texture->SetContents(device_buffer->OnGetContents(),
+                                  buffer_view.range.length)) {
           VALIDATION_LOG << "Could not upload texture to device memory";
           return false;
         }
@@ -986,6 +973,43 @@ TEST_P(RendererTest, InactiveUniforms) {
   OpenPlaygroundHere(callback);
 }
 
+TEST_P(RendererTest, CanCreateCPUBackedTexture) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP_("CPU backed textures are not supported on OpenGLES.");
+  }
+
+  auto context = GetContext();
+  auto allocator = context->GetResourceAllocator();
+  size_t dimension = 2;
+
+  do {
+    ISize size(dimension, dimension);
+    TextureDescriptor texture_descriptor;
+    texture_descriptor.storage_mode = StorageMode::kHostVisible;
+    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+    texture_descriptor.size = size;
+    auto row_bytes =
+        std::max(static_cast<uint16_t>(size.width * 4),
+                 allocator->MinimumBytesPerRow(texture_descriptor.format));
+    auto buffer_size = size.height * row_bytes;
+
+    DeviceBufferDescriptor buffer_descriptor;
+    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
+    buffer_descriptor.size = buffer_size;
+
+    auto buffer = allocator->CreateBuffer(buffer_descriptor);
+
+    ASSERT_TRUE(buffer);
+
+    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
+
+    ASSERT_TRUE(texture);
+    ASSERT_TRUE(texture->IsValid());
+
+    dimension *= 2;
+  } while (dimension <= 8192);
+}
+
 TEST_P(RendererTest, DefaultIndexSize) {
   using VS = BoxFadeVertexShader;
 
@@ -1154,20 +1178,11 @@ TEST_P(RendererTest, StencilMask) {
           }
         }
       }
-
-      auto mapping = std::make_unique<fml::NonOwnedMapping>(
-          stencil_contents.data(), stencil_contents.size());
-      auto blit_pass = buffer->CreateBlitPass();
-      auto device_buffer =
-          context->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
-      blit_pass->AddCopy(impeller::DeviceBuffer::AsBufferView(device_buffer),
-                         render_target.GetStencilAttachment()->texture);
-
-      if (!blit_pass->EncodeCommands(context->GetResourceAllocator())) {
+      if (!render_target.GetStencilAttachment()->texture->SetContents(
+              stencil_contents.data(), stencil_contents.size(), 0, false)) {
         VALIDATION_LOG << "Could not upload stencil contents to device memory";
         return false;
       }
-
       auto pass = buffer->CreateRenderPass(render_target);
       if (!pass) {
         return false;
