@@ -262,7 +262,7 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
                                image_copy               //
   );
 
-    // Transition to shader-read.
+  // Transition to shader-read.
   {
     BarrierVK barrier;
     barrier.cmd_buffer = cmd_buffer;
