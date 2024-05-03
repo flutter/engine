@@ -270,7 +270,10 @@ ContentContext::ContentContext(
     blit_pass->AddCopy(buffer_view, empty_texture_);
 
     if (!blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) ||
-        !GetContext()->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok()) {
+        !GetContext()
+             ->GetCommandQueue()
+             ->Submit({std::move(cmd_buffer)})
+             .ok()) {
       VALIDATION_LOG << "Failed to create empty texture.";
     }
   }
@@ -286,10 +289,6 @@ ContentContext::ContentContext(
           context_->GetCapabilities()->GetDefaultColorFormat()};
   const auto supports_decal = static_cast<Scalar>(
       context_->GetCapabilities()->SupportsDecalSamplerAddressMode());
-
-#ifdef IMPELLER_DEBUG
-  checkerboard_pipelines_.CreateDefault(*context_, options);
-#endif  // IMPELLER_DEBUG
 
   {
     solid_fill_pipelines_.CreateDefault(*context_, options);
