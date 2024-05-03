@@ -10,7 +10,6 @@
 #include <optional>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
 #include "impeller/base/thread_safety.h"
 #include "impeller/core/texture.h"

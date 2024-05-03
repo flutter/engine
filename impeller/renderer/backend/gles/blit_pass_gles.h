@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "flutter/impeller/base/config.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
 #include "flutter/impeller/renderer/blit_pass.h"
@@ -59,10 +58,9 @@ class BlitPassGLES final : public BlitPass,
   bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
                                     IPoint destination_origin,
-                                    std::string label) override {
-    IMPELLER_UNIMPLEMENTED;
-    return false;
-  }
+                                    std::string label,
+                                    uint32_t slice) override;
+
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;
