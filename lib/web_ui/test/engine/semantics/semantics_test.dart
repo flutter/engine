@@ -1393,8 +1393,8 @@ void _testVerticalScrolling() {
     int browserMaxScrollDiff = 0;
     // The max scroll value varies between `9` and `10` for Safari desktop
     // browsers.
-    if (browserEngine == BrowserEngine.webkit &&
-        operatingSystem == OperatingSystem.macOs) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
+        ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
       browserMaxScrollDiff = 1;
     }
 
@@ -1544,8 +1544,8 @@ void _testHorizontalScrolling() {
     int browserMaxScrollDiff = 0;
     // The max scroll value varies between `9` and `10` for Safari desktop
     // browsers.
-    if (browserEngine == BrowserEngine.webkit &&
-        operatingSystem == OperatingSystem.macOs) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
+        ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
       browserMaxScrollDiff = 1;
     }
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
@@ -1768,12 +1768,24 @@ void _testTextField() {
     );
 
     owner().updateSemantics(builder.build());
+
     expectSemanticsTree(owner(), '''
 <sem style="$rootSemanticStyle">
-  <input value="hello" />
+  <input />
 </sem>''');
 
+
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
+
+    // TODO(yjbanov): this used to attempt to test that value="hello" but the
+    //                test was a false positive. We should revise this test and
+    //                make sure it tests the right things:
+    //                https://github.com/flutter/flutter/issues/147200
+    expect(
+      (node.element as DomHTMLInputElement).value,
+      isNull,
+    );
+
     expect(node.primaryRole?.role, PrimaryRole.textField);
     expect(
       reason: 'Text fields use custom focus management',
@@ -1818,7 +1830,7 @@ void _testTextField() {
     semantics().semanticsEnabled = false;
   }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
       // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
-      skip: browserEngine != BrowserEngine.blink);
+      skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.blink);
 }
 
 void _testCheckables() {

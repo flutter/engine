@@ -14,9 +14,16 @@ import 'package:process_runner/process_runner.dart';
 import 'src/commands/command_runner.dart';
 import 'src/environment.dart';
 import 'src/logger.dart';
+import 'src/phone_home.dart';
 
 void main(List<String> args) async {
+  if (phoneHome(args)) {
+    return;
+  }
+
   final bool verbose = args.contains('--verbose') || args.contains('-v');
+  final bool help = args.contains('help') || args.contains('--help') ||
+                    args.contains('-h');
 
   // Find the engine repo.
   final Engine engine;
@@ -66,6 +73,7 @@ void main(List<String> args) async {
     environment: environment,
     configs: configs,
     verbose: verbose,
+    help: help,
   );
 
   try {

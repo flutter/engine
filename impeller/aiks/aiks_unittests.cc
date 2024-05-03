@@ -21,7 +21,6 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
-#include "impeller/core/capture.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
@@ -2218,30 +2217,6 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-/// Tests that the debug checkerboard displays for offscreen textures when
-/// enabled. Most of the complexity here is just to future proof by making pass
-/// collapsing hard.
-TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
-  Canvas canvas;
-  canvas.debug_options.offscreen_texture_checkerboard = true;
-
-  canvas.DrawPaint({.color = Color::AntiqueWhite()});
-  canvas.DrawCircle({400, 300}, 200,
-                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
-
-  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  {
-    canvas.DrawCircle({500, 400}, 200,
-                      {.color = Color::DarkBlue().WithAlpha(0.75)});
-    canvas.DrawCircle({550, 450}, 200,
-                      {.color = Color::LightCoral().WithAlpha(0.75),
-                       .blend_mode = BlendMode::kLuminosity});
-  }
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   Canvas canvas;
   canvas.Scale(Vector2(1.618, 1.618));
@@ -2349,10 +2324,6 @@ TEST_P(AiksTest, DrawPaintTransformsBounds) {
 }
 
 TEST_P(AiksTest, CanDrawPoints) {
-  if (GetBackend() == PlaygroundBackend::kMetal) {
-    // https://github.com/flutter/flutter/issues/147184
-    GTEST_SKIP() << "Draw Points is currently broken on the metal m1 backend.";
-  }
   std::vector<Point> points = {
       {0, 0},      //
       {100, 100},  //
@@ -2447,10 +2418,6 @@ TEST_P(AiksTest, DrawAtlasAdvancedAndTransform) {
 }
 
 TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
-  if (GetBackend() == PlaygroundBackend::kMetal) {
-    // https://github.com/flutter/flutter/issues/147184
-    GTEST_SKIP() << "Draw Points is currently broken on the metal m1 backend.";
-  }
   auto texture = CreateTextureForFixture("table_mountain_nx.png",
                                          /*enable_mipmapping=*/true);
 
@@ -2628,38 +2595,6 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CaptureContext) {
-  auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
-
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    Canvas canvas;
-
-    capture_context.Rewind();
-    auto document = capture_context.GetDocument("TestDocument");
-
-    auto color = document.AddColor("Background color", Color::CornflowerBlue());
-    canvas.DrawPaint({.color = color});
-
-    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize)) {
-      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
-        property.Invoke({.color = [](CaptureColorProperty& p) {
-          ImGui::ColorEdit4(p.label.c_str(),
-                            reinterpret_cast<float*>(&p.value));
-        }});
-      });
-      ImGui::End();
-    }
-
-    return canvas.EndRecordingAsPicture();
-  };
-  OpenPlaygroundHere(callback);
-}
-
-TEST_P(AiksTest, CaptureInactivatedByDefault) {
-  ASSERT_FALSE(GetContext()->capture.IsActive());
 }
 
 // Regression test for https://github.com/flutter/flutter/issues/134678.
@@ -3197,6 +3132,24 @@ TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
                             .stroke_cap = Cap::kRound,
                             .style = Paint::Style::kStroke,
                         });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
+  // Verifies that text scales are clamped to work around
+  // https://github.com/flutter/flutter/issues/136112 .
+
+  Canvas canvas;
+  Paint save_paint;
+  canvas.SaveLayer(save_paint);
+  canvas.Transform(Matrix(2000, 0, 0, 0,   //
+                          0, 2000, 0, 0,   //
+                          0, 0, -1, 9000,  //
+                          0, 0, -1, 7000   //
+                          ));
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
+                                     "Roboto-Regular.ttf"));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

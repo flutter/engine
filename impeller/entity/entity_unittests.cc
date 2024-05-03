@@ -2027,69 +2027,6 @@ TEST_P(EntityTest, SrgbToLinearFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(EntityTest, AtlasContentsSubAtlas) {
-  auto boston = CreateTextureForFixture("boston.jpg");
-
-  {
-    auto contents = std::make_shared<AtlasContents>();
-    contents->SetBlendMode(BlendMode::kSourceOver);
-    contents->SetTexture(boston);
-    contents->SetColors({
-        Color::Red(),
-        Color::Red(),
-        Color::Red(),
-    });
-    contents->SetTextureCoordinates({
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-    });
-    contents->SetTransforms({
-        Matrix::MakeTranslation(Vector2(0, 0)),
-        Matrix::MakeTranslation(Vector2(100, 100)),
-        Matrix::MakeTranslation(Vector2(200, 200)),
-    });
-
-    // Since all colors and sample rects are the same, there should
-    // only be a single entry in the sub atlas.
-    auto subatlas = contents->GenerateSubAtlas();
-    ASSERT_EQ(subatlas->sub_texture_coords.size(), 1u);
-  }
-
-  {
-    auto contents = std::make_shared<AtlasContents>();
-    contents->SetBlendMode(BlendMode::kSourceOver);
-    contents->SetTexture(boston);
-    contents->SetColors({
-        Color::Red(),
-        Color::Green(),
-        Color::Blue(),
-    });
-    contents->SetTextureCoordinates({
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-        Rect::MakeLTRB(0, 0, 10, 10),
-    });
-    contents->SetTransforms({
-        Matrix::MakeTranslation(Vector2(0, 0)),
-        Matrix::MakeTranslation(Vector2(100, 100)),
-        Matrix::MakeTranslation(Vector2(200, 200)),
-    });
-
-    // Since all colors are different, there are three entires.
-    auto subatlas = contents->GenerateSubAtlas();
-    ASSERT_EQ(subatlas->sub_texture_coords.size(), 3u);
-
-    // The translations are kept but the sample rects point into
-    // different parts of the sub atlas.
-    ASSERT_EQ(subatlas->result_texture_coords[0], Rect::MakeXYWH(0, 0, 10, 10));
-    ASSERT_EQ(subatlas->result_texture_coords[1],
-              Rect::MakeXYWH(11, 0, 10, 10));
-    ASSERT_EQ(subatlas->result_texture_coords[2],
-              Rect::MakeXYWH(22, 0, 10, 10));
-  }
-}
-
 static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {
   Vector3 yuv;
   switch (yuv_color_space) {
@@ -2303,6 +2240,20 @@ TEST_P(EntityTest, RuntimeEffectCanSuccessfullyRender) {
   ASSERT_TRUE(command.pipeline->GetDescriptor()
                   .GetFrontStencilAttachmentDescriptor()
                   .has_value());
+}
+
+TEST_P(EntityTest, RuntimeEffectCanPrecache) {
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_example.frag.iplr");
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  auto contents = std::make_shared<RuntimeEffectContents>();
+  contents->SetRuntimeStage(runtime_stage);
+
+  EXPECT_TRUE(contents->BootstrapShader(*GetContentContext()));
 }
 
 TEST_P(EntityTest, RuntimeEffectSetsRightSizeWhenUniformIsStruct) {
@@ -2582,24 +2533,6 @@ TEST_P(EntityTest, TiledTextureContentsIsOpaque) {
   ASSERT_FALSE(contents.IsOpaque());
 }
 
-TEST_P(EntityTest, PointFieldGeometryDivisions) {
-  // Square always gives 4 divisions.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(24.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(2.0, false), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(200.0, false), 4u);
-
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(0.5, true), 4u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1.5, true), 8u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(5.5, true), 24u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(12.5, true), 34u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(22.3, true), 22u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(40.5, true), 40u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(100.0, true), 100u);
-  // Caps at 140.
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(1000.0, true), 140u);
-  ASSERT_EQ(PointFieldGeometry::ComputeCircleDivisions(20000.0, true), 140u);
-}
-
 TEST_P(EntityTest, PointFieldGeometryCoverage) {
   std::vector<Point> points = {{10, 20}, {100, 200}};
   auto geometry = Geometry::MakePointField(points, 5.0, false);
@@ -2633,6 +2566,7 @@ TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(100000000.0f, 12), 48.0f);
 }
 
 TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {
@@ -2831,12 +2765,7 @@ TEST_P(EntityTest, CanComputeGeometryForEmptyPathsWithoutCrashing) {
   auto position_result =
       geom->GetPositionBuffer(*GetContentContext(), entity, render_pass);
 
-  auto uv_result =
-      geom->GetPositionUVBuffer(Rect::MakeLTRB(0, 0, 100, 100), Matrix(),
-                                *GetContentContext(), entity, render_pass);
-
   EXPECT_EQ(position_result.vertex_buffer.vertex_count, 0u);
-  EXPECT_EQ(uv_result.vertex_buffer.vertex_count, 0u);
 
   EXPECT_EQ(geom->GetResultMode(), GeometryResult::Mode::kNormal);
 }

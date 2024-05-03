@@ -24,13 +24,10 @@
 #include "impeller/fixtures/sepia.frag.h"
 #include "impeller/fixtures/sepia.vert.h"
 #include "impeller/fixtures/swizzle.frag.h"
-#include "impeller/fixtures/test_texture.frag.h"
-#include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/fixtures/texture.frag.h"
 #include "impeller/fixtures/texture.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/playground_test.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -38,7 +35,6 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 #include "third_party/imgui/imgui.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -392,25 +388,14 @@ TEST_P(RendererTest, CanRenderInstanced) {
   using FS = InstancedDrawFragmentShader;
 
   VertexBufferBuilder<VS::PerVertexData> builder;
-
-  ASSERT_EQ(Tessellator::Result::kSuccess,
-            Tessellator{}.Tessellate(
-                PathBuilder{}
-                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath(FillType::kOdd),
-                1.0f,
-                [&builder](const float* vertices, size_t vertices_count,
-                           const uint16_t* indices, size_t indices_count) {
-                  for (auto i = 0u; i < vertices_count * 2; i += 2) {
-                    VS::PerVertexData data;
-                    data.vtx = {vertices[i], vertices[i + 1]};
-                    builder.AppendVertex(data);
-                  }
-                  for (auto i = 0u; i < indices_count; i++) {
-                    builder.AppendIndex(indices[i]);
-                  }
-                  return true;
-                }));
+  builder.AddVertices({
+      VS::PerVertexData{Point{10, 10}},
+      VS::PerVertexData{Point{10, 110}},
+      VS::PerVertexData{Point{110, 10}},
+      VS::PerVertexData{Point{10, 110}},
+      VS::PerVertexData{Point{110, 10}},
+      VS::PerVertexData{Point{110, 110}},
+  });
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =

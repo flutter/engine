@@ -78,6 +78,20 @@ enum class RequiredAndroidDeviceExtensionVK : uint32_t {
   ///
   kKHRDedicatedAllocation,
 
+  //----------------------------------------------------------------------------
+  /// For exporting file descriptors from fences to interact with platform APIs.
+  ///
+  /// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_external_fence_fd.html
+  ///
+  kKHRExternalFenceFd,
+
+  //----------------------------------------------------------------------------
+  /// Dependency of kKHRExternalFenceFd.
+  ///
+  /// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_KHR_external_fence.html
+  ///
+  kKHRExternalFence,
+
   kLast,
 };
 
@@ -137,7 +151,8 @@ class CapabilitiesVK final : public Capabilities,
 
   using PhysicalDeviceFeatures =
       vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                         vk::PhysicalDeviceSamplerYcbcrConversionFeaturesKHR>;
+                         vk::PhysicalDeviceSamplerYcbcrConversionFeaturesKHR,
+                         vk::PhysicalDevice16BitStorageFeatures>;
 
   std::optional<PhysicalDeviceFeatures> GetEnabledDeviceFeatures(
       const vk::PhysicalDevice& physical_device) const;
