@@ -48,6 +48,22 @@ class FakeTexture : public Texture {
 
   Scalar GetYCoordScale() const override { return 1.0; }
 
+  bool OnSetContents(const uint8_t* contents,
+                     size_t length,
+                     size_t slice) override {
+    if (GetTextureDescriptor().GetByteSizeOfBaseMipLevel() != length) {
+      return false;
+    }
+    did_set_contents = true;
+    return true;
+  }
+
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) override {
+    did_set_contents = true;
+    return true;
+  }
+
   bool did_set_contents = false;
 };
 

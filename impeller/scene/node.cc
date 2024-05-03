@@ -114,12 +114,11 @@ static std::shared_ptr<Texture> UnpackTextureFromFlatbuffer(
     return nullptr;
   }
 
-  // TODO
-  // auto uploaded = texture->SetContents(image_mapping);
-  // if (!uploaded) {
-  //   FML_LOG(ERROR) << "Could not upload texture to device memory.";
-  //   return nullptr;
-  // }
+  auto uploaded = texture->SetContents(image_mapping);
+  if (!uploaded) {
+    FML_LOG(ERROR) << "Could not upload texture to device memory.";
+    return nullptr;
+  }
 
   return texture;
 }
