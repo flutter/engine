@@ -236,11 +236,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     return true;
   }
 
-  if (!tex_descriptor.IsValid()) {
-    return false;
-  }
-
-  if (mapping->GetSize() < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
+  if (!tex_descriptor.IsValid() ||
+      mapping->GetSize() < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
     return false;
   }
 
@@ -265,7 +262,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       break;
   }
 
-  auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
+  auto data = std::make_unique<TexImage2DData>(tex_descriptor.format,
                                                std::move(mapping));
   if (!data || !data->IsValid()) {
     VALIDATION_LOG << "Invalid texture format.";
@@ -273,7 +270,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
   }
 
   ReactorGLES::Operation texture_upload = [handle = handle_,            //
-                                           data,                        //
+                                           data = std::move(data),      //
                                            size = tex_descriptor.size,  //
                                            texture_type,                //
                                            texture_target               //
@@ -456,6 +453,10 @@ bool TextureGLES::Bind() const {
   }
   InitializeContentsIfNecessary();
   return true;
+}
+
+void TextureGLES::MarkContentsInitialized() const {
+  contents_initialized_ = true;
 }
 
 bool TextureGLES::GenerateMipmap() {

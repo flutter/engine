@@ -223,7 +223,7 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
     return false;
   }
 
-  destination->coordinate_system_ = TextureCoordinateSystem::kUploadFromHost;
+  destination->SetCoordinateSystem(TextureCoordinateSystem::kUploadFromHost);
 
   GLenum texture_type;
   GLenum texture_target;
@@ -277,7 +277,8 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
                   tex_data                     // data
     );
   }
-  return texture_gles.contents_initialized_ = true;
+  texture_gles.MarkContentsInitialized();
+  return true;
 }
 
 BlitCopyTextureToBufferCommandGLES::~BlitCopyTextureToBufferCommandGLES() =
