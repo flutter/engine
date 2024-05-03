@@ -12,6 +12,40 @@ Texture::Texture(TextureDescriptor desc) : desc_(desc) {}
 
 Texture::~Texture() = default;
 
+bool Texture::SetContents(const uint8_t* contents,
+                          size_t length,
+                          size_t slice,
+                          bool is_opaque) {
+  if (!IsSliceValid(slice)) {
+    VALIDATION_LOG << "Invalid slice for texture.";
+    return false;
+  }
+  if (!OnSetContents(contents, length, slice)) {
+    return false;
+  }
+  coordinate_system_ = TextureCoordinateSystem::kUploadFromHost;
+  is_opaque_ = is_opaque;
+  return true;
+}
+
+bool Texture::SetContents(std::shared_ptr<const fml::Mapping> mapping,
+                          size_t slice,
+                          bool is_opaque) {
+  if (!IsSliceValid(slice)) {
+    VALIDATION_LOG << "Invalid slice for texture.";
+    return false;
+  }
+  if (!mapping) {
+    return false;
+  }
+  if (!OnSetContents(std::move(mapping), slice)) {
+    return false;
+  }
+  coordinate_system_ = TextureCoordinateSystem::kUploadFromHost;
+  is_opaque_ = is_opaque;
+  return true;
+}
+
 bool Texture::IsOpaque() const {
   return is_opaque_;
 }
