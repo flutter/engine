@@ -1154,12 +1154,20 @@ TEST_P(RendererTest, StencilMask) {
           }
         }
       }
-      // TODO
-      // if (!render_target.GetStencilAttachment()->texture->SetContents(
-      //         stencil_contents.data(), stencil_contents.size(), 0, false)) {
-      //   VALIDATION_LOG << "Could not upload stencil contents to device
-      //   memory"; return false;
-      // }
+
+      auto mapping = std::make_unique<fml::NonOwnedMapping>(
+          stencil_contents.data(), stencil_contents.size());
+      auto blit_pass = buffer->CreateBlitPass();
+      auto device_buffer =
+          context->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
+      blit_pass->AddCopy(impeller::DeviceBuffer::AsBufferView(device_buffer),
+                         render_target.GetStencilAttachment()->texture);
+
+      if (!blit_pass->EncodeCommands(context->GetResourceAllocator())) {
+        VALIDATION_LOG << "Could not upload stencil contents to device memory";
+        return false;
+      }
+
       auto pass = buffer->CreateRenderPass(render_target);
       if (!pass) {
         return false;

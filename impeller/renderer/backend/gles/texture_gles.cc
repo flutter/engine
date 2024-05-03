@@ -8,7 +8,6 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
@@ -23,7 +22,6 @@ struct TexImage2DData {
   GLint internal_format = 0;
   GLenum external_format = GL_NONE;
   GLenum type = GL_NONE;
-  std::shared_ptr<const fml::Mapping> data;
 
   explicit TexImage2DData(PixelFormat pixel_format) {
     switch (pixel_format) {
@@ -75,12 +73,6 @@ struct TexImage2DData {
         return;
     }
     is_valid_ = true;
-  }
-
-  TexImage2DData(PixelFormat pixel_format,
-                 std::shared_ptr<const fml::Mapping> mapping)
-      : TexImage2DData(pixel_format) {
-    data = std::move(mapping);
   }
 
   bool IsValid() const { return is_valid_; }
