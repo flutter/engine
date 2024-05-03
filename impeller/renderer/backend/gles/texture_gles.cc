@@ -262,7 +262,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
       break;
   }
 
-  auto data = std::make_unique<TexImage2DData>(tex_descriptor.format,
+  auto data = std::make_shared<TexImage2DData>(tex_descriptor.format,
                                                std::move(mapping));
   if (!data || !data->IsValid()) {
     VALIDATION_LOG << "Invalid texture format.";
@@ -270,7 +270,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
   }
 
   ReactorGLES::Operation texture_upload = [handle = handle_,            //
-                                           data = std::move(data),      //
+                                           data,                        //
                                            size = tex_descriptor.size,  //
                                            texture_type,                //
                                            texture_target               //
