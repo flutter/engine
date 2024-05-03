@@ -18,6 +18,7 @@
 
 namespace impeller {
 
+namespace {
 static bool IsDepthStencilFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::kS8UInt:
@@ -53,76 +54,6 @@ static TextureGLES::Type GetTextureTypeFromDescriptor(
   }
   return is_msaa ? TextureGLES::Type::kTextureMultisampled
                  : TextureGLES::Type::kTexture;
-}
-
-HandleType ToHandleType(TextureGLES::Type type) {
-  switch (type) {
-    case TextureGLES::Type::kTexture:
-    case TextureGLES::Type::kTextureMultisampled:
-      return HandleType::kTexture;
-    case TextureGLES::Type::kRenderBuffer:
-    case TextureGLES::Type::kRenderBufferMultisampled:
-      return HandleType::kRenderBuffer;
-  }
-  FML_UNREACHABLE();
-}
-
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
-
-TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
-                         TextureDescriptor desc,
-                         enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
-
-std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
-                                                  TextureDescriptor desc,
-                                                  GLuint fbo) {
-  return std::shared_ptr<TextureGLES>(
-      new TextureGLES(std::move(reactor), desc, true, fbo));
-}
-
-TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
-                         TextureDescriptor desc,
-                         bool is_wrapped,
-                         std::optional<GLuint> fbo)
-    : Texture(desc),
-      reactor_(std::move(reactor)),
-      type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
-      handle_(reactor_->CreateHandle(ToHandleType(type_))),
-      is_wrapped_(is_wrapped),
-      wrapped_fbo_(fbo) {
-  // Ensure the texture descriptor itself is valid.
-  if (!GetTextureDescriptor().IsValid()) {
-    VALIDATION_LOG << "Invalid texture descriptor.";
-    return;
-  }
-  // Ensure the texture doesn't exceed device capabilities.
-  const auto tex_size = GetTextureDescriptor().size;
-  const auto max_size =
-      reactor_->GetProcTable().GetCapabilities()->max_texture_size;
-  if (tex_size.Max(max_size) != max_size) {
-    VALIDATION_LOG << "Texture of size " << tex_size
-                   << " would exceed max supported size of " << max_size << ".";
-    return;
-  }
-
-  is_valid_ = true;
-}
-
-// |Texture|
-TextureGLES::~TextureGLES() {
-  reactor_->CollectHandle(handle_);
-}
-
-// |Texture|
-bool TextureGLES::IsValid() const {
-  return is_valid_;
-}
-
-// |Texture|
-void TextureGLES::SetLabel(std::string_view label) {
-  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
 }
 
 struct TexImage2DData {
@@ -194,6 +125,77 @@ struct TexImage2DData {
  private:
   bool is_valid_ = false;
 };
+}  // namespace
+
+HandleType ToHandleType(TextureGLES::Type type) {
+  switch (type) {
+    case TextureGLES::Type::kTexture:
+    case TextureGLES::Type::kTextureMultisampled:
+      return HandleType::kTexture;
+    case TextureGLES::Type::kRenderBuffer:
+    case TextureGLES::Type::kRenderBufferMultisampled:
+      return HandleType::kRenderBuffer;
+  }
+  FML_UNREACHABLE();
+}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
+    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
+
+TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
+                         TextureDescriptor desc,
+                         enum IsWrapped wrapped)
+    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
+
+std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
+                                                  TextureDescriptor desc,
+                                                  GLuint fbo) {
+  return std::shared_ptr<TextureGLES>(
+      new TextureGLES(std::move(reactor), desc, true, fbo));
+}
+
+TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
+                         TextureDescriptor desc,
+                         bool is_wrapped,
+                         std::optional<GLuint> fbo)
+    : Texture(desc),
+      reactor_(std::move(reactor)),
+      type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
+      handle_(reactor_->CreateHandle(ToHandleType(type_))),
+      is_wrapped_(is_wrapped),
+      wrapped_fbo_(fbo) {
+  // Ensure the texture descriptor itself is valid.
+  if (!GetTextureDescriptor().IsValid()) {
+    VALIDATION_LOG << "Invalid texture descriptor.";
+    return;
+  }
+  // Ensure the texture doesn't exceed device capabilities.
+  const auto tex_size = GetTextureDescriptor().size;
+  const auto max_size =
+      reactor_->GetProcTable().GetCapabilities()->max_texture_size;
+  if (tex_size.Max(max_size) != max_size) {
+    VALIDATION_LOG << "Texture of size " << tex_size
+                   << " would exceed max supported size of " << max_size << ".";
+    return;
+  }
+
+  is_valid_ = true;
+}
+
+// |Texture|
+TextureGLES::~TextureGLES() {
+  reactor_->CollectHandle(handle_);
+}
+
+// |Texture|
+bool TextureGLES::IsValid() const {
+  return is_valid_;
+}
+
+// |Texture|
+void TextureGLES::SetLabel(std::string_view label) {
+  reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
+}
 
 // |Texture|
 bool TextureGLES::OnSetContents(const uint8_t* contents,
