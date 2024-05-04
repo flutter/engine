@@ -159,6 +159,8 @@ class GlyphAtlasContext {
   /// @brief      Retrieve the previous (if any) rect packer.
   std::shared_ptr<RectanglePacker> GetRectPacker() const;
 
+  void UpdateSize(ISize size);
+
   //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
   void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);

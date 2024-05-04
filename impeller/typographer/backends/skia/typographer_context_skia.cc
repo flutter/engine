@@ -82,7 +82,6 @@ static size_t PairsFitInAtlasOfSize(
 }
 
 static bool CanAppendToExistingAtlas(
-    const std::shared_ptr<GlyphAtlas>& atlas,
     const std::vector<FontGlyphPair>& extra_pairs,
     std::vector<Rect>& glyph_positions,
     ISize atlas_size,
@@ -383,8 +382,16 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   //         the type is identical.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
+  // Clone the old packer just in case! this feels a bit hacky, might rethink
+  // this.
+  std::shared_ptr<RectanglePacker> cloned_double;
+  if (atlas_context->GetRectPacker()) {
+    cloned_double = atlas_context->GetRectPacker()->CloneWithSize(
+        atlas_context->GetAtlasSize().width * 2,
+        atlas_context->GetAtlasSize().height * 2);
+  }
   if (last_atlas->GetType() == type &&
-      CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
+      CanAppendToExistingAtlas(new_glyphs, glyph_positions,
                                atlas_context->GetAtlasSize(),
                                atlas_context->GetRectPacker())) {
     // The old bitmap will be reused and only the additional glyphs will be
@@ -430,7 +437,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       font_glyph_pairs.push_back({scaled_font, glyph});
     }
   }
-  std::shared_ptr<GlyphAtlas> glyph_atlas = std::make_shared<GlyphAtlas>(type);
   ISize atlas_size = OptimumAtlasSizeForFontGlyphPairs(
       font_glyph_pairs,                                             //
       glyph_positions,                                              //
@@ -438,7 +444,93 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       type,                                                         //
       context.GetResourceAllocator()->GetMaxTextureSizeSupported()  //
   );
+  // ---------------------------------------------------------------------------
+  // Step 3c: Determine if we can reuse the old atlas contents by doubling
+  //          The atlas size and blitting the previous atlas to the top
+  //          left corner. This should work provided the new atlas size is
+  //          less than or equal to the current atlas size, and double the
+  //          current atlas size is less than the maximum texture size.
+  // ---------------------------------------------------------------------------
 
+  if (last_atlas && last_atlas->GetTexture()) {
+    auto maximum_size =
+        context.GetResourceAllocator()->GetMaxTextureSizeSupported();
+
+    // Experimentally, the SkBitmap maximum size is potentially much smaller
+    // than the device physial limits.
+    constexpr int64_t skia_limit = 16384;
+    int64_t max_width = std::min(maximum_size.width, skia_limit);
+    int64_t max_height = std::min(maximum_size.height, skia_limit);
+
+    auto old_size = last_atlas->GetTexture()->GetSize();
+    if (atlas_size.width <= old_size.width &&
+        atlas_size.height <= old_size.height &&
+        old_size.width * 2 <= max_width && old_size.height * 2 <= max_height) {
+      atlas_size = ISize{old_size.width * 2, old_size.height * 2};
+      // Repeat the appending, which should always succeed. In the worst case,
+      // where all new glyphs are unique and all old glyphs are unused, we
+      // should at most double the size of the atlas, given the constraint about
+      // on optimum sizing.
+      std::vector<Rect> glyph_positions;
+
+      if (!CanAppendToExistingAtlas(new_glyphs, glyph_positions, atlas_size,
+                                    cloned_double)) {
+        FML_LOG(ERROR) << "Cant append!";
+        return nullptr;
+      }
+      atlas_context->UpdateRectPacker(std::move(cloned_double));
+
+      // Record new positions.
+      for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
+        last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
+      }
+
+      // Create the new bitmap.
+      auto old_bitmap = atlas_context_skia.GetBitmap();
+      auto bitmap = CreateAtlasBitmap(*last_atlas, atlas_size);
+      if (!bitmap) {
+        return nullptr;
+      }
+      atlas_context_skia.UpdateBitmap(bitmap);
+
+      // CPU bound copy of the old bitmap contents to the new bitmap. This can
+      // be replaced by switching the source of truth from the CPU buffer to the
+      // texture.
+      uint8_t* old_data = reinterpret_cast<uint8_t*>(old_bitmap->getAddr(0, 0));
+      uint8_t* new_data = reinterpret_cast<uint8_t*>(bitmap->getAddr(0, 0));
+      for (auto i = 0; i < old_size.height; i++) {
+        ::memcpy(new_data + (i * atlas_size.width * bitmap->bytesPerPixel()),
+                 old_data + (i * old_size.width * bitmap->bytesPerPixel()),
+                 old_size.width * bitmap->bytesPerPixel());
+      }
+
+      if (!UpdateAtlasBitmap(*last_atlas, bitmap, new_glyphs)) {
+        return nullptr;
+      }
+
+      PixelFormat format;
+      switch (type) {
+        case GlyphAtlas::Type::kAlphaBitmap:
+          format = context.GetCapabilities()->GetDefaultGlyphAtlasFormat();
+          break;
+        case GlyphAtlas::Type::kColorBitmap:
+          format = PixelFormat::kR8G8B8A8UNormInt;
+          break;
+      }
+      std::shared_ptr<Texture> texture =
+          UploadGlyphTextureAtlas(context.GetResourceAllocator(), bitmap,
+                                  blit_pass, atlas_size, format);
+      if (!texture) {
+        return nullptr;
+      }
+      last_atlas->SetTexture(std::move(texture));
+      atlas_context->UpdateSize(atlas_size);
+
+      return last_atlas;
+    }
+  }
+
+  std::shared_ptr<GlyphAtlas> glyph_atlas = std::make_shared<GlyphAtlas>(type);
   atlas_context->UpdateGlyphAtlas(glyph_atlas, atlas_size);
   if (atlas_size.IsEmpty()) {
     return nullptr;

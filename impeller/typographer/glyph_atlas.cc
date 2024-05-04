@@ -33,6 +33,10 @@ void GlyphAtlasContext::UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
   atlas_size_ = size;
 }
 
+void GlyphAtlasContext::UpdateSize(ISize size) {
+  atlas_size_ = size;
+}
+
 void GlyphAtlasContext::UpdateRectPacker(
     std::shared_ptr<RectanglePacker> rect_packer) {
   rect_packer_ = std::move(rect_packer);
