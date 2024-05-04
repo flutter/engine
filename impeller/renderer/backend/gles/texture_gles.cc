@@ -455,8 +455,12 @@ bool TextureGLES::Bind() const {
   return true;
 }
 
-void TextureGLES::MarkContentsInitialized() const {
-  contents_initialized_ = true;
+void TextureGLES::MarkSliceInitialized(size_t slice) const {
+  contents_initialized_ |= (1 >> slice);
+}
+
+bool TextureGLES::IsSliceInitialized(size_t slice) const {
+  return (contents_initialized_ >> slice) & 1;
 }
 
 bool TextureGLES::GenerateMipmap() {

@@ -267,7 +267,7 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
 
   // GL_INVALID_OPERATION if the texture array has not been
   // defined by a previous glTexImage2D operation.
-  if (!texture_gles.IsInitialized()) {
+  if (!texture_gles.IsSliceInitialized(slice)) {
     gl.TexImage2D(texture_target,              // target
                   0u,                          // LOD level
                   data.internal_format,        // internal format
@@ -276,9 +276,9 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
                   0u,                          // border
                   data.external_format,        // external format
                   data.type,                   // type
-                  nullptr                      // data
+                  tex_data                     // data
     );
-    texture_gles.MarkContentsInitialized();
+    texture_gles.MarkSliceInitialized(slice);
   }
 
   {
