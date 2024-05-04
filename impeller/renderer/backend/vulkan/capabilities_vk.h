@@ -174,9 +174,6 @@ class CapabilitiesVK final : public Capabilities,
   bool SupportsSSBO() const override;
 
   // |Capabilities|
-  bool SupportsBufferToTextureBlits() const override;
-
-  // |Capabilities|
   bool SupportsTextureToTextureBlits() const override;
 
   // |Capabilities|
