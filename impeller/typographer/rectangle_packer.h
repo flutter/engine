@@ -51,6 +51,16 @@ class RectanglePacker {
   virtual float percentFull() const = 0;
 
   //----------------------------------------------------------------------------
+  /// @brief     Create a new rectangle packer with a different (larger) size
+  ///            and initialize its contents to the current packer.
+  ///
+  /// @return    A new rectangle packer.
+  ///
+  ///            This method is used for growing the glyph atlas while keeping
+  ///            existing glyphs in place.
+  virtual std::unique_ptr<RectanglePacker> CloneWithSize(int width, int height);
+
+  //----------------------------------------------------------------------------
   /// @brief     Empty out all previously added rectangles.
   ///
   virtual void reset() = 0;
