@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/metal/blit_pass_mtl.h"
 #include <Metal/Metal.h>
 #include <memory>
+#include <utility>
 #include <variant>
 
 #include "flutter/fml/closure.h"
@@ -126,13 +127,15 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
 bool BlitPassMTL::OnCopyBufferToTextureCommand(
     BufferView source,
     std::shared_ptr<Texture> destination,
-    IPoint destination_origin,
-    std::string label) {
+    IRect destination_region,
+    std::string label,
+    uint32_t slice) {
   auto command = std::make_unique<BlitCopyBufferToTextureCommandMTL>();
-  command->label = label;
+  command->label = std::move(label);
   command->source = std::move(source);
   command->destination = std::move(destination);
-  command->destination_origin = destination_origin;
+  command->destination_region = destination_region;
+  command->slice = slice;
 
   commands_.emplace_back(std::move(command));
   return true;

@@ -60,13 +60,18 @@ class TextureGLES final : public Texture,
 
   std::optional<GLuint> GetFBO() const { return wrapped_fbo_; }
 
- private:
-  friend class AllocatorMTL;
+  // For non cubemap textures, 0 indicates uninitialized and 1 indicates
+  // initialized. For cubemap textures, each face is initialized separately with
+  // each bit tracking the initialization of the corresponding slice.
+  void MarkSliceInitialized(size_t slice) const;
 
+  bool IsSliceInitialized(size_t slice) const;
+
+ private:
   ReactorGLES::Ref reactor_;
   const Type type_;
   HandleGLES handle_;
-  mutable bool contents_initialized_ = false;
+  mutable uint32_t contents_initialized_ = 0;
   const bool is_wrapped_;
   const std::optional<GLuint> wrapped_fbo_;
   bool is_valid_ = false;
