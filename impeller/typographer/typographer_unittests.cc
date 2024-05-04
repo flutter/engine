@@ -380,7 +380,7 @@ TEST(TypographerTest, CanCloneRectanglePackerEmpty) {
 
   EXPECT_EQ(skyline->percentFull(), 0);
 
-  auto skyline_2 = skyline->CloneWithSize(512, 512);
+  auto skyline_2 = skyline->Clone(/*scale=*/2);
 
   EXPECT_EQ(skyline->percentFull(), 0);
 }
@@ -394,7 +394,7 @@ TEST(TypographerTest, CanCloneRectanglePackerAndPreservePositions) {
   EXPECT_EQ(loc.y(), 0);
   auto percent = skyline->percentFull();
 
-  auto skyline_2 = skyline->CloneWithSize(512, 512);
+  auto skyline_2 = skyline->Clone(/*scale=*/2);
 
   EXPECT_LT(skyline_2->percentFull(), percent);
 }
@@ -407,11 +407,9 @@ TEST(TypographerTest, CanCloneRectanglePackerWhileFull) {
   // Packer is now full.
   EXPECT_FALSE(skyline->addRect(256, 256, &loc));
 
-  auto skyline_2 = skyline->CloneWithSize(512, 512);
+  auto skyline_2 = skyline->Clone(/*scale=*/2);
 
-  // Can now fit three more
-  EXPECT_TRUE(skyline_2->addRect(256, 256, &loc));
-  EXPECT_TRUE(skyline_2->addRect(256, 256, &loc));
+  // Can now fit one more
   EXPECT_TRUE(skyline_2->addRect(256, 256, &loc));
 }
 
@@ -423,7 +421,7 @@ TEST(TypographerTest, CloneToSameSizePreservesContents) {
   // Packer is now full.
   EXPECT_FALSE(skyline->addRect(256, 256, &loc));
 
-  auto skyline_2 = skyline->CloneWithSize(256, 256);
+  auto skyline_2 = skyline->Clone(/*scale=*/1);
 
   // Packer is still full.
   EXPECT_FALSE(skyline->addRect(256, 256, &loc));
