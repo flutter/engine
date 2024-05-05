@@ -61,7 +61,7 @@ class RectanglePacker {
   ///            This method is used for growing the glyph atlas while keeping
   ///            existing glyphs in place. The width of the rectangle packer
   ///            cannot be increased.
-  virtual std::unique_ptr<RectanglePacker> Clone(int scale);
+  virtual std::unique_ptr<RectanglePacker> Clone(int scale) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief     Empty out all previously added rectangles.
