@@ -27,6 +27,7 @@ class TypographerContextSTB : public TypographerContext {
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,
       GlyphAtlas::Type type,
+      HostBuffer& host_buffer,
       const std::shared_ptr<GlyphAtlasContext>& atlas_context,
       const FontGlyphMap& font_glyph_map) const override;
 

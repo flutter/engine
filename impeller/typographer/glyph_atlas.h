@@ -145,6 +145,8 @@ class GlyphAtlas {
 ///
 class GlyphAtlasContext {
  public:
+  GlyphAtlasContext();
+
   virtual ~GlyphAtlasContext();
 
   //----------------------------------------------------------------------------
@@ -164,9 +166,6 @@ class GlyphAtlasContext {
   void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);
 
   void UpdateRectPacker(std::shared_ptr<RectanglePacker> rect_packer);
-
- protected:
-  GlyphAtlasContext();
 
  private:
   std::shared_ptr<GlyphAtlas> atlas_;

@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/context.h"
 #include "impeller/typographer/glyph_atlas.h"
 
@@ -29,12 +28,10 @@ class TypographerContext {
   virtual std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext()
       const = 0;
 
-  // TODO(dnfield): Callers should not need to know which type of atlas to
-  // create. https://github.com/flutter/flutter/issues/111640
-
   virtual std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,
       GlyphAtlas::Type type,
+      HostBuffer& host_buffer,
       const std::shared_ptr<GlyphAtlasContext>& atlas_context,
       const FontGlyphMap& font_glyph_map) const = 0;
 

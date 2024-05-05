@@ -242,16 +242,19 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
 
   vk::BufferImageCopy image_copy;
   image_copy.setBufferOffset(source.range.offset);
-  image_copy.setBufferRowLength(0);
-  image_copy.setBufferImageHeight(0);
-  image_copy.setImageSubresource(
-      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+  image_copy.setBufferRowLength(0);    // 0 means tightly packed.
+  image_copy.setBufferImageHeight(0);  // 0 means tightly packed
   image_copy.imageOffset.x = destination_region.GetX();
   image_copy.imageOffset.y = destination_region.GetY();
   image_copy.imageOffset.z = 0u;
   image_copy.imageExtent.width = destination_region.GetWidth();
   image_copy.imageExtent.height = destination_region.GetHeight();
   image_copy.imageExtent.depth = 1u;
+  image_copy.imageSubresource.aspectMask =
+      ToImageAspectFlags(dst.GetTextureDescriptor().format);
+  image_copy.imageSubresource.mipLevel = 0u;
+  image_copy.imageSubresource.baseArrayLayer = slice;
+  image_copy.imageSubresource.layerCount = 1u;
 
   if (!dst.SetLayout(dst_barrier)) {
     VALIDATION_LOG << "Could not encode layout transition.";
