@@ -131,13 +131,13 @@ void SkylineRectanglePacker::addSkylineLevel(int skylineIndex,
   newSegment.width_ = width;
   skyline_.insert(std::next(skyline_.begin(), skylineIndex), newSegment);
 
-  FML_CHECK(newSegment.x_ + newSegment.width_ <= this->width());
-  FML_CHECK(newSegment.y_ <= this->height());
+  FML_DCHECK(newSegment.x_ + newSegment.width_ <= this->width());
+  FML_DCHECK(newSegment.y_ <= this->height());
 
   // delete width of the new skyline segment from following ones
   for (int i = skylineIndex + 1; i < (int)skyline_.size(); ++i) {
     // The new segment subsumes all or part of skyline_[i]
-    FML_CHECK(skyline_[i - 1].x_ <= skyline_[i].x_);
+    FML_DCHECK(skyline_[i - 1].x_ <= skyline_[i].x_);
 
     if (skyline_[i].x_ < skyline_[i - 1].x_ + skyline_[i - 1].width_) {
       int shrink = skyline_[i - 1].x_ + skyline_[i - 1].width_ - skyline_[i].x_;
