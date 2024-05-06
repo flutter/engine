@@ -124,6 +124,28 @@ final class DomTextRepresentation extends LabelRepresentationBehavior {
   }
 }
 
+/// A span queue for a size update.
+typedef _QueuedSizeUpdate = ({
+  // The span to be sized.
+  SizedSpanRepresentation representation,
+
+  // The desired size.
+  ui.Size targetSize,
+});
+
+/// The size of a span as measured in the DOM.
+typedef _Measurement = ({
+  // The span that was measured.
+  SizedSpanRepresentation representation,
+
+  // The measured size of the DOM element before the size adjustment.
+  ui.Size domSize,
+
+  // The size of the element that the screen reader should observe after the
+  // size adjustment.
+  ui.Size targetSize,
+});
+
 /// Sets the label as the text of a `<span>` child element.
 ///
 /// The span element is scaled to match the size of the semantic node.
@@ -206,9 +228,59 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       return;
     }
 
-    // Perform the adjustment in a post-update callback because the DOM layout
-    // can only be performed when the elements are attached to the document.
-    semanticsObject.owner.addOneTimePostUpdateCallback(() {
+    if (_resizeQueue == null) {
+      _resizeQueue = <_QueuedSizeUpdate>[];
+
+      // Perform the adjustment in a post-update callback because the DOM layout
+      // can only be performed when the elements are attached to the document,
+      // but at this point the DOM tree is not yet finalized, and the element
+      // corresponding to the semantic node may still be detached.
+      semanticsObject.owner.addOneTimePostUpdateCallback(_updateSizes);
+    }
+    _resizeQueue!.add((
+      representation: this,
+      targetSize: size,
+    ));
+  }
+
+  @override
+  void cleanUp() {
+    _domText.remove();
+  }
+
+  static List<_QueuedSizeUpdate>? _resizeQueue;
+
+  static void _updateSizes() {
+    final List<_QueuedSizeUpdate>? queue = _resizeQueue;
+
+    // Eagerly reset the queue before doing any work. This ensures that if there
+    // is an unexpected error while processing the queue, we don't end up in a
+    // cycle that grows the queue indefinitely. Worst case, some text nodes end
+    // up incorrectly sized, but that's a smaller problem compared to running
+    // out of memory.
+    _resizeQueue = null;
+
+    assert(
+      queue != null && queue.isNotEmpty,
+      '_updateSizes was called with an empty _resizeQueue. This should never '
+      'happend. If it does, please file an issue at '
+      'https://github.com/flutter/flutter/issues/new/choose',
+    );
+
+    if (queue == null || queue.isEmpty) {
+      // This should not happen, but if it does (e.g. something else fails and
+      // caused the post-update callback to be called with an empty queue), do
+      // not crash.
+      return;
+    }
+
+    final List<_Measurement> measurements = <_Measurement>[];
+
+    // Step 1: measure all spans in a single batch prior to updating their CSS
+    //         styles. This way, all measurements are taken with a single reflow
+    //         Interleaving measurements with updates, will cause the browser to
+    //         reflow the page between measurements.
+    for (final _QueuedSizeUpdate update in queue) {
       // Both clientWidth/Height and offsetWidth/Height provide a good
       // approximation for the purposes of sizing the focus ring of the text,
       // since there's no borders or scrollbars. The `offset` variant was chosen
@@ -218,25 +290,34 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       // getBoundingClientRect() was considered and rejected, because it provides
       // the rect in screen coordinates but this scale adjustment needs to be
       // local.
-      final double domWidth = _domText.offsetWidth;
-      final double domHeight = _domText.offsetHeight;
+      final double domWidth = update.representation._domText.offsetWidth;
+      final double domHeight = update.representation._domText.offsetHeight;
+      measurements.add((
+        representation: update.representation,
+        domSize: ui.Size(domWidth, domHeight),
+        targetSize: update.targetSize,
+      ));
+    }
+
+    // Step 2: update all spans at a batch without taking any further DOM
+    //         measurements, which avoids additional reflows.
+    for (final _Measurement measurement in measurements) {
+      final SizedSpanRepresentation representation = measurement.representation;
+      final double domWidth = measurement.domSize.width;
+      final double domHeight = measurement.domSize.height;
+      final ui.Size targetSize = measurement.targetSize;
 
       if (domWidth < 1 && domHeight < 1) {
         // Don't bother dealing with divisions by tiny numbers. This probably means
         // the label is empty or doesn't contain anything that would be visible to
         // the user.
-        _domText.style.transform = '';
+        representation._domText.style.transform = '';
       } else {
-        final double scaleX = size.width / domWidth;
-        final double scaleY = size.height / domHeight;
-        _domText.style.transform = 'scale($scaleX, $scaleY)';
+        final double scaleX = targetSize.width / domWidth;
+        final double scaleY = targetSize.height / domHeight;
+        representation._domText.style.transform = 'scale($scaleX, $scaleY)';
       }
-    });
-  }
-
-  @override
-  void cleanUp() {
-    _domText.remove();
+    }
   }
 }
 
