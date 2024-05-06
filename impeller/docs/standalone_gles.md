@@ -2,7 +2,7 @@
 
 This guide describes how to use Impeller as a standalone rendering library using OpenGL ES. Additionally, some form of Window System Integration (WSI) is essential. Since EGL is the most popular form of performing WSI on platforms with OpenGL ES, Impeller has a toolkit that assists in working with EGL. This guide will use that toolkit.
 
-While this guide focuses on OpenGL ES with EGL, the steps to setup rendering with another client rendering API (Metal and Vulkan) are fairly similar and you should be able to follow the same pattern for other backends.
+While this guide focuses on OpenGL ES with EGL, the steps to set up rendering with another client rendering API (Metal and Vulkan) are fairly similar and you should be able to follow the same pattern for other backends.
 
 This guide details extremely low-level setup and the `//impeller/renderer` API directly above the Hardware Abstraction Layer (HAL). Most users of Impeller will likely use the API using convenience wrappers already written for the platform. Interacting directly with the HAL is extremely powerful but also verbose. Applications are likely to also use higher level frameworks like Aiks or Display Lists.
 
