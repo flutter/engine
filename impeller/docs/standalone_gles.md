@@ -1,19 +1,19 @@
 # Using Impeller as a Standalone Rendering Library (with OpenGL ES)
 
-This guide describes how to use Impeller as a standalone rendering library using OpenGL ES. Additionally, some form of WSI (Window System Integration) is essential. Since EGL is the most popular form of performing WSI on platforms with OpenGL ES, Impeller has a toolkit that assists in working with EGL. This guide will use that toolkit.
+This guide describes how to use Impeller as a standalone rendering library using OpenGL ES. Additionally, some form of Window System Integration (WSI) is essential. Since EGL is the most popular form of performing WSI on platforms with OpenGL ES, Impeller has a toolkit that assists in working with EGL. This guide will use that toolkit.
 
 While this guide focuses on OpenGL ES with EGL, the steps to setup rendering with another client rendering API (Metal and Vulkan) are fairly similar and you should be able to follow the same pattern for other backends.
 
-This guide details extremely low-level setup and the `//impeller/renderer` API directly above the HAL. Most users of Impeller will likely use the API using convenience wrappers already written for the platform. Interacting directly with the HAL is extremely powerful but also verbose. Applications are likely to also use higher level frameworks like Aiks or Display Lists.
+This guide details extremely low-level setup and the `//impeller/renderer` API directly above the Hardware Abstraction Layer (HAL). Most users of Impeller will likely use the API using convenience wrappers already written for the platform. Interacting directly with the HAL is extremely powerful but also verbose. Applications are likely to also use higher level frameworks like Aiks or Display Lists.
 
 Building Impeller for the target platform is outside the scope of this guide.
 
 > [!CAUTION]
 > The code provided inline is pseudo-code and doesn't include error handling. See the headerdocs for more on error handling and failure modes. All classes are assumed to be in the `impeller` namespace. For a more complete example of setting up standalone Impeller, see [this patch](https://github.com/flutter/engine/pull/52472/files) that adds support for Impeller rendering via Wasm [in the browser and WebGL 2](https://public.chinmaygarde.com/impeller/wasm/wasm.html).
 
-# Setup
+# Set up
 
-To get started with Impeller rendering, you need to setup a context and a renderer. For backend specific classes, the convention in Impeller is to append the backend name as a suffix. So if you need to create an instance of an `impeller::Context` for OpenGLES, look for `impeller::ContextGLES`.
+To get started with Impeller rendering, you need to set up a context and a renderer. For backend-specific classes, the convention in Impeller is to append the backend name as a suffix. So if you need to create an instance of an `impeller::Context` for OpenGLES, look for `impeller::ContextGLES`.
 
 In our case, we need a `impeller::ContextGLES` and `impeller::Renderer`.
 
@@ -74,7 +74,7 @@ auto gl = std::make_unique<ProcTableGLES>(resolver);
 
 Once the proc table is created, the resolver will no longer be invoked.
 
-Then you need to provide the context a shader library that contains a manifest of all the shaders the context will need at runtime. Remember, Impeller doesn't generate shaders at runtime. Instead `impellerc` generates blobs that can either be delivered out of band or be embedded directly in the binary. When embedding the blobs directly in the binary, find the symbols referring to the shader blob somewhere in the generated build artifacts. A vector of mappings to these blobs needs to be provided to create context creation factory.
+Then you need to provide the context a shader library that contains a manifest of all the shaders the context will need at runtime. Remember, Impeller doesn't generate shaders at runtime. Instead `impellerc` generates blobs that can either be delivered out of band or be embedded directly in the binary. When embedding the blobs directly in the binary, look for the symbols referring to the shader blob somewhere in the generated build artifacts. A vector of mappings to these blobs needs to be provided to create context creation factory.
 
 An example of creating an embedded mapping is provided below. Adjust as necessary depending on how to plan on delivering shader blobs to Impeller at during setup.
 ```c++
@@ -135,7 +135,7 @@ Add an instance of this reactor worker to the context. Whew, that was unnecessar
 context->AddReactorWorker(worker);
 ```
 
-Once you have the context, use it to crate a renderer.
+Once you have the context, use it to create a renderer.
 
 ```c++
 auto renderer = std::make_shared<Renderer>(context);
@@ -148,15 +148,15 @@ And setup is done. Keep the context and renderer around. We will be using it dur
 Rendering frames is a matter of:
 * Wrapping the onscreen texture as a Surface (`impeller::SurfaceGLES` in our case).
 * Giving the surface to our renderer to render.
-* The renderer will prepare a render target from this surface and invoke a callback that we'll use to setup a render pass directed at that render target.
-* Populate the render pass how we see fit.
-* Tell our reactor worker that all operations need to be flushed to OpenGL.
-* Present the onscreen surface.
-* Repeat.
+* After the renderer prepares a render target from this surface and invokes a supplied callback with a render target, setting up a render pass directed at that render target.
+* Populating the render pass how we see fit.
+* Telling our reactor worker that all operations need to be flushed to OpenGL.
+* Presenting the onscreen surface.
+* Repeating for a new frame.
 
 ## Wrap the Onscreen Surface
 
-Per frame, the onscreen surface can be wrapped using SurfaceGLES::WrapFBO where the default framebuffer in our case is FBO 0. Take care to ensure that the pixel format matches the one we used to choose the EGL config. Figuring out the pixel size is left as an exercise for the reader.
+Per frame, the onscreen surface can be wrapped using `SurfaceGLES::WrapFBO` where the default framebuffer in our case is FBO 0. Take care to ensure that the pixel format matches the one we used to choose the EGL config. Figuring out the pixel size is left as an exercise for the reader.
 
 ```c++
 auto surface =
@@ -168,9 +168,9 @@ auto surface =
     );
 ```
 
-## Setup the Swap Callback
+## Set the the Swap Callback
 
-The swap callback will get invoked when the renderer presents the surface. Remember in our list of things to do, we need to first tell the reactor worker to flush all pending OpenGL operations and then present the surface. Setup the swap callback appropriately.
+The swap callback will get invoked when the renderer presents the surface. Remember in our list of things to do, we need to first tell the reactor worker to flush all pending OpenGL operations and then present the surface. Set the swap callback appropriately.
 
 ```c++
 SurfaceGLES::SwapCallback swap_callback =
