@@ -715,19 +715,9 @@ final class GenericRole extends PrimaryRoleManager {
       return false;
     }
 
-    // Case 3: current node is visual/informational. Move just the
-    // accessibility focus.
-
-    // Plain text nodes should not be focusable via keyboard or mouse. They are
-    // only focusable for the purposes of focusing the screen reader. To achieve
-    // this the -1 value is used.
-    //
-    // See also:
-    //
-    // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex
-    // TODO(yjbanov): if <span> is used, it should be focused, not the parent element
-    element.tabIndex = -1;
-    element.focus();
+    // Case 3: current node is visual/informational. Move just the accessibility
+    // focus.
+    labelAndValue!.focusAsRouteDefault();
     return true;
   }
 }

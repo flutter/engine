@@ -57,13 +57,44 @@ enum LabelRepresentation {
 abstract final class LabelRepresentationBehavior {
   LabelRepresentationBehavior(this.owner);
 
+  /// The role manager that this label representation is attached to.
   final PrimaryRoleManager owner;
 
+  /// Convenience getter for the corresponding semantics object.
   SemanticsObject get semanticsObject => owner.semanticsObject;
 
+  /// Updates the label displayed to the user.
   void update(String label);
 
+  /// Removes the DOM associated with this label.
+  ///
+  /// This can happen when the representation is changed from one type to
+  /// another.
   void cleanUp();
+
+  /// The element that gets focus when [focusAsRouteDefault] is called.
+  ///
+  /// Each label behavior decides which element should be focused on based on
+  /// its own bespoke DOM structure.
+  DomElement get focusTarget;
+
+  /// Move the accessibility focus to the element the carries the label assuming
+  /// the node is not [Focusable].
+  ///
+  /// Since normally, plain text is not focusable (e.g. it doesn't have explicit
+  /// or implicit `tabindex`), `tabindex` must be added artificially.
+  ///
+  /// Plain text nodes should not be focusable via keyboard or mouse. They are
+  /// only focusable for the purposes of focusing the screen reader. To achieve
+  /// this the -1 value is used.
+  ///
+  /// See also:
+  ///
+  /// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/tabindex
+  void focusAsRouteDefault() {
+    focusTarget.tabIndex = -1;
+    focusTarget.focus();
+  }
 }
 
 /// Sets the label as `aria-label`.
@@ -88,6 +119,11 @@ final class AriaLabelRepresentation extends LabelRepresentationBehavior {
   void cleanUp() {
     owner.removeAttribute('aria-label');
   }
+
+  // ARIA label does not introduce extra DOM elements, so focus should go to the
+  // semantic node's host element.
+  @override
+  DomElement get focusTarget => owner.element;
 }
 
 /// Sets the label as text inside the DOM element.
@@ -122,6 +158,11 @@ final class DomTextRepresentation extends LabelRepresentationBehavior {
   void cleanUp() {
     _domText?.remove();
   }
+
+  // DOM text does not introduce extra DOM elements, so focus should go to the
+  // semantic node's host element.
+  @override
+  DomElement get focusTarget => owner.element;
 }
 
 /// A span queue for a size update.
@@ -319,6 +360,22 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       }
     }
   }
+
+  // The structure of the sized span label looks like this:
+  //
+  // <flt-semantics>
+  //   <span>Here goes the label</span>
+  // </flt-semantics>
+  //
+  // The target of the focus should be the <span>, not the <flt-semantics>.
+  // Otherwise the browser will report the node as two separate nodes to the
+  // screen reader. It would require the user to make an additional navigation
+  // action to "step over" the <flt-semantics> to reach the <span> where the
+  // text is. However, logically this DOM structure is just "one thing" as far
+  // as the user is concerned, so both `tabindex` and the text of the label
+  // should go on the same element.
+  @override
+  DomElement get focusTarget => _domText;
 }
 
 /// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.
@@ -402,6 +459,18 @@ class LabelAndValue extends RoleManager {
   void dispose() {
     super.dispose();
     _cleanUpDom();
+  }
+
+  /// Moves the focus to the element that carries the semantic label.
+  ///
+  /// Typically a node would be [Focusable] and focus request would be satisfied
+  /// by transfering focus through the normal focusability features. However,
+  /// sometimes accessibility focus needs to be moved to a non-focusable node,
+  /// such as the title of a dialog. This method handles that situation.
+  /// Different label representations use different DOM structures, so the
+  /// actual work is delegated to [LabelRepresentationBehavior].
+  void focusAsRouteDefault() {
+    _getEffectiveRepresentation().focusAsRouteDefault();
   }
 }
 

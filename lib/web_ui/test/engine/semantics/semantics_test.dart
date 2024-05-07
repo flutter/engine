@@ -3277,9 +3277,24 @@ void _testDialog() {
     expect(capturedActions, isEmpty);
 
     // However, the element should have gotten the focus.
-    final DomElement element = owner().debugSemanticsTree![2]!.element;
-    expect(element.tabIndex, -1);
-    expect(domDocument.activeElement, element);
+
+    tester.expectSemantics('''
+<flt-semantics>
+  <flt-semantics-container>
+    <flt-semantics>
+      <flt-semantics-container>
+        <flt-semantics id="flt-semantic-node-2">
+          <span tabindex="-1">Heading</span>
+        </flt-semantics>
+        <flt-semantics role="button" tabindex="0" flt-tappable="">Click me!</flt-semantics>
+      </flt-semantics-container>
+    </flt-semantics>
+  </flt-semantics-container>
+</flt-semantics>''');
+
+    final DomElement span = owner().debugSemanticsTree![2]!.element.querySelectorAll('span').single;
+    expect(span.tabIndex, -1);
+    expect(domDocument.activeElement, span);
 
     semantics().semanticsEnabled = false;
   });
