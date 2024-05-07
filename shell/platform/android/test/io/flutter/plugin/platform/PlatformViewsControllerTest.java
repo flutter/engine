@@ -363,51 +363,6 @@ public class PlatformViewsControllerTest {
     assertNotEquals(resolvedEvent.getAction(), frameWorkTouch.action);
   }
 
-  @Ignore
-  @Test
-  public void itUsesActionEventTypeFromMotionEventForHybridPlatformViews() {
-    MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
-    PlatformViewsController platformViewsController = new PlatformViewsController();
-
-    MotionEvent original =
-        MotionEvent.obtain(
-            100, // downTime
-            100, // eventTime
-            1, // action
-            0, // x
-            0, // y
-            0 // metaState
-            );
-
-    // track an event that will later get passed to us from framework
-    MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
-
-    PlatformViewTouch frameWorkTouch =
-        new PlatformViewTouch(
-            0, // viewId
-            original.getDownTime(),
-            original.getEventTime(),
-            2, // action
-            1, // pointerCount
-            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
-            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
-            original.getMetaState(),
-            original.getButtonState(),
-            original.getXPrecision(),
-            original.getYPrecision(),
-            original.getDeviceId(),
-            original.getEdgeFlags(),
-            original.getSource(),
-            original.getFlags(),
-            motionEventId.getId());
-
-    MotionEvent resolvedEvent =
-        platformViewsController.toMotionEvent(
-            /*density=*/ 1, frameWorkTouch, /*usingVirtualDisplay=*/ false);
-
-    assertEquals(resolvedEvent.getAction(), frameWorkTouch.action);
-  }
-
   @Test
   public void toMotionEvent_returnsSameCoordsForVdAndNonVd() {
     MotionEventTracker motionEventTracker = MotionEventTracker.getInstance();
