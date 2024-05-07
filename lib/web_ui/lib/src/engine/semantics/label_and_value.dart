@@ -27,7 +27,7 @@ enum LabelRepresentation {
   /// role) JAWS on Windows. However, this role is still the most common, as it
   /// applies to all container nodes, and many ARIA roles (e.g. checkboxes,
   /// radios, scrollables, sliders).
-  ariaLabel(AriaLabelRepresentation),
+  ariaLabel,
 
   /// Represents the label as a [DomText] node.
   ///
@@ -37,7 +37,7 @@ enum LabelRepresentation {
   ///
   /// This representation is compatible with most web crawlers, and it is the
   /// best option for certain ARIA roles, such as buttons, links, and headings.
-  domText(DomTextRepresentation),
+  domText,
 
   /// Represents the label as a sized span.
   ///
@@ -45,17 +45,23 @@ enum LabelRepresentation {
   /// need to be laid out to compute the right size. It is compatible with most
   /// web crawlers, and it is the best options for certain ARIA roles, such as
   /// the implicit "generic" role used for plain text (not headings).
-  sizedSpan(SizedSpanRepresentation);
+  sizedSpan;
 
-  const LabelRepresentation(this.implementation);
-
-  /// The type used to implement this representation.
-  final Type implementation;
+  /// Creates the behavior for this label representation.
+  LabelRepresentationBehavior createBehavior(PrimaryRoleManager owner) {
+    return switch (this) {
+      LabelRepresentation.ariaLabel => AriaLabelRepresentation._(owner),
+      LabelRepresentation.domText => DomTextRepresentation._(owner),
+      LabelRepresentation.sizedSpan => SizedSpanRepresentation._(owner),
+    };
+  }
 }
 
 /// Provides a DOM behavior for a [LabelRepresentation].
 abstract final class LabelRepresentationBehavior {
-  LabelRepresentationBehavior(this.owner);
+  LabelRepresentationBehavior(this.kind, this.owner);
+
+  final LabelRepresentation kind;
 
   /// The role manager that this label representation is attached to.
   final PrimaryRoleManager owner;
@@ -103,7 +109,7 @@ abstract final class LabelRepresentationBehavior {
 ///
 ///     <flt-semantics aria-label="Hello, World!"></flt-semantics>
 final class AriaLabelRepresentation extends LabelRepresentationBehavior {
-  AriaLabelRepresentation._(super.owner);
+  AriaLabelRepresentation._(PrimaryRoleManager owner) : super(LabelRepresentation.ariaLabel, owner);
 
   String? _previousLabel;
 
@@ -137,7 +143,7 @@ final class AriaLabelRepresentation extends LabelRepresentationBehavior {
 /// no ARIA role set, or the role does not size the element, then the
 /// [SizedSpanRepresentation] representation can be used.
 final class DomTextRepresentation extends LabelRepresentationBehavior {
-  DomTextRepresentation._(super.owner);
+  DomTextRepresentation._(PrimaryRoleManager owner) : super(LabelRepresentation.domText, owner);
 
   DomText? _domText;
   String? _previousLabel;
@@ -199,12 +205,39 @@ typedef _Measurement = ({
 ///
 /// Text scaling is used to control the size of the screen reader focus ring.
 /// This is used for plain text nodes (e.g. paragraphs of text).
+///
+/// ## Why use scaling rather than another method?
+///
+/// Due to https://g-issues.chromium.org/issues/40875151?pli=1&authuser=0 and a
+/// lack of an ARIA role for plain text nodes (expecially after the removal of
+/// ARIA role "text" in WebKit, starting with Safari 17), there is no way to
+/// customize the size of the screen reader focus ring for a plain text element.
+/// The focus ring always tightly hugs the text itself. The following approaches
+/// were tried, and all failed:
+///
+/// * `text-align` + dummy text to force text align to span the width of the
+///   element. This does affect the screen reader focus size, but this method is
+///   limited to width only. There's no way to control the height. Also, using
+///   dummy text at the end feels extremely hacky, and risks failing due to
+///   proprietary screen reader behaviors - they may not consistency react to
+///   the dummy text (e.g. some may read it out loud).
+/// * The following methods did not have the desired effect:
+///   - Different `display` values.
+///   - Adding visual/layout features to the element: border, outline, padding,
+///     box-sizing, text-shadow.
+/// * `role="text"` was used previously and worked, but only in Safari pre-17.
+/// * `role="group"` sizes the element correctly, but breaks the message to the
+///   user (reads "empty group", requires multi-step traversal).
+/// * Adding `aria-hidden` contents to the element. This results in "group"
+///   behavior.
+/// * Use an existing non-text role, e.g. "heading". Sizes correctly, but breaks
+///   the message (reads "heading").
 final class SizedSpanRepresentation extends LabelRepresentationBehavior {
-  SizedSpanRepresentation._(super.owner) {
+  SizedSpanRepresentation._(PrimaryRoleManager owner) : super(LabelRepresentation.sizedSpan, owner) {
     _domText.style
       // `inline-block` is needed for two reasons:
       // - It supports measuring the true size of the text. Pure `block` would
-      //   disassosiate the size of the text from the size of the element.
+      //   disassociate the size of the text from the size of the element.
       // - It supports the `transform` and `transform-origin` properties. Pure
       //   `inline` does not support them.
       ..display = 'inline-block'
@@ -232,7 +265,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
     final bool labelChanged = label != _previousLabel;
     final bool sizeChanged = size != _previousSize;
 
-    // Label must be updated before sizing because the size depend on text
+    // Label must be updated before sizing because the size depends on text
     // content.
     if (labelChanged) {
       _domText.innerText = label;
@@ -265,6 +298,10 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
   void _updateSize(ui.Size? size) {
     if (size == null) {
       // There's no size to match => remove whatever stale sizing information was there.
+      // Note, it is not necessary to always reset the transform before measuring,
+      // as transform does not affect the offset size of the element. We do not
+      // reset it unnecessarily to reduce the cost of setting properties
+      // unnecessarily.
       _domText.style.transform = '';
       return;
     }
@@ -318,7 +355,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
     final List<_Measurement> measurements = <_Measurement>[];
 
     // Step 1: measure all spans in a single batch prior to updating their CSS
-    //         styles. This way, all measurements are taken with a single reflow
+    //         styles. This way, all measurements are taken with a single reflow.
     //         Interleaving measurements with updates, will cause the browser to
     //         reflow the page between measurements.
     for (final _QueuedSizeUpdate update in queue) {
@@ -359,6 +396,8 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
         representation._domText.style.transform = 'scale($scaleX, $scaleY)';
       }
     }
+
+    assert(_resizeQueue == null, '_resizeQueue must be empty after it is processed.');
   }
 
   // The structure of the sized span label looks like this:
@@ -423,13 +462,9 @@ class LabelAndValue extends RoleManager {
       : preferredRepresentation;
 
     LabelRepresentationBehavior? representation = _representation;
-    if (representation == null || representation.runtimeType != effectiveRepresentation.implementation) {
+    if (representation == null || representation.kind != effectiveRepresentation) {
       representation?.cleanUp();
-      _representation = representation = switch (effectiveRepresentation) {
-        LabelRepresentation.ariaLabel => AriaLabelRepresentation._(owner),
-        LabelRepresentation.domText => DomTextRepresentation._(owner),
-        LabelRepresentation.sizedSpan => SizedSpanRepresentation._(owner),
-      };
+      _representation = representation = effectiveRepresentation.createBehavior(owner);
     }
     return representation;
   }
