@@ -4,7 +4,6 @@
 
 import '../dependencies.dart';
 import 'command.dart';
-import 'flags.dart';
 
 /// The root 'fetch' command.
 final class FetchCommand extends CommandBase {
