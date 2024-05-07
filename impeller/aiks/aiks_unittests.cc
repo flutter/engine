@@ -21,7 +21,6 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
-#include "impeller/core/capture.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
@@ -2218,30 +2217,6 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-/// Tests that the debug checkerboard displays for offscreen textures when
-/// enabled. Most of the complexity here is just to future proof by making pass
-/// collapsing hard.
-TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
-  Canvas canvas;
-  canvas.debug_options.offscreen_texture_checkerboard = true;
-
-  canvas.DrawPaint({.color = Color::AntiqueWhite()});
-  canvas.DrawCircle({400, 300}, 200,
-                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
-
-  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  {
-    canvas.DrawCircle({500, 400}, 200,
-                      {.color = Color::DarkBlue().WithAlpha(0.75)});
-    canvas.DrawCircle({550, 450}, 200,
-                      {.color = Color::LightCoral().WithAlpha(0.75),
-                       .blend_mode = BlendMode::kLuminosity});
-  }
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   Canvas canvas;
   canvas.Scale(Vector2(1.618, 1.618));
@@ -2620,38 +2595,6 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CaptureContext) {
-  auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
-
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    Canvas canvas;
-
-    capture_context.Rewind();
-    auto document = capture_context.GetDocument("TestDocument");
-
-    auto color = document.AddColor("Background color", Color::CornflowerBlue());
-    canvas.DrawPaint({.color = color});
-
-    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize)) {
-      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
-        property.Invoke({.color = [](CaptureColorProperty& p) {
-          ImGui::ColorEdit4(p.label.c_str(),
-                            reinterpret_cast<float*>(&p.value));
-        }});
-      });
-      ImGui::End();
-    }
-
-    return canvas.EndRecordingAsPicture();
-  };
-  OpenPlaygroundHere(callback);
-}
-
-TEST_P(AiksTest, CaptureInactivatedByDefault) {
-  ASSERT_FALSE(GetContext()->capture.IsActive());
 }
 
 // Regression test for https://github.com/flutter/flutter/issues/134678.

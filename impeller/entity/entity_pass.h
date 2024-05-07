@@ -53,8 +53,6 @@ class EntityPass {
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
 
-  static const std::string kCaptureDocumentName;
-
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
@@ -174,8 +172,6 @@ class EntityPass {
 
   void SetBackdropFilter(BackdropFilterProc proc);
 
-  void SetEnableOffscreenCheckerboard(bool enabled);
-
   int32_t GetRequiredMipCount() const { return required_mip_count_; }
 
   void SetRequiredMipCount(int32_t mip_count) {
@@ -240,7 +236,6 @@ class EntityPass {
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
-                                   Capture& capture,
                                    InlinePassContext& pass_context,
                                    ISize root_pass_size,
                                    Point global_pass_position,
@@ -306,7 +301,6 @@ class EntityPass {
   ///                                      parent pass.
   ///
   bool OnRender(ContentContext& renderer,
-                Capture& capture,
                 ISize root_pass_size,
                 EntityPassTarget& pass_target,
                 Point global_pass_position,
@@ -334,7 +328,6 @@ class EntityPass {
   uint32_t clip_depth_ = 1u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
-  bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
   ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
   int32_t required_mip_count_ = 1;
