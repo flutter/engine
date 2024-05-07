@@ -40,7 +40,7 @@ class Logger {
     _setupIoSink(io.stdout);
   }
 
-  /// Constructrs a logger that invokes a [callback] for each log message.
+  /// Constructs a logger that invokes a [callback] for each log message.
   @visibleForTesting
   Logger.test(
     void Function(log.LogRecord) onLog, {
