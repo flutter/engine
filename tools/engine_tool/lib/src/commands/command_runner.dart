@@ -6,7 +6,6 @@ import 'package:args/command_runner.dart';
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../environment.dart';
-import '../logger.dart';
 import 'build_command.dart';
 import 'fetch_command.dart';
 import 'flags.dart';
