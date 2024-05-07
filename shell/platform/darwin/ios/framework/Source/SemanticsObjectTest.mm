@@ -1001,9 +1001,9 @@ FLUTTER_ASSERT_ARC
 
     @autoreleasepool {
       FlutterPlatformViewSemanticsContainer* container =
-      [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
-                                                                uid:1
-                                                       platformView:platformView];
+          [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
+                                                                    uid:1
+                                                           platformView:platformView];
       weakContainer = container;
       XCTAssertEqualObjects(platformView.accessibilityContainer, container);
       XCTAssertNotNil(weakPlatformView);
