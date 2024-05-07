@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
-
 import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
@@ -711,9 +710,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
           // The translation we do uses MotionEvent.offsetLocation, which shouldn't affect
           // verification status. This case is to warn in debug cases if this behavior changes,
           // so that it doesn't go unnoticed.
-          throw new Error("Motion event that was translated in PlatformViewsController.toPlatformView " +
-                  "does not have verified status. Investigate if this was caused by the translation, " +
-                  "or if there is a case in which it isn't verified that we should ignore.");
+          throw new Error(
+              "Motion event that was translated in PlatformViewsController.toPlatformView "
+                  + "does not have verified status. Investigate if this was caused by the translation, "
+                  + "or if there is a case in which it isn't verified that we should ignore.");
         }
       }
       return trackedEvent;
