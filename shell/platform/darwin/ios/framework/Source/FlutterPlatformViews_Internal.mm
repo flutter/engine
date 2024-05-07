@@ -172,8 +172,8 @@ static BOOL _preparedOnce = NO;
 
 @interface ChildClippingView ()
 
-@property(nonatomic, strong) NSArray<PlatformViewFilter*>* filters;
-@property(nonatomic, strong) NSMutableArray<UIVisualEffectView*>* backdropFilterSubviews;
+@property(nonatomic, copy) NSArray<PlatformViewFilter*>* filters;
+@property(nonatomic) NSMutableArray<UIVisualEffectView*>* backdropFilterSubviews;
 
 @end
 
@@ -446,7 +446,7 @@ static BOOL _preparedOnce = NO;
 
 // The pool contains the views that are available to use.
 // The number of items in the pool must not excceds `capacity`.
-@property(nonatomic, copy) NSMutableSet<FlutterClippingMaskView*>* pool;
+@property(nonatomic) NSMutableSet<FlutterClippingMaskView*>* pool;
 
 @end
 
