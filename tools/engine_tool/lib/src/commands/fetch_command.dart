@@ -25,7 +25,6 @@ final class FetchCommand extends CommandBase {
 
   @override
   Future<int> run() {
-    final bool verbose = globalResults![verboseFlag] as bool;
-    return fetchDependencies(environment, verbose: verbose);
+    return fetchDependencies(environment);
   }
 }
