@@ -78,7 +78,6 @@ void AHBTexturePoolVK::PerformGC() {
 }
 
 void AHBTexturePoolVK::PerformGCLocked() {
-  auto now = Clock::now();
   while (!pool_.empty() && (pool_.size() > max_entries_)) {
     // Buffers are pushed to the back of the queue and popped from the front.
     // The ones at the back should be given the most time for their fences to
