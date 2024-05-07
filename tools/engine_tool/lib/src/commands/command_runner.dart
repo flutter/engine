@@ -94,9 +94,6 @@ final class ToolCommandRunner extends CommandRunner<int> {
 
   @override
   Future<int> run(Iterable<String> args) async {
-    if (environment.verbose) {
-      environment.logger.level = Logger.infoLevel;
-    }
     try {
       return await runCommand(parse(args)) ?? 0;
     } on FormatException catch (e) {
