@@ -53,6 +53,8 @@ import java.util.List;
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
 
+  // This input manager is only used for confirming the verification status of motion events in
+  // debug builds.
   private InputManager inputManager;
 
   // These view types allow out-of-band drawing commands that don't notify the Android view
@@ -708,7 +710,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
         if (inputManager.verifyInputEvent(trackedEvent) == null) {
           // The translation we do uses MotionEvent.offsetLocation, which shouldn't affect
-          // verification status. This case is to warn in debug cases if this behavior changes,
+          // verification status. This case is to warn in debug builds if this behavior changes,
           // so that it doesn't go unnoticed.
           throw new Error(
               "Motion event that was translated in PlatformViewsController.toPlatformView "
