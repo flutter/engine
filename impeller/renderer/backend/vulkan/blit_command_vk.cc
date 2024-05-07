@@ -266,10 +266,8 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
   {
     BarrierVK barrier;
     barrier.cmd_buffer = cmd_buffer;
-    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                         vk::AccessFlagBits::eTransferWrite;
-    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                        vk::PipelineStageFlagBits::eTransfer;
+    barrier.src_access = vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eTransfer;
     barrier.dst_access = vk::AccessFlagBits::eShaderRead;
     barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
 
