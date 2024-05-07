@@ -698,6 +698,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
 
+    // Pointer coordinates in the tracked events are global to FlutterView
+    // The framework converts them to be local to a widget, given that
+    // motion events operate on local coords, we need to replace these in the tracked
+    // event with their local counterparts.
     // Compute this early so it can be used as input to translateNonVirtualDisplayMotionEvent.
     PointerCoords[] pointerCoords =
         parsePointerCoordsList(touch.rawPointerCoords, density)
@@ -708,7 +712,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       // input check.
       translateNonVirtualDisplayMotionEvent(trackedEvent, pointerCoords);
       if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
-        if (inputManager.verifyInputEvent(trackedEvent) == null) {
+        if (inputManager != null && inputManager.verifyInputEvent(trackedEvent) == null) {
           // The translation we do uses MotionEvent.offsetLocation, which shouldn't affect
           // verification status. This case is to warn in debug builds if this behavior changes,
           // so that it doesn't go unnoticed.
@@ -723,11 +727,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     // We are in virtual display mode or don't have a reference to the original MotionEvent.
     // In this case we manually recreate a MotionEvent to be delivered. This MotionEvent
     // will fail the verifiable input check.
-
-    // Pointer coordinates in the tracked events are global to FlutterView
-    // framework converts them to be local to a widget, given that
-    // motion events operate on local coords, we need to replace these in the tracked
-    // event with their local counterparts.
     PointerProperties[] pointerProperties =
         parsePointerPropertiesList(touch.rawPointerPropertiesList)
             .toArray(new PointerProperties[touch.pointerCount]);
