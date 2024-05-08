@@ -5,6 +5,7 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_TYPOGRAPHER_CONTEXT_STB_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_STB_TYPOGRAPHER_CONTEXT_STB_H_
 
+#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/typographer_context.h"
 
 #include <memory>
@@ -20,7 +21,8 @@ class TypographerContextSTB : public TypographerContext {
   ~TypographerContextSTB() override;
 
   // |TypographerContext|
-  std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext() const override;
+  std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext(
+      GlyphAtlas::Type type) const override;
 
   // |TypographerContext|
   std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(

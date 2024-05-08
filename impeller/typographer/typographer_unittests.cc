@@ -60,7 +60,8 @@ TEST_P(TypographerTest, CanCreateRenderContext) {
 
 TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
@@ -134,7 +135,8 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
 TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
@@ -153,7 +155,8 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
 
 TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
@@ -180,7 +183,8 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
 TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   ASSERT_TRUE(context && context->IsValid());
 
   const char* test_string =
@@ -225,7 +229,8 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
@@ -256,43 +261,6 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
 
   ASSERT_EQ(second_texture, first_texture);
   ASSERT_EQ(old_packer, new_packer);
-}
-
-TEST_P(TypographerTest, GlyphAtlasTextureIsRecreatedIfTypeChanges) {
-  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
-  auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
-  ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
-  auto blob = SkTextBlob::MakeFromString("spooky 1", sk_font);
-  ASSERT_TRUE(blob);
-  auto atlas =
-      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                       GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
-                       *MakeTextFrameFromTextBlobSkia(blob));
-  auto old_packer = atlas_context->GetRectPacker();
-
-  ASSERT_NE(atlas, nullptr);
-  ASSERT_NE(atlas->GetTexture(), nullptr);
-  ASSERT_EQ(atlas, atlas_context->GetGlyphAtlas());
-
-  auto* first_texture = atlas->GetTexture().get();
-
-  // now create a new glyph atlas with an identical blob,
-  // but change the type.
-
-  auto blob2 = SkTextBlob::MakeFromString("spooky 1", sk_font);
-  auto next_atlas =
-      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                       GlyphAtlas::Type::kColorBitmap, 1.0f, atlas_context,
-                       *MakeTextFrameFromTextBlobSkia(blob2));
-  ASSERT_NE(atlas, next_atlas);
-  auto* second_texture = next_atlas->GetTexture().get();
-
-  auto new_packer = atlas_context->GetRectPacker();
-
-  ASSERT_NE(second_texture, first_texture);
-  ASSERT_NE(old_packer, new_packer);
 }
 
 TEST_P(TypographerTest, MaybeHasOverlapping) {
@@ -358,7 +326,8 @@ TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledWhenContentsAreRecreated) {
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
-  auto atlas_context = context->CreateGlyphAtlasContext();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("ABCDEFGHIJKLMNOPQRSTUVQXYZ123456789",

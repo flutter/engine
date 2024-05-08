@@ -104,8 +104,8 @@ TypographerContextSkia::TypographerContextSkia() = default;
 TypographerContextSkia::~TypographerContextSkia() = default;
 
 std::shared_ptr<GlyphAtlasContext>
-TypographerContextSkia::CreateGlyphAtlasContext() const {
-  return std::make_shared<GlyphAtlasContext>();
+TypographerContextSkia::CreateGlyphAtlasContext(GlyphAtlas::Type type) const {
+  return std::make_shared<GlyphAtlasContext>(type);
 }
 
 static SkImageInfo GetImageInfo(const GlyphAtlas& atlas, ISize size) {
@@ -312,6 +312,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     return nullptr;
   }
   std::shared_ptr<GlyphAtlas> last_atlas = atlas_context->GetGlyphAtlas();
+  FML_DCHECK(last_atlas->GetType() == type);
 
   if (font_glyph_map.empty()) {
     return last_atlas;
@@ -401,7 +402,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       font_glyph_pairs,                                             //
       glyph_positions,                                              //
       atlas_context,                                                //
-      type,                                                         //
       context.GetResourceAllocator()->GetMaxTextureSizeSupported()  //
   );
 

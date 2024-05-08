@@ -25,8 +25,8 @@ class TypographerContext {
 
   virtual bool IsValid() const;
 
-  virtual std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext()
-      const = 0;
+  virtual std::shared_ptr<GlyphAtlasContext> CreateGlyphAtlasContext(
+      GlyphAtlas::Type type) const = 0;
 
   virtual std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
       Context& context,

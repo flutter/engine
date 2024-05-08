@@ -38,8 +38,8 @@ TypographerContextSTB::TypographerContextSTB() : TypographerContext() {}
 TypographerContextSTB::~TypographerContextSTB() = default;
 
 std::shared_ptr<GlyphAtlasContext>
-TypographerContextSTB::CreateGlyphAtlasContext() const {
-  return std::make_shared<GlyphAtlasContextSTB>();
+TypographerContextSTB::CreateGlyphAtlasContext(GlyphAtlas::Type type) const {
+  return std::make_shared<GlyphAtlasContextSTB>(type);
 }
 
 // Function returns the count of "remaining pairs" not packed into rect of given

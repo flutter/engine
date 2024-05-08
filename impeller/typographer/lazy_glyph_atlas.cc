@@ -20,10 +20,12 @@ LazyGlyphAtlas::LazyGlyphAtlas(
     std::shared_ptr<TypographerContext> typographer_context)
     : typographer_context_(std::move(typographer_context)),
       alpha_context_(typographer_context_
-                         ? typographer_context_->CreateGlyphAtlasContext()
+                         ? typographer_context_->CreateGlyphAtlasContext(
+                               GlyphAtlas::Type::kAlphaBitmap)
                          : nullptr),
       color_context_(typographer_context_
-                         ? typographer_context_->CreateGlyphAtlasContext()
+                         ? typographer_context_->CreateGlyphAtlasContext(
+                               GlyphAtlas::Type::kColorBitmap)
                          : nullptr) {}
 
 LazyGlyphAtlas::~LazyGlyphAtlas() = default;
