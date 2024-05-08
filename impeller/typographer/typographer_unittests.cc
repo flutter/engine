@@ -327,7 +327,7 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledWhenContentsAreRecreated) {
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
   auto atlas_context =
-      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kColorBitmap);
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
   auto blob = SkTextBlob::MakeFromString("ABCDEFGHIJKLMNOPQRSTUVQXYZ123456789",
