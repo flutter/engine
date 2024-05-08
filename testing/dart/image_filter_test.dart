@@ -7,6 +7,7 @@ import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
 
+import 'goldens.dart';
 import 'impeller_enabled.dart';
 
 const Color red = Color(0xFFAA0000);
@@ -296,5 +297,60 @@ void main() {
         'blur(30.0, 30.0, mirror)'
       ),
     );
+  });
+
+  // Tests that FilterQuality.<value> produces the expected golden file.
+  group('ImageFilter|FilterQuality', () async {
+    final ImageComparer comparer = await ImageComparer.create();
+
+    Future<Image> dashInNooglerHat() async {
+      final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
+      final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+      final Codec codec = await descriptor.instantiateCodec(targetWidth: 100, targetHeight: 100);
+      final FrameInfo frame = await codec.getNextFrame();
+      return frame.image;
+    }
+
+    Future<Image> scaleImage(Image image, FilterQuality quality) async {
+      // Mangify the image by 5x.
+      final ImageFilter filter = ImageFilter.matrix(Float64List.fromList(<double>[
+        5.0, 0.0, 0.0, 0.0,
+        0.0, 5.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+      ]), filterQuality: quality);
+
+      final Paint paint = Paint()..imageFilter = filter;
+      final PictureRecorder recorder = PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+      canvas.drawImage(image, Offset.zero, paint);
+
+      final Picture picture = recorder.endRecording();
+      return picture.toImage(500, 500);
+    }
+
+    test('FilterQuality.low', () async {
+      final Image base = await dashInNooglerHat();
+      final Image scaled = await scaleImage(base, FilterQuality.low);
+      await comparer.addGoldenImage(scaled, 'filter_quality_low.png');
+    });
+
+    test('FilterQuality.medium', () async {
+      final Image base = await dashInNooglerHat();
+      final Image scaled = await scaleImage(base, FilterQuality.medium);
+      await comparer.addGoldenImage(scaled, 'filter_quality_medium.png');
+    });
+
+    test('FilterQuality.high', () async {
+      final Image base = await dashInNooglerHat();
+      final Image scaled = await scaleImage(base, FilterQuality.high);
+      await comparer.addGoldenImage(scaled, 'filter_quality_high.png');
+    });
+
+    test('FilterQuality.none', () async {
+      final Image base = await dashInNooglerHat();
+      final Image scaled = await scaleImage(base, FilterQuality.none);
+      await comparer.addGoldenImage(scaled, 'filter_quality_none.png');
+    });
   });
 }
