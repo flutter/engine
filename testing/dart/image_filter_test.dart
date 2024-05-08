@@ -303,6 +303,7 @@ void main() {
   group('ImageFilter|FilterQuality', () async {
     final ImageComparer comparer = await ImageComparer.create();
 
+    /// Load the image of 'Dash in a Noogler hat'.
     Future<Image> dashInNooglerHat() async {
       final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
       final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
@@ -311,8 +312,8 @@ void main() {
       return frame.image;
     }
 
-    Future<Image> scaleImage(Image image, FilterQuality quality) async {
-      // Mangify the image by 5x.
+    /// Return the [image] magnified by a factor of 5.
+    Future<Image> scaleImage5x(Image image, FilterQuality quality) async {
       final ImageFilter filter = ImageFilter.matrix(Float64List.fromList(<double>[
         5.0, 0.0, 0.0, 0.0,
         0.0, 5.0, 0.0, 0.0,
@@ -331,25 +332,25 @@ void main() {
 
     test('FilterQuality.low', () async {
       final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage(base, FilterQuality.low);
+      final Image scaled = await scaleImage5x(base, FilterQuality.low);
       await comparer.addGoldenImage(scaled, 'filter_quality_low.png');
     });
 
     test('FilterQuality.medium', () async {
       final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage(base, FilterQuality.medium);
+      final Image scaled = await scaleImage5x(base, FilterQuality.medium);
       await comparer.addGoldenImage(scaled, 'filter_quality_medium.png');
     });
 
     test('FilterQuality.high', () async {
       final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage(base, FilterQuality.high);
+      final Image scaled = await scaleImage5x(base, FilterQuality.high);
       await comparer.addGoldenImage(scaled, 'filter_quality_high.png');
     });
 
     test('FilterQuality.none', () async {
       final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage(base, FilterQuality.none);
+      final Image scaled = await scaleImage5x(base, FilterQuality.none);
       await comparer.addGoldenImage(scaled, 'filter_quality_none.png');
     });
   });
