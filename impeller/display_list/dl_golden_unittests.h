@@ -8,7 +8,6 @@
 #include "impeller/display_list/dl_playground.h"
 #include "impeller/golden_tests/golden_playground_test.h"
 
-
 namespace impeller {
 namespace testing {
 
