@@ -481,7 +481,7 @@ void _testEngineSemanticsOwner() {
     expectSemanticsTree(owner(), '''
 <sem>
   <sem-c>
-    <sem><span>tooltip<br>Hello</span></sem>
+    <sem><span>tooltip\nHello</span></sem>
   </sem-c>
 </sem>''');
 

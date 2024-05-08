@@ -242,12 +242,9 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       //   `inline` does not support them.
       ..display = 'inline-block'
 
-      // Stretch the text full width because if the text is broken up into a
-      // multi-line paragraph the width of the paragraph can become smaller than
-      // the offsetWidth of the element, and therefore not fully cover the rect
-      // of the parent. "justify" will ensure the text is stretched edge to edge
-      // covering full offsetWidth.
-      ..textAlign = 'justify'
+      // Do not wrap text based on parent constraints. Instead, to fit in the
+      // parent's box the text will be scaled.
+      ..whiteSpace = 'nowrap'
 
       // The origin of the coordinate system is the top-left corner of the
       // parent element.
@@ -268,7 +265,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
     // Label must be updated before sizing because the size depends on text
     // content.
     if (labelChanged) {
-      _domText.innerText = label;
+      _domText.text = label;
     }
 
     // This code makes the assumption that the DOM size of the element depends
@@ -354,7 +351,15 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 
     final List<_Measurement> measurements = <_Measurement>[];
 
-    // Step 1: measure all spans in a single batch prior to updating their CSS
+    // Step 1: set `display` to `inline` so that the measurement measures the
+    //         true size of the text. Update all spans in a batch so that the
+    //         measurement can be done without changing CSS properties that
+    //         trigger reflow.
+    for (final _QueuedSizeUpdate update in queue) {
+      update.representation._domText.style.display = 'inline';
+    }
+
+    // Step 2: measure all spans in a single batch prior to updating their CSS
     //         styles. This way, all measurements are taken with a single reflow.
     //         Interleaving measurements with updates, will cause the browser to
     //         reflow the page between measurements.
@@ -377,13 +382,16 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       ));
     }
 
-    // Step 2: update all spans at a batch without taking any further DOM
+    // Step 3: update all spans at a batch without taking any further DOM
     //         measurements, which avoids additional reflows.
     for (final _Measurement measurement in measurements) {
       final SizedSpanRepresentation representation = measurement.representation;
       final double domWidth = measurement.domSize.width;
       final double domHeight = measurement.domSize.height;
       final ui.Size targetSize = measurement.targetSize;
+
+      // Reset back to `inline-block` (it was set to `inline` in Step 1).
+      representation._domText.style.display = 'inline-block';
 
       if (domWidth < 1 && domHeight < 1) {
         // Don't bother dealing with divisions by tiny numbers. This probably means
