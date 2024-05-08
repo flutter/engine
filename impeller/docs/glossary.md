@@ -10,7 +10,7 @@ The API Impeller uses to talk to devices. Examples of these are OpenGL, Metal, V
 
 ### Window System Integration (WSI)
 
-Impeller can render using one of the client rendering APIs into a render target. However, that render target needs to be presented in the platforms window system. A Window System Integration API does this and is usually extremely platform specific. For instance, OpenGL may be available on macOS and Linux, but the WSI API for macOS EAGL and usually (but not always) EGL for Linux.
+Impeller can render using one of the client rendering APIs into a render target. However, that render target needs to be presented in the platform's window system. A Window System Integration API does this and is usually extremely platform specific. For instance, OpenGL may be available on macOS and Linux, but the WSI API for macOS is EAGL and usually (but not always) EGL for Linux.
 
 ### Varying
 
@@ -18,7 +18,7 @@ In the context of shaders, a varying is a value that is interpolated between two
 
 ### OpenGL
 
-[OpenGL and OpenGL ES (Embedded Systems)](https://www.opengl.org/) are [client rendering APIs](#client-rendering-api). These uses these on older versions of Android today.
+[OpenGL and OpenGL ES (Embedded Systems)](https://www.opengl.org/) are [client rendering APIs](#client-rendering-api). Impeller uses these on older versions of Android today.
 
 ### Vulkan
 
