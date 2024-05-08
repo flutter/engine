@@ -60,19 +60,25 @@ void main(List<String> args) async {
     io.exitCode = 1;
   }
 
+  final Logger logger;
+  if (verbose) {
+    logger = Logger(level: Logger.infoLevel);
+  } else {
+    logger = Logger();
+  }
   final Environment environment = Environment(
     abi: ffi.Abi.current(),
     engine: engine,
     platform: const LocalPlatform(),
     processRunner: ProcessRunner(),
-    logger: Logger(),
+    logger: logger,
+    verbose: verbose,
   );
 
   // Use the Engine and BuildConfig collection to build the CommandRunner.
   final ToolCommandRunner runner = ToolCommandRunner(
     environment: environment,
     configs: configs,
-    verbose: verbose,
     help: help,
   );
 

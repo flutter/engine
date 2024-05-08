@@ -3172,10 +3172,17 @@ TEST_P(AiksTest, SetContentsWithRegion) {
   blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), bridge,
                      IRect::MakeLTRB(50, 50, 150, 150));
 
+<<<<<<< HEAD
   if (!blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) ||
       !GetContext()->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok()) {
     GTEST_FAIL();
   }
+=======
+  auto did_submit =
+      blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) &&
+      GetContext()->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok();
+  ASSERT_TRUE(did_submit);
+>>>>>>> 9cb60de37b6d582d886f46b86b90ccb9d6323fea
 
   auto image = std::make_shared<Image>(bridge);
 

@@ -138,7 +138,7 @@ static size_t PairsFitInAtlasOfSize(
     const auto glyph_size =
         ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
+    if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
                               &location_in_atlas             //
                               )) {
@@ -176,7 +176,7 @@ static bool CanAppendToExistingAtlas(
     const auto glyph_size =
         ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
     IPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
+    if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
                               &location_in_atlas             //
                               )) {

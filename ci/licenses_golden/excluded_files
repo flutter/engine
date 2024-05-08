@@ -183,7 +183,6 @@
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/blit_pass_unittests.cc
 ../../../flutter/impeller/renderer/capabilities_unittests.cc
-../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
 ../../../flutter/impeller/renderer/compute_unittests.cc
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
@@ -774,6 +773,7 @@
 ../../../flutter/third_party/accessibility/gfx/geometry/vector2d_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/range/range_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/test
+../../../flutter/third_party/android_tools
 ../../../flutter/third_party/angle/.clang-format
 ../../../flutter/third_party/angle/.git
 ../../../flutter/third_party/angle/.gitattributes
@@ -2782,7 +2782,6 @@
 ../../../flutter/third_party/skia/src/effects/colorfilters/BUILD.bazel
 ../../../flutter/third_party/skia/src/effects/imagefilters/BUILD.bazel
 ../../../flutter/third_party/skia/src/encode/BUILD.bazel
-../../../flutter/third_party/skia/src/fonts/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/android/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/ganesh/BUILD.bazel
@@ -3506,7 +3505,6 @@
 ../../../fuchsia/sdk/linux/version_history.json
 ../../../out
 ../../../third_party/android_embedding_dependencies
-../../../third_party/android_tools
 ../../../third_party/gradle
 ../../../third_party/java
 ../../../third_party/libcxx/.clang-format

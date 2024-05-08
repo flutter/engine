@@ -304,8 +304,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     }
   };
 
-  contents_initialized_ = reactor_->AddOperation(texture_upload);
-  return contents_initialized_;
+  slices_initialized_ = reactor_->AddOperation(texture_upload);
+  return slices_initialized_[0];
 }
 
 // |Texture|
@@ -343,13 +343,10 @@ static std::optional<GLenum> ToRenderBufferFormat(PixelFormat format) {
 }
 
 void TextureGLES::InitializeContentsIfNecessary() const {
-  if (!IsValid()) {
+  if (!IsValid() || slices_initialized_[0]) {
     return;
   }
-  if (contents_initialized_) {
-    return;
-  }
-  contents_initialized_ = true;
+  slices_initialized_[0] = true;
 
   if (is_wrapped_) {
     return;
@@ -456,11 +453,11 @@ bool TextureGLES::Bind() const {
 }
 
 void TextureGLES::MarkSliceInitialized(size_t slice) const {
-  contents_initialized_ |= (1 >> slice);
+  slices_initialized_[slice] = true;
 }
 
 bool TextureGLES::IsSliceInitialized(size_t slice) const {
-  return (contents_initialized_ >> slice) & 1;
+  return slices_initialized_[slice];
 }
 
 bool TextureGLES::GenerateMipmap() {

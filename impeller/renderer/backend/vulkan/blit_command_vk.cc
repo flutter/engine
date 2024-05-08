@@ -242,19 +242,29 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
 
   vk::BufferImageCopy image_copy;
   image_copy.setBufferOffset(source.range.offset);
+<<<<<<< HEAD
   image_copy.setBufferRowLength(0);    // 0 means tightly packed.
   image_copy.setBufferImageHeight(0);  // 0 means tightly packed
+=======
+  image_copy.setBufferRowLength(0);
+  image_copy.setBufferImageHeight(0);
+  image_copy.setImageSubresource(
+      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+>>>>>>> 9cb60de37b6d582d886f46b86b90ccb9d6323fea
   image_copy.imageOffset.x = destination_region.GetX();
   image_copy.imageOffset.y = destination_region.GetY();
   image_copy.imageOffset.z = 0u;
   image_copy.imageExtent.width = destination_region.GetWidth();
   image_copy.imageExtent.height = destination_region.GetHeight();
   image_copy.imageExtent.depth = 1u;
+<<<<<<< HEAD
   image_copy.imageSubresource.aspectMask =
       ToImageAspectFlags(dst.GetTextureDescriptor().format);
   image_copy.imageSubresource.mipLevel = 0u;
   image_copy.imageSubresource.baseArrayLayer = slice;
   image_copy.imageSubresource.layerCount = 1u;
+=======
+>>>>>>> 9cb60de37b6d582d886f46b86b90ccb9d6323fea
 
   if (!dst.SetLayout(dst_barrier)) {
     VALIDATION_LOG << "Could not encode layout transition.";
@@ -271,10 +281,8 @@ bool BlitCopyBufferToTextureCommandVK::Encode(CommandEncoderVK& encoder) const {
   {
     BarrierVK barrier;
     barrier.cmd_buffer = cmd_buffer;
-    barrier.src_access = vk::AccessFlagBits::eColorAttachmentWrite |
-                         vk::AccessFlagBits::eTransferWrite;
-    barrier.src_stage = vk::PipelineStageFlagBits::eColorAttachmentOutput |
-                        vk::PipelineStageFlagBits::eTransfer;
+    barrier.src_access = vk::AccessFlagBits::eTransferWrite;
+    barrier.src_stage = vk::PipelineStageFlagBits::eTransfer;
     barrier.dst_access = vk::AccessFlagBits::eShaderRead;
     barrier.dst_stage = vk::PipelineStageFlagBits::eFragmentShader;
 
