@@ -178,7 +178,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   }
 }
 
-- (BOOL)application:(UIApplication*)application
+- (void)application:(UIApplication*)application
               openURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
     completionHandler:(void (^)(BOOL success))completion {
@@ -223,7 +223,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
                         completionHandler:completionHandler];
 }
 
-- (BOOL)application:(UIApplication*)application
+- (void)application:(UIApplication*)application
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:
           (void (^)(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects))
