@@ -53,6 +53,7 @@ impeller_component("display_list_unittests") {
   testonly = true
 
   sources = [
+    "dl_golden_unittests.cc",
     "dl_playground.cc",
     "dl_playground.h",
     "dl_unittests.cc",
