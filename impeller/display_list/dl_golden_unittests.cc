@@ -15,11 +15,15 @@ namespace testing {
 INSTANTIATE_PLAYGROUND_SUITE(DlGoldenTest);
 
 TEST_P(DlGoldenTest, CanDrawPaint) {
+  auto draw = [](flutter::DlCanvas* canvas, flutter::DlImage** images) {
+    canvas->Scale(0.2, 0.2);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kCyan());
+    canvas->DrawPaint(paint);
+  };
+
   flutter::DisplayListBuilder builder;
-  builder.Scale(0.2, 0.2);
-  flutter::DlPaint paint;
-  paint.setColor(flutter::DlColor::kCyan());
-  builder.DrawPaint(paint);
+  draw(&builder, nullptr);
 
   DlDispatcher dispatcher;
   builder.Build()->Dispatch(dispatcher);
