@@ -14,6 +14,7 @@
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
 #include "fml/closure.h"
+#include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -225,6 +226,14 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   }
 
   return SaveScreenshot(std::move(screenshot));
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    sk_sp<flutter::DisplayList> list) {
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+  return OpenPlaygroundHere(std::move(picture));
 }
 
 bool GoldenPlaygroundTest::ImGuiBegin(const char* name,

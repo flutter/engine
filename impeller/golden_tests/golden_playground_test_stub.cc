@@ -37,6 +37,11 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   return false;
 }
 
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    sk_sp<flutter::DisplayList> list) {
+  return false;
+}
+
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {

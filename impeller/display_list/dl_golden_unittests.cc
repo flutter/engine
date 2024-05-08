@@ -25,9 +25,7 @@ TEST_P(DlGoldenTest, CanDrawPaint) {
   flutter::DisplayListBuilder builder;
   draw(&builder, nullptr);
 
-  DlDispatcher dispatcher;
-  builder.Build()->Dispatch(dispatcher);
-  ASSERT_TRUE(OpenPlaygroundHere(dispatcher.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 }  // namespace testing
