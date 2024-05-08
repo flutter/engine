@@ -303,54 +303,79 @@ void main() {
   group('ImageFilter|FilterQuality', () async {
     final ImageComparer comparer = await ImageComparer.create();
 
-    /// Load the image of 'Dash in a Noogler hat'.
-    Future<Image> dashInNooglerHat() async {
-      final ImmutableBuffer buffer = await ImmutableBuffer.fromAsset('DashInNooglerHat.jpg');
-      final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
-      final Codec codec = await descriptor.instantiateCodec(targetWidth: 100, targetHeight: 100);
-      final FrameInfo frame = await codec.getNextFrame();
-      return frame.image;
-    }
-
-    /// Return the [image] magnified by a factor of 5.
-    Future<Image> scaleImage5x(Image image, FilterQuality quality) async {
-      final ImageFilter filter = ImageFilter.matrix(Float64List.fromList(<double>[
-        5.0, 0.0, 0.0, 0.0,
-        0.0, 5.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-      ]), filterQuality: quality);
-
-      final Paint paint = Paint()..imageFilter = filter;
+    /// Draw a 100x100 red-green checkerboard pattern with 1x1 squares.
+    Future<Image> drawCheckerboard() async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder);
-      canvas.drawImage(image, Offset.zero, paint);
-
+      final Paint paint = Paint();
+      final Path pathRed = Path();
+      final Path pathGreen = Path();
+      for (int y = 0; y < 50; y++) {
+        for (int x = 0; x < 50; x++) {
+          if ((x + y).isEven) {
+            pathRed.addRect(Rect.fromLTWH(x.toDouble(), y.toDouble(), 1.0, 1.0));
+          } else {
+            pathGreen.addRect(Rect.fromLTWH(x.toDouble(), y.toDouble(), 1.0, 1.0));
+          }
+        }
+      }
+      canvas.drawPath(pathRed, paint..color = red);
+      canvas.drawPath(pathGreen, paint..color = green);
       final Picture picture = recorder.endRecording();
-      return picture.toImage(500, 500);
+      return picture.toImage(50, 50);
+    }
+
+    /// Return the [image] magnified by a factor of 0.5 and then scaled up 10x.
+    Future<Image> shrinkAndScaleImage(Image image, FilterQuality quality) async {
+      Future<Image> shrink() async {
+        final Paint paint = Paint()..filterQuality = quality;
+        final PictureRecorder recorder = PictureRecorder();
+        final Canvas canvas = Canvas(recorder);
+        canvas.drawImage(image, Offset.zero, paint);
+
+        final Picture picture = recorder.endRecording();
+        return picture.toImage(25, 25);
+      }
+
+      Future<Image> scale(Image image) async {
+        final Paint paint = Paint()..filterQuality = quality;
+        final PictureRecorder recorder = PictureRecorder();
+        final Canvas canvas = Canvas(recorder);
+        canvas.drawImageRect(
+          image,
+          const Rect.fromLTWH(0, 0, 25, 25),
+          const Rect.fromLTWH(0, 0, 250, 250),
+          paint,
+        );
+
+        final Picture picture = recorder.endRecording();
+        return picture.toImage(250, 250);
+      }
+
+      return scale(await shrink());
     }
 
     test('FilterQuality.low', () async {
-      final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage5x(base, FilterQuality.low);
+      final Image base = await drawCheckerboard();
+      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.low);
       await comparer.addGoldenImage(scaled, 'filter_quality_low.png');
     });
 
     test('FilterQuality.medium', () async {
-      final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage5x(base, FilterQuality.medium);
+      final Image base = await drawCheckerboard();
+      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.medium);
       await comparer.addGoldenImage(scaled, 'filter_quality_medium.png');
     });
 
     test('FilterQuality.high', () async {
-      final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage5x(base, FilterQuality.high);
+      final Image base = await drawCheckerboard();
+      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.high);
       await comparer.addGoldenImage(scaled, 'filter_quality_high.png');
     });
 
     test('FilterQuality.none', () async {
-      final Image base = await dashInNooglerHat();
-      final Image scaled = await scaleImage5x(base, FilterQuality.none);
+      final Image base = await drawCheckerboard();
+      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.none);
       await comparer.addGoldenImage(scaled, 'filter_quality_none.png');
     });
   });
