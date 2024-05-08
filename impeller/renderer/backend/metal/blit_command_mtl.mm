@@ -126,7 +126,9 @@ bool BlitCopyBufferToTextureCommandMTL::Encode(
   [encoder copyFromBuffer:source_mtl
              sourceOffset:source.range.offset
         sourceBytesPerRow:destination_bytes_per_row
-      sourceBytesPerImage:0
+      sourceBytesPerImage:
+          0  // 0 for 2D textures according to
+             // https://developer.apple.com/documentation/metal/mtlblitcommandencoder/1400752-copyfrombuffer
                sourceSize:source_size_mtl
                 toTexture:destination_mtl
          destinationSlice:slice

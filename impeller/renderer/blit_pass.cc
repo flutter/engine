@@ -149,6 +149,10 @@ bool BlitPass::AddCopy(BufferView source,
         << "Attempted to add a texture blit with out of bounds access.";
     return false;
   }
+  if (slice > 5) {
+    VALIDATION_LOG << "Invalid value for slice: " << slice;
+    return false;
+  }
 
   return OnCopyBufferToTextureCommand(std::move(source), std::move(destination),
                                       destination_region_value,

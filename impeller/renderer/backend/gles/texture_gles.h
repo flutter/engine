@@ -71,7 +71,7 @@ class TextureGLES final : public Texture,
   ReactorGLES::Ref reactor_;
   const Type type_;
   HandleGLES handle_;
-  mutable uint32_t contents_initialized_ = 0;
+  mutable std::bitset<6> slices_initialized_ = 0;
   const bool is_wrapped_;
   const std::optional<GLuint> wrapped_fbo_;
   bool is_valid_ = false;
