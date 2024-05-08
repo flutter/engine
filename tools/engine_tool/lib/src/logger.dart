@@ -169,6 +169,8 @@ class Logger {
   /// and emits a carriage return.
   void clearLine() {
     if (!io.stdout.hasTerminal || _test) {
+      // Just write a newline if we're not in a terminal.
+      _ioSinkWrite(io.stdout, '\n');
       return;
     }
     _status?.pause();
