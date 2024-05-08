@@ -58,8 +58,8 @@ inline const SkISize& ToSkISize(const DlISize& size) {
 }
 
 inline constexpr SkMatrix ToSkMatrix(const DlMatrix& matrix) {
-  return SkMatrix::MakeAll(matrix.m[0], matrix.m[4], matrix.m[12],
-                           matrix.m[1], matrix.m[5], matrix.m[13],
+  return SkMatrix::MakeAll(matrix.m[0], matrix.m[4], matrix.m[12],  //
+                           matrix.m[1], matrix.m[5], matrix.m[13],  //
                            matrix.m[3], matrix.m[7], matrix.m[15]);
 }
 
