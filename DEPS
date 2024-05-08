@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'ad143675a4d23a0c72801e9e53ce322633fce11a',
+  'skia_revision': '2319f1ae8fe42525f8b6a1969a1cee67bdbee290',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -277,7 +277,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '915f67999bfb4eb77cf596bbadacdce7868ede49',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'c5f0206b6fd70a85a41718f0bc6481b7c5348026',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -745,7 +745,7 @@ deps = {
     'dep_type': 'cipd'
   },
 
-  'src/third_party/android_tools/trace_to_text': {
+  'src/flutter/third_party/android_tools/trace_to_text': {
     'packages': [
       {
         # 25.0 downloads for both mac-amd64 and mac-arm64
@@ -759,7 +759,7 @@ deps = {
     'dep_type': 'cipd'
   },
 
-   'src/third_party/android_tools/google-java-format': {
+   'src/flutter/third_party/android_tools/google-java-format': {
      'packages': [
        {
         'package': 'flutter/android/google-java-format',
@@ -773,7 +773,7 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/third_party/android_tools': {
+  'src/flutter/third_party/android_tools': {
      'packages': [
        {
         'package': 'flutter/android/sdk/all/${{platform}}',
@@ -982,7 +982,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': 'QDv0tal7_BgoZx0juVDJ2Y4M-5-lh7z2MW0WJBQNtRQC'
+        'version': '27ZAbzJkEopmu0EmpMQBRPgXWhwI1SScm_VGkfi7KbEC'
        }
      ],
      'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',

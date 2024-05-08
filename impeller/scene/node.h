@@ -6,7 +6,6 @@
 #define FLUTTER_IMPELLER_SCENE_NODE_H_
 
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <vector>
 
@@ -14,11 +13,9 @@
 #include "impeller/base/thread_safety.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/renderer/render_target.h"
 #include "impeller/scene/animation/animation.h"
 #include "impeller/scene/animation/animation_clip.h"
 #include "impeller/scene/animation/animation_player.h"
-#include "impeller/scene/camera.h"
 #include "impeller/scene/mesh.h"
 #include "impeller/scene/scene_encoder.h"
 #include "impeller/scene/skin.h"

@@ -258,7 +258,7 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   if (!gl_handle.has_value()) {
     VALIDATION_LOG
         << "Texture was collected before it could be uploaded to the GPU.";
-    return true;
+    return false;
   }
   const auto& gl = reactor.GetProcTable();
   gl.BindTexture(texture_type, gl_handle.value());

@@ -8,6 +8,9 @@ import 'dart:io' as io show IOSink, stderr, stdout;
 import 'package:logging/logging.dart' as log;
 import 'package:meta/meta.dart';
 
+// Part of the public API, so it's nicer to provide the symbols directly.
+export 'package:logging/logging.dart' show LogRecord;
+
 // This is where a flutter_tool style progress spinner, color output,
 // ascii art, terminal control for clearing lines or the whole screen, etc.
 // can go. We can just add more methods to Logger using the flutter_tool's
@@ -26,22 +29,27 @@ import 'package:meta/meta.dart';
 /// which can be inspected by unit tetss.
 class Logger {
   /// Constructs a logger for use in the tool.
-  Logger()
+  Logger({
+    log.Level level = statusLevel,
+  })
       : _logger = log.Logger.detached('et'),
         _test = false {
-    _logger.level = statusLevel;
+    _logger.level = level;
     _logger.onRecord.listen(_handler);
     _setupIoSink(io.stderr);
     _setupIoSink(io.stdout);
   }
 
-  /// A logger for tests.
+  /// Constructs a logger that invokes a [callback] for each log message.
   @visibleForTesting
-  Logger.test()
+  Logger.test(
+    void Function(log.LogRecord) onLog, {
+    log.Level level = statusLevel,
+  })
       : _logger = log.Logger.detached('et'),
         _test = true {
-    _logger.level = statusLevel;
-    _logger.onRecord.listen((log.LogRecord r) => _testLogs.add(r));
+    _logger.level = level;
+    _logger.onRecord.listen(onLog);
   }
 
   /// The logging level for error messages. These go to stderr.
@@ -97,18 +105,12 @@ class Logger {
   }
 
   final log.Logger _logger;
-  final List<log.LogRecord> _testLogs = <log.LogRecord>[];
   final bool _test;
 
   Spinner? _status;
 
   /// Get the current logging level.
   log.Level get level => _logger.level;
-
-  /// Set the current logging level.
-  set level(log.Level l) {
-    _logger.level = l;
-  }
 
   /// Record a log message level [Logger.error] and throw a FatalError.
   /// This should only be called when the program has entered an impossible
@@ -260,11 +262,6 @@ class Logger {
     s = s.replaceRange(leftEnd, rightStart, '...');
     return s + maybeNewline;
   }
-
-  /// In a [Logger] constructed by [Logger.test], this list will contain all of
-  /// the [LogRecord]s emitted by the test.
-  @visibleForTesting
-  List<log.LogRecord> get testLogs => _testLogs;
 }
 
 /// A base class for progress spinners, and a no-op implementation that prints
