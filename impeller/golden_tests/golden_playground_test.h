@@ -44,7 +44,7 @@ class GoldenPlaygroundTest
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
-  bool OpenPlaygroundHere(sk_sp<flutter::DisplayList> list);
+  bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
 
   static bool ImGuiBegin(const char* name,
                          bool* p_open,

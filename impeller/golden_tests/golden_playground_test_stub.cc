@@ -38,7 +38,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    sk_sp<flutter::DisplayList> list) {
+    const sk_sp<flutter::DisplayList>& list) {
   return false;
 }
 
