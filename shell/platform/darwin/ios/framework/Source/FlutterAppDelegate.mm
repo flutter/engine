@@ -187,7 +187,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
-  } 
+  }
   if (![self isFlutterDeepLinkingEnabled]) {
     return NO;
   }
