@@ -8,13 +8,13 @@
 #include "impeller/display_list/dl_playground.h"
 #include "impeller/golden_tests/golden_playground_test.h"
 
-namespace impeller {
+namespace flutter {
 namespace testing {
 
 #ifdef IMPELLER_GOLDEN_TESTS
-using DlGoldenTest = GoldenPlaygroundTest;
+using DlGoldenTest = impeller::GoldenPlaygroundTest;
 #else
-using DlGoldenTest = DlPlayground;
+using DlGoldenTest = impeller::DlPlayground;
 #endif
 
 }  // namespace testing

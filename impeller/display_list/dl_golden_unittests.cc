@@ -7,23 +7,26 @@
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
-#include "impeller/display_list/dl_dispatcher.h"
 
-namespace impeller {
+namespace flutter {
 namespace testing {
+
+using impeller::PlaygroundBackend;
+using impeller::PlaygroundTest;
 
 INSTANTIATE_PLAYGROUND_SUITE(DlGoldenTest);
 
 TEST_P(DlGoldenTest, CanDrawPaint) {
-  auto draw = [](flutter::DlCanvas* canvas, flutter::DlImage** images) {
+  auto draw = [](DlCanvas* canvas,
+                 const std::vector<std::unique_ptr<DlImage>>& images) {
     canvas->Scale(0.2, 0.2);
-    flutter::DlPaint paint;
-    paint.setColor(flutter::DlColor::kCyan());
+    DlPaint paint;
+    paint.setColor(DlColor::kCyan());
     canvas->DrawPaint(paint);
   };
 
-  flutter::DisplayListBuilder builder;
-  draw(&builder, nullptr);
+  DisplayListBuilder builder;
+  draw(&builder, /*images=*/{});
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
