@@ -84,12 +84,11 @@ FLUTTER_ASSERT_ARC
                  arguments:@{@"location" : @"http://myApp/custom/route?query=test"}])
       .andReturn(@NO);
 
-
   [self.appDelegate openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                     options:@{}
-                    completionHandler:^(BOOL success) {
-                      XCTAssertFalse(success);
-                    }];
+          completionHandler:^(BOOL success) {
+            XCTAssertFalse(success);
+          }];
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
   OCMVerifyAll(self.mockNavigationChannel);
 }
