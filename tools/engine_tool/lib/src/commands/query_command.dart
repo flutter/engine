@@ -154,6 +154,11 @@ final class QueryTargetsCommand extends CommandBase {
       help: 'Filter build targets to only include tests',
       negatable: false,
     );
+    argParser.addFlag(
+      rbeFlag,
+      defaultsTo: environment.hasRbeConfigInTree(),
+      help: 'RBE is enabled by default when available.',
+    );
   }
 
   /// Build configurations loaded from the engine from under ci/builders.
@@ -176,6 +181,7 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
   Future<int> run() async {
     final String configName = argResults![configFlag] as String;
     final bool testOnly = argResults![testOnlyFlag] as bool;
+    final bool useRbe = argResults![rbeFlag] as bool;
     final String demangledName = demangleConfigName(environment, configName);
     final Build? build =
         builds.where((Build build) => build.name == demangledName).firstOrNull;
@@ -189,6 +195,7 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
       build,
       argResults!.rest,
       defaultToAll: true,
+      enableRbe: useRbe,
     );
     if (selectedTargets == null) {
       // The user typed something wrong and targetsFromCommandLine has already

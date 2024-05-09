@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:io' show ProcessStartMode;
+import 'dart:math';
 
 import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:process_runner/process_runner.dart';
@@ -36,9 +37,8 @@ final class RunCommand extends CommandBase {
     );
     argParser.addFlag(
       rbeFlag,
-      defaultsTo: true,
-      help: 'RBE is enabled by default when available. Use --no-rbe to '
-          'disable it.',
+      defaultsTo: environment.hasRbeConfigInTree(),
+      help: 'RBE is enabled by default when available.',
     );
   }
 
@@ -157,14 +157,24 @@ See `flutter run --help` for a listing
     ];
 
     // First build the host.
-    int r = await runBuild(environment, hostBuild, extraGnArgs: extraGnArgs);
+    int r = await runBuild(
+      environment, 
+      hostBuild, 
+      extraGnArgs: extraGnArgs, 
+      enableRbe: useRbe,
+    );
     if (r != 0) {
       return r;
     }
 
     // Now build the target if it isn't the same.
     if (hostBuild.name != build.name) {
-      r = await runBuild(environment, build, extraGnArgs: extraGnArgs);
+      r = await runBuild(
+        environment, 
+        build, 
+        extraGnArgs: extraGnArgs, 
+        enableRbe: useRbe,
+      );
       if (r != 0) {
         return r;
       }
