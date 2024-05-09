@@ -50,9 +50,9 @@ enum LabelRepresentation {
   /// Creates the behavior for this label representation.
   LabelRepresentationBehavior createBehavior(PrimaryRoleManager owner) {
     return switch (this) {
-      LabelRepresentation.ariaLabel => AriaLabelRepresentation._(owner),
-      LabelRepresentation.domText => DomTextRepresentation._(owner),
-      LabelRepresentation.sizedSpan => SizedSpanRepresentation._(owner),
+      ariaLabel => AriaLabelRepresentation._(owner),
+      domText => DomTextRepresentation._(owner),
+      sizedSpan => SizedSpanRepresentation._(owner),
     };
   }
 }
