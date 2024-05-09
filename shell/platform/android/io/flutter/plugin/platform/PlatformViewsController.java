@@ -679,7 +679,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    * @param originalEvent The saved original input event.
    * @param pointerCoords The coordinates that Flutter thinks the touch is happening at.
    */
-  private void translateNonVirtualDisplayMotionEvent(
+  private static void translateMotionEvent(
       MotionEvent originalEvent, PointerCoords[] pointerCoords) {
     if (pointerCoords.length < 1) {
       return;
@@ -710,7 +710,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     if (!usingVirtualDiplay && trackedEvent != null) {
       // We have the original event, deliver it after offsetting as it will pass the verifiable
       // input check.
-      translateNonVirtualDisplayMotionEvent(trackedEvent, pointerCoords);
+      translateMotionEvent(trackedEvent, pointerCoords);
       if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
         if (inputManager != null && inputManager.verifyInputEvent(trackedEvent) == null) {
           // The translation we do uses MotionEvent.offsetLocation, which shouldn't affect
