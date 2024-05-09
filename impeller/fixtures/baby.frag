@@ -15,7 +15,7 @@ frag_info;
 void main() {
   float floor = floor(frag_info.time);
   float fract = frag_info.time - floor;
-  if (int(floor) % 2 == 0) {
+  if (mod(int(floor), 2) == 0) {
     fract = 1.0 - fract;
   }
   frag_color = mix(v_color, v_color2, fract);
