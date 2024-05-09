@@ -121,7 +121,6 @@ bool BlitCopyTextureToTextureCommandGLES::Encode(
 
 namespace {
 struct TexImage2DData {
-  size_t alignment = 0;
   GLint internal_format = 0;
   GLenum external_format = GL_NONE;
   GLenum type = GL_NONE;
@@ -133,13 +132,11 @@ struct TexImage2DData {
         internal_format = GL_ALPHA;
         external_format = GL_ALPHA;
         type = GL_UNSIGNED_BYTE;
-        alignment = 1;
         break;
       case PixelFormat::kR8UNormInt:
         internal_format = GL_RED;
         external_format = GL_RED;
         type = GL_UNSIGNED_BYTE;
-        alignment = 1;
         break;
       case PixelFormat::kR8G8B8A8UNormInt:
       case PixelFormat::kB8G8R8A8UNormInt:
@@ -148,19 +145,16 @@ struct TexImage2DData {
         internal_format = GL_RGBA;
         external_format = GL_RGBA;
         type = GL_UNSIGNED_BYTE;
-        alignment = 4;
         break;
       case PixelFormat::kR32G32B32A32Float:
         internal_format = GL_RGBA;
         external_format = GL_RGBA;
         type = GL_FLOAT;
-        alignment = 4;
         break;
       case PixelFormat::kR16G16B16A16Float:
         internal_format = GL_RGBA;
         external_format = GL_RGBA;
         type = GL_HALF_FLOAT;
-        alignment = 4;
         break;
       case PixelFormat::kS8UInt:
         // Pure stencil textures are only available in OpenGL 4.4+, which is
@@ -172,7 +166,6 @@ struct TexImage2DData {
         internal_format = GL_DEPTH_STENCIL;
         external_format = GL_DEPTH_STENCIL;
         type = GL_UNSIGNED_INT_24_8;
-        alignment = 4;
         break;
       case PixelFormat::kUnknown:
       case PixelFormat::kD32FloatS8UInt:
@@ -291,7 +284,7 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
   {
     TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
                  std::to_string(data.buffer_view.range.length).c_str());
-    gl.PixelStorei(GL_UNPACK_ALIGNMENT, data.alignment);
+    gl.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
     gl.TexSubImage2D(texture_target,                  // target
                      0u,                              // LOD level
                      destination_region.GetX(),       // xoffset

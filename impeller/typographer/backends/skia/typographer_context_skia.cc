@@ -27,9 +27,8 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixelRef.h"
-#include "include/core/SkShader.h"
 #include "include/core/SkSize.h"
-#include "include/effects/SkGradientShader.h"
+
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
