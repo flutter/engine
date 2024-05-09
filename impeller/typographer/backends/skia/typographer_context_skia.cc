@@ -48,12 +48,13 @@ class HostBufferAllocator : public SkBitmap::Allocator {
   explicit HostBufferAllocator(HostBuffer& host_buffer)
       : host_buffer_(host_buffer) {}
 
-  BufferView TakeBufferView() {
+  [[nodiscard]] BufferView TakeBufferView() {
     buffer_view_.buffer->Flush();
     return std::move(buffer_view_);
   }
 
-  bool allocPixelRef(SkBitmap* bitmap) {
+  // |SkBitmap::Allocator|
+  bool allocPixelRef(SkBitmap* bitmap) override {
     if (!bitmap) {
       return false;
     }
@@ -67,20 +68,13 @@ class HostBufferAllocator : public SkBitmap::Allocator {
     BufferView buffer_view = host_buffer_.Emplace(nullptr, required_bytes,
                                                   DefaultUniformAlignment());
 
-    struct ImpellerPixelRef final : public SkPixelRef {
-      ImpellerPixelRef(int w, int h, void* s, size_t r)
-          : SkPixelRef(w, h, s, r) {}
-
-      ~ImpellerPixelRef() override {}
-    };
-
     // The impeller host buffer is not cleared between frames and may contain
     // stale data. The Skia software canvas does not write to pixels without
     // any contents, which causes this data to leak through.
     ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
              required_bytes);
 
-    auto pixel_ref = sk_sp<SkPixelRef>(new ImpellerPixelRef(
+    auto pixel_ref = sk_sp<SkPixelRef>(new SkPixelRef(
         info.width(), info.height(),
         buffer_view.buffer->OnGetContents() + buffer_view.range.offset,
         bitmap->rowBytes()));
