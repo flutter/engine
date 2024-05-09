@@ -158,9 +158,9 @@ See `flutter run --help` for a listing
 
     // First build the host.
     int r = await runBuild(
-      environment, 
-      hostBuild, 
-      extraGnArgs: extraGnArgs, 
+      environment,
+      hostBuild,
+      extraGnArgs: extraGnArgs,
       enableRbe: useRbe,
     );
     if (r != 0) {
@@ -170,9 +170,9 @@ See `flutter run --help` for a listing
     // Now build the target if it isn't the same.
     if (hostBuild.name != build.name) {
       r = await runBuild(
-        environment, 
-        build, 
-        extraGnArgs: extraGnArgs, 
+        environment,
+        build,
+        extraGnArgs: extraGnArgs,
         enableRbe: useRbe,
       );
       if (r != 0) {

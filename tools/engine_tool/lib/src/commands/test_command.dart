@@ -98,8 +98,8 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
     // TODO(johnmccutchan): runBuild manipulates buildTargets and adds some
     // targets listed in Build. Fix this.
     final int buildExitCode = await runBuild(
-      environment, 
-      build, 
+      environment,
+      build,
       targets: buildTargets,
       enableRbe: useRbe,
     );

@@ -52,7 +52,7 @@ final class Environment {
   /// This is a heuristic based on the presence of certain directories in the
   /// engine repo; it is not a guarantee that remote builds will work (due to
   /// authentication, network, or other issues).
-  /// 
+  ///
   /// **Note**: This calls does synchronous I/O.
   bool hasRbeConfigInTree() {
     final String rbeConfigPath = p.join(
