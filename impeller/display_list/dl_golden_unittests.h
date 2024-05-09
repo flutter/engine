@@ -18,6 +18,6 @@ using DlGoldenTest = impeller::DlPlayground;
 #endif
 
 }  // namespace testing
-}  // namespace impeller
+}  // namespace flutter
 
 #endif  // FLUTTER_IMPELLER_DISPLAY_LIST_DL_GOLDEN_UNITTESTS_H_

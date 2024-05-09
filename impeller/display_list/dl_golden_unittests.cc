@@ -31,5 +31,22 @@ TEST_P(DlGoldenTest, CanDrawPaint) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DlGoldenTest, CanRenderImage) {
+  auto draw = [](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images) {
+    FML_CHECK(images.size() >= 1);
+    DlPaint paint;
+    paint.setColor(DlColor::kRed());
+    canvas->DrawImage(images[0], SkPoint::Make(100.0, 100.0),
+                      DlImageSampling::kLinear, &paint);
+  };
+
+  DisplayListBuilder builder;
+  std::vector<sk_sp<DlImage>> images;
+  images.emplace_back(CreateDlImageForFixture("kalimba.jpg"));
+  draw(&builder, images);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
-}  // namespace impeller
+}  // namespace flutter
