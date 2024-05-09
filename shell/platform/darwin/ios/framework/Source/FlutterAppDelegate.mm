@@ -134,7 +134,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   }
 }
 
-- (BOOL) isFlutterDeepLinkingEnabled {
+- (BOOL)isFlutterDeepLinkingEnabled {
   NSNumber* isDeepLinkingEnabled =
       [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"];
   // Return yes if flag is not set.
@@ -144,9 +144,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (void)openURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
     completionHandler:(void (^)(BOOL success))completion {
-    
-  if (![self isFlutterDeepLinkingEnabled]
-  ) {
+  if (![self isFlutterDeepLinkingEnabled]) {
     completion(NO);
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
@@ -185,17 +183,18 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 }
 
 - (BOOL)application:(UIApplication*)application
-              openURL:(NSURL*)url
-              options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   } else {
-    if(![self isFlutterDeepLinkingEnabled]) {
+    if (![self isFlutterDeepLinkingEnabled]) {
       return NO;
     }
     [self openURL:url
                   options:options
-        completionHandler:^(BOOL success) {}];
+        completionHandler:^(BOOL success){
+        }];
     return YES;
   }
 }
@@ -241,12 +240,13 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  if(![self isFlutterDeepLinkingEnabled]) {
-      return NO;
+  if (![self isFlutterDeepLinkingEnabled]) {
+    return NO;
   }
   [self openURL:userActivity.webpageURL
                 options:options
-      completionHandler:^(BOOL success) {}];
+      completionHandler:^(BOOL success){
+      }];
   return YES;
 }
 

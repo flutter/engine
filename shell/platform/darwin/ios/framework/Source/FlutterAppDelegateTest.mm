@@ -67,9 +67,10 @@ FLUTTER_ASSERT_ARC
                  arguments:@{@"location" : @"http://myApp/custom/route?query=test"}])
       .andReturn(@YES);
 
-  BOOL result = [self.appDelegate application:[UIApplication sharedApplication]
-                        openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                        options:@{}];
+  BOOL result =
+      [self.appDelegate application:[UIApplication sharedApplication]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            options:@{}];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
@@ -83,9 +84,10 @@ FLUTTER_ASSERT_ARC
                  arguments:@{@"location" : @"http://myApp/custom/route?query=test"}])
       .andReturn(@NO);
 
-  BOOL result = [self.appDelegate application:[UIApplication sharedApplication]
-                        openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                        options:@{}];
+  BOOL result =
+      [self.appDelegate application:[UIApplication sharedApplication]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            options:@{}];
   XCTAssertFalse(result);
 }
 
@@ -93,9 +95,10 @@ FLUTTER_ASSERT_ARC
   OCMStub([self.mockMainBundle objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"])
       .andReturn(nil);
 
-  BOOL result = [self.appDelegate application:[UIApplication sharedApplication]
-                        openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                        options:@{}];
+  BOOL result =
+      [self.appDelegate application:[UIApplication sharedApplication]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            options:@{}];
   XCTAssertFalse(result);
   OCMReject([self.mockNavigationChannel invokeMethod:OCMOCK_ANY arguments:OCMOCK_ANY]);
 }
@@ -104,9 +107,10 @@ FLUTTER_ASSERT_ARC
   OCMStub([self.mockMainBundle objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"])
       .andReturn(@NO);
 
-  BOOL result = [self.appDelegate application:[UIApplication sharedApplication]
-                        openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                        options:@{}];
+  BOOL result =
+      [self.appDelegate application:[UIApplication sharedApplication]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            options:@{}];
   XCTAssertFalse(result);
   OCMReject([self.mockNavigationChannel invokeMethod:OCMOCK_ANY arguments:OCMOCK_ANY]);
 }
@@ -118,9 +122,10 @@ FLUTTER_ASSERT_ARC
               invokeMethod:@"pushRouteInformation"
                  arguments:@{@"location" : @"http://myApp/custom/route?query=test"}])
       .andReturn(@YES);
-  BOOL result = [self.appDelegate application:[UIApplication sharedApplication]
-                        openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                        options:@{}];
+  BOOL result =
+      [self.appDelegate application:[UIApplication sharedApplication]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            options:@{}];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
@@ -132,9 +137,10 @@ FLUTTER_ASSERT_ARC
               invokeMethod:@"pushRouteInformation"
                  arguments:@{@"location" : @"http://myApp/custom/route?query=test"}])
       .andReturn(@YES);
-  BOOL result = [self.appDelegate application:[UIApplication sharedApplication]
-                        openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                        options:@{}];
+  BOOL result =
+      [self.appDelegate application:[UIApplication sharedApplication]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            options:@{}];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
