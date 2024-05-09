@@ -196,12 +196,16 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
     const std::vector<FontGlyphPair>& pairs,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    GlyphAtlas::Type type,
     const ISize& max_texture_size) {
-  static constexpr auto kMinAtlasSize = 4096u;
+  static constexpr auto kMinAtlasSize = 8u;
+  static constexpr auto kMinAlphaBitmapSize = 1024u;
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
-  ISize current_size = ISize(kMinAtlasSize, kMinAtlasSize);
+  ISize current_size = type == GlyphAtlas::Type::kAlphaBitmap
+                           ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
+                           : ISize(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
   do {
     auto rect_packer = std::shared_ptr<RectanglePacker>(
@@ -346,7 +350,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       }
     }
   }
-  if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
+  if (new_glyphs.size() == 0) {
     return last_atlas;
   }
 
@@ -356,8 +360,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   //         the type is identical.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
-  if (last_atlas->GetType() == type &&
-      CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
+  if (CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
                                atlas_context->GetAtlasSize(),
                                atlas_context->GetRectPacker())) {
     // The old bitmap will be reused and only the additional glyphs will be
@@ -402,6 +405,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       font_glyph_pairs,                                             //
       glyph_positions,                                              //
       atlas_context,                                                //
+      type,                                                         //
       context.GetResourceAllocator()->GetMaxTextureSizeSupported()  //
   );
 
