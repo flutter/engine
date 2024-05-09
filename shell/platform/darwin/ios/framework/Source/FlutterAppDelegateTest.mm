@@ -122,10 +122,10 @@ FLUTTER_ASSERT_ARC
               invokeMethod:@"pushRouteInformation"
                  arguments:@{@"location" : @"http://myApp/custom/route?query=test"}])
       .andReturn(@YES);
-  BOOL result =
-      [self.appDelegate application:[UIApplication sharedApplication]
-                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
-                            options:@{}];
+  BOOL result = [self.appDelegate
+      application:[UIApplication sharedApplication]
+          openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test#fragment"]
+          options:@{}];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
@@ -139,7 +139,7 @@ FLUTTER_ASSERT_ARC
       .andReturn(@YES);
   BOOL result =
       [self.appDelegate application:[UIApplication sharedApplication]
-                            openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
+                            openURL:[NSURL URLWithString:@"http://myApp/custom/route#fragment"]
                             options:@{}];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
