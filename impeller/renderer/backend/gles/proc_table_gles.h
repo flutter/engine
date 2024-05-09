@@ -186,7 +186,6 @@ struct GLProc {
   PROC(GetShaderSource);                     \
   PROC(ReadPixels);
 
-
 // Calls specific to OpenGLES.
 void(glClearDepthf)(GLfloat depth);
 void(glDepthRangef)(GLfloat n, GLfloat f);

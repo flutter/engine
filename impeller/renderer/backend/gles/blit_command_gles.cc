@@ -292,16 +292,15 @@ bool BlitCopyBufferToTextureCommandGLES::Encode(
     TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
                  std::to_string(data.buffer_view.range.length).c_str());
     gl.PixelStorei(GL_UNPACK_ALIGNMENT, data.alignment);
-    gl.TexSubImage2D(
-        texture_target,                                          // target
-        0u,                                                      // LOD level
-        destination_region.GetX(),                               // xoffset
-        destination_region.GetY(),  // yoffset
-        destination_region.GetWidth(),                           // width
-        destination_region.GetHeight(),                          // height
-        data.external_format,  // external format
-        data.type,             // type
-        tex_data               // data
+    gl.TexSubImage2D(texture_target,                  // target
+                     0u,                              // LOD level
+                     destination_region.GetX(),       // xoffset
+                     destination_region.GetY(),       // yoffset
+                     destination_region.GetWidth(),   // width
+                     destination_region.GetHeight(),  // height
+                     data.external_format,            // external format
+                     data.type,                       // type
+                     tex_data                         // data
 
     );
   }

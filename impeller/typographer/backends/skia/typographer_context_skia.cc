@@ -304,9 +304,9 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     DrawGlyph(canvas, pair.scaled_font, pair.glyph, has_color);
 
-    if (!blit_pass->AddCopy(
-            allocator.TakeBufferView(), texture,
-            IRect::MakeXYWH(pos->GetLeft(), pos->GetTop(), size.width, size.height))) {
+    if (!blit_pass->AddCopy(allocator.TakeBufferView(), texture,
+                            IRect::MakeXYWH(pos->GetLeft(), pos->GetTop(),
+                                            size.width, size.height))) {
       return false;
     }
   }
