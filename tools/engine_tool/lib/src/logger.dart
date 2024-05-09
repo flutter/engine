@@ -166,9 +166,9 @@ class Logger {
   }
 
   /// Functionally ends and starts a new line.
-  /// 
+  ///
   /// How that is done depends on the terminal capabilities:
-  /// 
+  ///
   /// - If we are not in a terminal, just write a newline.
   /// - If we are in a a terminal, any spinners are temporarily paused, the
   ///   current line is cleared, and spinners are resumed. If ANSI escapes are
