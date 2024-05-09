@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -305,25 +306,24 @@ void main() {
 
     /// Draw a 100x100 red-green checkerboard pattern with 1x1 squares.
     Future<Image> drawCheckerboard() async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder);
-      final Paint paint = Paint();
-      final Path pathRed = Path();
-      final Path pathGreen = Path();
-      for (int y = 0; y < 50; y++) {
-        for (int x = 0; x < 50; x++) {
-          if ((x + y).isEven) {
-            pathRed.addRect(Rect.fromLTWH(x.toDouble(), y.toDouble(), 1.0, 1.0));
-          } else {
-            pathGreen.addRect(Rect.fromLTWH(x.toDouble(), y.toDouble(), 1.0, 1.0));
-          }
-        }
-      }
-      canvas.drawPath(pathRed, paint..color = red);
-      canvas.drawPath(pathGreen, paint..color = green);
-      final Picture picture = recorder.endRecording();
-      return picture.toImage(50, 50);
+      final Completer<Image> completer = Completer<Image>();
+      decodeImageFromPixels(
+        Uint8List.fromList(<int>[
+          for (int y = 0; y < 100; y++)
+            for (int x = 0; x < 100; x++)
+              x.isEven ? (y.isEven ? red.value : green.value) : (x.isEven ? green.value : red.value),
+        ]),
+        100,
+        100,
+        PixelFormat.rgba8888,
+        (Image image) {
+          completer.complete(image);
+        },
+      );
+      return completer.future;
     }
+
+    final Future<Image> redGreenCheckerboard = drawCheckerboard();
 
     /// Return the [image] magnified by a factor of 0.5 and then scaled up 10x.
     Future<Image> shrinkAndScaleImage(Image image, FilterQuality quality) async {
@@ -356,27 +356,27 @@ void main() {
     }
 
     test('FilterQuality.low', () async {
-      final Image base = await drawCheckerboard();
+      final Image base = await redGreenCheckerboard;
       final Image scaled = await shrinkAndScaleImage(base, FilterQuality.low);
-      await comparer.addGoldenImage(scaled, 'filter_quality_low.png');
+      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_low.png');
     });
 
     test('FilterQuality.medium', () async {
-      final Image base = await drawCheckerboard();
+      final Image base = await redGreenCheckerboard;
       final Image scaled = await shrinkAndScaleImage(base, FilterQuality.medium);
-      await comparer.addGoldenImage(scaled, 'filter_quality_medium.png');
+      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_medium.png');
     });
 
     test('FilterQuality.high', () async {
-      final Image base = await drawCheckerboard();
+      final Image base = await redGreenCheckerboard;
       final Image scaled = await shrinkAndScaleImage(base, FilterQuality.high);
-      await comparer.addGoldenImage(scaled, 'filter_quality_high.png');
+      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_high.png');
     });
 
     test('FilterQuality.none', () async {
-      final Image base = await drawCheckerboard();
+      final Image base = await redGreenCheckerboard;
       final Image scaled = await shrinkAndScaleImage(base, FilterQuality.none);
-      await comparer.addGoldenImage(scaled, 'filter_quality_none.png');
+      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_none.png');
     });
   });
 }

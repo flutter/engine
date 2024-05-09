@@ -28,7 +28,7 @@ before running the tests:
 # At the time of this writing, 'et build' did not work with Dart targets.
 # Instead, use the following command to build the tests.
 
-ninja -C out/host_debug_unopt_arm64 compile_image_filter_test.dart
+ninja -C ../out/host_debug_unopt_arm64 compile_image_filter_test.dart
 ```
 
 To view the outputted golden files locally, you'll need to open the generated
