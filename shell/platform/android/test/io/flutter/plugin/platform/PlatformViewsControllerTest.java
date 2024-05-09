@@ -362,37 +362,35 @@ public class PlatformViewsControllerTest {
   }
 
   private MotionEvent makePlatformViewTouchAndInvokeToMotionEvent(
-          PlatformViewsController platformViewsController,
-          MotionEventTracker motionEventTracker,
-          MotionEvent original,
-          boolean usingVirtualDisplays
-  ) {
+      PlatformViewsController platformViewsController,
+      MotionEventTracker motionEventTracker,
+      MotionEvent original,
+      boolean usingVirtualDisplays) {
     MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
     // Make a platform view touch from the motion event.
     PlatformViewTouch frameWorkTouchNonVd =
-            new PlatformViewTouch(
-                    0, // viewId
-                    original.getDownTime(),
-                    original.getEventTime(),
-                    original.getAction(),
-                    1, // pointerCount
-                    Arrays.asList(Arrays.asList(0, 0)), // pointer properties
-                    Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
-                    original.getMetaState(),
-                    original.getButtonState(),
-                    original.getXPrecision(),
-                    original.getYPrecision(),
-                    original.getDeviceId(),
-                    original.getEdgeFlags(),
-                    original.getSource(),
-                    original.getFlags(),
-                    motionEventId.getId());
+        new PlatformViewTouch(
+            0, // viewId
+            original.getDownTime(),
+            original.getEventTime(),
+            original.getAction(),
+            1, // pointerCount
+            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
+            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
+            original.getMetaState(),
+            original.getButtonState(),
+            original.getXPrecision(),
+            original.getYPrecision(),
+            original.getDeviceId(),
+            original.getEdgeFlags(),
+            original.getSource(),
+            original.getFlags(),
+            motionEventId.getId());
 
     return platformViewsController.toMotionEvent(
-            1, // density
-            frameWorkTouchNonVd,
-            usingVirtualDisplays
-    );
+        1, // density
+        frameWorkTouchNonVd,
+        usingVirtualDisplays);
   }
 
   @Test
@@ -411,18 +409,12 @@ public class PlatformViewsControllerTest {
             );
 
     MotionEvent resolvedNonVdEvent =
-            makePlatformViewTouchAndInvokeToMotionEvent(
-                    platformViewsController,
-                    motionEventTracker,
-                    original,
-                    false);
+        makePlatformViewTouchAndInvokeToMotionEvent(
+            platformViewsController, motionEventTracker, original, false);
 
     MotionEvent resolvedVdEvent =
-            makePlatformViewTouchAndInvokeToMotionEvent(
-                    platformViewsController,
-                    motionEventTracker,
-                    original,
-                    true);
+        makePlatformViewTouchAndInvokeToMotionEvent(
+            platformViewsController, motionEventTracker, original, true);
 
     assertEquals(resolvedVdEvent.getEventTime(), resolvedNonVdEvent.getEventTime());
     assertEquals(resolvedVdEvent.getX(), resolvedNonVdEvent.getX(), 0.001d);
