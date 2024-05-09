@@ -4,7 +4,6 @@
 
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
@@ -21,8 +20,9 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
+#include "impeller/core/capture.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -35,7 +35,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
 #include "impeller/typographer/backends/stb/typeface_stb.h"
 #include "impeller/typographer/backends/stb/typographer_context_stb.h"
@@ -2597,6 +2596,38 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CaptureContext) {
+  auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
+
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    Canvas canvas;
+
+    capture_context.Rewind();
+    auto document = capture_context.GetDocument("TestDocument");
+
+    auto color = document.AddColor("Background color", Color::CornflowerBlue());
+    canvas.DrawPaint({.color = color});
+
+    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
+        property.Invoke({.color = [](CaptureColorProperty& p) {
+          ImGui::ColorEdit4(p.label.c_str(),
+                            reinterpret_cast<float*>(&p.value));
+        }});
+      });
+      ImGui::End();
+    }
+
+    return canvas.EndRecordingAsPicture();
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(AiksTest, CaptureInactivatedByDefault) {
+  ASSERT_FALSE(GetContext()->capture.IsActive());
+}
+
 // Regression test for https://github.com/flutter/flutter/issues/134678.
 TEST_P(AiksTest, ReleasesTextureOnTeardown) {
   auto context = MakeContext();
@@ -3061,12 +3092,13 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
   auto texture =
       GetContext()->GetResourceAllocator()->CreateTexture(texture_descriptor);
 
-  ASSERT_TRUE(!!texture);
-  ASSERT_TRUE(texture->SetContents(mapping));
-
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
   auto command_buffer = GetContext()->CreateCommandBuffer();
   auto blit_pass = command_buffer->CreateBlitPass();
 
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(std::move(device_buffer)),
+                     texture);
   blit_pass->GenerateMipmap(texture);
   EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
   EXPECT_TRUE(GetContext()->GetCommandQueue()->Submit({command_buffer}).ok());
@@ -3150,6 +3182,39 @@ TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
 
   ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
                                      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SetContentsWithRegion) {
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+
+  // Replace part of the texture with a red rectangle.
+  std::vector<uint8_t> bytes(100 * 100 * 4);
+  for (auto i = 0u; i < bytes.size(); i += 4) {
+    bytes[i] = 255;
+    bytes[i + 1] = 0;
+    bytes[i + 2] = 0;
+    bytes[i + 3] = 255;
+  }
+  auto mapping =
+      std::make_shared<fml::NonOwnedMapping>(bytes.data(), bytes.size());
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
+  auto cmd_buffer = GetContext()->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), bridge,
+                     IRect::MakeLTRB(50, 50, 150, 150));
+
+  auto did_submit =
+      blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) &&
+      GetContext()->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok();
+  ASSERT_TRUE(did_submit);
+
+  auto image = std::make_shared<Image>(bridge);
+
+  Canvas canvas;
+  canvas.DrawImage(image, {0, 0}, {});
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

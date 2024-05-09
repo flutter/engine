@@ -144,7 +144,6 @@
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
-../../../flutter/impeller/entity/contents/content_context_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
@@ -184,7 +183,6 @@
 ../../../flutter/impeller/renderer/backend/vulkan/test
 ../../../flutter/impeller/renderer/blit_pass_unittests.cc
 ../../../flutter/impeller/renderer/capabilities_unittests.cc
-../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
 ../../../flutter/impeller/renderer/compute_unittests.cc
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
@@ -775,6 +773,7 @@
 ../../../flutter/third_party/accessibility/gfx/geometry/vector2d_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/range/range_unittest.cc
 ../../../flutter/third_party/accessibility/gfx/test
+../../../flutter/third_party/android_tools
 ../../../flutter/third_party/angle/.clang-format
 ../../../flutter/third_party/angle/.git
 ../../../flutter/third_party/angle/.gitattributes
@@ -3406,8 +3405,13 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-20/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-20/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
+../../../fuchsia/sdk/linux/packages/cmd-buf-benchmark-test/meta.json
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
 ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/meta.json
+../../../fuchsia/sdk/linux/packages/vkcopy-test/meta.json
+../../../fuchsia/sdk/linux/packages/vkext-test/meta.json
+../../../fuchsia/sdk/linux/packages/vkloop-test/meta.json
+../../../fuchsia/sdk/linux/packages/vkproto-driver-test/meta.json
 ../../../fuchsia/sdk/linux/packages/vkreadback_test/meta.json
 ../../../fuchsia/sdk/linux/pkg/async-cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/async-default/meta.json
@@ -3506,7 +3510,6 @@
 ../../../fuchsia/sdk/linux/version_history.json
 ../../../out
 ../../../third_party/android_embedding_dependencies
-../../../third_party/android_tools
 ../../../third_party/gradle
 ../../../third_party/java
 ../../../third_party/libcxx/.clang-format

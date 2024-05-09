@@ -14,6 +14,10 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_DEBUG=1" ]
   }
 
+  if (impeller_capture) {
+    defines += [ "IMPELLER_ENABLE_CAPTURE=1" ]
+  }
+
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }
@@ -112,10 +116,6 @@ impeller_component("impeller_unittests") {
       "//third_party/vulkan_validation_layers",
       "//third_party/vulkan_validation_layers:vulkan_gen_json_files",
     ]
-  }
-
-  if (impeller_enable_compute) {
-    deps += [ "renderer:compute_tessellation_unittests" ]
   }
 }
 

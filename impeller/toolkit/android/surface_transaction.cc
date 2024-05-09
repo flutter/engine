@@ -29,7 +29,7 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
   }
 
   if (!callback) {
-    callback = []() {};
+    callback = [](auto) {};
   }
 
   const auto& proc_table = GetProcTable();
@@ -41,7 +41,7 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
       data.release(),      //
       [](void* context, ASurfaceTransactionStats* stats) -> void {
         auto data = reinterpret_cast<TransactionInFlightData*>(context);
-        data->callback();
+        data->callback(stats);
         delete data;
       });
   proc_table.ASurfaceTransaction_apply(transaction_.get());
@@ -58,7 +58,13 @@ bool SurfaceTransaction::SetContents(const SurfaceControl* control,
     VALIDATION_LOG << "Invalid control or buffer.";
     return false;
   }
-  GetProcTable().ASurfaceTransaction_setBuffer(
+
+  const auto& proc_table = GetProcTable();
+
+  proc_table.ASurfaceTransaction_setEnableBackPressure(
+      transaction_.get(), control->GetHandle(), true);
+
+  proc_table.ASurfaceTransaction_setBuffer(
       transaction_.get(),                                      //
       control->GetHandle(),                                    //
       buffer->GetHandle(),                                     //
