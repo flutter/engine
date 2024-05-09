@@ -146,8 +146,7 @@ bool BlitPass::AddCopy(BufferView source,
 
   if (source.range.length != bytes_per_region) {
     VALIDATION_LOG
-        << "Attempted to add a texture blit with out of bounds access."
-        << source.range.length << " " << bytes_per_region;
+        << "Attempted to add a texture blit with out of bounds access.";
     return false;
   }
   if (slice > 5) {

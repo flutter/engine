@@ -4,6 +4,7 @@
 
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
+#include <cstddef>
 #include <numeric>
 #include <utility>
 
@@ -26,7 +27,9 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkPixelRef.h"
+#include "include/core/SkShader.h"
 #include "include/core/SkSize.h"
+#include "include/effects/SkGradientShader.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -236,7 +239,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(0, 0);
+  const auto position = SkPoint::Make(1, 1);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -252,6 +255,7 @@ static void DrawGlyph(SkCanvas* canvas,
   glyph_paint.setColor(glyph_color);
   canvas->resetMatrix();
   canvas->scale(scaled_font.scale, scaled_font.scale);
+
   canvas->drawGlyphs(
       1u,         // count
       &glyph_id,  // glyphs
@@ -280,6 +284,9 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
+    size.width += 2;
+    size.height += 2;
+
     SkBitmap bitmap;
     HostBufferAllocator allocator(host_buffer);
     bitmap.setInfo(GetImageInfo(atlas, size));
@@ -299,8 +306,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     if (!blit_pass->AddCopy(
             allocator.TakeBufferView(), texture,
-            IRect::MakeLTRB(pos->GetLeft(), pos->GetTop(), pos->GetRight(),
-                            pos->GetBottom()))) {
+            IRect::MakeXYWH(pos->GetLeft(), pos->GetTop(), size.width, size.height))) {
       return false;
     }
   }

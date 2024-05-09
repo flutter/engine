@@ -162,6 +162,7 @@ struct GLProc {
   PROC(IsShader);                            \
   PROC(IsTexture);                           \
   PROC(LinkProgram);                         \
+  PROC(PixelStorei);                         \
   PROC(RenderbufferStorage);                 \
   PROC(Scissor);                             \
   PROC(ShaderBinary);                        \
@@ -184,6 +185,7 @@ struct GLProc {
   PROC(Viewport);                            \
   PROC(GetShaderSource);                     \
   PROC(ReadPixels);
+
 
 // Calls specific to OpenGLES.
 void(glClearDepthf)(GLfloat depth);
