@@ -108,7 +108,7 @@ TypographerContextSkia::CreateGlyphAtlasContext(GlyphAtlas::Type type) const {
   return std::make_shared<GlyphAtlasContext>(type);
 }
 
-static SkImageInfo GetImageInfo(const GlyphAtlas& atlas, ISize size) {
+static SkImageInfo GetImageInfo(const GlyphAtlas& atlas, Size size) {
   switch (atlas.GetType()) {
     case GlyphAtlas::Type::kAlphaBitmap:
       return SkImageInfo::MakeA8(SkISize{static_cast<int32_t>(size.width),
@@ -276,13 +276,13 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!pos.has_value()) {
       continue;
     }
-    ISize rounded_out_size = ISize::Ceil(pos->GetSize());
-    if (rounded_out_size.IsEmpty()) {
+    Size size = pos->GetSize();
+    if (size.IsEmpty()) {
       continue;
     }
     SkBitmap bitmap;
     HostBufferAllocator allocator(host_buffer);
-    bitmap.setInfo(GetImageInfo(atlas, rounded_out_size));
+    bitmap.setInfo(GetImageInfo(atlas, size));
     if (!bitmap.tryAllocPixels(&allocator)) {
       return false;
     }
@@ -297,8 +297,10 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     DrawGlyph(canvas, pair.scaled_font, pair.glyph, has_color);
 
-    if (!blit_pass->AddCopy(allocator.TakeBufferView(), texture,
-                            IRect::RoundOut(pos.value()))) {
+    if (!blit_pass->AddCopy(
+            allocator.TakeBufferView(), texture,
+            IRect::MakeLTRB(pos->GetLeft(), pos->GetTop(), pos->GetRight(),
+                            pos->GetBottom()))) {
       return false;
     }
   }
