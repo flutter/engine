@@ -120,7 +120,7 @@ FLUTTER_ASSERT_ARC
       .andReturn(@YES);
   OCMStub([self.mockNavigationChannel
               invokeMethod:@"pushRouteInformation"
-                 arguments:@{@"location" :  @"http://myApp/custom/route?query=test#fragment"}])
+                 arguments:@{@"location" : @"http://myApp/custom/route?query=test#fragment"}])
       .andReturn(@YES);
   BOOL result = [self.appDelegate
       application:[UIApplication sharedApplication]
