@@ -367,6 +367,32 @@ public class PlatformViewsControllerTest {
       MotionEvent original,
       boolean usingVirtualDisplays) {
     MotionEventTracker.MotionEventId motionEventId = motionEventTracker.track(original);
+
+    // Construct a PlatformViewTouch.rawPointerPropertiesList by doing the inverse of
+    // PlatformViewsController.parsePointerPropertiesList.
+    List<List<Integer>> pointerProperties =
+            Arrays.asList(
+                    Arrays.asList(
+                            original.getPointerId(0),
+                            original.getToolType(0)
+                    )
+            );
+    // Construct a PlatformViewTouch.rawPointerCoords by doing the inverse of
+    // PlatformViewsController.parsePointerCoordsList.
+    List<List<Object>> pointerCoordinates =
+            Arrays.asList(
+                    Arrays.asList(
+                            (double) original.getOrientation(),
+                            (double) original.getPressure(),
+                            (double) original.getSize(),
+                            (double) original.getToolMajor(),
+                            (double) original.getToolMinor(),
+                            (double) original.getTouchMajor(),
+                            (double) original.getTouchMinor(),
+                            (double) original.getX(),
+                            (double) original.getY()
+                    )
+            );
     // Make a platform view touch from the motion event.
     PlatformViewTouch frameWorkTouchNonVd =
         new PlatformViewTouch(
@@ -375,8 +401,8 @@ public class PlatformViewsControllerTest {
             original.getEventTime(),
             original.getAction(),
             1, // pointerCount
-            Arrays.asList(Arrays.asList(0, 0)), // pointer properties
-            Arrays.asList(Arrays.asList(0., 1., 2., 3., 4., 5., 6., 7., 8.)), // pointer coords
+            pointerProperties, // pointer properties
+            pointerCoordinates, // pointer coords
             original.getMetaState(),
             original.getButtonState(),
             original.getXPrecision(),
@@ -417,8 +443,8 @@ public class PlatformViewsControllerTest {
             platformViewsController, motionEventTracker, original, true);
 
     assertEquals(resolvedVdEvent.getEventTime(), resolvedNonVdEvent.getEventTime());
-    assertEquals(resolvedVdEvent.getX(), resolvedNonVdEvent.getX(), 0.001d);
-    assertEquals(resolvedVdEvent.getY(), resolvedNonVdEvent.getY(), 0.001d);
+    assertEquals(resolvedVdEvent.getX(), resolvedNonVdEvent.getX(), 0.001f);
+    assertEquals(resolvedVdEvent.getY(), resolvedNonVdEvent.getY(), 0.001f);
   }
 
   @Test
