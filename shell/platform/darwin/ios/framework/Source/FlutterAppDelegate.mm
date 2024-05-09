@@ -243,7 +243,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return NO;
   }
   [self openURL:userActivity.webpageURL
-                options:options
+                options:@{}
       completionHandler:^(BOOL success){
       }];
   return YES;
