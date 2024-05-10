@@ -308,17 +308,17 @@ void main() {
     Future<Image> drawCheckerboard() async {
       final Completer<Image> completer = Completer<Image>();
       decodeImageFromPixels(
-        Uint8List.fromList(<int>[
-          for (int y = 0; y < 100; y++)
-            for (int x = 0; x < 100; x++)
-              x.isEven ? (y.isEven ? red.value : green.value) : (x.isEven ? green.value : red.value),
-        ]),
+        Uint8List.fromList(
+          List<int>.generate(100 * 100 * 4, (int index) {
+            final int x = index % 100;
+            final int y = index ~/ 100;
+            return (x % 2 == y % 2) ? red.value : green.value;
+          }),
+        ),
         100,
         100,
         PixelFormat.rgba8888,
-        (Image image) {
-          completer.complete(image);
-        },
+        completer.complete,
       );
       return completer.future;
     }
