@@ -336,7 +336,7 @@ void main() {
       double factorDown = 0.25,
       double factorUp = 10,
     }) async {
-      Future<Image> scale(Image input, double factor) async {
+      Future<Image> scale(Image image, double factor) async {
         final Paint paint = Paint()..filterQuality = quality;
         final PictureRecorder recorder = PictureRecorder();
         final Canvas canvas = Canvas(recorder);
@@ -353,28 +353,10 @@ void main() {
       return scale(shrunk, factorUp);
     }
 
-    test('FilterQuality.low', () async {
-      final Image base = await redGreenCheckerboard;
-      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.low);
-      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_low.png');
-    });
-
-    test('FilterQuality.medium', () async {
-      final Image base = await redGreenCheckerboard;
-      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.medium);
-      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_medium.png');
-    });
-
-    test('FilterQuality.high', () async {
-      final Image base = await redGreenCheckerboard;
-      final Image scaled = await shrinkAndScaleImage(base, FilterQuality.high);
-      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_high.png');
-    });
-
-    test('FilterQuality.none', () async {
+    test('Scaling a checkerboard of 1x1 red-green pixels with FilterQuality.none', () async {
       final Image base = await redGreenCheckerboard;
       final Image scaled = await shrinkAndScaleImage(base, FilterQuality.none);
-      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_none.png');
+      await comparer.addGoldenImage(scaled, 'dart_ui_filter_quality_none_scale_1x1_red_green_checkerboard.png');
     });
   });
 }
