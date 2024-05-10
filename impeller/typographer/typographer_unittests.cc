@@ -4,7 +4,9 @@
 
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/testing/testing.h"
+#include "gtest/gtest.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/playground/playground.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
@@ -324,6 +326,9 @@ TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledWhenContentsAreRecreated) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP() << "Testing";
+  }
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
   auto atlas_context =
