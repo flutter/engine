@@ -14,7 +14,7 @@ namespace flutter {
 /// Utility for saving display lists to disk in response to platform messages.
 class DisplayListDebugger {
  public:
-  static constexpr char kChannelName[] = "flutter/display_list";
+  static constexpr char kChannelName[] = "flutter/display_list_debugger";
   static void HandleMessage(std::unique_ptr<PlatformMessage> message);
   static fml::Status SaveDisplayList(const sk_sp<DisplayList>& display_list);
 };
