@@ -533,7 +533,13 @@ class ColorFilterEngineLayer extends ContainerLayer
     final CkPaint paint = CkPaint();
     paint.colorFilter = filter;
 
+    // We need to clip because if the ColorFilter affects transparent black,
+    // then it will fill the entire `cullRect` of the picture, ignoring the
+    // `paintBounds` passed to `saveLayer`. See:
+    // https://github.com/flutter/flutter/issues/88866
     paintContext.internalNodesCanvas.save();
+
+    // TODO(hterkelsen): Only clip if the ColorFilter affects transparent black.
     paintContext.internalNodesCanvas
         .clipRect(paintBounds, ui.ClipOp.intersect, false);
 
