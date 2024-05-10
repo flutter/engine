@@ -83,15 +83,6 @@ TEST_P(AiksTest, CanRenderColoredRect) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderImage) {
-  Canvas canvas;
-  Paint paint;
-  auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
-  paint.color = Color::Red();
-  canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CanRenderInvertedImageWithColorFilter) {
   Canvas canvas;
   Paint paint;
@@ -918,13 +909,6 @@ TEST_P(AiksTest, TextRotated) {
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanDrawPaint) {
-  Canvas canvas;
-  canvas.Scale(Vector2(0.2, 0.2));
-  canvas.DrawPaint({.color = Color::MediumTurquoise()});
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

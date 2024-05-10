@@ -18,9 +18,11 @@ namespace testing {
 using impeller::PlaygroundBackend;
 using impeller::PlaygroundTest;
 
-INSTANTIATE_PLAYGROUND_SUITE(DlGoldenTest);
+using AiksTest = DlGoldenTest;
 
-TEST_P(DlGoldenTest, CanDrawPaint) {
+INSTANTIATE_PLAYGROUND_SUITE(AiksTest);
+
+TEST_P(AiksTest, CanDrawPaint) {
   auto draw = [](DlCanvas* canvas,
                  const std::vector<std::unique_ptr<DlImage>>& images) {
     canvas->Scale(0.2, 0.2);
@@ -35,7 +37,7 @@ TEST_P(DlGoldenTest, CanDrawPaint) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(DlGoldenTest, CanRenderImage) {
+TEST_P(AiksTest, CanRenderImage) {
   auto draw = [](DlCanvas* canvas, const std::vector<sk_sp<DlImage>>& images) {
     FML_CHECK(images.size() >= 1);
     DlPaint paint;
@@ -52,7 +54,7 @@ TEST_P(DlGoldenTest, CanRenderImage) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(DlGoldenTest, RotateColorFilteredPath) {
+TEST_P(AiksTest, RotateColorFilteredPath) {
   DisplayListBuilder builder;
   builder.Transform(SkMatrix::Translate(300, 300));
   builder.Transform(SkMatrix::RotateDeg(impeller::kPiOver2));
