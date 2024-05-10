@@ -462,7 +462,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     return nullptr;
   }
   // The texture needs to be cleared to transparent black so that linearly
-  // samplex rotated/skewed glyphs do not grab uninitialized data.
+  // samplex rotated/skewed glyphs do not grab uninitialized data. We could
+  // instead use a render pass to clear to transparent black, but there are
+  // more restrictions on what kinds of textures can be bound on GLES.
   {
     auto bytes =
         new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
