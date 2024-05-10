@@ -304,20 +304,23 @@ void main() {
   group('ImageFilter|FilterQuality', () async {
     final ImageComparer comparer = await ImageComparer.create();
 
-    /// Draw a 1000x1000 red-blue checkerboard pattern with 1x1 squares.
-    Future<Image> drawCheckerboard() async {
+    /// Draw a red-green checkerboard pattern with 1x1 squares (pixels).
+    Future<Image> drawCheckerboard({
+      int width = 100,
+      int height = 100,
+    }) async {
       final Completer<Image> completer = Completer<Image>();
       final Uint32List pixels = Uint32List.fromList(
-        List<int>.generate(1000 * 1000, (int index) {
-          final int x = index % 1000;
-          final int y = index ~/ 1000;
+        List<int>.generate(width * height, (int index) {
+          final int x = index % width;
+          final int y = index ~/ width;
           return (x % 2 == y % 2) ? red.value : green.value;
         }),
       );
       decodeImageFromPixels(
         Uint8List.view(pixels.buffer),
-        100,
-        100,
+        width,
+        height,
         PixelFormat.rgba8888,
         completer.complete,
       );
@@ -326,34 +329,28 @@ void main() {
 
     final Future<Image> redGreenCheckerboard = drawCheckerboard();
 
-    /// Return the [image] magnified by a factor of 0.5 and then scaled up 10x.
-    Future<Image> shrinkAndScaleImage(Image image, FilterQuality quality) async {
-      Future<Image> shrink() async {
+    /// Return the [image] shrunk and then scaled.
+    Future<Image> shrinkAndScaleImage(
+      Image image, 
+      FilterQuality quality, {
+      double factorDown = 0.25,
+      double factorUp = 10,
+    }) async {
+      Future<Image> scale(Image input, double factor) async {
         final Paint paint = Paint()..filterQuality = quality;
         final PictureRecorder recorder = PictureRecorder();
         final Canvas canvas = Canvas(recorder);
-        canvas.drawImage(image, Offset.zero, paint);
+        
+        final Rect input = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+        final Rect output = Rect.fromLTWH(0, 0, input.width * factor, input.height * factor);
 
+        canvas.drawImageRect(image, input, output, paint);
         final Picture picture = recorder.endRecording();
-        return picture.toImage(50, 50);
+        return picture.toImage(output.width.toInt(), output.height.toInt());
       }
 
-      Future<Image> scale(Image image) async {
-        final Paint paint = Paint()..filterQuality = quality;
-        final PictureRecorder recorder = PictureRecorder();
-        final Canvas canvas = Canvas(recorder);
-        canvas.drawImageRect(
-          image,
-          const Rect.fromLTWH(0, 0, 50, 50),
-          const Rect.fromLTWH(0, 0, 500, 500),
-          paint,
-        );
-
-        final Picture picture = recorder.endRecording();
-        return picture.toImage(500, 500);
-      }
-
-      return scale(await shrink());
+      final Image shrunk = await scale(image, factorDown);
+      return scale(shrunk, factorUp);
     }
 
     test('FilterQuality.low', () async {
