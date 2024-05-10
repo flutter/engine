@@ -13,8 +13,6 @@ class Heading extends PrimaryRoleManager {
         addHeadingRole();
       }
 
-  static const int defaultHeadingLevel = 1;
-
   @override
   void update() {
     super.update();
@@ -23,11 +21,7 @@ class Heading extends PrimaryRoleManager {
       return;
     }
 
-    if (semanticsObject.headingLevel != 0) {
-      addHeadingLevel(semanticsObject.headingLevel);
-    } else {
-      addHeadingLevel(defaultHeadingLevel);
-    }
+    addHeadingLevel(semanticsObject.headingLevel);
   }
 
   @override
