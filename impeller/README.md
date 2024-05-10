@@ -229,6 +229,7 @@ To your `Info.plist` file, add under the top-level `<dict>` tag:
 ## Documentation, References, and Additional Reading
 
 * [Frequently Asked Questions](docs/faq.md)
+* [Baby's First Triangle](docs/babys_first_triangle.md)
 * [Impellers Coordinate System](docs/coordinate_system.md)
 * [How to Setup Xcode for GPU Frame Captures with Metal.](docs/xcode_frame_capture.md)
 * [How to Setup RenderDoc Frame Captures with Vulkan.](docs/renderdoc_frame_capture.md)
@@ -242,3 +243,4 @@ To your `Info.plist` file, add under the top-level `<dict>` tag:
 * [Threading in the Vulkan Backend](docs/vulkan_threading.md)
 * [Android Rendering Backend Selection](docs/android.md)
 * [Using Impeller as a Standalone Rendering Library (with OpenGL ES)](docs/standalone_gles.md)
+* [Glossary](docs/glossary.md)
