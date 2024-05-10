@@ -182,7 +182,9 @@ class CompositorContext {
 
   void OnGrContextDestroyed();
 
+#if !SLIMPELLER
   RasterCache& raster_cache() { return raster_cache_; }
+#endif  //  !SLIMPELLER
 
   std::shared_ptr<TextureRegistry> texture_registry() {
     return texture_registry_;
@@ -195,7 +197,9 @@ class CompositorContext {
   LayerSnapshotStore& snapshot_store() { return layer_snapshot_store_; }
 
  private:
+#if !SLIMPELLER
   RasterCache raster_cache_;
+#endif  //  !SLIMPELLER
   std::shared_ptr<TextureRegistry> texture_registry_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;

@@ -37,6 +37,7 @@ class DisplayListLayer : public Layer {
 
   void Paint(PaintContext& context) const override;
 
+#if !SLIMPELLER
   const DisplayListRasterCacheItem* raster_cache_item() const {
     return display_list_raster_cache_item_.get();
   }
@@ -45,10 +46,12 @@ class DisplayListLayer : public Layer {
     return RasterCacheKeyID(display_list()->unique_id(),
                             RasterCacheKeyType::kDisplayList);
   }
+#endif  //  !SLIMPELLER
 
  private:
+#if !SLIMPELLER
   std::unique_ptr<DisplayListRasterCacheItem> display_list_raster_cache_item_;
-
+#endif  //  !SLIMPELLER
   SkPoint offset_;
   SkRect bounds_;
 

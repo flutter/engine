@@ -52,7 +52,9 @@ static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 enum Clip { kNone, kHardEdge, kAntiAlias, kAntiAliasWithSaveLayer };
 
 struct PrerollContext {
+#if !SLIMPELLER
   RasterCache* raster_cache;
+#endif  //  !SLIMPELLER
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   LayerStateStack& state_stack;
@@ -111,7 +113,9 @@ struct PaintContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
+#if !SLIMPELLER
   const RasterCache* raster_cache;
+#endif  //  !SLIMPELLER
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
   // only when leaf layer tracing is enabled.
@@ -249,9 +253,11 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
+#if !SLIMPELLER
   virtual RasterCacheKeyID caching_key_id() const {
     return RasterCacheKeyID(unique_id_, RasterCacheKeyType::kLayer);
   }
+#endif  //  !SLIMPELLER
   virtual const ContainerLayer* as_container_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;
