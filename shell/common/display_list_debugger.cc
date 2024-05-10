@@ -10,31 +10,31 @@
 
 namespace {
 std::atomic<char*> saveDisplayListPath;
-}
+template <typename T>
+using FreePtr = std::unique_ptr<T, decltype(&free)>;
+}  // namespace
 
 namespace flutter {
 void DisplayListDebugger::HandleMessage(
     std::unique_ptr<PlatformMessage> message) {
   const fml::MallocMapping& data = message->data();
-  char* old_path = saveDisplayListPath.exchange(
-      strdup(reinterpret_cast<const char*>(data.GetMapping())));
-  if (old_path) {
-    free(old_path);
-  }
+  FreePtr<char>(saveDisplayListPath.exchange(
+                    strdup(reinterpret_cast<const char*>(data.GetMapping()))),
+                &free);
 }
 
 void DisplayListDebugger::SaveDisplayList(
     const sk_sp<DisplayList>& display_list) {
-  if (char* path = saveDisplayListPath.exchange(nullptr)) {
-    fml::UniqueFD dir = fml::OpenDirectory(path, /*create_if_necessary=*/false,
-                                           fml::FilePermission::kWrite);
+  if (FreePtr<char> path =
+          FreePtr<char>(saveDisplayListPath.exchange(nullptr), &free)) {
+    fml::UniqueFD dir = fml::OpenDirectory(
+        path.get(), /*create_if_necessary=*/false, fml::FilePermission::kWrite);
     // DisplayList doesn't have an accessor for the byte size of the storage,
     // adding one may confuse the api so we derive it with bytes().
     size_t size = display_list->bytes(/*nested=*/false) - sizeof(DisplayList);
     fml::NonOwnedMapping mapping(display_list->GetStorage().get(), size);
     bool success = fml::WriteAtomically(dir, "display_list.dat", mapping);
-    FML_LOG(ERROR) << "store display_list (" << success << "):" << path;
-    free(path);
+    FML_LOG(ERROR) << "store display_list (" << success << "):" << path.get();
   }
 }
 }  // namespace flutter
