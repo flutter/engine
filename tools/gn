@@ -68,6 +68,9 @@ def get_out_dir(args):
   if args.darwin_extension_safe:
     target_dir.append('extension_safe')
 
+  if args.slimpeller:
+    target_dir.append('slimpeller')
+
   if args.target_dir != '':
     target_dir = [args.target_dir]
 
@@ -209,6 +212,13 @@ def buildtools_dir():
   return '%s-%s' % (host_os, host_cpu)
 
 
+def get_dart_path():
+  new_dart_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'dart')
+  if os.path.exists(new_dart_path):
+    return new_dart_path
+  return os.path.join(SRC_ROOT, 'third_party', 'dart')
+
+
 def setup_rbe(args):
   rbe_gn_args = {}
   # RBE is default-off. If it is not asked for, then silently keep all default
@@ -245,78 +255,6 @@ def setup_rbe(args):
       rbe_gn_args['create_xcode_symlinks'] = True
 
   return rbe_gn_args
-
-
-def setup_goma(args):
-  goma_gn_args = {}
-  # If RBE is requested, don't try to use goma.
-  if args.rbe:
-    goma_gn_args['use_goma'] = False
-    goma_gn_args['goma_dir'] = None
-    return goma_gn_args
-
-  # args.goma has three states, True (--goma), False (--no-goma), and
-  # None (default). In True mode, we force GOMA to be used (and fail
-  # if we cannot enable it) unless the selected target definitely does
-  # not support it (in which case we print a warning). In False mode,
-  # we disable GOMA regardless. In None mode, we enable it if we can
-  # autodetect a configuration, and otherwise disable it.
-
-  # When running in CI, the recipes use their own goma install, and take
-  # care of starting and stopping the compiler proxy.
-  running_on_luci = os.environ.get('LUCI_CONTEXT') is not None
-
-  # The GOMA client has no arm64 binary, so run the x64 binary through
-  # Rosetta.
-  buildtools_platform = buildtools_dir()
-  if buildtools_platform == 'mac-arm64':
-    buildtools_platform = 'mac-x64'
-
-  # Prefer the goma fetched by gclient if it exists.
-  cipd_goma_dir = os.path.join(SRC_ROOT, 'flutter', 'buildtools', buildtools_platform, 'goma')
-
-  # Next, if GOMA_DIR is set, use that install.
-  goma_dir = os.environ.get('GOMA_DIR')
-
-  # Finally, look for goma in the install location recommended in our
-  # documentation.
-  goma_home_dir = os.path.join(os.getenv('HOME', ''), 'goma')
-  # GOMA has a different default (home) path on gWindows.
-  if not os.path.exists(goma_home_dir) and sys.platform.startswith(('cygwin', 'win')):
-    goma_home_dir = os.path.join('c:\\', 'src', 'goma', 'goma-win64')
-
-  if args.target_os == 'wasm' or args.web:
-    goma_gn_args['use_goma'] = False
-    goma_gn_args['goma_dir'] = None
-    if args.goma:
-      print('Disabling GOMA for wasm builds, it is not supported yet.')
-  elif args.goma is not False and not running_on_luci and os.path.exists(cipd_goma_dir):
-    goma_gn_args['use_goma'] = True
-    goma_gn_args['goma_dir'] = cipd_goma_dir
-  elif args.goma is not False and goma_dir and os.path.exists(goma_dir):
-    goma_gn_args['use_goma'] = True
-    goma_gn_args['goma_dir'] = goma_dir
-  elif args.goma is not False and os.path.exists(goma_home_dir):
-    goma_gn_args['use_goma'] = True
-    goma_gn_args['goma_dir'] = goma_home_dir
-  elif args.goma:
-    raise Exception(
-        'GOMA was specified but was not found. Set the GOMA_DIR environment '
-        'variable, install goma at $HOME/goma following the instructions at '
-        'https://github.com/flutter/flutter/wiki/Compiling-the-engine, or '
-        'run this script with the --no-goma flag to do a non-goma-enabled '
-        'build.',
-    )
-  else:
-    goma_gn_args['use_goma'] = False
-    goma_gn_args['goma_dir'] = None
-
-  if goma_gn_args['use_goma'] and sys.platform == 'darwin':
-    if (not running_on_luci or args.xcode_symlinks or
-        os.getenv('FLUTTER_GOMA_CREATE_XCODE_SYMLINKS', '0') == '1'):
-      goma_gn_args['create_xcode_symlinks'] = True
-
-  return goma_gn_args
 
 
 # Find the locations of the macOS and iOS SDKs under flutter/prebuilts.
@@ -377,8 +315,7 @@ def setup_git_versions():
   skia_path = os.path.join(SRC_ROOT, 'flutter', 'third_party', 'skia')
   revision_args['skia_version'] = get_repository_version(skia_path)
 
-  dart_path = os.path.join(SRC_ROOT, 'third_party', 'dart')
-  revision_args['dart_version'] = get_repository_version(dart_path)
+  revision_args['dart_version'] = get_repository_version(get_dart_path())
 
   return revision_args
 
@@ -464,8 +401,6 @@ def to_gn_args(args):
   gn_args['is_debug'] = args.unoptimized
 
   gn_args.update(setup_git_versions())
-
-  gn_args.update(setup_goma(args))
 
   gn_args.update(setup_rbe(args))
 
@@ -557,21 +492,17 @@ def to_gn_args(args):
     gn_args['host_cpu'] = 'x86'
     gn_args['current_cpu'] = 'x86'
 
-  # When building binaries to run on a macOS host (like gen_snapshot), always
-  # use the clang_x64 toolchain, which will run under Rosetta. This is done for
-  # two reasons:
-  #  1. goma currently only supports the clang_x64 toolchain.
-  #  2. gen_snapshot cannot crossbuild from arm64 to x64. Its host architecture
-  #     must be x64 to target x64.
-  # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+  # TODO(cbracken):
+  # https://github.com/flutter/flutter/issues/103386
   if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
-  if gn_args['target_os'] == 'ios':
-    gn_args['use_ios_simulator'] = args.simulator
-    gn_args.update(setup_apple_sdks())
-  elif get_host_os() == 'mac':
-    gn_args['use_ios_simulator'] = False
+  if gn_args['target_os'] == 'ios' or get_host_os() == 'mac':
+    if gn_args['target_os'] == 'ios':
+      gn_args['use_ios_simulator'] = args.simulator
+    else:
+      gn_args['use_ios_simulator'] = False
+    gn_args['ios_use_simulator'] = gn_args['use_ios_simulator']
     gn_args.update(setup_apple_sdks())
 
   if args.dart_debug:
@@ -606,7 +537,7 @@ def to_gn_args(args):
   # Hardcoding this avoids invoking a relatively expensive python script from
   # GN, but removes the ability to use git-worktrees in the Dart checkout from
   # within the Engine repo, but it's unlikely anyone is using that.
-  gn_args['default_git_folder'] = os.path.join(SRC_ROOT, 'third_party', 'dart', '.git')
+  gn_args['default_git_folder'] = os.path.join(get_dart_path(), '.git')
 
   # By default, the Dart GN build will invoke a relatively expensive python
   # script to calculate an SDK "hash" that ensures compatibility between the
@@ -872,7 +803,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_gl_standard'] = 'webgl'
   gn_args['skia_enable_ganesh'] = True
   gn_args['skia_enable_skottie'] = False
-  gn_args['skia_enable_sksl_tracing'] = False
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
   gn_args['skia_use_harfbuzz'] = True
@@ -908,8 +838,6 @@ def run_impeller_cmake(args):
   if not os.path.isdir(os.path.join(SRC_ROOT, impeller_cmake_dir)):
     print('The Impeller cmake example directory "{}" does not exist'.format(impeller_cmake_dir))
     return 1
-  goma_gn_args = setup_goma(args)
-  goma_dir = goma_gn_args['goma_dir']
   cmake_cmd = [
       'python3',
       os.path.join(SRC_ROOT, 'flutter', 'ci', 'impeller_cmake_build_test.py'),
@@ -917,8 +845,6 @@ def run_impeller_cmake(args):
       impeller_cmake_dir,
       '--cmake',
   ]
-  if goma_dir is not None:
-    cmake_cmd = cmake_cmd + ['--goma-dir', goma_dir]
   if args.xcode_symlinks:
     cmake_cmd = cmake_cmd + ['--xcode-symlinks']
   try:
@@ -1079,7 +1005,7 @@ def parse_args(args):
   parser.add_argument(
       '--xcode-symlinks',
       action='store_true',
-      help='Set to true for builds targeting macOS or iOS when using goma. If '
+      help='Set to true for builds targeting macOS or iOS when using RBE. If '
       'set, symlinks to the Xcode provided sysroot and SDKs will be '
       'created in a generated folder, which will avoid potential backend '
       'errors in Fuchsia RBE. Instead of specifying the flag on each '
@@ -1258,6 +1184,15 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Do not run GN. Instead configure the Impeller cmake example build.',
+  )
+
+  parser.add_argument(
+      '--slimpeller',
+      default=False,
+      action='store_true',
+      help='Enable optimizations that attempt to reduce binary size of the ' +
+      'Flutter engine by assuming only the Impeller rendering engine is supported.' +
+      'See [go/slimpeller-dashboard](https://github.com/orgs/flutter/projects/21) for details.'
   )
 
   # Sanitizers.

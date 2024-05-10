@@ -264,7 +264,6 @@ final class BuildRunner extends Runner {
   static const List<(String, String)> _overridableArgs = <(String, String)>[
     ('--lto', '--no-lto'),
     ('--rbe', '--no-rbe'),
-    ('--goma', '--no-goma'),
   ];
 
   // extraGnArgs overrides the build config args.
@@ -357,7 +356,7 @@ final class BuildRunner extends Runner {
     final List<String> bootstrapCommand = <String>[
       bootstrapPath,
       '--re_proxy=$reproxyPath',
-      '--automatic_auth=true',
+      '--use_application_default_credentials',
       if (shutdown) '--shutdown' else ...<String>['--cfg=$reclientConfigPath'],
     ];
     if (!processRunner.processManager.canRun(bootstrapPath)) {
@@ -416,7 +415,7 @@ final class BuildRunner extends Runner {
         ninjaPath,
         '-C',
         outDir,
-        if (_isGomaOrRbe) ...<String>['-j', '200'],
+        if (_isRbe) ...<String>['-j', '200'],
         ...extraNinjaArgs,
         ...build.ninja.targets,
       ];
@@ -523,9 +522,7 @@ final class BuildRunner extends Runner {
     return true;
   }
 
-  late final bool _isGoma = _mergedGnArgs.contains('--goma');
   late final bool _isRbe = _mergedGnArgs.contains('--rbe');
-  late final bool _isGomaOrRbe = _isGoma || _isRbe;
 
   Future<bool> _runGenerators(RunnerEventHandler eventHandler) async {
     for (final BuildTask task in build.generators) {

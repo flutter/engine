@@ -10,6 +10,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObject.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/SemanticsObjectTestMocks.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -993,19 +994,45 @@ FLUTTER_ASSERT_ARC
       new flutter::testing::MockAccessibilityBridge());
   fml::WeakPtr<flutter::testing::MockAccessibilityBridge> bridge = factory.GetWeakPtr();
   __weak FlutterTouchInterceptingView* weakPlatformView;
+  __weak FlutterPlatformViewSemanticsContainer* weakContainer;
   @autoreleasepool {
     FlutterTouchInterceptingView* platformView = [[FlutterTouchInterceptingView alloc] init];
     weakPlatformView = platformView;
-    FlutterPlatformViewSemanticsContainer* container =
-        [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
-                                                                  uid:1
-                                                         platformView:platformView];
-    XCTAssertEqualObjects(platformView.accessibilityContainer, container);
+
+    @autoreleasepool {
+      FlutterPlatformViewSemanticsContainer* container =
+          [[FlutterPlatformViewSemanticsContainer alloc] initWithBridge:bridge
+                                                                    uid:1
+                                                           platformView:platformView];
+      weakContainer = container;
+      XCTAssertEqualObjects(platformView.accessibilityContainer, container);
+      XCTAssertNotNil(weakPlatformView);
+      XCTAssertNotNil(weakContainer);
+    }
+    // Check the variables are still lived.
+    // `container` is `retain` in `platformView`, so it will not be nil here.
     XCTAssertNotNil(weakPlatformView);
+    XCTAssertNotNil(weakContainer);
   }
   // Check if there's no more strong references to `platformView` after container and platformView
   // are released.
   XCTAssertNil(weakPlatformView);
+  XCTAssertNil(weakContainer);
+}
+
+- (void)testTextInputSemanticsObject {
+  fml::WeakPtrFactory<flutter::AccessibilityBridgeIos> factory(
+      new flutter::testing::MockAccessibilityBridge());
+  fml::WeakPtr<flutter::AccessibilityBridgeIos> bridge = factory.GetWeakPtr();
+
+  flutter::SemanticsNode node;
+  node.label = "foo";
+  node.flags = static_cast<int32_t>(flutter::SemanticsFlags::kIsTextField) |
+               static_cast<int32_t>(flutter::SemanticsFlags::kIsReadOnly);
+  TextInputSemanticsObject* object = [[TextInputSemanticsObject alloc] initWithBridge:bridge uid:0];
+  [object setSemanticsNode:&node];
+  [object accessibilityBridgeDidFinishUpdate];
+  XCTAssertEqual([object accessibilityTraits], UIAccessibilityTraitNone);
 }
 
 @end

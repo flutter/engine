@@ -10,10 +10,11 @@
 #import <QuartzCore/QuartzCore.h>
 
 @interface FlutterView () <FlutterSurfaceManagerDelegate> {
-  int64_t _viewId;
+  FlutterViewIdentifier _viewIdentifier;
   __weak id<FlutterViewDelegate> _viewDelegate;
   FlutterThreadSynchronizer* _threadSynchronizer;
   FlutterSurfaceManager* _surfaceManager;
+  NSCursor* _lastCursor;
 }
 
 @end
@@ -24,13 +25,13 @@
                      commandQueue:(id<MTLCommandQueue>)commandQueue
                          delegate:(id<FlutterViewDelegate>)delegate
                threadSynchronizer:(FlutterThreadSynchronizer*)threadSynchronizer
-                           viewId:(int64_t)viewId {
+                   viewIdentifier:(FlutterViewIdentifier)viewIdentifier {
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     [self setWantsLayer:YES];
     [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
-    _viewId = viewId;
+    _viewIdentifier = viewIdentifier;
     _viewDelegate = delegate;
     _threadSynchronizer = threadSynchronizer;
     _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
@@ -42,7 +43,7 @@
 }
 
 - (void)onPresent:(CGSize)frameSize withBlock:(dispatch_block_t)block {
-  [_threadSynchronizer performCommitForView:_viewId size:frameSize notify:block];
+  [_threadSynchronizer performCommitForView:_viewIdentifier size:frameSize notify:block];
 }
 
 - (FlutterSurfaceManager*)surfaceManager {
@@ -51,7 +52,7 @@
 
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [_threadSynchronizer beginResizeForView:_viewId
+  [_threadSynchronizer beginResizeForView:_viewIdentifier
                                      size:scaledSize
                                    notify:^{
                                      [_viewDelegate viewDidReshape:self];
@@ -94,13 +95,30 @@
   return [_viewDelegate viewShouldAcceptFirstResponder:self];
 }
 
+- (void)didUpdateMouseCursor:(NSCursor*)cursor {
+  _lastCursor = cursor;
+}
+
+// Restores mouse cursor. There are few cases when this is needed and framework will not handle this
+// automatically:
+// - When mouse cursor leaves subview of FlutterView (technically still within bound of FlutterView
+// tracking area so the framework won't be notified)
+// - When context menu above FlutterView is closed. Context menu will change current cursor to arrow
+// and will not restore it back.
 - (void)cursorUpdate:(NSEvent*)event {
-  // When adding/removing views AppKit will schedule call to current hit-test view
-  // cursorUpdate: at the end of frame to determine possible cursor change. If
-  // the view doesn't implement cursorUpdate: AppKit will set the default (arrow) cursor
-  // instead. This would replace the cursor set by FlutterMouseCursorPlugin.
-  // Empty cursorUpdate: implementation prevents this behavior.
-  // https://github.com/flutter/flutter/issues/111425
+  // Make sure to not override cursor when over a platform view.
+  NSView* hitTestView = [self hitTest:[self convertPoint:event.locationInWindow fromView:nil]];
+  if (hitTestView != self) {
+    return;
+  }
+  [_lastCursor set];
+  // It is possible that there is a platform view with NSTrackingArea below flutter content.
+  // This could override the mouse cursor as a result of mouse move event. There is no good way
+  // to prevent that short of swizzling [NSCursor set], so as a workaround force flutter cursor
+  // in next runloop turn. This is not ideal, as it may cause the cursor flicker a bit.
+  [[NSRunLoop currentRunLoop] performBlock:^{
+    [_lastCursor set];
+  }];
 }
 
 - (void)viewDidChangeBackingProperties {

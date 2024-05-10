@@ -3,44 +3,33 @@
 // found in the LICENSE file.
 
 import 'dart:convert' as convert;
-import 'dart:ffi' as ffi show Abi;
-import 'dart:io' as io;
 
 import 'package:engine_build_configs/engine_build_configs.dart';
-import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/environment.dart';
 import 'package:litetest/litetest.dart';
 import 'package:logging/logging.dart' as log;
+import 'package:platform/platform.dart';
 
 import 'fixtures.dart' as fixtures;
 import 'utils.dart';
 
 void main() {
-  final Engine engine;
-  try {
-    engine = Engine.findWithin();
-  } catch (e) {
-    io.stderr.writeln(e);
-    io.exitCode = 1;
-    return;
-  }
-
   final BuilderConfig linuxTestConfig = BuilderConfig.fromJson(
     path: 'ci/builders/linux_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Linux'))
+    map: convert.jsonDecode(fixtures.testConfig('Linux', Platform.linux))
         as Map<String, Object?>,
   );
 
   final BuilderConfig macTestConfig = BuilderConfig.fromJson(
     path: 'ci/builders/mac_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Mac-12'))
+    map: convert.jsonDecode(fixtures.testConfig('Mac-12', Platform.macOS))
         as Map<String, Object?>,
   );
 
   final BuilderConfig winTestConfig = BuilderConfig.fromJson(
     path: 'ci/builders/win_test_config.json',
-    map: convert.jsonDecode(fixtures.testConfig('Windows-11'))
+    map: convert.jsonDecode(fixtures.testConfig('Windows-11', Platform.windows))
         as Map<String, Object?>,
   );
 
@@ -56,119 +45,129 @@ void main() {
   }
 
   final List<CannedProcess> cannedProcesses = <CannedProcess>[
-    CannedProcess((List<String> command) => command.contains('--as=label'),
-        stdout: '''
-//flutter/display_list:display_list_unittests
-//flutter/flow:flow_unittests
-//flutter/fml:fml_arc_unittests
-'''),
-    CannedProcess((List<String> command) => command.contains('--as=output'),
-        stdout: '''
-display_list_unittests
-flow_unittests
-fml_arc_unittests
-''')
+    CannedProcess((List<String> command) => command.contains('desc'),
+        stdout: fixtures.gnDescOutput()),
   ];
 
   test('query command returns builds for the host platform.', () async {
-    final TestEnvironment testEnvironment = TestEnvironment(engine,
-        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
-    final Environment env = testEnvironment.environment;
-    final ToolCommandRunner runner = ToolCommandRunner(
-      environment: env,
-      configs: configs,
+    final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
     );
-    final int result = await runner.run(<String>[
-      'query',
-      'builders',
-    ]);
-    expect(result, equals(0));
-    expect(
-      stringsFromLogs(env.logger.testLogs),
-      equals(<String>[
-        'Add --verbose to see detailed information about each builder\n',
-        '\n',
-        '"linux_test_config" builder:\n',
-        '   "build_name" config\n',
-        '   "host_debug" config\n',
-        '   "android_debug_arm64" config\n',
-        '   "android_debug_rbe_arm64" config\n',
-        '"linux_test_config2" builder:\n',
-        '   "build_name" config\n',
-        '   "host_debug" config\n',
-        '   "android_debug_arm64" config\n',
-        '   "android_debug_rbe_arm64" config\n',
-      ]),
-    );
-  });
-
-  test('query command with --builder returns only from the named builder.',
-      () async {
-    final TestEnvironment testEnvironment = TestEnvironment(engine,
-        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
-    final Environment env = testEnvironment.environment;
-    final ToolCommandRunner runner = ToolCommandRunner(
-      environment: env,
-      configs: configs,
-    );
-    final int result = await runner.run(<String>[
-      'query',
-      'builders',
-      '--builder',
-      'linux_test_config',
-    ]);
-    expect(result, equals(0));
-    expect(
-        stringsFromLogs(env.logger.testLogs),
+    try {
+      final Environment env = testEnvironment.environment;
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: env,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'query',
+        'builders',
+      ]);
+      expect(result, equals(0));
+      expect(
+        stringsFromLogs(testEnvironment.testLogs),
         equals(<String>[
           'Add --verbose to see detailed information about each builder\n',
           '\n',
           '"linux_test_config" builder:\n',
-          '   "build_name" config\n',
-          '   "host_debug" config\n',
-          '   "android_debug_arm64" config\n',
-          '   "android_debug_rbe_arm64" config\n',
-        ]));
+          '   "ci/build_name" config\n',
+          '   "linux/host_debug" config\n',
+          '   "linux/android_debug_arm64" config\n',
+          '   "ci/android_debug_rbe_arm64" config\n',
+          '"linux_test_config2" builder:\n',
+          '   "ci/build_name" config\n',
+          '   "linux/host_debug" config\n',
+          '   "linux/android_debug_arm64" config\n',
+          '   "ci/android_debug_rbe_arm64" config\n',
+        ]),
+      );
+    } finally {
+      testEnvironment.cleanup();
+    }
+  });
+
+  test('query command with --builder returns only from the named builder.',
+      () async {
+    final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
+    );
+    try {
+      final Environment env = testEnvironment.environment;
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: env,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'query',
+        'builders',
+        '--builder',
+        'linux_test_config',
+      ]);
+      expect(result, equals(0));
+      expect(
+          stringsFromLogs(testEnvironment.testLogs),
+          equals(<String>[
+            'Add --verbose to see detailed information about each builder\n',
+            '\n',
+            '"linux_test_config" builder:\n',
+            '   "ci/build_name" config\n',
+            '   "linux/host_debug" config\n',
+            '   "linux/android_debug_arm64" config\n',
+            '   "ci/android_debug_rbe_arm64" config\n',
+          ]));
+    } finally {
+      testEnvironment.cleanup();
+    }
   });
 
   test('query command with --all returns all builds.', () async {
-    final TestEnvironment testEnvironment = TestEnvironment(engine,
-        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
-    final Environment env = testEnvironment.environment;
-    final ToolCommandRunner runner = ToolCommandRunner(
-      environment: env,
-      configs: configs,
+    final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
     );
-    final int result = await runner.run(<String>[
-      'query',
-      'builders',
-      '--all',
-    ]);
-    expect(result, equals(0));
-    expect(
-      env.logger.testLogs.length,
-      equals(30),
-    );
+    try {
+      final Environment env = testEnvironment.environment;
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: env,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'query',
+        'builders',
+        '--all',
+      ]);
+      expect(result, equals(0));
+      expect(
+        testEnvironment.testLogs.length,
+        equals(30),
+      );
+    } finally {
+      testEnvironment.cleanup();
+    }
   });
 
-  test('query tests', () async {
-    final TestEnvironment testEnvironment = TestEnvironment(engine,
-        abi: ffi.Abi.linuxX64, cannedProcesses: cannedProcesses);
-    final Environment env = testEnvironment.environment;
-    final ToolCommandRunner runner = ToolCommandRunner(
-      environment: env,
-      configs: configs,
+  test('query targets', () async {
+    final TestEnvironment testEnvironment = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
     );
-    final int result = await runner.run(<String>[
-      'query',
-      'tests',
-    ]);
-    expect(result, equals(0));
-    expect(
-      env.logger.testLogs.length,
-      equals(3),
-    );
-    expect(env.logger.testLogs[0].message,
-        startsWith('//flutter/display_list:display_list_unittests'));
+    try {
+      final Environment env = testEnvironment.environment;
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: env,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'query',
+        'targets',
+      ]);
+      expect(result, equals(0));
+      expect(
+        testEnvironment.testLogs.length,
+        equals(4),
+      );
+      expect(testEnvironment.testLogs[1].message,
+          startsWith('//flutter/display_list:display_list_unittests'));
+    } finally {
+      testEnvironment.cleanup();
+    }
   });
 }

@@ -450,6 +450,14 @@ Shell::Shell(DartVMRef vm,
       weak_factory_(this) {
   FML_CHECK(!settings.enable_software_rendering || !settings.enable_impeller)
       << "Software rendering is incompatible with Impeller.";
+  if (!settings.enable_impeller && settings.warn_on_impeller_opt_out) {
+    FML_LOG(IMPORTANT)
+        << "[Action Required] The application opted out of Impeller by either "
+           "using the --no-enable-impeller flag or FLTEnableImpeller=false "
+           "plist flag. This option is going to go away in an upcoming Flutter "
+           "release. Remove the explicit opt-out. If you need to opt-out, "
+           "report a bug describing the issue.";
+  }
   FML_CHECK(vm_) << "Must have access to VM to create a shell.";
   FML_DCHECK(task_runners_.IsValid());
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -2106,9 +2114,9 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   return true;
 }
 
-void Shell::AddView(int64_t view_id,
-                    const ViewportMetrics& viewport_metrics,
-                    AddViewCallback callback) {
+void Shell::OnPlatformViewAddView(int64_t view_id,
+                                  const ViewportMetrics& viewport_metrics,
+                                  AddViewCallback callback) {
   TRACE_EVENT0("flutter", "Shell::AddView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -2127,7 +2135,8 @@ void Shell::AddView(int64_t view_id,
   });
 }
 
-void Shell::RemoveView(int64_t view_id, RemoveViewCallback callback) {
+void Shell::OnPlatformViewRemoveView(int64_t view_id,
+                                     RemoveViewCallback callback) {
   TRACE_EVENT0("flutter", "Shell::RemoveView");
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());

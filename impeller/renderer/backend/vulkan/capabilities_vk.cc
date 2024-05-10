@@ -14,7 +14,8 @@ namespace impeller {
 
 static constexpr const char* kInstanceLayer = "ImpellerInstance";
 
-CapabilitiesVK::CapabilitiesVK(bool enable_validations) {
+CapabilitiesVK::CapabilitiesVK(bool enable_validations,
+                               bool fatal_missing_validations) {
   auto extensions = vk::enumerateInstanceExtensionProperties();
   auto layers = vk::enumerateInstanceLayerProperties();
 
@@ -45,6 +46,9 @@ CapabilitiesVK::CapabilitiesVK(bool enable_validations) {
         << "Requested Impeller context creation with validations but the "
            "validation layers could not be found. Expect no Vulkan validation "
            "checks!";
+    if (fatal_missing_validations) {
+      FML_LOG(FATAL) << "Validation missing. Exiting.";
+    }
   }
   if (validations_enabled_) {
     FML_LOG(INFO) << "Vulkan validations are enabled.";
@@ -175,6 +179,14 @@ static const char* GetExtensionName(RequiredAndroidDeviceExtensionVK ext) {
       return VK_EXT_QUEUE_FAMILY_FOREIGN_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kKHRDedicatedAllocation:
       return VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME;
+    case RequiredAndroidDeviceExtensionVK::kKHRExternalFenceFd:
+      return VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME;
+    case RequiredAndroidDeviceExtensionVK::kKHRExternalFence:
+      return VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME;
+    case RequiredAndroidDeviceExtensionVK::kKHRExternalSemaphoreFd:
+      return VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME;
+    case RequiredAndroidDeviceExtensionVK::kKHRExternalSemaphore:
+      return VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME;
     case RequiredAndroidDeviceExtensionVK::kLast:
       return "Unknown";
   }
@@ -297,7 +309,7 @@ static bool HasSuitableDepthStencilFormat(const vk::PhysicalDevice& device,
 static bool PhysicalDeviceSupportsRequiredFormats(
     const vk::PhysicalDevice& device) {
   const auto has_color_format =
-      HasSuitableColorFormat(device, vk::Format::eB8G8R8A8Unorm);
+      HasSuitableColorFormat(device, vk::Format::eR8G8B8A8Unorm);
   const auto has_stencil_format =
       HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint) ||
       HasSuitableDepthStencilFormat(device, vk::Format::eD24UnormS8Uint);
@@ -386,6 +398,17 @@ CapabilitiesVK::GetEnabledDeviceFeatures(
     required.samplerYcbcrConversion = supported.samplerYcbcrConversion;
   }
 
+  // Vulkan 1.1
+  {
+    auto& required =
+        required_chain.get<vk::PhysicalDevice16BitStorageFeatures>();
+    const auto& supported =
+        supported_chain.get<vk::PhysicalDevice16BitStorageFeatures>();
+
+    required.uniformAndStorageBuffer16BitAccess =
+        supported.uniformAndStorageBuffer16BitAccess;
+  }
+
   return required_chain;
 }
 
@@ -412,6 +435,12 @@ void CapabilitiesVK::SetOffscreenFormat(PixelFormat pixel_format) const {
 }
 
 bool CapabilitiesVK::SetPhysicalDevice(const vk::PhysicalDevice& device) {
+  if (HasSuitableColorFormat(device, vk::Format::eR8G8B8A8Unorm)) {
+    default_color_format_ = PixelFormat::kR8G8B8A8UNormInt;
+  } else {
+    default_color_format_ = PixelFormat::kUnknown;
+  }
+
   if (HasSuitableDepthStencilFormat(device, vk::Format::eD32SfloatS8Uint)) {
     default_depth_stencil_format_ = PixelFormat::kD32FloatS8UInt;
   } else if (HasSuitableDepthStencilFormat(device,
@@ -504,11 +533,6 @@ bool CapabilitiesVK::SupportsImplicitResolvingMSAA() const {
 
 // |Capabilities|
 bool CapabilitiesVK::SupportsSSBO() const {
-  return true;
-}
-
-// |Capabilities|
-bool CapabilitiesVK::SupportsBufferToTextureBlits() const {
   return true;
 }
 

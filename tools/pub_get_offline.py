@@ -22,10 +22,10 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'flutter_frontend_server'),
     os.path.join(ENGINE_DIR, 'impeller', 'tessellator', 'dart'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
-    os.path.join(ENGINE_DIR, 'testing', 'android_background_image'),
     os.path.join(ENGINE_DIR, 'testing', 'benchmark'),
     os.path.join(ENGINE_DIR, 'testing', 'dart'),
     os.path.join(ENGINE_DIR, 'testing', 'litetest'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'testing', 'scenario_app'),
     os.path.join(ENGINE_DIR, 'testing', 'skia_gold_client'),
     os.path.join(ENGINE_DIR, 'testing', 'smoke_test_failure'),
@@ -92,6 +92,7 @@ EXCLUDED_DIRS = [
     os.path.join(ENGINE_DIR, 'shell', 'platform', 'fuchsia'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
     os.path.join(ENGINE_DIR, 'sky', 'packages'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'third_party'),
     os.path.join(ENGINE_DIR, 'web_sdk'),
 ]
@@ -118,7 +119,9 @@ def find_unlisted_packages():
 
 
 def main():
-  dart_sdk_bin = os.path.join(SRC_ROOT, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin')
+  dart_sdk_bin = os.path.join(
+      SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
+  )
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
   unlisted = find_unlisted_packages()

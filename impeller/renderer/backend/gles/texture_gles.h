@@ -5,6 +5,8 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_TEXTURE_GLES_H_
 
+#include <bitset>
+
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
@@ -32,6 +34,10 @@ class TextureGLES final : public Texture,
               TextureDescriptor desc,
               IsWrapped wrapped);
 
+  static std::shared_ptr<TextureGLES> WrapFBO(ReactorGLES::Ref reactor,
+                                              TextureDescriptor desc,
+                                              GLuint fbo);
+
   // |Texture|
   ~TextureGLES() override;
 
@@ -54,19 +60,28 @@ class TextureGLES final : public Texture,
 
   bool IsWrapped() const { return is_wrapped_; }
 
- private:
-  friend class AllocatorMTL;
+  std::optional<GLuint> GetFBO() const { return wrapped_fbo_; }
 
+  // For non cubemap textures, 0 indicates uninitialized and 1 indicates
+  // initialized. For cubemap textures, each face is initialized separately with
+  // each bit tracking the initialization of the corresponding slice.
+  void MarkSliceInitialized(size_t slice) const;
+
+  bool IsSliceInitialized(size_t slice) const;
+
+ private:
   ReactorGLES::Ref reactor_;
   const Type type_;
   HandleGLES handle_;
-  mutable bool contents_initialized_ = false;
+  mutable std::bitset<6> slices_initialized_ = 0;
   const bool is_wrapped_;
+  const std::optional<GLuint> wrapped_fbo_;
   bool is_valid_ = false;
 
   TextureGLES(std::shared_ptr<ReactorGLES> reactor,
               TextureDescriptor desc,
-              bool is_wrapped);
+              bool is_wrapped,
+              std::optional<GLuint> fbo);
 
   // |Texture|
   void SetLabel(std::string_view label) override;

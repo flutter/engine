@@ -28,10 +28,6 @@
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/command_buffer.h"
 
-#ifdef IMPELLER_DEBUG
-#include "impeller/entity/contents/checkerboard_contents.h"
-#endif  // IMPELLER_DEBUG
-
 namespace impeller {
 
 namespace {
@@ -110,7 +106,7 @@ void EntityPass::AddEntity(Entity entity) {
   }
 
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-    advanced_blend_reads_from_pass_texture_ += 1;
+    advanced_blend_reads_from_pass_texture_ = true;
   }
   elements_.emplace_back(std::move(entity));
 }
@@ -133,7 +129,7 @@ void EntityPass::PopClips(size_t num_clips, uint64_t depth) {
     FML_DCHECK(active_clips_.back() < elements_.size());
     Entity* element = std::get_if<Entity>(&elements_[active_clips_.back()]);
     FML_DCHECK(element);
-    element->SetNewClipDepth(depth);
+    element->SetClipDepth(depth);
     active_clips_.pop_back();
   }
 }
@@ -277,32 +273,15 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   pass->superpass_ = this;
 
   if (pass->backdrop_filter_proc_) {
-    backdrop_filter_reads_from_pass_texture_ += 1;
+    backdrop_filter_reads_from_pass_texture_ = true;
   }
   if (pass->blend_mode_ > Entity::kLastPipelineBlendMode) {
-    advanced_blend_reads_from_pass_texture_ += 1;
+    advanced_blend_reads_from_pass_texture_ = true;
   }
 
   auto subpass_pointer = pass.get();
   elements_.emplace_back(std::move(pass));
   return subpass_pointer;
-}
-
-void EntityPass::AddSubpassInline(std::unique_ptr<EntityPass> pass) {
-  if (!pass) {
-    return;
-  }
-  FML_DCHECK(pass->superpass_ == nullptr);
-
-  std::vector<Element>& elements = pass->elements_;
-  for (auto i = 0u; i < elements.size(); i++) {
-    elements_.emplace_back(std::move(elements[i]));
-  }
-
-  backdrop_filter_reads_from_pass_texture_ +=
-      pass->backdrop_filter_reads_from_pass_texture_;
-  advanced_blend_reads_from_pass_texture_ +=
-      pass->advanced_blend_reads_from_pass_texture_;
 }
 
 static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
@@ -366,10 +345,10 @@ static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
       renderer.GetDeviceCapabilities().SupportsImplicitResolvingMSAA());
 }
 
-uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
+bool EntityPass::DoesBackdropGetRead(ContentContext& renderer) const {
   return renderer.GetDeviceCapabilities().SupportsFramebufferFetch()
              ? backdrop_filter_reads_from_pass_texture_
-             : backdrop_filter_reads_from_pass_texture_ +
+             : backdrop_filter_reads_from_pass_texture_ ||
                    advanced_blend_reads_from_pass_texture_;
 }
 
@@ -413,11 +392,10 @@ bool EntityPass::Render(ContentContext& renderer,
   EntityPassClipStack clip_stack = EntityPassClipStack(
       Rect::MakeSize(root_render_target.GetRenderTargetSize()));
 
-  bool reads_from_onscreen_backdrop = GetTotalPassReads(renderer) > 0;
   // In this branch path, we need to render everything to an offscreen texture
   // and then blit the results onto the onscreen texture. If using this branch,
   // there's no need to set up a stencil attachment on the root render target.
-  if (reads_from_onscreen_backdrop) {
+  if (DoesBackdropGetRead(renderer)) {
     EntityPassTarget offscreen_target = CreateRenderTarget(
         renderer, root_render_target.GetRenderTargetSize(),
         GetRequiredMipCount(),
@@ -549,7 +527,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     Point global_pass_position,
     uint32_t pass_depth,
     EntityPassClipStack& clip_coverage_stack,
-    size_t clip_depth_floor) const {
+    size_t clip_height_floor) const {
   //--------------------------------------------------------------------------
   /// Setup entity element.
   ///
@@ -591,7 +569,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
               Point(),                       // local_pass_position
               pass_depth,                    // pass_depth
               clip_coverage_stack,           // clip_coverage_stack
-              clip_depth_,                   // clip_depth_floor
+              clip_height_,                  // clip_height_floor
               nullptr,                       // backdrop_filter_contents
               pass_context.GetRenderPass(pass_depth)  // collapsed_parent_pass
               )) {
@@ -690,7 +668,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // save layers may transform the subpass texture after it's rendered,
     // causing parent clip coverage to get misaligned with the actual area that
     // the subpass will affect in the parent pass.
-    clip_coverage_stack.PushSubpass(subpass_coverage, subpass->clip_depth_);
+    clip_coverage_stack.PushSubpass(subpass_coverage, subpass->clip_height_);
 
     // Stencil textures aren't shared between EntityPasses (as much of the
     // time they are transient).
@@ -704,7 +682,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
                 global_pass_position,         // local_pass_position
             ++pass_depth,                     // pass_depth
             clip_coverage_stack,              // clip_coverage_stack
-            subpass->clip_depth_,             // clip_depth_floor
+            subpass->clip_height_,            // clip_height_floor
             subpass_backdrop_filter_contents  // backdrop_filter_contents
             )) {
       // Validation error messages are triggered for all `OnRender()` failure
@@ -738,10 +716,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     Entity element_entity;
     Capture subpass_texture_capture =
         capture.CreateChild("Entity (Subpass texture)");
-    element_entity.SetNewClipDepth(subpass->new_clip_depth_);
+    element_entity.SetClipDepth(subpass->clip_depth_);
     element_entity.SetCapture(subpass_texture_capture);
     element_entity.SetContents(std::move(offscreen_texture_contents));
-    element_entity.SetClipDepth(subpass->clip_depth_);
     element_entity.SetBlendMode(subpass->blend_mode_);
     element_entity.SetTransform(subpass_texture_capture.AddMatrix(
         "Transform",
@@ -756,9 +733,6 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 static void SetClipScissor(std::optional<Rect> clip_coverage,
                            RenderPass& pass,
                            Point global_pass_position) {
-  if constexpr (!ContentContext::kEnableStencilThenCover) {
-    return;
-  }
   // Set the scissor to the clip coverage area. We do this prior to rendering
   // the clip itself and all its contents.
   IRect scissor;
@@ -773,7 +747,7 @@ static void SetClipScissor(std::optional<Rect> clip_coverage,
 }
 
 bool EntityPass::RenderElement(Entity& element_entity,
-                               size_t clip_depth_floor,
+                               size_t clip_height_floor,
                                InlinePassContext& pass_context,
                                int32_t pass_depth,
                                ContentContext& renderer,
@@ -803,7 +777,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
     Entity msaa_backdrop_entity;
     msaa_backdrop_entity.SetContents(std::move(msaa_backdrop_contents));
     msaa_backdrop_entity.SetBlendMode(BlendMode::kSource);
-    msaa_backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
+    msaa_backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
     if (!msaa_backdrop_entity.Render(renderer, *result.pass)) {
       VALIDATION_LOG << "Failed to render MSAA backdrop filter entity.";
       return false;
@@ -850,7 +824,7 @@ bool EntityPass::RenderElement(Entity& element_entity,
 
   EntityPassClipStack::ClipStateResult clip_state_result =
       clip_coverage_stack.ApplyClipState(clip_coverage, element_entity,
-                                         clip_depth_floor,
+                                         clip_height_floor,
                                          global_pass_position);
 
   if (clip_state_result.clip_did_change) {
@@ -879,7 +853,7 @@ bool EntityPass::OnRender(
     Point local_pass_position,
     uint32_t pass_depth,
     EntityPassClipStack& clip_coverage_stack,
-    size_t clip_depth_floor,
+    size_t clip_height_floor,
     std::shared_ptr<Contents> backdrop_filter_contents,
     const std::optional<InlinePassContext::RenderPassResult>&
         collapsed_parent_pass) const {
@@ -892,8 +866,7 @@ bool EntityPass::OnRender(
         pass_depth);
   }
 
-  InlinePassContext pass_context(renderer, pass_target,
-                                 GetTotalPassReads(renderer), GetElementCount(),
+  InlinePassContext pass_context(renderer, pass_target, GetElementCount(),
                                  collapsed_parent_pass);
   if (!pass_context.IsValid()) {
     VALIDATION_LOG << SPrintF("Pass context invalid (Depth=%d)", pass_depth);
@@ -922,10 +895,9 @@ bool EntityPass::OnRender(
     backdrop_entity.SetContents(std::move(backdrop_filter_contents));
     backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_pass_position)));
-    backdrop_entity.SetClipDepth(clip_depth_floor);
-    backdrop_entity.SetNewClipDepth(std::numeric_limits<uint32_t>::max());
+    backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
 
-    RenderElement(backdrop_entity, clip_depth_floor, pass_context, pass_depth,
+    RenderElement(backdrop_entity, clip_height_floor, pass_context, pass_depth,
                   renderer, clip_coverage_stack, global_pass_position);
   }
 
@@ -953,7 +925,7 @@ bool EntityPass::OnRender(
                             global_pass_position,  // global_pass_position
                             pass_depth,            // pass_depth
                             clip_coverage_stack,   // clip_coverage_stack
-                            clip_depth_floor);     // clip_depth_floor
+                            clip_height_floor);    // clip_height_floor
 
     switch (result.status) {
       case EntityResult::kSuccess:
@@ -969,13 +941,6 @@ bool EntityPass::OnRender(
     //--------------------------------------------------------------------------
     /// Setup advanced blends.
     ///
-
-    if (result.entity.GetBlendMode() == BlendMode::kPlus &&
-        !IsAlphaClampedToOne(pass_context.GetPassTarget()
-                                 .GetRenderTarget()
-                                 .GetRenderTargetPixelFormat())) {
-      result.entity.SetBlendMode(BlendMode::kPlusAdvanced);
-    }
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
       if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
@@ -1026,38 +991,13 @@ bool EntityPass::OnRender(
     //--------------------------------------------------------------------------
     /// Render the Element.
     ///
-    if (!RenderElement(result.entity, clip_depth_floor, pass_context,
+    if (!RenderElement(result.entity, clip_height_floor, pass_context,
                        pass_depth, renderer, clip_coverage_stack,
                        global_pass_position)) {
       // Specific validation logs are handled in `render_element()`.
       return false;
     }
   }
-
-#ifdef IMPELLER_DEBUG
-  //--------------------------------------------------------------------------
-  /// Draw debug checkerboard over offscreen textures.
-  ///
-
-  // When the pass depth is > 0, this EntityPass is being rendered to an
-  // offscreen texture.
-  if (enable_offscreen_debug_checkerboard_ &&
-      !collapsed_parent_pass.has_value() && pass_depth > 0) {
-    auto result = pass_context.GetRenderPass(pass_depth);
-    if (!result.pass) {
-      // Failure to produce a render pass should be explained by specific errors
-      // in `InlinePassContext::GetRenderPass()`.
-      return false;
-    }
-    auto checkerboard = CheckerboardContents();
-    auto color = ColorHSB(0,                                    // hue
-                          1,                                    // saturation
-                          std::max(0.0, 0.6 - pass_depth / 5),  // brightness
-                          0.25);                                // alpha
-    checkerboard.SetColor(Color(color));
-    checkerboard.Render(renderer, {}, *result.pass);
-  }
-#endif
 
   return true;
 }
@@ -1166,20 +1106,20 @@ void EntityPass::SetTransform(Matrix transform) {
   transform_ = transform;
 }
 
+void EntityPass::SetClipHeight(size_t clip_height) {
+  clip_height_ = clip_height;
+}
+
+size_t EntityPass::GetClipHeight() const {
+  return clip_height_;
+}
+
 void EntityPass::SetClipDepth(size_t clip_depth) {
   clip_depth_ = clip_depth;
 }
 
-size_t EntityPass::GetClipDepth() const {
+uint32_t EntityPass::GetClipDepth() const {
   return clip_depth_;
-}
-
-void EntityPass::SetNewClipDepth(size_t clip_depth) {
-  new_clip_depth_ = clip_depth;
-}
-
-uint32_t EntityPass::GetNewClipDepth() const {
-  return new_clip_depth_;
 }
 
 void EntityPass::SetBlendMode(BlendMode blend_mode) {
@@ -1219,10 +1159,6 @@ void EntityPass::SetBackdropFilter(BackdropFilterProc proc) {
   }
 
   backdrop_filter_proc_ = std::move(proc);
-}
-
-void EntityPass::SetEnableOffscreenCheckerboard(bool enabled) {
-  enable_offscreen_debug_checkerboard_ = enabled;
 }
 
 }  // namespace impeller

@@ -93,10 +93,14 @@ static FlutterDesktopViewControllerRef CreateViewController(
 
   std::unique_ptr<flutter::FlutterWindowsView> view =
       engine_ptr->CreateView(std::move(window_wrapper));
+  if (!view) {
+    return nullptr;
+  }
+
   auto controller = std::make_unique<flutter::FlutterWindowsViewController>(
       std::move(engine), std::move(view));
 
-  controller->view()->CreateRenderSurface();
+  // Launch the engine if it is not running already.
   if (!controller->engine()->running()) {
     if (!controller->engine()->Run()) {
       return nullptr;

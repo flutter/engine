@@ -7,7 +7,6 @@
 
 #include <Metal/Metal.h>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/metal/blit_command_mtl.h"
 #include "impeller/renderer/blit_pass.h"
 
@@ -56,8 +55,9 @@ class BlitPassMTL final : public BlitPass {
   // |BlitPass|
   bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
-                                    IPoint destination_origin,
-                                    std::string label) override;
+                                    IRect destination_region,
+                                    std::string label,
+                                    uint32_t slice) override;
 
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,

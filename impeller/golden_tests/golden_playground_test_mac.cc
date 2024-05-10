@@ -13,6 +13,9 @@
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
+#include "fml/closure.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -128,6 +131,16 @@ void GoldenPlaygroundTest::TearDown() {
   ASSERT_FALSE(dlopen("/usr/local/lib/libMoltenVK.dylib", RTLD_NOLOAD));
 }
 
+namespace {
+bool DoesSupportWideGamutTests() {
+#ifdef __arm64__
+  return true;
+#else
+  return false;
+#endif
+}
+}  // namespace
+
 void GoldenPlaygroundTest::SetUp() {
   std::filesystem::path testing_assets_path =
       flutter::testing::GetTestingAssetsPath();
@@ -142,10 +155,17 @@ void GoldenPlaygroundTest::SetUp() {
   bool enable_wide_gamut = test_name.find("WideGamut_") != std::string::npos;
   switch (GetParam()) {
     case PlaygroundBackend::kMetal:
+      if (!DoesSupportWideGamutTests()) {
+        GTEST_SKIP_(
+            "This metal device doesn't support wide gamut golden tests.");
+      }
       pimpl_->screenshotter =
           std::make_unique<testing::MetalScreenshotter>(enable_wide_gamut);
       break;
     case PlaygroundBackend::kVulkan: {
+      if (enable_wide_gamut) {
+        GTEST_SKIP_("Vulkan doesn't support wide gamut golden tests.");
+      }
       const std::unique_ptr<PlaygroundImpl>& playground =
           GetSharedVulkanPlayground(/*enable_validations=*/true);
       pimpl_->screenshotter =
@@ -153,6 +173,9 @@ void GoldenPlaygroundTest::SetUp() {
       break;
     }
     case PlaygroundBackend::kOpenGLES: {
+      if (enable_wide_gamut) {
+        GTEST_SKIP_("OpenGLES doesn't support wide gamut golden tests.");
+      }
       FML_CHECK(::glfwInit() == GLFW_TRUE);
       PlaygroundSwitches playground_switches;
       playground_switches.use_angle = true;
@@ -206,6 +229,14 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   return SaveScreenshot(std::move(screenshot));
 }
 
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const sk_sp<flutter::DisplayList>& list) {
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+  return OpenPlaygroundHere(std::move(picture));
+}
+
 bool GoldenPlaygroundTest::ImGuiBegin(const char* name,
                                       bool* p_open,
                                       ImGuiWindowFlags flags) {
@@ -223,6 +254,14 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     result->SetLabel(fixture_name);
   }
   return result;
+}
+
+sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
+    const char* fixture_name,
+    bool enable_mipmapping) const {
+  std::shared_ptr<Texture> texture =
+      CreateTextureForFixture(fixture_name, enable_mipmapping);
+  return DlImageImpeller::Make(texture);
 }
 
 RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(

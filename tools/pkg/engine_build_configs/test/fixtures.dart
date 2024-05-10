@@ -21,8 +21,9 @@ const String buildConfigJson = '''
       "gclient_variables": {
         "variable": false
       },
-      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "gn": ["--gn-arg", "--lto", "--no-rbe"],
       "name": "build_name",
+      "description": "build_description",
       "ninja": {
         "config": "build_name",
         "targets": ["ninja_target"]

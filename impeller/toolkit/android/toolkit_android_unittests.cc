@@ -12,6 +12,18 @@
 
 namespace impeller::android::testing {
 
+#define DISABLE_ANDROID_PROC(name)                 \
+  struct Disable##name {                           \
+    Disable##name() {                              \
+      real_proc = GetMutableProcTable().name.proc; \
+      GetMutableProcTable().name.proc = nullptr;   \
+    }                                              \
+    ~Disable##name() {                             \
+      GetMutableProcTable().name.proc = real_proc; \
+    }                                              \
+    decltype(name)* real_proc;                     \
+  } disable##name;
+
 TEST(ToolkitAndroidTest, CanCreateProcTable) {
   ProcTable proc_table;
   ASSERT_TRUE(proc_table.IsValid());
@@ -49,6 +61,11 @@ TEST(ToolkitAndroidTest, CanGetHardwareBufferIDs) {
   ASSERT_TRUE(buffer.GetSystemUniqueID().has_value());
 }
 
+TEST(ToolkitAndroidTest, HardwareBufferNullIDIfAPIUnavailable) {
+  DISABLE_ANDROID_PROC(AHardwareBuffer_getId);
+  ASSERT_FALSE(HardwareBuffer::GetSystemUniqueID(nullptr).has_value());
+}
+
 TEST(ToolkitAndroidTest, CanDescribeHardwareBufferHandles) {
   if (!HardwareBuffer::IsAvailableOnPlatform()) {
     GTEST_SKIP() << "Hardware buffers are not supported on this platform.";
@@ -72,7 +89,7 @@ TEST(ToolkitAndroidTest, CanApplySurfaceTransaction) {
   SurfaceTransaction transaction;
   ASSERT_TRUE(transaction.IsValid());
   fml::AutoResetWaitableEvent event;
-  ASSERT_TRUE(transaction.Apply([&event]() { event.Signal(); }));
+  ASSERT_TRUE(transaction.Apply([&event](auto) { event.Signal(); }));
   event.Wait();
 }
 

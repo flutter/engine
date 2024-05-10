@@ -8,6 +8,8 @@ import 'dart:io' as io;
 import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:engine_tool/src/environment.dart';
 import 'package:engine_tool/src/logger.dart';
+import 'package:litetest/litetest.dart' show Expect, Matcher;
+import 'package:path/path.dart' as path;
 import 'package:platform/platform.dart';
 import 'package:process_fakes/process_fakes.dart';
 import 'package:process_runner/process_runner.dart';
@@ -37,13 +39,14 @@ class CannedProcess {
 
 /// ExecutedProcess includes the command and the result.
 class ExecutedProcess {
-  ExecutedProcess(this.command, this.result);
+  ExecutedProcess(this.command, this.result, this.exitCode);
   final List<String> command;
   final FakeProcess result;
+  final int exitCode;
 
   @override
   String toString() {
-    return command.join(' ');
+    return '${command.join(' ')} exitCode=$exitCode';
   }
 }
 
@@ -53,26 +56,78 @@ class TestEnvironment {
     Engine engine, {
     Logger? logger,
     ffi.Abi abi = ffi.Abi.macosArm64,
+    bool verbose = false,
     this.cannedProcesses = const <CannedProcess>[],
   }) {
-    logger ??= Logger.test();
+    testLogs = <LogRecord>[];
+    logger ??= Logger.test(testLogs.add);
     environment = Environment(
       abi: abi,
       engine: engine,
       platform: FakePlatform(
           operatingSystem: _operatingSystemForAbi(abi),
-          resolvedExecutable: io.Platform.resolvedExecutable),
+          resolvedExecutable: io.Platform.resolvedExecutable,
+          pathSeparator: _pathSeparatorForAbi(abi)),
       processRunner: ProcessRunner(
           processManager: FakeProcessManager(onStart: (List<String> command) {
         final FakeProcess processResult =
             _getCannedResult(command, cannedProcesses);
-        processHistory.add(ExecutedProcess(command, processResult));
+        processResult.exitCode.then((int exitCode) {
+          processHistory.add(ExecutedProcess(command, processResult, exitCode));
+        });
         return processResult;
       }, onRun: (List<String> command) {
         throw UnimplementedError('onRun');
       })),
       logger: logger,
+      verbose: verbose,
     );
+  }
+
+  factory TestEnvironment.withTestEngine({
+    bool withRbe = false,
+    ffi.Abi abi = ffi.Abi.linuxX64,
+    List<CannedProcess> cannedProcesses = const <CannedProcess>[],
+    bool verbose = false,
+  }) {
+    final io.Directory rootDir = io.Directory.systemTemp.createTempSync('et');
+    final TestEngine engine = TestEngine.createTemp(rootDir: rootDir);
+    if (withRbe) {
+      io.Directory(path.join(
+        engine.srcDir.path,
+        'flutter',
+        'build',
+        'rbe',
+      )).createSync(recursive: true);
+    }
+    // When GN runs, always try to create out/host_debug.
+    final CannedProcess cannedGn = CannedProcess((List<String> command) {
+      if (command[0].endsWith('/gn') && !command.contains('desc')) {
+        io.Directory(path.join(
+          engine.outDir.path,
+          'host_debug',
+        )).createSync(recursive: true);
+        return true;
+      }
+      return false;
+    });
+    final TestEnvironment testEnvironment = TestEnvironment(
+      engine,
+      abi: abi,
+      cannedProcesses: cannedProcesses + <CannedProcess>[cannedGn],
+      verbose: verbose,
+    );
+    return testEnvironment;
+  }
+
+  void cleanup() {
+    try {
+      if (environment.engine is TestEngine) {
+        environment.engine.srcDir.parent.deleteSync(recursive: true);
+      }
+    } catch (_) {
+      // Ignore failure to clean up.
+    }
   }
 
   /// Environment.
@@ -83,6 +138,9 @@ class TestEnvironment {
 
   /// A history of all executed processes.
   final List<ExecutedProcess> processHistory = <ExecutedProcess>[];
+
+  /// Test log output.
+  late final List<LogRecord> testLogs;
 }
 
 String _operatingSystemForAbi(ffi.Abi abi) {
@@ -102,6 +160,17 @@ String _operatingSystemForAbi(ffi.Abi abi) {
   }
 }
 
+String _pathSeparatorForAbi(ffi.Abi abi) {
+  switch (abi) {
+    case ffi.Abi.windowsArm64:
+    case ffi.Abi.windowsIA32:
+    case ffi.Abi.windowsX64:
+      return r'\';
+    default:
+      return '/';
+  }
+}
+
 FakeProcess _getCannedResult(
     List<String> command, List<CannedProcess> cannedProcesses) {
   for (final CannedProcess cp in cannedProcesses) {
@@ -112,3 +181,49 @@ FakeProcess _getCannedResult(
   }
   return FakeProcess();
 }
+
+typedef CommandMatcher = bool Function(List<String> command);
+
+/// Returns a [Matcher] that fails the test if no process has a matching command.
+///
+/// Usage:
+///    expect(testEnv.processHistory,
+///        containsCommand((List<String> command) {
+///            return command.length > 5 &&
+///                command[0].contains('ninja') &&
+///                command[2].endsWith('/host_debug') &&
+///                command[5] == 'flutter/fml:fml_arc_unittests';
+///        })
+///    );
+Matcher containsCommand(CommandMatcher commandMatcher) => (dynamic processes) {
+      Expect.type<List<ExecutedProcess>>(processes);
+      final List<List<String>> commands = (processes as List<ExecutedProcess>)
+          .map((ExecutedProcess process) => process.command)
+          .toList();
+      if (!commands.any(commandMatcher)) {
+        Expect.fail('No process found with matching command');
+      }
+    };
+
+/// Returns a [Matcher] that fails the test if any process has a matching
+/// command.
+///
+/// Usage:
+///    expect(testEnv.processHistory,
+///        doesNotContainCommand((List<String> command) {
+///            return command.length > 5 &&
+///                command[0].contains('ninja') &&
+///                command[2].endsWith('/host_debug') &&
+///                command[5] == 'flutter/fml:fml_arc_unittests';
+///        })
+///    );
+Matcher doesNotContainCommand(CommandMatcher commandMatcher) =>
+    (dynamic processes) {
+      Expect.type<List<ExecutedProcess>>(processes);
+      final List<List<String>> commands = (processes as List<ExecutedProcess>)
+          .map((ExecutedProcess process) => process.command)
+          .toList();
+      if (commands.any(commandMatcher)) {
+        Expect.fail('Process found with matching command');
+      }
+    };

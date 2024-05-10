@@ -91,6 +91,8 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
     syslog(LOG_ALERT, "%.*s", (int)log.size(), log.c_str());
   };
 
+  settings.enable_platform_isolates = true;
+
   // The command line arguments may not always be complete. If they aren't, attempt to fill in
   // defaults.
 
@@ -200,10 +202,17 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
     }
   }
 
+  settings.warn_on_impeller_opt_out = true;
+
   NSNumber* enableTraceSystrace = [mainBundle objectForInfoDictionaryKey:@"FLTTraceSystrace"];
   // Change the default only if the option is present.
   if (enableTraceSystrace != nil) {
     settings.trace_systrace = enableTraceSystrace.boolValue;
+  }
+
+  NSNumber* enableDartAsserts = [mainBundle objectForInfoDictionaryKey:@"FLTEnableDartAsserts"];
+  if (enableDartAsserts != nil) {
+    settings.dart_flags.push_back("--enable-asserts");
   }
 
   NSNumber* enableDartProfiling = [mainBundle objectForInfoDictionaryKey:@"FLTEnableDartProfiling"];

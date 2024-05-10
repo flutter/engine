@@ -10,6 +10,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_arm64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
@@ -18,9 +20,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_profile_arm64",
+            "name": "ci/fuchsia_profile_arm64",
+            "description": "Produces profile mode artifacts to target arm64 Fuchsia from a Linux host.",
             "ninja": {
-                "config": "fuchsia_profile_arm64",
+                "config": "ci/fuchsia_profile_arm64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -39,6 +42,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_arm64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
@@ -48,9 +53,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_profile_arm64_tester",
+            "name": "ci/fuchsia_profile_arm64_tester",
+            "description": "Builds profile mode tests of arm64 Fuchsia.",
             "ninja": {
-                "config": "fuchsia_profile_arm64",
+                "config": "ci/fuchsia_profile_arm64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -64,7 +70,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_profile_arm64"
+                        "ci/fuchsia_profile_arm64_tester"
                     ]
                 }
             ]
@@ -79,6 +85,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_arm64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
@@ -87,9 +95,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_release_arm64",
+            "name": "ci/fuchsia_release_arm64",
+            "description": "Produces release mode artifacts to target arm64 Fuchsia from a Linux host.",
             "ninja": {
-                "config": "fuchsia_release_arm64",
+                "config": "ci/fuchsia_release_arm64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -108,6 +117,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_arm64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
@@ -117,9 +128,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_release_arm64_tester",
+            "name": "ci/fuchsia_release_arm64_tester",
+            "description": "Builds release mode tests of arm64 Fuchsia.",
             "ninja": {
-                "config": "fuchsia_release_arm64",
+                "config": "ci/fuchsia_release_arm64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -133,7 +145,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_release_arm64"
+                        "ci/fuchsia_release_arm64_tester"
                     ]
                 }
             ]
@@ -148,6 +160,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_arm64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
@@ -157,9 +171,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_debug_arm64",
+            "name": "ci/fuchsia_debug_arm64",
+            "description": "Produces debug mode artifacts to target arm64 Fuchsia from a Linux host.",
             "ninja": {
-                "config": "fuchsia_debug_arm64",
+                "config": "ci/fuchsia_debug_arm64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -172,7 +187,7 @@
                     "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
                     "parameters": [
                         "--symbol-dir",
-                        "out/fuchsia_debug_arm64/.build-id",
+                        "out/ci/fuchsia_debug_arm64/.build-id",
                         "--engine-version",
                         "${REVISION}",
                         "--upload"
@@ -193,6 +208,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_arm64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "arm64",
@@ -202,9 +219,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_debug_arm64_tester",
+            "name": "ci/fuchsia_debug_arm64_tester",
+            "description": "Builds debug mode tests of arm64 Fuchsia.",
             "ninja": {
-                "config": "fuchsia_debug_arm64",
+                "config": "ci/fuchsia_debug_arm64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -218,7 +236,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_debug_arm64"
+                        "ci/fuchsia_debug_arm64_tester"
                     ]
                 }
             ]
@@ -233,6 +251,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_x64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
@@ -241,9 +261,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_profile_x64",
+            "name": "ci/fuchsia_profile_x64",
+            "description": "Produces profile mode artifacts to target x64 Fuchsia from a Linux host.",
             "ninja": {
-                "config": "fuchsia_profile_x64",
+                "config": "ci/fuchsia_profile_x64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -262,6 +283,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_profile_x64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
@@ -271,9 +294,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_profile_x64_tester",
+            "name": "ci/fuchsia_profile_x64_tester",
+            "description": "Builds profile mode tests of x64 Fuchsia.",
             "ninja": {
-                "config": "fuchsia_profile_x64",
+                "config": "ci/fuchsia_profile_x64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -287,7 +311,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_profile_x64"
+                        "ci/fuchsia_profile_x64_tester"
                     ]
                 }
             ]
@@ -303,6 +327,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_x64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
@@ -311,9 +337,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_release_x64",
+            "name": "ci/fuchsia_release_x64",
+            "description": "Produces release mode artifacts to target x64 Fuchsia from a Linux host.",
             "ninja": {
-                "config": "fuchsia_release_x64",
+                "config": "ci/fuchsia_release_x64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -332,6 +359,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_release_x64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
@@ -341,9 +370,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_release_x64_tester",
+            "name": "ci/fuchsia_release_x64_tester",
+            "description": "Builds release mode tests of x64 Fuchsia.",
             "ninja": {
-                "config": "fuchsia_release_x64",
+                "config": "ci/fuchsia_release_x64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -357,7 +387,7 @@
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
                         "testing/fuchsia/run_tests.py",
-                        "fuchsia_release_x64"
+                        "ci/fuchsia_release_x64_tester"
                     ]
                 }
             ]
@@ -373,6 +403,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_x64",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
@@ -382,9 +414,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_debug_x64",
+            "name": "ci/fuchsia_debug_x64",
+            "description": "Produces debug mode artifacts to target x64 Fuchsia from a Linux host.",
             "ninja": {
-                "config": "fuchsia_debug_x64",
+                "config": "ci/fuchsia_debug_x64",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia"
                 ]
@@ -397,7 +430,7 @@
                     "script": "flutter/tools/fuchsia/upload_to_symbol_server.py",
                     "parameters": [
                         "--symbol-dir",
-                        "out/fuchsia_debug_x64/.build-id",
+                        "out/ci/fuchsia_debug_x64/.build-id",
                         "--engine-version",
                         "${REVISION}",
                         "--upload"
@@ -418,6 +451,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/fuchsia_debug_x64_tester",
                 "--fuchsia",
                 "--fuchsia-cpu",
                 "x64",
@@ -427,9 +462,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "fuchsia_debug_x64_tester",
+            "name": "ci/fuchsia_debug_x64_tester",
+            "description": "Builds debug mode tests of x64 Fuchsia.",
             "ninja": {
-                "config": "fuchsia_debug_x64",
+                "config": "ci/fuchsia_debug_x64_tester",
                 "targets": [
                     "flutter/shell/platform/fuchsia:fuchsia",
                     "flutter/shell/platform/fuchsia/dart_runner:dart_runner_tests",
@@ -450,7 +486,8 @@
                     "language": "python3",
                     "script": "flutter/tools/fuchsia/with_envs.py",
                     "parameters": [
-                        "testing/fuchsia/run_tests.py"
+                        "testing/fuchsia/run_tests.py",
+                        "ci/fuchsia_debug_x64_tester"
                     ]
                 }
             ]
@@ -480,9 +517,9 @@
                     "--out-dir",
                     "${LUCI_CLEANUP}",
                     "--symbol-dirs",
-                    "out/fuchsia_debug_arm64/.build-id",
-                    "out/fuchsia_profile_arm64/.build-id",
-                    "out/fuchsia_release_arm64/.build-id"
+                    "out/ci/fuchsia_debug_arm64/.build-id",
+                    "out/ci/fuchsia_profile_arm64/.build-id",
+                    "out/ci/fuchsia_release_arm64/.build-id"
                 ],
                 "script": "flutter/tools/fuchsia/merge_and_upload_debug_symbols.py",
                 "language": "python3"
@@ -498,9 +535,9 @@
                     "--out-dir",
                     "${LUCI_CLEANUP}",
                     "--symbol-dirs",
-                    "out/fuchsia_debug_x64/.build-id",
-                    "out/fuchsia_profile_x64/.build-id",
-                    "out/fuchsia_release_x64/.build-id"
+                    "out/ci/fuchsia_debug_x64/.build-id",
+                    "out/ci/fuchsia_profile_x64/.build-id",
+                    "out/ci/fuchsia_release_x64/.build-id"
                 ],
                 "script": "flutter/tools/fuchsia/merge_and_upload_debug_symbols.py",
                 "language": "python3"
@@ -508,7 +545,8 @@
             {
                 "name": "Verify-export-symbols-release-binaries",
                 "parameters": [
-                    "src/out"
+                    "src/out/ci",
+                    "src/flutter/buildtools"
                 ],
                 "script": "flutter/testing/symbols/verify_exported.dart",
                 "language": "dart"

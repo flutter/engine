@@ -179,6 +179,10 @@ void RuntimeController::AddView(int64_t view_id,
 
   platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
   bool added = platform_configuration->AddView(view_id, view_metrics);
+  if (added) {
+    ScheduleFrame();
+  }
+
   callback(added);
 }
 
@@ -354,7 +358,9 @@ bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
-    platform_configuration->DispatchPointerDataPacket(packet);
+    std::unique_ptr<PointerDataPacket> converted_packet =
+        pointer_data_packet_converter_.Convert(packet);
+    platform_configuration->DispatchPointerDataPacket(*converted_packet);
     return true;
   }
 

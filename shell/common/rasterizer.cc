@@ -184,6 +184,9 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 }
 
 void Rasterizer::CollectView(int64_t view_id) {
+  if (external_view_embedder_) {
+    external_view_embedder_->CollectView(view_id);
+  }
   view_records_.erase(view_id);
 }
 
@@ -419,14 +422,30 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
   return result;
 }
 
-sk_sp<DlImage> Rasterizer::MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                              SkISize picture_size) {
-  return snapshot_controller_->MakeRasterSnapshot(display_list, picture_size);
+void Rasterizer::MakeRasterSnapshot(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size,
+    std::function<void(sk_sp<DlImage>)> callback) {
+  return snapshot_controller_->MakeRasterSnapshot(display_list, picture_size,
+                                                  callback);
+}
+
+sk_sp<DlImage> Rasterizer::MakeRasterSnapshotSync(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size) {
+  return snapshot_controller_->MakeRasterSnapshotSync(display_list,
+                                                      picture_size);
 }
 
 sk_sp<SkImage> Rasterizer::ConvertToRasterImage(sk_sp<SkImage> image) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   return snapshot_controller_->ConvertToRasterImage(image);
+}
+
+// |SnapshotDelegate|
+void Rasterizer::CacheRuntimeStage(
+    const std::shared_ptr<impeller::RuntimeStage>& runtime_stage) {
+  snapshot_controller_->CacheRuntimeStage(runtime_stage);
 }
 
 fml::Milliseconds Rasterizer::GetFrameBudget() const {
