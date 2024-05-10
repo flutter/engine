@@ -304,17 +304,18 @@ void main() {
   group('ImageFilter|FilterQuality', () async {
     final ImageComparer comparer = await ImageComparer.create();
 
-    /// Draw a 100x100 red-green checkerboard pattern with 1x1 squares.
+    /// Draw a 1000x1000 red-blue checkerboard pattern with 1x1 squares.
     Future<Image> drawCheckerboard() async {
       final Completer<Image> completer = Completer<Image>();
+      final Uint32List pixels = Uint32List.fromList(
+        List<int>.generate(1000 * 1000, (int index) {
+          final int x = index % 1000;
+          final int y = index ~/ 1000;
+          return (x % 2 == y % 2) ? red.value : green.value;
+        }),
+      );
       decodeImageFromPixels(
-        Uint8List.fromList(
-          List<int>.generate(100 * 100 * 4, (int index) {
-            final int x = index % 100;
-            final int y = index ~/ 100;
-            return (x % 2 == y % 2) ? red.value : green.value;
-          }),
-        ),
+        Uint8List.view(pixels.buffer),
         100,
         100,
         PixelFormat.rgba8888,
@@ -334,7 +335,7 @@ void main() {
         canvas.drawImage(image, Offset.zero, paint);
 
         final Picture picture = recorder.endRecording();
-        return picture.toImage(25, 25);
+        return picture.toImage(50, 50);
       }
 
       Future<Image> scale(Image image) async {
@@ -343,13 +344,13 @@ void main() {
         final Canvas canvas = Canvas(recorder);
         canvas.drawImageRect(
           image,
-          const Rect.fromLTWH(0, 0, 25, 25),
-          const Rect.fromLTWH(0, 0, 250, 250),
+          const Rect.fromLTWH(0, 0, 50, 50),
+          const Rect.fromLTWH(0, 0, 500, 500),
           paint,
         );
 
         final Picture picture = recorder.endRecording();
-        return picture.toImage(250, 250);
+        return picture.toImage(500, 500);
       }
 
       return scale(await shrink());
