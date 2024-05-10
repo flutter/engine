@@ -224,6 +224,7 @@ void Canvas::Save(bool create_subpass,
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_height = transform_stack_.back().clip_height;
+  entry.distributed_opacity = transform_stack_.back().distributed_opacity;
   if (create_subpass) {
     entry.rendering_mode = Entity::RenderingMode::kSubpass;
     auto subpass = std::make_unique<EntityPass>();
@@ -827,6 +828,7 @@ void Canvas::AddRenderEntityToCurrentPass(Entity entity, bool reuse_depth) {
     ++current_depth_;
   }
   entity.SetClipDepth(current_depth_);
+  entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
@@ -838,8 +840,18 @@ void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter,
                        ContentBoundsPromise bounds_promise,
-                       uint32_t total_content_depth) {
+                       uint32_t total_content_depth,
+                       bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
+  if (can_distribute_opacity) {
+    FML_LOG(ERROR) << "Distribute opacity";
+    Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
+    transform_stack_.back().distributed_opacity *= paint.color.alpha;
+    return;
+  } else {
+    FML_LOG(ERROR) << "no dist opacity";
+  }
+
   Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
 
   // The DisplayList bounds/rtree doesn't account for filters applied to parent

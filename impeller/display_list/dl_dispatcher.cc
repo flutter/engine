@@ -624,7 +624,8 @@ void DlDispatcherBase::saveLayer(const SkRect& bounds,
                      ? ContentBoundsPromise::kMayClipContents
                      : ContentBoundsPromise::kContainsContents;
   GetCanvas().SaveLayer(paint, skia_conversions::ToRect(bounds),
-                        ToImageFilter(backdrop), promise, total_content_depth);
+                        ToImageFilter(backdrop), promise, total_content_depth,
+                        options.can_distribute_opacity());
 }
 
 // |flutter::DlOpReceiver|

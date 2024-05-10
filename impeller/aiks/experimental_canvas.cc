@@ -207,7 +207,8 @@ void ExperimentalCanvas::SaveLayer(
     std::optional<Rect> bounds,
     const std::shared_ptr<ImageFilter>& backdrop_filter,
     ContentBoundsPromise bounds_promise,
-    uint32_t total_content_depth) {
+    uint32_t total_content_depth,
+    bool can_distribute_opacity) {
   // Can we always guarantee that we get a bounds? Does a lack of bounds
   // indicate something?
   if (!bounds.has_value()) {
