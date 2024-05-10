@@ -57,6 +57,15 @@ void main() {
     buffer.dispose();
   });
 
+  test('Tester can disable loading fonts from an asset bundle', () async {
+    final List<int> ahemImage = await _createPictureFromFont('Ahem');
+    // Font that is bundled in the asset directory of the test runner.
+    final List<int> bundledFontImage = await _createPictureFromFont('Roboto');
+    // Bundling fonts is disabled, so the font selected in both cases should be ahem.
+    // Therefore each buffer will contain identical contents.
+    expect(ahemImage, equals(bundledFontImage));
+  });
+
   test('Tester can still load through dart:ui', () async {
     /// Manually load font asset through dart.
     final Uint8List encoded = utf8.encode(Uri(path: Uri.encodeFull('Roboto-Medium.ttf')).path);

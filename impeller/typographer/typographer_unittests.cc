@@ -326,9 +326,6 @@ TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledWhenContentsAreRecreated) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP() << "Testing";
-  }
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
   auto atlas_context =
