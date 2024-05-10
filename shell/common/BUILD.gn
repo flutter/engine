@@ -314,6 +314,7 @@ if (enable_unittests) {
       "animator_unittests.cc",
       "base64_unittests.cc",
       "context_options_unittests.cc",
+      "display_list_debugger_unittests.cc",
       "dl_op_spy_unittests.cc",
       "engine_animator_unittests.cc",
       "engine_unittests.cc",

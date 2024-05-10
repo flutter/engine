@@ -23,7 +23,7 @@ void DisplayListDebugger::HandleMessage(
                 &free);
 }
 
-void DisplayListDebugger::SaveDisplayList(
+fml::Status DisplayListDebugger::SaveDisplayList(
     const sk_sp<DisplayList>& display_list) {
   if (FreePtr<char> path =
           FreePtr<char>(saveDisplayListPath.exchange(nullptr), &free)) {
@@ -35,6 +35,9 @@ void DisplayListDebugger::SaveDisplayList(
     fml::NonOwnedMapping mapping(display_list->GetStorage().get(), size);
     bool success = fml::WriteAtomically(dir, "display_list.dat", mapping);
     FML_LOG(ERROR) << "store display_list (" << success << "):" << path.get();
+    return success ? fml::Status()
+                   : fml::Status(fml::StatusCode::kUnknown, "write failed");
   }
+  return fml::Status(fml::StatusCode::kUnavailable, "unavailable");
 }
 }  // namespace flutter
