@@ -232,7 +232,8 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(0, 0);
+  // This position is offset to allow 1px of padding around the glyph.
+  const auto position = SkPoint::Make(1, 1);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -277,6 +278,11 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
+    // The glyph size does not include the padding we added above
+    // to the rect packer. Because we do not clear the texture, we
+    // need to include this padding in the uploaded bytes.
+    size.width += 2;
+    size.height += 2;
 
     SkBitmap bitmap;
     HostBufferAllocator allocator(host_buffer);
