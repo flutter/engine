@@ -973,6 +973,21 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
+
+      if (event.target == _viewTarget) {
+        // The event default is prevented so that the <flutter-view /> element doens't gain focus.
+        event.preventDefault();
+        // We give time to TextFields to move the focus to the right <input /> or <textarea />
+        // elements. When requestViewFocus is called it will make sure that a child of the
+        // <flutter-view /> is focused, otherwise it will focus the <flutter-view /> itself.
+        Timer(Duration.zero, () {
+          EnginePlatformDispatcher.instance.requestViewFocusChange(
+            viewId: _view.viewId,
+            state: ui.ViewFocusState.focused,
+            direction: ui.ViewFocusDirection.undefined,
+          );
+        });
+      }
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
