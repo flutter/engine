@@ -331,7 +331,7 @@ void main() {
 
     /// Return the [image] shrunk and then scaled.
     Future<Image> shrinkAndScaleImage(
-      Image image, 
+      Image image,
       FilterQuality quality, {
       double factorDown = 0.25,
       double factorUp = 10,
@@ -340,7 +340,7 @@ void main() {
         final Paint paint = Paint()..filterQuality = quality;
         final PictureRecorder recorder = PictureRecorder();
         final Canvas canvas = Canvas(recorder);
-        
+
         final Rect input = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
         final Rect output = Rect.fromLTWH(0, 0, input.width * factor, input.height * factor);
 
