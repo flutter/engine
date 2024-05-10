@@ -257,6 +257,7 @@
 ../../../flutter/shell/common/animator_unittests.cc
 ../../../flutter/shell/common/base64_unittests.cc
 ../../../flutter/shell/common/context_options_unittests.cc
+../../../flutter/shell/common/display_list_debugger_unittests.cc
 ../../../flutter/shell/common/dl_op_spy_unittests.cc
 ../../../flutter/shell/common/engine_animator_unittests.cc
 ../../../flutter/shell/common/engine_unittests.cc
