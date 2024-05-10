@@ -4,9 +4,13 @@
 
 #include "impeller/display_list/dl_golden_unittests.h"
 
+#include "display_list/dl_blend_mode.h"
+#include "display_list/dl_color.h"
+#include "display_list/dl_paint.h"
+#include "display_list/effects/dl_color_filter.h"
 #include "flutter/display_list/dl_builder.h"
-#include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
+#include "impeller/geometry/constants.h"
 
 namespace flutter {
 namespace testing {
@@ -44,6 +48,33 @@ TEST_P(DlGoldenTest, CanRenderImage) {
   std::vector<sk_sp<DlImage>> images;
   images.emplace_back(CreateDlImageForFixture("kalimba.jpg"));
   draw(&builder, images);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DlGoldenTest, RotateColorFilteredPath) {
+  DisplayListBuilder builder;
+  builder.Transform(SkMatrix::Translate(300, 300));
+  builder.Transform(SkMatrix::RotateDeg(impeller::kPiOver2));
+
+  SkPath arrow_stem;
+  SkPath arrow_head;
+
+  arrow_stem.moveTo({120, 190}).lineTo({120, 50});
+  arrow_head.moveTo({50, 120}).lineTo({120, 190}).lineTo({190, 120});
+
+  auto filter =
+      DlBlendColorFilter::Make(DlColor::kAliceBlue(), DlBlendMode::kSrcIn);
+
+  DlPaint paint;
+  paint.setStrokeMiter(15.0);
+  paint.setStrokeCap(DlStrokeCap::kRound);
+  paint.setStrokeJoin(DlStrokeJoin::kRound);
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setColorFilter(filter);
+
+  builder.DrawPath(arrow_stem, paint);
+  builder.DrawPath(arrow_head, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
