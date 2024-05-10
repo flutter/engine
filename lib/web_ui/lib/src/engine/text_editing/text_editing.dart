@@ -1575,10 +1575,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }));
   }
 
-	/// Moves the focus to the [EngineFlutterView].
-	///
-	/// The delay gives the engine the opportunity to focus another <input /> element.
-	/// The delay should help prevent the keyboard from jumping when the focus goes from
+  /// Moves the focus to the [EngineFlutterView].
+  ///
+  /// The delay gives the engine the opportunity to focus another <input /> element.
+  /// The delay should help prevent the keyboard from jumping when the focus goes from
   /// one text field to another.
   static void _moveFocusToFlutterView(DomElement element, EngineFlutterView? view) {
     Timer(Duration.zero, () {
