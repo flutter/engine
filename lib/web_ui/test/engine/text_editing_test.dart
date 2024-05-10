@@ -74,13 +74,14 @@ Future<void> testMain() async {
     domDocument.activeElement?.blur();
   });
 
-  tearDown(() {
+  tearDown(() async {
     lastEditingState = null;
     editingDeltaState = null;
     lastInputAction = null;
     cleanTextEditingStrategy();
     cleanTestFlags();
     clearBackUpDomElementIfExists();
+    await waitForTextStrategyStopPropagation();
   });
 
   group('$GloballyPositionedTextEditingStrategy', () {
@@ -93,7 +94,7 @@ Future<void> testMain() async {
       testTextEditing.configuration = singlelineConfig;
     });
 
-    test('Creates element when enabled and removes it when disabled', () {
+    test('Creates element when enabled and removes it when disabled', () async {
       expect(
         domDocument.getElementsByTagName('input'),
         hasLength(0),
@@ -130,6 +131,7 @@ Future<void> testMain() async {
       expect(defaultTextEditingRoot.contains(editingStrategy!.domElement), isTrue);
 
       editingStrategy!.disable();
+      await waitForTextStrategyStopPropagation();
       expect(
         defaultTextEditingRoot.querySelectorAll('input'),
         hasLength(0),
@@ -140,7 +142,7 @@ Future<void> testMain() async {
           implicitViewRootElement);
     });
 
-    test('inserts element in the correct view', () {
+    test('inserts element in the correct view', () async {
       final DomElement host = createDomElement('div');
       domDocument.body!.append(host);
       final EngineFlutterView view = EngineFlutterView(dispatcher, host);
@@ -163,6 +165,7 @@ Future<void> testMain() async {
 
       // Cleanup.
       editingStrategy!.disable();
+      await waitForTextStrategyStopPropagation();
       expect(textEditingHost.querySelectorAll('input'), hasLength(0));
       dispatcher.viewManager.unregisterView(view.viewId);
       view.dispose();
@@ -316,7 +319,7 @@ Future<void> testMain() async {
       expect(lastInputAction, isNull);
     });
 
-    test('Multi-line mode also works', () {
+    test('Multi-line mode also works', () async {
       // The textarea element is created lazily.
       expect(domDocument.getElementsByTagName('textarea'), hasLength(0));
       editingStrategy!.enable(
@@ -349,6 +352,8 @@ Future<void> testMain() async {
 
       editingStrategy!.disable();
 
+      await waitForTextStrategyStopPropagation();
+
       // The textarea should be cleaned up.
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 
@@ -362,7 +367,7 @@ Future<void> testMain() async {
       expect(lastInputAction, isNull);
     });
 
-    test('Same instance can be re-enabled with different config', () {
+    test('Same instance can be re-enabled with different config', () async {
       // Make sure there's nothing in the DOM yet.
       expect(domDocument.getElementsByTagName('input'), hasLength(0));
       expect(domDocument.getElementsByTagName('textarea'), hasLength(0));
@@ -378,6 +383,7 @@ Future<void> testMain() async {
 
       // Disable and check that all DOM elements were removed.
       editingStrategy!.disable();
+      await waitForTextStrategyStopPropagation();
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 
@@ -387,11 +393,13 @@ Future<void> testMain() async {
         onChange: trackEditingState,
         onAction: trackInputAction,
       );
+      await waitForTextStrategyStopPropagation();
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(1));
 
       // Disable again and check that all DOM elements were removed.
       editingStrategy!.disable();
+      await waitForTextStrategyStopPropagation();
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
       expect(defaultTextEditingRoot.querySelectorAll('textarea'), hasLength(0));
 
@@ -738,6 +746,8 @@ Future<void> testMain() async {
       const MethodCall hide = MethodCall('TextInput.hide');
       sendFrameworkMessage(codec.encodeMethodCall(hide));
 
+      await waitForTextStrategyStopPropagation();
+
       expect(
         domDocument.activeElement,
         implicitViewRootElement,
@@ -786,6 +796,8 @@ Future<void> testMain() async {
 
       const MethodCall clearClient = MethodCall('TextInput.clearClient');
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+
+      await waitForTextStrategyStopPropagation();
 
       expect(
         domDocument.activeElement,
@@ -1283,6 +1295,8 @@ Future<void> testMain() async {
       final MethodCall setClient2 = MethodCall(
           'TextInput.setClient', <dynamic>[567, flutterSinglelineConfig]);
       sendFrameworkMessage(codec.encodeMethodCall(setClient2));
+
+      await waitForTextStrategyStopPropagation();
 
       expect(
         domDocument.activeElement,
@@ -2284,6 +2298,8 @@ Future<void> testMain() async {
 
       const MethodCall hide = MethodCall('TextInput.hide');
       sendFrameworkMessage(codec.encodeMethodCall(hide));
+
+      await waitForTextStrategyStopPropagation();
 
       expect(
         domDocument.activeElement,
@@ -3752,6 +3768,14 @@ Future<void> waitForDesktopSafariFocus() async {
   if (textEditing.strategy is SafariDesktopTextEditingStrategy) {
     await Future<void>.delayed(Duration.zero);
   }
+}
+
+/// After stopped the focus remains on the input element to give the engine
+/// an oportunity to move the focus to the right element before sending it back
+/// to the flutter view. This helps preventing the keyboard from jumping when the focus
+/// goes from one text field to another.
+Future<void> waitForTextStrategyStopPropagation() async {
+  await Future<void>.delayed(Duration.zero);
 }
 
 class GlobalTextEditingStrategySpy extends GloballyPositionedTextEditingStrategy {

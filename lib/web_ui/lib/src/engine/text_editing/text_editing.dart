@@ -1250,17 +1250,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   /// The [FlutterView] in which [activeDomElement] is contained.
-  EngineFlutterView get activeDomElementView {
-    final EngineFlutterView? view = EnginePlatformDispatcher
-      .instance
-      .viewManager
-      .findViewForElement(activeDomElement);
-    assert(
-      view != null,
-      'The DOM element of this text editing strategy is not in a flutter view.',
-    );
-    return view!;
-  }
+  EngineFlutterView? get _activeDomElementView =>
+    EnginePlatformDispatcher.instance.viewManager.findViewForElement(activeDomElement);
 
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
@@ -1430,7 +1421,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
     subscriptions.clear();
     removeCompositionEventHandlers(activeDomElement);
-    _moveFocusToFlutterView();
 
     // If focused element is a part of a form, it needs to stay on the DOM
     // until the autofill context of the form is finalized.
@@ -1439,9 +1429,8 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
-    } else {
-      activeDomElement.remove();
     }
+    _moveFocusToFlutterView(activeDomElement, _activeDomElementView);
     domElement = null;
   }
 
@@ -1586,11 +1575,18 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }));
   }
 
-  /// Moves the focus to the parent [EngineFlutterView].
-  void _moveFocusToFlutterView() {
-    if (activeDomElement == domDocument.activeElement) {
-      activeDomElementView.dom.rootElement.focus();
-    }
+	/// Moves the focus to the [EngineFlutterView].
+	///
+	/// The delay gives the engine the opportunity to focus another <input /> element.
+	/// The delay should help prevent the keyboard from jumping when the focus goes from
+  /// one text field to another.
+  static void _moveFocusToFlutterView(DomElement element, EngineFlutterView? view) {
+    Timer(Duration.zero, () {
+      if (element == domDocument.activeElement) {
+        view?.dom.rootElement.focus();
+      }
+      element.remove();
+    });
   }
 }
 
