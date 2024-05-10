@@ -232,7 +232,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(1, 1);
+  const auto position = SkPoint::Make(0, 0);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -277,8 +277,6 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
-    size.width += 2;
-    size.height += 2;
 
     SkBitmap bitmap;
     HostBufferAllocator allocator(host_buffer);
