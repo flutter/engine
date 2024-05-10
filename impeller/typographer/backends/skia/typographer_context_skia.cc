@@ -29,7 +29,6 @@
 #include "include/core/SkPixelRef.h"
 #include "include/core/SkSize.h"
 
-#include "src/core/SkGlyph.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
