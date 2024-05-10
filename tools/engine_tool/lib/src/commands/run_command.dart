@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:io' show ProcessStartMode;
-import 'dart:math';
 
 import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:process_runner/process_runner.dart';
@@ -152,6 +151,10 @@ See `flutter run --help` for a listing
     }
 
     final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
     final List<String> extraGnArgs = <String>[
       if (!useRbe) '--no-rbe',
     ];

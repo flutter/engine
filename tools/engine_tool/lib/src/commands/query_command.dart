@@ -182,6 +182,10 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
     final String configName = argResults![configFlag] as String;
     final bool testOnly = argResults![testOnlyFlag] as bool;
     final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
     final String demangledName = demangleConfigName(environment, configName);
     final Build? build =
         builds.where((Build build) => build.name == demangledName).firstOrNull;

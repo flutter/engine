@@ -56,6 +56,10 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
   Future<int> run() async {
     final String configName = argResults![configFlag] as String;
     final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
     final bool useLto = argResults![ltoFlag] as bool;
     final String demangledName = demangleConfigName(environment, configName);
     final Build? build =
