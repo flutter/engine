@@ -29,6 +29,7 @@
 #include "include/core/SkPixelRef.h"
 #include "include/core/SkSize.h"
 
+#include "src/core/SkGlyph.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -232,7 +233,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(0, 0);
+  const auto position = SkPoint::Make(1, 1);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
