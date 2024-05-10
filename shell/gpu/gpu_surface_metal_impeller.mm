@@ -129,7 +129,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
           return false;
         }
 
+#ifndef NDEBUG
         DisplayListDebugger::SaveDisplayList(display_list);
+#endif
 
         if (!disable_partial_repaint && damage) {
           uintptr_t texture = reinterpret_cast<uintptr_t>(last_texture);
