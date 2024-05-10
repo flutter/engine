@@ -237,9 +237,7 @@ class DisplayListStorage {
   DisplayListStorage() = default;
   DisplayListStorage(DisplayListStorage&&) = default;
 
-  uint8_t* get() { return ptr_.get(); }
-
-  const uint8_t* get() const { return ptr_.get(); }
+  uint8_t* get() const { return ptr_.get(); }
 
   void realloc(size_t count) {
     ptr_.reset(static_cast<uint8_t*>(std::realloc(ptr_.release(), count)));
@@ -311,8 +309,6 @@ class DisplayList : public SkRefCnt {
     return modifies_transparent_black_;
   }
 
-  const DisplayListStorage& GetStorage() const { return storage_; }
-
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
@@ -328,7 +324,7 @@ class DisplayList : public SkRefCnt {
 
   static uint32_t next_unique_id();
 
-  static void DisposeOps(const uint8_t* ptr, const uint8_t* end);
+  static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
   const DisplayListStorage storage_;
   const size_t byte_count_;
@@ -349,8 +345,8 @@ class DisplayList : public SkRefCnt {
   const sk_sp<const DlRTree> rtree_;
 
   void Dispatch(DlOpReceiver& ctx,
-                const uint8_t* ptr,
-                const uint8_t* end,
+                uint8_t* ptr,
+                uint8_t* end,
                 Culler& culler) const;
 
   friend class DisplayListBuilder;
