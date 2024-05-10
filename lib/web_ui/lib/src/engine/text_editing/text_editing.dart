@@ -1378,8 +1378,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.add(DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1692,8 +1691,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1845,8 +1843,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1909,8 +1906,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(
             activeDomElement, 'keydown', maybeSendAction));
 
-    activeDomElement.addEventListener('beforeinput',
-        createDomEventListener(handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
 
