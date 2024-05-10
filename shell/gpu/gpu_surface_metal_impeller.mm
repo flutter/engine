@@ -10,8 +10,10 @@
 #include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/paths.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/dl_dispatcher.h"
+#include "flutter/shell/common/display_list_debugger.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
@@ -126,6 +128,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
           FML_LOG(ERROR) << "Could not build display list for surface frame.";
           return false;
         }
+
+        DisplayListDebugger::SaveDisplayList(display_list);
 
         if (!disable_partial_repaint && damage) {
           uintptr_t texture = reinterpret_cast<uintptr_t>(last_texture);

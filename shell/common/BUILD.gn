@@ -86,6 +86,8 @@ source_set("common") {
     "animator.h",
     "context_options.cc",
     "context_options.h",
+    "display_list_debugger.cc",
+    "display_list_debugger.h",
     "display_manager.cc",
     "display_manager.h",
     "dl_op_spy.cc",

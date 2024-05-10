@@ -24,6 +24,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/base64.h"
+#include "flutter/shell/common/display_list_debugger.h"
 #include "flutter/shell/common/engine.h"
 #include "flutter/shell/common/skia_event_tracer_impl.h"
 #include "flutter/shell/common/switches.h"
@@ -1325,6 +1326,11 @@ void Shell::OnEngineHandlePlatformMessage(
 
   if (message->channel() == kSkiaChannel) {
     HandleEngineSkiaMessage(std::move(message));
+    return;
+  }
+
+  if (message->channel() == DisplayListDebugger::kChannelName) {
+    DisplayListDebugger::HandleMessage(std::move(message));
     return;
   }
 
