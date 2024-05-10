@@ -981,11 +981,6 @@ void FlutterPlatformViewsController::ResetFrameState() {
 @property(nonatomic, weak, readonly) UIView* embeddedView;
 @property(nonatomic, readonly) DelayingGestureRecognizer* delayingRecognizer;
 @property(nonatomic, readonly) FlutterPlatformViewGestureRecognizersBlockingPolicy blockingPolicy;
-
-// The used as the accessiblityContainer.
-// The `accessiblityContainer` is used in UIKit to determine the parent of this accessibility
-// node.
-@property(nonatomic, weak) NSObject* flutterAccessibilityContainer;
 @end
 
 @implementation FlutterTouchInterceptingView
@@ -1063,11 +1058,6 @@ void FlutterPlatformViewsController::ResetFrameState() {
 
 - (id)accessibilityContainer {
   return self.flutterAccessibilityContainer;
-}
-
-- (void)dealloc {
-  [_flutterAccessibilityContainer release];
-  [super dealloc];
 }
 
 @end
