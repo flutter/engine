@@ -18,9 +18,8 @@ class Link extends PrimaryRoleManager {
   @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
-    // TODO(chunhtai): Fill in the real link once the framework sends entire uri.
-    // https://github.com/flutter/flutter/issues/102535.
-    element.setAttribute('href', '#');
+    // TODO: The <a> element has `aria-label={value}`. We should stop that!
+    element.setAttribute('href', semanticsObject.hasValue ? semanticsObject.value! : '#');
     element.style.display = 'block';
     return element;
   }

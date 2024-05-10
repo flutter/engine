@@ -480,6 +480,10 @@ abstract class PrimaryRoleManager {
       ..overflow = 'visible';
     element.setAttribute('id', 'flt-semantic-node-${semanticsObject.id}');
 
+    if (semanticsObject.hasIdentifier) {
+      element.setAttribute('semantic-identifier', semanticsObject.identifier!);
+    }
+
     // The root node has some properties that other nodes do not.
     if (semanticsObject.id == 0 && !configuration.debugShowSemanticsNodes) {
       // Make all semantics transparent. Use `filter` instead of `opacity`
@@ -1097,6 +1101,21 @@ class SemanticsObject {
     _dirtyFields |= _platformViewIdIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get identifier => _identifier;
+  String? _identifier;
+
+  bool get hasIdentifier => _identifier != null && _identifier!.isNotEmpty;
+
+  static const int _identifierIndex = 1 << 24;
+
+  /// Whether the [identifier] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isIdentifierDirty => _isDirty(_identifierIndex);
+  void _markIdentifierDirty() {
+    _dirtyFields |= _identifierIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -1251,6 +1270,11 @@ class SemanticsObject {
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
+    }
+
+    if (_identifier != update.identifier) {
+      _identifier = update.identifier;
+      _markIdentifierDirty();
     }
 
     if (_value != update.value) {
