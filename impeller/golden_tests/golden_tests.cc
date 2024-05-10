@@ -23,6 +23,9 @@ namespace {
 std::string GetTestName() {
   std::string suite_name =
       ::testing::UnitTest::GetInstance()->current_test_suite()->name();
+  if (suite_name == "DlGoldenTest") {
+    suite_name = "AiksTest";
+  }
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   std::stringstream ss;
