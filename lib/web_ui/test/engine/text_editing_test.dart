@@ -1256,6 +1256,50 @@ Future<void> testMain() async {
       expect(domDocument.activeElement, inputElement);
     }, skip: !isSafari);
 
+    test('Moves the focus across input elements', () async {
+      final List<DomEvent> focusinEvents = <DomEvent>[];
+      final DomEventListener handleFocusIn = createDomEventListener(focusinEvents.add);
+
+      final MethodCall setClient1 = MethodCall(
+        'TextInput.setClient',
+        <dynamic>[123, flutterSinglelineConfig],
+      );
+      final MethodCall setClient2 = MethodCall(
+        'TextInput.setClient',
+        <dynamic>[567, flutterSinglelineConfig],
+      );
+      const MethodCall setEditingState =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'abcd',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      const MethodCall show = MethodCall('TextInput.show');
+
+
+      domDocument.body!.addEventListener('focusin', handleFocusIn);
+      sendFrameworkMessage(codec.encodeMethodCall(setClient1));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+      final DomElement firstInput = textEditing!.strategy.domElement!;
+
+      sendFrameworkMessage(codec.encodeMethodCall(setClient2));
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(show));
+      final DomElement secondInput = textEditing!.strategy.domElement!;
+
+      sendFrameworkMessage(codec.encodeMethodCall(clearClient));
+      await waitForTextStrategyStopPropagation();
+      domDocument.body!.removeEventListener('focusin', handleFocusIn);
+
+      expect(focusinEvents, hasLength(3));
+      expect(firstInput, isNot(secondInput));
+      expect(focusinEvents[0].target, firstInput);
+      expect(focusinEvents[1].target, secondInput);
+      expect(focusinEvents[2].target, implicitViewRootElement);
+    });
+
     test('setClient, setEditingState, show, setClient', () async {
       final MethodCall setClient = MethodCall(
           'TextInput.setClient', <dynamic>[123, flutterSinglelineConfig]);
