@@ -62,7 +62,7 @@ struct PerVertexData {
 
 The compiler has detected that the shader expects one point position per vertex. It is going to be our job to fill this in during rendering.
 
-This struct is handy because as you tinker on your shader, the compiler will add, remove, and reorder the fields. If there are alignment consideration for the GPU, the compiler knows about these and it will add the appropriate padding between these fields so you all you have to worry about is filling in the position. You don't have to use this struct directly, but trusting the compiler will greatly simplify you experience.
+This struct is handy because as you tinker on your shader, the compiler will add, remove, and reorder the fields. If there are alignment considerations for the GPU, the compiler knows about these and it will add the appropriate padding between these fields so you all you have to worry about is filling in the position. You don't have to use this struct directly, but trusting the compiler will greatly simplify you experience.
 
 Notice that all these interfaces and metadata are in a struct called `BabyVertexShader`. Find a similar struct called `BabyFragmentShader` in `baby.frag.h`. [Tinker around with the shader in the compiler explorer](https://tinyurl.com/28fypq2b) to see what the compiler generates.
 
@@ -91,7 +91,7 @@ Finally, we have everything we need, let's create the pipeline:
 auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
 ```
 
-This call creates a pipeline on a background thread and returns a future. But we need the pipeline right away. Just `Get` wait on the pipeline creation. Remember, pipelines are expensive to create. So just do this once upfront and keep them around for as long as possible. And don't create these in frame workload unless you want jank.
+This call creates a pipeline on a background thread and returns a future. But we need the pipeline right away. Just `Get` wait on the pipeline creation. Remember, pipelines are expensive to create. So just do this once upfront and keep them around for as long as possible. And don't create these in frame workloads unless you want jank.
 
 ### Vertex Data
 
