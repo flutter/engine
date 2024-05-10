@@ -9,6 +9,10 @@
 #include "impeller/renderer/backend/vulkan/swapchain/khr/khr_swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
+#if FML_OS_ANDROID
+#include "impeller/renderer/backend/vulkan/swapchain/ahb/ahb_swapchain_vk.h"
+#endif  // FML_OS_ANDROID
+
 namespace impeller {
 
 std::shared_ptr<SwapchainVK> SwapchainVK::Create(
@@ -49,6 +53,32 @@ std::shared_ptr<SwapchainVK> SwapchainVK::Create(
     VALIDATION_LOG << "Could not create KHR Android Surface: "
                    << vk::to_string(result);
     return nullptr;
+  }
+
+  // TODO(148139): https://github.com/flutter/flutter/issues/148139 sync issues
+  // on present.
+  if constexpr (false) {
+    // TODO(147533): AHB swapchains on emulators are not functional.
+    const auto emulator =
+        ContextVK::Cast(*context).GetDriverInfo()->IsEmulator();
+
+    // Try AHB swapchains first.
+    if (!emulator && AHBSwapchainVK::IsAvailableOnPlatform()) {
+      auto ahb_swapchain = std::shared_ptr<AHBSwapchainVK>(new AHBSwapchainVK(
+          context,             //
+          window.GetHandle(),  //
+          std::move(surface),  //
+          window.GetSize(),    //
+          enable_msaa          //
+          ));
+
+      if (ahb_swapchain->IsValid()) {
+        return ahb_swapchain;
+      } else {
+        VALIDATION_LOG
+            << "Could not create AHB swapchain. Falling back to KHR variant.";
+      }
+    }
   }
 
   // Fallback to KHR swapchains if AHB swapchains aren't available.
