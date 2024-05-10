@@ -20,6 +20,8 @@
 #include "impeller/core/platform.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/render_target.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
@@ -232,8 +234,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  // This position is offset to allow 1px of padding around the glyph.
-  const auto position = SkPoint::Make(1, 1);
+  const auto position = SkPoint::Make(0, 0);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -278,11 +279,6 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
-    // The glyph size does not include the padding we added above
-    // to the rect packer. Because we do not clear the texture, we
-    // need to include this padding in the uploaded bytes.
-    size.width += 2;
-    size.height += 2;
 
     SkBitmap bitmap;
     HostBufferAllocator allocator(host_buffer);
@@ -329,7 +325,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
   std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
 
-  fml::ScopedCleanupClosure closure([&cmd_buffer, &blit_pass, &context]() {
+  fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
     context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
   });
@@ -464,6 +460,18 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   if (!new_texture) {
     return nullptr;
+  }
+  // The texture needs to be cleared to transparent black so that linearly
+  // samplex rotated/skewed glyphs do not grab uninitialized data.
+  {
+    auto bytes =
+        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+    BufferView buffer_view =
+        host_buffer.Emplace(nullptr, bytes, DefaultUniformAlignment());
+
+    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
+             bytes);
+    blit_pass->AddCopy(buffer_view, new_texture);
   }
 
   new_texture->SetLabel("GlyphAtlas");
