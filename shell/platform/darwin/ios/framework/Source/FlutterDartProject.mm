@@ -6,12 +6,14 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 
+#import <Metal/Metal.h>
+#import <UIKit/UIKit.h>
+
 #include <syslog.h>
 
 #include "flutter/common/constants.h"
 #include "flutter/shell/common/switches.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -51,7 +53,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   // 4. Settings from the main NSBundle and default values.
 
   NSBundle* mainBundle = FLTGetApplicationBundle();
-  NSBundle* engineBundle = [NSBundle bundleForClass:[FlutterView class]];
+  NSBundle* engineBundle = [NSBundle bundleForClass:[FlutterDartProject class]];
 
   bool hasExplicitBundle = bundle != nil;
   if (bundle == nil) {
