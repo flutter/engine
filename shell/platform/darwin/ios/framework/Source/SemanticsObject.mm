@@ -309,7 +309,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [_childrenInHitTestOrder release];
 
   _parent = nil;
-  _container.semanticsObject = nil;
+  [_container release];
   _inDealloc = YES;
   [super dealloc];
 }
