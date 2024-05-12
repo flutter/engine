@@ -789,6 +789,18 @@ abstract class SemanticsUpdateBuilder {
   /// z-direction starting at `elevation`. Basically, in the z-direction the
   /// node starts at `elevation` above the parent and ends at `elevation` +
   /// `thickness` above the parent.
+  ///
+  /// The `headingLevel` describes that this node is a heading and the hierarchy
+  /// level this node represents as a heading. A value of 0 indicates that this
+  /// node is not a heading. A value of 1 or greater indicates that this node is
+  /// a heading at the specified level. The valid value range is from 1 to 6,
+  /// inclusive. This attribute is only used for Web platform, and it will have
+  /// no effect on other platforms.
+  ///
+  /// See also:
+  ///
+  ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
+  ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
   void updateNode({
     required int id,
     required int flags,
@@ -823,6 +835,7 @@ abstract class SemanticsUpdateBuilder {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    required int headingLevel,
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -893,8 +906,13 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
+    required int headingLevel,
   }) {
     assert(_matrix4IsValid(transform));
+    assert (
+      headingLevel >= 0 && headingLevel <= 6,
+      'Heading level must be between 1 and 6, or 0 to indicate that this node is not a heading.'
+    );
     _updateNode(
       id,
       flags,
@@ -932,6 +950,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       childrenInTraversalOrder,
       childrenInHitTestOrder,
       additionalActions,
+      headingLevel,
     );
   }
   @Native<
@@ -972,7 +991,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Handle,
-          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
+          Handle,
+          Int32)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,
@@ -1009,7 +1029,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Float64List transform,
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
-      Int32List additionalActions);
+      Int32List additionalActions,
+      int headingLevel);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
