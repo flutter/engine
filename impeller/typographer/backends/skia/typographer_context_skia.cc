@@ -142,10 +142,12 @@ static size_t PairsFitInAtlasOfSize(
                               )) {
       return pairs.size() - i;
     }
-    glyph_positions.emplace_back(Rect::MakeXYWH(location_in_atlas.x(),  //
-                                                location_in_atlas.y(),  //
-                                                glyph_size.width,       //
-                                                glyph_size.height       //
+    // The size of the glyph was padded by 1px on all sides. Shift the glyph
+    // origin by 1px so the padding surrounds the glyph.
+    glyph_positions.emplace_back(Rect::MakeXYWH(location_in_atlas.x() + 1,  //
+                                                location_in_atlas.y() + 1,  //
+                                                glyph_size.width,           //
+                                                glyph_size.height           //
                                                 ));
   }
 
@@ -180,10 +182,12 @@ static bool CanAppendToExistingAtlas(
                               )) {
       return false;
     }
-    glyph_positions.emplace_back(Rect::MakeXYWH(location_in_atlas.x(),  //
-                                                location_in_atlas.y(),  //
-                                                glyph_size.width,       //
-                                                glyph_size.height       //
+    // The size of the glyph was padded by 1px on all sides. Shift the glyph
+    // origin by 1px so the padding surrounds the glyph.
+    glyph_positions.emplace_back(Rect::MakeXYWH(location_in_atlas.x() + 1,  //
+                                                location_in_atlas.y() + 1,  //
+                                                glyph_size.width,           //
+                                                glyph_size.height           //
                                                 ));
   }
 
@@ -234,7 +238,8 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(0, 0);
+  const auto position =
+      SkPoint::Make(1 / scaled_font.scale, 1 / scaled_font.scale);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -279,6 +284,10 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
+    // Add 1px of padding around glyph so that linearly sampled skew/rotate
+    // glyphs do not sample uninitialized data.
+    size.width += 2;
+    size.height += 2;
 
     SkBitmap bitmap;
     HostBufferAllocator allocator(host_buffer);
@@ -297,9 +306,12 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     DrawGlyph(canvas, pair.scaled_font, pair.glyph, has_color);
 
-    if (!blit_pass->AddCopy(allocator.TakeBufferView(), texture,
-                            IRect::MakeXYWH(pos->GetLeft(), pos->GetTop(),
-                                            size.width, size.height))) {
+    // Note: the position is shifted by (1, 1) to include the padding pixels.
+    // Glyphs will never be positioned at (0, 0).
+    if (!blit_pass->AddCopy(
+            allocator.TakeBufferView(), texture,
+            IRect::MakeXYWH(pos->GetLeft() - 1, pos->GetTop() - 1, size.width,
+                            size.height))) {
       return false;
     }
   }
@@ -460,20 +472,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   if (!new_texture) {
     return nullptr;
-  }
-  // The texture needs to be cleared to transparent black so that linearly
-  // samplex rotated/skewed glyphs do not grab uninitialized data. We could
-  // instead use a render pass to clear to transparent black, but there are
-  // more restrictions on what kinds of textures can be bound on GLES.
-  {
-    auto bytes =
-        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
-    BufferView buffer_view =
-        host_buffer.Emplace(nullptr, bytes, DefaultUniformAlignment());
-
-    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-             bytes);
-    blit_pass->AddCopy(buffer_view, new_texture);
   }
 
   new_texture->SetLabel("GlyphAtlas");

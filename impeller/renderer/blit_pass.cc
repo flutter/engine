@@ -136,7 +136,8 @@ bool BlitPass::AddCopy(BufferView source,
       destination_region_value.GetY() < 0 ||
       destination_region_value.GetRight() > destination_size.width ||
       destination_region_value.GetBottom() > destination_size.height) {
-    VALIDATION_LOG << "Blit region cannot be larger than destination texture.";
+    VALIDATION_LOG << "Blit region cannot be larger than destination texture."
+                   << destination_region_value << " " << destination_size;
     return false;
   }
 
