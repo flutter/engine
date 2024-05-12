@@ -33,7 +33,7 @@ class SkylineRectanglePacker final : public RectanglePacker {
     return area_so_far_ / ((float)this->width() * this->height());
   }
 
-  std::unique_ptr<RectanglePacker> Clone(uint32_t scale) final;
+  std::unique_ptr<RectanglePacker> Clone(uint32_t height) final;
 
  private:
   struct SkylineSegment {
@@ -168,10 +168,10 @@ void SkylineRectanglePacker::addSkylineLevel(int skylineIndex,
   }
 }
 
-std::unique_ptr<RectanglePacker> SkylineRectanglePacker::Clone(uint32_t scale) {
-  FML_DCHECK(scale != 0);
-  auto packer =
-      std::make_unique<SkylineRectanglePacker>(width(), height() * scale);
+std::unique_ptr<RectanglePacker> SkylineRectanglePacker::Clone(
+    uint32_t height) {
+  FML_DCHECK(height >= this->height());
+  auto packer = std::make_unique<SkylineRectanglePacker>(width(), height);
   for (SkylineSegment segment : skyline_) {
     packer->skyline_.push_back(segment);
   }

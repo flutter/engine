@@ -55,14 +55,14 @@ class RectanglePacker {
   /// @brief     Create a new rectangle packer with a larger scaled height
   ///            scaled and initialize its contents to the current packer.
   ///
-  /// @param[in] scale  The scaling factor to be applied to the new height.
+  /// @param[in] scale  The new hight for the rect packer.
   ///
   /// @return    A new rectangle packer.
   ///
   ///            This method is used for growing the glyph atlas while keeping
   ///            existing rects in place. The width of the rectangle packer
   ///            cannot be increased.
-  virtual std::unique_ptr<RectanglePacker> Clone(uint32_t scale) = 0;
+  virtual std::unique_ptr<RectanglePacker> Clone(uint32_t height) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief     Empty out all previously added rectangles.
