@@ -1373,11 +1373,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     addCompositionEventHandlers(activeDomElement);
 
-    // Refocus on the activeDomElement after blur, so that user can keep editing the
-    // text field.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) { activeDomElement.focus(); }));
-
     preventDefaultForMouseEvents();
   }
 
@@ -1621,17 +1616,6 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
   Timer? _positionInputElementTimer;
   static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
 
-  /// This interval between the blur subscription and callback is considered to
-  /// be fast.
-  ///
-  /// This is only used for iOS. The blur callback may trigger as soon as the
-  /// creation of the subscription. Occasionally in this case, the virtual
-  /// keyboard will quickly show and hide again.
-  ///
-  /// Less than this interval allows the virtual keyboard to keep showing up
-  /// instead of hiding rapidly.
-  static const Duration _blurFastCallbackInterval = Duration(milliseconds: 200);
-
   /// Whether or not the input element can be positioned at this point in time.
   ///
   /// This is currently only used in iOS. It's set to false before focusing the
@@ -1699,35 +1683,6 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
             }));
 
     _addTapListener();
-
-    // Record start time of blur subscription.
-    final Stopwatch blurWatch = Stopwatch()..start();
-
-    // On iOS, blur is trigerred in the following cases:
-    //
-    // 1. The browser app is sent to the background (or the tab is changed). In
-    //    this case, the window loses focus (see [windowHasFocus]),
-    //    so we close the input connection with the framework.
-    // 2. The user taps on another focusable element. In this case, we refocus
-    //    the input field and wait for the framework to manage the focus change.
-    // 3. The virtual keyboard is closed by tapping "done". We can't detect this
-    //    programmatically, so we end up refocusing the input field. This is
-    //    okay because the virtual keyboard will hide, and as soon as the user
-    //    taps the text field again, the virtual keyboard will come up.
-    // 4. Safari sometimes sends a blur event immediately after activating the
-    //    input field. In this case, we want to keep the focus on the input field.
-    //    In order to detect this, we measure how much time has passed since the
-    //    input field was activated. If the time is too short, we re-focus the
-    //    input element.
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            (_) {
-              final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-              if (windowHasFocus && isFastCallback) {
-                activeDomElement.focus();
-              } else {
-                owner.sendTextConnectionClosedToFrameworkIfAny();
-              }
-            }));
   }
 
   @override
@@ -1843,20 +1798,6 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     addCompositionEventHandlers(activeDomElement);
 
-    subscriptions.add(
-        DomSubscription(activeDomElement, 'blur',
-            (_) {
-              if (windowHasFocus) {
-                // Chrome on Android will hide the onscreen keyboard when you tap outside
-                // the text box. Instead, we want the framework to tell us to hide the
-                // keyboard via `TextInput.clearClient` or `TextInput.hide`. Therefore
-                // refocus as long as [windowHasFocus] is true.
-                activeDomElement.focus();
-              } else {
-                owner.sendTextConnectionClosedToFrameworkIfAny();
-              }
-            }));
-
     preventDefaultForMouseEvents();
   }
 
@@ -1934,27 +1875,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(
             activeDomElement, 'select', handleChange));
 
-    // Refocus on the activeDomElement after blur, so that user can keep editing the
-    // text field.
-    subscriptions.add(
-        DomSubscription(
-            activeDomElement,
-            'blur',
-            (_) {
-              _postponeFocus();
-            }));
-
     preventDefaultForMouseEvents();
-  }
-
-  void _postponeFocus() {
-    // Firefox does not focus on the editing element if we call the focus
-    // inside the blur event, therefore we postpone the focus.
-    // Calling focus inside a Timer for `0` milliseconds guarantee that it is
-    // called after blur event propagation is completed.
-    Timer(Duration.zero, () {
-      activeDomElement.focus();
-    });
   }
 
   @override
