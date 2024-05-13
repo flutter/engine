@@ -711,17 +711,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       // We have the original event, deliver it after offsetting as it will pass the verifiable
       // input check.
       translateMotionEvent(trackedEvent, pointerCoords);
-      if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_30) {
-        if (inputManager != null && inputManager.verifyInputEvent(trackedEvent) == null) {
-          // The translation we do uses MotionEvent.offsetLocation, which shouldn't affect
-          // verification status. This case is to warn in debug builds if this behavior changes,
-          // so that it doesn't go unnoticed.
-          throw new Error(
-              "Motion event that was translated in PlatformViewsController.toPlatformView "
-                  + "does not have verified status. Investigate if this was caused by the translation, "
-                  + "or if there is a case in which it isn't verified that we should ignore.");
-        }
-      }
       return trackedEvent;
     }
     // We are in virtual display mode or don't have a reference to the original MotionEvent.
