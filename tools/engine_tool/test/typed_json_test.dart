@@ -234,7 +234,7 @@ void main() {
             final InvalidTypeJsonReadException e => e.key,
             final MissingKeyJsonReadException e => e.key,
             _ => throw StateError('Unexpected exception type: $e'),
-          }).toList(), 
+          }).toList(),
           <String>['isStudent'],
         );
         return ('Bob', 0, false);
