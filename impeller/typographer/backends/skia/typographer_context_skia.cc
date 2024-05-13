@@ -284,6 +284,8 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
+
+    FML_DCHECK(pos->GetOrigin() != Point(0, 0));
     // Add 1px of padding around glyph so that linearly sampled skew/rotate
     // glyphs do not sample uninitialized data.
     size.width += 2;
