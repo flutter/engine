@@ -196,6 +196,7 @@ static bool CanAppendToExistingAtlas(
 
 static ISize OptimumAtlasSizeForFontGlyphPairs(
     const std::vector<FontGlyphPair>& pairs,
+    std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     GlyphAtlas::Type type,
     const ISize& max_texture_size) {
@@ -208,7 +209,6 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
                            ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
                            : ISize(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
-  std::vector<Rect> glyph_positions;
   do {
     auto rect_packer = std::shared_ptr<RectanglePacker>(
         RectanglePacker::Factory(current_size.width, current_size.height));
@@ -417,6 +417,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   std::shared_ptr<GlyphAtlas> glyph_atlas = std::make_shared<GlyphAtlas>(type);
   ISize atlas_size = OptimumAtlasSizeForFontGlyphPairs(
       font_glyph_pairs,                                             //
+      glyph_positions,                                              //
       atlas_context,                                                //
       type,                                                         //
       context.GetResourceAllocator()->GetMaxTextureSizeSupported()  //
@@ -424,6 +425,16 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   atlas_context->UpdateGlyphAtlas(glyph_atlas, atlas_size);
   if (atlas_size.IsEmpty()) {
+    return nullptr;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Step 4b: Find location of font-glyph pairs in the atlas. We have this from
+  // the last step. So no need to do create another rect packer. But just do a
+  // sanity check of counts. This could also be just an assertion as only a
+  // construction issue would cause such a failure.
+  // ---------------------------------------------------------------------------
+  if (glyph_positions.size() != font_glyph_pairs.size()) {
     return nullptr;
   }
 
