@@ -426,15 +426,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (atlas_size.IsEmpty()) {
     return nullptr;
   }
-  // ---------------------------------------------------------------------------
-  // Step 4b: Find location of font-glyph pairs in the atlas. We have this from
-  // the last step. So no need to do create another rect packer. But just do a
-  // sanity check of counts. This could also be just an assertion as only a
-  // construction issue would cause such a failure.
-  // ---------------------------------------------------------------------------
-  if (glyph_positions.size() != font_glyph_pairs.size()) {
-    return nullptr;
-  }
 
   // ---------------------------------------------------------------------------
   // Step 5b: Record the positions in the glyph atlas.
