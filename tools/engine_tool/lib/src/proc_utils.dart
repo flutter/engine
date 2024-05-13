@@ -40,7 +40,9 @@ final class ProcessArtifacts {
         json.string('stdout'),
         json.string('stderr'),
         pid: json.integer('pid'),
-      )
+      ), onError: (JsonObject source, JsonMapException e) {
+        throw FormatException('Failed to parse ProcessArtifacts: $e', source.toPrettyString());
+      },
     );
   }
 

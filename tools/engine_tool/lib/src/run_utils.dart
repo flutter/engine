@@ -21,7 +21,9 @@ class RunTarget {
       json.string(_nameKey),
       json.string(_idKey),
       json.string(_targetPlatformKey),
-    ));
+    ), onError: (JsonObject source, JsonMapException e) {
+      throw FormatException('Failed to parse RunTarget: $e', source.toPrettyString());
+    });
   }
 
   RunTarget._(this.name, this.id, this.targetPlatform);
