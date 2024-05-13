@@ -185,7 +185,7 @@ void main() {
         fail('Expected JsonMapException');
       } on JsonMapException catch (e) {
         expect(
-          e.exceptions.map((JsonReadException e) => e.key).toList(), 
+          e.exceptions.map((JsonReadException e) => e.key).toList(),
           containsStringsInOrder(<String>['name', 'isStudent'],
         ));
       }
@@ -207,7 +207,7 @@ void main() {
         fail('Expected JsonMapException');
       } on JsonMapException catch (e) {
         expect(
-          e.exceptions.map((JsonReadException e) => e.key).toList(), 
+          e.exceptions.map((JsonReadException e) => e.key).toList(),
           containsStringsInOrder(<String>['name', 'age'],
         ));
       }
