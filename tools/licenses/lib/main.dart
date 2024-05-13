@@ -1431,18 +1431,6 @@ class _RepositoryGenericThirdPartyDirectory extends _RepositoryDirectory {
   bool get subdirectoriesAreLicenseRoots => true;
 }
 
-class _RepositoryRootThirdPartyDirectory extends _RepositoryGenericThirdPartyDirectory {
-  _RepositoryRootThirdPartyDirectory(super.parent, super.io);
-
-  @override
-  _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'icu') {
-      return _RepositoryIcuDirectory(this, entry);
-    }
-    return super.createSubdirectory(entry);
-  }
-}
-
 class _RepositoryExpatDirectory extends _RepositoryDirectory {
   _RepositoryExpatDirectory(_RepositoryDirectory super.parent, super.io);
 
@@ -1524,18 +1512,6 @@ class _RepositoryFreetypeSrcGZipDirectory extends _RepositoryDirectory {
       return result;
     }
     return super.nearestLicenseOfType(type);
-  }
-}
-
-class _RepositoryIcuDirectory extends _RepositoryDirectory {
-  _RepositoryIcuDirectory(super.parent, super.io);
-
-  @override
-  _RepositoryFile createFile(fs.IoNode entry) {
-    if (entry.name == 'LICENSE') {
-      return _RepositoryIcuLicenseFile(this, entry as fs.TextFile);
-    }
-    return super.createFile(entry);
   }
 }
 
