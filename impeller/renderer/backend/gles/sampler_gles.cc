@@ -94,7 +94,8 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
 
   gl.TexParameteri(*target, GL_TEXTURE_MIN_FILTER,
                    ToParam(desc.min_filter, mip_filter));
-  gl.TexParameteri(*target, GL_TEXTURE_MAG_FILTER, ToParam(desc.mag_filter));
+  gl.TexParameteri(*target, GL_TEXTURE_MAG_FILTER,
+                   ToParam(desc.mag_filter, MipFilter::kBase));
 
   const auto supports_decal_mode =
       gl.GetCapabilities()->SupportsDecalSamplerAddressMode();
