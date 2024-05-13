@@ -160,9 +160,11 @@ class GlyphAtlasContext {
   /// @brief      Retrieve the previous (if any) rect packer.
   std::shared_ptr<RectanglePacker> GetRectPacker() const;
 
+  int64_t GetHeightAdjustment() const;
+
   //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
-  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size, int64_t height_adjustment_);
 
   void UpdateRectPacker(std::shared_ptr<RectanglePacker> rect_packer);
 
@@ -170,6 +172,7 @@ class GlyphAtlasContext {
   std::shared_ptr<GlyphAtlas> atlas_;
   ISize atlas_size_;
   std::shared_ptr<RectanglePacker> rect_packer_;
+  int64_t height_adjustment_;
 
   GlyphAtlasContext(const GlyphAtlasContext&) = delete;
 

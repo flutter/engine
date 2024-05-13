@@ -6,11 +6,14 @@
 
 #include <numeric>
 #include <utility>
+#include "impeller/typographer/rectangle_packer.h"
 
 namespace impeller {
 
 GlyphAtlasContext::GlyphAtlasContext(GlyphAtlas::Type type)
-    : atlas_(std::make_shared<GlyphAtlas>(type)), atlas_size_(ISize(0, 0)) {}
+    : atlas_(std::make_shared<GlyphAtlas>(type)),
+      atlas_size_(ISize(0, 0)),
+      rect_packer_(RectanglePacker::Factory(4096, 512)) {}
 
 GlyphAtlasContext::~GlyphAtlasContext() {}
 
@@ -22,14 +25,20 @@ const ISize& GlyphAtlasContext::GetAtlasSize() const {
   return atlas_size_;
 }
 
+int64_t GlyphAtlasContext::GetHeightAdjustment() const {
+  return height_adjustment_;
+}
+
 std::shared_ptr<RectanglePacker> GlyphAtlasContext::GetRectPacker() const {
   return rect_packer_;
 }
 
 void GlyphAtlasContext::UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
-                                         ISize size) {
+                                         ISize size,
+                                         int64_t height_adjustment) {
   atlas_ = std::move(atlas);
   atlas_size_ = size;
+  height_adjustment_ = height_adjustment;
 }
 
 void GlyphAtlasContext::UpdateRectPacker(
