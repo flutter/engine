@@ -330,7 +330,7 @@
                 "--no-goma",
                 "--slimpeller"
             ],
-            "name": "macos/ios_release_slimpeller",
+            "name": "ci/macos/ios_release_slimpeller",
             "description": "Builds a Slimpeller release mode engine that targets iOS from a macOS host.",
             "ninja":
             {
@@ -371,7 +371,7 @@
                 "--no-goma",
                 "--slimpeller"
             ],
-            "name": "macos/ios_debug_unopt_slimpeller",
+            "name": "ci/macos/ios_debug_unopt_slimpeller",
             "description": "Builds an unoptimized debug mode engine with Slimpeller that targets iOS from a macOS host.",
             "ninja":
             {
