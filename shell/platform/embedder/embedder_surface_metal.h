@@ -17,8 +17,8 @@
 
 namespace flutter {
 
-// TODO(csg): This class is Skia specific and there is another on specifically
-// for Impeller called EmbedderSurfaceMetalImpeller. Rename this to
+// TODO(148235): This class is Skia specific and there is another on
+// specifically for Impeller called EmbedderSurfaceMetalImpeller. Rename this to
 // EmbedderSurfaceMetalSkia to avoid confusion.
 class EmbedderSurfaceMetal final : public EmbedderSurface,
                                    public GPUSurfaceMetalDelegate {
