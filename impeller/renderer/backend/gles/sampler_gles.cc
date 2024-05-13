@@ -16,19 +16,20 @@ SamplerGLES::SamplerGLES(SamplerDescriptor desc) : Sampler(std::move(desc)) {}
 
 SamplerGLES::~SamplerGLES() = default;
 
+// TODO(https://github.com/flutter/flutter/issues/148253): `MipFilter::kNearest`
+// is the default value for mip filters, as it cooresponds with the framework's
+// `FilterQuality.low`. If we ever change the default filter quality, we should
+// update this function to match.
 static GLint ToParam(MinMagFilter minmag_filter,
-                     std::optional<MipFilter> mip_filter = std::nullopt) {
-  if (!mip_filter.has_value()) {
-    switch (minmag_filter) {
-      case MinMagFilter::kNearest:
-        return GL_NEAREST;
-      case MinMagFilter::kLinear:
-        return GL_LINEAR;
-    }
-    FML_UNREACHABLE();
-  }
-
-  switch (mip_filter.value()) {
+                     MipFilter mip_filter = MipFilter::kNearest) {
+  switch (mip_filter) {
+    case MipFilter::kBase:
+      switch (minmag_filter) {
+        case MinMagFilter::kNearest:
+          return GL_NEAREST;
+        case MinMagFilter::kLinear:
+          return GL_LINEAR;
+      }
     case MipFilter::kNearest:
       switch (minmag_filter) {
         case MinMagFilter::kNearest:
@@ -82,7 +83,11 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
   }
   const auto& desc = GetDescriptor();
 
-  std::optional<MipFilter> mip_filter = std::nullopt;
+  // TODO(https://github.com/flutter/flutter/issues/148253):
+  // `MipFilter::kNearest` is the default value for mip filters, as it
+  // cooresponds with the framework's `FilterQuality.low`. If we ever change the
+  // default filter quality, we should update this function to match.
+  MipFilter mip_filter = MipFilter::kBase;
   if (texture.GetTextureDescriptor().mip_count > 1) {
     mip_filter = desc.mip_filter;
   }

@@ -125,6 +125,11 @@ bool TextContents::Render(const ContentContext& renderer,
     sampler_desc.min_filter = MinMagFilter::kLinear;
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
+
+  // TODO(https://github.com/flutter/flutter/issues/148253):
+  // `MipFilter::kNearest` is the default value for mip filters, as it
+  // cooresponds with the framework's `FilterQuality.low`. If we ever change the
+  // default filter quality, we should update this function to match.
   sampler_desc.mip_filter = MipFilter::kNearest;
 
   FS::BindGlyphAtlasSampler(
