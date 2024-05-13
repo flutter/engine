@@ -8,7 +8,6 @@
 
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 
-#include "flutter/common/graphics/msaa_sample_count.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
