@@ -1389,10 +1389,13 @@ class _EngineSrcDirectory extends _RepositoryDirectory {
   bool get subdirectoriesAreLicenseRoots => false;
 
   @override
+  bool shouldRecurse(fs.IoNode entry) {
+    return entry.name != 'third_party' // all third_party components have been moved to flutter/third_party
+        && super.shouldRecurse(entry);
+  }
+
+  @override
   _RepositoryDirectory createSubdirectory(fs.Directory entry) {
-    if (entry.name == 'third_party') {
-      return _RepositoryRootThirdPartyDirectory(this, entry);
-    }
     if (entry.name == 'flutter') {
       return _RepositoryFlutterDirectory(this, entry);
     }
