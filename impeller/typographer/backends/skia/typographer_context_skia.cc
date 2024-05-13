@@ -196,7 +196,6 @@ static bool CanAppendToExistingAtlas(
 
 static ISize OptimumAtlasSizeForFontGlyphPairs(
     const std::vector<FontGlyphPair>& pairs,
-    std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     GlyphAtlas::Type type,
     const ISize& max_texture_size) {
@@ -209,6 +208,7 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
                            ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
                            : ISize(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
+  std::vector<Rect> glyph_positions;
   do {
     auto rect_packer = std::shared_ptr<RectanglePacker>(
         RectanglePacker::Factory(current_size.width, current_size.height));
@@ -239,7 +239,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
   const auto position =
-      SkPoint::Make(1 / scaled_font.scale, 1 / scaled_font.scale);
+      SkPoint::Make(1.0f / scaled_font.scale, 1.0f / scaled_font.scale);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -307,7 +307,6 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     DrawGlyph(canvas, pair.scaled_font, pair.glyph, has_color);
 
     // Note: the position is shifted by (1, 1) to include the padding pixels.
-    // Glyphs will never be positioned at (0, 0).
     if (!blit_pass->AddCopy(
             allocator.TakeBufferView(), texture,
             IRect::MakeXYWH(pos->GetLeft() - 1, pos->GetTop() - 1, size.width,
@@ -416,7 +415,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   std::shared_ptr<GlyphAtlas> glyph_atlas = std::make_shared<GlyphAtlas>(type);
   ISize atlas_size = OptimumAtlasSizeForFontGlyphPairs(
       font_glyph_pairs,                                             //
-      glyph_positions,                                              //
       atlas_context,                                                //
       type,                                                         //
       context.GetResourceAllocator()->GetMaxTextureSizeSupported()  //
