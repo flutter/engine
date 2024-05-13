@@ -694,8 +694,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
   if ([self hasChildren] || self.uid == kRootNodeId) {
     if (self.container == nil) {
-      self.container = [[SemanticsObjectContainer alloc] initWithSemanticsObject:self
-                                                                          bridge:self.bridge];
+      self.container =
+          [[[SemanticsObjectContainer alloc] initWithSemanticsObject:self
+                                                              bridge:self.bridge] autorelease];
     }
     return self.container;
   }
