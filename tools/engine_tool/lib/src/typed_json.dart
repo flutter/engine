@@ -235,9 +235,9 @@ extension type const JsonObject(Map<String, Object?> _object) {
   /// If [onError] is provided, it is called with this object and the caught
   /// [JsonMapException] to handle the error. If not provided, the exception is
   /// rethrown.
-  /// 
+  ///
   /// **Note:** The [mapper] function _must_ be synchronous.
-  /// 
+  ///
   /// ## Example
   ///
   /// ```dart
