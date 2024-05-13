@@ -74,6 +74,16 @@ import 'package:meta/meta.dart';
 ///   print('Errors: ${e.exceptions}');
 /// }
 /// ```
+///
+/// Or, provide an `onError` handler to handle the exception (either to log and
+/// provide a default value, or to rethrow a different exception):
+///
+/// ```dart
+/// final person = json.map(
+///   (json) => Person(name: json.string('name')),
+///   onError: (json, e) => throw FormatException('Failed to read person: $e'),
+/// );
+/// ```
 extension type const JsonObject(Map<String, Object?> _object) {
   /// Parses a JSON string into a [JsonObject].
   static JsonObject parse(String jsonString) {
@@ -96,7 +106,9 @@ extension type const JsonObject(Map<String, Object?> _object) {
   T _get<T extends Object>(String key, T defaultTo) {
     final T? result = _getOrNull<T>(key);
     if (result == null) {
-      _error(MissingKeyJsonReadException(this, key));
+      if (!_object.containsKey(key)) {
+        _error(MissingKeyJsonReadException(this, key));
+      }
       return defaultTo;
     }
     return result;
@@ -206,23 +218,54 @@ extension type const JsonObject(Map<String, Object?> _object) {
   /// Throws a [JsonReadException] if the value cannot be cast.
   List<String>? stringListOrNull(String key) => _getListOrNull<String>(key);
 
+  static Never _onErrorThrow(JsonObject object, JsonMapException e) {
+    throw e;
+  }
+
   /// Returns the result of applying the given [mapper] to this JSON object.
   ///
   /// Any exception that otherwise would be thrown by the mapper is caught
   /// internally and rethrown as a [JsonMapException] with all of the original
   /// exceptions added to its [exceptions] property.
-  T map<T extends Object>(T Function(JsonObject) mapper) {
-    final List<JsonReadException> mapErrors = <JsonReadException>[];
-    _mapErrors = mapErrors;
+  ///
+  /// If [onError] is provided, it is called with this object and the caught
+  /// [JsonMapException] to handle the error. If not provided, the exception is
+  /// rethrown.
+  ///
+  /// ## Example
+  ///
+  /// ```dart
+  /// final person = json.map(
+  ///   (json) => Person(
+  ///     name: json.string('name'),
+  ///     age: json.integer('age'),
+  ///     isEmployed: json.boolean('isEmployed'),
+  ///   ), onError: (json, e) {
+  ///     throw FormatException('Failed to read person: $e');
+  ///   },
+  /// );
+  /// ```
+  T map<T extends Object>(
+    T Function(JsonObject) mapper, {
+    T Function(JsonObject, JsonMapException) onError = _onErrorThrow,
+  }) {
+    // Store the previous errors, if any.
+    final List<JsonReadException>? previousErrors = _mapErrors;
+
+    // Start collecting errors for this map operation.
+    final List<JsonReadException> currentErrors = <JsonReadException>[];
+    _mapErrors = currentErrors;
+
     try {
-      return mapper(this);
-    } finally {
-      _mapErrors = null;
-      if (mapErrors.isNotEmpty) {
-        final JsonMapException exception = JsonMapException(mapErrors);
-        // ignore: throw_in_finally
-        throw exception;
+      final T result = mapper(this);
+      if (currentErrors.isEmpty) {
+        return result;
+      } else {
+        return onError(this, JsonMapException(this, currentErrors));
       }
+    } finally {
+      // Restore the previous errors.
+      _mapErrors = previousErrors;
     }
   }
 
@@ -232,12 +275,24 @@ extension type const JsonObject(Map<String, Object?> _object) {
   }
 }
 
+/// An exception thrown when a JSON value cannot be read as the expected type.
+sealed class JsonReadException implements Exception {
+  const JsonReadException(this.object);
+
+  /// The JSON object that was being read.
+  final JsonObject object;
+
+  @override
+  @mustBeOverridden
+  String toString();
+}
+
 /// An exception thrown when read exceptions occur during [JsonObject.map].
-final class JsonMapException implements Exception {
+final class JsonMapException extends JsonReadException {
   /// Creates an exception for multiple JSON read exceptions.
   ///
   /// If [exceptions] is empty, a [StateError] is thrown.
-  JsonMapException(Iterable<JsonReadException> exceptions)
+  JsonMapException(super.object, Iterable<JsonReadException> exceptions)
       : exceptions = List<JsonReadException>.unmodifiable(exceptions) {
     if (exceptions.isEmpty) {
       throw StateError('Must provide at least one exception.');
@@ -253,25 +308,13 @@ final class JsonMapException implements Exception {
   }
 }
 
-/// An exception thrown when a JSON value cannot be read as the expected type.
-sealed class JsonReadException implements Exception {
-  const JsonReadException(this.object, this.key);
-
-  /// The JSON object that was being read.
-  final JsonObject object;
-
-  /// The key that was being read.
-  final String key;
-
-  @override
-  @mustBeOverridden
-  String toString();
-}
-
 /// An exception thrown when a JSON [key] is not found in the JSON object.
 final class MissingKeyJsonReadException extends JsonReadException {
   /// Creates an exception for a missing key in a JSON object.
-  const MissingKeyJsonReadException(super.object, super.key);
+  const MissingKeyJsonReadException(super.object, this.key);
+
+  /// The key that was being read.
+  final String key;
 
   @override
   String toString() => 'Key "$key" not found.';
@@ -282,10 +325,13 @@ final class InvalidTypeJsonReadException extends JsonReadException {
   /// Creates an exception for an invalid type in a JSON object.
   const InvalidTypeJsonReadException(
     super.object,
-    super.key, {
+    this.key, {
     required this.expected,
     required this.actual,
   });
+
+  /// The key that was being read.
+  final String key;
 
   /// The expected type of the value.
   final Type expected;
@@ -294,6 +340,7 @@ final class InvalidTypeJsonReadException extends JsonReadException {
   final Type actual;
 
   @override
-  String toString() =>
-      'Key "$key" expected type: $expected, actual type: $actual.';
+  String toString() {
+    return 'Key "$key" expected type: $expected, actual type: $actual.';
+  }
 }

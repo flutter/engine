@@ -185,7 +185,7 @@ void main() {
         fail('Expected JsonMapException');
       } on JsonMapException catch (e) {
         expect(
-          e.exceptions.map((JsonReadException e) => e.key).toList(),
+          e.exceptions.map((JsonReadException e) => (e as MissingKeyJsonReadException).key).toList(),
           containsStringsInOrder(<String>['name', 'isStudent'],
         ));
       }
@@ -207,10 +207,42 @@ void main() {
         fail('Expected JsonMapException');
       } on JsonMapException catch (e) {
         expect(
-          e.exceptions.map((JsonReadException e) => e.key).toList(),
+          e.exceptions.map((JsonReadException e) => switch (e) {
+            final InvalidTypeJsonReadException e => e.key,
+            final MissingKeyJsonReadException e => e.key,
+            _ => throw StateError('Unexpected exception type: $e'),
+          }).toList(),
           containsStringsInOrder(<String>['name', 'age'],
         ));
       }
+    });
+
+    test('allows a default with onError', () {
+      final (String name, int age, bool isStudent) = const JsonObject(<String, Object?>{
+        'name': 'Alice',
+        'age': 42,
+        'isStudent': 'true',
+      }).map((JsonObject json) {
+        return (
+          json.string('name'),
+          json.integer('age'),
+          json.boolean('isStudent'),
+        );
+      }, onError: expectAsync2((_, JsonMapException e) {
+        expect(
+          e.exceptions.map((JsonReadException e) => switch (e) {
+            final InvalidTypeJsonReadException e => e.key,
+            final MissingKeyJsonReadException e => e.key,
+            _ => throw StateError('Unexpected exception type: $e'),
+          }).toList(), 
+          <String>['isStudent'],
+        );
+        return ('Bob', 0, false);
+      }));
+
+      expect(name, 'Bob');
+      expect(age, 0);
+      expect(isStudent, false);
     });
   });
 }
