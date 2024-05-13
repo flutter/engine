@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/common/macros.h"
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
@@ -52,9 +53,7 @@ static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 enum Clip { kNone, kHardEdge, kAntiAlias, kAntiAliasWithSaveLayer };
 
 struct PrerollContext {
-#if !SLIMPELLER
-  RasterCache* raster_cache;
-#endif  //  !SLIMPELLER
+  NOT_SLIMPELLER(RasterCache* raster_cache);
   GrDirectContext* gr_context;
   ExternalViewEmbedder* view_embedder;
   LayerStateStack& state_stack;
@@ -113,9 +112,7 @@ struct PaintContext {
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
   std::shared_ptr<TextureRegistry> texture_registry;
-#if !SLIMPELLER
-  const RasterCache* raster_cache;
-#endif  //  !SLIMPELLER
+  NOT_SLIMPELLER(const RasterCache* raster_cache);
 
   // Snapshot store to collect leaf layer snapshots. The store is non-null
   // only when leaf layer tracing is enabled.

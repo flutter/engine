@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "flutter/common/macros.h"
 #include "flutter/display_list/display_list.h"
 #include "flutter/flow/layers/display_list_raster_cache_item.h"
 #include "flutter/flow/layers/layer.h"
@@ -49,9 +50,9 @@ class DisplayListLayer : public Layer {
 #endif  //  !SLIMPELLER
 
  private:
-#if !SLIMPELLER
-  std::unique_ptr<DisplayListRasterCacheItem> display_list_raster_cache_item_;
-#endif  //  !SLIMPELLER
+  NOT_SLIMPELLER(std::unique_ptr<DisplayListRasterCacheItem>
+                     display_list_raster_cache_item_);
+
   SkPoint offset_;
   SkRect bounds_;
 

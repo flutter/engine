@@ -9,6 +9,7 @@
 #include <string>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/common/macros.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/layer_snapshot_store.h"
@@ -197,9 +198,7 @@ class CompositorContext {
   LayerSnapshotStore& snapshot_store() { return layer_snapshot_store_; }
 
  private:
-#if !SLIMPELLER
-  RasterCache raster_cache_;
-#endif  //  !SLIMPELLER
+  NOT_SLIMPELLER(RasterCache raster_cache_);
   std::shared_ptr<TextureRegistry> texture_registry_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;

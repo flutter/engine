@@ -672,10 +672,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
   // TODO(dkwingsmt): Pass in raster cache(s) for all views.
   // See https://github.com/flutter/flutter/issues/135530, item 4.
   frame_timings_recorder.RecordRasterEnd(
-#if !SLIMPELLER
-      &compositor_context_->raster_cache()
-#endif  //  !SLIMPELLER
-  );
+      NOT_SLIMPELLER(&compositor_context_->raster_cache()));
 
   FireNextFrameCallbackIfPresent();
 
@@ -740,9 +737,7 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       surface_->GetAiksContext().get()  // aiks context
   );
   if (compositor_frame) {
-#if !SLIMPELLER
-    compositor_context_->raster_cache().BeginFrame();
-#endif  //  !SLIMPELLER
+    NOT_SLIMPELLER(compositor_context_->raster_cache().BeginFrame());
 
     std::unique_ptr<FrameDamage> damage;
     // when leaf layer tracing is enabled we wish to repaint the whole frame

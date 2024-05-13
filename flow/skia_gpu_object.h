@@ -8,6 +8,7 @@
 #include <mutex>
 #include <queue>
 
+#include "flutter/common/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/task_runner.h"
@@ -62,15 +63,13 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
   void Drain() {
     TRACE_EVENT0("flutter", "SkiaUnrefQueue::Drain");
     std::deque<SkRefCnt*> skia_objects;
-#if !SLIMPELLER
-    std::deque<GrBackendTexture> textures;
-#endif  //  !SLIMPELLER
+
+    NOT_SLIMPELLER(std::deque<GrBackendTexture> textures);
+
     {
       std::scoped_lock lock(mutex_);
       objects_.swap(skia_objects);
-#if !SLIMPELLER
-      textures_.swap(textures);
-#endif  //  !SLIMPELLER
+      NOT_SLIMPELLER(textures_.swap(textures));
       drain_pending_ = false;
     }
     DoDrain(skia_objects,
@@ -89,9 +88,7 @@ class UnrefQueue : public fml::RefCountedThreadSafe<UnrefQueue<T>> {
   const fml::TimeDelta drain_delay_;
   std::mutex mutex_;
   std::deque<SkRefCnt*> objects_;
-#if !SLIMPELLER
-  std::deque<GrBackendTexture> textures_;
-#endif  //  !SLIMPELLER
+  NOT_SLIMPELLER(std::deque<GrBackendTexture> textures_);
   bool drain_pending_ = false;
   sk_sp<ResourceContext> context_;
   // Enabled when there is an impeller context, which removes the usage of
