@@ -1,3 +1,7 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:convert' show JsonEncoder, jsonDecode;
 
 import 'package:meta/meta.dart';
@@ -231,7 +235,9 @@ extension type const JsonObject(Map<String, Object?> _object) {
   /// If [onError] is provided, it is called with this object and the caught
   /// [JsonMapException] to handle the error. If not provided, the exception is
   /// rethrown.
-  ///
+  /// 
+  /// **Note:** The [mapper] function _must_ be synchronous.
+  /// 
   /// ## Example
   ///
   /// ```dart
@@ -249,6 +255,18 @@ extension type const JsonObject(Map<String, Object?> _object) {
     T Function(JsonObject) mapper, {
     T Function(JsonObject, JsonMapException) onError = _onErrorThrow,
   }) {
+    // Refuse asynchronous mappers to avoid reentrancy issues.
+    //
+    // Could be replaced with a static check in the future:
+    // https://github.com/dart-lang/sdk/issues/35024
+    if (mapper is Future<void> Function(JsonObject)) {
+      throw ArgumentError.value(
+        mapper,
+        'mapper',
+        'must be synchronous',
+      );
+    }
+
     // Store the previous errors, if any.
     final List<JsonReadException>? previousErrors = _mapErrors;
 

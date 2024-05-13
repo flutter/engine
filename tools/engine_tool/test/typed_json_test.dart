@@ -244,5 +244,21 @@ void main() {
       expect(age, 0);
       expect(isStudent, false);
     });
+
+    test('disallows a return type of Future<*>', () {
+      expect(() {
+        const JsonObject(<String, Object?>{
+          'name': 'Alice',
+          'age': 42,
+          'isStudent': true,
+        }).map((JsonObject json) async {
+          return (
+            json.string('name'),
+            json.integer('age'),
+            json.boolean('isStudent'),
+          );
+        });
+      }, throwsA(isInstanceOf<ArgumentError>()));
+    });
   });
 }
