@@ -87,7 +87,7 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
   // `MipFilter::kNearest` is the default value for mip filters, as it
   // cooresponds with the framework's `FilterQuality.low`. If we ever change the
   // default filter quality, we should update this function to match.
-  MipFilter mip_filter = MipFilter::kBase;
+  MipFilter mip_filter = MipFilter::kNearest;
   if (texture.GetTextureDescriptor().mip_count > 1) {
     mip_filter = desc.mip_filter;
   }
