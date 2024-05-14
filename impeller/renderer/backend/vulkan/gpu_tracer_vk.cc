@@ -86,6 +86,7 @@ void GPUTracerVK::MarkFrameStart() {
 
 void GPUTracerVK::MarkFrameEnd() {
   in_frame_ = false;
+  FML_LOG(ERROR) << "In frame: " << in_frame_;
 
   if (!enabled_) {
     return;
