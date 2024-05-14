@@ -220,6 +220,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
+  __block BOOL openURLSuccess = NO;  // Flag to track success
   // Use a dispatch semaphore to wait for the completion handler
   dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
