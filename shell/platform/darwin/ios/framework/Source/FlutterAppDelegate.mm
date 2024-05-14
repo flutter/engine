@@ -149,32 +149,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   } else {
     FlutterViewController* flutterViewController = [self rootFlutterViewController];
     if (flutterViewController) {
-      [flutterViewController.engine
-          waitForFirstFrame:3.0
-                   callback:^(BOOL didTimeout) {
-                     if (didTimeout) {
-                       FML_LOG(ERROR)
-                           << "Timeout waiting for the first frame when launching an URL.";
-                       completion(NO);
-                     } else {
-                       // invove the method and get the result
-                       [flutterViewController.engine.navigationChannel
-                           invokeMethod:@"pushRouteInformation"
-                              arguments:@{
-                                @"location" : url.absoluteString ?: [NSNull null],
-                              }
-                                 result:^(id _Nullable result) {
-                                   BOOL success = [result isKindOfClass:[NSNumber class]] &&
-                                                  [result boolValue];
-                                   if (!success) {
-                                     // Logging the error if the result is not successful
-                                     FML_LOG(ERROR)
-                                         << "Failed to handle route information in Flutter.";
-                                   }
-                                   completion(success);
-                                 }];
-                     }
-                   }];
+      [flutterViewController openDeepLink:url completionHandler:completion];
     } else {
       FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
       completion(NO);
@@ -191,11 +166,20 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   if (![self isFlutterDeepLinkingEnabled]) {
     return NO;
   }
+
+  __block BOOL openURLSuccess = NO;  // Flag to track success
+  // Use a dispatch semaphore to wait for the completion handler
+  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
   [self openURL:url
                 options:options
-      completionHandler:^(BOOL success){
+      completionHandler:^(BOOL success) {
+        openURLSuccess = success;
+        dispatch_semaphore_signal(semaphore);
       }];
-  return YES;
+
+  dispatch_semaphore_wait(semaphore, 5 * NSEC_PER_SEC);
+  return openURLSuccess;
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -239,14 +223,18 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  if (![self isFlutterDeepLinkingEnabled]) {
-    return NO;
-  }
+  // Use a dispatch semaphore to wait for the completion handler
+  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
   [self openURL:userActivity.webpageURL
                 options:@{}
-      completionHandler:^(BOOL success){
+      completionHandler:^(BOOL success) {
+        openURLSuccess = success;
+        dispatch_semaphore_signal(semaphore);
       }];
-  return YES;
+
+  dispatch_semaphore_wait(semaphore, 5 * NSEC_PER_SEC);
+  return openURLSuccess;
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
