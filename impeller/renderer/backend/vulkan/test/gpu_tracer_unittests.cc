@@ -129,6 +129,20 @@ TEST(GPUTracerVK, TracesWithPartialFrameOverlap) {
 
   auto cmd_buffer = context->CreateCommandBuffer();
   auto blit_pass = cmd_buffer->CreateBlitPass();
+  {
+    TextureDescriptor dst_format;
+    dst_format.storage_mode = StorageMode::kHostVisible;
+    dst_format.format = PixelFormat::kR8G8B8A8UNormInt;
+    dst_format.size = {1, 1};
+    auto dst = context->GetResourceAllocator()->CreateTexture(dst_format);
+
+    TextureDescriptor src_format;
+    dst_format.size = {1, 1};
+    dst_format.format = PixelFormat::kR8G8B8A8UNormInt;
+    src_format.storage_mode = StorageMode::kHostVisible;
+    auto src = context->GetResourceAllocator()->CreateTexture(src_format);
+    blit_pass->AddCopy(src, dst);
+  }
   blit_pass->EncodeCommands(context->GetResourceAllocator());
   tracer->MarkFrameEnd();
 
