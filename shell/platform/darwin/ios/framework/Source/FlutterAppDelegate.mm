@@ -163,9 +163,6 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   }
-  if (![self isFlutterDeepLinkingEnabled]) {
-    return NO;
-  }
 
   __block BOOL openURLSuccess = NO;  // Flag to track success
   // Use a dispatch semaphore to wait for the completion handler
