@@ -144,9 +144,6 @@ TEST(GPUTracerVK, TracesWithPartialFrameOverlap) {
   latch->Wait();
 
   auto called = GetMockVulkanFunctions(context->GetDevice());
-  for (auto x : *called) {
-    FML_LOG(ERROR) << x;
-  }
   ASSERT_NE(called, nullptr);
   ASSERT_TRUE(std::find(called->begin(), called->end(), "vkCreateQueryPool") !=
               called->end());
