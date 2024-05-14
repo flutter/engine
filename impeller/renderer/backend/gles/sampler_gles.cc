@@ -4,7 +4,6 @@
 
 #include "impeller/renderer/backend/gles/sampler_gles.h"
 
-#include "GLES3/gl3.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/renderer/backend/gles/formats_gles.h"
