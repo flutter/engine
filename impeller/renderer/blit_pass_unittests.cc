@@ -66,6 +66,7 @@ TEST_P(BlitPassTest, BlitPassesForMatchingFormats) {
   TextureDescriptor src_desc;
   src_desc.format = PixelFormat::kR8G8B8A8UNormInt;
   src_desc.size = {100, 100};
+  src_desc.storage_mode = StorageMode::kHostVisible;
   auto src = context->GetResourceAllocator()->CreateTexture(src_desc);
 
   TextureDescriptor dst_format;
