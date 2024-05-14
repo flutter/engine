@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': 'e26aee36345f2522690475bc309d803b0472d725',
+  'skia_revision': 'd0d87c26b4899728b6e344d68843cae9f8c86c18',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -729,7 +729,7 @@ deps = {
   'src/flutter/third_party/stb':
   Var('flutter_git') + '/third_party/stb.git' + '@' + '5736b15f7ea0ffb08dd38af21067c314d6a3aae9',
 
-  'src/third_party/gradle': {
+  'src/flutter/third_party/gradle': {
     'packages': [
       {
         # See tools/gradle/README.md for update instructions.
