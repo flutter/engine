@@ -54,9 +54,9 @@ CGPoint ConvertPointToGlobal(SemanticsObject* reference, CGPoint local_point) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  UIScreen* screen = [reference.bridge->view() window].screen;
+  UIScreen* screen = reference.bridge->view().window.screen;
   // Screen can be nil if the FlutterView is covered by another native view.
-  CGFloat scale = screen == nil ? UIScreen.mainScreen.scale : screen.scale;
+  CGFloat scale = (screen ?: UIScreen.mainScreen).scale;
   auto result = CGPointMake(point.x() / scale, point.y() / scale);
   return [reference.bridge->view() convertPoint:result toView:nil];
 }
@@ -82,9 +82,9 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // `rect` is in the physical pixel coordinate system. iOS expects the accessibility frame in
   // the logical pixel coordinate system. Therefore, we divide by the `scale` (pixel ratio) to
   // convert.
-  UIScreen* screen = [reference.bridge->view() window].screen;
+  UIScreen* screen = reference.bridge->view().window.screen;
   // Screen can be nil if the FlutterView is covered by another native view.
-  CGFloat scale = screen == nil ? UIScreen.mainScreen.scale : screen.scale;
+  CGFloat scale = (screen ?: UIScreen.mainScreen).scale;
   auto result =
       CGRectMake(rect.x() / scale, rect.y() / scale, rect.width() / scale, rect.height() / scale);
   return UIAccessibilityConvertFrameToScreenCoordinates(result, reference.bridge->view());
@@ -126,12 +126,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (NSString*)accessibilityValue {
-  if (self.node.HasFlag(flutter::SemanticsFlags::kIsToggled) ||
-      self.node.HasFlag(flutter::SemanticsFlags::kIsChecked)) {
-    self.nativeSwitch.on = YES;
-  } else {
-    self.nativeSwitch.on = NO;
-  }
+  self.nativeSwitch.on = self.node.HasFlag(flutter::SemanticsFlags::kIsToggled) ||
+                         self.node.HasFlag(flutter::SemanticsFlags::kIsChecked);
 
   if (![self isAccessibilityBridgeAlive]) {
     return nil;
@@ -141,11 +137,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (UIAccessibilityTraits)accessibilityTraits {
-  if (self.node.HasFlag(flutter::SemanticsFlags::kIsEnabled)) {
-    self.nativeSwitch.enabled = YES;
-  } else {
-    self.nativeSwitch.enabled = NO;
-  }
+  self.nativeSwitch.enabled = self.node.HasFlag(flutter::SemanticsFlags::kIsEnabled);
 
   return self.nativeSwitch.accessibilityTraits;
 }
