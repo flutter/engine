@@ -138,6 +138,7 @@
 ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/core/allocator_unittests.cc
+../../../flutter/impeller/display_list/aiks_dl_path_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.h
 ../../../flutter/impeller/display_list/dl_unittests.cc
@@ -1842,6 +1843,7 @@
 ../../../flutter/third_party/gn
 ../../../flutter/third_party/google_fonts_for_unit_tests
 ../../../flutter/third_party/googletest
+../../../flutter/third_party/gradle
 ../../../flutter/third_party/gtest-parallel/.git
 ../../../flutter/third_party/gtest-parallel/.gitignore
 ../../../flutter/third_party/gtest-parallel/CONTRIBUTING.md
