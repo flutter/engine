@@ -216,7 +216,7 @@ public class FlutterJNI {
       PackageInfo packageInfo =
           context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
       version = packageInfo.versionName;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
         versionCode = String.valueOf(packageInfo.getLongVersionCode());
       } else {
         versionCode = String.valueOf(packageInfo.versionCode);
