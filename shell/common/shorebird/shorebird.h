@@ -1,5 +1,5 @@
-#ifndef SHELL_COMMON_SHOREBIRD_H_
-#define SHELL_COMMON_SHOREBIRD_H_
+#ifndef FLUTTER_SHELL_COMMON_SHOREBIRD_SHOREBIRD_H_
+#define FLUTTER_SHELL_COMMON_SHOREBIRD_SHOREBIRD_H_
 
 #include "flutter/common/settings.h"
 
@@ -14,4 +14,4 @@ void ConfigureShorebird(std::string code_cache_path,
 
 }  // namespace flutter
 
-#endif  // SHELL_COMMON_SHOREBIRD_H_
+#endif  // FLUTTER_SHELL_COMMON_SHOREBIRD_SHOREBIRD_H_

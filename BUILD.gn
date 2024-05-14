@@ -112,9 +112,9 @@ group("flutter") {
 
         # path_ops
         "//flutter/tools/path_ops",
-        
+
         # Built alongside gen_snapshot arm64 targets.
-        "$dart_src/runtime/bin:analyze_snapshot"
+        "$dart_src/runtime/bin:analyze_snapshot",
       ]
 
       if (full_dart_sdk) {

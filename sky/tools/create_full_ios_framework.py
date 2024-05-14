@@ -252,14 +252,11 @@ def _generate_gen_snapshot(directory, destination):
 
 def generate_analyze_snapshot(args, dst, x64_out_dir, arm64_out_dir):
   if x64_out_dir:
-    _generate_analyze_snapshot(
-        x64_out_dir, os.path.join(dst, 'analyze_snapshot_x64')
-    )
+    _generate_analyze_snapshot(x64_out_dir, os.path.join(dst, 'analyze_snapshot_x64'))
 
   if arm64_out_dir:
     _generate_analyze_snapshot(
-        os.path.join(arm64_out_dir, args.clang_dir),
-        os.path.join(dst, 'analyze_snapshot_arm64')
+        os.path.join(arm64_out_dir, args.clang_dir), os.path.join(dst, 'analyze_snapshot_arm64')
     )
 
 
@@ -269,9 +266,7 @@ def _generate_analyze_snapshot(directory, destination):
     print('Cannot find analyze_snapshot at %s' % analyze_snapshot_dir)
     sys.exit(1)
 
-  subprocess.check_call([
-      'xcrun', 'bitcode_strip', '-r', analyze_snapshot_dir, '-o', destination
-  ])
+  subprocess.check_call(['xcrun', 'bitcode_strip', '-r', analyze_snapshot_dir, '-o', destination])
 
 
 if __name__ == '__main__':

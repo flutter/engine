@@ -16,7 +16,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   'skia_revision': 'c0e0b76d6d519c4d4d1be59e4723d415dd01f24e',
 
-  'dart_sdk_revision': 'c3b59ba47be2f933142d0e7685de0a464fffbbe9',
+  'dart_sdk_revision': '26dfc96c5f53211628b0de7a7e7c52e1f4bbe6fe',
   'dart_sdk_git': 'git@github.com:shorebirdtech/dart-sdk.git',
   'updater_git': 'https://github.com/shorebirdtech/updater.git',
   'updater_rev': 'd30931771b78f7e1cca51a295c36de47b1fdd891',
@@ -293,7 +293,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + 'a39f3c1d06d2f2e0afa71e04b78889d250543058',
+  'src': 'https://github.com/shorebirdtech/buildroot.git' + '@' + 'd87401ec88bdb70113eb3f4cd6912fcfa1e71950',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
