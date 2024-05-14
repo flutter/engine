@@ -848,8 +848,6 @@ void Canvas::SaveLayer(const Paint& paint,
     Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;
-  } else {
-    FML_LOG(ERROR) << "no dist opacity";
   }
 
   Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
@@ -873,13 +871,7 @@ void Canvas::SaveLayer(const Paint& paint,
     new_layer_pass.SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
   }
 
-  // Only apply opacity peephole on default blending.
-  if (paint.blend_mode == BlendMode::kSourceOver) {
-    new_layer_pass.SetDelegate(
-        std::make_shared<OpacityPeepholePassDelegate>(paint));
-  } else {
-    new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
-  }
+  new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
 }
 
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
