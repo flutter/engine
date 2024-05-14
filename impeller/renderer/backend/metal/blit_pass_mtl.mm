@@ -37,7 +37,11 @@ BlitPassMTL::BlitPassMTL(id<MTLCommandBuffer> buffer) : buffer_(buffer) {
   is_valid_ = true;
 }
 
-BlitPassMTL::~BlitPassMTL() = default;
+BlitPassMTL::~BlitPassMTL() {
+  if (!did_finish_encoding_) {
+    [encoder_ endEncoding];
+  }
+}
 
 bool BlitPassMTL::IsValid() const {
   return is_valid_;
@@ -53,6 +57,7 @@ void BlitPassMTL::OnSetLabel(std::string label) {
 bool BlitPassMTL::EncodeCommands(
     const std::shared_ptr<Allocator>& transients_allocator) const {
   [encoder_ endEncoding];
+  did_finish_encoding_ = true;
   return true;
 }
 

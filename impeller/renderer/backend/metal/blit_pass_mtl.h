@@ -23,6 +23,10 @@ class BlitPassMTL final : public BlitPass {
   id<MTLCommandBuffer> buffer_ = nil;
   bool is_valid_ = false;
   bool is_metal_trace_active_ = false;
+  // Many parts of the codebase will start writing to a render pass but
+  // never submit them. This boolean is used to track if a submit happened
+  // so that in the dtor we can always ensure the render pass is finished.
+  mutable bool did_finish_encoding_ = false;
 
   explicit BlitPassMTL(id<MTLCommandBuffer> buffer);
 
