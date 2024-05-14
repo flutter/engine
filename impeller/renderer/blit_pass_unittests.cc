@@ -72,6 +72,7 @@ TEST_P(BlitPassTest, BlitPassesForMatchingFormats) {
   TextureDescriptor dst_format;
   dst_format.format = PixelFormat::kR8G8B8A8UNormInt;
   dst_format.size = {100, 100};
+  dst_format.storage_mode = StorageMode::kHostVisible;
   auto dst = context->GetResourceAllocator()->CreateTexture(dst_format);
 
   EXPECT_TRUE(blit_pass->AddCopy(src, dst));
