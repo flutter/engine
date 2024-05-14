@@ -195,7 +195,7 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const ISize& max_texture_size) {
-  static constexpr ISize kMinAtlasSize = ISize{4096, 4096};
+  static constexpr ISize kMinAtlasSize = ISize{4096, 1024};
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
