@@ -358,8 +358,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   // ---------------------------------------------------------------------------
   // Step 2: Determine if the additional missing glyphs can be appended to the
-  //         existing bitmap without recreating the atlas. This requires that
-  //         the type is identical.
+  //         existing bitmap without recreating the atlas.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
   if (CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
