@@ -164,18 +164,18 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  __block BOOL openURLSuccess = NO;  // Flag to track success
-  // Use a dispatch semaphore to wait for the completion handler
-  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
+  __block BOOL openURLSuccess = NO;
+  __block BOOL openURLCompleted = NO;
   [self openURL:url
                 options:options
       completionHandler:^(BOOL success) {
         openURLSuccess = success;
-        dispatch_semaphore_signal(semaphore);
+        openURLCompleted = YES;
       }];
 
-  dispatch_semaphore_wait(semaphore, 5 * NSEC_PER_SEC);
+  while (!openURLCompleted) {
+    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
   return openURLSuccess;
 }
 
@@ -220,18 +220,18 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  __block BOOL openURLSuccess = NO;  // Flag to track success
-  // Use a dispatch semaphore to wait for the completion handler
-  dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-
+  __block BOOL openURLSuccess = NO;
+  __block BOOL openURLCompleted = NO;
   [self openURL:userActivity.webpageURL
                 options:@{}
       completionHandler:^(BOOL success) {
         openURLSuccess = success;
-        dispatch_semaphore_signal(semaphore);
+        openURLCompleted = YES;
       }];
 
-  dispatch_semaphore_wait(semaphore, 5 * NSEC_PER_SEC);
+  while (!openURLCompleted) {
+    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
   return openURLSuccess;
 }
 
