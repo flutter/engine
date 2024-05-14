@@ -10,7 +10,6 @@ import android.annotation.TargetApi;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
-import android.hardware.input.InputManager;
 import android.os.Build;
 import android.util.SparseArray;
 import android.view.MotionEvent;
@@ -24,7 +23,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
-import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.embedding.android.FlutterView;
@@ -52,10 +50,6 @@ import java.util.List;
  */
 public class PlatformViewsController implements PlatformViewsAccessibilityDelegate {
   private static final String TAG = "PlatformViewsController";
-
-  // This input manager is only used for confirming the verification status of motion events in
-  // debug builds.
-  private InputManager inputManager;
 
   // These view types allow out-of-band drawing commands that don't notify the Android view
   // hierarchy.
@@ -776,9 +770,6 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     this.textureRegistry = textureRegistry;
     platformViewsChannel = new PlatformViewsChannel(dartExecutor);
     platformViewsChannel.setPlatformViewsHandler(channelHandler);
-    if (context != null) {
-      inputManager = (InputManager) context.getSystemService(Context.INPUT_SERVICE);
-    }
   }
 
   /**
