@@ -1282,11 +1282,13 @@ Future<void> testMain() async {
       sendFrameworkMessage(codec.encodeMethodCall(setClient1));
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
       sendFrameworkMessage(codec.encodeMethodCall(show));
+      await waitForDesktopSafariFocus();
       final DomElement firstInput = textEditing!.strategy.domElement!;
 
       sendFrameworkMessage(codec.encodeMethodCall(setClient2));
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
       sendFrameworkMessage(codec.encodeMethodCall(show));
+      await waitForDesktopSafariFocus();
       final DomElement secondInput = textEditing!.strategy.domElement!;
 
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
