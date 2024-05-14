@@ -10,7 +10,6 @@
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/effects/dl_color_filter.h"
 #include "flutter/testing/testing.h"
-#include "impeller/geometry/constants.h"
 
 namespace impeller {
 namespace testing {
@@ -19,8 +18,7 @@ using namespace flutter;
 
 TEST_P(AiksTest, RotateColorFilteredPath) {
   DisplayListBuilder builder;
-  builder.Transform(SkMatrix::Translate(300, 300));
-  builder.Transform(SkMatrix::RotateDeg(impeller::kPiOver2));
+  builder.Transform(SkMatrix::Translate(300, 300) * SkMatrix::RotateDeg(90));
 
   SkPath arrow_stem;
   SkPath arrow_head;
@@ -32,11 +30,12 @@ TEST_P(AiksTest, RotateColorFilteredPath) {
       DlBlendColorFilter::Make(DlColor::kAliceBlue(), DlBlendMode::kSrcIn);
 
   DlPaint paint;
-  paint.setStrokeMiter(15.0);
+  paint.setStrokeWidth(15.0);
   paint.setStrokeCap(DlStrokeCap::kRound);
   paint.setStrokeJoin(DlStrokeJoin::kRound);
   paint.setDrawStyle(DlDrawStyle::kStroke);
   paint.setColorFilter(filter);
+  paint.setColor(DlColor::kBlack());
 
   builder.DrawPath(arrow_stem, paint);
   builder.DrawPath(arrow_head, paint);
