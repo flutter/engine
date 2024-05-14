@@ -313,18 +313,19 @@ bool ClearTextureToTransparentBlack(Context& context,
                                     std::shared_ptr<CommandBuffer>& cmd_buffer,
                                     std::shared_ptr<BlitPass>& blit_pass,
                                     std::shared_ptr<Texture>& texture) {
+  // The R8/A8 textures used for certain glyphs is not supported as color
+  // attachments in most graphics drivers. To be safe, just do a CPU clear
+  // for these.
   if (texture->GetTextureDescriptor().format ==
-          context.GetCapabilities()->GetDefaultGlyphAtlasFormat() &&
-      context.GetBackendType() == Context::BackendType::kOpenGLES) {
-    // The R8/A8 textures used for certain glyphs are not supported as color
-    // attachments on GLES.
-
-    auto bytes = texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+      context.GetCapabilities()->GetDefaultGlyphAtlasFormat()) {
+    size_t byte_size =
+        texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
     BufferView buffer_view =
-        host_buffer.Emplace(nullptr, bytes, DefaultUniformAlignment());
+        host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
 
     ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-             bytes);
+             byte_size);
+    buffer_view.buffer->Flush();
     return blit_pass->AddCopy(buffer_view, texture);
   }
   // In all other cases, we can use a render pass to clear to a transparent
