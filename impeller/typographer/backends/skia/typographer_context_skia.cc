@@ -322,13 +322,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (font_glyph_map.empty()) {
     return last_atlas;
   }
-  std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
-  std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
-
-  fml::ScopedCleanupClosure closure([&]() {
-    blit_pass->EncodeCommands(context.GetResourceAllocator());
-    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
-  });
 
   // ---------------------------------------------------------------------------
   // Step 1: Determine if the atlas type and font glyph pairs are compatible
@@ -354,6 +347,14 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (new_glyphs.size() == 0) {
     return last_atlas;
   }
+
+  std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
+  std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
+
+  fml::ScopedCleanupClosure closure([&]() {
+    blit_pass->EncodeCommands(context.GetResourceAllocator());
+    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+  });
 
   // ---------------------------------------------------------------------------
   // Step 2: Determine if the additional missing glyphs can be appended to the
