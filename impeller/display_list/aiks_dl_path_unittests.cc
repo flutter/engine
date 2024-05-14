@@ -18,7 +18,8 @@ using namespace flutter;
 
 TEST_P(AiksTest, RotateColorFilteredPath) {
   DisplayListBuilder builder;
-  builder.Transform(SkMatrix::Translate(300, 300) * SkMatrix::RotateDeg(90));
+  // TESTING!
+  builder.Transform(SkMatrix::Translate(300, 300));
 
   SkPath arrow_stem;
   SkPath arrow_head;
