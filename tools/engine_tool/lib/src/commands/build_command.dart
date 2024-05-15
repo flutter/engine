@@ -6,6 +6,7 @@ import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
 import '../gn_utils.dart';
+import '../label.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -88,8 +89,8 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
     }
 
     // Chop off the '//' prefix.
-    final List<String> ninjaTargets = selectedTargets.map<String>(
-      (BuildTarget target) => target.label.substring('//'.length),
+    final List<Label> ninjaTargets = selectedTargets.map<Label>(
+      (BuildTarget target) => Label.parse(target.label),
     ).toList();
 
     return runBuild(

@@ -6,6 +6,7 @@ import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
 import '../gn_utils.dart';
+import '../label.dart';
 import '../proc_utils.dart';
 import '../worker_pool.dart';
 import 'command.dart';
@@ -94,17 +95,11 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
             '$target is an executable but is missing the executable path');
       }
     }
-    // Chop off the '//' prefix.
-    final List<String> buildTargets = testTargets
-        .map<String>(
-            (BuildTarget target) => target.label.substring('//'.length))
-        .toList();
-    // TODO(johnmccutchan): runBuild manipulates buildTargets and adds some
-    // targets listed in Build. Fix this.
+
     final int buildExitCode = await runBuild(
       environment,
       build,
-      targets: buildTargets,
+      targets: testTargets.map((BuildTarget target) => Label.parse(target.label)).toList(),
       enableRbe: useRbe,
     );
     if (buildExitCode != 0) {
