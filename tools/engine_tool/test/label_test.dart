@@ -48,9 +48,9 @@ void main() {
       expect(Label.parse('//foo/bar_:_baz'), Label('//foo/bar_', '_baz'));
     });
 
-    test('parses the ninja format', () {
-      expect(Label.parseGn('foo/bar'), Label('//foo/bar'));
-      expect(Label.parseGn('foo/bar:baz'), Label('//foo/bar', 'baz'));
+    test('parses the GN format', () {
+      expect(Label.parseGn('//foo/bar'), Label('//foo/bar'));
+      expect(Label.parseGn('//foo/bar:baz'), Label('//foo/bar', 'baz'));
     });
 
     test('converts to string', () {
