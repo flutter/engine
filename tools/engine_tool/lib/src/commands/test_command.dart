@@ -47,8 +47,9 @@ final class TestCommand extends CommandBase {
   @override
   String get description => '''
 Runs a test target
-et test //flutter/fml/...             # Run all test targets in `//flutter/fml/`
-et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/fml/`
+et test //flutter/fml/...             # Run all test targets in `//flutter/fml` and its subdirectories.
+et test //flutter/fml:all             # Run all test targets in `//flutter/fml`.
+et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/fml`.
 ''';
 
   @override

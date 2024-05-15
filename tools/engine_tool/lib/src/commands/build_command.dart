@@ -49,8 +49,9 @@ final class BuildCommand extends CommandBase {
   @override
   String get description => '''
 Builds the engine
-et build //flutter/fml/...             # Build all targets in `//flutter/fml/`
-et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml/`
+et build //flutter/fml/...             # Build all targets in `//flutter/fml` and its subdirectories.
+et build //flutter/fml:all             # Build all targets in `//flutter/fml`.
+et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml`.
 ''';
 
   @override
