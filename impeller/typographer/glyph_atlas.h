@@ -164,7 +164,9 @@ class GlyphAtlasContext {
 
   //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
-  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size, int64_t height_adjustment_);
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
+                        ISize size,
+                        int64_t height_adjustment_);
 
   void UpdateRectPacker(std::shared_ptr<RectanglePacker> rect_packer);
 
