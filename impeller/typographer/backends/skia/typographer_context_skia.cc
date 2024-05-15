@@ -14,7 +14,6 @@
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 
-#include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -214,12 +213,13 @@ static ISize ComputeNextAtlasSize(
     } else {
       rect_packer = RectanglePacker::Factory(kAtlasWidth, current_size.height);
     }
-
+    glyph_positions.erase(glyph_positions.begin() + glyph_index_start,
+                          glyph_positions.end());
     atlas_context->UpdateRectPacker(rect_packer);
-    glyph_index_start = PairsFitInAtlasOfSize(
-        extra_pairs, current_size, glyph_positions, height_adjustment,
-        rect_packer, glyph_index_start);
-    if (glyph_index_start == extra_pairs.size()) {
+    auto next_index = PairsFitInAtlasOfSize(extra_pairs, current_size,
+                                            glyph_positions, height_adjustment,
+                                            rect_packer, glyph_index_start);
+    if (next_index == extra_pairs.size()) {
       return current_size;
     }
     current_size = ISize(current_size.width, current_size.height * 2);
