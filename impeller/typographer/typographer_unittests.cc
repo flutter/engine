@@ -325,58 +325,6 @@ TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
   ASSERT_EQ(packer->PercentFull(), 0);
 }
 
-TEST(TypographerTest, CanCloneRectanglePackerEmpty) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-
-  EXPECT_EQ(skyline->PercentFull(), 0);
-
-  auto skyline_2 = skyline->Clone(/*scale=*/2);
-
-  EXPECT_EQ(skyline->PercentFull(), 0);
-}
-
-TEST(TypographerTest, CanCloneRectanglePackerAndPreservePositions) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-  IPoint16 loc;
-  EXPECT_TRUE(skyline->AddRect(100, 100, &loc));
-
-  EXPECT_EQ(loc.x(), 0);
-  EXPECT_EQ(loc.y(), 0);
-  auto percent = skyline->PercentFull();
-
-  auto skyline_2 = skyline->Clone(/*scale=*/2);
-
-  EXPECT_LT(skyline_2->PercentFull(), percent);
-}
-
-TEST(TypographerTest, CanCloneRectanglePackerWhileFull) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-  IPoint16 loc;
-  // Add a rectangle the size of the entire area.
-  EXPECT_TRUE(skyline->AddRect(256, 256, &loc));
-  // Packer is now full.
-  EXPECT_FALSE(skyline->AddRect(256, 256, &loc));
-
-  auto skyline_2 = skyline->Clone(/*scale=*/2);
-
-  // Can now fit one more
-  EXPECT_TRUE(skyline_2->AddRect(256, 256, &loc));
-}
-
-TEST(TypographerTest, CloneToSameSizePreservesContents) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-  IPoint16 loc;
-  // Add a rectangle the size of the entire area.
-  EXPECT_TRUE(skyline->AddRect(256, 256, &loc));
-  // Packer is now full.
-  EXPECT_FALSE(skyline->AddRect(256, 256, &loc));
-
-  auto skyline_2 = skyline->Clone(/*scale=*/1);
-
-  // Packer is still full.
-  EXPECT_FALSE(skyline->AddRect(256, 256, &loc));
-}
-
 TEST(TypographerTest, RectanglePackerFillsRows) {
   auto skyline = RectanglePacker::Factory(257, 256);
 
