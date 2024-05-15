@@ -195,7 +195,7 @@ static ISize ComputeNextAtlasSize(
   // Because we can't grow the skyline packer horizontally, pick a reasonable
   // large width for all atlases.
   static constexpr auto kAtlasWidth = 4096u;
-  static constexpr auto kMinAtlasHeight = 4096u;
+  static constexpr auto kMinAtlasHeight = 1024;
 
   ISize current_size = ISize(kAtlasWidth, kMinAtlasHeight);
   if (atlas_context->GetAtlasSize().height > current_size.height) {
