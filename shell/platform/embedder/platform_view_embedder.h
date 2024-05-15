@@ -21,7 +21,7 @@
 #endif
 
 #ifdef SHELL_ENABLE_METAL
-#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal_skia.h"
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN

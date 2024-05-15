@@ -84,7 +84,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif  // SHELL_ENABLE_GL
 
 #ifdef SHELL_ENABLE_METAL
-#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal_skia.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
@@ -551,11 +551,12 @@ InferMetalPlatformViewCreationCallback(
         metal_dispatch_table, view_embedder);
   } else {
 #if !SLIMPELLER
-    flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
-        .present = metal_present,
-        .get_texture = metal_get_texture,
-    };
-    embedder_surface = std::make_unique<flutter::EmbedderSurfaceMetal>(
+    flutter::EmbedderSurfaceMetalSkia::MetalDispatchTable metal_dispatch_table =
+        {
+            .present = metal_present,
+            .get_texture = metal_get_texture,
+        };
+    embedder_surface = std::make_unique<flutter::EmbedderSurfaceMetalSkia>(
         const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
         const_cast<flutter::GPUMTLCommandQueueHandle>(
             config->metal.present_command_queue),
