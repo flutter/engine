@@ -67,7 +67,7 @@ interface class Gn {
       result = JsonObject.parse(process.stdout);
     } on FormatException catch (e) {
       _environment.logger.fatal(
-        'Failed to parse JSON output from `gn desc`:\n$e\n\n${process.stdout}',
+        'Failed to parse JSON output from `gn desc`:\n$e',
       );
     }
 

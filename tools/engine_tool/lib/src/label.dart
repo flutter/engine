@@ -15,7 +15,7 @@ import 'package:meta/meta.dart';
 ///
 /// Unlike counterparts in Bazel and GN:
 /// - The package name is always a source-absolute path (i.e. starts with `//`).
-/// - Valid identifier characters are `a-zA-Z0-9_`, not starting with a digit.
+/// - Valid identifier characters are `a-zA-Z0-9_-`, not starting with a digit.
 /// - The target name is never empty, even when it is a default target.
 @immutable
 final class Label {
@@ -148,7 +148,7 @@ final class Label {
     return null;
   }
 
-  static final RegExp _identifier = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_]*$');
+  static final RegExp _identifier = RegExp(r'^[a-zA-Z_][a-zA-Z0-9_-]*$');
 }
 
 /// A generic target pattern that can be used to match multiple targets.
@@ -170,6 +170,11 @@ final class TargetPattern {
     if (package.endsWith('/...')) {
       packageEndsWithWildcard = true;
       package = package.substring(0, package.length - 4);
+    }
+
+    // Edgecase: //... is a valid pattern that matches all targets.
+    if (packageEndsWithWildcard && package == '/') {
+      return const TargetPattern._('//...', null);
     }
 
     // Throws a FormatException if the package or target name is invalid.
@@ -232,6 +237,12 @@ final class TargetPattern {
     final String package = this.package.substring(2);
     if (target == null) {
       assert(package.endsWith('...'));
+
+      // Edgecase: //... is a valid pattern that matches all targets.
+      if (package == '...') {
+        return '/*';
+      }
+
       return package.replaceRange(package.length - 3, package.length, '/*');
     }
     return '$package:${target == 'all' ? '*' : target}';
