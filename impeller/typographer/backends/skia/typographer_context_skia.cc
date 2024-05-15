@@ -392,11 +392,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       return last_atlas;
     }
   }
-  FML_LOG(ERROR) << "about to make new atlas: "
-                 << (new_glyphs.size() - first_missing_index);
 
   int64_t height_adjustment = atlas_context->GetAtlasSize().height;
-
   const int64_t max_texture_height =
       context.GetResourceAllocator()->GetMaxTextureSizeSupported().height;
 
@@ -487,7 +484,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
   });
 
-  FML_LOG(ERROR) << "new atlas: " << new_texture->GetSize();
   // Blit the old texture to the top left of the new atlas.
   if (last_atlas->GetTexture() && blit_old_atlas) {
     blit_pass->AddCopy(last_atlas->GetTexture(), new_texture,
