@@ -194,6 +194,7 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
+  entry.distributed_opacity = transform_stack_.back().distributed_opacity;
   FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
       << " after allocating " << total_content_depth;
@@ -209,6 +210,11 @@ void ExperimentalCanvas::SaveLayer(
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
     bool can_distribute_opacity) {
+  if (can_distribute_opacity) {
+    Save(total_content_depth);
+    transform_stack_.back().distributed_opacity *= paint.color.alpha;
+    return;
+  }
   // Can we always guarantee that we get a bounds? Does a lack of bounds
   // indicate something?
   if (!bounds.has_value()) {
@@ -394,6 +400,8 @@ void ExperimentalCanvas::DrawTextFrame(
 
 void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
                                                       bool reuse_depth) {
+  entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
+
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
