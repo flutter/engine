@@ -198,7 +198,7 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
     // Builds only accept labels as arguments, so convert patterns to labels.
     // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
     final Gn gn = Gn.fromEnvironment(environment);
-    
+
     // TODO(matanlurey): Discuss if we want to just require '//...'.
     // For now this retains the existing behavior.
     List<String> patterns = argResults!.rest;
@@ -215,7 +215,7 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
       );
       allTargets.addAll(targets);
     }
-    
+
     if (allTargets.isEmpty) {
       environment.logger.fatal('Query unexpectedly returned an empty list');
     }

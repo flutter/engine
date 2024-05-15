@@ -54,7 +54,7 @@ final class Label {
   }
 
   /// Parses a label from a string in the format `//package-name:target-name`.
-  /// 
+  ///
   /// If a toolchain is present, it is removed.
   ///
   /// Throws a [FormatException] if the label is invalid.
@@ -188,7 +188,7 @@ final class TargetPattern {
   const TargetPattern._(this.package, this.target);
 
   /// Parses a pattern from a string in the format `//package-name:target-name`.
-  /// 
+  ///
   /// Throws a [FormatException] if the pattern is invalid.
   static TargetPattern parse(String pattern) {
     final int colon = pattern.indexOf(':');

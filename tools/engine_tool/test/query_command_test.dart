@@ -180,8 +180,8 @@ void main() {
       }
 
       expect(
-        expected.isEmpty, 
-        isTrue, 
+        expected.isEmpty,
+        isTrue,
         reason: 'All expected targets were found',
       );
     } finally {

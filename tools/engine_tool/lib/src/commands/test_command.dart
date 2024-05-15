@@ -81,12 +81,12 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       );
       buildTargets.addAll(found);
     }
-    
+
     // Make sure there is at least one test target.
     final List<ExecutableBuildTarget> testTargets = buildTargets
         .whereType<ExecutableBuildTarget>()
         .where((ExecutableBuildTarget t) => t.testOnly).toList();
-    
+
     if (testTargets.isEmpty) {
       environment.logger.error('No test targets found');
       return 1;
@@ -102,7 +102,7 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       return buildExitCode;
     }
     final WorkerPool workerPool = WorkerPool(
-      environment, 
+      environment,
       ProcessTaskProgressReporter(environment),
     );
     final Set<ProcessTask> tasks = <ProcessTask>{};
@@ -110,8 +110,8 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
       final List<String> commandLine = <String>[target.executable];
       tasks.add(ProcessTask(
         target.label.toString(),
-        environment, 
-        environment.engine.srcDir, 
+        environment,
+        environment.engine.srcDir,
         commandLine,
       ));
     }
