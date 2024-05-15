@@ -255,14 +255,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   BOOL _inDealloc;
 }
 
-#pragma mark - Override base class designated initializers
-
-// Method declared as unavailable in the interface
-- (instancetype)init {
-  [super doesNotRecognizeSelector:_cmd];
-  return nil;
-}
-
 #pragma mark - Designated initializers
 
 - (instancetype)initWithBridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge
@@ -286,9 +278,16 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 - (void)dealloc {
+  // Set parent and children parents to nil explicitly in dealloc.
+  // -[UIAccessibilityElement dealloc] has in the past called into -accessibilityContainer
+  // and self.children. There have also been crashes related to iOS
+  // accessing methods during dealloc, and there's a lag before the tree changes.
+  // See https://github.com/flutter/engine/pull/4602 and
+  // https://github.com/flutter/engine/pull/27786.
   for (SemanticsObject* child in _children) {
     child.parent = nil;
   }
+  [_children removeAllObjects];
 
   _parent = nil;
   _inDealloc = YES;
@@ -673,7 +672,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   if ([self hasChildren] || self.uid == kRootNodeId) {
     if (self.container == nil) {
       self.container = [[SemanticsObjectContainer alloc] initWithSemanticsObject:self
-                                                                          bridge:[self bridge]];
+                                                                          bridge:self.bridge];
     }
     return self.container;
   }
@@ -772,16 +771,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 @end
 
-@implementation FlutterSemanticsObject {
-}
-
-#pragma mark - Override base class designated initializers
-
-// Method declared as unavailable in the interface
-- (instancetype)init {
-  [super doesNotRecognizeSelector:_cmd];
-  return nil;
-}
+@implementation FlutterSemanticsObject
 
 #pragma mark - Designated initializers
 
@@ -863,12 +853,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 #pragma mark - initializers
-
-// Method declared as unavailable in the interface
-- (instancetype)init {
-  [super doesNotRecognizeSelector:_cmd];
-  return nil;
-}
 
 - (instancetype)initWithSemanticsObject:(SemanticsObject*)semanticsObject
                                  bridge:(fml::WeakPtr<flutter::AccessibilityBridgeIos>)bridge {
