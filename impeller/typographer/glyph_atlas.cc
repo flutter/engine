@@ -6,14 +6,11 @@
 
 #include <numeric>
 #include <utility>
-#include "impeller/typographer/rectangle_packer.h"
 
 namespace impeller {
 
 GlyphAtlasContext::GlyphAtlasContext(GlyphAtlas::Type type)
-    : atlas_(std::make_shared<GlyphAtlas>(type)),
-      atlas_size_(ISize(0, 0)),
-      rect_packer_(RectanglePacker::Factory(4096, 512)) {}
+    : atlas_(std::make_shared<GlyphAtlas>(type)), atlas_size_(ISize(0, 0)) {}
 
 GlyphAtlasContext::~GlyphAtlasContext() {}
 

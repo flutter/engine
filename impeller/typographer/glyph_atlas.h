@@ -160,6 +160,14 @@ class GlyphAtlasContext {
   /// @brief      Retrieve the previous (if any) rect packer.
   std::shared_ptr<RectanglePacker> GetRectPacker() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      A y-coordinate shift that must be applied to glyphs appended
+  /// to
+  ///             the atlas.
+  ///
+  ///             The rectangle packer is only initialized for unfilled regions
+  ///             of the atlas. The area the rectangle packer covers is offset
+  ///             from the origin by this height adjustment.
   int64_t GetHeightAdjustment() const;
 
   //----------------------------------------------------------------------------

@@ -346,6 +346,53 @@ TEST(TypographerTest, RectanglePackerFillsRows) {
   EXPECT_EQ(loc.y(), 16);
 }
 
+TEST_P(TypographerTest, GlyphAtlasTextureWillGrowTilMaxTextureSize) {
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
+  auto blob = SkTextBlob::MakeFromString("A", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas =
+      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                       GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
+                       *MakeTextFrameFromTextBlobSkia(blob));
+  // Continually append new glyphs until the glyph size grows to the maximum.
+  // Note that the sizes here are more or less experimentally determined, but
+  // the important expectation is that the atlas size will shrink again after
+  // growing to the maximum size.
+  constexpr ISize expected_sizes[13] = {
+      {4096, 4096},   //
+      {4096, 4096},   //
+      {4096, 8192},   //
+      {4096, 8192},   //
+      {4096, 8192},   //
+      {4096, 8192},   //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 4096}    // Shrinks!
+  };
+
+  for (int i = 0; i < 13; i++) {
+    SkFont sk_font = flutter::testing::CreateTestFontOfSize(50 + i);
+    auto blob = SkTextBlob::MakeFromString("A", sk_font);
+
+    atlas =
+        CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                         GlyphAtlas::Type::kAlphaBitmap, 50 + i, atlas_context,
+                         *MakeTextFrameFromTextBlobSkia(blob));
+    ASSERT_TRUE(!!atlas);
+    EXPECT_EQ(atlas->GetTexture()->GetTextureDescriptor().size,
+              expected_sizes[i]);
+  }
+}
+
 }  // namespace testing
 }  // namespace impeller
 

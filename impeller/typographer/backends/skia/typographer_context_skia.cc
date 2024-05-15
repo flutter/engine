@@ -5,6 +5,7 @@
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 
 #include <cstddef>
+#include <memory>
 #include <numeric>
 #include <utility>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "flutter/fml/trace_event.h"
 #include "fml/closure.h"
 
+#include "impeller/base/validation.h"
 #include "impeller/core/allocator.h"
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
@@ -400,11 +402,15 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   // IF the current atlas size is as big as it can get, then "GC" and create an
   // atlas with only the required glyphs.
   bool blit_old_atlas = true;
+  std::shared_ptr<GlyphAtlas> new_atlas = last_atlas;
   if (atlas_context->GetAtlasSize().height >= max_texture_height) {
     blit_old_atlas = false;
     first_missing_index = 0;
     glyph_positions.clear();
     height_adjustment = 0;
+    new_atlas = std::make_shared<GlyphAtlas>(type);
+    atlas_context->UpdateRectPacker(nullptr);
+    atlas_context->UpdateGlyphAtlas(new_atlas, {0, 0}, 0);
   }
 
   // A new glyph atlas must be created.
@@ -415,7 +421,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
                                           max_texture_height    //
   );
 
-  atlas_context->UpdateGlyphAtlas(last_atlas, atlas_size, height_adjustment);
+  atlas_context->UpdateGlyphAtlas(new_atlas, atlas_size, height_adjustment);
   if (atlas_size.IsEmpty()) {
     return nullptr;
   }
@@ -433,11 +439,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   }
   descriptor.size = atlas_size;
   descriptor.storage_mode = StorageMode::kDevicePrivate;
-  descriptor.usage = TextureUsage::kShaderRead | TextureUsage::kRenderTarget;
+  descriptor.usage = TextureUsage::kShaderRead;
   std::shared_ptr<Texture> new_texture =
       context.GetResourceAllocator()->CreateTexture(descriptor);
-  new_texture->SetLabel("GlyphAtlas");
-
   if (!new_texture) {
     return nullptr;
   }
@@ -445,39 +449,20 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   new_texture->SetLabel("GlyphAtlas");
 
   std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
-  std::shared_ptr<BlitPass> blit_pass;
+  std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
 
   // The R8/A8 textures used for certain glyphs is not supported as color
-  // attachments in most graphics drivers. To be safe, just do a CPU clear
-  // for these.
-  if (type == GlyphAtlas::Type::kAlphaBitmap) {
-    size_t byte_size =
-        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
-    BufferView buffer_view =
-        host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
+  // attachments in most graphics drivers. For other textures, most framebuffer
+  // attachments have a much smaller size limit than the max texture size.
+  size_t byte_size =
+      new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+  BufferView buffer_view =
+      host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
 
-    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-             byte_size);
-    buffer_view.buffer->Flush();
-    blit_pass = cmd_buffer->CreateBlitPass();
-    blit_pass->AddCopy(buffer_view, new_texture);
-  } else {
-    // In all other cases, we can use a render pass to clear to a transparent
-    // color.
-    ColorAttachment attachment;
-    attachment.clear_color = Color::BlackTransparent();
-    attachment.load_action = LoadAction::kClear;
-    attachment.store_action = StoreAction::kStore;
-    attachment.texture = new_texture;
-
-    RenderTarget render_target;
-    render_target.SetColorAttachment(attachment, 0u);
-
-    auto render_pass = cmd_buffer->CreateRenderPass(render_target);
-    render_pass->EncodeCommands();
-    blit_pass = cmd_buffer->CreateBlitPass();
-  }
-  FML_DCHECK(!!blit_pass);
+  ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
+           byte_size);
+  buffer_view.buffer->Flush();
+  blit_pass->AddCopy(buffer_view, new_texture);
 
   fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
@@ -485,29 +470,29 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   });
 
   // Blit the old texture to the top left of the new atlas.
-  if (last_atlas->GetTexture() && blit_old_atlas) {
-    blit_pass->AddCopy(last_atlas->GetTexture(), new_texture,
-                       IRect::MakeSize(last_atlas->GetTexture()->GetSize()),
+  if (new_atlas->GetTexture() && blit_old_atlas) {
+    blit_pass->AddCopy(new_atlas->GetTexture(), new_texture,
+                       IRect::MakeSize(new_atlas->GetTexture()->GetSize()),
                        {0, 0});
   }
 
   // Now append all remaining glyphs. This should never have any missing data...
-  last_atlas->SetTexture(std::move(new_texture));
+  new_atlas->SetTexture(std::move(new_texture));
 
   // ---------------------------------------------------------------------------
   // Step 3a: Record the positions in the glyph atlas of the newly added
   //          glyphs.
   // ---------------------------------------------------------------------------
   for (size_t i = first_missing_index; i < glyph_positions.size(); i++) {
-    last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
+    new_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
   }
 
   // ---------------------------------------------------------------------------
   // Step 4a: Draw new font-glyph pairs into the a host buffer and encode
   // the uploads into the blit pass.
   // ---------------------------------------------------------------------------
-  if (!UpdateAtlasBitmap(*last_atlas, blit_pass, host_buffer,
-                         last_atlas->GetTexture(), new_glyphs,
+  if (!UpdateAtlasBitmap(*new_atlas, blit_pass, host_buffer,
+                         new_atlas->GetTexture(), new_glyphs,
                          first_missing_index, new_glyphs.size())) {
     return nullptr;
   }
@@ -515,7 +500,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   // Step 8b: Record the texture in the glyph atlas.
   // ---------------------------------------------------------------------------
 
-  return last_atlas;
+  return new_atlas;
 }
 
 }  // namespace impeller
