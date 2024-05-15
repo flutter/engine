@@ -2,13 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include <utility>
 
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
+#include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 FLUTTER_ASSERT_NOT_ARC
@@ -47,8 +49,7 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(
   }
 
   const bool render_to_surface = !external_view_embedder_;
-  auto surface = std::make_unique<GPUSurfaceMetalSkia>(this, main_context_, MsaaSampleCount::kNone,
-                                                       render_to_surface);
+  auto surface = std::make_unique<GPUSurfaceMetalSkia>(this, main_context_, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;
@@ -80,3 +81,5 @@ bool EmbedderSurfaceMetal::PresentTexture(GPUMTLTextureInfo texture) const {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

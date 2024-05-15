@@ -119,6 +119,7 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
   switch (options) {
     case flutter::DlImageSampling::kNearestNeighbor:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
+      desc.mip_filter = impeller::MipFilter::kBase;
       desc.label = "Nearest Sampler";
       break;
     case flutter::DlImageSampling::kLinear:
@@ -840,7 +841,7 @@ void DlDispatcherBase::drawPath(const CacheablePath& cache) {
   SimplifyOrDrawPath(GetCanvas(), cache, paint_);
 }
 
-void DlDispatcherBase::SimplifyOrDrawPath(CanvasType& canvas,
+void DlDispatcherBase::SimplifyOrDrawPath(Canvas& canvas,
                                           const CacheablePath& cache,
                                           const Paint& paint) {
   SkRect rect;

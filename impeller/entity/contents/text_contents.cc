@@ -73,7 +73,7 @@ bool TextContents::Render(const ContentContext& renderer,
   auto type = frame_->GetAtlasType();
   const std::shared_ptr<GlyphAtlas>& atlas =
       renderer.GetLazyGlyphAtlas()->CreateOrGetGlyphAtlas(
-          *renderer.GetContext(), type);
+          *renderer.GetContext(), renderer.GetTransientsBuffer(), type);
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -125,7 +125,9 @@ bool TextContents::Render(const ContentContext& renderer,
     sampler_desc.min_filter = MinMagFilter::kLinear;
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
-  sampler_desc.mip_filter = MipFilter::kNearest;
+
+  // No mipmaps for glyph atlas (glyphs are generated at exact scales).
+  sampler_desc.mip_filter = MipFilter::kBase;
 
   FS::BindGlyphAtlasSampler(
       pass,                 // command
