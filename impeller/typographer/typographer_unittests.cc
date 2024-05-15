@@ -347,6 +347,10 @@ TEST(TypographerTest, RectanglePackerFillsRows) {
 }
 
 TEST_P(TypographerTest, GlyphAtlasTextureWillGrowTilMaxTextureSize) {
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP() << "Atlas growth isn't supported for OpenGLES currently.";
+  }
+
   auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   auto context = TypographerContextSkia::Make();
   auto atlas_context =

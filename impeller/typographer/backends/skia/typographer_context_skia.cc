@@ -400,10 +400,14 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       context.GetResourceAllocator()->GetMaxTextureSizeSupported().height;
 
   // IF the current atlas size is as big as it can get, then "GC" and create an
-  // atlas with only the required glyphs.
+  // atlas with only the required glyphs. OpenGLES cannot reliably perform the
+  // blit required here, as 1) it requires attaching textures as read and write
+  // framebuffers which has substantially smaller size limits that max textures
+  // and 2) is missing a GLES 2.0 implementation and cap check.
   bool blit_old_atlas = true;
   std::shared_ptr<GlyphAtlas> new_atlas = last_atlas;
-  if (atlas_context->GetAtlasSize().height >= max_texture_height) {
+  if (atlas_context->GetAtlasSize().height >= max_texture_height ||
+      context.GetBackendType() == Context::BackendType::kOpenGLES) {
     blit_old_atlas = false;
     first_missing_index = 0;
     glyph_positions.clear();
