@@ -54,7 +54,7 @@ void main() {
                 "testonly": true,
                 "type": "executable"
               }
-            }         
+            }
           ''',
         ),
       ],
@@ -99,7 +99,7 @@ void main() {
                 "testonly": false,
                 "type": "executable"
               }
-            }         
+            }
           ''',
         ),
       ],
