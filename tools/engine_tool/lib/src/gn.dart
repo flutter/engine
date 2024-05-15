@@ -84,6 +84,7 @@ interface class Gn {
       if (target == null) {
         return null;
       }
+      return target;
     }).whereType<BuildTarget>().toList();
   }
 }
@@ -111,7 +112,8 @@ sealed class BuildTarget {
       'executable' => ExecutableBuildTarget(
           label: Label.parseGn(label),
           testOnly: testOnly,
-          executable: json.stringList('outputs').first,
+          // Remove the leading // from the path.
+          executable: json.stringList('outputs').first.substring(2),
         ),
       'shared_library' || 'static_library' => LibraryBuildTarget(
           label: Label.parseGn(label),
@@ -126,6 +128,14 @@ sealed class BuildTarget {
 
   /// Whether a target is only used for testing.
   final bool testOnly;
+
+  @mustBeOverridden
+  @override
+  bool operator ==(Object other);
+
+  @mustBeOverridden
+  @override
+  int get hashCode;
 }
 
 /// A build target that produces a [shared library][] or [static library][].
@@ -138,6 +148,16 @@ final class LibraryBuildTarget extends BuildTarget {
     required super.label,
     required super.testOnly,
   });
+
+  @override
+  bool operator ==(Object other) {
+    return other is LibraryBuildTarget &&
+        label == other.label &&
+        testOnly == other.testOnly;
+  }
+
+  @override
+  int get hashCode => Object.hash(label, testOnly);
 }
 
 /// A build target that produces an [executable][] program.
@@ -153,4 +173,15 @@ final class ExecutableBuildTarget extends BuildTarget {
 
   /// The path to the executable program.
   final String executable;
+
+  @override
+  bool operator ==(Object other) {
+    return other is ExecutableBuildTarget &&
+        label == other.label &&
+        testOnly == other.testOnly &&
+        executable == other.executable;
+  }
+
+  @override
+  int get hashCode => Object.hash(label, testOnly, executable);
 }

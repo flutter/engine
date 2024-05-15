@@ -81,10 +81,10 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
     final Gn gn = Gn.fromEnvironment(environment);
     final Set<Label> allTargets = <Label>{};
     for (final String pattern in argResults!.rest) {
-      final TargetPattern targetPattern = TargetPattern.parse(pattern);
+      final TargetPattern target = TargetPattern.parse(pattern);
       final List<BuildTarget> targets = await gn.desc(
         'out/${build.ninja.config}',
-        targetPattern,
+        target,
       );
       allTargets.addAll(targets.map((BuildTarget target) => target.label));
     }

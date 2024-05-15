@@ -109,7 +109,7 @@ et test //flutter/fml:fml_benchmarks  # Run a single test target in `//flutter/f
     for (final ExecutableBuildTarget target in testTargets) {
       final List<String> commandLine = <String>[target.executable];
       tasks.add(ProcessTask(
-        target.label.toNinjaLabel(), 
+        target.label.toString(),
         environment, 
         environment.engine.srcDir, 
         commandLine,
