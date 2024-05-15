@@ -53,10 +53,22 @@ final class Label {
     return Label(label.substring(0, colon), label.substring(colon + 1));
   }
 
-  /// Parses a label from a string in the format `package-name:target-name`.
+  /// Parses a label from a string in the format `//package-name:target-name`.
+  /// 
+  /// If a toolchain is present, it is removed.
   ///
   /// Throws a [FormatException] if the label is invalid.
-  static Label parseNinja(String label) => parse('//$label');
+  static Label parseGn(String label) {
+    // Remove (//build/toolchain/...) at the end of the label.
+    if (label.endsWith(')')) {
+      final int start = label.lastIndexOf('(', label.length - 2);
+      if (start != -1) {
+        label = label.substring(0, start);
+      }
+    }
+
+    return Label.parse(label);
+  }
 
   /// A source-absolute package name, starting with `//`.
   ///
@@ -83,7 +95,7 @@ final class Label {
   @override
   String toString() => '$package:$target';
 
-  /// Returns a [parseNinja] compatible string representation of the label.
+  /// Returns a Ninja-compatible string representation of the label.
   ///
   /// `//package-name:target-name` becomes `package-name:target-name`.
   String toNinjaLabel() => '${package.substring(2)}:$target';
@@ -115,7 +127,7 @@ final class Label {
       if (!_identifier.hasMatch(component)) {
         return FormatException(
           'Package name component must be a valid identifier.',
-          component,
+          package,
           i,
         );
       }

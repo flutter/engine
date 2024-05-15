@@ -5,7 +5,7 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
-import '../gn_utils.dart';
+import '../gn.dart';
 import '../label.dart';
 import 'command.dart';
 import 'flags.dart';
@@ -73,32 +73,27 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
 
     final List<String> extraGnArgs = <String>[
       if (!useRbe) '--no-rbe',
-      if (useLto) '--lto',
-      if (!useLto) '--no-lto',
+      if (useLto) '--lto' else '--no-lto',
     ];
 
-    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
-      environment,
-      build,
-      argResults!.rest,
-      enableRbe: useRbe,
-    );
-    if (selectedTargets == null) {
-      // The user typed something wrong and targetsFromCommandLine has already
-      // logged the error message.
-      return 1;
+    // Builds only accept labels as arguments, so convert patterns to labels.
+    // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
+    final Gn gn = Gn.fromEnvironment(environment);
+    final Set<Label> allTargets = <Label>{};
+    for (final String pattern in argResults!.rest) {
+      final TargetPattern targetPattern = TargetPattern.parse(pattern);
+      final List<BuildTarget> targets = await gn.desc(
+        'out/${build.ninja.config}',
+        targetPattern,
+      );
+      allTargets.addAll(targets.map((BuildTarget target) => target.label));
     }
-
-    // Chop off the '//' prefix.
-    final List<Label> ninjaTargets = selectedTargets.map<Label>(
-      (BuildTarget target) => Label.parse(target.label),
-    ).toList();
 
     return runBuild(
       environment,
       build,
       extraGnArgs: extraGnArgs,
-      targets: ninjaTargets,
+      targets: allTargets.toList(),
       enableRbe: useRbe,
     );
   }

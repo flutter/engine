@@ -103,20 +103,18 @@ sealed class BuildTarget {
     final (
       String type,
       bool testOnly,
-      List<String> outputs,
     ) = json.map((JsonObject json) => (
-          json.string('type'),
-          json.boolean('test_only'),
-          json.stringList('outputs'),
-        ));
+      json.string('type'),
+      json.boolean('testonly'),
+    ));
     return switch (type) {
       'executable' => ExecutableBuildTarget(
-          label: label,
+          label: Label.parseGn(label),
           testOnly: testOnly,
-          executable: outputs.first,
+          executable: json.stringList('outputs').first,
         ),
       'shared_library' || 'static_library' => LibraryBuildTarget(
-          label: label,
+          label: Label.parseGn(label),
           testOnly: testOnly,
         ),
       _ => null,
@@ -124,7 +122,7 @@ sealed class BuildTarget {
   }
 
   /// Build target label, e.g. `//flutter/fml:fml_unittests`.
-  final String label;
+  final Label label;
 
   /// Whether a target is only used for testing.
   final bool testOnly;

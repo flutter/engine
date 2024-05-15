@@ -5,7 +5,8 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
-import '../gn_utils.dart';
+import '../gn.dart';
+import '../label.dart';
 import 'command.dart';
 import 'flags.dart';
 
@@ -194,27 +195,27 @@ et query targets //flutter/fml/...  # List all targets under `//flutter/fml`
       return 1;
     }
 
-    final List<BuildTarget>? selectedTargets = await targetsFromCommandLine(
-      environment,
-      build,
-      argResults!.rest,
-      defaultToAll: true,
-      enableRbe: useRbe,
-    );
-    if (selectedTargets == null) {
-      // The user typed something wrong and targetsFromCommandLine has already
-      // logged the error message.
-      return 1;
+    // Builds only accept labels as arguments, so convert patterns to labels.
+    // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
+    final Gn gn = Gn.fromEnvironment(environment);
+    final Set<BuildTarget> allTargets = <BuildTarget>{};
+    for (final String pattern in argResults!.rest) {
+      final TargetPattern target = TargetPattern.parse(pattern);
+      final List<BuildTarget> targets = await gn.desc(
+        'out/${build.ninja.config}',
+        target,
+      );
+      allTargets.addAll(targets);
     }
-    if (selectedTargets.isEmpty) {
+    
+    if (allTargets.isEmpty) {
       environment.logger.fatal(
         'targetsFromCommandLine unexpectedly returned an empty list',
       );
     }
 
-    for (final BuildTarget target in selectedTargets) {
-      if (testOnly &&
-          (!target.testOnly || target.type != BuildTargetType.executable)) {
+    for (final BuildTarget target in allTargets) {
+      if (testOnly && (!target.testOnly || target is! ExecutableBuildTarget)) {
         continue;
       }
       environment.logger.status(target.label);

@@ -49,8 +49,8 @@ void main() {
     });
 
     test('parses the ninja format', () {
-      expect(Label.parseNinja('foo/bar'), Label('//foo/bar'));
-      expect(Label.parseNinja('foo/bar:baz'), Label('//foo/bar', 'baz'));
+      expect(Label.parseGn('foo/bar'), Label('//foo/bar'));
+      expect(Label.parseGn('foo/bar:baz'), Label('//foo/bar', 'baz'));
     });
 
     test('converts to string', () {
