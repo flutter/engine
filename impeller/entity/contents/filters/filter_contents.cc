@@ -153,6 +153,7 @@ std::optional<Rect> FilterContents::GetLocalCoverage(
   auto coverage = GetFilterCoverage(inputs_, local_entity, effect_transform_);
   auto coverage_hint = GetCoverageHint();
   if (coverage_hint.has_value() && coverage.has_value()) {
+    FML_DLOG(ERROR) << coverage_hint.value() << " " << coverage.value();
     coverage = coverage->Intersection(coverage_hint.value());
   }
 
