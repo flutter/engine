@@ -844,6 +844,7 @@ void Canvas::SaveLayer(const Paint& paint,
                        bool can_distribute_opacity) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
   if (can_distribute_opacity) {
+    FML_DCHECK(!backdrop_filter);
     Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;

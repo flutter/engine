@@ -494,30 +494,6 @@ TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderGroupOpacity) {
-  Canvas canvas;
-
-  Paint red;
-  red.color = Color::Red();
-  Paint green;
-  green.color = Color::Green().WithAlpha(0.5);
-  Paint blue;
-  blue.color = Color::Blue();
-
-  Paint alpha;
-  alpha.color = Color::Red().WithAlpha(0.5);
-
-  canvas.SaveLayer(alpha);
-
-  canvas.DrawRect(Rect::MakeXYWH(000, 000, 100, 100), red);
-  canvas.DrawRect(Rect::MakeXYWH(020, 020, 100, 100), green);
-  canvas.DrawRect(Rect::MakeXYWH(040, 040, 100, 100), blue);
-
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CoordinateConversionsAreCorrect) {
   Canvas canvas;
 
