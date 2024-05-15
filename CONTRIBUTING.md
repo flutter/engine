@@ -86,9 +86,8 @@ types. The engine is moving towards the Dart style guide, but this is a gradual
 process. In the meantime, follow these guidelines:
 
 - **Always** annotate when inference is not possible.
-- **Consider** annotating when inference is possible but the type is not
+- **Prefer** annotating when inference is possible but the type is not
   obvious.
-- **Prefer** annotating when a code review requests it, regardless.
 
 Some cases when using `var`/`final`/`const` is appropriate:
 
@@ -166,6 +165,12 @@ Objective-C++ and is automatically formatted with `clang-format`.
 
 Follows the [Google Python Style Guide][google_python_style] and is
 automatically formatted with `yapf`.
+
+> [!WARNING]
+> Historically, the engine grew a number of one-off Python scripts, often as
+> part of the testing or build infrastructure (i.e. command-line tools). We are
+> instead moving towards using Dart for these tasks, so new Python scripts
+> should be avoided whenever possible.
 
 ### GN
 
