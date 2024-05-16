@@ -9,7 +9,7 @@
 #include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/tessellator/tessellator.h"
+#include "impeller/tessellator/tessellator_libtess.h"
 
 namespace impeller {
 
@@ -37,7 +37,7 @@ Path CreateQuadratic(bool closed);
 Path CreateRRect();
 }  // namespace
 
-static Tessellator tess;
+static TessellatorLibtess tess;
 
 template <class... Args>
 static void BM_Polyline(benchmark::State& state, Args&&... args) {
@@ -105,9 +105,10 @@ static void BM_Convex(benchmark::State& state, Args&&... args) {
   auto points = std::make_unique<std::vector<Point>>();
   auto indices = std::make_unique<std::vector<uint16_t>>();
   points->reserve(2048);
-  indices->reserve(2048);
   while (state.KeepRunning()) {
-    tess.TessellateConvexInternal(path, *points, *indices, 1.0f);
+    points->clear();
+    indices->clear();
+    Tessellator::TessellateConvexInternal(path, *points, *indices, 1.0f);
     single_point_count = indices->size();
     point_count += indices->size();
   }

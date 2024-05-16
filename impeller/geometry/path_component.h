@@ -6,11 +6,11 @@
 #define FLUTTER_IMPELLER_GEOMETRY_PATH_COMPONENT_H_
 
 #include <functional>
+#include <optional>
 #include <type_traits>
 #include <variant>
 #include <vector>
 
-#include "impeller/geometry/matrix.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
 

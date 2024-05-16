@@ -30,32 +30,33 @@ void VertexWriter::EndContour() {
     end--;
   }
 
-  if (contour_start_ > 0) {
-    // Triangle strip break.
-    indices_.emplace_back(indices_.back());
-    indices_.emplace_back(start);
-    indices_.emplace_back(start);
+  // Triangle strip break for subsequent contours
+  if (contour_start_ != 0) {
+    auto back = indices_.back();
+    indices_.push_back(back);
+    indices_.push_back(start);
+    indices_.push_back(start);
 
     // If the contour has an odd number of points, insert an extra point when
     // bridging to the next contour to preserve the correct triangle winding
     // order.
     if (previous_contour_odd_points_) {
-      indices_.emplace_back(start);
+      indices_.push_back(start);
     }
   } else {
-    indices_.emplace_back(start);
+    indices_.push_back(start);
   }
 
   size_t a = start + 1;
   size_t b = end;
   while (a < b) {
-    indices_.emplace_back(a);
-    indices_.emplace_back(b);
+    indices_.push_back(a);
+    indices_.push_back(b);
     a++;
     b--;
   }
   if (a == b) {
-    indices_.emplace_back(a);
+    indices_.push_back(a);
     previous_contour_odd_points_ = false;
   } else {
     previous_contour_odd_points_ = true;
@@ -64,7 +65,7 @@ void VertexWriter::EndContour() {
 }
 
 void VertexWriter::Write(Point point) {
-  points_.emplace_back(point);
+  points_.push_back(point);
 }
 
 /*
@@ -157,6 +158,16 @@ Point QuadraticPathComponent::SolveDerivative(Scalar time) const {
   };
 }
 
+void QuadraticPathComponent::ToLinearPathComponents(
+    Scalar scale,
+    VertexWriter& writer) const {
+  Scalar line_count = std::ceilf(ComputeQuadradicSubdivisions(scale, *this));
+  for (size_t i = 1; i < line_count; i += 1) {
+    writer.Write(Solve(i / line_count));
+  }
+  writer.Write(p2);
+}
+
 void QuadraticPathComponent::AppendPolylinePoints(
     Scalar scale_factor,
     std::vector<Point>& points) const {
@@ -174,16 +185,6 @@ void QuadraticPathComponent::ToLinearPathComponents(
     proc(Solve(i / line_count));
   }
   proc(p2);
-}
-
-void QuadraticPathComponent::ToLinearPathComponents(
-    Scalar scale,
-    VertexWriter& writer) const {
-  Scalar line_count = std::ceilf(ComputeQuadradicSubdivisions(scale, *this));
-  for (size_t i = 1; i < line_count; i += 1) {
-    writer.Write(Solve(i / line_count));
-  }
-  writer.Write(p2);
 }
 
 std::vector<Point> QuadraticPathComponent::Extrema() const {
@@ -232,6 +233,15 @@ void CubicPathComponent::AppendPolylinePoints(
       scale, [&points](const Point& point) { points.emplace_back(point); });
 }
 
+void CubicPathComponent::ToLinearPathComponents(Scalar scale,
+                                                VertexWriter& writer) const {
+  Scalar line_count = std::ceilf(ComputeCubicSubdivisions(scale, *this));
+  for (size_t i = 1; i < line_count; i++) {
+    writer.Write(Solve(i / line_count));
+  }
+  writer.Write(p2);
+}
+
 inline QuadraticPathComponent CubicPathComponent::Lower() const {
   return QuadraticPathComponent(3.0 * (cp1 - p1), 3.0 * (cp2 - cp1),
                                 3.0 * (p2 - cp2));
@@ -254,15 +264,6 @@ void CubicPathComponent::ToLinearPathComponents(Scalar scale,
     proc(Solve(i / line_count));
   }
   proc(p2);
-}
-
-void CubicPathComponent::ToLinearPathComponents(Scalar scale,
-                                                VertexWriter& writer) const {
-  Scalar line_count = std::ceilf(ComputeCubicSubdivisions(scale, *this));
-  for (size_t i = 1; i < line_count; i++) {
-    writer.Write(Solve(i / line_count));
-  }
-  writer.Write(p2);
 }
 
 static inline bool NearEqual(Scalar a, Scalar b, Scalar epsilon) {

@@ -47,8 +47,8 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
     Path path = PathBuilder{}.AddCircle({100, 100}, 50).TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(100, 50));
-    ASSERT_TRUE(contour.is_closed);
+    EXPECT_POINT_NEAR(contour.destination, Point(100, 50));
+    EXPECT_TRUE(contour.is_closed);
   }
 
   {
@@ -56,8 +56,8 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
         PathBuilder{}.AddOval(Rect::MakeXYWH(100, 100, 100, 100)).TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(150, 100));
-    ASSERT_TRUE(contour.is_closed);
+    EXPECT_POINT_NEAR(contour.destination, Point(150, 100));
+    EXPECT_TRUE(contour.is_closed);
   }
 
   {
@@ -65,8 +65,8 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
         PathBuilder{}.AddRect(Rect::MakeXYWH(100, 100, 100, 100)).TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(100, 100));
-    ASSERT_TRUE(contour.is_closed);
+    EXPECT_POINT_NEAR(contour.destination, Point(100, 100));
+    EXPECT_TRUE(contour.is_closed);
   }
 
   {
@@ -75,8 +75,8 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
                     .TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(110, 100));
-    ASSERT_TRUE(contour.is_closed);
+    EXPECT_POINT_NEAR(contour.destination, Point(110, 100));
+    EXPECT_TRUE(contour.is_closed);
   }
 
   {
@@ -86,8 +86,8 @@ TEST(PathTest, PathBuilderSetsCorrectContourPropertiesForAddCommands) {
             .TakePath();
     ContourComponent contour;
     path.GetContourComponentAtIndex(0, contour);
-    ASSERT_POINT_NEAR(contour.destination, Point(110, 100));
-    ASSERT_TRUE(contour.is_closed);
+    EXPECT_POINT_NEAR(contour.destination, Point(110, 100));
+    EXPECT_TRUE(contour.is_closed);
   }
 
   // Open shapes.
@@ -454,6 +454,50 @@ TEST(PathTest, SimplePath) {
       });
 }
 
+TEST(PathTest, RepeatCloseDoesNotAddNewLines) {
+  PathBuilder builder;
+  auto path = builder.LineTo({0, 10})
+                  .LineTo({10, 10})
+                  .Close()  // Returns to (0, 0)
+                  .Close()  // No Op
+                  .Close()  // Still No op
+                  .TakePath();
+
+  EXPECT_EQ(path.GetComponentCount(), 5u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 3u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 2u);
+}
+
+TEST(PathTest, CloseAfterMoveDoesNotAddNewLines) {
+  PathBuilder builder;
+  auto path = builder.LineTo({0, 10})
+                  .LineTo({10, 10})
+                  .MoveTo({30, 30})  // Moves to (30, 30)
+                  .Close()           // No Op
+                  .Close()           // Still No op
+                  .TakePath();
+
+  EXPECT_EQ(path.GetComponentCount(), 4u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 2u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 2u);
+}
+
+TEST(PathTest, CloseAtOriginDoesNotAddNewLineSegment) {
+  PathBuilder builder;
+  // Create a path that has a current position at the origin when close is
+  // called. This should not insert a new line segment
+  auto path = builder.LineTo({10, 0})
+                  .LineTo({10, 10})
+                  .LineTo({0, 10})
+                  .LineTo({0, 0})
+                  .Close()
+                  .TakePath();
+
+  EXPECT_EQ(path.GetComponentCount(), 6u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kLinear), 4u);
+  EXPECT_EQ(path.GetComponentCount(Path::ComponentType::kContour), 2u);
+}
+
 TEST(PathTest, CanBeCloned) {
   PathBuilder builder;
   builder.MoveTo({10, 10});
@@ -564,29 +608,17 @@ TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
       },
       true, {}, "Close");
 
-  test_isolation(
-      [](PathBuilder& builder) {
-        builder.MoveTo({20, 30}, false);
-      },
-      false, {}, "Absolute MoveTo");
+  test_isolation([](PathBuilder& builder) { builder.MoveTo({20, 30}, false); },
+                 false, {}, "Absolute MoveTo");
 
-  test_isolation(
-      [](PathBuilder& builder) {
-        builder.MoveTo({20, 30}, true);
-      },
-      false, {}, "Relative MoveTo");
+  test_isolation([](PathBuilder& builder) { builder.MoveTo({20, 30}, true); },
+                 false, {}, "Relative MoveTo");
 
-  test_isolation(
-      [](PathBuilder& builder) {
-        builder.LineTo({20, 30}, false);
-      },
-      false, {}, "Absolute LineTo");
+  test_isolation([](PathBuilder& builder) { builder.LineTo({20, 30}, false); },
+                 false, {}, "Absolute LineTo");
 
-  test_isolation(
-      [](PathBuilder& builder) {
-        builder.LineTo({20, 30}, true);
-      },
-      false, {}, "Relative LineTo");
+  test_isolation([](PathBuilder& builder) { builder.LineTo({20, 30}, true); },
+                 false, {}, "Relative LineTo");
 
   test_isolation(
       [](PathBuilder& builder) {  //
@@ -637,9 +669,7 @@ TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
       false, {}, "Relative CubicCurveTo");
 
   test_isolation(
-      [](PathBuilder& builder) {
-        builder.AddLine({100, 100}, {150, 100});
-      },
+      [](PathBuilder& builder) { builder.AddLine({100, 100}, {150, 100}); },
       false, {}, "AddLine");
 
   test_isolation(
@@ -655,10 +685,8 @@ TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
       false, {}, "AddOval");
 
   test_isolation(
-      [](PathBuilder& builder) {
-        builder.AddCircle({100, 100}, 20);
-      },
-      false, {}, "AddCircle");
+      [](PathBuilder& builder) { builder.AddCircle({100, 100}, 20); }, false,
+      {}, "AddCircle");
 
   test_isolation(
       [](PathBuilder& builder) {
@@ -679,11 +707,8 @@ TEST(PathTest, PathBuilderDoesNotMutateCopiedPaths) {
       },
       false, {}, "AddCubicCurve");
 
-  test_isolation(
-      [](PathBuilder& builder) {
-        builder.Shift({23, 42});
-      },
-      false, {23, 42}, "Shift");
+  test_isolation([](PathBuilder& builder) { builder.Shift({23, 42}); }, false,
+                 {23, 42}, "Shift");
 }
 
 }  // namespace testing

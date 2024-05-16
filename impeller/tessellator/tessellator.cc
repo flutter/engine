@@ -4,10 +4,6 @@
 
 #include "impeller/tessellator/tessellator.h"
 
-#include "impeller/core/buffer_view.h"
-#include "impeller/core/formats.h"
-#include "impeller/core/vertex_buffer.h"
-
 namespace impeller {
 
 Tessellator::Tessellator()
@@ -67,13 +63,12 @@ void Tessellator::TessellateConvexInternal(const Path& path,
                                            std::vector<Point>& point_buffer,
                                            std::vector<uint16_t>& index_buffer,
                                            Scalar tolerance) {
-  index_buffer_->clear();
-  point_buffer_->clear();
+  point_buffer.clear();
+  index_buffer.clear();
 
   VertexWriter writer(point_buffer, index_buffer);
 
   path.WritePolyline(tolerance, writer);
-  writer.EndContour();
 }
 
 static constexpr int kPrecomputedDivisionCount = 1024;

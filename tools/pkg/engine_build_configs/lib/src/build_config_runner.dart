@@ -76,7 +76,13 @@ final class RunnerProgress extends RunnerEvent {
 
 /// A [RunnerEvent] representing the result of a command.
 final class RunnerResult extends RunnerEvent {
-  RunnerResult(super.name, super.command, super.timestamp, this.result);
+  RunnerResult(
+    super.name,
+    super.command,
+    super.timestamp,
+    this.result, {
+    this.okMessage = 'OK',
+  });
 
   /// The resuilt of running the command.
   final ProcessRunnerResult result;
@@ -84,10 +90,13 @@ final class RunnerResult extends RunnerEvent {
   /// Whether the command was successful.
   late final bool ok = result.exitCode == 0;
 
+  /// The message to print on a successful result. The default is 'OK'.
+  final String okMessage;
+
   @override
   String toString() {
     if (ok) {
-      return '[${_timestamp(timestamp)}][$name]: OK';
+      return '[${_timestamp(timestamp)}][$name]: $okMessage';
     }
     final StringBuffer buffer = StringBuffer();
     buffer.writeln('[$timestamp][$name]: FAILED');
@@ -264,7 +273,6 @@ final class BuildRunner extends Runner {
   static const List<(String, String)> _overridableArgs = <(String, String)>[
     ('--lto', '--no-lto'),
     ('--rbe', '--no-rbe'),
-    ('--goma', '--no-goma'),
   ];
 
   // extraGnArgs overrides the build config args.
@@ -332,6 +340,38 @@ final class BuildRunner extends Runner {
     return p.join(engineSrcDir.path, 'flutter', 'buildtools', platformDir);
   }();
 
+  // Returns the second line of output from reproxystatus, which contains
+  // RBE statistics, or null if something goes wrong.
+  Future<String?> _reproxystatus() async {
+    final String reclientPath = p.join(_buildtoolsPath, 'reclient');
+    final String exe = platform.isWindows ? '.exe' : '';
+    final String restatsPath = p.join(reclientPath, 'reproxystatus$exe');
+    final ProcessRunnerResult restatsResult;
+    if (dryRun) {
+      restatsResult = ProcessRunnerResult(
+        0,                       // exit code.
+        utf8.encode('OK\nOK\n'), // stdout.
+        <int>[],                 // stderr.
+        utf8.encode('OK\nOK\n'), // combined,
+        pid: 0,                  // pid.
+      );
+    } else {
+      restatsResult = await processRunner.runProcess(
+        <String>[restatsPath, '-color', 'off'],
+        failOk: true,
+      );
+    }
+    if (restatsResult.exitCode != 0) {
+      return null;
+    }
+    // The second line of output has the stats.
+    final List<String> lines = restatsResult.stdout.split('\n');
+    if (lines.length < 2) {
+      return null;
+    }
+    return lines[1];
+  }
+
   Future<bool> _bootstrapRbe(
     RunnerEventHandler eventHandler, {
     bool shutdown = false,
@@ -357,7 +397,7 @@ final class BuildRunner extends Runner {
     final List<String> bootstrapCommand = <String>[
       bootstrapPath,
       '--re_proxy=$reproxyPath',
-      '--automatic_auth=true',
+      '--use_application_default_credentials',
       if (shutdown) '--shutdown' else ...<String>['--cfg=$reclientConfigPath'],
     ];
     if (!processRunner.processManager.canRun(bootstrapPath)) {
@@ -383,11 +423,16 @@ final class BuildRunner extends Runner {
         failOk: true,
       );
     }
+    String okMessage = bootstrapResult.stdout.trim();
+    if (shutdown) {
+      okMessage = await _reproxystatus() ?? okMessage;
+    }
     eventHandler(RunnerResult(
       '${build.name}: RBE ${shutdown ? 'shutdown' : 'startup'}',
       bootstrapCommand,
       DateTime.now(),
       bootstrapResult,
+      okMessage: okMessage,
     ));
     return bootstrapResult.exitCode == 0;
   }
@@ -416,7 +461,7 @@ final class BuildRunner extends Runner {
         ninjaPath,
         '-C',
         outDir,
-        if (_isGomaOrRbe) ...<String>['-j', '200'],
+        if (_isRbe) ...<String>['-j', '200'],
         ...extraNinjaArgs,
         ...build.ninja.targets,
       ];
@@ -523,9 +568,7 @@ final class BuildRunner extends Runner {
     return true;
   }
 
-  late final bool _isGoma = _mergedGnArgs.contains('--goma');
   late final bool _isRbe = _mergedGnArgs.contains('--rbe');
-  late final bool _isGomaOrRbe = _isGoma || _isRbe;
 
   Future<bool> _runGenerators(RunnerEventHandler eventHandler) async {
     for (final BuildTask task in build.generators) {

@@ -169,16 +169,16 @@ class Path {
           std::make_unique<std::vector<Point>>(),
       Polyline::ReclaimPointBufferCallback reclaim = nullptr) const;
 
+  std::optional<Rect> GetBoundingBox() const;
+
+  std::optional<Rect> GetTransformedBoundingBox(const Matrix& transform) const;
+
   /// Generate a polyline into the temporary storage held by the [writer].
   ///
   /// It is suitable to use the max basis length of the matrix used to transform
   /// the path. If the provided scale is 0, curves will revert to straight
   /// lines.
   void WritePolyline(Scalar scale, VertexWriter& writer) const;
-
-  std::optional<Rect> GetBoundingBox() const;
-
-  std::optional<Rect> GetTransformedBoundingBox(const Matrix& transform) const;
 
  private:
   friend class PathBuilder;

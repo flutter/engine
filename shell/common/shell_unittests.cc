@@ -2280,7 +2280,7 @@ TEST_F(ShellTest, LocaltimesMatch) {
 class SinglePixelImageGenerator : public ImageGenerator {
  public:
   SinglePixelImageGenerator()
-      : info_(SkImageInfo::MakeN32(1, 1, SkAlphaType::kOpaque_SkAlphaType)){};
+      : info_(SkImageInfo::MakeN32(1, 1, SkAlphaType::kOpaque_SkAlphaType)) {};
   ~SinglePixelImageGenerator() = default;
   const SkImageInfo& GetInfo() { return info_; }
 
@@ -2450,7 +2450,7 @@ TEST_F(ShellTest, RasterizerMakeRasterSnapshot) {
       shell->GetTaskRunners().GetRasterTaskRunner(), [&shell, &latch]() {
         SnapshotDelegate* delegate =
             reinterpret_cast<Rasterizer*>(shell->GetRasterizer().get());
-        sk_sp<DlImage> image = delegate->MakeRasterSnapshot(
+        sk_sp<DlImage> image = delegate->MakeRasterSnapshotSync(
             MakeSizedDisplayList(50, 50), SkISize::Make(50, 50));
         EXPECT_NE(image, nullptr);
 

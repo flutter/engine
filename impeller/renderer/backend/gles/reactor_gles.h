@@ -9,7 +9,6 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -248,8 +247,8 @@ class ReactorGLES {
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
 
   mutable Mutex workers_mutex_;
-  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(
-      workers_mutex_);
+  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_
+      IPLR_GUARDED_BY(workers_mutex_);
 
   bool can_set_debug_labels_ = false;
   bool is_valid_ = false;

@@ -9,8 +9,11 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "fml/closure.h"
+#include "fml/mapping.h"
 #include "impeller/base/allocation.h"
 #include "impeller/core/allocator.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/typographer/backends/stb/glyph_atlas_context_stb.h"
 #include "impeller/typographer/font_glyph_pair.h"
 #include "typeface_stb.h"
@@ -35,8 +38,8 @@ TypographerContextSTB::TypographerContextSTB() : TypographerContext() {}
 TypographerContextSTB::~TypographerContextSTB() = default;
 
 std::shared_ptr<GlyphAtlasContext>
-TypographerContextSTB::CreateGlyphAtlasContext() const {
-  return std::make_shared<GlyphAtlasContextSTB>();
+TypographerContextSTB::CreateGlyphAtlasContext(GlyphAtlas::Type type) const {
+  return std::make_shared<GlyphAtlasContextSTB>(type);
 }
 
 // Function returns the count of "remaining pairs" not packed into rect of given
@@ -70,10 +73,8 @@ static size_t PairsFitInAtlasOfSize(
     ISize glyph_size;
     {
       int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-      // NOTE: We increase the size of the glyph by one pixel in all dimensions
-      // to allow us to cut out padding later.
-      float scale = stbtt_ScaleForPixelHeight(typeface_stb->GetFontInfo(),
-                                              text_size_pixels);
+      float scale = stbtt_ScaleForMappingEmToPixels(typeface_stb->GetFontInfo(),
+                                                    text_size_pixels);
       stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.index,
                               scale, scale, &x0, &y0, &x1, &y1);
 
@@ -81,7 +82,7 @@ static size_t PairsFitInAtlasOfSize(
     }
 
     IPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
+    if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
                               &location_in_atlas             //
                               )) {
@@ -128,10 +129,8 @@ static bool CanAppendToExistingAtlas(
     ISize glyph_size;
     {
       int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-      // NOTE: We increase the size of the glyph by one pixel in all dimensions
-      // to allow us to cut out padding later.
-      float scale_y = stbtt_ScaleForPixelHeight(typeface_stb->GetFontInfo(),
-                                                text_size_pixels);
+      float scale_y = stbtt_ScaleForMappingEmToPixels(
+          typeface_stb->GetFontInfo(), text_size_pixels);
       float scale_x = scale_y;
       stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.index,
                               scale_x, scale_y, &x0, &y0, &x1, &y1);
@@ -140,7 +139,7 @@ static bool CanAppendToExistingAtlas(
     }
 
     IPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
+    if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
                               &location_in_atlas             //
                               )) {
@@ -210,8 +209,8 @@ static void DrawGlyph(BitmapSTB* bitmap,
   // Conversion factor to scale font size in Points to pixels.
   // Note this assumes typical DPI.
   float text_size_pixels = metrics.point_size * TypefaceSTB::kPointsToPixels;
-  float scale_y =
-      stbtt_ScaleForPixelHeight(typeface_stb->GetFontInfo(), text_size_pixels);
+  float scale_y = stbtt_ScaleForMappingEmToPixels(typeface_stb->GetFontInfo(),
+                                                  text_size_pixels);
   float scale_x = scale_y;
 
   auto output = bitmap->GetPixelAddress({static_cast<size_t>(location.GetX()),
@@ -313,6 +312,8 @@ static std::shared_ptr<BitmapSTB> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
 // static bool UpdateGlyphTextureAtlas(std::shared_ptr<SkBitmap> bitmap,
 static bool UpdateGlyphTextureAtlas(std::shared_ptr<BitmapSTB>& bitmap,
+                                    const std::shared_ptr<Allocator>& allocator,
+                                    std::shared_ptr<BlitPass>& blit_pass,
                                     const std::shared_ptr<Texture>& texture) {
   TRACE_EVENT0("impeller", __FUNCTION__);
 
@@ -327,11 +328,16 @@ static bool UpdateGlyphTextureAtlas(std::shared_ptr<BitmapSTB>& bitmap,
       // specify a release proc.
   );
 
-  return texture->SetContents(mapping);
+  std::shared_ptr<DeviceBuffer> device_buffer =
+      allocator->CreateBufferWithCopy(*mapping);
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), texture);
+
+  return blit_pass->EncodeCommands(allocator);
 }
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
     const std::shared_ptr<Allocator>& allocator,
+    std::shared_ptr<BlitPass>& blit_pass,
     std::shared_ptr<BitmapSTB>& bitmap,
     const ISize& atlas_size,
     PixelFormat format) {
@@ -343,7 +349,7 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   FML_DCHECK(bitmap != nullptr);
 
   TextureDescriptor texture_descriptor;
-  texture_descriptor.storage_mode = StorageMode::kHostVisible;
+  texture_descriptor.storage_mode = StorageMode::kDevicePrivate;
   texture_descriptor.format = format;
   texture_descriptor.size = atlas_size;
 
@@ -358,22 +364,27 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   }
   texture->SetLabel("GlyphAtlas");
 
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->GetPixels()),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel()          // size
-      // As the bitmap is static in this module I believe we don't need to
-      // specify a release proc.
-  );
-
-  if (!texture->SetContents(mapping)) {
+  std::shared_ptr<fml::NonOwnedMapping> mapping =
+      std::make_shared<fml::NonOwnedMapping>(
+          reinterpret_cast<const uint8_t*>(bitmap->GetPixels()),  // data
+          texture_descriptor.GetByteSizeOfBaseMipLevel()          // size
+          // As the bitmap is static in this module I believe we don't need to
+          // specify a release proc.
+      );
+  std::shared_ptr<DeviceBuffer> device_buffer =
+      allocator->CreateBufferWithCopy(*mapping);
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), texture);
+  if (!blit_pass->EncodeCommands(allocator)) {
     return nullptr;
   }
+
   return texture;
 }
 
 std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
+    HostBuffer& host_buffer,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const FontGlyphMap& font_glyph_map) const {
   TRACE_EVENT0("impeller", __FUNCTION__);
@@ -386,6 +397,13 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   if (font_glyph_map.empty()) {
     return last_atlas;
   }
+
+  std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
+  std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
+
+  fml::ScopedCleanupClosure closure([&cmd_buffer, &context]() {
+    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+  });
 
   // ---------------------------------------------------------------------------
   // Step 1: Determine if the atlas type and font glyph pairs are compatible
@@ -445,7 +463,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     // ---------------------------------------------------------------------------
     // Step 5a: Update the existing texture with the updated bitmap.
     // ---------------------------------------------------------------------------
-    if (!UpdateGlyphTextureAtlas(bitmap, last_atlas->GetTexture())) {
+    if (!UpdateGlyphTextureAtlas(bitmap, context.GetResourceAllocator(),
+                                 blit_pass, last_atlas->GetTexture())) {
       return nullptr;
     }
     return last_atlas;
@@ -523,8 +542,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
                    : PixelFormat::kR8G8B8A8UNormInt;
       break;
   }
-  auto texture = UploadGlyphTextureAtlas(context.GetResourceAllocator(), bitmap,
-                                         atlas_size, format);
+  auto texture = UploadGlyphTextureAtlas(context.GetResourceAllocator(),
+                                         blit_pass, bitmap, atlas_size, format);
   if (!texture) {
     return nullptr;
   }

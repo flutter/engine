@@ -4,7 +4,6 @@
 
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
@@ -14,6 +13,7 @@
 #include <vector>
 
 #include "flutter/testing/testing.h"
+#include "gtest/gtest.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
@@ -21,8 +21,8 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/capture.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -35,7 +35,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
 #include "impeller/typographer/backends/stb/typeface_stb.h"
 #include "impeller/typographer/backends/stb/typographer_context_stb.h"
@@ -2217,30 +2216,6 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-/// Tests that the debug checkerboard displays for offscreen textures when
-/// enabled. Most of the complexity here is just to future proof by making pass
-/// collapsing hard.
-TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
-  Canvas canvas;
-  canvas.debug_options.offscreen_texture_checkerboard = true;
-
-  canvas.DrawPaint({.color = Color::AntiqueWhite()});
-  canvas.DrawCircle({400, 300}, 200,
-                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
-
-  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  {
-    canvas.DrawCircle({500, 400}, 200,
-                      {.color = Color::DarkBlue().WithAlpha(0.75)});
-    canvas.DrawCircle({550, 450}, 200,
-                      {.color = Color::LightCoral().WithAlpha(0.75),
-                       .blend_mode = BlendMode::kLuminosity});
-  }
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   Canvas canvas;
   canvas.Scale(Vector2(1.618, 1.618));
@@ -2764,6 +2739,38 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
+  Canvas canvas;
+  Paint paint;
+  auto texture = CreateTextureForFixture("table_mountain_nx.png");
+
+  paint.color_source =
+      ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
+                             Entity::TileMode::kClamp, {}, Matrix());
+
+  auto vertices = {
+      Point(0, 0),
+      Point(texture->GetSize().width, 0),
+      Point(0, texture->GetSize().height),
+      Point(texture->GetSize().width, 0),
+      Point(0, 0),
+      Point(texture->GetSize().width, texture->GetSize().height),
+  };
+  std::vector<uint16_t> indices = {};
+  std::vector<Point> texture_coordinates = {};
+  std::vector<Color> vertex_colors = {
+      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
+      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
+      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
+  };
+  auto geometry = std::make_shared<VerticesGeometry>(
+      vertices, indices, texture_coordinates, vertex_colors,
+      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
+
+  canvas.DrawVertices(geometry, BlendMode::kColorBurn, paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, MatrixImageFilterMagnify) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -3085,12 +3092,13 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
   auto texture =
       GetContext()->GetResourceAllocator()->CreateTexture(texture_descriptor);
 
-  ASSERT_TRUE(!!texture);
-  ASSERT_TRUE(texture->SetContents(mapping));
-
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
   auto command_buffer = GetContext()->CreateCommandBuffer();
   auto blit_pass = command_buffer->CreateBlitPass();
 
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(std::move(device_buffer)),
+                     texture);
   blit_pass->GenerateMipmap(texture);
   EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
   EXPECT_TRUE(GetContext()->GetCommandQueue()->Submit({command_buffer}).ok());
@@ -3132,6 +3140,80 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
   Canvas canvas;
   canvas.DrawAtlas(atlas, transforms, texture_coordinates, colors,
                    BlendMode::kPlus, {}, std::nullopt, {});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+// https://github.com/flutter/flutter/issues/146648
+TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
+  Path path = PathBuilder{}
+                  .MoveTo({0, 400})
+                  .LineTo({0, 0})
+                  .LineTo({400, 0})
+                  // MoveTo implicitly adds a contour, ensure that close doesn't
+                  // add another nearly-empty contour.
+                  .MoveTo({0, 400})
+                  .Close()
+                  .TakePath();
+
+  Canvas canvas;
+  canvas.Translate({50, 50, 0});
+  canvas.DrawPath(path, {
+                            .color = Color::Blue(),
+                            .stroke_width = 10,
+                            .stroke_cap = Cap::kRound,
+                            .style = Paint::Style::kStroke,
+                        });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
+  // Verifies that text scales are clamped to work around
+  // https://github.com/flutter/flutter/issues/136112 .
+
+  Canvas canvas;
+  Paint save_paint;
+  canvas.SaveLayer(save_paint);
+  canvas.Transform(Matrix(2000, 0, 0, 0,   //
+                          0, 2000, 0, 0,   //
+                          0, 0, -1, 9000,  //
+                          0, 0, -1, 7000   //
+                          ));
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
+                                     "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SetContentsWithRegion) {
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+
+  // Replace part of the texture with a red rectangle.
+  std::vector<uint8_t> bytes(100 * 100 * 4);
+  for (auto i = 0u; i < bytes.size(); i += 4) {
+    bytes[i] = 255;
+    bytes[i + 1] = 0;
+    bytes[i + 2] = 0;
+    bytes[i + 3] = 255;
+  }
+  auto mapping =
+      std::make_shared<fml::NonOwnedMapping>(bytes.data(), bytes.size());
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
+  auto cmd_buffer = GetContext()->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), bridge,
+                     IRect::MakeLTRB(50, 50, 150, 150));
+
+  auto did_submit =
+      blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) &&
+      GetContext()->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok();
+  ASSERT_TRUE(did_submit);
+
+  auto image = std::make_shared<Image>(bridge);
+
+  Canvas canvas;
+  canvas.DrawImage(image, {0, 0}, {});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

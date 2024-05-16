@@ -550,6 +550,7 @@ InferMetalPlatformViewCreationCallback(
             config->metal.present_command_queue),
         metal_dispatch_table, view_embedder);
   } else {
+#if !SLIMPELLER
     flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
         .present = metal_present,
         .get_texture = metal_get_texture,
@@ -559,6 +560,9 @@ InferMetalPlatformViewCreationCallback(
         const_cast<flutter::GPUMTLCommandQueueHandle>(
             config->metal.present_command_queue),
         metal_dispatch_table, view_embedder);
+#else   //  !SLIMPELLER
+    FML_LOG(FATAL) << "Impeller opt-out unavailable.";
+#endif  //  !SLIMPELLER
   }
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
@@ -913,7 +917,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterMetalBackingStore* metal) {
-#ifdef SHELL_ENABLE_METAL
+#if defined(SHELL_ENABLE_METAL) && !SLIMPELLER
   GrMtlTextureInfo texture_info;
   if (!metal->texture.texture) {
     FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
@@ -935,12 +939,10 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
-      // TODO(dnfield): Update this when embedders support MSAA, see
-      // https://github.com/flutter/flutter/issues/100392
-      1,                       // sample count
-      kBGRA_8888_SkColorType,  // color type
-      nullptr,                 // color space
-      &surface_properties,     // surface properties
+      1,                         // sample count
+      kBGRA_8888_SkColorType,    // color type
+      nullptr,                   // color space
+      &surface_properties,       // surface properties
       static_cast<SkSurfaces::TextureReleaseProc>(
           metal->texture.destruction_callback),  // release proc
       metal->texture.user_data                   // release context
@@ -1774,6 +1776,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     icu_data_path = SAFE_ACCESS(args, icu_data_path, nullptr);
   }
 
+#if !SLIMPELLER
   if (SAFE_ACCESS(args, persistent_cache_path, nullptr) != nullptr) {
     std::string persistent_cache_path =
         SAFE_ACCESS(args, persistent_cache_path, nullptr);
@@ -1783,6 +1786,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, is_persistent_cache_read_only, false)) {
     flutter::PersistentCache::gIsReadOnly = true;
   }
+#endif  //  !SLIMPELLER
 
   fml::CommandLine command_line;
   if (SAFE_ACCESS(args, command_line_argc, 0) != 0 &&
@@ -2457,7 +2461,8 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
-    FlutterPointerDeviceKind device_kind = SAFE_ACCESS(current, device_kind, 0);
+    FlutterPointerDeviceKind device_kind =
+        SAFE_ACCESS(current, device_kind, kFlutterPointerDeviceKindMouse);
     // For backwards compatibility with embedders written before the device
     // kind and buttons were exposed, if the device kind is not set treat it
     // as a mouse, with a synthesized primary button state based on the phase.

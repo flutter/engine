@@ -24,16 +24,25 @@ class SnapshotDelegate {
   /// @brief      A data structure used by the Skia implementation of deferred
   ///             GPU based images.
   struct GpuImageResult {
-    GpuImageResult(const GrBackendTexture& p_texture,
-                   sk_sp<GrDirectContext> p_context,
-                   sk_sp<SkImage> p_image = nullptr,
-                   const std::string& p_error = "")
-        : texture(p_texture),
+    GpuImageResult(
+#if !SLIMPELLER
+        const GrBackendTexture& p_texture,
+#endif  //  !SLIMPELLER
+        sk_sp<GrDirectContext> p_context,
+        sk_sp<SkImage> p_image = nullptr,
+        const std::string& p_error = "")
+        :
+#if !SLIMPELLER
+          texture(p_texture),
+#endif  //  !SLIMPELLER
           context(std::move(p_context)),
           image(std::move(p_image)),
-          error(p_error) {}
+          error(p_error) {
+    }
 
+#if !SLIMPELLER
     const GrBackendTexture texture;
+#endif  //  !SLIMPELLER
     // If texture.isValid() == true, this is a pointer to a GrDirectContext that
     // can be used to create an image from the texture.
     sk_sp<GrDirectContext> context;
@@ -67,10 +76,21 @@ class SnapshotDelegate {
 
   virtual GrDirectContext* GetGrContext() = 0;
 
-  virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                            SkISize picture_size) = 0;
+  virtual void MakeRasterSnapshot(
+      sk_sp<DisplayList> display_list,
+      SkISize picture_size,
+      std::function<void(sk_sp<DlImage>)> callback) = 0;
+
+  virtual sk_sp<DlImage> MakeRasterSnapshotSync(sk_sp<DisplayList> display_list,
+                                                SkISize picture_size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;
+
+  /// Load and compile and initial PSO for the provided [runtime_stage].
+  ///
+  /// Impeller only.
+  virtual void CacheRuntimeStage(
+      const std::shared_ptr<impeller::RuntimeStage>& runtime_stage) = 0;
 };
 
 }  // namespace flutter

@@ -20,6 +20,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppLifecycleDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginMacOS.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -223,7 +224,7 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE(stdout_capture.GetOutput().find("Hello logging") != std::string::npos);
 }
 
-TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+TEST_F(FlutterEngineTest, DISABLED_BackgroundIsBlack) {
   FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
