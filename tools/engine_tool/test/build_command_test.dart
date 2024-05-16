@@ -64,7 +64,6 @@ void main() {
   test('build command invokes gn', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -87,7 +86,6 @@ void main() {
   test('build command invokes ninja', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -110,7 +108,6 @@ void main() {
   test('build command invokes generator', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -136,7 +133,6 @@ void main() {
   test('build command does not invoke tests', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -159,7 +155,6 @@ void main() {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       withRbe: true,
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'android_debug_rbe_arm64',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -213,7 +208,6 @@ void main() {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       withRbe: true,
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'android_debug_rbe_arm64',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -242,7 +236,6 @@ void main() {
       () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'android_debug_rbe_arm64',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -316,7 +309,6 @@ void main() {
     };
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'local_host_debug',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -349,7 +341,6 @@ void main() {
     };
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
-      expectedOutDir: 'ci/host_debug',
     );
     final Environment env = testEnv.environment;
     try {
