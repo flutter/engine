@@ -159,6 +159,23 @@ TEST_P(MatrixFilterContentsTest,
                             Rect::MakeXYWH(200, 400, 100, 100));
 }
 
+TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageScale) {
+  std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
+  MatrixFilterContents contents;
+  contents.SetInputs({FilterInput::Make(texture)});
+  contents.SetMatrix(Matrix::MakeScale({3, 3, 1}));
+  contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
+
+  Entity entity;
+  entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
+
+  std::shared_ptr<ContentContext> renderer = GetContentContext();
+  std::optional<Entity> result =
+      contents.GetEntity(*renderer, entity, /*coverage_hint=*/{});
+  expectRenderCoverageEqual(result, contents.GetCoverage(entity),
+                            Rect::MakeXYWH(100, 200, 300, 300));
+}
+
 TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageSubpassScale) {
   std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
   MatrixFilterContents contents;
@@ -174,7 +191,7 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageSubpassScale) {
   std::optional<Entity> result =
       contents.GetEntity(*renderer, entity, /*coverage_hint=*/{});
   expectRenderCoverageEqual(result, contents.GetCoverage(entity),
-                            Rect::MakeXYWH(300, 600, 300, 300));
+                            Rect::MakeXYWH(100, 200, 300, 300));
 }
 
 }  // namespace testing
