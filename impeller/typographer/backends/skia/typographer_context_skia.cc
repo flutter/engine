@@ -195,8 +195,8 @@ static ISize ComputeNextAtlasSize(
     int64_t max_texture_height) {
   // Because we can't grow the skyline packer horizontally, pick a reasonable
   // large width for all atlases.
-  static constexpr auto kAtlasWidth = 4096u;
-  static constexpr auto kMinAtlasHeight = 1024;
+  static constexpr int64_t kAtlasWidth = 4096;
+  static constexpr int64_t kMinAtlasHeight = 1024;
 
   ISize current_size = ISize(kAtlasWidth, kMinAtlasHeight);
   if (atlas_context->GetAtlasSize().height > current_size.height) {
@@ -458,15 +458,18 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   // The R8/A8 textures used for certain glyphs is not supported as color
   // attachments in most graphics drivers. For other textures, most framebuffer
   // attachments have a much smaller size limit than the max texture size.
-  size_t byte_size =
-      new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
-  BufferView buffer_view =
-      host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
+  {
+    TRACE_EVENT0("flutter", "ClearGlyphAtlas");
+    size_t byte_size =
+        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+    BufferView buffer_view =
+        host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
 
-  ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-           byte_size);
-  buffer_view.buffer->Flush();
-  blit_pass->AddCopy(buffer_view, new_texture);
+    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
+             byte_size);
+    buffer_view.buffer->Flush();
+    blit_pass->AddCopy(buffer_view, new_texture);
+  }
 
   fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
