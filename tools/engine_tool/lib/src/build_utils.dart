@@ -183,16 +183,18 @@ Future<int> runBuild(
 }
 
 /// Run a [build]'s GN step if the output directory is missing.
-///
-/// TODO(matanlurey): https://github.com/flutter/flutter/issues/148442.
 Future<bool> ensureBuildDir(
   Environment environment,
   Build build, {
   List<String> extraGnArgs = const <String>[],
   required bool enableRbe,
 }) async {
+  // TODO(matanlurey): https://github.com/flutter/flutter/issues/148442.
   final io.Directory buildDir = io.Directory(
-    p.join(environment.engine.outDir.path, build.ninja.config),
+    p.join(
+      environment.engine.outDir.path,
+      build.ninja.config,
+    ),
   );
   if (buildDir.existsSync()) {
     return true;

@@ -64,6 +64,7 @@ void main() {
   test('build command invokes gn', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -86,6 +87,7 @@ void main() {
   test('build command invokes ninja', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -99,7 +101,7 @@ void main() {
       ]);
       expect(result, equals(0));
       expect(testEnv.processHistory.length, greaterThanOrEqualTo(2));
-      expect(testEnv.processHistory[1].command[0], contains('ninja'));
+      expect(testEnv.processHistory[2].command[0], contains('ninja'));
     } finally {
       testEnv.cleanup();
     }
@@ -108,6 +110,7 @@ void main() {
   test('build command invokes generator', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -122,7 +125,7 @@ void main() {
       expect(result, equals(0));
       expect(testEnv.processHistory.length, greaterThanOrEqualTo(3));
       expect(
-        testEnv.processHistory[2].command,
+        testEnv.processHistory[3].command,
         containsStringsInOrder(<String>['python3', 'gen/script.py']),
       );
     } finally {
@@ -133,6 +136,7 @@ void main() {
   test('build command does not invoke tests', () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'build_name',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -155,6 +159,7 @@ void main() {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       withRbe: true,
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'android_debug_rbe_arm64',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -167,10 +172,10 @@ void main() {
         'ci/android_debug_rbe_arm64',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory[0].command[0],
-          contains(path.join('tools', 'gn')));
-      expect(testEnv.processHistory[0].command[2], equals('--rbe'));
       expect(testEnv.processHistory[1].command[0],
+          contains(path.join('tools', 'gn')));
+      expect(testEnv.processHistory[1].command[2], equals('--rbe'));
+      expect(testEnv.processHistory[2].command[0],
           contains(path.join('reclient', 'bootstrap')));
     } finally {
       testEnv.cleanup();
@@ -208,6 +213,7 @@ void main() {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       withRbe: true,
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'android_debug_rbe_arm64',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -225,7 +231,7 @@ void main() {
           contains(path.join('tools', 'gn')));
       expect(testEnv.processHistory[0].command,
           doesNotContainAny(<String>['--rbe']));
-      expect(testEnv.processHistory[1].command[0],
+      expect(testEnv.processHistory[2].command[0],
           contains(path.join('ninja', 'ninja')));
     } finally {
       testEnv.cleanup();
@@ -236,6 +242,7 @@ void main() {
       () async {
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'android_debug_rbe_arm64',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -252,7 +259,7 @@ void main() {
           contains(path.join('tools', 'gn')));
       expect(testEnv.processHistory[0].command,
           doesNotContainAny(<String>['--rbe']));
-      expect(testEnv.processHistory[1].command[0],
+      expect(testEnv.processHistory[2].command[0],
           contains(path.join('ninja', 'ninja')));
     } finally {
       testEnv.cleanup();
@@ -309,6 +316,7 @@ void main() {
     };
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'local_host_debug',
     );
     try {
       final ToolCommandRunner runner = ToolCommandRunner(
@@ -321,10 +329,10 @@ void main() {
         'host_debug',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory[1].command[0],
+      expect(testEnv.processHistory[2].command[0],
           contains(path.join('ninja', 'ninja')));
       expect(
-          testEnv.processHistory[1].command[2], contains('local_host_debug'));
+          testEnv.processHistory[2].command[2], contains('local_host_debug'));
     } finally {
       testEnv.cleanup();
     }
@@ -341,6 +349,7 @@ void main() {
     };
     final TestEnvironment testEnv = TestEnvironment.withTestEngine(
       cannedProcesses: cannedProcesses,
+      expectedOutDir: 'ci/host_debug',
     );
     final Environment env = testEnv.environment;
     try {
@@ -354,9 +363,9 @@ void main() {
         'ci/host_debug',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory[1].command[0],
+      expect(testEnv.processHistory[2].command[0],
           contains(path.join('ninja', 'ninja')));
-      expect(testEnv.processHistory[1].command[2], contains('ci/host_debug'));
+      expect(testEnv.processHistory[2].command[2], contains('ci/host_debug'));
     } finally {
       testEnv.cleanup();
     }

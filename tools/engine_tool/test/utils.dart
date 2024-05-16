@@ -89,6 +89,7 @@ class TestEnvironment {
     ffi.Abi abi = ffi.Abi.linuxX64,
     List<CannedProcess> cannedProcesses = const <CannedProcess>[],
     bool verbose = false,
+    String expectedOutDir = 'host_debug',
   }) {
     final io.Directory rootDir = io.Directory.systemTemp.createTempSync('et');
     final TestEngine engine = TestEngine.createTemp(rootDir: rootDir);
@@ -100,12 +101,12 @@ class TestEnvironment {
         'rbe',
       )).createSync(recursive: true);
     }
-    // When GN runs, always try to create out/host_debug.
+    // When GN runs, always try to create {expectedOutDir}.
     final CannedProcess cannedGn = CannedProcess((List<String> command) {
       if (command[0].endsWith('/gn') && !command.contains('desc')) {
         io.Directory(path.join(
           engine.outDir.path,
-          'host_debug',
+          expectedOutDir,
         )).createSync(recursive: true);
         return true;
       }
