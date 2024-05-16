@@ -66,11 +66,13 @@ TEST_P(BlitPassTest, BlitPassesForMatchingFormats) {
   TextureDescriptor src_desc;
   src_desc.format = PixelFormat::kR8G8B8A8UNormInt;
   src_desc.size = {100, 100};
+  src_desc.storage_mode = StorageMode::kHostVisible;
   auto src = context->GetResourceAllocator()->CreateTexture(src_desc);
 
   TextureDescriptor dst_format;
   dst_format.format = PixelFormat::kR8G8B8A8UNormInt;
   dst_format.size = {100, 100};
+  dst_format.storage_mode = StorageMode::kHostVisible;
   auto dst = context->GetResourceAllocator()->CreateTexture(dst_format);
 
   EXPECT_TRUE(blit_pass->AddCopy(src, dst));
@@ -102,6 +104,30 @@ TEST_P(BlitPassTest, ChecksInvalidSliceParameters) {
                                   std::nullopt, "", /*slice=*/6));
   EXPECT_TRUE(blit_pass->AddCopy(DeviceBuffer::AsBufferView(src), dst,
                                  std::nullopt, "", /*slice=*/0));
+}
+
+TEST_P(BlitPassTest, CanBlitSmallRegionToUninitializedTexture) {
+  auto context = GetContext();
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+
+  TextureDescriptor dst_format;
+  dst_format.storage_mode = StorageMode::kDevicePrivate;
+  dst_format.format = PixelFormat::kR8G8B8A8UNormInt;
+  dst_format.size = {1000, 1000};
+  auto dst = context->GetResourceAllocator()->CreateTexture(dst_format);
+
+  DeviceBufferDescriptor src_format;
+  src_format.size = 4;
+  src_format.storage_mode = StorageMode::kHostVisible;
+  auto src = context->GetResourceAllocator()->CreateBuffer(src_format);
+
+  ASSERT_TRUE(dst);
+
+  EXPECT_TRUE(blit_pass->AddCopy(DeviceBuffer::AsBufferView(src), dst,
+                                 IRect::MakeLTRB(0, 0, 1, 1), "", /*slice=*/0));
+  EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
+  EXPECT_TRUE(context->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok());
 }
 
 }  // namespace testing

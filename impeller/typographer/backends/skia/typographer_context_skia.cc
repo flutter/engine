@@ -194,16 +194,12 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
     const std::vector<FontGlyphPair>& pairs,
     std::vector<Rect>& glyph_positions,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-    GlyphAtlas::Type type,
     const ISize& max_texture_size) {
-  static constexpr auto kMinAtlasSize = 8u;
-  static constexpr auto kMinAlphaBitmapSize = 1024u;
+  static constexpr ISize kMinAtlasSize = ISize{4096, 1024};
 
   TRACE_EVENT0("impeller", __FUNCTION__);
 
-  ISize current_size = type == GlyphAtlas::Type::kAlphaBitmap
-                           ? ISize(kMinAlphaBitmapSize, kMinAlphaBitmapSize)
-                           : ISize(kMinAtlasSize, kMinAtlasSize);
+  ISize current_size = kMinAtlasSize;
   size_t total_pairs = pairs.size() + 1;
   do {
     auto rect_packer = std::shared_ptr<RectanglePacker>(
@@ -322,13 +318,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (font_glyph_map.empty()) {
     return last_atlas;
   }
-  std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
-  std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
-
-  fml::ScopedCleanupClosure closure([&]() {
-    blit_pass->EncodeCommands(context.GetResourceAllocator());
-    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
-  });
 
   // ---------------------------------------------------------------------------
   // Step 1: Determine if the atlas type and font glyph pairs are compatible
@@ -357,8 +346,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   // ---------------------------------------------------------------------------
   // Step 2: Determine if the additional missing glyphs can be appended to the
-  //         existing bitmap without recreating the atlas. This requires that
-  //         the type is identical.
+  //         existing bitmap without recreating the atlas.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_positions;
   if (CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
@@ -374,6 +362,14 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
       last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
     }
+
+    std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
+    std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
+
+    fml::ScopedCleanupClosure closure([&]() {
+      blit_pass->EncodeCommands(context.GetResourceAllocator());
+      context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+    });
 
     // ---------------------------------------------------------------------------
     // Step 4a: Draw new font-glyph pairs into the a host buffer and encode
@@ -406,7 +402,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       font_glyph_pairs,                                             //
       glyph_positions,                                              //
       atlas_context,                                                //
-      type,                                                         //
       context.GetResourceAllocator()->GetMaxTextureSizeSupported()  //
   );
 
@@ -455,28 +450,56 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     }
     descriptor.size = atlas_size;
     descriptor.storage_mode = StorageMode::kDevicePrivate;
+    descriptor.usage = TextureUsage::kShaderRead | TextureUsage::kRenderTarget;
     new_texture = context.GetResourceAllocator()->CreateTexture(descriptor);
   }
 
   if (!new_texture) {
     return nullptr;
   }
-  // The texture needs to be cleared to transparent black so that linearly
-  // samplex rotated/skewed glyphs do not grab uninitialized data. We could
-  // instead use a render pass to clear to transparent black, but there are
-  // more restrictions on what kinds of textures can be bound on GLES.
-  {
-    auto bytes =
-        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
-    BufferView buffer_view =
-        host_buffer.Emplace(nullptr, bytes, DefaultUniformAlignment());
-
-    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-             bytes);
-    blit_pass->AddCopy(buffer_view, new_texture);
-  }
 
   new_texture->SetLabel("GlyphAtlas");
+
+  std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
+  std::shared_ptr<BlitPass> blit_pass;
+
+  // The R8/A8 textures used for certain glyphs is not supported as color
+  // attachments in most graphics drivers. To be safe, just do a CPU clear
+  // for these.
+  if (type == GlyphAtlas::Type::kAlphaBitmap) {
+    size_t byte_size =
+        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+    BufferView buffer_view =
+        host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
+
+    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
+             byte_size);
+    buffer_view.buffer->Flush();
+    blit_pass = cmd_buffer->CreateBlitPass();
+    blit_pass->AddCopy(buffer_view, new_texture);
+  } else {
+    // In all other cases, we can use a render pass to clear to a transparent
+    // color.
+    ColorAttachment attachment;
+    attachment.clear_color = Color::BlackTransparent();
+    attachment.load_action = LoadAction::kClear;
+    attachment.store_action = StoreAction::kStore;
+    attachment.texture = new_texture;
+
+    RenderTarget render_target;
+    render_target.SetColorAttachment(attachment, 0u);
+
+    auto render_pass = cmd_buffer->CreateRenderPass(render_target);
+    render_pass->EncodeCommands();
+    blit_pass = cmd_buffer->CreateBlitPass();
+  }
+  FML_DCHECK(!!blit_pass);
+
+  fml::ScopedCleanupClosure closure([&]() {
+    blit_pass->EncodeCommands(context.GetResourceAllocator());
+    context.GetCommandQueue()->Submit({std::move(cmd_buffer)});
+  });
+
   if (!UpdateAtlasBitmap(*glyph_atlas, blit_pass, host_buffer, new_texture,
                          font_glyph_pairs)) {
     return nullptr;

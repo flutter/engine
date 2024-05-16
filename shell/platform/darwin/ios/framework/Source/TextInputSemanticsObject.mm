@@ -2,28 +2,33 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <UIKit/UIKit.h>
+#import "flutter/shell/platform/darwin/ios/framework/Source/TextInputSemanticsObject.h"
 
-#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+
+FLUTTER_ASSERT_ARC
 
 static const UIAccessibilityTraits kUIAccessibilityTraitUndocumentedEmptyLine = 0x800000000000;
 
-@implementation FlutterInactiveTextInput {
-}
+/**
+ * An implementation of `UITextInput` used for text fields that do not currently
+ * have input focus.
+ *
+ * This class is used by `TextInputSemanticsObject`.
+ */
+@interface FlutterInactiveTextInput : UIView <UITextInput>
+@property(nonatomic, copy) NSString* text;
+@end
 
-@synthesize tokenizer = _tokenizer;
+@implementation FlutterInactiveTextInput
+
 @synthesize beginningOfDocument = _beginningOfDocument;
 @synthesize endOfDocument = _endOfDocument;
-
-- (void)dealloc {
-  [_text release];
-  [_markedText release];
-  [_markedTextRange release];
-  [_selectedTextRange release];
-  [_markedTextStyle release];
-  [super dealloc];
-}
+@synthesize inputDelegate = _inputDelegate;
+@synthesize markedTextRange = _markedTextRange;
+@synthesize markedTextStyle = _markedTextStyle;
+@synthesize selectedTextRange = _selectedTextRange;
+@synthesize tokenizer = _tokenizer;
 
 - (BOOL)hasText {
   return self.text.length > 0;
@@ -191,11 +196,6 @@ static const UIAccessibilityTraits kUIAccessibilityTraitUndocumentedEmptyLine = 
   }
 
   return self;
-}
-
-- (void)dealloc {
-  [_inactive_text_input release];
-  [super dealloc];
 }
 
 #pragma mark - SemanticsObject overrides
