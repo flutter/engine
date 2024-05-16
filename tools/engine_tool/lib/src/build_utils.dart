@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:io' as io;
+
 import 'package:engine_build_configs/engine_build_configs.dart';
+import 'package:path/path.dart' as p;
 
 import 'environment.dart';
 import 'label.dart';
@@ -179,13 +182,22 @@ Future<int> runBuild(
   return buildResult ? 0 : 1;
 }
 
-/// Given a [Build] object, run only its GN step.
-Future<int> runGn(
+/// Run a [build]'s GN step if the output directory is missing.
+///
+/// TODO(matanlurey): https://github.com/flutter/flutter/issues/148442.
+Future<bool> ensureBuildDir(
   Environment environment,
   Build build, {
   List<String> extraGnArgs = const <String>[],
   required bool enableRbe,
 }) async {
+  final io.Directory buildDir = io.Directory(
+    p.join(environment.engine.outDir.path, build.ninja.config),
+  );
+  if (buildDir.existsSync()) {
+    return true;
+  }
+
   final List<String> gnArgs = <String>[
     if (!enableRbe) '--no-rbe',
     ...extraGnArgs,
@@ -203,12 +215,22 @@ Future<int> runGn(
     runTests: false,
   );
 
-  final bool buildResult = await buildRunner.run((RunnerEvent event) {
+  final bool built = await buildRunner.run((RunnerEvent event) {
     switch (event) {
       case RunnerResult(ok: false):
         environment.logger.error(event);
       default:
     }
   });
-  return buildResult ? 0 : 1;
+  if (built) {
+    if (!buildDir.existsSync()) {
+      environment.logger.error(
+        'The specified build did not produce the expected output directory: '
+        '${buildDir.path}',
+      );
+      return false;
+    }
+    return true;
+  }
+  return false;
 }

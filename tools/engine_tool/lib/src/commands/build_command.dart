@@ -76,6 +76,10 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
       if (useLto) '--lto' else '--no-lto',
     ];
 
+    if (!await ensureBuildDir(environment, build, enableRbe: useRbe)) {
+      return 1;
+    }
+
     // Builds only accept labels as arguments, so convert patterns to labels.
     // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
     final Gn gn = Gn.fromEnvironment(environment);
