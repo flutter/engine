@@ -164,19 +164,24 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
+  return [self handleOpenURL:url options:options];
+}
+
+- (BOOL)handleOpenURL:(NSURL*)url 
+              options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+  
   __block BOOL openURLSuccess = NO;
   __block BOOL openURLCompleted = NO;
-  [self openURL:url
-                options:options
-      completionHandler:^(BOOL success) {
-        openURLSuccess = success;
-        openURLCompleted = YES;
-      }];
+  CFTimeInterval start = CACurrentMediaTime();
 
-  while (!openURLCompleted) {
+  [self openURL:url options:options completionHandler:^(BOOL success) {
+    openURLSuccess = success;
+    openURLCompleted = YES;
+  }];
+  
+  while (!openURLCompleted && CACurrentMediaTime() - start <= 5.0) {
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
-  return openURLSuccess;
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
@@ -220,19 +225,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  __block BOOL openURLSuccess = NO;
-  __block BOOL openURLCompleted = NO;
-  [self openURL:userActivity.webpageURL
-                options:@{}
-      completionHandler:^(BOOL success) {
-        openURLSuccess = success;
-        openURLCompleted = YES;
-      }];
-
-  while (!openURLCompleted) {
-    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-  }
-  return openURLSuccess;
+  return [self handleOpenURL:userActivity.webpageURL options:@{}];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
