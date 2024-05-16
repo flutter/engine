@@ -28,6 +28,17 @@ void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
 
+namespace {
+Matrix CalculateSubpassTransform(const Matrix& entity_transform,
+                                 const Matrix& effect_transform,
+                                 const Matrix& matrix) {
+  return entity_transform *  //
+         effect_transform *  //
+         matrix *            //
+         effect_transform.Invert();
+}
+}  // namespace
+
 std::optional<Entity> MatrixFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
@@ -68,11 +79,8 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
     //    backdrop texture (as mentioned above). And so we sneak the subpass's
     //    captured CTM in through the effect transform.
     //
-
-    snapshot->transform = snapshot->transform *  //
-                          effect_transform *     //
-                          matrix_ *              //
-                          effect_transform.Invert();
+    snapshot->transform = CalculateSubpassTransform(snapshot->transform,
+                                                    effect_transform, matrix_);
   } else {
     snapshot->transform = entity.GetTransform() *           //
                           matrix_ *                         //
@@ -107,23 +115,21 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
     return std::nullopt;
   }
 
-  auto coverage = inputs[0]->GetCoverage(entity);
+  std::optional<Rect> coverage = inputs[0]->GetCoverage(entity);
   if (!coverage.has_value()) {
     return std::nullopt;
   }
 
-  auto input_transform = inputs[0]->GetTransform(entity);
+  Matrix input_transform = inputs[0]->GetTransform(entity);
   if (rendering_mode_ == Entity::RenderingMode::kSubpass) {
-    auto coverage_bounds = coverage->TransformBounds(input_transform.Invert());
-    auto transform = input_transform *           //
-                     effect_transform *          //
-                     matrix_ *                   //
-                     effect_transform.Invert();  //
+    Rect coverage_bounds = coverage->TransformBounds(input_transform.Invert());
+    Matrix transform =
+        CalculateSubpassTransform(input_transform, effect_transform, matrix_);
     return coverage_bounds.TransformBounds(transform);
   } else {
-    auto transform = input_transform *          //
-                     matrix_ *                  //
-                     input_transform.Invert();  //
+    Matrix transform = input_transform *          //
+                       matrix_ *                  //
+                       input_transform.Invert();  //
     return coverage->TransformBounds(transform);
   }
 }
