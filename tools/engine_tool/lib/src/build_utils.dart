@@ -187,7 +187,7 @@ Future<bool> ensureBuildDir(
   Environment environment,
   Build build, {
   List<String> extraGnArgs = const <String>[],
-  required bool enableRbe,
+  required bool enableRbe,  
 }) async {
   // TODO(matanlurey): https://github.com/flutter/flutter/issues/148442.
   final io.Directory buildDir = io.Directory(
@@ -200,6 +200,28 @@ Future<bool> ensureBuildDir(
     return true;
   }
 
+  final bool built = await _runGn(
+    environment,
+    build,
+    extraGnArgs: extraGnArgs,
+    enableRbe: enableRbe,
+  );
+  if (built && !buildDir.existsSync()) {
+    environment.logger.error(
+      'The specified build did not produce the expected output directory: '
+      '${buildDir.path}',
+    );
+    return false;
+  }
+  return built;  
+}
+
+Future<bool> _runGn(
+  Environment environment,
+  Build build, {
+  List<String> extraGnArgs = const <String>[],
+  required bool enableRbe,
+}) async {
   final List<String> gnArgs = <String>[
     if (!enableRbe) '--no-rbe',
     ...extraGnArgs,
@@ -217,22 +239,11 @@ Future<bool> ensureBuildDir(
     runTests: false,
   );
 
-  final bool built = await buildRunner.run((RunnerEvent event) {
+  return buildRunner.run((RunnerEvent event) {
     switch (event) {
       case RunnerResult(ok: false):
         environment.logger.error(event);
       default:
     }
   });
-  if (built) {
-    if (!buildDir.existsSync()) {
-      environment.logger.error(
-        'The specified build did not produce the expected output directory: '
-        '${buildDir.path}',
-      );
-      return false;
-    }
-    return true;
-  }
-  return false;
 }

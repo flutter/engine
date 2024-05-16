@@ -101,7 +101,7 @@ void main() {
       ]);
       expect(result, equals(0));
       expect(testEnv.processHistory.length, greaterThanOrEqualTo(2));
-      expect(testEnv.processHistory[2].command[0], contains('ninja'));
+      expect(testEnv.processHistory[1].command[0], contains('ninja'));
     } finally {
       testEnv.cleanup();
     }
@@ -125,7 +125,7 @@ void main() {
       expect(result, equals(0));
       expect(testEnv.processHistory.length, greaterThanOrEqualTo(3));
       expect(
-        testEnv.processHistory[3].command,
+        testEnv.processHistory[2].command,
         containsStringsInOrder(<String>['python3', 'gen/script.py']),
       );
     } finally {
@@ -172,10 +172,10 @@ void main() {
         'ci/android_debug_rbe_arm64',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory[1].command[0],
+      expect(testEnv.processHistory[0].command[0],
           contains(path.join('tools', 'gn')));
-      expect(testEnv.processHistory[1].command[2], equals('--rbe'));
-      expect(testEnv.processHistory[2].command[0],
+      expect(testEnv.processHistory[0].command[2], equals('--rbe'));
+      expect(testEnv.processHistory[1].command[0],
           contains(path.join('reclient', 'bootstrap')));
     } finally {
       testEnv.cleanup();
@@ -231,7 +231,7 @@ void main() {
           contains(path.join('tools', 'gn')));
       expect(testEnv.processHistory[0].command,
           doesNotContainAny(<String>['--rbe']));
-      expect(testEnv.processHistory[2].command[0],
+      expect(testEnv.processHistory[1].command[0],
           contains(path.join('ninja', 'ninja')));
     } finally {
       testEnv.cleanup();
@@ -259,7 +259,7 @@ void main() {
           contains(path.join('tools', 'gn')));
       expect(testEnv.processHistory[0].command,
           doesNotContainAny(<String>['--rbe']));
-      expect(testEnv.processHistory[2].command[0],
+      expect(testEnv.processHistory[1].command[0],
           contains(path.join('ninja', 'ninja')));
     } finally {
       testEnv.cleanup();
@@ -329,10 +329,10 @@ void main() {
         'host_debug',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory[2].command[0],
+      expect(testEnv.processHistory[1].command[0],
           contains(path.join('ninja', 'ninja')));
       expect(
-          testEnv.processHistory[2].command[2], contains('local_host_debug'));
+          testEnv.processHistory[1].command[2], contains('local_host_debug'));
     } finally {
       testEnv.cleanup();
     }
@@ -363,9 +363,9 @@ void main() {
         'ci/host_debug',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory[2].command[0],
+      expect(testEnv.processHistory[1].command[0],
           contains(path.join('ninja', 'ninja')));
-      expect(testEnv.processHistory[2].command[2], contains('ci/host_debug'));
+      expect(testEnv.processHistory[1].command[2], contains('ci/host_debug'));
     } finally {
       testEnv.cleanup();
     }

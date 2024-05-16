@@ -76,7 +76,8 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
       if (useLto) '--lto' else '--no-lto',
     ];
 
-    if (!await ensureBuildDir(environment, build, enableRbe: useRbe)) {
+    final List<String> commandLineTargets = argResults!.rest;
+    if (commandLineTargets.isNotEmpty && !await ensureBuildDir(environment, build, enableRbe: useRbe)) {
       return 1;
     }
 
@@ -84,7 +85,7 @@ et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/f
     // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
     final Gn gn = Gn.fromEnvironment(environment);
     final Set<Label> allTargets = <Label>{};
-    for (final String pattern in argResults!.rest) {
+    for (final String pattern in commandLineTargets) {
       final TargetPattern target = TargetPattern.parse(pattern);
       final List<BuildTarget> targets = await gn.desc(
         'out/${build.ninja.config}',
