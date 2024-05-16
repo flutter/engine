@@ -32,9 +32,9 @@ class MatrixFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform) const override;
 
-//   const Matrix& GetCoverageHintTransform() const override {
-//     return matrix_;
-//   }
+  //   const Matrix& GetCoverageHintTransform() const override {
+  //     return matrix_;
+  //   }
 
  private:
   // |FilterContents|

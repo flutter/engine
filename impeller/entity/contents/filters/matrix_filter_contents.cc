@@ -112,24 +112,24 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
     return std::nullopt;
   }
 
-//  Matrix transform;
-//  if (rendering_mode_ == Entity::RenderingMode::kSubpass) {
-//    transform = inputs[0]->GetTransform(entity) *  //
-//                effect_transform *                 //
-//                matrix_ *                          //
-//                effect_transform.Invert();
-//  } else {
-//    transform = entity.GetTransform() *           //
-//                matrix_ *                         //
-//                entity.GetTransform().Invert() *  //
-//                inputs[0]->GetTransform(entity);
-//  }
+  //  Matrix transform;
+  //  if (rendering_mode_ == Entity::RenderingMode::kSubpass) {
+  //    transform = inputs[0]->GetTransform(entity) *  //
+  //                effect_transform *                 //
+  //                matrix_ *                          //
+  //                effect_transform.Invert();
+  //  } else {
+  //    transform = entity.GetTransform() *           //
+  //                matrix_ *                         //
+  //                entity.GetTransform().Invert() *  //
+  //                inputs[0]->GetTransform(entity);
+  //  }
   auto& m = rendering_mode_ == Entity::RenderingMode::kSubpass
-               ? effect_transform
-               : inputs[0]->GetTransform(entity);
+                ? effect_transform
+                : inputs[0]->GetTransform(entity);
   auto transform = m *          //
-                  matrix_ *    //
-                  m.Invert();  //
+                   matrix_ *    //
+                   m.Invert();  //
   return coverage->TransformBounds(transform);
 }
 

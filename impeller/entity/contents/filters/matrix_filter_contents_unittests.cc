@@ -159,8 +159,7 @@ TEST_P(MatrixFilterContentsTest,
                             Rect::MakeXYWH(200, 400, 100, 100));
 }
 
-TEST_P(MatrixFilterContentsTest,
-       RenderCoverageMatchesGetCoverageSubpassScale) {
+TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageSubpassScale) {
   std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
   MatrixFilterContents contents;
   contents.SetInputs({FilterInput::Make(texture)});

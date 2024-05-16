@@ -192,7 +192,8 @@ class FilterContents : public Contents {
   ///         is used in this case.
   virtual void SetRenderingMode(Entity::RenderingMode rendering_mode);
 
-  //virtual const Matrix& GetCoverageHintTransform() const { return Matrix(); };
+  // virtual const Matrix& GetCoverageHintTransform() const { return Matrix();
+  // };
 
  private:
   /// @brief  Internal utility method for |GetLocalCoverage| that computes
