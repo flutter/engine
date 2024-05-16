@@ -167,18 +167,19 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   return [self handleOpenURL:url options:options];
 }
 
-- (BOOL)handleOpenURL:(NSURL*)url 
+- (BOOL)handleOpenURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  
   __block BOOL openURLSuccess = NO;
   __block BOOL openURLCompleted = NO;
   CFTimeInterval start = CACurrentMediaTime();
 
-  [self openURL:url options:options completionHandler:^(BOOL success) {
-    openURLSuccess = success;
-    openURLCompleted = YES;
-  }];
-  
+  [self openURL:url
+                options:options
+      completionHandler:^(BOOL success) {
+        openURLSuccess = success;
+        openURLCompleted = YES;
+      }];
+
   while (!openURLCompleted && CACurrentMediaTime() - start <= 5.0) {
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
