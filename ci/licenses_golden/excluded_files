@@ -2848,7 +2848,7 @@
 ../../../flutter/third_party/skia/src/gpu/mtl/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/tessellate/BUILD.bazel
 ../../../flutter/third_party/skia/src/gpu/vk/BUILD.bazel
-../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/BUILD.bazel
+../../../flutter/third_party/skia/src/gpu/vk/vulkan_memory_allocator/BUILD.bazel
 ../../../flutter/third_party/skia/src/image/BUILD.bazel
 ../../../flutter/third_party/skia/src/lazy/BUILD.bazel
 ../../../flutter/third_party/skia/src/opts/BUILD.bazel
@@ -2887,7 +2887,7 @@
 ../../../flutter/third_party/skia/third_party/libpng
 ../../../flutter/third_party/skia/third_party/lua
 ../../../flutter/third_party/skia/third_party/vello
-../../../flutter/third_party/skia/third_party/vulkanmemoryallocator/BUILD.bazel
+../../../flutter/third_party/skia/third_party/vulkan_memory_allocator/BUILD.bazel
 ../../../flutter/third_party/skia/toolchain/BUILD.bazel
 ../../../flutter/third_party/skia/toolchain/android_trampolines/gen_trampolines/BUILD.bazel
 ../../../flutter/third_party/skia/toolchain/clang_layering_check.bzl

@@ -1,4 +1,4 @@
-Signature: 13c63c18a4c31eee10ce9497fc8cc1d4
+Signature: bde3e5e285493a483402713e900cc803
 
 ====================================================================================================
 LIBRARY: etc1
@@ -5129,8 +5129,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/vk/GrVkTypesPriv.cpp + 
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/ganesh/vk/GrVkTypesPriv.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/VulkanAMDMemoryAllocator.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/VulkanAMDMemoryAllocator.h + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorWrapper.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorWrapper.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/vulkan_memory_allocator/VulkanMemoryAllocatorWrapper.cpp + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/vk/vulkan_memory_allocator/VulkanMemoryAllocatorWrapper.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/image/SkImage_Lazy.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/opts/SkBitmapProcState_opts.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/opts/SkOpts_hsw.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -5343,8 +5343,8 @@ FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/vk/GrVkTypesPriv.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/ganesh/vk/GrVkTypesPriv.h
 FILE: ../../../flutter/third_party/skia/src/gpu/vk/VulkanAMDMemoryAllocator.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/vk/VulkanAMDMemoryAllocator.h
-FILE: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorWrapper.cpp
-FILE: ../../../flutter/third_party/skia/src/gpu/vk/vulkanmemoryallocator/VulkanMemoryAllocatorWrapper.h
+FILE: ../../../flutter/third_party/skia/src/gpu/vk/vulkan_memory_allocator/VulkanMemoryAllocatorWrapper.cpp
+FILE: ../../../flutter/third_party/skia/src/gpu/vk/vulkan_memory_allocator/VulkanMemoryAllocatorWrapper.h
 FILE: ../../../flutter/third_party/skia/src/image/SkImage_Lazy.h
 FILE: ../../../flutter/third_party/skia/src/opts/SkBitmapProcState_opts.h
 FILE: ../../../flutter/third_party/skia/src/opts/SkOpts_hsw.cpp
