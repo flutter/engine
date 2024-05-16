@@ -20,7 +20,10 @@ class TextFrame {
  public:
   TextFrame();
 
-  TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color);
+  TextFrame(std::vector<TextRun>& runs,
+            Rect bounds,
+            bool has_color,
+            Color color);
 
   ~TextFrame();
 
@@ -60,6 +63,8 @@ class TextFrame {
   ///             to apply opacity peephole optimizations to text blobs.
   bool MaybeHasOverlapping() const;
 
+  Color GetColor() const;
+
   //----------------------------------------------------------------------------
   /// @brief      The type of atlas this run should be emplaced in.
   GlyphAtlas::Type GetAtlasType() const;
@@ -71,7 +76,8 @@ class TextFrame {
  private:
   std::vector<TextRun> runs_;
   Rect bounds_;
-  bool has_color_ = false;
+  bool has_color_;
+  Color color_;
 };
 
 }  // namespace impeller
