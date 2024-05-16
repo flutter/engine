@@ -112,13 +112,20 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
     return std::nullopt;
   }
 
-  auto& m = rendering_mode_ == Entity::RenderingMode::kSubpass
-                ? effect_transform
-                : inputs[0]->GetTransform(entity);
-  auto transform = m *          //
-                   matrix_ *    //
-                   m.Invert();  //
-  return coverage->TransformBounds(transform);
+  auto m = inputs[0]->GetTransform(entity);
+  if (rendering_mode_ == Entity::RenderingMode::kSubpass) {
+    auto foo = Rect::MakeXYWH(0, 0, coverage->GetWidth(), coverage->GetHeight());
+    auto transform = m *
+                     effect_transform *          //
+                     matrix_ *                   //
+                     effect_transform.Invert();  //
+    return foo.TransformBounds(transform);
+  } else {
+    auto transform = m *          //
+                     matrix_ *    //
+                     m.Invert();  //
+    return coverage->TransformBounds(transform);
+  }
 }
 
 }  // namespace impeller
