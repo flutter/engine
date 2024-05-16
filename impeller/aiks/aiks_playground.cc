@@ -5,6 +5,7 @@
 #include "impeller/aiks/aiks_playground.h"
 
 #include <memory>
+#include <optional>
 
 #include "impeller/aiks/aiks_context.h"
 #include "impeller/display_list/dl_dispatcher.h"
@@ -44,14 +45,18 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
     return false;
   }
 
-  return Playground::OpenPlaygroundHere(
-      [&renderer, &callback](RenderTarget& render_target) -> bool {
-        const std::optional<Picture>& picture = callback(renderer);
+  std::optional<Picture> last_frame;
 
-        if (!picture.has_value()) {
-          return false;
+  return Playground::OpenPlaygroundHere(
+      [&renderer, &callback, &last_frame](RenderTarget& render_target) -> bool {
+        std::optional<Picture> picture = callback(renderer);
+        if (picture.has_value() && picture->pass != nullptr) {
+          last_frame = std::move(picture);
         }
-        return renderer.Render(*picture, render_target, true);
+        if (!last_frame.has_value()) {
+          return false;  // The first frame rendered nothing. Fail
+        }
+        return renderer.Render(*last_frame, render_target, true);
       });
 }
 
