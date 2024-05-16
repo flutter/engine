@@ -49,6 +49,8 @@ TEST_P(DlGoldenTest, CanRenderImage) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+// Asserts that subpass rendering of MatrixImageFilters works.
+// https://github.com/flutter/flutter/issues/147807
 TEST_P(DlGoldenTest, Bug147807) {
   Point content_scale = GetContentScale();
   auto draw = [content_scale](DlCanvas* canvas,
