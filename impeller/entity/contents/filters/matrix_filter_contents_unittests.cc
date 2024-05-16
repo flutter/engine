@@ -90,6 +90,24 @@ TEST(MatrixFilterContentsTest, Coverage2xEffect) {
   ASSERT_EQ(coverage, Rect::MakeXYWH(10, 10, 100, 100));
 }
 
+namespace {
+void expectRenderCoverageEqual(const std::optional<Entity>& result,
+                               const std::optional<Rect> contents_coverage,
+                               const Rect& expected) {
+  EXPECT_TRUE(result.has_value());
+  if (result.has_value()) {
+    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
+    std::optional<Rect> result_coverage = result.value().GetCoverage();
+    EXPECT_TRUE(result_coverage.has_value());
+    EXPECT_TRUE(contents_coverage.has_value());
+    if (result_coverage.has_value() && contents_coverage.has_value()) {
+      EXPECT_TRUE(RectNear(contents_coverage.value(), expected));
+      EXPECT_TRUE(RectNear(result_coverage.value(), expected));
+    }
+  }
+}
+}  // namespace
+
 TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageIdentity) {
   std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
   MatrixFilterContents contents;
@@ -101,20 +119,8 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageIdentity) {
   std::shared_ptr<ContentContext> renderer = GetContentContext();
   std::optional<Entity> result =
       contents.GetEntity(*renderer, entity, /*coverage_hint=*/{});
-  EXPECT_TRUE(result.has_value());
-  if (result.has_value()) {
-    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
-    std::optional<Rect> result_coverage = result.value().GetCoverage();
-    std::optional<Rect> contents_coverage = contents.GetCoverage(entity);
-    EXPECT_TRUE(result_coverage.has_value());
-    EXPECT_TRUE(contents_coverage.has_value());
-    if (result_coverage.has_value() && contents_coverage.has_value()) {
-      EXPECT_TRUE(RectNear(contents_coverage.value(),
-                           Rect::MakeXYWH(100, 200, 100, 100)));
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeXYWH(100, 200, 100, 100)));
-    }
-  }
+  expectRenderCoverageEqual(result, contents.GetCoverage(entity),
+                            Rect::MakeXYWH(100, 200, 100, 100));
 }
 
 TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate) {
@@ -122,6 +128,7 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate) {
   MatrixFilterContents contents;
   contents.SetInputs({FilterInput::Make(texture)});
   contents.SetMatrix(Matrix::MakeTranslation({50, 100, 0}));
+  contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
@@ -129,20 +136,27 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate) {
   std::shared_ptr<ContentContext> renderer = GetContentContext();
   std::optional<Entity> result =
       contents.GetEntity(*renderer, entity, /*coverage_hint=*/{});
-  EXPECT_TRUE(result.has_value());
-  if (result.has_value()) {
-    EXPECT_EQ(result.value().GetBlendMode(), BlendMode::kSourceOver);
-    std::optional<Rect> result_coverage = result.value().GetCoverage();
-    std::optional<Rect> contents_coverage = contents.GetCoverage(entity);
-    EXPECT_TRUE(result_coverage.has_value());
-    EXPECT_TRUE(contents_coverage.has_value());
-    if (result_coverage.has_value() && contents_coverage.has_value()) {
-      EXPECT_TRUE(RectNear(contents_coverage.value(),
-                           Rect::MakeXYWH(150, 300, 100, 100)));
-      EXPECT_TRUE(RectNear(result_coverage.value(),
-                           Rect::MakeXYWH(150, 300, 100, 100)));
-    }
-  }
+  expectRenderCoverageEqual(result, contents.GetCoverage(entity),
+                            Rect::MakeXYWH(150, 300, 100, 100));
+}
+
+TEST_P(MatrixFilterContentsTest,
+       RenderCoverageMatchesGetCoverageSubpassTranslate) {
+  std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
+  MatrixFilterContents contents;
+  contents.SetInputs({FilterInput::Make(texture)});
+  contents.SetMatrix(Matrix::MakeTranslation({50, 100, 0}));
+  contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
+  contents.SetRenderingMode(Entity::RenderingMode::kSubpass);
+
+  Entity entity;
+  entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
+
+  std::shared_ptr<ContentContext> renderer = GetContentContext();
+  std::optional<Entity> result =
+      contents.GetEntity(*renderer, entity, /*coverage_hint=*/{});
+  expectRenderCoverageEqual(result, contents.GetCoverage(entity),
+                            Rect::MakeXYWH(200, 400, 100, 100));
 }
 
 }  // namespace testing
