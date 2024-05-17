@@ -183,6 +183,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   while (!openURLCompleted && CACurrentMediaTime() - start <= 5.0) {
     [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
+  return openURLSuccess;
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {
