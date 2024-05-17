@@ -253,7 +253,12 @@ struct Color {
     return {r, g, b, a};
   }
 
-  constexpr uint32_t ToSkia() const {
+  /**
+   * @brief Convert to ARGB 32 bit color.
+   *
+   * @return constexpr uint32_t
+   */
+  constexpr uint32_t ToARGB() const {
     std::array<uint8_t, 4> result = ToR8G8B8A8();
     return result[3] << 24 | result[0] << 16 | result[1] << 8 | result[2];
   }

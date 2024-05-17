@@ -240,7 +240,7 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setHinting(SkFontHinting::kSlight);
   sk_font.setEmbolden(metrics.embolden);
 
-  auto glyph_color = has_color ? scaled_font.color.ToSkia() : SK_ColorBLACK;
+  auto glyph_color = has_color ? scaled_font.color.ToARGB() : SK_ColorBLACK;
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);

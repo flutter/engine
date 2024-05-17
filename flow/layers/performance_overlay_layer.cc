@@ -9,11 +9,9 @@
 #include <memory>
 #include <string>
 
-#include "display_list/dl_color.h"
 #include "flow/stopwatch.h"
 #include "flow/stopwatch_dl.h"
 #include "flow/stopwatch_sk.h"
-#include "include/core/SkColor.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkTextBlob.h"

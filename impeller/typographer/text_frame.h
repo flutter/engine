@@ -63,6 +63,13 @@ class TextFrame {
   ///             to apply opacity peephole optimizations to text blobs.
   bool MaybeHasOverlapping() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Returns the paint color this text frame was recorded with.
+  ///
+  ///             Non-bitmap/COLR fonts always use a black text color here, but
+  ///             COLR fonts can potentially use the paint color in the glyph
+  ///             atlas, so this color must be considered as part of the cache
+  ///             key.
   Color GetColor() const;
 
   //----------------------------------------------------------------------------
