@@ -147,7 +147,7 @@ TEST_P(MatrixFilterContentsTest,
   contents.SetInputs({FilterInput::Make(texture)});
   contents.SetMatrix(Matrix::MakeTranslation({50, 100, 0}));
   contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
-  contents.SetRenderingMode(Entity::RenderingMode::kSubpass);
+  contents.SetRenderingMode(Entity::RenderingMode::kBackdropSubpass);
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
@@ -182,7 +182,7 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageSubpassScale) {
   contents.SetInputs({FilterInput::Make(texture)});
   contents.SetMatrix(Matrix::MakeScale({3, 3, 1}));
   contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
-  contents.SetRenderingMode(Entity::RenderingMode::kSubpass);
+  contents.SetRenderingMode(Entity::RenderingMode::kBackdropSubpass);
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
