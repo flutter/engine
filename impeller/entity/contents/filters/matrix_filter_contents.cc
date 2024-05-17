@@ -32,10 +32,11 @@ namespace {
 Matrix CalculateSubpassTransform(const Matrix& entity_transform,
                                  const Matrix& effect_transform,
                                  const Matrix& matrix) {
+  Matrix effect_basis = effect_transform.Basis();
   return entity_transform *  //
-         effect_transform *  //
+         effect_basis *      //
          matrix *            //
-         effect_transform.Invert();
+         effect_basis.Invert();
 }
 }  // namespace
 
