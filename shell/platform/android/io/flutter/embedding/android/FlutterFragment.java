@@ -1685,7 +1685,7 @@ public class FlutterFragment extends Fragment
 
   @Override
   public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
-    if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
+    if (!getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       return;
     }
     onBackPressedCallback.setEnabled(frameworkHandlesBack);

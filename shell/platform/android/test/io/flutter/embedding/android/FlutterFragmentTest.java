@@ -301,6 +301,8 @@ public class FlutterFragmentTest {
 
     FlutterFragment fragment =
         FlutterFragment.withCachedEngine("my_cached_engine")
+            // This enables the use of onBackPressedCallback, which is what
+            // sends backs to the framework if setFrameworkHandlesBack is true.
             .shouldAutomaticallyHandleOnBackPressed(true)
             .build();
     FragmentActivity activity = getMockFragmentActivity();
@@ -318,13 +320,15 @@ public class FlutterFragmentTest {
     TestDelegateFactory delegateFactory = new TestDelegateFactory(mockDelegate);
     fragment.setDelegateFactory(delegateFactory);
 
+    // Calling onBackPressed now will still be handled by Android (the default),
+    // until setFrameworkHandlesBack is set to true.
     activity.onBackPressed();
-
     verify(mockDelegate, times(0)).onBackPressed();
 
+    // Setting setFrameworkHandlesBack to true means the delegate will receive
+    // the back and Android won't handle it.
     fragment.setFrameworkHandlesBack(true);
     activity.onBackPressed();
-
     verify(mockDelegate, times(1)).onBackPressed();
   }
 
