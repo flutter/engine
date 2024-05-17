@@ -728,8 +728,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       checkInputEditingState(textEditing!.strategy.domElement, '', 0, 0);
 
       const MethodCall setEditingState =
@@ -789,8 +787,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
 
@@ -830,8 +826,6 @@ Future<void> testMain() async {
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      await waitForDesktopSafariFocus();
 
       const MethodCall setEditingState =
         MethodCall('TextInput.setEditingState', <String, dynamic>{
@@ -917,8 +911,6 @@ Future<void> testMain() async {
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      await waitForDesktopSafariFocus();
 
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -1014,8 +1006,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
 
@@ -1072,8 +1062,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
 
@@ -1128,8 +1116,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       final DomHTMLFormElement formElement =
@@ -1183,8 +1169,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       // Form is added to DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
       final DomHTMLFormElement formElement =
@@ -1211,51 +1195,6 @@ Future<void> testMain() async {
       expect(formsOnTheDom, hasLength(0));
     });
 
-    test('form is not placed and input is not focused until after tick on Desktop Safari', () async {
-      // Create a configuration with an AutofillGroup of four text fields.
-      final Map<String, dynamic> flutterMultiAutofillElementConfig =
-          createFlutterConfig('text',
-              autofillHint: 'username',
-              autofillHintsForFields: <String>[
-            'username',
-            'email',
-            'name',
-            'telephoneNumber'
-          ]);
-      final MethodCall setClient = MethodCall('TextInput.setClient',
-          <dynamic>[123, flutterMultiAutofillElementConfig]);
-      sendFrameworkMessage(codec.encodeMethodCall(setClient));
-
-      const MethodCall setEditingState1 =
-          MethodCall('TextInput.setEditingState', <String, dynamic>{
-        'text': 'abcd',
-        'selectionBase': 2,
-        'selectionExtent': 3,
-      });
-      sendFrameworkMessage(codec.encodeMethodCall(setEditingState1));
-
-      const MethodCall show = MethodCall('TextInput.show');
-      sendFrameworkMessage(codec.encodeMethodCall(show));
-
-      final MethodCall setSizeAndTransform =
-          configureSetSizeAndTransformMethodCall(150, 50,
-              Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
-      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      // Prior to tick, form should not exist and no elements should be focused.
-      expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
-      expect(domDocument.activeElement, domDocument.body);
-
-      await waitForDesktopSafariFocus();
-
-      // Form is added to DOM.
-      expect(defaultTextEditingRoot.querySelectorAll('form'), isNotEmpty);
-
-      final DomHTMLInputElement inputElement =
-          textEditing!.strategy.domElement! as DomHTMLInputElement;
-      expect(domDocument.activeElement, inputElement);
-    }, skip: !isSafari);
-
     test('Moves the focus across input elements', () async {
       final List<DomEvent> focusinEvents = <DomEvent>[];
       final DomEventListener handleFocusIn = createDomEventListener(focusinEvents.add);
@@ -1274,29 +1213,35 @@ Future<void> testMain() async {
         'selectionBase': 2,
         'selectionExtent': 3,
       });
-      const MethodCall clearClient = MethodCall('TextInput.clearClient');
+      final MethodCall setSizeAndTransform = configureSetSizeAndTransformMethodCall(
+        150,
+        50,
+        Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList(),
+      );
       const MethodCall show = MethodCall('TextInput.show');
-
+      const MethodCall clearClient = MethodCall('TextInput.clearClient');
 
       domDocument.body!.addEventListener('focusin', handleFocusIn);
       sendFrameworkMessage(codec.encodeMethodCall(setClient1));
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
       sendFrameworkMessage(codec.encodeMethodCall(show));
-      await waitForDesktopSafariFocus();
       final DomElement firstInput = textEditing!.strategy.domElement!;
+      expect(domDocument.activeElement, firstInput);
 
       sendFrameworkMessage(codec.encodeMethodCall(setClient2));
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+      sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
       sendFrameworkMessage(codec.encodeMethodCall(show));
-      await waitForDesktopSafariFocus();
       final DomElement secondInput = textEditing!.strategy.domElement!;
+      expect(domDocument.activeElement, secondInput);
+      expect(firstInput, isNot(secondInput));
 
       sendFrameworkMessage(codec.encodeMethodCall(clearClient));
       await waitForTextStrategyStopPropagation();
       domDocument.body!.removeEventListener('focusin', handleFocusIn);
 
       expect(focusinEvents, hasLength(3));
-      expect(firstInput, isNot(secondInput));
       expect(focusinEvents[0].target, firstInput);
       expect(focusinEvents[1].target, secondInput);
       expect(focusinEvents[2].target, implicitViewRootElement);
@@ -1333,7 +1278,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
 
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -1389,7 +1333,6 @@ Future<void> testMain() async {
       });
       sendFrameworkMessage(codec.encodeMethodCall(setEditingState2));
 
-      await waitForDesktopSafariFocus();
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'xyz', 0, 2);
@@ -1431,7 +1374,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -1502,7 +1444,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(updateSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
       // Check the element still has focus. User can keep editing.
       expect(defaultTextEditingRoot.ownerDocument?.activeElement,
           textEditing!.strategy.domElement);
@@ -1558,7 +1499,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
@@ -1870,8 +1810,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       // Check if the selection range is correct.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'xyz', 1, 2);
@@ -2045,8 +1983,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       final DomHTMLInputElement input = textEditing!.strategy.domElement! as
           DomHTMLInputElement;
 
@@ -2119,8 +2055,6 @@ Future<void> testMain() async {
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      await waitForDesktopSafariFocus();
 
       final DomHTMLInputElement input = textEditing!.strategy.domElement! as
           DomHTMLInputElement;
@@ -2206,7 +2140,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
@@ -2275,8 +2208,6 @@ Future<void> testMain() async {
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      await waitForDesktopSafariFocus();
 
       final DomHTMLTextAreaElement textarea = textEditing!.strategy.domElement!
           as DomHTMLTextAreaElement;
@@ -2374,8 +2305,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       expect(textEditing!.strategy.domElement!.tagName, 'INPUT');
       expect(getEditingInputMode(), 'none');
     });
@@ -2396,8 +2325,6 @@ Future<void> testMain() async {
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
-      await waitForDesktopSafariFocus();
 
       expect(textEditing!.strategy.domElement!.tagName, 'TEXTAREA');
       expect(getEditingInputMode(), 'none');
@@ -2635,10 +2562,7 @@ Future<void> testMain() async {
       final MethodCall setSizeAndTransform = configureSetSizeAndTransformMethodCall(10, 10, transform);
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       final DomElement input = textEditing!.strategy.domElement!;
-
 
       // Input is appended to the right view.
       expect(view.dom.textEditingHost.contains(input), isTrue);
@@ -2719,8 +2643,6 @@ Future<void> testMain() async {
       final MethodCall setSizeAndTransform = configureSetSizeAndTransformMethodCall(10, 10, transform);
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-      await waitForDesktopSafariFocus();
-
       final DomElement input = textEditing!.strategy.domElement!;
       final DomElement form = textEditing!.configuration!.autofillGroup!.formElement;
 
@@ -2763,8 +2685,6 @@ Future<void> testMain() async {
 
       const MethodCall show = MethodCall('TextInput.show');
       sendFrameworkMessage(codec.encodeMethodCall(show));
-
-      await waitForDesktopSafariFocus();
 
       final DomElement input = textEditing!.strategy.domElement!;
       final DomElement form = textEditing!.configuration!.autofillGroup!.formElement;
@@ -3805,15 +3725,6 @@ void clearForms() {
     defaultTextEditingRoot.querySelectorAll('form').last.remove();
   }
   formsOnTheDom.clear();
-}
-
-/// On Desktop Safari, the editing element is focused after a zero-duration timer
-/// to prevent autofill popup flickering. We must wait a tick for this placement
-/// before referencing these elements.
-Future<void> waitForDesktopSafariFocus() async {
-  if (textEditing.strategy is SafariDesktopTextEditingStrategy) {
-    await Future<void>.delayed(Duration.zero);
-  }
 }
 
 /// After stopped the focus remains on the input element to give the engine
