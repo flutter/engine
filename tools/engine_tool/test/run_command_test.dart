@@ -68,7 +68,7 @@ void main() {
           processManager: FakeProcessManager(onStart: (List<String> command) {
             runHistory.add(command);
             switch (command) {
-              case ['flutter', 'devices', '--machine']:
+              case ['flutter', '--no-version-check', 'devices', '--machine']:
                 return FakeProcess(stdout: fixtures.attachedDevices());
               default:
                 return FakeProcess();

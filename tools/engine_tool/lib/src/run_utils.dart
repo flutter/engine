@@ -115,8 +115,9 @@ RunTarget? selectRunTarget(Environment env, String flutterDevicesMachine,
 /// Detects available targets and then selects one.
 Future<RunTarget?> detectAndSelectRunTarget(Environment env,
     [String? idPrefix]) async {
-  final ProcessRunnerResult result = await env.processRunner
-      .runProcess(<String>['flutter', 'devices', '--machine']);
+  final ProcessRunnerResult result = await env.processRunner.runProcess(
+    <String>['flutter', '--no-version-check', 'devices', '--machine'],
+  );
   if (result.exitCode != 0) {
     env.logger.error('flutter devices --machine failed:\n'
         'EXIT_CODE:${result.exitCode}\n'
