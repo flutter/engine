@@ -8,7 +8,7 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/html/image.dart';
-import 'package:ui/src/engine/html_image_codec.dart';
+import 'package:ui/src/engine/html_image_element_codec.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -79,8 +79,7 @@ Future<void> testMain() async {
     test('provides image loading progress', () async {
       final StringBuffer buffer = StringBuffer();
       final HTMLImageElementCodec codec = HtmlRendererImageCodec(
-          'sample_image1.png',
-          chunkCallback: (int loaded, int total) {
+          'sample_image1.png', chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
       });
       await codec.getNextFrame();
@@ -119,8 +118,7 @@ Future<void> testMain() async {
       final Uri uri = Uri.base.resolve('sample_image1.png');
       final StringBuffer buffer = StringBuffer();
       final HTMLImageElementCodec codec = await ui_web
-          .createImageCodecFromUrl(uri,
-          chunkCallback: (int loaded, int total) {
+          .createImageCodecFromUrl(uri, chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
       }) as HTMLImageElementCodec;
       await codec.getNextFrame();
