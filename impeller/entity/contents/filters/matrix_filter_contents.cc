@@ -29,14 +29,22 @@ void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
 }
 
 namespace {
-Matrix CalculateSubpassTransform(const Matrix& entity_transform,
+Matrix CalculateSubpassTransform(const Matrix& snapshot_transform,
                                  const Matrix& effect_transform,
                                  const Matrix& matrix) {
-  Matrix effect_basis = effect_transform.Basis();
-  return entity_transform *  //
-         effect_basis *      //
-         matrix *            //
-         effect_basis.Invert();
+  Scalar x = effect_transform.m[12];
+  Scalar y = effect_transform.m[13];
+  if (Point(x, y) == Point()) {
+    return snapshot_transform *  //
+           effect_transform *    //
+           matrix *              //
+           effect_transform.Invert();
+  } else {
+    return effect_transform *           //
+           matrix *                     //
+           effect_transform.Invert() *  //
+           snapshot_transform;
+  }
 }
 }  // namespace
 
