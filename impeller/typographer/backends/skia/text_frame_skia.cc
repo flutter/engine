@@ -6,6 +6,7 @@
 
 #include <vector>
 
+#include "display_list/dl_color.h"
 #include "flutter/fml/logging.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "include/core/SkRect.h"
@@ -15,6 +16,15 @@
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
+
+static Color ToColor(const flutter::DlColor& color) {
+  return {
+      static_cast<Scalar>(color.getRedF()),    //
+      static_cast<Scalar>(color.getGreenF()),  //
+      static_cast<Scalar>(color.getBlueF()),   //
+      static_cast<Scalar>(color.getAlphaF())   //
+  };
+}
 
 static Font ToFont(const SkTextBlobRunIterator& run) {
   auto& font = run.font();
@@ -36,11 +46,13 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-static constexpr Scalar kScaleSize = 100000.0f;
+static constexpr Scalar kScaleSize = 64.0f;
 
 std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
-    const sk_sp<SkTextBlob>& blob) {
+    const sk_sp<SkTextBlob>& blob,
+    flutter::DlColor dl_color) {
   bool has_color = false;
+  Color color = ToColor(dl_color);
   std::vector<TextRun> runs;
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
@@ -59,7 +71,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
         // For some platforms (including Android), `SkFont::getBounds()` snaps
         // the computed bounds to integers. And so we scale up the font size
         // prior to fetching the bounds to ensure that the returned bounds are
-        // always precise enough.
+        // always precise enough. Scaling too large will cause Skia to use
+        // path rendering and potentially inaccurate glyph sizes.
         font.setSize(kScaleSize);
         font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
@@ -88,7 +101,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
         continue;
     }
   }
-  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color);
+  return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color,
+                                     has_color ? color : Color::Black());
 }
 
 }  // namespace impeller
