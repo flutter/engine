@@ -1278,7 +1278,6 @@ Future<void> testMain() async {
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
 
-
       checkInputEditingState(
           textEditing!.strategy.domElement, 'abcd', 2, 3);
 
@@ -1498,7 +1497,6 @@ Future<void> testMain() async {
           configureSetSizeAndTransformMethodCall(150, 50,
               Matrix4.translationValues(10.0, 20.0, 30.0).storage.toList());
       sendFrameworkMessage(codec.encodeMethodCall(setSizeAndTransform));
-
 
       // The second [setEditingState] should override the first one.
       checkInputEditingState(
