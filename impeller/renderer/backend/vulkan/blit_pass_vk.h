@@ -38,6 +38,9 @@ class BlitPassVK final : public BlitPass {
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
   // |BlitPass|
+  bool ConvertTextureToShaderRead(std::shared_ptr<Texture> texture) override;
+
+  // |BlitPass|
   bool OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
                                      std::shared_ptr<Texture> destination,
                                      IRect source_region,
@@ -56,7 +59,8 @@ class BlitPassVK final : public BlitPass {
                                     std::shared_ptr<Texture> destination,
                                     IRect destination_region,
                                     std::string label,
-                                    uint32_t slice) override;
+                                    uint32_t slice,
+                                    bool convert_to_read) override;
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;

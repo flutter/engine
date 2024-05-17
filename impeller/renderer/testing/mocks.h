@@ -52,46 +52,6 @@ class MockAllocator : public Allocator {
               (override));
 };
 
-class MockBlitPass : public BlitPass {
- public:
-  MOCK_METHOD(bool, IsValid, (), (const, override));
-  MOCK_METHOD(bool,
-              EncodeCommands,
-              (const std::shared_ptr<Allocator>& transients_allocator),
-              (const, override));
-  MOCK_METHOD(void, OnSetLabel, (std::string label), (override));
-
-  MOCK_METHOD(bool,
-              OnCopyTextureToTextureCommand,
-              (std::shared_ptr<Texture> source,
-               std::shared_ptr<Texture> destination,
-               IRect source_region,
-               IPoint destination_origin,
-               std::string label),
-              (override));
-
-  MOCK_METHOD(bool,
-              OnCopyTextureToBufferCommand,
-              (std::shared_ptr<Texture> source,
-               std::shared_ptr<DeviceBuffer> destination,
-               IRect source_region,
-               size_t destination_offset,
-               std::string label),
-              (override));
-  MOCK_METHOD(bool,
-              OnCopyBufferToTextureCommand,
-              (BufferView source,
-               std::shared_ptr<Texture> destination,
-               IRect destination_rect,
-               std::string label,
-               uint32_t slice),
-              (override));
-  MOCK_METHOD(bool,
-              OnGenerateMipmapCommand,
-              (std::shared_ptr<Texture> texture, std::string label),
-              (override));
-};
-
 class MockRenderPass : public RenderPass {
  public:
   MockRenderPass(std::shared_ptr<const Context> context,
