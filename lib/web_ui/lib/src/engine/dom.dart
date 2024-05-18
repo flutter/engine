@@ -670,7 +670,16 @@ extension DomElementExtension on DomElement {
   external JSNumber? get _tabIndex;
   double? get tabIndex => _tabIndex?.toDartDouble;
 
-  external JSVoid focus();
+  @JS('focus')
+  external JSVoid _focus(JSAny options);
+
+  void focus({bool? preventScroll, bool? focusVisible}) {
+    final Map<String, bool> options = {
+      if (preventScroll != null) 'preventScroll': preventScroll,
+      if (focusVisible != null) 'focusVisible': focusVisible,
+    };
+    _focus(options.toJSAnyDeep);
+  }
 
   @JS('scrollTop')
   external JSNumber get _scrollTop;
