@@ -63,8 +63,8 @@ void main() {
     // Rouding up here prevents the bounds from becoming 1 pixel too small
     // when nearest sampling. This path breaks down for projections.
     position =
-        vec4(round(screen_glyph_position +
-                   project(basis_transform, unit_position * glyph_bounds.zw)),
+        vec4(ceil(screen_glyph_position +
+                  project(basis_transform, unit_position * glyph_bounds.zw)),
              0.0, 1.0);
   } else {
     position = frame_info.entity_transform *

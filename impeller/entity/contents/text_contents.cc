@@ -13,6 +13,7 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
@@ -182,9 +183,12 @@ bool TextContents::Render(const ContentContext& renderer,
             }
             const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
             vtx.atlas_glyph_bounds = Vector4(atlas_glyph_bounds.GetXYWH());
-            vtx.glyph_bounds = Vector4(glyph_position.glyph.bounds.GetXYWH());
-            vtx.glyph_position = glyph_position.position;
+            auto rounded_bounds =
+                IRect::RoundOut(glyph_position.glyph.bounds).GetXYWH();
 
+            vtx.glyph_bounds = Vector4(rounded_bounds[0], rounded_bounds[1],
+                                       rounded_bounds[2], rounded_bounds[3]);
+            vtx.glyph_position = glyph_position.position;
             for (const Point& point : unit_points) {
               vtx.unit_position = point;
               vtx_contents[offset++] = vtx;
