@@ -57,8 +57,8 @@ void main() {
   // nearest sampling.
   mat4 basis_transform = basis(frame_info.entity_transform);
   vec2 screen_glyph_position =
-      screen_offset +
-      project(basis_transform, (glyph_position + glyph_bounds.xy));
+      round(screen_offset +
+      project(basis_transform, (glyph_position + glyph_bounds.xy)));
 
   vec4 position;
   if (frame_info.is_translation_scale == 1.0) {
