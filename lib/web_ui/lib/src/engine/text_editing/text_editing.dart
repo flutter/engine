@@ -1239,8 +1239,17 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   /// The [FlutterView] in which [activeDomElement] is contained.
-  EngineFlutterView? get _activeDomElementView =>
-    EnginePlatformDispatcher.instance.viewManager.findViewForElement(activeDomElement);
+  EngineFlutterView? get _activeDomElementView => _viewForElement(activeDomElement);
+
+  bool _inSameView(DomElement element1, DomElement element2) {
+    final EngineFlutterView? element1View =  _viewForElement(element1);
+    final EngineFlutterView? element2View =  _viewForElement(element2);
+    return element1View != null && element2View != null && element1View == element2View;
+  }
+
+  EngineFlutterView? _viewForElement(DomElement element) =>
+    EnginePlatformDispatcher.instance.viewManager.findViewForElement(element);
+
 
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
@@ -1358,7 +1367,11 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.add(DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
+            handleBeforeInput));
+
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            handleBlur));
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1491,6 +1504,13 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         editingDeltaState.deltaStart = deltaOffset;
         editingDeltaState.deltaEnd = deltaOffset;
       }
+    }
+  }
+
+  void handleBlur(DomEvent event) {
+    final DomElement? willGainFocus = event.target as DomElement?;
+    if (willGainFocus != null && _inSameView(willGainFocus, activeDomElement)) {
+      activeDomElement.focus();
     }
   }
 
@@ -1660,7 +1680,12 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
+            handleBeforeInput));
+
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            handleBlur));
+
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1783,7 +1808,11 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(domDocument, 'selectionchange',
             handleChange));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
+    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
+        handleBeforeInput));
+
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+        handleBlur));
 
     addCompositionEventHandlers(activeDomElement);
 
