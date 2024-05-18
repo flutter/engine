@@ -1861,7 +1861,9 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(
             activeDomElement, 'keydown', maybeSendAction));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'beforeinput', handleBeforeInput));
+    subscriptions.add(
+        DomSubscription(
+            activeDomElement, 'beforeinput', handleBeforeInput));
 
     addCompositionEventHandlers(activeDomElement);
 
