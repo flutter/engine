@@ -46,20 +46,19 @@ vec2 project(mat4 m, vec2 v) {
 }
 
 void main() {
-  vec2 screen_offset =
-      round(project(frame_info.entity_transform, frame_info.offset));
+  vec2 screen_offset = project(frame_info.entity_transform, frame_info.offset);
 
   // For each glyph, we compute two rectangles. One for the vertex positions
   // and one for the texture coordinates (UVs).
   vec2 uv_origin = (atlas_glyph_bounds.xy - vec2(0.5)) / frame_info.atlas_size;
-  vec2 uv_size = (atlas_glyph_bounds.zw + vec2(1)) / frame_info.atlas_size;
+  vec2 uv_size = atlas_glyph_bounds.zw / frame_info.atlas_size;
 
   // Rounding here prevents most jitter between glyphs in the run when
   // nearest sampling.
   mat4 basis_transform = basis(frame_info.entity_transform);
   vec2 screen_glyph_position =
       screen_offset +
-      round(project(basis_transform, (glyph_position + glyph_bounds.xy)));
+      project(basis_transform, (glyph_position + glyph_bounds.xy));
 
   vec4 position;
   if (frame_info.is_translation_scale == 1.0) {
