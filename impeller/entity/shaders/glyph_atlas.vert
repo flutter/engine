@@ -64,10 +64,10 @@ void main() {
   if (frame_info.is_translation_scale == 1.0) {
     // Rouding up here prevents the bounds from becoming 1 pixel too small
     // when nearest sampling. This path breaks down for projections.
-    position = vec4(
-        round(screen_glyph_position +
-            project(basis_transform, unit_position * glyph_bounds.zw)),
-        0.0, 1.0);
+    position =
+        vec4(round(screen_glyph_position +
+                   project(basis_transform, unit_position * glyph_bounds.zw)),
+             0.0, 1.0);
   } else {
     position = frame_info.entity_transform *
                vec4(frame_info.offset + glyph_position + glyph_bounds.xy +
