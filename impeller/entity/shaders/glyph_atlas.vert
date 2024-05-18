@@ -51,7 +51,7 @@ void main() {
   // For each glyph, we compute two rectangles. One for the vertex positions
   // and one for the texture coordinates (UVs).
   vec2 uv_origin = (atlas_glyph_bounds.xy - vec2(0.5)) / frame_info.atlas_size;
-  vec2 uv_size = atlas_glyph_bounds.zw / frame_info.atlas_size;
+  vec2 uv_size = (atlas_glyph_bounds.zw) / frame_info.atlas_size;
 
   // Rounding here prevents most jitter between glyphs in the run when
   // nearest sampling.
@@ -65,8 +65,8 @@ void main() {
     // Rouding up here prevents the bounds from becoming 1 pixel too small
     // when nearest sampling. This path breaks down for projections.
     position = vec4(
-        screen_glyph_position +
-            ceil(project(basis_transform, unit_position * glyph_bounds.zw)),
+        round(screen_glyph_position +
+            project(basis_transform, unit_position * glyph_bounds.zw)),
         0.0, 1.0);
   } else {
     position = frame_info.entity_transform *
