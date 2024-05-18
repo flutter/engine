@@ -1654,7 +1654,6 @@ class SemanticsObject {
       PrimaryRole.dialog => Dialog(this),
       PrimaryRole.image => ImageRoleManager(this),
       PrimaryRole.platformView => PlatformViewRoleManager(this),
-      PrimaryRole.heading => Heading(this),
       PrimaryRole.link => Link(this),
       PrimaryRole.heading => Heading(this),
       PrimaryRole.generic => GenericRole(this),
