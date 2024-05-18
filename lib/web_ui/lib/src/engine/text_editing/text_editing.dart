@@ -1865,6 +1865,11 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
         DomSubscription(
             activeDomElement, 'beforeinput', handleBeforeInput));
 
+    subscriptions.add(
+        DomSubscription(
+            activeDomElement, 'blur', handleBlur));
+
+
     addCompositionEventHandlers(activeDomElement);
 
     // Detects changes in text selection.
