@@ -1166,17 +1166,6 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     geometry?.applyToDomElement(activeDomElement);
     if (hasAutofillGroup) {
       placeForm();
-      // On Safari Desktop, when a form is focused, it opens an autofill menu
-      // immediately.
-      // Flutter framework sends `setEditableSizeAndTransform` for informing
-      // the engine about the location of the text field. This call may arrive
-      // after the first `show` call, depending on the text input widget's
-      // implementation. Therefore form is placed, when
-      // `setEditableSizeAndTransform` method is called and focus called on the
-      // form only after placing it to the correct position and only once after
-      // that. Calling focus multiple times causes flickering.
-      focusedFormElement!.focus();
-
       // Set the last editing state if it exists, this is critical for a
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
@@ -1240,12 +1229,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
   /// The [FlutterView] in which [activeDomElement] is contained.
   EngineFlutterView? get _activeDomElementView => _viewForElement(activeDomElement);
-
-  bool _inSameView(DomElement element1, DomElement element2) {
-    final EngineFlutterView? element1View =  _viewForElement(element1);
-    final EngineFlutterView? element2View =  _viewForElement(element2);
-    return element1View != null && element2View != null && element1View == element2View;
-  }
 
   EngineFlutterView? _viewForElement(DomElement element) =>
     EnginePlatformDispatcher.instance.viewManager.findViewForElement(element);
@@ -1369,9 +1352,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
             handleBeforeInput));
-
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            handleBlur));
 
     addCompositionEventHandlers(activeDomElement);
 
@@ -1508,8 +1488,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   void handleBlur(DomEvent event) {
-    final DomElement? willGainFocus = event.target as DomElement?;
-    if (willGainFocus != null && _inSameView(willGainFocus, activeDomElement)) {
+    event as DomFocusEvent;
+
+    final DomElement? willGainFocusElement = event.relatedTarget as DomElement?;
+    if (willGainFocusElement == null || _viewForElement(willGainFocusElement) == _activeDomElementView) {
       activeDomElement.focus();
     }
   }
@@ -1683,10 +1665,6 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
             handleBeforeInput));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            handleBlur));
-
-
     addCompositionEventHandlers(activeDomElement);
 
     // Position the DOM element after it is focused.
@@ -1811,9 +1789,6 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
         handleBeforeInput));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-        handleBlur));
-
     addCompositionEventHandlers(activeDomElement);
 
     preventDefaultForMouseEvents();
@@ -1864,11 +1839,6 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(
         DomSubscription(
             activeDomElement, 'beforeinput', handleBeforeInput));
-
-    subscriptions.add(
-        DomSubscription(
-            activeDomElement, 'blur', handleBlur));
-
 
     addCompositionEventHandlers(activeDomElement);
 
