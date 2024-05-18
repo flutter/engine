@@ -46,8 +46,6 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-static constexpr Scalar kScaleSize = 64.0f;
-
 std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob,
     flutter::DlColor dl_color) {
@@ -68,12 +66,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
         glyph_bounds.resize(glyph_count);
         SkFont font = run.font();
         auto font_size = font.getSize();
-        // For some platforms (including Android), `SkFont::getBounds()` snaps
-        // the computed bounds to integers. And so we scale up the font size
-        // prior to fetching the bounds to ensure that the returned bounds are
-        // always precise enough. Scaling too large will cause Skia to use
-        // path rendering and potentially inaccurate glyph sizes.
-        font.setSize(kScaleSize);
+
+        font.setSize(font_size);
         font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
         std::vector<TextRun::GlyphPosition> positions;
@@ -88,8 +82,7 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
           has_color |= type == Glyph::Type::kBitmap;
 
           positions.emplace_back(TextRun::GlyphPosition{
-              Glyph{glyphs[i], type,
-                    ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
+              Glyph{glyphs[i], type, ToRect(glyph_bounds[i])},
               Point{point->x(), point->y()}});
         }
         TextRun text_run(ToFont(run), positions);
