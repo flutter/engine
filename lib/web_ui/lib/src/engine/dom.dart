@@ -674,7 +674,7 @@ extension DomElementExtension on DomElement {
   external JSVoid _focus(JSAny options);
 
   void focus({bool? preventScroll, bool? focusVisible}) {
-    final Map<String, bool> options = {
+    final Map<String, bool> options = <String, bool>{
       if (preventScroll != null) 'preventScroll': preventScroll,
       if (focusVisible != null) 'focusVisible': focusVisible,
     };
