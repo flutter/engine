@@ -1132,7 +1132,7 @@ class GloballyPositionedTextEditingStrategy extends DefaultTextEditingStrategy {
       // does not appear on top-left of the page.
       // Refocus on the elements after applying the geometry.
       focusedFormElement!.focus(preventScroll: true);
-      activeDomElement.focus(preventScroll: true);
+      moveFocusToActiveDomElement();
     }
   }
 }
@@ -1170,7 +1170,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
       // users ongoing work to continue uninterrupted when there is an update to
       // the transform.
       // If domElement is not focused cursor location will not be correct.
-      activeDomElement.focus(preventScroll: true);
+      moveFocusToActiveDomElement();
       lastEditingState?.applyToDomElement(activeDomElement);
     }
   }
@@ -1180,7 +1180,7 @@ class SafariDesktopTextEditingStrategy extends DefaultTextEditingStrategy {
     if (geometry != null) {
       placeElement();
     }
-    activeDomElement.focus(preventScroll: true);
+    moveFocusToActiveDomElement();
   }
 }
 
@@ -1420,7 +1420,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   }
 
   void placeElement() {
-    activeDomElement.focus(preventScroll: true);
+    moveFocusToActiveDomElement();
   }
 
   void placeForm() {
@@ -1491,7 +1491,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
 
     final DomElement? willGainFocusElement = event.relatedTarget as DomElement?;
     if (willGainFocusElement == null || _viewForElement(willGainFocusElement) == _activeDomElementView) {
-      activeDomElement.focus(preventScroll: true);
+      moveFocusToActiveDomElement();
     }
   }
 
@@ -1532,7 +1532,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     }
 
     // Re-focuses after setting editing state.
-    activeDomElement.focus(preventScroll: true);
+    moveFocusToActiveDomElement();
   }
 
   /// Prevent default behavior for mouse down, up and move.
@@ -1558,6 +1558,11 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         DomSubscription(activeDomElement, 'mousemove', (DomEvent event) {
       event.preventDefault();
     }));
+  }
+
+  /// Moves the focus to the [activeDomElement].
+  void moveFocusToActiveDomElement() {
+    activeDomElement.focus(preventScroll: true);
   }
 
   /// Moves the focus to the [EngineFlutterView].
@@ -1733,7 +1738,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus(preventScroll: true);
+    moveFocusToActiveDomElement();
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1795,7 +1800,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus(preventScroll: true);
+    moveFocusToActiveDomElement();
     geometry?.applyToDomElement(activeDomElement);
   }
 }
@@ -1874,7 +1879,7 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
   @override
   void placeElement() {
-    activeDomElement.focus(preventScroll: true);
+    moveFocusToActiveDomElement();
     geometry?.applyToDomElement(activeDomElement);
     // Set the last editing state if it exists, this is critical for a
     // users ongoing work to continue uninterrupted when there is an update to
