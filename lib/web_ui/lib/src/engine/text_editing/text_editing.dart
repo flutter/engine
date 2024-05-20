@@ -1233,7 +1233,6 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   EngineFlutterView? _viewForElement(DomElement element) =>
     EnginePlatformDispatcher.instance.viewManager.findViewForElement(element);
 
-
   late InputConfiguration inputConfiguration;
   EditingState? lastEditingState;
 
