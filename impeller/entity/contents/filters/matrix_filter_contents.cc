@@ -33,13 +33,13 @@ Matrix CalculateSubpassTransform(const Matrix& snapshot_transform,
                                  const Matrix& effect_transform,
                                  const Matrix& matrix,
                                  Entity::RenderingMode rendering_mode) {
-  if (rendering_mode == Entity::RenderingMode::kBackdropSubpass) {
+  if (rendering_mode == Entity::RenderingMode::kClippedSubpass) {
     return snapshot_transform *  //
            effect_transform *    //
            matrix *              //
            effect_transform.Invert();
   } else {
-    FML_DCHECK(rendering_mode == Entity::RenderingMode::kImageFilterSubpass);
+    FML_DCHECK(rendering_mode == Entity::RenderingMode::kSubpass);
     return effect_transform *           //
            matrix *                     //
            effect_transform.Invert() *  //
@@ -60,8 +60,8 @@ std::optional<Entity> MatrixFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  if (rendering_mode_ == Entity::RenderingMode::kImageFilterSubpass ||
-      rendering_mode_ == Entity::RenderingMode::kBackdropSubpass) {
+  if (rendering_mode_ == Entity::RenderingMode::kSubpass ||
+      rendering_mode_ == Entity::RenderingMode::kClippedSubpass) {
     // There are two special quirks with how Matrix filters behave when used as
     // subpass backdrop filters:
     //
@@ -131,8 +131,8 @@ std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
   }
 
   Matrix input_transform = inputs[0]->GetTransform(entity);
-  if (rendering_mode_ == Entity::RenderingMode::kImageFilterSubpass ||
-      rendering_mode_ == Entity::RenderingMode::kBackdropSubpass) {
+  if (rendering_mode_ == Entity::RenderingMode::kSubpass ||
+      rendering_mode_ == Entity::RenderingMode::kClippedSubpass) {
     Rect coverage_bounds = coverage->TransformBounds(input_transform.Invert());
     Matrix transform = CalculateSubpassTransform(
         input_transform, effect_transform, matrix_, rendering_mode_);

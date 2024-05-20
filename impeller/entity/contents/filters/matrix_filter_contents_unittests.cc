@@ -141,13 +141,13 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageTranslate) {
 }
 
 TEST_P(MatrixFilterContentsTest,
-       RenderCoverageMatchesGetCoverageBackdropSubpassTranslate) {
+       RenderCoverageMatchesGetCoverageClippedSubpassTranslate) {
   std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
   MatrixFilterContents contents;
   contents.SetInputs({FilterInput::Make(texture)});
   contents.SetMatrix(Matrix::MakeTranslation({50, 100, 0}));
   contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
-  contents.SetRenderingMode(Entity::RenderingMode::kBackdropSubpass);
+  contents.SetRenderingMode(Entity::RenderingMode::kClippedSubpass);
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
@@ -177,13 +177,13 @@ TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageScale) {
 }
 
 TEST_P(MatrixFilterContentsTest,
-       RenderCoverageMatchesGetCoverageBackdropSubpassScale) {
+       RenderCoverageMatchesGetCoverageClippedSubpassScale) {
   std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
   MatrixFilterContents contents;
   contents.SetInputs({FilterInput::Make(texture)});
   contents.SetMatrix(Matrix::MakeScale({3, 3, 1}));
   contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
-  contents.SetRenderingMode(Entity::RenderingMode::kBackdropSubpass);
+  contents.SetRenderingMode(Entity::RenderingMode::kClippedSubpass);
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
@@ -195,14 +195,13 @@ TEST_P(MatrixFilterContentsTest,
                             Rect::MakeXYWH(100, 200, 300, 300));
 }
 
-TEST_P(MatrixFilterContentsTest,
-       RenderCoverageMatchesGetCoverageImageFilterSubpassScale) {
+TEST_P(MatrixFilterContentsTest, RenderCoverageMatchesGetCoverageSubpassScale) {
   std::shared_ptr<Texture> texture = MakeTexture(ISize(100, 100));
   MatrixFilterContents contents;
   contents.SetInputs({FilterInput::Make(texture)});
   contents.SetMatrix(Matrix::MakeScale({3, 3, 1}));
   contents.SetEffectTransform(Matrix::MakeScale({2, 2, 1}));
-  contents.SetRenderingMode(Entity::RenderingMode::kImageFilterSubpass);
+  contents.SetRenderingMode(Entity::RenderingMode::kSubpass);
 
   Entity entity;
   entity.SetTransform(Matrix::MakeTranslation({100, 200, 0}));
