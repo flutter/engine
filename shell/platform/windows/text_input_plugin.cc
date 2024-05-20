@@ -22,6 +22,7 @@ static constexpr char kHideMethod[] = "TextInput.hide";
 static constexpr char kSetMarkedTextRect[] = "TextInput.setMarkedTextRect";
 static constexpr char kSetEditableSizeAndTransform[] =
     "TextInput.setEditableSizeAndTransform";
+static constexpr char kSetCaretRect[] = "TextInput.setCaretRect";
 
 static constexpr char kMultilineInputType[] = "TextInputType.multiline";
 
@@ -327,7 +328,7 @@ void TextInputPlugin::HandleMethodCall(
       active_model_->SetComposingRange(
           TextRange(composing_base, composing_extent), cursor_offset);
     }
-  } else if (method.compare(kSetMarkedTextRect) == 0) {
+  } else if (method.compare(kSetCaretRect) == 0) {
     // TODO(loicsharma): Remove implicit view assumption.
     // https://github.com/flutter/flutter/issues/142845
     FlutterWindowsView* view = engine_->view(kImplicitViewId);
@@ -349,12 +350,11 @@ void TextInputPlugin::HandleMethodCall(
         y == args.MemberEnd() || y->value.IsNull() ||          //
         width == args.MemberEnd() || width->value.IsNull() ||  //
         height == args.MemberEnd() || height->value.IsNull()) {
-      result->Error(kInternalConsistencyError,
-                    "Composing rect values invalid.");
+      result->Error(kInternalConsistencyError, "Caret rect values invalid.");
       return;
     }
-    composing_rect_ = {{x->value.GetDouble(), y->value.GetDouble()},
-                       {width->value.GetDouble(), height->value.GetDouble()}};
+    caret_rect_ = {{x->value.GetDouble(), y->value.GetDouble()},
+                   {width->value.GetDouble(), height->value.GetDouble()}};
 
     Rect transformed_rect = GetCursorRect();
     view->OnCursorRectUpdated(transformed_rect);
@@ -402,13 +402,13 @@ void TextInputPlugin::HandleMethodCall(
 
 Rect TextInputPlugin::GetCursorRect() const {
   Point transformed_point = {
-      composing_rect_.left() * editabletext_transform_[0][0] +
-          composing_rect_.top() * editabletext_transform_[1][0] +
+      caret_rect_.left() * editabletext_transform_[0][0] +
+          caret_rect_.top() * editabletext_transform_[1][0] +
           editabletext_transform_[3][0],
-      composing_rect_.left() * editabletext_transform_[0][1] +
-          composing_rect_.top() * editabletext_transform_[1][1] +
+      caret_rect_.left() * editabletext_transform_[0][1] +
+          caret_rect_.top() * editabletext_transform_[1][1] +
           editabletext_transform_[3][1]};
-  return {transformed_point, composing_rect_.size()};
+  return {transformed_point, caret_rect_.size()};
 }
 
 void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
