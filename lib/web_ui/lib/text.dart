@@ -4,6 +4,10 @@
 
 part of ui;
 
+// This constant must be consistent with `kTextHeightNone` defined in
+// flutter/lib/ui/text.dart.
+const double kTextHeightNone = 0.0;
+
 enum FontStyle {
   normal,
   italic,

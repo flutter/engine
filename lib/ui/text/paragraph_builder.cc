@@ -445,7 +445,7 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
 
   if (mask & kTSHeightMask) {
     style.height = height;
-    style.has_height_override = true;
+    style.has_height_override = style.height != 0;
   }
 
   if (mask & kTSLocaleMask) {
