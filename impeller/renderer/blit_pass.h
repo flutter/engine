@@ -36,7 +36,7 @@ class BlitPass {
   ///             state, then convert it to that state.
   ///
   ///             This API is only used by Vulkan.
-  virtual bool ConvertTextureToShaderRead(std::shared_ptr<Texture> texture);
+  virtual bool ConvertTextureToShaderRead(const std::shared_ptr<Texture>& texture);
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command to copy the contents of one texture to

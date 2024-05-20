@@ -160,7 +160,7 @@ bool BlitPass::AddCopy(BufferView source,
                                       std::move(label), slice, convert_to_read);
 }
 
-bool BlitPass::ConvertTextureToShaderRead(std::shared_ptr<Texture> texture) {
+bool BlitPass::ConvertTextureToShaderRead(const std::shared_ptr<Texture>& texture) {
   return true;
 }
 

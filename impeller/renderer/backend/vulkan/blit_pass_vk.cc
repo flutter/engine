@@ -221,7 +221,7 @@ bool BlitPassVK::OnCopyTextureToBufferCommand(
   return true;
 }
 
-bool BlitPassVK::ConvertTextureToShaderRead(std::shared_ptr<Texture> texture) {
+bool BlitPassVK::ConvertTextureToShaderRead(const std::shared_ptr<Texture>& texture) {
   auto& encoder = *command_buffer_->GetEncoder();
   const auto& cmd_buffer = encoder.GetCommandBuffer();
 
