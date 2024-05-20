@@ -7,6 +7,7 @@
 #include <gmodule.h>
 
 #include <cstring>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -206,6 +207,33 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
   g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
   return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
                                     layers_count);
+}
+
+// Retrieves the refresh rate of the primary monitor.
+static std::optional<double> get_refresh_rate() {
+  GdkDisplay* gdk_display = gdk_display_get_default();
+  if (gdk_display == nullptr) {
+    return std::nullopt;
+  }
+
+  GdkMonitor* gdk_monitor = gdk_display_get_primary_monitor(gdk_display);
+  if (gdk_monitor == nullptr) {
+    if (gdk_display_get_n_monitors(gdk_display) == 0) {
+      return std::nullopt;
+    }
+    // Assume the first monitor is the primary monitor.
+    gdk_monitor = gdk_display_get_monitor(gdk_display, 0);
+    if (gdk_monitor == nullptr) {
+      return std::nullopt;
+    }
+  }
+
+  gint refresh_rate = gdk_monitor_get_refresh_rate(gdk_monitor);
+  if (refresh_rate <= 0) {
+    return std::nullopt;
+  }
+  // the return value is in milli-hertz, convert to hertz
+  return static_cast<double>(refresh_rate) / 1000.0;
 }
 
 // Flutter engine rendering callbacks.
@@ -571,6 +599,21 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   result = self->embedder_api.UpdateSemanticsEnabled(self->engine, TRUE);
   if (result != kSuccess) {
     g_warning("Failed to enable accessibility features on Flutter engine");
+  }
+
+  std::optional<double> refresh_rate = get_refresh_rate();
+  FlutterEngineDisplay display = {};
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate = refresh_rate.value_or(0.0);
+
+  std::vector displays = {display};
+  result = self->embedder_api.NotifyDisplayUpdate(
+      self->engine, kFlutterEngineDisplaysUpdateTypeStartup, displays.data(),
+      displays.size());
+  if (result != kSuccess) {
+    g_warning("Failed to notify display update to Flutter engine: %d", result);
   }
 
   return TRUE;
