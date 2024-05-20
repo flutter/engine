@@ -23,8 +23,8 @@ final bool _supportsDecode = _jsImageDecodeFunction != null;
 // https://github.com/flutter/flutter/issues/127395
 typedef WebOnlyImageCodecChunkCallback = ui_web.ImageCodecChunkCallback;
 
-abstract class HTMLImageElementCodec implements ui.Codec {
-  HTMLImageElementCodec(this.src, {this.chunkCallback});
+abstract class HtmlImageElementCodec implements ui.Codec {
+  HtmlImageElementCodec(this.src, {this.chunkCallback});
 
   final String src;
   final ui_web.ImageCodecChunkCallback? chunkCallback;
@@ -124,7 +124,7 @@ abstract class HTMLImageElementCodec implements ui.Codec {
   void dispose() {}
 }
 
-abstract class HtmlBlobCodec extends HTMLImageElementCodec {
+abstract class HtmlBlobCodec extends HtmlImageElementCodec {
   HtmlBlobCodec(this.blob) : super(domWindow.URL.createObjectURL(blob));
 
   final DomBlob blob;

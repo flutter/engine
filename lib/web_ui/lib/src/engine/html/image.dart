@@ -7,7 +7,7 @@ import 'dart:typed_data';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-class HtmlRendererImageCodec extends HTMLImageElementCodec {
+class HtmlRendererImageCodec extends HtmlImageElementCodec {
   HtmlRendererImageCodec(super.src, {super.chunkCallback});
 
   @override
