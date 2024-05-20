@@ -38,7 +38,8 @@ class BlitPassVK final : public BlitPass {
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
   // |BlitPass|
-  bool ConvertTextureToShaderRead(const std::shared_ptr<Texture>& texture) override;
+  bool ConvertTextureToShaderRead(
+      const std::shared_ptr<Texture>& texture) override;
 
   // |BlitPass|
   bool OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
