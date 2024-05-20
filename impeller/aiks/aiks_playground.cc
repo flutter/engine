@@ -29,9 +29,20 @@ void AiksPlayground::TearDown() {
 }
 
 bool AiksPlayground::OpenPlaygroundHere(Picture picture) {
-  return OpenPlaygroundHere([&picture](AiksContext& renderer) -> Picture {
-    return std::move(picture);
-  });
+  if (!switches_.enable_playground) {
+    return true;
+  }
+
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  if (!renderer.IsValid()) {
+    return false;
+  }
+
+  return Playground::OpenPlaygroundHere(
+      [&renderer, &picture](RenderTarget& render_target) -> bool {
+        return renderer.Render(picture, render_target, true);
+      });
 }
 
 bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
@@ -45,18 +56,13 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
     return false;
   }
 
-  std::optional<Picture> last_frame;
-
   return Playground::OpenPlaygroundHere(
-      [&renderer, &callback, &last_frame](RenderTarget& render_target) -> bool {
+      [&renderer, &callback](RenderTarget& render_target) -> bool {
         std::optional<Picture> picture = callback(renderer);
-        if (picture.has_value() && picture->pass != nullptr) {
-          last_frame = std::move(picture);
+        if (!picture.has_value()) {
+          return false;
         }
-        if (!last_frame.has_value()) {
-          return false;  // The first frame rendered nothing. Fail
-        }
-        return renderer.Render(*last_frame, render_target, true);
+        return renderer.Render(*picture, render_target, true);
       });
 }
 
