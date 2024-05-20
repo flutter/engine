@@ -34,6 +34,8 @@
 #include "impeller/entity/gaussian.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
+#include "impeller/entity/gradient.frag.h"
+#include "impeller/entity/gradient.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
@@ -79,6 +81,8 @@
 
 namespace impeller {
 
+using GradientPipeline =
+    RenderPipelineHandle<GradientVertexShader, GradientFragmentShader>;
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientFillFragmentShader>;
@@ -378,6 +382,11 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGradientPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(gradient_pipelines_, opts);
+  }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -859,6 +868,7 @@ class ContentContext {
   // map.
 
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<GradientPipeline> gradient_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<ConicalGradientFillPipeline>
