@@ -629,6 +629,18 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
+    // RoundOut the subpass coverage to ensure the new subpass texture will be
+    // perfectly pixel aligned in the common case. By default, we draw subpass
+    // textures with nearest sampling, perfectly aligned with the parent pass
+    // render target. So integer aligning the subpass coverage rectangle is
+    // important for:
+    // 1. Correct visual subpixel placement/antialiasing of subpass elements.
+    // 2. Avoiding visual nearest sampling errors caused by limited floating
+    //    point precision when straddling a half pixel boundary.
+    if (subpass_coverage.has_value()) {
+      subpass_coverage = Rect::RoundOut(subpass_coverage.value());
+    }
+
     auto subpass_size = ISize(subpass_coverage->GetSize());
     if (subpass_size.IsEmpty()) {
       return EntityPass::EntityResult::Skip();
