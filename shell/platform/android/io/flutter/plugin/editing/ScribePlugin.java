@@ -35,6 +35,8 @@ public class ScribePlugin
       @NonNull View view,
       @NonNull InputMethodManager imm,
       @NonNull ScribeChannel scribeChannel) {
+    view.setAutoHandwritingEnabled(false);
+
     mView = view;
     mImm = imm;
     mScribeChannel = scribeChannel;
