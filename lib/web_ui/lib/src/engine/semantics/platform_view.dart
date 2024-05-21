@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import '../platform_views/slots.dart';
+import 'label_and_value.dart';
 import 'semantics.dart';
 
 /// Manages the semantic element corresponding to a platform view.
@@ -21,7 +22,11 @@ import 'semantics.dart';
 ///   * https://bugs.webkit.org/show_bug.cgi?id=223798
 class PlatformViewRoleManager extends PrimaryRoleManager {
   PlatformViewRoleManager(SemanticsObject semanticsObject)
-      : super.withBasics(PrimaryRole.platformView, semanticsObject);
+      : super.withBasics(
+          PrimaryRole.platformView,
+          semanticsObject,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+        );
 
   @override
   void update() {
@@ -37,5 +42,14 @@ class PlatformViewRoleManager extends PrimaryRoleManager {
     } else {
       removeAttribute('aria-owns');
     }
+  }
+
+  @override
+  bool focusAsRouteDefault() {
+    // It's unclear how it's possible to auto-focus on something inside a
+    // platform view without knowing what's in it. If the framework adds API for
+    // focusing on platform view internals, this method will be able to do more,
+    // but for now there's nothing to focus on.
+    return false;
   }
 }

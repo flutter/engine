@@ -103,19 +103,18 @@ DebugReportVK::Result DebugReportVK::OnDebugCallback(
     vk::DebugUtilsMessageSeverityFlagBitsEXT severity,
     vk::DebugUtilsMessageTypeFlagsEXT type,
     const VkDebugUtilsMessengerCallbackDataEXT* data) {
-  // Issue in older versions of the SDK.
-  // https://github.com/KhronosGroup/Vulkan-ValidationLayers/issues/3554
-  if (strstr(data->pMessageIdName, "CoreValidation-Shader-OutputNotConsumed") !=
-      nullptr) {
+  // This is a real issue caused by INPUT_ATTACHMENT_BIT not being a supported
+  // `VkSurfaceCapabilitiesKHR::supportedUsageFlags` on any platform other than
+  // Android. This is necessary for all the framebuffer fetch related tests. We
+  // can get away with suppressing this on macOS but this must be fixed.
+  if (data->messageIdNumber == 0x2c36905d) {
     return Result::kContinue;
   }
-
-  // This is a real error but we can't fix it due to our headers being too
-  // old. More more details see:
-  // https://vulkan.lunarg.com/doc/view/1.3.224.1/mac/1.3-extensions/vkspec.html#VUID-VkImageViewCreateInfo-imageViewFormatSwizzle-04465
-  // This validation error currently only trips on macOS due to the use of
-  // texture swizzles.
-  if (data->messageIdNumber == static_cast<int32_t>(0x82ae5050)) {
+  // This is a performance warning when a fragment stage does not consume all
+  // varyings from the vertex stage. We ignore this as we want to use a single
+  // vertex stage for the runtime effect shader without trying to determine if
+  // the fragment consumes it or not.
+  if (data->messageIdNumber == 0x609A13B) {
     return Result::kContinue;
   }
 

@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_COMPILER_COMPILER_BACKEND_H_
+#define FLUTTER_IMPELLER_COMPILER_COMPILER_BACKEND_H_
 
 #include <cstdint>
 #include <memory>
 #include <variant>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "spirv_glsl.hpp"
 #include "spirv_msl.hpp"
 #include "spirv_sksl.h"
@@ -26,6 +25,7 @@ struct CompilerBackend {
   enum class Type {
     kMSL,
     kGLSL,
+    kGLSLVulkan,
     kSkSL,
   };
 
@@ -71,3 +71,5 @@ struct CompilerBackend {
 
 }  // namespace compiler
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_COMPILER_COMPILER_BACKEND_H_

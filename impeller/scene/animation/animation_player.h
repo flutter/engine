@@ -2,19 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_
+#define FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_
 
 #include <map>
 #include <memory>
 #include <optional>
-#include <vector>
 
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
-#include "flutter/fml/time/time_delta.h"
 #include "impeller/base/timing.h"
-#include "impeller/geometry/matrix.h"
-#include "impeller/geometry/matrix_decomposition.h"
 #include "impeller/scene/animation/animation_clip.h"
 
 namespace impeller {
@@ -52,3 +47,5 @@ class AnimationPlayer final {
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_PLAYER_H_

@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_
 
 #include <Metal/Metal.h>
 
 #include <optional>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -206,25 +206,22 @@ constexpr MTLBlendOperation ToMTLBlendOperation(BlendOperation type) {
   return MTLBlendOperationAdd;
 };
 
-constexpr MTLColorWriteMask ToMTLColorWriteMask(
-    std::underlying_type_t<ColorWriteMask> type) {
-  using UnderlyingType = decltype(type);
-
+constexpr MTLColorWriteMask ToMTLColorWriteMask(ColorWriteMask type) {
   MTLColorWriteMask mask = MTLColorWriteMaskNone;
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kRed)) {
+  if (type & ColorWriteMaskBits::kRed) {
     mask |= MTLColorWriteMaskRed;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kGreen)) {
+  if (type & ColorWriteMaskBits::kGreen) {
     mask |= MTLColorWriteMaskGreen;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kBlue)) {
+  if (type & ColorWriteMaskBits::kBlue) {
     mask |= MTLColorWriteMaskBlue;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kAlpha)) {
+  if (type & ColorWriteMaskBits::kAlpha) {
     mask |= MTLColorWriteMaskAlpha;
   }
 
@@ -345,6 +342,8 @@ constexpr MTLSamplerMinMagFilter ToMTLSamplerMinMagFilter(MinMagFilter filter) {
 
 constexpr MTLSamplerMipFilter ToMTLSamplerMipFilter(MipFilter filter) {
   switch (filter) {
+    case MipFilter::kBase:
+      return MTLSamplerMipFilterNotMipmapped;
     case MipFilter::kNearest:
       return MTLSamplerMipFilterNearest;
     case MipFilter::kLinear:
@@ -399,3 +398,5 @@ MTLDepthStencilDescriptor* ToMTLDepthStencilDescriptor(
 MTLTextureDescriptor* ToMTLTextureDescriptor(const TextureDescriptor& desc);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_FORMATS_MTL_H_

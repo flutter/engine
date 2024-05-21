@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_
+#define FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_
 
 #include <array>
 #include <iostream>
@@ -15,8 +16,41 @@
 #include "impeller/geometry/vector.h"
 
 inline bool NumberNear(double a, double b) {
-  static const double epsilon = 1e-3;
-  return (a > (b - epsilon)) && (a < (b + epsilon));
+  if (a == b) {
+    return true;
+  }
+  if (std::isnan(a) || std::isnan(b)) {
+    return false;
+  }
+
+  // We used to compare based on an absolute difference of 1e-3 which
+  // would allow up to 10 bits of mantissa difference in a float
+  // (leaving 14 bits of accuracy being tested). Some numbers in the tests
+  // will fail with a bit difference of up to 19 (a little over 4 bits) even
+  // though the numbers print out identically using the float ostream output
+  // at the default output precision. Choosing a max "units of least precision"
+  // of 32 allows up to 5 bits of imprecision.
+  static constexpr float kImpellerTestingMaxULP = 32;
+
+  // We also impose a minimum step size so that cases of comparing numbers
+  // very close to 0.0 don't compute a huge number of ULPs due to the ever
+  // increasing precision near 0. This value is approximately the step size
+  // of numbers going less than 1.0f.
+  static constexpr float kMinimumULPStep = (1.0f / (1 << 24));
+
+  auto adjust_step = [](float v) {
+    return (std::abs(v) < kMinimumULPStep) ? std::copysignf(kMinimumULPStep, v)
+                                           : v;
+  };
+
+  float step_ab = adjust_step(a - std::nexttowardf(a, b));
+  float step_ba = adjust_step(b - std::nexttowardf(b, a));
+
+  float ab_ulps = (a - b) / step_ab;
+  float ba_ulps = (b - a) / step_ba;
+  FML_CHECK(ab_ulps >= 0 && ba_ulps >= 0);
+
+  return (std::min(ab_ulps, ba_ulps) < kImpellerTestingMaxULP);
 }
 
 inline ::testing::AssertionResult MatrixNear(impeller::Matrix a,
@@ -53,10 +87,10 @@ inline ::testing::AssertionResult QuaternionNear(impeller::Quaternion a,
 }
 
 inline ::testing::AssertionResult RectNear(impeller::Rect a, impeller::Rect b) {
-  auto equal = NumberNear(a.GetOrigin().x, b.GetOrigin().x) &&
-               NumberNear(a.GetOrigin().y, b.GetOrigin().y) &&
-               NumberNear(a.GetSize().width, b.GetSize().width) &&
-               NumberNear(a.GetSize().height, b.GetSize().height);
+  auto equal = NumberNear(a.GetLeft(), b.GetLeft()) &&
+               NumberNear(a.GetTop(), b.GetTop()) &&
+               NumberNear(a.GetRight(), b.GetRight()) &&
+               NumberNear(a.GetBottom(), b.GetBottom());
 
   return equal ? ::testing::AssertionSuccess()
                : ::testing::AssertionFailure()
@@ -175,3 +209,5 @@ inline ::testing::AssertionResult ColorsNear(std::vector<impeller::Color> a,
 #define EXPECT_ARRAY_4_NEAR(a, b) EXPECT_PRED2(&::Array4Near, a, b)
 #define EXPECT_COLOR_BUFFER_NEAR(a, b) EXPECT_PRED2(&::ColorBufferNear, a, b)
 #define EXPECT_COLORS_NEAR(a, b) EXPECT_PRED2(&::ColorsNear, a, b)
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_GEOMETRY_ASSERTS_H_

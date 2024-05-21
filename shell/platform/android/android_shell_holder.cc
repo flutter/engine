@@ -118,8 +118,7 @@ AndroidShellHolder::AndroidShellHolder(
             shell.GetTaskRunners(),  // task runners
             jni_facade,              // JNI interop
             shell.GetSettings()
-                .enable_software_rendering,   // use software rendering
-            shell.GetSettings().msaa_samples  // msaa sample count
+                .enable_software_rendering  // use software rendering
         );
         weak_platform_view = platform_view_android->GetWeakPtr();
         return platform_view_android;
@@ -296,7 +295,8 @@ Rasterizer::Screenshot AndroidShellHolder::Screenshot(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
   if (!IsValid()) {
-    return {nullptr, SkISize::MakeEmpty(), ""};
+    return {nullptr, SkISize::MakeEmpty(), "",
+            Rasterizer::ScreenshotFormat::kUnknown};
   }
   return shell_->Screenshot(type, base64_encode);
 }
@@ -350,10 +350,6 @@ void AndroidShellHolder::UpdateDisplayMetrics() {
   std::vector<std::unique_ptr<Display>> displays;
   displays.push_back(std::make_unique<AndroidDisplay>(jni_facade_));
   shell_->OnDisplayUpdates(std::move(displays));
-}
-
-void AndroidShellHolder::SetIsRenderingToImageView(bool value) {
-  platform_view_->SetIsRenderingToImageView(value);
 }
 
 }  // namespace flutter

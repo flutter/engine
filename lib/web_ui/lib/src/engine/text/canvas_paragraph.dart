@@ -87,17 +87,6 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   void layout(ui.ParagraphConstraints constraints) {
-    // When constraint width has a decimal place, we floor it to avoid getting
-    // a layout width that's higher than the constraint width.
-    //
-    // For example, if constraint width is `30.8` and the text has a width of
-    // `30.5` then the TextPainter in the framework will ceil the `30.5` width
-    // which will result in a width of `40.0` that's higher than the constraint
-    // width.
-    if (!ui.ParagraphBuilder.shouldDisableRoundingHack) {
-      constraints = ui.ParagraphConstraints(width: constraints.width.floorToDouble());
-    }
-
     if (constraints == _lastUsedConstraints) {
       return;
     }
@@ -431,6 +420,7 @@ abstract class StyleNode {
         letterSpacing: _letterSpacing,
         wordSpacing: _wordSpacing,
         height: _height,
+        leadingDistribution: _leadingDistribution,
         locale: _locale,
         background: _background,
         foreground: _foreground,
@@ -456,6 +446,7 @@ abstract class StyleNode {
   double? get _letterSpacing;
   double? get _wordSpacing;
   double? get _height;
+  ui.TextLeadingDistribution? get _leadingDistribution;
   ui.Locale? get _locale;
   ui.Paint? get _background;
   ui.Paint? get _foreground;
@@ -520,6 +511,9 @@ class ChildStyleNode extends StyleNode {
 
   @override
   double? get _height => style.height ?? parent._height;
+
+  @override
+  ui.TextLeadingDistribution? get _leadingDistribution => style.leadingDistribution ?? parent._leadingDistribution;
 
   @override
   ui.Locale? get _locale => style.locale ?? parent._locale;
@@ -597,6 +591,9 @@ class RootStyleNode extends StyleNode {
 
   @override
   double? get _height => paragraphStyle.height;
+
+  @override
+  ui.TextLeadingDistribution? get _leadingDistribution => null;
 
   @override
   ui.Locale? get _locale => paragraphStyle.locale;

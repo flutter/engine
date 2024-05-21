@@ -13,6 +13,31 @@
 
 namespace flutter {
 
+namespace {
+
+const char* StateToString(FrameTimingsRecorder::State state) {
+#ifndef NDEBUG
+  switch (state) {
+    case FrameTimingsRecorder::State::kUninitialized:
+      return "kUninitialized";
+    case FrameTimingsRecorder::State::kVsync:
+      return "kVsync";
+    case FrameTimingsRecorder::State::kBuildStart:
+      return "kBuildStart";
+    case FrameTimingsRecorder::State::kBuildEnd:
+      return "kBuildEnd";
+    case FrameTimingsRecorder::State::kRasterStart:
+      return "kRasterStart";
+    case FrameTimingsRecorder::State::kRasterEnd:
+      return "kRasterEnd";
+  };
+  FML_UNREACHABLE();
+#endif
+  return "";
+}
+
+}  // namespace
+
 std::atomic<uint64_t> FrameTimingsRecorder::frame_number_gen_ = {1};
 
 FrameTimingsRecorder::FrameTimingsRecorder()
@@ -181,12 +206,14 @@ FrameTiming FrameTimingsRecorder::RecordRasterEnd(const RasterCache* cache) {
   raster_end_ = fml::TimePoint::Now();
   raster_end_wall_time_ = fml::TimePoint::CurrentWallTime();
   if (cache) {
+#if !SLIMPELLER
     const RasterCacheMetrics& layer_metrics = cache->layer_metrics();
     const RasterCacheMetrics& picture_metrics = cache->picture_metrics();
     layer_cache_count_ = layer_metrics.total_count();
     layer_cache_bytes_ = layer_metrics.total_bytes();
     picture_cache_count_ = picture_metrics.total_count();
     picture_cache_bytes_ = picture_metrics.total_bytes();
+#endif  //  !SLIMPELLER
   } else {
     layer_cache_count_ = layer_cache_bytes_ = picture_cache_count_ =
         picture_cache_bytes_ = 0;
@@ -252,27 +279,6 @@ uint64_t FrameTimingsRecorder::GetFrameNumber() const {
 
 const char* FrameTimingsRecorder::GetFrameNumberTraceArg() const {
   return frame_number_trace_arg_val_.c_str();
-}
-
-static const char* StateToString(FrameTimingsRecorder::State state) {
-#ifndef NDEBUG
-  switch (state) {
-    case FrameTimingsRecorder::State::kUninitialized:
-      return "kUninitialized";
-    case FrameTimingsRecorder::State::kVsync:
-      return "kVsync";
-    case FrameTimingsRecorder::State::kBuildStart:
-      return "kBuildStart";
-    case FrameTimingsRecorder::State::kBuildEnd:
-      return "kBuildEnd";
-    case FrameTimingsRecorder::State::kRasterStart:
-      return "kRasterStart";
-    case FrameTimingsRecorder::State::kRasterEnd:
-      return "kRasterEnd";
-  };
-  FML_UNREACHABLE();
-#endif
-  return "";
 }
 
 void FrameTimingsRecorder::AssertInState(State state) const {

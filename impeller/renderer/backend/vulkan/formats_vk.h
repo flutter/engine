@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_
 
 #include <cstdint>
+#include <ostream>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
@@ -73,25 +74,22 @@ constexpr vk::BlendOp ToVKBlendOp(BlendOperation op) {
   FML_UNREACHABLE();
 }
 
-constexpr vk::ColorComponentFlags ToVKColorComponentFlags(
-    std::underlying_type_t<ColorWriteMask> type) {
-  using UnderlyingType = decltype(type);
-
+constexpr vk::ColorComponentFlags ToVKColorComponentFlags(ColorWriteMask type) {
   vk::ColorComponentFlags mask;
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kRed)) {
+  if (type & ColorWriteMaskBits::kRed) {
     mask |= vk::ColorComponentFlagBits::eR;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kGreen)) {
+  if (type & ColorWriteMaskBits::kGreen) {
     mask |= vk::ColorComponentFlagBits::eG;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kBlue)) {
+  if (type & ColorWriteMaskBits::kBlue) {
     mask |= vk::ColorComponentFlagBits::eB;
   }
 
-  if (type & static_cast<UnderlyingType>(ColorWriteMask::kAlpha)) {
+  if (type & ColorWriteMaskBits::kAlpha) {
     mask |= vk::ColorComponentFlagBits::eA;
   }
 
@@ -223,8 +221,8 @@ constexpr vk::Filter ToVKSamplerMinMagFilter(MinMagFilter filter) {
 }
 
 constexpr vk::SamplerMipmapMode ToVKSamplerMipmapMode(MipFilter filter) {
-  vk::SamplerCreateInfo sampler_info;
   switch (filter) {
+    case MipFilter::kBase:
     case MipFilter::kNearest:
       return vk::SamplerMipmapMode::eNearest;
     case MipFilter::kLinear:
@@ -312,18 +310,39 @@ constexpr vk::AttachmentLoadOp ToVKAttachmentLoadOp(LoadAction load_action) {
   FML_UNREACHABLE();
 }
 
-constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(
-    StoreAction store_action) {
+constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(StoreAction store_action,
+                                                      bool is_resolve_texture) {
   switch (store_action) {
     case StoreAction::kStore:
+      // Both MSAA and resolve textures need to be stored. A resolve is NOT
+      // performed.
       return vk::AttachmentStoreOp::eStore;
     case StoreAction::kDontCare:
+      // Both MSAA and resolve textures can be discarded. A resolve is NOT
+      // performed.
       return vk::AttachmentStoreOp::eDontCare;
     case StoreAction::kMultisampleResolve:
+      // The resolve texture is stored but the MSAA texture can be discarded. A
+      // resolve IS performed.
+      return is_resolve_texture ? vk::AttachmentStoreOp::eStore
+                                : vk::AttachmentStoreOp::eDontCare;
     case StoreAction::kStoreAndMultisampleResolve:
-      return vk::AttachmentStoreOp::eDontCare;
+      // Both MSAA and resolve textures need to be stored. A resolve IS
+      // performed.
+      return vk::AttachmentStoreOp::eStore;
   }
+  FML_UNREACHABLE();
+}
 
+constexpr bool StoreActionPerformsResolve(StoreAction store_action) {
+  switch (store_action) {
+    case StoreAction::kDontCare:
+    case StoreAction::kStore:
+      return false;
+    case StoreAction::kMultisampleResolve:
+    case StoreAction::kStoreAndMultisampleResolve:
+      return true;
+  }
   FML_UNREACHABLE();
 }
 
@@ -391,102 +410,6 @@ constexpr bool PixelFormatIsDepthStencil(PixelFormat format) {
       return true;
   }
   return false;
-}
-
-enum class AttachmentKind {
-  kColor,
-  kDepth,
-  kStencil,
-  kDepthStencil,
-};
-
-constexpr AttachmentKind AttachmentKindFromFormat(PixelFormat format) {
-  switch (format) {
-    case PixelFormat::kUnknown:
-    case PixelFormat::kA8UNormInt:
-    case PixelFormat::kR8UNormInt:
-    case PixelFormat::kR8G8UNormInt:
-    case PixelFormat::kR8G8B8A8UNormInt:
-    case PixelFormat::kR8G8B8A8UNormIntSRGB:
-    case PixelFormat::kB8G8R8A8UNormInt:
-    case PixelFormat::kB8G8R8A8UNormIntSRGB:
-    case PixelFormat::kR32G32B32A32Float:
-    case PixelFormat::kR16G16B16A16Float:
-    case PixelFormat::kB10G10R10XR:
-    case PixelFormat::kB10G10R10XRSRGB:
-    case PixelFormat::kB10G10R10A10XR:
-      return AttachmentKind::kColor;
-    case PixelFormat::kS8UInt:
-      return AttachmentKind::kStencil;
-    case PixelFormat::kD24UnormS8Uint:
-    case PixelFormat::kD32FloatS8UInt:
-      return AttachmentKind::kDepthStencil;
-  }
-  FML_UNREACHABLE();
-}
-
-constexpr vk::AttachmentDescription CreateAttachmentDescription(
-    PixelFormat format,
-    SampleCount sample_count,
-    LoadAction load_action,
-    StoreAction store_action,
-    vk::ImageLayout current_layout,
-    bool supports_framebuffer_fetch) {
-  vk::AttachmentDescription vk_attachment;
-
-  vk_attachment.format = ToVKImageFormat(format);
-  vk_attachment.samples = ToVKSampleCount(sample_count);
-
-  // The Vulkan spec has somewhat complicated rules for when these ops are used
-  // and ignored. Just set safe defaults.
-  vk_attachment.loadOp = vk::AttachmentLoadOp::eDontCare;
-  vk_attachment.storeOp = vk::AttachmentStoreOp::eDontCare;
-  vk_attachment.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
-  vk_attachment.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-
-  const auto kind = AttachmentKindFromFormat(format);
-
-  switch (kind) {
-    case AttachmentKind::kColor:
-      // If the attachment uses a color format, then loadOp and storeOp are
-      // used, and stencilLoadOp and stencilStoreOp are ignored.
-      vk_attachment.loadOp = ToVKAttachmentLoadOp(load_action);
-      vk_attachment.storeOp = ToVKAttachmentStoreOp(store_action);
-      break;
-    case AttachmentKind::kDepth:
-    case AttachmentKind::kDepthStencil:
-      // If the format has depth and/or stencil components, loadOp and storeOp
-      // apply only to the depth data, while stencilLoadOp and stencilStoreOp
-      // define how the stencil data is handled.
-      vk_attachment.loadOp = ToVKAttachmentLoadOp(load_action);
-      vk_attachment.storeOp = ToVKAttachmentStoreOp(store_action);
-      [[fallthrough]];
-    case AttachmentKind::kStencil:
-      vk_attachment.stencilLoadOp = ToVKAttachmentLoadOp(load_action);
-      vk_attachment.stencilStoreOp = ToVKAttachmentStoreOp(store_action);
-      break;
-  }
-
-  switch (kind) {
-    case AttachmentKind::kColor:
-      vk_attachment.initialLayout = current_layout;
-      if (supports_framebuffer_fetch) {
-        vk_attachment.finalLayout = vk::ImageLayout::eGeneral;
-      } else {
-        vk_attachment.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-      }
-      break;
-    case AttachmentKind::kDepth:
-    case AttachmentKind::kStencil:
-    case AttachmentKind::kDepthStencil:
-      // Separate depth stencil layouts feature is only available in Vulkan 1.2.
-      vk_attachment.initialLayout = current_layout;
-      vk_attachment.finalLayout =
-          vk::ImageLayout::eDepthStencilAttachmentOptimal;
-      break;
-  }
-
-  return vk_attachment;
 }
 
 static constexpr vk::AttachmentReference kUnusedAttachmentReference = {
@@ -665,3 +588,5 @@ constexpr vk::ImageAspectFlags ToImageAspectFlags(PixelFormat format) {
 }
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_FORMATS_VK_H_

@@ -34,7 +34,7 @@ std::string GetGoldenFilename() {
   return GetTestName() + ".png";
 }
 
-bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
+bool SaveScreenshot(std::unique_ptr<Screenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
@@ -50,7 +50,8 @@ bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
 
 class GoldenTests : public ::testing::Test {
  public:
-  GoldenTests() : screenshotter_(new MetalScreenshotter()) {}
+  GoldenTests()
+      : screenshotter_(new MetalScreenshotter(/*enable_wide_gamut=*/false)) {}
 
   MetalScreenshotter& Screenshotter() { return *screenshotter_; }
 

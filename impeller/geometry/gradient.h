@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_GRADIENT_H_
+#define FLUTTER_IMPELLER_GEOMETRY_GRADIENT_H_
 
 #include <cstdint>
-#include <memory>
 #include <vector>
 
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -32,3 +30,5 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
                                   const std::vector<Scalar>& stops);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_GRADIENT_H_

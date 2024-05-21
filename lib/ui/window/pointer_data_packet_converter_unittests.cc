@@ -45,6 +45,7 @@ void CreateSimulatedPointerData(PointerData& data,  // NOLINT
   data.platformData = 0;
   data.scroll_delta_x = 0.0;
   data.scroll_delta_y = 0.0;
+  data.view_id = 0;
 }
 
 void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
@@ -84,6 +85,7 @@ void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
   data.platformData = 0;
   data.scroll_delta_x = scroll_delta_x;
   data.scroll_delta_y = scroll_delta_y;
+  data.view_id = 0;
 }
 
 void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
@@ -129,6 +131,7 @@ void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
   data.pan_delta_y = 0.0;
   data.scale = scale;
   data.rotation = rotation;
+  data.view_id = 0;
 }
 
 void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT
@@ -157,7 +160,7 @@ TEST(PointerDataPacketConverterTest, CanConvertPointerDataPacket) {
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 0, 3.0, 4.0,
                              0);
   packet->SetPointerData(5, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -202,7 +205,7 @@ TEST(PointerDataPacketConverterTest, CanSynthesizeDownAndUp) {
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 0, 3.0, 4.0,
                              0);
   packet->SetPointerData(3, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -259,7 +262,7 @@ TEST(PointerDataPacketConverterTest, CanUpdatePointerIdentifier) {
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 0, 3.0, 0.0,
                              0);
   packet->SetPointerData(6, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -309,7 +312,7 @@ TEST(PointerDataPacketConverterTest, AlwaysForwardMoveEvent) {
   CreateSimulatedPointerData(data, PointerData::Change::kUp, 0, 0.0, 0.0, 0);
   packet->SetPointerData(3, data);
 
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -362,7 +365,7 @@ TEST(PointerDataPacketConverterTest, CanWorkWithDifferentDevices) {
   CreateSimulatedPointerData(data, PointerData::Change::kRemove, 1, 0.0, 4.0,
                              0);
   packet->SetPointerData(11, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -438,7 +441,7 @@ TEST(PointerDataPacketConverterTest, CanSynthesizeAdd) {
   packet->SetPointerData(0, data);
   CreateSimulatedPointerData(data, PointerData::Change::kUp, 0, 0.0, 0.0, 0);
   packet->SetPointerData(1, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -482,14 +485,14 @@ TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
   auto packet = std::make_unique<PointerDataPacket>(1);
   CreateSimulatedPointerData(data, PointerData::Change::kDown, 0, 0.0, 0.0, 1);
   packet->SetPointerData(0, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
   UnpackPointerPacket(result, std::move(converted_packet));
   // Second finger down.
   packet = std::make_unique<PointerDataPacket>(1);
   CreateSimulatedPointerData(data, PointerData::Change::kDown, 1, 33.0, 44.0,
                              1);
   packet->SetPointerData(0, data);
-  converted_packet = converter.Convert(std::move(packet));
+  converted_packet = converter.Convert(*packet);
   UnpackPointerPacket(result, std::move(converted_packet));
   // Triggers three cancels.
   packet = std::make_unique<PointerDataPacket>(3);
@@ -502,7 +505,7 @@ TEST(PointerDataPacketConverterTest, CanHandleThreeFingerGesture) {
   CreateSimulatedPointerData(data, PointerData::Change::kCancel, 2, 40.0, 50.0,
                              0);
   packet->SetPointerData(2, data);
-  converted_packet = converter.Convert(std::move(packet));
+  converted_packet = converter.Convert(*packet);
   UnpackPointerPacket(result, std::move(converted_packet));
 
   ASSERT_EQ(result.size(), (size_t)6);
@@ -579,7 +582,7 @@ TEST(PointerDataPacketConverterTest, CanConvertPointerSignals) {
     CreateSimulatedMousePointerData(data, PointerData::Change::kHover, kind, 2,
                                     10.0, 20.0, 30.0, 40.0, 0);
     packet->SetPointerData(5, data);
-    auto converted_packet = converter.Convert(std::move(packet));
+    auto converted_packet = converter.Convert(*packet);
 
     std::vector<PointerData> result;
     UnpackPointerPacket(result, std::move(converted_packet));
@@ -675,7 +678,7 @@ TEST(PointerDataPacketConverterTest, CanConvertTrackpadGesture) {
   CreateSimulatedTrackpadGestureData(data, PointerData::Change::kPanZoomEnd, 0,
                                      0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
   packet->SetPointerData(2, data);
-  auto converted_packet = converter.Convert(std::move(packet));
+  auto converted_packet = converter.Convert(*packet);
 
   std::vector<PointerData> result;
   UnpackPointerPacket(result, std::move(converted_packet));
@@ -711,6 +714,26 @@ TEST(PointerDataPacketConverterTest, CanConvertTrackpadGesture) {
   ASSERT_EQ(result[3].physical_x, 0.0);
   ASSERT_EQ(result[3].physical_y, 0.0);
   ASSERT_EQ(result[3].synthesized, 0);
+}
+
+TEST(PointerDataPacketConverterTest, CanConvertViewId) {
+  PointerDataPacketConverter converter;
+  auto packet = std::make_unique<PointerDataPacket>(2);
+  PointerData data;
+  CreateSimulatedPointerData(data, PointerData::Change::kAdd, 0, 0.0, 0.0, 0);
+  data.view_id = 100;
+  packet->SetPointerData(0, data);
+  CreateSimulatedPointerData(data, PointerData::Change::kHover, 0, 1.0, 0.0, 0);
+  data.view_id = 200;
+  packet->SetPointerData(1, data);
+  auto converted_packet = converter.Convert(*packet);
+
+  std::vector<PointerData> result;
+  UnpackPointerPacket(result, std::move(converted_packet));
+
+  ASSERT_EQ(result.size(), (size_t)2);
+  ASSERT_EQ(result[0].view_id, 100);
+  ASSERT_EQ(result[1].view_id, 200);
 }
 
 }  // namespace testing

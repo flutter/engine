@@ -72,23 +72,35 @@ static FlutterDesktopTextureRegistrarRef HandleForTextureRegistrar(
   return reinterpret_cast<FlutterDesktopTextureRegistrarRef>(registrar);
 }
 
-FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+// Creates a view controller that might own the engine.
+//
+// If `owns_engine` is true, then the returned `FlutterDesktopViewControllerRef`
+// owns `engine_ref` and will deallocate `engine_ref` upon its own destruction.
+static FlutterDesktopViewControllerRef CreateViewController(
+    FlutterDesktopEngineRef engine_ref,
     int width,
     int height,
-    FlutterDesktopEngineRef engine_ref) {
+    bool owns_engine) {
   flutter::FlutterWindowsEngine* engine_ptr = EngineFromHandle(engine_ref);
   std::unique_ptr<flutter::WindowBindingHandler> window_wrapper =
       std::make_unique<flutter::FlutterWindow>(
           width, height, engine_ptr->windows_proc_table());
 
-  auto engine = std::unique_ptr<flutter::FlutterWindowsEngine>(engine_ptr);
-  auto view =
-      std::make_unique<flutter::FlutterWindowsView>(std::move(window_wrapper));
+  std::unique_ptr<flutter::FlutterWindowsEngine> engine;
+  if (owns_engine) {
+    engine = std::unique_ptr<flutter::FlutterWindowsEngine>(engine_ptr);
+  }
+
+  std::unique_ptr<flutter::FlutterWindowsView> view =
+      engine_ptr->CreateView(std::move(window_wrapper));
+  if (!view) {
+    return nullptr;
+  }
+
   auto controller = std::make_unique<flutter::FlutterWindowsViewController>(
       std::move(engine), std::move(view));
 
-  controller->view()->SetEngine(controller->engine());
-  controller->view()->CreateRenderSurface();
+  // Launch the engine if it is not running already.
   if (!controller->engine()->running()) {
     if (!controller->engine()->Run()) {
       return nullptr;
@@ -106,9 +118,30 @@ FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
   return HandleForViewController(controller.release());
 }
 
+FlutterDesktopViewControllerRef FlutterDesktopViewControllerCreate(
+    int width,
+    int height,
+    FlutterDesktopEngineRef engine) {
+  return CreateViewController(engine, width, height, /*owns_engine=*/true);
+}
+
+FlutterDesktopViewControllerRef FlutterDesktopEngineCreateViewController(
+    FlutterDesktopEngineRef engine,
+    const FlutterDesktopViewControllerProperties* properties) {
+  return CreateViewController(engine, properties->width, properties->height,
+                              /*owns_engine=*/false);
+}
+
 void FlutterDesktopViewControllerDestroy(FlutterDesktopViewControllerRef ref) {
   auto controller = ViewControllerFromHandle(ref);
+  controller->Destroy();
   delete controller;
+}
+
+FlutterDesktopViewId FlutterDesktopViewControllerGetViewId(
+    FlutterDesktopViewControllerRef ref) {
+  auto controller = ViewControllerFromHandle(ref);
+  return static_cast<FlutterDesktopViewId>(controller->view()->view_id());
 }
 
 FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
@@ -211,15 +244,15 @@ void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
 }
 
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
-  return ViewFromHandle(view)->GetPlatformWindow();
+  return ViewFromHandle(view)->GetWindowHandle();
 }
 
 IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(FlutterDesktopViewRef view) {
-  auto surface_manager = ViewFromHandle(view)->GetEngine()->surface_manager();
-  if (surface_manager) {
+  auto egl_manager = ViewFromHandle(view)->GetEngine()->egl_manager();
+  if (egl_manager) {
     Microsoft::WRL::ComPtr<ID3D11Device> d3d_device;
     Microsoft::WRL::ComPtr<IDXGIDevice> dxgi_device;
-    if (surface_manager->GetDevice(d3d_device.GetAddressOf()) &&
+    if (egl_manager->GetDevice(d3d_device.GetAddressOf()) &&
         SUCCEEDED(d3d_device.As(&dxgi_device))) {
       IDXGIAdapter* adapter;
       if (SUCCEEDED(dxgi_device->GetAdapter(&adapter))) {
@@ -246,9 +279,23 @@ bool FlutterDesktopEngineProcessExternalWindowMessage(
   return lresult.has_value();
 }
 
+void FlutterDesktopEngineRegisterPlatformViewType(
+    FlutterDesktopEngineRef engine,
+    const char* view_type_name,
+    FlutterPlatformViewTypeEntry view_type) {
+  // TODO(schectman): forward to platform view manager.
+  // https://github.com/flutter/flutter/issues/143375
+}
+
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef registrar) {
-  return HandleForView(registrar->engine->view());
+  return HandleForView(registrar->engine->view(flutter::kImplicitViewId));
+}
+
+FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetViewById(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopViewId view_id) {
+  return HandleForView(registrar->engine->view(view_id));
 }
 
 void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(

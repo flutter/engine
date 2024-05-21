@@ -5,6 +5,7 @@
 package io.flutter.plugin.platform;
 
 import static android.os.Looper.getMainLooper;
+import static io.flutter.Build.API_LEVELS;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -16,6 +17,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.media.Image;
+import android.view.Surface;
 import android.view.View;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -23,7 +25,7 @@ import io.flutter.view.TextureRegistry.ImageTextureEntry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@TargetApi(29)
+@TargetApi(API_LEVELS.API_29)
 @RunWith(AndroidJUnit4.class)
 public class ImageReaderPlatformViewRenderTargetTest {
   private final Context ctx = ApplicationProvider.getApplicationContext();
@@ -78,7 +80,9 @@ public class ImageReaderPlatformViewRenderTargetTest {
     assertNull(textureEntry.acquireLatestImage());
 
     // Start rendering a frame.
-    final Canvas targetCanvas = renderTarget.lockHardwareCanvas();
+    final Surface s = renderTarget.getSurface();
+    assertNotNull(s);
+    final Canvas targetCanvas = s.lockHardwareCanvas();
     assertNotNull(targetCanvas);
 
     try {
@@ -89,7 +93,7 @@ public class ImageReaderPlatformViewRenderTargetTest {
       platformView.draw(targetCanvas);
     } finally {
       // Finish rendering a frame.
-      renderTarget.unlockCanvasAndPost(targetCanvas);
+      s.unlockCanvasAndPost(targetCanvas);
     }
 
     // Pump the UI thread task loop. This is needed so that the OnImageAvailable callback

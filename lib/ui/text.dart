@@ -1201,6 +1201,9 @@ class FontVariation {
 ///  * [Paragraph.getClosestGlyphInfoForOffset], which finds the [GlyphInfo] of
 ///    the glyph(s) onscreen that's closest to the given [Offset].
 final class GlyphInfo {
+  /// Creates a [GlyphInfo] with the specified values.
+  GlyphInfo(this.graphemeClusterLayoutBounds, this.graphemeClusterCodeUnitRange, this.writingDirection);
+
   GlyphInfo._(double left, double top, double right, double bottom, int graphemeStart, int graphemeEnd, bool isLTR)
     : graphemeClusterLayoutBounds = Rect.fromLTRB(left, top, right, bottom),
       graphemeClusterCodeUnitRange = TextRange(start: graphemeStart, end: graphemeEnd),
@@ -1209,7 +1212,7 @@ final class GlyphInfo {
   /// The layout bounding rect of the associated character, in the paragraph's
   /// coordinates.
   ///
-  /// This is **not** the tight bounding box that encloses the character's outline.
+  /// This is **not** a tight bounding box that encloses the character's outline.
   /// The vertical extent reported is derived from the font metrics (instead of
   /// glyph metrics), and the horizontal extent is the horizontal advance of the
   /// character.
@@ -3017,18 +3020,24 @@ abstract class Paragraph {
   List<TextBox> getBoxesForPlaceholders();
 
   /// Returns the text position closest to the given offset.
+  ///
+  /// This method always returns a [TextPosition] for any given [offset], even
+  /// when the [offset] is not close to any text, or when the paragraph is empty.
+  /// This is useful for determining the text to select when the user drags the
+  /// text selection handle.
+  ///
+  /// See also:
+  ///
+  ///  * [getClosestGlyphInfoForOffset], which returns more information about
+  ///    the closest character to an [Offset].
   TextPosition getPositionForOffset(Offset offset);
 
   /// Returns the [GlyphInfo] of the glyph closest to the given `offset` in the
-  /// paragraph coordinate system, or null if the glyph is not in the visible
-  /// range.
+  /// paragraph coordinate system, or null if if the text is empty, or is
+  /// entirely clipped or ellipsized away.
   ///
   /// This method first finds the line closest to `offset.dy`, and then returns
   /// the [GlyphInfo] of the closest glyph(s) within that line.
-  ///
-  /// This method can be used to implement per-glyph hit-testing. The returned
-  /// [GlyphInfo] can help determine whether the given `offset` directly hits a
-  /// glyph in the paragraph.
   GlyphInfo? getClosestGlyphInfoForOffset(Offset offset);
 
   /// Returns the [GlyphInfo] located at the given UTF-16 `codeUnitOffset` in
@@ -3325,6 +3334,27 @@ base class _NativeParagraph extends NativeFieldWrapperClass1 implements Paragrap
     }());
     return disposed ?? (throw StateError('$runtimeType.debugDisposed is only available when asserts are enabled.'));
   }
+
+  @override
+  String toString() {
+    String? result;
+    assert(() {
+      if (_disposed && _needsLayout) {
+        result = 'Paragraph(DISPOSED while dirty)';
+      }
+      if (_disposed && !_needsLayout) {
+        result = 'Paragraph(DISPOSED)';
+      }
+      return true;
+    }());
+    if (result != null) {
+      return result!;
+    }
+    if (_needsLayout) {
+      return 'Paragraph(dirty)';
+    }
+    return 'Paragraph()';
+  }
 }
 
 /// Builds a [Paragraph] containing text with the given styling information.
@@ -3345,23 +3375,6 @@ abstract class ParagraphBuilder {
   /// Creates a new [ParagraphBuilder] object, which is used to create a
   /// [Paragraph].
   factory ParagraphBuilder(ParagraphStyle style) = _NativeParagraphBuilder;
-
-  /// Whether the rounding hack enabled by default in SkParagraph and TextPainter
-  /// is disabled.
-  ///
-  /// Do not rely on this getter as it exists for migration purposes only and
-  /// will soon be removed.
-  @Deprecated('''
-    The shouldDisableRoundingHack flag is for internal migration purposes only and should not be used.
-  ''')
-  static bool get shouldDisableRoundingHack => _shouldDisableRoundingHack;
-  static bool _shouldDisableRoundingHack = true;
-  /// Do not call this method as it is for migration purposes only and will soon
-  /// be removed.
-  // ignore: use_setters_to_change_properties
-  static void setDisableRoundingHack(bool disableRoundingHack) {
-    _shouldDisableRoundingHack = disableRoundingHack;
-  }
 
   /// The number of placeholders currently in the paragraph.
   int get placeholderCount;
@@ -3480,11 +3493,10 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
         style._height ?? 0,
         style._ellipsis ?? '',
         _encodeLocale(style._locale),
-        !ParagraphBuilder.shouldDisableRoundingHack,
       );
   }
 
-  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle, Bool)>(symbol: 'ParagraphBuilder::Create')
+  @Native<Void Function(Handle, Handle, Handle, Handle, Handle, Double, Double, Handle, Handle)>(symbol: 'ParagraphBuilder::Create')
   external void _constructor(
       Int32List encoded,
       ByteData? strutData,
@@ -3494,7 +3506,7 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
       double height,
       String ellipsis,
       String locale,
-      bool applyRoundingHack);
+  );
 
   @override
   int get placeholderCount => _placeholderCount;
@@ -3648,6 +3660,9 @@ base class _NativeParagraphBuilder extends NativeFieldWrapperClass1 implements P
 
   @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'ParagraphBuilder::build')
   external void _build(_NativeParagraph outParagraph);
+
+  @override
+  String toString() => 'ParagraphBuilder';
 }
 
 /// Loads a font from a buffer and makes it available for rendering text.

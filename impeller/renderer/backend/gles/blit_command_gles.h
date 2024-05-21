@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BLIT_COMMAND_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BLIT_COMMAND_GLES_H_
 
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
@@ -17,6 +18,16 @@ struct BlitEncodeGLES : BackendCast<BlitEncodeGLES, BlitCommand> {
   virtual std::string GetLabel() const = 0;
 
   [[nodiscard]] virtual bool Encode(const ReactorGLES& reactor) const = 0;
+};
+
+struct BlitCopyBufferToTextureCommandGLES
+    : public BlitEncodeGLES,
+      public BlitCopyBufferToTextureCommand {
+  ~BlitCopyBufferToTextureCommandGLES() override;
+
+  std::string GetLabel() const override;
+
+  [[nodiscard]] bool Encode(const ReactorGLES& reactor) const override;
 };
 
 struct BlitCopyTextureToTextureCommandGLES
@@ -49,3 +60,5 @@ struct BlitGenerateMipmapCommandGLES : public BlitEncodeGLES,
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_BLIT_COMMAND_GLES_H_

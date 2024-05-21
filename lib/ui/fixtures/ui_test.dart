@@ -145,6 +145,7 @@ external void _validateVertices(Vertices vertices);
 @pragma('vm:entry-point')
 void sendSemanticsUpdate() {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder();
+  final String identifier = "identifier";
   final String label = "label";
   final List<StringAttribute> labelAttributes = <StringAttribute> [
     SpellOutStringAttribute(range: TextRange(start: 1, end: 2)),
@@ -171,6 +172,8 @@ void sendSemanticsUpdate() {
       locale: Locale('en', 'MX'), range: TextRange(start: 0, end: 1),
     ),
   ];
+
+  String tooltip = "tooltip";
 
   final Float64List transform = Float64List(16);
   final Int32List childrenInTraversalOrder = Int32List(0);
@@ -212,6 +215,7 @@ void sendSemanticsUpdate() {
     rect: Rect.fromLTRB(0, 0, 10, 10),
     elevation: 0,
     thickness: 0,
+    identifier: identifier,
     label: label,
     labelAttributes: labelAttributes,
     value: value,
@@ -222,6 +226,7 @@ void sendSemanticsUpdate() {
     decreasedValueAttributes: decreasedValueAttributes,
     hint: hint,
     hintAttributes: hintAttributes,
+    tooltip: tooltip,
     textDirection: TextDirection.ltr,
     transform: transform,
     childrenInTraversalOrder: childrenInTraversalOrder,
@@ -381,6 +386,28 @@ Future<void> toByteDataRetries() async {
   try {
     ByteData? byteData = await image.toByteData();
     _validateNotNull(byteData);
+  } catch (error) {
+    _validateNotNull(null);
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> toImageRetries() async {
+  final PictureRecorder pictureRecorder = PictureRecorder();
+  final Canvas canvas = Canvas(pictureRecorder);
+  final Paint paint = Paint()
+    ..color = Color.fromRGBO(255, 255, 255, 1.0)
+    ..style = PaintingStyle.fill;
+  final Offset c = Offset(50.0, 50.0);
+  canvas.drawCircle(c, 25.0, paint);
+  final Picture picture = pictureRecorder.endRecording();
+  _turnOffGPU(true);
+  Future<void>.delayed(Duration(milliseconds: 10), () {
+    _turnOffGPU(false);
+  });
+  try {
+    final Image image = await picture.toImage(100, 100);
+    _validateNotNull(image);
   } catch (error) {
     _validateNotNull(null);
   }

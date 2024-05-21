@@ -3,13 +3,20 @@
 // found in the LICENSE file.
 
 #include "impeller/typographer/text_frame.h"
+#include "impeller/typographer/font_glyph_pair.h"
 
 namespace impeller {
 
 TextFrame::TextFrame() = default;
 
-TextFrame::TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color)
-    : runs_(std::move(runs)), bounds_(bounds), has_color_(has_color) {}
+TextFrame::TextFrame(std::vector<TextRun>& runs,
+                     Rect bounds,
+                     bool has_color,
+                     Color color)
+    : runs_(std::move(runs)),
+      bounds_(bounds),
+      has_color_(has_color),
+      color_(color) {}
 
 TextFrame::~TextFrame() = default;
 
@@ -30,6 +37,10 @@ GlyphAtlas::Type TextFrame::GetAtlasType() const {
                     : GlyphAtlas::Type::kAlphaBitmap;
 }
 
+Color TextFrame::GetColor() const {
+  return color_;
+}
+
 bool TextFrame::MaybeHasOverlapping() const {
   if (runs_.size() > 1) {
     return true;
@@ -46,13 +57,13 @@ bool TextFrame::MaybeHasOverlapping() const {
   // on text runs.
   auto first_position = glyph_positions[0];
   auto overlapping_rect = Rect::MakeOriginSize(
-      first_position.position + first_position.glyph.bounds.origin,
-      first_position.glyph.bounds.size);
+      first_position.position + first_position.glyph.bounds.GetOrigin(),
+      first_position.glyph.bounds.GetSize());
   for (auto i = 1u; i < glyph_positions.size(); i++) {
     auto glyph_position = glyph_positions[i];
     auto glyph_rect = Rect::MakeOriginSize(
-        glyph_position.position + glyph_position.glyph.bounds.origin,
-        glyph_position.glyph.bounds.size);
+        glyph_position.position + glyph_position.glyph.bounds.GetOrigin(),
+        glyph_position.glyph.bounds.GetSize());
     auto intersection = glyph_rect.Intersection(overlapping_rect);
     if (intersection.has_value()) {
       return true;
@@ -64,7 +75,12 @@ bool TextFrame::MaybeHasOverlapping() const {
 
 // static
 Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
-  return std::round(scale * 100) / 100;
+  // An arbitrarily chosen maximum text scale to ensure that regardless of the
+  // CTM, a glyph will fit in the atlas. If we clamp significantly, this may
+  // reduce fidelity but is preferable to the alternative of failing to render.
+  constexpr Scalar kMaximumTextScale = 48;
+  Scalar result = std::round(scale * 100) / 100;
+  return std::clamp(result, 0.0f, kMaximumTextScale);
 }
 
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
@@ -73,7 +89,7 @@ void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
     const Font& font = run.GetFont();
     auto rounded_scale =
         RoundScaledFontSize(scale, font.GetMetrics().point_size);
-    auto& set = glyph_map[{font, rounded_scale}];
+    auto& set = glyph_map[ScaledFont{font, rounded_scale, color_}];
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
 #if false

@@ -40,7 +40,7 @@ static constexpr inline bool is_power_of_two(int value) {
 }
 
 template <typename T, typename... Args>
-void* DisplayListBuilder::Push(size_t pod, int render_op_inc, Args&&... args) {
+void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
   FML_DCHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
@@ -58,7 +58,8 @@ void* DisplayListBuilder::Push(size_t pod, int render_op_inc, Args&&... args) {
   new (op) T{std::forward<Args>(args)...};
   op->type = T::kType;
   op->size = size;
-  render_op_count_ += render_op_inc;
+  render_op_count_ += T::kRenderOpInc;
+  depth_ += T::kDepthInc * render_op_depth_cost_;
   op_index_++;
   return op + 1;
 }
@@ -72,22 +73,30 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   int count = render_op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
+  uint32_t total_depth = depth_;
   bool compatible = current_layer_->is_group_opacity_compatible();
   bool is_safe = is_ui_thread_safe_;
   bool affects_transparency = current_layer_->affects_transparent_layer();
 
+  sk_sp<DlRTree> rtree = this->rtree();
+  SkRect bounds = rtree ? rtree->bounds() : this->bounds();
+
   used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
+  depth_ = 0;
   is_ui_thread_safe_ = true;
   storage_.realloc(bytes);
   layer_stack_.pop_back();
   layer_stack_.emplace_back();
+  current_layer_ = &layer_stack_.back();
   tracker_.reset();
+  layer_tracker_.reset();
   current_ = DlPaint();
 
-  return sk_sp<DisplayList>(new DisplayList(
-      std::move(storage_), bytes, count, nested_bytes, nested_count, bounds(),
-      compatible, is_safe, affects_transparency, rtree()));
+  return sk_sp<DisplayList>(
+      new DisplayList(std::move(storage_), bytes, count, nested_bytes,
+                      nested_count, total_depth, bounds, compatible, is_safe,
+                      affects_transparency, std::move(rtree)));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
@@ -121,47 +130,47 @@ SkImageInfo DisplayListBuilder::GetImageInfo() const {
 
 void DisplayListBuilder::onSetAntiAlias(bool aa) {
   current_.setAntiAlias(aa);
-  Push<SetAntiAliasOp>(0, 0, aa);
+  Push<SetAntiAliasOp>(0, aa);
 }
 void DisplayListBuilder::onSetInvertColors(bool invert) {
   current_.setInvertColors(invert);
-  Push<SetInvertColorsOp>(0, 0, invert);
+  Push<SetInvertColorsOp>(0, invert);
   UpdateCurrentOpacityCompatibility();
 }
 void DisplayListBuilder::onSetStrokeCap(DlStrokeCap cap) {
   current_.setStrokeCap(cap);
-  Push<SetStrokeCapOp>(0, 0, cap);
+  Push<SetStrokeCapOp>(0, cap);
 }
 void DisplayListBuilder::onSetStrokeJoin(DlStrokeJoin join) {
   current_.setStrokeJoin(join);
-  Push<SetStrokeJoinOp>(0, 0, join);
+  Push<SetStrokeJoinOp>(0, join);
 }
 void DisplayListBuilder::onSetDrawStyle(DlDrawStyle style) {
   current_.setDrawStyle(style);
-  Push<SetStyleOp>(0, 0, style);
+  Push<SetStyleOp>(0, style);
 }
 void DisplayListBuilder::onSetStrokeWidth(float width) {
   current_.setStrokeWidth(width);
-  Push<SetStrokeWidthOp>(0, 0, width);
+  Push<SetStrokeWidthOp>(0, width);
 }
 void DisplayListBuilder::onSetStrokeMiter(float limit) {
   current_.setStrokeMiter(limit);
-  Push<SetStrokeMiterOp>(0, 0, limit);
+  Push<SetStrokeMiterOp>(0, limit);
 }
 void DisplayListBuilder::onSetColor(DlColor color) {
   current_.setColor(color);
-  Push<SetColorOp>(0, 0, color);
+  Push<SetColorOp>(0, color);
 }
 void DisplayListBuilder::onSetBlendMode(DlBlendMode mode) {
   current_.setBlendMode(mode);
-  Push<SetBlendModeOp>(0, 0, mode);
+  Push<SetBlendModeOp>(0, mode);
   UpdateCurrentOpacityCompatibility();
 }
 
 void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
   if (source == nullptr) {
     current_.setColorSource(nullptr);
-    Push<ClearColorSourceOp>(0, 0);
+    Push<ClearColorSourceOp>(0);
   } else {
     current_.setColorSource(source->shared());
     is_ui_thread_safe_ = is_ui_thread_safe_ && source->isUIThreadSafe();
@@ -175,20 +184,20 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
       case DlColorSourceType::kImage: {
         const DlImageColorSource* image_source = source->asImage();
         FML_DCHECK(image_source);
-        Push<SetImageColorSourceOp>(0, 0, image_source);
+        Push<SetImageColorSourceOp>(0, image_source);
         break;
       }
       case DlColorSourceType::kLinearGradient: {
         const DlLinearGradientColorSource* linear = source->asLinearGradient();
         FML_DCHECK(linear);
-        void* pod = Push<SetPodColorSourceOp>(linear->size(), 0);
+        void* pod = Push<SetPodColorSourceOp>(linear->size());
         new (pod) DlLinearGradientColorSource(linear);
         break;
       }
       case DlColorSourceType::kRadialGradient: {
         const DlRadialGradientColorSource* radial = source->asRadialGradient();
         FML_DCHECK(radial);
-        void* pod = Push<SetPodColorSourceOp>(radial->size(), 0);
+        void* pod = Push<SetPodColorSourceOp>(radial->size());
         new (pod) DlRadialGradientColorSource(radial);
         break;
       }
@@ -196,28 +205,28 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
         const DlConicalGradientColorSource* conical =
             source->asConicalGradient();
         FML_DCHECK(conical);
-        void* pod = Push<SetPodColorSourceOp>(conical->size(), 0);
+        void* pod = Push<SetPodColorSourceOp>(conical->size());
         new (pod) DlConicalGradientColorSource(conical);
         break;
       }
       case DlColorSourceType::kSweepGradient: {
         const DlSweepGradientColorSource* sweep = source->asSweepGradient();
         FML_DCHECK(sweep);
-        void* pod = Push<SetPodColorSourceOp>(sweep->size(), 0);
+        void* pod = Push<SetPodColorSourceOp>(sweep->size());
         new (pod) DlSweepGradientColorSource(sweep);
         break;
       }
       case DlColorSourceType::kRuntimeEffect: {
         const DlRuntimeEffectColorSource* effect = source->asRuntimeEffect();
         FML_DCHECK(effect);
-        Push<SetRuntimeEffectColorSourceOp>(0, 0, effect);
+        Push<SetRuntimeEffectColorSourceOp>(0, effect);
         break;
       }
 #ifdef IMPELLER_ENABLE_3D
       case DlColorSourceType::kScene: {
         const DlSceneColorSource* scene = source->asScene();
         FML_DCHECK(scene);
-        Push<SetSceneColorSourceOp>(0, 0, scene);
+        Push<SetSceneColorSourceOp>(0, scene);
         break;
       }
 #endif  // IMPELLER_ENABLE_3D
@@ -227,42 +236,42 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
 void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
   if (filter == nullptr) {
     current_.setImageFilter(nullptr);
-    Push<ClearImageFilterOp>(0, 0);
+    Push<ClearImageFilterOp>(0);
   } else {
     current_.setImageFilter(filter->shared());
     switch (filter->type()) {
       case DlImageFilterType::kBlur: {
         const DlBlurImageFilter* blur_filter = filter->asBlur();
         FML_DCHECK(blur_filter);
-        void* pod = Push<SetPodImageFilterOp>(blur_filter->size(), 0);
+        void* pod = Push<SetPodImageFilterOp>(blur_filter->size());
         new (pod) DlBlurImageFilter(blur_filter);
         break;
       }
       case DlImageFilterType::kDilate: {
         const DlDilateImageFilter* dilate_filter = filter->asDilate();
         FML_DCHECK(dilate_filter);
-        void* pod = Push<SetPodImageFilterOp>(dilate_filter->size(), 0);
+        void* pod = Push<SetPodImageFilterOp>(dilate_filter->size());
         new (pod) DlDilateImageFilter(dilate_filter);
         break;
       }
       case DlImageFilterType::kErode: {
         const DlErodeImageFilter* erode_filter = filter->asErode();
         FML_DCHECK(erode_filter);
-        void* pod = Push<SetPodImageFilterOp>(erode_filter->size(), 0);
+        void* pod = Push<SetPodImageFilterOp>(erode_filter->size());
         new (pod) DlErodeImageFilter(erode_filter);
         break;
       }
       case DlImageFilterType::kMatrix: {
         const DlMatrixImageFilter* matrix_filter = filter->asMatrix();
         FML_DCHECK(matrix_filter);
-        void* pod = Push<SetPodImageFilterOp>(matrix_filter->size(), 0);
+        void* pod = Push<SetPodImageFilterOp>(matrix_filter->size());
         new (pod) DlMatrixImageFilter(matrix_filter);
         break;
       }
       case DlImageFilterType::kCompose:
       case DlImageFilterType::kLocalMatrix:
       case DlImageFilterType::kColorFilter: {
-        Push<SetSharedImageFilterOp>(0, 0, filter);
+        Push<SetSharedImageFilterOp>(0, filter);
         break;
       }
     }
@@ -271,31 +280,31 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
 void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   if (filter == nullptr) {
     current_.setColorFilter(nullptr);
-    Push<ClearColorFilterOp>(0, 0);
+    Push<ClearColorFilterOp>(0);
   } else {
     current_.setColorFilter(filter->shared());
     switch (filter->type()) {
       case DlColorFilterType::kBlend: {
         const DlBlendColorFilter* blend_filter = filter->asBlend();
         FML_DCHECK(blend_filter);
-        void* pod = Push<SetPodColorFilterOp>(blend_filter->size(), 0);
+        void* pod = Push<SetPodColorFilterOp>(blend_filter->size());
         new (pod) DlBlendColorFilter(blend_filter);
         break;
       }
       case DlColorFilterType::kMatrix: {
         const DlMatrixColorFilter* matrix_filter = filter->asMatrix();
         FML_DCHECK(matrix_filter);
-        void* pod = Push<SetPodColorFilterOp>(matrix_filter->size(), 0);
+        void* pod = Push<SetPodColorFilterOp>(matrix_filter->size());
         new (pod) DlMatrixColorFilter(matrix_filter);
         break;
       }
       case DlColorFilterType::kSrgbToLinearGamma: {
-        void* pod = Push<SetPodColorFilterOp>(filter->size(), 0);
+        void* pod = Push<SetPodColorFilterOp>(filter->size());
         new (pod) DlSrgbToLinearGammaColorFilter();
         break;
       }
       case DlColorFilterType::kLinearToSrgbGamma: {
-        void* pod = Push<SetPodColorFilterOp>(filter->size(), 0);
+        void* pod = Push<SetPodColorFilterOp>(filter->size());
         new (pod) DlLinearToSrgbGammaColorFilter();
         break;
       }
@@ -306,13 +315,13 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
 void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
   if (effect == nullptr) {
     current_.setPathEffect(nullptr);
-    Push<ClearPathEffectOp>(0, 0);
+    Push<ClearPathEffectOp>(0);
   } else {
     current_.setPathEffect(effect->shared());
     switch (effect->type()) {
       case DlPathEffectType::kDash: {
         const DlDashPathEffect* dash_effect = effect->asDash();
-        void* pod = Push<SetPodPathEffectOp>(dash_effect->size(), 0);
+        void* pod = Push<SetPodPathEffectOp>(dash_effect->size());
         new (pod) DlDashPathEffect(dash_effect);
         break;
       }
@@ -322,14 +331,16 @@ void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
     current_.setMaskFilter(nullptr);
-    Push<ClearMaskFilterOp>(0, 0);
+    render_op_depth_cost_ = 1u;
+    Push<ClearMaskFilterOp>(0);
   } else {
     current_.setMaskFilter(filter->shared());
+    render_op_depth_cost_ = 2u;
     switch (filter->type()) {
       case DlMaskFilterType::kBlur: {
         const DlBlurMaskFilter* blur_filter = filter->asBlur();
         FML_DCHECK(blur_filter);
-        void* pod = Push<SetPodMaskFilterOp>(blur_filter->size(), 0);
+        void* pod = Push<SetPodMaskFilterOp>(blur_filter->size());
         new (pod) DlBlurMaskFilter(blur_filter);
         break;
       }
@@ -379,69 +390,122 @@ void DisplayListBuilder::SetAttributesFromPaint(
 void DisplayListBuilder::checkForDeferredSave() {
   if (current_layer_->has_deferred_save_op_) {
     size_t save_offset_ = used_;
-    Push<SaveOp>(0, 1);
+    Push<SaveOp>(0);
     current_layer_->save_offset_ = save_offset_;
+    current_layer_->start_depth_ = depth_;
     current_layer_->has_deferred_save_op_ = false;
   }
 }
 
 void DisplayListBuilder::Save() {
-  bool is_nop = current_layer_->is_nop_;
   layer_stack_.emplace_back();
   current_layer_ = &layer_stack_.back();
+
+  FML_DCHECK(layer_stack_.size() >= 2u);
+  // Note we can't use the previous value of current_layer_ because
+  // the emplace_back() may have moved the storage locations, so we
+  // recompute the location of the penultimate layer info here.
+  auto parent_layer = &layer_stack_.end()[-2];
+
   current_layer_->has_deferred_save_op_ = true;
-  current_layer_->is_nop_ = is_nop;
+  current_layer_->is_nop_ = parent_layer->is_nop_;
+
+  if (parent_layer->layer_accumulator_) {
+    FML_DCHECK(layer_tracker_);
+    // If the previous layer was using an accumulator, we need to keep
+    // filling it with content bounds. We reuse the previous accumulator
+    // for this layer, but clone the associated transform so that new
+    // transform mutations are restricted to this save/restore context.
+    current_layer_->layer_accumulator_ = parent_layer->layer_accumulator_;
+    layer_tracker_->save();
+  } else {
+    FML_DCHECK(!layer_tracker_);
+  }
+
   tracker_.save();
   accumulator()->save();
 }
 
 void DisplayListBuilder::Restore() {
-  if (layer_stack_.size() > 1) {
-    SaveOpBase* op = reinterpret_cast<SaveOpBase*>(
-        storage_.get() + current_layer_->save_offset());
-    if (!current_layer_->has_deferred_save_op_) {
-      op->restore_index = op_index_;
-      Push<RestoreOp>(0, 1);
+  if (layer_stack_.size() <= 1) {
+    return;
+  }
+
+  SaveOpBase* op = reinterpret_cast<SaveOpBase*>(storage_.get() +
+                                                 current_layer_->save_offset());
+
+  if (!current_layer_->has_deferred_save_op_) {
+    op->restore_index = op_index_;
+    op->total_content_depth = depth_ - current_layer_->start_depth_;
+    Push<RestoreOp>(0);
+    if (current_layer_->is_save_layer()) {
+      // A saveLayer will usually do a final copy to the main buffer in
+      // addition to its content, but that is accounted for outside of
+      // the total content depth computed above.
+      depth_ += render_op_depth_cost_;
     }
-    // Grab the current layer info before we push the restore
-    // on the stack.
-    LayerInfo layer_info = layer_stack_.back();
+  }
 
-    tracker_.restore();
-    layer_stack_.pop_back();
-    current_layer_ = &layer_stack_.back();
-    bool is_unbounded = layer_info.is_unbounded();
+  std::shared_ptr<const DlImageFilter> filter = current_layer_->filter();
+  {
+    // We should not pop the stack until we are done synching up the current
+    // and parent layers.
+    auto parent_layer = &layer_stack_.end()[-2];
 
-    // Before we pop_back we will get the current layer bounds from the
-    // current accumulator and adjust it as required based on the filter.
-    std::shared_ptr<const DlImageFilter> filter = layer_info.filter();
-    if (filter) {
-      const SkRect clip = tracker_.device_cull_rect();
-      if (!accumulator()->restore(
-              [filter = filter, matrix = GetTransform()](const SkRect& input,
-                                                         SkRect& output) {
-                SkIRect output_bounds;
-                bool ret = filter->map_device_bounds(input.roundOut(), matrix,
-                                                     output_bounds);
-                output.set(output_bounds);
-                return ret;
-              },
-              &clip)) {
-        is_unbounded = true;
-      }
-    } else {
-      accumulator()->restore();
-    }
-
-    if (is_unbounded) {
-      AccumulateUnbounded();
-    }
-
-    if (layer_info.has_layer()) {
+    if (current_layer_->is_save_layer()) {
       // Layers are never deferred for now, we need to update the
       // following code if we ever do saveLayer culling...
-      FML_DCHECK(!layer_info.has_deferred_save_op_);
-      if (layer_info.is_group_opacity_compatible()) {
+      FML_DCHECK(!current_layer_->has_deferred_save_op_);
+      FML_DCHECK(current_layer_->layer_accumulator_);
+
+      SkRect content_bounds = current_layer_->layer_accumulator_->bounds();
+
+      switch (op->type) {
+        case DisplayListOpType::kSaveLayer:
+        case DisplayListOpType::kSaveLayerBackdrop: {
+          SaveLayerOpBase* layer_op = reinterpret_cast<SaveLayerOpBase*>(op);
+          if (op->options.bounds_from_caller()) {
+            if (!content_bounds.isEmpty() &&
+                !layer_op->rect.contains(content_bounds)) {
+              op->options = op->options.with_content_is_clipped();
+              content_bounds.intersect(layer_op->rect);
+            }
+          }
+          layer_op->rect = content_bounds;
+          break;
+        }
+        default:
+          FML_UNREACHABLE();
+      }
+
+      if (layer_tracker_->getSaveCount() > 1) {
+        layer_tracker_->restore();
+      } else {
+        // If this was the last layer in the tracker, then there should
+        // be no parent saveLayer.
+        FML_DCHECK(!parent_layer->layer_accumulator_);
+        layer_tracker_.reset();
+      }
+
+      if (parent_layer->layer_accumulator_) {
+        SkRect bounds_for_parent = content_bounds;
+        if (filter) {
+          if (!filter->map_local_bounds(bounds_for_parent, bounds_for_parent)) {
+            parent_layer->set_unbounded();
+          }
+        }
+        // The content_bounds were accumulated in the base coordinate system
+        // of the current layer, and have been adjusted there according to
+        // its image filter.
+        // The content bounds accumulation of the parent layer is relative
+        // to the parent's base coordinate system, so we need to adjust
+        // bounds_for_parent to that coordinate space.
+        FML_DCHECK(layer_tracker_);
+        layer_tracker_->mapRect(&bounds_for_parent);
+        parent_layer->layer_accumulator_->accumulate(bounds_for_parent);
+      }
+
+      if (current_layer_->is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
         // call to add the option indicating it can distribute an opacity
         // value to its children.
@@ -457,14 +521,52 @@ void DisplayListBuilder::Restore() {
         op->options = op->options.with_can_distribute_opacity();
       }
     } else {
+      if (layer_tracker_) {
+        FML_DCHECK(layer_tracker_->getSaveCount() > 1);
+        layer_tracker_->restore();
+      }
       // For regular save() ops there was no protecting layer so we have to
-      // accumulate the values into the enclosing layer.
-      if (layer_info.cannot_inherit_opacity()) {
-        current_layer_->mark_incompatible();
-      } else if (layer_info.has_compatible_op()) {
-        current_layer_->add_compatible_op();
+      // accumulate the inheritance properties into the enclosing layer.
+      if (current_layer_->cannot_inherit_opacity()) {
+        parent_layer->mark_incompatible();
+      } else if (current_layer_->has_compatible_op()) {
+        parent_layer->add_compatible_op();
       }
     }
+  }
+
+  // Remember whether the outgoing layer was unbounded so we can adjust
+  // for it below after we apply the outgoing layer's filter to the bounds.
+  bool popped_was_unbounded = current_layer_->is_unbounded();
+
+  // parent_layer is no longer in scope, time to pop the layer.
+  layer_stack_.pop_back();
+  tracker_.restore();
+  current_layer_ = &layer_stack_.back();
+
+  // As we pop the accumulator, use the filter that was applied to the
+  // outgoing layer (saved above, if any) to adjust the bounds that
+  // were accumulated while that layer was active.
+  if (filter) {
+    const SkRect clip = tracker_.device_cull_rect();
+    if (!accumulator()->restore(
+            [filter = filter, matrix = GetTransform()](const SkRect& input,
+                                                       SkRect& output) {
+              SkIRect output_bounds;
+              bool ret = filter->map_device_bounds(input.roundOut(), matrix,
+                                                   output_bounds);
+              output.set(output_bounds);
+              return ret;
+            },
+            &clip)) {
+      popped_was_unbounded = true;
+    }
+  } else {
+    accumulator()->restore();
+  }
+
+  if (popped_was_unbounded) {
+    AccumulateUnbounded();
   }
 }
 void DisplayListBuilder::RestoreToCount(int restore_count) {
@@ -473,7 +575,7 @@ void DisplayListBuilder::RestoreToCount(int restore_count) {
     restore();
   }
 }
-void DisplayListBuilder::saveLayer(const SkRect* bounds,
+void DisplayListBuilder::saveLayer(const SkRect& bounds,
                                    const SaveLayerOptions in_options,
                                    const DlImageFilter* backdrop) {
   SaveLayerOptions options = in_options.without_optimizations();
@@ -486,7 +588,9 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     current_layer_->is_nop_ = true;
     return;
   }
+
   size_t save_layer_offset = used_;
+
   if (options.renders_with_attributes()) {
     // The actual flood of the outer layer clip will occur after the
     // (eventual) corresponding restore is called, but rather than
@@ -505,16 +609,39 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
       FML_DCHECK(unclipped);
     }
     CheckLayerOpacityCompatibility(true);
-    layer_stack_.emplace_back(save_layer_offset, true,
-                              current_.getImageFilter());
+    layer_stack_.emplace_back(save_layer_offset, depth_);
+    layer_stack_.back().filter_ = current_.getImageFilter();
   } else {
     CheckLayerOpacityCompatibility(false);
-    layer_stack_.emplace_back(save_layer_offset, true, nullptr);
+    layer_stack_.emplace_back(save_layer_offset, depth_);
   }
   current_layer_ = &layer_stack_.back();
+  current_layer_->is_save_layer_ = true;
 
   tracker_.save();
   accumulator()->save();
+
+  SkRect record_bounds;
+  if (in_options.bounds_from_caller()) {
+    options = options.with_bounds_from_caller();
+    record_bounds = bounds;
+  } else {
+    FML_DCHECK(record_bounds.isEmpty());
+  }
+  current_layer_->layer_accumulator_.reset(new RectBoundsAccumulator());
+  if (layer_tracker_) {
+    layer_tracker_->save();
+    layer_tracker_->setTransform(SkMatrix::I());
+  } else {
+    SkRect cull_rect;
+    if (in_options.bounds_from_caller()) {
+      cull_rect = bounds;
+    } else {
+      cull_rect = tracker_.local_cull_rect();
+    }
+    layer_tracker_.reset(
+        new DisplayListMatrixClipTracker(cull_rect, SkMatrix::I()));
+  }
 
   if (backdrop) {
     // A backdrop will affect up to the entire surface, bounded by the clip
@@ -523,13 +650,9 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     // when we tested the PaintResult.
     [[maybe_unused]] bool unclipped = AccumulateUnbounded();
     FML_DCHECK(unclipped);
-    bounds  //
-        ? Push<SaveLayerBackdropBoundsOp>(0, 1, options, *bounds, backdrop)
-        : Push<SaveLayerBackdropOp>(0, 1, options, backdrop);
+    Push<SaveLayerBackdropOp>(0, options, record_bounds, backdrop);
   } else {
-    bounds  //
-        ? Push<SaveLayerBoundsOp>(0, 1, options, *bounds)
-        : Push<SaveLayerOp>(0, 1, options);
+    Push<SaveLayerOp>(0, options, record_bounds);
   }
 
   if (options.renders_with_attributes()) {
@@ -555,55 +678,72 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     // The filtered bounds will be clipped to the existing clip rect when
     // this layer is restored.
     // If bounds is null then the original cull_rect will be used.
-    tracker_.resetCullRect(bounds);
-  } else if (bounds) {
+    tracker_.resetLocalCullRect(in_options.bounds_from_caller() ? &bounds
+                                                                : nullptr);
+  } else if (in_options.bounds_from_caller()) {
     // Even though Skia claims that the bounds are only a hint, they actually
     // use them as the temporary layer bounds during rendering the layer, so
     // we set them as if a clip operation were performed.
-    tracker_.clipRect(*bounds, ClipOp::kIntersect, false);
+    tracker_.clipRect(bounds, ClipOp::kIntersect, false);
   }
 }
 void DisplayListBuilder::SaveLayer(const SkRect* bounds,
                                    const DlPaint* paint,
                                    const DlImageFilter* backdrop) {
+  SaveLayerOptions options;
+  SkRect temp_bounds;
+  if (bounds) {
+    options = options.with_bounds_from_caller();
+    temp_bounds = *bounds;
+  } else {
+    temp_bounds.setEmpty();
+  }
   if (paint != nullptr) {
+    options = options.with_renders_with_attributes();
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kSaveLayerWithPaintFlags);
-    saveLayer(bounds, SaveLayerOptions::kWithAttributes, backdrop);
-  } else {
-    saveLayer(bounds, SaveLayerOptions::kNoAttributes, backdrop);
   }
+  saveLayer(temp_bounds, options, backdrop);
 }
 
 void DisplayListBuilder::Translate(SkScalar tx, SkScalar ty) {
-  if (SkScalarIsFinite(tx) && SkScalarIsFinite(ty) &&
-      (tx != 0.0 || ty != 0.0)) {
+  if (std::isfinite(tx) && std::isfinite(ty) && (tx != 0.0 || ty != 0.0)) {
     checkForDeferredSave();
-    Push<TranslateOp>(0, 1, tx, ty);
+    Push<TranslateOp>(0, tx, ty);
     tracker_.translate(tx, ty);
+    if (layer_tracker_) {
+      layer_tracker_->translate(tx, ty);
+    }
   }
 }
 void DisplayListBuilder::Scale(SkScalar sx, SkScalar sy) {
-  if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
-      (sx != 1.0 || sy != 1.0)) {
+  if (std::isfinite(sx) && std::isfinite(sy) && (sx != 1.0 || sy != 1.0)) {
     checkForDeferredSave();
-    Push<ScaleOp>(0, 1, sx, sy);
+    Push<ScaleOp>(0, sx, sy);
     tracker_.scale(sx, sy);
+    if (layer_tracker_) {
+      layer_tracker_->scale(sx, sy);
+    }
   }
 }
 void DisplayListBuilder::Rotate(SkScalar degrees) {
   if (SkScalarMod(degrees, 360.0) != 0.0) {
     checkForDeferredSave();
-    Push<RotateOp>(0, 1, degrees);
+    Push<RotateOp>(0, degrees);
     tracker_.rotate(degrees);
+    if (layer_tracker_) {
+      layer_tracker_->rotate(degrees);
+    }
   }
 }
 void DisplayListBuilder::Skew(SkScalar sx, SkScalar sy) {
-  if (SkScalarIsFinite(sx) && SkScalarIsFinite(sy) &&
-      (sx != 0.0 || sy != 0.0)) {
+  if (std::isfinite(sx) && std::isfinite(sy) && (sx != 0.0 || sy != 0.0)) {
     checkForDeferredSave();
-    Push<SkewOp>(0, 1, sx, sy);
+    Push<SkewOp>(0, sx, sy);
     tracker_.skew(sx, sy);
+    if (layer_tracker_) {
+      layer_tracker_->skew(sx, sy);
+    }
   }
 }
 
@@ -613,19 +753,23 @@ void DisplayListBuilder::Skew(SkScalar sx, SkScalar sy) {
 void DisplayListBuilder::Transform2DAffine(
     SkScalar mxx, SkScalar mxy, SkScalar mxt,
     SkScalar myx, SkScalar myy, SkScalar myt) {
-  if (SkScalarsAreFinite(mxx, myx) &&
-      SkScalarsAreFinite(mxy, myy) &&
-      SkScalarsAreFinite(mxt, myt)) {
+  if (std::isfinite(mxx) && std::isfinite(myx) &&
+      std::isfinite(mxy) && std::isfinite(myy) &&
+      std::isfinite(mxt) && std::isfinite(myt)) {
     if (mxx == 1 && mxy == 0 &&
         myx == 0 && myy == 1) {
       Translate(mxt, myt);
     } else {
       checkForDeferredSave();
-      Push<Transform2DAffineOp>(0, 1,
+      Push<Transform2DAffineOp>(0,
                                 mxx, mxy, mxt,
                                 myx, myy, myt);
       tracker_.transform2DAffine(mxx, mxy, mxt,
                                  myx, myy, myt);
+      if (layer_tracker_) {
+        layer_tracker_->transform2DAffine(mxx, mxy, mxt,
+                                          myx, myy, myt);
+      }
     }
   }
 }
@@ -641,12 +785,16 @@ void DisplayListBuilder::TransformFullPerspective(
       mwx == 0 && mwy == 0 && mwz == 0 && mwt == 1) {
     Transform2DAffine(mxx, mxy, mxt,
                       myx, myy, myt);
-  } else if (SkScalarsAreFinite(mxx, mxy) && SkScalarsAreFinite(mxz, mxt) &&
-             SkScalarsAreFinite(myx, myy) && SkScalarsAreFinite(myz, myt) &&
-             SkScalarsAreFinite(mzx, mzy) && SkScalarsAreFinite(mzz, mzt) &&
-             SkScalarsAreFinite(mwx, mwy) && SkScalarsAreFinite(mwz, mwt)) {
+  } else if (std::isfinite(mxx) && std::isfinite(mxy) &&
+             std::isfinite(mxz) && std::isfinite(mxt) &&
+             std::isfinite(myx) && std::isfinite(myy) &&
+             std::isfinite(myz) && std::isfinite(myt) &&
+             std::isfinite(mzx) && std::isfinite(mzy) &&
+             std::isfinite(mzz) && std::isfinite(mzt) &&
+             std::isfinite(mwx) && std::isfinite(mwy) &&
+             std::isfinite(mwz) && std::isfinite(mwt)) {
     checkForDeferredSave();
-    Push<TransformFullPerspectiveOp>(0, 1,
+    Push<TransformFullPerspectiveOp>(0,
                                      mxx, mxy, mxz, mxt,
                                      myx, myy, myz, myt,
                                      mzx, mzy, mzz, mzt,
@@ -655,12 +803,39 @@ void DisplayListBuilder::TransformFullPerspective(
                                       myx, myy, myz, myt,
                                       mzx, mzy, mzz, mzt,
                                       mwx, mwy, mwz, mwt);
+    if (layer_tracker_) {
+      layer_tracker_->transformFullPerspective(mxx, mxy, mxz, mxt,
+                                               myx, myy, myz, myt,
+                                               mzx, mzy, mzz, mzt,
+                                               mwx, mwy, mwz, mwt);
+    }
   }
 }
 // clang-format on
 void DisplayListBuilder::TransformReset() {
   checkForDeferredSave();
-  Push<TransformResetOp>(0, 0);
+  Push<TransformResetOp>(0);
+  if (layer_tracker_) {
+    // The matrices in layer_tracker_ and tracker_ are similar, but
+    // start at a different base transform. The tracker_ potentially
+    // has some number of transform operations on it that prefix the
+    // operations accumulated in layer_tracker_. So we can't set them both
+    // to identity in parallel as they would no longer maintain their
+    // relationship to each other.
+    // Instead we reinterpret this operation as transforming by the
+    // inverse of the current transform. Doing so to tracker_ sets it
+    // to identity so we can avoid the math there, but we must do the
+    // math the long way for layer_tracker_. This becomes:
+    //   layer_tracker_.transform(tracker_.inverse());
+    if (!layer_tracker_->inverseTransform(tracker_)) {
+      // If the inverse operation failed then that means that either
+      // the matrix above the current layer was singular, or the matrix
+      // became singular while we were accumulating the current layer.
+      // In either case, we should no longer be accumulating any
+      // contents so we set the layer tracking transform to a singular one.
+      layer_tracker_->setTransform(SkMatrix::Scale(0.0f, 0.0f));
+    }
+  }
   tracker_.setIdentity();
 }
 void DisplayListBuilder::Transform(const SkMatrix* matrix) {
@@ -692,10 +867,10 @@ void DisplayListBuilder::ClipRect(const SkRect& rect,
   checkForDeferredSave();
   switch (clip_op) {
     case ClipOp::kIntersect:
-      Push<ClipIntersectRectOp>(0, 1, rect, is_aa);
+      Push<ClipIntersectRectOp>(0, rect, is_aa);
       break;
     case ClipOp::kDifference:
-      Push<ClipDifferenceRectOp>(0, 1, rect, is_aa);
+      Push<ClipDifferenceRectOp>(0, rect, is_aa);
       break;
   }
 }
@@ -713,10 +888,10 @@ void DisplayListBuilder::ClipRRect(const SkRRect& rrect,
     checkForDeferredSave();
     switch (clip_op) {
       case ClipOp::kIntersect:
-        Push<ClipIntersectRRectOp>(0, 1, rrect, is_aa);
+        Push<ClipIntersectRRectOp>(0, rrect, is_aa);
         break;
       case ClipOp::kDifference:
-        Push<ClipDifferenceRRectOp>(0, 1, rrect, is_aa);
+        Push<ClipDifferenceRRectOp>(0, rrect, is_aa);
         break;
     }
   }
@@ -749,10 +924,10 @@ void DisplayListBuilder::ClipPath(const SkPath& path,
   checkForDeferredSave();
   switch (clip_op) {
     case ClipOp::kIntersect:
-      Push<ClipIntersectPathOp>(0, 1, path, is_aa);
+      Push<ClipIntersectPathOp>(0, path, is_aa);
       break;
     case ClipOp::kDifference:
-      Push<ClipDifferencePathOp>(0, 1, path, is_aa);
+      Push<ClipDifferencePathOp>(0, path, is_aa);
       break;
   }
 }
@@ -764,7 +939,7 @@ bool DisplayListBuilder::QuickReject(const SkRect& bounds) const {
 void DisplayListBuilder::drawPaint() {
   OpResult result = PaintResult(current_, kDrawPaintFlags);
   if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
-    Push<DrawPaintOp>(0, 1);
+    Push<DrawPaintOp>(0);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
   }
@@ -776,7 +951,7 @@ void DisplayListBuilder::DrawPaint(const DlPaint& paint) {
 void DisplayListBuilder::DrawColor(DlColor color, DlBlendMode mode) {
   OpResult result = PaintResult(DlPaint(color).setBlendMode(mode));
   if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
-    Push<DrawColorOp>(0, 1, color, mode);
+    Push<DrawColorOp>(0, color, mode);
     CheckLayerOpacityCompatibility(mode);
     UpdateLayerResult(result);
   }
@@ -788,7 +963,7 @@ void DisplayListBuilder::drawLine(const SkPoint& p0, const SkPoint& p1) {
                                                         : kDrawHVLineFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
-    Push<DrawLineOp>(0, 1, p0, p1);
+    Push<DrawLineOp>(0, p0, p1);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
   }
@@ -804,7 +979,7 @@ void DisplayListBuilder::drawRect(const SkRect& rect) {
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(rect.makeSorted(), flags)) {
-    Push<DrawRectOp>(0, 1, rect);
+    Push<DrawRectOp>(0, rect);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
   }
@@ -818,7 +993,7 @@ void DisplayListBuilder::drawOval(const SkRect& bounds) {
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(bounds.makeSorted(), flags)) {
-    Push<DrawOvalOp>(0, 1, bounds);
+    Push<DrawOvalOp>(0, bounds);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
   }
@@ -834,7 +1009,7 @@ void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
     SkRect bounds = SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
                                      center.fX + radius, center.fY + radius);
     if (AccumulateOpBounds(bounds, flags)) {
-      Push<DrawCircleOp>(0, 1, center, radius);
+      Push<DrawCircleOp>(0, center, radius);
       CheckLayerOpacityCompatibility();
       UpdateLayerResult(result);
     }
@@ -856,7 +1031,7 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
     OpResult result = PaintResult(current_, flags);
     if (result != OpResult::kNoEffect &&
         AccumulateOpBounds(rrect.getBounds(), flags)) {
-      Push<DrawRRectOp>(0, 1, rrect);
+      Push<DrawRRectOp>(0, rrect);
       CheckLayerOpacityCompatibility();
       UpdateLayerResult(result);
     }
@@ -872,7 +1047,7 @@ void DisplayListBuilder::drawDRRect(const SkRRect& outer,
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(outer.getBounds(), flags)) {
-    Push<DrawDRRectOp>(0, 1, outer, inner);
+    Push<DrawDRRectOp>(0, outer, inner);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
   }
@@ -891,7 +1066,7 @@ void DisplayListBuilder::drawPath(const SkPath& path) {
                           ? AccumulateUnbounded()
                           : AccumulateOpBounds(path.getBounds(), flags);
     if (is_visible) {
-      Push<DrawPathOp>(0, 1, path);
+      Push<DrawPathOp>(0, path);
       CheckLayerOpacityHairlineCompatibility();
       UpdateLayerResult(result);
     }
@@ -915,7 +1090,7 @@ void DisplayListBuilder::drawArc(const SkRect& bounds,
   // angles are and then also consider the quadrants swept and
   // the center if specified.
   if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
-    Push<DrawArcOp>(0, 1, bounds, start, sweep, useCenter);
+    Push<DrawArcOp>(0, bounds, start, sweep, useCenter);
     if (useCenter) {
       CheckLayerOpacityHairlineCompatibility();
     } else {
@@ -972,13 +1147,13 @@ void DisplayListBuilder::drawPoints(PointMode mode,
   void* data_ptr;
   switch (mode) {
     case PointMode::kPoints:
-      data_ptr = Push<DrawPointsOp>(bytes, 1, count);
+      data_ptr = Push<DrawPointsOp>(bytes, count);
       break;
     case PointMode::kLines:
-      data_ptr = Push<DrawLinesOp>(bytes, 1, count);
+      data_ptr = Push<DrawLinesOp>(bytes, count);
       break;
     case PointMode::kPolygon:
-      data_ptr = Push<DrawPolygonOp>(bytes, 1, count);
+      data_ptr = Push<DrawPolygonOp>(bytes, count);
       break;
     default:
       FML_UNREACHABLE();
@@ -1006,7 +1181,7 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(vertices->bounds(), flags)) {
-    void* pod = Push<DrawVerticesOp>(vertices->size(), 1, mode);
+    void* pod = Push<DrawVerticesOp>(vertices->size(), mode);
     new (pod) DlVertices(vertices);
     // DrawVertices applies its colors to the paint so we have no way
     // of controlling opacity using the current paint attributes.
@@ -1038,8 +1213,8 @@ void DisplayListBuilder::drawImage(const sk_sp<DlImage> image,
                                    image->width(), image->height());
   if (AccumulateOpBounds(bounds, flags)) {
     render_with_attributes
-        ? Push<DrawImageWithAttrOp>(0, 1, image, point, sampling)
-        : Push<DrawImageOp>(0, 1, image, point, sampling);
+        ? Push<DrawImageWithAttrOp>(0, image, point, sampling)
+        : Push<DrawImageOp>(0, image, point, sampling);
     CheckLayerOpacityCompatibility(render_with_attributes);
     UpdateLayerResult(result);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
@@ -1068,8 +1243,8 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                         : kDrawImageRectFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect && AccumulateOpBounds(dst, flags)) {
-    Push<DrawImageRectOp>(0, 1, image, src, dst, sampling,
-                          render_with_attributes, constraint);
+    Push<DrawImageRectOp>(0, image, src, dst, sampling, render_with_attributes,
+                          constraint);
     CheckLayerOpacityCompatibility(render_with_attributes);
     UpdateLayerResult(result);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
@@ -1100,8 +1275,8 @@ void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect && AccumulateOpBounds(dst, flags)) {
     render_with_attributes
-        ? Push<DrawImageNineWithAttrOp>(0, 1, image, center, dst, filter)
-        : Push<DrawImageNineOp>(0, 1, image, center, dst, filter);
+        ? Push<DrawImageNineWithAttrOp>(0, image, center, dst, filter)
+        : Push<DrawImageNineOp>(0, image, center, dst, filter);
     CheckLayerOpacityCompatibility(render_with_attributes);
     UpdateLayerResult(result);
     is_ui_thread_safe_ = is_ui_thread_safe_ && image->isUIThreadSafe();
@@ -1156,21 +1331,21 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage> atlas,
     bytes += count * sizeof(DlColor);
     if (cull_rect != nullptr) {
       data_ptr =
-          Push<DrawAtlasCulledOp>(bytes, 1, atlas, count, mode, sampling, true,
+          Push<DrawAtlasCulledOp>(bytes, atlas, count, mode, sampling, true,
                                   *cull_rect, render_with_attributes);
     } else {
-      data_ptr = Push<DrawAtlasOp>(bytes, 1, atlas, count, mode, sampling, true,
+      data_ptr = Push<DrawAtlasOp>(bytes, atlas, count, mode, sampling, true,
                                    render_with_attributes);
     }
     CopyV(data_ptr, xform, count, tex, count, colors, count);
   } else {
     if (cull_rect != nullptr) {
       data_ptr =
-          Push<DrawAtlasCulledOp>(bytes, 1, atlas, count, mode, sampling, false,
+          Push<DrawAtlasCulledOp>(bytes, atlas, count, mode, sampling, false,
                                   *cull_rect, render_with_attributes);
     } else {
-      data_ptr = Push<DrawAtlasOp>(bytes, 1, atlas, count, mode, sampling,
-                                   false, render_with_attributes);
+      data_ptr = Push<DrawAtlasOp>(bytes, atlas, count, mode, sampling, false,
+                                   render_with_attributes);
     }
     CopyV(data_ptr, xform, count, tex, count);
   }
@@ -1203,7 +1378,7 @@ void DisplayListBuilder::DrawAtlas(const sk_sp<DlImage>& atlas,
 
 void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                          SkScalar opacity) {
-  if (!SkScalarIsFinite(opacity) || opacity <= SK_ScalarNearlyZero ||
+  if (!std::isfinite(opacity) || opacity <= SK_ScalarNearlyZero ||
       display_list->op_count() == 0 || display_list->bounds().isEmpty() ||
       current_layer_->is_nop_) {
     return;
@@ -1237,8 +1412,19 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
   }
 
   DlPaint current_paint = current_;
-  Push<DrawDisplayListOp>(0, 1, display_list,
+  Push<DrawDisplayListOp>(0, display_list,
                           opacity < SK_Scalar1 ? opacity : SK_Scalar1);
+
+  // This depth increment accounts for every draw call in the child
+  // DisplayList and is in addition to the implicit depth increment
+  // that was performed when we pushed the DrawDisplayListOp. The
+  // eventual dispatcher can use or ignore the implicit depth increment
+  // as it sees fit depending on whether it needs to do rendering
+  // before or after the drawDisplayList op, but it must be accounted
+  // for if the depth value accounting is to remain consistent between
+  // the recording and dispatching process.
+  depth_ += display_list->total_depth();
+
   is_ui_thread_safe_ = is_ui_thread_safe_ && display_list->isUIThreadSafe();
   // Not really necessary if the developer is interacting with us via
   // our attribute-state-less DlCanvas methods, but this avoids surprises
@@ -1278,7 +1464,7 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
   unclipped = true;
 #endif  // OS_FUCHSIA
   if (unclipped) {
-    Push<DrawTextBlobOp>(0, 1, blob, x, y);
+    Push<DrawTextBlobOp>(0, blob, x, y);
     // There is no way to query if the glyphs of a text blob overlap and
     // there are no current guarantees from either Skia or Impeller that
     // they will protect overlapping glyphs from the effects of overdraw
@@ -1317,7 +1503,7 @@ void DisplayListBuilder::drawTextFrame(
   unclipped = true;
 #endif  // OS_FUCHSIA
   if (unclipped) {
-    Push<DrawTextFrameOp>(0, 1, text_frame, x, y);
+    Push<DrawTextFrameOp>(0, text_frame, x, y);
     // There is no way to query if the glyphs of a text blob overlap and
     // there are no current guarantees from either Skia or Impeller that
     // they will protect overlapping glyphs from the effects of overdraw
@@ -1348,23 +1534,13 @@ void DisplayListBuilder::DrawShadow(const SkPath& path,
         DlCanvas::ComputeShadowBounds(path, elevation, dpr, GetTransform());
     if (AccumulateOpBounds(shadow_bounds, kDrawShadowFlags)) {
       transparent_occluder  //
-          ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation,
+          ? Push<DrawShadowTransparentOccluderOp>(0, path, color, elevation,
                                                   dpr)
-          : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
+          : Push<DrawShadowOp>(0, path, color, elevation, dpr);
       UpdateLayerOpacityCompatibility(false);
       UpdateLayerResult(result);
     }
   }
-}
-
-bool DisplayListBuilder::ComputeFilteredBounds(SkRect& bounds,
-                                               const DlImageFilter* filter) {
-  if (filter) {
-    if (!filter->map_local_bounds(bounds, bounds)) {
-      return false;
-    }
-  }
-  return true;
 }
 
 bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
@@ -1417,8 +1593,16 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
     }
   }
 
+  // Color filter does not modify bounds even if it affects transparent
+  // black because it is clipped by the "mask" of the primitive. That
+  // property only comes into play when it is applied to something like
+  // a layer.
+
   if (flags.applies_image_filter()) {
-    return ComputeFilteredBounds(bounds, current_.getImageFilter().get());
+    auto filter = current_.getImageFilterPtr();
+    if (filter && !filter->map_local_bounds(bounds, bounds)) {
+      return false;
+    }
   }
 
   return true;
@@ -1430,6 +1614,11 @@ bool DisplayListBuilder::AccumulateUnbounded() {
     return false;
   }
   accumulator()->accumulate(clip, op_index_);
+  if (current_layer_->layer_accumulator_) {
+    FML_DCHECK(layer_tracker_);
+    current_layer_->layer_accumulator_->accumulate(
+        layer_tracker_->device_cull_rect());
+  }
   return true;
 }
 
@@ -1443,9 +1632,16 @@ bool DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
 }
 bool DisplayListBuilder::AccumulateBounds(SkRect& bounds) {
   if (!bounds.isEmpty()) {
-    tracker_.mapRect(&bounds);
-    if (bounds.intersect(tracker_.device_cull_rect())) {
-      accumulator()->accumulate(bounds, op_index_);
+    SkRect device_bounds;
+    tracker_.mapRect(bounds, &device_bounds);
+    if (device_bounds.intersect(tracker_.device_cull_rect())) {
+      accumulator()->accumulate(device_bounds, op_index_);
+      if (current_layer_->layer_accumulator_) {
+        FML_DCHECK(layer_tracker_);
+        SkRect layer_bounds;
+        layer_tracker_->mapRect(bounds, &layer_bounds);
+        current_layer_->layer_accumulator_->accumulate(layer_bounds);
+      }
       return true;
     }
   }

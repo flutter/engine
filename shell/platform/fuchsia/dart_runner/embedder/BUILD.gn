@@ -5,7 +5,7 @@
 import("//build/compiled_action.gni")
 import("//flutter/common/fuchsia_config.gni")
 import("//flutter/tools/fuchsia/dart_kernel.gni")
-import("//third_party/dart/build/dart/dart_action.gni")
+import("$dart_src/build/dart/dart_action.gni")
 
 dart_kernel("shim_kernel") {
   main_dart = "shim.dart"
@@ -54,8 +54,7 @@ template("create_aot_snapshot") {
     # No asserts in debug or release product.
     # No asserts in release with flutter_profile=true (non-product)
     # Yes asserts in non-product debug.
-    if (!invoker.product &&
-        (!(flutter_runtime_mode == "profile") || is_debug)) {
+    if (!invoker.product && (flutter_runtime_mode == "debug" || is_debug)) {
       args += [ "--enable_asserts" ]
     }
     args += [ rebase_path(shim_kernel) ]

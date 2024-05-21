@@ -25,9 +25,36 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
     return _hostElement!;
   }
 
-  @JS('initialData')
-  external JSObject? get _initialData;
-  Object? get initialData => _initialData?.toObjectDeep;
+  @JS('viewConstraints')
+  external JsViewConstraints? get _viewConstraints;
+  JsViewConstraints? get viewConstraints {
+    return _viewConstraints;
+  }
+
+  external JSAny? get initialData;
+}
+
+/// The JS bindings for a [ViewConstraints] object.
+@JS()
+@anonymous
+@staticInterop
+class JsViewConstraints {
+  external factory JsViewConstraints({
+    double? minWidth,
+    double? maxWidth,
+    double? minHeight,
+    double? maxHeight,
+  });
+}
+
+/// The attributes of a [JsViewConstraints] object.
+///
+/// These attributes are expressed in *logical* pixels.
+extension JsViewConstraintsExtension on JsViewConstraints {
+  external double? get maxHeight;
+  external double? get maxWidth;
+  external double? get minHeight;
+  external double? get minWidth;
 }
 
 /// The public JS API of a running Flutter Web App.
@@ -40,10 +67,8 @@ abstract class FlutterApp {
     required RemoveFlutterViewFn removeView,
   }) =>
       FlutterApp._(
-        addView: ((JsFlutterViewOptions options) =>
-            futureToPromise(addView(options) as Future<JSAny>)).toJS,
-        removeView: ((int id) =>
-            futureToPromise(removeView(id) as Future<JSObject?>)).toJS,
+        addView: addView.toJS,
+        removeView: ((JSNumber id) => removeView(id.toDartInt)).toJS,
       );
   external factory FlutterApp._({
     required JSFunction addView,
@@ -54,9 +79,9 @@ abstract class FlutterApp {
 /// Typedef for the function that adds a new view to the app.
 ///
 /// Returns the ID of the newly created view.
-typedef AddFlutterViewFn = Future<int> Function(JsFlutterViewOptions);
+typedef AddFlutterViewFn = int Function(JsFlutterViewOptions);
 
 /// Typedef for the function that removes a view from the app.
 ///
 /// Returns the configuration used to create the view.
-typedef RemoveFlutterViewFn = Future<JsFlutterViewOptions?> Function(int);
+typedef RemoveFlutterViewFn = JsFlutterViewOptions? Function(int);

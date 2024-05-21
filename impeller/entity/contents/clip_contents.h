@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_
 
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -62,6 +62,10 @@ class ClipRestoreContents final : public Contents {
 
   ~ClipRestoreContents();
 
+  void SetRestoreHeight(size_t clip_height);
+
+  size_t GetRestoreHeight() const;
+
   /// @brief  The area on the pass texture where this clip restore will be
   ///         applied. If unset, the entire pass texture will be restored.
   ///
@@ -93,6 +97,7 @@ class ClipRestoreContents final : public Contents {
 
  private:
   std::optional<Rect> restore_coverage_;
+  size_t restore_height_ = 0;
 
   ClipRestoreContents(const ClipRestoreContents&) = delete;
 
@@ -100,3 +105,5 @@ class ClipRestoreContents final : public Contents {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_CLIP_CONTENTS_H_

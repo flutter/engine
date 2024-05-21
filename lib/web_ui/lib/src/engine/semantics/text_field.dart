@@ -4,8 +4,9 @@
 
 import 'dart:async';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
+import '../browser_detection.dart' show isIosSafari;
 import '../dom.dart';
 import '../platform_dispatcher.dart';
 import '../text_editing/text_editing.dart';
@@ -152,8 +153,6 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
       {OnChangeCallback? onChange, OnActionCallback? onAction}) {
     isEnabled = true;
     inputConfiguration = inputConfig;
-    onChange = onChange;
-    onAction = onAction;
     applyConfiguration(inputConfig);
   }
 
@@ -226,6 +225,16 @@ class TextField extends PrimaryRoleManager {
     return editableElement!;
   }
 
+  @override
+  bool focusAsRouteDefault() {
+    final DomHTMLElement? editableElement = this.editableElement;
+    if (editableElement == null) {
+      return false;
+    }
+    editableElement.focus();
+    return true;
+  }
+
   /// Timer that times when to set the location of the input text.
   ///
   /// This is only used for iOS. In iOS, virtual keyboard shifts the screen.
@@ -251,7 +260,7 @@ class TextField extends PrimaryRoleManager {
 
     // On iOS, even though the semantic text field is transparent, the cursor
     // and text highlighting are still visible. The cursor and text selection
-    // are made invisible by CSS in [FlutterViewEmbedder.reset].
+    // are made invisible by CSS in [StyleManager.attachGlobalStyles].
     // But there's one more case where iOS highlights text. That's when there's
     // and autocorrect suggestion. To disable that, we have to do the following:
     activeEditableElement
@@ -279,11 +288,11 @@ class TextField extends PrimaryRoleManager {
   }
 
   void _setupDomElement() {
-    switch (browserEngine) {
-      case BrowserEngine.blink:
-      case BrowserEngine.firefox:
+    switch (ui_web.browser.browserEngine) {
+      case ui_web.BrowserEngine.blink:
+      case ui_web.BrowserEngine.firefox:
         _initializeForBlink();
-      case BrowserEngine.webkit:
+      case ui_web.BrowserEngine.webkit:
         _initializeForWebkit();
     }
   }
@@ -331,7 +340,7 @@ class TextField extends PrimaryRoleManager {
   /// semanicsObject.element to avoid confusing VoiceOver.
   void _initializeForWebkit() {
     // Safari for desktop is also initialized as the other browsers.
-    if (operatingSystem == OperatingSystem.macOs) {
+    if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
       _initializeForBlink();
       return;
     }

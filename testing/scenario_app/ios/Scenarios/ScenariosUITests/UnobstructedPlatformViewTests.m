@@ -305,4 +305,59 @@ static const CGFloat kCompareAccuracy = 0.001;
   XCTAssertFalse(overlayView1.exists);
 }
 
+// Platform view surrounded by adjacent layers on each side should not create any overlays.
+//      +----+
+//      | B  |
+//  +---+----+---+
+//  | A | PV | C |
+//  +---+----+---+
+//      | D  |
+//      +----+
+- (void)testPlatformViewsWithAdjacentSurroundingLayersAndFractionalCoordinate {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--platform-view-surrounding-layers-fractional-coordinate" ];
+  [app launch];
+
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
+  XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
+
+  CGFloat scale = [UIScreen mainScreen].scale;
+  XCTAssertEqual(platform_view.frame.origin.x * scale, 100.5);
+  XCTAssertEqual(platform_view.frame.origin.y * scale, 100.5);
+  XCTAssertEqual(platform_view.frame.size.width * scale, 100);
+  XCTAssertEqual(platform_view.frame.size.height * scale, 100);
+
+  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCTAssertFalse(overlay.exists);
+}
+
+// Platform view partially intersect with a layer in fractional coordinate.
+// +-------+
+// |       |
+// | PV +--+--+
+// |    |     |
+// +----+  A  |
+//      |     |
+//      +-----+
+- (void)testPlatformViewsWithPartialIntersectionAndFractionalCoordinate {
+  XCUIApplication* app = [[XCUIApplication alloc] init];
+  app.launchArguments = @[ @"--platform-view-partial-intersection-fractional-coordinate" ];
+  [app launch];
+
+  XCUIElement* platform_view = app.otherElements[@"platform_view[0]"];
+  XCTAssertTrue([platform_view waitForExistenceWithTimeout:1.0]);
+
+  CGFloat scale = [UIScreen mainScreen].scale;
+  XCTAssertEqual(platform_view.frame.origin.x * scale, 0.5);
+  XCTAssertEqual(platform_view.frame.origin.y * scale, 0.5);
+  XCTAssertEqual(platform_view.frame.size.width * scale, 100);
+  XCTAssertEqual(platform_view.frame.size.height * scale, 100);
+
+  XCUIElement* overlay = app.otherElements[@"platform_view[0].overlay[0]"];
+  XCTAssert(overlay.exists);
+
+  // We want to make sure the overlay covers the edge (which is at 100.5).
+  XCTAssertEqual(CGRectGetMaxX(overlay.frame) * scale, 101);
+  XCTAssertEqual(CGRectGetMaxY(overlay.frame) * scale, 101);
+}
 @end

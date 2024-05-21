@@ -7,6 +7,7 @@
 #include <optional>
 #include <utility>
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/allocation.h"
@@ -17,19 +18,114 @@
 
 namespace impeller {
 
+namespace {
+static bool IsDepthStencilFormat(PixelFormat format) {
+  switch (format) {
+    case PixelFormat::kS8UInt:
+    case PixelFormat::kD24UnormS8Uint:
+    case PixelFormat::kD32FloatS8UInt:
+      return true;
+    case PixelFormat::kUnknown:
+    case PixelFormat::kA8UNormInt:
+    case PixelFormat::kR8UNormInt:
+    case PixelFormat::kR8G8UNormInt:
+    case PixelFormat::kR8G8B8A8UNormInt:
+    case PixelFormat::kR8G8B8A8UNormIntSRGB:
+    case PixelFormat::kB8G8R8A8UNormInt:
+    case PixelFormat::kB8G8R8A8UNormIntSRGB:
+    case PixelFormat::kR32G32B32A32Float:
+    case PixelFormat::kR16G16B16A16Float:
+    case PixelFormat::kB10G10R10XR:
+    case PixelFormat::kB10G10R10XRSRGB:
+    case PixelFormat::kB10G10R10A10XR:
+      return false;
+  }
+  FML_UNREACHABLE();
+}
+
 static TextureGLES::Type GetTextureTypeFromDescriptor(
     const TextureDescriptor& desc) {
   const auto usage = static_cast<TextureUsageMask>(desc.usage);
-  const auto render_target =
-      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+  const auto render_target = TextureUsage::kRenderTarget;
   const auto is_msaa = desc.sample_count == SampleCount::kCount4;
-  if (usage == render_target && desc.format == PixelFormat::kS8UInt) {
+  if (usage == render_target && IsDepthStencilFormat(desc.format)) {
     return is_msaa ? TextureGLES::Type::kRenderBufferMultisampled
                    : TextureGLES::Type::kRenderBuffer;
   }
   return is_msaa ? TextureGLES::Type::kTextureMultisampled
                  : TextureGLES::Type::kTexture;
 }
+
+struct TexImage2DData {
+  GLint internal_format = 0;
+  GLenum external_format = GL_NONE;
+  GLenum type = GL_NONE;
+  std::shared_ptr<const fml::Mapping> data;
+
+  explicit TexImage2DData(PixelFormat pixel_format) {
+    switch (pixel_format) {
+      case PixelFormat::kA8UNormInt:
+        internal_format = GL_ALPHA;
+        external_format = GL_ALPHA;
+        type = GL_UNSIGNED_BYTE;
+        break;
+      case PixelFormat::kR8UNormInt:
+        internal_format = GL_RED;
+        external_format = GL_RED;
+        type = GL_UNSIGNED_BYTE;
+        break;
+      case PixelFormat::kR8G8B8A8UNormInt:
+      case PixelFormat::kB8G8R8A8UNormInt:
+      case PixelFormat::kR8G8B8A8UNormIntSRGB:
+      case PixelFormat::kB8G8R8A8UNormIntSRGB:
+        internal_format = GL_RGBA;
+        external_format = GL_RGBA;
+        type = GL_UNSIGNED_BYTE;
+        break;
+      case PixelFormat::kR32G32B32A32Float:
+        internal_format = GL_RGBA;
+        external_format = GL_RGBA;
+        type = GL_FLOAT;
+        break;
+      case PixelFormat::kR16G16B16A16Float:
+        internal_format = GL_RGBA;
+        external_format = GL_RGBA;
+        type = GL_HALF_FLOAT;
+        break;
+      case PixelFormat::kS8UInt:
+        // Pure stencil textures are only available in OpenGL 4.4+, which is
+        // ~0% of mobile devices. Instead, we use a depth-stencil texture and
+        // only use the stencil component.
+        //
+        // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
+      case PixelFormat::kD24UnormS8Uint:
+        internal_format = GL_DEPTH_STENCIL;
+        external_format = GL_DEPTH_STENCIL;
+        type = GL_UNSIGNED_INT_24_8;
+        break;
+      case PixelFormat::kUnknown:
+      case PixelFormat::kD32FloatS8UInt:
+      case PixelFormat::kR8G8UNormInt:
+      case PixelFormat::kB10G10R10XRSRGB:
+      case PixelFormat::kB10G10R10XR:
+      case PixelFormat::kB10G10R10A10XR:
+        return;
+    }
+    is_valid_ = true;
+  }
+
+  TexImage2DData(PixelFormat pixel_format,
+                 std::shared_ptr<const fml::Mapping> mapping)
+      : TexImage2DData(pixel_format) {
+    data = std::move(mapping);
+  }
+
+  bool IsValid() const { return is_valid_; }
+
+ private:
+  bool is_valid_ = false;
+};
+}  // namespace
 
 HandleType ToHandleType(TextureGLES::Type type) {
   switch (type) {
@@ -44,21 +140,30 @@ HandleType ToHandleType(TextureGLES::Type type) {
 }
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor, TextureDescriptor desc)
-    : TextureGLES(std::move(reactor), desc, false) {}
+    : TextureGLES(std::move(reactor), desc, false, std::nullopt) {}
 
 TextureGLES::TextureGLES(ReactorGLES::Ref reactor,
                          TextureDescriptor desc,
                          enum IsWrapped wrapped)
-    : TextureGLES(std::move(reactor), desc, true) {}
+    : TextureGLES(std::move(reactor), desc, true, std::nullopt) {}
+
+std::shared_ptr<TextureGLES> TextureGLES::WrapFBO(ReactorGLES::Ref reactor,
+                                                  TextureDescriptor desc,
+                                                  GLuint fbo) {
+  return std::shared_ptr<TextureGLES>(
+      new TextureGLES(std::move(reactor), desc, true, fbo));
+}
 
 TextureGLES::TextureGLES(std::shared_ptr<ReactorGLES> reactor,
                          TextureDescriptor desc,
-                         bool is_wrapped)
+                         bool is_wrapped,
+                         std::optional<GLuint> fbo)
     : Texture(desc),
       reactor_(std::move(reactor)),
       type_(GetTextureTypeFromDescriptor(GetTextureDescriptor())),
       handle_(reactor_->CreateHandle(ToHandleType(type_))),
-      is_wrapped_(is_wrapped) {
+      is_wrapped_(is_wrapped),
+      wrapped_fbo_(fbo) {
   // Ensure the texture descriptor itself is valid.
   if (!GetTextureDescriptor().IsValid()) {
     VALIDATION_LOG << "Invalid texture descriptor.";
@@ -91,72 +196,6 @@ bool TextureGLES::IsValid() const {
 void TextureGLES::SetLabel(std::string_view label) {
   reactor_->SetDebugLabel(handle_, std::string{label.data(), label.size()});
 }
-
-struct TexImage2DData {
-  GLint internal_format = 0;
-  GLenum external_format = GL_NONE;
-  GLenum type = GL_NONE;
-  std::shared_ptr<const fml::Mapping> data;
-
-  explicit TexImage2DData(PixelFormat pixel_format) {
-    switch (pixel_format) {
-      case PixelFormat::kA8UNormInt:
-        internal_format = GL_ALPHA;
-        external_format = GL_ALPHA;
-        type = GL_UNSIGNED_BYTE;
-        break;
-      case PixelFormat::kR8G8B8A8UNormInt:
-      case PixelFormat::kB8G8R8A8UNormInt:
-      case PixelFormat::kR8G8B8A8UNormIntSRGB:
-      case PixelFormat::kB8G8R8A8UNormIntSRGB:
-        internal_format = GL_RGBA;
-        external_format = GL_RGBA;
-        type = GL_UNSIGNED_BYTE;
-        break;
-      case PixelFormat::kR32G32B32A32Float:
-        internal_format = GL_RGBA;
-        external_format = GL_RGBA;
-        type = GL_FLOAT;
-        break;
-      case PixelFormat::kR16G16B16A16Float:
-        internal_format = GL_RGBA;
-        external_format = GL_RGBA;
-        type = GL_HALF_FLOAT;
-        break;
-      case PixelFormat::kS8UInt:
-        // Pure stencil textures are only available in OpenGL 4.4+, which is
-        // ~0% of mobile devices. Instead, we use a depth-stencil texture and
-        // only use the stencil component.
-        //
-        // https://registry.khronos.org/OpenGL-Refpages/gl4/html/glTexImage2D.xhtml
-        internal_format = GL_DEPTH_STENCIL;
-        external_format = GL_DEPTH_STENCIL;
-        type = GL_UNSIGNED_INT_24_8;
-        break;
-      case PixelFormat::kUnknown:
-      case PixelFormat::kD24UnormS8Uint:
-      case PixelFormat::kD32FloatS8UInt:
-      case PixelFormat::kR8UNormInt:
-      case PixelFormat::kR8G8UNormInt:
-      case PixelFormat::kB10G10R10XRSRGB:
-      case PixelFormat::kB10G10R10XR:
-      case PixelFormat::kB10G10R10A10XR:
-        return;
-    }
-    is_valid_ = true;
-  }
-
-  TexImage2DData(PixelFormat pixel_format,
-                 std::shared_ptr<const fml::Mapping> mapping)
-      : TexImage2DData(pixel_format) {
-    data = std::move(mapping);
-  }
-
-  bool IsValid() const { return is_valid_; }
-
- private:
-  bool is_valid_ = false;
-};
 
 // |Texture|
 bool TextureGLES::OnSetContents(const uint8_t* contents,
@@ -197,11 +236,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     return true;
   }
 
-  if (!tex_descriptor.IsValid()) {
-    return false;
-  }
-
-  if (mapping->GetSize() < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
+  if (!tex_descriptor.IsValid() ||
+      mapping->GetSize() < tex_descriptor.GetByteSizeOfBaseMipLevel()) {
     return false;
   }
 
@@ -255,6 +291,7 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     {
       TRACE_EVENT1("impeller", "TexImage2DUpload", "Bytes",
                    std::to_string(data->data->GetSize()).c_str());
+      gl.PixelStorei(GL_UNPACK_ALIGNMENT, 1);
       gl.TexImage2D(texture_target,         // target
                     0u,                     // LOD level
                     data->internal_format,  // internal format
@@ -268,8 +305,8 @@ bool TextureGLES::OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
     }
   };
 
-  contents_initialized_ = reactor_->AddOperation(texture_upload);
-  return contents_initialized_;
+  slices_initialized_ = reactor_->AddOperation(texture_upload);
+  return slices_initialized_[0];
 }
 
 // |Texture|
@@ -307,13 +344,10 @@ static std::optional<GLenum> ToRenderBufferFormat(PixelFormat format) {
 }
 
 void TextureGLES::InitializeContentsIfNecessary() const {
-  if (!IsValid()) {
+  if (!IsValid() || slices_initialized_[0]) {
     return;
   }
-  if (contents_initialized_) {
-    return;
-  }
-  contents_initialized_ = true;
+  slices_initialized_[0] = true;
 
   if (is_wrapped_) {
     return;
@@ -419,6 +453,14 @@ bool TextureGLES::Bind() const {
   return true;
 }
 
+void TextureGLES::MarkSliceInitialized(size_t slice) const {
+  slices_initialized_[slice] = true;
+}
+
+bool TextureGLES::IsSliceInitialized(size_t slice) const {
+  return slices_initialized_[slice];
+}
+
 bool TextureGLES::GenerateMipmap() {
   if (!IsValid()) {
     return false;
@@ -457,19 +499,20 @@ TextureGLES::Type TextureGLES::GetType() const {
   return type_;
 }
 
-static GLenum ToAttachmentPoint(TextureGLES::AttachmentPoint point) {
+static GLenum ToAttachmentType(TextureGLES::AttachmentType point) {
   switch (point) {
-    case TextureGLES::AttachmentPoint::kColor0:
+    case TextureGLES::AttachmentType::kColor0:
       return GL_COLOR_ATTACHMENT0;
-    case TextureGLES::AttachmentPoint::kDepth:
+    case TextureGLES::AttachmentType::kDepth:
       return GL_DEPTH_ATTACHMENT;
-    case TextureGLES::AttachmentPoint::kStencil:
+    case TextureGLES::AttachmentType::kStencil:
       return GL_STENCIL_ATTACHMENT;
   }
 }
 
-bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
-                                             AttachmentPoint point) const {
+bool TextureGLES::SetAsFramebufferAttachment(
+    GLenum target,
+    AttachmentType attachment_type) const {
   if (!IsValid()) {
     return false;
   }
@@ -482,29 +525,30 @@ bool TextureGLES::SetAsFramebufferAttachment(GLenum target,
 
   switch (type_) {
     case Type::kTexture:
-      gl.FramebufferTexture2D(target,                    // target
-                              ToAttachmentPoint(point),  // attachment
-                              GL_TEXTURE_2D,             // textarget
-                              handle.value(),            // texture
-                              0                          // level
+      gl.FramebufferTexture2D(target,                             // target
+                              ToAttachmentType(attachment_type),  // attachment
+                              GL_TEXTURE_2D,                      // textarget
+                              handle.value(),                     // texture
+                              0                                   // level
       );
       break;
     case Type::kTextureMultisampled:
       gl.FramebufferTexture2DMultisampleEXT(
-          target,                    // target
-          ToAttachmentPoint(point),  // attachment
-          GL_TEXTURE_2D,             // textarget
-          handle.value(),            // texture
-          0,                         // level
-          4                          // samples
+          target,                             // target
+          ToAttachmentType(attachment_type),  // attachment
+          GL_TEXTURE_2D,                      // textarget
+          handle.value(),                     // texture
+          0,                                  // level
+          4                                   // samples
       );
       break;
     case Type::kRenderBuffer:
     case Type::kRenderBufferMultisampled:
-      gl.FramebufferRenderbuffer(target,                    // target
-                                 ToAttachmentPoint(point),  // attachment
-                                 GL_RENDERBUFFER,  // render-buffer target
-                                 handle.value()    // render-buffer
+      gl.FramebufferRenderbuffer(
+          target,                             // target
+          ToAttachmentType(attachment_type),  // attachment
+          GL_RENDERBUFFER,                    // render-buffer target
+          handle.value()                      // render-buffer
       );
       break;
   }

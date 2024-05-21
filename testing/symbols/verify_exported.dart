@@ -40,7 +40,7 @@ void main(List<String> arguments) {
     outPath = p.join(engineCheckoutPath, outPath);
   }
   final String buildToolsPath = arguments.length == 1
-      ? p.join(p.dirname(outPath), 'buildtools')
+      ? p.join(p.dirname(outPath), 'flutter', 'buildtools')
       : arguments[1];
 
   String platform;
@@ -194,16 +194,15 @@ int _checkLinux(String outPath, String nmPath, Iterable<String> builds) {
 }
 
 class NmEntry {
-  NmEntry._(this.address, this.type, this.name);
+  NmEntry._(this.type, this.name);
 
-  final String address;
   final String type;
   final String name;
 
   static Iterable<NmEntry> parse(String stdout) {
     return LineSplitter.split(stdout).map((String line) {
       final List<String> parts = line.split(' ');
-      return NmEntry._(parts[0], parts[1], parts.last);
+      return NmEntry._(parts[1], parts.last);
     });
   }
 

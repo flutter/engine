@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_
 
 #include <memory>
 #include <optional>
@@ -50,7 +51,8 @@ class FilterInput {
       const std::string& label,
       const ContentContext& renderer,
       const Entity& entity,
-      std::optional<Rect> coverage_limit = std::nullopt) const = 0;
+      std::optional<Rect> coverage_limit = std::nullopt,
+      int32_t mip_count = 1) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
 
@@ -92,3 +94,5 @@ class FilterInput {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_FILTERS_INPUTS_FILTER_INPUT_H_

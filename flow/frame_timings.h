@@ -123,7 +123,7 @@ class FrameTimingsRecorder {
   /// Instead of adding a `GetState` method and asserting on the result, this
   /// method prevents other logic from relying on the state.
   ///
-  /// In opt builds, this call is a no-op.
+  /// In release builds, this call is a no-op.
   void AssertInState(State state) const;
 
  private:

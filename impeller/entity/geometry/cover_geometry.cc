@@ -15,7 +15,7 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                 RenderPass& pass) const {
   auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
   constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
@@ -29,26 +29,8 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = 4,
               .index_type = IndexType::k16bit,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
-}
-
-// |Geometry|
-GeometryResult CoverGeometry::GetPositionUVBuffer(
-    Rect texture_coverage,
-    Matrix effect_transform,
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  auto rect = Rect::MakeSize(pass.GetRenderTargetSize());
-  return ComputeUVGeometryForRect(rect, texture_coverage, effect_transform,
-                                  renderer, entity, pass);
-}
-
-GeometryVertexType CoverGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
 }
 
 std::optional<Rect> CoverGeometry::GetCoverage(const Matrix& transform) const {
@@ -58,6 +40,10 @@ std::optional<Rect> CoverGeometry::GetCoverage(const Matrix& transform) const {
 bool CoverGeometry::CoversArea(const Matrix& transform,
                                const Rect& rect) const {
   return true;
+}
+
+bool CoverGeometry::CanApplyMaskFilter() const {
+  return false;
 }
 
 }  // namespace impeller

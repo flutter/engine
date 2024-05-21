@@ -11,42 +11,73 @@
 #include "flutter/assets/asset_manager.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/runtime_stage/runtime_stage.h"
-#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/ui_dart_state.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
 
+#include "impeller/core/runtime_types.h"
 #include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
-#include "third_party/tonic/dart_args.h"
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
 
 IMPLEMENT_WRAPPERTYPEINFO(ui, FragmentProgram);
 
+static std::string RuntimeStageBackendToString(
+    impeller::RuntimeStageBackend backend) {
+  switch (backend) {
+    case impeller::RuntimeStageBackend::kSkSL:
+      return "SkSL";
+    case impeller::RuntimeStageBackend::kMetal:
+      return "Metal";
+    case impeller::RuntimeStageBackend::kOpenGLES:
+      return "OpenGLES";
+    case impeller::RuntimeStageBackend::kVulkan:
+      return "Vulkan";
+  }
+}
+
 std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   FML_TRACE_EVENT("flutter", "FragmentProgram::initFromAsset", "asset",
                   asset_name);
-  std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
-                                                    ->platform_configuration()
-                                                    ->client()
-                                                    ->GetAssetManager();
+  UIDartState* ui_dart_state = UIDartState::Current();
+  std::shared_ptr<AssetManager> asset_manager =
+      ui_dart_state->platform_configuration()->client()->GetAssetManager();
+
   std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(asset_name);
   if (data == nullptr) {
     return std::string("Asset '") + asset_name + std::string("' not found");
   }
 
-  auto runtime_stage = impeller::RuntimeStage(std::move(data));
-  if (!runtime_stage.IsValid()) {
+  auto runtime_stages =
+      impeller::RuntimeStage::DecodeRuntimeStages(std::move(data));
+
+  if (runtime_stages.empty()) {
     return std::string("Asset '") + asset_name +
-           std::string("' does not contain valid shader data.");
+           std::string("' does not contain any shader data.");
+  }
+
+  impeller::RuntimeStageBackend backend =
+      ui_dart_state->GetRuntimeStageBackend();
+  std::shared_ptr<impeller::RuntimeStage> runtime_stage =
+      runtime_stages[backend];
+  if (!runtime_stage) {
+    std::ostringstream stream;
+    stream << "Asset '" << asset_name
+           << "' does not contain appropriate runtime stage data for current "
+              "backend ("
+           << RuntimeStageBackendToString(backend) << ")." << std::endl
+           << "Found stages: ";
+    for (const auto& kvp : runtime_stages) {
+      if (kvp.second) {
+        stream << RuntimeStageBackendToString(kvp.first) << " ";
+      }
+    }
+    return stream.str();
   }
 
   int sampled_image_count = 0;
   size_t other_uniforms_bytes = 0;
-  for (const auto& uniform_description : runtime_stage.GetUniforms()) {
+  for (const auto& uniform_description : runtime_stage->GetUniforms()) {
     if (uniform_description.type ==
         impeller::RuntimeUniformType::kSampledImage) {
       sampled_image_count++;
@@ -56,10 +87,19 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   }
 
   if (UIDartState::Current()->IsImpellerEnabled()) {
-    runtime_effect_ = DlRuntimeEffect::MakeImpeller(
-        std::make_unique<impeller::RuntimeStage>(std::move(runtime_stage)));
+    // Spawn (but do not block on) a task that will load the runtime stage and
+    // populate an initial shader variant.
+    auto snapshot_controller = UIDartState::Current()->GetSnapshotDelegate();
+    ui_dart_state->GetTaskRunners().GetRasterTaskRunner()->PostTask(
+        [runtime_stage, snapshot_controller]() {
+          if (!snapshot_controller) {
+            return;
+          }
+          snapshot_controller->CacheRuntimeStage(runtime_stage);
+        });
+    runtime_effect_ = DlRuntimeEffect::MakeImpeller(std::move(runtime_stage));
   } else {
-    const auto& code_mapping = runtime_stage.GetSkSLMapping();
+    const auto& code_mapping = runtime_stage->GetCodeMapping();
     auto code_size = code_mapping->GetSize();
     const char* sksl =
         reinterpret_cast<const char*>(code_mapping->GetMapping());
@@ -77,19 +117,21 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   if (Dart_IsError(ths)) {
     Dart_PropagateError(ths);
   }
+
   Dart_Handle result = Dart_SetField(ths, tonic::ToDart("_samplerCount"),
                                      Dart_NewInteger(sampled_image_count));
   if (Dart_IsError(result)) {
-    Dart_PropagateError(result);
+    return "Failed to set sampler count for fragment program.";
   }
 
   size_t rounded_uniform_bytes =
       (other_uniforms_bytes + sizeof(float) - 1) & ~(sizeof(float) - 1);
   size_t float_count = rounded_uniform_bytes / sizeof(float);
+
   result = Dart_SetField(ths, tonic::ToDart("_uniformFloatCount"),
                          Dart_NewInteger(float_count));
   if (Dart_IsError(result)) {
-    Dart_PropagateError(result);
+    return "Failed to set uniform float count for fragment program.";
   }
 
   return "";

@@ -2,19 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_GRADIENT_GENERATOR_H_
+#define FLUTTER_IMPELLER_ENTITY_CONTENTS_GRADIENT_GENERATOR_H_
 
-#include <functional>
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "flutter/impeller/core/texture.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/gradient.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/point.h"
 
 namespace impeller {
 
@@ -45,3 +42,5 @@ std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
                                            const std::vector<Scalar>& stops);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_CONTENTS_GRADIENT_GENERATOR_H_

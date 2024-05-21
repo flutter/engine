@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_
 
 #include <cstddef>
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/capabilities.h"
@@ -73,6 +75,8 @@ class CapabilitiesGLES final
 
   size_t GetMaxTextureUnits(ShaderStage stage) const;
 
+  bool IsANGLE() const;
+
   // |Capabilities|
   bool SupportsOffscreenMSAA() const override;
 
@@ -81,9 +85,6 @@ class CapabilitiesGLES final
 
   // |Capabilities|
   bool SupportsSSBO() const override;
-
-  // |Capabilities|
-  bool SupportsBufferToTextureBlits() const override;
 
   // |Capabilities|
   bool SupportsTextureToTextureBlits() const override;
@@ -115,11 +116,18 @@ class CapabilitiesGLES final
   // |Capabilities|
   PixelFormat GetDefaultDepthStencilFormat() const override;
 
+  // |Capabilities|
+  PixelFormat GetDefaultGlyphAtlasFormat() const override;
+
  private:
   bool supports_framebuffer_fetch_ = false;
   bool supports_decal_sampler_address_mode_ = false;
   bool supports_offscreen_msaa_ = false;
   bool supports_implicit_msaa_ = false;
+  bool is_angle_ = false;
+  PixelFormat default_glyph_atlas_format_ = PixelFormat::kUnknown;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_CAPABILITIES_GLES_H_

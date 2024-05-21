@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_COMMAND_BUFFER_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_COMMAND_BUFFER_GLES_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
@@ -52,3 +52,5 @@ class CommandBufferGLES final : public CommandBuffer {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_COMMAND_BUFFER_GLES_H_

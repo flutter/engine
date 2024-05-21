@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_REACTOR_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_REACTOR_GLES_H_
 
 #include <functional>
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/backend/gles/handle_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -247,8 +247,8 @@ class ReactorGLES {
   LiveHandles handles_ IPLR_GUARDED_BY(handles_mutex_);
 
   mutable Mutex workers_mutex_;
-  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_
-      IPLR_GUARDED_BY(workers_mutex_);
+  mutable std::map<WorkerID, std::weak_ptr<Worker>> workers_ IPLR_GUARDED_BY(
+      workers_mutex_);
 
   bool can_set_debug_labels_ = false;
   bool is_valid_ = false;
@@ -271,3 +271,5 @@ class ReactorGLES {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_REACTOR_GLES_H_

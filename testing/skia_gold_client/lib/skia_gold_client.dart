@@ -3,12 +3,18 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'package:crypto/crypto.dart';
 import 'package:engine_repo_tools/engine_repo_tools.dart';
+import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:process/process.dart';
+
+import 'src/errors.dart';
+import 'src/release_version.dart';
+
+export 'src/errors.dart' show SkiaGoldProcessError;
 
 const String _kGoldctlKey = 'GOLDCTL';
 const String _kPresubmitEnvName = 'GOLD_TRYJOB';
@@ -17,27 +23,120 @@ const String _kLuciEnvName = 'LUCI_CONTEXT';
 const String _skiaGoldHost = 'https://flutter-engine-gold.skia.org';
 const String _instance = 'flutter-engine';
 
-/// Whether the Skia Gold client is available and can be used in this
-/// environment.
-bool get isSkiaGoldClientAvailable => Platform.environment.containsKey(_kGoldctlKey);
-
-/// Returns true if the current environment is a LUCI builder.
-bool get isLuciEnv => Platform.environment.containsKey(_kLuciEnvName);
-
-/// Whether the current task is run during a presubmit check.
-bool get _isPresubmit => isLuciEnv && isSkiaGoldClientAvailable && Platform.environment.containsKey(_kPresubmitEnvName);
-
-/// Whether the current task is run during a postsubmit check.
-bool get _isPostsubmit => isLuciEnv && isSkiaGoldClientAvailable && !Platform.environment.containsKey(_kPresubmitEnvName);
-
-/// A client for uploading image tests and making baseline requests to the
-/// Flutter Gold Dashboard.
-class SkiaGoldClient {
+/// Uploads images and makes baseline requests to Skia Gold.
+///
+/// For an example of how to use this class, see `tool/e2e_test.dart`.
+interface class SkiaGoldClient {
   /// Creates a [SkiaGoldClient] with the given [workDirectory].
   ///
-  /// [dimensions] allows to add attributes about the environment
-  /// used to generate the screenshots.
-  SkiaGoldClient(this.workDirectory, { this.dimensions, this.verbose = false});
+  /// A set of [dimensions] can be provided to add attributes about the
+  /// environment used to generate the screenshots, which are treated as keys
+  /// for the image:
+  ///
+  /// ```dart
+  /// final SkiaGoldClient skiaGoldClient = SkiaGoldClient(
+  ///   someDir,
+  ///   dimensions: <String, String>{
+  ///     'platform': 'linux',
+  ///   },
+  /// );
+  /// ```
+  ///
+  /// The [verbose] flag is intended for use in debugging CI issues, and
+  /// produces more detailed output that some may find useful, but would be too
+  /// spammy for regular use.
+  factory SkiaGoldClient(
+    io.Directory workDirectory, {
+    Map<String, String>? dimensions,
+    bool verbose = false,
+  }) {
+    return SkiaGoldClient.forTesting(
+      workDirectory,
+      dimensions: dimensions,
+      verbose: verbose,
+    );
+  }
+
+  /// Creates a [SkiaGoldClient] for testing.
+  ///
+  /// Similar to the default constructor, but allows for dependency injection
+  /// for testing purposes:
+  ///
+  /// - [httpClient] makes requests to Skia Gold to fetch expectations.
+  /// - [processManager] launches sub-processes.
+  /// - [stderr] is where output is written for diagnostics.
+  /// - [environment] is the environment variables for the currently running
+  ///   process, and is used to determine if Skia Gold is available, and whether
+  ///   the current environment is CI, and if so, if it's pre-submit or
+  ///   post-submit.
+  /// - [engineRoot] is the root of the engine repository, which is used for
+  ///   finding the current commit hash, as well as the location of the
+  ///   `.engine-release.version` file.
+  @visibleForTesting
+  SkiaGoldClient.forTesting(
+    this.workDirectory, {
+    this.dimensions,
+    this.verbose = false,
+    io.HttpClient? httpClient,
+    ProcessManager? processManager,
+    StringSink? stderr,
+    Map<String, String>? environment,
+    Engine? engineRoot,
+  }) : httpClient = httpClient ?? io.HttpClient(),
+       process = processManager ?? const LocalProcessManager(),
+       _stderr = stderr ?? io.stderr,
+       _environment = environment ?? io.Platform.environment,
+       _engineRoot = engineRoot ?? Engine.findWithin() {
+    // Lookup the release version from the engine repository.
+    final io.File releaseVersionFile = io.File(path.join(
+      _engineRoot.flutterDir.path,
+      '.engine-release.version',
+    ));
+
+    // If the file is not found or cannot be read, we are in an invalid state.
+    try {
+      _releaseVersion = ReleaseVersion.parse(releaseVersionFile.readAsStringSync());
+    } on FormatException catch (error) {
+      throw StateError('Failed to parse release version file: $error.');
+    } on io.FileSystemException catch (error) {
+      throw StateError('Failed to read release version file: $error.');
+    }
+  }
+
+  /// The root of the engine repository.
+  final Engine _engineRoot;
+  ReleaseVersion? _releaseVersion;
+
+  /// Whether the client is available and can be used in this environment.
+  static bool isAvailable({
+    Map<String, String>? environment,
+  }) {
+    final String? result = (environment ?? io.Platform.environment)[_kGoldctlKey];
+    return result != null && result.isNotEmpty;
+  }
+
+  /// Returns true if the current environment is a LUCI builder.
+  static bool isLuciEnv({
+    Map<String, String>? environment,
+  }) {
+    return (environment ?? io.Platform.environment).containsKey(_kLuciEnvName);
+  }
+
+  /// Whether the current environment is a presubmit job.
+  bool get _isPresubmit {
+    return
+        isLuciEnv(environment: _environment) &&
+        isAvailable(environment: _environment) &&
+        _environment.containsKey(_kPresubmitEnvName);
+  }
+
+  /// Whether the current environment is a postsubmit job.
+  bool get _isPostsubmit {
+    return
+        isLuciEnv(environment: _environment) &&
+        isAvailable(environment: _environment) &&
+        !_environment.containsKey(_kPresubmitEnvName);
+  }
 
   /// Whether to print verbose output from goldctl.
   ///
@@ -45,18 +144,24 @@ class SkiaGoldClient {
   /// ordinarily be set to true.
   final bool verbose;
 
+  /// Environment variables for the currently running process.
+  final Map<String, String> _environment;
+
+  /// Where output is written for diagnostics.
+  final StringSink _stderr;
+
   /// Allows to add attributes about the environment used to generate the screenshots.
   final Map<String, String>? dimensions;
 
   /// A controller for launching sub-processes.
-  final ProcessManager process = const LocalProcessManager();
+  final ProcessManager process;
 
   /// A client for making Http requests to the Flutter Gold dashboard.
-  final HttpClient httpClient = HttpClient();
+  final io.HttpClient httpClient;
 
   /// The local [Directory] for the current test context. In this directory, the
   /// client will create image and JSON files for the `goldctl` tool to use.
-  final Directory workDirectory;
+  final io.Directory workDirectory;
 
   String get _tempPath => path.join(workDirectory.path, 'temp');
   String get _keysPath => path.join(workDirectory.path, 'keys.json');
@@ -72,9 +177,9 @@ class SkiaGoldClient {
   /// Indicates whether the client has already been authorized to communicate
   /// with the Skia Gold backend.
   bool get _isAuthorized {
-    final File authFile = File(path.join(_tempPath, 'auth_opt.json'));
+    final io.File authFile = io.File(path.join(_tempPath, 'auth_opt.json'));
 
-    if(authFile.existsSync()) {
+    if (authFile.existsSync()) {
       final String contents = authFile.readAsStringSync();
       final Map<String, dynamic> decoded = json.decode(contents) as Map<String, dynamic>;
       return !(decoded['GSUtil'] as bool);
@@ -85,10 +190,14 @@ class SkiaGoldClient {
   /// The path to the local [Directory] where the `goldctl` tool is hosted.
   String get _goldctl {
     assert(
-      isSkiaGoldClientAvailable,
+      isAvailable(environment: _environment),
       'Trying to use `goldctl` in an environment where it is not available',
     );
-    return Platform.environment[_kGoldctlKey]!;
+    final String? result = _environment[_kGoldctlKey];
+    if (result == null || result.isEmpty) {
+      throw StateError('The environment variable $_kGoldctlKey is not set.');
+    }
+    return result;
   }
 
   /// Prepares the local work space for golden file testing and calls the
@@ -107,26 +216,27 @@ class SkiaGoldClient {
       '--luci',
     ];
 
-    final ProcessResult result = await _runCommand(authCommand);
+    final io.ProcessResult result = await _runCommand(authCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
         ..writeln('Skia Gold authorization failed.')
         ..writeln('Luci environments authenticate using the file provided '
           'by LUCI_CONTEXT. There may be an error with this file or Gold '
-          'authentication.')
-        ..writeln('Debug information for Gold:')
-        ..writeln('stdout: ${result.stdout}')
-        ..writeln('stderr: ${result.stderr}');
-      throw Exception(buf.toString());
+          'authentication.');
+      throw SkiaGoldProcessError(
+        command: authCommand,
+        stdout: result.stdout.toString(),
+        stderr: result.stderr.toString(),
+        message: buf.toString(),
+      );
     } else if (verbose) {
-      print('stdout:\n${result.stdout}');
-      print('stderr:\n${result.stderr}');
+      _stderr.writeln('stdout:\n${result.stdout}');
+      _stderr.writeln('stderr:\n${result.stderr}');
     }
   }
 
-  Future<ProcessResult> _runCommand(List<String> command) {
-    print(command.join(' '));
+  Future<io.ProcessResult> _runCommand(List<String> command) {
     return process.run(command);
   }
 
@@ -135,8 +245,8 @@ class SkiaGoldClient {
   /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `init` argument initializes the current test.
   Future<void> _imgtestInit() async {
-    final File keys = File(_keysPath);
-    final File failures = File(_failuresPath);
+    final io.File keys = io.File(_keysPath);
+    final io.File failures = io.File(_failuresPath);
 
     await keys.writeAsString(_getKeysJSON());
     await failures.create();
@@ -154,30 +264,22 @@ class SkiaGoldClient {
       '--passfail',
     ];
 
-    if (imgtestInitCommand.contains(null)) {
-      final StringBuffer buf = StringBuffer()
-        ..writeln('A null argument was provided for Skia Gold imgtest init.')
-        ..writeln('Please confirm the settings of your golden file test.')
-        ..writeln('Arguments provided:');
-      imgtestInitCommand.forEach(buf.writeln);
-      throw Exception(buf.toString());
-    }
-
-    final ProcessResult result = await _runCommand(imgtestInitCommand);
+    final io.ProcessResult result = await _runCommand(imgtestInitCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
         ..writeln('Skia Gold imgtest init failed.')
         ..writeln('An error occurred when initializing golden file test with ')
-        ..writeln('goldctl.')
-        ..writeln()
-        ..writeln('Debug information for Gold:')
-        ..writeln('stdout: ${result.stdout}')
-        ..writeln('stderr: ${result.stderr}');
-      throw Exception(buf.toString());
+        ..writeln('goldctl.');
+      throw SkiaGoldProcessError(
+        command: imgtestInitCommand,
+        stdout: result.stdout.toString(),
+        stderr: result.stderr.toString(),
+        message: buf.toString(),
+      );
     } else if (verbose) {
-      print('stdout:\n${result.stdout}');
-      print('stderr:\n${result.stderr}');
+      _stderr.writeln('stdout:\n${result.stdout}');
+      _stderr.writeln('stderr:\n${result.stderr}');
     }
 
   }
@@ -195,7 +297,7 @@ class SkiaGoldClient {
   /// [pixelColorDelta] defines maximum acceptable difference in RGB channels of
   /// each pixel, such that:
   ///
-  /// ```
+  /// ```dart
   /// bool isSame(Color image, Color golden, int pixelDeltaThreshold) {
   ///   return abs(image.r - golden.r)
   ///     + abs(image.g - golden.g)
@@ -207,14 +309,32 @@ class SkiaGoldClient {
   /// determined by the [pixelColorDelta] parameter. It's in the range [0.0,
   /// 1.0] and defaults to 0.01. A value of 0.01 means that 1% of the pixels are
   /// allowed to be different.
+  ///
+  /// ## Release Testing
+  ///
+  /// In release branches, we add a unique test suffix to the test name. For
+  /// example "testName" -> "testName_Release_3_21", based on the version in the
+  /// `.engine-release.version` file at the root of the engine repository.
+  ///
+  /// See <../README.md#release-testing> for more information.
   Future<void> addImg(
     String testName,
-    File goldenFile, {
+    io.File goldenFile, {
     double differentPixelsRate = 0.01,
     int pixelColorDelta = 0,
     required int screenshotSize,
   }) async {
     assert(_isPresubmit || _isPostsubmit);
+
+    // Clean the test name to remove the file extension.
+    testName = path.basenameWithoutExtension(testName);
+
+    // In release branches, we add a unique test suffix to the test name.
+    // For example "testName" -> "testName_Release_3_21".
+    // See ../README.md#release-testing for more information.
+    if (_releaseVersion case final ReleaseVersion v) {
+      testName = '${testName}_Release_${v.major}_${v.minor}';
+    }
 
     if (_isPresubmit) {
       await _tryjobAdd(testName, goldenFile, screenshotSize, pixelColorDelta, differentPixelsRate);
@@ -235,7 +355,7 @@ class SkiaGoldClient {
   /// comparison being evaluated.
   Future<void> _imgtestAdd(
     String testName,
-    File goldenFile,
+    io.File goldenFile,
     int screenshotSize,
     int pixelDeltaThreshold,
     double maxDifferentPixelsRate,
@@ -244,25 +364,42 @@ class SkiaGoldClient {
 
     final List<String> imgtestCommand = <String>[
       _goldctl,
-      'imgtest', 'add',
-      if (verbose) '--verbose',
-      '--work-dir', _tempPath,
-      '--test-name', cleanTestName(testName),
-      '--png-file', goldenFile.path,
+      'imgtest',
+      'add',
+      if (verbose)
+      '--verbose',
+      '--work-dir',
+      _tempPath,
+      '--test-name',
+      testName,
+      '--png-file',
+      goldenFile.path,
+      // Otherwise post submit will not fail.
+      '--passfail',
       ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, maxDifferentPixelsRate),
     ];
 
-    final ProcessResult result = await _runCommand(imgtestCommand);
+    final io.ProcessResult result = await _runCommand(imgtestCommand);
 
     if (result.exitCode != 0) {
-      // We do not want to throw for non-zero exit codes here, as an intentional
-      // change or new golden file test expect non-zero exit codes. Logging here
-      // is meant to inform when an unexpected result occurs.
-      print('goldctl imgtest add stdout: ${result.stdout}');
-      print('goldctl imgtest add stderr: ${result.stderr}');
+      final StringBuffer buf = StringBuffer()
+        ..writeln('Skia Gold received an unapproved image in post-submit ')
+        ..writeln('testing. Golden file images in flutter/engine are triaged ')
+        ..writeln('in pre-submit during code review for the given PR.')
+        ..writeln()
+        ..writeln('Visit https://flutter-engine-gold.skia.org/ to view and approve ')
+        ..writeln('the image(s), or revert the associated change. For more ')
+        ..writeln('information, visit the wiki: ')
+        ..writeln('https://github.com/flutter/flutter/wiki/Writing-a-golden-file-test-for-package:flutter');
+      throw SkiaGoldProcessError(
+        command: imgtestCommand,
+        stdout: result.stdout.toString(),
+        stderr: result.stderr.toString(),
+        message: buf.toString(),
+      );
     } else if (verbose) {
-      print('stdout:\n${result.stdout}');
-      print('stderr:\n${result.stderr}');
+      _stderr.writeln('stdout:\n${result.stdout}');
+      _stderr.writeln('stderr:\n${result.stderr}');
     }
   }
 
@@ -271,8 +408,8 @@ class SkiaGoldClient {
   /// The `imgtest` command collects and uploads test results to the Skia Gold
   /// backend, the `init` argument initializes the current tryjob.
   Future<void> _tryjobInit() async {
-    final File keys = File(_keysPath);
-    final File failures = File(_failuresPath);
+    final io.File keys = io.File(_keysPath);
+    final io.File failures = io.File(_failuresPath);
 
     await keys.writeAsString(_getKeysJSON());
     await failures.create();
@@ -290,33 +427,25 @@ class SkiaGoldClient {
       '--passfail',
       '--crs', 'github',
       '--patchset_id', commitHash,
-      ...getCIArguments(),
+      ..._getCIArguments(),
     ];
 
-    if (tryjobInitCommand.contains(null)) {
-      final StringBuffer buf = StringBuffer()
-        ..writeln('A null argument was provided for Skia Gold tryjob init.')
-        ..writeln('Please confirm the settings of your golden file test.')
-        ..writeln('Arguments provided:');
-      tryjobInitCommand.forEach(buf.writeln);
-      throw Exception(buf.toString());
-    }
-
-    final ProcessResult result = await _runCommand(tryjobInitCommand);
+    final io.ProcessResult result = await _runCommand(tryjobInitCommand);
 
     if (result.exitCode != 0) {
       final StringBuffer buf = StringBuffer()
         ..writeln('Skia Gold tryjobInit failure.')
         ..writeln('An error occurred when initializing golden file tryjob with ')
-        ..writeln('goldctl.')
-        ..writeln()
-        ..writeln('Debug information for Gold:')
-        ..writeln('stdout: ${result.stdout}')
-        ..writeln('stderr: ${result.stderr}');
-      throw Exception(buf.toString());
+        ..writeln('goldctl.');
+      throw SkiaGoldProcessError(
+        command: tryjobInitCommand,
+        stdout: result.stdout.toString(),
+        stderr: result.stderr.toString(),
+        message: buf.toString(),
+      );
     } else if (verbose) {
-      print('stdout:\n${result.stdout}');
-      print('stderr:\n${result.stderr}');
+      _stderr.writeln('stdout:\n${result.stdout}');
+      _stderr.writeln('stderr:\n${result.stderr}');
     }
   }
 
@@ -331,7 +460,7 @@ class SkiaGoldClient {
   /// comparison being evaluated.
   Future<void> _tryjobAdd(
     String testName,
-    File goldenFile,
+    io.File goldenFile,
     int screenshotSize,
     int pixelDeltaThreshold,
     double differentPixelsRate,
@@ -340,32 +469,51 @@ class SkiaGoldClient {
 
     final List<String> tryjobCommand = <String>[
       _goldctl,
-      'imgtest', 'add',
+      'imgtest',
+      'add',
       if (verbose) '--verbose',
-      '--work-dir', _tempPath,
-      '--test-name', cleanTestName(testName),
-      '--png-file', goldenFile.path,
+      '--work-dir',
+      _tempPath,
+      '--test-name',
+      testName,
+      '--png-file',
+      goldenFile.path,
       ..._getMatchingArguments(testName, screenshotSize, pixelDeltaThreshold, differentPixelsRate),
     ];
 
-    final ProcessResult result = await _runCommand(tryjobCommand);
-
+    final io.ProcessResult result = await _runCommand(tryjobCommand);
     final String resultStdout = result.stdout.toString();
-    if (result.exitCode != 0 &&
-      !(resultStdout.contains('Untriaged') || resultStdout.contains('negative image'))) {
-      final StringBuffer buf = StringBuffer()
-        ..writeln('Unexpected Gold tryjobAdd failure.')
-        ..writeln('Tryjob execution for golden file test $testName failed for')
-        ..writeln('a reason unrelated to pixel comparison.')
-        ..writeln()
-        ..writeln('Debug information for Gold:')
-        ..writeln('stdout: ${result.stdout}')
-        ..writeln('stderr: ${result.stderr}')
-        ..writeln();
-      throw Exception(buf.toString());
-    } else if (verbose) {
-      print('stdout:\n${result.stdout}');
-      print('stderr:\n${result.stderr}');
+    if (result.exitCode == 0) {
+      // In "verbose" (debugging) mode, print the output of the tryjob anyway.
+      if (verbose) {
+        _stderr.writeln('stdout:\n${result.stdout}');
+        _stderr.writeln('stderr:\n${result.stderr}');
+      }
+    } else {
+      // Neither of these conditions are considered failures during tryjobs.
+      final bool isUntriaged = resultStdout.contains('Untriaged');
+      final bool isNegative = resultStdout.contains('negative image');
+      if (!isUntriaged && !isNegative) {
+        final StringBuffer buf = StringBuffer()
+          ..writeln('Unexpected Gold tryjobAdd failure.')
+          ..writeln('Tryjob execution for golden file test $testName failed for')
+          ..writeln('a reason unrelated to pixel comparison.');
+        throw SkiaGoldProcessError(
+          command: tryjobCommand,
+          stdout: resultStdout,
+          stderr: result.stderr.toString(),
+          message: buf.toString(),
+        );
+      }
+      // ... but we want to know about them anyway.
+      // See https://github.com/flutter/flutter/issues/145219.
+      // TODO(matanlurey): Update the documentation to reflect the new behavior.
+      if (isUntriaged) {
+        _stderr
+          ..writeln('NOTE: Untriaged image detected in tryjob.')
+          ..writeln('Triage should be required by the "Flutter Gold" check')
+          ..writeln('stdout:\n$resultStdout');
+      }
     }
   }
 
@@ -398,64 +546,40 @@ class SkiaGoldClient {
   Future<String?> getExpectationForTest(String testName) async {
     late String? expectation;
     final String traceID = getTraceID(testName);
-    await HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
-      final Uri requestForExpectations = Uri.parse(
-        '$_skiaGoldHost/json/v2/latestpositivedigest/$traceID'
-      );
-      late String rawResponse;
-      try {
-        final HttpClientRequest request = await httpClient.getUrl(requestForExpectations);
-        final HttpClientResponse response = await request.close();
-        rawResponse = await utf8.decodeStream(response);
-        final dynamic jsonResponse = json.decode(rawResponse);
-        if (jsonResponse is! Map<String, dynamic>) {
-          throw const FormatException('Skia gold expectations do not match expected format.');
-        }
-        expectation = jsonResponse['digest'] as String?;
-      } on FormatException catch (error) {
-        print(
-          'Formatting error detected requesting expectations from Flutter Gold.\n'
-          'error: $error\n'
-          'url: $requestForExpectations\n'
-          'response: $rawResponse'
-        );
-        rethrow;
+    final Uri requestForExpectations = Uri.parse(
+      '$_skiaGoldHost/json/v2/latestpositivedigest/$traceID'
+    );
+    late String rawResponse;
+    try {
+      final io.HttpClientRequest request = await httpClient.getUrl(requestForExpectations);
+      final io.HttpClientResponse response = await request.close();
+      rawResponse = await utf8.decodeStream(response);
+      final dynamic jsonResponse = json.decode(rawResponse);
+      if (jsonResponse is! Map<String, dynamic>) {
+        throw const FormatException('Skia gold expectations do not match expected format.');
       }
-    },
-      SkiaGoldHttpOverrides(),
-    );
-    return expectation;
-  }
-
-  /// Returns a list of bytes representing the golden image retrieved from the
-  /// Skia Gold dashboard.
-  ///
-  /// The provided image hash represents an expectation from Skia Gold.
-  Future<List<int>>getImageBytes(String imageHash) async {
-    final List<int> imageBytes = <int>[];
-    await HttpOverrides.runWithHttpOverrides<Future<void>>(() async {
-      final Uri requestForImage = Uri.parse(
-        '$_skiaGoldHost/img/images/$imageHash.png',
+      expectation = jsonResponse['digest'] as String?;
+    } on FormatException catch (error) {
+      _stderr.writeln(
+        'Formatting error detected requesting expectations from Flutter Gold.\n'
+        'error: $error\n'
+        'url: $requestForExpectations\n'
+        'response: $rawResponse'
       );
-
-      final HttpClientRequest request = await httpClient.getUrl(requestForImage);
-      final HttpClientResponse response = await request.close();
-      await response.forEach((List<int> bytes) => imageBytes.addAll(bytes));
-    },
-      SkiaGoldHttpOverrides(),
-    );
-    return imageBytes;
+      rethrow;
+    }
+    return expectation;
   }
 
   /// Returns the current commit hash of the engine repository.
   Future<String> _getCurrentCommit() async {
-    final String engineCheckout = Engine.findWithin().flutterDir.path;
-    final ProcessResult revParse = await process.run(
+    final String engineCheckout = _engineRoot.flutterDir.path;
+    final io.ProcessResult revParse = await process.run(
       <String>['git', 'rev-parse', 'HEAD'],
       workingDirectory: engineCheckout,
     );
     if (revParse.exitCode != 0) {
-      throw Exception('Current commit of the engine can not be found from path $engineCheckout.');
+      throw StateError('Current commit of the engine can not be found from path $engineCheckout.');
     }
     return (revParse.stdout as String).trim();
   }
@@ -468,7 +592,7 @@ class SkiaGoldClient {
   Map<String, dynamic> _getKeys() {
     final Map<String, dynamic> initialKeys = <String, dynamic>{
       'CI': 'luci',
-      'Platform': Platform.operatingSystem,
+      'Platform': io.Platform.operatingSystem,
     };
     if (dimensions != null) {
       initialKeys.addAll(dimensions!);
@@ -481,17 +605,11 @@ class SkiaGoldClient {
     return json.encode(_getKeys());
   }
 
-  /// Removes the file extension from the [fileName] to represent the test name
-  /// properly.
-  String cleanTestName(String fileName) {
-    return fileName.split(path.extension(fileName))[0];
-  }
-
   /// Returns a list of arguments for initializing a tryjob based on the testing
   /// environment.
-  List<String> getCIArguments() {
-    final String jobId = Platform.environment['LOGDOG_STREAM_PREFIX']!.split('/').last;
-    final List<String> refs = Platform.environment['GOLD_TRYJOB']!.split('/');
+  List<String> _getCIArguments() {
+    final String jobId = _environment['LOGDOG_STREAM_PREFIX']!.split('/').last;
+    final List<String> refs = _environment['GOLD_TRYJOB']!.split('/');
     final String pullRequest = refs[refs.length - 2];
 
     return <String>[
@@ -504,6 +622,7 @@ class SkiaGoldClient {
   /// Returns a trace id based on the current testing environment to lookup
   /// the latest positive digest on Skia Gold with a hex-encoded md5 hash of
   /// the image keys.
+  @visibleForTesting
   String getTraceID(String testName) {
     final Map<String, dynamic> keys = <String, dynamic>{
       ..._getKeys(),
@@ -515,6 +634,3 @@ class SkiaGoldClient {
     return md5Sum;
   }
 }
-
-/// Used to make HttpRequests during testing.
-class SkiaGoldHttpOverrides extends HttpOverrides { }

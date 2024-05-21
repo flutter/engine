@@ -2,14 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_SURFACE_H_
+#define FLUTTER_IMPELLER_RENDERER_SURFACE_H_
 
-#include <functional>
-#include <memory>
-
-#include "flutter/fml/macros.h"
-#include "impeller/renderer/context.h"
-#include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 
 namespace impeller {
@@ -42,3 +37,5 @@ class Surface {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_SURFACE_H_

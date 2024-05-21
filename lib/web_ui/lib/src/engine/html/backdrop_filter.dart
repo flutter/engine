@@ -3,13 +3,13 @@
 // found in the LICENSE file.
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../color_filter.dart';
 import '../dom.dart';
-import '../embedder.dart';
 import '../util.dart';
 import '../vector_math.dart';
+import 'resource_manager.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
 import 'surface_stats.dart';
@@ -66,7 +66,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
-    flutterViewEmbedder.removeResource(_svgFilter);
+    ResourceManager.instance.removeResource(_svgFilter);
     _svgFilter = null;
     _childContainer = null;
     _filterElement = null;
@@ -80,7 +80,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     } else {
       backendFilter = filter as EngineImageFilter;
     }
-    flutterViewEmbedder.removeResource(_svgFilter);
+    ResourceManager.instance.removeResource(_svgFilter);
     _svgFilter = null;
     if (_previousTransform != transform) {
       _invertedTransform = Matrix4.inverted(transform!);
@@ -121,7 +121,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       ..top = '${top}px'
       ..width = '${width}px'
       ..height = '${height}px';
-    if (browserEngine == BrowserEngine.firefox) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
       // For FireFox for now render transparent black background.
       // TODO(ferhat): Switch code to use filter when
       // See https://caniuse.com/#feat=css-backdrop-filter.
@@ -142,7 +142,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // CSS uses pixel radius for blur. Flutter & SVG use sigma parameters. For
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
-      if (browserEngine == BrowserEngine.webkit) {
+      if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
         setElementStyle(_filterElement!, '-webkit-backdrop-filter',
             backendFilter.filterAttribute);
       }

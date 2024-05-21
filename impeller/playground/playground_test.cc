@@ -15,6 +15,16 @@ PlaygroundTest::PlaygroundTest()
 
 PlaygroundTest::~PlaygroundTest() = default;
 
+namespace {
+bool DoesSupportWideGamutTests() {
+#ifdef __arm64__
+  return true;
+#else
+  return false;
+#endif
+}
+}  // namespace
+
 void PlaygroundTest::SetUp() {
   if (!Playground::SupportsBackend(GetParam())) {
     GTEST_SKIP_("Playground doesn't support this backend type.");
@@ -28,7 +38,19 @@ void PlaygroundTest::SetUp() {
 
   ImpellerValidationErrorsSetFatal(true);
 
-  SetupContext(GetParam());
+  // Test names that end with "WideGamut" will render with wide gamut support.
+  std::string test_name = flutter::testing::GetCurrentTestName();
+  PlaygroundSwitches switches = switches_;
+  switches.enable_wide_gamut =
+      test_name.find("WideGamut/") != std::string::npos;
+
+  if (switches.enable_wide_gamut && (GetParam() != PlaygroundBackend::kMetal ||
+                                     !DoesSupportWideGamutTests())) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+    return;
+  }
+
+  SetupContext(GetParam(), switches);
   SetupWindow();
 }
 
@@ -46,28 +68,37 @@ std::unique_ptr<fml::Mapping> PlaygroundTest::OpenAssetAsMapping(
   return flutter::testing::OpenFixtureAsMapping(asset_name);
 }
 
-std::shared_ptr<RuntimeStage> PlaygroundTest::OpenAssetAsRuntimeStage(
+RuntimeStage::Map PlaygroundTest::OpenAssetAsRuntimeStage(
     const char* asset_name) const {
-  auto fixture = flutter::testing::OpenFixtureAsMapping(asset_name);
+  const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping(asset_name);
   if (!fixture || fixture->GetSize() == 0) {
-    return nullptr;
+    return {};
   }
-  auto stage = std::make_unique<RuntimeStage>(std::move(fixture));
-  if (!stage->IsValid()) {
-    return nullptr;
-  }
-  return stage;
-}
-
-static std::string FormatWindowTitle(const std::string& test_name) {
-  std::stringstream stream;
-  stream << "Impeller Playground for '" << test_name << "' (Press ESC to quit)";
-  return stream.str();
+  return RuntimeStage::DecodeRuntimeStages(fixture);
 }
 
 // |Playground|
 std::string PlaygroundTest::GetWindowTitle() const {
-  return FormatWindowTitle(flutter::testing::GetCurrentTestName());
+  std::stringstream stream;
+  stream << "Impeller Playground for '"
+         << flutter::testing::GetCurrentTestName() << "' ";
+  switch (GetBackend()) {
+    case PlaygroundBackend::kMetal:
+      break;
+    case PlaygroundBackend::kOpenGLES:
+      if (switches_.use_angle) {
+        stream << " (Angle) ";
+      }
+      break;
+    case PlaygroundBackend::kVulkan:
+      if (switches_.use_swiftshader) {
+        stream << " (SwiftShader) ";
+      }
+      break;
+  }
+  stream << " (Press ESC to quit)";
+  return stream.str();
 }
 
 // |Playground|

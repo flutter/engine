@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_
 
 #include <map>
 #include <string>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "flutter/impeller/golden_tests/working_directory.h"
 
 namespace impeller {
@@ -51,3 +51,5 @@ class GoldenDigest {
 };
 }  // namespace testing
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_DIGEST_H_

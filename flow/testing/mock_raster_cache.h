@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLOW_TESTING_MOCK_RASTER_CACHE_H_
-#define FLOW_TESTING_MOCK_RASTER_CACHE_H_
+#ifndef FLUTTER_FLOW_TESTING_MOCK_RASTER_CACHE_H_
+#define FLUTTER_FLOW_TESTING_MOCK_RASTER_CACHE_H_
 
 #include <vector>
 #include "flutter/flow/layers/layer.h"
@@ -31,7 +31,7 @@ class MockRasterCacheResult : public RasterCacheResult {
 
   void draw(DlCanvas& canvas,
             const DlPaint* paint = nullptr,
-            bool preserve_rtree = false) const override{};
+            bool preserve_rtree = false) const override {};
 
   SkISize image_dimensions() const override {
     return SkSize::Make(device_rect_.width(), device_rect_.height()).toCeil();
@@ -149,4 +149,4 @@ bool RasterCacheItemTryToRasterCache(
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLOW_TESTING_MOCK_RASTER_CACHE_H_
+#endif  // FLUTTER_FLOW_TESTING_MOCK_RASTER_CACHE_H_

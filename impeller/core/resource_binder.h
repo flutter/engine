@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_
+#define FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_
 
 #include <memory>
 
@@ -23,15 +24,19 @@ struct ResourceBinder {
   virtual ~ResourceBinder() = default;
 
   virtual bool BindResource(ShaderStage stage,
+                            DescriptorType type,
                             const ShaderUniformSlot& slot,
                             const ShaderMetadata& metadata,
                             BufferView view) = 0;
 
   virtual bool BindResource(ShaderStage stage,
+                            DescriptorType type,
                             const SampledImageSlot& slot,
                             const ShaderMetadata& metadata,
                             std::shared_ptr<const Texture> texture,
-                            std::shared_ptr<const Sampler> sampler) = 0;
+                            const std::unique_ptr<const Sampler>& sampler) = 0;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_RESOURCE_BINDER_H_

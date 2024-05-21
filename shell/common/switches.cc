@@ -17,7 +17,7 @@
 // Include once for the default enum definition.
 #include "flutter/shell/common/switches.h"
 
-#undef SHELL_COMMON_SWITCHES_H_
+#undef FLUTTER_SHELL_COMMON_SWITCHES_H_
 
 struct SwitchDesc {
   flutter::Switch sw;
@@ -62,9 +62,8 @@ static const std::string kAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
-    "--null_assertions",
-    "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
+    "--enable-asserts",
 };
 // clang-format on
 
@@ -459,7 +458,7 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
     if (command_line.GetOptionValue(FlagForSwitch(Switch::ImpellerBackend),
                                     &impeller_backend_value)) {
       if (!impeller_backend_value.empty()) {
-        settings.impeller_backend = impeller_backend_value;
+        settings.requested_rendering_backend = impeller_backend_value;
       }
     }
   }
@@ -468,6 +467,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
       command_line.HasOption(FlagForSwitch(Switch::EnableVulkanValidation));
   settings.enable_opengl_gpu_tracing =
       command_line.HasOption(FlagForSwitch(Switch::EnableOpenGLGPUTracing));
+  settings.enable_vulkan_gpu_tracing =
+      command_line.HasOption(FlagForSwitch(Switch::EnableVulkanGPUTracing));
 
   settings.enable_embedder_api =
       command_line.HasOption(FlagForSwitch(Switch::EnableEmbedderAPI));
@@ -518,27 +519,8 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
         std::stoi(resource_cache_max_bytes_threshold);
   }
 
-  if (command_line.HasOption(FlagForSwitch(Switch::MsaaSamples))) {
-    std::string msaa_samples;
-    command_line.GetOptionValue(FlagForSwitch(Switch::MsaaSamples),
-                                &msaa_samples);
-    if (msaa_samples == "0") {
-      settings.msaa_samples = 0;
-    } else if (msaa_samples == "1") {
-      settings.msaa_samples = 1;
-    } else if (msaa_samples == "2") {
-      settings.msaa_samples = 2;
-    } else if (msaa_samples == "4") {
-      settings.msaa_samples = 4;
-    } else if (msaa_samples == "8") {
-      settings.msaa_samples = 8;
-    } else if (msaa_samples == "16") {
-      settings.msaa_samples = 16;
-    } else {
-      FML_DLOG(ERROR) << "Invalid value for --msaa-samples: '" << msaa_samples
-                      << "' (expected 0, 1, 2, 4, 8, or 16).";
-    }
-  }
+  settings.enable_platform_isolates =
+      command_line.HasOption(FlagForSwitch(Switch::EnablePlatformIsolates));
 
   return settings;
 }

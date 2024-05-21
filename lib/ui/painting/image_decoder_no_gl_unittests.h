@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_LIB_UI_PAINTING_IMAGE_DECODER_NO_GL_UNITTESTS_H_
+#define FLUTTER_LIB_UI_PAINTING_IMAGE_DECODER_NO_GL_UNITTESTS_H_
+
 #include <stdint.h>
 
 #include "flutter/impeller/core/allocator.h"
@@ -41,12 +44,6 @@ class TestImpellerDeviceBuffer : public DeviceBuffer {
   ~TestImpellerDeviceBuffer() { free(bytes_); }
 
  private:
-  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
-                                     const TextureDescriptor& descriptor,
-                                     uint16_t row_bytes) const override {
-    return nullptr;
-  }
-
   bool SetLabel(const std::string& label) override { return true; }
 
   bool SetLabel(const std::string& label, Range range) override { return true; }
@@ -99,3 +96,5 @@ float DecodeBGR10(uint32_t x);
 
 }  // namespace testing
 }  // namespace flutter
+
+#endif  // FLUTTER_LIB_UI_PAINTING_IMAGE_DECODER_NO_GL_UNITTESTS_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
+#define FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_
 
 #include <cstdint>
 #include <functional>
@@ -13,6 +14,7 @@
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
@@ -20,7 +22,23 @@
 namespace impeller {
 
 class ContentContext;
-class EntityPassClipRecorder;
+
+/// Specifies how much to trust the bounds rectangle provided for a list
+/// of contents. Used by both |EntityPass| and |Canvas::SaveLayer|.
+enum class ContentBoundsPromise {
+  /// @brief The caller makes no claims related to the size of the bounds.
+  kUnknown,
+
+  /// @brief The caller claims the bounds are a reasonably tight estimate
+  ///        of the coverage of the contents and should contain all of the
+  ///        contents.
+  kContainsContents,
+
+  /// @brief The caller claims the bounds are a subset of an estimate of
+  ///        the reasonably tight bounds but likely clips off some of the
+  ///        contents.
+  kMayClipContents,
+};
 
 class EntityPass {
  public:
@@ -35,19 +53,10 @@ class EntityPass {
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
 
-  static const std::string kCaptureDocumentName;
-
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
       Entity::RenderingMode rendering_mode)>;
-
-  struct ClipCoverageLayer {
-    std::optional<Rect> coverage;
-    size_t clip_depth;
-  };
-
-  using ClipCoverageStack = std::vector<ClipCoverageLayer>;
 
   EntityPass();
 
@@ -62,18 +71,36 @@ class EntityPass {
   ///         For consistency with Skia, we effectively treat this like a
   ///         rectangle clip by forcing the subpass texture size to never exceed
   ///         it.
-  void SetBoundsLimit(std::optional<Rect> bounds_limit);
+  ///
+  ///         The entity pass will assume that these bounds cause a clipping
+  ///         effect on the layer unless this call is followed up with a
+  ///         call to |SetBoundsClipsContent()| specifying otherwise.
+  void SetBoundsLimit(
+      std::optional<Rect> bounds_limit,
+      ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown);
 
   /// @brief  Get the bounds limit, which is provided by the user when creating
   ///         a SaveLayer.
   std::optional<Rect> GetBoundsLimit() const;
 
-  size_t GetSubpassesDepth() const;
+  /// @brief  Indicates if the bounds limit set using |SetBoundsLimit()|
+  ///         might clip the contents of the pass.
+  bool GetBoundsLimitMightClipContent() const;
 
-  std::unique_ptr<EntityPass> Clone() const;
+  /// @brief  Indicates if the bounds limit set using |SetBoundsLimit()|
+  ///         is a reasonably tight estimate of the bounds of the contents.
+  bool GetBoundsLimitIsSnug() const;
+
+  size_t GetSubpassesDepth() const;
 
   /// @brief Add an entity to the current entity pass.
   void AddEntity(Entity entity);
+
+  void PushClip(Entity entity);
+
+  void PopClips(size_t num_clips, uint64_t depth);
+
+  void PopAllClips(uint64_t depth);
 
   void SetElements(std::vector<Element> elements);
 
@@ -81,13 +108,6 @@ class EntityPass {
   /// @brief  Appends a given pass as a subpass.
   ///
   EntityPass* AddSubpass(std::unique_ptr<EntityPass> pass);
-
-  //----------------------------------------------------------------------------
-  /// @brief  Merges a given pass into this pass. Useful for drawing
-  ///         pre-recorded pictures that don't require rendering into a separate
-  ///         subpass.
-  ///
-  void AddSubpassInline(std::unique_ptr<EntityPass> pass);
 
   EntityPass* GetSuperpass() const;
 
@@ -99,6 +119,9 @@ class EntityPass {
   ///         order is depth-first. Whenever a subpass elements is encountered,
   ///         it's included in the stream before its children.
   void IterateAllElements(const std::function<bool(Element&)>& iterator);
+
+  void IterateAllElements(
+      const std::function<bool(const Element&)>& iterator) const;
 
   //----------------------------------------------------------------------------
   /// @brief  Iterate all entities in this pass, recursively including entities
@@ -129,17 +152,31 @@ class EntityPass {
 
   void SetTransform(Matrix transform);
 
+  void SetClipHeight(size_t clip_height);
+
+  size_t GetClipHeight() const;
+
   void SetClipDepth(size_t clip_depth);
 
-  size_t GetClipDepth();
+  uint32_t GetClipDepth() const;
 
   void SetBlendMode(BlendMode blend_mode);
 
-  Color GetClearColor(ISize size = ISize::Infinite()) const;
+  /// @brief Return the premultiplied clear color of the pass entities, if any.
+  std::optional<Color> GetClearColor(ISize size = ISize::Infinite()) const;
+
+  /// @brief Return the premultiplied clear color of the pass entities.
+  ///
+  /// If the entity pass has no clear color, this will return transparent black.
+  Color GetClearColorOrDefault(ISize size = ISize::Infinite()) const;
 
   void SetBackdropFilter(BackdropFilterProc proc);
 
-  void SetEnableOffscreenCheckerboard(bool enabled);
+  int32_t GetRequiredMipCount() const { return required_mip_count_; }
+
+  void SetRequiredMipCount(int32_t mip_count) {
+    required_mip_count_ = mip_count;
+  }
 
   //----------------------------------------------------------------------------
   /// @brief  Computes the coverage of a given subpass. This is used to
@@ -190,22 +227,21 @@ class EntityPass {
   };
 
   bool RenderElement(Entity& element_entity,
-                     size_t clip_depth_floor,
+                     size_t clip_height_floor,
                      InlinePassContext& pass_context,
                      int32_t pass_depth,
                      ContentContext& renderer,
-                     ClipCoverageStack& clip_coverage_stack,
+                     EntityPassClipStack& clip_coverage_stack,
                      Point global_pass_position) const;
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
-                                   Capture& capture,
                                    InlinePassContext& pass_context,
                                    ISize root_pass_size,
                                    Point global_pass_position,
                                    uint32_t pass_depth,
-                                   ClipCoverageStack& clip_coverage_stack,
-                                   size_t clip_depth_floor) const;
+                                   EntityPassClipStack& clip_coverage_stack,
+                                   size_t clip_height_floor) const;
 
   //----------------------------------------------------------------------------
   /// @brief     OnRender is the internal command recording routine for
@@ -245,7 +281,7 @@ class EntityPass {
   ///                                      Used to cull Elements that we
   ///                                      know won't result in a visible
   ///                                      change.
-  /// @param[in]  clip_depth_floor         The clip depth that a value of
+  /// @param[in]  clip_height_floor         The clip depth that a value of
   ///                                      zero corresponds to in the given
   ///                                      `pass_target` clip buffer.
   ///                                      When new `pass_target`s are created
@@ -265,14 +301,13 @@ class EntityPass {
   ///                                      parent pass.
   ///
   bool OnRender(ContentContext& renderer,
-                Capture& capture,
                 ISize root_pass_size,
                 EntityPassTarget& pass_target,
                 Point global_pass_position,
                 Point local_pass_position,
                 uint32_t pass_depth,
-                ClipCoverageStack& clip_coverage_stack,
-                size_t clip_depth_floor = 0,
+                EntityPassClipStack& clip_coverage_stack,
+                size_t clip_height_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 const std::optional<InlinePassContext::RenderPassResult>&
                     collapsed_parent_pass = std::nullopt) const;
@@ -281,28 +316,34 @@ class EntityPass {
   /// evaluated and recorded to an `EntityPassTarget` by the `OnRender` method.
   std::vector<Element> elements_;
 
+  /// The stack of currently active clips (during Aiks recording time). Each
+  /// entry is an index into the `elements_` list. The depth value of a clip is
+  /// the max of all the entities it affects, so assignment of the depth value
+  /// is deferred until clip restore or end of the EntityPass.
+  std::vector<size_t> active_clips_;
+
   EntityPass* superpass_ = nullptr;
   Matrix transform_;
-  size_t clip_depth_ = 0u;
+  size_t clip_height_ = 0u;
+  uint32_t clip_depth_ = 1u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
-  bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
-  std::unique_ptr<EntityPassClipRecorder> clip_replay_ =
-      std::make_unique<EntityPassClipRecorder>();
+  ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
+  int32_t required_mip_count_ = 1;
 
-  /// These values are incremented whenever something is added to the pass that
-  /// requires reading from the backdrop texture. Currently, this can happen in
-  /// the following scenarios:
+  /// These values indicate whether something has been added to the EntityPass
+  /// that requires reading from the backdrop texture. Currently, this can
+  /// happen in the following scenarios:
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
   /// These are tracked as separate values because we may ignore
-  /// blend_reads_from_pass_texture_ if the device supports framebuffer based
+  /// `blend_reads_from_pass_texture_` if the device supports framebuffer based
   /// advanced blends.
-  uint32_t advanced_blend_reads_from_pass_texture_ = 0;
-  uint32_t backdrop_filter_reads_from_pass_texture_ = 0;
+  bool advanced_blend_reads_from_pass_texture_ = false;
+  bool backdrop_filter_reads_from_pass_texture_ = false;
 
-  uint32_t GetTotalPassReads(ContentContext& renderer) const;
+  bool DoesBackdropGetRead(ContentContext& renderer) const;
 
   BackdropFilterProc backdrop_filter_proc_ = nullptr;
 
@@ -314,24 +355,6 @@ class EntityPass {
   EntityPass& operator=(const EntityPass&) = delete;
 };
 
-/// @brief A class that tracks all clips that have been recorded in the current
-///        entity pass stencil.
-///
-///        These clips are replayed when restoring the backdrop so that the
-///        stencil buffer is left in an identical state.
-class EntityPassClipRecorder {
- public:
-  EntityPassClipRecorder();
-
-  ~EntityPassClipRecorder() = default;
-
-  /// @brief Record the entity based on the provided coverage [type].
-  void RecordEntity(const Entity& entity, Contents::ClipCoverage::Type type);
-
-  const std::vector<Entity>& GetReplayEntities() const;
-
- private:
-  std::vector<Entity> rendered_clip_entities_;
-};
-
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_ENTITY_PASS_H_

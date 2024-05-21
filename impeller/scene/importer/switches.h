@@ -2,13 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_IMPORTER_SWITCHES_H_
+#define FLUTTER_IMPELLER_SCENE_IMPORTER_SWITCHES_H_
 
 #include <iostream>
 #include <memory>
 
 #include "flutter/fml/command_line.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/scene/importer/types.h"
 
@@ -36,3 +36,5 @@ struct Switches {
 }  // namespace importer
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_IMPORTER_SWITCHES_H_

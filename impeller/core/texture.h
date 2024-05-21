@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_TEXTURE_H_
+#define FLUTTER_IMPELLER_CORE_TEXTURE_H_
 
 #include <string_view>
 
@@ -19,11 +20,13 @@ class Texture {
 
   virtual void SetLabel(std::string_view label) = 0;
 
+  // Deprecated: use BlitPass::AddCopy instead.
   [[nodiscard]] bool SetContents(const uint8_t* contents,
                                  size_t length,
                                  size_t slice = 0,
                                  bool is_opaque = false);
 
+  // Deprecated: use BlitPass::AddCopy instead.
   [[nodiscard]] bool SetContents(std::shared_ptr<const fml::Mapping> mapping,
                                  size_t slice = 0,
                                  bool is_opaque = false);
@@ -38,12 +41,19 @@ class Texture {
 
   const TextureDescriptor& GetTextureDescriptor() const;
 
+  /// Update the coordinate system used by the texture.
+  ///
+  /// The setting is used to conditionally invert the coordinates to
+  /// account for the different origin of GLES textures.
   void SetCoordinateSystem(TextureCoordinateSystem coordinate_system);
 
   TextureCoordinateSystem GetCoordinateSystem() const;
 
   virtual Scalar GetYCoordScale() const;
 
+  /// Returns true if mipmaps have never been generated.
+  /// The contents of the mipmap may be out of date if the root texture has been
+  /// modified and the mipmaps hasn't been regenerated.
   bool NeedsMipmapGeneration() const;
 
  protected:
@@ -73,3 +83,5 @@ class Texture {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_TEXTURE_H_

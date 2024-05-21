@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
+#define FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/formats.h"
 
 namespace impeller {
@@ -27,11 +27,6 @@ class Capabilities {
   /// @brief  Whether the context backend supports binding Shader Storage Buffer
   ///         Objects (SSBOs) to pipelines.
   virtual bool SupportsSSBO() const = 0;
-
-  /// @brief  Whether the context backend supports blitting from a given
-  ///         `DeviceBuffer` view to a texture region (via the relevant
-  ///         `BlitPass::AddCopy` overloads).
-  virtual bool SupportsBufferToTextureBlits() const = 0;
 
   /// @brief  Whether the context backend supports blitting from one texture
   ///         region to another texture region (via the relevant
@@ -104,6 +99,12 @@ class Capabilities {
   ///         format was found.
   virtual PixelFormat GetDefaultDepthStencilFormat() const = 0;
 
+  /// @brief Returns the default pixel format for the alpha bitmap glyph atlas.
+  ///
+  ///        Some backends may use Red channel while others use grey. This
+  ///        should not have any impact
+  virtual PixelFormat GetDefaultGlyphAtlasFormat() const = 0;
+
  protected:
   Capabilities();
 
@@ -121,8 +122,6 @@ class CapabilitiesBuilder {
   CapabilitiesBuilder& SetSupportsOffscreenMSAA(bool value);
 
   CapabilitiesBuilder& SetSupportsSSBO(bool value);
-
-  CapabilitiesBuilder& SetSupportsBufferToTextureBlits(bool value);
 
   CapabilitiesBuilder& SetSupportsTextureToTextureBlits(bool value);
 
@@ -144,12 +143,13 @@ class CapabilitiesBuilder {
 
   CapabilitiesBuilder& SetSupportsDeviceTransientTextures(bool value);
 
+  CapabilitiesBuilder& SetDefaultGlyphAtlasFormat(PixelFormat value);
+
   std::unique_ptr<Capabilities> Build();
 
  private:
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
-  bool supports_buffer_to_texture_blits_ = false;
   bool supports_texture_to_texture_blits_ = false;
   bool supports_framebuffer_fetch_ = false;
   bool supports_compute_ = false;
@@ -160,6 +160,7 @@ class CapabilitiesBuilder {
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
   std::optional<PixelFormat> default_depth_stencil_format_ = std::nullopt;
+  std::optional<PixelFormat> default_glyph_atlas_format_ = std::nullopt;
 
   CapabilitiesBuilder(const CapabilitiesBuilder&) = delete;
 
@@ -167,3 +168,5 @@ class CapabilitiesBuilder {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_CAPABILITIES_H_

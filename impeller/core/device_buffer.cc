@@ -10,33 +10,16 @@ DeviceBuffer::DeviceBuffer(DeviceBufferDescriptor desc) : desc_(desc) {}
 
 DeviceBuffer::~DeviceBuffer() = default;
 
-// |Buffer|
-std::shared_ptr<const DeviceBuffer> DeviceBuffer::GetDeviceBuffer(
-    Allocator& allocator) const {
-  return shared_from_this();
-}
+void DeviceBuffer::Flush(std::optional<Range> range) const {}
 
-BufferView DeviceBuffer::AsBufferView() const {
+void DeviceBuffer::Invalidate(std::optional<Range> range) const {}
+
+// static
+BufferView DeviceBuffer::AsBufferView(std::shared_ptr<DeviceBuffer> buffer) {
   BufferView view;
-  view.buffer = shared_from_this();
-  view.contents = OnGetContents();
-  view.range = {0u, desc_.size};
+  view.buffer = std::move(buffer);
+  view.range = {0u, view.buffer->desc_.size};
   return view;
-}
-
-std::shared_ptr<Texture> DeviceBuffer::AsTexture(
-    Allocator& allocator,
-    const TextureDescriptor& descriptor,
-    uint16_t row_bytes) const {
-  auto texture = allocator.CreateTexture(descriptor);
-  if (!texture) {
-    return nullptr;
-  }
-  if (!texture->SetContents(std::make_shared<fml::NonOwnedMapping>(
-          OnGetContents(), desc_.size))) {
-    return nullptr;
-  }
-  return texture;
 }
 
 const DeviceBufferDescriptor& DeviceBuffer::GetDeviceBufferDescriptor() const {

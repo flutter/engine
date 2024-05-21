@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_
 
 #include <functional>
 #include <string>
@@ -36,12 +37,10 @@ struct AutoErrorCheck {
       }
       if (GLErrorIsFatal(error)) {
         FML_LOG(FATAL) << "Fatal GL Error " << GLErrorToString(error) << "("
-                       << error << ")"
-                       << " encountered on call to " << name;
+                       << error << ")" << " encountered on call to " << name;
       } else {
         FML_LOG(ERROR) << "GL Error " << GLErrorToString(error) << "(" << error
-                       << ")"
-                       << " encountered on call to " << name;
+                       << ")" << " encountered on call to " << name;
       }
     }
   }
@@ -86,9 +85,6 @@ struct GLProc {
     FML_CHECK(IsAvailable()) << "GL function " << name << " is not available. "
                              << "This is likely due to a missing extension.";
 #endif  // IMPELLER_DEBUG
-#ifdef IMPELLER_TRACE_ALL_GL_CALLS
-    TRACE_EVENT0("impeller", name);
-#endif  // IMPELLER_TRACE_ALL_GL_CALLS
     return function(std::forward<Args>(args)...);
   }
 
@@ -114,7 +110,6 @@ struct GLProc {
   PROC(CheckFramebufferStatus);              \
   PROC(Clear);                               \
   PROC(ClearColor);                          \
-  PROC(ClearDepthf);                         \
   PROC(ClearStencil);                        \
   PROC(ColorMask);                           \
   PROC(CompileShader);                       \
@@ -129,7 +124,6 @@ struct GLProc {
   PROC(DeleteTextures);                      \
   PROC(DepthFunc);                           \
   PROC(DepthMask);                           \
-  PROC(DepthRangef);                         \
   PROC(DetachShader);                        \
   PROC(Disable);                             \
   PROC(DisableVertexAttribArray);            \
@@ -165,6 +159,7 @@ struct GLProc {
   PROC(IsShader);                            \
   PROC(IsTexture);                           \
   PROC(LinkProgram);                         \
+  PROC(PixelStorei);                         \
   PROC(RenderbufferStorage);                 \
   PROC(Scissor);                             \
   PROC(ShaderBinary);                        \
@@ -173,6 +168,7 @@ struct GLProc {
   PROC(StencilMaskSeparate);                 \
   PROC(StencilOpSeparate);                   \
   PROC(TexImage2D);                          \
+  PROC(TexSubImage2D);                       \
   PROC(TexParameteri);                       \
   PROC(TexParameterfv);                      \
   PROC(Uniform1fv);                          \
@@ -186,6 +182,22 @@ struct GLProc {
   PROC(Viewport);                            \
   PROC(GetShaderSource);                     \
   PROC(ReadPixels);
+
+// Calls specific to OpenGLES.
+void(glClearDepthf)(GLfloat depth);
+void(glDepthRangef)(GLfloat n, GLfloat f);
+
+#define FOR_EACH_IMPELLER_ES_ONLY_PROC(PROC) \
+  PROC(ClearDepthf);                         \
+  PROC(DepthRangef);
+
+// Calls specific to desktop GL.
+void(glClearDepth)(GLdouble depth);
+void(glDepthRange)(GLdouble n, GLdouble f);
+
+#define FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(PROC) \
+  PROC(ClearDepth);                               \
+  PROC(DepthRange);
 
 #define FOR_EACH_IMPELLER_GLES3_PROC(PROC) PROC(BlitFramebuffer);
 
@@ -225,6 +237,8 @@ class ProcTableGLES {
   GLProc<decltype(gl##name)> name = {"gl" #name, nullptr};
 
   FOR_EACH_IMPELLER_PROC(IMPELLER_PROC);
+  FOR_EACH_IMPELLER_ES_ONLY_PROC(IMPELLER_PROC);
+  FOR_EACH_IMPELLER_DESKTOP_ONLY_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_GLES3_PROC(IMPELLER_PROC);
   FOR_EACH_IMPELLER_EXT_PROC(IMPELLER_PROC);
 
@@ -276,3 +290,5 @@ class ProcTableGLES {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PROC_TABLE_GLES_H_

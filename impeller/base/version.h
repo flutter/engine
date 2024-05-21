@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_BASE_VERSION_H_
+#define FLUTTER_IMPELLER_BASE_VERSION_H_
 
 #include <cstddef>
 #include <optional>
@@ -27,7 +28,7 @@ struct Version {
 
   static std::optional<Version> FromVector(const std::vector<size_t>& version);
 
-  constexpr bool IsAtLeast(const Version& other) {
+  constexpr bool IsAtLeast(const Version& other) const {
     return std::tie(major_version, minor_version, patch_version) >=
            std::tie(other.major_version, other.minor_version,
                     other.patch_version);
@@ -37,3 +38,5 @@ struct Version {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_BASE_VERSION_H_

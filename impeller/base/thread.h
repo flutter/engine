@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_BASE_THREAD_H_
+#define FLUTTER_IMPELLER_BASE_THREAD_H_
 
 #include <chrono>
 #include <condition_variable>
@@ -11,8 +12,6 @@
 #include <mutex>
 #include <thread>
 
-#include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/synchronization/shared_mutex.h"
 #include "impeller/base/thread_safety.h"
 
@@ -268,3 +267,5 @@ class ConditionVariable {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_BASE_THREAD_H_

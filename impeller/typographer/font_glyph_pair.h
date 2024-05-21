@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_
 
-#include <optional>
 #include <unordered_map>
 #include <unordered_set>
-#include <vector>
 
-#include "flutter/fml/macros.h"
-#include "impeller/geometry/size.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
 
@@ -23,6 +20,7 @@ namespace impeller {
 struct ScaledFont {
   Font font;
   Scalar scale;
+  Color color;
 };
 
 using FontGlyphMap = std::unordered_map<ScaledFont, std::unordered_set<Glyph>>;
@@ -43,7 +41,7 @@ struct FontGlyphPair {
 template <>
 struct std::hash<impeller::ScaledFont> {
   constexpr std::size_t operator()(const impeller::ScaledFont& sf) const {
-    return fml::HashCombine(sf.font.GetHash(), sf.scale);
+    return fml::HashCombine(sf.font.GetHash(), sf.scale, sf.color.ToARGB());
   }
 };
 
@@ -51,6 +49,9 @@ template <>
 struct std::equal_to<impeller::ScaledFont> {
   constexpr bool operator()(const impeller::ScaledFont& lhs,
                             const impeller::ScaledFont& rhs) const {
-    return lhs.font.IsEqual(rhs.font) && lhs.scale == rhs.scale;
+    return lhs.font.IsEqual(rhs.font) && lhs.scale == rhs.scale &&
+           lhs.color == rhs.color;
   }
 };
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_FONT_GLYPH_PAIR_H_

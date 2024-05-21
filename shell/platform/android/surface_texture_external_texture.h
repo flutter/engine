@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_SURFACE_TEXTURE_EXTERNAL_TEXTURE_H_
-#define FLUTTER_SHELL_PLATFORM_SURFACE_TEXTURE_EXTERNAL_TEXTURE_H_
+#ifndef FLUTTER_SHELL_PLATFORM_ANDROID_SURFACE_TEXTURE_EXTERNAL_TEXTURE_H_
+#define FLUTTER_SHELL_PLATFORM_ANDROID_SURFACE_TEXTURE_EXTERNAL_TEXTURE_H_
 
 #include <GLES/gl.h>
 
@@ -40,6 +40,7 @@ class SurfaceTextureExternalTexture : public flutter::Texture {
   virtual void Detach();
 
   void Attach(int gl_tex_id);
+  bool ShouldUpdate();
   void Update();
 
   enum class AttachmentState { kUninitialized, kAttached, kDetached };
@@ -48,7 +49,6 @@ class SurfaceTextureExternalTexture : public flutter::Texture {
   fml::jni::ScopedJavaGlobalRef<jobject> surface_texture_;
   AttachmentState state_ = AttachmentState::kUninitialized;
   SkMatrix transform_;
-  bool new_frame_ready_ = false;
   sk_sp<flutter::DlImage> dl_image_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SurfaceTextureExternalTexture);
@@ -56,4 +56,4 @@ class SurfaceTextureExternalTexture : public flutter::Texture {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_SURFACE_TEXTURE_EXTERNAL_TEXTURE_H_
+#endif  // FLUTTER_SHELL_PLATFORM_ANDROID_SURFACE_TEXTURE_EXTERNAL_TEXTURE_H_

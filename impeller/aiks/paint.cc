@@ -9,6 +9,7 @@
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/geometry/geometry.h"
 
@@ -67,7 +68,8 @@ std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform) const {
   auto image_filter =
-      WithImageFilter(input, effect_transform, Entity::RenderingMode::kSubpass);
+      WithImageFilter(input, effect_transform,
+                      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
   if (image_filter) {
     input = image_filter;
   }
@@ -122,14 +124,42 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
+    std::shared_ptr<TextureContents> texture_contents) const {
+  Scalar expand_amount = GaussianBlurFilterContents::CalculateBlurRadius(
+      GaussianBlurFilterContents::ScaleSigma(sigma.sigma));
+  texture_contents->SetSourceRect(
+      texture_contents->GetSourceRect().Expand(expand_amount, expand_amount));
+  auto mask = std::make_shared<SolidColorContents>();
+  mask->SetColor(Color::White());
+  std::optional<Rect> coverage = texture_contents->GetCoverage({});
+  std::shared_ptr<Geometry> geometry;
+  if (coverage) {
+    texture_contents->SetDestinationRect(
+        coverage.value().Expand(expand_amount, expand_amount));
+    geometry = Geometry::MakeRect(coverage.value());
+  }
+  mask->SetGeometry(geometry);
+  auto descriptor = texture_contents->GetSamplerDescriptor();
+  texture_contents->SetSamplerDescriptor(descriptor);
+  std::shared_ptr<FilterContents> blurred_mask =
+      FilterContents::MakeGaussianBlur(FilterInput::Make(mask), sigma, sigma,
+                                       Entity::TileMode::kDecal, style,
+                                       geometry);
+
+  return ColorFilterContents::MakeBlend(
+      BlendMode::kSourceIn,
+      {FilterInput::Make(blurred_mask), FilterInput::Make(texture_contents)});
+}
+
+std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     std::shared_ptr<ColorSourceContents> color_source_contents,
     const std::shared_ptr<ColorFilter>& color_filter) const {
   // If it's a solid color and there is no color filter, then we can just get
   // away with doing one Gaussian blur.
   if (color_source_contents->IsSolidColor() && !color_filter) {
     return FilterContents::MakeGaussianBlur(
-        FilterInput::Make(color_source_contents), sigma, sigma, style,
-        Entity::TileMode::kDecal);
+        FilterInput::Make(color_source_contents), sigma, sigma,
+        Entity::TileMode::kDecal, style, color_source_contents->GetGeometry());
   }
 
   /// 1. Create an opaque white mask of the original geometry.
@@ -141,7 +171,8 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   /// 2. Blur the mask.
 
   auto blurred_mask = FilterContents::MakeGaussianBlur(
-      FilterInput::Make(mask), sigma, sigma, style, Entity::TileMode::kDecal);
+      FilterInput::Make(mask), sigma, sigma, Entity::TileMode::kDecal, style,
+      color_source_contents->GetGeometry());
 
   /// 3. Replace the geometry of the original color source with a rectangle that
   ///    covers the full region of the blurred mask. Note that geometry is in
@@ -153,7 +184,6 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   }
   color_source_contents->SetGeometry(
       Geometry::MakeRect(*expanded_local_bounds));
-
   std::shared_ptr<Contents> color_contents = color_source_contents;
 
   /// 4. Apply the user set color filter on the GPU, if applicable.
@@ -175,8 +205,8 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     const FilterInput::Ref& input,
     bool is_solid_color) const {
   if (is_solid_color) {
-    return FilterContents::MakeGaussianBlur(input, sigma, sigma, style,
-                                            Entity::TileMode::kDecal);
+    return FilterContents::MakeGaussianBlur(input, sigma, sigma,
+                                            Entity::TileMode::kDecal, style);
   }
   return FilterContents::MakeBorderMaskBlur(input, sigma, sigma, style);
 }

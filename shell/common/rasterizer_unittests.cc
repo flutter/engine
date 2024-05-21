@@ -97,9 +97,7 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
       (override));
   MOCK_METHOD(void,
               PrepareFlutterView,
-              (int64_t flutter_view_id,
-               SkISize frame_size,
-               double device_pixel_ratio),
+              (SkISize frame_size, double device_pixel_ratio),
               (override));
   MOCK_METHOD(void,
               PrerollCompositeEmbeddedView,
@@ -113,7 +111,8 @@ class MockExternalViewEmbedder : public ExternalViewEmbedder {
   MOCK_METHOD(DlCanvas*, CompositeEmbeddedView, (int64_t view_id), (override));
   MOCK_METHOD(void,
               SubmitFlutterView,
-              (GrDirectContext * context,
+              (int64_t flutter_view_id,
+               GrDirectContext* context,
                const std::shared_ptr<impeller::AiksContext>& aiks_context,
                std::unique_ptr<SurfaceFrame> frame),
               (override));
@@ -223,12 +222,13 @@ TEST(RasterizerTest,
                          /*raster_thread_merger=*/
                          fml::RefPtr<fml::RasterThreadMerger>(nullptr)))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareFlutterView(/*flutter_view_id=*/kImplicitViewId,
-                                 /*frame_size=*/SkISize(),
-                                 /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(1);
   EXPECT_CALL(
       *external_view_embedder,
       EndFrame(/*should_resubmit_frame=*/false,
@@ -240,9 +240,8 @@ TEST(RasterizerTest,
   fml::AutoResetWaitableEvent latch;
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
-    auto layer_tree =
-        std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
-                                    /*frame_size=*/SkISize());
+    auto layer_tree = std::make_unique<LayerTree>(/*root_layer=*/nullptr,
+                                                  /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -299,12 +298,13 @@ TEST(
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareFlutterView(/*flutter_view_id=*/kImplicitViewId,
-                                 /*frame_size=*/SkISize(),
-                                 /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(0);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(0);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -314,7 +314,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -378,12 +378,13 @@ TEST(
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareFlutterView(/*flutter_view_id=*/kImplicitViewId,
-                                 /*frame_size=*/SkISize(),
-                                 /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(1);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -391,7 +392,7 @@ TEST(
   rasterizer->Setup(std::move(surface));
 
   auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
-  auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
+  auto layer_tree = std::make_unique<LayerTree>(/*root_layer=*/nullptr,
                                                 /*frame_size=*/SkISize());
   auto layer_tree_item = std::make_unique<FrameItem>(
       SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
@@ -460,12 +461,13 @@ TEST(RasterizerTest,
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(2);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareFlutterView(/*flutter_view_id=*/kImplicitViewId,
-                                 /*frame_size=*/SkISize(),
-                                 /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
       .Times(2);
-  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(2);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/kImplicitViewId, _, _, _))
+      .Times(2);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(2);
@@ -473,7 +475,7 @@ TEST(RasterizerTest,
   rasterizer->Setup(std::move(surface));
 
   auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
-  auto layer_tree = std::make_unique<LayerTree>(/*config=*/LayerTree::Config(),
+  auto layer_tree = std::make_unique<LayerTree>(/*root_layer=*/nullptr,
                                                 /*frame_size=*/SkISize());
   auto layer_tree_item = std::make_unique<FrameItem>(
       SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
@@ -526,7 +528,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNoSurfaceIsSet) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -575,10 +577,9 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(0);
-  EXPECT_CALL(*external_view_embedder,
-              PrepareFlutterView(/*flutter_view_id=*/kImplicitViewId,
-                                 /*frame_size=*/SkISize(),
-                                 /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder, PrepareFlutterView(
+                                           /*frame_size=*/SkISize(),
+                                           /*device_pixel_ratio=*/2.0))
       .Times(0);
   EXPECT_CALL(
       *external_view_embedder,
@@ -591,7 +592,7 @@ TEST(RasterizerTest, externalViewEmbedderDoesntEndFrameWhenNotUsedThisFrame) {
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -696,17 +697,20 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
   EXPECT_CALL(*external_view_embedder, BeginFrame(/*context=*/nullptr,
                                                   /*raster_thread_merger=*/_))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareFlutterView(/*flutter_view_id=*/0, /*frame_size=*/SkISize(),
-                         /*device_pixel_ratio=*/1.5))
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/1.5))
       .Times(1);
-  EXPECT_CALL(
-      *external_view_embedder,
-      PrepareFlutterView(/*flutter_view_id=*/1, /*frame_size=*/SkISize(),
-                         /*device_pixel_ratio=*/2.0))
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/0, _, _, _))
       .Times(1);
-  EXPECT_CALL(*external_view_embedder, SubmitFlutterView).Times(2);
+  EXPECT_CALL(*external_view_embedder,
+              PrepareFlutterView(/*frame_size=*/SkISize(),
+                                 /*device_pixel_ratio=*/2.0))
+      .Times(1);
+  EXPECT_CALL(*external_view_embedder,
+              SubmitFlutterView(/*flutter_view_id=*/1, _, _, _))
+      .Times(1);
   EXPECT_CALL(*external_view_embedder, EndFrame(/*should_resubmit_frame=*/false,
                                                 /*raster_thread_merger=*/_))
       .Times(1);
@@ -717,9 +721,9 @@ TEST(RasterizerTest, drawMultipleViewsWithExternalViewEmbedder) {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     std::vector<std::unique_ptr<LayerTreeTask>> tasks;
     tasks.push_back(std::make_unique<LayerTreeTask>(
-        0, std::make_unique<LayerTree>(LayerTree::Config(), SkISize()), 1.5));
+        0, std::make_unique<LayerTree>(nullptr, SkISize()), 1.5));
     tasks.push_back(std::make_unique<LayerTreeTask>(
-        1, std::make_unique<LayerTree>(LayerTree::Config(), SkISize()), 2.0));
+        1, std::make_unique<LayerTree>(nullptr, SkISize()), 2.0));
     auto layer_tree_item = std::make_unique<FrameItem>(
         std::move(tasks), CreateFinishedBuildRecorder());
     PipelineProduceResult result =
@@ -777,7 +781,7 @@ TEST(RasterizerTest,
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -838,7 +842,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -899,7 +903,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -959,7 +963,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -1017,7 +1021,7 @@ TEST(
   thread_host.raster_thread->GetTaskRunner()->PostTask([&] {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                             kDevicePixelRatio),
@@ -1101,7 +1105,7 @@ TEST(RasterizerTest,
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
-          /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+          /*root_layer=*/nullptr, /*frame_size=*/SkISize());
       auto layer_tree_item = std::make_unique<FrameItem>(
           SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                               kDevicePixelRatio),
@@ -1275,7 +1279,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
       auto layer_tree = std::make_unique<LayerTree>(
-          /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+          /*root_layer=*/nullptr, /*frame_size=*/SkISize());
       auto layer_tree_item = std::make_unique<FrameItem>(
           SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                              kDevicePixelRatio),
@@ -1358,7 +1362,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
     rasterizer->Setup(std::move(surface));
     auto pipeline = std::make_shared<FramePipeline>(/*depth=*/10);
     auto layer_tree = std::make_unique<LayerTree>(
-        /*config=*/LayerTree::Config(), /*frame_size=*/SkISize());
+        /*root_layer=*/nullptr, /*frame_size=*/SkISize());
     auto layer_tree_item = std::make_unique<FrameItem>(
         SingleLayerTreeList(kImplicitViewId, std::move(layer_tree),
                            kDevicePixelRatio),

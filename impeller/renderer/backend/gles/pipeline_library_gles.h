@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PIPELINE_LIBRARY_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PIPELINE_LIBRARY_GLES_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/pipeline_library.h"
 
@@ -29,12 +29,13 @@ class PipelineLibraryGLES final : public PipelineLibrary {
   bool IsValid() const override;
 
   // |PipelineLibrary|
-  PipelineFuture<PipelineDescriptor> GetPipeline(
-      PipelineDescriptor descriptor) override;
+  PipelineFuture<PipelineDescriptor> GetPipeline(PipelineDescriptor descriptor,
+                                                 bool async) override;
 
   // |PipelineLibrary|
   PipelineFuture<ComputePipelineDescriptor> GetPipeline(
-      ComputePipelineDescriptor descriptor) override;
+      ComputePipelineDescriptor descriptor,
+      bool async) override;
 
   // |PipelineLibrary|
   void RemovePipelinesWithEntryPoint(
@@ -46,3 +47,5 @@ class PipelineLibraryGLES final : public PipelineLibrary {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_PIPELINE_LIBRARY_GLES_H_

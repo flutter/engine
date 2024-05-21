@@ -2,19 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_HANDLE_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_HANDLE_GLES_H_
 
 #include <optional>
 #include <sstream>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
-#include "impeller/renderer/backend/gles/gles.h"
 
 namespace impeller {
 
@@ -89,3 +86,5 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_HANDLE_GLES_H_

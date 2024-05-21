@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLOW_TESTING_MOCK_EMBEDDER_H_
-#define FLOW_TESTING_MOCK_EMBEDDER_H_
+#ifndef FLUTTER_FLOW_TESTING_MOCK_EMBEDDER_H_
+#define FLUTTER_FLOW_TESTING_MOCK_EMBEDDER_H_
 
 #include "flutter/flow/embedded_views.h"
 
@@ -30,8 +30,7 @@ class MockViewEmbedder : public ExternalViewEmbedder {
                       raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  void PrepareFlutterView(int64_t flutter_view_id,
-                          SkISize frame_size,
+  void PrepareFlutterView(SkISize frame_size,
                           double device_pixel_ratio) override;
 
   // |ExternalViewEmbedder|
@@ -54,4 +53,4 @@ class MockViewEmbedder : public ExternalViewEmbedder {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // FLOW_TESTING_MOCK_EMBEDDER_H_
+#endif  // FLUTTER_FLOW_TESTING_MOCK_EMBEDDER_H_

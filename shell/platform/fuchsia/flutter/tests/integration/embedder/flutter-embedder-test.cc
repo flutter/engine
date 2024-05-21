@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <fuchsia/inspect/cpp/fidl.h>
 #include <fuchsia/logger/cpp/fidl.h>
+#include <fuchsia/sysmem/cpp/fidl.h>
+#include <fuchsia/sysmem2/cpp/fidl.h>
 #include <fuchsia/tracing/provider/cpp/fidl.h>
 #include <fuchsia/ui/app/cpp/fidl.h>
 #include <fuchsia/ui/composition/cpp/fidl.h>
@@ -114,7 +117,7 @@ class FlutterEmbedderTest : public ::loop_fixture::RealLoop,
  public:
   FlutterEmbedderTest()
       : realm_builder_(component_testing::RealmBuilder::Create()) {
-    FML_VLOG(-1) << "Setting up base realm";
+    FML_VLOG(1) << "Setting up base realm";
     SetUpRealmBase();
 
     // Post a "just in case" quit task, if the test hangs.
@@ -232,7 +235,13 @@ void FlutterEmbedderTest::SetUpRealmBase() {
       Route{.capabilities =
                 {
                     Protocol{fuchsia::logger::LogSink::Name_},
+                    Protocol{fuchsia::inspect::InspectSink::Name_},
                     Protocol{fuchsia::sysmem::Allocator::Name_},
+
+                    // Replace "fuchsia.sysmem2.Allocator" with
+                    // fuchsia::sysmem2::Allocator::Name_
+                    // when available (fuchsia SDK >= 19).
+                    Protocol{"fuchsia.sysmem2.Allocator"},
                     Protocol{fuchsia::tracing::provider::Registry::Name_},
                     Protocol{kVulkanLoaderServiceName},
                 },
@@ -243,7 +252,13 @@ void FlutterEmbedderTest::SetUpRealmBase() {
   // Route base system services to the test UI stack.
   realm_builder_.AddRoute(Route{
       .capabilities = {Protocol{fuchsia::logger::LogSink::Name_},
+                       Protocol{fuchsia::inspect::InspectSink::Name_},
                        Protocol{fuchsia::sysmem::Allocator::Name_},
+
+                       // Replace "fuchsia.sysmem2.Allocator" with
+                       // fuchsia::sysmem2::Allocator::Name_
+                       // when available (fuchsia SDK >= 19).
+                       Protocol{"fuchsia.sysmem2.Allocator"},
                        Protocol{fuchsia::tracing::provider::Registry::Name_},
                        Protocol{kVulkanLoaderServiceName}},
       .source = ParentRef{},

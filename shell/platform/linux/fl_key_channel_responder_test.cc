@@ -45,20 +45,14 @@ static FlKeyEvent* fl_key_event_new_by_mock(guint32 time_in_milliseconds,
                                             bool is_press,
                                             guint keyval,
                                             guint16 keycode,
-                                            int state,
-                                            const char* string,
+                                            GdkModifierType state,
                                             gboolean is_modifier) {
-  if (_g_key_event.string != nullptr) {
-    g_free(const_cast<char*>(_g_key_event.string));
-  }
   _g_key_event.is_press = is_press;
   _g_key_event.time = time_in_milliseconds;
   _g_key_event.state = state;
   _g_key_event.keyval = keyval;
-  _g_key_event.string = g_strdup(string);
   _g_key_event.keycode = keycode;
   _g_key_event.origin = nullptr;
-  _g_key_event.dispose_origin = nullptr;
   return &_g_key_event;
 }
 
@@ -77,7 +71,8 @@ TEST(FlKeyChannelResponderTest, SendKeyEvent) {
 
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04, 0x0, "A", false),
+      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04,
+                               static_cast<GdkModifierType>(0), false),
       responder_callback, loop);
   expected_value =
       "{type: keydown, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
@@ -89,7 +84,8 @@ TEST(FlKeyChannelResponderTest, SendKeyEvent) {
 
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(23456, false, GDK_KEY_A, 0x04, 0x0, "A", false),
+      fl_key_event_new_by_mock(23456, false, GDK_KEY_A, 0x04,
+                               static_cast<GdkModifierType>(0), false),
       responder_callback, loop);
   expected_value =
       "{type: keyup, keymap: linux, scanCode: 4, toolkit: gtk, keyCode: 65, "
@@ -116,8 +112,8 @@ void test_lock_event(guint key_code,
 
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(12345, true, key_code, 0x04, 0x0, nullptr,
-                               false),
+      fl_key_event_new_by_mock(12345, true, key_code, 0x04,
+                               static_cast<GdkModifierType>(0), false),
       responder_callback, loop);
   expected_value = down_expected;
   expected_handled = FALSE;
@@ -129,8 +125,8 @@ void test_lock_event(guint key_code,
   expected_handled = FALSE;
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(12346, false, key_code, 0x04, 0x0, nullptr,
-                               false),
+      fl_key_event_new_by_mock(12346, false, key_code, 0x04,
+                               static_cast<GdkModifierType>(0), false),
       responder_callback, loop);
 
   // Blocks here until echo_response_cb is called.
@@ -178,8 +174,8 @@ TEST(FlKeyChannelResponderTest, TestKeyEventHandledByFramework) {
 
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04, 0x0, nullptr,
-                               false),
+      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04,
+                               static_cast<GdkModifierType>(0), false),
       responder_callback, loop);
   expected_handled = TRUE;
   expected_value =
@@ -204,8 +200,8 @@ TEST(FlKeyChannelResponderTest, UseSpecifiedLogicalKey) {
 
   fl_key_responder_handle_event(
       responder,
-      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04, 0x0, nullptr,
-                               false),
+      fl_key_event_new_by_mock(12345, true, GDK_KEY_A, 0x04,
+                               static_cast<GdkModifierType>(0), false),
       responder_callback, loop, 888);
   expected_handled = TRUE;
   expected_value =

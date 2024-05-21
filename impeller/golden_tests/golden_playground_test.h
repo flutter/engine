@@ -2,16 +2,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_PLAYGROUND_TEST_H_
+#define FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_PLAYGROUND_TEST_H_
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
+#include "flutter/display_list/display_list.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/impeller/aiks/aiks_context.h"
 #include "flutter/impeller/playground/playground.h"
 #include "flutter/impeller/renderer/render_target.h"
 #include "flutter/testing/testing.h"
 #include "impeller/typographer/typographer_context.h"
+#include "third_party/imgui/imgui.h"
 
 #if FML_OS_MACOSX
 #include "flutter/fml/platform/darwin/scoped_nsautorelease_pool.h"
@@ -42,20 +45,38 @@ class GoldenPlaygroundTest
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
+  bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
+
+  static bool ImGuiBegin(const char* name,
+                         bool* p_open,
+                         ImGuiWindowFlags flags);
+
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,
       bool enable_mipmapping = false) const;
 
-  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
-      const char* asset_name) const;
+  sk_sp<flutter::DlImage> CreateDlImageForFixture(
+      const char* fixture_name,
+      bool enable_mipmapping = false) const;
+
+  RuntimeStage::Map OpenAssetAsRuntimeStage(const char* asset_name) const;
 
   std::shared_ptr<Context> GetContext() const;
+
+  std::shared_ptr<Context> MakeContext() const;
 
   Point GetContentScale() const;
 
   Scalar GetSecondsElapsed() const;
 
   ISize GetWindowSize() const;
+
+  [[nodiscard]] fml::Status SetCapabilities(
+      const std::shared_ptr<Capabilities>& capabilities);
+
+  /// TODO(https://github.com/flutter/flutter/issues/139950): Remove this.
+  /// Returns true if `OpenPlaygroundHere` will actually render anything.
+  bool WillRenderSomething() const { return true; }
 
  protected:
   void SetWindowSize(ISize size);
@@ -79,3 +100,5 @@ class GoldenPlaygroundTest
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GOLDEN_TESTS_GOLDEN_PLAYGROUND_TEST_H_

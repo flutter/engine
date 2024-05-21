@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_SAMPLER_DESCRIPTOR_H_
+#define FLUTTER_IMPELLER_CORE_SAMPLER_DESCRIPTOR_H_
 
 #include "impeller/base/comparable.h"
 #include "impeller/core/formats.h"
@@ -14,6 +15,11 @@ class Context;
 struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
   MinMagFilter min_filter = MinMagFilter::kNearest;
   MinMagFilter mag_filter = MinMagFilter::kNearest;
+
+  // TODO(https://github.com/flutter/flutter/issues/148253):
+  // `MipFilter::kNearest` is the default value for mip filters, as it
+  // cooresponds with the framework's `FilterQuality.low`. If we ever change the
+  // default filter quality, we should update this function to match.
   MipFilter mip_filter = MipFilter::kNearest;
 
   SamplerAddressMode width_address_mode = SamplerAddressMode::kClampToEdge;
@@ -47,3 +53,5 @@ struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_SAMPLER_DESCRIPTOR_H_

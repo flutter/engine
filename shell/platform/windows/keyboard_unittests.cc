@@ -336,9 +336,11 @@ typedef struct {
 // A FlutterWindowsView that spies on text.
 class TestFlutterWindowsView : public FlutterWindowsView {
  public:
-  TestFlutterWindowsView(std::function<void(KeyCall)> on_key_call,
-                         std::unique_ptr<WindowBindingHandler> window)
-      : on_key_call_(on_key_call), FlutterWindowsView(std::move(window)) {}
+  TestFlutterWindowsView(FlutterWindowsEngine* engine,
+                         std::unique_ptr<WindowBindingHandler> window,
+                         std::function<void(KeyCall)> on_key_call)
+      : on_key_call_(on_key_call),
+        FlutterWindowsView(kImplicitViewId, engine, std::move(window)) {}
 
   void OnText(const std::u16string& text) override {
     on_key_call_(KeyCall{
@@ -363,11 +365,16 @@ class KeyboardTester {
         map_virtual_key_layout_(LayoutDefault) {
     engine_ = GetTestEngine(context);
     view_ = std::make_unique<TestFlutterWindowsView>(
-        [this](KeyCall key_call) { key_calls.push_back(key_call); },
+        engine_.get(),
         // The WindowBindingHandler is used for window size and such, and
         // doesn't affect keyboard.
-        std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
-    view_->SetEngine(engine_.get());
+        std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>(),
+        [this](KeyCall key_call) { key_calls.push_back(key_call); });
+
+    EngineModifier modifier{engine_.get()};
+    modifier.SetImplicitView(view_.get());
+    modifier.InitializeKeyboard();
+
     window_ = std::make_unique<MockKeyboardManagerDelegate>(
         view_.get(), [this](UINT virtual_key) -> SHORT {
           return map_virtual_key_layout_(virtual_key, MAPVK_VK_TO_CHAR);
@@ -544,9 +551,11 @@ class KeyboardTest : public WindowsTest {
 // Define compound `expect` in macros. If they're defined in functions, the
 // stacktrace wouldn't print where the function is called in the unit tests.
 
-#define EXPECT_CALL_IS_EVENT(_key_call, ...)         \
-  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey); \
-  EXPECT_EVENT_EQUALS(_key_call.key_event, __VA_ARGS__);
+#define EXPECT_CALL_IS_EVENT(_key_call, _type, _physical, _logical,    \
+                             _character, _synthesized)                 \
+  EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnKey);                   \
+  EXPECT_EVENT_EQUALS(_key_call.key_event, _type, _physical, _logical, \
+                      _character, _synthesized);
 
 #define EXPECT_CALL_IS_TEXT(_key_call, u16_string)    \
   EXPECT_EQ(_key_call.type, KeyCall::kKeyCallOnText); \

@@ -33,7 +33,6 @@ class CopyArtifactsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await environment.webTestsArtifactsDir.create(recursive: true);
-    await copyTestBootstrapScripts();
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
@@ -49,23 +48,6 @@ class CopyArtifactsStep implements PipelineStep {
     if (artifactDeps.skwasm) {
       print('Copying Skwasm...');
       await copySkwasm();
-    }
-  }
-
-  Future<void> copyTestBootstrapScripts() async {
-    for (final String filename in <String>[
-      'test_dart2js.js',
-      'test_dart2wasm.js',
-    ]) {
-      final io.File sourceFile = io.File(pathlib.join(
-        environment.webUiDevDir.path,
-        filename,
-      ));
-      final io.File targetFile = io.File(pathlib.join(
-        environment.webTestsArtifactsDir.path,
-        filename,
-      ));
-      await sourceFile.copy(targetFile.path);
     }
   }
 
@@ -123,6 +105,7 @@ class CopyArtifactsStep implements PipelineStep {
 
     final io.Directory fallbackFontsSource = io.Directory(pathlib.join(
       environment.engineSrcDir.path,
+      'flutter',
       'third_party',
       'google_fonts_for_unit_tests',
     ));

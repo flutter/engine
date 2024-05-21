@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_DISPLAY_LIST_DL_PLAYGROUND_H_
+#define FLUTTER_IMPELLER_DISPLAY_LIST_DL_PLAYGROUND_H_
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_builder.h"
@@ -30,6 +31,10 @@ class DlPlayground : public PlaygroundTest {
 
   SkFont CreateTestFont();
 
+  sk_sp<flutter::DlImage> CreateDlImageForFixture(
+      const char* fixture_name,
+      bool enable_mipmapping = false) const;
+
  private:
   DlPlayground(const DlPlayground&) = delete;
 
@@ -37,3 +42,5 @@ class DlPlayground : public PlaygroundTest {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_DISPLAY_LIST_DL_PLAYGROUND_H_

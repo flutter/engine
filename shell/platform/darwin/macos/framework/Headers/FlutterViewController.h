@@ -2,12 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_
+
 #import <Cocoa/Cocoa.h>
 
 #import "FlutterEngine.h"
 #import "FlutterMacros.h"
 #import "FlutterPlatformViews.h"
 #import "FlutterPluginRegistrarMacOS.h"
+
+/**
+ * A unique identifier for a view within which Flutter content is hosted.
+ *
+ * Identifiers are guaranteed to be unique for views owned by a given engine but
+ * may collide for views owned by different engines.
+ */
+typedef int64_t FlutterViewIdentifier;
 
 /**
  * Values for the `mouseTrackingMode` property.
@@ -108,6 +119,17 @@ FLUTTER_DARWIN_EXPORT
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
 
 /**
+ * The identifier for this view controller, if it is attached.
+ *
+ * The identifier is assigned when the view controller is attached to a
+ * `FlutterEngine`.
+ *
+ * If the view controller is detached (see `FlutterViewController#attached`),
+ * reading this property throws an assertion.
+ */
+@property(nonatomic, readonly) FlutterViewIdentifier viewIdentifier;
+
+/**
  * Return YES if the view controller is attached to an engine.
  */
 - (BOOL)attached;
@@ -188,3 +210,5 @@ FLUTTER_DARWIN_EXPORT
 @property(readwrite, nonatomic, nullable, copy) NSColor* backgroundColor;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_HEADERS_FLUTTERVIEWCONTROLLER_H_

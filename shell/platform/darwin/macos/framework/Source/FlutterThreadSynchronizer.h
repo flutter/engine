@@ -2,7 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTHREADSYNCHRONIZER_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTHREADSYNCHRONIZER_H_
+
 #import <Cocoa/Cocoa.h>
+
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
 /**
  * Takes care of synchronization between raster and platform thread.
@@ -21,7 +26,7 @@
 /**
  * Blocks until all views have a commit with their given sizes (or empty) is requested.
  */
-- (void)beginResizeForView:(int64_t)viewId
+- (void)beginResizeForView:(FlutterViewIdentifier)viewIdentifier
                       size:(CGSize)size
                     notify:(nonnull dispatch_block_t)notify;
 
@@ -34,9 +39,16 @@
  *
  * The notify block is guaranteed to be called within a core animation transaction.
  */
-- (void)performCommitForView:(int64_t)viewId
+- (void)performCommitForView:(FlutterViewIdentifier)viewIdentifier
                         size:(CGSize)size
                       notify:(nonnull dispatch_block_t)notify;
+
+/**
+ * Schedules the given block to be performed on the platform thread.
+ * The block will be performed even if the platform thread is blocked waiting
+ * for a commit.
+ */
+- (void)performOnPlatformThread:(nonnull dispatch_block_t)block;
 
 /**
  * Requests the synchronizer to track another view.
@@ -45,14 +57,14 @@
  * performCommitForView:. It is typically done when the view controller is
  * created.
  */
-- (void)registerView:(int64_t)viewId;
+- (void)registerView:(FlutterViewIdentifier)viewIdentifier;
 
 /**
  * Requests the synchronizer to no longer track a view.
  *
  * It is typically done when the view controller is destroyed.
  */
-- (void)deregisterView:(int64_t)viewId;
+- (void)deregisterView:(FlutterViewIdentifier)viewIdentifier;
 
 /**
  * Called when the engine shuts down.
@@ -96,3 +108,5 @@
 - (void)blockUntilFrameAvailable;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERTHREADSYNCHRONIZER_H_

@@ -4,61 +4,92 @@
 
 #include "flutter/benchmarking/benchmarking.h"
 
+#include "flutter/impeller/entity/solid_fill.vert.h"
+
+#include "impeller/entity/geometry/stroke_path_geometry.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/tessellator/tessellator.h"
+#include "impeller/tessellator/tessellator_libtess.h"
 
 namespace impeller {
+
+class ImpellerBenchmarkAccessor {
+ public:
+  static std::vector<SolidFillVertexShader::PerVertexData>
+  GenerateSolidStrokeVertices(const Path::Polyline& polyline,
+                              Scalar stroke_width,
+                              Scalar miter_limit,
+                              Join stroke_join,
+                              Cap stroke_cap,
+                              Scalar scale) {
+    return StrokePathGeometry::GenerateSolidStrokeVertices(
+        polyline, stroke_width, miter_limit, stroke_join, stroke_cap, scale);
+  }
+};
 
 namespace {
 /// A path with many connected cubic components, including
 /// overlaps/self-intersections/multi-contour.
-Path CreateCubic();
+Path CreateCubic(bool closed);
 /// Similar to the path above, but with all cubics replaced by quadratics.
-Path CreateQuadratic();
+Path CreateQuadratic(bool closed);
 /// Create a rounded rect.
 Path CreateRRect();
 }  // namespace
 
-static Tessellator tess;
+static TessellatorLibtess tess;
 
 template <class... Args>
 static void BM_Polyline(benchmark::State& state, Args&&... args) {
   auto args_tuple = std::make_tuple(std::move(args)...);
-  auto path = std::get<Path>(args_tuple).Clone();
-  bool tessellate = std::get<bool>(args_tuple);
+  auto path = std::get<Path>(args_tuple);
 
   size_t point_count = 0u;
   size_t single_point_count = 0u;
   auto points = std::make_unique<std::vector<Point>>();
   points->reserve(2048);
   while (state.KeepRunning()) {
-    if (tessellate) {
-      tess.Tessellate(path, 1.0f,
-                      [&point_count, &single_point_count](
-                          const float* vertices, size_t vertices_count,
-                          const uint16_t* indices, size_t indices_count) {
-                        if (indices_count > 0) {
-                          single_point_count = indices_count;
-                          point_count += indices_count;
-                        } else {
-                          single_point_count = vertices_count;
-                          point_count += vertices_count;
-                        }
-                        return true;
-                      });
-    } else {
-      auto polyline = path.CreatePolyline(
-          // Clang-tidy doesn't know that the points get moved back before
-          // getting moved again in this loop.
-          // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
-          1.0f, std::move(points),
-          [&points](Path::Polyline::PointBufferPtr reclaimed) {
-            points = std::move(reclaimed);
-          });
-      single_point_count = polyline.points->size();
-      point_count += single_point_count;
-    }
+    auto polyline = path.CreatePolyline(
+        // Clang-tidy doesn't know that the points get moved back before
+        // getting moved again in this loop.
+        // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
+        1.0f, std::move(points),
+        [&points](Path::Polyline::PointBufferPtr reclaimed) {
+          points = std::move(reclaimed);
+        });
+    single_point_count = polyline.points->size();
+    point_count += single_point_count;
+  }
+  state.counters["SinglePointCount"] = single_point_count;
+  state.counters["TotalPointCount"] = point_count;
+}
+
+template <class... Args>
+static void BM_StrokePolyline(benchmark::State& state, Args&&... args) {
+  auto args_tuple = std::make_tuple(std::move(args)...);
+  auto path = std::get<Path>(args_tuple);
+  auto cap = std::get<Cap>(args_tuple);
+  auto join = std::get<Join>(args_tuple);
+
+  const Scalar stroke_width = 5.0f;
+  const Scalar miter_limit = 10.0f;
+  const Scalar scale = 1.0f;
+
+  auto points = std::make_unique<std::vector<Point>>();
+  points->reserve(2048);
+  auto polyline =
+      path.CreatePolyline(1.0f, std::move(points),
+                          [&points](Path::Polyline::PointBufferPtr reclaimed) {
+                            points = std::move(reclaimed);
+                          });
+
+  size_t point_count = 0u;
+  size_t single_point_count = 0u;
+  while (state.KeepRunning()) {
+    auto vertices = ImpellerBenchmarkAccessor::GenerateSolidStrokeVertices(
+        polyline, stroke_width, miter_limit, join, cap, scale);
+    single_point_count = vertices.size();
+    point_count += single_point_count;
   }
   state.counters["SinglePointCount"] = single_point_count;
   state.counters["TotalPointCount"] = point_count;
@@ -67,26 +98,49 @@ static void BM_Polyline(benchmark::State& state, Args&&... args) {
 template <class... Args>
 static void BM_Convex(benchmark::State& state, Args&&... args) {
   auto args_tuple = std::make_tuple(std::move(args)...);
-  auto path = std::get<Path>(args_tuple).Clone();
+  auto path = std::get<Path>(args_tuple);
 
   size_t point_count = 0u;
   size_t single_point_count = 0u;
   auto points = std::make_unique<std::vector<Point>>();
+  auto indices = std::make_unique<std::vector<uint16_t>>();
   points->reserve(2048);
   while (state.KeepRunning()) {
-    auto points = tess.TessellateConvex(path, 1.0f);
-    single_point_count = points.size();
-    point_count += points.size();
+    points->clear();
+    indices->clear();
+    Tessellator::TessellateConvexInternal(path, *points, *indices, 1.0f);
+    single_point_count = indices->size();
+    point_count += indices->size();
   }
   state.counters["SinglePointCount"] = single_point_count;
   state.counters["TotalPointCount"] = point_count;
 }
 
-BENCHMARK_CAPTURE(BM_Polyline, cubic_polyline, CreateCubic(), false);
-BENCHMARK_CAPTURE(BM_Polyline, cubic_polyline_tess, CreateCubic(), true);
-BENCHMARK_CAPTURE(BM_Polyline, quad_polyline, CreateQuadratic(), false);
-BENCHMARK_CAPTURE(BM_Polyline, quad_polyline_tess, CreateQuadratic(), true);
+#define MAKE_STROKE_BENCHMARK_CAPTURE(path, cap, join, closed, uvname, uvtype) \
+  BENCHMARK_CAPTURE(BM_StrokePolyline, stroke_##path##_##cap##_##join##uvname, \
+                    Create##path(closed), Cap::k##cap, Join::k##join)
+
+#define MAKE_STROKE_BENCHMARK_CAPTURE_CAPS_JOINS(path, uvname, uvtype)       \
+  MAKE_STROKE_BENCHMARK_CAPTURE(path, Butt, Bevel, false, uvname, uvtype);   \
+  MAKE_STROKE_BENCHMARK_CAPTURE(path, Butt, Miter, false, uvname, uvtype);   \
+  MAKE_STROKE_BENCHMARK_CAPTURE(path, Butt, Round, false, uvname, uvtype);   \
+  MAKE_STROKE_BENCHMARK_CAPTURE(path, Square, Bevel, false, uvname, uvtype); \
+  MAKE_STROKE_BENCHMARK_CAPTURE(path, Round, Bevel, false, uvname, uvtype)
+
+BENCHMARK_CAPTURE(BM_Polyline, cubic_polyline, CreateCubic(true), false);
+BENCHMARK_CAPTURE(BM_Polyline,
+                  unclosed_cubic_polyline,
+                  CreateCubic(false),
+                  false);
+
+BENCHMARK_CAPTURE(BM_Polyline, quad_polyline, CreateQuadratic(true), false);
+BENCHMARK_CAPTURE(BM_Polyline,
+                  unclosed_quad_polyline,
+                  CreateQuadratic(false),
+                  false);
+
 BENCHMARK_CAPTURE(BM_Convex, rrect_convex, CreateRRect(), true);
+MAKE_STROKE_BENCHMARK_CAPTURE(RRect, Butt, Bevel, , , );
 
 namespace {
 
@@ -96,8 +150,9 @@ Path CreateRRect() {
       .TakePath();
 }
 
-Path CreateCubic() {
-  return PathBuilder{}
+Path CreateCubic(bool closed) {
+  auto builder = PathBuilder{};
+  builder  //
       .MoveTo({359.934, 96.6335})
       .CubicCurveTo({358.189, 96.7055}, {356.436, 96.7908}, {354.673, 96.8895})
       .CubicCurveTo({354.571, 96.8953}, {354.469, 96.9016}, {354.367, 96.9075})
@@ -165,12 +220,18 @@ Path CreateCubic() {
       .LineTo({360, 119.256})
       .LineTo({360, 106.332})
       .LineTo({360, 96.6307})
-      .CubicCurveTo({359.978, 96.6317}, {359.956, 96.6326}, {359.934, 96.6335})
-      .Close()
+      .CubicCurveTo({359.978, 96.6317}, {359.956, 96.6326}, {359.934, 96.6335});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({337.336, 124.143})
       .CubicCurveTo({337.274, 122.359}, {338.903, 121.511}, {338.903, 121.511})
-      .CubicCurveTo({338.903, 121.511}, {338.96, 123.303}, {337.336, 124.143})
-      .Close()
+      .CubicCurveTo({338.903, 121.511}, {338.96, 123.303}, {337.336, 124.143});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({340.082, 121.849})
       .CubicCurveTo({340.074, 121.917}, {340.062, 121.992}, {340.046, 122.075})
       .CubicCurveTo({340.039, 122.109}, {340.031, 122.142}, {340.023, 122.177})
@@ -195,8 +256,11 @@ Path CreateCubic() {
       .CubicCurveTo({339.256, 122.215}, {339.339, 122.12}, {339.425, 122.037})
       .CubicCurveTo({339.428, 122.033}, {339.431, 122.03}, {339.435, 122.027})
       .CubicCurveTo({339.785, 121.687}, {340.106, 121.511}, {340.106, 121.511})
-      .CubicCurveTo({340.106, 121.511}, {340.107, 121.645}, {340.082, 121.849})
-      .Close()
+      .CubicCurveTo({340.106, 121.511}, {340.107, 121.645}, {340.082, 121.849});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({340.678, 113.245})
       .CubicCurveTo({340.594, 113.488}, {340.356, 113.655}, {340.135, 113.775})
       .CubicCurveTo({339.817, 113.948}, {339.465, 114.059}, {339.115, 114.151})
@@ -215,21 +279,30 @@ Path CreateCubic() {
       .CubicCurveTo({339.574, 110.984}, {337.942, 112.708}, {336.753, 113.784})
       .CubicCurveTo({336.768, 113.8}, {336.782, 113.816}, {336.796, 113.833})
       .CubicCurveTo({338.104, 112.946}, {340.187, 111.755}, {340.65, 112.813})
-      .CubicCurveTo({340.71, 112.95}, {340.728, 113.102}, {340.678, 113.245})
-      .Close()
+      .CubicCurveTo({340.71, 112.95}, {340.728, 113.102}, {340.678, 113.245});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({346.357, 106.771})
       .CubicCurveTo({346.295, 104.987}, {347.924, 104.139}, {347.924, 104.139})
-      .CubicCurveTo({347.924, 104.139}, {347.982, 105.931}, {346.357, 106.771})
-      .Close()
+      .CubicCurveTo({347.924, 104.139}, {347.982, 105.931}, {346.357, 106.771});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({347.56, 106.771})
       .CubicCurveTo({347.498, 104.987}, {349.127, 104.139}, {349.127, 104.139})
-      .CubicCurveTo({349.127, 104.139}, {349.185, 105.931}, {347.56, 106.771})
-      .Close()
-      .TakePath();
+      .CubicCurveTo({349.127, 104.139}, {349.185, 105.931}, {347.56, 106.771});
+  if (closed) {
+    builder.Close();
+  }
+  return builder.TakePath();
 }
 
-Path CreateQuadratic() {
-  return PathBuilder{}
+Path CreateQuadratic(bool closed) {
+  auto builder = PathBuilder{};
+  builder  //
       .MoveTo({359.934, 96.6335})
       .QuadraticCurveTo({358.189, 96.7055}, {354.673, 96.8895})
       .QuadraticCurveTo({354.571, 96.8953}, {354.367, 96.9075})
@@ -297,12 +370,18 @@ Path CreateQuadratic() {
       .LineTo({360, 119.256})
       .LineTo({360, 106.332})
       .LineTo({360, 96.6307})
-      .QuadraticCurveTo({359.978, 96.6317}, {359.934, 96.6335})
-      .Close()
+      .QuadraticCurveTo({359.978, 96.6317}, {359.934, 96.6335});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({337.336, 124.143})
       .QuadraticCurveTo({337.274, 122.359}, {338.903, 121.511})
-      .QuadraticCurveTo({338.903, 121.511}, {337.336, 124.143})
-      .Close()
+      .QuadraticCurveTo({338.903, 121.511}, {337.336, 124.143});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({340.082, 121.849})
       .QuadraticCurveTo({340.074, 121.917}, {340.046, 122.075})
       .QuadraticCurveTo({340.039, 122.109}, {340.023, 122.177})
@@ -326,8 +405,11 @@ Path CreateQuadratic() {
       .QuadraticCurveTo({339.256, 122.215}, {339.425, 122.037})
       .QuadraticCurveTo({339.428, 122.033}, {339.435, 122.027})
       .QuadraticCurveTo({339.785, 121.687}, {340.106, 121.511})
-      .QuadraticCurveTo({340.106, 121.511}, {340.082, 121.849})
-      .Close()
+      .QuadraticCurveTo({340.106, 121.511}, {340.082, 121.849});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({340.678, 113.245})
       .QuadraticCurveTo({340.594, 113.488}, {340.135, 113.775})
       .QuadraticCurveTo({339.817, 113.948}, {339.115, 114.151})
@@ -346,17 +428,25 @@ Path CreateQuadratic() {
       .QuadraticCurveTo({339.574, 110.984}, {336.753, 113.784})
       .QuadraticCurveTo({336.768, 113.8}, {336.796, 113.833})
       .QuadraticCurveTo({338.104, 112.946}, {340.65, 112.813})
-      .QuadraticCurveTo({340.71, 112.95}, {340.678, 113.245})
-      .Close()
+      .QuadraticCurveTo({340.71, 112.95}, {340.678, 113.245});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({346.357, 106.771})
       .QuadraticCurveTo({346.295, 104.987}, {347.924, 104.139})
-      .QuadraticCurveTo({347.924, 104.139}, {346.357, 106.771})
-      .Close()
+      .QuadraticCurveTo({347.924, 104.139}, {346.357, 106.771});
+  if (closed) {
+    builder.Close();
+  }
+  builder  //
       .MoveTo({347.56, 106.771})
       .QuadraticCurveTo({347.498, 104.987}, {349.127, 104.139})
-      .QuadraticCurveTo({349.127, 104.139}, {347.56, 106.771})
-      .Close()
-      .TakePath();
+      .QuadraticCurveTo({349.127, 104.139}, {347.56, 106.771});
+  if (closed) {
+    builder.Close();
+  }
+  return builder.TakePath();
 }
 
 }  // namespace

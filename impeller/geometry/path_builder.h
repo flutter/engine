@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
+#define FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_
 
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/rect.h"
@@ -25,15 +26,13 @@ class PathBuilder {
 
   ~PathBuilder();
 
-  Path CopyPath(FillType fill = FillType::kNonZero) const;
+  Path CopyPath(FillType fill = FillType::kNonZero);
 
   Path TakePath(FillType fill = FillType::kNonZero);
 
   /// @brief Reserve [point_size] points and [verb_size] verbs in the underlying
   ///        path buffer.
   void Reserve(size_t point_size, size_t verb_size);
-
-  const Path& GetCurrentPath() const;
 
   PathBuilder& SetConvexity(Convexity value);
 
@@ -132,6 +131,12 @@ class PathBuilder {
           top_right(radii),
           bottom_right(radii) {}
 
+    explicit RoundingRadii(Size radii)
+        : top_left(radii),
+          bottom_left(radii),
+          top_right(radii),
+          bottom_right(radii) {}
+
     bool AreAllZero() const {
       return top_left.IsZero() &&     //
              bottom_left.IsZero() &&  //
@@ -142,7 +147,7 @@ class PathBuilder {
 
   PathBuilder& AddRoundedRect(Rect rect, RoundingRadii radii);
 
-  PathBuilder& AddRoundedRect(Rect rect, Point radii);
+  PathBuilder& AddRoundedRect(Rect rect, Size radii);
 
   PathBuilder& AddRoundedRect(Rect rect, Scalar radius);
 
@@ -151,9 +156,7 @@ class PathBuilder {
  private:
   Point subpath_start_;
   Point current_;
-  Path prototype_;
-  Convexity convexity_;
-  bool did_compute_bounds_ = false;
+  Path::Data prototype_;
 
   PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
 
@@ -163,8 +166,30 @@ class PathBuilder {
 
   PathBuilder& AddRoundedRectBottomLeft(Rect rect, RoundingRadii radii);
 
+  void AddContourComponent(const Point& destination, bool is_closed = false);
+
+  void SetContourClosed(bool is_closed);
+
+  void AddLinearComponent(const Point& p1, const Point& p2);
+
+  void AddQuadraticComponent(const Point& p1, const Point& cp, const Point& p2);
+
+  void AddCubicComponent(const Point& p1,
+                         const Point& cp1,
+                         const Point& cp2,
+                         const Point& p2);
+
+  /// Compute the bounds of the path unless they are already computed or
+  /// set by an external source, such as |SetBounds|. Any call which mutates
+  /// the path data can invalidate the computed/set bounds.
+  void UpdateBounds();
+
+  std::optional<std::pair<Point, Point>> GetMinMaxCoveragePoints() const;
+
   PathBuilder(const PathBuilder&) = delete;
   PathBuilder& operator=(const PathBuilder&&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_PATH_BUILDER_H_

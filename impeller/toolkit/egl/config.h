@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TOOLKIT_EGL_CONFIG_H_
+#define FLUTTER_IMPELLER_TOOLKIT_EGL_CONFIG_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/toolkit/egl/egl.h"
 
 namespace impeller {
@@ -51,10 +51,17 @@ struct ConfigDescriptor {
   SurfaceType surface_type = SurfaceType::kPBuffer;
 };
 
+class Display;
+
+//------------------------------------------------------------------------------
+/// @brief      An EGL config. These are returned by the display to indicate
+///             support for a specific config descriptor.
+///
+///             There is no ability to construct these manually except for
+///             testing.
+///
 class Config {
  public:
-  Config(ConfigDescriptor descriptor, EGLConfig config);
-
   ~Config();
 
   bool IsValid() const;
@@ -62,6 +69,9 @@ class Config {
   const ConfigDescriptor& GetDescriptor() const;
 
   const EGLConfig& GetHandle() const;
+
+  // Do not use. Only for testing.
+  Config(ConfigDescriptor descriptor, EGLConfig config);
 
  private:
   const ConfigDescriptor desc_;
@@ -74,3 +84,5 @@ class Config {
 
 }  // namespace egl
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TOOLKIT_EGL_CONFIG_H_

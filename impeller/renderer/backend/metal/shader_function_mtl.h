@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_
 
 #include <Metal/Metal.h>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/shader_function.h"
 
@@ -44,3 +44,5 @@ class ShaderFunctionMTL final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_FUNCTION_MTL_H_

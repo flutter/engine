@@ -13,6 +13,7 @@
 
 import 'package:ui/ui.dart' as ui;
 
+import 'label_and_value.dart';
 import 'semantics.dart';
 
 /// The specific type of checkable control.
@@ -51,7 +52,13 @@ _CheckableKind _checkableKindFromSemanticsFlag(
 class Checkable extends PrimaryRoleManager {
   Checkable(SemanticsObject semanticsObject)
       : _kind = _checkableKindFromSemanticsFlag(semanticsObject),
-        super.withBasics(PrimaryRole.checkable, semanticsObject);
+        super.withBasics(
+          PrimaryRole.checkable,
+          semanticsObject,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+        ) {
+    addTappable();
+  }
 
   final _CheckableKind _kind;
 
@@ -102,4 +109,7 @@ class Checkable extends PrimaryRoleManager {
     removeAttribute('aria-disabled');
     removeAttribute('disabled');
   }
+
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 }

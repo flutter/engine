@@ -22,12 +22,12 @@ void main() {
 Future<void> testMain() async {
   const double baselineRatio = 1.1662499904632568;
 
-  setUpUnitTests();
+  setUpUnitTests(withImplicitView: true);
 
   late String fallback;
   setUp(() {
-    if (operatingSystem == OperatingSystem.macOs ||
-        operatingSystem == OperatingSystem.iOs) {
+    if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs ||
+        ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs) {
       if (isIOS15) {
         fallback = 'BlinkMacSystemFont';
       } else {
@@ -155,6 +155,29 @@ Future<void> testMain() async {
     expect(bottomRight?.writingDirection, TextDirection.ltr);
   });
 
+  test('Basic glyph metrics - hit test - center aligned text in separate fragments', () {
+    const double fontSize = 10.0;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: fontSize,
+      textAlign: TextAlign.center,
+      fontFamily: 'FlutterTest',
+    ))..addText('12345\n')
+      ..addText('1')
+      ..addText('2')
+      ..addText('3');
+    final Paragraph paragraph = builder.build();
+    paragraph.layout(const ParagraphConstraints(width: 50));
+
+    final GlyphInfo? bottomCenter = paragraph.getClosestGlyphInfoForOffset(const Offset(25.0, 99.0));
+    final GlyphInfo? expected = paragraph.getGlyphInfoAt(7);
+    expect(bottomCenter, equals(expected));
+    expect(bottomCenter, isNot(paragraph.getGlyphInfoAt(8)));
+
+    expect(bottomCenter?.graphemeClusterLayoutBounds, const Rect.fromLTWH(20, 10, 10, 10));
+    expect(bottomCenter?.graphemeClusterCodeUnitRange, const TextRange(start: 7, end: 8));
+    expect(bottomCenter?.writingDirection, TextDirection.ltr);
+  });
+
   test('Glyph metrics with grapheme split into different runs', () {
     const double fontSize = 10;
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
@@ -177,12 +200,7 @@ Future<void> testMain() async {
     expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
   }, skip: domIntl.v8BreakIterator == null); // Intended: Intl.v8breakiterator is needed for correctly breaking grapheme clusters.
 
-  test('Can disable rounding hack', () {
-    if (!ParagraphBuilder.shouldDisableRoundingHack) {
-      ParagraphBuilder.setDisableRoundingHack(true);
-      addTearDown(() => ParagraphBuilder.setDisableRoundingHack(false));
-    }
-    assert(ParagraphBuilder.shouldDisableRoundingHack);
+  test('disable rounding hack', () {
     const double fontSize = 1;
     const String text = '12345';
     const double letterSpacing = 0.25;
@@ -342,7 +360,7 @@ Future<void> testMain() async {
     expect(spans[1].style.fontFamily, 'FlutterTest, $fallback, sans-serif');
   },
       // TODO(mdebbar): https://github.com/flutter/flutter/issues/46638
-      skip: browserEngine == BrowserEngine.firefox);
+      skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox);
 
   test('adds Arial and sans-serif as fallback fonts', () {
     // Set this to false so it doesn't default to the test font.
@@ -360,7 +378,7 @@ Future<void> testMain() async {
     ui_web.debugEmulateFlutterTesterEnvironment = true;
   },
       // TODO(mdebbar): https://github.com/flutter/flutter/issues/46638
-      skip: browserEngine == BrowserEngine.firefox);
+      skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox);
 
   test('does not add fallback fonts to generic families', () {
     // Set this to false so it doesn't default to the default test font.

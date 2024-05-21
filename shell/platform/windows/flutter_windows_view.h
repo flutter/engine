@@ -17,17 +17,17 @@
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
-#include "flutter/shell/platform/windows/angle_surface_manager.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_proc_table.h"
 
 namespace flutter {
 
-// ID for the window frame buffer.
-inline constexpr uint32_t kWindowFrameBufferID = 0;
+// A unique identifier for a view.
+using FlutterViewId = int64_t;
 
 // An OS-windowing neutral abstration for a Flutter view that works
 // with win32 HWNDs.
@@ -35,50 +35,69 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
  public:
   // Creates a FlutterWindowsView with the given implementor of
   // WindowBindingHandler.
-  //
-  // In order for object to render Flutter content the SetEngine method must be
-  // called with a valid FlutterWindowsEngine instance.
-  FlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding);
+  FlutterWindowsView(
+      FlutterViewId view_id,
+      FlutterWindowsEngine* engine,
+      std::unique_ptr<WindowBindingHandler> window_binding,
+      std::shared_ptr<WindowsProcTable> windows_proc_table = nullptr);
 
   virtual ~FlutterWindowsView();
 
-  // Configures the window instance with an instance of a running Flutter
-  // engine.
-  void SetEngine(FlutterWindowsEngine* engine);
+  // Get the view's unique identifier.
+  FlutterViewId view_id() const;
 
-  // Creates rendering surface for Flutter engine to draw into.
-  // Should be called before calling FlutterEngineRun using this view.
+  // Whether this view is the implicit view.
+  //
+  // The implicit view is a special view for backwards compatibility.
+  // The engine assumes it can always render to this view, even if the app has
+  // destroyed the window for this view.
+  //
+  // Today, the implicit view is the first view that is created. It is the only
+  // view that can be created before the engine is launched.
+  //
+  // The embedder must ignore presents to this view before it is created and
+  // after it is destroyed.
+  //
+  // See:
+  // https://api.flutter.dev/flutter/dart-ui/PlatformDispatcher/implicitView.html
+  bool IsImplicitView() const;
+
+  // Create a rendering surface for Flutter engine to draw into.
+  //
+  // This is a no-op if using software rasterization.
   void CreateRenderSurface();
 
-  // Destroys current rendering surface if one has been allocated.
-  void DestroyRenderSurface();
+  // Get the EGL surface that backs the Flutter view.
+  //
+  // This might be nullptr or an invalid surface.
+  egl::WindowSurface* surface() const;
 
-  // Return the currently configured WindowsRenderTarget.
-  WindowsRenderTarget* GetRenderTarget() const;
-
-  // Return the currently configured PlatformWindow.
-  virtual PlatformWindow GetPlatformWindow() const;
+  // Return the currently configured HWND.
+  virtual HWND GetWindowHandle() const;
 
   // Returns the engine backing this view.
-  FlutterWindowsEngine* GetEngine();
+  FlutterWindowsEngine* GetEngine() const;
 
   // Tells the engine to generate a new frame
   void ForceRedraw();
 
-  // Swap the view's surface buffers. Must be called on the engine's raster
-  // thread. Returns true if the buffers were swapped.
-  //
-  // If the view is resizing, this returns false if the frame is not the target
-  // size. Otherwise, it unblocks the platform thread and blocks the raster
-  // thread until the v-blank.
-  bool SwapBuffers();
+  // Callback to clear a previously presented software bitmap.
+  virtual bool ClearSoftwareBitmap();
 
   // Callback for presenting a software bitmap.
-  bool PresentSoftwareBitmap(const void* allocation,
-                             size_t row_bytes,
-                             size_t height);
+  virtual bool PresentSoftwareBitmap(const void* allocation,
+                                     size_t row_bytes,
+                                     size_t height);
 
-  // Send initial bounds to embedder.  Must occur after engine has initialized.
+  // Creates a window metric for this view.
+  //
+  // Used to notify the engine of a view's current size and device pixel ratio.
+  FlutterWindowMetricsEvent CreateWindowMetricsEvent() const;
+
+  // Send initial bounds to embedder. Must occur after engine has initialized.
+  //
+  // This is a no-op if this is not the implicit view. Non-implicit views'
+  // initial window metrics are sent when the view is added to the engine.
   void SendInitialBounds();
 
   // Set the text of the alert, and create it if it does not yet exist.
@@ -87,8 +106,24 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   // |WindowBindingHandlerDelegate|
   void OnHighContrastChanged() override;
 
-  // Returns the frame buffer id for the engine to render to.
-  uint32_t GetFrameBufferId(size_t width, size_t height);
+  // Called on the raster thread when |CompositorOpenGL| receives an empty
+  // frame. Returns true if the frame can be presented.
+  //
+  // This destroys and then re-creates the view's surface if a resize is
+  // pending.
+  bool OnEmptyFrameGenerated();
+
+  // Called on the raster thread when |CompositorOpenGL| receives a frame.
+  // Returns true if the frame can be presented.
+  //
+  // This destroys and then re-creates the view's surface if a resize is pending
+  // and |width| and |height| match the target size.
+  bool OnFrameGenerated(size_t width, size_t height);
+
+  // Called on the raster thread after |CompositorOpenGL| presents a frame.
+  //
+  // This completes a view resize if one is pending.
+  virtual void OnFramePresented();
 
   // Sets the cursor that should be used when the mouse is over the Flutter
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
@@ -98,7 +133,7 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void SetFlutterCursor(HCURSOR cursor);
 
   // |WindowBindingHandlerDelegate|
-  void OnWindowSizeChanged(size_t width, size_t height) override;
+  bool OnWindowSizeChanged(size_t width, size_t height) override;
 
   // |WindowBindingHandlerDelegate|
   void OnWindowRepaint() override;
@@ -220,6 +255,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   CreateAccessibilityBridge();
 
  private:
+  // Allows setting the surface in tests.
+  friend class ViewModifier;
+
   // Struct holding the state of an individual pointer. The engine doesn't keep
   // track of which buttons have been pressed, so it's the embedding's
   // responsibility.
@@ -261,9 +299,20 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
     kDone,
   };
 
+  // Resize the surface to the desired size.
+  //
+  // If the dimensions have changed, this destroys the original surface and
+  // creates a new one.
+  //
+  // This must be run on the raster thread. This binds the surface to the
+  // current thread.
+  //
+  // Width and height are the surface's desired physical pixel dimensions.
+  bool ResizeRenderSurface(size_t width, size_t height);
+
   // Sends a window metrics update to the Flutter engine using current window
-  // dimensions in physical
-  void SendWindowMetrics(size_t width, size_t height, double dpiscale) const;
+  // dimensions in physical pixels.
+  void SendWindowMetrics(size_t width, size_t height, double pixel_ratio) const;
 
   // Reports a mouse movement to Flutter engine.
   void SendPointerMove(double x, double y, PointerState* state);
@@ -355,13 +404,24 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
   void SendPointerEventWithData(const FlutterPointerEvent& event_data,
                                 PointerState* state);
 
-  // Currently configured WindowsRenderTarget for this view used by
-  // surface_manager for creation of render surfaces and bound to the physical
-  // os window.
-  std::unique_ptr<WindowsRenderTarget> render_target_;
+  // If true, rendering to the window should synchronize with the vsync
+  // to prevent screen tearing.
+  bool NeedsVsync() const;
+
+  // The view's unique identifier.
+  FlutterViewId view_id_;
 
   // The engine associated with this view.
   FlutterWindowsEngine* engine_ = nullptr;
+
+  // Mocks win32 APIs.
+  std::shared_ptr<WindowsProcTable> windows_proc_table_;
+
+  // The EGL surface backing the view.
+  //
+  // Null if using software rasterization, the surface hasn't been created yet,
+  // or if surface creation failed.
+  std::unique_ptr<egl::WindowSurface> surface_ = nullptr;
 
   // Keeps track of pointer states in relation to the window.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;

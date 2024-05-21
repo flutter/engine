@@ -14,7 +14,6 @@ import 'text_goldens.dart';
 const String threeLines = 'First\nSecond\nThird';
 const String veryLong =
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
-const String longUnbreakable = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -26,6 +25,7 @@ Future<void> testMain() async {
   );
 
   setUpUnitTests(
+    withImplicitView: true,
     emulateTesterEnvironment: false,
     setUpTestViewDimensions: false,
   );

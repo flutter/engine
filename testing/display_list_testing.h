@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef TESTING_DISPLAY_LIST_TESTING_H_
-#define TESTING_DISPLAY_LIST_TESTING_H_
+#ifndef FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
+#define FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_
 
 #include <ostream>
 
@@ -73,7 +73,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void setImageFilter(const DlImageFilter* filter) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
   void restore() override;
@@ -176,4 +176,4 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
 }  // namespace testing
 }  // namespace flutter
 
-#endif  // TESTING_DISPLAY_LIST_TESTING_H_
+#endif  // FLUTTER_TESTING_DISPLAY_LIST_TESTING_H_

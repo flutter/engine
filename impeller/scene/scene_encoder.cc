@@ -2,13 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/macros.h"
-
+#include "impeller/scene/scene_encoder.h"
 #include "flutter/fml/logging.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/scene/scene_context.h"
-#include "impeller/scene/scene_encoder.h"
 
 namespace impeller {
 namespace scene {
@@ -24,24 +21,25 @@ static void EncodeCommand(const SceneContext& scene_context,
                           const Matrix& view_transform,
                           RenderPass& render_pass,
                           const SceneCommand& scene_command) {
-  auto& host_buffer = render_pass.GetTransientsBuffer();
+  auto& host_buffer = scene_context.GetTransientsBuffer();
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, scene_command.label);
-  cmd.stencil_reference =
-      0;  // TODO(bdero): Configurable stencil ref per-command.
+  render_pass.SetCommandLabel(scene_command.label);
+  // TODO(bdero): Configurable stencil ref per-command.
+  render_pass.SetStencilReference(0);
 
-  cmd.pipeline = scene_context.GetPipeline(
+  render_pass.SetPipeline(scene_context.GetPipeline(
       PipelineKey{scene_command.geometry->GetGeometryType(),
                   scene_command.material->GetMaterialType()},
-      scene_command.material->GetContextOptions(render_pass));
+      scene_command.material->GetContextOptions(render_pass)));
 
   scene_command.geometry->BindToCommand(
       scene_context, host_buffer, view_transform * scene_command.transform,
-      cmd);
-  scene_command.material->BindToCommand(scene_context, host_buffer, cmd);
+      render_pass);
+  scene_command.material->BindToCommand(scene_context, host_buffer,
+                                        render_pass);
 
-  render_pass.AddCommand(std::move(cmd));
+  render_pass.Draw();
+  ;
 }
 
 std::shared_ptr<CommandBuffer> SceneEncoder::BuildSceneCommandBuffer(
@@ -53,8 +51,7 @@ std::shared_ptr<CommandBuffer> SceneEncoder::BuildSceneCommandBuffer(
     ds_texture.type = TextureType::kTexture2DMultisample;
     ds_texture.format = PixelFormat::kD32FloatS8UInt;
     ds_texture.size = render_target.GetRenderTargetSize();
-    ds_texture.usage =
-        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+    ds_texture.usage = TextureUsage::kRenderTarget;
     ds_texture.sample_count = SampleCount::kCount4;
     ds_texture.storage_mode = StorageMode::kDeviceTransient;
     auto texture =

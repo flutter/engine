@@ -1,4 +1,9 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #include <memory>
+
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -35,6 +40,10 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
               SurfaceTextureAttachToGLContext,
               (JavaLocalRef surface_texture, int textureId),
               (override));
+  MOCK_METHOD(bool,
+              SurfaceTextureShouldUpdate,
+              (JavaLocalRef surface_texture),
+              (override));
   MOCK_METHOD(void,
               SurfaceTextureUpdateTexImage,
               (JavaLocalRef surface_texture),
@@ -48,7 +57,7 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
               (JavaLocalRef surface_texture),
               (override));
   MOCK_METHOD(JavaLocalRef,
-              ImageTextureEntryAcquireLatestImage,
+              ImageProducerTextureEntryAcquireLatestImage,
               (JavaLocalRef image_texture_entry),
               (override));
   MOCK_METHOD(JavaLocalRef,

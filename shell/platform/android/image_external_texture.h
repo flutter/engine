@@ -7,6 +7,7 @@
 
 #include "flutter/common/graphics/texture.h"
 #include "flutter/fml/logging.h"
+#include "flutter/shell/platform/android/image_lru.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 #include "flutter/shell/platform/android/platform_view_android_jni_impl.h"
 
@@ -61,9 +62,8 @@ class ImageExternalTexture : public flutter::Texture {
 
   enum class AttachmentState { kUninitialized, kAttached, kDetached };
   AttachmentState state_ = AttachmentState::kUninitialized;
-  bool new_frame_ready_ = false;
-
   sk_sp<flutter::DlImage> dl_image_;
+  ImageLRU image_lru_ = ImageLRU();
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageExternalTexture);
 };

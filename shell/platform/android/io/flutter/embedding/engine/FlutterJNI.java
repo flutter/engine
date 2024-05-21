@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -553,7 +555,7 @@ public class FlutterJNI {
   @VisibleForTesting
   @Nullable
   public static Bitmap decodeImage(@NonNull ByteBuffer buffer, long imageGeneratorAddress) {
-    if (Build.VERSION.SDK_INT >= 28) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_28) {
       ImageDecoder.Source source = ImageDecoder.createSource(buffer);
       try {
         return ImageDecoder.decodeBitmap(
@@ -742,13 +744,6 @@ public class FlutterJNI {
       int[] displayFeaturesType,
       int[] displayFeaturesState);
 
-  @UiThread
-  public void SetIsRenderingToImageView(boolean value) {
-    nativeSetIsRenderingToImageView(nativeShellHolderId, value);
-  }
-
-  private native void nativeSetIsRenderingToImageView(long nativeShellHolderId, boolean value);
-
   // ----- End Render Surface Support -----
 
   // ------ Start Touch Interaction Support ---
@@ -921,19 +916,19 @@ public class FlutterJNI {
    */
   @UiThread
   public void registerImageTexture(
-      long textureId, @NonNull TextureRegistry.ImageTextureEntry imageTextureEntry) {
+      long textureId, @NonNull TextureRegistry.ImageConsumer imageTexture) {
     ensureRunningOnMainThread();
     ensureAttachedToNative();
     nativeRegisterImageTexture(
         nativeShellHolderId,
         textureId,
-        new WeakReference<TextureRegistry.ImageTextureEntry>(imageTextureEntry));
+        new WeakReference<TextureRegistry.ImageConsumer>(imageTexture));
   }
 
   private native void nativeRegisterImageTexture(
       long nativeShellHolderId,
       long textureId,
-      @NonNull WeakReference<TextureRegistry.ImageTextureEntry> imageTextureEntry);
+      @NonNull WeakReference<TextureRegistry.ImageConsumer> imageTexture);
 
   /**
    * Call this method to inform Flutter that a texture previously registered with {@link
@@ -950,6 +945,16 @@ public class FlutterJNI {
   }
 
   private native void nativeMarkTextureFrameAvailable(long nativeShellHolderId, long textureId);
+
+  /** Schedule the engine to draw a frame but does not invalidate the layout tree. */
+  @UiThread
+  public void scheduleFrame() {
+    ensureRunningOnMainThread();
+    ensureAttachedToNative();
+    nativeScheduleFrame(nativeShellHolderId);
+  }
+
+  private native void nativeScheduleFrame(long nativeShellHolderId);
 
   /**
    * Unregisters a texture that was registered with {@link #registerTexture(long,
@@ -1281,22 +1286,17 @@ public class FlutterJNI {
       String countryCode = strings[i + 1];
       String scriptCode = strings[i + 2];
       // Convert to Locales via LocaleBuilder if available (API 21+) to include scriptCode.
-      if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-        Locale.Builder localeBuilder = new Locale.Builder();
-        if (!languageCode.isEmpty()) {
-          localeBuilder.setLanguage(languageCode);
-        }
-        if (!countryCode.isEmpty()) {
-          localeBuilder.setRegion(countryCode);
-        }
-        if (!scriptCode.isEmpty()) {
-          localeBuilder.setScript(scriptCode);
-        }
-        supportedLocales.add(localeBuilder.build());
-      } else {
-        // Pre-API 21, we fall back on scriptCode-less locales.
-        supportedLocales.add(new Locale(languageCode, countryCode));
+      Locale.Builder localeBuilder = new Locale.Builder();
+      if (!languageCode.isEmpty()) {
+        localeBuilder.setLanguage(languageCode);
       }
+      if (!countryCode.isEmpty()) {
+        localeBuilder.setRegion(countryCode);
+      }
+      if (!scriptCode.isEmpty()) {
+        localeBuilder.setScript(scriptCode);
+      }
+      supportedLocales.add(localeBuilder.build());
     }
 
     Locale result = localizationPlugin.resolveNativeLocale(supportedLocales);
@@ -1307,11 +1307,7 @@ public class FlutterJNI {
     String[] output = new String[localeDataLength];
     output[0] = result.getLanguage();
     output[1] = result.getCountry();
-    if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-      output[2] = result.getScript();
-    } else {
-      output[2] = "";
-    }
+    output[2] = result.getScript();
     return output;
   }
 

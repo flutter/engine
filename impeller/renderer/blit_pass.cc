@@ -9,24 +9,17 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
-#include "impeller/core/host_buffer.h"
-#include "impeller/renderer/blit_command.h"
 
 namespace impeller {
 
-BlitPass::BlitPass() : transients_buffer_(HostBuffer::Create()) {}
+BlitPass::BlitPass() {}
 
 BlitPass::~BlitPass() = default;
-
-HostBuffer& BlitPass::GetTransientsBuffer() {
-  return *transients_buffer_;
-}
 
 void BlitPass::SetLabel(std::string label) {
   if (label.empty()) {
     return;
   }
-  transients_buffer_->SetLabel(SPrintF("%s Transients", label.c_str()));
   OnSetLabel(std::move(label));
 }
 
@@ -107,7 +100,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
   auto bytes_per_pixel =
       BytesPerPixelForPixelFormat(source->GetTextureDescriptor().format);
-  auto bytes_per_image = source_region->size.Area() * bytes_per_pixel;
+  auto bytes_per_image = source_region->Area() * bytes_per_pixel;
   if (destination_offset + bytes_per_image >
       destination->GetDeviceBufferDescriptor().size) {
     VALIDATION_LOG
@@ -129,26 +122,47 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
 bool BlitPass::AddCopy(BufferView source,
                        std::shared_ptr<Texture> destination,
-                       IPoint destination_origin,
-                       std::string label) {
+                       std::optional<IRect> destination_region,
+                       std::string label,
+                       uint32_t slice,
+                       bool convert_to_read) {
   if (!destination) {
     VALIDATION_LOG << "Attempted to add a texture blit with no destination.";
+    return false;
+  }
+  ISize destination_size = destination->GetSize();
+  IRect destination_region_value =
+      destination_region.value_or(IRect::MakeSize(destination_size));
+  if (destination_region_value.GetX() < 0 ||
+      destination_region_value.GetY() < 0 ||
+      destination_region_value.GetRight() > destination_size.width ||
+      destination_region_value.GetBottom() > destination_size.height) {
+    VALIDATION_LOG << "Blit region cannot be larger than destination texture.";
     return false;
   }
 
   auto bytes_per_pixel =
       BytesPerPixelForPixelFormat(destination->GetTextureDescriptor().format);
-  auto bytes_per_image =
-      destination->GetTextureDescriptor().size.Area() * bytes_per_pixel;
+  auto bytes_per_region = destination_region_value.Area() * bytes_per_pixel;
 
-  if (source.range.length != bytes_per_image) {
+  if (source.range.length != bytes_per_region) {
     VALIDATION_LOG
         << "Attempted to add a texture blit with out of bounds access.";
     return false;
   }
+  if (slice > 5) {
+    VALIDATION_LOG << "Invalid value for slice: " << slice;
+    return false;
+  }
 
   return OnCopyBufferToTextureCommand(std::move(source), std::move(destination),
-                                      destination_origin, std::move(label));
+                                      destination_region_value,
+                                      std::move(label), slice, convert_to_read);
+}
+
+bool BlitPass::ConvertTextureToShaderRead(
+    const std::shared_ptr<Texture>& texture) {
+  return true;
 }
 
 bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,

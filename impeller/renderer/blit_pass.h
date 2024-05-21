@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BLIT_PASS_H_
+#define FLUTTER_IMPELLER_RENDERER_BLIT_PASS_H_
 
 #include <string>
-#include <variant>
 
 #include "impeller/core/device_buffer.h"
 #include "impeller/core/texture.h"
-#include "impeller/renderer/blit_command.h"
 
 namespace impeller {
 
@@ -32,14 +31,19 @@ class BlitPass {
 
   void SetLabel(std::string label);
 
-  HostBuffer& GetTransientsBuffer();
+  //----------------------------------------------------------------------------
+  /// @brief      If the texture is not already in a shader read internal
+  ///             state, then convert it to that state.
+  ///
+  ///             This API is only used by Vulkan.
+  virtual bool ConvertTextureToShaderRead(
+      const std::shared_ptr<Texture>& texture);
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command to copy the contents of one texture to
   ///             another texture. The blit area is limited by the intersection
   ///             of the texture coverage with respect the source region and
   ///             destination origin.
-  ///             No work is encoded into the command buffer at this time.
   ///
   /// @param[in]  source              The texture to read for copying.
   /// @param[in]  destination         The texture to overwrite using the source
@@ -63,7 +67,6 @@ class BlitPass {
   //----------------------------------------------------------------------------
   /// @brief      Record a command to copy the contents of the buffer to
   ///             the texture.
-  ///             No work is encoded into the command buffer at this time.
   ///
   /// @param[in]  source              The texture to read for copying.
   /// @param[in]  destination         The buffer to overwrite using the source
@@ -87,26 +90,39 @@ class BlitPass {
   //----------------------------------------------------------------------------
   /// @brief      Record a command to copy the contents of the buffer to
   ///             the texture.
-  ///             No work is encoded into the command buffer at this time.
   ///
   /// @param[in]  source              The buffer view to read for copying.
   /// @param[in]  destination         The texture to overwrite using the source
   ///                                 contents.
-  /// @param[in]  destination_offset  The offset to start writing to in the
-  ///                                 destination buffer.
+  /// @param[in]  destination_region  The offset to start writing to in the
+  ///                                 destination texture. If not provided, this
+  ///                                 defaults to the entire texture.
   /// @param[in]  label               The optional debug label to give the
   ///                                 command.
+  /// @param[in]  slice               For cubemap textures, the slice to write
+  ///                                 data to.
+  /// @param[in]  convert_to_read     Whether to convert the texture to a shader
+  ///                                 read state. Defaults to true.
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
+  /// If a region smaller than the texture size is provided, the
+  /// contents are treated as containing tightly packed pixel data of
+  /// that region. Only the portion of the texture in this region is
+  /// replaced and existing data is preserved.
+  ///
+  /// For example, to replace the top left 10 x 10 region of a larger
+  /// 100 x 100 texture, the region is {0, 0, 10, 10} and the expected
+  /// buffer size in bytes is 100 x bpp.
   bool AddCopy(BufferView source,
                std::shared_ptr<Texture> destination,
-               IPoint destination_origin = {},
-               std::string label = "");
+               std::optional<IRect> destination_region = std::nullopt,
+               std::string label = "",
+               uint32_t slice = 0,
+               bool convert_to_read = true);
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command to generate all mip levels for a texture.
-  ///             No work is encoded into the command buffer at this time.
   ///
   /// @param[in]  texture  The texture to generate mipmaps for.
   /// @param[in]  label    The optional debug label to give the command.
@@ -127,8 +143,6 @@ class BlitPass {
       const std::shared_ptr<Allocator>& transients_allocator) const = 0;
 
  protected:
-  std::shared_ptr<HostBuffer> transients_buffer_;
-
   explicit BlitPass();
 
   virtual void OnSetLabel(std::string label) = 0;
@@ -150,8 +164,10 @@ class BlitPass {
   virtual bool OnCopyBufferToTextureCommand(
       BufferView source,
       std::shared_ptr<Texture> destination,
-      IPoint destination_origin,
-      std::string label) = 0;
+      IRect destination_region,
+      std::string label,
+      uint32_t slice,
+      bool convert_to_read) = 0;
 
   virtual bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                        std::string label) = 0;
@@ -163,3 +179,5 @@ class BlitPass {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BLIT_PASS_H_

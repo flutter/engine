@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/runtime_effect_contents.h"
 
+#include <algorithm>
 #include <future>
 #include <memory>
 
@@ -11,14 +12,15 @@
 #include "flutter/fml/make_copyable.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/runtime_types.h"
 #include "impeller/core/shader_types.h"
-#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/runtime_effect.vert.h"
+#include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/shader_function.h"
+#include "impeller/renderer/vertex_descriptor.h"
 
 namespace impeller {
 
@@ -41,29 +43,56 @@ bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
   return false;
 }
 
-bool RuntimeEffectContents::Render(const ContentContext& renderer,
-                                   const Entity& entity,
-                                   RenderPass& pass) const {
-// TODO(jonahwilliams): FragmentProgram API is not fully wired up on Android.
-// Disable until this is complete so that integration tests and benchmarks can
-// run m3 applications.
-#ifdef FML_OS_ANDROID
+static ShaderType GetShaderType(RuntimeUniformType type) {
+  switch (type) {
+    case kSampledImage:
+      return ShaderType::kSampledImage;
+    case kFloat:
+      return ShaderType::kFloat;
+    case kStruct:
+      return ShaderType::kStruct;
+  }
+}
+
+static std::shared_ptr<ShaderMetadata> MakeShaderMetadata(
+    const RuntimeUniformDescription& uniform) {
+  auto metadata = std::make_shared<ShaderMetadata>();
+  metadata->name = uniform.name;
+  metadata->members.emplace_back(ShaderStructMemberMetadata{
+      .type = GetShaderType(uniform.type),
+      .size = uniform.GetSize(),
+      .byte_length = uniform.bit_width / 8,
+  });
+
+  return metadata;
+}
+
+bool RuntimeEffectContents::BootstrapShader(
+    const ContentContext& renderer) const {
+  if (!RegisterShader(renderer)) {
+    return false;
+  }
+  ContentContextOptions options;
+  options.color_attachment_pixel_format =
+      renderer.GetContext()->GetCapabilities()->GetDefaultColorFormat();
+  CreatePipeline(renderer, options, /*async=*/true);
   return true;
-#else
+}
 
-  auto context = renderer.GetContext();
-  auto library = context->GetShaderLibrary();
-
-  //--------------------------------------------------------------------------
-  /// Get or register shader.
-  ///
-
-  // TODO(113719): Register the shader function earlier.
+bool RuntimeEffectContents::RegisterShader(
+    const ContentContext& renderer) const {
+  const std::shared_ptr<Context>& context = renderer.GetContext();
+  const std::shared_ptr<ShaderLibrary>& library = context->GetShaderLibrary();
 
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
+  //--------------------------------------------------------------------------
+  /// Resolve runtime stage function.
+  ///
+
   if (function && runtime_stage_->IsDirty()) {
+    renderer.ClearCachedRuntimeEffectPipeline(runtime_stage_->GetEntrypoint());
     context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
     library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
                                 ShaderStage::kFragment);
@@ -101,166 +130,206 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
     runtime_stage_->SetClean();
   }
+  return true;
+}
 
-  //--------------------------------------------------------------------------
-  /// Resolve geometry.
-  ///
-
-  auto geometry_result =
-      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
-
-  //--------------------------------------------------------------------------
-  /// Get or create runtime stage pipeline.
-  ///
-
-  const auto& caps = context->GetCapabilities();
+std::shared_ptr<Pipeline<PipelineDescriptor>>
+RuntimeEffectContents::CreatePipeline(const ContentContext& renderer,
+                                      ContentContextOptions options,
+                                      bool async) const {
+  const std::shared_ptr<Context>& context = renderer.GetContext();
+  const std::shared_ptr<ShaderLibrary>& library = context->GetShaderLibrary();
+  const std::shared_ptr<const Capabilities>& caps = context->GetCapabilities();
   const auto color_attachment_format = caps->GetDefaultColorFormat();
-  const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
+  const auto stencil_attachment_format = caps->GetDefaultDepthStencilFormat();
 
   using VS = RuntimeEffectVertexShader;
+
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage");
   desc.AddStageEntrypoint(
       library->GetFunction(VS::kEntrypointName, ShaderStage::kVertex));
   desc.AddStageEntrypoint(library->GetFunction(runtime_stage_->GetEntrypoint(),
                                                ShaderStage::kFragment));
-  auto vertex_descriptor = std::make_shared<VertexDescriptor>();
+
+  std::shared_ptr<VertexDescriptor> vertex_descriptor =
+      std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
+  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+  vertex_descriptor->RegisterDescriptorSetLayouts(
+      runtime_stage_->GetDescriptorSetLayouts().data(),
+      runtime_stage_->GetDescriptorSetLayouts().size());
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   desc.SetColorAttachmentDescriptor(
       0u, {.format = color_attachment_format, .blending_enabled = true});
 
-  StencilAttachmentDescriptor stencil0;
-  stencil0.stencil_compare = CompareFunction::kEqual;
-  desc.SetStencilAttachmentDescriptors(stencil0);
+  desc.SetStencilAttachmentDescriptors(StencilAttachmentDescriptor{});
   desc.SetStencilPixelFormat(stencil_attachment_format);
 
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  if (geometry_result.prevent_overdraw) {
-    options.stencil_compare = CompareFunction::kEqual;
-    options.stencil_operation = StencilOperation::kIncrementClamp;
-  }
-  options.primitive_type = geometry_result.type;
-  options.ApplyToPipelineDescriptor(desc);
+  desc.SetDepthStencilAttachmentDescriptor(DepthAttachmentDescriptor{});
+  desc.SetDepthPixelFormat(stencil_attachment_format);
 
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+  options.ApplyToPipelineDescriptor(desc);
+  if (async) {
+    context->GetPipelineLibrary()->GetPipeline(desc, async);
+    return nullptr;
+  }
+
+  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc, async).Get();
   if (!pipeline) {
     VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
-    return false;
+    return nullptr;
   }
 
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "RuntimeEffectContents");
-  cmd.pipeline = pipeline;
-  cmd.stencil_reference = entity.GetClipDepth();
-  cmd.BindVertices(std::move(geometry_result.vertex_buffer));
+  return pipeline;
+}
+
+bool RuntimeEffectContents::Render(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) const {
+  const std::shared_ptr<Context>& context = renderer.GetContext();
+  const std::shared_ptr<ShaderLibrary>& library = context->GetShaderLibrary();
 
   //--------------------------------------------------------------------------
-  /// Vertex stage uniforms.
+  /// Get or register shader. Flutter will do this when the runtime effect
+  /// is first loaded, but this check is added to supporting testing of the
+  /// Aiks API and non-flutter usage of Impeller.
   ///
-
-  VS::FrameInfo frame_info;
-  frame_info.mvp = geometry_result.transform;
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  if (!RegisterShader(renderer)) {
+    return false;
+  }
 
   //--------------------------------------------------------------------------
   /// Fragment stage uniforms.
   ///
+  BindFragmentCallback bind_callback = [this, &renderer,
+                                        &context](RenderPass& pass) {
+    size_t minimum_sampler_index = 100000000;
+    size_t buffer_index = 0;
+    size_t buffer_offset = 0;
 
-  size_t minimum_sampler_index = 100000000;
-  size_t buffer_index = 0;
-  size_t buffer_offset = 0;
-  for (const auto& uniform : runtime_stage_->GetUniforms()) {
-    // TODO(113715): Populate this metadata once GLES is able to handle
-    //               non-struct uniform names.
-    std::shared_ptr<ShaderMetadata> metadata =
-        std::make_shared<ShaderMetadata>();
+    for (const auto& uniform : runtime_stage_->GetUniforms()) {
+      std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
 
-    switch (uniform.type) {
-      case kSampledImage: {
-        // Sampler uniforms are ordered in the IPLR according to their
-        // declaration and the uniform location reflects the correct offset to
-        // be mapped to - except that it may include all proceeding float
-        // uniforms. For example, a float sampler that comes after 4 float
-        // uniforms may have a location of 4. To convert to the actual offset we
-        // need to find the largest location assigned to a float uniform and
-        // then subtract this from all uniform locations. This is more or less
-        // the same operation we previously performed in the shader compiler.
-        minimum_sampler_index =
-            std::min(minimum_sampler_index, uniform.location);
-        break;
+      switch (uniform.type) {
+        case kSampledImage: {
+          // Sampler uniforms are ordered in the IPLR according to their
+          // declaration and the uniform location reflects the correct offset to
+          // be mapped to - except that it may include all proceeding float
+          // uniforms. For example, a float sampler that comes after 4 float
+          // uniforms may have a location of 4. To convert to the actual offset
+          // we need to find the largest location assigned to a float uniform
+          // and then subtract this from all uniform locations. This is more or
+          // less the same operation we previously performed in the shader
+          // compiler.
+          minimum_sampler_index =
+              std::min(minimum_sampler_index, uniform.location);
+          break;
+        }
+        case kFloat: {
+          FML_DCHECK(renderer.GetContext()->GetBackendType() !=
+                     Context::BackendType::kVulkan)
+              << "Uniform " << uniform.name
+              << " had unexpected type kFloat for Vulkan backend.";
+
+          size_t alignment =
+              std::max(uniform.bit_width / 8, DefaultUniformAlignment());
+          BufferView buffer_view = renderer.GetTransientsBuffer().Emplace(
+              uniform_data_->data() + buffer_offset, uniform.GetSize(),
+              alignment);
+
+          ShaderUniformSlot uniform_slot;
+          uniform_slot.name = uniform.name.c_str();
+          uniform_slot.ext_res_0 = uniform.location;
+          pass.BindResource(ShaderStage::kFragment,
+                            DescriptorType::kUniformBuffer, uniform_slot,
+                            metadata, std::move(buffer_view));
+          buffer_index++;
+          buffer_offset += uniform.GetSize();
+          break;
+        }
+        case kStruct: {
+          FML_DCHECK(renderer.GetContext()->GetBackendType() ==
+                     Context::BackendType::kVulkan);
+          ShaderUniformSlot uniform_slot;
+          uniform_slot.name = uniform.name.c_str();
+          uniform_slot.binding = uniform.location;
+
+          // TODO(jonahwilliams): rewrite this to emplace directly into
+          // HostBuffer.
+          std::vector<float> uniform_buffer;
+          uniform_buffer.reserve(uniform.struct_layout.size());
+          size_t uniform_byte_index = 0u;
+          for (const auto& byte_type : uniform.struct_layout) {
+            if (byte_type == 0) {
+              uniform_buffer.push_back(0.f);
+            } else if (byte_type == 1) {
+              uniform_buffer.push_back(reinterpret_cast<float*>(
+                  uniform_data_->data())[uniform_byte_index++]);
+            } else {
+              FML_UNREACHABLE();
+            }
+          }
+          size_t alignment = std::max(sizeof(float) * uniform_buffer.size(),
+                                      DefaultUniformAlignment());
+
+          BufferView buffer_view = renderer.GetTransientsBuffer().Emplace(
+              reinterpret_cast<const void*>(uniform_buffer.data()),
+              sizeof(float) * uniform_buffer.size(), alignment);
+          pass.BindResource(ShaderStage::kFragment,
+                            DescriptorType::kUniformBuffer, uniform_slot,
+                            ShaderMetadata{}, std::move(buffer_view));
+        }
       }
-      case kFloat: {
-        size_t alignment =
-            std::max(uniform.bit_width / 8, DefaultUniformAlignment());
-        auto buffer_view = pass.GetTransientsBuffer().Emplace(
-            uniform_data_->data() + buffer_offset, uniform.GetSize(),
-            alignment);
-
-        ShaderUniformSlot uniform_slot;
-        uniform_slot.name = uniform.name.c_str();
-        uniform_slot.ext_res_0 = uniform.location;
-        cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
-                         buffer_view);
-        buffer_index++;
-        buffer_offset += uniform.GetSize();
-        break;
-      }
-      case kBoolean:
-      case kSignedByte:
-      case kUnsignedByte:
-      case kSignedShort:
-      case kUnsignedShort:
-      case kSignedInt:
-      case kUnsignedInt:
-      case kSignedInt64:
-      case kUnsignedInt64:
-      case kHalfFloat:
-      case kDouble:
-        VALIDATION_LOG << "Unsupported uniform type for " << uniform.name
-                       << ".";
-        return true;
     }
-  }
 
-  size_t sampler_index = 0;
-  for (const auto& uniform : runtime_stage_->GetUniforms()) {
-    // TODO(113715): Populate this metadata once GLES is able to handle
-    //               non-struct uniform names.
-    ShaderMetadata metadata;
+    size_t sampler_index = 0;
+    for (const auto& uniform : runtime_stage_->GetUniforms()) {
+      std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
 
-    switch (uniform.type) {
-      case kSampledImage: {
-        FML_DCHECK(sampler_index < texture_inputs_.size());
-        auto& input = texture_inputs_[sampler_index];
+      switch (uniform.type) {
+        case kSampledImage: {
+          FML_DCHECK(sampler_index < texture_inputs_.size());
+          auto& input = texture_inputs_[sampler_index];
 
-        auto sampler =
-            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
+          const std::unique_ptr<const Sampler>& sampler =
+              context->GetSamplerLibrary()->GetSampler(
+                  input.sampler_descriptor);
 
-        SampledImageSlot image_slot;
-        image_slot.name = uniform.name.c_str();
-        image_slot.texture_index = uniform.location - minimum_sampler_index;
-        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
-                         input.texture, sampler);
+          SampledImageSlot image_slot;
+          image_slot.name = uniform.name.c_str();
+          image_slot.binding = uniform.binding;
+          image_slot.texture_index = uniform.location - minimum_sampler_index;
+          pass.BindResource(ShaderStage::kFragment,
+                            DescriptorType::kSampledImage, image_slot,
+                            *metadata, input.texture, sampler);
 
-        sampler_index++;
-        break;
+          sampler_index++;
+          break;
+        }
+        default:
+          continue;
       }
-      default:
-        continue;
     }
-  }
+    return true;
+  };
 
-  pass.AddCommand(std::move(cmd));
+  /// Now that the descriptor set layouts are known, get the pipeline.
+  using VS = RuntimeEffectVertexShader;
 
-  if (geometry_result.prevent_overdraw) {
-    auto restore = ClipRestoreContents();
-    restore.SetRestoreCoverage(GetCoverage(entity));
-    return restore.Render(renderer, entity, pass);
-  }
-  return true;
-#endif  // FML_OS_ANDROID
+  PipelineBuilderCallback pipeline_callback =
+      [&](ContentContextOptions options) {
+        // Pipeline creation callback for the cache handler to call.
+        return renderer.GetCachedRuntimeEffectPipeline(
+            runtime_stage_->GetEntrypoint(), options, [&]() {
+              return CreatePipeline(renderer, options, /*async=*/false);
+            });
+      };
+
+  return ColorSourceContents::DrawGeometry<VS>(renderer, entity, pass,
+                                               pipeline_callback,
+                                               VS::FrameInfo{}, bind_callback);
 }
 
 }  // namespace impeller

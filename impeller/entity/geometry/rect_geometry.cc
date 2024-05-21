@@ -11,7 +11,7 @@ RectGeometry::RectGeometry(Rect rect) : rect_(rect) {}
 GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
                                                const Entity& entity,
                                                RenderPass& pass) const {
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer =
@@ -21,24 +21,8 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
               .vertex_count = 4,
               .index_type = IndexType::kNone,
           },
-      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransform(),
-      .prevent_overdraw = false,
+      .transform = entity.GetShaderTransform(pass),
   };
-}
-
-// |Geometry|
-GeometryResult RectGeometry::GetPositionUVBuffer(Rect texture_coverage,
-                                                 Matrix effect_transform,
-                                                 const ContentContext& renderer,
-                                                 const Entity& entity,
-                                                 RenderPass& pass) const {
-  return ComputeUVGeometryForRect(rect_, texture_coverage, effect_transform,
-                                  renderer, entity, pass);
-}
-
-GeometryVertexType RectGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
 }
 
 std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {

@@ -4,10 +4,11 @@
 
 import 'dart:async';
 
-import 'package:ui/src/engine/browser_detection.dart';
+import 'package:ui/src/engine/display.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import 'dimensions_provider.dart';
 
@@ -67,10 +68,10 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     late double windowInnerWidth;
     late double windowInnerHeight;
     final DomVisualViewport? viewport = domWindow.visualViewport;
-    final double devicePixelRatio = getDevicePixelRatio();
+    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
 
     if (viewport != null) {
-      if (operatingSystem == OperatingSystem.iOs) {
+      if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs) {
         /// Chrome on iOS reports incorrect viewport.height when app
         /// starts in portrait orientation and the phone is rotated to
         /// landscape.
@@ -102,12 +103,12 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     double physicalHeight,
     bool isEditingOnMobile,
   ) {
-    final double devicePixelRatio = getDevicePixelRatio();
+    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
     final DomVisualViewport? viewport = domWindow.visualViewport;
     late double windowInnerHeight;
 
     if (viewport != null) {
-      if (operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
+      if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs && !isEditingOnMobile) {
         windowInnerHeight =
             domDocument.documentElement!.clientHeight * devicePixelRatio;
       } else {

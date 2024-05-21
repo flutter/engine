@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_DEFAULT_FLATLAND_CONNECTION_H_
-#define FLUTTER_SHELL_PLATFORM_FUCHSIA_DEFAULT_FLATLAND_CONNECTION_H_
+#ifndef FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLATLAND_CONNECTION_H_
+#define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLATLAND_CONNECTION_H_
 
 #include <fuchsia/ui/composition/cpp/fidl.h>
 
@@ -105,10 +105,11 @@ class FlatlandConnection final {
   std::vector<zx::event> acquire_fences_;
   std::vector<zx::event> current_present_release_fences_;
   std::vector<zx::event> previous_present_release_fences_;
+  std::string debug_label_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlatlandConnection);
 };
 
 }  // namespace flutter_runner
 
-#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_DEFAULT_FLATLAND_CONNECTION_H_
+#endif  // FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_FLATLAND_CONNECTION_H_

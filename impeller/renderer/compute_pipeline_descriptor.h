@@ -2,23 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMPUTE_PIPELINE_DESCRIPTOR_H_
+#define FLUTTER_IMPELLER_RENDERER_COMPUTE_PIPELINE_DESCRIPTOR_H_
 
-#include <functional>
-#include <future>
-#include <map>
 #include <memory>
 #include <string>
-#include <string_view>
-#include <type_traits>
-#include <unordered_map>
 
-#include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
-#include "impeller/core/formats.h"
 #include "impeller/core/shader_types.h"
-#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
@@ -66,3 +57,5 @@ class ComputePipelineDescriptor final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMPUTE_PIPELINE_DESCRIPTOR_H_

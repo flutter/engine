@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_GPU_COMMAND_BUFFER_H_
+#define FLUTTER_LIB_GPU_COMMAND_BUFFER_H_
 
 #include "flutter/lib/gpu/context.h"
 #include "flutter/lib/gpu/export.h"
@@ -17,8 +18,8 @@ class CommandBuffer : public RefCountedDartWrappable<CommandBuffer> {
   FML_FRIEND_MAKE_REF_COUNTED(CommandBuffer);
 
  public:
-  explicit CommandBuffer(
-      std::shared_ptr<impeller::CommandBuffer> command_buffer);
+  CommandBuffer(std::shared_ptr<impeller::Context> context,
+                std::shared_ptr<impeller::CommandBuffer> command_buffer);
 
   std::shared_ptr<impeller::CommandBuffer> GetCommandBuffer();
 
@@ -31,6 +32,7 @@ class CommandBuffer : public RefCountedDartWrappable<CommandBuffer> {
   ~CommandBuffer() override;
 
  private:
+  std::shared_ptr<impeller::Context> context_;
   std::shared_ptr<impeller::CommandBuffer> command_buffer_;
   std::vector<std::shared_ptr<impeller::RenderPass>> encodables_;
 
@@ -57,3 +59,5 @@ extern Dart_Handle InternalFlutterGpu_CommandBuffer_Submit(
     Dart_Handle completion_callback);
 
 }  // extern "C"
+
+#endif  // FLUTTER_LIB_GPU_COMMAND_BUFFER_H_

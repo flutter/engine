@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_
 
 #include <type_traits>
 #include "impeller/entity/geometry/geometry.h"
@@ -51,17 +52,7 @@ class LineGeometry final : public Geometry {
                                    RenderPass& pass) const override;
 
   // |Geometry|
-  GeometryVertexType GetVertexType() const override;
-
-  // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
-
-  // |Geometry|
-  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                     Matrix effect_transform,
-                                     const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) const override;
 
   Point p0_;
   Point p1_;
@@ -76,3 +67,5 @@ class LineGeometry final : public Geometry {
 static_assert(std::is_trivially_destructible<LineGeometry>::value);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_LINE_GEOMETRY_H_

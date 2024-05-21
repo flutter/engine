@@ -4,6 +4,8 @@
 
 package io.flutter.plugin.platform;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -13,6 +15,7 @@ import android.graphics.Matrix;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.View;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
@@ -23,6 +26,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.android.AndroidTouchProcessor;
+import io.flutter.embedding.engine.renderer.FlutterRenderer;
 import io.flutter.util.ViewUtils;
 
 /**
@@ -36,7 +40,7 @@ import io.flutter.util.ViewUtils;
  * <p>Since the view is in the Android view hierarchy, keyboard and accessibility interactions
  * behave normally.
  */
-@TargetApi(23)
+@TargetApi(API_LEVELS.API_23)
 public class PlatformViewWrapper extends FrameLayout {
   private static final String TAG = "PlatformViewWrapper";
 
@@ -58,6 +62,16 @@ public class PlatformViewWrapper extends FrameLayout {
       @NonNull Context context, @NonNull PlatformViewRenderTarget renderTarget) {
     this(context);
     this.renderTarget = renderTarget;
+
+    Surface surface = renderTarget.getSurface();
+    if (surface != null && !FlutterRenderer.debugDisableSurfaceClear) {
+      final Canvas canvas = surface.lockHardwareCanvas();
+      try {
+        canvas.drawColor(Color.TRANSPARENT, PorterDuff.Mode.CLEAR);
+      } finally {
+        surface.unlockCanvasAndPost(canvas);
+      }
+    }
   }
 
   /**
@@ -151,7 +165,8 @@ public class PlatformViewWrapper extends FrameLayout {
       Log.e(TAG, "Platform view cannot be composed without a RenderTarget.");
       return;
     }
-    final Canvas targetCanvas = renderTarget.lockHardwareCanvas();
+    final Surface targetSurface = renderTarget.getSurface();
+    final Canvas targetCanvas = targetSurface.lockHardwareCanvas();
     if (targetCanvas == null) {
       // Cannot render right now.
       invalidate();
@@ -165,7 +180,8 @@ public class PlatformViewWrapper extends FrameLayout {
       // Override the canvas that this subtree of views will use to draw.
       super.draw(targetCanvas);
     } finally {
-      renderTarget.unlockCanvasAndPost(targetCanvas);
+      renderTarget.scheduleFrame();
+      targetSurface.unlockCanvasAndPost(targetCanvas);
     }
   }
 

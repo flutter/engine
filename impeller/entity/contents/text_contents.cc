@@ -6,15 +6,14 @@
 
 #include <cstring>
 #include <optional>
-#include <type_traits>
 #include <utility>
 
+#include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/sampler_library.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -26,18 +25,6 @@ TextContents::~TextContents() = default;
 
 void TextContents::SetTextFrame(const std::shared_ptr<TextFrame>& frame) {
   frame_ = frame;
-}
-
-std::shared_ptr<GlyphAtlas> TextContents::ResolveAtlas(
-    Context& context,
-    GlyphAtlas::Type type,
-    const std::shared_ptr<LazyGlyphAtlas>& lazy_atlas) const {
-  FML_DCHECK(lazy_atlas);
-  if (lazy_atlas) {
-    return lazy_atlas->CreateOrGetGlyphAtlas(context, type);
-  }
-
-  return nullptr;
 }
 
 void TextContents::SetColor(Color color) {
@@ -84,8 +71,9 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   auto type = frame_->GetAtlasType();
-  auto atlas =
-      ResolveAtlas(*renderer.GetContext(), type, renderer.GetLazyGlyphAtlas());
+  const std::shared_ptr<GlyphAtlas>& atlas =
+      renderer.GetLazyGlyphAtlas()->CreateOrGetGlyphAtlas(
+          *renderer.GetContext(), renderer.GetTransientsBuffer(), type);
 
   if (!atlas || !atlas->IsValid()) {
     VALIDATION_LOG << "Cannot render glyphs without prepared atlas.";
@@ -93,23 +81,18 @@ bool TextContents::Render(const ContentContext& renderer,
   }
 
   // Information shared by all glyph draw calls.
-  Command cmd;
-  DEBUG_COMMAND_INFO(cmd, "TextFrame");
+  pass.SetCommandLabel("TextFrame");
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = PrimitiveType::kTriangle;
-  if (type == GlyphAtlas::Type::kAlphaBitmap) {
-    cmd.pipeline = renderer.GetGlyphAtlasPipeline(opts);
-  } else {
-    cmd.pipeline = renderer.GetGlyphAtlasColorPipeline(opts);
-  }
-  cmd.stencil_reference = entity.GetClipDepth();
+  pass.SetPipeline(renderer.GetGlyphAtlasPipeline(opts));
 
   using VS = GlyphAtlasPipeline::VertexShader;
   using FS = GlyphAtlasPipeline::FragmentShader;
 
   // Common vertex uniforms for all glyphs.
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
+  frame_info.mvp =
+      Entity::GetShaderTransform(entity.GetShaderClipDepth(), pass, Matrix());
   frame_info.atlas_size =
       Vector2{static_cast<Scalar>(atlas->GetTexture()->GetSize().width),
               static_cast<Scalar>(atlas->GetTexture()->GetSize().height)};
@@ -117,17 +100,17 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.is_translation_scale =
       entity.GetTransform().IsTranslationScaleOnly();
   frame_info.entity_transform = entity.GetTransform();
-  frame_info.text_color = ToVector(color.Premultiply());
 
-  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+  VS::BindFrameInfo(pass,
+                    renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
 
-  if (type == GlyphAtlas::Type::kColorBitmap) {
-    using FSS = GlyphAtlasColorPipeline::FragmentShader;
-    FSS::FragInfo frag_info;
-    frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
-    FSS::BindFragInfo(cmd,
-                      pass.GetTransientsBuffer().EmplaceUniform(frag_info));
-  }
+  FS::FragInfo frag_info;
+  frag_info.use_text_color = force_text_color_ ? 1.0 : 0.0;
+  frag_info.text_color = ToVector(color.Premultiply());
+  frag_info.is_color_glyph = type == GlyphAtlas::Type::kColorBitmap;
+
+  FS::BindFragInfo(pass,
+                   renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   SamplerDescriptor sampler_desc;
   if (frame_info.is_translation_scale) {
@@ -142,10 +125,12 @@ bool TextContents::Render(const ContentContext& renderer,
     sampler_desc.min_filter = MinMagFilter::kLinear;
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
-  sampler_desc.mip_filter = MipFilter::kNearest;
+
+  // No mipmaps for glyph atlas (glyphs are generated at exact scales).
+  sampler_desc.mip_filter = MipFilter::kBase;
 
   FS::BindGlyphAtlasSampler(
-      cmd,                  // command
+      pass,                 // command
       atlas->GetTexture(),  // texture
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           sampler_desc)  // sampler
@@ -162,25 +147,26 @@ bool TextContents::Render(const ContentContext& renderer,
                                                 Point{0, 1}, Point{1, 0},
                                                 Point{0, 1}, Point{1, 1}};
 
-  auto& host_buffer = pass.GetTransientsBuffer();
+  auto& host_buffer = renderer.GetTransientsBuffer();
   size_t vertex_count = 0;
   for (const auto& run : frame_->GetRuns()) {
     vertex_count += run.GetGlyphPositions().size();
   }
   vertex_count *= 6;
 
-  auto buffer_view = host_buffer.Emplace(
+  BufferView buffer_view = host_buffer.Emplace(
       vertex_count * sizeof(VS::PerVertexData), alignof(VS::PerVertexData),
       [&](uint8_t* contents) {
         VS::PerVertexData vtx;
         VS::PerVertexData* vtx_contents =
             reinterpret_cast<VS::PerVertexData*>(contents);
+        size_t offset = 0u;
         for (const TextRun& run : frame_->GetRuns()) {
           const Font& font = run.GetFont();
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
           const FontGlyphAtlas* font_atlas =
-              atlas->GetFontGlyphAtlas(font, rounded_scale);
+              atlas->GetFontGlyphAtlas(font, rounded_scale, frame_->GetColor());
           if (!font_atlas) {
             VALIDATION_LOG << "Could not find font in the atlas.";
             continue;
@@ -195,31 +181,26 @@ bool TextContents::Render(const ContentContext& renderer,
               continue;
             }
             const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
-            vtx.atlas_glyph_bounds = Vector4(
-                atlas_glyph_bounds.origin.x, atlas_glyph_bounds.origin.y,
-                atlas_glyph_bounds.size.width, atlas_glyph_bounds.size.height);
-            vtx.glyph_bounds = Vector4(glyph_position.glyph.bounds.origin.x,
-                                       glyph_position.glyph.bounds.origin.y,
-                                       glyph_position.glyph.bounds.size.width,
-                                       glyph_position.glyph.bounds.size.height);
+            vtx.atlas_glyph_bounds = Vector4(atlas_glyph_bounds.GetXYWH());
+            vtx.glyph_bounds = Vector4(glyph_position.glyph.bounds.GetXYWH());
             vtx.glyph_position = glyph_position.position;
 
             for (const Point& point : unit_points) {
               vtx.unit_position = point;
-              std::memcpy(vtx_contents++, &vtx, sizeof(VS::PerVertexData));
+              vtx_contents[offset++] = vtx;
             }
           }
         }
       });
 
-  cmd.BindVertices({
-      .vertex_buffer = buffer_view,
+  pass.SetVertexBuffer({
+      .vertex_buffer = std::move(buffer_view),
       .index_buffer = {},
       .vertex_count = vertex_count,
       .index_type = IndexType::kNone,
   });
 
-  return pass.AddCommand(std::move(cmd));
+  return pass.Draw().ok();
 }
 
 }  // namespace impeller

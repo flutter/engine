@@ -2,17 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_
 
 #include <functional>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
-#include "impeller/renderer/pipeline.h"
 #include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/rectangle_packer.h"
 
@@ -32,8 +31,10 @@ class GlyphAtlas {
   enum class Type {
     //--------------------------------------------------------------------------
     /// The glyphs are reprsented at their requested size using only an 8-bit
-    /// alpha channel.
+    /// color channel.
     ///
+    /// This might be backed by a grey or red single channel texture, depending
+    /// on the backend capabilities.
     kAlphaBitmap,
 
     //--------------------------------------------------------------------------
@@ -125,7 +126,9 @@ class GlyphAtlas {
   ///             scale are not available in the atlas.  The pointer is only
   ///             valid for the lifetime of the GlyphAtlas.
   ///
-  const FontGlyphAtlas* GetFontGlyphAtlas(const Font& font, Scalar scale) const;
+  const FontGlyphAtlas* GetFontGlyphAtlas(const Font& font,
+                                          Scalar scale,
+                                          Color color) const;
 
  private:
   const Type type_;
@@ -143,6 +146,8 @@ class GlyphAtlas {
 ///
 class GlyphAtlasContext {
  public:
+  explicit GlyphAtlasContext(GlyphAtlas::Type type);
+
   virtual ~GlyphAtlasContext();
 
   //----------------------------------------------------------------------------
@@ -158,18 +163,28 @@ class GlyphAtlasContext {
   std::shared_ptr<RectanglePacker> GetRectPacker() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      A y-coordinate shift that must be applied to glyphs appended
+  /// to
+  ///             the atlas.
+  ///
+  ///             The rectangle packer is only initialized for unfilled regions
+  ///             of the atlas. The area the rectangle packer covers is offset
+  ///             from the origin by this height adjustment.
+  int64_t GetHeightAdjustment() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
-  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
+                        ISize size,
+                        int64_t height_adjustment_);
 
   void UpdateRectPacker(std::shared_ptr<RectanglePacker> rect_packer);
-
- protected:
-  GlyphAtlasContext();
 
  private:
   std::shared_ptr<GlyphAtlas> atlas_;
   ISize atlas_size_;
   std::shared_ptr<RectanglePacker> rect_packer_;
+  int64_t height_adjustment_;
 
   GlyphAtlasContext(const GlyphAtlasContext&) = delete;
 
@@ -204,3 +219,5 @@ class FontGlyphAtlas {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_GLYPH_ATLAS_H_

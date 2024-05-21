@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:io' as io show Directory, File, Platform, stderr;
+import 'dart:convert' show jsonEncode;
+import 'dart:io' as io show Directory, File, Platform, ProcessSignal, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
@@ -32,7 +33,7 @@ final class Fixture {
       errSink: errBuffer,
       processManager: processManager,
       engine: engine,
-    ), errBuffer, outBuffer);
+    ), errBuffer);
   }
 
   /// Simulates running the tool with the given [options].
@@ -49,20 +50,16 @@ final class Fixture {
       outSink: outBuffer,
       errSink: errBuffer,
       processManager: processManager,
-    ), errBuffer, outBuffer);
+    ), errBuffer);
   }
 
   Fixture._(
     this.tool,
     this.errBuffer,
-    this.outBuffer,
   );
 
   /// The `clang-tidy` tool.
   final ClangTidy tool;
-
-  /// Captured `stdout` from the tool.
-  final StringBuffer outBuffer;
 
   /// Captured `stderr` from the tool.
   final StringBuffer errBuffer;
@@ -217,6 +214,7 @@ Future<int> main(List<String> args) async {
   test('clang-tidy specified', () async {
     _withTempFile('shard-id-valid', (String path) {
       final Options options = Options.fromCommandLine( <String>[
+          '--compile-commands=$path',
           '--clang-tidy=foo/bar',
         ],);
       expect(options.clangTidyPath, isNotNull);
@@ -363,7 +361,7 @@ Future<int> main(List<String> args) async {
       ),
     );
     final List<io.File> fileList = await fixture.tool.computeFilesOfInterest();
-    expect(fileList.length, lessThan(1000));
+    expect(fileList.length, lessThan(2000));
   });
 
   test('Sharding', () async {
@@ -577,6 +575,87 @@ Future<int> main(List<String> args) async {
     );
 
     expect(lintAction, equals(LintAction.lint));
+  });
+
+  test('Command filters out sed command after a compile command', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          '../../buildtools/mac-x64/clang/bin/clang filename '
+          "&& sed -i 's@/b/f/w@../..@g' filename",
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
+  });
+
+  test('Command filters out the -MF flag', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          '../../buildtools/mac-x64/clang/bin/clang -MF stuff filename ',
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
+  });
+
+  test('Command filters out rewrapper command before a compile command', () {
+    final Command command = Command.fromMap(<String, String>{
+        'directory': '/unused',
+        'command':
+          'flutter/engine/src/buildtools/mac-arm64/reclient/rewrapper '
+          '--cfg=flutter/engine/src/flutter/build/rbe/rewrapper-mac-arm64.cfg '
+          '--exec_root=flutter/engine/src/ '
+          '--labels=type=compile,compiler=clang,lang=cpp '
+          '../../buildtools/mac-x64/clang/bin/clang++ filename ',
+        'file': 'unused',
+    });
+    expect(command.tidyArgs.trim(), 'filename');
+  });
+
+  test('Files that cause clang-tidy to segfault are skipped', () async {
+    final Fixture fileListFixture = Fixture.fromOptions(
+      Options(
+        buildCommandsPath: io.File(buildCommands),
+        lintTarget: const LintAll(),
+      ),
+    );
+    final String firstFilePath = (await fileListFixture.tool.computeFilesOfInterest()).first.path;
+
+    final FakeProcessManager fakeProcessManager = FakeProcessManager(
+      onStart: (List<String> command) {
+        if (command.first.endsWith('clang-tidy')) {
+          return FakeProcess(exitCode: -io.ProcessSignal.sigsegv.signalNumber);
+        }
+        return FakeProcessManager.unhandledStart(command);
+      },
+    );
+
+    final List<dynamic> commandsData = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'file': firstFilePath,
+        'directory': '/unused',
+        'command': 'clang/bin/clang $firstFilePath',
+      },
+    ];
+
+    final io.File commands = io.File(path.join(
+        io.Directory.systemTemp.path, 'test_compile_commands.json'));
+    int result;
+    try {
+      commands.writeAsStringSync(jsonEncode(commandsData));
+      final Fixture fixture = Fixture.fromOptions(
+        Options(
+          buildCommandsPath: commands,
+          lintTarget: const LintAll(),
+        ),
+        processManager: fakeProcessManager,
+      );
+      result = await fixture.tool.run();
+    } finally {
+      commands.deleteSync();
+    }
+
+    expect(result, 0);
   });
 
   return 0;

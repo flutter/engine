@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:isolate';
 
 import 'package:async_helper/async_helper.dart';
 import 'package:async_helper/async_minitest.dart';
@@ -12,6 +13,25 @@ import 'package:litetest/src/test_suite.dart';
 
 Future<void> main() async {
   asyncStart();
+
+  test('skip', () async {
+    final StringBuffer buffer = StringBuffer();
+    final TestLifecycle lifecycle = TestLifecycle();
+    final TestSuite ts = TestSuite(
+      logger: buffer,
+      lifecycle: lifecycle,
+    );
+
+    ts.test('Test', () {
+      expect(1, equals(1));
+    }, skip: true);
+    final bool result = await lifecycle.result;
+
+    expect(result, true);
+    expect(buffer.toString(), equals(
+      'Test "Test": Skipped\nAll tests skipped.\n',
+    ));
+  });
 
   test('test', () async {
     final StringBuffer buffer = StringBuffer();
@@ -89,7 +109,7 @@ Test "Test3": Passed
     expect(output.contains('Test "Test2": Started'), true);
     expect(output.contains('Test "Test2": Failed'), true);
     expect(output.contains(
-      'In test "Test2" Expect.deepEquals(expected: <3>, actual: <2>) fails.',
+      'In test "Test2" Expect.deepEquals(expected: <3>, actual: <2>, \'[]\') fails.',
     ), true);
     expect(output.contains('Test "Test3": Started'), true);
     expect(output.contains('Test "Test3": Passed'), true);
@@ -114,7 +134,7 @@ Test "Test3": Passed
     expect(output.contains('Test "Test": Failed'), true);
     expect(
       output.contains(
-        'In test "Test" Expect.deepEquals(expected: <2>, actual: <1>) fails.',
+        'In test "Test" Expect.deepEquals(expected: <2>, actual: <1>, \'[]\') fails.',
       ),
       true,
     );
@@ -168,7 +188,7 @@ Test "Test3": Passed
     expect(output.contains('Test "Test": Failed'), true);
     expect(
       output.contains(
-        'In test "Test" Expect.deepEquals(expected: <2>, actual: <1>) fails.',
+        'In test "Test" Expect.deepEquals(expected: <2>, actual: <1>, \'[]\') fails.',
       ),
       true,
     );
@@ -211,6 +231,8 @@ Test "Test3": Passed
 }
 
 class TestLifecycle implements Lifecycle {
+  final ReceivePort port = ReceivePort();
+
   final Completer<bool> _testCompleter = Completer<bool>();
 
   Future<bool> get result => _testCompleter.future;
@@ -225,5 +247,6 @@ class TestLifecycle implements Lifecycle {
       testsSucceeded = testsSucceeded && (t.state == TestState.succeeded);
     }
     _testCompleter.complete(testsSucceeded);
+    port.close();
   }
 }

@@ -766,7 +766,7 @@ enum BlendMode {
   /// [srcOver]. Regions that are entirely transparent in the source image take
   /// their saturation from the destination.
   ///
-  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_hue.png)
+  /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/blend_mode_saturation.png)
   ///
   /// See also:
   ///
@@ -1087,10 +1087,26 @@ enum Clip {
 ///
 /// Most APIs on [Canvas] take a [Paint] object to describe the style
 /// to use for that operation.
-class Paint {
+final class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
   Paint();
+
+  /// Constructs a new [Paint] object with the same fields as [other].
+  ///
+  /// Any changes made to the object returned will not affect [other], and
+  /// changes to [other] will not affect the object returned.
+  ///
+  /// Backends (for example web versus native) may have different performance
+  /// characteristics. If the code is performance-sensitive, consider profiling
+  /// and falling back to reusing a single [Paint] object if necessary.
+  Paint.from(Paint other) {
+    // Every field on Paint is deeply immutable, so to create a copy of a Paint
+    // object, we copy the underlying data buffer and the list of objects (which
+    // are also deeply immutable).
+    _data.buffer.asUint32List().setAll(0, other._data.buffer.asUint32List());
+    _objects = other._objects?.toList();
+  }
 
   // Paint objects are encoded in two buffers:
   //
@@ -1501,7 +1517,7 @@ class Paint {
       }
       semicolon = '; ';
     }
-    if (isAntiAlias != true) {
+    if (!isAntiAlias) {
       result.write('${semicolon}antialias off');
       semicolon = '; ';
     }
@@ -2131,6 +2147,9 @@ base class _NativeCodec extends NativeFieldWrapperClass1 implements Codec {
   @override
   @Native<Void Function(Pointer<Void>)>(symbol: 'Codec::dispose')
   external void dispose();
+
+  @override
+  String toString() => 'Codec(${_cachedFrameCount == null ? "" : "$_cachedFrameCount frames"})';
 }
 
 /// Instantiates an image [Codec].
@@ -3110,6 +3129,9 @@ base class _NativePath extends NativeFieldWrapperClass1 implements Path {
   PathMetrics computeMetrics({bool forceClosed = false}) {
     return PathMetrics._(this, forceClosed);
   }
+
+  @override
+  String toString() => 'Path';
 }
 
 /// The geometric description of a tangent: the angle at a point.
@@ -4465,35 +4487,31 @@ base class FragmentProgram extends NativeFieldWrapperClass1 {
     // the same encoding here so that users can load assets with the same
     // key they have written in the pubspec.
     final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
-    final FragmentProgram? program = _shaderRegistry[encodedKey]?.target;
+    final FragmentProgram? program = _shaderRegistry[encodedKey];
     if (program != null) {
       return Future<FragmentProgram>.value(program);
     }
     return Future<FragmentProgram>.microtask(() {
       final FragmentProgram program = FragmentProgram._fromAsset(encodedKey);
-      _shaderRegistry[encodedKey] = WeakReference<FragmentProgram>(program);
+      _shaderRegistry[encodedKey] = program;
       return program;
     });
   }
 
   // This is a cache of shaders that have been loaded by
-  // FragmentProgram.fromAsset. It holds weak references to the FragmentPrograms
-  // so that the case where an in-use program is requested again can be fast,
-  // but programs that are no longer referenced are not retained because of the
-  // cache.
-  static final Map<String, WeakReference<FragmentProgram>> _shaderRegistry =
-      <String, WeakReference<FragmentProgram>>{};
+  // FragmentProgram.fromAsset. It holds a strong reference to theFragmentPrograms
+  // The native engine will retain the resources associated with this shader
+  // program (PSO variants) until shutdown, so maintaining a strong reference
+  // here ensures we do not perform extra work if the dart object is continually
+  // re-initialized.
+  static final Map<String, FragmentProgram> _shaderRegistry =
+      <String, FragmentProgram>{};
 
   static void _reinitializeShader(String assetKey) {
     // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
-    final WeakReference<FragmentProgram>? programRef = _shaderRegistry[assetKey];
-    if (programRef == null) {
-      return;
-    }
-
-    final FragmentProgram? program = programRef.target;
+    final FragmentProgram? program = _shaderRegistry[assetKey];
     if (program == null) {
       return;
     }
@@ -4946,6 +4964,18 @@ enum ClipOp {
 ///
 /// The current transform and clip can be saved and restored using the stack
 /// managed by the [save], [saveLayer], and [restore] methods.
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [Canvas] objects ([RendererBinding.createCanvas]) that allows tests to hook
+/// into the scene creation logic. When creating a [Canvas] that will be used
+/// with a [PictureLayer] as part of the [Scene] in the context of the Flutter
+/// framework, consider calling [RendererBinding.createCanvas] instead of
+/// calling the [Canvas.new] constructor directly.
+///
+/// This does not apply when using a canvas to generate a bitmap for other
+/// purposes, e.g. for generating a PNG image using [Picture.toImage].
 abstract class Canvas {
   /// Creates a canvas for recording graphical operations into the
   /// given picture recorder.
@@ -5774,6 +5804,18 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
   external void save();
 
+  static Rect _sorted(Rect rect) {
+    if (rect.isEmpty) {
+      rect = Rect.fromLTRB(
+        math.min(rect.left, rect.right),
+        math.min(rect.top, rect.bottom),
+        math.max(rect.left, rect.right),
+        math.max(rect.top, rect.bottom),
+      );
+    }
+    return rect;
+  }
+
   @override
   void saveLayer(Rect? bounds, Paint paint) {
     if (bounds == null) {
@@ -5844,6 +5886,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void clipRect(Rect rect, { ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true }) {
     assert(_rectIsValid(rect));
+    rect = _sorted(rect);
+    // Even if rect is still empty - which implies it has a zero dimension -
+    // we still need to perform the clipRect operation as it will effectively
+    // nullify any further rendering until the next restore call.
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
@@ -5916,7 +5962,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawRect(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
@@ -5944,7 +5993,10 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
   @override
   void drawOval(Rect rect, Paint paint) {
     assert(_rectIsValid(rect));
-    _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    rect = _sorted(rect);
+    if (paint.style != PaintingStyle.fill || !rect.isEmpty) {
+      _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
+    }
   }
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
@@ -6220,6 +6272,9 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
   external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
+
+  @override
+  String toString() => 'Canvas(recording: ${_recorder != null})';
 }
 
 /// Signature for [Picture] lifecycle events.
@@ -6363,12 +6418,28 @@ base class _NativePicture extends NativeFieldWrapperClass1 implements Picture {
   @override
   @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Picture::GetAllocationSize', isLeaf: true)
   external int get approximateBytesUsed;
+
+  @override
+  String toString() => 'Picture';
 }
 
 /// Records a [Picture] containing a sequence of graphical operations.
 ///
 /// To begin recording, construct a [Canvas] to record the commands.
 /// To end recording, use the [PictureRecorder.endRecording] method.
+///
+/// ## Use with the Flutter framework
+///
+/// The Flutter framework's [RendererBinding] provides a hook for creating
+/// [PictureRecorder] objects ([RendererBinding.createPictureRecorder]) that
+/// allows tests to hook into the scene creation logic. When creating a
+/// [PictureRecorder] and [Canvas] that will be used with a [PictureLayer] as
+/// part of the [Scene] in the context of the Flutter framework, consider
+/// calling [RendererBinding.createPictureRecorder] instead of calling the
+/// [PictureRecorder.new] constructor directly.
+///
+/// This does not apply when using a canvas to generate a bitmap for other
+/// purposes, e.g. for generating a PNG image using [Picture.toImage].
 abstract class PictureRecorder {
   /// Creates a new idle PictureRecorder. To associate it with a
   /// [Canvas] and begin recording, pass this [PictureRecorder] to the
@@ -6420,6 +6491,9 @@ base class _NativePictureRecorder extends NativeFieldWrapperClass1 implements Pi
   external void _endRecording(_NativePicture outPicture);
 
   _NativeCanvas? _canvas;
+
+  @override
+  String toString() => 'PictureRecorder(recording: $isRecording)';
 }
 
 /// A single shadow.
@@ -6864,9 +6938,7 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
       targetHeight = height;
     } else if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (width / height)).round();
-      targetHeight = targetHeight;
     } else if (targetHeight == null && targetWidth != null) {
-      targetWidth = targetWidth;
       targetHeight = targetWidth ~/ (width / height);
     }
     assert(targetWidth != null);
@@ -6879,6 +6951,9 @@ base class _NativeImageDescriptor extends NativeFieldWrapperClass1 implements Im
 
   @Native<Void Function(Pointer<Void>, Handle, Int32, Int32)>(symbol: 'ImageDescriptor::instantiateCodec')
   external void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight);
+
+  @override
+  String toString() => 'ImageDescriptor(width: ${_width ?? '?'}, height: ${_height ?? '?'}, bytes per pixel: ${_bytesPerPixel ?? '?'})';
 }
 
 /// Generic callback signature, used by [_futurize].

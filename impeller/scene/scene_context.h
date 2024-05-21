@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_
+#define FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_
 
 #include <memory>
 
+#include "impeller/core/host_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
@@ -52,6 +54,8 @@ class SceneContext {
 
   std::shared_ptr<Texture> GetPlaceholderTexture() const;
 
+  HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
+
  private:
   class PipelineVariants {
    public:
@@ -92,8 +96,8 @@ class SceneContext {
       FML_CHECK(prototype != variants_.end());
 
       auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
-          [&context, &opts,
-           variants_count = variants_.size()](PipelineDescriptor& desc) {
+          /*async=*/false, [&context, &opts, variants_count = variants_.size()](
+                               PipelineDescriptor& desc) {
             opts.ApplyToPipelineDescriptor(*context.GetCapabilities(), desc);
             desc.SetLabel(
                 SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
@@ -121,13 +125,13 @@ class SceneContext {
   /// If a pipeline could not be created, returns nullptr.
   std::unique_ptr<PipelineVariants> MakePipelineVariants(Context& context) {
     auto pipeline =
-        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>(
+        PipelineVariantsT<RenderPipelineHandle<VertexShader, FragmentShader>>(
             context);
     if (!pipeline.IsValid()) {
       return nullptr;
     }
     return std::make_unique<
-        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>>(
+        PipelineVariantsT<RenderPipelineHandle<VertexShader, FragmentShader>>>(
         std::move(pipeline));
   }
 
@@ -143,6 +147,7 @@ class SceneContext {
   // A 1x1 opaque white texture that can be used as a placeholder binding.
   // Available for the lifetime of the scene context
   std::shared_ptr<Texture> placeholder_texture_;
+  std::shared_ptr<HostBuffer> host_buffer_;
 
   SceneContext(const SceneContext&) = delete;
 
@@ -151,3 +156,5 @@ class SceneContext {
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_SCENE_CONTEXT_H_

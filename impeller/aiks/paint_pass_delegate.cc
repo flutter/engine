@@ -10,7 +10,6 @@
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity_pass.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path_builder.h"
 
 namespace impeller {
 
@@ -51,8 +50,9 @@ std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
 std::shared_ptr<FilterContents> PaintPassDelegate::WithImageFilter(
     const FilterInput::Variant& input,
     const Matrix& effect_transform) const {
-  return paint_.WithImageFilter(input, effect_transform,
-                                Entity::RenderingMode::kSubpass);
+  return paint_.WithImageFilter(
+      input, effect_transform,
+      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
 }
 
 /// OpacityPeepholePassDelegate
@@ -72,8 +72,9 @@ bool OpacityPeepholePassDelegate::CanElide() {
 // |EntityPassDelgate|
 bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     EntityPass* entity_pass) {
-  // Passes with absorbed clips can not be safely collapsed.
-  if (entity_pass->GetBoundsLimit().has_value()) {
+  // Passes with enforced bounds that clip the contents can not be safely
+  // collapsed.
+  if (entity_pass->GetBoundsLimitMightClipContent()) {
     return false;
   }
 
@@ -152,8 +153,9 @@ OpacityPeepholePassDelegate::CreateContentsForSubpassTarget(
 std::shared_ptr<FilterContents> OpacityPeepholePassDelegate::WithImageFilter(
     const FilterInput::Variant& input,
     const Matrix& effect_transform) const {
-  return paint_.WithImageFilter(input, effect_transform,
-                                Entity::RenderingMode::kSubpass);
+  return paint_.WithImageFilter(
+      input, effect_transform,
+      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
 }
 
 }  // namespace impeller

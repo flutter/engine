@@ -23,6 +23,7 @@ bool Command::BindVertices(VertexBuffer buffer) {
 }
 
 bool Command::BindResource(ShaderStage stage,
+                           DescriptorType type,
                            const ShaderUniformSlot& slot,
                            const ShaderMetadata& metadata,
                            BufferView view) {
@@ -31,6 +32,7 @@ bool Command::BindResource(ShaderStage stage,
 
 bool Command::BindResource(
     ShaderStage stage,
+    DescriptorType type,
     const ShaderUniformSlot& slot,
     const std::shared_ptr<const ShaderMetadata>& metadata,
     BufferView view) {
@@ -66,11 +68,12 @@ bool Command::DoBindResource(ShaderStage stage,
 }
 
 bool Command::BindResource(ShaderStage stage,
+                           DescriptorType type,
                            const SampledImageSlot& slot,
                            const ShaderMetadata& metadata,
                            std::shared_ptr<const Texture> texture,
-                           std::shared_ptr<const Sampler> sampler) {
-  if (!sampler || !sampler->IsValid()) {
+                           const std::unique_ptr<const Sampler>& sampler) {
+  if (!sampler) {
     return false;
   }
   if (!texture || !texture->IsValid()) {
@@ -82,14 +85,14 @@ bool Command::BindResource(ShaderStage stage,
       vertex_bindings.sampled_images.emplace_back(TextureAndSampler{
           .slot = slot,
           .texture = {&metadata, std::move(texture)},
-          .sampler = std::move(sampler),
+          .sampler = sampler,
       });
       return true;
     case ShaderStage::kFragment:
       fragment_bindings.sampled_images.emplace_back(TextureAndSampler{
           .slot = slot,
           .texture = {&metadata, std::move(texture)},
-          .sampler = std::move(sampler),
+          .sampler = sampler,
       });
       return true;
     case ShaderStage::kCompute:

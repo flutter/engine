@@ -15,9 +15,7 @@ import sys
 # out/impeller-cmake-example, so the build can then be performed with
 # e.g. ninja -C out/impeller-cmake-example-out.
 
-SRC_ROOT = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def parse_args(argv):
@@ -30,16 +28,6 @@ def parse_args(argv):
       default=False,
       action='store_true',
       help='Run cmake for impeller-cmake-example.',
-  )
-  parser.add_argument(
-      '--goma-dir',
-      '-g',
-      type=str,
-      default=os.getenv('GOMA_DIR'),
-      help=(
-          'The path to the Goma install. Defaults to the value of the '
-          'GOMA_DIR environment variable.'
-      ),
   )
   parser.add_argument(
       '--path',
@@ -122,9 +110,7 @@ def main(argv):
     return 0
 
   if args.cmake:
-    cmake_path = os.path.join(
-        SRC_ROOT, 'buildtools', 'mac-x64', 'cmake', 'bin', 'cmake'
-    )
+    cmake_path = os.path.join(SRC_ROOT, 'buildtools', 'mac-x64', 'cmake', 'bin', 'cmake')
     cmake_command = [
         cmake_path,
         '--preset',
@@ -137,7 +123,6 @@ def main(argv):
     cmake_env.update({
         'PATH': os.environ['PATH'] + ':' + ninja_path,
         'FLUTTER_ENGINE_SRC_DIR': SRC_ROOT,
-        'FLUTTER_GOMA_DIR': args.goma_dir,
     })
     if args.xcode_symlinks:
       xcode_symlink_path = create_xcode_symlink()

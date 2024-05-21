@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_DEVICE_BUFFER_GLES_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_DEVICE_BUFFER_GLES_H_
 
 #include <cstdint>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/allocation.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/device_buffer.h"
@@ -38,6 +38,8 @@ class DeviceBufferGLES final
 
   [[nodiscard]] bool BindAndUploadDataIfNecessary(BindingType type) const;
 
+  void Flush(std::optional<Range> range = std::nullopt) const override;
+
  private:
   ReactorGLES::Ref reactor_;
   HandleGLES handle_;
@@ -65,3 +67,5 @@ class DeviceBufferGLES final
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_GLES_DEVICE_BUFFER_GLES_H_

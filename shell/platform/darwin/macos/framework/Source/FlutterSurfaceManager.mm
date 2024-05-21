@@ -34,6 +34,8 @@
   // FLTEnableSurfaceDebugInfo value in main bundle Info.plist.
   NSNumber* _enableSurfaceDebugInfo;
   CATextLayer* _infoLayer;
+
+  CFTimeInterval _lastPresentationTime;
 }
 
 /**
@@ -151,7 +153,7 @@ static void UpdateContentSubLayers(CALayer* layer,
   FML_DCHECK([NSThread isMainThread]);
 
   // Release all unused back buffer surfaces and replace them with front surfaces.
-  [_backBufferCache replaceSurfaces:_frontSurfaces];
+  [_backBufferCache returnSurfaces:_frontSurfaces];
 
   // Front surfaces will be replaced by currently presented surfaces.
   [_frontSurfaces removeAllObjects];
@@ -213,30 +215,66 @@ static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces
   return size;
 }
 
-- (void)present:(NSArray<FlutterSurfacePresentInfo*>*)surfaces notify:(dispatch_block_t)notify {
+- (void)presentSurfaces:(NSArray<FlutterSurfacePresentInfo*>*)surfaces
+                 atTime:(CFTimeInterval)presentationTime
+                 notify:(dispatch_block_t)notify {
   id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
   [commandBuffer commit];
   [commandBuffer waitUntilScheduled];
 
-  // Get the actual dimensions of the frame (relevant for thread synchronizer).
-  CGSize size = GetRequiredFrameSize(surfaces);
+  dispatch_block_t presentBlock = ^{
+    // Get the actual dimensions of the frame (relevant for thread synchronizer).
+    CGSize size = GetRequiredFrameSize(surfaces);
+    [_delegate onPresent:size
+               withBlock:^{
+                 _lastPresentationTime = presentationTime;
+                 [self commit:surfaces];
+                 if (notify != nil) {
+                   notify();
+                 }
+               }];
+  };
 
-  [_delegate onPresent:size
-             withBlock:^{
-               [self commit:surfaces];
-               if (notify != nil) {
-                 notify();
-               }
-             }];
+  if (presentationTime > 0) {
+    // Enforce frame pacing. It seems that the target timestamp of CVDisplayLink does not
+    // exactly correspond to core animation deadline. Especially with 120hz, setting the frame
+    // contents too close after previous target timestamp will result in uneven frame pacing.
+    // Empirically setting the content in the second half of frame interval seems to work
+    // well for both 60hz and 120hz.
+    //
+    // This schedules a timer on current (raster) thread runloop. Raster thread at
+    // this point should be idle (the next frame vsync has not been signalled yet).
+    //
+    // Alternative could be simply blocking the raster thread, but that would show
+    // as a average_frame_rasterizer_time_millis regresson.
+    CFTimeInterval minPresentationTime = (presentationTime + _lastPresentationTime) / 2.0;
+    CFTimeInterval now = CACurrentMediaTime();
+    if (now < minPresentationTime) {
+      NSTimer* timer = [NSTimer timerWithTimeInterval:minPresentationTime - now
+                                              repeats:NO
+                                                block:^(NSTimer* timer) {
+                                                  presentBlock();
+                                                }];
+      [[NSRunLoop currentRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
+      return;
+    }
+  }
+  presentBlock();
 }
 
 @end
 
 // Cached back buffers will be released after kIdleDelay if there is no activity.
 static const double kIdleDelay = 1.0;
+// Once surfaces reach kEvictionAge, they will be evicted from the cache.
+// The age of 30 has been chosen to reduce potential surface allocation churn.
+// For unused surface 30 frames means only half a second at 60fps, and there is
+// idle timeout of 1 second where all surfaces are evicted.
+static const int kSurfaceEvictionAge = 30;
 
 @interface FlutterBackBufferCache () {
   NSMutableArray<FlutterSurface*>* _surfaces;
+  NSMapTable<FlutterSurface*, NSNumber*>* _surfaceAge;
 }
 
 @end
@@ -246,28 +284,65 @@ static const double kIdleDelay = 1.0;
 - (instancetype)init {
   if (self = [super init]) {
     self->_surfaces = [[NSMutableArray alloc] init];
+    self->_surfaceAge = [NSMapTable weakToStrongObjectsMapTable];
   }
   return self;
 }
 
+- (int)ageForSurface:(FlutterSurface*)surface {
+  NSNumber* age = [_surfaceAge objectForKey:surface];
+  return age != nil ? age.intValue : 0;
+}
+
+- (void)setAge:(int)age forSurface:(FlutterSurface*)surface {
+  [_surfaceAge setObject:@(age) forKey:surface];
+}
+
 - (nullable FlutterSurface*)removeSurfaceForSize:(CGSize)size {
   @synchronized(self) {
+    // Purge all cached surfaces if the size has changed.
+    if (_surfaces.firstObject != nil && !CGSizeEqualToSize(_surfaces.firstObject.size, size)) {
+      [_surfaces removeAllObjects];
+    }
+
+    FlutterSurface* res;
+
+    // Returns youngest surface that is not in use. Returning youngest surface ensures
+    // that the cache doesn't keep more surfaces than it needs to, as the unused surfaces
+    // kept in cache will have their age kept increasing until purged (inside [returnSurfaces:]).
     for (FlutterSurface* surface in _surfaces) {
-      if (CGSizeEqualToSize(surface.size, size)) {
-        // By default ARC doesn't retain enumeration iteration variables.
-        FlutterSurface* res = surface;
-        [_surfaces removeObject:surface];
-        return res;
+      if (!surface.isInUse &&
+          (res == nil || [self ageForSurface:res] > [self ageForSurface:surface])) {
+        res = surface;
       }
     }
-    return nil;
+    if (res != nil) {
+      [_surfaces removeObject:res];
+    }
+    return res;
   }
 }
 
-- (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces {
+- (void)returnSurfaces:(nonnull NSArray<FlutterSurface*>*)returnedSurfaces {
   @synchronized(self) {
-    [_surfaces removeAllObjects];
-    [_surfaces addObjectsFromArray:surfaces];
+    for (FlutterSurface* surface in returnedSurfaces) {
+      [self setAge:0 forSurface:surface];
+    }
+    for (FlutterSurface* surface in _surfaces) {
+      [self setAge:[self ageForSurface:surface] + 1 forSurface:surface];
+    }
+
+    [_surfaces addObjectsFromArray:returnedSurfaces];
+
+    // Purge all surface with age = kSurfaceEvictionAge. Reaching this age can mean two things:
+    // - Surface is still in use and we can't return it. This can happen in some edge
+    //   cases where the compositor holds on to the surface for much longer than expected.
+    // - Surface is not in use but it hasn't been requested from the cache for a while.
+    //   This means there are too many surfaces in the cache.
+    [_surfaces filterUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(FlutterSurface* surface,
+                                                                          NSDictionary* bindings) {
+                 return [self ageForSurface:surface] < kSurfaceEvictionAge;
+               }]];
   }
 
   // performSelector:withObject:afterDelay needs to be performed on RunLoop thread

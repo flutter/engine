@@ -124,19 +124,6 @@ class _CkBlurImageFilter extends CkImageFilter {
     borrow(_ref.nativeObject);
   }
 
-  String get _modeString {
-    switch (tileMode) {
-      case ui.TileMode.clamp:
-        return 'clamp';
-      case ui.TileMode.mirror:
-        return 'mirror';
-      case ui.TileMode.repeated:
-        return 'repeated';
-      case ui.TileMode.decal:
-        return 'decal';
-    }
-  }
-
   @override
   bool operator ==(Object other) {
     if (runtimeType != other.runtimeType) {
@@ -153,7 +140,7 @@ class _CkBlurImageFilter extends CkImageFilter {
 
   @override
   String toString() {
-    return 'ImageFilter.blur($sigmaX, $sigmaY, $_modeString)';
+    return 'ImageFilter.blur($sigmaX, $sigmaY, ${tileModeString(tileMode)})';
   }
 }
 

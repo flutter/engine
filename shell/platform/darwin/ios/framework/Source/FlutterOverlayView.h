@@ -2,20 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_OVERLAY_VIEW_H_
-#define SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_OVERLAY_VIEW_H_
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTEROVERLAYVIEW_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTEROVERLAYVIEW_H_
 
 #include <Metal/Metal.h>
 #include <UIKit/UIKit.h>
-
-#include <memory>
-
-#include "flutter/fml/memory/weak_ptr.h"
-#include "flutter/shell/common/shell.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface.h"
-#include "fml/platform/darwin/cf_utils.h"
-
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 
 /// UIViews that are used by |FlutterPlatformViews| to present Flutter
 /// rendering on top of system compositor rendering (ex. a web view).
@@ -38,4 +29,4 @@
 
 @end
 
-#endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_OVERLAY_VIEW_H_
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTEROVERLAYVIEW_H_

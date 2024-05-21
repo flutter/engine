@@ -52,6 +52,10 @@
         @"platform_view_one_overlay_two_intersecting_overlays",
     @"--platform-view-multiple-without-overlays" : @"platform_view_multiple_without_overlays",
     @"--platform-view-max-overlays" : @"platform_view_max_overlays",
+    @"--platform-view-surrounding-layers-fractional-coordinate" :
+        @"platform_view_surrounding_layers_fractional_coordinate",
+    @"--platform-view-partial-intersection-fractional-coordinate" :
+        @"platform_view_partial_intersection_fractional_coordinate",
     @"--platform-view-multiple" : @"platform_view_multiple",
     @"--platform-view-multiple-background-foreground" :
         @"platform_view_multiple_background_foreground",
@@ -80,6 +84,7 @@
         @"platform_view_gesture_accept_with_overlapping_platform_views",
     @"--tap-status-bar" : @"tap_status_bar",
     @"--animated-color-square" : @"animated_color_square",
+    @"--solid-blue" : @"solid_blue",
     @"--platform-view-with-continuous-texture" : @"platform_view_with_continuous_texture",
     @"--bogus-font-text" : @"bogus_font_text",
     @"--spawn-engine-works" : @"spawn_engine_works",

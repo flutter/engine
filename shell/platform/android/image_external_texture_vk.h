@@ -5,9 +5,11 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_IMAGE_EXTERNAL_TEXTURE_VK_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_IMAGE_EXTERNAL_TEXTURE_VK_H_
 
+#include <cstdint>
+#include <utility>
 #include "flutter/shell/platform/android/image_external_texture.h"
 
-#include "flutter/impeller/renderer/backend/vulkan/android_hardware_buffer_texture_source_vk.h"
+#include "flutter/impeller/renderer/backend/vulkan/android/ahb_texture_source_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
 #include "flutter/impeller/renderer/backend/vulkan/vk.h"
 #include "flutter/shell/platform/android/android_context_vulkan_impeller.h"
@@ -31,8 +33,6 @@ class ImageExternalTextureVK : public ImageExternalTexture {
   void Detach() override;
 
   const std::shared_ptr<impeller::ContextVK> impeller_context_;
-
-  fml::jni::ScopedJavaGlobalRef<jobject> android_image_;
 };
 
 }  // namespace flutter

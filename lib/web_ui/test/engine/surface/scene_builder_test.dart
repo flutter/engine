@@ -13,8 +13,10 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
+import '../../common/rendering.dart';
 import '../../common/test_initialization.dart';
 
 void main() {
@@ -23,7 +25,8 @@ void main() {
 
 void testMain() {
   setUpAll(() async {
-    await bootstrapAndRunApp();
+    await bootstrapAndRunApp(withImplicitView: true);
+    setUpRenderingForTests();
   });
 
   group('SceneBuilder', () {
@@ -31,7 +34,7 @@ void testMain() {
       testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
         return sceneBuilder.pushOffset(10, 20, oldLayer: oldLayer as ui.OffsetEngineLayer?);
       }, () {
-        return '''<s><flt-offset></flt-offset></s>''';
+        return '''<flt-scene><flt-offset></flt-offset></flt-scene>''';
       });
     });
 
@@ -40,7 +43,7 @@ void testMain() {
         return sceneBuilder.pushTransform(
             (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64());
       }, () {
-        return '''<s><flt-transform></flt-transform></s>''';
+        return '''<flt-scene><flt-transform></flt-transform></flt-scene>''';
       });
     });
 
@@ -50,9 +53,9 @@ void testMain() {
             oldLayer: oldLayer as ui.ClipRectEngineLayer?);
       }, () {
         return '''
-<s>
-  <clip><clip-i></clip-i></clip>
-</s>
+<flt-scene>
+  <flt-clip><flt-clip-interior></flt-clip-interior></flt-clip>
+</flt-scene>
 ''';
       });
     });
@@ -65,9 +68,11 @@ void testMain() {
             clipBehavior: ui.Clip.none);
       }, () {
         return '''
-<s>
-  <rclip><clip-i></clip-i></rclip>
-</s>
+<flt-scene>
+  <flt-clip clip-type="rrect">
+    <flt-clip-interior></flt-clip-interior>
+  </flt-clip>
+</flt-scene>
 ''';
       });
     });
@@ -78,11 +83,11 @@ void testMain() {
         return sceneBuilder.pushClipPath(path, oldLayer: oldLayer as ui.ClipPathEngineLayer?);
       }, () {
         return '''
-<s>
+<flt-scene>
   <flt-clippath>
     <svg><defs><clipPath><path></path></clipPath></defs></svg>
   </flt-clippath>
-</s>
+</flt-scene>
 ''';
       });
     });
@@ -91,7 +96,7 @@ void testMain() {
       testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
         return sceneBuilder.pushOpacity(10, oldLayer: oldLayer as ui.OpacityEngineLayer?);
       }, () {
-        return '''<s><o></o></s>''';
+        return '''<flt-scene><flt-opacity></flt-opacity></flt-scene>''';
       });
     });
     test('pushBackdropFilter implements surface lifecycle', () {
@@ -101,10 +106,13 @@ void testMain() {
           oldLayer: oldLayer as ui.BackdropFilterEngineLayer?,
         );
       }, () {
-        return '<s><flt-backdrop>'
-            '<flt-backdrop-filter></flt-backdrop-filter>'
-            '<flt-backdrop-interior></flt-backdrop-interior>'
-            '</flt-backdrop></s>';
+        return '''
+<flt-scene>
+  <flt-backdrop>
+    <flt-backdrop-filter></flt-backdrop-filter>
+    <flt-backdrop-interior></flt-backdrop-interior>
+  </flt-backdrop>
+</flt-scene>''';
       });
     });
   });
@@ -175,7 +183,7 @@ void testMain() {
       expect(picture.updateCount, 0);
       expect(picture.applyPaintCount, 2);
     }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
-        skip: browserEngine == BrowserEngine.firefox);
+        skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox);
   });
 
   group('Compositing order', () {
@@ -477,7 +485,7 @@ void testMain() {
     // Pump an empty scene to reset it, otherwise the first frame will attempt
     // to diff left-overs from a previous test, which results in unpredictable
     // DOM mutations.
-    ui.PlatformDispatcher.instance.render(SurfaceSceneBuilder().build());
+    await renderScene(SurfaceSceneBuilder().build());
 
     // Renders a `string` by breaking it up into individual characters and
     // rendering each character into its own layer.
@@ -487,7 +495,7 @@ void testMain() {
 
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
-      final DomMutationObserver observer = createDomMutationObserver((JSArray mutations, _) {
+      final DomMutationObserver observer = createDomMutationObserver((JSArray<JSAny?> mutations, _) {
         for (final DomMutationRecord record in mutations.toDart.cast<DomMutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);
@@ -731,7 +739,7 @@ void testLayerLifeCycle(
   // Recycle: discards all the layers.
   sceneBuilder = SurfaceSceneBuilder();
   tester = SceneTester(sceneBuilder.build());
-  tester.expectSceneHtml('<s></s>');
+  tester.expectSceneHtml('<flt-scene></flt-scene>');
 
   expect(surface3.rootElement, isNull); // offset3 should be recycled.
 
@@ -913,4 +921,17 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
+}
+
+class SceneTester {
+  SceneTester(this.scene);
+
+  final SurfaceScene scene;
+
+  void expectSceneHtml(String expectedHtml) {
+    expect(
+      scene.webOnlyRootElement,
+      hasHtml(expectedHtml),
+    );
+  }
 }

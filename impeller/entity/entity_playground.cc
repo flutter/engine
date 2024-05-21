@@ -30,6 +30,12 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPass& entity_pass) {
     return false;
   }
 
+  // Resolve any lingering tracked clips by assigning an arbitrarily high
+  // number. The number to assign just needs to be at least as high as larger
+  // any previously assigned clip depth in the scene. Normally, Aiks handles
+  // this correctly when wrapping up the base pass as an `impeller::Picture`.
+  entity_pass.PopAllClips(99999);
+
   auto callback = [&](RenderTarget& render_target) -> bool {
     return entity_pass.Render(content_context, render_target);
   };
@@ -50,7 +56,11 @@ bool EntityPlayground::OpenPlaygroundHere(Entity entity) {
     return false;
   }
   SinglePassCallback callback = [&](RenderPass& pass) -> bool {
-    return entity.Render(*content_context, pass);
+    content_context->GetRenderTargetCache()->Start();
+    bool result = entity.Render(*content_context, pass);
+    content_context->GetRenderTargetCache()->End();
+    content_context->GetTransientsBuffer().Reset();
+    return result;
   };
   return Playground::OpenPlaygroundHere(callback);
 }
@@ -70,7 +80,11 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPlaygroundCallback callback) {
       wireframe = !wireframe;
       content_context.SetWireframe(wireframe);
     }
-    return callback(content_context, pass);
+    content_context.GetRenderTargetCache()->Start();
+    bool result = callback(content_context, pass);
+    content_context.GetRenderTargetCache()->End();
+    content_context.GetTransientsBuffer().Reset();
+    return result;
   };
   return Playground::OpenPlaygroundHere(pass_callback);
 }

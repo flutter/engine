@@ -7,7 +7,13 @@ import '../semantics.dart';
 
 /// Provides accessibility for links.
 class Link extends PrimaryRoleManager {
-  Link(SemanticsObject semanticsObject) : super.withBasics(PrimaryRole.link, semanticsObject);
+  Link(SemanticsObject semanticsObject) : super.withBasics(
+    PrimaryRole.link,
+    semanticsObject,
+    preferredLabelRepresentation: LabelRepresentation.domText,
+  ) {
+    addTappable();
+  }
 
   @override
   DomElement createElement() {
@@ -18,4 +24,7 @@ class Link extends PrimaryRoleManager {
     element.style.display = 'block';
     return element;
   }
+
+  @override
+  bool focusAsRouteDefault() => focusable?.focusAsRouteDefault() ?? false;
 }

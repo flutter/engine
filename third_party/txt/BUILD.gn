@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 declare_args() {
   flutter_use_fontconfig = false
@@ -83,8 +86,8 @@ source_set("txt") {
     "//flutter/fml",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//flutter/skia",
-    "//third_party/harfbuzz",
-    "//third_party/icu",
+    "//flutter/third_party/harfbuzz",
+    "//flutter/third_party/icu",
   ]
 
   deps = [
@@ -109,7 +112,7 @@ source_set("txt") {
     sources += [ "src/txt/platform_linux.cc" ]
   } else if (is_fuchsia) {
     sources += [ "src/txt/platform_fuchsia.cc" ]
-    deps += [ "$fuchsia_sdk_root/fidl:fuchsia.fonts" ]
+    deps += [ "${fuchsia_sdk}/fidl/fuchsia.fonts" ]
   } else if (is_win) {
     sources += [ "src/txt/platform_windows.cc" ]
   } else {
@@ -147,6 +150,7 @@ if (enable_unittests) {
 
     sources = [
       "tests/font_collection_tests.cc",
+      "tests/paragraph_builder_skia_tests.cc",
       "tests/paragraph_unittests.cc",
       "tests/txt_run_all_unittests.cc",
     ]
@@ -169,10 +173,11 @@ if (enable_unittests) {
       "//flutter/testing:testing_lib",
     ]
 
-    # This is needed for //third_party/googletest for linking zircon symbols.
+    # This is needed for //flutter/third_party/googletest for linking zircon
+    # symbols.
     if (is_fuchsia) {
       libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+          [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 }

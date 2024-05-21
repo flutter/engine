@@ -14,10 +14,6 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_DEBUG=1" ]
   }
 
-  if (impeller_capture) {
-    defines += [ "IMPELLER_ENABLE_CAPTURE=1" ]
-  }
-
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }
@@ -34,14 +30,6 @@ config("impeller_public_config") {
     defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
   }
 
-  if (impeller_enable_vulkan_playgrounds) {
-    defines += [ "IMPELLER_ENABLE_VULKAN_PLAYGROUNDS=1" ]
-  }
-
-  if (impeller_trace_all_gl_calls) {
-    defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
-  }
-
   if (is_win) {
     defines += [
       # TODO(dnfield): https://github.com/flutter/flutter/issues/50053
@@ -56,7 +44,6 @@ config("impeller_public_config") {
 
 group("impeller") {
   public_deps = [
-    "archivist",
     "base",
     "geometry",
     "tessellator",
@@ -67,7 +54,6 @@ group("impeller") {
       "aiks",
       "display_list",
       "entity",
-      "image:image_skia_backend",
       "renderer",
       "renderer/backend",
       "typographer/backends/skia:typographer_skia_backend",
@@ -81,7 +67,6 @@ impeller_component("impeller_unittests") {
   testonly = true
 
   deps = [
-    "archivist:archivist_unittests",
     "base:base_unittests",
     "compiler:compiler_unittests",
     "core:allocator_unittests",
@@ -101,7 +86,6 @@ impeller_component("impeller_unittests") {
       "entity:entity_unittests",
       "fixtures",
       "geometry:geometry_unittests",
-      "image:image_unittests",
       "playground",
       "renderer:renderer_unittests",
       "scene:scene_unittests",
@@ -119,15 +103,11 @@ impeller_component("impeller_unittests") {
 
   if (glfw_vulkan_library != "") {
     deps += [
-      "//third_party/swiftshader",
-      "//third_party/vulkan-deps/vulkan-loader/src:libvulkan",
+      "//flutter/third_party/swiftshader",
+      "//flutter/third_party/vulkan-deps/vulkan-loader/src:libvulkan",
       "//third_party/vulkan_validation_layers",
       "//third_party/vulkan_validation_layers:vulkan_gen_json_files",
     ]
-  }
-
-  if (impeller_enable_compute) {
-    deps += [ "renderer:compute_tessellation_unittests" ]
   }
 }
 

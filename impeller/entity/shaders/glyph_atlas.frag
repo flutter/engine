@@ -8,13 +8,33 @@ precision mediump float;
 
 uniform f16sampler2D glyph_atlas_sampler;
 
-in highp vec2 v_uv;
+layout(constant_id = 0) const float use_alpha_color_channel = 1.0;
 
-IMPELLER_MAYBE_FLAT in f16vec4 v_text_color;
+uniform FragInfo {
+  float is_color_glyph;
+  float use_text_color;
+  f16vec4 text_color;
+}
+frag_info;
+
+in highp vec2 v_uv;
 
 out f16vec4 frag_color;
 
 void main() {
   f16vec4 value = texture(glyph_atlas_sampler, v_uv);
-  frag_color = value.aaaa * v_text_color;
+
+  if (frag_info.is_color_glyph == 1.0) {
+    if (frag_info.use_text_color == 1.0) {
+      frag_color = value.aaaa * frag_info.text_color;
+    } else {
+      frag_color = value * frag_info.text_color.aaaa;
+    }
+  } else {
+    if (use_alpha_color_channel == 1.0) {
+      frag_color = value.aaaa * frag_info.text_color;
+    } else {
+      frag_color = value.rrrr * frag_info.text_color;
+    }
+  }
 }

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_LIB_WEB_UI_SKWASM_HELPERS_H_
+#define FLUTTER_LIB_WEB_UI_SKWASM_HELPERS_H_
 
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkRRect.h"
@@ -48,7 +49,7 @@ inline SkSamplingOptions samplingOptionsForQuality(FilterQuality quality) {
     case FilterQuality::none:
       return SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
     case FilterQuality::low:
-      return SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNearest);
+      return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
     case FilterQuality::medium:
       return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
     case FilterQuality::high:
@@ -58,3 +59,5 @@ inline SkSamplingOptions samplingOptionsForQuality(FilterQuality quality) {
   }
 }
 }  // namespace Skwasm
+
+#endif  // FLUTTER_LIB_WEB_UI_SKWASM_HELPERS_H_

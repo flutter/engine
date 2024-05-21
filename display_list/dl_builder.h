@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
-#define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
+#ifndef FLUTTER_DISPLAY_LIST_DL_BUILDER_H_
+#define FLUTTER_DISPLAY_LIST_DL_BUILDER_H_
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/dl_blend_mode.h"
@@ -356,7 +356,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // other flags will be ignored and calculated anew as the DisplayList is
   // built. Alternatively, use the |saveLayer(SkRect, bool)| method.
   // |DlOpReceiver|
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
   // |DlOpReceiver|
@@ -486,47 +486,46 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void checkForDeferredSave();
 
   DisplayListStorage storage_;
-  size_t used_ = 0;
-  size_t allocated_ = 0;
-  int render_op_count_ = 0;
+  size_t used_ = 0u;
+  size_t allocated_ = 0u;
+  uint32_t render_op_count_ = 0u;
+  uint32_t depth_ = 0u;
+  // Most rendering ops will use 1 depth value, but some attributes may
+  // require an additional depth value (due to implicit saveLayers)
+  uint32_t render_op_depth_cost_ = 1u;
   int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
-  int nested_op_count_ = 0;
+  uint32_t nested_op_count_ = 0;
 
   bool is_ui_thread_safe_ = true;
 
   template <typename T, typename... Args>
-  void* Push(size_t extra, int op_inc, Args&&... args);
+  void* Push(size_t extra, Args&&... args);
 
   void intersect(const SkRect& rect);
 
   // kInvalidSigma is used to indicate that no MaskBlur is currently set.
   static constexpr SkScalar kInvalidSigma = 0.0;
   static bool mask_sigma_valid(SkScalar sigma) {
-    return SkScalarIsFinite(sigma) && sigma > 0.0;
+    return std::isfinite(sigma) && sigma > 0.0;
   }
 
-  class LayerInfo {
+  class SaveInfo {
    public:
-    explicit LayerInfo(
-        size_t save_offset = 0,
-        bool has_layer = false,
-        const std::shared_ptr<const DlImageFilter>& filter = nullptr)
-        : save_offset_(save_offset),
-          has_layer_(has_layer),
-          filter_(filter) {}
+    explicit SaveInfo(size_t save_offset = 0, uint32_t start_depth = 0)
+        : save_offset_(save_offset), start_depth_(start_depth) {}
 
-    // The offset into the memory buffer where the saveLayer DLOp record
-    // for this saveLayer() call is placed. This may be needed if the
+    // The offset into the memory buffer where the save DLOp record
+    // for this save() call is placed. This may be needed if the
     // eventual restore() call has discovered important information about
     // the records inside the saveLayer that may impact how the saveLayer
     // is handled (e.g., |cannot_inherit_opacity| == false).
     // This offset is only valid if |has_layer| is true.
     size_t save_offset() const { return save_offset_; }
 
-    bool has_layer() const { return has_layer_; }
+    bool is_save_layer() const { return is_save_layer_; }
     bool cannot_inherit_opacity() const { return cannot_inherit_opacity_; }
     bool has_compatible_op() const { return has_compatible_op_; }
     bool affects_transparent_layer() const {
@@ -593,7 +592,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
    private:
     size_t save_offset_;
-    bool has_layer_;
+    uint32_t start_depth_;
+    bool is_save_layer_ = false;
     bool cannot_inherit_opacity_ = false;
     bool has_compatible_op_ = false;
     std::shared_ptr<const DlImageFilter> filter_;
@@ -601,13 +601,15 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool has_deferred_save_op_ = false;
     bool is_nop_ = false;
     bool affects_transparent_layer_ = false;
+    std::shared_ptr<BoundsAccumulator> layer_accumulator_;
 
     friend class DisplayListBuilder;
   };
 
-  std::vector<LayerInfo> layer_stack_;
-  LayerInfo* current_layer_;
+  std::vector<SaveInfo> layer_stack_;
+  SaveInfo* current_layer_;
   DisplayListMatrixClipTracker tracker_;
+  std::unique_ptr<DisplayListMatrixClipTracker> layer_tracker_;
   std::unique_ptr<BoundsAccumulator> accumulator_;
   BoundsAccumulator* accumulator() { return accumulator_.get(); }
 
@@ -744,12 +746,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   static DlColor GetEffectiveColor(const DlPaint& paint,
                                    DisplayListAttributeFlags flags);
 
-  // Computes the bounds of an operation adjusted for a given ImageFilter
-  // and returns whether the computation was possible. If the method
-  // returns false then the caller should assume the worst about the bounds.
-  static bool ComputeFilteredBounds(SkRect& bounds,
-                                    const DlImageFilter* filter);
-
   // Adjusts the indicated bounds for the given flags and returns true if
   // the calculation was possible, or false if it could not be estimated.
   bool AdjustBoundsForPaint(SkRect& bounds, DisplayListAttributeFlags flags);
@@ -780,4 +776,4 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BUILDER_H_
+#endif  // FLUTTER_DISPLAY_LIST_DL_BUILDER_H_

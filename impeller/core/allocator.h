@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_ALLOCATOR_H_
+#define FLUTTER_IMPELLER_CORE_ALLOCATOR_H_
 
 #include "flutter/fml/mapping.h"
 #include "impeller/core/device_buffer_descriptor.h"
@@ -43,9 +44,11 @@ class Allocator {
 
   virtual ISize GetMaxTextureSizeSupported() const = 0;
 
-  /// @brief Increment an internal frame used to cycle through a ring buffer of
-  /// allocation pools.
-  virtual void DidAcquireSurfaceFrame();
+  /// @brief Write debug memory usage information to the dart timeline in debug
+  ///        and profile modes.
+  ///
+  ///        This is only supported on the Vulkan backend.
+  virtual void DebugTraceMemoryStatistics() const {};
 
  protected:
   Allocator();
@@ -63,3 +66,5 @@ class Allocator {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_ALLOCATOR_H_

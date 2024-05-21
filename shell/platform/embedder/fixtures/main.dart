@@ -60,6 +60,12 @@ void invokePlatformTaskRunner() {
   PlatformDispatcher.instance.sendPlatformMessage('OhHi', null, null);
 }
 
+@pragma('vm:entry-point')
+void invokePlatformThreadIsolate() {
+  signalNativeTest();
+  runOnPlatformThread(ffiSignalNativeTest);
+}
+
 Float64List kTestTransform = () {
   final Float64List values = Float64List(16);
   values[0] = 1.0; // scaleX
@@ -86,6 +92,9 @@ external void notifySemanticsEnabled(bool enabled);
 external void notifyAccessibilityFeatures(bool reduceMotion);
 @pragma('vm:external-name', 'NotifySemanticsAction')
 external void notifySemanticsAction(int nodeId, int action, List<int> data);
+
+@ffi.Native<ffi.Void Function()>(symbol: 'FFISignalNativeTest')
+external void ffiSignalNativeTest();
 
 /// Returns a future that completes when
 /// `PlatformDispatcher.instance.onSemanticsEnabledChanged` fires.
@@ -137,6 +146,7 @@ Future<void> a11y_main() async {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
     ..updateNode(
       id: 42,
+      identifier: '',
       label: 'A: root',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(0.0, 0.0, 10.0, 10.0),
@@ -166,10 +176,12 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 84,
+      identifier: '',
       label: 'B: leaf',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
@@ -197,12 +209,14 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
     )
     ..updateNode(
       id: 96,
+      identifier: '',
       label: 'C: branch',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
@@ -232,10 +246,12 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
     )
     ..updateNode(
       id: 128,
+      identifier: '',
       label: 'D: leaf',
       labelAttributes: <StringAttribute>[],
       rect: Rect.fromLTRB(40.0, 40.0, 80.0, 80.0),
@@ -264,6 +280,7 @@ Future<void> a11y_main() async {
       decreasedValue: '',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
     )
@@ -301,6 +318,7 @@ Future<void> a11y_string_attributes() async {
   final SemanticsUpdateBuilder builder = SemanticsUpdateBuilder()
     ..updateNode(
       id: 42,
+      identifier: 'identifier',
       label: 'What is the meaning of life?',
       labelAttributes: <StringAttribute>[
         LocaleStringAttribute(
@@ -359,6 +377,7 @@ Future<void> a11y_string_attributes() async {
       decreasedValue: '41',
       decreasedValueAttributes: <StringAttribute>[],
       tooltip: 'tooltip',
+      textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
     );
 
@@ -802,6 +821,48 @@ Future<void> key_data_late_echo() async {
     callback(null);
   });
   signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void render_implicit_view() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final Size size = Size(800.0, 600.0);
+    final Color red = Color.fromARGB(127, 255, 0, 0);
+
+    final SceneBuilder builder = SceneBuilder();
+
+    builder.pushOffset(0.0, 0.0);
+
+    builder.addPicture(
+        Offset(0.0, 0.0), CreateColoredBox(red, size));
+
+    builder.pop();
+
+    PlatformDispatcher.instance.implicitView?.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_all_views() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      final Size size = Size(800.0, 600.0);
+      final Color red = Color.fromARGB(127, 255, 0, 0);
+
+      final SceneBuilder builder = SceneBuilder();
+
+      builder.pushOffset(0.0, 0.0);
+
+      builder.addPicture(
+          Offset(0.0, 0.0), CreateColoredBox(red, size));
+
+      builder.pop();
+
+      view.render(builder.build());
+    }
+  };
+  PlatformDispatcher.instance.scheduleFrame();
 }
 
 @pragma('vm:entry-point')
@@ -1268,6 +1329,18 @@ void can_schedule_frame() {
   signalNativeTest();
 }
 
+@pragma('vm:entry-point')
+void add_view_schedules_frame() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration beginTime) {
+    for (final FlutterView view in PlatformDispatcher.instance.views) {
+      if (view.viewId == 123) {
+        signalNativeCount(beginTime.inMicroseconds);
+      }
+    }
+  };
+  signalNativeTest();
+}
+
 void drawSolidColor(Color c) {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     final SceneBuilder builder = SceneBuilder();
@@ -1303,9 +1376,72 @@ void pointer_data_packet() {
     (PointerDataPacket packet) {
     signalNativeCount(packet.data.length);
 
-    for (final pointerData in packet.data) {
+    for (final PointerData pointerData in packet.data) {
       signalNativeMessage(pointerData.toString());
     }
+  };
+
+  signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void pointer_data_packet_view_id() {
+  PlatformDispatcher.instance.onPointerDataPacket = (PointerDataPacket packet) {
+    assert(packet.data.length == 1);
+
+    for (final PointerData pointerData in packet.data) {
+      signalNativeMessage('ViewID: ${pointerData.viewId}');
+    }
+  };
+
+  signalNativeTest();
+}
+
+Map<int, Size> _getAllViewSizes() {
+  final Map<int, Size> result = <int, Size>{};
+  for (final FlutterView view in PlatformDispatcher.instance.views) {
+    result[view.viewId] = view.physicalSize;
+  }
+  return result;
+}
+
+List<int> _findDifferences(Map<int, Size> a, Map<int, Size> b) {
+  final Set<int> result = <int>{};
+  a.forEach((int viewId, Size sizeA) {
+    if (!b.containsKey(viewId) || b[viewId] != sizeA) {
+      result.add(viewId);
+    }
+  });
+  b.forEach((int viewId, Size sizeB) {
+    if (!a.containsKey(viewId)) {
+      result.add(viewId);
+    }
+  });
+  return result.toList()..sort();
+}
+
+@pragma('vm:entry-point')
+void window_metrics_event_view_id() {
+  Map<int, Size> sizes = _getAllViewSizes();
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    final Map<int, Size> newSizes = _getAllViewSizes();
+    final List<int> differences = _findDifferences(sizes, newSizes);
+    sizes = newSizes;
+    signalNativeMessage('Changed: $differences');
+  };
+
+  signalNativeTest();
+}
+
+@pragma('vm:entry-point')
+void window_metrics_event_all_view_ids() {
+  PlatformDispatcher.instance.onMetricsChanged = () {
+    final List<int> viewIds =
+      PlatformDispatcher.instance.views.map((view) => view.viewId).toList();
+
+    viewIds.sort();
+
+    signalNativeMessage('View IDs: [${viewIds.join(', ')}]');
   };
 
   signalNativeTest();
@@ -1337,6 +1473,24 @@ void render_gradient_retained() {
 
     builder.pop();
 
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_impeller_gl_test() {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    final Paint paint = Paint();
+    paint.color = Color.fromARGB(255, 0, 0, 255);
+    final PictureRecorder baseRecorder = PictureRecorder();
+    final Canvas canvas = Canvas(baseRecorder);
+    canvas.drawPaint(Paint()..color = Color.fromARGB(255, 255, 0, 0));
+    canvas.drawRect(Rect.fromLTRB(20.0, 20.0, 200.0, 150.0), paint);
+    builder.addPicture(Offset.zero, baseRecorder.endRecording());
+    builder.pop();
     PlatformDispatcher.instance.views.first.render(builder.build());
   };
   PlatformDispatcher.instance.scheduleFrame();

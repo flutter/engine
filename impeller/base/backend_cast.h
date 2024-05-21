@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
-
-#include "flutter/fml/macros.h"
+#ifndef FLUTTER_IMPELLER_BASE_BACKEND_CAST_H_
+#define FLUTTER_IMPELLER_BASE_BACKEND_CAST_H_
 
 namespace impeller {
 
@@ -25,3 +24,5 @@ class BackendCast {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_BASE_BACKEND_CAST_H_

@@ -2,13 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
-
-#ifndef IMPELLER_ENABLE_VALIDATION
-#ifdef IMPELLER_DEBUG
-#define IMPELLER_ENABLE_VALIDATION 1
-#endif
-#endif
+#ifndef FLUTTER_IMPELLER_BASE_VALIDATION_H_
+#define FLUTTER_IMPELLER_BASE_VALIDATION_H_
 
 #include <sstream>
 
@@ -38,6 +33,8 @@ void ImpellerValidationBreak(const char* message);
 
 void ImpellerValidationErrorsSetFatal(bool fatal);
 
+bool ImpellerValidationErrorsAreFatal();
+
 struct ScopedValidationDisable {
   ScopedValidationDisable();
 
@@ -46,6 +43,16 @@ struct ScopedValidationDisable {
   ScopedValidationDisable(const ScopedValidationDisable&) = delete;
 
   ScopedValidationDisable& operator=(const ScopedValidationDisable&) = delete;
+};
+
+struct ScopedValidationFatal {
+  ScopedValidationFatal();
+
+  ~ScopedValidationFatal();
+
+  ScopedValidationFatal(const ScopedValidationFatal&) = delete;
+
+  ScopedValidationFatal& operator=(const ScopedValidationFatal&) = delete;
 };
 
 }  // namespace impeller
@@ -64,3 +71,5 @@ struct ScopedValidationDisable {
 ///   happens in test environments.
 ///
 #define VALIDATION_LOG ::impeller::ValidationLog{}.GetStream()
+
+#endif  // FLUTTER_IMPELLER_BASE_VALIDATION_H_

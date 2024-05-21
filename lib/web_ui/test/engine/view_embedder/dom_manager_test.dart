@@ -9,6 +9,7 @@ import 'dart:js_interop';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../../common/matchers.dart';
 
@@ -19,7 +20,7 @@ void main() {
 void doTests() {
   group('DomManager', () {
     test('DOM tree looks right', () {
-      final DomManager domManager = DomManager(viewId: 0, devicePixelRatio: 3.0);
+      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
 
       // Check tag names.
 
@@ -27,7 +28,6 @@ void doTests() {
       expect(domManager.platformViewsHost.tagName, equalsIgnoringCase(DomManager.glassPaneTagName));
       expect(domManager.textEditingHost.tagName, equalsIgnoringCase(DomManager.textEditingHostTagName));
       expect(domManager.semanticsHost.tagName, equalsIgnoringCase(DomManager.semanticsHostTagName));
-      expect(domManager.announcementsHost.tagName, equalsIgnoringCase(DomManager.announcementsHostTagName));
 
       // Check parent-child relationships.
 
@@ -39,15 +39,13 @@ void doTests() {
       expect(rootChildren[3].tagName, equalsIgnoringCase('style'));
 
       final List<DomElement> shadowChildren = domManager.renderingHost.childNodes.cast<DomElement>().toList();
-      expect(shadowChildren.length, 4);
-      expect(shadowChildren[0].tagName, equalsIgnoringCase('flt-semantics-placeholder'));
-      expect(shadowChildren[1], domManager.sceneHost);
-      expect(shadowChildren[2], domManager.announcementsHost);
-      expect(shadowChildren[3].tagName, equalsIgnoringCase('style'));
+      expect(shadowChildren.length, 2);
+      expect(shadowChildren[0], domManager.sceneHost);
+      expect(shadowChildren[1].tagName, equalsIgnoringCase('style'));
     });
 
     test('hide placeholder text for textfield', () {
-      final DomManager domManager = DomManager(viewId: 0, devicePixelRatio: 3.0);
+      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
       domDocument.body!.append(domManager.rootElement);
 
       final DomHTMLInputElement regularTextField = createDomHTMLInputElement();
@@ -77,7 +75,7 @@ void doTests() {
 
       // For some reason, only Firefox is able to correctly compute styles for
       // the `::placeholder` pseudo-element.
-    }, skip: browserEngine != BrowserEngine.firefox);
+    }, skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.firefox);
   });
 
   group('Shadow root', () {
@@ -87,12 +85,12 @@ void doTests() {
 
       attachShadow = null; // Break ShadowDOM
 
-      expect(() => DomManager(viewId: 0, devicePixelRatio: 3.0), throwsAssertionError);
+      expect(() => DomManager(devicePixelRatio: 3.0), throwsAssertionError);
       attachShadow = oldAttachShadow; // Restore ShadowDOM
     });
 
     test('Initializes and attaches a shadow root', () {
-      final DomManager domManager = DomManager(viewId: 0, devicePixelRatio: 3.0);
+      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
 
       expect(domInstanceOfString(domManager.renderingHost, 'ShadowRoot'), isTrue);
       expect(domManager.renderingHost.host, domManager.platformViewsHost);
@@ -100,8 +98,8 @@ void doTests() {
 
       // The shadow root should be initialized with correct parameters.
       expect(domManager.renderingHost.mode, 'open');
-      if (browserEngine != BrowserEngine.firefox &&
-          browserEngine != BrowserEngine.webkit) {
+      if (ui_web.browser.browserEngine != ui_web.BrowserEngine.firefox &&
+          ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit) {
         // Older versions of Safari and Firefox don't support this flag yet.
         // See: https://caniuse.com/mdn-api_shadowroot_delegatesfocus
         expect(domManager.renderingHost.delegatesFocus, isFalse);
@@ -109,7 +107,7 @@ void doTests() {
     });
 
     test('Attaches a stylesheet to the shadow root', () {
-      final DomManager domManager = DomManager(viewId: 0, devicePixelRatio: 3.0);
+      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
       final DomElement? style =
           domManager.renderingHost.querySelector('#flt-internals-stylesheet');
 
@@ -119,7 +117,7 @@ void doTests() {
     });
 
     test('setScene', () {
-      final DomManager domManager = DomManager(viewId: 0, devicePixelRatio: 3.0);
+      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
 
       final DomElement sceneHost =
           domManager.renderingHost.querySelector('flt-scene-host')!;

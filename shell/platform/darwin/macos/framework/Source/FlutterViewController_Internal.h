@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#ifndef FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
+#define FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
+
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
 #include <memory>
@@ -12,16 +15,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 @interface FlutterViewController () <FlutterKeyboardViewDelegate>
-
-/**
- * The identifier for this view controller.
- *
- * The ID is assigned by FlutterEngine when the view controller is attached.
- *
- * If the view controller is unattached (see FlutterViewController#attached),
- * reading this property throws an assertion.
- */
-@property(nonatomic, readonly) FlutterViewId viewId;
 
 // The FlutterView for this view controller.
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
@@ -45,7 +38,7 @@
  * before being used, and must be set up only once until detachFromEngine:.
  */
 - (void)setUpWithEngine:(nonnull FlutterEngine*)engine
-                 viewId:(FlutterViewId)viewId
+         viewIdentifier:(FlutterViewIdentifier)viewIdentifier
      threadSynchronizer:(nonnull FlutterThreadSynchronizer*)threadSynchronizer;
 
 /**
@@ -85,3 +78,5 @@
                                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue;
 
 @end
+
+#endif  // FLUTTER_SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_

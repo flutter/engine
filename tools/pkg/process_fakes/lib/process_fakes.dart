@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
 
@@ -15,7 +16,8 @@ final class FakeProcessManager implements ProcessManager {
   FakeProcessManager({
     io.ProcessResult Function(List<String> command) onRun = unhandledRun,
     io.Process Function(List<String> command) onStart = unhandledStart,
-  }) : _onRun = onRun, _onStart = onStart;
+    bool Function(Object?, {String? workingDirectory}) canRun = unhandledCanRun,
+  }) : _onRun = onRun, _onStart = onStart, _canRun = canRun;
 
   /// A default implementation of [onRun] that throws an [UnsupportedError].
   static io.ProcessResult unhandledRun(List<String> command) {
@@ -27,11 +29,19 @@ final class FakeProcessManager implements ProcessManager {
     throw UnsupportedError('Unhandled start: ${command.join(' ')}');
   }
 
+  /// A default implementation of [canRun] that returns `true`.
+  static bool unhandledCanRun(Object? executable, {String? workingDirectory}) {
+    return true;
+  }
+
   final io.ProcessResult Function(List<String> command) _onRun;
   final io.Process Function(List<String> command) _onStart;
+  final bool Function(Object?, {String? workingDirectory}) _canRun;
 
   @override
-  bool canRun(Object? executable, {String? workingDirectory}) => true;
+  bool canRun(Object? executable, {String? workingDirectory}) {
+    return _canRun(executable, workingDirectory: workingDirectory);
+  }
 
   @override
   bool killPid(int pid, [io.ProcessSignal signal = io.ProcessSignal.sigterm]) => true;
@@ -92,11 +102,13 @@ final class FakeProcess implements io.Process {
     String stderr = '',
   })  : _exitCode = exitCode,
         _stdout = stdout,
-        _stderr = stderr;
+        _stderr = stderr,
+        _stdin = io.IOSink(StreamController<List<int>>.broadcast().sink);
 
   final int _exitCode;
   final String _stdout;
   final String _stderr;
+  final io.IOSink _stdin;
 
   @override
   Future<int> get exitCode async => _exitCode;
@@ -113,7 +125,7 @@ final class FakeProcess implements io.Process {
   }
 
   @override
-  io.IOSink get stdin => throw UnimplementedError();
+  io.IOSink get stdin => _stdin;
 
   @override
   Stream<List<int>> get stdout {

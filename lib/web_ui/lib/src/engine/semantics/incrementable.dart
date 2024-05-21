@@ -7,6 +7,7 @@ import 'package:ui/ui.dart' as ui;
 import '../dom.dart';
 import '../platform_dispatcher.dart';
 import 'focusable.dart';
+import 'label_and_value.dart';
 import 'semantics.dart';
 
 /// Adds increment/decrement event handling to a semantics object.
@@ -27,7 +28,7 @@ class Incrementable extends PrimaryRoleManager {
     // the one being focused on, but the internal `<input>` element.
     addLiveRegion();
     addRouteName();
-    addLabelAndValue();
+    addLabelAndValue(preferredRepresentation: LabelRepresentation.ariaLabel);
 
     append(_element);
     _element.type = 'range';
@@ -57,6 +58,12 @@ class Incrementable extends PrimaryRoleManager {
     };
     EngineSemantics.instance.addGestureModeListener(_gestureModeListener);
     _focusManager.manage(semanticsObject.id, _element);
+  }
+
+  @override
+  bool focusAsRouteDefault() {
+    _element.focus();
+    return true;
   }
 
   /// The HTML element used to render semantics to the browser.

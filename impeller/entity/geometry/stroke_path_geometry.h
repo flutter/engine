@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_ENTITY_GEOMETRY_STROKE_PATH_GEOMETRY_H_
+#define FLUTTER_IMPELLER_ENTITY_GEOMETRY_STROKE_PATH_GEOMETRY_H_
 
 #include "impeller/entity/geometry/geometry.h"
 
@@ -11,7 +12,7 @@ namespace impeller {
 /// @brief A geometry that is created from a stroked path object.
 class StrokePathGeometry final : public Geometry {
  public:
-  StrokePathGeometry(Path path,
+  StrokePathGeometry(const Path& path,
                      Scalar stroke_width,
                      Scalar miter_limit,
                      Cap stroke_cap,
@@ -28,59 +29,30 @@ class StrokePathGeometry final : public Geometry {
   Join GetStrokeJoin() const;
 
  private:
-  using VS = SolidFillVertexShader;
-
-  using CapProc =
-      std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
-                         const Point& position,
-                         const Point& offset,
-                         Scalar scale,
-                         bool reverse)>;
-  using JoinProc =
-      std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
-                         const Point& position,
-                         const Point& start_offset,
-                         const Point& end_offset,
-                         Scalar miter_limit,
-                         Scalar scale)>;
-
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const override;
 
   // |Geometry|
-  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                     Matrix effect_transform,
-                                     const ContentContext& renderer,
-                                     const Entity& entity,
-                                     RenderPass& pass) const override;
-
-  // |Geometry|
-  GeometryVertexType GetVertexType() const override;
+  GeometryResult::Mode GetResultMode() const override;
 
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
+  // Private for benchmarking and debugging
+  static std::vector<SolidFillVertexShader::PerVertexData>
+  GenerateSolidStrokeVertices(const Path::Polyline& polyline,
+                              Scalar stroke_width,
+                              Scalar miter_limit,
+                              Join stroke_join,
+                              Cap stroke_cap,
+                              Scalar scale);
+
+  friend class ImpellerBenchmarkAccessor;
+  friend class ImpellerEntityUnitTestAccessor;
+
   bool SkipRendering() const;
-
-  static Scalar CreateBevelAndGetDirection(
-      VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& vtx_builder,
-      const Point& position,
-      const Point& start_offset,
-      const Point& end_offset);
-
-  static VertexBufferBuilder<SolidFillVertexShader::PerVertexData>
-  CreateSolidStrokeVertices(const Path& path,
-                            Scalar stroke_width,
-                            Scalar scaled_miter_limit,
-                            const JoinProc& join_proc,
-                            const CapProc& cap_proc,
-                            Scalar scale);
-
-  static StrokePathGeometry::JoinProc GetJoinProc(Join stroke_join);
-
-  static StrokePathGeometry::CapProc GetCapProc(Cap stroke_cap);
 
   Path path_;
   Scalar stroke_width_;
@@ -94,3 +66,5 @@ class StrokePathGeometry final : public Geometry {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_ENTITY_GEOMETRY_STROKE_PATH_GEOMETRY_H_

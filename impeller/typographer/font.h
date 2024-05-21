@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_TYPOGRAPHER_FONT_H_
+#define FLUTTER_IMPELLER_TYPOGRAPHER_FONT_H_
 
 #include <memory>
-#include <optional>
 
-#include "flutter/fml/macros.h"
+#include "fml/hash_combine.h"
 #include "impeller/base/comparable.h"
 #include "impeller/typographer/glyph.h"
 #include "impeller/typographer/typeface.h"
@@ -77,3 +77,5 @@ struct std::hash<impeller::Font::Metrics> {
     return fml::HashCombine(m.point_size, m.skewX, m.scaleX);
   }
 };
+
+#endif  // FLUTTER_IMPELLER_TYPOGRAPHER_FONT_H_

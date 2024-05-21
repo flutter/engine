@@ -37,15 +37,26 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   return false;
 }
 
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const sk_sp<flutter::DisplayList>& list) {
+  return false;
+}
+
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
   return nullptr;
 }
 
-std::shared_ptr<RuntimeStage> GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
-    const char* asset_name) const {
+sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
+    const char* fixture_name,
+    bool enable_mipmapping) const {
   return nullptr;
+}
+
+RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(
+    const char* asset_name) const {
+  return {};
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
@@ -65,5 +76,12 @@ ISize GoldenPlaygroundTest::GetWindowSize() const {
 }
 
 void GoldenPlaygroundTest::SetWindowSize(ISize size) {}
+
+fml::Status GoldenPlaygroundTest::SetCapabilities(
+    const std::shared_ptr<Capabilities>& capabilities) {
+  return fml::Status(
+      fml::StatusCode::kUnimplemented,
+      "GoldenPlaygroundTest-Stub doesn't support SetCapabilities.");
+}
 
 }  // namespace impeller

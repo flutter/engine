@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_CORE_TEXTURE_DESCRIPTOR_H_
+#define FLUTTER_IMPELLER_CORE_TEXTURE_DESCRIPTOR_H_
 
 #include "impeller/core/formats.h"
 #include "impeller/geometry/size.h"
@@ -39,8 +40,7 @@ struct TextureDescriptor {
   PixelFormat format = PixelFormat::kUnknown;
   ISize size;
   size_t mip_count = 1u;  // Size::MipCount is usually appropriate.
-  TextureUsageMask usage =
-      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  TextureUsageMask usage = TextureUsage::kShaderRead;
   SampleCount sample_count = SampleCount::kCount1;
   CompressionType compression_type = CompressionType::kLossless;
 
@@ -89,3 +89,5 @@ struct TextureDescriptor {
 std::string TextureDescriptorToString(const TextureDescriptor& desc);
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_CORE_TEXTURE_DESCRIPTOR_H_

@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_GEOMETRY_COLOR_H_
+#define FLUTTER_IMPELLER_GEOMETRY_COLOR_H_
 
 #include <stdint.h>
 #include <algorithm>
@@ -55,7 +56,7 @@ enum class YUVColorSpace { kBT601LimitedRange, kBT601FullRange };
 
 /// All blend modes assume that both the source (fragment output) and
 /// destination (first color attachment) have colors with premultiplied alpha.
-enum class BlendMode {
+enum class BlendMode : uint8_t {
   // The following blend modes are able to be used as pipeline blend modes or
   // via `BlendFilterContents`.
   kClear = 0,
@@ -250,6 +251,16 @@ struct Color {
     uint8_t b = std::round(blue * 255.0f);
     uint8_t a = std::round(alpha * 255.0f);
     return {r, g, b, a};
+  }
+
+  /**
+   * @brief Convert to ARGB 32 bit color.
+   *
+   * @return constexpr uint32_t
+   */
+  constexpr uint32_t ToARGB() const {
+    std::array<uint8_t, 4> result = ToR8G8B8A8();
+    return result[3] << 24 | result[0] << 16 | result[1] << 8 | result[2];
   }
 
   static constexpr Color White() { return {1.0f, 1.0f, 1.0f, 1.0f}; }
@@ -954,3 +965,5 @@ inline std::ostream& operator<<(std::ostream& out, const impeller::Color& c) {
 }
 
 }  // namespace std
+
+#endif  // FLUTTER_IMPELLER_GEOMETRY_COLOR_H_

@@ -2,17 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_
 
-#include "flutter/fml/macros.h"
-#include "flutter/fml/memory/ref_ptr.h"
 #include "impeller/core/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
-#include <array>
 #include <cstdint>
 #include <memory>
 
@@ -23,34 +21,47 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ~AllocatorVK() override;
 
+  // Visible for testing
+  size_t DebugGetHeapUsage() const;
+
+  /// @brief Select a matching memory type for the given
+  ///        [memory_type_bits_requirement], or -1 if none is found.
+  ///
+  ///        This only returns memory types with deviceLocal allocations.
+  static int32_t FindMemoryTypeIndex(
+      uint32_t memory_type_bits_requirement,
+      vk::PhysicalDeviceMemoryProperties& memory_properties);
+
+  // Visible for testing.
+  static vk::ImageUsageFlags ToVKImageUsageFlags(
+      PixelFormat format,
+      TextureUsageMask usage,
+      StorageMode mode,
+      bool supports_memoryless_textures);
+
  private:
   friend class ContextVK;
 
   UniqueAllocatorVMA allocator_;
   UniquePoolVMA staging_buffer_pool_;
   std::weak_ptr<Context> context_;
-  std::weak_ptr<DeviceHolder> device_holder_;
+  std::weak_ptr<DeviceHolderVK> device_holder_;
   ISize max_texture_size_;
   bool is_valid_ = false;
   bool supports_memoryless_textures_ = false;
-  bool supports_framebuffer_fetch_ = false;
   // TODO(jonahwilliams): figure out why CI can't create these buffer pools.
   bool created_buffer_pool_ = true;
-  uint32_t frame_count_ = 0;
-  std::thread::id raster_thread_id_;
+  vk::PhysicalDeviceMemoryProperties memory_properties_;
 
   AllocatorVK(std::weak_ptr<Context> context,
               uint32_t vulkan_api_version,
               const vk::PhysicalDevice& physical_device,
-              const std::shared_ptr<DeviceHolder>& device_holder,
+              const std::shared_ptr<DeviceHolderVK>& device_holder,
               const vk::Instance& instance,
               const CapabilitiesVK& capabilities);
 
   // |Allocator|
   bool IsValid() const;
-
-  // |Allocator|
-  void DidAcquireSurfaceFrame() override;
 
   // |Allocator|
   std::shared_ptr<DeviceBuffer> OnCreateBuffer(
@@ -63,9 +74,14 @@ class AllocatorVK final : public Allocator {
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
 
+  // |Allocator|
+  void DebugTraceMemoryStatistics() const override;
+
   AllocatorVK(const AllocatorVK&) = delete;
 
   AllocatorVK& operator=(const AllocatorVK&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_VULKAN_ALLOCATOR_VK_H_

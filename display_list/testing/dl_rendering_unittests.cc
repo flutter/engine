@@ -24,6 +24,7 @@
 
 #include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkFontMgr.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkStream.h"
@@ -2232,8 +2233,8 @@ class CanvasCompareTester {
       return DirectoryStatus::kCreated;
     }
     FML_LOG(ERROR) << "Could not create directory (" << dir
-                   << ") for impeller failure images"
-                   << ", ret = " << ret.get() << ", errno = " << errno;
+                   << ") for impeller failure images" << ", ret = " << ret.get()
+                   << ", errno = " << errno;
     return DirectoryStatus::kFailed;
   }
 
@@ -4110,7 +4111,7 @@ TEST_F(DisplayListRendering, MatrixColorFilterOpacityCommuteCheck) {
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
     matrix[element] = value;
     auto filter = DlMatrixColorFilter::Make(matrix);
-    EXPECT_EQ(SkScalarIsFinite(value), filter != nullptr);
+    EXPECT_EQ(std::isfinite(value), filter != nullptr);
 
     DlPaint paint(DlColor(0x80808080));
     DlPaint opacity_save_paint = DlPaint().setOpacity(0.5);
@@ -4528,10 +4529,14 @@ class DisplayListNopTest : public DisplayListRendering {
 
     auto sk_mode = static_cast<SkBlendMode>(mode);
     auto sk_color_filter = SkColorFilters::Blend(ToSk(color), sk_mode);
+    auto srgb = SkColorSpace::MakeSRGB();
     int all_flags = 0;
     if (sk_color_filter) {
       for (DlColor dst_color : test_dst_colors) {
-        DlColor result = DlColor(sk_color_filter->filterColor(ToSk(dst_color)));
+        SkColor4f dst_color_f = SkColor4f::FromColor(ToSk(dst_color));
+        DlColor result = DlColor(
+            sk_color_filter->filterColor4f(dst_color_f, srgb.get(), srgb.get())
+                .toSkColor());
         all_flags |= check_color_result(dst_color, result, dl, desc);
       }
       if ((all_flags & kWasMTB) != 0) {

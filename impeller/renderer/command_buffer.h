@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_COMMAND_BUFFER_H_
+#define FLUTTER_IMPELLER_RENDERER_COMMAND_BUFFER_H_
 
 #include <functional>
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/blit_pass.h"
 #include "impeller/renderer/compute_pass.h"
 
@@ -17,6 +17,7 @@ class ComputePass;
 class Context;
 class RenderPass;
 class RenderTarget;
+class CommandQueue;
 
 namespace testing {
 class CommandBufferMock;
@@ -58,42 +59,6 @@ class CommandBuffer {
   virtual bool IsValid() const = 0;
 
   virtual void SetLabel(const std::string& label) const = 0;
-
-  //----------------------------------------------------------------------------
-  /// @brief      Schedule the command encoded by render passes within this
-  ///             command buffer on the GPU. The encoding of these commnands is
-  ///             performed immediately on the calling thread.
-  ///
-  ///             A command buffer may only be committed once.
-  ///
-  /// @param[in]  callback  The completion callback.
-  ///
-  [[nodiscard]] bool SubmitCommands(const CompletionCallback& callback);
-
-  [[nodiscard]] bool SubmitCommands();
-
-  //----------------------------------------------------------------------------
-  /// @brief      Schedule the command encoded by render passes within this
-  ///             command buffer on the GPU. The enqueing of this buffer is
-  ///             performed immediately but encoding is pushed to a worker
-  ///             thread if possible.
-  ///
-  ///             A command buffer may only be committed once.
-  ///
-  [[nodiscard]] virtual bool EncodeAndSubmit(
-      const std::shared_ptr<RenderPass>& render_pass);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Schedule the command encoded by blit passes within this
-  ///             command buffer on the GPU. The enqueing of this buffer is
-  ///             performed immediately but encoding is pushed to a worker
-  ///             thread if possible.
-  ///
-  ///             A command buffer may only be committed once.
-  ///
-  [[nodiscard]] virtual bool EncodeAndSubmit(
-      const std::shared_ptr<BlitPass>& blit_pass,
-      const std::shared_ptr<Allocator>& allocator);
 
   //----------------------------------------------------------------------------
   /// @brief      Force execution of pending GPU commands.
@@ -142,9 +107,26 @@ class CommandBuffer {
   virtual std::shared_ptr<ComputePass> OnCreateComputePass() = 0;
 
  private:
+  friend class CommandQueue;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Schedule the command encoded by render passes within this
+  ///             command buffer on the GPU. The encoding of these commnands is
+  ///             performed immediately on the calling thread.
+  ///
+  ///             A command buffer may only be committed once.
+  ///
+  /// @param[in]  callback  The completion callback.
+  ///
+  [[nodiscard]] bool SubmitCommands(const CompletionCallback& callback);
+
+  [[nodiscard]] bool SubmitCommands();
+
   CommandBuffer(const CommandBuffer&) = delete;
 
   CommandBuffer& operator=(const CommandBuffer&) = delete;
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_COMMAND_BUFFER_H_

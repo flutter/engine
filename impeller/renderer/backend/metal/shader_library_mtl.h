@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_
+#define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_
 
 #include <Foundation/Foundation.h>
 #include <Metal/Metal.h>
@@ -11,7 +12,6 @@
 #include <string>
 #include <unordered_map>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/comparable.h"
 #include "impeller/base/thread.h"
 #include "impeller/renderer/shader_key.h"
@@ -64,3 +64,5 @@ class ShaderLibraryMTL final : public ShaderLibrary {
 };
 
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_SHADER_LIBRARY_MTL_H_

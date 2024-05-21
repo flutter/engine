@@ -2,18 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#pragma once
+#ifndef FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_H_
+#define FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "flutter/fml/hash_combine.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/timing.h"
-#include "impeller/geometry/quaternion.h"
-#include "impeller/geometry/scalar.h"
-#include "impeller/geometry/vector.h"
 #include "impeller/scene/animation/property_resolver.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
 
@@ -77,3 +74,5 @@ class Animation final {
 
 }  // namespace scene
 }  // namespace impeller
+
+#endif  // FLUTTER_IMPELLER_SCENE_ANIMATION_ANIMATION_H_

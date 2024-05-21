@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_DISPLAY_LIST_DL_OP_SPY_H_
-#define FLUTTER_DISPLAY_LIST_DL_OP_SPY_H_
+#ifndef FLUTTER_SHELL_COMMON_DL_OP_SPY_H_
+#define FLUTTER_SHELL_COMMON_DL_OP_SPY_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/display_list/utils/dl_receiver_utils.h"
@@ -39,7 +39,7 @@ class DlOpSpy final : public virtual DlOpReceiver,
   void setColor(DlColor color) override;
   void setColorSource(const DlColorSource* source) override;
   void save() override;
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override;
   void restore() override;
@@ -109,4 +109,4 @@ class DlOpSpy final : public virtual DlOpReceiver,
 
 }  // namespace flutter
 
-#endif  // FLUTTER_DISPLAY_LIST_DL_OP_SPY_H_
+#endif  // FLUTTER_SHELL_COMMON_DL_OP_SPY_H_
