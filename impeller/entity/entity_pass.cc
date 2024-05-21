@@ -185,7 +185,8 @@ std::optional<Rect> EntityPass::GetElementsCoverage(
         std::shared_ptr<FilterContents> backdrop_filter =
             subpass.backdrop_filter_proc_(
                 FilterInput::Make(accumulated_coverage.value()),
-                subpass.transform_, Entity::RenderingMode::kClippedSubpass);
+                subpass.transform_,
+                Entity::RenderingMode::kSubpassAppendSnapshotTransform);
         if (backdrop_filter) {
           auto backdrop_coverage = backdrop_filter->GetCoverage({});
           unfiltered_coverage =
@@ -589,9 +590,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       Matrix subpass_transform_basis = subpass->transform_.Basis();
       subpass_backdrop_filter_contents =
           proc(FilterInput::Make(std::move(texture)), subpass_transform_basis,
+               // When the subpass has a translation that means the math with
+               // the snapshot has to be different.
                subpass_transform_basis == subpass->transform_
-                   ? Entity::RenderingMode::kClippedSubpass
-                   : Entity::RenderingMode::kSubpass);
+                   ? Entity::RenderingMode::kSubpassAppendSnapshotTransform
+                   : Entity::RenderingMode::kSubpassPrependSnapshotTransform);
 
       // If the very first thing we render in this EntityPass is a subpass that
       // happens to have a backdrop filter, than that backdrop filter will end

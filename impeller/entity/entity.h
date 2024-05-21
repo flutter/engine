@@ -33,13 +33,8 @@ class Entity {
     /// rather than local space, and so some filters (namely,
     /// MatrixFilterContents) need to interpret the given EffectTransform as the
     /// current transform matrix.
-    ///
-    /// With kClippedSubpass the filters's transform is prepended to the
-    /// snapshot's transform.  With kSubpass the filters's  transform is
-    /// appended
-    /// to the snapshot's transform.
-    kClippedSubpass,
-    kSubpass,
+    kSubpassAppendSnapshotTransform,
+    kSubpassPrependSnapshotTransform,
   };
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
