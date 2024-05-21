@@ -46,56 +46,6 @@ namespace impeller {
 //              https://github.com/flutter/flutter/issues/114563
 constexpr auto kPadding = 2;
 
-namespace {
-
-class HostBufferAllocator : public SkBitmap::Allocator {
- public:
-  explicit HostBufferAllocator(HostBuffer& host_buffer)
-      : host_buffer_(host_buffer) {}
-
-  [[nodiscard]] BufferView TakeBufferView() {
-    buffer_view_.buffer->Flush();
-    return std::move(buffer_view_);
-  }
-
-  // |SkBitmap::Allocator|
-  bool allocPixelRef(SkBitmap* bitmap) override {
-    if (!bitmap) {
-      return false;
-    }
-    const SkImageInfo& info = bitmap->info();
-    if (kUnknown_SkColorType == info.colorType() || info.width() < 0 ||
-        info.height() < 0 || !info.validRowBytes(bitmap->rowBytes())) {
-      return false;
-    }
-
-    size_t required_bytes = bitmap->rowBytes() * bitmap->height();
-    BufferView buffer_view = host_buffer_.Emplace(nullptr, required_bytes,
-                                                  DefaultUniformAlignment());
-
-    // The impeller host buffer is not cleared between frames and may contain
-    // stale data. The Skia software canvas does not write to pixels without
-    // any contents, which causes this data to leak through.
-    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-             required_bytes);
-
-    auto pixel_ref = sk_sp<SkPixelRef>(new SkPixelRef(
-        info.width(), info.height(),
-        buffer_view.buffer->OnGetContents() + buffer_view.range.offset,
-        bitmap->rowBytes()));
-
-    bitmap->setPixelRef(std::move(pixel_ref), 0, 0);
-    buffer_view_ = std::move(buffer_view);
-    return true;
-  }
-
- private:
-  BufferView buffer_view_;
-  HostBuffer& host_buffer_;
-};
-
-}  // namespace
-
 std::shared_ptr<TypographerContext> TypographerContextSkia::Make() {
   return std::make_shared<TypographerContextSkia>();
 }
@@ -242,7 +192,7 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setHinting(SkFontHinting::kSlight);
   sk_font.setEmbolden(metrics.embolden);
 
-  auto glyph_color = has_color ? SK_ColorWHITE : SK_ColorBLACK;
+  auto glyph_color = has_color ? scaled_font.color.ToARGB() : SK_ColorBLACK;
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
@@ -282,9 +232,8 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     }
 
     SkBitmap bitmap;
-    HostBufferAllocator allocator(host_buffer);
     bitmap.setInfo(GetImageInfo(atlas, size));
-    if (!bitmap.tryAllocPixels(&allocator)) {
+    if (!bitmap.tryAllocPixels()) {
       return false;
     }
     auto surface = SkSurfaces::WrapPixels(bitmap.pixmap());
@@ -298,13 +247,29 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
     DrawGlyph(canvas, pair.scaled_font, pair.glyph, has_color);
 
-    if (!blit_pass->AddCopy(allocator.TakeBufferView(), texture,
+    // Writing to a malloc'd buffer and then copying to the staging buffers
+    // benchmarks as substantially faster on a number of Android devices.
+    BufferView buffer_view = host_buffer.Emplace(
+        bitmap.getAddr(0, 0),
+        size.Area() * BytesPerPixelForPixelFormat(
+                          atlas.GetTexture()->GetTextureDescriptor().format),
+        DefaultUniformAlignment());
+
+    // convert_to_read is set to false so that the texture remains in a transfer
+    // dst layout until we finish writing to it below. This only has an impact
+    // on Vulkan where we are responsible for managing image layouts.
+    if (!blit_pass->AddCopy(std::move(buffer_view),  //
+                            texture,                 //
                             IRect::MakeXYWH(pos->GetLeft(), pos->GetTop(),
-                                            size.width, size.height))) {
+                                            size.width, size.height),  //
+                            /*label=*/"",                              //
+                            /*slice=*/0,                               //
+                            /*convert_to_read=*/false                  //
+                            )) {
       return false;
     }
   }
-  return true;
+  return blit_pass->ConvertTextureToShaderRead(texture);
 }
 
 std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
@@ -331,8 +296,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   std::vector<FontGlyphPair> new_glyphs;
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
-    const FontGlyphAtlas* font_glyph_atlas =
-        last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale);
+    const FontGlyphAtlas* font_glyph_atlas = last_atlas->GetFontGlyphAtlas(
+        scaled_font.font, scaled_font.scale, scaled_font.color);
     if (font_glyph_atlas) {
       for (const Glyph& glyph : font_value.second) {
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
