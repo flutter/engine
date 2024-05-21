@@ -29,8 +29,6 @@ public class ScribePlugin
   private final InputMethodManager mImm;
   @NonNull private final View mView;
 
-  @VisibleForTesting MethodChannel.Result pendingResult;
-
   public ScribePlugin(
       @NonNull View view,
       @NonNull InputMethodManager imm,
@@ -59,8 +57,7 @@ public class ScribePlugin
    * Starts stylus handwriting input.
    */
   @Override
-  public void startStylusHandwriting(
-      @NonNull MethodChannel.Result result) {
+  public void startStylusHandwriting() {
     mImm.startStylusHandwriting(mView);
   }
 }

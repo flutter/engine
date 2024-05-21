@@ -27,8 +27,6 @@ public class ScribeChannel {
       new MethodChannel.MethodCallHandler() {
         @Override
         public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-          // TODO(justinmc): Log here (using the correct log method) to see if
-          // it's getting called.
           if (scribeMethodHandler == null) {
             Log.v(
                 TAG,
@@ -41,7 +39,8 @@ public class ScribeChannel {
           switch (method) {
             case "Scribe.startStylusHandwriting":
               try {
-                scribeMethodHandler.startStylusHandwriting(result);
+                scribeMethodHandler.startStylusHandwriting();
+                result.success(null);
               } catch (IllegalStateException exception) {
                 result.error("error", exception.getMessage(), null);
               }
@@ -73,6 +72,6 @@ public class ScribeChannel {
      * {@code result} with either success if handwriting input has started or
      * error otherwise.
      */
-    void startStylusHandwriting(@NonNull MethodChannel.Result result);
+    void startStylusHandwriting();
   }
 }
