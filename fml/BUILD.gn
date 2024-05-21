@@ -13,6 +13,7 @@ source_set("fml") {
   sources = [
     "ascii_trie.cc",
     "ascii_trie.h",
+    "backtrace.cc",
     "backtrace.h",
     "base32.cc",
     "base32.h",
@@ -104,12 +105,6 @@ source_set("fml") {
     "wakeable.h",
   ]
 
-  if (enable_backtrace) {
-    sources += [ "backtrace.cc" ]
-  } else {
-    sources += [ "backtrace_stub.cc" ]
-  }
-
   public_deps = [
     ":build_config",
     ":command_line",
@@ -119,14 +114,12 @@ source_set("fml") {
   deps = [
     "$dart_src/runtime:dart_api",
 
+    # This abseil dependency is only used by backtrace.cc.
+    "//flutter/third_party/abseil-cpp/absl/debugging:symbolize",
+
     # These need to be in sync with the Fuchsia buildroot.
     "//flutter/third_party/icu",
   ]
-
-  if (enable_backtrace) {
-    # This abseil dependency is only used by backtrace.cc.
-    deps += [ "//flutter/third_party/abseil-cpp/absl/debugging:symbolize" ]
-  }
 
   configs += [ "//flutter/third_party/icu:icu_config" ]
 

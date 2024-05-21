@@ -20,9 +20,6 @@ declare_args() {
   # Whether to build host-side development artifacts.
   flutter_build_engine_artifacts = true
 
-  # Whether to include backtrace support.
-  enable_backtrace = true
-
   # Whether to include --fapplication-extension when build iOS framework.
   # This is currently a test flag and does not work properly.
   #TODO(cyanglaz): Remove above comment about test flag when the entire iOS embedder supports app extension
