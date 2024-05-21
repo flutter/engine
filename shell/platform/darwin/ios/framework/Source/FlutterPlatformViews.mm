@@ -437,14 +437,14 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 }
 
 void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
-  if (clipView.maskView) {
+  if (clipView.layer.mask) {
     return;
   }
   UIView* flutterView = flutter_view_.get();
   CGRect frame =
       CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
                  CGRectGetWidth(flutterView.bounds), CGRectGetHeight(flutterView.bounds));
-  clipView.maskView = [mask_view_pool_.get() getMaskViewWithFrame:frame];
+  clipView.layer.mask = [mask_view_pool_.get() getMaskViewWithFrame:frame];
 }
 
 // This method is only called when the `embedded_view` needs to be re-composited at the current
@@ -461,11 +461,12 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   SkMatrix transformMatrix;
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
-  FML_DCHECK(!clipView.maskView ||
-             [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
-  if (clipView.maskView) {
-    [mask_view_pool_.get() insertViewToPoolIfNeeded:(FlutterClippingMaskView*)(clipView.maskView)];
-    clipView.maskView = nil;
+  FML_DCHECK(!clipView.layer.mask ||
+             [clipView.layer.mask isKindOfClass:[FlutterClippingMaskLayer class]]);
+  if (clipView.layer.mask) {
+    [mask_view_pool_.get()
+        insertViewToPoolIfNeeded:(FlutterClippingMaskLayer*)(clipView.layer.mask)];
+    clipView.layer.mask = nil;
   }
   CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
@@ -481,8 +482,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
           break;
         }
         ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
-                                                       matrix:transformMatrix];
+        [(FlutterClippingMaskLayer*)clipView.layer.mask clipRect:(*iter)->GetRect()
+                                                          matrix:transformMatrix];
         break;
       }
       case kClipRRect: {
@@ -491,8 +492,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
           break;
         }
         ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipRRect:(*iter)->GetRRect()
-                                                        matrix:transformMatrix];
+        [(FlutterClippingMaskLayer*)clipView.layer.mask clipRRect:(*iter)->GetRRect()
+                                                           matrix:transformMatrix];
         break;
       }
       case kClipPath: {
@@ -500,8 +501,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         // rect. See `ClipRRectContainsPlatformViewBoundingRect`.
         // https://github.com/flutter/flutter/issues/118650
         ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipPath:(*iter)->GetPath()
-                                                       matrix:transformMatrix];
+        [(FlutterClippingMaskLayer*)clipView.layer.mask clipPath:(*iter)->GetPath()
+                                                          matrix:transformMatrix];
         break;
       }
       case kOpacity:

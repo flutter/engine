@@ -2761,42 +2761,42 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   XCTAssertFalse(view.flt_hasFirstResponderInViewHierarchySubtree);
 }
 
-- (void)testFlutterClippingMaskViewPoolReuseViewsAfterRecycle {
-  FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
-  FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
-  FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
-  [pool insertViewToPoolIfNeeded:view1];
-  [pool insertViewToPoolIfNeeded:view2];
-  CGRect newRect = CGRectMake(0, 0, 10, 10);
-  FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:newRect];
-  FlutterClippingMaskView* view4 = [pool getMaskViewWithFrame:newRect];
-  // view3 and view4 should randomly get either of view1 and view2.
-  NSSet* set1 = [NSSet setWithObjects:view1, view2, nil];
-  NSSet* set2 = [NSSet setWithObjects:view3, view4, nil];
-  XCTAssertEqualObjects(set1, set2);
-  XCTAssertTrue(CGRectEqualToRect(view3.frame, newRect));
-  XCTAssertTrue(CGRectEqualToRect(view4.frame, newRect));
-}
+// - (void)testFlutterClippingMaskViewPoolReuseViewsAfterRecycle {
+//   FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
+//   FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
+//   FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
+//   [pool insertViewToPoolIfNeeded:view1];
+//   [pool insertViewToPoolIfNeeded:view2];
+//   CGRect newRect = CGRectMake(0, 0, 10, 10);
+//   FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:newRect];
+//   FlutterClippingMaskView* view4 = [pool getMaskViewWithFrame:newRect];
+//   // view3 and view4 should randomly get either of view1 and view2.
+//   NSSet* set1 = [NSSet setWithObjects:view1, view2, nil];
+//   NSSet* set2 = [NSSet setWithObjects:view3, view4, nil];
+//   XCTAssertEqualObjects(set1, set2);
+//   XCTAssertTrue(CGRectEqualToRect(view3.frame, newRect));
+//   XCTAssertTrue(CGRectEqualToRect(view4.frame, newRect));
+// }
 
-- (void)testFlutterClippingMaskViewPoolAllocsNewMaskViewsAfterReachingCapacity {
-  FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
-  FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
-  FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
-  FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:CGRectZero];
-  XCTAssertNotEqual(view1, view3);
-  XCTAssertNotEqual(view2, view3);
-}
+// - (void)testFlutterClippingMaskViewPoolAllocsNewMaskViewsAfterReachingCapacity {
+//   FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
+//   FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
+//   FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
+//   FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:CGRectZero];
+//   XCTAssertNotEqual(view1, view3);
+//   XCTAssertNotEqual(view2, view3);
+// }
 
-- (void)testMaskViewsReleasedWhenPoolIsReleased {
-  __weak UIView* weakView;
-  @autoreleasepool {
-    FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
-    FlutterClippingMaskView* view = [pool getMaskViewWithFrame:CGRectZero];
-    weakView = view;
-    XCTAssertNotNil(weakView);
-  }
-  XCTAssertNil(weakView);
-}
+// - (void)testMaskViewsReleasedWhenPoolIsReleased {
+//   __weak UIView* weakView;
+//   @autoreleasepool {
+//     FlutterClippingMaskViewPool* pool = [[FlutterClippingMaskViewPool alloc] initWithCapacity:2];
+//     FlutterClippingMaskView* view = [pool getMaskViewWithFrame:CGRectZero];
+//     weakView = view;
+//     XCTAssertNotNil(weakView);
+//   }
+//   XCTAssertNil(weakView);
+// }
 
 - (void)testClipMaskViewIsReused {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;

@@ -28,7 +28,7 @@
 //
 // When a UIView sets a |FlutterClippingMaskView| as its `maskView`, the alpha channel of the UIView
 // is replaced with the alpha channel of the |FlutterClippingMaskView|.
-@interface FlutterClippingMaskView : UIView
+@interface FlutterClippingMaskLayer : CAShapeLayer
 
 - (instancetype)initWithFrame:(CGRect)frame screenScale:(CGFloat)screenScale;
 
@@ -66,10 +66,10 @@
 - (instancetype)initWithCapacity:(NSInteger)capacity;
 
 // Reuse a maskView from the pool, or allocate a new one.
-- (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
+- (FlutterClippingMaskLayer*)getMaskViewWithFrame:(CGRect)frame;
 
 // Insert the `maskView` into the pool.
-- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskView*)maskView;
+- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskLayer*)maskView;
 
 @end
 

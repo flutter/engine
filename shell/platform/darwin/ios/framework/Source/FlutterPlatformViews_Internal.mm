@@ -188,6 +188,20 @@ static BOOL _preparedOnce = NO;
 
 @implementation ChildClippingView
 
+- (id<CAAction>)actionForLayer:(CALayer*)layer forKey:(NSString*)event {
+  // Unlike UIView, CALayer has animation enabled by default.
+  // Disable all animations for ChildClippingView's layer, such as its `mask` and other animatable
+  // properties. Note that we should disable animation for the layer being masked, rather than
+  // FlutterClippingMaskLayer itself. See
+  // https://developer.apple.com/documentation/quartzcore/calayer/1410844-actionforkey
+  // We cannot simply use `setDisableActions` since the embedded platform views may have their own
+  // anmiations.
+  if (layer == self.layer) {
+    return [NSNull null];
+  }
+  return [super actionForLayer:layer forKey:event];
+}
+
 // The ChildClippingView's frame is the bounding rect of the platform view. we only want touches to
 // be hit tested and consumed by this view if they are inside the embedded platform view which could
 // be smaller the embedded platform view is rotated.
@@ -243,7 +257,7 @@ static BOOL _preparedOnce = NO;
 
 @end
 
-@interface FlutterClippingMaskView ()
+@interface FlutterClippingMaskLayer ()
 
 // A `CATransform3D` matrix represnts a scale transform that revese UIScreen.scale.
 //
@@ -255,12 +269,12 @@ static BOOL _preparedOnce = NO;
 // information about screen scale.
 @property(nonatomic) CATransform3D reverseScreenScale;
 
-- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
+- (void)addTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
 
 @end
 
-@implementation FlutterClippingMaskView {
-  std::vector<fml::CFRef<CGPathRef>> paths_;
+@implementation FlutterClippingMaskLayer {
+  CGMutablePathRef pathSoFar_;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -268,16 +282,24 @@ static BOOL _preparedOnce = NO;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame screenScale:(CGFloat)screenScale {
-  if (self = [super initWithFrame:frame]) {
-    self.backgroundColor = UIColor.clearColor;
+  if (self = [super init]) {
     _reverseScreenScale = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
+    pathSoFar_ = CGPathCreateMutable();
+    self.frame = frame;
   }
   return self;
 }
 
 - (void)reset {
-  paths_.clear();
+  CGPathRelease(pathSoFar_);
+  pathSoFar_ = CGPathCreateMutable();
+  self.path = nil;
   [self setNeedsDisplay];
+}
+
+- (void)dealloc {
+  CGPathRelease(pathSoFar_);
+  [super dealloc];
 }
 
 // In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added
@@ -289,28 +311,13 @@ static BOOL _preparedOnce = NO;
   return NO;
 }
 
-- (void)drawRect:(CGRect)rect {
-  CGContextRef context = UIGraphicsGetCurrentContext();
-  CGContextSaveGState(context);
-
-  // For mask view, only the alpha channel is used.
-  CGContextSetAlpha(context, 1);
-
-  for (size_t i = 0; i < paths_.size(); i++) {
-    CGContextAddPath(context, paths_.at(i));
-    CGContextClip(context);
-  }
-  CGContextFillRect(context, rect);
-  CGContextRestoreGState(context);
-}
-
 - (void)clipRect:(const SkRect&)clipSkRect matrix:(const SkMatrix&)matrix {
   CGRect clipRect = flutter::GetCGRectFromSkRect(clipSkRect);
   CGPathRef path = CGPathCreateWithRect(clipRect, nil);
   // The `matrix` is based on the physical pixels, convert it to UIKit points.
   CATransform3D matrixInPoints =
       CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
-  paths_.push_back([self getTransformedPath:path matrix:matrixInPoints]);
+  [self addTransformedPath:path matrix:matrixInPoints];
 }
 
 - (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const SkMatrix&)matrix {
@@ -379,7 +386,7 @@ static BOOL _preparedOnce = NO;
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrixInPoints]);
+  [self addTransformedPath:pathRef matrix:matrixInPoints];
 }
 
 - (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix {
@@ -444,15 +451,15 @@ static BOOL _preparedOnce = NO;
   // The `matrix` is based on the physical pixels, convert it to UIKit points.
   CATransform3D matrixInPoints =
       CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrixInPoints]);
+  [self addTransformedPath:pathRef matrix:matrixInPoints];
 }
 
-- (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
+- (void)addTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {
   CGAffineTransform affine =
       CGAffineTransformMake(matrix.m11, matrix.m12, matrix.m21, matrix.m22, matrix.m41, matrix.m42);
-  CGPathRef transformedPath = CGPathCreateCopyByTransformingPath(path, &affine);
+  CGPathAddPath(pathSoFar_, &affine, path);
+  self.path = pathSoFar_;
   CGPathRelease(path);
-  return fml::CFRef<CGPathRef>(transformedPath);
 }
 
 @end
@@ -465,7 +472,7 @@ static BOOL _preparedOnce = NO;
 
 // The pool contains the views that are available to use.
 // The number of items in the pool must not excceds `capacity`.
-@property(retain, nonatomic) NSMutableSet<FlutterClippingMaskView*>* pool;
+@property(retain, nonatomic) NSMutableSet<FlutterClippingMaskLayer*>* pool;
 
 @end
 
@@ -481,22 +488,22 @@ static BOOL _preparedOnce = NO;
   return self;
 }
 
-- (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame {
+- (FlutterClippingMaskLayer*)getMaskViewWithFrame:(CGRect)frame {
   FML_DCHECK(self.pool.count <= self.capacity);
   if (self.pool.count == 0) {
     // The pool is empty, alloc a new one.
     return
-        [[[FlutterClippingMaskView alloc] initWithFrame:frame
-                                            screenScale:[UIScreen mainScreen].scale] autorelease];
+        [[[FlutterClippingMaskLayer alloc] initWithFrame:frame
+                                             screenScale:[UIScreen mainScreen].scale] autorelease];
   }
-  FlutterClippingMaskView* maskView = [[[self.pool anyObject] retain] autorelease];
+  FlutterClippingMaskLayer* maskView = [[[self.pool anyObject] retain] autorelease];
   maskView.frame = frame;
   [maskView reset];
   [self.pool removeObject:maskView];
   return maskView;
 }
 
-- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskView*)maskView {
+- (void)insertViewToPoolIfNeeded:(FlutterClippingMaskLayer*)maskView {
   FML_DCHECK(![self.pool containsObject:maskView]);
   FML_DCHECK(self.pool.count <= self.capacity);
   if (self.pool.count == self.capacity) {
