@@ -39,6 +39,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.view.textservice.SpellCheckerInfo;
 import android.view.textservice.TextServicesManager;
+import android.view.InputDevice;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -826,6 +827,20 @@ public class FlutterView extends FrameLayout
     }
 
     return textInputPlugin.createInputConnection(this, keyboardManager, outAttrs);
+  }
+
+  @Override
+  public PointerIcon onResolvePointerIcon(MotionEvent event, int pointerIndex) {
+    // TODO(justinmc): Also need to check if over a valid field and if stylus
+    // input is supported.
+    // Maybe have to do this in the framework and show a Flutter icon?
+    final int toolType = event.getToolType(pointerIndex);
+    if (!event.isFromSource(InputDevice.SOURCE_MOUSE)
+      && event.isFromSource(InputDevice.SOURCE_STYLUS)
+      && toolType == MotionEvent.TOOL_TYPE_STYLUS) {
+      return PointerIcon.getSystemIcon(getContext(), PointerIcon.TYPE_HANDWRITING);
+    }
+    return super.onResolvePointerIcon(event, pointerIndex);
   }
 
   /**
