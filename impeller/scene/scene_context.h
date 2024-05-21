@@ -96,8 +96,8 @@ class SceneContext {
       FML_CHECK(prototype != variants_.end());
 
       auto variant_future = prototype->second->WaitAndGet()->CreateVariant(
-          [&context, &opts,
-           variants_count = variants_.size()](PipelineDescriptor& desc) {
+          /*async=*/false, [&context, &opts, variants_count = variants_.size()](
+                               PipelineDescriptor& desc) {
             opts.ApplyToPipelineDescriptor(*context.GetCapabilities(), desc);
             desc.SetLabel(
                 SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
@@ -125,13 +125,13 @@ class SceneContext {
   /// If a pipeline could not be created, returns nullptr.
   std::unique_ptr<PipelineVariants> MakePipelineVariants(Context& context) {
     auto pipeline =
-        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>(
+        PipelineVariantsT<RenderPipelineHandle<VertexShader, FragmentShader>>(
             context);
     if (!pipeline.IsValid()) {
       return nullptr;
     }
     return std::make_unique<
-        PipelineVariantsT<RenderPipelineT<VertexShader, FragmentShader>>>(
+        PipelineVariantsT<RenderPipelineHandle<VertexShader, FragmentShader>>>(
         std::move(pipeline));
   }
 

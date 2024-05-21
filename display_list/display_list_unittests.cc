@@ -65,8 +65,10 @@ class DisplayListTestBase : public BaseT {
     DisplayListBuilder builder;
     DlOpReceiver& receiver =
         DisplayListTestBase<::testing::Test>::ToReceiver(builder);
-    unsigned int op_count = 0;
-    size_t byte_count = 0;
+    uint32_t op_count = 0u;
+    size_t byte_count = 0u;
+    uint32_t depth = 0u;
+    uint32_t render_op_depth_cost = 1u;
     for (size_t i = 0; i < allGroups.size(); i++) {
       DisplayListInvocationGroup& group = allGroups[i];
       size_t j = (i == g_index ? v_index : 0);
@@ -76,7 +78,10 @@ class DisplayListTestBase : public BaseT {
       DisplayListInvocation& invocation = group.variants[j];
       op_count += invocation.op_count();
       byte_count += invocation.raw_byte_count();
-      invocation.invoker(receiver);
+      depth += invocation.depth_accumulated(render_op_depth_cost);
+      invocation.Invoke(receiver);
+      render_op_depth_cost =
+          invocation.adjust_render_op_depth_cost(render_op_depth_cost);
     }
     sk_sp<DisplayList> dl = builder.Build();
     std::string name;
@@ -92,6 +97,7 @@ class DisplayListTestBase : public BaseT {
     }
     EXPECT_EQ(dl->op_count(false), op_count) << name;
     EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
+    EXPECT_EQ(dl->total_depth(), depth) << name;
     return dl;
   }
 
@@ -231,6 +237,7 @@ TEST_F(DisplayListTest, EmptyBuild) {
   auto dl = builder.Build();
   EXPECT_EQ(dl->op_count(), 0u);
   EXPECT_EQ(dl->bytes(), sizeof(DisplayList));
+  EXPECT_EQ(dl->total_depth(), 0u);
 }
 
 TEST_F(DisplayListTest, EmptyRebuild) {
@@ -526,6 +533,7 @@ TEST_F(DisplayListTest, UnclippedSaveLayerContentAccountsForFilter) {
   auto display_list = builder.Build();
 
   ASSERT_EQ(display_list->op_count(), 6u);
+  EXPECT_EQ(display_list->total_depth(), 2u);
 
   SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.intersect(clip_rect));
@@ -558,6 +566,7 @@ TEST_F(DisplayListTest, ClippedSaveLayerContentAccountsForFilter) {
   auto display_list = builder.Build();
 
   ASSERT_EQ(display_list->op_count(), 6u);
+  EXPECT_EQ(display_list->total_depth(), 2u);
 
   SkRect result_rect = draw_rect.makeOutset(30.0f, 30.0f);
   ASSERT_TRUE(result_rect.intersect(clip_rect));
@@ -573,6 +582,7 @@ TEST_F(DisplayListTest, SingleOpSizes) {
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
       ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
       ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
+      EXPECT_EQ(dl->total_depth(), invocation.depth_accumulated()) << desc;
     }
   }
 }
@@ -611,6 +621,7 @@ TEST_F(DisplayListTest, SingleOpDisplayListsRecapturedAreEqual) {
       ASSERT_EQ(copy->bytes(false), dl->bytes(false)) << desc;
       ASSERT_EQ(copy->op_count(true), dl->op_count(true)) << desc;
       ASSERT_EQ(copy->bytes(true), dl->bytes(true)) << desc;
+      EXPECT_EQ(copy->total_depth(), dl->total_depth()) << desc;
       ASSERT_EQ(copy->bounds(), dl->bounds()) << desc;
       ASSERT_TRUE(copy->Equals(*dl)) << desc;
       ASSERT_TRUE(dl->Equals(*copy)) << desc;
@@ -640,6 +651,7 @@ TEST_F(DisplayListTest, SingleOpDisplayListsCompareToEachOther) {
           ASSERT_EQ(listA->bytes(false), listB->bytes(false)) << desc;
           ASSERT_EQ(listA->op_count(true), listB->op_count(true)) << desc;
           ASSERT_EQ(listA->bytes(true), listB->bytes(true)) << desc;
+          EXPECT_EQ(listA->total_depth(), listB->total_depth()) << desc;
           ASSERT_EQ(listA->bounds(), listB->bounds()) << desc;
           ASSERT_TRUE(listA->Equals(*listB)) << desc;
           ASSERT_TRUE(listB->Equals(*listA)) << desc;
@@ -659,8 +671,8 @@ TEST_F(DisplayListTest, SingleOpDisplayListsAreEqualWithOrWithoutRtree) {
     for (size_t i = 0; i < group.variants.size(); i++) {
       DisplayListBuilder builder1(/*prepare_rtree=*/false);
       DisplayListBuilder builder2(/*prepare_rtree=*/true);
-      group.variants[i].invoker(ToReceiver(builder1));
-      group.variants[i].invoker(ToReceiver(builder2));
+      group.variants[i].Invoke(ToReceiver(builder1));
+      group.variants[i].Invoke(ToReceiver(builder2));
       sk_sp<DisplayList> dl1 = builder1.Build();
       sk_sp<DisplayList> dl2 = builder2.Build();
 
@@ -669,7 +681,9 @@ TEST_F(DisplayListTest, SingleOpDisplayListsAreEqualWithOrWithoutRtree) {
       ASSERT_EQ(dl1->bytes(false), dl2->bytes(false)) << desc;
       ASSERT_EQ(dl1->op_count(true), dl2->op_count(true)) << desc;
       ASSERT_EQ(dl1->bytes(true), dl2->bytes(true)) << desc;
+      EXPECT_EQ(dl1->total_depth(), dl2->total_depth()) << desc;
       ASSERT_EQ(dl1->bounds(), dl2->bounds()) << desc;
+      ASSERT_EQ(dl1->total_depth(), dl2->total_depth()) << desc;
       ASSERT_TRUE(DisplayListsEQ_Verbose(dl1, dl2)) << desc;
       ASSERT_TRUE(DisplayListsEQ_Verbose(dl2, dl2)) << desc;
       ASSERT_EQ(dl1->rtree().get(), nullptr) << desc;
@@ -691,6 +705,7 @@ TEST_F(DisplayListTest, FullRotationsAreNop) {
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
   ASSERT_EQ(dl->op_count(false), 0u);
   ASSERT_EQ(dl->op_count(true), 0u);
+  EXPECT_EQ(dl->total_depth(), 0u);
 }
 
 TEST_F(DisplayListTest, AllBlendModeNops) {
@@ -702,6 +717,7 @@ TEST_F(DisplayListTest, AllBlendModeNops) {
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
   ASSERT_EQ(dl->op_count(false), 0u);
   ASSERT_EQ(dl->op_count(true), 0u);
+  EXPECT_EQ(dl->total_depth(), 0u);
 }
 
 TEST_F(DisplayListTest, DisplayListsWithVaryingOpComparisons) {
@@ -933,13 +949,15 @@ TEST_F(DisplayListTest, NestedOpCountMetricsSameAsSkPicture) {
       receiver.drawRect(SkRect::MakeXYWH(x, y, 80, 80));
     }
   }
+
   DisplayListBuilder outer_builder(SkRect::MakeWH(150, 100));
   DlOpReceiver& outer_receiver = ToReceiver(outer_builder);
   outer_receiver.drawDisplayList(builder.Build());
-
   auto display_list = outer_builder.Build();
+
   ASSERT_EQ(display_list->op_count(), 1u);
   ASSERT_EQ(display_list->op_count(true), 36u);
+  EXPECT_EQ(display_list->total_depth(), 37u);
 
   ASSERT_EQ(picture->approximateOpCount(),
             static_cast<int>(display_list->op_count()));
@@ -1227,7 +1245,7 @@ class SaveLayerOptionsExpector : public virtual DlOpReceiver,
   explicit SaveLayerOptionsExpector(std::vector<SaveLayerOptions> expected)
       : expected_(std::move(expected)) {}
 
-  void saveLayer(const SkRect* bounds,
+  void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override {
     EXPECT_EQ(options, expected_[save_layer_count_]);
@@ -1555,7 +1573,8 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   // This is the more practical result. The bounds are "almost" 0,0,100x100
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
-  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 384u);
+  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 400u);
+  EXPECT_EQ(display_list->total_depth(), 3u);
 }
 
 TEST_F(DisplayListTest, TranslateAffectsCurrentTransform) {
@@ -3084,11 +3103,13 @@ TEST_F(DisplayListTest, DrawUnorderedRoundRectPathCCW) {
 TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
   auto run_tests = [](const std::string& name,
                       void init(DisplayListBuilder & builder, DlPaint & paint),
-                      uint32_t expected_op_count = 0u) {
+                      uint32_t expected_op_count = 0u,
+                      uint32_t expected_total_depth = 0u) {
     auto run_one_test =
         [init](const std::string& name,
                void build(DisplayListBuilder & builder, DlPaint & paint),
-               uint32_t expected_op_count = 0u) {
+               uint32_t expected_op_count = 0u,
+               uint32_t expected_total_depth = 0u) {
           DisplayListBuilder builder;
           DlPaint paint;
           init(builder, paint);
@@ -3098,6 +3119,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
             FML_LOG(ERROR) << *list;
           }
           ASSERT_EQ(list->op_count(), expected_op_count) << name;
+          EXPECT_EQ(list->total_depth(), expected_total_depth) << name;
           ASSERT_TRUE(list->bounds().isEmpty()) << name;
         };
     run_one_test(
@@ -3105,19 +3127,19 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
         [](DisplayListBuilder& builder, DlPaint& paint) {
           builder.DrawColor(paint.getColor(), paint.getBlendMode());
         },
-        expected_op_count);
+        expected_op_count, expected_total_depth);
     run_one_test(
         name + " DrawPaint",
         [](DisplayListBuilder& builder, DlPaint& paint) {
           builder.DrawPaint(paint);
         },
-        expected_op_count);
+        expected_op_count, expected_total_depth);
     run_one_test(
         name + " DrawRect",
         [](DisplayListBuilder& builder, DlPaint& paint) {
           builder.DrawRect({10, 10, 20, 20}, paint);
         },
-        expected_op_count);
+        expected_op_count, expected_total_depth);
     run_one_test(
         name + " Other Draw Ops",
         [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3155,7 +3177,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
             builder.DrawShadow(kTestPath1, paint.getColor(), 1, true, 1);
           }
         },
-        expected_op_count);
+        expected_op_count, expected_total_depth);
     run_one_test(
         name + " SaveLayer",
         [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3163,7 +3185,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawRect({10, 10, 20, 20}, DlPaint());
           builder.Restore();
         },
-        expected_op_count);
+        expected_op_count, expected_total_depth);
     run_one_test(
         name + " inside Save",
         [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3171,7 +3193,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawRect({10, 10, 20, 20}, paint);
           builder.Restore();
         },
-        expected_op_count);
+        expected_op_count, expected_total_depth);
   };
   run_tests("transparent color",  //
             [](DisplayListBuilder& builder, DlPaint& paint) {
@@ -3230,7 +3252,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
         builder.SaveLayer(nullptr, nullptr);
         paint.setBlendMode(DlBlendMode::kDst);
       },
-      2u);
+      2u, 1u);
   run_tests("DrawImage inside Culled SaveLayer",  //
             [](DisplayListBuilder& builder, DlPaint& paint) {
               DlPaint save_paint;
@@ -3330,6 +3352,537 @@ TEST_F(DisplayListTest, ImpellerPathPreferenceIsHonored) {
     EXPECT_EQ(impeller_tester.impeller_clip_path_calls(), 1);
     EXPECT_EQ(impeller_tester.impeller_draw_shadow_calls(), 1);
   }
+}
+
+class SaveLayerBoundsExpector : public virtual DlOpReceiver,
+                                public IgnoreAttributeDispatchHelper,
+                                public IgnoreClipDispatchHelper,
+                                public IgnoreTransformDispatchHelper,
+                                public IgnoreDrawDispatchHelper {
+ public:
+  explicit SaveLayerBoundsExpector() {}
+
+  SaveLayerBoundsExpector& addComputedExpectation(const SkRect& bounds) {
+    expected_.emplace_back(BoundsExpectation{
+        .bounds = bounds,
+        .options = SaveLayerOptions(),
+    });
+    return *this;
+  }
+
+  SaveLayerBoundsExpector& addSuppliedExpectation(const SkRect& bounds,
+                                                  bool clipped = false) {
+    SaveLayerOptions options;
+    options = options.with_bounds_from_caller();
+    if (clipped) {
+      options = options.with_content_is_clipped();
+    }
+    expected_.emplace_back(BoundsExpectation{
+        .bounds = bounds,
+        .options = options,
+    });
+    return *this;
+  }
+
+  void saveLayer(const SkRect& bounds,
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {
+    ASSERT_LT(save_layer_count_, expected_.size());
+    auto expected = expected_[save_layer_count_];
+    EXPECT_EQ(options.bounds_from_caller(),
+              expected.options.bounds_from_caller())
+        << "expected bounds index " << save_layer_count_;
+    EXPECT_EQ(options.content_is_clipped(),
+              expected.options.content_is_clipped())
+        << "expected bounds index " << save_layer_count_;
+    if (!SkScalarNearlyEqual(bounds.fLeft, expected.bounds.fLeft) ||
+        !SkScalarNearlyEqual(bounds.fTop, expected.bounds.fTop) ||
+        !SkScalarNearlyEqual(bounds.fRight, expected.bounds.fRight) ||
+        !SkScalarNearlyEqual(bounds.fBottom, expected.bounds.fBottom)) {
+      EXPECT_EQ(bounds, expected.bounds)
+          << "expected bounds index " << save_layer_count_;
+    }
+    save_layer_count_++;
+  }
+
+  bool all_bounds_checked() const {
+    return save_layer_count_ == expected_.size();
+  }
+
+ private:
+  struct BoundsExpectation {
+    const SkRect bounds;
+    const SaveLayerOptions options;
+  };
+
+  std::vector<BoundsExpectation> expected_;
+  size_t save_layer_count_ = 0;
+};
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfMaskBlurredRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint draw_paint;
+  auto mask_filter = DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 2.0f);
+  draw_paint.setMaskFilter(mask_filter);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, draw_paint);
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect.makeOutset(6.0f, 6.0f));
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfImageBlurredRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint draw_paint;
+  auto image_filter = DlBlurImageFilter::Make(2.0f, 3.0f, DlTileMode::kDecal);
+  draw_paint.setImageFilter(image_filter);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, draw_paint);
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect.makeOutset(6.0f, 9.0f));
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfStrokedRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint draw_paint;
+  draw_paint.setStrokeWidth(5.0f);
+  draw_paint.setDrawStyle(DlDrawStyle::kStroke);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, draw_paint);
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect.makeOutset(2.5f, 2.5f));
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, TranslatedSaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.Translate(10.0f, 10.0f);
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, ScaledSaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.Scale(10.0f, 10.0f);
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, RotatedSaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.Rotate(45.0f);
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, TransformResetSaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  SkRect rect_doubled = SkMatrix::Scale(2.0f, 2.0f).mapRect(rect);
+
+  DisplayListBuilder builder;
+  builder.Scale(10.0f, 10.0f);
+  builder.SaveLayer(nullptr, nullptr);
+  builder.TransformReset();
+  builder.Scale(20.0f, 20.0f);
+  // Net local transform for saveLayer is Scale(2, 2)
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect_doubled);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfTranslatedSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.Translate(10.0f, 10.0f);
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect.makeOffset(10.0f, 10.0f));
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfScaledSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.Scale(10.0f, 10.0f);
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(
+      SkRect::MakeLTRB(1000.0f, 1000.0f, 2000.0f, 2000.0f));
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfRotatedSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.Rotate(45.0f);
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SkMatrix matrix = SkMatrix::RotateDeg(45.0f);
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(matrix.mapRect(rect));
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfNestedSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.SaveLayer(nullptr, nullptr);
+    {  //
+      builder.DrawRect(rect, DlPaint());
+    }
+    builder.Restore();
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, FloodingSaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint save_paint;
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+  ASSERT_TRUE(color_filter->modifies_transparent_black());
+  save_paint.setColorFilter(color_filter);
+  SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
+  ASSERT_NE(clip_rect, rect);
+  ASSERT_TRUE(clip_rect.contains(rect));
+
+  DisplayListBuilder builder;
+  builder.ClipRect(clip_rect);
+  builder.SaveLayer(nullptr, &save_paint);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, NestedFloodingSaveLayerBoundsComputationOfSimpleRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint save_paint;
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+  ASSERT_TRUE(color_filter->modifies_transparent_black());
+  save_paint.setColorFilter(color_filter);
+  SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
+  ASSERT_NE(clip_rect, rect);
+  ASSERT_TRUE(clip_rect.contains(rect));
+
+  DisplayListBuilder builder;
+  builder.ClipRect(clip_rect);
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    builder.SaveLayer(nullptr, &save_paint);
+    {  //
+      builder.DrawRect(rect, DlPaint());
+    }
+    builder.Restore();
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(clip_rect);
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfFloodingImageFilter) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint draw_paint;
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+  ASSERT_TRUE(color_filter->modifies_transparent_black());
+  auto image_filter = DlColorFilterImageFilter::Make(color_filter);
+  draw_paint.setImageFilter(image_filter);
+  SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
+  ASSERT_NE(clip_rect, rect);
+  ASSERT_TRUE(clip_rect.contains(rect));
+
+  DisplayListBuilder builder;
+  builder.ClipRect(clip_rect);
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, draw_paint);
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(clip_rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsComputationOfFloodingColorFilter) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  DlPaint draw_paint;
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrc);
+  ASSERT_TRUE(color_filter->modifies_transparent_black());
+  draw_paint.setColorFilter(color_filter);
+  SkRect clip_rect = rect.makeOutset(100.0f, 100.0f);
+  ASSERT_NE(clip_rect, rect);
+  ASSERT_TRUE(clip_rect.contains(rect));
+
+  DisplayListBuilder builder;
+  builder.ClipRect(clip_rect);
+  builder.SaveLayer(nullptr, nullptr);
+  {  //
+    builder.DrawRect(rect, draw_paint);
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  // A color filter is implicitly clipped to the draw bounds so the layer
+  // bounds will be the same as the draw bounds.
+  SaveLayerBoundsExpector expector;
+  expector.addComputedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsClipDetectionSimpleUnclippedRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  SkRect save_rect = SkRect::MakeLTRB(50.0f, 50.0f, 250.0f, 250.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(&save_rect, nullptr);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  // A color filter is implicitly clipped to the draw bounds so the layer
+  // bounds will be the same as the draw bounds.
+  SaveLayerBoundsExpector expector;
+  expector.addSuppliedExpectation(rect);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+TEST_F(DisplayListTest, SaveLayerBoundsClipDetectionSimpleClippedRect) {
+  SkRect rect = SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f);
+  SkRect save_rect = SkRect::MakeLTRB(50.0f, 50.0f, 110.0f, 110.0f);
+  SkRect content_rect = SkRect::MakeLTRB(100.0f, 100.0f, 110.0f, 110.0f);
+
+  DisplayListBuilder builder;
+  builder.SaveLayer(&save_rect, nullptr);
+  {  //
+    builder.DrawRect(rect, DlPaint());
+  }
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  // A color filter is implicitly clipped to the draw bounds so the layer
+  // bounds will be the same as the draw bounds.
+  SaveLayerBoundsExpector expector;
+  expector.addSuppliedExpectation(content_rect, true);
+  display_list->Dispatch(expector);
+  EXPECT_TRUE(expector.all_bounds_checked());
+}
+
+class DepthExpector : public virtual DlOpReceiver,
+                      virtual IgnoreAttributeDispatchHelper,
+                      virtual IgnoreTransformDispatchHelper,
+                      virtual IgnoreClipDispatchHelper,
+                      virtual IgnoreDrawDispatchHelper {
+ public:
+  explicit DepthExpector(std::vector<uint32_t> expectations)
+      : depth_expectations_(std::move(expectations)) {}
+
+  void save() override {
+    // This method should not be called since we override the variant with
+    // the total_content_depth parameter.
+    FAIL() << "save(no depth parameter) method should not be called";
+  }
+
+  void save(uint32_t total_content_depth) override {
+    ASSERT_LT(index_, depth_expectations_.size());
+    EXPECT_EQ(depth_expectations_[index_], total_content_depth)
+        << "at index " << index_;
+    index_++;
+  }
+
+  void saveLayer(const SkRect& bounds,
+                 SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {
+    // This method should not be called since we override the variant with
+    // the total_content_depth parameter.
+    FAIL() << "saveLayer(no depth parameter) method should not be called";
+  }
+
+  void saveLayer(const SkRect& bounds,
+                 const SaveLayerOptions& options,
+                 uint32_t total_content_depth,
+                 const DlImageFilter* backdrop) override {
+    ASSERT_LT(index_, depth_expectations_.size());
+    EXPECT_EQ(depth_expectations_[index_], total_content_depth)
+        << "at index " << index_;
+    index_++;
+  }
+
+ private:
+  size_t index_ = 0;
+  std::vector<uint32_t> depth_expectations_;
+};
+
+TEST_F(DisplayListTest, SaveContentDepthTest) {
+  DisplayListBuilder child_builder;
+  child_builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 1
+  auto child = child_builder.Build();
+
+  DisplayListBuilder builder;
+  builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 1
+
+  builder.Save();  // covers depth 1->9
+  {
+    builder.Translate(5, 5);
+    builder.DrawRect({10, 10, 20, 20}, DlPaint());  // depth 2
+
+    builder.DrawDisplayList(child, 1.0f);  // depth 3 (content) + 4 (self)
+
+    builder.SaveLayer(nullptr, nullptr);  // covers depth 5->6
+    {
+      builder.DrawRect({12, 12, 22, 22}, DlPaint());  // depth 5
+      builder.DrawRect({14, 14, 24, 24}, DlPaint());  // depth 6
+    }
+    builder.Restore();  // layer is restored with depth 7
+
+    builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 8
+    builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 9
+  }
+  builder.Restore();
+
+  builder.DrawRect({16, 16, 26, 26}, DlPaint());  // depth 10
+  builder.DrawRect({18, 18, 28, 28}, DlPaint());  // depth 11
+  auto display_list = builder.Build();
+
+  EXPECT_EQ(display_list->total_depth(), 11u);
+
+  DepthExpector expector({8, 2});
+  display_list->Dispatch(expector);
 }
 
 }  // namespace testing

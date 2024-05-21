@@ -33,7 +33,8 @@ void main() {
         engine: engine,
         platform: FakePlatform(
             operatingSystem: Platform.macOS,
-            resolvedExecutable: io.Platform.resolvedExecutable),
+            resolvedExecutable: io.Platform.resolvedExecutable,
+            pathSeparator: '/'),
         processRunner: ProcessRunner(
             processManager: FakeProcessManager(onStart: (List<String> command) {
           runHistory.add(command);
@@ -57,7 +58,7 @@ void main() {
   }
 
   test('process queue success', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = macEnv(logger);
     final WorkerPool wp = WorkerPool(env, NoopWorkerPoolProgressReporter());
     final ProcessTask task =
@@ -71,7 +72,7 @@ void main() {
   });
 
   test('process queue failure', () async {
-    final Logger logger = Logger.test();
+    final Logger logger = Logger.test((_) {});
     final (Environment env, _) = macEnv(logger);
     final WorkerPool wp = WorkerPool(env, NoopWorkerPoolProgressReporter());
     final ProcessTask task =

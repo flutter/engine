@@ -15,6 +15,16 @@ PlaygroundTest::PlaygroundTest()
 
 PlaygroundTest::~PlaygroundTest() = default;
 
+namespace {
+bool DoesSupportWideGamutTests() {
+#ifdef __arm64__
+  return true;
+#else
+  return false;
+#endif
+}
+}  // namespace
+
 void PlaygroundTest::SetUp() {
   if (!Playground::SupportsBackend(GetParam())) {
     GTEST_SKIP_("Playground doesn't support this backend type.");
@@ -28,7 +38,19 @@ void PlaygroundTest::SetUp() {
 
   ImpellerValidationErrorsSetFatal(true);
 
-  SetupContext(GetParam());
+  // Test names that end with "WideGamut" will render with wide gamut support.
+  std::string test_name = flutter::testing::GetCurrentTestName();
+  PlaygroundSwitches switches = switches_;
+  switches.enable_wide_gamut =
+      test_name.find("WideGamut/") != std::string::npos;
+
+  if (switches.enable_wide_gamut && (GetParam() != PlaygroundBackend::kMetal ||
+                                     !DoesSupportWideGamutTests())) {
+    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
+    return;
+  }
+
+  SetupContext(GetParam(), switches);
   SetupWindow();
 }
 

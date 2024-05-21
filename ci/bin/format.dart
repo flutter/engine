@@ -326,6 +326,7 @@ class ClangFormatChecker extends FormatChecker {
     clangFormat = File(
       path.join(
         srcDir.absolute.path,
+        'flutter',
         'buildtools',
         clangOs,
         'clang',
@@ -974,9 +975,10 @@ final class HeaderFormatChecker extends FormatChecker {
     super.messageCallback,
   });
 
-  // $ENGINE/third_party/dart/tools/sdks/dart-sdk/bin/dart
+  // $ENGINE/flutter/third_party/dart/tools/sdks/dart-sdk/bin/dart
   late final String _dartBin = path.join(
     repoDir.absolute.parent.path,
+    'flutter',
     'third_party',
     'dart',
     'tools',
@@ -1009,6 +1011,7 @@ final class HeaderFormatChecker extends FormatChecker {
     }
     final List<String> args = <String>[
       _dartBin,
+      '--disable-dart-dev',
       _headerGuardCheckBin,
       ...include.map((String f) => '--include=$f'),
     ];
@@ -1037,6 +1040,7 @@ final class HeaderFormatChecker extends FormatChecker {
     }
     final List<String> args = <String>[
       _dartBin,
+      '--disable-dart-dev',
       _headerGuardCheckBin,
       '--fix',
       ...include.map((String f) => '--include=$f'),

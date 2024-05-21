@@ -22,10 +22,10 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'flutter_frontend_server'),
     os.path.join(ENGINE_DIR, 'impeller', 'tessellator', 'dart'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
-    os.path.join(ENGINE_DIR, 'testing', 'android_background_image'),
     os.path.join(ENGINE_DIR, 'testing', 'benchmark'),
     os.path.join(ENGINE_DIR, 'testing', 'dart'),
     os.path.join(ENGINE_DIR, 'testing', 'litetest'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'testing', 'scenario_app'),
     os.path.join(ENGINE_DIR, 'testing', 'skia_gold_client'),
     os.path.join(ENGINE_DIR, 'testing', 'smoke_test_failure'),
@@ -34,6 +34,7 @@ ALL_PACKAGES = [
     os.path.join(ENGINE_DIR, 'tools', 'api_check'),
     os.path.join(ENGINE_DIR, 'tools', 'build_bucket_golden_scraper'),
     os.path.join(ENGINE_DIR, 'tools', 'clang_tidy'),
+    os.path.join(ENGINE_DIR, 'tools', 'clangd_check'),
     os.path.join(ENGINE_DIR, 'tools', 'compare_goldens'),
     os.path.join(ENGINE_DIR, 'tools', 'const_finder'),
     os.path.join(ENGINE_DIR, 'tools', 'dir_contents_diff'),
@@ -91,6 +92,7 @@ EXCLUDED_DIRS = [
     os.path.join(ENGINE_DIR, 'shell', 'platform', 'fuchsia'),
     os.path.join(ENGINE_DIR, 'shell', 'vmservice'),
     os.path.join(ENGINE_DIR, 'sky', 'packages'),
+    os.path.join(ENGINE_DIR, 'testing', 'pkg_test_demo'),
     os.path.join(ENGINE_DIR, 'third_party'),
     os.path.join(ENGINE_DIR, 'web_sdk'),
 ]
@@ -117,7 +119,9 @@ def find_unlisted_packages():
 
 
 def main():
-  dart_sdk_bin = os.path.join(SRC_ROOT, 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin')
+  dart_sdk_bin = os.path.join(
+      SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
+  )
 
   # Ensure all relevant packages are listed in ALL_PACKAGES.
   unlisted = find_unlisted_packages()
@@ -129,7 +133,7 @@ def main():
   dart = 'dart'
   if os.name == 'nt':
     dart = 'dart.exe'
-  pubcmd = [os.path.join(dart_sdk_bin, dart), 'pub', 'get', '--offline']
+  pubcmd = [os.path.join(dart_sdk_bin, dart), 'pub', '--suppress-analytics', 'get', '--offline']
 
   pub_count = 0
   for package in ALL_PACKAGES:

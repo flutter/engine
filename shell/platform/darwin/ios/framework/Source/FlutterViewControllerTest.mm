@@ -15,6 +15,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKeyEvents.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/UIViewController+FlutterScreenAndSceneIfLoaded.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
@@ -1135,12 +1136,21 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 - (void)testViewControllerIsReleased {
   __weak FlutterViewController* weakViewController;
+  __weak UIView* weakView;
   @autoreleasepool {
-    FlutterViewController* viewController = [[FlutterViewController alloc] init];
+    FlutterEngine* engine = [[FlutterEngine alloc] init];
+
+    [engine runWithEntrypoint:nil];
+    FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                  nibName:nil
+                                                                                   bundle:nil];
     weakViewController = viewController;
     [viewController viewDidLoad];
+    weakView = viewController.view;
+    XCTAssertTrue([viewController.view isKindOfClass:[FlutterView class]]);
   }
   XCTAssertNil(weakViewController);
+  XCTAssertNil(weakView);
 }
 
 #pragma mark - Platform Brightness
@@ -1363,6 +1373,22 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   // Verify behavior.
   XCTAssert((flags & (int32_t)flutter::AccessibilityFeatureFlag::kOnOffSwitchLabels) != 0);
+}
+
+- (void)testAccessibilityPerformEscapePopsRoute {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  id mockNavigationChannel = OCMClassMock([FlutterMethodChannel class]);
+  OCMStub([mockEngine navigationChannel]).andReturn(mockNavigationChannel);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  XCTAssertTrue([viewController accessibilityPerformEscape]);
+
+  OCMVerify([mockNavigationChannel invokeMethod:@"popRoute" arguments:nil]);
+
+  [mockNavigationChannel stopMocking];
 }
 
 - (void)testPerformOrientationUpdateForcesOrientationChange {
@@ -2186,6 +2212,20 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                  bundle:nil];
   [viewController setUpKeyboardAnimationVsyncClient:nil];
   XCTAssertNil(viewController.keyboardAnimationVSyncClient);
+}
+
+- (void)testSupportsShowingSystemContextMenuForIOS16AndAbove {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  BOOL supportsShowingSystemContextMenu = [viewController supportsShowingSystemContextMenu];
+  if (@available(iOS 16.0, *)) {
+    XCTAssertTrue(supportsShowingSystemContextMenu);
+  } else {
+    XCTAssertFalse(supportsShowingSystemContextMenu);
+  }
 }
 
 @end

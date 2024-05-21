@@ -49,11 +49,11 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
                   const fml::RefPtr<fml::RasterThreadMerger>&
                       raster_thread_merger) override {}
 
-  void PrepareFlutterView(int64_t flutter_view_id,
-                          SkISize frame_size,
+  void PrepareFlutterView(SkISize frame_size,
                           double device_pixel_ratio) override {}
 
   void SubmitFlutterView(
+      int64_t flutter_view_id,
       GrDirectContext* context,
       const std::shared_ptr<impeller::AiksContext>& aiks_context,
       std::unique_ptr<flutter::SurfaceFrame> frame) override {}
@@ -87,6 +87,13 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   void OnPlatformViewDestroyed() {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewScheduleFrame() {}
+  // |flutter::PlatformView::Delegate|
+  void OnPlatformViewAddView(int64_t view_id,
+                             const flutter::ViewportMetrics& viewport_metrics,
+                             AddViewCallback callback) override {}
+  // |flutter::PlatformView::Delegate|
+  void OnPlatformViewRemoveView(int64_t view_id,
+                                RemoveViewCallback callback) override {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) {}
   // |flutter::PlatformView::Delegate|

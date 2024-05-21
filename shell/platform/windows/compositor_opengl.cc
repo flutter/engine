@@ -92,14 +92,10 @@ bool CompositorOpenGL::CollectBackingStore(const FlutterBackingStore* store) {
   return true;
 }
 
-bool CompositorOpenGL::Present(const FlutterLayer** layers,
+bool CompositorOpenGL::Present(FlutterWindowsView* view,
+                               const FlutterLayer** layers,
                                size_t layers_count) {
-  // TODO(loicsharma): Remove implicit view assumption.
-  // https://github.com/flutter/flutter/issues/142845
-  FlutterWindowsView* view = engine_->view(kImplicitViewId);
-  if (!view) {
-    return false;
-  }
+  FML_DCHECK(view != nullptr);
 
   // Clear the view if there are no layers to present.
   if (layers_count == 0) {

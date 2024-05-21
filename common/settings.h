@@ -229,6 +229,9 @@ struct Settings {
   bool enable_impeller = false;
 #endif
 
+  // Log a warning during shell initialization if Impeller is not enabled.
+  bool warn_on_impeller_opt_out = false;
+
   // The selected Android rendering API.
   AndroidRenderingAPI android_rendering_api =
       AndroidRenderingAPI::kSkiaOpenGLES;
@@ -264,8 +267,6 @@ struct Settings {
   // associated resources.
   // It can be customized by application, more detail:
   // https://github.com/flutter/flutter/issues/95903
-  // TODO(eggfly): Should it be set to false by default?
-  // https://github.com/flutter/flutter/issues/96843
   bool leak_vm = true;
 
   // Engine settings
@@ -345,17 +346,15 @@ struct Settings {
   // Max bytes threshold of resource cache, or 0 for unlimited.
   size_t resource_cache_max_bytes_threshold = 0;
 
-  /// The minimum number of samples to require in multipsampled anti-aliasing.
-  ///
-  /// Setting this value to 0 or 1 disables MSAA.
-  /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
-  /// GPU does not support the requested sampling value, MSAA will be disabled.
-  uint8_t msaa_samples = 0;
-
   /// Enable embedder api on the embedder.
   ///
   /// This is currently only used by iOS.
   bool enable_embedder_api = false;
+
+  /// Enable support for isolates that run on the platform thread.
+  ///
+  /// This is used by the runOnPlatformThread API.
+  bool enable_platform_isolates = false;
 };
 
 }  // namespace flutter

@@ -4,22 +4,26 @@
 
 #include "impeller/aiks/canvas.h"
 
+#include <memory>
 #include <optional>
 #include <utility>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/aiks/color_source.h"
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_contents.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 
@@ -44,8 +48,10 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
     }
   }
 
+  bool can_apply_mask_filter = geometry->CanApplyMaskFilter();
   contents->SetGeometry(std::move(geometry));
-  if (paint.mask_blur_descriptor.has_value()) {
+
+  if (can_apply_mask_filter && paint.mask_blur_descriptor.has_value()) {
     // If there's a mask blur and we need to apply the color filter on the GPU,
     // we need to be careful to only apply the color filter to the source
     // colors. CreateMaskBlur is able to handle this case.
@@ -72,6 +78,47 @@ static std::shared_ptr<Contents> CreateContentsForGeometryWithFilters(
   }
 
   return contents_copy;
+}
+
+struct GetTextureColorSourceDataVisitor {
+  GetTextureColorSourceDataVisitor() {}
+
+  std::optional<ImageData> operator()(const LinearGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const RadialGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const ConicalGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const SweepGradientData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const ImageData& data) { return data; }
+
+  std::optional<ImageData> operator()(const RuntimeEffectData& data) {
+    return std::nullopt;
+  }
+
+  std::optional<ImageData> operator()(const std::monostate& data) {
+    return std::nullopt;
+  }
+
+#if IMPELLER_ENABLE_3D
+  std::optional<ImageData> operator()(const SceneData& data) {
+    return std::nullopt;
+  }
+#endif  // IMPELLER_ENABLE_3D
+};
+
+static std::optional<ImageData> GetImageColorSourceData(
+    const ColorSource& color_source) {
+  return std::visit(GetTextureColorSourceDataVisitor{}, color_source.GetData());
 }
 
 static std::shared_ptr<Contents> CreatePathContentsWithFilters(
@@ -117,9 +164,12 @@ Canvas::~Canvas() = default;
 void Canvas::Initialize(std::optional<Rect> cull_rect) {
   initial_cull_rect_ = cull_rect;
   base_pass_ = std::make_unique<EntityPass>();
-  base_pass_->SetNewClipDepth(++current_depth_);
+  base_pass_->SetClipDepth(++current_depth_);
   current_pass_ = base_pass_.get();
-  transform_stack_.emplace_back(CanvasStackEntry{.cull_rect = cull_rect});
+  transform_stack_.emplace_back(CanvasStackEntry{
+      .cull_rect = cull_rect,
+      .clip_depth = kMaxDepth,
+  });
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
@@ -131,8 +181,8 @@ void Canvas::Reset() {
   transform_stack_ = {};
 }
 
-void Canvas::Save() {
-  Save(false);
+void Canvas::Save(uint32_t total_content_depth) {
+  Save(false, total_content_depth);
 }
 
 namespace {
@@ -167,17 +217,17 @@ class MipCountVisitor : public ImageFilterVisitor {
 }  // namespace
 
 void Canvas::Save(bool create_subpass,
+                  uint32_t total_content_depth,
                   BlendMode blend_mode,
                   const std::shared_ptr<ImageFilter>& backdrop_filter) {
   auto entry = CanvasStackEntry{};
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
-  entry.clip_depth = transform_stack_.back().clip_depth;
+  entry.clip_height = transform_stack_.back().clip_height;
   if (create_subpass) {
-    entry.rendering_mode = Entity::RenderingMode::kSubpass;
+    entry.rendering_mode =
+        Entity::RenderingMode::kSubpassAppendSnapshotTransform;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetEnableOffscreenCheckerboard(
-        debug_options.offscreen_texture_checkerboard);
     if (backdrop_filter) {
       EntityPass::BackdropFilterProc backdrop_filter_proc =
           [backdrop_filter = backdrop_filter->Clone()](
@@ -198,7 +248,7 @@ void Canvas::Save(bool create_subpass,
     subpass->SetBlendMode(blend_mode);
     current_pass_ = GetCurrentPass().AddSubpass(std::move(subpass));
     current_pass_->SetTransform(transform_stack_.back().transform);
-    current_pass_->SetClipDepth(transform_stack_.back().clip_depth);
+    current_pass_->SetClipHeight(transform_stack_.back().clip_height);
   }
   transform_stack_.emplace_back(entry);
 }
@@ -212,8 +262,10 @@ bool Canvas::Restore() {
   current_pass_->PopClips(num_clips, current_depth_);
 
   if (transform_stack_.back().rendering_mode ==
-      Entity::RenderingMode::kSubpass) {
-    current_pass_->SetNewClipDepth(++current_depth_);
+          Entity::RenderingMode::kSubpassAppendSnapshotTransform ||
+      transform_stack_.back().rendering_mode ==
+          Entity::RenderingMode::kSubpassPrependSnapshotTransform) {
+    current_pass_->SetClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
   }
@@ -290,21 +342,19 @@ void Canvas::RestoreToCount(size_t count) {
 void Canvas::DrawPath(const Path& path, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreatePathContentsWithFilters(paint, path));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateCoverContentsWithFilters(paint));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
@@ -360,16 +410,24 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       (paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kSolid &&
        (!rrect_color.IsOpaque() ||
         paint.blend_mode != BlendMode::kSourceOver))) {
+    Rect render_bounds = rect;
+    if (paint.mask_blur_descriptor->style !=
+        FilterContents::BlurStyle::kInner) {
+      render_bounds =
+          render_bounds.Expand(paint.mask_blur_descriptor->sigma.sigma * 4.0);
+    }
     // Defer the alpha, blend mode, and image filter to a separate layer.
     SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
                .blend_mode = paint.blend_mode,
-               .image_filter = paint.image_filter});
+               .image_filter = paint.image_filter},
+              render_bounds, nullptr, ContentBoundsPromise::kContainsContents,
+              1u);
     rrect_paint.color = rrect_color.WithAlpha(1);
   } else {
     rrect_paint.color = rrect_color;
     rrect_paint.blend_mode = paint.blend_mode;
     rrect_paint.image_filter = paint.image_filter;
-    Save();
+    Save(1u);
   }
 
   auto draw_blurred_rrect = [this, &rect, &corner_radii, &rrect_paint]() {
@@ -381,13 +439,12 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 
     Entity blurred_rrect_entity;
     blurred_rrect_entity.SetTransform(GetCurrentTransform());
-    blurred_rrect_entity.SetClipDepth(GetClipDepth());
     blurred_rrect_entity.SetBlendMode(rrect_paint.blend_mode);
 
     rrect_paint.mask_blur_descriptor = std::nullopt;
     blurred_rrect_entity.SetContents(
         rrect_paint.WithFilters(std::move(contents)));
-    AddEntityToCurrentPass(std::move(blurred_rrect_entity));
+    AddRenderEntityToCurrentPass(std::move(blurred_rrect_entity));
   };
 
   switch (rrect_paint.mask_blur_descriptor->style) {
@@ -401,11 +458,10 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
       // Then, draw the non-blurred RRect on top.
       Entity entity;
       entity.SetTransform(GetCurrentTransform());
-      entity.SetClipDepth(GetClipDepth());
       entity.SetBlendMode(rrect_paint.blend_mode);
       entity.SetContents(CreateContentsForGeometryWithFilters(
           rrect_paint, Geometry::MakeRoundRect(rect, corner_radii)));
-      AddEntityToCurrentPass(std::move(entity));
+      AddRenderEntityToCurrentPass(std::move(entity), true);
       break;
     }
     case FilterContents::BlurStyle::kOuter: {
@@ -428,12 +484,11 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateContentsForGeometryWithFilters(
       paint, Geometry::MakeLine(p0, p1, paint.stroke_width, paint.stroke_cap)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
@@ -448,12 +503,11 @@ void Canvas::DrawRect(const Rect& rect, const Paint& paint) {
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(
       CreateContentsForGeometryWithFilters(paint, Geometry::MakeRect(rect)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
@@ -475,12 +529,11 @@ void Canvas::DrawOval(const Rect& rect, const Paint& paint) {
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(
       CreateContentsForGeometryWithFilters(paint, Geometry::MakeOval(rect)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawRRect(const Rect& rect,
@@ -493,12 +546,11 @@ void Canvas::DrawRRect(const Rect& rect,
   if (paint.style == Paint::Style::kFill) {
     Entity entity;
     entity.SetTransform(GetCurrentTransform());
-    entity.SetClipDepth(GetClipDepth());
     entity.SetBlendMode(paint.blend_mode);
     entity.SetContents(CreateContentsForGeometryWithFilters(
         paint, Geometry::MakeRoundRect(rect, corner_radii)));
 
-    AddEntityToCurrentPass(std::move(entity));
+    AddRenderEntityToCurrentPass(std::move(entity));
     return;
   }
 
@@ -522,7 +574,6 @@ void Canvas::DrawCircle(const Point& center,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   auto geometry =
       paint.style == Paint::Style::kStroke
@@ -531,7 +582,7 @@ void Canvas::DrawCircle(const Point& center,
   entity.SetContents(
       CreateContentsForGeometryWithFilters(paint, std::move(geometry)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::ClipPath(const Path& path, Entity::ClipOperation clip_op) {
@@ -634,11 +685,10 @@ void Canvas::ClipGeometry(const std::shared_ptr<Geometry>& geometry,
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
   entity.SetContents(std::move(contents));
-  entity.SetClipDepth(GetClipDepth());
 
-  GetCurrentPass().PushClip(std::move(entity));
+  AddClipEntityToCurrentPass(std::move(entity));
 
-  ++transform_stack_.back().clip_depth;
+  ++transform_stack_.back().clip_height;
   ++transform_stack_.back().num_clips;
 }
 
@@ -672,10 +722,11 @@ void Canvas::RestoreClip() {
   entity.SetTransform(GetCurrentTransform());
   // This path is empty because ClipRestoreContents just generates a quad that
   // takes up the full render target.
-  entity.SetContents(std::make_shared<ClipRestoreContents>());
-  entity.SetClipDepth(GetClipDepth());
+  auto clip_restore = std::make_shared<ClipRestoreContents>();
+  clip_restore->SetRestoreHeight(GetClipHeight());
+  entity.SetContents(std::move(clip_restore));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawPoints(std::vector<Point> points,
@@ -688,14 +739,13 @@ void Canvas::DrawPoints(std::vector<Point> points,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(CreateContentsForGeometryWithFilters(
       paint,
       Geometry::MakePointField(std::move(points), radius,
                                /*round=*/point_style == PointStyle::kRound)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawImage(const std::shared_ptr<Image>& image,
@@ -744,11 +794,10 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
-  entity.SetClipDepth(GetClipDepth());
   entity.SetContents(paint.WithFilters(contents));
   entity.SetTransform(GetCurrentTransform());
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 Picture Canvas::EndRecordingAsPicture() {
@@ -772,20 +821,29 @@ EntityPass& Canvas::GetCurrentPass() {
   return *current_pass_;
 }
 
-size_t Canvas::GetClipDepth() const {
-  return transform_stack_.back().clip_depth;
+size_t Canvas::GetClipHeight() const {
+  return transform_stack_.back().clip_height;
 }
 
-void Canvas::AddEntityToCurrentPass(Entity entity) {
-  entity.SetNewClipDepth(++current_depth_);
+void Canvas::AddRenderEntityToCurrentPass(Entity entity, bool reuse_depth) {
+  if (!reuse_depth) {
+    ++current_depth_;
+  }
+  entity.SetClipDepth(current_depth_);
   GetCurrentPass().AddEntity(std::move(entity));
+}
+
+void Canvas::AddClipEntityToCurrentPass(Entity entity) {
+  GetCurrentPass().PushClip(std::move(entity));
 }
 
 void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
-                       const std::shared_ptr<ImageFilter>& backdrop_filter) {
+                       const std::shared_ptr<ImageFilter>& backdrop_filter,
+                       ContentBoundsPromise bounds_promise,
+                       uint32_t total_content_depth) {
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
-  Save(true, paint.blend_mode, backdrop_filter);
+  Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
 
   // The DisplayList bounds/rtree doesn't account for filters applied to parent
   // layers, and so sub-DisplayLists are getting culled as if no filters are
@@ -796,7 +854,9 @@ void Canvas::SaveLayer(const Paint& paint,
   }
 
   auto& new_layer_pass = GetCurrentPass();
-  new_layer_pass.SetBoundsLimit(bounds);
+  if (bounds) {
+    new_layer_pass.SetBoundsLimit(bounds, bounds_promise);
+  }
 
   if (paint.image_filter) {
     MipCountVisitor mip_count_visitor;
@@ -817,7 +877,6 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
                            Point position,
                            const Paint& paint) {
   Entity entity;
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
   auto text_contents = std::make_shared<TextContents>();
@@ -837,21 +896,19 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   entity.SetContents(
       paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 static bool UseColorSourceContents(
     const std::shared_ptr<VerticesGeometry>& vertices,
     const Paint& paint) {
   // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image or
-  // a solid color.
+  // are vertex coordinates but its just a color.
   if (vertices->HasVertexColors()) {
     return false;
   }
   if (vertices->HasTextureCoordinates() &&
-      (paint.color_source.GetType() == ColorSource::Type::kImage ||
-       paint.color_source.GetType() == ColorSource::Type::kColor)) {
+      (paint.color_source.GetType() == ColorSource::Type::kColor)) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
@@ -869,14 +926,41 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image.
+  // If there are no vertex colors.
   if (UseColorSourceContents(vertices, paint)) {
     entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
-    AddEntityToCurrentPass(std::move(entity));
+    AddRenderEntityToCurrentPass(std::move(entity));
+    return;
+  }
+
+  // If the blend mode is destination don't bother to bind or create a texture.
+  if (blend_mode == BlendMode::kDestination) {
+    auto contents = std::make_shared<VerticesSimpleBlendContents>();
+    contents->SetBlendMode(blend_mode);
+    contents->SetAlpha(paint.color.alpha);
+    contents->SetGeometry(vertices);
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    AddRenderEntityToCurrentPass(std::move(entity));
+    return;
+  }
+
+  // If there is a texture, use this directly. Otherwise render the color
+  // source to a texture.
+  if (std::optional<ImageData> maybe_image_data =
+          GetImageColorSourceData(paint.color_source)) {
+    const ImageData& image_data = maybe_image_data.value();
+    auto contents = std::make_shared<VerticesSimpleBlendContents>();
+    contents->SetBlendMode(blend_mode);
+    contents->SetAlpha(paint.color.alpha);
+    contents->SetGeometry(vertices);
+    contents->SetEffectTransform(image_data.effect_transform);
+    contents->SetTexture(image_data.texture);
+    contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
+
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    AddRenderEntityToCurrentPass(std::move(entity));
     return;
   }
 
@@ -885,36 +969,36 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
-  if (vertices->HasTextureCoordinates()) {
-    // If the color source has an intrinsic size, then we use that to
-    // create the src contents as a simplification. Otherwise we use
-    // the extent of the texture coordinates to determine how large
-    // the src contents should be. If neither has a value we fall back
-    // to using the geometry coverage data.
-    Rect src_coverage;
-    auto size = src_contents->GetColorSourceSize();
-    if (size.has_value()) {
-      src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
-    } else {
-      auto cvg = vertices->GetCoverage(Matrix{});
-      FML_CHECK(cvg.has_value());
-      src_coverage =
-          // Covered by FML_CHECK.
-          // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-          vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
-    }
-    src_contents =
-        src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
+
+  // If the color source has an intrinsic size, then we use that to
+  // create the src contents as a simplification. Otherwise we use
+  // the extent of the texture coordinates to determine how large
+  // the src contents should be. If neither has a value we fall back
+  // to using the geometry coverage data.
+  Rect src_coverage;
+  auto size = src_contents->GetColorSourceSize();
+  if (size.has_value()) {
+    src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
+  } else {
+    auto cvg = vertices->GetCoverage(Matrix{});
+    FML_CHECK(cvg.has_value());
+    src_coverage =
+        // Covered by FML_CHECK.
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+        vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
   }
+  src_contents =
+      src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
 
-  auto contents = std::make_shared<VerticesContents>();
-  contents->SetAlpha(paint.color.alpha);
+  auto contents = std::make_shared<VerticesSimpleBlendContents>();
   contents->SetBlendMode(blend_mode);
+  contents->SetAlpha(paint.color.alpha);
   contents->SetGeometry(vertices);
-  contents->SetSourceContents(std::move(src_contents));
+  contents->SetLazyTexture([src_contents](const ContentContext& renderer) {
+    return src_contents->RenderToSnapshot(renderer, {})->texture;
+  });
   entity.SetContents(paint.WithFilters(std::move(contents)));
-
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
@@ -941,11 +1025,10 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
 
   Entity entity;
   entity.SetTransform(GetCurrentTransform());
-  entity.SetClipDepth(GetClipDepth());
   entity.SetBlendMode(paint.blend_mode);
   entity.SetContents(paint.WithFilters(contents));
 
-  AddEntityToCurrentPass(std::move(entity));
+  AddRenderEntityToCurrentPass(std::move(entity));
 }
 
 }  // namespace impeller

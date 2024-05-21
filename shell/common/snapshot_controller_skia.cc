@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include "flutter/shell/common/snapshot_controller_skia.h"
 
 #include "display_list/image/dl_image.h"
@@ -48,6 +50,13 @@ sk_sp<SkImage> DrawSnapshot(
   return nullptr;
 }
 }  // namespace
+
+void SnapshotControllerSkia::MakeRasterSnapshot(
+    sk_sp<DisplayList> display_list,
+    SkISize picture_size,
+    std::function<void(const sk_sp<DlImage>&)> callback) {
+  callback(MakeRasterSnapshotSync(display_list, picture_size));
+}
 
 sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
     SkISize size,
@@ -129,7 +138,7 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
   return DlImage::Make(result);
 }
 
-sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
+sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshotSync(
     sk_sp<DisplayList> display_list,
     SkISize size) {
   return DoMakeRasterSnapshot(size, [display_list](SkCanvas* canvas) {
@@ -160,4 +169,9 @@ sk_sp<SkImage> SnapshotControllerSkia::ConvertToRasterImage(
   return result->skia_image();
 }
 
+void SnapshotControllerSkia::CacheRuntimeStage(
+    const std::shared_ptr<impeller::RuntimeStage>& runtime_stage) {}
+
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

@@ -22,7 +22,7 @@ from gen_package import CreateFarPackage
 
 _script_dir = os.path.abspath(os.path.join(os.path.realpath(__file__), '..'))
 _src_root_dir = os.path.join(_script_dir, '..', '..', '..')
-_out_dir = os.path.join(_src_root_dir, 'out')
+_out_dir = os.path.join(_src_root_dir, 'out', 'ci')
 _bucket_directory = os.path.join(_out_dir, 'fuchsia_bucket')
 
 
@@ -178,10 +178,12 @@ def CopyToBucket(src, dst, product=False):
 
 
 def ReadTargetAPILevel():
-  filename = os.path.join(os.path.dirname(__file__), 'target_api_level')
+  filename = os.path.join(os.path.dirname(__file__), '../../build/config/fuchsia/gn_configs.gni')
   with open(filename) as f:
-    api_level = f.read().rstrip('\n')
-  return api_level
+    for line in f:
+      if line.startswith('fuchsia_target_api_level'):
+        return line.split('=')[-1].strip()
+  assert False, 'No fuchsia_target_api_level found in //flutter/build/config/fuchsia/gn_configs.gni'
 
 
 def CopyVulkanDepsToBucket(src, dst, arch):
@@ -220,7 +222,7 @@ def CopyBuildToBucket(runtime_mode, arch, optimized, product):
   # are about to package.
   bucket_root = os.path.join(_bucket_directory, 'flutter')
   licenses_root = os.path.join(_src_root_dir, 'flutter/ci/licenses_golden')
-  license_files = ['licenses_flutter', 'licenses_fuchsia', 'licenses_skia', 'licenses_third_party']
+  license_files = ['licenses_flutter', 'licenses_fuchsia', 'licenses_skia']
   for license in license_files:
     src_path = os.path.join(licenses_root, license)
     dst_path = os.path.join(bucket_root, license)

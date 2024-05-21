@@ -6,13 +6,12 @@
 #import <UIKit/UIKit.h>
 #import <XCTest/XCTest.h>
 
-#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/fml/thread.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterPlatformViews.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTouchInterceptingView_Test.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 
 FLUTTER_ASSERT_ARC
@@ -88,6 +87,10 @@ class FlutterPlatformViewsTestMockPlatformViewDelegate : public PlatformView::De
   void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
+  void OnPlatformViewAddView(int64_t view_id,
+                             const ViewportMetrics& viewport_metrics,
+                             AddViewCallback callback) override {}
+  void OnPlatformViewRemoveView(int64_t view_id, RemoveViewCallback callback) override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}
   void OnPlatformViewSetViewportMetrics(int64_t view_id, const ViewportMetrics& metrics) override {}
   const flutter::Settings& OnPlatformViewGetSettings() const override { return settings_; }
@@ -248,13 +251,38 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testReleasesBackdropFilterSubviewsOnChildClippingViewDealloc {
   __weak NSMutableArray<UIVisualEffectView*>* weakBackdropFilterSubviews = nil;
+  __weak UIVisualEffectView* weakVisualEffectView1 = nil;
+  __weak UIVisualEffectView* weakVisualEffectView2 = nil;
+
   @autoreleasepool {
-    ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
-    weakBackdropFilterSubviews = clipping_view.backdropFilterSubviews;
+    ChildClippingView* clippingView = [[ChildClippingView alloc] initWithFrame:CGRectZero];
+    UIVisualEffectView* visualEffectView1 = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+    weakVisualEffectView1 = visualEffectView1;
+    PlatformViewFilter* platformViewFilter1 =
+        [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                       blurRadius:5
+                                 visualEffectView:visualEffectView1];
+
+    [clippingView applyBlurBackdropFilters:@[ platformViewFilter1 ]];
+
+    // Replace the blur filter to validate the original and new UIVisualEffectView are released.
+    UIVisualEffectView* visualEffectView2 = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
+    weakVisualEffectView2 = visualEffectView2;
+    PlatformViewFilter* platformViewFilter2 =
+        [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                       blurRadius:5
+                                 visualEffectView:visualEffectView2];
+    [clippingView applyBlurBackdropFilters:@[ platformViewFilter2 ]];
+
+    weakBackdropFilterSubviews = clippingView.backdropFilterSubviews;
     XCTAssertNotNil(weakBackdropFilterSubviews);
-    clipping_view = nil;
+    clippingView = nil;
   }
   XCTAssertNil(weakBackdropFilterSubviews);
+  XCTAssertNil(weakVisualEffectView1);
+  XCTAssertNil(weakVisualEffectView2);
 }
 
 - (void)testApplyBackdropFilter {
@@ -592,6 +620,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     XCTAssertEqual(originalView, newView);
     id mockOrignalView = OCMPartialMock(originalView);
     OCMReject([mockOrignalView removeFromSuperview]);
+    [mockOrignalView stopMocking];
   }
 }
 
@@ -1299,20 +1328,26 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 }
 
 - (void)testBackdropFilterVisualEffectSubviewBackgroundColor {
-  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-  PlatformViewFilter* platformViewFilter =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                     blurRadius:5
-                               visualEffectView:visualEffectView];
-  CGColorRef visualEffectSubviewBackgroundColor = nil;
-  for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
-    if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
-      visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
+  __weak UIVisualEffectView* weakVisualEffectView;
+
+  @autoreleasepool {
+    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+    weakVisualEffectView = visualEffectView;
+    PlatformViewFilter* platformViewFilter =
+        [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                       blurRadius:5
+                                 visualEffectView:visualEffectView];
+    CGColorRef visualEffectSubviewBackgroundColor = nil;
+    for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
+      if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
+        visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
+      }
     }
+    XCTAssertTrue(
+        CGColorEqualToColor(visualEffectSubviewBackgroundColor, UIColor.clearColor.CGColor));
   }
-  XCTAssertTrue(
-      CGColorEqualToColor(visualEffectSubviewBackgroundColor, UIColor.clearColor.CGColor));
+  XCTAssertNil(weakVisualEffectView);
 }
 
 - (void)testCompositePlatformView {
@@ -2154,7 +2189,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [forwardGectureRecognizer touchesBegan:touches1 withEvent:event1];
   OCMVerify([mockFlutterViewContoller touchesBegan:touches1 withEvent:event1]);
 
-  UIViewController* mockFlutterViewContoller2 = OCMClassMock([UIViewController class]);
+  FlutterViewController* mockFlutterViewContoller2 = OCMClassMock([FlutterViewController class]);
   flutterPlatformViewsController->SetFlutterViewController(mockFlutterViewContoller2);
 
   // Touch events should still send to the old FlutterViewController if FlutterViewController

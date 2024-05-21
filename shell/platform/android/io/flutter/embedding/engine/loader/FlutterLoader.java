@@ -4,15 +4,12 @@
 
 package io.flutter.embedding.engine.loader;
 
-import static io.flutter.Build.API_LEVELS;
-
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.hardware.display.DisplayManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -182,7 +179,40 @@ public class FlutterLoader {
               try (TraceSection e = TraceSection.scoped("FlutterLoader initTask")) {
                 ResourceExtractor resourceExtractor = initResources(appContext);
 
-                flutterJNI.loadLibrary();
+                try {
+                  flutterJNI.loadLibrary();
+                } catch (UnsatisfiedLinkError unsatisfiedLinkError) {
+                  String couldntFindVersion = "couldn't find \"libflutter.so\"";
+                  String notFoundVersion = "dlopen failed: library \"libflutter.so\" not found";
+
+                  if (unsatisfiedLinkError.toString().contains(couldntFindVersion)
+                      || unsatisfiedLinkError.toString().contains(notFoundVersion)) {
+                    // To gather more information for
+                    // https://github.com/flutter/flutter/issues/144291,
+                    // log the contents of the native libraries directory as well as the
+                    // cpu architecture.
+
+                    String cpuArch = System.getProperty("os.arch");
+                    File nativeLibsDir = new File(flutterApplicationInfo.nativeLibraryDir);
+                    String[] nativeLibsContents = nativeLibsDir.list();
+
+                    throw new UnsupportedOperationException(
+                        "Could not load libflutter.so this is possibly because the application"
+                            + " is running on an architecture that Flutter Android does not support (e.g. x86)"
+                            + " see https://docs.flutter.dev/deployment/android#what-are-the-supported-target-architectures"
+                            + " for more detail.\n"
+                            + "App is using cpu architecture: "
+                            + cpuArch
+                            + ", and the native libraries directory (with path "
+                            + nativeLibsDir.getAbsolutePath()
+                            + ") contains the following files: "
+                            + Arrays.toString(nativeLibsContents),
+                        unsatisfiedLinkError);
+                  }
+
+                  throw unsatisfiedLinkError;
+                }
+
                 flutterJNI.updateRefreshRate();
 
                 // Prefetch the default font manager as soon as possible on a background thread.
@@ -202,13 +232,6 @@ public class FlutterLoader {
           };
       initResultFuture = executorService.submit(initTask);
     }
-  }
-
-  private static boolean areValidationLayersOnByDefault() {
-    if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
-      return Build.SUPPORTED_ABIS[0].equals("arm64-v8a");
-    }
-    return false;
   }
 
   /**
@@ -320,8 +343,7 @@ public class FlutterLoader {
         if (metaData.getBoolean(ENABLE_IMPELLER_META_DATA_KEY, false)) {
           shellArgs.add("--enable-impeller");
         }
-        if (metaData.getBoolean(
-            ENABLE_VULKAN_VALIDATION_META_DATA_KEY, areValidationLayersOnByDefault())) {
+        if (metaData.getBoolean(ENABLE_VULKAN_VALIDATION_META_DATA_KEY, false)) {
           shellArgs.add("--enable-vulkan-validation");
         }
         if (metaData.getBoolean(IMPELLER_OPENGL_GPU_TRACING_DATA_KEY, false)) {

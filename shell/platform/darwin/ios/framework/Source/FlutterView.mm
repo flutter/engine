@@ -3,22 +3,16 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
-#include <Metal/Metal.h>
 
-#include "flutter/common/settings.h"
-#include "flutter/common/task_runners.h"
-#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
-#include "flutter/fml/synchronization/waitable_event.h"
-#include "flutter/fml/trace_event.h"
-#include "flutter/shell/common/platform_view.h"
-#include "flutter/shell/common/rasterizer.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
-#include "third_party/skia/include/utils/mac/SkCGUtils.h"
+
+FLUTTER_ASSERT_ARC
+
+@interface FlutterView ()
+@property(nonatomic, weak) id<FlutterViewEngineDelegate> delegate;
+@end
 
 @implementation FlutterView {
-  id<FlutterViewEngineDelegate> _delegate;
   BOOL _isWideGamutEnabled;
 }
 
@@ -56,7 +50,7 @@
   return MTLPixelFormatBGRA8Unorm;
 }
 - (BOOL)isWideGamutSupported {
-  if (![_delegate isUsingImpeller]) {
+  if (!self.delegate.isUsingImpeller) {
     return NO;
   }
 
@@ -73,7 +67,6 @@
                  enableWideGamut:(BOOL)isWideGamutEnabled {
   if (delegate == nil) {
     NSLog(@"FlutterView delegate was nil.");
-    [self release];
     return nil;
   }
 
@@ -122,11 +115,7 @@ static void PrintWideGamutWarningOnce() {
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
       CFRelease(srgb);
-      // MTLPixelFormatRGBA16Float was chosen since it is compatible with
-      // impeller's offscreen buffers which need to have transparency.  Also,
-      // F16 was chosen over BGRA10_XR since Skia does not support decoding
-      // BGRA10_XR.
-      layer.pixelFormat = MTLPixelFormatRGBA16Float;
+      layer.pixelFormat = MTLPixelFormatBGRA10_XR;
     } else if (_isWideGamutEnabled && !isWideGamutSupported) {
       PrintWideGamutWarningOnce();
     }
@@ -239,7 +228,7 @@ static BOOL _forceSoftwareRendering;
   // TODO(chunhtai): Remove this workaround once iOS provides an
   // API to query whether voice control is enabled.
   // https://github.com/flutter/flutter/issues/76808.
-  [_delegate flutterViewAccessibilityDidCall];
+  [self.delegate flutterViewAccessibilityDidCall];
   return NO;
 }
 

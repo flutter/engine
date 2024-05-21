@@ -8,8 +8,6 @@
 #include <chrono>
 #include <memory>
 
-#include "flutter/fml/closure.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/status.h"
 #include "flutter/fml/time/time_delta.h"
 #include "impeller/core/runtime_types.h"
@@ -31,22 +29,6 @@ enum class PlaygroundBackend {
   kOpenGLES,
   kVulkan,
 };
-
-// TODO(https://github.com/flutter/flutter/issues/145039)
-// clang-format off
-static const std::vector<std::string> kVulkanDenyValidationTests = {
-  "impeller_Play_SceneTest_FlutterLogo_Vulkan",
-  "impeller_Play_SceneTest_CuboidUnlit_Vulkan",
-  "impeller_Play_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
-  "impeller_Play_RuntimeEffectSetsRightSizeWhenUniformIsStruct_Vulkan",
-  "impeller_Play_RuntimeEffectCanSuccessfullyRender_Vulkan",
-  "impeller_Play_RuntimeEffect_Vulkan",
-  "impeller_Play_EntityTest_RuntimeStageTest_CanCreatePipelineFromRuntimeStage_Vulkan",
-  "impeller_Play_EntityTest_RuntimeEffectSetsRightSizeWhenUniformIsStruct_Vulkan",
-  "impeller_Play_EntityTest_RuntimeEffectCanSuccessfullyRender_Vulkan",
-  "impeller_Play_EntityTest_RuntimeEffect_Vulkan",
-};
-// clang-format on
 
 constexpr inline RuntimeStageBackend PlaygroundBackendToRuntimeStageBackend(
     PlaygroundBackend backend) {
@@ -73,11 +55,14 @@ class Playground {
 
   static bool ShouldOpenNewPlaygrounds();
 
-  void SetupContext(PlaygroundBackend backend);
+  void SetupContext(PlaygroundBackend backend,
+                    const PlaygroundSwitches& switches);
 
   void SetupWindow();
 
   void TeardownWindow();
+
+  bool IsPlaygroundEnabled() const;
 
   Point GetCursorPosition() const;
 

@@ -9,7 +9,6 @@
 #include <memory>
 #include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -49,17 +48,6 @@ class ClipContents final : public Contents {
   void SetInheritedOpacity(Scalar opacity) override;
 
  private:
-  bool RenderDepthClip(const ContentContext& renderer,
-                       const Entity& entity,
-                       RenderPass& pass,
-                       Entity::ClipOperation clip_op,
-                       const Geometry& geometry) const;
-  bool RenderStencilClip(const ContentContext& renderer,
-                         const Entity& entity,
-                         RenderPass& pass,
-                         Entity::ClipOperation clip_op,
-                         const Geometry& geometry) const;
-
   std::shared_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
@@ -73,6 +61,10 @@ class ClipRestoreContents final : public Contents {
   ClipRestoreContents();
 
   ~ClipRestoreContents();
+
+  void SetRestoreHeight(size_t clip_height);
+
+  size_t GetRestoreHeight() const;
 
   /// @brief  The area on the pass texture where this clip restore will be
   ///         applied. If unset, the entire pass texture will be restored.
@@ -105,6 +97,7 @@ class ClipRestoreContents final : public Contents {
 
  private:
   std::optional<Rect> restore_coverage_;
+  size_t restore_height_ = 0;
 
   ClipRestoreContents(const ClipRestoreContents&) = delete;
 

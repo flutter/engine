@@ -68,7 +68,8 @@ std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform) const {
   auto image_filter =
-      WithImageFilter(input, effect_transform, Entity::RenderingMode::kSubpass);
+      WithImageFilter(input, effect_transform,
+                      Entity::RenderingMode::kSubpassPrependSnapshotTransform);
   if (image_filter) {
     input = image_filter;
   }
@@ -183,7 +184,6 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
   }
   color_source_contents->SetGeometry(
       Geometry::MakeRect(*expanded_local_bounds));
-
   std::shared_ptr<Contents> color_contents = color_source_contents;
 
   /// 4. Apply the user set color filter on the GPU, if applicable.

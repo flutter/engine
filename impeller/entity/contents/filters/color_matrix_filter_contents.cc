@@ -56,7 +56,6 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
                                const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) -> bool {
     pass.SetCommandLabel("Color Matrix Filter");
-    pass.SetStencilReference(entity.GetClipDepth());
 
     auto options = OptionsFromPassAndEntity(pass, entity);
     options.primitive_type = PrimitiveType::kTriangleStrip;
@@ -75,10 +74,10 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
     pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
     VS::FrameInfo frame_info;
-    frame_info.depth = entity.GetShaderClipDepth();
-    frame_info.mvp = pass.GetOrthographicTransform() * entity.GetTransform() *
-                     input_snapshot->transform *
-                     Matrix::MakeScale(Vector2(size));
+    frame_info.mvp = Entity::GetShaderTransform(
+        entity.GetShaderClipDepth(), pass,
+        entity.GetTransform() * input_snapshot->transform *
+            Matrix::MakeScale(Vector2(size)));
     frame_info.texture_sampler_y_coord_scale =
         input_snapshot->texture->GetYCoordScale();
 
@@ -116,7 +115,6 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
 
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
-  sub_entity.SetClipDepth(entity.GetClipDepth());
   sub_entity.SetBlendMode(entity.GetBlendMode());
   return sub_entity;
 }

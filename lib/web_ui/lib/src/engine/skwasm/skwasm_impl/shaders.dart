@@ -33,6 +33,11 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
   }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
+
     final RawPointArray endPoints =
       scope.convertPointArrayToNative(<ui.Offset>[from, to]);
     final RawColorArray nativeColors = scope.convertColorArrayToNative(colors);
@@ -61,6 +66,11 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
   }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
+
     final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
     final Pointer<Float> rawStops = colorStops != null
       ? scope.convertDoublesToNative(colorStops)
@@ -91,6 +101,11 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
   }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
+
     final RawPointArray endPoints =
       scope.convertPointArrayToNative(<ui.Offset>[focal, center]);
     final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
@@ -122,6 +137,11 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     required double endAngle,
     Float32List? matrix4,
   }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
+
     final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
     final Pointer<Float> rawStops = colorStops != null
       ? scope.convertDoublesToNative(colorStops)
@@ -166,7 +186,7 @@ class SkwasmImageShader extends SkwasmNativeShader implements ui.ImageShader {
           image.handle,
           tmx.index,
           tmy.index,
-          (filterQuality ?? ui.FilterQuality.medium).index,
+          (filterQuality ?? ui.FilterQuality.none).index,
           localMatrix,
         ));
       });
@@ -175,7 +195,7 @@ class SkwasmImageShader extends SkwasmNativeShader implements ui.ImageShader {
         image.handle,
         tmx.index,
         tmy.index,
-        (filterQuality ?? ui.FilterQuality.medium).index,
+        (filterQuality ?? ui.FilterQuality.none).index,
         nullptr,
       ));
     }

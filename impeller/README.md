@@ -188,15 +188,26 @@ macOS Desktop. This flag can be specified to `flutter run`.
 If the application needs to be launched with Impeller enabled without using the
 Flutter tool, follow the platform specific steps below.
 
-### iOS and macOS Desktop
+### iOS
 
-To your `Info.plist` file, add under the top-level `<dict>` tag:
+Flutter enables Impeller by **default** on iOS.
+
+> [!CAUTION]
+> The ability to disable Impeller is going to go away in a future release. Please [file
+> an issue](https://github.com/flutter/flutter/issues/new/choose) if you need to do this
+> in your application. A warning will be displayed on application launch if you opt-out.
+
+To **disable** Impeller on iOS, update your `Info.plist` file to add the following
+under the top-level `<dict>` tag:
+
 ```
   <key>FLTEnableImpeller</key>
-  <true/>
+  <false/>
 ```
 
 ### Android
+
+Impeller is in preview on Android.
 
 To your `AndroidManifest.xml` file, add under the `<application>` tag:
 ```
@@ -205,9 +216,20 @@ To your `AndroidManifest.xml` file, add under the `<application>` tag:
     android:value="true" />
 ```
 
+### macOS Desktop
+
+Impeller is in preview on macOS Desktop.
+
+To your `Info.plist` file, add under the top-level `<dict>` tag:
+```
+  <key>FLTEnableImpeller</key>
+  <true/>
+```
+
 ## Documentation, References, and Additional Reading
 
 * [Frequently Asked Questions](docs/faq.md)
+* [Baby's First Triangle](docs/babys_first_triangle.md)
 * [Impellers Coordinate System](docs/coordinate_system.md)
 * [How to Setup Xcode for GPU Frame Captures with Metal.](docs/xcode_frame_capture.md)
 * [How to Setup RenderDoc Frame Captures with Vulkan.](docs/renderdoc_frame_capture.md)
@@ -220,3 +242,5 @@ To your `AndroidManifest.xml` file, add under the `<application>` tag:
 * [Important Benchmarks](docs/benchmarks.md)
 * [Threading in the Vulkan Backend](docs/vulkan_threading.md)
 * [Android Rendering Backend Selection](docs/android.md)
+* [Using Impeller as a Standalone Rendering Library (with OpenGL ES)](docs/standalone_gles.md)
+* [Glossary](docs/glossary.md)

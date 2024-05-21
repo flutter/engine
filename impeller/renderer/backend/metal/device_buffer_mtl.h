@@ -7,7 +7,6 @@
 
 #include <Metal/Metal.h>
 
-#include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/core/device_buffer.h"
 
@@ -36,11 +35,6 @@ class DeviceBufferMTL final
 
   // |DeviceBuffer|
   uint8_t* OnGetContents() const override;
-
-  // |DeviceBuffer|
-  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
-                                     const TextureDescriptor& descriptor,
-                                     uint16_t row_bytes) const override;
 
   // |DeviceBuffer|
   bool OnCopyHostBuffer(const uint8_t* source,

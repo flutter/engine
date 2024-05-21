@@ -24,14 +24,11 @@ import 'package:ui/ui.dart' as ui;
 /// viewport "scrollTop" may take positive values.
 class Scrollable extends PrimaryRoleManager {
   Scrollable(SemanticsObject semanticsObject)
-      : super.withBasics(PrimaryRole.scrollable, semanticsObject) {
-    _scrollOverflowElement.style
-      ..position = 'absolute'
-      ..transformOrigin = '0 0 0'
-      // Ignore pointer events since this is a dummy element.
-      ..pointerEvents = 'none';
-    append(_scrollOverflowElement);
-  }
+      : super.withBasics(
+          PrimaryRole.scrollable,
+          semanticsObject,
+          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+        );
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;
@@ -91,6 +88,20 @@ class Scrollable extends PrimaryRoleManager {
         }
       }
     }
+  }
+
+  @override
+  void initState() {
+    // Scrolling is controlled by setting overflow-y/overflow-x to 'scroll`. The
+    // default overflow = "visible" needs to be unset.
+    semanticsObject.element.style.overflow = '';
+
+    _scrollOverflowElement.style
+      ..position = 'absolute'
+      ..transformOrigin = '0 0 0'
+      // Ignore pointer events since this is a dummy element.
+      ..pointerEvents = 'none';
+    append(_scrollOverflowElement);
   }
 
   @override

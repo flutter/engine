@@ -2,12 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
 #include "flutter/shell/common/context_options.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendContext.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -79,10 +84,12 @@ FLUTTER_ASSERT_ARC
                              commandQueue:(id<MTLCommandQueue>)commandQueue {
   const auto contextOptions =
       flutter::MakeDefaultContextOptions(flutter::ContextType::kRender, GrBackendApi::kMetal);
+  GrMtlBackendContext backendContext = {};
   // Skia expect arguments to `MakeMetal` transfer ownership of the reference in for release later
   // when the GrDirectContext is collected.
-  return GrDirectContext::MakeMetal((__bridge_retained void*)device,
-                                    (__bridge_retained void*)commandQueue, contextOptions);
+  backendContext.fDevice.reset((__bridge_retained void*)device);
+  backendContext.fQueue.reset((__bridge_retained void*)commandQueue);
+  return GrDirectContexts::MakeMetal(backendContext, contextOptions);
 }
 
 - (void)dealloc {
@@ -101,3 +108,5 @@ FLUTTER_ASSERT_ARC
 }
 
 @end
+
+#endif  //  !SLIMPELLER
