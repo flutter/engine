@@ -26,6 +26,7 @@ import android.view.inputmethod.CursorAnchorInfo;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.ExtractedText;
 import android.view.inputmethod.ExtractedTextRequest;
+import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
 import androidx.annotation.NonNull;
@@ -38,6 +39,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.concurrent.Executor;
+import java.util.function.IntConsumer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -260,6 +263,24 @@ public class InputConnectionAdaptor extends BaseInputConnection
     boolean result = super.setSelection(start, end);
     endBatchEdit();
     return result;
+  }
+
+  @Override
+  public void performHandwritingGesture (HandwritingGesture gesture, Executor executor, IntConsumer consumer) {
+    // TODO(justinmc): Why doesn't this ever get called?
+    System.out.println("justin performHandwritingGesture.");
+    System.out.println("justin performHandwritingGesture gesture: " + gesture);
+
+    /*
+InputConnection#HANDWRITING_GESTURE_RESULT_SUCCESS
+InputConnection#HANDWRITING_GESTURE_RESULT_FAILED
+InputConnection#HANDWRITING_GESTURE_RESULT_FALLBACK
+The gesture is performed and fallback text is inserted.
+InputConnection#HANDWRITING_GESTURE_RESULT_UNSUPPORTED
+The gesture is not supported by the editor
+InputConnection#HANDWRITING_GESTURE_RESULT_CANCELLED
+    */
+    executor.execute(() -> consumer.accept(HANDWRITING_GESTURE_RESULT_SUCCESS));
   }
 
   // Sanitizes the index to ensure the index is within the range of the
