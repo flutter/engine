@@ -587,14 +587,13 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_;
 
-      Matrix subpass_transform_basis = subpass->transform_.Basis();
-      subpass_backdrop_filter_contents =
-          proc(FilterInput::Make(std::move(texture)), subpass_transform_basis,
-               // When the subpass has a translation that means the math with
-               // the snapshot has to be different.
-               subpass_transform_basis == subpass->transform_
-                   ? Entity::RenderingMode::kSubpassAppendSnapshotTransform
-                   : Entity::RenderingMode::kSubpassPrependSnapshotTransform);
+      subpass_backdrop_filter_contents = proc(
+          FilterInput::Make(std::move(texture)), subpass->transform_.Basis(),
+          // When the subpass has a translation that means the math with
+          // the snapshot has to be different.
+          subpass->transform_.HasTranslation()
+              ? Entity::RenderingMode::kSubpassPrependSnapshotTransform
+              : Entity::RenderingMode::kSubpassAppendSnapshotTransform);
 
       // If the very first thing we render in this EntityPass is a subpass that
       // happens to have a backdrop filter, than that backdrop filter will end
