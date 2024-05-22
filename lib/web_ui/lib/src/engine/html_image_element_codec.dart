@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
@@ -12,20 +11,20 @@ import 'dom.dart';
 import 'safe_browser_api.dart';
 
 Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
-  getJsProperty<Object>(
-    getJsProperty<Object>(domWindow, 'Image'),
-    'prototype',
-  ),
-  'decode',
-);
+      getJsProperty<Object>(
+        getJsProperty<Object>(domWindow, 'Image'),
+        'prototype',
+      ),
+      'decode',
+    );
 final bool _supportsDecode = _jsImageDecodeFunction != null;
 
 // TODO(mdebbar): Deprecate this and remove it.
 // https://github.com/flutter/flutter/issues/127395
 typedef WebOnlyImageCodecChunkCallback = ui_web.ImageCodecChunkCallback;
 
-class HtmlCodec implements ui.Codec {
-  HtmlCodec(this.src, {this.chunkCallback});
+abstract class HtmlImageElementCodec implements ui.Codec {
+  HtmlImageElementCodec(this.src, {this.chunkCallback});
 
   final String src;
   final ui_web.ImageCodecChunkCallback? chunkCallback;
@@ -42,7 +41,7 @@ class HtmlCodec implements ui.Codec {
     // Currently there is no way to watch decode progress, so
     // we add 0/100 , 100/100 progress callbacks to enable loading progress
     // builders to create UI.
-      chunkCallback?.call(0, 100);
+    chunkCallback?.call(0, 100);
     if (_supportsDecode) {
       final DomHTMLImageElement imgElement = createDomHTMLImageElement();
       imgElement.src = src;
@@ -56,12 +55,14 @@ class HtmlCodec implements ui.Codec {
         int naturalWidth = imgElement.naturalWidth.toInt();
         int naturalHeight = imgElement.naturalHeight.toInt();
         // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
-        if (naturalWidth == 0 && naturalHeight == 0 && ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
+        if (naturalWidth == 0 &&
+            naturalHeight == 0 &&
+            ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
           const int kDefaultImageSizeFallback = 300;
           naturalWidth = kDefaultImageSizeFallback;
           naturalHeight = kDefaultImageSizeFallback;
         }
-        final HtmlImage image = HtmlImage(
+        final ui.Image image = createImageFromHTMLImageElement(
           imgElement,
           naturalWidth,
           naturalHeight,
@@ -101,7 +102,7 @@ class HtmlCodec implements ui.Codec {
       }
       imgElement.removeEventListener('load', loadListener);
       imgElement.removeEventListener('error', errorListener);
-      final HtmlImage image = HtmlImage(
+      final ui.Image image = createImageFromHTMLImageElement(
         imgElement,
         imgElement.naturalWidth.toInt(),
         imgElement.naturalHeight.toInt(),
@@ -112,11 +113,18 @@ class HtmlCodec implements ui.Codec {
     imgElement.src = src;
   }
 
+  /// Creates a [ui.Image] from an [HTMLImageElement] that has been loaded.
+  ui.Image createImageFromHTMLImageElement(
+    DomHTMLImageElement image,
+    int naturalWidth,
+    int naturalHeight,
+  );
+
   @override
   void dispose() {}
 }
 
-class HtmlBlobCodec extends HtmlCodec {
+abstract class HtmlBlobCodec extends HtmlImageElementCodec {
   HtmlBlobCodec(this.blob) : super(domWindow.URL.createObjectURL(blob));
 
   final DomBlob blob;
@@ -135,94 +143,4 @@ class SingleFrameInfo implements ui.FrameInfo {
 
   @override
   final ui.Image image;
-}
-
-class HtmlImage implements ui.Image {
-  HtmlImage(this.imgElement, this.width, this.height) {
-    ui.Image.onCreate?.call(this);
-  }
-
-  final DomHTMLImageElement imgElement;
-  bool _didClone = false;
-
-  bool _disposed = false;
-  @override
-  void dispose() {
-    ui.Image.onDispose?.call(this);
-    // Do nothing. The codec that owns this image should take care of
-    // releasing the object url.
-    assert(() {
-      _disposed = true;
-      return true;
-    }());
-  }
-
-  @override
-  bool get debugDisposed {
-    bool? result;
-    assert(() {
-      result = _disposed;
-      return true;
-    }());
-
-    if (result != null) {
-      return result!;
-    }
-
-    throw StateError('Image.debugDisposed is only available when asserts are enabled.');
-  }
-
-
-  @override
-  ui.Image clone() => this;
-
-  @override
-  bool isCloneOf(ui.Image other) => other == this;
-
-  @override
-  List<StackTrace>? debugGetOpenHandleStackTraces() => null;
-
-  @override
-  final int width;
-
-  @override
-  final int height;
-
-  @override
-  Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
-    switch (format) {
-      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
-      // The format rawRgba always returns straight rather than premul currently.
-      case ui.ImageByteFormat.rawRgba:
-      case ui.ImageByteFormat.rawStraightRgba:
-        final DomCanvasElement canvas = createDomCanvasElement()
-          ..width = width.toDouble()
-          ..height = height.toDouble();
-        final DomCanvasRenderingContext2D ctx = canvas.context2D;
-        ctx.drawImage(imgElement, 0, 0);
-        final DomImageData imageData = ctx.getImageData(0, 0, width, height);
-        return Future<ByteData?>.value(imageData.data.buffer.asByteData());
-      default:
-        if (imgElement.src?.startsWith('data:') ?? false) {
-          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
-          return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
-        } else {
-          return Future<ByteData?>.value();
-        }
-    }
-  }
-
-  @override
-  ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
-
-  DomHTMLImageElement cloneImageElement() {
-    if (!_didClone) {
-      _didClone = true;
-      imgElement.style.position = 'absolute';
-    }
-    return imgElement.cloneNode(true) as DomHTMLImageElement;
-  }
-
-  @override
-  String toString() => '[$width\u00D7$height]';
 }

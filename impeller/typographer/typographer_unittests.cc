@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "display_list/dl_color.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
@@ -10,6 +11,7 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -38,6 +40,22 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const TextFrame& frame) {
   FontGlyphMap font_glyph_map;
   frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale);
+  return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
+                                               atlas_context, font_glyph_map);
+}
+
+static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
+    Context& context,
+    const TypographerContext* typographer_context,
+    HostBuffer& host_buffer,
+    GlyphAtlas::Type type,
+    Scalar scale,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    const std::vector<std::shared_ptr<TextFrame>>& frames) {
+  FontGlyphMap font_glyph_map;
+  for (auto& frame : frames) {
+    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale);
+  }
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);
 }
@@ -281,6 +299,61 @@ TEST_P(TypographerTest, MaybeHasOverlapping) {
   ASSERT_FALSE(frame_2->MaybeHasOverlapping());
 }
 
+TEST_P(TypographerTest, GlyphColorIsPartOfCacheKey) {
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+#if FML_OS_MACOSX
+  auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color Emoji.ttc");
+#else
+  auto mapping = flutter::testing::OpenFixtureAsSkData("NotoColorEmoji.ttf");
+#endif
+  ASSERT_TRUE(mapping);
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  SkFont emoji_font(font_mgr->makeFromData(mapping), 50.0);
+
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kColorBitmap);
+
+  // Create two frames with the same character and a different color, expect
+  // that it adds a character.
+  auto frame = MakeTextFrameFromTextBlobSkia(
+      SkTextBlob::MakeFromString("😂", emoji_font), flutter::DlColor::kCyan());
+  auto frame_2 = MakeTextFrameFromTextBlobSkia(
+      SkTextBlob::MakeFromString("😂", emoji_font),
+      flutter::DlColor::kMagenta());
+
+  auto next_atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                                     GlyphAtlas::Type::kColorBitmap, 1.0f,
+                                     atlas_context, {frame, frame_2});
+
+  EXPECT_EQ(next_atlas->GetGlyphCount(), 2u);
+}
+
+TEST_P(TypographerTest, GlyphColorIsIgnoredForNonEmojiFonts) {
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  sk_sp<SkTypeface> typeface =
+      font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
+  SkFont sk_font(typeface, 0.5f);
+
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kColorBitmap);
+
+  // Create two frames with the same character and a different color, but as a
+  // non-emoji font the text frame constructor will ignore it.
+  auto frame = MakeTextFrameFromTextBlobSkia(
+      SkTextBlob::MakeFromString("A", sk_font), flutter::DlColor::kCyan());
+  auto frame_2 = MakeTextFrameFromTextBlobSkia(
+      SkTextBlob::MakeFromString("A", sk_font), flutter::DlColor::kMagenta());
+
+  auto next_atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                                     GlyphAtlas::Type::kColorBitmap, 1.0f,
+                                     atlas_context, {frame, frame_2});
+
+  EXPECT_EQ(next_atlas->GetGlyphCount(), 1u);
+}
+
 TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
   auto packer = RectanglePacker::Factory(200, 100);
   ASSERT_NE(packer, nullptr);
@@ -325,58 +398,6 @@ TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
   ASSERT_EQ(packer->PercentFull(), 0);
 }
 
-TEST(TypographerTest, CanCloneRectanglePackerEmpty) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-
-  EXPECT_EQ(skyline->PercentFull(), 0);
-
-  auto skyline_2 = skyline->Clone(/*scale=*/2);
-
-  EXPECT_EQ(skyline->PercentFull(), 0);
-}
-
-TEST(TypographerTest, CanCloneRectanglePackerAndPreservePositions) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-  IPoint16 loc;
-  EXPECT_TRUE(skyline->AddRect(100, 100, &loc));
-
-  EXPECT_EQ(loc.x(), 0);
-  EXPECT_EQ(loc.y(), 0);
-  auto percent = skyline->PercentFull();
-
-  auto skyline_2 = skyline->Clone(/*scale=*/2);
-
-  EXPECT_LT(skyline_2->PercentFull(), percent);
-}
-
-TEST(TypographerTest, CanCloneRectanglePackerWhileFull) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-  IPoint16 loc;
-  // Add a rectangle the size of the entire area.
-  EXPECT_TRUE(skyline->AddRect(256, 256, &loc));
-  // Packer is now full.
-  EXPECT_FALSE(skyline->AddRect(256, 256, &loc));
-
-  auto skyline_2 = skyline->Clone(/*scale=*/2);
-
-  // Can now fit one more
-  EXPECT_TRUE(skyline_2->AddRect(256, 256, &loc));
-}
-
-TEST(TypographerTest, CloneToSameSizePreservesContents) {
-  auto skyline = RectanglePacker::Factory(256, 256);
-  IPoint16 loc;
-  // Add a rectangle the size of the entire area.
-  EXPECT_TRUE(skyline->AddRect(256, 256, &loc));
-  // Packer is now full.
-  EXPECT_FALSE(skyline->AddRect(256, 256, &loc));
-
-  auto skyline_2 = skyline->Clone(/*scale=*/1);
-
-  // Packer is still full.
-  EXPECT_FALSE(skyline->AddRect(256, 256, &loc));
-}
-
 TEST(TypographerTest, RectanglePackerFillsRows) {
   auto skyline = RectanglePacker::Factory(257, 256);
 
@@ -396,6 +417,57 @@ TEST(TypographerTest, RectanglePackerFillsRows) {
 
   EXPECT_EQ(loc.x(), 256 - 16);
   EXPECT_EQ(loc.y(), 16);
+}
+
+TEST_P(TypographerTest, GlyphAtlasTextureWillGrowTilMaxTextureSize) {
+  if (GetBackend() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP() << "Atlas growth isn't supported for OpenGLES currently.";
+  }
+
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kAlphaBitmap);
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font = flutter::testing::CreateTestFontOfSize(12);
+  auto blob = SkTextBlob::MakeFromString("A", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas =
+      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                       GlyphAtlas::Type::kAlphaBitmap, 1.0f, atlas_context,
+                       *MakeTextFrameFromTextBlobSkia(blob));
+  // Continually append new glyphs until the glyph size grows to the maximum.
+  // Note that the sizes here are more or less experimentally determined, but
+  // the important expectation is that the atlas size will shrink again after
+  // growing to the maximum size.
+  constexpr ISize expected_sizes[13] = {
+      {4096, 4096},   //
+      {4096, 4096},   //
+      {4096, 8192},   //
+      {4096, 8192},   //
+      {4096, 8192},   //
+      {4096, 8192},   //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 16384},  //
+      {4096, 4096}    // Shrinks!
+  };
+
+  for (int i = 0; i < 13; i++) {
+    SkFont sk_font = flutter::testing::CreateTestFontOfSize(50 + i);
+    auto blob = SkTextBlob::MakeFromString("A", sk_font);
+
+    atlas =
+        CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                         GlyphAtlas::Type::kAlphaBitmap, 50 + i, atlas_context,
+                         *MakeTextFrameFromTextBlobSkia(blob));
+    ASSERT_TRUE(!!atlas);
+    EXPECT_EQ(atlas->GetTexture()->GetTextureDescriptor().size,
+              expected_sizes[i]);
+  }
 }
 
 }  // namespace testing

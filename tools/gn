@@ -724,12 +724,6 @@ def to_gn_args(args):
   if args.enable_impeller_3d:
     gn_args['impeller_enable_3d'] = True
 
-  if args.enable_impeller_trace_canvas:
-    gn_args['impeller_trace_canvas'] = True
-
-  if args.prebuilt_impellerc is not None:
-    gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
-
   malioc_path = args.malioc_path
   if not malioc_path:
     malioc_path = os.environ.get('MALIOC_PATH')
@@ -1167,26 +1161,12 @@ def parse_args(args):
 
   # Impeller flags.
   parser.add_argument(
-      '--prebuilt-impellerc',
-      default=None,
-      type=str,
-      help='Absolute path to a prebuilt impellerc. ' +
-      'Do not use this outside of CI or with impellerc from a different engine version.'
-  )
-
-  parser.add_argument(
       '--enable-impeller-3d',
       default=False,
       action='store_true',
       help='Enables experimental 3d support.'
   )
 
-  parser.add_argument(
-      '--enable-impeller-trace-canvas',
-      default=False,
-      action='store_true',
-      help='Enables tracing calls to Canvas.'
-  )
   parser.add_argument('--malioc-path', type=str, help='The path to the malioc tool.')
 
   parser.add_argument(
@@ -1217,14 +1197,6 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Whether the -fstack-protector flag should be passed unconditionally.'
-  )
-
-  parser.add_argument(
-      '--trace-gn',
-      default=True,
-      action='store_true',
-      help='Write a GN trace log (gn_trace.json) in the Chromium tracing '
-      'format in the build directory.'
   )
 
   parser.add_argument(
@@ -1311,9 +1283,7 @@ def main(argv):
   out_dir = get_out_dir(args)
   command.append(out_dir)
   command.append('--args=%s' % ' '.join(gn_args))
-
-  if args.trace_gn:
-    command.append('--tracelog=%s/gn_trace.json' % out_dir)
+  command.append('--tracelog=%s/gn_trace.json' % out_dir)
 
   if args.verbose:
     command.append('-v')
