@@ -58,6 +58,11 @@ public class ScribePlugin
    */
   @Override
   public void startStylusHandwriting() {
+    if (!mImm.isStylusHandwritingAvailable()) {
+      // TODO(justinmc): Maybe I should throw an error here. Or maybe I should
+      // expose this method and call it from the framework first.
+      return;
+    }
     mImm.startStylusHandwriting(mView);
   }
 }
