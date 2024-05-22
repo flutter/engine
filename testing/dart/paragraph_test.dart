@@ -352,10 +352,30 @@ void main() {
 
   test('kTextHeightNone unsets the height multiplier', () {
     const double fontSize = 10;
-    const String text = 'A';
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
     builder.pushStyle(TextStyle(height: kTextHeightNone));
-    builder.addText(text);
+    builder.addText('A');
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
+    expect(paragraph.height, fontSize);
+  });
+
+  test('kTextHeightNone ParagraphStyle', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: kTextHeightNone));
+    builder.addText('A');
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
+    expect(paragraph.height, fontSize);
+  });
+
+  test('kTextHeightNone StrutStyle', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: 100,
+      strutStyle: StrutStyle(forceStrutHeight: true, height: kTextHeightNone, fontSize: fontSize),
+    ));
+    builder.addText('A');
     final Paragraph paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: 1000));
     expect(paragraph.height, fontSize);
