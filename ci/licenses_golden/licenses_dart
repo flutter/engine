@@ -1,4 +1,4 @@
-Signature: 8ad659ac1d6d8a8bfb23da91ac0eefc7
+Signature: 84ff125e90248a2b70df48bde8bc00b6
 
 ====================================================================================================
 LIBRARY: dart
@@ -4087,6 +4087,8 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.h + ../../../flutt
 ORIGIN: ../../../flutter/third_party/dart/runtime/tools/dartfuzz/flag_fuzzer.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/heap/incremental_compactor.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/vm/heap/incremental_compactor.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/os.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart + ../../../flutter/third_party/dart/LICENSE
@@ -4098,6 +4100,8 @@ FILE: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.h
 FILE: ../../../flutter/third_party/dart/runtime/tools/dartfuzz/flag_fuzzer.dart
 FILE: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.h
+FILE: ../../../flutter/third_party/dart/runtime/vm/heap/incremental_compactor.cc
+FILE: ../../../flutter/third_party/dart/runtime/vm/heap/incremental_compactor.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/os.cc
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart
@@ -4741,7 +4745,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/d1a786ef6888b3552e6086972b871a3392c6d3c9
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/fca7dd796e81569271eba5cfaaec4e42e26e60dd
 /third_party/fallback_root_certificates/
 
 ====================================================================================================
