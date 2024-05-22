@@ -103,4 +103,12 @@ void main() {
     whitePicture.dispose();
     redClippedPicture.dispose();
   });
+
+  test('ImageFilter.matrix defaults to FilterQuality.medium', () {
+    final Float32List data = Matrix4.identity().storage;
+    expect(
+      ImageFilter.matrix(data).toString(),
+      'ImageFilter.matrix($data, FilterQuality.medium)',
+    );
+  });
 }
