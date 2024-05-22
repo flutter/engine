@@ -1220,6 +1220,8 @@ void testMain() {
         _overlay,
         _platformView,
       ]);
+
+      debugOverrideJsConfiguration(null);
     });
 
     test(
