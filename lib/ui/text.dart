@@ -6,6 +6,7 @@ part of dart.ui;
 /// A [TextStyle.height] value that indicates the text span should take
 /// the height defined by the font, which may not be exactly the height of
 /// [TextStyle.fontSize].
+// To change the sentinel value, search for "kTextHeightNone" in the source code.
 const double kTextHeightNone = 0.0;
 
 /// Whether to use the italic type variation of glyphs in the font.
@@ -1830,6 +1831,7 @@ class TextStyle {
   @override
   String toString() {
     final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    final String heightText = _encoded[0] & 0x02000 == 0x02000  ? (_height == kTextHeightNone ? 'kTextHeightNone' : '${_height}x') : 'unspecified';
     return 'TextStyle('
              'color: ${              _encoded[0] & 0x00002 == 0x00002  ? Color(_encoded[1])                           : "unspecified"}, '
              'decoration: ${         _encoded[0] & 0x00004 == 0x00004  ? TextDecoration._(_encoded[2])                : "unspecified"}, '
@@ -1848,7 +1850,7 @@ class TextStyle {
              'fontSize: ${           _encoded[0] & 0x00400 == 0x00400  ? _fontSize                                    : "unspecified"}, '
              'letterSpacing: ${      _encoded[0] & 0x00800 == 0x00800  ? "${_letterSpacing}x"                         : "unspecified"}, '
              'wordSpacing: ${        _encoded[0] & 0x01000 == 0x01000  ? "${_wordSpacing}x"                           : "unspecified"}, '
-             'height: ${             _encoded[0] & 0x02000 == 0x02000  ? "${_height}x"                                : "unspecified"}, '
+             'height: $heightText, '
              'leadingDistribution: ${_leadingDistribution ?? "unspecified"}, '
              'locale: ${             _encoded[0] & 0x04000 == 0x04000  ? _locale                                      : "unspecified"}, '
              'background: ${         _encoded[0] & 0x08000 == 0x08000  ? _background                                  : "unspecified"}, '
