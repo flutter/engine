@@ -16,8 +16,8 @@
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
 
 #ifdef SHELL_ENABLE_GL
-#include "flutter/shell/platform/embedder/embedder_surface_gl_skia.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl_skia.h"
 #endif
 
 #ifdef SHELL_ENABLE_METAL

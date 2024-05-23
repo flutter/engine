@@ -160,8 +160,8 @@ SkMatrix EmbedderSurfaceGLImpeller::GLContextSurfaceTransformation() const {
 }
 
 // |GPUSurfaceGLDelegate|
-EmbedderSurfaceGLSkia::GLProcResolver EmbedderSurfaceGLImpeller::GetGLProcResolver()
-    const {
+EmbedderSurfaceGLSkia::GLProcResolver
+EmbedderSurfaceGLImpeller::GetGLProcResolver() const {
   return gl_dispatch_table_.gl_proc_resolver;
 }
 
