@@ -108,6 +108,17 @@ bool DisplayListMatrixClipState::inverseTransform(
   return false;
 }
 
+bool DisplayListMatrixClipState::mapAndClipRect(const SkRect& src,
+                                                SkRect* mapped) const {
+  DlRect dl_mapped = ToDlRect(src).TransformAndClipBounds(matrix_);
+  auto dl_intersected = dl_mapped.Intersection(cull_rect_);
+  if (dl_intersected.has_value()) {
+    *mapped = ToSkRect(dl_intersected.value());
+    return true;
+  }
+  return false;
+}
+
 void DisplayListMatrixClipState::clipRect(const DlRect& rect,
                                           ClipOp op,
                                           bool is_aa) {

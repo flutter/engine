@@ -2226,49 +2226,57 @@ TEST_F(DisplayListTest, FlatDrawPointsProducesBounds) {
   }
 }
 
+#define TEST_RTREE(rtree, query, expected_rects, expected_indices) \
+  test_rtree(rtree, query, expected_rects, expected_indices, \
+             __FILE__, __LINE__)
+
 static void test_rtree(const sk_sp<const DlRTree>& rtree,
                        const SkRect& query,
                        std::vector<SkRect> expected_rects,
-                       const std::vector<int>& expected_indices) {
+                       const std::vector<int>& expected_indices,
+                       const std::string& file,
+                       int line) {
   std::vector<int> indices;
+  auto label = "from " + file + ":" + std::to_string(line);
   rtree->search(query, &indices);
-  EXPECT_EQ(indices, expected_indices);
-  EXPECT_EQ(indices.size(), expected_indices.size());
-  std::list<SkRect> rects = rtree->searchAndConsolidateRects(query);
+  EXPECT_EQ(indices, expected_indices) << label;
+  EXPECT_EQ(indices.size(), expected_indices.size()) << label;
+  std::list<SkRect> rects = rtree->searchAndConsolidateRects(query, false);
   // ASSERT_EQ(rects.size(), expected_indices.size());
   auto iterator = rects.cbegin();
   for (int i : expected_indices) {
-    EXPECT_TRUE(iterator != rects.cend());
-    EXPECT_EQ(*iterator++, expected_rects[i]);
+    ASSERT_TRUE(iterator != rects.cend()) << label;
+    EXPECT_EQ(*iterator++, expected_rects[i]) << label;
   }
 }
 
 TEST_F(DisplayListTest, RTreeOfSimpleScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
   DlOpReceiver& receiver = ToReceiver(builder);
-  receiver.drawRect({10, 10, 20, 20});
-  receiver.drawRect({50, 50, 60, 60});
-  auto display_list = builder.Build();
-  auto rtree = display_list->rtree();
   std::vector<SkRect> rects = {
       {10, 10, 20, 20},
       {50, 50, 60, 60},
   };
+  receiver.drawRect(rects[0]);
+  receiver.drawRect(rects[1]);
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
 
   // Missing all drawRect calls
-  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
-  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
-  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
-  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 10, 10), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(20, 20, 25, 25), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 50, 50), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(60, 60, 65, 65), rects, {});
 
   // Hitting just 1 of the drawRects
-  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
-  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
-  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
-  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 11, 11), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 25, 25), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 51, 51), rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(59, 59, 65, 65), rects, {1});
 
   // Hitting both drawRect calls
-  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 51, 51), rects,
+             std::vector<int>({0, 1}));
 }
 
 TEST_F(DisplayListTest, RTreeOfSaveRestoreScene) {
@@ -2286,19 +2294,20 @@ TEST_F(DisplayListTest, RTreeOfSaveRestoreScene) {
   };
 
   // Missing all drawRect calls
-  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
-  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
-  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
-  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 10, 10), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(20, 20, 25, 25), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 50, 50), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(60, 60, 65, 65), rects, {});
 
   // Hitting just 1 of the drawRects
-  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
-  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
-  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
-  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 11, 11), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 25, 25), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 51, 51), rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(59, 59, 65, 65), rects, {1});
 
   // Hitting both drawRect calls
-  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 51, 51), rects,
+             std::vector<int>({0, 1}));
 }
 
 TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
@@ -2321,19 +2330,20 @@ TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
   };
 
   // Missing all drawRect calls
-  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
-  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
-  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
-  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 10, 10), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(20, 20, 25, 25), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 50, 50), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(60, 60, 65, 65), rects, {});
 
   // Hitting just 1 of the drawRects
-  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
-  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
-  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
-  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 11, 11), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 25, 25), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 51, 51), rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(59, 59, 65, 65), rects, {1});
 
   // Hitting both drawRect calls
-  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+  auto expected_indices = std::vector<int>{0, 1};
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 51, 51), rects, expected_indices);
 }
 
 TEST_F(DisplayListTest, NestedDisplayListRTreesAreSparse) {
@@ -2355,7 +2365,8 @@ TEST_F(DisplayListTest, NestedDisplayListRTreesAreSparse) {
   };
 
   // Hitting both sub-dl drawRect calls
-  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 51, 51), rects,
+             std::vector<int>({0, 1}));
 }
 
 TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairs) {
@@ -3014,19 +3025,20 @@ TEST_F(DisplayListTest, RTreeOfClippedSaveLayerFilterScene) {
   };
 
   // Missing all drawRect calls
-  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
-  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
-  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
-  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 10, 10), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(20, 20, 25, 25), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 50, 50), rects, {});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(60, 60, 65, 65), rects, {});
 
   // Hitting just 1 of the drawRects
-  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
-  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
-  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
-  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(5, 5, 11, 11), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 25, 25), rects, {0});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(45, 45, 51, 51), rects, {1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(59, 59, 65, 65), rects, {1});
 
   // Hitting both drawRect calls
-  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+  TEST_RTREE(rtree, SkRect::MakeLTRB(19, 19, 51, 51), rects,
+             std::vector<int>({0, 1}));
 }
 
 TEST_F(DisplayListTest, RTreeRenderCulling) {
@@ -3779,6 +3791,8 @@ TEST_F(DisplayListTest, NestedFloodingSaveLayerBoundsComputationOfSimpleRect) {
   builder.Restore();
   auto display_list = builder.Build();
 
+  EXPECT_EQ(display_list->bounds(), clip_rect);
+
   SaveLayerBoundsExpector expector;
   expector.addComputedExpectation(clip_rect);
   expector.addComputedExpectation(rect);
@@ -3853,8 +3867,6 @@ TEST_F(DisplayListTest, SaveLayerBoundsClipDetectionSimpleUnclippedRect) {
   builder.Restore();
   auto display_list = builder.Build();
 
-  // A color filter is implicitly clipped to the draw bounds so the layer
-  // bounds will be the same as the draw bounds.
   SaveLayerBoundsExpector expector;
   expector.addSuppliedExpectation(rect);
   display_list->Dispatch(expector);
@@ -3874,8 +3886,6 @@ TEST_F(DisplayListTest, SaveLayerBoundsClipDetectionSimpleClippedRect) {
   builder.Restore();
   auto display_list = builder.Build();
 
-  // A color filter is implicitly clipped to the draw bounds so the layer
-  // bounds will be the same as the draw bounds.
   SaveLayerBoundsExpector expector;
   expector.addSuppliedExpectation(content_rect, true);
   display_list->Dispatch(expector);

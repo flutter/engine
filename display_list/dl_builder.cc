@@ -517,13 +517,14 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
     // to adjust them so that we cull for the correct input space for the
     // output of the filter.
     if (filter) {
-      SkRect outer_cull_rect = current_info().global_state.local_cull_rect();
+      SkRect outer_cull_rect = current_info().global_state.device_cull_rect();
+      SkMatrix matrix = current_info().global_state.matrix_3x3();
 
       SkIRect output_bounds = outer_cull_rect.roundOut();
       SkIRect input_bounds;
-      if (filter->get_input_device_bounds(output_bounds, SkMatrix::I(),
+      if (filter->get_input_device_bounds(output_bounds, matrix,
                                           input_bounds)) {
-        current_info().global_state.resetLocalCullRect(
+        current_info().global_state.resetDeviceCullRect(
             SkRect::Make(input_bounds));
       } else {
         // Filter could not make any promises about the bounds it needs to
@@ -535,7 +536,8 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
 
     // We always want to cull based on user provided bounds, though, as
     // that is legacy behavior even if it doesn't always work precisely
-    // in a rotated or skewed coordinate system.
+    // in a rotated or skewed coordinate system (but it will work
+    // conservatively).
     if (in_options.bounds_from_caller()) {
       current_info().global_state.clipRect(bounds, ClipOp::kIntersect, false);
     }
@@ -609,16 +611,27 @@ void DisplayListBuilder::Restore() {
       op->restore_index = op_index_;
       op->total_content_depth = depth_ - current_info.save_depth;
 
-      Push<RestoreOp>(0);
-
       if (current_info.is_save_layer) {
         RestoreLayer(current_info, parent_info(), op);
       } else {
+        // No need to propagate bounds as we do with layers...
+        // global accumulator is either the same object or both nullptr
+        FML_DCHECK(current_info.global_space_accumulator.get() ==
+                   parent_info().global_space_accumulator.get());
+        // layer accumulators are both the same object
+        FML_DCHECK(current_info.layer_local_accumulator.get() ==
+                   parent_info().layer_local_accumulator.get());
+
         // We only propagate these values through a regular save()
         if (current_info.opacity_incompatible_op_detected) {
           parent_info().opacity_incompatible_op_detected = true;
         }
       }
+
+      // Wait until all outgoing bounds information for the saveLayer is
+      // recorded before pushing the record to the buffer so that any rtree
+      // bounds will be attributed to the op_index of the restore op.
+      Push<RestoreOp>(0);
     } else {
       FML_DCHECK(!current_info.is_save_layer);
     }
@@ -668,6 +681,9 @@ void DisplayListBuilder::RestoreLayer(const SaveInfo& current_info,
     layer_op->options = layer_op->options.with_can_distribute_opacity();
   }
 
+  // Ensure that the bounds transferred in the following call will be
+  // attributed to the index of the restore op.
+  FML_DCHECK(layer_op->restore_index == op_index_);
   TransferLayerBounds(current_info, parent_info, content_bounds);
 }
 
@@ -728,7 +744,13 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
   bool parent_is_flooded = false;
   SkRect bounds_for_parent = content_bounds;
 
-  // First, let's adjust or transfer the global bounds.
+  // First, let's adjust or transfer the global/rtree bounds by the filter.
+
+  // Matrix and Clip for the filter adjustment are the global values from
+  // just before our saveLayer and should still be the current values
+  // present in the parent layer.
+  const SkRect clip = parent_info.global_state.device_cull_rect();
+  const SkMatrix matrix = parent_info.global_state.matrix_3x3();
 
   if (rtree_data_.has_value()) {
     // Neither current or parent layer should have a global space accumulator
@@ -745,11 +767,6 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
     // revisit all of the RTree rects accumulated during the current layer
     // (indicated by rtree_rects_start_index) and expand them by the filter.
 
-    // Matrix and Clip are the global values from just before our saveLayer
-    // and should still be the current values present in the parent layer.
-    const SkRect clip = parent_info.global_state.device_cull_rect();
-    const SkMatrix matrix = parent_info.global_state.matrix_3x3();
-
     // Starting rect index was snapshotted to this layer's data during
     // saveLayer.
     auto rect_start_index = current_info.rtree_rects_start_index;
@@ -759,7 +776,7 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
       parent_is_flooded = true;
     }
   } else {
-    // Both current or parent layer should have a global space accumulator
+    // Both current and parent layer should have a global space accumulator
     FML_DCHECK(current_info.global_space_accumulator);
     FML_DCHECK(parent_info.global_space_accumulator);
 
@@ -770,13 +787,10 @@ void DisplayListBuilder::TransferLayerBounds(const SaveInfo& current_info,
     SkRect global_bounds = current_info.global_space_accumulator->bounds();
     if (!global_bounds.isEmpty()) {
       SkIRect global_ibounds = global_bounds.roundOut();
-      if (!filter->map_device_bounds(global_ibounds,
-                                     parent_info.global_state.matrix_3x3(),
-                                     global_ibounds)) {
+      if (!filter->map_device_bounds(global_ibounds, matrix, global_ibounds)) {
         parent_is_flooded = true;
       } else {
         global_bounds.set(global_ibounds);
-        const SkRect clip = parent_info.global_state.device_cull_rect();
         if (global_bounds.intersect(clip)) {
           parent_info.global_space_accumulator->accumulate(global_bounds);
         }
@@ -1770,20 +1784,21 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
 }
 
 bool DisplayListBuilder::AccumulateUnbounded(SaveInfo& layer) {
-  SkRect clip = layer.global_state.device_cull_rect();
-  if (clip.isEmpty()) {
+  SkRect global_clip = layer.global_state.device_cull_rect();
+  SkRect layer_clip = layer.global_state.local_cull_rect();
+  if (global_clip.isEmpty() || !layer.layer_state.mapAndClipRect(&layer_clip)) {
     return false;
   }
   if (rtree_data_.has_value()) {
     FML_DCHECK(!layer.global_space_accumulator);
-    rtree_data_->rects.push_back(clip);
+    rtree_data_->rects.push_back(global_clip);
     rtree_data_->indices.push_back(op_index_);
   } else {
     FML_DCHECK(layer.global_space_accumulator);
-    layer.global_space_accumulator->accumulate(clip);
+    layer.global_space_accumulator->accumulate(global_clip);
   }
-  clip = layer.layer_state.device_cull_rect();
-  layer.layer_local_accumulator->accumulate(clip);
+  layer.layer_local_accumulator->accumulate(layer_clip);
+  layer.is_unbounded = true;
   return true;
 }
 
@@ -1802,23 +1817,22 @@ bool DisplayListBuilder::AccumulateBounds(const SkRect& bounds,
   if (bounds.isEmpty()) {
     return false;
   }
-  SkRect device_bounds;
-  layer.global_state.mapRect(bounds, &device_bounds);
-  if (!device_bounds.intersect(layer.global_state.device_cull_rect())) {
+  SkRect global_bounds;
+  SkRect layer_bounds;
+  if (!layer.global_state.mapAndClipRect(bounds, &global_bounds) ||
+      !layer.layer_state.mapAndClipRect(bounds, &layer_bounds)) {
     return false;
   }
   if (rtree_data_.has_value()) {
     FML_DCHECK(!layer.global_space_accumulator);
     if (id >= 0) {
-      rtree_data_->rects.push_back(device_bounds);
+      rtree_data_->rects.push_back(global_bounds);
       rtree_data_->indices.push_back(id);
     }
   } else {
     FML_DCHECK(layer.global_space_accumulator);
-    layer.global_space_accumulator->accumulate(device_bounds);
+    layer.global_space_accumulator->accumulate(global_bounds);
   }
-  SkRect layer_bounds;
-  layer.layer_state.mapRect(bounds, &layer_bounds);
   layer.layer_local_accumulator->accumulate(layer_bounds);
   return true;
 }
@@ -1828,10 +1842,10 @@ bool DisplayListBuilder::SaveInfo::AccumulateBoundsLocal(const SkRect& bounds) {
     return false;
   }
   SkRect local_bounds;
-  layer_state.mapRect(bounds, &local_bounds);
-  if (local_bounds.intersect(layer_state.device_cull_rect())) {
-    layer_local_accumulator->accumulate(local_bounds);
+  if (!layer_state.mapAndClipRect(bounds, &local_bounds)) {
+    return false;
   }
+  layer_local_accumulator->accumulate(local_bounds);
   return true;
 }
 

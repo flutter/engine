@@ -126,6 +126,13 @@ class DisplayListMatrixClipState {
     return matrix_.IsAligned2D();
   }
 
+  /// @brief  Maps the rect by the current matrix and then clips it against
+  ///         the current cull rect, returning true if the result is non-empty.
+  bool mapAndClipRect(SkRect* rect) const {
+    return mapAndClipRect(*rect, rect);
+  }
+  bool mapAndClipRect(const SkRect& src, SkRect* mapped) const;
+
   void clipRect(const DlRect& rect, ClipOp op, bool is_aa);
   void clipRect(const SkRect& rect, ClipOp op, bool is_aa) {
     clipRect(ToDlRect(rect), op, is_aa);

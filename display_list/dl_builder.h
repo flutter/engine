@@ -545,7 +545,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
           is_save_layer(true),
           rtree_rects_start_index(rtree_rect_index),
           global_state(parent_info->global_state),
-          layer_state(parent_info->global_state.local_cull_rect()),
+          layer_state(kMaxCullRect),
           global_space_accumulator(parent_info->global_space_accumulator),
           layer_local_accumulator(new AccumulationRect()),
           filter(filter) {}
