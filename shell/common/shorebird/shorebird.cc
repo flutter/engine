@@ -145,13 +145,6 @@ void ConfigureShorebird(std::string code_cache_path,
     std::string active_path = c_active_path;
     shorebird_free_string(c_active_path);
     FML_LOG(INFO) << "Shorebird updater: active path: " << active_path;
-    size_t c_patch_number = shorebird_next_boot_patch_number();
-    // FIXME: use a constant for this.
-    // 0 means no patch is available.
-    if (c_patch_number != 0) {
-      FML_LOG(INFO) << "Shorebird updater: active patch number: "
-                    << c_patch_number;
-    }
 
 #if FML_OS_IOS
     // On iOS we add the patch to the front of the list instead of clearing
