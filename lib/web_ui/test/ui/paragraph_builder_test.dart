@@ -85,36 +85,36 @@ Future<void> testMain() async {
   test('kTextHeightNone unsets the height multiplier', () {
     const double fontSize = 10;
     const String text = 'A';
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(fontSize: fontSize, height: 10));
-    builder.pushStyle(ui.TextStyle(height: ui.kTextHeightNone));
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
+    builder.pushStyle(TextStyle(height: kTextHeightNone));
     builder.addText(text);
-    final ui.Paragraph paragraph = builder.build()
-      ..layout(const ui.ParagraphConstraints(width: 1000));
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
     expect(paragraph.height, fontSize);
   });
 
   test('kTextHeightNone ParagraphStyle', () {
     const double fontSize = 10;
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
-      ui.ParagraphStyle(fontSize: fontSize, height: ui.kTextHeightNone),
+    final ParagraphBuilder builder = ParagraphBuilder(
+      ParagraphStyle(fontSize: fontSize, height: kTextHeightNone),
     );
     builder.addText('A');
-    final ui.Paragraph paragraph = builder.build()
-      ..layout(const ui.ParagraphConstraints(width: 1000));
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
     expect(paragraph.height, fontSize);
   });
 
   test('kTextHeightNone StrutStyle', () {
     const double fontSize = 10;
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
-      ui.ParagraphStyle(
+    final ParagraphBuilder builder = ParagraphBuilder(
+      ParagraphStyle(
         fontSize: 100,
-        strutStyle: ui.StrutStyle(forceStrutHeight: true, height: ui.kTextHeightNone, fontSize: fontSize),
+        strutStyle: StrutStyle(forceStrutHeight: true, height: kTextHeightNone, fontSize: fontSize),
       ),
     );
     builder.addText('A');
-    final ui.Paragraph paragraph = builder.build()
-      ..layout(const ui.ParagraphConstraints(width: 1000));
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
     expect(paragraph.height, fontSize);
   });
 }
