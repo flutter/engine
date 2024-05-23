@@ -317,7 +317,7 @@ public class FlutterFragmentTest {
     doAnswer(invocation -> isDelegateAttached = false).when(mockDelegate).onDetach();
     TestDelegateFactory delegateFactory = new TestDelegateFactory(mockDelegate);
     fragment.setDelegateFactory(delegateFactory);
-    
+
     activity.getOnBackPressedDispatcher().onBackPressed();
 
     verify(mockDelegate, times(1)).onBackPressed();
