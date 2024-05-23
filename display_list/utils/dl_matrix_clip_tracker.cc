@@ -116,6 +116,7 @@ bool DisplayListMatrixClipState::mapAndClipRect(const SkRect& src,
     *mapped = ToSkRect(dl_intersected.value());
     return true;
   }
+  mapped->setEmpty();
   return false;
 }
 
