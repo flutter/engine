@@ -75,6 +75,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"  // nogncheck
+#include "flutter/shell/platform/embedder/embedder_surface_gl_skia.h"  // nogncheck
 #include "impeller/core/texture.h"                        // nogncheck
 #include "impeller/renderer/backend/gles/context_gles.h"  // nogncheck
 #include "impeller/renderer/backend/gles/texture_gles.h"  // nogncheck
@@ -447,7 +448,7 @@ InferOpenGLPlatformViewCreationCallback(
   bool fbo_reset_after_present =
       SAFE_ACCESS(open_gl_config, fbo_reset_after_present, false);
 
-  flutter::EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table = {
+  flutter::EmbedderSurfaceGLSkia::GLDispatchTable gl_dispatch_table = {
       gl_make_current,                     // gl_make_current_callback
       gl_clear_current,                    // gl_clear_current_callback
       gl_present,                          // gl_present_callback
@@ -479,7 +480,7 @@ InferOpenGLPlatformViewCreationCallback(
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
-            std::make_unique<flutter::EmbedderSurfaceGL>(
+            std::make_unique<flutter::EmbedderSurfaceGLSkia>(
                 gl_dispatch_table, fbo_reset_after_present,
                 view_embedder),       // embedder_surface
             platform_dispatch_table,  // embedder platform dispatch table
