@@ -341,6 +341,14 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
     }
 
+    // TODO(justinmc): If our AndroidX Core version can be upgraded, then
+    // uncomment this.
+    /*
+    if (EditorInfoCompat.isStylusHandwritingAvailable(outAttrs)) {
+      EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
+    }
+    */
+
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
             view, inputTarget.id, textInputChannel, keyboardManager, mEditable, outAttrs);
