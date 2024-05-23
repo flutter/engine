@@ -38,6 +38,10 @@ DlPaint DisplayListBuilderTestingAttributes(DisplayListBuilder& builder) {
   return builder.CurrentAttributes();
 }
 
+int DisplayListBuilderTestingLastOpIndex(DisplayListBuilder& builder) {
+  return builder.LastOpIndex();
+}
+
 namespace testing {
 
 static std::vector<testing::DisplayListInvocationGroup> allGroups =
@@ -3971,6 +3975,76 @@ TEST_F(DisplayListTest, SaveContentDepthTest) {
 
   DepthExpector expector({8, 2});
   display_list->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, FloodingFilteredLayerPushesRestoreOpIndex) {
+  DisplayListBuilder builder(true);
+  builder.ClipRect(SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
+  // ClipRect does not contribute to rtree rects, no id needed
+
+  DlPaint save_paint;
+  // clang-format off
+  const float matrix[] = {
+    0.5f, 0.0f, 0.0f, 0.0f, 0.5f,
+    0.5f, 0.0f, 0.0f, 0.0f, 0.5f,
+    0.5f, 0.0f, 0.0f, 0.0f, 0.5f,
+    0.5f, 0.0f, 0.0f, 0.0f, 0.5f
+  };
+  // clang-format on
+  auto color_filter = DlMatrixColorFilter::Make(matrix);
+  save_paint.setImageFilter(DlColorFilterImageFilter::Make(color_filter));
+  builder.SaveLayer(nullptr, &save_paint);
+  int save_layer_id = DisplayListBuilderTestingLastOpIndex(builder);
+
+  builder.DrawRect(SkRect::MakeLTRB(120.0f, 120.0f, 125.0f, 125.0f), DlPaint());
+  int draw_rect_id = DisplayListBuilderTestingLastOpIndex(builder);
+
+  builder.Restore();
+  int restore_id = DisplayListBuilderTestingLastOpIndex(builder);
+
+  auto dl = builder.Build();
+  std::vector<int> indices;
+  dl->rtree()->search(SkRect::MakeLTRB(0.0f, 0.0f, 500.0f, 500.0f), &indices);
+  ASSERT_EQ(indices.size(), 3u);
+  EXPECT_EQ(dl->rtree()->id(indices[0]), save_layer_id);
+  EXPECT_EQ(dl->rtree()->id(indices[1]), draw_rect_id);
+  EXPECT_EQ(dl->rtree()->id(indices[2]), restore_id);
+}
+
+TEST_F(DisplayListTest, TransformingFilterSaveLayerSimpleContentBounds) {
+  DisplayListBuilder builder;
+  builder.ClipRect(SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
+
+  DlPaint save_paint;
+  auto image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(100.0f, 100.0f), DlImageSampling::kNearestNeighbor);
+  save_paint.setImageFilter(image_filter);
+  builder.SaveLayer(nullptr, &save_paint);
+
+  builder.DrawRect(SkRect::MakeLTRB(20.0f, 20.0f, 25.0f, 25.0f), DlPaint());
+
+  builder.Restore();
+
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->bounds(), SkRect::MakeLTRB(120.0f, 120.0f, 125.0f, 125.0f));
+}
+
+TEST_F(DisplayListTest, TransformingFilterSaveLayerFloodedContentBounds) {
+  DisplayListBuilder builder;
+  builder.ClipRect(SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
+
+  DlPaint save_paint;
+  auto image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(100.0f, 100.0f), DlImageSampling::kNearestNeighbor);
+  save_paint.setImageFilter(image_filter);
+  builder.SaveLayer(nullptr, &save_paint);
+
+  builder.DrawColor(DlColor::kBlue(), DlBlendMode::kSrcOver);
+
+  builder.Restore();
+
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->bounds(), SkRect::MakeLTRB(100.0f, 100.0f, 200.0f, 200.0f));
 }
 
 }  // namespace testing

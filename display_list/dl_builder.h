@@ -260,6 +260,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
       DisplayListBuilder& builder);
   friend DlPaint DisplayListBuilderTestingAttributes(
       DisplayListBuilder& builder);
+  friend int DisplayListBuilderTestingLastOpIndex(DisplayListBuilder& builder);
 
   void SetAttributesFromPaint(const DlPaint& paint,
                               const DisplayListAttributeFlags flags);
@@ -350,6 +351,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
 
   DlPaint CurrentAttributes() const { return current_; }
+  int LastOpIndex() const { return op_index_ - 1; }
 
   // |DlOpReceiver|
   void save() override { Save(); }

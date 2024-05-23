@@ -615,12 +615,15 @@ void DisplayListBuilder::Restore() {
         RestoreLayer(current_info, parent_info(), op);
       } else {
         // No need to propagate bounds as we do with layers...
+
         // global accumulator is either the same object or both nullptr
         FML_DCHECK(current_info.global_space_accumulator.get() ==
                    parent_info().global_space_accumulator.get());
+
         // layer accumulators are both the same object
         FML_DCHECK(current_info.layer_local_accumulator.get() ==
                    parent_info().layer_local_accumulator.get());
+        FML_DCHECK(current_info.layer_local_accumulator.get() != nullptr);
 
         // We only propagate these values through a regular save()
         if (current_info.opacity_incompatible_op_detected) {
