@@ -505,11 +505,11 @@ class HtmlViewEmbedder {
 
     // Add all the pictures from the deleted canvases to the second-to-last
     // canvas (or the last canvas if there is only one).
-    sawLastCanvas = false;
+    sawLastCanvas = (maximumCanvases == 1);
     for (int i = modifiedEntities.length - 1; i > 0; i--) {
       final RenderingEntity entity = modifiedEntities[i];
       if (entity is RenderingRenderCanvas) {
-        if (sawLastCanvas || maximumCanvases == 1) {
+        if (sawLastCanvas) {
           entity.pictures.addAll(picturesForLastCanvas);
           break;
         }
