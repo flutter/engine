@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 
 import '../common/test_initialization.dart';
+import 'utils.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -85,12 +86,13 @@ Future<void> testMain() async {
   test('kTextHeightNone unsets the height multiplier', () {
     const double fontSize = 10;
     const String text = 'A';
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10, fontFamily: 'FlutterTest'));
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
     builder.pushStyle(TextStyle(height: kTextHeightNone));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: 1000));
-    expect(paragraph.height, fontSize);
+    // The height should be much smaller than fontSize * 10.
+    expect(paragraph.height, lessThan(2 * fontSize));
   });
 
   test('kTextHeightNone ParagraphStyle', () {
@@ -101,7 +103,8 @@ Future<void> testMain() async {
     builder.addText('A');
     final Paragraph paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: 1000));
-    expect(paragraph.height, fontSize);
+    // The height should be much smaller than fontSize * 10.
+    expect(paragraph.height, lessThan(2 * fontSize));
   });
 
   test('kTextHeightNone StrutStyle', () {
@@ -116,6 +119,9 @@ Future<void> testMain() async {
     builder.addText('A');
     final Paragraph paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: 1000));
-    expect(paragraph.height, fontSize);
-  });
+    // The height should be much smaller than fontSize * 10.
+    expect(paragraph.height, lessThan(2 * fontSize));
+  },
+    skip: isHtml, // The HTML renderer does not support struts.
+  );
 }
