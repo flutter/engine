@@ -12,11 +12,13 @@ TextFrame::TextFrame() = default;
 TextFrame::TextFrame(std::vector<TextRun>& runs,
                      Rect bounds,
                      bool has_color,
-                     Color color)
+                     Color color,
+                     Point adjustment)
     : runs_(std::move(runs)),
       bounds_(bounds),
       has_color_(has_color),
-      color_(color) {}
+      color_(color),
+      adjustment_(adjustment) {}
 
 TextFrame::~TextFrame() = default;
 
