@@ -114,10 +114,11 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
 }
 
 namespace {
-float CalculateInverseDotStartToEnd(Point start_point, Point end_point) {
+Scalar CalculateInverseDotStartToEnd(Point start_point, Point end_point) {
   Point start_to_end = end_point - start_point;
-  return 1.0f /
-         (start_to_end.x * start_to_end.x + start_to_end.y * start_to_end.y);
+  Scalar dot =
+      (start_to_end.x * start_to_end.x + start_to_end.y * start_to_end.y);
+  return dot == 0.0f ? 0.0f : 1.0f / dot;
 }
 }  // namespace
 
