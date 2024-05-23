@@ -54,9 +54,13 @@ std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
                                            const std::vector<Scalar>& stops) {
   FML_DCHECK(stops.size() == colors.size());
 
-  std::vector<StopData> result(stops.size());
+  std::vector<StopData> result;
+  result.reserve(stops.size());
+  Scalar last_stop = 0;
   for (auto i = 0u; i < stops.size(); i++) {
-    result[i] = {.color = colors[i], .stop = stops[i]};
+    result.emplace_back(StopData{
+        .color = colors[i], .stop = stops[i], .delta = stops[i] - last_stop});
+    last_stop = stops[i];
   }
   return result;
 }

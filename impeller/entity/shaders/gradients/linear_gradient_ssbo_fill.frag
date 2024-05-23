@@ -12,6 +12,7 @@ precision mediump float;
 struct ColorPoint {
   vec4 color;
   float stop;
+  float delta;
 };
 
 layout(std140) readonly buffer ColorData {
@@ -49,11 +50,10 @@ void main() {
       ColorPoint prev_point = color_data.colors[i - 1];
       ColorPoint current_point = color_data.colors[i];
       if (t >= prev_point.stop && t <= current_point.stop) {
-        float delta = (current_point.stop - prev_point.stop);
-        if (delta < 0.001) {
+        if (current_point.delta < 0.001) {
           frag_color = current_point.color;
         } else {
-          float ratio = (t - prev_point.stop) / delta;
+          float ratio = (t - prev_point.stop) / current_point.delta;
           frag_color = mix(prev_point.color, current_point.color, ratio);
         }
         break;
