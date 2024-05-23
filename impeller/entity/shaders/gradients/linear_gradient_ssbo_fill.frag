@@ -26,6 +26,7 @@ uniform FragInfo {
   float tile_mode;
   vec4 decal_border_color;
   int colors_length;
+  highp vec2 start_to_end;
   float inverse_dot_start_to_end;
 }
 frag_info;
@@ -35,10 +36,9 @@ highp in vec2 v_position;
 out vec4 frag_color;
 
 void main() {
-  highp vec2 start_to_end = frag_info.end_point - frag_info.start_point;
   highp vec2 start_to_position = v_position - frag_info.start_point;
-  highp float t =
-      dot(start_to_position, start_to_end) * frag_info.inverse_dot_start_to_end;
+  highp float t = dot(start_to_position, frag_info.start_to_end) *
+                  frag_info.inverse_dot_start_to_end;
 
   if ((t < 0.0 || t > 1.0) && frag_info.tile_mode == kTileModeDecal) {
     frag_color = frag_info.decal_border_color;

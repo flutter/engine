@@ -143,6 +143,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
         frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
         frag_info.decal_border_color = decal_border_color_;
         frag_info.alpha = GetOpacityFactor();
+        frag_info.start_to_end = end_point_ - start_point_;
         frag_info.inverse_dot_start_to_end =
             CalculateInverseDotStartToEnd(start_point_, end_point_);
 
