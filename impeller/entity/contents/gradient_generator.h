@@ -28,7 +28,7 @@ std::shared_ptr<Texture> CreateGradientTexture(
 struct StopData {
   Color color;
   Scalar stop;
-  Scalar delta;
+  Scalar inverse_delta;
   Padding<8> _padding_;
 };
 

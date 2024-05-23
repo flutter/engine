@@ -58,8 +58,10 @@ std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
   result.reserve(stops.size());
   Scalar last_stop = 0;
   for (auto i = 0u; i < stops.size(); i++) {
+    Scalar delta = stops[i] - last_stop;
+    Scalar inverse_delta = delta == 0.0f ? 0.0 : 1.0 / delta;
     result.emplace_back(StopData{
-        .color = colors[i], .stop = stops[i], .delta = stops[i] - last_stop});
+        .color = colors[i], .stop = stops[i], .inverse_delta = inverse_delta});
     last_stop = stops[i];
   }
   return result;
