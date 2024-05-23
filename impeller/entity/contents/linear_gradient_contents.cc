@@ -114,9 +114,10 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
 }
 
 namespace {
-float CalculateDotStartToEnd(Point start_point, Point end_point) {
+float CalculateInverseDotStartToEnd(Point start_point, Point end_point) {
   Point start_to_end = end_point - start_point;
-  return start_to_end.x * start_to_end.x + start_to_end.y * start_to_end.y;
+  return 1.0f /
+         (start_to_end.x * start_to_end.x + start_to_end.y * start_to_end.y);
 }
 }  // namespace
 
@@ -142,8 +143,8 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
         frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
         frag_info.decal_border_color = decal_border_color_;
         frag_info.alpha = GetOpacityFactor();
-        frag_info.dot_start_to_end =
-            CalculateDotStartToEnd(start_point_, end_point_);
+        frag_info.inverse_dot_start_to_end =
+            CalculateInverseDotStartToEnd(start_point_, end_point_);
 
         auto& host_buffer = renderer.GetTransientsBuffer();
         auto colors = CreateGradientColors(colors_, stops_);
