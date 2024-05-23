@@ -2227,8 +2227,7 @@ TEST_F(DisplayListTest, FlatDrawPointsProducesBounds) {
 }
 
 #define TEST_RTREE(rtree, query, expected_rects, expected_indices) \
-  test_rtree(rtree, query, expected_rects, expected_indices, \
-             __FILE__, __LINE__)
+  test_rtree(rtree, query, expected_rects, expected_indices, __FILE__, __LINE__)
 
 static void test_rtree(const sk_sp<const DlRTree>& rtree,
                        const SkRect& query,

@@ -1126,9 +1126,7 @@ class CanvasCompareTester {
     return provider;
   }
 
-  static void ClearProviders() {
-    TestBackends.clear();
-  }
+  static void ClearProviders() { TestBackends.clear(); }
 
   static bool AddProvider(BackendType type) {
     auto provider = GetProvider(type);
@@ -2850,7 +2848,8 @@ class DisplayListRenderingTestBase : public BaseT,
       providers += " " + DlSurfaceProvider::BackendName(back_end);
     }
     std::string libraries = " Skia";
-    if (CanvasCompareTester::ImpellerSupported && RenderEnvironment::EnableImpeller) {
+    if (CanvasCompareTester::ImpellerSupported &&
+        RenderEnvironment::EnableImpeller) {
       libraries += " Impeller";
     }
     FML_LOG(INFO) << "Running tests on [" << providers  //
