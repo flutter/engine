@@ -7,11 +7,13 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
 
@@ -131,7 +133,36 @@ enum class OptionalDeviceExtensionVK : uint32_t {
   ///
   kVKKHRPortabilitySubset,
 
+  //----------------------------------------------------------------------------
+  /// For fixed-rate compression of images.
+  ///
+  /// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_image_compression_control.html
+  ///
+  kEXTImageCompressionControl,
+
+  //----------------------------------------------------------------------------
+  /// For fixed-rate compression of swapchain images.
+  ///
+  /// https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VK_EXT_image_compression_control_swapchain.html
+  ///
+  kEXTImageCompressionControlSwapchain,
+
   kLast,
+};
+
+struct FRCFormatDescriptor {
+  vk::Format format = vk::Format::eUndefined;
+  vk::ImageType type = {};
+  vk::ImageTiling tiling = {};
+  vk::ImageUsageFlags usage = {};
+  vk::ImageCreateFlags flags = {};
+
+  explicit FRCFormatDescriptor(const vk::ImageCreateInfo& image_info)
+      : format(image_info.format),
+        type(image_info.imageType),
+        tiling(image_info.tiling),
+        usage(image_info.usage),
+        flags(image_info.flags) {}
 };
 
 //------------------------------------------------------------------------------
@@ -162,16 +193,19 @@ class CapabilitiesVK final : public Capabilities,
   std::optional<std::vector<std::string>> GetEnabledDeviceExtensions(
       const vk::PhysicalDevice& physical_device) const;
 
-  using PhysicalDeviceFeatures =
-      vk::StructureChain<vk::PhysicalDeviceFeatures2,
-                         vk::PhysicalDeviceSamplerYcbcrConversionFeaturesKHR,
-                         vk::PhysicalDevice16BitStorageFeatures>;
+  using PhysicalDeviceFeatures = vk::StructureChain<
+      vk::PhysicalDeviceFeatures2,
+      vk::PhysicalDeviceSamplerYcbcrConversionFeaturesKHR,
+      vk::PhysicalDevice16BitStorageFeatures,
+      vk::PhysicalDeviceImageCompressionControlFeaturesEXT,
+      vk::PhysicalDeviceImageCompressionControlSwapchainFeaturesEXT>;
 
   std::optional<PhysicalDeviceFeatures> GetEnabledDeviceFeatures(
       const vk::PhysicalDevice& physical_device) const;
 
   [[nodiscard]] bool SetPhysicalDevice(
-      const vk::PhysicalDevice& physical_device);
+      const vk::PhysicalDevice& physical_device,
+      const PhysicalDeviceFeatures& enabled_features);
 
   const vk::PhysicalDeviceProperties& GetPhysicalDeviceProperties() const;
 
@@ -219,6 +253,14 @@ class CapabilitiesVK final : public Capabilities,
   // |Capabilities|
   PixelFormat GetDefaultGlyphAtlasFormat() const override;
 
+  bool SupportsTextureFixedRateCompression() const;
+
+  bool SupportsSwapchainFixedRateCompression() const;
+
+  std::optional<vk::ImageCompressionFixedRateFlagBitsEXT> GetSupportedFRCRate(
+      CompressionType compression_type,
+      const FRCFormatDescriptor& desc) const;
+
  private:
   bool validations_enabled_ = false;
   std::map<std::string, std::set<std::string>> exts_;
@@ -229,9 +271,12 @@ class CapabilitiesVK final : public Capabilities,
   mutable PixelFormat default_color_format_ = PixelFormat::kUnknown;
   PixelFormat default_stencil_format_ = PixelFormat::kUnknown;
   PixelFormat default_depth_stencil_format_ = PixelFormat::kUnknown;
+  vk::PhysicalDevice physical_device_;
   vk::PhysicalDeviceProperties device_properties_;
   bool supports_compute_subgroups_ = false;
   bool supports_device_transient_textures_ = false;
+  bool supports_texture_fixed_rate_compression_ = false;
+  bool supports_swapchain_fixed_rate_compression_ = false;
   bool is_valid_ = false;
 
   bool HasExtension(const std::string& ext) const;
