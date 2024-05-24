@@ -53,7 +53,15 @@ float RRectBlurX(vec2 sample_position, vec2 half_size) {
   // The calling function RRectBlur will never provide a Y sample outside
   // of that range, though, so the max(0.0) is mostly a precaution.
   float unit_space_y = space_y / frag_info.corner_radii.y;
-  float unit_space_x = sqrt(max(0.0, 1.0 - unit_space_y * unit_space_y));
+  float unit_space_x_squared = 1.0 - unit_space_y * unit_space_y;
+  float unit_space_x;
+  if (unit_space_x_squared >= 1.0) {
+    unit_space_x = 1.0;
+  } else if (unit_space_x_squared < 0.0) {
+    unit_space_x = 0.0;
+  } else {
+    unit_space_x = sqrt(unit_space_x_squared);
+  }
   float rrect_distance =
       half_size.x - frag_info.corner_radii.x * (1.0 - unit_space_x);
 
