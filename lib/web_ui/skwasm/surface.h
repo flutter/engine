@@ -13,16 +13,8 @@
 #include <webgl/webgl1.h>
 #include <cassert>
 #include "export.h"
+#include "render_strategy.h"
 #include "skwasm_support.h"
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkColorSpace.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/encode/SkPngEncoder.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 #include "wrappers.h"
 
 namespace Skwasm {

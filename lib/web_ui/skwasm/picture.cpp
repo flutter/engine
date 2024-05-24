@@ -4,9 +4,7 @@
 
 #include "export.h"
 #include "helpers.h"
-#include "third_party/skia/include/core/SkBBHFactory.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "render_strategy.h"
 #include "wrappers.h"
 
 using namespace Skwasm;
@@ -21,7 +19,7 @@ SKWASM_EXPORT void pictureRecorder_dispose(SkPictureRecorder* recorder) {
   delete recorder;
 }
 
-SKWASM_EXPORT SkCanvas* pictureRecorder_beginRecording(
+SKWASM_EXPORT Canvas* pictureRecorder_beginRecording(
     SkPictureRecorder* recorder,
     const SkRect* cullRect) {
   return recorder->beginRecording(*cullRect, &bbhFactory);

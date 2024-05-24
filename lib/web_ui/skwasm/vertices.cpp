@@ -4,12 +4,14 @@
 
 #include "export.h"
 
-#include "third_party/skia/include/core/SkVertices.h"
+#include "render_strategy.h"
+
+using namespace Skwasm;
 
 SKWASM_EXPORT SkVertices* vertices_create(SkVertices::VertexMode vertexMode,
                                           int vertexCount,
-                                          SkPoint* positions,
-                                          SkPoint* textureCoordinates,
+                                          Point* positions,
+                                          Point* textureCoordinates,
                                           SkColor* colors,
                                           int indexCount,
                                           uint16_t* indices) {

@@ -4,30 +4,27 @@
 
 #include "export.h"
 #include "helpers.h"
-
-#include "third_party/skia/include/core/SkColorFilter.h"
-#include "third_party/skia/include/core/SkMaskFilter.h"
-#include "third_party/skia/include/effects/SkImageFilters.h"
+#include "render_strategy.h"
 
 using namespace Skwasm;
 
-SKWASM_EXPORT SkImageFilter* imageFilter_createBlur(SkScalar sigmaX,
-                                                    SkScalar sigmaY,
-                                                    SkTileMode tileMode) {
+SKWASM_EXPORT SkImageFilter* imageFilter_createBlur(Scalar sigmaX,
+                                                    Scalar sigmaY,
+                                                    TileMode tileMode) {
   return SkImageFilters::Blur(sigmaX, sigmaY, tileMode, nullptr).release();
 }
 
-SKWASM_EXPORT SkImageFilter* imageFilter_createDilate(SkScalar radiusX,
-                                                      SkScalar radiusY) {
+SKWASM_EXPORT SkImageFilter* imageFilter_createDilate(Scalar radiusX,
+                                                      Scalar radiusY) {
   return SkImageFilters::Dilate(radiusX, radiusY, nullptr).release();
 }
 
-SKWASM_EXPORT SkImageFilter* imageFilter_createErode(SkScalar radiusX,
-                                                     SkScalar radiusY) {
+SKWASM_EXPORT SkImageFilter* imageFilter_createErode(Scalar radiusX,
+                                                     Scalar radiusY) {
   return SkImageFilters::Erode(radiusX, radiusY, nullptr).release();
 }
 
-SKWASM_EXPORT SkImageFilter* imageFilter_createMatrix(SkScalar* matrix33,
+SKWASM_EXPORT SkImageFilter* imageFilter_createMatrix(Scalar* matrix33,
                                                       FilterQuality quality) {
   return SkImageFilters::MatrixTransform(createMatrix(matrix33),
                                          samplingOptionsForQuality(quality),
@@ -91,7 +88,7 @@ SKWASM_EXPORT void colorFilter_dispose(SkColorFilter* filter) {
 }
 
 SKWASM_EXPORT SkMaskFilter* maskFilter_createBlur(SkBlurStyle blurStyle,
-                                                  SkScalar sigma) {
+                                                  Scalar sigma) {
   return SkMaskFilter::MakeBlur(blurStyle, sigma).release();
 }
 

@@ -230,7 +230,6 @@ source_set("display_list_benchmarks_source") {
   deps = [
     ":display_list",
     ":display_list_fixtures",
-    "$dart_src/runtime:libdart_jit",  # for tracing
     "//flutter/benchmarking",
     "//flutter/common/graphics",
     "//flutter/display_list/testing:display_list_surface_provider",
@@ -240,6 +239,12 @@ source_set("display_list_benchmarks_source") {
     "//flutter/testing:skia",
     "//flutter/testing:testing_lib",
   ]
+
+  if (!is_wasm) {
+    deps += [
+      "$dart_src/runtime:libdart_jit",  # for tracing
+    ]
+  }
 }
 
 executable("display_list_benchmarks") {

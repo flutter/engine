@@ -4,8 +4,7 @@
 
 #include "export.h"
 #include "helpers.h"
-#include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/pathops/SkPathOps.h"
+#include "render_strategy.h"
 
 using namespace Skwasm;
 
@@ -29,103 +28,103 @@ SKWASM_EXPORT SkPathFillType path_getFillType(SkPath* path) {
   return path->getFillType();
 }
 
-SKWASM_EXPORT void path_moveTo(SkPath* path, SkScalar x, SkScalar y) {
+SKWASM_EXPORT void path_moveTo(SkPath* path, Scalar x, Scalar y) {
   path->moveTo(x, y);
 }
 
-SKWASM_EXPORT void path_relativeMoveTo(SkPath* path, SkScalar x, SkScalar y) {
+SKWASM_EXPORT void path_relativeMoveTo(SkPath* path, Scalar x, Scalar y) {
   path->rMoveTo(x, y);
 }
 
-SKWASM_EXPORT void path_lineTo(SkPath* path, SkScalar x, SkScalar y) {
+SKWASM_EXPORT void path_lineTo(SkPath* path, Scalar x, Scalar y) {
   path->lineTo(x, y);
 }
 
-SKWASM_EXPORT void path_relativeLineTo(SkPath* path, SkScalar x, SkScalar y) {
+SKWASM_EXPORT void path_relativeLineTo(SkPath* path, Scalar x, Scalar y) {
   path->rLineTo(x, y);
 }
 
 SKWASM_EXPORT void path_quadraticBezierTo(SkPath* path,
-                                          SkScalar x1,
-                                          SkScalar y1,
-                                          SkScalar x2,
-                                          SkScalar y2) {
+                                          Scalar x1,
+                                          Scalar y1,
+                                          Scalar x2,
+                                          Scalar y2) {
   path->quadTo(x1, y1, x2, y2);
 }
 
 SKWASM_EXPORT void path_relativeQuadraticBezierTo(SkPath* path,
-                                                  SkScalar x1,
-                                                  SkScalar y1,
-                                                  SkScalar x2,
-                                                  SkScalar y2) {
+                                                  Scalar x1,
+                                                  Scalar y1,
+                                                  Scalar x2,
+                                                  Scalar y2) {
   path->rQuadTo(x1, y1, x2, y2);
 }
 
 SKWASM_EXPORT void path_cubicTo(SkPath* path,
-                                SkScalar x1,
-                                SkScalar y1,
-                                SkScalar x2,
-                                SkScalar y2,
-                                SkScalar x3,
-                                SkScalar y3) {
+                                Scalar x1,
+                                Scalar y1,
+                                Scalar x2,
+                                Scalar y2,
+                                Scalar x3,
+                                Scalar y3) {
   path->cubicTo(x1, y1, x2, y2, x3, y3);
 }
 
 SKWASM_EXPORT void path_relativeCubicTo(SkPath* path,
-                                        SkScalar x1,
-                                        SkScalar y1,
-                                        SkScalar x2,
-                                        SkScalar y2,
-                                        SkScalar x3,
-                                        SkScalar y3) {
+                                        Scalar x1,
+                                        Scalar y1,
+                                        Scalar x2,
+                                        Scalar y2,
+                                        Scalar x3,
+                                        Scalar y3) {
   path->rCubicTo(x1, y1, x2, y2, x3, y3);
 }
 
 SKWASM_EXPORT void path_conicTo(SkPath* path,
-                                SkScalar x1,
-                                SkScalar y1,
-                                SkScalar x2,
-                                SkScalar y2,
-                                SkScalar w) {
+                                Scalar x1,
+                                Scalar y1,
+                                Scalar x2,
+                                Scalar y2,
+                                Scalar w) {
   path->conicTo(x1, y1, x2, y2, w);
 }
 
 SKWASM_EXPORT void path_relativeConicTo(SkPath* path,
-                                        SkScalar x1,
-                                        SkScalar y1,
-                                        SkScalar x2,
-                                        SkScalar y2,
-                                        SkScalar w) {
+                                        Scalar x1,
+                                        Scalar y1,
+                                        Scalar x2,
+                                        Scalar y2,
+                                        Scalar w) {
   path->rConicTo(x1, y1, x2, y2, w);
 }
 
 SKWASM_EXPORT void path_arcToOval(SkPath* path,
                                   const SkRect* rect,
-                                  SkScalar startAngle,
-                                  SkScalar sweepAngle,
+                                  Scalar startAngle,
+                                  Scalar sweepAngle,
                                   bool forceMoveTo) {
   path->arcTo(*rect, startAngle, sweepAngle, forceMoveTo);
 }
 
 SKWASM_EXPORT void path_arcToRotated(SkPath* path,
-                                     SkScalar rx,
-                                     SkScalar ry,
-                                     SkScalar xAxisRotate,
+                                     Scalar rx,
+                                     Scalar ry,
+                                     Scalar xAxisRotate,
                                      SkPath::ArcSize arcSize,
                                      SkPathDirection pathDirection,
-                                     SkScalar x,
-                                     SkScalar y) {
+                                     Scalar x,
+                                     Scalar y) {
   path->arcTo(rx, ry, xAxisRotate, arcSize, pathDirection, x, y);
 }
 
 SKWASM_EXPORT void path_relativeArcToRotated(SkPath* path,
-                                             SkScalar rx,
-                                             SkScalar ry,
-                                             SkScalar xAxisRotate,
+                                             Scalar rx,
+                                             Scalar ry,
+                                             Scalar xAxisRotate,
                                              SkPath::ArcSize arcSize,
                                              SkPathDirection pathDirection,
-                                             SkScalar x,
-                                             SkScalar y) {
+                                             Scalar x,
+                                             Scalar y) {
   path->rArcTo(rx, ry, xAxisRotate, arcSize, pathDirection, x, y);
 }
 
@@ -139,25 +138,25 @@ SKWASM_EXPORT void path_addOval(SkPath* path, const SkRect* oval) {
 
 SKWASM_EXPORT void path_addArc(SkPath* path,
                                const SkRect* oval,
-                               SkScalar startAngle,
-                               SkScalar sweepAngle) {
+                               Scalar startAngle,
+                               Scalar sweepAngle) {
   path->addArc(*oval, startAngle, sweepAngle);
 }
 
 SKWASM_EXPORT void path_addPolygon(SkPath* path,
-                                   const SkPoint* points,
+                                   const Point* points,
                                    int count,
                                    bool close) {
   path->addPoly(points, count, close);
 }
 
-SKWASM_EXPORT void path_addRRect(SkPath* path, const SkScalar* rrectValues) {
+SKWASM_EXPORT void path_addRRect(SkPath* path, const Scalar* rrectValues) {
   path->addRRect(createRRect(rrectValues), SkPathDirection::kCW);
 }
 
 SKWASM_EXPORT void path_addPath(SkPath* path,
                                 const SkPath* other,
-                                const SkScalar* matrix33,
+                                const Scalar* matrix33,
                                 SkPath::AddPathMode extendPath) {
   path->addPath(*other, createMatrix(matrix33), extendPath);
 }
@@ -170,11 +169,11 @@ SKWASM_EXPORT void path_reset(SkPath* path) {
   path->reset();
 }
 
-SKWASM_EXPORT bool path_contains(SkPath* path, SkScalar x, SkScalar y) {
+SKWASM_EXPORT bool path_contains(SkPath* path, Scalar x, Scalar y) {
   return path->contains(x, y);
 }
 
-SKWASM_EXPORT void path_transform(SkPath* path, const SkScalar* matrix33) {
+SKWASM_EXPORT void path_transform(SkPath* path, const Scalar* matrix33) {
   path->transform(createMatrix(matrix33));
 }
 

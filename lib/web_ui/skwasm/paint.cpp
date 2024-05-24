@@ -4,11 +4,7 @@
 
 #include "export.h"
 #include "helpers.h"
-#include "third_party/skia/include/core/SkColorFilter.h"
-#include "third_party/skia/include/core/SkImageFilter.h"
-#include "third_party/skia/include/core/SkMaskFilter.h"
-#include "third_party/skia/include/core/SkPaint.h"
-#include "third_party/skia/include/core/SkShader.h"
+#include "render_strategy.h"
 
 using namespace Skwasm;
 
@@ -38,11 +34,11 @@ SKWASM_EXPORT SkPaint::Style paint_getStyle(SkPaint* paint) {
   return paint->getStyle();
 }
 
-SKWASM_EXPORT void paint_setStrokeWidth(SkPaint* paint, SkScalar width) {
+SKWASM_EXPORT void paint_setStrokeWidth(SkPaint* paint, Scalar width) {
   paint->setStrokeWidth(width);
 }
 
-SKWASM_EXPORT SkScalar paint_getStrokeWidth(SkPaint* paint) {
+SKWASM_EXPORT Scalar paint_getStrokeWidth(SkPaint* paint) {
   return paint->getStrokeWidth();
 }
 
@@ -78,11 +74,11 @@ SKWASM_EXPORT SkColor paint_getColorInt(SkPaint* paint) {
   return paint->getColor();
 }
 
-SKWASM_EXPORT void paint_setMiterLimit(SkPaint* paint, SkScalar miterLimit) {
+SKWASM_EXPORT void paint_setMiterLimit(SkPaint* paint, Scalar miterLimit) {
   paint->setStrokeMiter(miterLimit);
 }
 
-SKWASM_EXPORT SkScalar paint_getMiterLimit(SkPaint* paint) {
+SKWASM_EXPORT Scalar paint_getMiterLimit(SkPaint* paint) {
   return paint->getStrokeMiter();
 }
 

@@ -4,7 +4,7 @@
 
 #include "export.h"
 
-#include "third_party/skia/include/core/SkString.h"
+#include "render_strategy.h"
 
 SKWASM_EXPORT SkString* skString_allocate(size_t length) {
   return new SkString(length);

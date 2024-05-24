@@ -104,7 +104,7 @@ source_set("fml") {
     "wakeable.h",
   ]
 
-  if (enable_backtrace) {
+  if (enable_backtrace && !is_wasm) {
     sources += [ "backtrace.cc" ]
   } else {
     sources += [ "backtrace_stub.cc" ]
@@ -117,11 +117,13 @@ source_set("fml") {
   ]
 
   deps = [
-    "$dart_src/runtime:dart_api",
-
     # These need to be in sync with the Fuchsia buildroot.
     "//flutter/third_party/icu",
   ]
+
+  if (target_os != "wasm") {
+    deps += [ "$dart_src/runtime:dart_api" ]
+  }
 
   if (enable_backtrace) {
     # This abseil dependency is only used by backtrace.cc.

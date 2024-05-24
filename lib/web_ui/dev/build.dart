@@ -19,6 +19,7 @@ const Map<String, String> targetAliases = <String, String>{
   'canvaskit': 'flutter/third_party/canvaskit:canvaskit_group',
   'canvaskit_chromium': 'flutter/third_party/canvaskit:canvaskit_chromium_group',
   'skwasm': 'flutter/third_party/canvaskit:skwasm_group',
+  'wimp': 'flutter/third_party/canvaskit:wimp_group',
   'archive': 'flutter/web_sdk:flutter_web_sdk_archive',
 };
 
@@ -52,6 +53,11 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       help: 'Embed DWARF debugging info into the output wasm modules. This is '
           'only valid in debug mode.',
     );
+    argParser.addFlag(
+      'verbose',
+      abbr: 'v',
+      help: 'Output verbose build logging.'
+    );
   }
 
   @override
@@ -67,6 +73,8 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   List<String> get targets => argResults?.rest ?? <String>[];
   bool get embedDwarf => boolArg('dwarf');
 
+  bool get verbose => boolArg('verbose');
+
   @override
   FutureOr<bool> run() async {
     if (embedDwarf && runtimeMode != RuntimeMode.debug) {
@@ -78,11 +86,13 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
         host: host,
         runtimeMode: runtimeMode,
         embedDwarf: embedDwarf,
+        verbose: verbose,
       ),
       NinjaPipelineStep(
         host: host,
         runtimeMode: runtimeMode,
         targets: targets.map((String target) => targetAliases[target] ?? target),
+        verbose: verbose,
       ),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -111,11 +121,13 @@ class GnPipelineStep extends ProcessStep {
     required this.host,
     required this.runtimeMode,
     required this.embedDwarf,
+    required this.verbose,
   });
 
   final bool host;
   final RuntimeMode runtimeMode;
   final bool embedDwarf;
+  final bool verbose;
 
   @override
   String get description => 'gn';
@@ -137,6 +149,8 @@ class GnPipelineStep extends ProcessStep {
           '--unoptimized',
         if (embedDwarf)
           '--wasm-use-dwarf',
+        if (verbose)
+          '--verbose',
       ];
     }
   }
@@ -159,6 +173,7 @@ class NinjaPipelineStep extends ProcessStep {
     required this.host,
     required this.runtimeMode,
     required this.targets,
+    required this.verbose,
   });
 
   @override
@@ -170,6 +185,7 @@ class NinjaPipelineStep extends ProcessStep {
   final bool host;
   final Iterable<String> targets;
   final RuntimeMode runtimeMode;
+  final bool verbose;
 
   String get buildDirectory {
     if (host) {
@@ -184,6 +200,7 @@ class NinjaPipelineStep extends ProcessStep {
     return startProcess(
       'autoninja',
       <String>[
+        if (verbose) '-v',
         '-C',
         buildDirectory,
         ...targets,

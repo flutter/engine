@@ -5,18 +5,16 @@
 #ifndef FLUTTER_LIB_WEB_UI_SKWASM_HELPERS_H_
 #define FLUTTER_LIB_WEB_UI_SKWASM_HELPERS_H_
 
-#include "third_party/skia/include/core/SkMatrix.h"
-#include "third_party/skia/include/core/SkRRect.h"
-#include "third_party/skia/include/core/SkSamplingOptions.h"
+#include "render_strategy.h"
 
 namespace Skwasm {
 
-inline SkMatrix createMatrix(const SkScalar* f) {
+inline SkMatrix createMatrix(const Scalar* f) {
   return SkMatrix::MakeAll(f[0], f[1], f[2], f[3], f[4], f[5], f[6], f[7],
                            f[8]);
 }
 
-inline SkRRect createRRect(const SkScalar* f) {
+inline SkRRect createRRect(const Scalar* f) {
   const SkRect* rect = reinterpret_cast<const SkRect*>(f);
   const SkVector* radiiValues = reinterpret_cast<const SkVector*>(f + 4);
 

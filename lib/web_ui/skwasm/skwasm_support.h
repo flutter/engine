@@ -5,9 +5,10 @@
 #ifndef FLUTTER_LIB_WEB_UI_SKWASM_SKWASM_SUPPORT_H_
 #define FLUTTER_LIB_WEB_UI_SKWASM_SKWASM_SUPPORT_H_
 
+#include "render_strategy.h"
+
 #include <emscripten/threading.h>
 #include <cinttypes>
-#include "third_party/skia/include/core/SkPicture.h"
 
 namespace Skwasm {
 class Surface;

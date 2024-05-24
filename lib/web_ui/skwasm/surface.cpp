@@ -3,12 +3,9 @@
 // found in the LICENSE file.
 
 #include "surface.h"
-#include <algorithm>
+#include "render_strategy.h"
 
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLDirectContext.h"
+#include <algorithm>
 
 using namespace Skwasm;
 

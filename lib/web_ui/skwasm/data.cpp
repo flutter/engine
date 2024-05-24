@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 #include "export.h"
-
-#include "third_party/skia/include/core/SkData.h"
+#include "render_strategy.h"
 
 SKWASM_EXPORT SkData* skData_create(size_t size) {
   return SkData::MakeUninitialized(size).release();

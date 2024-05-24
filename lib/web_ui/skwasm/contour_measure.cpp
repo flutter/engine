@@ -4,14 +4,12 @@
 
 #include "export.h"
 #include "helpers.h"
-
-#include "third_party/skia/include/core/SkContourMeasure.h"
-#include "third_party/skia/include/core/SkPath.h"
+#include "render_strategy.h"
 
 using namespace Skwasm;
 
 SKWASM_EXPORT SkContourMeasureIter*
-contourMeasureIter_create(SkPath* path, bool forceClosed, SkScalar resScale) {
+contourMeasureIter_create(SkPath* path, bool forceClosed, Scalar resScale) {
   return new SkContourMeasureIter(*path, forceClosed, resScale);
 }
 
@@ -32,7 +30,7 @@ SKWASM_EXPORT void contourMeasure_dispose(SkContourMeasure* measure) {
   measure->unref();
 }
 
-SKWASM_EXPORT SkScalar contourMeasure_length(SkContourMeasure* measure) {
+SKWASM_EXPORT Scalar contourMeasure_length(SkContourMeasure* measure) {
   return measure->length();
 }
 
@@ -41,15 +39,15 @@ SKWASM_EXPORT bool contourMeasure_isClosed(SkContourMeasure* measure) {
 }
 
 SKWASM_EXPORT bool contourMeasure_getPosTan(SkContourMeasure* measure,
-                                            SkScalar distance,
-                                            SkPoint* outPosition,
+                                            Scalar distance,
+                                            Point* outPosition,
                                             SkVector* outTangent) {
   return measure->getPosTan(distance, outPosition, outTangent);
 }
 
 SKWASM_EXPORT SkPath* contourMeasure_getSegment(SkContourMeasure* measure,
-                                                SkScalar startD,
-                                                SkScalar stopD,
+                                                Scalar startD,
+                                                Scalar stopD,
                                                 bool startWithMoveTo) {
   SkPath* outPath = new SkPath();
   if (!measure->getSegment(startD, stopD, outPath, startWithMoveTo)) {

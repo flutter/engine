@@ -93,7 +93,7 @@ template("impellerc") {
              ])
 
   _impellerc(target_name) {
-    pool = "//build/toolchain:toolchain_pool"
+    #pool = "//build/toolchain:toolchain_pool"
     shader_bundle = defined(invoker.shader_bundle)
 
     # When single_invocation is true, impellerc will be invoked exactly once. When it's

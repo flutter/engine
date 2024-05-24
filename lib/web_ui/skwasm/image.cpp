@@ -3,24 +3,10 @@
 // found in the LICENSE file.
 
 #include "export.h"
+#include "render_strategy.h"
 #include "skwasm_support.h"
 #include "surface.h"
 #include "wrappers.h"
-
-#include "third_party/skia/include/core/SkColorSpace.h"
-#include "third_party/skia/include/core/SkData.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/core/SkImageInfo.h"
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h"
-#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
-#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>

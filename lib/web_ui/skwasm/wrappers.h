@@ -5,11 +5,9 @@
 #ifndef FLUTTER_LIB_WEB_UI_SKWASM_WRAPPERS_H_
 #define FLUTTER_LIB_WEB_UI_SKWASM_WRAPPERS_H_
 
+#include "render_strategy.h"
+
 #include <emscripten/html5_webgl.h>
-#include "third_party/skia/include/core/SkCanvas.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/modules/skparagraph/include/FontCollection.h"
-#include "third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h"
 
 namespace Skwasm {
 

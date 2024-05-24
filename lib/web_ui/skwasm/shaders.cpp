@@ -4,20 +4,18 @@
 
 #include "export.h"
 #include "helpers.h"
-#include "third_party/skia/include/core/SkImage.h"
-#include "third_party/skia/include/effects/SkGradientShader.h"
-#include "third_party/skia/include/effects/SkRuntimeEffect.h"
+#include "render_strategy.h"
 #include "wrappers.h"
 
 using namespace Skwasm;
 
 SKWASM_EXPORT SkShader* shader_createLinearGradient(
-    SkPoint* endPoints,  // Two points
+    Point* endPoints,  // Two points
     SkColor* colors,
-    SkScalar* stops,
+    Scalar* stops,
     int count,  // Number of stops/colors
-    SkTileMode tileMode,
-    SkScalar* matrix33  // Can be nullptr
+    TileMode tileMode,
+    Scalar* matrix33  // Can be nullptr
 ) {
   if (matrix33) {
     SkMatrix localMatrix = createMatrix(matrix33);
@@ -31,14 +29,14 @@ SKWASM_EXPORT SkShader* shader_createLinearGradient(
   }
 }
 
-SKWASM_EXPORT SkShader* shader_createRadialGradient(SkScalar centerX,
-                                                    SkScalar centerY,
-                                                    SkScalar radius,
+SKWASM_EXPORT SkShader* shader_createRadialGradient(Scalar centerX,
+                                                    Scalar centerY,
+                                                    Scalar radius,
                                                     SkColor* colors,
-                                                    SkScalar* stops,
+                                                    Scalar* stops,
                                                     int count,
-                                                    SkTileMode tileMode,
-                                                    SkScalar* matrix33) {
+                                                    TileMode tileMode,
+                                                    Scalar* matrix33) {
   if (matrix33) {
     SkMatrix localMatrix = createMatrix(matrix33);
     return SkGradientShader::MakeRadial({centerX, centerY}, radius, colors,
@@ -52,14 +50,14 @@ SKWASM_EXPORT SkShader* shader_createRadialGradient(SkScalar centerX,
 }
 
 SKWASM_EXPORT SkShader* shader_createConicalGradient(
-    SkPoint* endPoints,  // Two points
-    SkScalar startRadius,
-    SkScalar endRadius,
+    Point* endPoints,  // Two points
+    Scalar startRadius,
+    Scalar endRadius,
     SkColor* colors,
-    SkScalar* stops,
+    Scalar* stops,
     int count,
-    SkTileMode tileMode,
-    SkScalar* matrix33) {
+    TileMode tileMode,
+    Scalar* matrix33) {
   if (matrix33) {
     SkMatrix localMatrix = createMatrix(matrix33);
     return SkGradientShader::MakeTwoPointConical(
@@ -75,15 +73,15 @@ SKWASM_EXPORT SkShader* shader_createConicalGradient(
   }
 }
 
-SKWASM_EXPORT SkShader* shader_createSweepGradient(SkScalar centerX,
-                                                   SkScalar centerY,
+SKWASM_EXPORT SkShader* shader_createSweepGradient(Scalar centerX,
+                                                   Scalar centerY,
                                                    SkColor* colors,
-                                                   SkScalar* stops,
+                                                   Scalar* stops,
                                                    int count,
-                                                   SkTileMode tileMode,
-                                                   SkScalar startAngle,
-                                                   SkScalar endAngle,
-                                                   SkScalar* matrix33) {
+                                                   TileMode tileMode,
+                                                   Scalar startAngle,
+                                                   Scalar endAngle,
+                                                   Scalar* matrix33) {
   if (matrix33) {
     SkMatrix localMatrix = createMatrix(matrix33);
     return SkGradientShader::MakeSweep(centerX, centerY, colors, stops, count,
@@ -137,10 +135,10 @@ SKWASM_EXPORT SkShader* shader_createRuntimeEffectShader(
 }
 
 SKWASM_EXPORT SkShader* shader_createFromImage(SkImage* image,
-                                               SkTileMode tileModeX,
-                                               SkTileMode tileModeY,
+                                               TileMode tileModeX,
+                                               TileMode tileModeY,
                                                FilterQuality quality,
-                                               SkScalar* matrix33) {
+                                               Scalar* matrix33) {
   if (matrix33) {
     SkMatrix localMatrix = createMatrix(matrix33);
     return image

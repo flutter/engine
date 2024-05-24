@@ -3,10 +3,7 @@
 // found in the LICENSE file.
 
 #include "export.h"
-#include "third_party/skia/include/core/SkFontMgr.h"
-#include "third_party/skia/include/ports/SkFontMgr_empty.h"
-#include "third_party/skia/modules/skparagraph/include/FontCollection.h"
-#include "third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h"
+#include "render_strategy.h"
 #include "wrappers.h"
 
 #include <memory>
