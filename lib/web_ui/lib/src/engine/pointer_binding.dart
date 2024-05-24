@@ -706,6 +706,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         pressureMax: 1.0,
         scrollDeltaX: deltaX,
         scrollDeltaY: deltaY,
+        respond: ({bool preventPlatformDefault = true}) {
+          if (preventPlatformDefault) {
+            event.preventDefault();
+          }
+        },
       );
     }
     _lastWheelEvent = event;
@@ -728,11 +733,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     if (_debugLogPointerEvents) {
       print(event.type);
     }
+    // [ui.PointerData] has a binding to the native `event` so users can choose
+    // to prevent default (or not).
     _callback(e, _convertWheelEventToPointerData(event));
-    // Prevent default so mouse wheel event doesn't get converted to
-    // a scroll event that semantic nodes would process.
-    //
-    event.preventDefault();
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox

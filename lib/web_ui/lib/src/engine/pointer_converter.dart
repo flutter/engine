@@ -117,6 +117,7 @@ class PointerDataConverter {
     required double scrollDeltaX,
     required double scrollDeltaY,
     required double scale,
+    void Function({bool preventPlatformDefault})? respond,
   }) {
     assert(globalPointerState.pointers.containsKey(device));
     final _PointerDeviceState state = globalPointerState.pointers[device]!;
@@ -154,6 +155,7 @@ class PointerDataConverter {
       scrollDeltaX: scrollDeltaX,
       scrollDeltaY: scrollDeltaY,
       scale: scale,
+      respond: respond,
     );
   }
 
@@ -263,6 +265,7 @@ class PointerDataConverter {
     double scrollDeltaX = 0.0,
     double scrollDeltaY = 0.0,
     double scale = 1.0,
+    void Function({bool preventPlatformDefault})? respond,
   }) {
     if (_debugLogPointerConverter) {
       print('>> view=$viewId device=$device change=$change buttons=$buttons');
@@ -796,6 +799,7 @@ class PointerDataConverter {
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
               scale: scale,
+              respond: respond,
             )
           );
         case ui.PointerSignalKind.none:
