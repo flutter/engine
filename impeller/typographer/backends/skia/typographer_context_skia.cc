@@ -34,8 +34,7 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkSize.h"
 
-#include "src/core/SkScalerContext.h"
-#include "src/core/SkStrikeSpec.h"
+
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -88,8 +87,7 @@ static size_t AppendToExistingAtlas(
 
   for (size_t i = 0; i < extra_pairs.size(); i++) {
     const FontGlyphPair& pair = extra_pairs[i];
-    const auto glyph_size =
-        ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
+    ISize glyph_size = ISize::Ceil(pair.glyph.scaled_bounds.GetSize());
     IPoint16 location_in_atlas;
     if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -119,8 +117,7 @@ static size_t PairsFitInAtlasOfSize(
 
   for (size_t i = start_index; i < pairs.size(); i++) {
     const auto& pair = pairs[i];
-    const auto glyph_size =
-        ISize::Ceil(pair.glyph.bounds.GetSize() * pair.scaled_font.scale);
+    ISize glyph_size = ISize::Ceil(pair.glyph.scaled_bounds.GetSize());
     IPoint16 location_in_atlas;
     if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -194,19 +191,20 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setHinting(SkFontHinting::kSlight);
   sk_font.setEmbolden(metrics.embolden);
   sk_font.setSubpixel(true);
+  sk_font.setSize(sk_font.getSize() * scaled_font.scale);
+  FML_LOG(ERROR) << "Scaling: " << scaled_font.scale;
 
   auto glyph_color = has_color ? scaled_font.color.ToARGB() : SK_ColorBLACK;
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
-  canvas->resetMatrix();
-  canvas->scale(scaled_font.scale, scaled_font.scale);
+  // canvas->resetMatrix();
 
   canvas->drawGlyphs(
       1u,         // count
       &glyph_id,  // glyphs
       &position,  // positions
-      SkPoint::Make(-glyph.bounds.GetLeft(), -glyph.bounds.GetTop()),  // origin
+      SkPoint::Make(-glyph.scaled_bounds.GetLeft(), -glyph.scaled_bounds.GetTop()),  // origin
       sk_font,                                                         // font
       glyph_paint                                                      // paint
   );

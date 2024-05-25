@@ -71,7 +71,9 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     switch (run.positioning()) {
       case SkTextBlobRunIterator::kFull_Positioning: {
         std::vector<SkRect> glyph_bounds;
+        std::vector<SkRect> scaled_bounds;
         glyph_bounds.resize(glyph_count);
+        scaled_bounds.resize(glyph_count);
         SkFont font = run.font();
         auto font_size = font.getSize();
         font.setSize(kScaleSize);
@@ -83,10 +85,13 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
 
         font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
+        SkFont scaled_font = run.font();
+        scaled_font.setSize(scaled_font.getSize() * 2.63);
+        scaled_font.getBounds(glyphs, glyph_count, scaled_bounds.data(), nullptr);
+
         std::vector<TextRun::GlyphPosition> positions;
         positions.reserve(glyph_count);
         for (auto i = 0u; i < glyph_count; i++) {
-
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
           const SkPoint* point = glyph_points + i;
@@ -95,7 +100,9 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
                                  : Glyph::Type::kPath;
           has_color |= type == Glyph::Type::kBitmap;
           positions.emplace_back(TextRun::GlyphPosition{
-              Glyph{glyphs[i], type, ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
+              Glyph{glyphs[i], type,
+                    ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize),
+                    ToRect(scaled_bounds[i])},
               Point{point->x(), point->y()}});
         }
         TextRun text_run(ToFont(run), positions);

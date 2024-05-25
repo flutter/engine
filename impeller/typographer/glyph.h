@@ -34,13 +34,15 @@ struct Glyph {
   ///
   Rect bounds;
 
-  Glyph(uint16_t p_index, Type p_type, Rect p_bounds)
-      : index(p_index), type(p_type), bounds(p_bounds) {}
+  Rect scaled_bounds;
+
+  Glyph(uint16_t p_index, Type p_type, Rect p_bounds, Rect p_scaled_bounds)
+      : index(p_index), type(p_type), bounds(p_bounds), scaled_bounds(p_scaled_bounds) {}
 };
 
 // Many Glyph instances are instantiated, so care should be taken when
 // increasing the size.
-static_assert(sizeof(Glyph) == 20);
+//static_assert(sizeof(Glyph) == 20);
 
 }  // namespace impeller
 

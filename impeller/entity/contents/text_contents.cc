@@ -182,7 +182,7 @@ bool TextContents::Render(const ContentContext& renderer,
               continue;
             }
             const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
-            Rect glyph_bounds = glyph_position.glyph.bounds;
+            Rect glyph_bounds = glyph_position.glyph.scaled_bounds;
             // For each glyph, we compute two rectangles. One for the vertex
             // positions and one for the texture coordinates (UVs).
             Point uv_origin =
@@ -196,13 +196,13 @@ bool TextContents::Render(const ContentContext& renderer,
             constexpr Point kPositionAdjustment = Point(0.125, 0.5);
 
             Point unrounded_glyph_position =
-                basis_transform *
-                (glyph_position.position + glyph_bounds.GetLeftTop());
+                (basis_transform *
+                glyph_position.position) + glyph_bounds.GetLeftTop();
             Point screen_glyph_position =
                 (screen_offset + unrounded_glyph_position + kPositionAdjustment)
                     .Floor();
 
-            auto scaled_size = glyph_bounds.GetSize() + Size(1, 1);
+            auto scaled_size = glyph_bounds.GetSize();
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
@@ -211,7 +211,7 @@ bool TextContents::Render(const ContentContext& renderer,
                 // projections.
                 position =
                     ((screen_glyph_position +
-                     (basis_transform * (point * scaled_size)))
+                     ((point * scaled_size)))
                         .Ceil());
               } else {
                 position =
