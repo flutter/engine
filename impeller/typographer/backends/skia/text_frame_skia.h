@@ -7,13 +7,15 @@
 
 #include "display_list/dl_color.h"
 #include "impeller/typographer/text_frame.h"
+#include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace impeller {
 
 std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob,
-    flutter::DlColor color = flutter::DlColor::kBlack());
+    flutter::DlColor color = flutter::DlColor::kBlack(),
+    Scalar dx = 0);
 
 }  // namespace impeller
 

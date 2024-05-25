@@ -23,8 +23,7 @@ class TextFrame {
   TextFrame(std::vector<TextRun>& runs,
             Rect bounds,
             bool has_color,
-            Color color,
-            Point adjustment);
+            Color color);
 
   ~TextFrame();
 
@@ -77,10 +76,6 @@ class TextFrame {
   /// @brief      The type of atlas this run should be emplaced in.
   GlyphAtlas::Type GetAtlasType() const;
 
-  Point GetGlyphAdjustment() const {
-    return adjustment_;
-  }
-
   TextFrame& operator=(TextFrame&& other) = default;
 
   TextFrame(const TextFrame& other) = default;
@@ -90,7 +85,6 @@ class TextFrame {
   Rect bounds_;
   bool has_color_;
   Color color_;
-  Point adjustment_;
 };
 
 }  // namespace impeller

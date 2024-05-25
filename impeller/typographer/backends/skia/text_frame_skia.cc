@@ -9,15 +9,15 @@
 #include "display_list/dl_color.h"
 #include "flutter/fml/logging.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
-#include "include/core/SkMatrix.h"
+#include "impeller/typographer/glyph.h"
+
 #include "include/core/SkPaint.h"
 #include "include/core/SkRect.h"
-#include "src/core/SkStrikeCache.h"
-#include "third_party/skia/include/core/SkFont.h"
-#include "third_party/skia/include/core/SkFontMetrics.h"
-#include "third_party/skia/include/private/base/SkPoint_impl.h"
-#include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
-#include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
+#include "third_party/skia/include/core/SkFont.h"         // nogncheck
+#include "third_party/skia/include/core/SkFontMetrics.h"  // nogncheck
+#include "third_party/skia/src/core/SkStrikeCache.h"      // nogncheck
+#include "third_party/skia/src/core/SkStrikeSpec.h"       // nogncheck
+#include "third_party/skia/src/core/SkTextBlobPriv.h"     // nogncheck
 
 namespace impeller {
 
@@ -50,31 +50,21 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
+static constexpr Scalar kScaleSize = 64.0f;
+
 std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob,
-    flutter::DlColor dl_color) {
+    flutter::DlColor dl_color,
+    Scalar dx) {
   bool has_color = false;
   Color color = ToColor(dl_color);
   std::vector<TextRun> runs;
-  Point adjustment; // TODO
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
     // https://github.com/flutter/flutter/issues/112005
 
-    auto device_m = SkMatrix::I();
-    device_m.setScaleX(2.625);
-    device_m.setScaleY(2.625);
-    SkStrikeSpec strikeSpec = SkStrikeSpec::MakeMask(
-        run.font(), SkPaint{}, SkSurfaceProps(), SkScalerContextFlags::kFakeGammaAndBoostContrast, device_m);
-
+    SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
     SkBulkGlyphMetricsAndPaths paths{strikeSpec};
-    auto scaler = strikeSpec.createScalerContext();
-
-    sk_sp<sktext::StrikeForGPU> strike = strikeSpec.findOrCreateScopedStrike(SkStrikeCache::GlobalStrikeCache());
-
-    auto rounding_spec = strike->roundingSpec();
-    SkPoint adjustment = rounding_spec.halfAxisSampleFreq;
-    SkIPoint field_mask = rounding_spec.ignorePositionFieldMask;
 
     const auto glyph_count = run.glyphCount();
     const auto* glyphs = run.glyphs();
@@ -82,33 +72,30 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
       case SkTextBlobRunIterator::kFull_Positioning: {
         std::vector<SkRect> glyph_bounds;
         glyph_bounds.resize(glyph_count);
-        // SkFont font = run.font();
-        // auto font_size = font.getSize();
+        SkFont font = run.font();
+        auto font_size = font.getSize();
+        font.setSize(kScaleSize);
         // For some platforms (including Android), `SkFont::getBounds()` snaps
         // the computed bounds to integers. And so we scale up the font size
         // prior to fetching the bounds to ensure that the returned bounds are
         // always precise enough. Scaling too large will cause Skia to use
         // path rendering and potentially inaccurate glyph sizes.
 
-       // font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
+        font.getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
 
         std::vector<TextRun::GlyphPosition> positions;
         positions.reserve(glyph_count);
         for (auto i = 0u; i < glyph_count; i++) {
+
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
-          const auto* point = glyph_points + i;
+          const SkPoint* point = glyph_points + i;
           Glyph::Type type = paths.glyph(glyphs[i])->isColor()
                                  ? Glyph::Type::kBitmap
                                  : Glyph::Type::kPath;
           has_color |= type == Glyph::Type::kBitmap;
-
-          const SkPackedGlyphID packedID{glyphs[i], adjustment, field_mask};
-          auto digest = strike->digestFor(skglyph::kDirectMask, packedID);
-          FML_LOG(ERROR) << "Bounds: " << ToRect(digest.bounds().rect());
           positions.emplace_back(TextRun::GlyphPosition{
-              Glyph{glyphs[i], type,
-                    ToRect(digest.bounds().rect())},
+              Glyph{glyphs[i], type, ToRect(glyph_bounds[i]).Scale(font_size / kScaleSize)},
               Point{point->x(), point->y()}});
         }
         TextRun text_run(ToFont(run), positions);
@@ -121,7 +108,7 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     }
   }
   return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color,
-                                     has_color ? color : Color::Black(), adjustment);
+                                     has_color ? color : Color::Black());
 }
 
 }  // namespace impeller

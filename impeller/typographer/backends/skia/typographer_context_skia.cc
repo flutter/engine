@@ -26,14 +26,16 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/font_glyph_pair.h"
+#include "impeller/typographer/glyph.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "impeller/typographer/typographer_context.h"
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
-#include "include/core/SkPixelRef.h"
 #include "include/core/SkSize.h"
 
+#include "src/core/SkScalerContext.h"
+#include "src/core/SkStrikeSpec.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -182,7 +184,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Glyph& glyph,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  const auto position = SkPoint::Make(0, 0);
+  SkPoint position = SkPoint::Make(0, 0);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -191,6 +193,7 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setEdging(SkFont::Edging::kAntiAlias);
   sk_font.setHinting(SkFontHinting::kSlight);
   sk_font.setEmbolden(metrics.embolden);
+  sk_font.setSubpixel(true);
 
   auto glyph_color = has_color ? scaled_font.color.ToARGB() : SK_ColorBLACK;
 

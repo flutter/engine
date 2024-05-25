@@ -15,6 +15,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/typographer/glyph.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -99,7 +100,6 @@ bool TextContents::Render(const ContentContext& renderer,
   bool is_translation_scale = entity.GetTransform().IsTranslationScaleOnly();
   Matrix entity_transform = entity.GetTransform();
   Matrix basis_transform = entity_transform.Basis();
-  FML_LOG(ERROR) << "Basis: " << basis_transform;
 
   VS::BindFrameInfo(pass,
                     renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -191,17 +191,18 @@ bool TextContents::Render(const ContentContext& renderer,
             Point uv_size =
                 (atlas_glyph_bounds.GetSize() + Point(1, 1)) / atlas_size;
 
-            // Rounding here prevents most jitter between glyphs in the run when
-            // nearest sampling.
+            // Glyph positions are rounded to whole pixels in Y axis and half
+            // pixels in X axis.
+            constexpr Point kPositionAdjustment = Point(0.125, 0.5);
+
             Point unrounded_glyph_position =
                 basis_transform *
-                (glyph_position.position) + glyph_bounds.GetLeftTop();
+                (glyph_position.position + glyph_bounds.GetLeftTop());
             Point screen_glyph_position =
-                (screen_offset + unrounded_glyph_position + frame_->GetGlyphAdjustment()).Floor();
+                (screen_offset + unrounded_glyph_position + kPositionAdjustment)
+                    .Floor();
 
-            FML_LOG(ERROR) << "UNROUNDED: " << (screen_offset + unrounded_glyph_position + frame_->GetGlyphAdjustment());
-            FML_LOG(ERROR) << "Scaled Glyph Bounds: " << (glyph_bounds.GetSize());
-
+            auto scaled_size = glyph_bounds.GetSize() + Size(1, 1);
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
@@ -209,15 +210,16 @@ bool TextContents::Render(const ContentContext& renderer,
                 // small when nearest sampling. This path breaks down for
                 // projections.
                 position =
-                    (screen_glyph_position +
-                     (basis_transform * (point * glyph_bounds.GetSize())));
+                    ((screen_glyph_position +
+                     (basis_transform * (point * scaled_size)))
+                        .Ceil());
               } else {
                 position =
                     entity_transform * (offset + glyph_position.position +
                                         glyph_bounds.GetLeftTop() +
                                         point * glyph_bounds.GetSize());
               }
-              FML_LOG(ERROR) << position;
+
               vtx.uv = uv_origin + (uv_size * point);
               vtx.position = position;
               vtx_contents[i++] = vtx;

@@ -9,7 +9,7 @@
 
 #include "fml/hash_combine.h"
 #include "impeller/base/comparable.h"
-#include "impeller/typographer/glyph.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/typographer/typeface.h"
 
 namespace impeller {

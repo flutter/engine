@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "impeller/geometry/color.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
 
