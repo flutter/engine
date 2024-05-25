@@ -261,8 +261,8 @@ static BOOL _preparedOnce = NO;
   return [CAShapeLayer class];
 }
 
-- (CAShapeLayer *)shapeLayer {
-  return (CAShapeLayer *)self.layer;
+- (CAShapeLayer*)shapeLayer {
+  return (CAShapeLayer*)self.layer;
 }
 
 - (void)reset {
@@ -271,7 +271,6 @@ static BOOL _preparedOnce = NO;
   [self shapeLayer].path = nil;
   [self setNeedsDisplay];
 }
-
 
 - (void)dealloc {
   CGPathRelease(pathSoFar_);
