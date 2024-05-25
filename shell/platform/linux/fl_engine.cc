@@ -7,7 +7,6 @@
 #include <gmodule.h>
 
 #include <cstring>
-#include <optional>
 #include <string>
 #include <vector>
 
