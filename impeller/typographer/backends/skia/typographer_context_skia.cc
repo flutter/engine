@@ -20,6 +20,7 @@
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/platform.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_pass.h"
@@ -33,7 +34,6 @@
 #include "include/core/SkColor.h"
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkSize.h"
-
 
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -77,6 +77,7 @@ static size_t AppendToExistingAtlas(
     const std::shared_ptr<GlyphAtlas>& atlas,
     const std::vector<FontGlyphPair>& extra_pairs,
     std::vector<Rect>& glyph_positions,
+    const std::vector<Rect>& glyph_sizes,
     ISize atlas_size,
     int64_t height_adjustment,
     const std::shared_ptr<RectanglePacker>& rect_packer) {
@@ -86,8 +87,7 @@ static size_t AppendToExistingAtlas(
   }
 
   for (size_t i = 0; i < extra_pairs.size(); i++) {
-    const FontGlyphPair& pair = extra_pairs[i];
-    ISize glyph_size = ISize::Ceil(pair.glyph.scaled_bounds.GetSize());
+    ISize glyph_size = ISize::Ceil(glyph_sizes[i].GetSize());
     IPoint16 location_in_atlas;
     if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -110,14 +110,14 @@ static size_t PairsFitInAtlasOfSize(
     const std::vector<FontGlyphPair>& pairs,
     const ISize& atlas_size,
     std::vector<Rect>& glyph_positions,
+    const std::vector<Rect>& glyph_sizes,
     int64_t height_adjustment,
     const std::shared_ptr<RectanglePacker>& rect_packer,
     size_t start_index) {
   FML_DCHECK(!atlas_size.IsEmpty());
 
   for (size_t i = start_index; i < pairs.size(); i++) {
-    const auto& pair = pairs[i];
-    ISize glyph_size = ISize::Ceil(pair.glyph.scaled_bounds.GetSize());
+    ISize glyph_size = ISize::Ceil(glyph_sizes[i].GetSize());
     IPoint16 location_in_atlas;
     if (!rect_packer->AddRect(glyph_size.width + kPadding,   //
                               glyph_size.height + kPadding,  //
@@ -140,6 +140,7 @@ static ISize ComputeNextAtlasSize(
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const std::vector<FontGlyphPair>& extra_pairs,
     std::vector<Rect>& glyph_positions,
+    const std::vector<Rect>& glyph_sizes,
     size_t glyph_index_start,
     int64_t max_texture_height) {
   // Because we can't grow the skyline packer horizontally, pick a reasonable
@@ -165,9 +166,9 @@ static ISize ComputeNextAtlasSize(
     glyph_positions.erase(glyph_positions.begin() + glyph_index_start,
                           glyph_positions.end());
     atlas_context->UpdateRectPacker(rect_packer);
-    auto next_index = PairsFitInAtlasOfSize(extra_pairs, current_size,
-                                            glyph_positions, height_adjustment,
-                                            rect_packer, glyph_index_start);
+    auto next_index = PairsFitInAtlasOfSize(
+        extra_pairs, current_size, glyph_positions, glyph_sizes,
+        height_adjustment, rect_packer, glyph_index_start);
     if (next_index == extra_pairs.size()) {
       return current_size;
     }
@@ -179,6 +180,7 @@ static ISize ComputeNextAtlasSize(
 static void DrawGlyph(SkCanvas* canvas,
                       const ScaledFont& scaled_font,
                       const Glyph& glyph,
+                      const Rect& scaled_bounds,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
   SkPoint position = SkPoint::Make(0, 0);
@@ -192,7 +194,6 @@ static void DrawGlyph(SkCanvas* canvas,
   sk_font.setEmbolden(metrics.embolden);
   sk_font.setSubpixel(true);
   sk_font.setSize(sk_font.getSize() * scaled_font.scale);
-  FML_LOG(ERROR) << "Scaling: " << scaled_font.scale;
 
   auto glyph_color = has_color ? scaled_font.color.ToARGB() : SK_ColorBLACK;
 
@@ -200,13 +201,13 @@ static void DrawGlyph(SkCanvas* canvas,
   glyph_paint.setColor(glyph_color);
   // canvas->resetMatrix();
 
-  canvas->drawGlyphs(
-      1u,         // count
-      &glyph_id,  // glyphs
-      &position,  // positions
-      SkPoint::Make(-glyph.scaled_bounds.GetLeft(), -glyph.scaled_bounds.GetTop()),  // origin
-      sk_font,                                                         // font
-      glyph_paint                                                      // paint
+  canvas->drawGlyphs(1u,         // count
+                     &glyph_id,  // glyphs
+                     &position,  // positions
+                     SkPoint::Make(-scaled_bounds.GetLeft(),
+                                   -scaled_bounds.GetTop()),  // origin
+                     sk_font,                                 // font
+                     glyph_paint                              // paint
   );
 }
 
@@ -223,11 +224,12 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
 
   for (size_t i = start_index; i < end_index; i++) {
     const FontGlyphPair& pair = new_pairs[i];
-    auto pos = atlas.FindFontGlyphBounds(pair);
-    if (!pos.has_value()) {
+    auto data = atlas.FindFontGlyphBounds(pair);
+    if (!data.has_value()) {
       continue;
     }
-    Size size = pos->GetSize();
+    auto [pos, bounds] = data.value();
+    Size size = pos.GetSize();
     if (size.IsEmpty()) {
       continue;
     }
@@ -246,7 +248,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
       return false;
     }
 
-    DrawGlyph(canvas, pair.scaled_font, pair.glyph, has_color);
+    DrawGlyph(canvas, pair.scaled_font, pair.glyph, bounds, has_color);
 
     // Writing to a malloc'd buffer and then copying to the staging buffers
     // benchmarks as substantially faster on a number of Android devices.
@@ -261,7 +263,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     // on Vulkan where we are responsible for managing image layouts.
     if (!blit_pass->AddCopy(std::move(buffer_view),  //
                             texture,                 //
-                            IRect::MakeXYWH(pos->GetLeft(), pos->GetTop(),
+                            IRect::MakeXYWH(pos.GetLeft(), pos.GetTop(),
                                             size.width, size.height),  //
                             /*label=*/"",                              //
                             /*slice=*/0,                               //
@@ -290,24 +292,49 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     return last_atlas;
   }
 
+  auto compute_size = [](const SkFont& font, const Glyph& glyph) -> Rect {
+    SkRect scaled_bounds;
+    font.getBounds(&glyph.index, 1, &scaled_bounds, nullptr);
+
+    auto result = Rect::MakeLTRB(scaled_bounds.fLeft, scaled_bounds.fTop,
+                                 scaled_bounds.fRight, scaled_bounds.fBottom);
+    return result;
+  };
+
   // ---------------------------------------------------------------------------
   // Step 1: Determine if the atlas type and font glyph pairs are compatible
-  //         with the current atlas and reuse if possible.
+  //         with the current atlas and reuse if possible. Compute glyph sizes
   // ---------------------------------------------------------------------------
+  std::vector<Rect> glyph_sizes;
   std::vector<FontGlyphPair> new_glyphs;
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
     const FontGlyphAtlas* font_glyph_atlas = last_atlas->GetFontGlyphAtlas(
         scaled_font.font, scaled_font.scale, scaled_font.color);
+
+    auto metrics = scaled_font.font.GetMetrics();
+
+    // TODO: make font creation lazy and share with draw glyphs.
+    SkFont sk_font(
+        TypefaceSkia::Cast(*scaled_font.font.GetTypeface()).GetSkiaTypeface(),
+        metrics.point_size, metrics.scaleX, metrics.skewX);
+    sk_font.setEdging(SkFont::Edging::kAntiAlias);
+    sk_font.setHinting(SkFontHinting::kSlight);
+    sk_font.setEmbolden(metrics.embolden);
+    sk_font.setSize(sk_font.getSize() * scaled_font.scale);
+    sk_font.setSubpixel(true);
+
     if (font_glyph_atlas) {
       for (const Glyph& glyph : font_value.second) {
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
           new_glyphs.emplace_back(scaled_font, glyph);
+          glyph_sizes.push_back(compute_size(sk_font, glyph));
         }
       }
     } else {
       for (const Glyph& glyph : font_value.second) {
         new_glyphs.emplace_back(scaled_font, glyph);
+        glyph_sizes.push_back(compute_size(sk_font, glyph));
       }
     }
   }
@@ -326,15 +353,17 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (last_atlas->GetTexture()) {
     // Append all glyphs that fit into the current atlas.
     first_missing_index = AppendToExistingAtlas(
-        last_atlas, new_glyphs, glyph_positions, atlas_context->GetAtlasSize(),
-        atlas_context->GetHeightAdjustment(), atlas_context->GetRectPacker());
+        last_atlas, new_glyphs, glyph_positions, glyph_sizes,
+        atlas_context->GetAtlasSize(), atlas_context->GetHeightAdjustment(),
+        atlas_context->GetRectPacker());
 
     // ---------------------------------------------------------------------------
     // Step 3a: Record the positions in the glyph atlas of the newly added
     //          glyphs.
     // ---------------------------------------------------------------------------
     for (size_t i = 0; i < first_missing_index; i++) {
-      last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
+      last_atlas->AddTypefaceGlyphPositionAndBounds(
+          new_glyphs[i], glyph_positions[i], glyph_sizes[i]);
     }
 
     std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
@@ -387,6 +416,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   ISize atlas_size = ComputeNextAtlasSize(atlas_context,        //
                                           new_glyphs,           //
                                           glyph_positions,      //
+                                          glyph_sizes,          //
                                           first_missing_index,  //
                                           max_texture_height    //
   );
@@ -457,7 +487,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   //          glyphs.
   // ---------------------------------------------------------------------------
   for (size_t i = first_missing_index; i < glyph_positions.size(); i++) {
-    new_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
+    new_atlas->AddTypefaceGlyphPositionAndBounds(
+        new_glyphs[i], glyph_positions[i], glyph_sizes[i]);
   }
 
   // ---------------------------------------------------------------------------

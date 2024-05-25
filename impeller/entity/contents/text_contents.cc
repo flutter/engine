@@ -175,14 +175,15 @@ bool TextContents::Render(const ContentContext& renderer,
           Point screen_offset = (entity_transform * offset);
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
-            std::optional<Rect> maybe_atlas_glyph_bounds =
+            std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
                 font_atlas->FindGlyphBounds(glyph_position.glyph);
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;
             }
-            const Rect& atlas_glyph_bounds = maybe_atlas_glyph_bounds.value();
-            Rect glyph_bounds = glyph_position.glyph.scaled_bounds;
+            const Rect& atlas_glyph_bounds =
+                maybe_atlas_glyph_bounds.value().first;
+            Rect glyph_bounds = maybe_atlas_glyph_bounds.value().second;
             // For each glyph, we compute two rectangles. One for the vertex
             // positions and one for the texture coordinates (UVs).
             Point uv_origin =
@@ -196,8 +197,8 @@ bool TextContents::Render(const ContentContext& renderer,
             constexpr Point kPositionAdjustment = Point(0.125, 0.5);
 
             Point unrounded_glyph_position =
-                (basis_transform *
-                glyph_position.position) + glyph_bounds.GetLeftTop();
+                (basis_transform * glyph_position.position) +
+                glyph_bounds.GetLeftTop();
             Point screen_glyph_position =
                 (screen_offset + unrounded_glyph_position + kPositionAdjustment)
                     .Floor();
@@ -206,18 +207,13 @@ bool TextContents::Render(const ContentContext& renderer,
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
-                // Rouding up here prevents the bounds from becoming 1 pixel too
-                // small when nearest sampling. This path breaks down for
-                // projections.
-                position =
-                    ((screen_glyph_position +
-                     ((point * scaled_size)))
-                        .Ceil());
+                position = screen_glyph_position + (point * scaled_size);
               } else {
+                Rect scaled_bounds = glyph_bounds.Scale(1 / rounded_scale);
                 position =
                     entity_transform * (offset + glyph_position.position +
-                                        glyph_bounds.GetLeftTop() +
-                                        point * glyph_bounds.GetSize());
+                                        scaled_bounds.GetLeftTop() +
+                                        point * scaled_bounds.GetSize());
               }
 
               vtx.uv = uv_origin + (uv_size * point);
