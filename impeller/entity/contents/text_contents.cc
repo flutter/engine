@@ -13,9 +13,9 @@
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/point.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/typographer/glyph.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -209,7 +209,7 @@ bool TextContents::Render(const ContentContext& renderer,
               if (is_translation_scale) {
                 position = screen_glyph_position + (point * scaled_size);
               } else {
-                Rect scaled_bounds = glyph_bounds.Scale(1 / rounded_scale);
+                Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
                 position =
                     entity_transform * (offset + glyph_position.position +
                                         scaled_bounds.GetLeftTop() +

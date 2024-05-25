@@ -36,6 +36,7 @@
 #include "include/core/SkSize.h"
 
 #include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkBlendMode.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -199,8 +200,7 @@ static void DrawGlyph(SkCanvas* canvas,
 
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
-  // canvas->resetMatrix();
-
+  glyph_paint.setBlendMode(SkBlendMode::kSrc);
   canvas->drawGlyphs(1u,         // count
                      &glyph_id,  // glyphs
                      &position,  // positions
