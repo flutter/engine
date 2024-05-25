@@ -19,11 +19,18 @@ static void fl_mock_renderer_make_resource_current(FlRenderer* renderer) {}
 // Implements FlRenderer::clear_current.
 static void fl_mock_renderer_clear_current(FlRenderer* renderer) {}
 
+// Implements FlRenderer::get_refresh_rate.
+static gdouble fl_mock_renderer_get_refresh_rate(FlRenderer* renderer) {
+  return -1.0;
+}
+
 static void fl_mock_renderer_class_init(FlMockRendererClass* klass) {
   FL_RENDERER_CLASS(klass)->make_current = fl_mock_renderer_make_current;
   FL_RENDERER_CLASS(klass)->make_resource_current =
       fl_mock_renderer_make_resource_current;
   FL_RENDERER_CLASS(klass)->clear_current = fl_mock_renderer_clear_current;
+  FL_RENDERER_CLASS(klass)->get_refresh_rate =
+      fl_mock_renderer_get_refresh_rate;
 }
 
 static void fl_mock_renderer_init(FlMockRenderer* self) {}

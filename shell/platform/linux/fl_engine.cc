@@ -209,33 +209,6 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
                                     layers_count);
 }
 
-// Retrieves the refresh rate of the primary monitor.
-static std::optional<double> get_refresh_rate() {
-  GdkDisplay* gdk_display = gdk_display_get_default();
-  if (gdk_display == nullptr) {
-    return std::nullopt;
-  }
-
-  GdkMonitor* gdk_monitor = gdk_display_get_primary_monitor(gdk_display);
-  if (gdk_monitor == nullptr) {
-    if (gdk_display_get_n_monitors(gdk_display) == 0) {
-      return std::nullopt;
-    }
-    // Assume the first monitor is the primary monitor.
-    gdk_monitor = gdk_display_get_monitor(gdk_display, 0);
-    if (gdk_monitor == nullptr) {
-      return std::nullopt;
-    }
-  }
-
-  gint refresh_rate = gdk_monitor_get_refresh_rate(gdk_monitor);
-  if (refresh_rate <= 0) {
-    return std::nullopt;
-  }
-  // the return value is in milli-hertz, convert to hertz
-  return static_cast<double>(refresh_rate) / 1000.0;
-}
-
 // Flutter engine rendering callbacks.
 
 static void* fl_engine_gl_proc_resolver(void* user_data, const char* name) {
@@ -601,12 +574,17 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     g_warning("Failed to enable accessibility features on Flutter engine");
   }
 
-  std::optional<double> refresh_rate = get_refresh_rate();
+  gdouble refresh_rate = fl_renderer_get_refresh_rate(self->renderer);
+  // FlutterEngineDisplay::refresh_rate expects 0 if the refresh rate is
+  // unknown.
+  if (refresh_rate <= 0.0) {
+    refresh_rate = 0.0;
+  }
   FlutterEngineDisplay display = {};
   display.struct_size = sizeof(FlutterEngineDisplay);
   display.display_id = 0;
   display.single_display = true;
-  display.refresh_rate = refresh_rate.value_or(0.0);
+  display.refresh_rate = refresh_rate;
 
   std::vector displays = {display};
   result = self->embedder_api.NotifyDisplayUpdate(
