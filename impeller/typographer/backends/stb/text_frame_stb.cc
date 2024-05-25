@@ -42,8 +42,9 @@ std::shared_ptr<TextFrame> MakeTextFrameSTB(
     stbtt_GetGlyphHMetrics(typeface_stb->GetFontInfo(), glyph_index,
                            &advance_width, &left_side_bearing);
 
-    Glyph glyph(glyph_index, Glyph::Type::kPath,
-                Rect::MakeXYWH(0, 0, x1 - x0, y1 - y0));
+    // auto bounds =
+    //             Rect::MakeXYWH(0, 0, x1 - x0, y1 - y0);
+    Glyph glyph(glyph_index, Glyph::Type::kPath);
     run.AddGlyph(glyph, {x + (left_side_bearing * scale), y});
 
     if (i + 1 < text.size()) {
@@ -54,12 +55,12 @@ std::shared_ptr<TextFrame> MakeTextFrameSTB(
   }
 
   std::optional<Rect> result;
-  for (const auto& glyph_position : run.GetGlyphPositions()) {
-    Rect glyph_rect = Rect::MakeOriginSize(
-        glyph_position.position + glyph_position.glyph.bounds.GetOrigin(),
-        glyph_position.glyph.bounds.GetSize());
-    result = result.has_value() ? result->Union(glyph_rect) : glyph_rect;
-  }
+  // for (const auto& glyph_position : run.GetGlyphPositions()) {
+  // Rect glyph_rect = Rect::MakeOriginSize(
+  //     glyph_position.position + glyph_position.glyph.bounds.GetOrigin(),
+  //     glyph_position.glyph.bounds.GetSize());
+  // result = result.has_value() ? result->Union(glyph_rect) : glyph_rect;
+  // }
 
   std::vector<TextRun> runs = {run};
   return std::make_shared<TextFrame>(

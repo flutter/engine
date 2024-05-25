@@ -280,7 +280,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!pos.has_value()) {
       continue;
     }
-    DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph, pos.value(),
+    DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph, pos.value().first,
               has_color);
   }
   return true;
@@ -448,7 +448,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     // glyphs.
     // ---------------------------------------------------------------------------
     for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
-      last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
+      last_atlas->AddTypefaceGlyphPositionAndBounds(
+          new_glyphs[i], glyph_positions[i], Rect::MakeLTRB(0, 0, 0, 0));
     }
 
     // ---------------------------------------------------------------------------
@@ -515,7 +516,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     size_t i = 0;
     for (auto it = font_glyph_pairs.begin(); it != font_glyph_pairs.end();
          ++i, ++it) {
-      glyph_atlas->AddTypefaceGlyphPosition(*it, glyph_positions[i]);
+      glyph_atlas->AddTypefaceGlyphPositionAndBounds(
+          *it, glyph_positions[i], Rect::MakeLTRB(0, 0, 0, 0));
     }
   }
 
