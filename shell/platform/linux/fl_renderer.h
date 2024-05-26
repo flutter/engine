@@ -238,7 +238,7 @@ void fl_renderer_cleanup(FlRenderer* renderer);
  * @renderer: an #FlRenderer.
  *
  * Returns: The refresh rate of the display in Hz. If the refresh rate is
- * not available, returns 0.
+ * not available, returns -1.0.
  */
 gdouble fl_renderer_get_refresh_rate(FlRenderer* renderer);
 
