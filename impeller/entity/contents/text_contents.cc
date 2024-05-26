@@ -185,7 +185,10 @@ bool TextContents::Render(const ContentContext& renderer,
                 maybe_atlas_glyph_bounds.value().first;
             Rect glyph_bounds = maybe_atlas_glyph_bounds.value().second;
             // For each glyph, we compute two rectangles. One for the vertex
-            // positions and one for the texture coordinates (UVs).
+            // positions and one for the texture coordinates (UVs). The atlas
+            // glyph bounds are used to compute UVs in cases where the
+            // destination and source sizes may differ due to clamping the sizes
+            // of large glyphs.
             Point uv_origin =
                 (atlas_glyph_bounds.GetLeftTop() - Point(0.5, 0.5)) /
                 atlas_size;
@@ -193,7 +196,8 @@ bool TextContents::Render(const ContentContext& renderer,
                 (atlas_glyph_bounds.GetSize() + Point(1, 1)) / atlas_size;
 
             // Glyph positions are rounded to whole pixels in Y axis and half
-            // pixels in X axis.
+            // pixels in X axis. This behavior is observed in Skia and seems to
+            // give better looking results.
             constexpr Point kPositionAdjustment = Point(0.125, 0.5);
 
             Point unrounded_glyph_position =
@@ -203,7 +207,7 @@ bool TextContents::Render(const ContentContext& renderer,
                 (screen_offset + unrounded_glyph_position + kPositionAdjustment)
                     .Floor();
 
-            auto scaled_size = glyph_bounds.GetSize();
+            Size scaled_size = glyph_bounds.GetSize();
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
@@ -215,7 +219,6 @@ bool TextContents::Render(const ContentContext& renderer,
                                         scaled_bounds.GetLeftTop() +
                                         point * scaled_bounds.GetSize());
               }
-
               vtx.uv = uv_origin + (uv_size * point);
               vtx.position = position;
               vtx_contents[i++] = vtx;

@@ -35,6 +35,7 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkSize.h"
 
+#include "include/core/SkSurfaceProps.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkBlendMode.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -97,10 +98,10 @@ static size_t AppendToExistingAtlas(
       return i;
     }
     glyph_positions.push_back(Rect::MakeXYWH(
-        location_in_atlas.x(),                      //
-        location_in_atlas.y() + height_adjustment,  //
-        glyph_size.width,                           //
-        glyph_size.height                           //
+        location_in_atlas.x() + 1,                      //
+        location_in_atlas.y() + height_adjustment + 1,  //
+        glyph_size.width,                               //
+        glyph_size.height                               //
         ));
   }
 
@@ -127,10 +128,10 @@ static size_t PairsFitInAtlasOfSize(
       return i;
     }
     glyph_positions.push_back(Rect::MakeXYWH(
-        location_in_atlas.x(),                      //
-        location_in_atlas.y() + height_adjustment,  //
-        glyph_size.width,                           //
-        glyph_size.height                           //
+        location_in_atlas.x() + 1,                      //
+        location_in_atlas.y() + height_adjustment + 1,  //
+        glyph_size.width,                               //
+        glyph_size.height                               //
         ));
   }
 
@@ -184,7 +185,7 @@ static void DrawGlyph(SkCanvas* canvas,
                       const Rect& scaled_bounds,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
-  SkPoint position = SkPoint::Make(0, 0);
+  SkPoint position = SkPoint::Make(1, 1);
   SkGlyphID glyph_id = glyph.index;
 
   SkFont sk_font(
@@ -233,13 +234,22 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (size.IsEmpty()) {
       continue;
     }
+    // The uploaded bitmap is expanded by 1px of padding
+    // on each side.
+    size.width += 2;
+    size.height += 2;
 
     SkBitmap bitmap;
     bitmap.setInfo(GetImageInfo(atlas, size));
     if (!bitmap.tryAllocPixels()) {
       return false;
     }
-    auto surface = SkSurfaces::WrapPixels(bitmap.pixmap());
+    // By providing this default constructed surface properties, we ensure the
+    // correct gamma and text contrast settings for the software surface used to
+    // render glyphs. Without this, dark text on a light background may be too
+    // faint compared to Skia.
+    SkSurfaceProps props = SkSurfaceProps();
+    auto surface = SkSurfaces::WrapPixels(bitmap.pixmap(), &props);
     if (!surface) {
       return false;
     }
@@ -263,7 +273,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     // on Vulkan where we are responsible for managing image layouts.
     if (!blit_pass->AddCopy(std::move(buffer_view),  //
                             texture,                 //
-                            IRect::MakeXYWH(pos.GetLeft(), pos.GetTop(),
+                            IRect::MakeXYWH(pos.GetLeft() - 1, pos.GetTop() - 1,
                                             size.width, size.height),  //
                             /*label=*/"",                              //
                             /*slice=*/0,                               //
@@ -321,6 +331,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     sk_font.setEdging(SkFont::Edging::kAntiAlias);
     sk_font.setHinting(SkFontHinting::kSlight);
     sk_font.setEmbolden(metrics.embolden);
+    // Rather than computing the bounds at the requested point size and scaling
+    // up the bounds, we scale up the font size and request the bounds. This
+    // seems to give more accurate bounds information.
     sk_font.setSize(sk_font.getSize() * scaled_font.scale);
     sk_font.setSubpixel(true);
 
