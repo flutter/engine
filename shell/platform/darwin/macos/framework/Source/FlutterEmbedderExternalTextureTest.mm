@@ -60,6 +60,7 @@
   CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, _width, _width, _pixelFormatType,
                                         (__bridge CFDictionaryRef)options, &pxbuffer);
   NSAssert(status == kCVReturnSuccess && pxbuffer != NULL, @"Failed to create pixel buffer.");
+  FML_DCHECK(status == kCVReturnSuccess && pxbuffer != nullptr) << "Failed to create pixel buffer";
   return pxbuffer;
 }
 
