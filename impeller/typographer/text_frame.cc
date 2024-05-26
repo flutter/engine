@@ -64,13 +64,6 @@ void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
     auto& set = glyph_map[ScaledFont{font, rounded_scale, color_}];
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
-#if false
-// Glyph size error due to RoundScaledFontSize usage above.
-if (rounded_scale != scale) {
-  auto delta = std::abs(rounded_scale - scale);
-  FML_LOG(ERROR) << glyph_position.glyph.bounds.size * delta;
-}
-#endif
       set.insert(glyph_position.glyph);
     }
   }

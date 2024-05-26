@@ -13,8 +13,10 @@
 
 #include "include/core/SkPaint.h"
 #include "include/core/SkRect.h"
+#include "include/private/base/SkFixed.h"
 #include "third_party/skia/include/core/SkFont.h"         // nogncheck
 #include "third_party/skia/include/core/SkFontMetrics.h"  // nogncheck
+#include "third_party/skia/include/private/base/SkPoint_impl.h"
 #include "third_party/skia/src/core/SkStrikeSpec.h"       // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"     // nogncheck
 
@@ -77,8 +79,31 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
                                  ? Glyph::Type::kBitmap
                                  : Glyph::Type::kPath;
           has_color |= type == Glyph::Type::kBitmap;
+          Point position = Point{point->x(), point->y()} + Point(run.offset().x(), run.offset().y());
+          position.x += dx;
+          position.x *= 2.625;
+          position.x += 0.125;
+
+          FML_LOG(ERROR) << "Mapped-ish Position: " << position;
+          SubpixelPosition subpixel = SubpixelPosition::kZero;
+          SkIPoint mask = SkIPoint::Make(3, 0);
+          const SkPackedGlyphID packedID{glyphs[i], SkPoint::Make(position.x, position.y), mask};
+          Scalar delta = SkFixedToScalar(packedID.getSubXFixed());
+          if (delta < 0.25) {
+            subpixel = SubpixelPosition::kZero;
+          } else if (delta < 0.5) {
+            subpixel = SubpixelPosition::kOne;
+          } else if (delta < 0.75) {
+            subpixel = SubpixelPosition::kTwo;
+          } else {
+            subpixel = SubpixelPosition::kThree;
+          }
+          FML_LOG(ERROR) << "Subpixel: " << static_cast<int>(subpixel);
           positions.emplace_back(TextRun::GlyphPosition{
-              Glyph{glyphs[i], type}, Point{point->x(), point->y()}});
+              Glyph{glyphs[i], type, subpixel}, Point{
+                                                    point->x(),
+                                                    point->y(),
+                                                }});
         }
         TextRun text_run(ToFont(run), positions);
         runs.emplace_back(text_run);

@@ -208,6 +208,7 @@ bool TextContents::Render(const ContentContext& renderer,
                     .Floor();
 
             Size scaled_size = glyph_bounds.GetSize();
+            FML_LOG(ERROR) << "LeftTop: " << glyph_bounds.GetLeftTop();
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {

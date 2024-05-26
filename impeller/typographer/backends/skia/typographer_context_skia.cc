@@ -202,6 +202,19 @@ static void DrawGlyph(SkCanvas* canvas,
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
   glyph_paint.setBlendMode(SkBlendMode::kSrc);
+  switch (glyph.subpixel_position) {
+    case SubpixelPosition::kZero:
+      break;
+    case SubpixelPosition::kOne:
+      canvas->translate(0.25, 0);
+      break;
+    case SubpixelPosition::kTwo:
+      canvas->translate(0.5, 0);
+      break;
+    case SubpixelPosition::kThree:
+      canvas->translate(0.75, 0);
+      break;
+  }
   canvas->drawGlyphs(1u,         // count
                      &glyph_id,  // glyphs
                      &position,  // positions
@@ -306,8 +319,14 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     SkRect scaled_bounds;
     font.getBounds(&glyph.index, 1, &scaled_bounds, nullptr);
 
-    auto result = Rect::MakeLTRB(scaled_bounds.fLeft, scaled_bounds.fTop,
-                                 scaled_bounds.fRight, scaled_bounds.fBottom);
+    Scalar adjustment = 0.0;
+    if (glyph.subpixel_position != SubpixelPosition::kZero) {
+      adjustment = 1.0;
+    }
+    auto result = Rect::MakeLTRB(
+        scaled_bounds.fLeft - adjustment, scaled_bounds.fTop,
+        scaled_bounds.fRight + adjustment, scaled_bounds.fBottom);
+
     return result;
   };
 
