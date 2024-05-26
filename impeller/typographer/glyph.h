@@ -12,9 +12,9 @@ namespace impeller {
 
 enum class SubpixelPosition : uint8_t {
   kZero,
-  kOne, // 0.25
-  kTwo, // 0.5
-  kThree, // 0.75
+  kOne,    // 0.25
+  kTwo,    // 0.5
+  kThree,  // 0.75
 };
 
 //------------------------------------------------------------------------------

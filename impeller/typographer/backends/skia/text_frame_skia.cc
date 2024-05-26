@@ -17,8 +17,8 @@
 #include "third_party/skia/include/core/SkFont.h"         // nogncheck
 #include "third_party/skia/include/core/SkFontMetrics.h"  // nogncheck
 #include "third_party/skia/include/private/base/SkPoint_impl.h"
-#include "third_party/skia/src/core/SkStrikeSpec.h"       // nogncheck
-#include "third_party/skia/src/core/SkTextBlobPriv.h"     // nogncheck
+#include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
+#include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
 
@@ -79,7 +79,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
                                  ? Glyph::Type::kBitmap
                                  : Glyph::Type::kPath;
           has_color |= type == Glyph::Type::kBitmap;
-          Point position = Point{point->x(), point->y()} + Point(run.offset().x(), run.offset().y());
+          Point position = Point{point->x(), point->y()} +
+                           Point(run.offset().x(), run.offset().y());
           position.x += dx;
           position.x *= 2.625;
           position.x += 0.125;
@@ -87,7 +88,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
           FML_LOG(ERROR) << "Mapped-ish Position: " << position;
           SubpixelPosition subpixel = SubpixelPosition::kZero;
           SkIPoint mask = SkIPoint::Make(3, 0);
-          const SkPackedGlyphID packedID{glyphs[i], SkPoint::Make(position.x, position.y), mask};
+          const SkPackedGlyphID packedID{
+              glyphs[i], SkPoint::Make(position.x, position.y), mask};
           Scalar delta = SkFixedToScalar(packedID.getSubXFixed());
           if (delta < 0.25) {
             subpixel = SubpixelPosition::kZero;
