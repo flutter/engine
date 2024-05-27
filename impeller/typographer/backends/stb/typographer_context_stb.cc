@@ -389,11 +389,11 @@ static Rect ComputeGlyphSize(const ScaledFont& font,
       std::reinterpret_pointer_cast<TypefaceSTB>(font.font.GetTypeface());
   float scale = stbtt_ScaleForMappingEmToPixels(
       typeface_stb->GetFontInfo(),
-      font.font.GetMetrics().point_size * font.scale);
+      font.font.GetMetrics().point_size * TypefaceSTB::kPointsToPixels);
   int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
   stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), glyph.glyph.index, scale,
                           scale, &x0, &y0, &x1, &y1);
-  return Rect::MakeLTRB(x0, y0, x1, y1);
+  return Rect::MakeLTRB(0, 0, x1 - x0, y1 - y0);
 }
 
 std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
