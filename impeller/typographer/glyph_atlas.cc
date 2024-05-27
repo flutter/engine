@@ -98,7 +98,7 @@ size_t GlyphAtlas::GetGlyphCount() const {
 
 size_t GlyphAtlas::IterateGlyphs(
     const std::function<bool(const ScaledFont& scaled_font,
-                             const Glyph& glyph,
+                             const SubpixelGlyph& glyph,
                              const Rect& rect)>& iterator) const {
   if (!iterator) {
     return 0u;
@@ -118,7 +118,7 @@ size_t GlyphAtlas::IterateGlyphs(
 }
 
 std::optional<std::pair<Rect, Rect>> FontGlyphAtlas::FindGlyphBounds(
-    const Glyph& glyph) const {
+    const SubpixelGlyph& glyph) const {
   const auto& found = positions_.find(glyph);
   if (found == positions_.end()) {
     return std::nullopt;

@@ -181,12 +181,12 @@ static ISize ComputeNextAtlasSize(
 
 static void DrawGlyph(SkCanvas* canvas,
                       const ScaledFont& scaled_font,
-                      const Glyph& glyph,
+                      const SubpixelGlyph& glyph,
                       const Rect& scaled_bounds,
                       bool has_color) {
   const auto& metrics = scaled_font.font.GetMetrics();
   SkPoint position = SkPoint::Make(1, 1);
-  SkGlyphID glyph_id = glyph.index;
+  SkGlyphID glyph_id = glyph.glyph.index;
 
   SkFont sk_font(
       TypefaceSkia::Cast(*scaled_font.font.GetTypeface()).GetSkiaTypeface(),
@@ -202,7 +202,7 @@ static void DrawGlyph(SkCanvas* canvas,
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
   glyph_paint.setBlendMode(SkBlendMode::kSrc);
-  switch (glyph.subpixel_position) {
+  switch (glyph.subpixel) {
     case SubpixelPosition::kZero:
       break;
     case SubpixelPosition::kOne:
@@ -298,6 +298,20 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
   return blit_pass->ConvertTextureToShaderRead(texture);
 }
 
+static Rect ComputeGlyphSize(const SkFont& font, const SubpixelGlyph& glyph) {
+  SkRect scaled_bounds;
+  font.getBounds(&glyph.glyph.index, 1, &scaled_bounds, nullptr);
+
+  // Expand the bounds of glyphs at subpixel offsets by 2 in the x direction.
+  Scalar adjustment = 0.0;
+  if (glyph.subpixel != SubpixelPosition::kZero) {
+    adjustment = 1.0;
+  }
+  return Rect::MakeLTRB(scaled_bounds.fLeft - adjustment, scaled_bounds.fTop,
+                        scaled_bounds.fRight + adjustment,
+                        scaled_bounds.fBottom);
+};
+
 std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
@@ -314,21 +328,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   if (font_glyph_map.empty()) {
     return last_atlas;
   }
-
-  auto compute_size = [](const SkFont& font, const Glyph& glyph) -> Rect {
-    SkRect scaled_bounds;
-    font.getBounds(&glyph.index, 1, &scaled_bounds, nullptr);
-
-    Scalar adjustment = 0.0;
-    if (glyph.subpixel_position != SubpixelPosition::kZero) {
-      adjustment = 1.0;
-    }
-    auto result = Rect::MakeLTRB(
-        scaled_bounds.fLeft - adjustment, scaled_bounds.fTop,
-        scaled_bounds.fRight + adjustment, scaled_bounds.fBottom);
-
-    return result;
-  };
 
   // ---------------------------------------------------------------------------
   // Step 1: Determine if the atlas type and font glyph pairs are compatible
@@ -357,16 +356,16 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
     sk_font.setSubpixel(true);
 
     if (font_glyph_atlas) {
-      for (const Glyph& glyph : font_value.second) {
+      for (const SubpixelGlyph& glyph : font_value.second) {
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
           new_glyphs.emplace_back(scaled_font, glyph);
-          glyph_sizes.push_back(compute_size(sk_font, glyph));
+          glyph_sizes.push_back(ComputeGlyphSize(sk_font, glyph));
         }
       }
     } else {
-      for (const Glyph& glyph : font_value.second) {
+      for (const SubpixelGlyph& glyph : font_value.second) {
         new_glyphs.emplace_back(scaled_font, glyph);
-        glyph_sizes.push_back(compute_size(sk_font, glyph));
+        glyph_sizes.push_back(ComputeGlyphSize(sk_font, glyph));
       }
     }
   }

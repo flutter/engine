@@ -41,10 +41,6 @@ Color TextFrame::GetColor() const {
   return color_;
 }
 
-bool TextFrame::MaybeHasOverlapping() const {
-  return true;
-}
-
 // static
 Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
   // An arbitrarily chosen maximum text scale to ensure that regardless of the
@@ -55,8 +51,31 @@ Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
   return std::clamp(result, 0.0f, kMaximumTextScale);
 }
 
+// Compute subpixel position for glyphs based on X position and provided
+// max basis length (scale).
+// This logic is based on the SkPackedGlyphID logic in SkGlyph.h
+// static
+SubpixelPosition TextFrame::ComputeSubpixelPosition(
+    const TextRun::GlyphPosition& glyph_position,
+    Point offset,
+    Scalar scale) {
+  Scalar dx = ((glyph_position.position + offset).x * scale) + 0.125;
+  dx = (dx - floorf(dx));
+  if (dx < 0.25) {
+    return SubpixelPosition::kZero;
+  }
+  if (dx < 0.5) {
+    return SubpixelPosition::kOne;
+  }
+  if (dx < 0.75) {
+    return SubpixelPosition::kTwo;
+  }
+  return SubpixelPosition::kThree;
+}
+
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
-                                            Scalar scale) const {
+                                            Scalar scale,
+                                            Point offset) const {
   for (const TextRun& run : GetRuns()) {
     const Font& font = run.GetFont();
     auto rounded_scale =
@@ -64,7 +83,9 @@ void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
     auto& set = glyph_map[ScaledFont{font, rounded_scale, color_}];
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
-      set.insert(glyph_position.glyph);
+      SubpixelPosition subpixel =
+          ComputeSubpixelPosition(glyph_position, offset, scale);
+      set.emplace(glyph_position.glyph, subpixel);
     }
   }
 }

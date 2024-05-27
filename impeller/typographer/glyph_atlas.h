@@ -104,7 +104,7 @@ class GlyphAtlas {
   ///
   size_t IterateGlyphs(
       const std::function<bool(const ScaledFont& scaled_font,
-                               const Glyph& glyph,
+                               const SubpixelGlyph& glyph,
                                const Rect& rect)>& iterator) const;
 
   //----------------------------------------------------------------------------
@@ -212,11 +212,11 @@ class FontGlyphAtlas {
   ///             `std::nullopt` if the glyph is not in the atlas.
   ///
   std::optional<std::pair<Rect, Rect>> FindGlyphBounds(
-      const Glyph& glyph) const;
+      const SubpixelGlyph& glyph) const;
 
  private:
   friend class GlyphAtlas;
-  std::unordered_map<Glyph, std::pair<Rect, Rect>> positions_;
+  std::unordered_map<SubpixelGlyph, std::pair<Rect, Rect>> positions_;
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
 

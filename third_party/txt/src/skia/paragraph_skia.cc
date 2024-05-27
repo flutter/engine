@@ -93,7 +93,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
         return;
       }
       builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(
-                                  blob, dl_paints_[paint_id].getColor(), x),
+                                  blob, dl_paints_[paint_id].getColor()),
                               x, y, dl_paints_[paint_id]);
       return;
     }
@@ -117,7 +117,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     }
     if (impeller_enabled_) {
       builder_->DrawTextFrame(
-          impeller::MakeTextFrameFromTextBlobSkia(blob, paint.getColor(), x), x, y,
+          impeller::MakeTextFrameFromTextBlobSkia(blob, paint.getColor()), x, y,
           paint);
       return;
     }

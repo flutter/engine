@@ -38,7 +38,7 @@ Color TextContents::GetColor() const {
 }
 
 bool TextContents::CanInheritOpacity(const Entity& entity) const {
-  return !frame_->MaybeHasOverlapping();
+  return false;
 }
 
 void TextContents::SetInheritedOpacity(Scalar opacity) {
@@ -60,7 +60,7 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale);
+  lazy_glyph_atlas->AddTextFrame(*frame_, scale, offset_);
   scale_ = scale;
 }
 
@@ -96,7 +96,6 @@ bool TextContents::Render(const ContentContext& renderer,
   frame_info.mvp =
       Entity::GetShaderTransform(entity.GetShaderClipDepth(), pass, Matrix());
   ISize atlas_size = atlas->GetTexture()->GetSize();
-  Point offset = offset_;
   bool is_translation_scale = entity.GetTransform().IsTranslationScaleOnly();
   Matrix entity_transform = entity.GetTransform();
   Matrix basis_transform = entity_transform.Basis();
@@ -172,11 +171,15 @@ bool TextContents::Render(const ContentContext& renderer,
             continue;
           }
 
-          Point screen_offset = (entity_transform * offset);
+          Point screen_offset = (entity_transform * Point(0, 0));
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
+            // Note: uses unrounded scale for more accurate subpixel position.
+            SubpixelPosition subpixel = TextFrame::ComputeSubpixelPosition(
+                glyph_position, offset_, scale_);
             std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
-                font_atlas->FindGlyphBounds(glyph_position.glyph);
+                font_atlas->FindGlyphBounds(
+                    SubpixelGlyph{glyph_position.glyph, subpixel});
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;
@@ -208,7 +211,6 @@ bool TextContents::Render(const ContentContext& renderer,
                     .Floor();
 
             Size scaled_size = glyph_bounds.GetSize();
-            FML_LOG(ERROR) << "LeftTop: " << glyph_bounds.GetLeftTop();
             for (const Point& point : unit_points) {
               Point position;
               if (is_translation_scale) {
@@ -216,7 +218,7 @@ bool TextContents::Render(const ContentContext& renderer,
               } else {
                 Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
                 position =
-                    entity_transform * (offset + glyph_position.position +
+                    entity_transform * (Point(0, 0) + glyph_position.position +
                                         scaled_bounds.GetLeftTop() +
                                         point * scaled_bounds.GetSize());
               }
