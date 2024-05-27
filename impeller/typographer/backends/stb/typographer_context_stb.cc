@@ -383,6 +383,19 @@ static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
   return texture;
 }
 
+static Rect ComputeGlyphSize(const ScaledFont& font,
+                             const SubpixelGlyph& glyph) {
+  std::shared_ptr<TypefaceSTB> typeface_stb =
+      std::reinterpret_pointer_cast<TypefaceSTB>(font.font.GetTypeface());
+  float scale = stbtt_ScaleForMappingEmToPixels(
+      typeface_stb->GetFontInfo(),
+      font.font.GetMetrics().point_size * font.scale);
+  int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+  stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), glyph.glyph.index, scale,
+                          scale, &x0, &y0, &x1, &y1);
+  return Rect::MakeLTRB(x0, y0, x1, y1);
+}
+
 std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     Context& context,
     GlyphAtlas::Type type,
@@ -412,6 +425,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
   std::vector<FontGlyphPair> new_glyphs;
+  std::vector<Rect> new_sizes;
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
     const FontGlyphAtlas* font_glyph_atlas = last_atlas->GetFontGlyphAtlas(
@@ -420,11 +434,13 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
       for (const SubpixelGlyph& glyph : font_value.second) {
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
           new_glyphs.emplace_back(scaled_font, glyph);
+          new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
         }
       }
     } else {
       for (const SubpixelGlyph& glyph : font_value.second) {
         new_glyphs.emplace_back(scaled_font, glyph);
+        new_sizes.push_back(ComputeGlyphSize(scaled_font, glyph));
       }
     }
   }
@@ -451,7 +467,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     // ---------------------------------------------------------------------------
     for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
       last_atlas->AddTypefaceGlyphPositionAndBounds(
-          new_glyphs[i], glyph_positions[i], Rect::MakeLTRB(0, 0, 0, 0));
+          new_glyphs[i], glyph_positions[i], new_sizes[i]);
     }
 
     // ---------------------------------------------------------------------------
@@ -518,8 +534,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     size_t i = 0;
     for (auto it = font_glyph_pairs.begin(); it != font_glyph_pairs.end();
          ++i, ++it) {
-      glyph_atlas->AddTypefaceGlyphPositionAndBounds(
-          *it, glyph_positions[i], Rect::MakeLTRB(0, 0, 0, 0));
+      glyph_atlas->AddTypefaceGlyphPositionAndBounds(*it, glyph_positions[i],
+                                                     new_sizes[i]);
     }
   }
 
