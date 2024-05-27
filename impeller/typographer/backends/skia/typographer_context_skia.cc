@@ -342,7 +342,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
     auto metrics = scaled_font.font.GetMetrics();
 
-    // TODO: make font creation lazy and share with draw glyphs.
     SkFont sk_font(
         TypefaceSkia::Cast(*scaled_font.font.GetTypeface()).GetSkiaTypeface(),
         metrics.point_size, metrics.scaleX, metrics.skewX);

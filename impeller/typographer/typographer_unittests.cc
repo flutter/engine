@@ -239,7 +239,8 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
     return true;
   });
 
-  EXPECT_EQ(unique_glyphs.size() * size_count, atlas->GetGlyphCount());
+  // These numbers may be different due to subpixel positions.
+  EXPECT_LE(unique_glyphs.size() * size_count, atlas->GetGlyphCount());
   EXPECT_EQ(total_glyphs.size(), atlas->GetGlyphCount());
 
   EXPECT_TRUE(atlas->GetGlyphCount() > 0);
