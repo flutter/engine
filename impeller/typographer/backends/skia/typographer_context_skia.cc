@@ -35,7 +35,6 @@
 #include "include/core/SkImageInfo.h"
 #include "include/core/SkSize.h"
 
-#include "include/core/SkSurfaceProps.h"
 #include "third_party/skia/include/core/SkBitmap.h"
 #include "third_party/skia/include/core/SkBlendMode.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -202,19 +201,7 @@ static void DrawGlyph(SkCanvas* canvas,
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
   glyph_paint.setBlendMode(SkBlendMode::kSrc);
-  switch (glyph.subpixel) {
-    case SubpixelPosition::kZero:
-      break;
-    case SubpixelPosition::kOne:
-      canvas->translate(0.25, 0);
-      break;
-    case SubpixelPosition::kTwo:
-      canvas->translate(0.5, 0);
-      break;
-    case SubpixelPosition::kThree:
-      canvas->translate(0.75, 0);
-      break;
-  }
+  canvas->translate(glyph.subpixel.x, glyph.subpixel.y);
   canvas->drawGlyphs(1u,         // count
                      &glyph_id,  // glyphs
                      &position,  // positions
@@ -257,12 +244,8 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!bitmap.tryAllocPixels()) {
       return false;
     }
-    // By providing this default constructed surface properties, we ensure the
-    // correct gamma and text contrast settings for the software surface used to
-    // render glyphs. Without this, dark text on a light background may be too
-    // faint compared to Skia.
-    SkSurfaceProps props = SkSurfaceProps();
-    auto surface = SkSurfaces::WrapPixels(bitmap.pixmap(), &props);
+
+    auto surface = SkSurfaces::WrapPixels(bitmap.pixmap());
     if (!surface) {
       return false;
     }
@@ -304,7 +287,7 @@ static Rect ComputeGlyphSize(const SkFont& font, const SubpixelGlyph& glyph) {
 
   // Expand the bounds of glyphs at subpixel offsets by 2 in the x direction.
   Scalar adjustment = 0.0;
-  if (glyph.subpixel != SubpixelPosition::kZero) {
+  if (glyph.subpixel != Point(0, 0)) {
     adjustment = 1.0;
   }
   return Rect::MakeLTRB(scaled_bounds.fLeft - adjustment, scaled_bounds.fTop,

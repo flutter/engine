@@ -175,8 +175,8 @@ bool TextContents::Render(const ContentContext& renderer,
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
             // Note: uses unrounded scale for more accurate subpixel position.
-            SubpixelPosition subpixel = TextFrame::ComputeSubpixelPosition(
-                glyph_position, offset_, scale_);
+            Point subpixel = TextFrame::ComputeSubpixelPosition(
+                glyph_position, font.GetAxisAlignment(), offset_, scale_);
             std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
                 font_atlas->FindGlyphBounds(
                     SubpixelGlyph{glyph_position.glyph, subpixel});

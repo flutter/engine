@@ -9,6 +9,7 @@
 #include "display_list/dl_color.h"
 #include "flutter/fml/logging.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
+#include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
 
 #include "include/core/SkPaint.h"
@@ -29,7 +30,7 @@ static Color ToColor(const flutter::DlColor& color) {
   };
 }
 
-static Font ToFont(const SkTextBlobRunIterator& run) {
+static Font ToFont(const SkTextBlobRunIterator& run, AxisAlignment alignment) {
   auto& font = run.font();
   auto typeface = std::make_shared<TypefaceSkia>(font.refTypeface());
 
@@ -42,7 +43,7 @@ static Font ToFont(const SkTextBlobRunIterator& run) {
   metrics.skewX = font.getSkewX();
   metrics.scaleX = font.getScaleX();
 
-  return Font{std::move(typeface), metrics};
+  return Font{std::move(typeface), metrics, alignment};
 }
 
 static Rect ToRect(const SkRect& rect) {
@@ -61,6 +62,24 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
 
     SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
     SkBulkGlyphMetricsAndPaths paths{strikeSpec};
+    AxisAlignment alignment = AxisAlignment::kNone;
+    if (run.font().isSubpixel()) {
+      switch (
+          strikeSpec.createScalerContext()->computeAxisAlignmentForHText()) {
+        case SkAxisAlignment::kNone:
+          // Skia calls this case none, meaning alignment in both X and Y.
+          // Impeller will call it "all" since that is less confusing. "none"
+          // is reserved for no subpixel alignment.
+          alignment = AxisAlignment::kAll;
+          break;
+        case SkAxisAlignment::kX:
+          alignment = AxisAlignment::kX;
+          break;
+        case SkAxisAlignment::kY:
+          alignment = AxisAlignment::kY;
+          break;
+      }
+    }
 
     const auto glyph_count = run.glyphCount();
     const auto* glyphs = run.glyphs();
@@ -82,7 +101,7 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
                                                                  point->y(),
                                                              }});
         }
-        TextRun text_run(ToFont(run), positions);
+        TextRun text_run(ToFont(run, alignment), positions);
         runs.emplace_back(text_run);
         break;
       }

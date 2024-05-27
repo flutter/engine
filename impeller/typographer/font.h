@@ -15,6 +15,20 @@
 namespace impeller {
 
 //------------------------------------------------------------------------------
+/// @brief      Determines the axis along which there is subpixel positioning.
+///
+enum class AxisAlignment : uint8_t {
+  // No subpixel positioning.
+  kNone,
+  // Subpixel positioning in the X axis only.
+  kX,
+  // Subpixel positioning in the Y axis only.
+  kY,
+  // No specific axis, subpixel positioning in each direction.
+  kAll,
+};
+
+//------------------------------------------------------------------------------
 /// @brief      Describes a typeface along with any modifications to its
 ///             intrinsic properties.
 ///
@@ -42,7 +56,9 @@ class Font : public Comparable<Font> {
     }
   };
 
-  Font(std::shared_ptr<Typeface> typeface, Metrics metrics);
+  Font(std::shared_ptr<Typeface> typeface,
+       Metrics metrics,
+       AxisAlignment axis_alignment);
 
   ~Font();
 
@@ -63,9 +79,12 @@ class Font : public Comparable<Font> {
   // |Comparable<Font>|
   bool IsEqual(const Font& other) const override;
 
+  AxisAlignment GetAxisAlignment() const;
+
  private:
   std::shared_ptr<Typeface> typeface_;
   Metrics metrics_ = {};
+  AxisAlignment axis_alignment_;
   bool is_valid_ = false;
 };
 

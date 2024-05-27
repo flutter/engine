@@ -9,17 +9,11 @@
 #include <unordered_set>
 
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/point.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
 
 namespace impeller {
-
-enum class SubpixelPosition : uint8_t {
-  kZero,   // 0
-  kOne,    // 0.25
-  kTwo,    // 0.5
-  kThree,  // 0.75
-};
 
 //------------------------------------------------------------------------------
 /// @brief      A font and a scale.  Used as a key that represents a typeface
@@ -36,9 +30,9 @@ struct ScaledFont {
 ///
 struct SubpixelGlyph {
   Glyph glyph;
-  SubpixelPosition subpixel;
+  Point subpixel;
 
-  SubpixelGlyph(Glyph p_glyph, SubpixelPosition p_subpixel)
+  SubpixelGlyph(Glyph p_glyph, Point p_subpixel)
       : glyph(p_glyph), subpixel(p_subpixel) {}
 };
 
@@ -77,7 +71,7 @@ struct std::equal_to<impeller::ScaledFont> {
 template <>
 struct std::hash<impeller::SubpixelGlyph> {
   constexpr std::size_t operator()(const impeller::SubpixelGlyph& sg) const {
-    return fml::HashCombine(sg.glyph.index, sg.subpixel);
+    return fml::HashCombine(sg.glyph.index, sg.subpixel.x, sg.subpixel.y);
   }
 };
 

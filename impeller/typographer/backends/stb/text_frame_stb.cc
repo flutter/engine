@@ -12,7 +12,7 @@ std::shared_ptr<TextFrame> MakeTextFrameSTB(
     const std::shared_ptr<TypefaceSTB>& typeface_stb,
     Font::Metrics metrics,
     const std::string& text) {
-  TextRun run(Font(typeface_stb, metrics));
+  TextRun run(Font(typeface_stb, metrics, AxisAlignment::kNone));
 
   // Shape the text run using STB. The glyph positions could also be resolved
   // using a more advanced text shaper such as harfbuzz.

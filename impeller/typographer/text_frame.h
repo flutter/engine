@@ -31,8 +31,9 @@ class TextFrame {
                                    Scalar scale,
                                    Point offset) const;
 
-  static SubpixelPosition ComputeSubpixelPosition(
+  static Point ComputeSubpixelPosition(
       const TextRun::GlyphPosition& glyph_position,
+      AxisAlignment alignment,
       Point offset,
       Scalar scale);
 

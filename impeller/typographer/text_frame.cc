@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/typographer/text_frame.h"
+#include "impeller/typographer/font.h"
 #include "impeller/typographer/font_glyph_pair.h"
 
 namespace impeller {
@@ -51,26 +52,42 @@ Scalar TextFrame::RoundScaledFontSize(Scalar scale, Scalar point_size) {
   return std::clamp(result, 0.0f, kMaximumTextScale);
 }
 
+static constexpr Scalar ComputeFractionalPosition(Scalar value) {
+  value += 0.125;
+  value = (value - floorf(value));
+  if (value < 0.25) {
+    return 0;
+  }
+  if (value < 0.5) {
+    return 0.25;
+  }
+  if (value < 0.75) {
+    return 0.5;
+  }
+  return 0.75;
+}
+
 // Compute subpixel position for glyphs based on X position and provided
 // max basis length (scale).
 // This logic is based on the SkPackedGlyphID logic in SkGlyph.h
 // static
-SubpixelPosition TextFrame::ComputeSubpixelPosition(
+Point TextFrame::ComputeSubpixelPosition(
     const TextRun::GlyphPosition& glyph_position,
+    AxisAlignment alignment,
     Point offset,
     Scalar scale) {
-  Scalar dx = ((glyph_position.position + offset).x * scale) + 0.125;
-  dx = (dx - floorf(dx));
-  if (dx < 0.25) {
-    return SubpixelPosition::kZero;
+  Point pos = glyph_position.position + offset;
+  switch (alignment) {
+    case AxisAlignment::kNone:
+      return Point(0, 0);
+    case AxisAlignment::kX:
+      return Point(ComputeFractionalPosition(pos.x * scale), 0);
+    case AxisAlignment::kY:
+      return Point(0, ComputeFractionalPosition(pos.y * scale));
+    case AxisAlignment::kAll:
+      return Point(ComputeFractionalPosition(pos.x * scale),
+                   ComputeFractionalPosition(pos.y * scale));
   }
-  if (dx < 0.5) {
-    return SubpixelPosition::kOne;
-  }
-  if (dx < 0.75) {
-    return SubpixelPosition::kTwo;
-  }
-  return SubpixelPosition::kThree;
 }
 
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
@@ -83,8 +100,8 @@ void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
     auto& set = glyph_map[ScaledFont{font, rounded_scale, color_}];
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
-      SubpixelPosition subpixel =
-          ComputeSubpixelPosition(glyph_position, offset, scale);
+      Point subpixel = ComputeSubpixelPosition(
+          glyph_position, font.GetAxisAlignment(), offset, scale);
       set.emplace(glyph_position.glyph, subpixel);
     }
   }
