@@ -75,8 +75,9 @@ static size_t PairsFitInAtlasOfSize(
       int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
       float scale = stbtt_ScaleForMappingEmToPixels(typeface_stb->GetFontInfo(),
                                                     text_size_pixels);
-      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.glyph.index,
-                              scale, scale, &x0, &y0, &x1, &y1);
+      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(),
+                              pair.glyph.glyph.index, scale, scale, &x0, &y0,
+                              &x1, &y1);
 
       glyph_size = ISize(x1 - x0, y1 - y0);
     }
@@ -132,8 +133,9 @@ static bool CanAppendToExistingAtlas(
       float scale_y = stbtt_ScaleForMappingEmToPixels(
           typeface_stb->GetFontInfo(), text_size_pixels);
       float scale_x = scale_y;
-      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.glyph.index,
-                              scale_x, scale_y, &x0, &y0, &x1, &y1);
+      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(),
+                              pair.glyph.glyph.index, scale_x, scale_y, &x0,
+                              &y0, &x1, &y1);
 
       glyph_size = ISize(x1 - x0, y1 - y0);
     }
@@ -280,8 +282,8 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!pos.has_value()) {
       continue;
     }
-    DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph.glyph, pos.value().first,
-              has_color);
+    DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph.glyph,
+              pos.value().first, has_color);
   }
   return true;
 }
