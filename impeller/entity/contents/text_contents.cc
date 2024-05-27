@@ -230,10 +230,9 @@ bool TextContents::Render(const ContentContext& renderer,
                 position = screen_glyph_position + (point * scaled_size);
               } else {
                 Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
-                position =
-                    entity_transform * (glyph_position.position +
-                                        scaled_bounds.GetLeftTop() +
-                                        point * scaled_bounds.GetSize());
+                position = entity_transform * (glyph_position.position +
+                                               scaled_bounds.GetLeftTop() +
+                                               point * scaled_bounds.GetSize());
               }
               vtx.uv = uv_origin + (uv_size * point);
               vtx.position = position;
