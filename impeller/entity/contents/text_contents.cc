@@ -171,6 +171,24 @@ bool TextContents::Render(const ContentContext& renderer,
             continue;
           }
 
+          // Adjust glyph position based on the subpixel rounding
+          // used by the font.
+          Point subpixel_adjustment(0.5, 0.5);
+          switch (font.GetAxisAlignment()) {
+            case AxisAlignment::kNone:
+              break;
+            case AxisAlignment::kX:
+              subpixel_adjustment.x = 0.125;
+              break;
+            case AxisAlignment::kY:
+              subpixel_adjustment.y = 0.125;
+              break;
+            case AxisAlignment::kAll:
+              subpixel_adjustment.x = 0.125;
+              subpixel_adjustment.y = 0.125;
+              break;
+          }
+
           Point screen_offset = (entity_transform * Point(0, 0));
           for (const TextRun::GlyphPosition& glyph_position :
                run.GetGlyphPositions()) {
@@ -198,16 +216,11 @@ bool TextContents::Render(const ContentContext& renderer,
             Point uv_size =
                 (atlas_glyph_bounds.GetSize() + Point(1, 1)) / atlas_size;
 
-            // Glyph positions are rounded to whole pixels in Y axis and half
-            // pixels in X axis. This behavior is observed in Skia and seems to
-            // give better looking results.
-            constexpr Point kPositionAdjustment = Point(0.125, 0.5);
-
             Point unrounded_glyph_position =
                 (basis_transform * glyph_position.position) +
                 glyph_bounds.GetLeftTop();
             Point screen_glyph_position =
-                (screen_offset + unrounded_glyph_position + kPositionAdjustment)
+                (screen_offset + unrounded_glyph_position + subpixel_adjustment)
                     .Floor();
 
             Size scaled_size = glyph_bounds.GetSize();
@@ -218,7 +231,7 @@ bool TextContents::Render(const ContentContext& renderer,
               } else {
                 Rect scaled_bounds = glyph_bounds.Scale(1.0 / rounded_scale);
                 position =
-                    entity_transform * (Point(0, 0) + glyph_position.position +
+                    entity_transform * (glyph_position.position +
                                         scaled_bounds.GetLeftTop() +
                                         point * scaled_bounds.GetSize());
               }
