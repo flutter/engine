@@ -75,7 +75,7 @@ static size_t PairsFitInAtlasOfSize(
       int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
       float scale = stbtt_ScaleForMappingEmToPixels(typeface_stb->GetFontInfo(),
                                                     text_size_pixels);
-      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.index,
+      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.glyph.index,
                               scale, scale, &x0, &y0, &x1, &y1);
 
       glyph_size = ISize(x1 - x0, y1 - y0);
@@ -132,7 +132,7 @@ static bool CanAppendToExistingAtlas(
       float scale_y = stbtt_ScaleForMappingEmToPixels(
           typeface_stb->GetFontInfo(), text_size_pixels);
       float scale_x = scale_y;
-      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.index,
+      stbtt_GetGlyphBitmapBox(typeface_stb->GetFontInfo(), pair.glyph.glyph.index,
                               scale_x, scale_y, &x0, &y0, &x1, &y1);
 
       glyph_size = ISize(x1 - x0, y1 - y0);
@@ -280,7 +280,7 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
     if (!pos.has_value()) {
       continue;
     }
-    DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph, pos.value().first,
+    DrawGlyph(bitmap.get(), pair.scaled_font, pair.glyph.glyph, pos.value().first,
               has_color);
   }
   return true;
@@ -301,9 +301,9 @@ static std::shared_ptr<BitmapSTB> CreateAtlasBitmap(const GlyphAtlas& atlas,
   bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
 
   atlas.IterateGlyphs([&bitmap, has_color](const ScaledFont& scaled_font,
-                                           const Glyph& glyph,
+                                           const SubpixelGlyph& glyph,
                                            const Rect& location) -> bool {
-    DrawGlyph(bitmap.get(), scaled_font, glyph, location, has_color);
+    DrawGlyph(bitmap.get(), scaled_font, glyph.glyph, location, has_color);
     return true;
   });
 
@@ -415,13 +415,13 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
     const FontGlyphAtlas* font_glyph_atlas = last_atlas->GetFontGlyphAtlas(
         scaled_font.font, scaled_font.scale, scaled_font.color);
     if (font_glyph_atlas) {
-      for (const Glyph& glyph : font_value.second) {
+      for (const SubpixelGlyph& glyph : font_value.second) {
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
           new_glyphs.emplace_back(scaled_font, glyph);
         }
       }
     } else {
-      for (const Glyph& glyph : font_value.second) {
+      for (const SubpixelGlyph& glyph : font_value.second) {
         new_glyphs.emplace_back(scaled_font, glyph);
       }
     }
@@ -481,7 +481,7 @@ std::shared_ptr<GlyphAtlas> TypographerContextSTB::CreateGlyphAtlas(
       [](const int a, const auto& b) { return a + b.second.size(); }));
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
-    for (const Glyph& glyph : font_value.second) {
+    for (const SubpixelGlyph& glyph : font_value.second) {
       font_glyph_pairs.push_back({scaled_font, glyph});
     }
   }
