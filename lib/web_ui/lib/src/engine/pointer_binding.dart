@@ -499,6 +499,7 @@ abstract class _BaseAdapter {
   final List<_Listener> _listeners = <_Listener>[];
   DomWheelEvent? _lastWheelEvent;
   bool _lastWheelEventWasTrackpad = false;
+  bool _lastWheelEventAllowedDefault = false;
 
   DomEventTarget get _viewTarget => _view.dom.rootElement;
   DomEventTarget get _globalTarget => _view.embeddingStrategy.globalEventTarget;
@@ -706,10 +707,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         pressureMax: 1.0,
         scrollDeltaX: deltaX,
         scrollDeltaY: deltaY,
-        respond: ({bool preventPlatformDefault = true}) {
-          if (preventPlatformDefault) {
-            event.preventDefault();
-          }
+        respond: ({bool allowPlatformDefault = false}) {
+          _lastWheelEventAllowedDefault = allowPlatformDefault;
         },
       );
     }
@@ -733,9 +732,16 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    // [ui.PointerData] has a binding to the native `event` so users can choose
-    // to prevent default (or not).
+    _lastWheelEventAllowedDefault = false;
+    // [ui.PointerData] has a binding to the native `event` so the framework can
+    // allow the default behavior of the platform, when it doesn't handle the
+    // event itself.
     _callback(e, _convertWheelEventToPointerData(event));
+    // This works because the `_callback` is handled synchronously in the
+    // framework, so it's able to modify `_lastWheelEventAllowedDefault`.
+    if (!_lastWheelEventAllowedDefault) {
+      e.preventDefault();
+    }
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox

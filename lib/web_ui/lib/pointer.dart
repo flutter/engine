@@ -72,7 +72,7 @@ class PointerData {
     this.panDeltaY = 0.0,
     this.scale = 0.0,
     this.rotation = 0.0,
-    void Function({bool preventPlatformDefault})? respond,
+    void Function({bool allowPlatformDefault})? respond,
   }) : _respond = respond;
   final int viewId;
   final int embedderId;
@@ -110,11 +110,11 @@ class PointerData {
   final double panDeltaY;
   final double scale;
   final double rotation;
-  final void Function({bool preventPlatformDefault})? _respond;
+  final void Function({bool allowPlatformDefault})? _respond;
 
-  void respond({required bool preventPlatformDefault}) {
+  void respond({required bool allowPlatformDefault}) {
     if (_respond != null) {
-      _respond(preventPlatformDefault: preventPlatformDefault);
+      _respond(allowPlatformDefault: allowPlatformDefault);
     }
   }
 
