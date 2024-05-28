@@ -328,7 +328,7 @@ public class FlutterFragmentTest {
     // Setting setFrameworkHandlesBack to true means the delegate will receive
     // the back and Android won't handle it.
     fragment.setFrameworkHandlesBack(true);
-    activity.onBackPressed();
+    activity.getOnBackPressedDispatcher().onBackPressed();
     verify(mockDelegate, times(1)).onBackPressed();
   }
 
