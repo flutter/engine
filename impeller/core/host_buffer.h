@@ -84,6 +84,7 @@ class HostBuffer {
   ///             host buffer.
   ///
   /// @param[in]  buffer        The buffer data.
+  /// @param[in]  alignment     Minimum alignment of the data being emplaced.
   ///
   /// @tparam     BufferType    The type of the buffer data.
   ///
