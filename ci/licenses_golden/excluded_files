@@ -147,6 +147,7 @@
 ../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
+../../../flutter/impeller/entity/contents/filters/matrix_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
 ../../../flutter/impeller/entity/contents/test
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
@@ -201,10 +202,9 @@
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/toolkit/android/README.md
 ../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
-../../../flutter/impeller/tools/build_metal_library.py
-../../../flutter/impeller/tools/check_licenses.py
 ../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
+../../../flutter/impeller/tools/metal_library.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
 ../../../flutter/lib/gpu/analysis_options.yaml
@@ -271,7 +271,6 @@
 ../../../flutter/shell/common/variable_refresh_rate_display_unittests.cc
 ../../../flutter/shell/common/vsync_waiter_unittests.cc
 ../../../flutter/shell/gpu/gpu_surface_metal_impeller_unittests.mm
-../../../flutter/shell/platform/.clang-tidy
 ../../../flutter/shell/platform/android/.gitignore
 ../../../flutter/shell/platform/android/README.md
 ../../../flutter/shell/platform/android/android_context_gl_impeller_unittests.cc
@@ -367,6 +366,7 @@
 ../../../flutter/shell/platform/glfw/client_wrapper/flutter_window_unittests.cc
 ../../../flutter/shell/platform/glfw/client_wrapper/plugin_registrar_glfw_unittests.cc
 ../../../flutter/shell/platform/glfw/client_wrapper/testing
+../../../flutter/shell/platform/linux/.clang-tidy
 ../../../flutter/shell/platform/linux/testing
 ../../../flutter/shell/platform/windows/README.md
 ../../../flutter/shell/platform/windows/accessibility_bridge_windows_unittests.cc
