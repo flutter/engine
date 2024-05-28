@@ -91,10 +91,11 @@ class HostBuffer {
   ///
   template <class BufferType,
             class = std::enable_if_t<std::is_standard_layout_v<BufferType>>>
-  [[nodiscard]] BufferView Emplace(const BufferType& buffer) {
-    return Emplace(reinterpret_cast<const void*>(&buffer),  // buffer
-                   sizeof(BufferType),                      // size
-                   alignof(BufferType)                      // alignment
+  [[nodiscard]] BufferView Emplace(const BufferType& buffer,
+                                   size_t alignment = 0) {
+    return Emplace(reinterpret_cast<const void*>(&buffer),   // buffer
+                   sizeof(BufferType),                       // size
+                   std::max(alignment, alignof(BufferType))  // alignment
     );
   }
 
