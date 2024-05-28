@@ -643,8 +643,8 @@ TEST_F(DisplayListTest, SingleOpSizes) {
       auto& invocation = group.variants[i];
       sk_sp<DisplayList> dl = Build(invocation);
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
-      ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
-      ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
+      EXPECT_EQ(dl->op_count(false), invocation.op_count()) << desc;
+      EXPECT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
       EXPECT_EQ(dl->total_depth(), invocation.depth_accumulated()) << desc;
     }
   }
@@ -1656,7 +1656,7 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   // This is the more practical result. The bounds are "almost" 0,0,100x100
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
-  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 400u);
+  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 408u);
   EXPECT_EQ(display_list->total_depth(), 3u);
 }
 
@@ -3928,6 +3928,7 @@ class DepthExpector : public virtual DlOpReceiver,
   void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions& options,
                  uint32_t total_content_depth,
+                 DlBlendMode max_content_mode,
                  const DlImageFilter* backdrop) override {
     ASSERT_LT(index_, depth_expectations_.size());
     EXPECT_EQ(depth_expectations_[index_], total_content_depth)

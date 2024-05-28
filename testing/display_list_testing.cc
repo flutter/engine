@@ -116,9 +116,11 @@ std::ostream& operator<<(std::ostream& os, const DlBlendMode& mode) {
 
 std::ostream& operator<<(std::ostream& os, const SaveLayerOptions& options) {
   return os << "SaveLayerOptions("
+            << "renders_with_attributes: " << options.renders_with_attributes()
+            << ", "
             << "can_distribute_opacity: " << options.can_distribute_opacity()
             << ", "
-            << "renders_with_attributes: " << options.renders_with_attributes()
+            << "contains_backdrop: " << options.contains_backdrop_filter()
             << ")";
 }
 

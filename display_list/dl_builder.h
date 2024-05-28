@@ -564,6 +564,12 @@ class DisplayListBuilder final : public virtual DlCanvas,
     // Simply transfers the local bounds to the parent
     void TransferBoundsToParent(const SaveInfo& parent);
 
+    void update_blend_mode(DlBlendMode mode) {
+      if (max_blend_mode < mode) {
+        max_blend_mode = mode;
+      }
+    }
+
     const bool is_root_layer;
     const bool is_save_layer;
 
@@ -572,6 +578,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
     bool opacity_incompatible_op_detected = false;
     bool is_unbounded = false;
     bool affects_transparent_layer = false;
+    bool contains_backdrop_filter = false;
+
+    DlBlendMode max_blend_mode = DlBlendMode::kClear;
 
     // The offset into the buffer where the associated save op is recorded
     // (which is not necessarily the same as when the Save() method is called)
@@ -617,6 +626,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     // when it is restored into the parent layer.
     const std::shared_ptr<const DlImageFilter> filter;
   };
+  static_assert(sizeof(SaveInfo) == 248);
 
   const DlRect original_cull_rect_;
   std::vector<SaveInfo> save_stack_;
@@ -755,7 +765,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   OpResult PaintResult(const DlPaint& paint,
                        DisplayListAttributeFlags flags = kDrawPaintFlags);
 
-  void UpdateLayerResult(OpResult result) {
+  void UpdateLayerResult(OpResult result, DlBlendMode mode) {
     switch (result) {
       case OpResult::kNoEffect:
       case OpResult::kPreservesTransparency:
@@ -764,6 +774,11 @@ class DisplayListBuilder final : public virtual DlCanvas,
         current_info().affects_transparent_layer = true;
         break;
     }
+    current_info().update_blend_mode(mode);
+  }
+  void UpdateLayerResult(OpResult result, bool uses_attributes = true) {
+    UpdateLayerResult(result, uses_attributes ? current_.getBlendMode()
+                                              : DlBlendMode::kSrcOver);
   }
 
   // kAnyColor is a non-opaque and non-transparent color that will not
