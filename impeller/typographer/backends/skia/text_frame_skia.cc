@@ -11,15 +11,34 @@
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
-
 #include "include/core/SkPaint.h"
 #include "include/core/SkRect.h"
+#include "src/core/SkGlyph.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
 #include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
+
+/// @brief Convert a Skia axis alignment into an Impeller alignment.
+///
+///        This does not include a case for AxisAlignment::kNone, that should
+///        be used if SkFont::isSubpixel is false.
+static AxisAlignment ToAxisAligment(SkAxisAlignment aligment) {
+  switch (aligment) {
+    case SkAxisAlignment::kNone:
+      // Skia calls this case none, meaning alignment in both X and Y.
+      // Impeller will call it "all" since that is less confusing. "none"
+      // is reserved for no subpixel alignment.
+      return AxisAlignment::kAll;
+    case SkAxisAlignment::kX:
+      return AxisAlignment::kX;
+    case SkAxisAlignment::kY:
+      return AxisAlignment::kY;
+  }
+  FML_UNREACHABLE();
+}
 
 static Color ToColor(const flutter::DlColor& color) {
   return {
@@ -59,26 +78,12 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
     // TODO(jonahwilliams): ask Skia for a public API to look this up.
     // https://github.com/flutter/flutter/issues/112005
-
     SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
     SkBulkGlyphMetricsAndPaths paths{strikeSpec};
     AxisAlignment alignment = AxisAlignment::kNone;
     if (run.font().isSubpixel()) {
-      switch (
-          strikeSpec.createScalerContext()->computeAxisAlignmentForHText()) {
-        case SkAxisAlignment::kNone:
-          // Skia calls this case none, meaning alignment in both X and Y.
-          // Impeller will call it "all" since that is less confusing. "none"
-          // is reserved for no subpixel alignment.
-          alignment = AxisAlignment::kAll;
-          break;
-        case SkAxisAlignment::kX:
-          alignment = AxisAlignment::kX;
-          break;
-        case SkAxisAlignment::kY:
-          alignment = AxisAlignment::kY;
-          break;
-      }
+      alignment = ToAxisAligment(
+          strikeSpec.createScalerContext()->computeAxisAlignmentForHText());
     }
 
     const auto glyph_count = run.glyphCount();

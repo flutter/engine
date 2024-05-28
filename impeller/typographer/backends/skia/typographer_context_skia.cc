@@ -96,6 +96,7 @@ static size_t AppendToExistingAtlas(
                               )) {
       return i;
     }
+    // Position the glyph in the center of the 1px padding.
     glyph_positions.push_back(Rect::MakeXYWH(
         location_in_atlas.x() + 1,                      //
         location_in_atlas.y() + height_adjustment + 1,  //
@@ -201,7 +202,7 @@ static void DrawGlyph(SkCanvas* canvas,
   SkPaint glyph_paint;
   glyph_paint.setColor(glyph_color);
   glyph_paint.setBlendMode(SkBlendMode::kSrc);
-  canvas->translate(glyph.subpixel.x, glyph.subpixel.y);
+  canvas->translate(glyph.subpixel_offset.x, glyph.subpixel_offset.y);
   canvas->drawGlyphs(1u,         // count
                      &glyph_id,  // glyphs
                      &position,  // positions
@@ -287,7 +288,7 @@ static Rect ComputeGlyphSize(const SkFont& font, const SubpixelGlyph& glyph) {
 
   // Expand the bounds of glyphs at subpixel offsets by 2 in the x direction.
   Scalar adjustment = 0.0;
-  if (glyph.subpixel != Point(0, 0)) {
+  if (glyph.subpixel_offset != Point(0, 0)) {
     adjustment = 1.0;
   }
   return Rect::MakeLTRB(scaled_bounds.fLeft - adjustment, scaled_bounds.fTop,
@@ -314,7 +315,8 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   // ---------------------------------------------------------------------------
   // Step 1: Determine if the atlas type and font glyph pairs are compatible
-  //         with the current atlas and reuse if possible. Compute glyph sizes
+  //         with the current atlas and reuse if possible. For each new font and
+  //         glyph pair, compute the glyph size at scale.
   // ---------------------------------------------------------------------------
   std::vector<Rect> glyph_sizes;
   std::vector<FontGlyphPair> new_glyphs;

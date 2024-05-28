@@ -38,6 +38,12 @@ Color TextContents::GetColor() const {
 }
 
 bool TextContents::CanInheritOpacity(const Entity& entity) const {
+  // Computing whether or not opacity can be inherited requires determining if
+  // any glyphs can overlap exactly. While this was previously implemented
+  // via TextFrame::MaybeHasOverlapping, this code relied on scaling up text
+  // bounds for a size specified at 1.0 DPR, which was not accurate at
+  // higher or lower DPRs. Rather than re-implement the checks to compute exact
+  // glyph bounds, for now this optimization has been disabled for Text.
   return false;
 }
 

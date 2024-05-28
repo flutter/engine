@@ -30,10 +30,10 @@ struct ScaledFont {
 ///
 struct SubpixelGlyph {
   Glyph glyph;
-  Point subpixel;
+  Point subpixel_offset;
 
-  SubpixelGlyph(Glyph p_glyph, Point p_subpixel)
-      : glyph(p_glyph), subpixel(p_subpixel) {}
+  SubpixelGlyph(Glyph p_glyph, Point p_subpixel_offset)
+      : glyph(p_glyph), subpixel_offset(p_subpixel_offset) {}
 };
 
 using FontGlyphMap =
@@ -71,7 +71,8 @@ struct std::equal_to<impeller::ScaledFont> {
 template <>
 struct std::hash<impeller::SubpixelGlyph> {
   constexpr std::size_t operator()(const impeller::SubpixelGlyph& sg) const {
-    return fml::HashCombine(sg.glyph.index, sg.subpixel.x, sg.subpixel.y);
+    return fml::HashCombine(sg.glyph.index, sg.subpixel_offset.x,
+                            sg.subpixel_offset.y);
   }
 };
 
@@ -80,7 +81,8 @@ struct std::equal_to<impeller::SubpixelGlyph> {
   constexpr bool operator()(const impeller::SubpixelGlyph& lhs,
                             const impeller::SubpixelGlyph& rhs) const {
     return lhs.glyph.index == rhs.glyph.index &&
-           lhs.glyph.type == rhs.glyph.type && lhs.subpixel == rhs.subpixel;
+           lhs.glyph.type == rhs.glyph.type &&
+           lhs.subpixel_offset == rhs.subpixel_offset;
   }
 };
 
