@@ -11,11 +11,10 @@
 #include "impeller/typographer/backends/skia/typeface_skia.h"
 #include "impeller/typographer/font.h"
 #include "impeller/typographer/glyph.h"
-#include "include/core/SkPaint.h"
-#include "include/core/SkRect.h"
-#include "src/core/SkGlyph.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
+#include "third_party/skia/include/core/SkPaint.h"
+#include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
