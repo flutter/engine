@@ -39,11 +39,11 @@ void Surface::dispose() {
 }
 
 // Main thread only
-uint32_t Surface::renderPictures(SkPicture** pictures, int count) {
+uint32_t Surface::renderPictures(Picture** pictures, int count) {
   assert(emscripten_is_main_browser_thread());
   uint32_t callbackId = ++_currentCallbackId;
-  std::unique_ptr<sk_sp<SkPicture>[]> picturePointers =
-      std::make_unique<sk_sp<SkPicture>[]>(count);
+  std::unique_ptr<sk_sp<Picture>[]> picturePointers =
+      std::make_unique<sk_sp<Picture>[]>(count);
   for (int i = 0; i < count; i++) {
     picturePointers[i] = sk_ref_sp(pictures[i]);
   }
@@ -56,7 +56,7 @@ uint32_t Surface::renderPictures(SkPicture** pictures, int count) {
 }
 
 // Main thread only
-uint32_t Surface::rasterizeImage(SkImage* image, ImageByteFormat format) {
+uint32_t Surface::rasterizeImage(Image* image, ImageByteFormat format) {
   assert(emscripten_is_main_browser_thread());
   uint32_t callbackId = ++_currentCallbackId;
   image->ref();
@@ -140,11 +140,11 @@ void Surface::_recreateSurface() {
                                                _sampleCount, _stencil, _fbInfo);
   _surface = SkSurfaces::WrapBackendRenderTarget(
       _grContext.get(), target, kBottomLeft_GrSurfaceOrigin,
-      kRGBA_8888_SkColorType, SkColorSpace::MakeSRGB(), nullptr);
+      kRGBA_8888_SkColorType, ColorSpace::MakeSRGB(), nullptr);
 }
 
 // Worker thread only
-void Surface::renderPicturesOnWorker(sk_sp<SkPicture>* pictures,
+void Surface::renderPicturesOnWorker(sk_sp<Picture>* pictures,
                                      int pictureCount,
                                      uint32_t callbackId,
                                      double rasterStart) {
@@ -152,17 +152,13 @@ void Surface::renderPicturesOnWorker(sk_sp<SkPicture>* pictures,
   // passed in.
   SkwasmObject imagePromiseArray = __builtin_wasm_ref_null_extern();
   for (int i = 0; i < pictureCount; i++) {
-    sk_sp<SkPicture> picture = pictures[i];
-    SkRect pictureRect = picture->cullRect();
-    SkIRect roundedOutRect;
+    sk_sp<Picture> picture = pictures[i];
+    Rect pictureRect = picture->cullRect();
+    IRect roundedOutRect;
     pictureRect.roundOut(&roundedOutRect);
     _resizeCanvasToFit(roundedOutRect.width(), roundedOutRect.height());
-    SkMatrix matrix =
-        SkMatrix::Translate(-roundedOutRect.fLeft, -roundedOutRect.fTop);
     makeCurrent(_glContext);
-    auto canvas = _surface->getCanvas();
-    canvas->drawColor(SK_ColorTRANSPARENT, SkBlendMode::kSrc);
-    canvas->drawPicture(picture, &matrix, nullptr);
+    drawPictureToSurface(picture.get(), _surface.get(), -roundedOutRect.fLeft, -roundedOutRect.fTop);
     _grContext->flush(_surface.get());
     imagePromiseArray =
         skwasm_captureImageBitmap(_glContext, roundedOutRect.width(),
@@ -171,7 +167,7 @@ void Surface::renderPicturesOnWorker(sk_sp<SkPicture>* pictures,
   skwasm_resolveAndPostImages(this, imagePromiseArray, rasterStart, callbackId);
 }
 
-void Surface::_rasterizeImage(SkImage* image,
+void Surface::_rasterizeImage(Image* image,
                               ImageByteFormat format,
                               uint32_t callbackId) {
   // We handle PNG encoding with browser APIs so that we can omit libpng from
@@ -181,9 +177,9 @@ void Surface::_rasterizeImage(SkImage* image,
   SkAlphaType alphaType = format == ImageByteFormat::rawStraightRgba
                               ? SkAlphaType::kUnpremul_SkAlphaType
                               : SkAlphaType::kPremul_SkAlphaType;
-  SkImageInfo info = SkImageInfo::Make(image->width(), image->height(),
-                                       SkColorType::kRGBA_8888_SkColorType,
-                                       alphaType, SkColorSpace::MakeSRGB());
+  ImageInfo info = ImageInfo::Make(image->width(), image->height(),
+                                       ColorType::kRGBA_8888_SkColorType,
+                                       alphaType, ColorSpace::MakeSRGB());
   size_t bytesPerRow = 4 * image->width();
   size_t byteSize = info.computeByteSize(bytesPerRow);
   data = SkData::MakeUninitialized(byteSize);
@@ -219,7 +215,7 @@ void Surface::fOnRasterizeComplete(Surface* surface,
 }
 
 void Surface::fRasterizeImage(Surface* surface,
-                              SkImage* image,
+                              Image* image,
                               ImageByteFormat format,
                               uint32_t callbackId) {
   surface->_rasterizeImage(image, format, callbackId);
@@ -245,25 +241,25 @@ SKWASM_EXPORT void surface_destroy(Surface* surface) {
 }
 
 SKWASM_EXPORT uint32_t surface_renderPictures(Surface* surface,
-                                              SkPicture** pictures,
+                                              Picture** pictures,
                                               int count) {
   return surface->renderPictures(pictures, count);
 }
 
 SKWASM_EXPORT void surface_renderPicturesOnWorker(Surface* surface,
-                                                  sk_sp<SkPicture>* pictures,
+                                                  sk_sp<Picture>* pictures,
                                                   int pictureCount,
                                                   uint32_t callbackId,
                                                   double rasterStart) {
   // This will release the pictures when they leave scope.
-  std::unique_ptr<sk_sp<SkPicture>[]> picturesPointer =
-      std::unique_ptr<sk_sp<SkPicture>[]>(pictures);
+  std::unique_ptr<sk_sp<Picture>[]> picturesPointer =
+      std::unique_ptr<sk_sp<Picture>[]>(pictures);
   surface->renderPicturesOnWorker(pictures, pictureCount, callbackId,
                                   rasterStart);
 }
 
 SKWASM_EXPORT uint32_t surface_rasterizeImage(Surface* surface,
-                                              SkImage* image,
+                                              Image* image,
                                               ImageByteFormat format) {
   return surface->rasterizeImage(image, format);
 }

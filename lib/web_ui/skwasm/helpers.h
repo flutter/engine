@@ -14,11 +14,11 @@ inline SkMatrix createMatrix(const Scalar* f) {
                            f[8]);
 }
 
-inline SkRRect createRRect(const Scalar* f) {
-  const SkRect* rect = reinterpret_cast<const SkRect*>(f);
-  const SkVector* radiiValues = reinterpret_cast<const SkVector*>(f + 4);
+inline Skwasm::RRect createRRect(const Scalar* f) {
+  const Skwasm::Rect* rect = reinterpret_cast<const Rect*>(f);
+  const Vector* radiiValues = reinterpret_cast<const Vector*>(f + 4);
 
-  SkRRect rr;
+  Skwasm::RRect rr;
   rr.setRectRadii(*rect, radiiValues);
   return rr;
 }
@@ -31,29 +31,29 @@ enum class FilterQuality {
   high,
 };
 
-inline SkFilterMode filterModeForQuality(FilterQuality quality) {
+inline FilterMode filterModeForQuality(FilterQuality quality) {
   switch (quality) {
     case FilterQuality::none:
     case FilterQuality::low:
-      return SkFilterMode::kNearest;
+      return FilterMode::kNearest;
     case FilterQuality::medium:
     case FilterQuality::high:
-      return SkFilterMode::kLinear;
+      return FilterMode::kLinear;
   }
 }
 
-inline SkSamplingOptions samplingOptionsForQuality(FilterQuality quality) {
+inline SamplingOptions samplingOptionsForQuality(FilterQuality quality) {
   switch (quality) {
     case FilterQuality::none:
-      return SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
+      return SamplingOptions(FilterMode::kNearest, MipmapMode::kNone);
     case FilterQuality::low:
-      return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
+      return SamplingOptions(FilterMode::kLinear, MipmapMode::kNone);
     case FilterQuality::medium:
-      return SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kLinear);
+      return SamplingOptions(FilterMode::kLinear, MipmapMode::kLinear);
     case FilterQuality::high:
       // Cubic equation coefficients recommended by Mitchell & Netravali
       // in their paper on cubic interpolation.
-      return SkSamplingOptions(SkCubicResampler::Mitchell());
+      return SamplingOptions(SkCubicResampler::Mitchell());
   }
 }
 }  // namespace Skwasm

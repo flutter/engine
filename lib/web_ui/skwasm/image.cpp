@@ -12,7 +12,7 @@
 #include <GLES2/gl2ext.h>
 #include <emscripten/html5_webgl.h>
 
-using namespace SkImages;
+using namespace Skwasm;
 
 namespace {
 
@@ -22,14 +22,14 @@ enum class PixelFormat {
   rgbaFloat32,
 };
 
-SkColorType colorTypeForPixelFormat(PixelFormat format) {
+ColorType colorTypeForPixelFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::rgba8888:
-      return SkColorType::kRGBA_8888_SkColorType;
+      return ColorType::kRGBA_8888_SkColorType;
     case PixelFormat::bgra8888:
-      return SkColorType::kBGRA_8888_SkColorType;
+      return ColorType::kBGRA_8888_SkColorType;
     case PixelFormat::rgbaFloat32:
-      return SkColorType::kRGBA_F32_SkColorType;
+      return ColorType::kRGBA_F32_SkColorType;
   }
 }
 
@@ -68,7 +68,7 @@ class ExternalWebGLTexture : public GrExternalTexture {
 
 class TextureSourceImageGenerator : public GrExternalTextureGenerator {
  public:
-  TextureSourceImageGenerator(SkImageInfo ii,
+  TextureSourceImageGenerator(ImageInfo ii,
                               SkwasmObject textureSource,
                               Skwasm::Surface* surface)
       : GrExternalTextureGenerator(ii),
@@ -99,55 +99,55 @@ class TextureSourceImageGenerator : public GrExternalTextureGenerator {
   std::unique_ptr<Skwasm::TextureSourceWrapper> _textureSourceWrapper;
 };
 
-SKWASM_EXPORT SkImage* image_createFromPicture(SkPicture* picture,
+SKWASM_EXPORT Image* image_createFromPicture(Picture* picture,
                                                int32_t width,
                                                int32_t height) {
-  return DeferredFromPicture(sk_ref_sp<SkPicture>(picture), {width, height},
-                             nullptr, nullptr, BitDepth::kU8,
-                             SkColorSpace::MakeSRGB())
+  return Images::DeferredFromPicture(sk_ref_sp<Picture>(picture), {width, height},
+                             nullptr, nullptr, Images::BitDepth::kU8,
+                             ColorSpace::MakeSRGB())
       .release();
 }
 
-SKWASM_EXPORT SkImage* image_createFromPixels(SkData* data,
+SKWASM_EXPORT Image* image_createFromPixels(SkData* data,
                                               int width,
                                               int height,
                                               PixelFormat pixelFormat,
                                               size_t rowByteCount) {
-  return SkImages::RasterFromData(
-             SkImageInfo::Make(width, height,
+  return Images::RasterFromData(
+             ImageInfo::Make(width, height,
                                colorTypeForPixelFormat(pixelFormat),
                                alphaTypeForPixelFormat(pixelFormat),
-                               SkColorSpace::MakeSRGB()),
+                               ColorSpace::MakeSRGB()),
              sk_ref_sp(data), rowByteCount)
       .release();
 }
 
-SKWASM_EXPORT SkImage* image_createFromTextureSource(SkwasmObject textureSource,
+SKWASM_EXPORT Image* image_createFromTextureSource(SkwasmObject textureSource,
                                                      int width,
                                                      int height,
                                                      Skwasm::Surface* surface) {
-  return SkImages::DeferredFromTextureGenerator(
+  return Images::DeferredFromTextureGenerator(
              std::unique_ptr<TextureSourceImageGenerator>(
                  new TextureSourceImageGenerator(
-                     SkImageInfo::Make(width, height,
-                                       SkColorType::kRGBA_8888_SkColorType,
+                     ImageInfo::Make(width, height,
+                                       ColorType::kRGBA_8888_SkColorType,
                                        SkAlphaType::kPremul_SkAlphaType),
                      textureSource, surface)))
       .release();
 }
 
-SKWASM_EXPORT void image_ref(SkImage* image) {
+SKWASM_EXPORT void image_ref(Image* image) {
   image->ref();
 }
 
-SKWASM_EXPORT void image_dispose(SkImage* image) {
+SKWASM_EXPORT void image_dispose(Image* image) {
   image->unref();
 }
 
-SKWASM_EXPORT int image_getWidth(SkImage* image) {
+SKWASM_EXPORT int image_getWidth(Image* image) {
   return image->width();
 }
 
-SKWASM_EXPORT int image_getHeight(SkImage* image) {
+SKWASM_EXPORT int image_getHeight(Image* image) {
   return image->height();
 }

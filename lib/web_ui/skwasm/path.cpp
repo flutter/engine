@@ -8,43 +8,43 @@
 
 using namespace Skwasm;
 
-SKWASM_EXPORT SkPath* path_create() {
-  return new SkPath();
+SKWASM_EXPORT Path* path_create() {
+  return new Path();
 }
 
-SKWASM_EXPORT void path_dispose(SkPath* path) {
+SKWASM_EXPORT void path_dispose(Path* path) {
   delete path;
 }
 
-SKWASM_EXPORT SkPath* path_copy(SkPath* path) {
-  return new SkPath(*path);
+SKWASM_EXPORT Path* path_copy(Path* path) {
+  return new Path(*path);
 }
 
-SKWASM_EXPORT void path_setFillType(SkPath* path, SkPathFillType fillType) {
+SKWASM_EXPORT void path_setFillType(Path* path, PathFillType fillType) {
   path->setFillType(fillType);
 }
 
-SKWASM_EXPORT SkPathFillType path_getFillType(SkPath* path) {
+SKWASM_EXPORT PathFillType path_getFillType(Path* path) {
   return path->getFillType();
 }
 
-SKWASM_EXPORT void path_moveTo(SkPath* path, Scalar x, Scalar y) {
+SKWASM_EXPORT void path_moveTo(Path* path, Scalar x, Scalar y) {
   path->moveTo(x, y);
 }
 
-SKWASM_EXPORT void path_relativeMoveTo(SkPath* path, Scalar x, Scalar y) {
+SKWASM_EXPORT void path_relativeMoveTo(Path* path, Scalar x, Scalar y) {
   path->rMoveTo(x, y);
 }
 
-SKWASM_EXPORT void path_lineTo(SkPath* path, Scalar x, Scalar y) {
+SKWASM_EXPORT void path_lineTo(Path* path, Scalar x, Scalar y) {
   path->lineTo(x, y);
 }
 
-SKWASM_EXPORT void path_relativeLineTo(SkPath* path, Scalar x, Scalar y) {
+SKWASM_EXPORT void path_relativeLineTo(Path* path, Scalar x, Scalar y) {
   path->rLineTo(x, y);
 }
 
-SKWASM_EXPORT void path_quadraticBezierTo(SkPath* path,
+SKWASM_EXPORT void path_quadraticBezierTo(Path* path,
                                           Scalar x1,
                                           Scalar y1,
                                           Scalar x2,
@@ -52,7 +52,7 @@ SKWASM_EXPORT void path_quadraticBezierTo(SkPath* path,
   path->quadTo(x1, y1, x2, y2);
 }
 
-SKWASM_EXPORT void path_relativeQuadraticBezierTo(SkPath* path,
+SKWASM_EXPORT void path_relativeQuadraticBezierTo(Path* path,
                                                   Scalar x1,
                                                   Scalar y1,
                                                   Scalar x2,
@@ -60,7 +60,7 @@ SKWASM_EXPORT void path_relativeQuadraticBezierTo(SkPath* path,
   path->rQuadTo(x1, y1, x2, y2);
 }
 
-SKWASM_EXPORT void path_cubicTo(SkPath* path,
+SKWASM_EXPORT void path_cubicTo(Path* path,
                                 Scalar x1,
                                 Scalar y1,
                                 Scalar x2,
@@ -70,7 +70,7 @@ SKWASM_EXPORT void path_cubicTo(SkPath* path,
   path->cubicTo(x1, y1, x2, y2, x3, y3);
 }
 
-SKWASM_EXPORT void path_relativeCubicTo(SkPath* path,
+SKWASM_EXPORT void path_relativeCubicTo(Path* path,
                                         Scalar x1,
                                         Scalar y1,
                                         Scalar x2,
@@ -80,7 +80,7 @@ SKWASM_EXPORT void path_relativeCubicTo(SkPath* path,
   path->rCubicTo(x1, y1, x2, y2, x3, y3);
 }
 
-SKWASM_EXPORT void path_conicTo(SkPath* path,
+SKWASM_EXPORT void path_conicTo(Path* path,
                                 Scalar x1,
                                 Scalar y1,
                                 Scalar x2,
@@ -89,7 +89,7 @@ SKWASM_EXPORT void path_conicTo(SkPath* path,
   path->conicTo(x1, y1, x2, y2, w);
 }
 
-SKWASM_EXPORT void path_relativeConicTo(SkPath* path,
+SKWASM_EXPORT void path_relativeConicTo(Path* path,
                                         Scalar x1,
                                         Scalar y1,
                                         Scalar x2,
@@ -98,93 +98,93 @@ SKWASM_EXPORT void path_relativeConicTo(SkPath* path,
   path->rConicTo(x1, y1, x2, y2, w);
 }
 
-SKWASM_EXPORT void path_arcToOval(SkPath* path,
-                                  const SkRect* rect,
+SKWASM_EXPORT void path_arcToOval(Path* path,
+                                  const Rect* rect,
                                   Scalar startAngle,
                                   Scalar sweepAngle,
                                   bool forceMoveTo) {
   path->arcTo(*rect, startAngle, sweepAngle, forceMoveTo);
 }
 
-SKWASM_EXPORT void path_arcToRotated(SkPath* path,
+SKWASM_EXPORT void path_arcToRotated(Path* path,
                                      Scalar rx,
                                      Scalar ry,
                                      Scalar xAxisRotate,
-                                     SkPath::ArcSize arcSize,
-                                     SkPathDirection pathDirection,
+                                     Path::ArcSize arcSize,
+                                     PathDirection pathDirection,
                                      Scalar x,
                                      Scalar y) {
   path->arcTo(rx, ry, xAxisRotate, arcSize, pathDirection, x, y);
 }
 
-SKWASM_EXPORT void path_relativeArcToRotated(SkPath* path,
+SKWASM_EXPORT void path_relativeArcToRotated(Path* path,
                                              Scalar rx,
                                              Scalar ry,
                                              Scalar xAxisRotate,
-                                             SkPath::ArcSize arcSize,
-                                             SkPathDirection pathDirection,
+                                             Path::ArcSize arcSize,
+                                             PathDirection pathDirection,
                                              Scalar x,
                                              Scalar y) {
   path->rArcTo(rx, ry, xAxisRotate, arcSize, pathDirection, x, y);
 }
 
-SKWASM_EXPORT void path_addRect(SkPath* path, const SkRect* rect) {
+SKWASM_EXPORT void path_addRect(Path* path, const Rect* rect) {
   path->addRect(*rect);
 }
 
-SKWASM_EXPORT void path_addOval(SkPath* path, const SkRect* oval) {
-  path->addOval(*oval, SkPathDirection::kCW, 1);
+SKWASM_EXPORT void path_addOval(Path* path, const Rect* oval) {
+  path->addOval(*oval, PathDirection::kCW, 1);
 }
 
-SKWASM_EXPORT void path_addArc(SkPath* path,
-                               const SkRect* oval,
+SKWASM_EXPORT void path_addArc(Path* path,
+                               const Rect* oval,
                                Scalar startAngle,
                                Scalar sweepAngle) {
   path->addArc(*oval, startAngle, sweepAngle);
 }
 
-SKWASM_EXPORT void path_addPolygon(SkPath* path,
+SKWASM_EXPORT void path_addPolygon(Path* path,
                                    const Point* points,
                                    int count,
                                    bool close) {
   path->addPoly(points, count, close);
 }
 
-SKWASM_EXPORT void path_addRRect(SkPath* path, const Scalar* rrectValues) {
-  path->addRRect(createRRect(rrectValues), SkPathDirection::kCW);
+SKWASM_EXPORT void path_addRRect(Path* path, const Scalar* rrectValues) {
+  path->addRRect(createRRect(rrectValues), PathDirection::kCW);
 }
 
-SKWASM_EXPORT void path_addPath(SkPath* path,
-                                const SkPath* other,
+SKWASM_EXPORT void path_addPath(Path* path,
+                                const Path* other,
                                 const Scalar* matrix33,
-                                SkPath::AddPathMode extendPath) {
+                                Path::AddPathMode extendPath) {
   path->addPath(*other, createMatrix(matrix33), extendPath);
 }
 
-SKWASM_EXPORT void path_close(SkPath* path) {
+SKWASM_EXPORT void path_close(Path* path) {
   path->close();
 }
 
-SKWASM_EXPORT void path_reset(SkPath* path) {
+SKWASM_EXPORT void path_reset(Path* path) {
   path->reset();
 }
 
-SKWASM_EXPORT bool path_contains(SkPath* path, Scalar x, Scalar y) {
+SKWASM_EXPORT bool path_contains(Path* path, Scalar x, Scalar y) {
   return path->contains(x, y);
 }
 
-SKWASM_EXPORT void path_transform(SkPath* path, const Scalar* matrix33) {
+SKWASM_EXPORT void path_transform(Path* path, const Scalar* matrix33) {
   path->transform(createMatrix(matrix33));
 }
 
-SKWASM_EXPORT void path_getBounds(SkPath* path, SkRect* rect) {
+SKWASM_EXPORT void path_getBounds(Path* path, Rect* rect) {
   *rect = path->getBounds();
 }
 
-SKWASM_EXPORT SkPath* path_combine(SkPathOp operation,
-                                   const SkPath* path1,
-                                   const SkPath* path2) {
-  SkPath* output = new SkPath();
+SKWASM_EXPORT Path* path_combine(PathOp operation,
+                                   const Path* path1,
+                                   const Path* path2) {
+  Path* output = new Path();
   if (Op(*path1, *path2, operation, output)) {
     output->setFillType(path1->getFillType());
     return output;

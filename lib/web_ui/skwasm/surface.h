@@ -54,8 +54,8 @@ class Surface {
 
   // Main thread only
   void dispose();
-  uint32_t renderPictures(SkPicture** picture, int count);
-  uint32_t rasterizeImage(SkImage* image, ImageByteFormat format);
+  uint32_t renderPictures(Picture** picture, int count);
+  uint32_t rasterizeImage(Image* image, ImageByteFormat format);
   void setCallbackHandler(CallbackHandler* callbackHandler);
   void onRenderComplete(uint32_t callbackId, SkwasmObject imageBitmap);
 
@@ -64,7 +64,7 @@ class Surface {
       SkwasmObject textureSource);
 
   // Worker thread
-  void renderPicturesOnWorker(sk_sp<SkPicture>* picture,
+  void renderPicturesOnWorker(sk_sp<Picture>* picture,
                               int pictureCount,
                               uint32_t callbackId,
                               double rasterStart);
@@ -75,7 +75,7 @@ class Surface {
   void _dispose();
   void _resizeCanvasToFit(int width, int height);
   void _recreateSurface();
-  void _rasterizeImage(SkImage* image,
+  void _rasterizeImage(Image* image,
                        ImageByteFormat format,
                        uint32_t callbackId);
   void _onRasterizeComplete(SkData* data, uint32_t callbackId);
@@ -101,7 +101,7 @@ class Surface {
                                 uint32_t callbackId,
                                 SkwasmObject imageBitmap);
   static void fRasterizeImage(Surface* surface,
-                              SkImage* image,
+                              Image* image,
                               ImageByteFormat format,
                               uint32_t callbackId);
   static void fOnRasterizeComplete(Surface* surface,

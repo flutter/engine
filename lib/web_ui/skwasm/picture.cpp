@@ -9,35 +9,35 @@
 
 using namespace Skwasm;
 
-SkRTreeFactory bbhFactory;
+RTreeFactory bbhFactory;
 
-SKWASM_EXPORT SkPictureRecorder* pictureRecorder_create() {
-  return new SkPictureRecorder();
+SKWASM_EXPORT PictureRecorder* pictureRecorder_create() {
+  return new PictureRecorder();
 }
 
-SKWASM_EXPORT void pictureRecorder_dispose(SkPictureRecorder* recorder) {
+SKWASM_EXPORT void pictureRecorder_dispose(PictureRecorder* recorder) {
   delete recorder;
 }
 
 SKWASM_EXPORT Canvas* pictureRecorder_beginRecording(
-    SkPictureRecorder* recorder,
-    const SkRect* cullRect) {
+    PictureRecorder* recorder,
+    const Rect* cullRect) {
   return recorder->beginRecording(*cullRect, &bbhFactory);
 }
 
-SKWASM_EXPORT SkPicture* pictureRecorder_endRecording(
-    SkPictureRecorder* recorder) {
+SKWASM_EXPORT Picture* pictureRecorder_endRecording(
+    PictureRecorder* recorder) {
   return recorder->finishRecordingAsPicture().release();
 }
 
-SKWASM_EXPORT void picture_getCullRect(SkPicture* picture, SkRect* outRect) {
+SKWASM_EXPORT void picture_getCullRect(Picture* picture, Rect* outRect) {
   *outRect = picture->cullRect();
 }
 
-SKWASM_EXPORT void picture_dispose(SkPicture* picture) {
+SKWASM_EXPORT void picture_dispose(Picture* picture) {
   picture->unref();
 }
 
-SKWASM_EXPORT uint32_t picture_approximateBytesUsed(SkPicture* picture) {
+SKWASM_EXPORT uint32_t picture_approximateBytesUsed(Picture* picture) {
   return static_cast<uint32_t>(picture->approximateBytesUsed());
 }

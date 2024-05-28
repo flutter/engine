@@ -8,92 +8,92 @@
 
 using namespace Skwasm;
 
-SKWASM_EXPORT SkPaint* paint_create() {
-  auto paint = new SkPaint();
+SKWASM_EXPORT Paint* paint_create() {
+  auto paint = new Paint();
 
   // Antialias defaults to true in flutter.
   paint->setAntiAlias(true);
   return paint;
 }
 
-SKWASM_EXPORT void paint_dispose(SkPaint* paint) {
+SKWASM_EXPORT void paint_dispose(Paint* paint) {
   delete paint;
 }
 
-SKWASM_EXPORT void paint_setBlendMode(SkPaint* paint, SkBlendMode mode) {
+SKWASM_EXPORT void paint_setBlendMode(Paint* paint, BlendMode mode) {
   paint->setBlendMode(mode);
 }
 
 // No getter for blend mode, as it's non trivial. Cache on the dart side.
 
-SKWASM_EXPORT void paint_setStyle(SkPaint* paint, SkPaint::Style style) {
+SKWASM_EXPORT void paint_setStyle(Paint* paint, Paint::Style style) {
   paint->setStyle(style);
 }
 
-SKWASM_EXPORT SkPaint::Style paint_getStyle(SkPaint* paint) {
+SKWASM_EXPORT Paint::Style paint_getStyle(Paint* paint) {
   return paint->getStyle();
 }
 
-SKWASM_EXPORT void paint_setStrokeWidth(SkPaint* paint, Scalar width) {
+SKWASM_EXPORT void paint_setStrokeWidth(Paint* paint, Scalar width) {
   paint->setStrokeWidth(width);
 }
 
-SKWASM_EXPORT Scalar paint_getStrokeWidth(SkPaint* paint) {
+SKWASM_EXPORT Scalar paint_getStrokeWidth(Paint* paint) {
   return paint->getStrokeWidth();
 }
 
-SKWASM_EXPORT void paint_setStrokeCap(SkPaint* paint, SkPaint::Cap cap) {
+SKWASM_EXPORT void paint_setStrokeCap(Paint* paint, Paint::Cap cap) {
   paint->setStrokeCap(cap);
 }
 
-SKWASM_EXPORT SkPaint::Cap paint_getStrokeCap(SkPaint* paint) {
+SKWASM_EXPORT Paint::Cap paint_getStrokeCap(Paint* paint) {
   return paint->getStrokeCap();
 }
 
-SKWASM_EXPORT void paint_setStrokeJoin(SkPaint* paint, SkPaint::Join join) {
+SKWASM_EXPORT void paint_setStrokeJoin(Paint* paint, Paint::Join join) {
   paint->setStrokeJoin(join);
 }
 
-SKWASM_EXPORT SkPaint::Join paint_getStrokeJoin(SkPaint* paint) {
+SKWASM_EXPORT Paint::Join paint_getStrokeJoin(Paint* paint) {
   return paint->getStrokeJoin();
 }
 
-SKWASM_EXPORT void paint_setAntiAlias(SkPaint* paint, bool antiAlias) {
+SKWASM_EXPORT void paint_setAntiAlias(Paint* paint, bool antiAlias) {
   paint->setAntiAlias(antiAlias);
 }
 
-SKWASM_EXPORT bool paint_getAntiAlias(SkPaint* paint) {
+SKWASM_EXPORT bool paint_getAntiAlias(Paint* paint) {
   return paint->isAntiAlias();
 }
 
-SKWASM_EXPORT void paint_setColorInt(SkPaint* paint, SkColor colorInt) {
+SKWASM_EXPORT void paint_setColorInt(Paint* paint, Color colorInt) {
   paint->setColor(colorInt);
 }
 
-SKWASM_EXPORT SkColor paint_getColorInt(SkPaint* paint) {
+SKWASM_EXPORT Color paint_getColorInt(Paint* paint) {
   return paint->getColor();
 }
 
-SKWASM_EXPORT void paint_setMiterLimit(SkPaint* paint, Scalar miterLimit) {
+SKWASM_EXPORT void paint_setMiterLimit(Paint* paint, Scalar miterLimit) {
   paint->setStrokeMiter(miterLimit);
 }
 
-SKWASM_EXPORT Scalar paint_getMiterLimit(SkPaint* paint) {
+SKWASM_EXPORT Scalar paint_getMiterLimit(Paint* paint) {
   return paint->getStrokeMiter();
 }
 
-SKWASM_EXPORT void paint_setShader(SkPaint* paint, SkShader* shader) {
+SKWASM_EXPORT void paint_setShader(Paint* paint, SkShader* shader) {
   paint->setShader(sk_ref_sp<SkShader>(shader));
 }
 
-SKWASM_EXPORT void paint_setImageFilter(SkPaint* paint, SkImageFilter* filter) {
-  paint->setImageFilter(sk_ref_sp<SkImageFilter>(filter));
+SKWASM_EXPORT void paint_setImageFilter(Paint* paint, ImageFilter* filter) {
+  //paint->setImageFilter(sk_ref_sp<ImageFilter>(filter));
 }
 
-SKWASM_EXPORT void paint_setColorFilter(SkPaint* paint, SkColorFilter* filter) {
-  paint->setColorFilter(sk_ref_sp<SkColorFilter>(filter));
+SKWASM_EXPORT void paint_setColorFilter(Paint* paint, ColorFilter* filter) {
+  //paint->setColorFilter(sk_ref_sp<ColorFilter>(filter));
 }
 
-SKWASM_EXPORT void paint_setMaskFilter(SkPaint* paint, SkMaskFilter* filter) {
-  paint->setMaskFilter(sk_ref_sp<SkMaskFilter>(filter));
+SKWASM_EXPORT void paint_setMaskFilter(Paint* paint, MaskFilter* filter) {
+  //paint->setMaskFilter(sk_ref_sp<MaskFilter>(filter));
 }

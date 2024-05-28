@@ -7,29 +7,12 @@
 #include "render_strategy.h"
 #include "wrappers.h"
 
-using namespace skia::textlayout;
-
 using namespace Skwasm;
 
-namespace {
-// These numbers have been chosen empirically to give a result closest to the
-// material spec.
-// These values are also used by the CanvasKit renderer and the native engine.
-// See:
-//   flutter/display_list/skia/dl_sk_dispatcher.cc
-//   flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
-constexpr Scalar kShadowAmbientAlpha = 0.039;
-constexpr Scalar kShadowSpotAlpha = 0.25;
-constexpr Scalar kShadowLightRadius = 1.1;
-constexpr Scalar kShadowLightHeight = 600.0;
-constexpr Scalar kShadowLightXOffset = 0;
-constexpr Scalar kShadowLightYOffset = -450;
-}  // namespace
-
 SKWASM_EXPORT void canvas_saveLayer(Canvas* canvas,
-                                    SkRect* rect,
-                                    SkPaint* paint,
-                                    SkImageFilter* backdrop) {
+                                    Rect* rect,
+                                    Paint* paint,
+                                    ImageFilter* backdrop) {
   canvas->saveLayer(Canvas::SaveLayerRec(rect, paint, backdrop, 0));
 }
 
@@ -67,13 +50,13 @@ SKWASM_EXPORT void canvas_skew(Canvas* canvas, Scalar sx, Scalar sy) {
   canvas->skew(sx, sy);
 }
 
-SKWASM_EXPORT void canvas_transform(Canvas* canvas, const SkM44* matrix44) {
+SKWASM_EXPORT void canvas_transform(Canvas* canvas, const Matrix44* matrix44) {
   canvas->concat(*matrix44);
 }
 
 SKWASM_EXPORT void canvas_clipRect(Canvas* canvas,
-                                   const SkRect* rect,
-                                   SkClipOp op,
+                                   const Rect* rect,
+                                   ClipOp op,
                                    bool antialias) {
   canvas->clipRect(*rect, op, antialias);
 }
@@ -85,14 +68,14 @@ SKWASM_EXPORT void canvas_clipRRect(Canvas* canvas,
 }
 
 SKWASM_EXPORT void canvas_clipPath(Canvas* canvas,
-                                   SkPath* path,
+                                   Path* path,
                                    bool antialias) {
   canvas->clipPath(*path, antialias);
 }
 
 SKWASM_EXPORT void canvas_drawColor(Canvas* canvas,
                                     Color color,
-                                    SkBlendMode blendMode) {
+                                    BlendMode blendMode) {
   canvas->drawColor(color, blendMode);
 }
 
@@ -101,37 +84,37 @@ SKWASM_EXPORT void canvas_drawLine(Canvas* canvas,
                                    Scalar y1,
                                    Scalar x2,
                                    Scalar y2,
-                                   SkPaint* paint) {
+                                   Paint* paint) {
   canvas->drawLine(x1, y1, x2, y2, *paint);
 }
 
-SKWASM_EXPORT void canvas_drawPaint(Canvas* canvas, SkPaint* paint) {
+SKWASM_EXPORT void canvas_drawPaint(Canvas* canvas, Paint* paint) {
   canvas->drawPaint(*paint);
 }
 
 SKWASM_EXPORT void canvas_drawRect(Canvas* canvas,
-                                   SkRect* rect,
-                                   SkPaint* paint) {
+                                   Rect* rect,
+                                   Paint* paint) {
   canvas->drawRect(*rect, *paint);
 }
 
 SKWASM_EXPORT void canvas_drawRRect(Canvas* canvas,
                                     const Scalar* rrectValues,
-                                    SkPaint* paint) {
+                                    Paint* paint) {
   canvas->drawRRect(createRRect(rrectValues), *paint);
 }
 
 SKWASM_EXPORT void canvas_drawDRRect(Canvas* canvas,
                                      const Scalar* outerRrectValues,
                                      const Scalar* innerRrectValues,
-                                     SkPaint* paint) {
+                                     Paint* paint) {
   canvas->drawDRRect(createRRect(outerRrectValues),
                      createRRect(innerRrectValues), *paint);
 }
 
 SKWASM_EXPORT void canvas_drawOval(Canvas* canvas,
-                                   const SkRect* rect,
-                                   SkPaint* paint) {
+                                   const Rect* rect,
+                                   Paint* paint) {
   canvas->drawOval(*rect, *paint);
 }
 
@@ -139,75 +122,61 @@ SKWASM_EXPORT void canvas_drawCircle(Canvas* canvas,
                                      Scalar x,
                                      Scalar y,
                                      Scalar radius,
-                                     SkPaint* paint) {
+                                     Paint* paint) {
   canvas->drawCircle(x, y, radius, *paint);
 }
 
 SKWASM_EXPORT void canvas_drawArc(Canvas* canvas,
-                                  const SkRect* rect,
+                                  const Rect* rect,
                                   Scalar startAngleDegrees,
                                   Scalar sweepAngleDegrees,
                                   bool useCenter,
-                                  SkPaint* paint) {
+                                  Paint* paint) {
   canvas->drawArc(*rect, startAngleDegrees, sweepAngleDegrees, useCenter,
                   *paint);
 }
 
 SKWASM_EXPORT void canvas_drawPath(Canvas* canvas,
-                                   SkPath* path,
-                                   SkPaint* paint) {
+                                   Path* path,
+                                   Paint* paint) {
   canvas->drawPath(*path, *paint);
 }
 
 SKWASM_EXPORT void canvas_drawShadow(Canvas* canvas,
-                                     SkPath* path,
+                                     Path* path,
                                      Scalar elevation,
                                      Scalar devicePixelRatio,
                                      Color color,
                                      bool transparentOccluder) {
-  Color inAmbient =
-      SkColorSetA(color, kShadowAmbientAlpha * SkColorGetA(color));
-  Color inSpot = SkColorSetA(color, kShadowSpotAlpha * SkColorGetA(color));
-  Color outAmbient;
-  Color outSpot;
-  SkShadowUtils::ComputeTonalColors(inAmbient, inSpot, &outAmbient, &outSpot);
-  uint32_t flags = transparentOccluder
-                       ? SkShadowFlags::kTransparentOccluder_ShadowFlag
-                       : SkShadowFlags::kNone_ShadowFlag;
-  flags |= SkShadowFlags::kDirectionalLight_ShadowFlag;
-  SkShadowUtils::DrawShadow(
-      canvas, *path, Point3::Make(0.0f, 0.0f, elevation * devicePixelRatio),
-      Point3::Make(kShadowLightXOffset, kShadowLightYOffset,
-                     kShadowLightHeight * devicePixelRatio),
-      devicePixelRatio * kShadowLightRadius, outAmbient, outSpot, flags);
+  drawShadowOnCanvas(canvas, path, elevation, devicePixelRatio, color, transparentOccluder);
 }
 
 SKWASM_EXPORT void canvas_drawParagraph(Canvas* canvas,
                                         Paragraph* paragraph,
                                         Scalar x,
                                         Scalar y) {
-  paragraph->paint(canvas, x, y);
+  drawParagraphOnCanvas(canvas, paragraph, x, y);
 }
 
-SKWASM_EXPORT void canvas_drawPicture(Canvas* canvas, SkPicture* picture) {
+SKWASM_EXPORT void canvas_drawPicture(Canvas* canvas, Picture* picture) {
   canvas->drawPicture(picture);
 }
 
 SKWASM_EXPORT void canvas_drawImage(Canvas* canvas,
-                                    SkImage* image,
+                                    Image* image,
                                     Scalar offsetX,
                                     Scalar offsetY,
-                                    SkPaint* paint,
+                                    Paint* paint,
                                     FilterQuality quality) {
   canvas->drawImage(image, offsetX, offsetY, samplingOptionsForQuality(quality),
                     paint);
 }
 
 SKWASM_EXPORT void canvas_drawImageRect(Canvas* canvas,
-                                        SkImage* image,
-                                        SkRect* sourceRect,
-                                        SkRect* destRect,
-                                        SkPaint* paint,
+                                        Image* image,
+                                        Rect* sourceRect,
+                                        Rect* destRect,
+                                        Paint* paint,
                                         FilterQuality quality) {
   canvas->drawImageRect(image, *sourceRect, *destRect,
                         samplingOptionsForQuality(quality), paint,
@@ -215,55 +184,55 @@ SKWASM_EXPORT void canvas_drawImageRect(Canvas* canvas,
 }
 
 SKWASM_EXPORT void canvas_drawImageNine(Canvas* canvas,
-                                        SkImage* image,
-                                        SkIRect* centerRect,
-                                        SkRect* destinationRect,
-                                        SkPaint* paint,
+                                        Image* image,
+                                        IRect* centerRect,
+                                        Rect* destinationRect,
+                                        Paint* paint,
                                         FilterQuality quality) {
   canvas->drawImageNine(image, *centerRect, *destinationRect,
                         filterModeForQuality(quality), paint);
 }
 
 SKWASM_EXPORT void canvas_drawVertices(Canvas* canvas,
-                                       SkVertices* vertices,
-                                       SkBlendMode mode,
-                                       SkPaint* paint) {
-  canvas->drawVertices(sk_ref_sp<SkVertices>(vertices), mode, *paint);
+                                       Vertices* vertices,
+                                       BlendMode mode,
+                                       Paint* paint) {
+  canvas->drawVertices(vertices, mode, *paint);
 }
 
 SKWASM_EXPORT void canvas_drawPoints(Canvas* canvas,
                                      Canvas::PointMode mode,
                                      Point* points,
                                      int pointCount,
-                                     SkPaint* paint) {
+                                     Paint* paint) {
   canvas->drawPoints(mode, pointCount, points, *paint);
 }
 
 SKWASM_EXPORT void canvas_drawAtlas(Canvas* canvas,
-                                    SkImage* atlas,
-                                    SkRSXform* transforms,
-                                    SkRect* rects,
+                                    Image* atlas,
+                                    RSXform* transforms,
+                                    Rect* rects,
                                     Color* colors,
                                     int spriteCount,
-                                    SkBlendMode mode,
-                                    SkRect* cullRect,
-                                    SkPaint* paint) {
+                                    BlendMode mode,
+                                    Rect* cullRect,
+                                    Paint* paint) {
   canvas->drawAtlas(
       atlas, transforms, rects, colors, spriteCount, mode,
-      SkSamplingOptions{SkFilterMode::kLinear, SkMipmapMode::kNone}, cullRect,
+      SamplingOptions{FilterMode::kLinear, MipmapMode::kNone}, cullRect,
       paint);
 }
 
-SKWASM_EXPORT void canvas_getTransform(Canvas* canvas, SkM44* outTransform) {
+SKWASM_EXPORT void canvas_getTransform(Canvas* canvas, Matrix44* outTransform) {
   *outTransform = canvas->getLocalToDevice();
 }
 
 SKWASM_EXPORT void canvas_getLocalClipBounds(Canvas* canvas,
-                                             SkRect* outRect) {
+                                             Rect* outRect) {
   *outRect = canvas->getLocalClipBounds();
 }
 
 SKWASM_EXPORT void canvas_getDeviceClipBounds(Canvas* canvas,
-                                              SkIRect* outRect) {
+                                              IRect* outRect) {
   *outRect = canvas->getDeviceClipBounds();
 }

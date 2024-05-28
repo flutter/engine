@@ -9,73 +9,73 @@
 
 using namespace Skwasm;
 
-SKWASM_EXPORT SkShader* shader_createLinearGradient(
+SKWASM_EXPORT Shader* shader_createLinearGradient(
     Point* endPoints,  // Two points
-    SkColor* colors,
+    Color* colors,
     Scalar* stops,
     int count,  // Number of stops/colors
     TileMode tileMode,
     Scalar* matrix33  // Can be nullptr
 ) {
   if (matrix33) {
-    SkMatrix localMatrix = createMatrix(matrix33);
-    return SkGradientShader::MakeLinear(endPoints, colors, stops, count,
+    Matrix localMatrix = createMatrix(matrix33);
+    return GradientShader::MakeLinear(endPoints, colors, stops, count,
                                         tileMode, 0, &localMatrix)
         .release();
   } else {
-    return SkGradientShader::MakeLinear(endPoints, colors, stops, count,
+    return GradientShader::MakeLinear(endPoints, colors, stops, count,
                                         tileMode)
         .release();
   }
 }
 
-SKWASM_EXPORT SkShader* shader_createRadialGradient(Scalar centerX,
+SKWASM_EXPORT Shader* shader_createRadialGradient(Scalar centerX,
                                                     Scalar centerY,
                                                     Scalar radius,
-                                                    SkColor* colors,
+                                                    Color* colors,
                                                     Scalar* stops,
                                                     int count,
                                                     TileMode tileMode,
                                                     Scalar* matrix33) {
   if (matrix33) {
-    SkMatrix localMatrix = createMatrix(matrix33);
-    return SkGradientShader::MakeRadial({centerX, centerY}, radius, colors,
+    Matrix localMatrix = createMatrix(matrix33);
+    return GradientShader::MakeRadial({centerX, centerY}, radius, colors,
                                         stops, count, tileMode, 0, &localMatrix)
         .release();
   } else {
-    return SkGradientShader::MakeRadial({centerX, centerY}, radius, colors,
+    return GradientShader::MakeRadial({centerX, centerY}, radius, colors,
                                         stops, count, tileMode)
         .release();
   }
 }
 
-SKWASM_EXPORT SkShader* shader_createConicalGradient(
+SKWASM_EXPORT Shader* shader_createConicalGradient(
     Point* endPoints,  // Two points
     Scalar startRadius,
     Scalar endRadius,
-    SkColor* colors,
+    Color* colors,
     Scalar* stops,
     int count,
     TileMode tileMode,
     Scalar* matrix33) {
   if (matrix33) {
-    SkMatrix localMatrix = createMatrix(matrix33);
-    return SkGradientShader::MakeTwoPointConical(
+    Matrix localMatrix = createMatrix(matrix33);
+    return GradientShader::MakeTwoPointConical(
                endPoints[0], startRadius, endPoints[1], endRadius, colors,
                stops, count, tileMode, 0, &localMatrix)
         .release();
 
   } else {
-    return SkGradientShader::MakeTwoPointConical(endPoints[0], startRadius,
+    return GradientShader::MakeTwoPointConical(endPoints[0], startRadius,
                                                  endPoints[1], endRadius,
                                                  colors, stops, count, tileMode)
         .release();
   }
 }
 
-SKWASM_EXPORT SkShader* shader_createSweepGradient(Scalar centerX,
+SKWASM_EXPORT Shader* shader_createSweepGradient(Scalar centerX,
                                                    Scalar centerY,
-                                                   SkColor* colors,
+                                                   Color* colors,
                                                    Scalar* stops,
                                                    int count,
                                                    TileMode tileMode,
@@ -83,25 +83,25 @@ SKWASM_EXPORT SkShader* shader_createSweepGradient(Scalar centerX,
                                                    Scalar endAngle,
                                                    Scalar* matrix33) {
   if (matrix33) {
-    SkMatrix localMatrix = createMatrix(matrix33);
-    return SkGradientShader::MakeSweep(centerX, centerY, colors, stops, count,
+    Matrix localMatrix = createMatrix(matrix33);
+    return GradientShader::MakeSweep(centerX, centerY, colors, stops, count,
                                        tileMode, startAngle, endAngle, 0,
                                        &localMatrix)
         .release();
   } else {
-    return SkGradientShader::MakeSweep(centerX, centerY, colors, stops, count,
+    return GradientShader::MakeSweep(centerX, centerY, colors, stops, count,
                                        tileMode, startAngle, endAngle, 0,
                                        nullptr)
         .release();
   }
 }
 
-SKWASM_EXPORT void shader_dispose(SkShader* shader) {
+SKWASM_EXPORT void shader_dispose(Shader* shader) {
   shader->unref();
 }
 
-SKWASM_EXPORT SkRuntimeEffect* runtimeEffect_create(SkString* source) {
-  auto result = SkRuntimeEffect::MakeForShader(*source);
+SKWASM_EXPORT RuntimeEffect* runtimeEffect_create(SkString* source) {
+  auto result = RuntimeEffect::MakeForShader(*source);
   if (result.effect == nullptr) {
     printf("Failed to compile shader. Error text:\n%s",
            result.errorText.data());
@@ -111,22 +111,22 @@ SKWASM_EXPORT SkRuntimeEffect* runtimeEffect_create(SkString* source) {
   }
 }
 
-SKWASM_EXPORT void runtimeEffect_dispose(SkRuntimeEffect* effect) {
+SKWASM_EXPORT void runtimeEffect_dispose(RuntimeEffect* effect) {
   effect->unref();
 }
 
-SKWASM_EXPORT size_t runtimeEffect_getUniformSize(SkRuntimeEffect* effect) {
+SKWASM_EXPORT size_t runtimeEffect_getUniformSize(RuntimeEffect* effect) {
   return effect->uniformSize();
 }
 
-SKWASM_EXPORT SkShader* shader_createRuntimeEffectShader(
-    SkRuntimeEffect* runtimeEffect,
+SKWASM_EXPORT Shader* shader_createRuntimeEffectShader(
+    RuntimeEffect* runtimeEffect,
     SkData* uniforms,
-    SkShader** children,
+    Shader** children,
     size_t childCount) {
-  std::vector<sk_sp<SkShader>> childPointers;
+  std::vector<sk_sp<Shader>> childPointers;
   for (size_t i = 0; i < childCount; i++) {
-    childPointers.emplace_back(sk_ref_sp<SkShader>(children[i]));
+    childPointers.emplace_back(sk_ref_sp<Shader>(children[i]));
   }
   return runtimeEffect
       ->makeShader(SkData::MakeWithCopy(uniforms->data(), uniforms->size()),
@@ -134,13 +134,13 @@ SKWASM_EXPORT SkShader* shader_createRuntimeEffectShader(
       .release();
 }
 
-SKWASM_EXPORT SkShader* shader_createFromImage(SkImage* image,
+SKWASM_EXPORT Shader* shader_createFromImage(Image* image,
                                                TileMode tileModeX,
                                                TileMode tileModeY,
                                                FilterQuality quality,
                                                Scalar* matrix33) {
   if (matrix33) {
-    SkMatrix localMatrix = createMatrix(matrix33);
+    Matrix localMatrix = createMatrix(matrix33);
     return image
         ->makeShader(tileModeX, tileModeY, samplingOptionsForQuality(quality),
                      &localMatrix)

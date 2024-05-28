@@ -6,9 +6,9 @@
 #define FLUTTER_LIB_WEB_UI_SKWASM_RENDER_STRATEGY_H_
 
 #ifdef SKWASM_USE_IMPELLER
-#include "impeller_strategy.h" // nogncheck
+#include "impeller/impeller_strategy.h" // nogncheck
 #else
-#include "skia_strategy.h" // nogncheck
+#include "skia/skia_strategy.h" // nogncheck
 #endif
 
 #endif  // FLUTTER_LIB_WEB_UI_SKWASM_RENDER_STRATEGY_H_

@@ -38,11 +38,12 @@ template("skwasm_library") {
 
     if (invoker.use_impeller) {
       sources += [
-        "impeller_strategy.h",
+        "impeller/impeller_strategy.h",
       ]
     } else {
       sources += [
-        "skia_strategy.h",
+        "skia/skia_strategy.cpp",
+        "skia/skia_strategy.h",
       ]
     }
 

@@ -27,7 +27,7 @@ extern void skwasm_registerMessageListener(pthread_t threadId);
 extern void skwasm_syncTimeOriginForThread(pthread_t threadId);
 extern void skwasm_dispatchRenderPictures(unsigned long threadId,
                                           Skwasm::Surface* surface,
-                                          sk_sp<SkPicture>* pictures,
+                                          sk_sp<Skwasm::Picture>* pictures,
                                           int count,
                                           uint32_t callbackId);
 extern uint32_t skwasm_createOffscreenCanvas(int width, int height);
