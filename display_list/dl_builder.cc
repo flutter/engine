@@ -657,9 +657,8 @@ void DisplayListBuilder::RestoreLayer(const SaveInfo& current_info,
 
   SkRect content_bounds = current_info.layer_local_accumulator->bounds();
 
-  SaveLayerOpBase* layer_op =
-      reinterpret_cast<SaveLayerOpBase*>(storage_.get() +
-                                         current_info.save_offset);
+  SaveLayerOpBase* layer_op = reinterpret_cast<SaveLayerOpBase*>(
+      storage_.get() + current_info.save_offset);
   FML_DCHECK(layer_op->type == DisplayListOpType::kSaveLayer ||
              layer_op->type == DisplayListOpType::kSaveLayerBackdrop);
 
