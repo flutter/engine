@@ -7,7 +7,8 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/html_image_codec.dart';
+import 'package:ui/src/engine/html/image.dart';
+import 'package:ui/src/engine/html_image_element_codec.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -19,7 +20,7 @@ void main() {
 
 Future<void> testMain() async {
   setUpUnitTests();
-  group('HtmCodec', () {
+  group('$HtmlImageElementCodec', () {
     test('supports raw images - RGBA8888', () async {
       final Completer<ui.Image> completer = Completer<ui.Image>();
       const int width = 200;
@@ -59,14 +60,16 @@ Future<void> testMain() async {
       expect(image.height, height);
     });
     test('loads sample image', () async {
-      final HtmlCodec codec = HtmlCodec('sample_image1.png');
+      final HtmlImageElementCodec codec =
+          HtmlRendererImageCodec('sample_image1.png');
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.width, 100);
       expect(frameInfo.image.toString(), '[100×100]');
     });
     test('dispose image image', () async {
-      final HtmlCodec codec = HtmlCodec('sample_image1.png');
+      final HtmlImageElementCodec codec =
+          HtmlRendererImageCodec('sample_image1.png');
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.debugDisposed, isFalse);
@@ -75,8 +78,8 @@ Future<void> testMain() async {
     });
     test('provides image loading progress', () async {
       final StringBuffer buffer = StringBuffer();
-      final HtmlCodec codec = HtmlCodec('sample_image1.png',
-          chunkCallback: (int loaded, int total) {
+      final HtmlImageElementCodec codec = HtmlRendererImageCodec(
+          'sample_image1.png', chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
       });
       await codec.getNextFrame();
@@ -86,7 +89,7 @@ Future<void> testMain() async {
     /// Regression test for Firefox
     /// https://github.com/flutter/flutter/issues/66412
     test('Returns nonzero natural width/height', () async {
-      final HtmlCodec codec = HtmlCodec(
+      final HtmlImageElementCodec codec = HtmlRendererImageCodec(
           'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9I'
           'jAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dG'
           'l0bGU+QWJzdHJhY3QgaWNvbjwvdGl0bGU+PHBhdGggZD0iTTEyIDBjOS42MDEgMCAx'
@@ -105,7 +108,8 @@ Future<void> testMain() async {
   group('ImageCodecUrl', () {
     test('loads sample image from web', () async {
       final Uri uri = Uri.base.resolve('sample_image1.png');
-      final HtmlCodec codec = await ui_web.createImageCodecFromUrl(uri) as HtmlCodec;
+      final HtmlImageElementCodec codec =
+          await ui_web.createImageCodecFromUrl(uri) as HtmlImageElementCodec;
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.width, 100);
@@ -113,10 +117,10 @@ Future<void> testMain() async {
     test('provides image loading progress from web', () async {
       final Uri uri = Uri.base.resolve('sample_image1.png');
       final StringBuffer buffer = StringBuffer();
-      final HtmlCodec codec = await ui_web.createImageCodecFromUrl(uri,
-          chunkCallback: (int loaded, int total) {
+      final HtmlImageElementCodec codec = await ui_web
+          .createImageCodecFromUrl(uri, chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
-      }) as HtmlCodec;
+      }) as HtmlImageElementCodec;
       await codec.getNextFrame();
       expect(buffer.toString(), '0/100,100/100,');
     });

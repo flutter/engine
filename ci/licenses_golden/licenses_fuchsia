@@ -1,4 +1,4 @@
-Signature: b68f1249e4a65614d0a0cc49a11f0611
+Signature: 5073a1c4a31cb9250760e4d6704ff4f4
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -13070,7 +13070,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/legacy_types.fidl 
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.registrar/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/graphical_presenter.fidl + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/endpoint.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/dai_interconnect.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/clock.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/common.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/composite.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -13170,7 +13170,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/legacy_types.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.legacy/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.driver.registrar/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.element/graphical_presenter.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/endpoint.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/dai_interconnect.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/clock.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/common.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/composite.fidl
@@ -13292,6 +13292,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/iso.fidl + ../../..
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/coding_format.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/availability.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/controller.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/overview.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -13331,6 +13332,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/iso.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/coding_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component.sandbox/availability.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.component/introspector.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.device.fs/controller.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/overview.fidl

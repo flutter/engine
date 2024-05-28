@@ -20,7 +20,6 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
-#include "impeller/core/capture.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/geometry/color.h"
@@ -709,6 +708,26 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
 TEST_P(AiksTest, CanRenderTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameWithHalfScaling) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.Scale({0.5, 0.5, 1});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.Scale({2.625, 2.625, 1});
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -2533,38 +2552,6 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CaptureContext) {
-  auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
-
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    Canvas canvas;
-
-    capture_context.Rewind();
-    auto document = capture_context.GetDocument("TestDocument");
-
-    auto color = document.AddColor("Background color", Color::CornflowerBlue());
-    canvas.DrawPaint({.color = color});
-
-    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize)) {
-      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
-        property.Invoke({.color = [](CaptureColorProperty& p) {
-          ImGui::ColorEdit4(p.label.c_str(),
-                            reinterpret_cast<float*>(&p.value));
-        }});
-      });
-      ImGui::End();
-    }
-
-    return canvas.EndRecordingAsPicture();
-  };
-  OpenPlaygroundHere(callback);
-}
-
-TEST_P(AiksTest, CaptureInactivatedByDefault) {
-  ASSERT_FALSE(GetContext()->capture.IsActive());
-}
-
 // Regression test for https://github.com/flutter/flutter/issues/134678.
 TEST_P(AiksTest, ReleasesTextureOnTeardown) {
   auto context = MakeContext();
@@ -2709,19 +2696,29 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
 }
 
 TEST_P(AiksTest, MatrixImageFilterMagnify) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
-  canvas.Translate({600, -200});
-  canvas.SaveLayer({
-      .image_filter = std::make_shared<MatrixImageFilter>(
-          Matrix::MakeScale({2, 2, 2}), SamplerDescriptor{}),
-  });
-  canvas.DrawImage(image, {0, 0},
-                   Paint{.color = Color::White().WithAlpha(0.5)});
-  canvas.Restore();
+  Scalar scale = 2.0;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Scale", &scale, 1, 2);
+      ImGui::End();
+    }
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    auto image =
+        std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+    canvas.Translate({600, -200});
+    canvas.SaveLayer({
+        .image_filter = std::make_shared<MatrixImageFilter>(
+            Matrix::MakeScale({scale, scale, 1}), SamplerDescriptor{}),
+    });
+    canvas.DrawImage(image, {0, 0},
+                     Paint{.color = Color::White().WithAlpha(0.5)});
+    canvas.Restore();
+    return canvas.EndRecordingAsPicture();
+  };
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 // Render a white circle at the top left corner of the screen.

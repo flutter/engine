@@ -147,6 +147,7 @@
 ../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
+../../../flutter/impeller/entity/contents/filters/matrix_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
 ../../../flutter/impeller/entity/contents/test
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
@@ -169,7 +170,6 @@
 ../../../flutter/impeller/renderer/backend/gles/test
 ../../../flutter/impeller/renderer/backend/metal/texture_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk_unittests.cc
-../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/context_vk_unittests.cc
@@ -202,10 +202,9 @@
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/toolkit/android/README.md
 ../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
-../../../flutter/impeller/tools/build_metal_library.py
-../../../flutter/impeller/tools/check_licenses.py
 ../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
+../../../flutter/impeller/tools/metal_library.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
 ../../../flutter/lib/gpu/analysis_options.yaml
@@ -1844,6 +1843,7 @@
 ../../../flutter/third_party/gn
 ../../../flutter/third_party/google_fonts_for_unit_tests
 ../../../flutter/third_party/googletest
+../../../flutter/third_party/gradle
 ../../../flutter/third_party/gtest-parallel/.git
 ../../../flutter/third_party/gtest-parallel/.gitignore
 ../../../flutter/third_party/gtest-parallel/CONTRIBUTING.md
