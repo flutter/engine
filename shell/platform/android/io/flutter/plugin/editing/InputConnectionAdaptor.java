@@ -13,6 +13,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CancellationSignal;
 import android.text.DynamicLayout;
 import android.text.Editable;
 import android.text.InputType;
@@ -29,6 +30,7 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.HandwritingGesture;
 import android.view.inputmethod.InputContentInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.view.inputmethod.PreviewableHandwritingGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.view.inputmethod.InputConnectionCompat;
@@ -263,6 +265,14 @@ public class InputConnectionAdaptor extends BaseInputConnection
     boolean result = super.setSelection(start, end);
     endBatchEdit();
     return result;
+  }
+
+  @Override
+  public boolean previewHandwritingGesture (PreviewableHandwritingGesture gesture,
+                CancellationSignal cancellationSignal) {
+    System.out.println("justin previewHandwritingGesture.");
+    System.out.println("justin previewHandwritingGesture gesture: " + gesture);
+    return true;
   }
 
   @Override
