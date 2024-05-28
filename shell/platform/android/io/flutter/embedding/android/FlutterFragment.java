@@ -1056,10 +1056,13 @@ public class FlutterFragment extends Fragment
     delegate.onAttach(context);
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
-      // By default, Android handles backs, and predictive back is enabled. This
-      // can be changed by calling setFrameworkHandlesBack. For example, the
-      // framework will call this automatically in a typical app when it has
-      // routes to pop.
+      // When Android handles a back gesture, it pops an Activity or goes back
+      // to the home screen. When Flutter handles a back gesture, it pops a
+      // route inside of the Flutter part of the app. By default, Android
+      // handles back gestures, so this callback is disabled. If, for example,
+      // the Flutter app has routes for which it wants to handle the back
+      // gesture, then it will enable this callback using
+      // setFrameworkHandlesBack.
       onBackPressedCallback.setEnabled(false);
     }
     context.registerComponentCallbacks(this);
