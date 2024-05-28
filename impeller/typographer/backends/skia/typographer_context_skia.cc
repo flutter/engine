@@ -43,9 +43,8 @@
 
 namespace impeller {
 
-// TODO(bdero): We might be able to remove this per-glyph padding if we fix
-//              the underlying causes of the overlap.
-//              https://github.com/flutter/flutter/issues/114563
+// Despite having accurate glyph bounds, we must pad 1px to account for linear
+// sampling modes if the glyph is rendered with a skew/rotate/perspective.
 constexpr auto kPadding = 2;
 
 std::shared_ptr<TypographerContext> TypographerContextSkia::Make() {
@@ -465,22 +464,6 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
 
   std::shared_ptr<CommandBuffer> cmd_buffer = context.CreateCommandBuffer();
   std::shared_ptr<BlitPass> blit_pass = cmd_buffer->CreateBlitPass();
-
-  // The R8/A8 textures used for certain glyphs is not supported as color
-  // attachments in most graphics drivers. For other textures, most framebuffer
-  // attachments have a much smaller size limit than the max texture size.
-  {
-    TRACE_EVENT0("flutter", "ClearGlyphAtlas");
-    size_t byte_size =
-        new_texture->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
-    BufferView buffer_view =
-        host_buffer.Emplace(nullptr, byte_size, DefaultUniformAlignment());
-
-    ::memset(buffer_view.buffer->OnGetContents() + buffer_view.range.offset, 0,
-             byte_size);
-    buffer_view.buffer->Flush();
-    blit_pass->AddCopy(buffer_view, new_texture);
-  }
 
   fml::ScopedCleanupClosure closure([&]() {
     blit_pass->EncodeCommands(context.GetResourceAllocator());
