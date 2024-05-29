@@ -22,10 +22,12 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
+#include "include/core/SkRRect.h"
 
 #if IMPELLER_ENABLE_3D
 #include "impeller/entity/contents/scene_contents.h"
@@ -814,7 +816,7 @@ void DlDispatcherBase::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
+  if (skia_conversions::IsNearlySimpleRRect(rrect)) {
     GetCanvas().DrawRRect(skia_conversions::ToRect(rrect.rect()),
                           skia_conversions::ToSize(rrect.getSimpleRadii()),
                           paint_);
