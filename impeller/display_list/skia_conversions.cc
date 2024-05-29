@@ -23,7 +23,6 @@ bool IsNearlySimpleRRect(const SkRRect& rr) {
          SkScalarNearlyEqual(a, h, kEhCloseEnough);
 }
 
-
 Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
