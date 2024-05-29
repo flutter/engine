@@ -356,8 +356,7 @@ bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
           vk::PipelineStageFlagBits::eColorAttachmentOutput,
       /*dst_stage=*/vk::PipelineStageFlagBits::eTransfer,
       /*base_mip_level=*/0u,
-      /*mip_level_count=*/mip_count
-  );
+      /*mip_level_count=*/mip_count);
 
   vk::ImageMemoryBarrier barrier;
   barrier.image = image;
