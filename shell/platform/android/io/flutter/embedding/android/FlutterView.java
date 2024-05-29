@@ -1136,8 +1136,10 @@ public class FlutterView extends FrameLayout
       Log.e(TAG, "TextServicesManager not supported by device, spell check disabled.");
     }
 
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_34) {
       scribePlugin =
           new ScribePlugin(this, textInputPlugin.getInputMethodManager(), this.flutterEngine.getScribeChannel());
+    }
 
     localizationPlugin = this.flutterEngine.getLocalizationPlugin();
 
