@@ -114,11 +114,10 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   }
 
   storage_.realloc(bytes);
-  return sk_sp<DisplayList>(
-      new DisplayList(std::move(storage_), bytes, count, nested_bytes,
-                      nested_count, total_depth, bounds, compatible, is_safe,
-                      root_has_backdrop_filter, max_root_blend_mode,
-                      affects_transparency, std::move(rtree)));
+  return sk_sp<DisplayList>(new DisplayList(
+      std::move(storage_), bytes, count, nested_bytes, nested_count,
+      total_depth, bounds, compatible, is_safe, root_has_backdrop_filter,
+      max_root_blend_mode, affects_transparency, std::move(rtree)));
 }
 
 static constexpr DlRect kEmpty = DlRect();
@@ -455,7 +454,6 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
   }
 
   if (backdrop != nullptr) {
-    FML_LOG(ERROR) << "setting bdf filter flag";
     current_info().contains_backdrop_filter = true;
   }
 
@@ -641,7 +639,6 @@ void DisplayListBuilder::Restore() {
       }
 
       if (current_info.contains_backdrop_filter) {
-        FML_LOG(ERROR) << "normal save, transferring bdf flag = true";
         parent_info.contains_backdrop_filter = true;
       }
       parent_info.update_blend_mode(current_info.max_blend_mode);
@@ -674,12 +671,11 @@ void DisplayListBuilder::RestoreLayer(const SaveInfo& current_info,
 
   SaveLayerOpBase* layer_op = reinterpret_cast<SaveLayerOpBase*>(
       storage_.get() + current_info.save_offset);
-  FML_DCHECK(layer_op->type == DisplayListOpType::kSaveLayer ||
-             layer_op->type == DisplayListOpType::kSaveLayerBackdrop);
+  FML_CHECK(layer_op->type == DisplayListOpType::kSaveLayer ||
+            layer_op->type == DisplayListOpType::kSaveLayerBackdrop);
 
   if (layer_op->options.bounds_from_caller()) {
-    if (!content_bounds.isEmpty() &&
-        !layer_op->rect.contains(content_bounds)) {
+    if (!content_bounds.isEmpty() && !layer_op->rect.contains(content_bounds)) {
       layer_op->options = layer_op->options.with_content_is_clipped();
       content_bounds.intersect(layer_op->rect);
     }
@@ -688,10 +684,7 @@ void DisplayListBuilder::RestoreLayer(const SaveInfo& current_info,
   layer_op->max_blend_mode = current_info.max_blend_mode;
 
   if (current_info.contains_backdrop_filter) {
-    FML_LOG(ERROR) << "setting bdf flag in layer options from "
-        << layer_op->options.contains_backdrop_filter();
     layer_op->options = layer_op->options.with_contains_backdrop_filter();
-    FML_LOG(ERROR) << " to " << layer_op->options.contains_backdrop_filter();
   }
 
   if (current_info.is_group_opacity_compatible()) {

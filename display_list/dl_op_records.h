@@ -357,10 +357,10 @@ struct SaveOp final : SaveOpBase {
 // 16 byte SaveOpBase + 20 byte payload packs into 36 bytes
 struct SaveLayerOpBase : SaveOpBase {
   SaveLayerOpBase(const SaveLayerOptions& options, const SkRect& rect)
-      : SaveOpBase(options), rect(rect), max_blend_mode(DlBlendMode::kClear) {}
+      : SaveOpBase(options), rect(rect) {}
 
   SkRect rect;
-  DlBlendMode max_blend_mode;
+  DlBlendMode max_blend_mode = DlBlendMode::kClear;
 };
 // 36 byte SaveLayerOpBase with no additional data packs into 40 bytes
 // of buffer storage with 4 bytes unused.

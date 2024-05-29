@@ -300,9 +300,7 @@ TEST_F(BackdropFilterLayerTest, Nested) {
   EXPECT_EQ(mock_layer1->parent_matrix(), initial_transform);
   EXPECT_EQ(mock_layer2->parent_matrix(), initial_transform);
 
-  FML_LOG(ERROR) << "painting layers";
   parent->Paint(display_list_paint_context());
-  FML_LOG(ERROR) << "making expected builder";
   DisplayListBuilder expected_builder;
   /* (ClipRect)parent::Paint */ {
     expected_builder.Save();

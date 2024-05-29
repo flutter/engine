@@ -329,9 +329,7 @@ class DisplayList : public SkRefCnt {
   /// for the root layer into which to render the DisplayList as some GPUs
   /// can support surfaces that do or do not support the readback that would
   /// be required for the backdrop filter to do its work.
-  bool root_has_backdrop_filter() const {
-    return root_has_backdrop_filter_;
-  }
+  bool root_has_backdrop_filter() const { return root_has_backdrop_filter_; }
 
   /// @brief    Indicates the maximum DlBlendMode used on any rendering op
   ///           in the root surface of the DisplayList.
@@ -340,9 +338,7 @@ class DisplayList : public SkRefCnt {
   /// for the root layer into which to render the DisplayList as some GPUs
   /// can support surfaces that do or do not support the readback that would
   /// be required for the indicated blend mode to do its work.
-  DlBlendMode max_root_blend_mode() const {
-    return max_root_blend_mode_;
-  }
+  DlBlendMode max_root_blend_mode() const { return max_root_blend_mode_; }
 
  private:
   DisplayList(DisplayListStorage&& ptr,
