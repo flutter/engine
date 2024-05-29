@@ -15,7 +15,7 @@
 #include "third_party/skia/include/gpu/ganesh/gl/egl/GrGLMakeEGLInterface.h"
 #endif
 
-#if defined(FML_OS_LINUX)
+#if defined(FML_OS_LINUX) && defined(SK_GLX)
 #include "third_party/skia/include/gpu/ganesh/gl/glx/GrGLMakeGLXInterface.h"
 #endif
 
@@ -86,7 +86,11 @@ static sk_sp<const GrGLInterface> CreateGLInterface(
 #if defined(FML_OS_ANDROID)
     return GrGLInterfaces::MakeEGL();
 #elif defined(FML_OS_LINUX)
+  #if defined(SK_GLX)
     return GrGLInterfaces::MakeGLX();
+  #else
+    return nullptr;
+  #endif
 #elif defined(FML_OS_IOS)
     return GrGLInterfaces::MakeIOS();
 #elif defined(FML_OS_MACOSX)
