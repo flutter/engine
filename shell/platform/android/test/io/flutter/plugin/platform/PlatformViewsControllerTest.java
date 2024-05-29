@@ -375,7 +375,8 @@ public class PlatformViewsControllerTest {
     // Construct a PlatformViewTouch.rawPointerCoords by doing the inverse of
     // PlatformViewsController.parsePointerCoordsList.
     List<List<Double>> pointerCoordinates =
-        Arrays.asList(Arrays.asList(
+        Arrays.asList(
+            Arrays.asList(
                 (double) original.getOrientation(),
                 (double) original.getPressure(),
                 (double) original.getSize(),
