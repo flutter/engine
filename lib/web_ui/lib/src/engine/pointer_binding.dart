@@ -733,9 +733,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       print(event.type);
     }
     _lastWheelEventAllowedDefault = false;
-    // [ui.PointerData] has a binding to the native `event` so the framework can
-    // allow the default behavior of the platform, when it doesn't handle the
-    // event itself.
+    // [ui.PointerData] can set the `_lastWheelEventAllowedDefault` variable
+    // to true, when the framework says so. See the implementation of `respond`
+    // when creating the PointerData object above.
     _callback(e, _convertWheelEventToPointerData(event));
     // This works because the `_callback` is handled synchronously in the
     // framework, so it's able to modify `_lastWheelEventAllowedDefault`.
