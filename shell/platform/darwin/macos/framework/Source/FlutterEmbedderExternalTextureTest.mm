@@ -59,7 +59,7 @@
   CVPixelBufferRef pxbuffer = NULL;
   CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault, _width, _width, _pixelFormatType,
                                         (__bridge CFDictionaryRef)options, &pxbuffer);
-  FML_DCHECK(status == kCVReturnSuccess && pxbuffer != nullptr) << "Failed to create pixel buffer";
+  FML_CHECK(status == kCVReturnSuccess && pxbuffer != nullptr) << "Failed to create pixel buffer";
   return pxbuffer;
 }
 
