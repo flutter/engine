@@ -45,8 +45,8 @@ public class FlutterShellArgs {
   public static final String ARG_KEY_TRACE_TO_FILE = "trace-to-file";
   public static final String ARG_TRACE_TO_FILE = "--trace-to-file";
   public static final String ARG_KEY_ENABLE_IMPELLER = "enable-impeller";
-  public static final String ARG_ENABLE_IMPELLER = "--enable-impeller";
-  public static final String ARG_DISABLE_IMPELLER = "--no-enable-impeller";
+  public static final String ARG_ENABLE_IMPELLER = "--enable-impeller=true";
+  public static final String ARG_DISABLE_IMPELLER = "--enable-impeller=false";
   public static final String ARG_KEY_ENABLE_VULKAN_VALIDATION = "enable-vulkan-validation";
   public static final String ARG_ENABLE_VULKAN_VALIDATION = "--enable-vulkan-validation";
   public static final String ARG_KEY_DUMP_SHADER_SKP_ON_SHADER_COMPILATION =
