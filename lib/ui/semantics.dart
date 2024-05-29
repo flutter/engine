@@ -46,7 +46,8 @@ class SemanticsAction {
   static const int _kSetTextIndex = 1 << 21;
   static const int _kFocus = 1 << 22;
   // READ THIS: if you add an action here, you MUST update the
-  // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
+  // numSemanticsActions value in testing/dart/semantics_test.dart and
+  // lib/web_ui/test/engine/semantics/semantics_api_test.dart, or tests
   // will fail.
 
   /// The equivalent of a user briefly tapping the screen with the finger
@@ -289,8 +290,9 @@ class SemanticsFlag {
   static const int _kHasExpandedStateIndex = 1 << 26;
   static const int _kIsExpandedIndex = 1 << 27;
   // READ THIS: if you add a flag here, you MUST update the numSemanticsFlags
-  // value in testing/dart/semantics_test.dart, or tests will fail. Also,
-  // please update the Flag enum in
+  // value in testing/dart/semantics_test.dart and
+  // lib/web_ui/test/engine/semantics/semantics_api_test.dart, or tests will
+  // fail. Also, please update the Flag enum in
   // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
   // and the SemanticsFlag class in lib/web_ui/lib/semantics.dart. If the new flag
   // affects the visibility of a [SemanticsNode] to accessibility services,
