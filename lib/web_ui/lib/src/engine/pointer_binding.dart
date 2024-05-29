@@ -726,9 +726,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     ));
   }
 
-  void _handleWheelEvent(DomEvent e) {
-    assert(domInstanceOfString(e, 'WheelEvent'));
-    final DomWheelEvent event = e as DomWheelEvent;
+  void _handleWheelEvent(DomEvent event) {
+    assert(domInstanceOfString(event, 'WheelEvent'));
     if (_debugLogPointerEvents) {
       print(event.type);
     }
@@ -736,11 +735,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     // [ui.PointerData] can set the `_lastWheelEventAllowedDefault` variable
     // to true, when the framework says so. See the implementation of `respond`
     // when creating the PointerData object above.
-    _callback(e, _convertWheelEventToPointerData(event));
+    _callback(event, _convertWheelEventToPointerData(event as DomWheelEvent));
     // This works because the `_callback` is handled synchronously in the
     // framework, so it's able to modify `_lastWheelEventAllowedDefault`.
     if (!_lastWheelEventAllowedDefault) {
-      e.preventDefault();
+      event.preventDefault();
     }
   }
 
