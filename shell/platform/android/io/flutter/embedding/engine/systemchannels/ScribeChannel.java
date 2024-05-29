@@ -4,6 +4,8 @@
 
 package io.flutter.embedding.engine.systemchannels;
 
+import android.graphics.RectF;
+import android.view.inputmethod.SelectGesture;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.Log;
@@ -11,6 +13,8 @@ import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.StandardMethodCodec;
+import java.util.HashMap;
+import java.util.Arrays;
 
 /**
  * {@link ScribeChannel} is a platform channel that is used by the framework to facilitate
@@ -73,5 +77,18 @@ public class ScribeChannel {
      * error otherwise.
      */
     void startStylusHandwriting();
+  }
+
+  public void performHandwritingSelectGesture(SelectGesture gesture, MethodChannel.Result result) {
+    System.out.println("justin sending performSelectionGesture for gesture: " + gesture);
+    final HashMap<Object, Object> selectionAreaMap = new HashMap<>();
+    final RectF selectionArea = gesture.getSelectionArea();
+    selectionAreaMap.put("bottom", selectionArea.bottom);
+    selectionAreaMap.put("top", selectionArea.top);
+    selectionAreaMap.put("left", selectionArea.left);
+    selectionAreaMap.put("right", selectionArea.right);
+    final HashMap<Object, Object> gestureMap = new HashMap<>();
+    gestureMap.put("selectionArea", selectionAreaMap);
+    channel.invokeMethod("ScribeClient.performSelectionGesture", Arrays.asList(gestureMap), result);
   }
 }

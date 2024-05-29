@@ -37,6 +37,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.view.inputmethod.EditorInfoCompat;
 import io.flutter.Log;
 import io.flutter.embedding.android.KeyboardManager;
+import io.flutter.embedding.engine.systemchannels.ScribeChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel;
 import io.flutter.embedding.engine.systemchannels.TextInputChannel.TextEditState;
 import io.flutter.plugin.platform.PlatformViewsController;
@@ -53,6 +54,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   @NonNull private final View mView;
   @NonNull private final InputMethodManager mImm;
   @NonNull private final AutofillManager afm;
+  @NonNull private final ScribeChannel scribeChannel;
   @NonNull private final TextInputChannel textInputChannel;
   @NonNull private InputTarget inputTarget = new InputTarget(InputTarget.Type.NO_TARGET, 0);
   @Nullable private TextInputChannel.Configuration configuration;
@@ -77,6 +79,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   public TextInputPlugin(
       @NonNull View view,
       @NonNull TextInputChannel textInputChannel,
+      @NonNull ScribeChannel scribeChannel,
       @NonNull PlatformViewsController platformViewsController) {
     mView = view;
     // Create a default object.
@@ -163,6 +166,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
         });
 
     textInputChannel.requestExistingInputState();
+
+    this.scribeChannel = scribeChannel;
 
     this.platformViewsController = platformViewsController;
     this.platformViewsController.attachTextInputPlugin(this);
@@ -358,7 +363,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
-            view, inputTarget.id, textInputChannel, keyboardManager, mEditable, outAttrs);
+            // TODO(justinmc): scribeChannel could be part of textInputChannel
+            // instead of adding a new parameter here.
+            view, inputTarget.id, textInputChannel, scribeChannel, keyboardManager, mEditable, outAttrs);
     outAttrs.initialSelStart = mEditable.getSelectionStart();
     outAttrs.initialSelEnd = mEditable.getSelectionEnd();
 

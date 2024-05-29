@@ -1120,10 +1120,13 @@ public class FlutterView extends FrameLayout
     if (Build.VERSION.SDK_INT >= API_LEVELS.API_24) {
       mouseCursorPlugin = new MouseCursorPlugin(this, this.flutterEngine.getMouseCursorChannel());
     }
+
     textInputPlugin =
         new TextInputPlugin(
             this,
             this.flutterEngine.getTextInputChannel(),
+            // TODO(justinmc): This could just be part of TextInputChannel...
+            this.flutterEngine.getScribeChannel(),
             this.flutterEngine.getPlatformViewsController());
 
     try {
