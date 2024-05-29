@@ -439,9 +439,13 @@ optional("gpu") {
       libs += [ "GL" ]
       public_defines += [ "SK_GLX" ]
     } else if (is_mac) {
-      sources += [ "src/gpu/ganesh/gl/mac/GrGLMakeNativeInterface_mac.cpp" ]
+      sources += [
+        "$_skia_root/src/gpu/ganesh/gl/mac/GrGLMakeNativeInterface_mac.cpp",
+      ]
     } else if (is_ios) {
-      sources += [ "src/gpu/ganesh/gl/iOS/GrGLMakeNativeInterface_iOS.cpp" ]
+      sources += [
+        "$_skia_root/src/gpu/ganesh/gl/iOS/GrGLMakeNativeInterface_iOS.cpp",
+      ]
     } else if (is_win) {
       sources += [
         "$_skia_root/src/gpu/ganesh/gl/win/GrGLMakeNativeInterface_win.cpp",
