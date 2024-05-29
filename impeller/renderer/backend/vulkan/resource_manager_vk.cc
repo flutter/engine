@@ -39,9 +39,6 @@ void ResourceManagerVK::Start() {
   // ... so no FML_DCHECK here.
 
   fml::Thread::SetCurrentThreadName(fml::Thread::ThreadConfig{"IplrVkResMgr"});
-  // While this code calls destructors it doesn't need to be particularly fast
-  // with them, as long as it doesn't interrupt raster thread.
-  fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
 
   bool should_exit = false;
   while (!should_exit) {

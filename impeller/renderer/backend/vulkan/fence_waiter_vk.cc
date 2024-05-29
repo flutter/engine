@@ -92,9 +92,6 @@ static std::vector<vk::Fence> GetFencesForWaitSet(const WaitSet& set) {
 void FenceWaiterVK::Main() {
   fml::Thread::SetCurrentThreadName(
       fml::Thread::ThreadConfig{"IplrVkFenceWait"});
-  // Since this thread mostly waits on fences, it doesn't need to be fast.
-  fml::RequestAffinity(fml::CpuAffinity::kEfficiency);
-
   while (true) {
     // We'll read the terminate_ flag within the lock below.
     bool terminate = false;
