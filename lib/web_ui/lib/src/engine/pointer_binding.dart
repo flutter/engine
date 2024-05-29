@@ -707,8 +707,9 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         pressureMax: 1.0,
         scrollDeltaX: deltaX,
         scrollDeltaY: deltaY,
-        respond: ({bool allowPlatformDefault = false}) {
-          _lastWheelEventAllowedDefault = allowPlatformDefault;
+        onRespond: ({bool allowPlatformDefault = false}) {
+          // Once `allowPlatformDefault` is `true`, never go back to `false`!
+          _lastWheelEventAllowedDefault |= allowPlatformDefault;
         },
       );
     }

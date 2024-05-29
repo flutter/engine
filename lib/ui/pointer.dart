@@ -137,6 +137,9 @@ enum PointerSignalKind {
   unknown
 }
 
+/// A function that implements the [PointerData.respond] method.
+typedef OnPointerDataRespondCallback = void Function({bool allowPlatformDefault});
+
 /// Information about the state of a pointer.
 class PointerData {
   /// Creates an object that represents the state of a pointer.
@@ -177,8 +180,8 @@ class PointerData {
     this.panDeltaY = 0.0,
     this.scale = 0.0,
     this.rotation = 0.0,
-    void Function({bool allowPlatformDefault})? respond,
-  }) : _respond = respond;
+    OnPointerDataRespondCallback? onRespond,
+  }) : _onRespond = onRespond;
 
   /// The ID of the [FlutterView] this [PointerEvent] originated from.
   final int viewId;
@@ -383,18 +386,24 @@ class PointerData {
 
   // An optional function that allows the framework to respond to the event
   // that triggered this PointerData instance.
-  final void Function({bool allowPlatformDefault})? _respond;
+  final OnPointerDataRespondCallback? _onRespond;
 
-  /// Function that the framework/app can call to respond to the native event
-  /// that triggered this PointerData.
+  /// Method that the framework/app can call to respond to the native event
+  /// that triggered this [PointerData].
   ///
   /// The parameter [allowPlatformDefault] allows the platform to perform the
   /// default action associated with the native event when it's set to `true`.
-  /// The default value depends on the embedder, for example in the web it is
-  /// set to `false`, unless explicitly allowed by the framework by passing `true`.
+  ///
+  /// This method can be called any number of times, but once `allowPlatformDefault`
+  /// is set to `true`, it can't be set to `false` again.
+  ///
+  /// The implementation of this method is configured through the `onRespond`
+  /// parameter of the [PointerData] constructor.
+  ///
+  /// See also [OnPointerDataRespondCallback].
   void respond({required bool allowPlatformDefault}) {
-    if (_respond != null) {
-      _respond(allowPlatformDefault: allowPlatformDefault);
+    if (_onRespond != null) {
+      _onRespond(allowPlatformDefault: allowPlatformDefault);
     }
   }
 

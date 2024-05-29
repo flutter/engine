@@ -740,6 +740,34 @@ void testMain() {
     expect(event.defaultPrevented, isFalse);
   });
 
+  test('wheel event - once allowPlatformDefault is set to true, it cannot be rolled back', () {
+    // The framework calls `data.respond(allowPlatformDefault: true)`
+    ui.PlatformDispatcher.instance.onPointerDataPacket = (ui.PointerDataPacket packet) {
+      packet.data.where(
+        (ui.PointerData datum) => datum.signalKind == ui.PointerSignalKind.scroll
+      ).forEach(
+        (ui.PointerData datum) {
+          datum.respond(allowPlatformDefault: false);
+          datum.respond(allowPlatformDefault: true);
+          datum.respond(allowPlatformDefault: false);
+        }
+      );
+    };
+
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+
+    // Check that the engine did NOT call `preventDefault` on the event.
+    expect(event.defaultPrevented, isFalse);
+  });
+
   test(
     'does synthesize add or hover or move for scroll',
     () {
