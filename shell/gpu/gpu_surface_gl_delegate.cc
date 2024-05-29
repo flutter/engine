@@ -86,11 +86,11 @@ static sk_sp<const GrGLInterface> CreateGLInterface(
 #if defined(FML_OS_ANDROID)
     return GrGLInterfaces::MakeEGL();
 #elif defined(FML_OS_LINUX)
-  #if defined(SK_GLX)
+#if defined(SK_GLX)
     return GrGLInterfaces::MakeGLX();
-  #else
+#else
     return nullptr;
-  #endif
+#endif  // defined(SK_GLX)
 #elif defined(FML_OS_IOS)
     return GrGLInterfaces::MakeIOS();
 #elif defined(FML_OS_MACOSX)
