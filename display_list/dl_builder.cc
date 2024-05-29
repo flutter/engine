@@ -474,8 +474,10 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
     }
     filter = current_.getImageFilter();
     CheckLayerOpacityCompatibility(true);
+    UpdateLayerResult(result, true);
   } else {
     CheckLayerOpacityCompatibility(false);
+    UpdateLayerResult(result, false);
   }
 
   // The actual flood of the outer layer clip will occur after the
@@ -575,8 +577,6 @@ void DisplayListBuilder::saveLayer(const SkRect& bounds,
       UpdateLayerOpacityCompatibility(false);
     }
   }
-  // REMIND: NEEDED?
-  UpdateLayerResult(result, DlBlendMode::kClear);
 }
 void DisplayListBuilder::SaveLayer(const SkRect* bounds,
                                    const DlPaint* paint,

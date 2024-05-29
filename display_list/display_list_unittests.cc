@@ -1314,38 +1314,61 @@ TEST_F(DisplayListTest, SaveLayerBoundsSnapshotsImageFilter) {
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
 }
 
-class SaveLayerOptionsExpector : public virtual DlOpReceiver,
-                                 public IgnoreAttributeDispatchHelper,
-                                 public IgnoreClipDispatchHelper,
-                                 public IgnoreTransformDispatchHelper,
-                                 public IgnoreDrawDispatchHelper {
+class SaveLayerExpector : public virtual DlOpReceiver,
+                          public IgnoreAttributeDispatchHelper,
+                          public IgnoreClipDispatchHelper,
+                          public IgnoreTransformDispatchHelper,
+                          public IgnoreDrawDispatchHelper {
  public:
-  explicit SaveLayerOptionsExpector(const SaveLayerOptions& expected) {
+  struct Expectations {
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    Expectations(SaveLayerOptions o) : options(o) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    Expectations(DlBlendMode mode) : max_blend_mode(mode) {}
+
+    std::optional<SaveLayerOptions> options;
+    std::optional<DlBlendMode> max_blend_mode;
+  };
+
+  explicit SaveLayerExpector(const Expectations& expected) {
     expected_.push_back(expected);
   }
 
-  explicit SaveLayerOptionsExpector(std::vector<SaveLayerOptions> expected)
+  explicit SaveLayerExpector(std::vector<Expectations> expected)
       : expected_(std::move(expected)) {}
 
   void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override {
-    EXPECT_EQ(options, expected_[save_layer_count_])
-        << "index " << save_layer_count_;
-    save_layer_count_++;
+    FML_UNREACHABLE();
+  }
+
+  virtual void saveLayer(const SkRect& bounds,
+                         const SaveLayerOptions& options,
+                         uint32_t total_content_depth,
+                         DlBlendMode max_content_blend_mode,
+                         const DlImageFilter* backdrop = nullptr) {
+    auto label = "index " + std::to_string(save_layer_count_);
+    auto expect = expected_[save_layer_count_++];
+    if (expect.options.has_value()) {
+      EXPECT_EQ(options, expect.options.value()) << label;
+    }
+    if (expect.max_blend_mode.has_value()) {
+      EXPECT_EQ(max_content_blend_mode, expect.max_blend_mode.value()) << label;
+    }
   }
 
   int save_layer_count() { return save_layer_count_; }
 
  private:
-  std::vector<SaveLayerOptions> expected_;
+  std::vector<Expectations> expected_;
   int save_layer_count_ = 0;
 };
 
 TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1361,7 +1384,7 @@ TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
 TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1375,7 +1398,7 @@ TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
 
 TEST_F(DisplayListTest, SaveLayerTwoOverlappingOpsDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1395,7 +1418,7 @@ TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
   SaveLayerOptions expected2 = SaveLayerOptions::kWithAttributes;
   SaveLayerOptions expected3 =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector({expected1, expected2, expected3});
+  SaveLayerExpector expector({expected1, expected2, expected3});
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1418,7 +1441,7 @@ TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptions expected2 =
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector({expected1, expected2});
+  SaveLayerExpector expector({expected1, expected2});
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1435,7 +1458,7 @@ TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
 
 TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1452,7 +1475,7 @@ TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
 
 TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1469,7 +1492,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
 
 TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1487,7 +1510,7 @@ TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
 TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1503,7 +1526,7 @@ TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
 
 TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1519,7 +1542,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
 
 TEST_F(DisplayListTest, SaveLayerSrcBlendOnChildDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -4071,6 +4094,147 @@ TEST_F(DisplayListTest, OpacityIncompatibleRenderOpInsideDeferredSave) {
     builder.Restore();
     EXPECT_FALSE(builder.Build()->can_apply_group_opacity());
   }
+}
+
+TEST_F(DisplayListTest, MaxBlendModeEmptyDisplayList) {
+  DisplayListBuilder builder;
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kClear);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeSimpleRect) {
+  auto test = [](DlBlendMode mode) {
+    DisplayListBuilder builder;
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setAlpha(0x7f).setBlendMode(mode));
+    DlBlendMode expect =
+        (mode == DlBlendMode::kDst) ? DlBlendMode::kClear : mode;
+    EXPECT_EQ(builder.Build()->max_root_blend_mode(), expect)  //
+        << "testing " << mode;
+  };
+
+  for (int i = 0; i < static_cast<int>(DlBlendMode::kLastMode); i++) {
+    test(static_cast<DlBlendMode>(i));
+  }
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideNonDeferredSave) {
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    // Trigger the deferred save
+    builder.Scale(2.0f, 2.0f);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  // Save was triggered, did it forward the max blend mode?
+  builder.Restore();
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kModulate);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideDeferredSave) {
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    // Nothing to trigger the deferred save...
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  // Deferred save was not triggered, did it forward the max blend mode?
+  builder.Restore();
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kModulate);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideSaveLayer) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
+  SaveLayerExpector expector(DlBlendMode::kModulate);
+  dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideNonDefaultBlendedSaveLayer) {
+  DisplayListBuilder builder;
+  DlPaint save_paint;
+  save_paint.setBlendMode(DlBlendMode::kScreen);
+  builder.SaveLayer(nullptr, &save_paint);
+  {
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kScreen);
+  SaveLayerExpector expector(DlBlendMode::kModulate);
+  dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideComplexDeferredSaves) {
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+    builder.Save();
+    {
+      // We want to use a blend mode that is greater than modulate here
+      ASSERT_GT(DlBlendMode::kScreen, DlBlendMode::kModulate);
+      builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                       DlPaint().setBlendMode(DlBlendMode::kScreen));
+    }
+    builder.Restore();
+
+    // We want to use a blend mode that is smaller than modulate here
+    ASSERT_LT(DlBlendMode::kSrc, DlBlendMode::kModulate);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kSrc));
+  }
+  builder.Restore();
+
+  // Double check that kScreen is the max blend mode
+  auto expect = std::max(DlBlendMode::kModulate, DlBlendMode::kScreen);
+  expect = std::max(expect, DlBlendMode::kSrc);
+  ASSERT_EQ(expect, DlBlendMode::kScreen);
+
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kScreen);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideComplexSaveLayers) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    // outer save layer has Modulate now and Src later - Modulate is larger
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+    builder.SaveLayer(nullptr, nullptr);
+    {
+      // inner save layer only has a Screen blend
+      builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                       DlPaint().setBlendMode(DlBlendMode::kScreen));
+    }
+    builder.Restore();
+
+    // We want to use a blend mode that is smaller than modulate here
+    ASSERT_LT(DlBlendMode::kSrc, DlBlendMode::kModulate);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kSrc));
+  }
+  builder.Restore();
+
+  // Double check that kModulate is the max blend mode for the first
+  // saveLayer operations
+  auto expect = std::max(DlBlendMode::kModulate, DlBlendMode::kSrc);
+  ASSERT_EQ(expect, DlBlendMode::kModulate);
+
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
+  SaveLayerExpector expector({DlBlendMode::kModulate, DlBlendMode::kScreen});
+  dl->Dispatch(expector);
 }
 
 }  // namespace testing
