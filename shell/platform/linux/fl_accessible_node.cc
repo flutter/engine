@@ -59,6 +59,7 @@ static ActionData action_mapping[] = {
     {kFlutterSemanticsActionMoveCursorForwardByWord, "MoveCursorForwardByWord"},
     {kFlutterSemanticsActionMoveCursorBackwardByWord,
      "MoveCursorBackwardByWord"},
+    {kFocus, "Focus"},
     {static_cast<FlutterSemanticsAction>(0), nullptr}};
 
 struct FlAccessibleNodePrivate {

@@ -44,6 +44,7 @@ class SemanticsAction {
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
   static const int _kSetTextIndex = 1 << 21;
+  static const int _kFocus = 1 << 22;
   // READ THIS: if you add an action here, you MUST update the
   // numSemanticsActions value in testing/dart/semantics_test.dart, or tests
   // will fail.
@@ -201,6 +202,8 @@ class SemanticsAction {
   /// movement should extend (or start) a selection.
   static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(_kMoveCursorBackwardByWordIndex, 'moveCursorBackwardByWord');
 
+  static const SemanticsAction focus = SemanticsAction._(_kFocus, 'focus');
+
   /// The possible semantics actions.
   ///
   /// The map's key is the [index] of the action and the value is the action
@@ -228,6 +231,7 @@ class SemanticsAction {
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
     _kSetTextIndex: setText,
+    _kFocus: focus,
   };
 
   static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);

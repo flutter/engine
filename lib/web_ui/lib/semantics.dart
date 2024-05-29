@@ -32,6 +32,7 @@ class SemanticsAction {
   static const int _kMoveCursorForwardByWordIndex = 1 << 19;
   static const int _kMoveCursorBackwardByWordIndex = 1 << 20;
   static const int _kSetTextIndex = 1 << 21;
+  static const int _kFocus = 1 << 22;
 
   static const SemanticsAction tap = SemanticsAction._(_kTapIndex, 'tap');
   static const SemanticsAction longPress = SemanticsAction._(_kLongPressIndex, 'longPress');
@@ -55,6 +56,7 @@ class SemanticsAction {
   static const SemanticsAction dismiss = SemanticsAction._(_kDismissIndex, 'dismiss');
   static const SemanticsAction moveCursorForwardByWord = SemanticsAction._(_kMoveCursorForwardByWordIndex, 'moveCursorForwardByWord');
   static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(_kMoveCursorBackwardByWordIndex, 'moveCursorBackwardByWord');
+  static const SemanticsAction focus = SemanticsAction._(_kFocus, 'focus');
 
   static const Map<int, SemanticsAction> _kActionById = <int, SemanticsAction>{
     _kTapIndex: tap,
@@ -79,6 +81,7 @@ class SemanticsAction {
     _kMoveCursorForwardByWordIndex: moveCursorForwardByWord,
     _kMoveCursorBackwardByWordIndex: moveCursorBackwardByWord,
     _kSetTextIndex: setText,
+    _kFocus: focus,
   };
 
   static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);

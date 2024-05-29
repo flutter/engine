@@ -162,6 +162,7 @@ typedef enum {
   kFlutterSemanticsActionMoveCursorBackwardByWord = 1 << 20,
   /// Replace the current text in the text field.
   kFlutterSemanticsActionSetText = 1 << 21,
+  kFlutterSemanticsActionFocus = 1 << 22,
 } FlutterSemanticsAction;
 
 /// The set of properties that may be associated with a semantics node.
