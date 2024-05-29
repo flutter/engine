@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_SKIA_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_SKIA_H_
 
+#if !SLIMPELLER
+
 #include <Metal/Metal.h>
 
 #include "flutter/fml/macros.h"
@@ -18,7 +20,7 @@ namespace flutter {
 
 class IOSContextMetalSkia final : public IOSContext {
  public:
-  explicit IOSContextMetalSkia(MsaaSampleCount msaa_samples);
+  explicit IOSContextMetalSkia();
 
   ~IOSContextMetalSkia();
 
@@ -50,5 +52,7 @@ class IOSContextMetalSkia final : public IOSContext {
 };
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_IOS_CONTEXT_METAL_SKIA_H_

@@ -119,6 +119,7 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
   switch (options) {
     case flutter::DlImageSampling::kNearestNeighbor:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kNearest;
+      desc.mip_filter = impeller::MipFilter::kBase;
       desc.label = "Nearest Sampler";
       break;
     case flutter::DlImageSampling::kLinear:
@@ -813,7 +814,7 @@ void DlDispatcherBase::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
+  if (skia_conversions::IsNearlySimpleRRect(rrect)) {
     GetCanvas().DrawRRect(skia_conversions::ToRect(rrect.rect()),
                           skia_conversions::ToSize(rrect.getSimpleRadii()),
                           paint_);
@@ -1248,8 +1249,8 @@ void TextFrameDispatcher::drawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
     SkScalar x,
     SkScalar y) {
-  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,
-                                              matrix_.GetMaxBasisLengthXY());
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(
+      *text_frame, matrix_.GetMaxBasisLengthXY(), Point(x, y));
 }
 
 void TextFrameDispatcher::drawDisplayList(
