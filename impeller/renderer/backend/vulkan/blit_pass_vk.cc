@@ -345,16 +345,18 @@ bool BlitPassVK::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
   // of the blit, before finally switching it to ShaderReadOnly so its available
   // for sampling in a shader.
   InsertImageMemoryBarrier(
-      cmd,                                   // command buffer
-      image,                                 // image
-      vk::AccessFlagBits::eTransferWrite,    // src access mask
-      vk::AccessFlagBits::eTransferRead,     // dst access mask
-      src.GetLayout(),                       // old layout
-      vk::ImageLayout::eTransferDstOptimal,  // new layout
-      vk::PipelineStageFlagBits::eTransfer,  // src stage
-      vk::PipelineStageFlagBits::eTransfer,  // dst stage
-      0u,                                    // mip level
-      mip_count                              // mip level count
+      cmd,    // command buffer
+      image,  // image
+      vk::AccessFlagBits::eTransferWrite |
+          vk::AccessFlagBits::eColorAttachmentWrite,  // src access mask
+      vk::AccessFlagBits::eTransferRead,              // dst access mask
+      src.GetLayout(),                                // old layout
+      vk::ImageLayout::eTransferDstOptimal,           // new layout
+      vk::PipelineStageFlagBits::eTransfer |
+          vk::PipelineStageFlagBits::eColorAttachmentOutput,  // src stage
+      vk::PipelineStageFlagBits::eTransfer,                   // dst stage
+      0u,                                                     // mip level
+      mip_count                                               // mip level count
   );
 
   vk::ImageMemoryBarrier barrier;
