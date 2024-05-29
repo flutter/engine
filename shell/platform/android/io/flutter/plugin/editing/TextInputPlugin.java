@@ -352,13 +352,9 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
       EditorInfoCompat.setContentMimeTypes(outAttrs, imgTypeString);
     }
 
-    if (EditorInfoCompat.isStylusHandwritingEnabled(outAttrs)) {
-      // TODO(justinmc): This is never called. Is it that
-      // isStylusHandwritingEnabled is false?
-      EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
-      outAttrs.setSupportedHandwritingGestures(Arrays.asList(SelectGesture.class, SelectRangeGesture.class, InsertGesture.class, InsertModeGesture.class, DeleteGesture.class, DeleteRangeGesture.class, SelectRangeGesture.class, JoinOrSplitGesture.class, RemoveSpaceGesture.class));
-      outAttrs.setSupportedHandwritingGesturePreviews(Set.of(SelectGesture.class, SelectRangeGesture.class, DeleteGesture.class, DeleteRangeGesture.class));
-    }
+    EditorInfoCompat.setStylusHandwritingEnabled(outAttrs, true);
+    outAttrs.setSupportedHandwritingGestures(Arrays.asList(SelectGesture.class, SelectRangeGesture.class, InsertGesture.class, InsertModeGesture.class, DeleteGesture.class, DeleteRangeGesture.class, SelectRangeGesture.class, JoinOrSplitGesture.class, RemoveSpaceGesture.class));
+    outAttrs.setSupportedHandwritingGesturePreviews(Set.of(SelectGesture.class, SelectRangeGesture.class, DeleteGesture.class, DeleteRangeGesture.class));
 
     InputConnectionAdaptor connection =
         new InputConnectionAdaptor(
