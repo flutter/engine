@@ -294,7 +294,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       }
     });
 
-    test('instantiateImageCodec with multi-frame image does not support targetWidth/targetHeight',
+    test(
+        'instantiateImageCodec with multi-frame image supports targetWidth/targetHeight',
         () async {
         final ui.Codec codec = await ui.instantiateImageCodec(
           kAnimatedGif,
@@ -303,18 +304,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         );
         final ui.Image image = (await codec.getNextFrame()).image;
 
-        expect(
-        warnings,
-        containsAllInOrder(
-          <String>[
-            'targetWidth and targetHeight for multi-frame images not supported',
-          ],
-        ),
-      );
-
         // expect the re-size did not happen, kAnimatedGif is [1x1]
-        expect(image.width, 1);
-        expect(image.height, 1);
+      expect(image.width, 2);
+      expect(image.height, 3);
         image.dispose();
         codec.dispose();
     });

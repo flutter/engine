@@ -13,14 +13,15 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     [int? targetWidth, int? targetHeight]) async {
-  // If we have either a target width or target height, use canvaskit to decode.
   ui.Codec codec;
+  print('browser supports image decoder? $browserSupportsImageDecoder');
   if (browserSupportsImageDecoder) {
     codec = await CkBrowserImageDecoder.create(
       data: list,
       debugSource: 'encoded image bytes',
     );
   } else {
+    // TODO(harryterkelsen): If the image is animated, then use Skia to decode.
     final DomBlob blob = createDomBlob(<dynamic>[list.buffer]);
     codec = CkImageBlobCodec(blob);
   }
