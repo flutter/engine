@@ -178,7 +178,7 @@ class PointerData {
     this.scale = 0.0,
     this.rotation = 0.0,
     void Function({bool allowPlatformDefault})? respond,
-  }):_respond = respond;
+  }) : _respond = respond;
 
   /// The ID of the [FlutterView] this [PointerEvent] originated from.
   final int viewId;
@@ -389,7 +389,7 @@ class PointerData {
   /// that triggered this PointerData.
   ///
   /// The parameter [allowPlatformDefault] allows the platform to perform the
-  /// default action associated to the native event when it's set to `true`.
+  /// default action associated with the native event when it's set to `true`.
   /// The default value depends on the embedder, for example in the web it is
   /// set to `false`, unless explicitly allowed by the framework by passing `true`.
   void respond({required bool allowPlatformDefault}) {
