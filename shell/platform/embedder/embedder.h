@@ -162,7 +162,7 @@ typedef enum {
   kFlutterSemanticsActionMoveCursorBackwardByWord = 1 << 20,
   /// Replace the current text in the text field.
   kFlutterSemanticsActionSetText = 1 << 21,
-  /// Request that the respective focusable widget gain keyboard input focus.
+  /// Request that the respective focusable widget gain input focus.
   kFlutterSemanticsActionFocus = 1 << 22,
 } FlutterSemanticsAction;
 
