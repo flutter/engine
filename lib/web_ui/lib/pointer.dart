@@ -34,7 +34,7 @@ enum PointerSignalKind {
   unknown
 }
 
-typedef OnPointerDataRespondCallback = void Function({bool allowPlatformDefault});
+typedef PointerDataRespondCallback = void Function({bool allowPlatformDefault});
 
 class PointerData {
   const PointerData({
@@ -74,7 +74,7 @@ class PointerData {
     this.panDeltaY = 0.0,
     this.scale = 0.0,
     this.rotation = 0.0,
-    OnPointerDataRespondCallback? onRespond,
+    PointerDataRespondCallback? onRespond,
   }) : _onRespond = onRespond;
   final int viewId;
   final int embedderId;
@@ -112,7 +112,7 @@ class PointerData {
   final double panDeltaY;
   final double scale;
   final double rotation;
-  final OnPointerDataRespondCallback? _onRespond;
+  final PointerDataRespondCallback? _onRespond;
 
   void respond({required bool allowPlatformDefault}) {
     if (_onRespond != null) {

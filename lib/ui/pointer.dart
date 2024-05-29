@@ -138,7 +138,7 @@ enum PointerSignalKind {
 }
 
 /// A function that implements the [PointerData.respond] method.
-typedef OnPointerDataRespondCallback = void Function({bool allowPlatformDefault});
+typedef PointerDataRespondCallback = void Function({bool allowPlatformDefault});
 
 /// Information about the state of a pointer.
 class PointerData {
@@ -180,7 +180,7 @@ class PointerData {
     this.panDeltaY = 0.0,
     this.scale = 0.0,
     this.rotation = 0.0,
-    OnPointerDataRespondCallback? onRespond,
+    PointerDataRespondCallback? onRespond,
   }) : _onRespond = onRespond;
 
   /// The ID of the [FlutterView] this [PointerEvent] originated from.
@@ -386,7 +386,7 @@ class PointerData {
 
   // An optional function that allows the framework to respond to the event
   // that triggered this PointerData instance.
-  final OnPointerDataRespondCallback? _onRespond;
+  final PointerDataRespondCallback? _onRespond;
 
   /// Method that the framework/app can call to respond to the native event
   /// that triggered this [PointerData].
@@ -400,7 +400,7 @@ class PointerData {
   /// The implementation of this method is configured through the `onRespond`
   /// parameter of the [PointerData] constructor.
   ///
-  /// See also [OnPointerDataRespondCallback].
+  /// See also [PointerDataRespondCallback].
   void respond({required bool allowPlatformDefault}) {
     if (_onRespond != null) {
       _onRespond(allowPlatformDefault: allowPlatformDefault);

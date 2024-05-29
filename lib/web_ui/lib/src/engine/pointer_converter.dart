@@ -117,7 +117,7 @@ class PointerDataConverter {
     required double scrollDeltaX,
     required double scrollDeltaY,
     required double scale,
-    ui.OnPointerDataRespondCallback? onRespond,
+    ui.PointerDataRespondCallback? onRespond,
   }) {
     assert(globalPointerState.pointers.containsKey(device));
     final _PointerDeviceState state = globalPointerState.pointers[device]!;
@@ -265,7 +265,7 @@ class PointerDataConverter {
     double scrollDeltaX = 0.0,
     double scrollDeltaY = 0.0,
     double scale = 1.0,
-    ui.OnPointerDataRespondCallback? onRespond,
+    ui.PointerDataRespondCallback? onRespond,
   }) {
     if (_debugLogPointerConverter) {
       print('>> view=$viewId device=$device change=$change buttons=$buttons');
