@@ -626,7 +626,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
     // when it is restored into the parent layer.
     const std::shared_ptr<const DlImageFilter> filter;
   };
-  static_assert(sizeof(SaveInfo) == 248);
 
   const DlRect original_cull_rect_;
   std::vector<SaveInfo> save_stack_;
