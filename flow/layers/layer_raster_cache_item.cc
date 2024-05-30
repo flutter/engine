@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/raster_cache_item.h"
@@ -106,8 +108,6 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
   FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
   LayerStateStack state_stack;
   state_stack.set_delegate(canvas);
-  state_stack.set_checkerboard_func(
-      paint_context.state_stack.checkerboard_func());
   PaintContext context = {
       // clang-format off
       .state_stack                   = state_stack,
@@ -198,3 +198,5 @@ bool LayerRasterCacheItem::Draw(const PaintContext& context,
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

@@ -12,7 +12,6 @@
 
 #include "impeller/core/texture.h"
 #include "impeller/geometry/rect.h"
-#include "impeller/renderer/pipeline.h"
 #include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/rectangle_packer.h"
 
@@ -80,9 +79,12 @@ class GlyphAtlas {
   ///             atlas.
   ///
   /// @param[in]  pair  The font-glyph pair
-  /// @param[in]  rect  The rectangle
+  /// @param[in]  rect  The position in the atlas
+  /// @param[in]  bounds The bounds of the glyph at scale
   ///
-  void AddTypefaceGlyphPosition(const FontGlyphPair& pair, Rect rect);
+  void AddTypefaceGlyphPositionAndBounds(const FontGlyphPair& pair,
+                                         Rect position,
+                                         Rect bounds);
 
   //----------------------------------------------------------------------------
   /// @brief      Get the number of unique font-glyph pairs in this atlas.
@@ -102,7 +104,7 @@ class GlyphAtlas {
   ///
   size_t IterateGlyphs(
       const std::function<bool(const ScaledFont& scaled_font,
-                               const Glyph& glyph,
+                               const SubpixelGlyph& glyph,
                                const Rect& rect)>& iterator) const;
 
   //----------------------------------------------------------------------------
@@ -113,7 +115,8 @@ class GlyphAtlas {
   /// @return     The location of the font-glyph pair in the atlas.
   ///             `std::nullopt` if the pair is not in the atlas.
   ///
-  std::optional<Rect> FindFontGlyphBounds(const FontGlyphPair& pair) const;
+  std::optional<std::pair<Rect, Rect>> FindFontGlyphBounds(
+      const FontGlyphPair& pair) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Obtain an interface for querying the location of glyphs in the
@@ -127,7 +130,9 @@ class GlyphAtlas {
   ///             scale are not available in the atlas.  The pointer is only
   ///             valid for the lifetime of the GlyphAtlas.
   ///
-  const FontGlyphAtlas* GetFontGlyphAtlas(const Font& font, Scalar scale) const;
+  const FontGlyphAtlas* GetFontGlyphAtlas(const Font& font,
+                                          Scalar scale,
+                                          Color color) const;
 
  private:
   const Type type_;
@@ -145,6 +150,8 @@ class GlyphAtlas {
 ///
 class GlyphAtlasContext {
  public:
+  explicit GlyphAtlasContext(GlyphAtlas::Type type);
+
   virtual ~GlyphAtlasContext();
 
   //----------------------------------------------------------------------------
@@ -160,18 +167,28 @@ class GlyphAtlasContext {
   std::shared_ptr<RectanglePacker> GetRectPacker() const;
 
   //----------------------------------------------------------------------------
+  /// @brief      A y-coordinate shift that must be applied to glyphs appended
+  /// to
+  ///             the atlas.
+  ///
+  ///             The rectangle packer is only initialized for unfilled regions
+  ///             of the atlas. The area the rectangle packer covers is offset
+  ///             from the origin by this height adjustment.
+  int64_t GetHeightAdjustment() const;
+
+  //----------------------------------------------------------------------------
   /// @brief      Update the context with a newly constructed glyph atlas.
-  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
+                        ISize size,
+                        int64_t height_adjustment_);
 
   void UpdateRectPacker(std::shared_ptr<RectanglePacker> rect_packer);
-
- protected:
-  GlyphAtlasContext();
 
  private:
   std::shared_ptr<GlyphAtlas> atlas_;
   ISize atlas_size_;
   std::shared_ptr<RectanglePacker> rect_packer_;
+  int64_t height_adjustment_;
 
   GlyphAtlasContext(const GlyphAtlasContext&) = delete;
 
@@ -194,11 +211,12 @@ class FontGlyphAtlas {
   /// @return     The location of the glyph in the atlas.
   ///             `std::nullopt` if the glyph is not in the atlas.
   ///
-  std::optional<Rect> FindGlyphBounds(const Glyph& glyph) const;
+  std::optional<std::pair<Rect, Rect>> FindGlyphBounds(
+      const SubpixelGlyph& glyph) const;
 
  private:
   friend class GlyphAtlas;
-  std::unordered_map<Glyph, Rect> positions_;
+  std::unordered_map<SubpixelGlyph, std::pair<Rect, Rect>> positions_;
 
   FontGlyphAtlas(const FontGlyphAtlas&) = delete;
 

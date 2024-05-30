@@ -7,7 +7,6 @@ import 'dart:math' as math;
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../dom.dart';
 import '../util.dart';
 import '../view_embedder/style_manager.dart';
@@ -436,7 +435,7 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     this.maxLines,
     this.fontFamily,
     this.fontSize,
-    this.height,
+    double? height,
     ui.TextHeightBehavior? textHeightBehavior,
     this.fontWeight,
     this.fontStyle,
@@ -445,7 +444,8 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
     this.locale,
   })  : _textHeightBehavior = textHeightBehavior,
         // TODO(mdebbar): add support for strut style., b/128317744
-        _strutStyle = strutStyle as EngineStrutStyle?;
+        _strutStyle = strutStyle as EngineStrutStyle?,
+        height = height == ui.kTextHeightNone ? null : height;
 
   final ui.TextAlign? textAlign;
   final ui.TextDirection? textDirection;
@@ -809,7 +809,7 @@ class EngineStrutStyle implements ui.StrutStyle {
   })  : _fontFamily = fontFamily,
         _fontFamilyFallback = fontFamilyFallback,
         _fontSize = fontSize,
-        _height = height,
+        _height = height == ui.kTextHeightNone ? null : height,
         _leadingDistribution = leadingDistribution,
         _leading = leading,
         _fontWeight = fontWeight,
@@ -1006,7 +1006,7 @@ void applyTextStyleToElement({
       final String? textDecoration =
           _textDecorationToCssString(style.decoration, style.decorationStyle);
       if (textDecoration != null) {
-        if (browserEngine == BrowserEngine.webkit) {
+        if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
           setElementStyle(element, '-webkit-text-decoration', textDecoration);
         } else {
           cssStyle.textDecoration = textDecoration;

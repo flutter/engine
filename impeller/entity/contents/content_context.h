@@ -10,24 +10,18 @@
 #include <optional>
 #include <unordered_map>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
-#include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/typographer_context.h"
-
-#ifdef IMPELLER_DEBUG
-#include "impeller/entity/checkerboard.frag.h"
-#include "impeller/entity/checkerboard.vert.h"
-#endif  // IMPELLER_DEBUG
 
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/clip.frag.h"
@@ -59,8 +53,6 @@
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 
-#include "impeller/typographer/glyph_atlas.h"
-
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
@@ -83,11 +75,6 @@
 #endif
 
 namespace impeller {
-
-#ifdef IMPELLER_DEBUG
-using CheckerboardPipeline =
-    RenderPipelineHandle<CheckerboardVertexShader, CheckerboardFragmentShader>;
-#endif  // IMPELLER_DEBUG
 
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
@@ -388,13 +375,6 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
-
-#ifdef IMPELLER_DEBUG
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(checkerboard_pipelines_, opts);
-  }
-#endif  // IMPELLER_DEBUG
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -875,10 +855,6 @@ class ContentContext {
   // variants requested from that are lazily created and cached in the variants
   // map.
 
-#ifdef IMPELLER_DEBUG
-  mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
-#endif  // IMPELLER_DEBUG
-
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
@@ -1000,8 +976,8 @@ class ContentContext {
     }
 
     auto variant_future = pipeline->CreateVariant(
-        [&opts, variants_count =
-                    container.GetPipelineCount()](PipelineDescriptor& desc) {
+        /*async=*/false, [&opts, variants_count = container.GetPipelineCount()](
+                             PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));

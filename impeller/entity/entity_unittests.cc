@@ -12,6 +12,7 @@
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "fml/logging.h"
 #include "gtest/gtest.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/atlas_contents.h"
@@ -2070,6 +2071,9 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
       uv_data.push_back(j % 2 == 0 ? u : v);
     }
   }
+  auto cmd_buffer = context->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+
   impeller::TextureDescriptor y_texture_descriptor;
   y_texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   y_texture_descriptor.format = PixelFormat::kR8UNormInt;
@@ -2077,9 +2081,10 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
   auto y_texture =
       context->GetResourceAllocator()->CreateTexture(y_texture_descriptor);
   auto y_mapping = std::make_shared<fml::DataMapping>(y_data);
-  if (!y_texture->SetContents(y_mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into Y texture.";
-  }
+  auto y_mapping_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(*y_mapping);
+
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(y_mapping_buffer), y_texture);
 
   impeller::TextureDescriptor uv_texture_descriptor;
   uv_texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
@@ -2088,8 +2093,14 @@ static std::vector<std::shared_ptr<Texture>> CreateTestYUVTextures(
   auto uv_texture =
       context->GetResourceAllocator()->CreateTexture(uv_texture_descriptor);
   auto uv_mapping = std::make_shared<fml::DataMapping>(uv_data);
-  if (!uv_texture->SetContents(uv_mapping)) {
-    FML_DLOG(ERROR) << "Could not copy contents into UV texture.";
+  auto uv_mapping_buffer =
+      context->GetResourceAllocator()->CreateBufferWithCopy(*uv_mapping);
+
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(uv_mapping_buffer), uv_texture);
+
+  if (!blit_pass->EncodeCommands(context->GetResourceAllocator()) ||
+      !context->GetCommandQueue()->Submit({cmd_buffer}).ok()) {
+    FML_DLOG(ERROR) << "Could not copy contents into Y/UV texture.";
   }
 
   return {y_texture, uv_texture};
@@ -2345,26 +2356,6 @@ TEST_P(EntityTest, InheritOpacityTest) {
   tiled_texture->SetInheritedOpacity(0.5);
   ASSERT_EQ(tiled_texture->GetOpacityFactor(), 0.25);
 
-  // Text contents can accept opacity if the text frames do not
-  // overlap
-  SkFont font = flutter::testing::CreateTestFontOfSize(30);
-  auto blob = SkTextBlob::MakeFromString("A", font);
-  auto frame = MakeTextFrameFromTextBlobSkia(blob);
-  auto lazy_glyph_atlas =
-      std::make_shared<LazyGlyphAtlas>(TypographerContextSkia::Make());
-  lazy_glyph_atlas->AddTextFrame(*frame, 1.0f);
-
-  auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(frame);
-  text_contents->SetColor(Color::Blue().WithAlpha(0.5));
-
-  ASSERT_TRUE(text_contents->CanInheritOpacity(entity));
-
-  text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
-  text_contents->SetInheritedOpacity(0.5);
-  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
-
   // Clips and restores trivially accept opacity.
   ASSERT_TRUE(ClipContents().CanInheritOpacity(entity));
   ASSERT_TRUE(ClipRestoreContents().CanInheritOpacity(entity));
@@ -2566,6 +2557,7 @@ TEST_P(EntityTest, TextContentsCeilsGlyphScaleToDecimal) {
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.5321111f, 12), 0.53f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(2.1f, 12), 2.1f);
   ASSERT_EQ(TextFrame::RoundScaledFontSize(0.0f, 12), 0.0f);
+  ASSERT_EQ(TextFrame::RoundScaledFontSize(100000000.0f, 12), 48.0f);
 }
 
 TEST_P(EntityTest, AdvancedBlendCoverageHintIsNotResetByEntityPass) {

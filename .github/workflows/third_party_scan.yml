@@ -21,7 +21,7 @@ jobs:
       contents: read
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
         with:
           persist-credentials: false
       - name: "setup python"
@@ -41,7 +41,7 @@ jobs:
     name: Vulnerability scanning
     needs:
       extract-deps
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.7.1"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.7.3"
     with:
       # Download the artifact uploaded in extract-deps step
       download-artifact: osv-lockfile-${{github.sha}}
