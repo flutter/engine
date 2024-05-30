@@ -128,8 +128,8 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     size_t device_extension_count,
     const char** device_extensions,
     ContextType context_type) const {
-  uint32_t skia_features = 0;
-  if (!device_.GetPhysicalDeviceFeaturesSkia(&skia_features)) {
+  VkPhysicalDeviceFeatures features;
+  if (!device_.GetPhysicalDeviceFeatures(&features)) {
     FML_LOG(ERROR) << "Failed to get physical device features.";
 
     return nullptr;
@@ -149,12 +149,10 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
   backend_context.fDevice = device_.GetHandle();
   backend_context.fQueue = device_.GetQueueHandle();
   backend_context.fGraphicsQueueIndex = device_.GetGraphicsQueueIndex();
-  backend_context.fMinAPIVersion = version;
   backend_context.fMaxAPIVersion = version;
-  backend_context.fFeatures = skia_features;
+  backend_context.fDeviceFeatures = &features;
   backend_context.fVkExtensions = &extensions;
   backend_context.fGetProc = get_proc;
-  backend_context.fOwnsInstanceAndDevice = false;
 
   uint32_t vulkan_api_version = version;
   sk_sp<skgpu::VulkanMemoryAllocator> allocator =
