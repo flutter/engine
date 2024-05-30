@@ -1349,6 +1349,7 @@ class SaveLayerExpector : public virtual DlOpReceiver,
                          DlBlendMode max_content_blend_mode,
                          const DlImageFilter* backdrop = nullptr) {
     auto label = "index " + std::to_string(save_layer_count_);
+    ASSERT_LT(save_layer_count_, expected_.size());
     auto expect = expected_[save_layer_count_++];
     if (expect.options.has_value()) {
       EXPECT_EQ(options, expect.options.value()) << label;
@@ -1358,11 +1359,13 @@ class SaveLayerExpector : public virtual DlOpReceiver,
     }
   }
 
-  int save_layer_count() { return save_layer_count_; }
+  bool all_expectations_checked() const {
+    return save_layer_count_ == expected_.size();
+  }
 
  private:
   std::vector<Expectations> expected_;
-  int save_layer_count_ = 0;
+  size_t save_layer_count_ = 0;
 };
 
 TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
@@ -1378,7 +1381,7 @@ TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
@@ -1393,7 +1396,7 @@ TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerTwoOverlappingOpsDoesNotInheritOpacity) {
@@ -1409,7 +1412,7 @@ TEST_F(DisplayListTest, SaveLayerTwoOverlappingOpsDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
@@ -1433,7 +1436,7 @@ TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 3);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
@@ -1453,7 +1456,7 @@ TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 2);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
@@ -1470,7 +1473,7 @@ TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
@@ -1487,7 +1490,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
@@ -1504,7 +1507,7 @@ TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
@@ -1521,7 +1524,7 @@ TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
@@ -1537,7 +1540,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerSrcBlendOnChildDoesNotInheritOpacity) {
@@ -1553,7 +1556,7 @@ TEST_F(DisplayListTest, SaveLayerSrcBlendOnChildDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
@@ -4156,6 +4159,7 @@ TEST_F(DisplayListTest, MaxBlendModeInsideSaveLayer) {
   EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
   SaveLayerExpector expector(DlBlendMode::kModulate);
   dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, MaxBlendModeInsideNonDefaultBlendedSaveLayer) {
@@ -4172,6 +4176,7 @@ TEST_F(DisplayListTest, MaxBlendModeInsideNonDefaultBlendedSaveLayer) {
   EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kScreen);
   SaveLayerExpector expector(DlBlendMode::kModulate);
   dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, MaxBlendModeInsideComplexDeferredSaves) {
@@ -4235,6 +4240,62 @@ TEST_F(DisplayListTest, MaxBlendModeInsideComplexSaveLayers) {
   EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
   SaveLayerExpector expector({DlBlendMode::kModulate, DlBlendMode::kScreen});
   dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionEmptyDisplayList) {
+  DisplayListBuilder builder;
+  EXPECT_FALSE(builder.Build()->root_has_backdrop_filter());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionSimpleRect) {
+  DisplayListBuilder builder;
+  builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10), DlPaint());
+  EXPECT_FALSE(builder.Build()->root_has_backdrop_filter());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionSimpleSaveLayer) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr, &kTestBlurImageFilter1);
+  {
+    // inner content has no backdrop filter
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10), DlPaint());
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+
+  EXPECT_TRUE(dl->root_has_backdrop_filter());
+  // The saveLayer itself, though, does not have the contains backdrop
+  // flag set because its content does not contain a saveLayer with backdrop
+  SaveLayerExpector expector(
+      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity());
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionNestedSaveLayer) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    // first inner content does have backdrop filter
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10), DlPaint());
+    builder.SaveLayer(nullptr, nullptr, &kTestBlurImageFilter1);
+    {
+      // second inner content has no backdrop filter
+      builder.DrawRect(SkRect::MakeLTRB(10, 10, 20, 20), DlPaint());
+    }
+    builder.Restore();
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+
+  EXPECT_FALSE(dl->root_has_backdrop_filter());
+  SaveLayerExpector expector({
+      SaveLayerOptions::kNoAttributes.with_contains_backdrop_filter(),
+      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity(),
+  });
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 }  // namespace testing

@@ -116,8 +116,8 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   storage_.realloc(bytes);
   return sk_sp<DisplayList>(new DisplayList(
       std::move(storage_), bytes, count, nested_bytes, nested_count,
-      total_depth, bounds, compatible, is_safe, root_has_backdrop_filter,
-      max_root_blend_mode, affects_transparency, std::move(rtree)));
+      total_depth, bounds, compatible, is_safe, affects_transparency,
+      max_root_blend_mode, root_has_backdrop_filter, std::move(rtree)));
 }
 
 static constexpr DlRect kEmpty = DlRect();

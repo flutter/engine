@@ -210,7 +210,7 @@ class SaveLayerOptions {
   }
 
   bool contains_backdrop_filter() const { return fHasBackdropFilter; }
-  SaveLayerOptions with_contains_backdrop_filter() {
+  SaveLayerOptions with_contains_backdrop_filter() const {
     SaveLayerOptions options(this);
     options.fHasBackdropFilter = true;
     return options;

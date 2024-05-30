@@ -67,6 +67,8 @@ extern std::ostream& operator<<(std::ostream& os,
                                 const flutter::DlTileMode& mode);
 extern std::ostream& operator<<(std::ostream& os,
                                 const flutter::DlImage* image);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::SaveLayerOptions& image);
 
 }  // namespace std
 
