@@ -9,26 +9,26 @@
 using namespace Skwasm;
 
 SKWASM_EXPORT ImageFilter* imageFilter_createBlur(Scalar sigmaX,
-                                                    Scalar sigmaY,
-                                                    TileMode tileMode) {
+                                                  Scalar sigmaY,
+                                                  TileMode tileMode) {
   return ImageFilters::Blur(sigmaX, sigmaY, tileMode, nullptr).release();
 }
 
 SKWASM_EXPORT ImageFilter* imageFilter_createDilate(Scalar radiusX,
-                                                      Scalar radiusY) {
+                                                    Scalar radiusY) {
   return ImageFilters::Dilate(radiusX, radiusY, nullptr).release();
 }
 
 SKWASM_EXPORT ImageFilter* imageFilter_createErode(Scalar radiusX,
-                                                     Scalar radiusY) {
+                                                   Scalar radiusY) {
   return ImageFilters::Erode(radiusX, radiusY, nullptr).release();
 }
 
 SKWASM_EXPORT ImageFilter* imageFilter_createMatrix(Scalar* matrix33,
-                                                      FilterQuality quality) {
+                                                    FilterQuality quality) {
   return ImageFilters::MatrixTransform(createMatrix(matrix33),
-                                         samplingOptionsForQuality(quality),
-                                         nullptr)
+                                       samplingOptionsForQuality(quality),
+                                       nullptr)
       .release();
 }
 
@@ -39,9 +39,9 @@ SKWASM_EXPORT ImageFilter* imageFilter_createFromColorFilter(
 }
 
 SKWASM_EXPORT ImageFilter* imageFilter_compose(ImageFilter* outer,
-                                                 ImageFilter* inner) {
+                                               ImageFilter* inner) {
   return ImageFilters::Compose(sk_ref_sp<ImageFilter>(outer),
-                                 sk_ref_sp<ImageFilter>(inner))
+                               sk_ref_sp<ImageFilter>(inner))
       .release();
 }
 
@@ -58,7 +58,7 @@ SKWASM_EXPORT void imageFilter_getFilterBounds(ImageFilter* filter,
 }
 
 SKWASM_EXPORT ColorFilter* colorFilter_createMode(Color color,
-                                                    SkBlendMode mode) {
+                                                  SkBlendMode mode) {
   return ColorFilters::Blend(color, mode).release();
 }
 
@@ -77,9 +77,9 @@ SKWASM_EXPORT ColorFilter* colorFilter_createLinearToSRGBGamma() {
 }
 
 SKWASM_EXPORT ColorFilter* colorFilter_compose(ColorFilter* outer,
-                                                 ColorFilter* inner) {
+                                               ColorFilter* inner) {
   return ColorFilters::Compose(sk_ref_sp<ColorFilter>(outer),
-                                 sk_ref_sp<ColorFilter>(inner))
+                               sk_ref_sp<ColorFilter>(inner))
       .release();
 }
 
@@ -88,7 +88,7 @@ SKWASM_EXPORT void colorFilter_dispose(ColorFilter* filter) {
 }
 
 SKWASM_EXPORT MaskFilter* maskFilter_createBlur(SkBlurStyle blurStyle,
-                                                  Scalar sigma) {
+                                                Scalar sigma) {
   return MaskFilter::MakeBlur(blurStyle, sigma).release();
 }
 

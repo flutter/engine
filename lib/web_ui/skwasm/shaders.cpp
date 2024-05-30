@@ -19,32 +19,31 @@ SKWASM_EXPORT Shader* shader_createLinearGradient(
 ) {
   if (matrix33) {
     Matrix localMatrix = createMatrix(matrix33);
-    return GradientShader::MakeLinear(endPoints, colors, stops, count,
-                                        tileMode, 0, &localMatrix)
+    return GradientShader::MakeLinear(endPoints, colors, stops, count, tileMode,
+                                      0, &localMatrix)
         .release();
   } else {
-    return GradientShader::MakeLinear(endPoints, colors, stops, count,
-                                        tileMode)
+    return GradientShader::MakeLinear(endPoints, colors, stops, count, tileMode)
         .release();
   }
 }
 
 SKWASM_EXPORT Shader* shader_createRadialGradient(Scalar centerX,
-                                                    Scalar centerY,
-                                                    Scalar radius,
-                                                    Color* colors,
-                                                    Scalar* stops,
-                                                    int count,
-                                                    TileMode tileMode,
-                                                    Scalar* matrix33) {
+                                                  Scalar centerY,
+                                                  Scalar radius,
+                                                  Color* colors,
+                                                  Scalar* stops,
+                                                  int count,
+                                                  TileMode tileMode,
+                                                  Scalar* matrix33) {
   if (matrix33) {
     Matrix localMatrix = createMatrix(matrix33);
-    return GradientShader::MakeRadial({centerX, centerY}, radius, colors,
-                                        stops, count, tileMode, 0, &localMatrix)
+    return GradientShader::MakeRadial({centerX, centerY}, radius, colors, stops,
+                                      count, tileMode, 0, &localMatrix)
         .release();
   } else {
-    return GradientShader::MakeRadial({centerX, centerY}, radius, colors,
-                                        stops, count, tileMode)
+    return GradientShader::MakeRadial({centerX, centerY}, radius, colors, stops,
+                                      count, tileMode)
         .release();
   }
 }
@@ -67,31 +66,30 @@ SKWASM_EXPORT Shader* shader_createConicalGradient(
 
   } else {
     return GradientShader::MakeTwoPointConical(endPoints[0], startRadius,
-                                                 endPoints[1], endRadius,
-                                                 colors, stops, count, tileMode)
+                                               endPoints[1], endRadius, colors,
+                                               stops, count, tileMode)
         .release();
   }
 }
 
 SKWASM_EXPORT Shader* shader_createSweepGradient(Scalar centerX,
-                                                   Scalar centerY,
-                                                   Color* colors,
-                                                   Scalar* stops,
-                                                   int count,
-                                                   TileMode tileMode,
-                                                   Scalar startAngle,
-                                                   Scalar endAngle,
-                                                   Scalar* matrix33) {
+                                                 Scalar centerY,
+                                                 Color* colors,
+                                                 Scalar* stops,
+                                                 int count,
+                                                 TileMode tileMode,
+                                                 Scalar startAngle,
+                                                 Scalar endAngle,
+                                                 Scalar* matrix33) {
   if (matrix33) {
     Matrix localMatrix = createMatrix(matrix33);
     return GradientShader::MakeSweep(centerX, centerY, colors, stops, count,
-                                       tileMode, startAngle, endAngle, 0,
-                                       &localMatrix)
+                                     tileMode, startAngle, endAngle, 0,
+                                     &localMatrix)
         .release();
   } else {
     return GradientShader::MakeSweep(centerX, centerY, colors, stops, count,
-                                       tileMode, startAngle, endAngle, 0,
-                                       nullptr)
+                                     tileMode, startAngle, endAngle, 0, nullptr)
         .release();
   }
 }
@@ -135,10 +133,10 @@ SKWASM_EXPORT Shader* shader_createRuntimeEffectShader(
 }
 
 SKWASM_EXPORT Shader* shader_createFromImage(Image* image,
-                                               TileMode tileModeX,
-                                               TileMode tileModeY,
-                                               FilterQuality quality,
-                                               Scalar* matrix33) {
+                                             TileMode tileModeX,
+                                             TileMode tileModeY,
+                                             FilterQuality quality,
+                                             Scalar* matrix33) {
   if (matrix33) {
     Matrix localMatrix = createMatrix(matrix33);
     return image

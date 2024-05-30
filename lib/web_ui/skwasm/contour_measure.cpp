@@ -8,8 +8,9 @@
 
 using namespace Skwasm;
 
-SKWASM_EXPORT ContourMeasureIter*
-contourMeasureIter_create(Path* path, bool forceClosed, Scalar resScale) {
+SKWASM_EXPORT ContourMeasureIter* contourMeasureIter_create(Path* path,
+                                                            bool forceClosed,
+                                                            Scalar resScale) {
   return new ContourMeasureIter(*path, forceClosed, resScale);
 }
 
@@ -46,9 +47,9 @@ SKWASM_EXPORT bool contourMeasure_getPosTan(ContourMeasure* measure,
 }
 
 SKWASM_EXPORT Path* contourMeasure_getSegment(ContourMeasure* measure,
-                                                Scalar startD,
-                                                Scalar stopD,
-                                                bool startWithMoveTo) {
+                                              Scalar startD,
+                                              Scalar stopD,
+                                              bool startWithMoveTo) {
   Path* outPath = new Path();
   if (!measure->getSegment(startD, stopD, outPath, startWithMoveTo)) {
     delete outPath;

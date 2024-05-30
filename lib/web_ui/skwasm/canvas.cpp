@@ -32,9 +32,7 @@ SKWASM_EXPORT int canvas_getSaveCount(Canvas* canvas) {
   return canvas->getSaveCount();
 }
 
-SKWASM_EXPORT void canvas_translate(Canvas* canvas,
-                                    Scalar dx,
-                                    Scalar dy) {
+SKWASM_EXPORT void canvas_translate(Canvas* canvas, Scalar dx, Scalar dy) {
   canvas->translate(dx, dy);
 }
 
@@ -67,9 +65,7 @@ SKWASM_EXPORT void canvas_clipRRect(Canvas* canvas,
   canvas->clipRRect(createRRect(rrectValues), antialias);
 }
 
-SKWASM_EXPORT void canvas_clipPath(Canvas* canvas,
-                                   Path* path,
-                                   bool antialias) {
+SKWASM_EXPORT void canvas_clipPath(Canvas* canvas, Path* path, bool antialias) {
   canvas->clipPath(*path, antialias);
 }
 
@@ -92,9 +88,7 @@ SKWASM_EXPORT void canvas_drawPaint(Canvas* canvas, Paint* paint) {
   canvas->drawPaint(*paint);
 }
 
-SKWASM_EXPORT void canvas_drawRect(Canvas* canvas,
-                                   Rect* rect,
-                                   Paint* paint) {
+SKWASM_EXPORT void canvas_drawRect(Canvas* canvas, Rect* rect, Paint* paint) {
   canvas->drawRect(*rect, *paint);
 }
 
@@ -136,9 +130,7 @@ SKWASM_EXPORT void canvas_drawArc(Canvas* canvas,
                   *paint);
 }
 
-SKWASM_EXPORT void canvas_drawPath(Canvas* canvas,
-                                   Path* path,
-                                   Paint* paint) {
+SKWASM_EXPORT void canvas_drawPath(Canvas* canvas, Path* path, Paint* paint) {
   canvas->drawPath(*path, *paint);
 }
 
@@ -148,7 +140,8 @@ SKWASM_EXPORT void canvas_drawShadow(Canvas* canvas,
                                      Scalar devicePixelRatio,
                                      Color color,
                                      bool transparentOccluder) {
-  drawShadowOnCanvas(canvas, path, elevation, devicePixelRatio, color, transparentOccluder);
+  drawShadowOnCanvas(canvas, path, elevation, devicePixelRatio, color,
+                     transparentOccluder);
 }
 
 SKWASM_EXPORT void canvas_drawParagraph(Canvas* canvas,
@@ -217,22 +210,19 @@ SKWASM_EXPORT void canvas_drawAtlas(Canvas* canvas,
                                     BlendMode mode,
                                     Rect* cullRect,
                                     Paint* paint) {
-  canvas->drawAtlas(
-      atlas, transforms, rects, colors, spriteCount, mode,
-      SamplingOptions{FilterMode::kLinear, MipmapMode::kNone}, cullRect,
-      paint);
+  canvas->drawAtlas(atlas, transforms, rects, colors, spriteCount, mode,
+                    SamplingOptions{FilterMode::kLinear, MipmapMode::kNone},
+                    cullRect, paint);
 }
 
 SKWASM_EXPORT void canvas_getTransform(Canvas* canvas, Matrix44* outTransform) {
   *outTransform = canvas->getLocalToDevice();
 }
 
-SKWASM_EXPORT void canvas_getLocalClipBounds(Canvas* canvas,
-                                             Rect* outRect) {
+SKWASM_EXPORT void canvas_getLocalClipBounds(Canvas* canvas, Rect* outRect) {
   *outRect = canvas->getLocalClipBounds();
 }
 
-SKWASM_EXPORT void canvas_getDeviceClipBounds(Canvas* canvas,
-                                              IRect* outRect) {
+SKWASM_EXPORT void canvas_getDeviceClipBounds(Canvas* canvas, IRect* outRect) {
   *outRect = canvas->getDeviceClipBounds();
 }

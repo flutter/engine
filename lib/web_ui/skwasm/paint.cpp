@@ -87,13 +87,13 @@ SKWASM_EXPORT void paint_setShader(Paint* paint, SkShader* shader) {
 }
 
 SKWASM_EXPORT void paint_setImageFilter(Paint* paint, ImageFilter* filter) {
-  //paint->setImageFilter(sk_ref_sp<ImageFilter>(filter));
+  // paint->setImageFilter(sk_ref_sp<ImageFilter>(filter));
 }
 
 SKWASM_EXPORT void paint_setColorFilter(Paint* paint, ColorFilter* filter) {
-  //paint->setColorFilter(sk_ref_sp<ColorFilter>(filter));
+  // paint->setColorFilter(sk_ref_sp<ColorFilter>(filter));
 }
 
 SKWASM_EXPORT void paint_setMaskFilter(Paint* paint, MaskFilter* filter) {
-  //paint->setMaskFilter(sk_ref_sp<MaskFilter>(filter));
+  // paint->setMaskFilter(sk_ref_sp<MaskFilter>(filter));
 }

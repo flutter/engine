@@ -429,9 +429,10 @@ ContentContext::ContentContext(
   texture_strict_src_pipelines_.CreateDefault(*context_, options);
   tiled_texture_pipelines_.CreateDefault(*context_, options, {supports_decal});
   // gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
-                                        //  {supports_decal});
+  //  {supports_decal});
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  // morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
+  // morphology_filter_pipelines_.CreateDefault(*context_,
+  // options_trianglestrip,
   //                                            {supports_decal});
   color_matrix_color_filter_pipelines_.CreateDefault(*context_,
                                                      options_trianglestrip);
@@ -449,7 +450,8 @@ ContentContext::ContentContext(
                                              {supports_decal});
   vertices_uber_shader_.CreateDefault(*context_, options, {supports_decal});
   // GLES only shader that is unsupported on macOS.
-#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX) && !defined(FML_OS_EMSCRIPTEN)
+#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX) && \
+    !defined(FML_OS_EMSCRIPTEN)
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
   }

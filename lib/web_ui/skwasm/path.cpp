@@ -182,8 +182,8 @@ SKWASM_EXPORT void path_getBounds(Path* path, Rect* rect) {
 }
 
 SKWASM_EXPORT Path* path_combine(PathOp operation,
-                                   const Path* path1,
-                                   const Path* path2) {
+                                 const Path* path1,
+                                 const Path* path2) {
   Path* output = new Path();
   if (Op(*path1, *path2, operation, output)) {
     output->setFillType(path1->getFillType());

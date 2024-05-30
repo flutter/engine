@@ -130,7 +130,8 @@ void Surface::_resizeCanvasToFit(int width, int height) {
 void Surface::_recreateSurface() {
   makeCurrent(_glContext);
   skwasm_resizeCanvas(_glContext, _canvasWidth, _canvasHeight);
-  _surface = createGraphicsSurface(_grContext, _canvasWidth, _canvasHeight, _sampleCount, _stencil);
+  _surface = createGraphicsSurface(_grContext, _canvasWidth, _canvasHeight,
+                                   _sampleCount, _stencil);
 }
 
 // Worker thread only
@@ -149,7 +150,8 @@ void Surface::renderPicturesOnWorker(sk_sp<Picture>* pictures,
     _resizeCanvasToFit(roundedOutRect.width(), roundedOutRect.height());
     makeCurrent(_glContext);
     emscripten_console_log("rendering picture\n");
-    drawPictureToSurface(picture.get(), _surface.get(), -roundedOutRect.fLeft, -roundedOutRect.fTop);
+    drawPictureToSurface(picture.get(), _surface.get(), -roundedOutRect.fLeft,
+                         -roundedOutRect.fTop);
     _grContext->flush(_surface.get());
     imagePromiseArray =
         skwasm_captureImageBitmap(_glContext, roundedOutRect.width(),
@@ -169,14 +171,14 @@ void Surface::_rasterizeImage(Image* image,
                               ? SkAlphaType::kUnpremul_SkAlphaType
                               : SkAlphaType::kPremul_SkAlphaType;
   ImageInfo info = ImageInfo::Make(image->width(), image->height(),
-                                       ColorType::kRGBA_8888_SkColorType,
-                                       alphaType, ColorSpace::MakeSRGB());
+                                   ColorType::kRGBA_8888_SkColorType, alphaType,
+                                   ColorSpace::MakeSRGB());
   size_t bytesPerRow = 4 * image->width();
   size_t byteSize = info.computeByteSize(bytesPerRow);
   data = SkData::MakeUninitialized(byteSize);
   uint8_t* pixels = reinterpret_cast<uint8_t*>(data->writable_data());
-  bool success = false; //image->readPixels(_grContext.get(), image->imageInfo(), pixels,
-                                   //bytesPerRow, 0, 0);
+  bool success = false;  // image->readPixels(_grContext.get(),
+                         // image->imageInfo(), pixels, bytesPerRow, 0, 0);
   if (!success) {
     printf("Failed to read pixels from image!\n");
     data = nullptr;

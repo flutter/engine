@@ -9,14 +9,14 @@
 using namespace Skwasm;
 
 SKWASM_EXPORT Vertices* vertices_create(Vertices::VertexMode vertexMode,
-                                          int vertexCount,
-                                          Point* positions,
-                                          Point* textureCoordinates,
-                                          Color* colors,
-                                          int indexCount,
-                                          uint16_t* indices) {
+                                        int vertexCount,
+                                        Point* positions,
+                                        Point* textureCoordinates,
+                                        Color* colors,
+                                        int indexCount,
+                                        uint16_t* indices) {
   return Vertices::MakeCopy(vertexMode, vertexCount, positions,
-                              textureCoordinates, colors, indexCount, indices)
+                            textureCoordinates, colors, indexCount, indices)
       .release();
 }
 

@@ -283,7 +283,7 @@ shaderc::CompileOptions SPIRVCompilerOptions::BuildShadercOptions() const {
   options.SetAutoMapLocations(true);
 
   options.SetOptimizationLevel(
-        shaderc_optimization_level::shaderc_optimization_level_zero);
+      shaderc_optimization_level::shaderc_optimization_level_zero);
 
   if (generate_debug_info) {
     options.SetGenerateDebugInfo();

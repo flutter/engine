@@ -20,7 +20,6 @@
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
 #include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 
-
 using namespace Skwasm;
 
 namespace {
@@ -99,7 +98,7 @@ class TextureSourceImageGenerator : public GrExternalTextureGenerator {
 
     // In order to bind the image source to the texture, makeTexture has changed
     // which texture is "in focus" for the WebGL context.
-    //GrAsDirectContext(context)->resetContext(kTextureBinding_GrGLBackendState);
+    // GrAsDirectContext(context)->resetContext(kTextureBinding_GrGLBackendState);
     return std::make_unique<ExternalWebGLTexture>(
         backendTexture, glInfo.fID, emscripten_webgl_get_current_context());
   }
@@ -109,38 +108,37 @@ class TextureSourceImageGenerator : public GrExternalTextureGenerator {
 };
 
 SKWASM_EXPORT Image* image_createFromPicture(Picture* picture,
-                                               int32_t width,
-                                               int32_t height) {
-  return Images::DeferredFromPicture(sk_ref_sp<Picture>(picture), {width, height},
-                             nullptr, nullptr, Images::BitDepth::kU8,
-                             ColorSpace::MakeSRGB())
+                                             int32_t width,
+                                             int32_t height) {
+  return Images::DeferredFromPicture(
+             sk_ref_sp<Picture>(picture), {width, height}, nullptr, nullptr,
+             Images::BitDepth::kU8, ColorSpace::MakeSRGB())
       .release();
 }
 
 SKWASM_EXPORT Image* image_createFromPixels(SkData* data,
-                                              int width,
-                                              int height,
-                                              PixelFormat pixelFormat,
-                                              size_t rowByteCount) {
+                                            int width,
+                                            int height,
+                                            PixelFormat pixelFormat,
+                                            size_t rowByteCount) {
   return Images::RasterFromData(
-             ImageInfo::Make(width, height,
-                               colorTypeForPixelFormat(pixelFormat),
-                               alphaTypeForPixelFormat(pixelFormat),
-                               ColorSpace::MakeSRGB()),
+             ImageInfo::Make(
+                 width, height, colorTypeForPixelFormat(pixelFormat),
+                 alphaTypeForPixelFormat(pixelFormat), ColorSpace::MakeSRGB()),
              sk_ref_sp(data), rowByteCount)
       .release();
 }
 
 SKWASM_EXPORT Image* image_createFromTextureSource(SkwasmObject textureSource,
-                                                     int width,
-                                                     int height,
-                                                     Skwasm::Surface* surface) {
+                                                   int width,
+                                                   int height,
+                                                   Skwasm::Surface* surface) {
   return Images::DeferredFromTextureGenerator(
              std::unique_ptr<TextureSourceImageGenerator>(
                  new TextureSourceImageGenerator(
                      ImageInfo::Make(width, height,
-                                       ColorType::kRGBA_8888_SkColorType,
-                                       SkAlphaType::kPremul_SkAlphaType),
+                                     ColorType::kRGBA_8888_SkColorType,
+                                     SkAlphaType::kPremul_SkAlphaType),
                      textureSource, surface)))
       .release();
 }
