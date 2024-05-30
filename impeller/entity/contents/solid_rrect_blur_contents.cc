@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
@@ -48,13 +49,20 @@ Color SolidRRectBlurContents::GetColor() const {
   return color_;
 }
 
+namespace {
+Scalar ScaleSigma(Scalar sigma) {
+  // 0.5 comes from the math in `blur_rrect.frag`.
+  return 0.5 * GaussianBlurFilterContents::ScaleSigma(sigma);
+}
+}  // namespace
+
 std::optional<Rect> SolidRRectBlurContents::GetCoverage(
     const Entity& entity) const {
   if (!rect_.has_value()) {
     return std::nullopt;
   }
 
-  Scalar radius = PadForSigma(sigma_.sigma);
+  Scalar radius = PadForSigma(ScaleSigma(sigma_.sigma));
 
   return rect_->Expand(radius).TransformBounds(entity.GetTransform());
 }
@@ -71,10 +79,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
-  // Clamp the max kernel width/height to 1000 to limit the extent
-  // of the blur and to kEhCloseEnough to prevent NaN calculations
-  // trying to evaluate a Guassian distribution with a sigma of 0.
-  auto blur_sigma = std::clamp(sigma_.sigma, kEhCloseEnough, 250.0f);
+  auto blur_sigma = ScaleSigma(sigma_.sigma);
   // Increase quality by making the radius a bit bigger than the typical
   // sigma->radius conversion we use for slower blurs.
   auto blur_radius = PadForSigma(blur_sigma);
