@@ -5,8 +5,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
-import 'dart:io' as io show Directory, Process;
+import 'dart:io' as io show Directory, File, Process;
 
+import 'package:engine_repo_tools/engine_repo_tools.dart';
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:process_runner/process_runner.dart';
@@ -246,6 +247,7 @@ final class BuildRunner extends Runner {
       if (!await _runGn(eventHandler)) {
         return false;
       }
+      await _postGn();
     }
 
     if (runNinja) {
@@ -316,6 +318,31 @@ final class BuildRunner extends Runner {
     );
     eventHandler(result);
     return result.ok;
+  }
+
+  Future<void> _postGn() async {
+    if (dryRun) {
+      return;
+    }
+    final Engine engine = Engine.fromSrcPath(engineSrcDir.path);
+    final Output? latest = engine.latestOutput();
+    if (latest == null) {
+      return;
+    }
+    final io.File commandsFile = latest.compileCommandsJson;
+    if (!commandsFile.existsSync()) {
+      return;
+    }
+    final RegExp regex = RegExp(r'("command"\s*:\s*").*(\s\S*clang\+\+)');
+    String contents = await commandsFile.readAsString();
+    int matches = 0;
+    contents = contents.replaceAllMapped(regex, (Match match) {
+      matches += 1;
+      return  '${match[1]}${match[2]!.trim()}';
+    });
+    if (matches > 0) {
+      await commandsFile.writeAsString(contents);
+    }
   }
 
   late final String _hostCpu = () {
