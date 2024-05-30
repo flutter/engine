@@ -87,6 +87,7 @@ public class ScribeChannel {
     selectionAreaMap.put("top", selectionArea.top);
     selectionAreaMap.put("left", selectionArea.left);
     selectionAreaMap.put("right", selectionArea.right);
+    // TODO(justinmc): Include granularity.
     final HashMap<Object, Object> gestureMap = new HashMap<>();
     gestureMap.put("selectionArea", selectionAreaMap);
     channel.invokeMethod("ScribeClient.performSelectionGesture", Arrays.asList(gestureMap), result);
