@@ -1632,6 +1632,9 @@ void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
                         ? OpResult::kAffectsAll
                         : OpResult::kPreservesTransparency,
                     display_list->max_root_blend_mode());
+  if (display_list->root_has_backdrop_filter()) {
+    current_info().contains_backdrop_filter = true;
+  }
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
