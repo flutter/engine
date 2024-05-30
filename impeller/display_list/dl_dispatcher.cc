@@ -619,6 +619,7 @@ void DlDispatcherBase::save(uint32_t total_content_depth) {
 void DlDispatcherBase::saveLayer(const SkRect& bounds,
                                  const flutter::SaveLayerOptions& options,
                                  uint32_t total_content_depth,
+                                 flutter::DlBlendMode max_content_mode,
                                  const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
   auto promise = options.content_is_clipped()
@@ -814,7 +815,7 @@ void DlDispatcherBase::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
+  if (skia_conversions::IsNearlySimpleRRect(rrect)) {
     GetCanvas().DrawRRect(skia_conversions::ToRect(rrect.rect()),
                           skia_conversions::ToSize(rrect.getSimpleRadii()),
                           paint_);
@@ -1249,8 +1250,8 @@ void TextFrameDispatcher::drawTextFrame(
     const std::shared_ptr<impeller::TextFrame>& text_frame,
     SkScalar x,
     SkScalar y) {
-  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,
-                                              matrix_.GetMaxBasisLengthXY());
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(
+      *text_frame, matrix_.GetMaxBasisLengthXY(), Point(x, y));
 }
 
 void TextFrameDispatcher::drawDisplayList(
