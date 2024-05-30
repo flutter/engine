@@ -110,7 +110,7 @@ void testMain() {
 
     // TODO(yjbanov): this test will need to be adjusted for Safari when we add
     //                Safari testing.
-    test('sends a didGainAccessibilityFocus/didLoseAccessibilityFocus action when browser requests focus/blur', () async {
+    test('sends a SemanticsAction.focus action when browser requests focus', () async {
       final SemanticsActionLogger logger = SemanticsActionLogger();
       createTextFieldSemantics(value: 'hello');
 
@@ -123,13 +123,11 @@ void testMain() {
 
       expect(owner().semanticsHost.ownerDocument?.activeElement, textField);
       expect(await logger.idLog.first, 0);
-      expect(await logger.actionLog.first, ui.SemanticsAction.didGainAccessibilityFocus);
+      expect(await logger.actionLog.first, ui.SemanticsAction.focus);
 
       textField.blur();
 
       expect(owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
-      expect(await logger.idLog.first, 0);
-      expect(await logger.actionLog.first, ui.SemanticsAction.didLoseAccessibilityFocus);
     }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
        // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
     skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.blink);
