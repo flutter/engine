@@ -173,9 +173,6 @@ bool VulkanWindow::CreateSkiaBackendContext(
   context->fQueue = logical_device_->GetQueueHandle();
   context->fGraphicsQueueIndex = logical_device_->GetGraphicsQueueIndex();
   context->fMaxAPIVersion = application_->GetAPIVersion();
-  // context->fExtensions = kKHR_surface_GrVkExtensionFlag |
-  //                        kKHR_swapchain_GrVkExtensionFlag |
-  //                        surface_->GetNativeSurface().GetSkiaExtensionName();
   context->fDeviceFeatures = features;
   context->fGetProc = std::move(getProc);
   context->fMemoryAllocator = memory_allocator_;
