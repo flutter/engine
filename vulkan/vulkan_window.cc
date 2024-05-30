@@ -154,6 +154,7 @@ bool VulkanWindow::CreateSkiaBackendContext(
     GrVkBackendContext* context,
     VkPhysicalDeviceFeatures* features,
     skgpu::VulkanExtensions* extensions) {
+#ifdef SK_VULKAN
   FML_CHECK(context);
   FML_CHECK(features);
   FML_CHECK(extensions);
@@ -194,6 +195,9 @@ bool VulkanWindow::CreateSkiaBackendContext(
                    device_extensions);
   context->fVkExtensions = extensions;
   return true;
+#else
+  return false;
+#endif
 }
 
 sk_sp<SkSurface> VulkanWindow::AcquireSurface() {
