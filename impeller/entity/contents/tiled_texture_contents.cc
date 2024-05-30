@@ -134,7 +134,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   PipelineBuilderMethod pipeline_method;
 
-#ifdef IMPELLER_ENABLE_OPENGLES
+#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_EMSCRIPTEN)
   if (is_external_texture) {
     pipeline_method = &ContentContext::GetTiledTextureExternalPipeline;
   } else {

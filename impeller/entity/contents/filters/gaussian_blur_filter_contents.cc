@@ -152,7 +152,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
 
         ContentContextOptions options = OptionsFromPass(pass);
         options.primitive_type = PrimitiveType::kTriangleStrip;
-        pass.SetPipeline(renderer.GetGaussianBlurPipeline(options));
+        // pass.SetPipeline(renderer.GetGaussianBlurPipeline(options));
 
         BindVertices<GaussianBlurVertexShader>(pass, host_buffer,
                                                {

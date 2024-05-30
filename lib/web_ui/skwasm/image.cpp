@@ -11,6 +11,15 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <emscripten/html5_webgl.h>
+#include "third_party/skia/include/gpu/GrBackendSurface.h"
+#include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
+#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
+#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
+
 
 using namespace Skwasm;
 
@@ -90,7 +99,7 @@ class TextureSourceImageGenerator : public GrExternalTextureGenerator {
 
     // In order to bind the image source to the texture, makeTexture has changed
     // which texture is "in focus" for the WebGL context.
-    GrAsDirectContext(context)->resetContext(kTextureBinding_GrGLBackendState);
+    //GrAsDirectContext(context)->resetContext(kTextureBinding_GrGLBackendState);
     return std::make_unique<ExternalWebGLTexture>(
         backendTexture, glInfo.fID, emscripten_webgl_get_current_context());
   }

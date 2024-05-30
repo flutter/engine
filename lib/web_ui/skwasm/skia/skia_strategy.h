@@ -50,6 +50,9 @@
 #include "third_party/skia/modules/skparagraph/include/Paragraph.h"
 #include "third_party/skia/modules/skparagraph/include/TypefaceFontProvider.h"
 
+#include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
+
 namespace Skwasm {
     using BlendMode = SkBlendMode;
     using Canvas = SkCanvas;
@@ -93,6 +96,8 @@ namespace Skwasm {
     using Shader = SkShader;
     using ShadowFlags = SkShadowFlags;
     using ShadowUtils = SkShadowUtils;
+    using GraphicsContext = GrDirectContext;
+    using GraphicsSurface = SkSurface;
     using TileMode = SkTileMode;
     using Vector = SkVector;
     using Vertices = SkVertices;
@@ -146,6 +151,34 @@ namespace Skwasm {
 
         SkMatrix matrix = SkMatrix::Translate(offsetX, offsetY);
         canvas->drawPicture(picture, &matrix, nullptr);
+    }
+
+    inline sk_sp<GraphicsContext> createGraphicsContext() {
+        return GrDirectContexts::MakeGL(GrGLMakeNativeInterface());
+    }
+
+    inline void resetGraphicsContext(const sk_sp<GraphicsContext>& context) {
+        context->resetContext(kRenderTarget_GrGLBackendState | kMisc_GrGLBackendState);
+    }
+
+    inline sk_sp<GraphicsSurface> createGraphicsSurface(
+        const sk_sp<GraphicsContext>& context,
+        int width,
+        int height,
+        int sampleCount,
+        int stencil
+    ) {
+        GrGLFramebufferInfo info;
+        info.fFBOID = 0; // Onscreen frame buffer
+        info.fFormat = GL_RGBA8_OES;
+        auto target = GrBackendRenderTargets::MakeGL(
+            width,
+            height,
+            sampleCount,
+            stencil, info);
+        return SkSurfaces::WrapBackendRenderTarget(
+            context.get(), target, kBottomLeft_GrSurfaceOrigin,
+            kRGBA_8888_SkColorType, ColorSpace::MakeSRGB(), nullptr);
     }
 }
 

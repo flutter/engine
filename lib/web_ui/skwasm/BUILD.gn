@@ -38,6 +38,7 @@ template("skwasm_library") {
 
     if (invoker.use_impeller) {
       sources += [
+        "impeller/impeller_strategy.cpp",
         "impeller/impeller_strategy.h",
       ]
     } else {
@@ -87,11 +88,17 @@ template("skwasm_library") {
     ]
 
     if (invoker.use_impeller) {
-      defines = [ "SKWASM_USE_IMPELLER" ]
+      defines = [
+        "SKWASM_USE_IMPELLER",
+      ]
       deps += [
         "//flutter/fml",
         "//flutter/display_list",
         "//flutter/impeller",
+      ]
+      libs = [
+        "EGL",
+        "GLESv2",
       ]
     } else {
       deps += [ "//flutter/skia" ]

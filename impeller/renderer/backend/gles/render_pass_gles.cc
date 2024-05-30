@@ -444,16 +444,22 @@ struct RenderPassData {
       // Bind the index buffer if necessary.
       auto index_buffer_view = command.vertex_buffer.index_buffer;
       auto index_buffer = index_buffer_view.buffer;
+
+      // Making a copy here to avoid issues with webgl
       const auto& index_buffer_gles = DeviceBufferGLES::Cast(*index_buffer);
-      if (!index_buffer_gles.BindAndUploadDataIfNecessary(
+      auto copied_index_buffer = transients_allocator->CreateBufferWithCopy(
+        index_buffer_gles.GetBufferData() + index_buffer_view.range.offset,
+        index_buffer_view.range.length
+      );
+      const auto& copied_index_buffer_gles = DeviceBufferGLES::Cast(*copied_index_buffer);
+      if (!copied_index_buffer_gles.BindAndUploadDataIfNecessary(
               DeviceBufferGLES::BindingType::kElementArrayBuffer)) {
         return false;
       }
       gl.DrawElements(mode,                                           // mode
                       command.vertex_buffer.vertex_count,             // count
                       ToIndexType(command.vertex_buffer.index_type),  // type
-                      reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(
-                          index_buffer_view.range.offset))  // indices
+                      nullptr  // indices
       );
     }
 

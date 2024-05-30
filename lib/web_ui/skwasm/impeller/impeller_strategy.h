@@ -27,17 +27,6 @@
 #include "third_party/skia/include/core/SkVertices.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
 #include "third_party/skia/include/encode/SkPngEncoder.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLDirectContext.h"
-#include "third_party/skia/include/gpu/GpuTypes.h"
-#include "third_party/skia/include/gpu/GrBackendSurface.h"
-#include "third_party/skia/include/gpu/GrDirectContext.h"
-#include "third_party/skia/include/gpu/ganesh/GrExternalTextureGenerator.h"
-#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
-#include "third_party/skia/include/gpu/ganesh/SkSurfaceGanesh.h"
-#include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
-#include "third_party/skia/include/gpu/gl/GrGLInterface.h"
-#include "third_party/skia/include/gpu/gl/GrGLTypes.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
@@ -54,6 +43,16 @@
 #include "flutter/display_list/dl_color.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
+
+#include <emscripten/html5_webgl.h>
+
+class GrTextureGenerator;
+namespace impeller {
+    class ContextGLES;
+    class Surface;
+    class Picture;
+    class Renderer;
+}
 
 namespace Skwasm {
     using Color = SkColor;
@@ -360,18 +359,68 @@ namespace Skwasm {
                                    sk_sp<SkColorSpace> colorSpace) {
             return nullptr;
         }
-        inline sk_sp<SkImage> DeferredFromTextureGenerator(std::unique_ptr<GrTextureGenerator> generator) {
+        inline sk_sp<SkImage> DeferredFromTextureGenerator(std::unique_ptr<GrTextureGenerator> &&generator) {
             return nullptr;
         }
     }
 
-    inline void drawPictureToSurface(Picture* picture, SkSurface* surface, Scalar offsetX, Scalar offsetY) {
-        auto canvas = surface->getCanvas();
-        auto dispatcher = flutter::DlSkCanvasDispatcher(canvas);
-        dispatcher.drawColor(flutter::DlColor::kTransparent(), BlendMode::kSrc);
-        dispatcher.translate(offsetX, offsetY);
-        dispatcher.drawDisplayList(sk_ref_sp(picture), 1.0);
+    class GraphicsSurface : public SkRefCnt {
+    public:
+        GraphicsSurface(
+            std::shared_ptr<impeller::ContextGLES> context,
+            std::shared_ptr<impeller::Renderer> renderer,
+            int width,
+            int height);
+
+        void renderPicture(const impeller::Picture& picture);
+
+        ~GraphicsSurface();
+    private:
+        std::shared_ptr<impeller::ContextGLES> _context;
+        std::shared_ptr<impeller::Renderer> _renderer;
+        int _width;
+        int _height;
+    };
+
+
+    class ReactorWorker;
+    class GraphicsContext : public SkRefCnt {
+    public:
+        GraphicsContext(
+            std::shared_ptr<impeller::ContextGLES> context,
+            std::shared_ptr<impeller::Renderer> renderer,
+            std::shared_ptr<ReactorWorker> worker);
+
+        sk_sp<GraphicsSurface> createSurface(
+            int width,
+            int height
+        );
+
+        void flush(GraphicsSurface* surface) {
+        }
+
+    private:
+        std::shared_ptr<impeller::ContextGLES> _context;
+        std::shared_ptr<impeller::Renderer> _renderer;
+        std::shared_ptr<ReactorWorker> _worker;
+    };
+
+    sk_sp<GraphicsContext> createGraphicsContext();
+
+    inline sk_sp<GraphicsSurface> createGraphicsSurface(
+        const sk_sp<GraphicsContext>& context,
+        int width,
+        int height,
+        int sampleCount,
+        int stencil
+    ) {
+        return context->createSurface(width, height);
     }
+
+    inline void resetGraphicsContext(const sk_sp<GraphicsContext>) {
+    }
+
+    void drawPictureToSurface(Picture* picture, GraphicsSurface* surface, Scalar offsetX, Scalar offsetY);
 }
 
 #endif  // FLUTTER_LIB_WEB_UI_SKWASM_IMPELLER_STRATEGY_H_

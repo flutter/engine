@@ -47,7 +47,7 @@ SKWASM_EXPORT bool paragraph_getDidExceedMaxLines(Paragraph* paragraph) {
 }
 
 SKWASM_EXPORT void paragraph_layout(Paragraph* paragraph, SkScalar width) {
-  paragraph->layout(width);
+  //paragraph->layout(width);
 }
 
 SKWASM_EXPORT int32_t paragraph_getPositionForOffset(Paragraph* paragraph,

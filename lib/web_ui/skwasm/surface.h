@@ -88,11 +88,10 @@ class Surface {
   int _canvasHeight = 0;
 
   EMSCRIPTEN_WEBGL_CONTEXT_HANDLE _glContext = 0;
-  sk_sp<GrDirectContext> _grContext = nullptr;
-  sk_sp<SkSurface> _surface = nullptr;
-  GrGLFramebufferInfo _fbInfo;
-  GrGLint _sampleCount;
-  GrGLint _stencil;
+  sk_sp<GraphicsContext> _grContext = nullptr;
+  sk_sp<GraphicsSurface> _surface = nullptr;
+  int _sampleCount;
+  int _stencil;
 
   pthread_t _thread;
 

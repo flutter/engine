@@ -98,7 +98,7 @@ void Surface::_init() {
   makeCurrent(_glContext);
   emscripten_webgl_enable_extension(_glContext, "WEBGL_debug_renderer_info");
 
-  _grContext = GrDirectContexts::MakeGL(GrGLMakeNativeInterface());
+  _grContext = createGraphicsContext();
 
   // WebGL should already be clearing the color and stencil buffers, but do it
   // again here to ensure Skia receives them in the expected state.
@@ -106,13 +106,7 @@ void Surface::_init() {
   emscripten_glClearColor(0, 0, 0, 0);
   emscripten_glClearStencil(0);
   emscripten_glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-  _grContext->resetContext(kRenderTarget_GrGLBackendState |
-                           kMisc_GrGLBackendState);
-
-  // The on-screen canvas is FBO 0. Wrap it in a Skia render target so Skia
-  // can render to it.
-  _fbInfo.fFBOID = 0;
-  _fbInfo.fFormat = GL_RGBA8_OES;
+  resetGraphicsContext(_grContext);
 
   emscripten_glGetIntegerv(GL_SAMPLES, &_sampleCount);
   emscripten_glGetIntegerv(GL_STENCIL_BITS, &_stencil);
@@ -136,11 +130,7 @@ void Surface::_resizeCanvasToFit(int width, int height) {
 void Surface::_recreateSurface() {
   makeCurrent(_glContext);
   skwasm_resizeCanvas(_glContext, _canvasWidth, _canvasHeight);
-  auto target = GrBackendRenderTargets::MakeGL(_canvasWidth, _canvasHeight,
-                                               _sampleCount, _stencil, _fbInfo);
-  _surface = SkSurfaces::WrapBackendRenderTarget(
-      _grContext.get(), target, kBottomLeft_GrSurfaceOrigin,
-      kRGBA_8888_SkColorType, ColorSpace::MakeSRGB(), nullptr);
+  _surface = createGraphicsSurface(_grContext, _canvasWidth, _canvasHeight, _sampleCount, _stencil);
 }
 
 // Worker thread only
@@ -158,6 +148,7 @@ void Surface::renderPicturesOnWorker(sk_sp<Picture>* pictures,
     pictureRect.roundOut(&roundedOutRect);
     _resizeCanvasToFit(roundedOutRect.width(), roundedOutRect.height());
     makeCurrent(_glContext);
+    emscripten_console_log("rendering picture\n");
     drawPictureToSurface(picture.get(), _surface.get(), -roundedOutRect.fLeft, -roundedOutRect.fTop);
     _grContext->flush(_surface.get());
     imagePromiseArray =
@@ -184,8 +175,8 @@ void Surface::_rasterizeImage(Image* image,
   size_t byteSize = info.computeByteSize(bytesPerRow);
   data = SkData::MakeUninitialized(byteSize);
   uint8_t* pixels = reinterpret_cast<uint8_t*>(data->writable_data());
-  bool success = image->readPixels(_grContext.get(), image->imageInfo(), pixels,
-                                   bytesPerRow, 0, 0);
+  bool success = false; //image->readPixels(_grContext.get(), image->imageInfo(), pixels,
+                                   //bytesPerRow, 0, 0);
   if (!success) {
     printf("Failed to read pixels from image!\n");
     data = nullptr;

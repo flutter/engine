@@ -85,7 +85,6 @@ bool DeviceBufferGLES::BindAndUploadDataIfNecessary(BindingType type) const {
   const auto& gl = reactor_->GetProcTable();
 
   gl.BindBuffer(target_type, buffer.value());
-
   if (upload_generation_ != generation_) {
     TRACE_EVENT1("impeller", "BufferData", "Bytes",
                  std::to_string(backing_store_->GetLength()).c_str());

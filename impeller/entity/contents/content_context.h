@@ -231,7 +231,7 @@ using FramebufferBlendSoftLightPipeline =
 using VerticesUberShader = RenderPipelineHandle<PorterDuffBlendVertexShader,
                                                 VerticesUberFragmentShader>;
 
-#ifdef IMPELLER_ENABLE_OPENGLES
+#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_EMSCRIPTEN)
 using TiledTextureExternalPipeline =
     RenderPipelineHandle<TextureUvFillVertexShader,
                          TiledTextureFillExternalFragmentShader>;
@@ -440,7 +440,7 @@ class ContentContext {
     return GetPipeline(texture_strict_src_pipelines_, opts);
   }
 
-#ifdef IMPELLER_ENABLE_OPENGLES
+#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_EMSCRIPTEN)
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTextureExternalPipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetContext()->GetBackendType() ==
@@ -454,20 +454,20 @@ class ContentContext {
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(gaussian_blur_pipelines_, opts);
-  }
+  // std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
+  //     ContentContextOptions opts) const {
+  //   return GetPipeline(gaussian_blur_pipelines_, opts);
+  // }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetMorphologyFilterPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(morphology_filter_pipelines_, opts);
-  }
+  // std::shared_ptr<Pipeline<PipelineDescriptor>> GetMorphologyFilterPipeline(
+  //     ContentContextOptions opts) const {
+  //   return GetPipeline(morphology_filter_pipelines_, opts);
+  // }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetColorMatrixColorFilterPipeline(ContentContextOptions opts) const {
@@ -872,14 +872,14 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<TextureStrictSrcPipeline> texture_strict_src_pipelines_;
-#ifdef IMPELLER_ENABLE_OPENGLES
+#if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_EMSCRIPTEN)
   mutable Variants<TiledTextureExternalPipeline>
       tiled_texture_external_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
-  mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
+  // mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
-  mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
+  // mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
       color_matrix_color_filter_pipelines_;
   mutable Variants<LinearToSrgbFilterPipeline> linear_to_srgb_filter_pipelines_;
