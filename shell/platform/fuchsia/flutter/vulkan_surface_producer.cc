@@ -112,8 +112,8 @@ bool VulkanSurfaceProducer::Initialize() {
     return false;
   }
 
-  uint32_t skia_features = 0;
-  if (!logical_device_->GetPhysicalDeviceFeaturesSkia(&skia_features)) {
+  VkPhysicalDeviceFeatures features;
+  if (!logical_device_->GetPhysicalDeviceFeatures(&features)) {
     FML_LOG(ERROR)
         << "VulkanSurfaceProducer: Failed to get physical device features.";
 
@@ -134,7 +134,7 @@ bool VulkanSurfaceProducer::Initialize() {
       logical_device_->GetGraphicsQueueIndex();
   backend_context.fMinAPIVersion = application_->GetAPIVersion();
   backend_context.fMaxAPIVersion = application_->GetAPIVersion();
-  backend_context.fFeatures = skia_features;
+  backend_context.fFeatures = features;
   backend_context.fGetProc = std::move(getProc);
   backend_context.fOwnsInstanceAndDevice = false;
   backend_context.fMemoryAllocator = memory_allocator_;
