@@ -24,8 +24,9 @@ class Link extends PrimaryRoleManager {
   @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
-    // TODO: The <a> element has `aria-label={value}`. We should stop that!
-    element.setAttribute('href', semanticsObject.hasValue ? semanticsObject.value! : '#');
+    if (semanticsObject.hasValue) {
+      element.setAttribute('href', semanticsObject.value!);
+    }
     element.style.display = 'block';
     return element;
   }
