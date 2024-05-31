@@ -425,14 +425,33 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
   DomElement get focusTarget => _domText;
 }
 
+/// The source of the label attribute for a semantic node.
+enum LabelSource {
+  /// The label is provided by the [SemanticsObject.label] property.
+  label,
+
+  /// The label is provided by the [SemanticsObject.value] property.
+  value,
+
+  /// The label is provided by the [SemanticsObject.hint] property.
+  hint,
+
+  /// The label is provided by the [SemanticsObject.tooltip] property.
+  tooltip,
+}
+
 /// Renders [SemanticsObject.label] and/or [SemanticsObject.value] to the semantics DOM.
 ///
 /// The value is not always rendered. Some semantics nodes correspond to
 /// interactive controls. In such case the value is reported via that element's
 /// `value` attribute rather than rendering it separately.
 class LabelAndValue extends RoleManager {
-  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.preferredRepresentation })
-      : super(Role.labelAndValue, semanticsObject, owner);
+  LabelAndValue(
+    SemanticsObject semanticsObject,
+    PrimaryRoleManager owner, {
+    required this.preferredRepresentation,
+    this.labelSources = allLabelSources,
+  }) : super(Role.labelAndValue, semanticsObject, owner);
 
   /// The preferred representation of the label in the DOM.
   ///
@@ -442,6 +461,17 @@ class LabelAndValue extends RoleManager {
   /// If the node contains children, [LabelRepresentation.ariaLabel] is used
   /// instead.
   LabelRepresentation preferredRepresentation;
+
+  /// The sources of the label that are allowed to be used.
+  final Set<LabelSource> labelSources;
+
+  /// All possible sources of the label.
+  static const Set<LabelSource> allLabelSources = <LabelSource>{
+    LabelSource.label,
+    LabelSource.value,
+    LabelSource.hint,
+    LabelSource.tooltip,
+  };
 
   @override
   void update() {
@@ -477,20 +507,34 @@ class LabelAndValue extends RoleManager {
     return representation;
   }
 
+  String? get _label =>
+      labelSources.contains(LabelSource.label) && semanticsObject.hasLabel
+          ? semanticsObject.label
+          : null;
+
+  String? get _value =>
+      labelSources.contains(LabelSource.value) && semanticsObject.hasValue
+          ? semanticsObject.value
+          : null;
+
+  String? get _tooltip =>
+      labelSources.contains(LabelSource.tooltip) && semanticsObject.hasTooltip
+          ? semanticsObject.tooltip
+          : null;
+
+  String? get _hint =>
+      labelSources.contains(LabelSource.hint) ? semanticsObject.hint : null;
+
   /// Computes the final label to be assigned to the node.
   ///
   /// The label is a concatenation of tooltip, label, hint, and value, whichever
-  /// combination is present.
+  /// combination is present and allowed by [labelSources].
   String? _computeLabel() {
-    // If the node is incrementable the value is reported to the browser via
-    // the respective role manager. We do not need to also render it again here.
-    final bool shouldDisplayValue = !semanticsObject.isIncrementable && semanticsObject.hasValue;
-
     return computeDomSemanticsLabel(
-      tooltip: semanticsObject.hasTooltip ? semanticsObject.tooltip : null,
-      label: semanticsObject.hasLabel ? semanticsObject.label : null,
-      hint: semanticsObject.hint,
-      value: shouldDisplayValue ? semanticsObject.value : null,
+      tooltip: _tooltip,
+      label: _label,
+      hint: _hint,
+      value: _value,
     );
   }
 

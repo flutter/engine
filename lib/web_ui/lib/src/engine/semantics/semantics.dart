@@ -434,12 +434,20 @@ abstract class PrimaryRoleManager {
   ///
   /// If `labelRepresentation` is true, configures the [LabelAndValue] role with
   /// [LabelAndValue.labelRepresentation] set to true.
-  PrimaryRoleManager.withBasics(this.role, this.semanticsObject, { required LabelRepresentation preferredLabelRepresentation }) {
+  PrimaryRoleManager.withBasics(
+    this.role,
+    this.semanticsObject, {
+    required LabelRepresentation preferredLabelRepresentation,
+    Set<LabelSource> labelSources = LabelAndValue.allLabelSources,
+  }) {
     element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
     addRouteName();
-    addLabelAndValue(preferredRepresentation: preferredLabelRepresentation);
+    addLabelAndValue(
+      preferredRepresentation: preferredLabelRepresentation,
+      labelSources: labelSources,
+    );
   }
 
   /// Initializes a blank role for a [semanticsObject].
@@ -566,8 +574,16 @@ abstract class PrimaryRoleManager {
   LabelAndValue? _labelAndValue;
 
   /// Adds generic label features.
-  void addLabelAndValue({ required LabelRepresentation preferredRepresentation }) {
-    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, preferredRepresentation: preferredRepresentation));
+  void addLabelAndValue({
+    required LabelRepresentation preferredRepresentation,
+    Set<LabelSource> labelSources = LabelAndValue.allLabelSources,
+  }) {
+    addSecondaryRole(_labelAndValue = LabelAndValue(
+      semanticsObject,
+      this,
+      preferredRepresentation: preferredRepresentation,
+      labelSources: labelSources,
+    ));
   }
 
   /// Adds generic functionality for handling taps and clicks.
