@@ -2736,6 +2736,7 @@ class CanvasCompareTester {
     int pix_height = pix_size.height();
     int worst_pad_x = std::max(pad_left, pad_right);
     int worst_pad_y = std::max(pad_top, pad_bottom);
+    printf("shouldBoundsOverflow %p\n", tolerance);
     if (tolerance->overflows(pix_bounds, worst_pad_x, worst_pad_y)) {
       FML_LOG(ERROR) << "Computed bounds for " << info;
       FML_LOG(ERROR) << "pix bounds["                        //
@@ -3964,6 +3965,8 @@ TEST_F(DisplayListRendering, SaveLayerConsolidation) {
         // and elide a renderpass. In this case rounding and precision of inputs
         // to color filters may cause the output to differ by 1.
         if (always || same) {
+          printf("%d %d nested_results %p, combined_results %p\n",
+              always, same, nested_results.get(), combined_results.get());
           CanvasCompareTester::compareToReference(
               nested_results.get(), combined_results.get(),
               "nested " + desc1 + " then " + desc2, &kTestBounds2,
@@ -3972,6 +3975,9 @@ TEST_F(DisplayListRendering, SaveLayerConsolidation) {
               combined_results->height(), /*printMismatches=*/true);
         }
         if (always || rev_same) {
+          printf("%d rev %d nested_results %p, combined_results %p\n",
+              always, rev_same, nested_results.get(),
+              combined_results.get());
           CanvasCompareTester::compareToReference(
               reverse_results.get(), combined_results.get(),
               "nested " + desc2 + " then " + desc1, &kTestBounds2,
