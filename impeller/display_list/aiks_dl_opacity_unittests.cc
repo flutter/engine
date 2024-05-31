@@ -26,7 +26,7 @@ TEST_P(AiksTest, DrawOpacityPeephole) {
   alpha.setColor(DlColor::kRed().modulateOpacity(0.5));
 
   builder.SaveLayer(nullptr, &alpha);
-  builder.DrawRect(SkRect::MakeXYWH(020, 020, 100, 100), green);
+  builder.DrawRect(SkRect::MakeXYWH(0, 0, 100, 100), green);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
