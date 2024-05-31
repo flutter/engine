@@ -5,8 +5,10 @@
 #include "impeller/aiks/aiks_playground.h"
 
 #include <memory>
+#include <optional>
 
 #include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/dl_dispatcher.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -23,14 +25,24 @@ void AiksPlayground::SetTypographerContext(
 }
 
 void AiksPlayground::TearDown() {
-  inspector_.HackResetDueToTextureLeaks();
   PlaygroundTest::TearDown();
 }
 
 bool AiksPlayground::OpenPlaygroundHere(Picture picture) {
-  return OpenPlaygroundHere([&picture](AiksContext& renderer) -> Picture {
-    return std::move(picture);
-  });
+  if (!switches_.enable_playground) {
+    return true;
+  }
+
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  if (!renderer.IsValid()) {
+    return false;
+  }
+
+  return Playground::OpenPlaygroundHere(
+      [&renderer, &picture](RenderTarget& render_target) -> bool {
+        return renderer.Render(picture, render_target, true);
+      });
 }
 
 bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
@@ -45,10 +57,8 @@ bool AiksPlayground::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
   }
 
   return Playground::OpenPlaygroundHere(
-      [this, &renderer, &callback](RenderTarget& render_target) -> bool {
-        const std::optional<Picture>& picture = inspector_.RenderInspector(
-            renderer, [&]() { return callback(renderer); });
-
+      [&renderer, &callback](RenderTarget& render_target) -> bool {
+        std::optional<Picture> picture = callback(renderer);
         if (!picture.has_value()) {
           return false;
         }
@@ -61,6 +71,14 @@ bool AiksPlayground::ImGuiBegin(const char* name,
                                 ImGuiWindowFlags flags) {
   ImGui::Begin(name, p_open, flags);
   return true;
+}
+
+bool AiksPlayground::OpenPlaygroundHere(
+    const sk_sp<flutter::DisplayList>& list) {
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+  return OpenPlaygroundHere(std::move(picture));
 }
 
 }  // namespace impeller

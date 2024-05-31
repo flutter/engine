@@ -40,10 +40,12 @@
 #include <net/if.h>
 
 #include "flutter/fml/logging.h"
-#include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/runtime/dart_service_isolate.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+
+FLUTTER_ASSERT_ARC
 
 @protocol FlutterDartVMServicePublisherDelegate
 - (void)publishServiceProtocolPort:(NSURL*)uri;
@@ -54,7 +56,7 @@
 + (NSData*)createTxtData:(NSURL*)url;
 
 @property(readonly, class) NSString* serviceName;
-@property(readonly) fml::scoped_nsobject<NSObject<FlutterDartVMServicePublisherDelegate>> delegate;
+@property(readonly) NSObject<FlutterDartVMServicePublisherDelegate>* delegate;
 @property(nonatomic, readwrite) NSURL* url;
 @property(readonly) BOOL enableVMServicePublication;
 
@@ -65,17 +67,12 @@
 
 @implementation DartVMServiceDNSServiceDelegate {
   DNSServiceRef _dnsServiceRef;
-  DNSServiceRef _legacyDnsServiceRef;
 }
 
 - (void)stopService {
   if (_dnsServiceRef) {
     DNSServiceRefDeallocate(_dnsServiceRef);
     _dnsServiceRef = NULL;
-  }
-  if (_legacyDnsServiceRef) {
-    DNSServiceRefDeallocate(_legacyDnsServiceRef);
-    _legacyDnsServiceRef = NULL;
   }
 }
 
@@ -91,7 +88,6 @@
   uint32_t interfaceIndex = 0;
 #endif  // TARGET_IPHONE_SIMULATOR
   const char* registrationType = "_dartVmService._tcp";
-  const char* legacyRegistrationType = "_dartobservatory._tcp";
 
   const char* domain = "local.";  // default domain
   uint16_t port = [[url port] unsignedShortValue];
@@ -104,20 +100,6 @@
 
   if (err == 0) {
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
-    return;
-  }
-
-  // TODO(bkonyi): remove once flutter_tools no longer looks for the legacy registration type.
-  // See https://github.com/dart-lang/sdk/issues/50233
-  //
-  // Try to fallback on the legacy registration type.
-  err = DNSServiceRegister(&_legacyDnsServiceRef, flags, interfaceIndex,
-                           FlutterDartVMServicePublisher.serviceName.UTF8String,
-                           legacyRegistrationType, domain, NULL, htons(port), txtData.length,
-                           txtData.bytes, RegistrationCallback, NULL);
-
-  if (err == 0) {
-    DNSServiceSetDispatchQueue(_legacyDnsServiceRef, dispatch_get_main_queue());
     return;
   }
 
@@ -159,32 +141,31 @@ static void DNSSD_API RegistrationCallback(DNSServiceRef sdRef,
 
 @implementation FlutterDartVMServicePublisher {
   flutter::DartServiceIsolate::CallbackHandle _callbackHandle;
-  std::unique_ptr<fml::WeakPtrFactory<FlutterDartVMServicePublisher>> _weakFactory;
 }
 
 - (instancetype)initWithEnableVMServicePublication:(BOOL)enableVMServicePublication {
   self = [super init];
   NSAssert(self, @"Super must not return null on init.");
 
-  _delegate.reset([[DartVMServiceDNSServiceDelegate alloc] init]);
+  _delegate = [[DartVMServiceDNSServiceDelegate alloc] init];
   _enableVMServicePublication = enableVMServicePublication;
-  _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterDartVMServicePublisher>>(self);
+  __weak __typeof(self) weakSelf = self;
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
 
   _callbackHandle = flutter::DartServiceIsolate::AddServerStatusCallback(
-      [weak = _weakFactory->GetWeakPtr(),
-       runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
+      [weakSelf, runner = fml::MessageLoop::GetCurrent().GetTaskRunner()](const std::string& uri) {
         if (!uri.empty()) {
-          runner->PostTask([weak, uri]() {
+          runner->PostTask([weakSelf, uri]() {
+            FlutterDartVMServicePublisher* strongSelf = weakSelf;
             // uri comes in as something like 'http://127.0.0.1:XXXXX/' where XXXXX is the port
             // number.
-            if (weak) {
-              NSURL* url = [[[NSURL alloc]
-                  initWithString:[NSString stringWithUTF8String:uri.c_str()]] autorelease];
-              weak.get().url = url;
-              if (weak.get().enableVMServicePublication) {
-                [[weak.get() delegate] publishServiceProtocolPort:url];
+            if (strongSelf) {
+              NSURL* url =
+                  [[NSURL alloc] initWithString:[NSString stringWithUTF8String:uri.c_str()]];
+              strongSelf.url = url;
+              if (strongSelf.enableVMServicePublication) {
+                [[strongSelf delegate] publishServiceProtocolPort:url];
               }
             }
           });
@@ -210,15 +191,9 @@ static void DNSSD_API RegistrationCallback(DNSServiceRef sdRef,
 }
 
 - (void)dealloc {
-  // It will be destroyed and invalidate its weak pointers
-  // before any other members are destroyed.
-  _weakFactory.reset();
-
   [_delegate stopService];
-  [_url release];
 
   flutter::DartServiceIsolate::RemoveServerStatusCallback(_callbackHandle);
-  [super dealloc];
 }
 @end
 

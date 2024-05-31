@@ -30,12 +30,20 @@ function follow_links() (
   echo "$file"
 )
 
+function dart_bin() {
+  dart_path="$1/flutter/third_party/dart/tools/sdks/dart-sdk/bin"
+  if [[ ! -e "$dart_path" ]]; then
+    dart_path="$1/third_party/dart/tools/sdks/dart-sdk/bin"
+  fi
+  echo "$dart_path"
+}
+
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(
   cd "$SCRIPT_DIR/../.."
   pwd -P
 )"
-DART_BIN="$SRC_DIR/third_party/dart/tools/sdks/dart-sdk/bin"
+DART_BIN=$(dart_bin "$SRC_DIR")
 PATH="$DART_BIN:$PATH"
 
 # Use:
@@ -73,7 +81,7 @@ dart --version
 # Runs the tests for the license script.
 function run_tests() (
   cd "$SRC_DIR/flutter/tools/licenses"
-  find . -name "*_test.dart" | xargs -n 1 dart --enable-asserts
+  find . -name "*_test.dart" | xargs -n 1 dart --disable-dart-dev --enable-asserts
 )
 
 # Collects the license information from the repo.
@@ -85,7 +93,11 @@ function collect_licenses() (
   # For very large RegExps that are currently used in license script using
   # interpreter is faster than using unoptimized machine code, which has
   # no chance of being optimized(due to its size).
-  dart --enable-asserts --interpret_irregexp lib/main.dart \
+  dart \
+    --disable-dart-dev \
+    --enable-asserts \
+    --interpret_irregexp \
+    lib/main.dart \
     --src ../../.. \
     --out ../../../out/license_script_output \
     --golden ../../ci/licenses_golden \
@@ -162,7 +174,7 @@ function verify_licenses() (
 
   local actualLicenseCount
   actualLicenseCount="$(tail -n 1 flutter/ci/licenses_golden/licenses_flutter | tr -dc '0-9')"
-  local expectedLicenseCount=758 # When changing this number: Update the error message below as well describing the newly expected license types.
+  local expectedLicenseCount=903 # When changing this number: Update the error message below as well describing the newly expected license types.
 
   if [[ $actualLicenseCount -ne $expectedLicenseCount ]]; then
     echo "=============================== ERROR ==============================="

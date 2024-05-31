@@ -119,7 +119,12 @@ void Animator::BeginFrame(
 }
 
 void Animator::EndFrame() {
-  FML_DCHECK(frame_timings_recorder_ != nullptr);
+  if (frame_timings_recorder_ == nullptr) {
+    // `EndFrame` has been called in this frame. This happens if the engine has
+    // called `OnAllViewsRendered` and then the end of the vsync task calls
+    // `EndFrame` again.
+    return;
+  }
   if (!layer_trees_tasks_.empty()) {
     // The build is completed in OnAnimatorBeginFrame.
     frame_timings_recorder_->RecordBuildEnd(fml::TimePoint::Now());
@@ -128,9 +133,15 @@ void Animator::EndFrame() {
         frame_timings_recorder_->GetVsyncTargetTime());
 
     // Commit the pending continuation.
-    PipelineProduceResult result =
-        producer_continuation_.Complete(std::make_unique<FrameItem>(
-            std::move(layer_trees_tasks_), std::move(frame_timings_recorder_)));
+    std::vector<std::unique_ptr<LayerTreeTask>> layer_tree_task_list;
+    layer_tree_task_list.reserve(layer_trees_tasks_.size());
+    for (auto& [view_id, layer_tree_task] : layer_trees_tasks_) {
+      layer_tree_task_list.push_back(std::move(layer_tree_task));
+    }
+    layer_trees_tasks_.clear();
+    PipelineProduceResult result = producer_continuation_.Complete(
+        std::make_unique<FrameItem>(std::move(layer_tree_task_list),
+                                    std::move(frame_timings_recorder_)));
 
     if (!result.success) {
       FML_DLOG(INFO) << "Failed to commit to the pipeline";
@@ -192,8 +203,11 @@ void Animator::Render(int64_t view_id,
                                 "Animator::Render", /*flow_id_count=*/0,
                                 /*flow_ids=*/nullptr);
 
-  layer_trees_tasks_.push_back(std::make_unique<LayerTreeTask>(
-      view_id, std::move(layer_tree), device_pixel_ratio));
+  // Only inserts if the view ID has not been rendered before, ignoring
+  // duplicate Render calls.
+  layer_trees_tasks_.try_emplace(
+      view_id, std::make_unique<LayerTreeTask>(view_id, std::move(layer_tree),
+                                               device_pixel_ratio));
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {
@@ -223,7 +237,7 @@ void Animator::DrawLastLayerTrees(
 }
 
 void Animator::RequestFrame(bool regenerate_layer_trees) {
-  if (regenerate_layer_trees) {
+  if (regenerate_layer_trees && !regenerate_layer_trees_) {
     // This event will be closed by BeginFrame. BeginFrame will only be called
     // if regenerating the layer trees. If a frame has been requested to update
     // an external texture, this will be false and no BeginFrame call will
@@ -274,7 +288,7 @@ void Animator::AwaitVSync() {
   }
 }
 
-void Animator::EndWarmUpFrame() {
+void Animator::OnAllViewsRendered() {
   if (!layer_trees_tasks_.empty()) {
     EndFrame();
   }

@@ -3,12 +3,15 @@
 # found in the LICENSE file.
 
 import("//build/compiled_action.gni")
-import("//build/fuchsia/sdk.gni")
 import("//flutter/build/bin_to_obj.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/lib/ui/dart_ui.gni")
 import("$dart_src/utils/compile_platform.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 # Generates the Dart/Flutter core platform files and tools.
 #
@@ -229,13 +232,13 @@ compile_platform("strong_platform") {
     "$root_out_dir/flutter_patched_sdk/vm_outline_strong.dill",
   ]
 
-  pool = "//flutter/build/dart:dart_pool"
+  pool = "//build/toolchain:toolchain_pool"
 
   is_runtime_mode_release =
       flutter_runtime_mode == "release" || flutter_runtime_mode == "jit_release"
   args = [
     "--enable-experiment=generic-metadata",
-    "--nnbd-agnostic",
+    "--nnbd-strong",
     "--target=flutter",
     "-Ddart.vm.product=$is_runtime_mode_release",
     "-Ddart.isVM=true",

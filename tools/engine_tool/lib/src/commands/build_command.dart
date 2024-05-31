@@ -5,88 +5,101 @@
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../build_utils.dart';
-
+import '../gn.dart';
+import '../label.dart';
 import 'command.dart';
-
-const String _configFlag = 'config';
-
-// TODO(johnmccutchan): Should BuildConfig be BuilderConfig and GlobalBuild be BuildConfig?
-// TODO(johnmccutchan): List all available build targets and allow the user
-// to specify which one(s) we should build on the cli.
-// TODO(johnmccutchan): Can we show a progress indicator like 'running gn...'?
+import 'flags.dart';
 
 /// The root 'build' command.
 final class BuildCommand extends CommandBase {
   /// Constructs the 'build' command.
   BuildCommand({
     required super.environment,
-    required Map<String, BuildConfig> configs,
+    required Map<String, BuilderConfig> configs,
+    super.help = false,
+    super.usageLineLength,
   }) {
-    builds = runnableBuilds(environment, configs);
-    // Add options here that are common to all queries.
-    argParser.addOption(
-      _configFlag,
-      abbr: 'c',
-      defaultsTo: 'host_debug',
-      help: 'Specify the build config to use',
-      allowed: <String>[
-        for (final GlobalBuild config in runnableBuilds(environment, configs))
-          config.name,
-      ],
-      allowedHelp: <String, String>{
-        for (final GlobalBuild config in runnableBuilds(environment, configs))
-          config.name: config.gn.join(' '),
-      },
+    // When printing the help/usage for this command, only list all builds
+    // when the --verbose flag is supplied.
+    final bool includeCiBuilds = environment.verbose || !help;
+    builds = runnableBuilds(environment, configs, includeCiBuilds);
+    debugCheckBuilds(builds);
+    addConfigOption(
+      environment,
+      argParser,
+      builds,
+    );
+    argParser.addFlag(
+      rbeFlag,
+      defaultsTo: environment.hasRbeConfigInTree(),
+      help: 'RBE is enabled by default when available.',
+    );
+    argParser.addFlag(
+      ltoFlag,
+      help: 'Whether LTO should be enabled for a build. Default is disabled',
     );
   }
 
   /// List of compatible builds.
-  late final List<GlobalBuild> builds;
+  late final List<Build> builds;
 
   @override
   String get name => 'build';
 
   @override
-  String get description => 'Builds the engine';
+  String get description => '''
+Builds the engine
+et build //flutter/fml/...             # Build all targets in `//flutter/fml` and its subdirectories.
+et build //flutter/fml:all             # Build all targets in `//flutter/fml`.
+et build //flutter/fml:fml_benchmarks  # Build a specific target in `//flutter/fml`.
+''';
 
   @override
   Future<int> run() async {
-    final String configName = argResults![_configFlag] as String;
-    final GlobalBuild? build = builds
-        .where((GlobalBuild build) => build.name == configName)
-        .firstOrNull;
+    final String configName = argResults![configFlag] as String;
+    final bool useRbe = argResults![rbeFlag] as bool;
+    if (useRbe && !environment.hasRbeConfigInTree()) {
+      environment.logger.error('RBE was requested but no RBE config was found');
+      return 1;
+    }
+    final bool useLto = argResults![ltoFlag] as bool;
+    final String demangledName = demangleConfigName(environment, configName);
+    final Build? build =
+        builds.where((Build build) => build.name == demangledName).firstOrNull;
     if (build == null) {
       environment.logger.error('Could not find config $configName');
       return 1;
     }
-    final GlobalBuildRunner buildRunner = GlobalBuildRunner(
-        platform: environment.platform,
-        processRunner: environment.processRunner,
-        abi: environment.abi,
-        engineSrcDir: environment.engine.srcDir,
-        build: build);
-    void handler(RunnerEvent event) {
-      switch (event) {
-        case RunnerStart():
-          environment.logger.info('$event: ${event.command.join(' ')}');
-        case RunnerProgress(done: true):
-          environment.logger.clearLine();
-          environment.logger.status(event);
-        case RunnerProgress(done: false):
-          {
-            final String percent = '${event.percent.toStringAsFixed(1)}%';
-            final String fraction = '(${event.completed}/${event.total})';
-            final String prefix = '[${event.name}] $percent $fraction ';
-            final String what = event.what;
-            environment.logger.clearLine();
-            environment.logger.status('$prefix$what');
-          }
-        default:
-          environment.logger.status(event);
-      }
+
+    final List<String> extraGnArgs = <String>[
+      if (!useRbe) '--no-rbe',
+      if (useLto) '--lto' else '--no-lto',
+    ];
+
+    final List<String> commandLineTargets = argResults!.rest;
+    if (commandLineTargets.isNotEmpty && !await ensureBuildDir(environment, build, enableRbe: useRbe)) {
+      return 1;
     }
 
-    final bool buildResult = await buildRunner.run(handler);
-    return buildResult ? 0 : 1;
+    // Builds only accept labels as arguments, so convert patterns to labels.
+    // TODO(matanlurey): Can be optimized in cases where wildcards are not used.
+    final Gn gn = Gn.fromEnvironment(environment);
+    final Set<Label> allTargets = <Label>{};
+    for (final String pattern in commandLineTargets) {
+      final TargetPattern target = TargetPattern.parse(pattern);
+      final List<BuildTarget> targets = await gn.desc(
+        'out/${build.ninja.config}',
+        target,
+      );
+      allTargets.addAll(targets.map((BuildTarget target) => target.label));
+    }
+
+    return runBuild(
+      environment,
+      build,
+      extraGnArgs: extraGnArgs,
+      targets: allTargets.toList(),
+      enableRbe: useRbe,
+    );
   }
 }

@@ -14,6 +14,7 @@ impeller_component("golden_playground_test") {
     ":digest",
     "//flutter/fml",
     "//flutter/impeller/aiks",
+    "//flutter/impeller/display_list:display_list",
     "//flutter/impeller/playground",
     "//flutter/impeller/typographer/backends/skia:typographer_skia_backend",
     "//flutter/testing:testing_lib",
@@ -23,7 +24,7 @@ impeller_component("golden_playground_test") {
     sources += [ "golden_playground_test_mac.cc" ]
     deps += [
       ":metal_screenshot",
-      "//third_party/abseil-cpp/absl/base:no_destructor",
+      "//flutter/third_party/abseil-cpp/absl/base:no_destructor",
     ]
   } else {
     sources += [ "golden_playground_test_stub.cc" ]
@@ -82,11 +83,12 @@ if (is_mac) {
       ":metal_screenshot",
       "//flutter/impeller/aiks",
       "//flutter/impeller/aiks:aiks_unittests_golden",
+      "//flutter/impeller/display_list:display_list_unittests_golden",
       "//flutter/impeller/fixtures",
+      "//flutter/third_party/angle:libEGL",
+      "//flutter/third_party/angle:libGLESv2",
       "//flutter/third_party/googletest:gtest",
       "//flutter/third_party/swiftshader",
-      "//third_party/angle:libEGL",
-      "//third_party/angle:libGLESv2",
     ]
   }
 }

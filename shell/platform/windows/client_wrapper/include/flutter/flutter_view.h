@@ -9,11 +9,15 @@
 
 namespace flutter {
 
+// The unique identifier for a view.
+typedef int64_t FlutterViewId;
+
 // A view displaying Flutter content.
 class FlutterView {
  public:
   explicit FlutterView(FlutterDesktopViewRef view) : view_(view) {}
 
+  // Destroys this reference to the view. The underlying view is not destroyed.
   virtual ~FlutterView() = default;
 
   // Prevent copying.

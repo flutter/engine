@@ -7,8 +7,9 @@
 
 #include <memory>
 
-#include "flutter_windows_engine.h"
-#include "flutter_windows_view.h"
+#include "flutter/fml/macros.h"
+#include "flutter/shell/platform/windows/flutter_windows_engine.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 namespace flutter {
 
@@ -19,12 +20,32 @@ class FlutterWindowsViewController {
                                std::unique_ptr<FlutterWindowsView> view)
       : engine_(std::move(engine)), view_(std::move(view)) {}
 
-  FlutterWindowsEngine* engine() { return engine_.get(); }
+  ~FlutterWindowsViewController();
+
+  // Destroy this view controller and its view.
+  //
+  // If this view controller owns the engine, the engine is also destroyed.
+  void Destroy();
+
+  FlutterWindowsEngine* engine() { return view_->GetEngine(); }
   FlutterWindowsView* view() { return view_.get(); }
 
  private:
+  // The engine owned by this view controller, if any.
+  //
+  // This is used only if the view controller was created
+  // using |FlutterDesktopViewControllerCreate| as that takes
+  // ownership of the engine. Destroying this view controller
+  // also destroys the engine.
+  //
+  // View controllers created using |FlutterDesktopEngineCreateViewController|
+  // do not take ownership of the engine and this will be null. Destroying
+  // this view controller does not destroy the engine.
   std::unique_ptr<FlutterWindowsEngine> engine_;
+
   std::unique_ptr<FlutterWindowsView> view_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsViewController);
 };
 
 }  // namespace flutter

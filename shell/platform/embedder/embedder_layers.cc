@@ -10,10 +10,12 @@ namespace flutter {
 
 EmbedderLayers::EmbedderLayers(SkISize frame_size,
                                double device_pixel_ratio,
-                               SkMatrix root_surface_transformation)
+                               SkMatrix root_surface_transformation,
+                               uint64_t presentation_time)
     : frame_size_(frame_size),
       device_pixel_ratio_(device_pixel_ratio),
-      root_surface_transformation_(root_surface_transformation) {}
+      root_surface_transformation_(root_surface_transformation),
+      presentation_time_(presentation_time) {}
 
 EmbedderLayers::~EmbedderLayers() = default;
 
@@ -62,6 +64,7 @@ void EmbedderLayers::PushBackingStoreLayer(
   present_info->paint_region = paint_region.get();
   regions_referenced_.push_back(std::move(paint_region));
   layer.backing_store_present_info = present_info.get();
+  layer.presentation_time = presentation_time_;
 
   present_info_referenced_.push_back(std::move(present_info));
   presented_layers_.push_back(layer);
@@ -225,17 +228,20 @@ void EmbedderLayers::PushPlatformViewLayer(
   layer.size.width = transformed_layer_bounds.width();
   layer.size.height = transformed_layer_bounds.height();
 
+  layer.presentation_time = presentation_time_;
+
   presented_layers_.push_back(layer);
 }
 
 void EmbedderLayers::InvokePresentCallback(
+    FlutterViewId view_id,
     const PresentCallback& callback) const {
   std::vector<const FlutterLayer*> presented_layers_pointers;
   presented_layers_pointers.reserve(presented_layers_.size());
   for (const auto& layer : presented_layers_) {
     presented_layers_pointers.push_back(&layer);
   }
-  callback(presented_layers_pointers);
+  callback(view_id, presented_layers_pointers);
 }
 
 }  // namespace flutter

@@ -9,10 +9,10 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
+#include "impeller/base/mask.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
@@ -297,18 +297,15 @@ enum class SampleCount : uint8_t {
   kCount4 = 4,
 };
 
-using TextureUsageMask = uint64_t;
-
-enum class TextureUsage : TextureUsageMask {
+enum class TextureUsage {
   kUnknown = 0,
   kShaderRead = 1 << 0,
   kShaderWrite = 1 << 1,
   kRenderTarget = 1 << 2,
 };
+IMPELLER_ENUM_IS_MASK(TextureUsage);
 
-constexpr bool TextureUsageIsRenderTarget(TextureUsageMask mask) {
-  return static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) & mask;
-}
+using TextureUsageMask = Mask<TextureUsage>;
 
 constexpr const char* TextureUsageToString(TextureUsage usage) {
   switch (usage) {
@@ -406,19 +403,32 @@ struct Viewport {
   }
 };
 
+/// @brief      Describes how the texture should be sampled when the texture
+///             is being shrunk (minified) or expanded (magnified) to fit to
+///             the sample point.
 enum class MinMagFilter {
   /// Select nearest to the sample point. Most widely supported.
   kNearest,
+
   /// Select two points and linearly interpolate between them. Some formats
   /// may not support this.
   kLinear,
 };
 
+/// @brief      Options for selecting and filtering between mipmap levels.
 enum class MipFilter {
-  /// Sample from the nearest mip level.
+  /// @brief    The texture is sampled as if it only had a single mipmap level.
+  ///
+  ///           All samples are read from level 0.
+  kBase,
+
+  /// @brief    The nearst mipmap level is selected.
   kNearest,
-  /// Sample from the two nearest mip levels and linearly interpolate between
-  /// them.
+
+  /// @brief    Sample from the two nearest mip levels and linearly interpolate.
+  ///
+  ///           If the filter falls between levels, both levels are sampled, and
+  ///           their results linearly interpolated between levels.
   kLinear,
 };
 
@@ -435,7 +445,7 @@ enum class SamplerAddressMode {
   kDecal,
 };
 
-enum class ColorWriteMask : uint64_t {
+enum class ColorWriteMaskBits : uint64_t {
   kNone = 0,
   kRed = 1 << 0,
   kGreen = 1 << 1,
@@ -443,6 +453,9 @@ enum class ColorWriteMask : uint64_t {
   kAlpha = 1 << 3,
   kAll = kRed | kGreen | kBlue | kAlpha,
 };
+IMPELLER_ENUM_IS_MASK(ColorWriteMaskBits);
+
+using ColorWriteMask = Mask<ColorWriteMaskBits>;
 
 constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
   switch (format) {
@@ -508,8 +521,7 @@ struct ColorAttachmentDescriptor {
   BlendOperation alpha_blend_op = BlendOperation::kAdd;
   BlendFactor dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
 
-  std::underlying_type_t<ColorWriteMask> write_mask =
-      static_cast<uint64_t>(ColorWriteMask::kAll);
+  ColorWriteMask write_mask = ColorWriteMaskBits::kAll;
 
   constexpr bool operator==(const ColorAttachmentDescriptor& o) const {
     return format == o.format &&                                  //
@@ -524,10 +536,10 @@ struct ColorAttachmentDescriptor {
   }
 
   constexpr size_t Hash() const {
-    return fml::HashCombine(format, blending_enabled, src_color_blend_factor,
-                            color_blend_op, dst_color_blend_factor,
-                            src_alpha_blend_factor, alpha_blend_op,
-                            dst_alpha_blend_factor, write_mask);
+    return fml::HashCombine(
+        format, blending_enabled, src_color_blend_factor, color_blend_op,
+        dst_color_blend_factor, src_alpha_blend_factor, alpha_blend_op,
+        dst_alpha_blend_factor, static_cast<uint64_t>(write_mask));
   }
 };
 

@@ -11,7 +11,7 @@
 namespace impeller {
 
 static std::atomic_int32_t sValidationLogsDisabledCount = 0;
-static bool sValidationLogsAreFatal = false;
+static std::atomic_int32_t sValidationLogsAreFatal = 0;
 
 void ImpellerValidationErrorsSetFatal(bool fatal) {
   sValidationLogsAreFatal = fatal;
@@ -23,6 +23,14 @@ ScopedValidationDisable::ScopedValidationDisable() {
 
 ScopedValidationDisable::~ScopedValidationDisable() {
   sValidationLogsDisabledCount--;
+}
+
+ScopedValidationFatal::ScopedValidationFatal() {
+  sValidationLogsAreFatal++;
+}
+
+ScopedValidationFatal::~ScopedValidationFatal() {
+  sValidationLogsAreFatal--;
 }
 
 ValidationLog::ValidationLog() = default;
@@ -38,17 +46,22 @@ std::ostream& ValidationLog::GetStream() {
 }
 
 void ImpellerValidationBreak(const char* message) {
-// Nothing to do. Exists for the debugger.
-#ifdef IMPELLER_ENABLE_VALIDATION
   std::stringstream stream;
+#if FLUTTER_RELEASE
+  stream << "Impeller validation: " << message;
+#else
   stream << "Break on '" << __FUNCTION__
          << "' to inspect point of failure: " << message;
-  if (sValidationLogsAreFatal) {
+#endif
+  if (sValidationLogsAreFatal > 0) {
     FML_LOG(FATAL) << stream.str();
   } else {
     FML_LOG(ERROR) << stream.str();
   }
-#endif  // IMPELLER_ENABLE_VALIDATION
+}
+
+bool ImpellerValidationErrorsAreFatal() {
+  return sValidationLogsAreFatal;
 }
 
 }  // namespace impeller

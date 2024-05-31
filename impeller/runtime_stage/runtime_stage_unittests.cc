@@ -62,6 +62,7 @@ TEST_P(RuntimeStageTest, CanReadUniforms) {
   ASSERT_TRUE(stage->IsValid());
   switch (GetBackend()) {
     case PlaygroundBackend::kMetal:
+      [[fallthrough]];
     case PlaygroundBackend::kOpenGLES: {
       ASSERT_EQ(stage->GetUniforms().size(), 17u);
       {
@@ -277,7 +278,16 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   auto vertex_descriptor = std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
-  vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
+
+  std::array<DescriptorSetLayout, 2> descriptor_set_layouts = {
+      VS::kDescriptorSetLayouts[0],
+      DescriptorSetLayout{
+          .binding = 64u,
+          .descriptor_type = DescriptorType::kUniformBuffer,
+          .shader_stage = ShaderStage::kFragment,
+      },
+  };
+  vertex_descriptor->RegisterDescriptorSetLayouts(descriptor_set_layouts);
 
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   ColorAttachmentDescriptor color0;

@@ -323,7 +323,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     );
     await runProcess('gclient', <String>[
       'setdep',
-      '--revision=src/third_party/google_fonts_for_unit_tests:$packageName@$versionString',
+      '--revision=src/flutter/third_party/google_fonts_for_unit_tests:$packageName@$versionString',
       '--deps-file=$depFilePath'
     ]);
   }
@@ -473,6 +473,7 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Warang Citi',
   'Noto Sans Yi',
   'Noto Sans Zanabazar Square',
+  'Noto Serif Tibetan',
 ];
 
 bool _checkForLicenseAttribution(Uint8List fontBytes) {

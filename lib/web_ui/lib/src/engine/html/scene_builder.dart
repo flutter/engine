@@ -7,10 +7,9 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
+import '../../engine.dart' show FrameTimingRecorder, kProfileApplyFrame, kProfilePrerollFrame;
 import '../display.dart';
 import '../dom.dart';
-import '../picture.dart';
 import '../profiler.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -425,42 +424,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _addSurface(PersistedPlatformView(viewId, dx, dy, width, height));
   }
 
-  /// Sets a threshold after which additional debugging information should be
-  /// recorded.
-  ///
-  /// Currently this interface is difficult to use by end-developers. If you're
-  /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  /// We'll hopefully be able to figure out how to make this feature more useful
-  /// to you.
-  @override
-  void setRasterizerTracingThreshold(int frameInterval) {}
-
-  /// Sets whether the raster cache should checkerboard cached entries. This is
-  /// only useful for debugging purposes.
-  ///
-  /// The compositor can sometimes decide to cache certain portions of the
-  /// widget hierarchy. Such portions typically don't change often from frame to
-  /// frame and are expensive to render. This can speed up overall rendering.
-  /// However, there is certain upfront cost to constructing these cache
-  /// entries. And, if the cache entries are not used very often, this cost may
-  /// not be worth the speedup in rendering of subsequent frames. If the
-  /// developer wants to be certain that populating the raster cache is not
-  /// causing stutters, this option can be set. Depending on the observations
-  /// made, hints can be provided to the compositor that aid it in making better
-  /// decisions about caching.
-  ///
-  /// Currently this interface is difficult to use by end-developers. If you're
-  /// interested in using this feature, please contact [flutter-dev](https://groups.google.com/forum/#!forum/flutter-dev).
-  @override
-  void setCheckerboardRasterCacheImages(bool checkerboard) {}
-
-  /// Sets whether the compositor should checkerboard layers that are rendered
-  /// to offscreen bitmaps.
-  ///
-  /// This is only useful for debugging purposes.
-  @override
-  void setCheckerboardOffscreenLayers(bool checkerboard) {}
-
   /// The scene recorded in the last frame.
   ///
   /// This is a surface tree that holds onto the DOM elements that can be reused
@@ -511,8 +474,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    frameTimingsOnBuildFinish();
-    frameTimingsOnRasterStart();
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    recorder?.recordBuildFinish();
+    recorder?.recordRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
       while (_surfaceStack.length > 1) {
         // Auto-pop layers that were pushed without a corresponding pop.
@@ -528,7 +492,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       }
       commitScene(_persistedScene);
       _lastFrameScene = _persistedScene;
-      return SurfaceScene(_persistedScene.rootElement);
+      return SurfaceScene(_persistedScene.rootElement, timingRecorder: recorder);
     });
   }
 

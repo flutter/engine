@@ -4,6 +4,11 @@
 
 part of ui;
 
+// This constant must be consistent with `kTextHeightNone` defined in
+// flutter/lib/ui/text.dart.
+// To change the sentinel value, search for "kTextHeightNone" in the source code.
+const double kTextHeightNone = 0.0;
+
 enum FontStyle {
   normal,
   italic,
@@ -732,13 +737,6 @@ abstract class Paragraph {
 abstract class ParagraphBuilder {
   factory ParagraphBuilder(ParagraphStyle style) =>
     engine.renderer.createParagraphBuilder(style);
-
-  static bool get shouldDisableRoundingHack => _shouldDisableRoundingHack;
-  static bool _shouldDisableRoundingHack = true;
-  // ignore: use_setters_to_change_properties
-  static void setDisableRoundingHack(bool disableRoundingHack) {
-    _shouldDisableRoundingHack = disableRoundingHack;
-  }
 
   void pushStyle(TextStyle style);
   void pop();

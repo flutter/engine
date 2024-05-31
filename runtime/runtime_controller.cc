@@ -47,8 +47,8 @@ RuntimeController::RuntimeController(
 
 std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     RuntimeDelegate& p_client,
-    std::string advisory_script_uri,
-    std::string advisory_script_entrypoint,
+    const std::string& advisory_script_uri,
+    const std::string& advisory_script_entrypoint,
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
@@ -57,13 +57,18 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
-  UIDartState::Context spawned_context{
-      context_.task_runners,          std::move(snapshot_delegate),
-      std::move(io_manager),          context_.unref_queue,
-      std::move(image_decoder),       std::move(image_generator_registry),
-      std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
-      context_.volatile_path_tracker, context_.concurrent_task_runner,
-      context_.enable_impeller,       context_.runtime_stage_backend};
+  UIDartState::Context spawned_context{context_.task_runners,
+                                       std::move(snapshot_delegate),
+                                       std::move(io_manager),
+                                       context_.unref_queue,
+                                       std::move(image_decoder),
+                                       std::move(image_generator_registry),
+                                       advisory_script_uri,
+                                       advisory_script_entrypoint,
+                                       context_.volatile_path_tracker,
+                                       context_.concurrent_task_runner,
+                                       context_.enable_impeller,
+                                       context_.runtime_stage_backend};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -116,12 +121,30 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
   FML_DCHECK(!has_flushed_runtime_state_)
       << "FlushRuntimeStateToIsolate is called more than once somehow.";
   has_flushed_runtime_state_ = true;
+
+  auto platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    return false;
+  }
+
   for (auto const& [view_id, viewport_metrics] :
        platform_data_.viewport_metrics_for_views) {
-    if (!AddView(view_id, viewport_metrics)) {
-      return false;
+    bool added = platform_configuration->AddView(view_id, viewport_metrics);
+
+    // Callbacks will have been already invoked if the engine was restarted.
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](added);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    if (!added) {
+      FML_LOG(ERROR) << "Failed to flush view #" << view_id
+                     << ". The Dart isolate may be in an inconsistent state.";
     }
   }
+
+  FML_DCHECK(pending_add_view_callbacks_.empty());
   return SetLocales(platform_data_.locale_data) &&
          SetSemanticsEnabled(platform_data_.semantics_enabled) &&
          SetAccessibilityFeatures(
@@ -131,26 +154,57 @@ bool RuntimeController::FlushRuntimeStateToIsolate() {
          SetDisplays(platform_data_.displays);
 }
 
-bool RuntimeController::AddView(int64_t view_id,
-                                const ViewportMetrics& view_metrics) {
-  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->AddView(view_id, view_metrics);
+void RuntimeController::AddView(int64_t view_id,
+                                const ViewportMetrics& view_metrics,
+                                AddViewCallback callback) {
+  // If the Dart isolate is not running, |FlushRuntimeStateToIsolate| will
+  // add the view and invoke the callback when the isolate is started.
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    FML_DCHECK(has_flushed_runtime_state_ == false);
 
-    return true;
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      FML_LOG(ERROR) << "View #" << view_id << " is already pending creation.";
+      callback(false);
+      return;
+    }
+
+    platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
+    pending_add_view_callbacks_[view_id] = std::move(callback);
+    return;
   }
 
-  return false;
+  FML_DCHECK(has_flushed_runtime_state_ || pending_add_view_callbacks_.empty());
+
+  platform_data_.viewport_metrics_for_views[view_id] = view_metrics;
+  bool added = platform_configuration->AddView(view_id, view_metrics);
+  if (added) {
+    ScheduleFrame();
+  }
+
+  callback(added);
 }
 
 bool RuntimeController::RemoveView(int64_t view_id) {
   platform_data_.viewport_metrics_for_views.erase(view_id);
-  if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->RemoveView(view_id);
-    return true;
+
+  // If the Dart isolate has not been launched yet, the pending
+  // add view operation's callback is stored by the runtime controller.
+  // Notify this callback of the cancellation.
+  auto* platform_configuration = GetPlatformConfigurationIfAvailable();
+  if (!platform_configuration) {
+    FML_DCHECK(has_flushed_runtime_state_ == false);
+    if (pending_add_view_callbacks_.find(view_id) !=
+        pending_add_view_callbacks_.end()) {
+      pending_add_view_callbacks_[view_id](false);
+      pending_add_view_callbacks_.erase(view_id);
+    }
+
+    return false;
   }
 
-  return false;
+  return platform_configuration->RemoveView(view_id);
 }
 
 bool RuntimeController::SetViewportMetrics(int64_t view_id,
@@ -226,6 +280,7 @@ bool RuntimeController::SetAccessibilityFeatures(int32_t flags) {
 
 bool RuntimeController::BeginFrame(fml::TimePoint frame_time,
                                    uint64_t frame_number) {
+  MarkAsFrameBorder();
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     platform_configuration->BeginFrame(frame_time, frame_number);
     return true;
@@ -303,7 +358,9 @@ bool RuntimeController::DispatchPointerDataPacket(
     const PointerDataPacket& packet) {
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
     TRACE_EVENT0("flutter", "RuntimeController::DispatchPointerDataPacket");
-    platform_configuration->DispatchPointerDataPacket(packet);
+    std::unique_ptr<PointerDataPacket> converted_packet =
+        pointer_data_packet_converter_.Convert(packet);
+    platform_configuration->DispatchPointerDataPacket(*converted_packet);
     return true;
   }
 
@@ -341,7 +398,7 @@ void RuntimeController::ScheduleFrame() {
 }
 
 void RuntimeController::EndWarmUpFrame() {
-  client_.EndWarmUpFrame();
+  client_.OnAllViewsRendered();
 }
 
 // |PlatformConfigurationClient|
@@ -356,6 +413,21 @@ void RuntimeController::Render(int64_t view_id,
   }
   client_.Render(view_id, scene->takeLayerTree(width, height),
                  view_metrics->device_pixel_ratio);
+  rendered_views_during_frame_.insert(view_id);
+  CheckIfAllViewsRendered();
+}
+
+void RuntimeController::MarkAsFrameBorder() {
+  rendered_views_during_frame_.clear();
+}
+
+void RuntimeController::CheckIfAllViewsRendered() {
+  if (rendered_views_during_frame_.size() != 0 &&
+      rendered_views_during_frame_.size() ==
+          platform_data_.viewport_metrics_for_views.size()) {
+    client_.OnAllViewsRendered();
+    MarkAsFrameBorder();
+  }
 }
 
 // |PlatformConfigurationClient|
@@ -557,6 +629,10 @@ bool RuntimeController::SetDisplays(const std::vector<DisplayData>& displays) {
 double RuntimeController::GetScaledFontSize(double unscaled_font_size,
                                             int configuration_id) const {
   return client_.GetScaledFontSize(unscaled_font_size, configuration_id);
+}
+
+void RuntimeController::ShutdownPlatformIsolates() {
+  platform_isolate_manager_->ShutdownPlatformIsolates();
 }
 
 RuntimeController::Locale::Locale(std::string language_code_,

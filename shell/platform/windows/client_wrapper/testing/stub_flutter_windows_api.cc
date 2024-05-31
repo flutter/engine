@@ -52,6 +52,12 @@ void FlutterDesktopViewControllerDestroy(
   }
 }
 
+FlutterDesktopViewId FlutterDesktopViewControllerGetViewId(
+    FlutterDesktopViewControllerRef controller) {
+  // The stub ignores this, so just return an arbitrary non-zero value.
+  return static_cast<FlutterDesktopViewId>(1);
+}
+
 FlutterDesktopEngineRef FlutterDesktopViewControllerGetEngine(
     FlutterDesktopViewControllerRef controller) {
   // The stub ignores this, so just return an arbitrary non-zero value.
@@ -188,8 +194,19 @@ void FlutterDesktopEngineRegisterPlatformViewType(
 
 FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetView(
     FlutterDesktopPluginRegistrarRef controller) {
-  // The stub ignores this, so just return an arbitrary non-zero value.
-  return reinterpret_cast<FlutterDesktopViewRef>(1);
+  if (s_stub_implementation) {
+    return s_stub_implementation->PluginRegistrarGetView();
+  }
+  return nullptr;
+}
+
+FlutterDesktopViewRef FlutterDesktopPluginRegistrarGetViewById(
+    FlutterDesktopPluginRegistrarRef controller,
+    FlutterDesktopViewId view_id) {
+  if (s_stub_implementation) {
+    return s_stub_implementation->PluginRegistrarGetViewById(view_id);
+  }
+  return nullptr;
 }
 
 void FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(

@@ -401,16 +401,19 @@ class SkwasmRenderer implements Renderer {
   // https://github.com/flutter/flutter/issues/137073.
   @override
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
+    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    recorder?.recordBuildFinish();
+
     view as EngineFlutterView;
     assert(view is EngineFlutterWindow, 'Skwasm does not support multi-view mode yet');
     final EngineSceneView sceneView = _getSceneViewForView(view);
-    return sceneView.renderScene(scene as EngineScene);
+    return sceneView.renderScene(scene as EngineScene, recorder);
   }
 
   EngineSceneView _getSceneViewForView(EngineFlutterView view) {
     // TODO(mdebbar): Support multi-view mode.
     if (_sceneView == null) {
-      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface));
+      _sceneView = EngineSceneView(SkwasmPictureRenderer(surface), view);
       final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
       implicitView.dom.setScene(_sceneView!.sceneElement);
     }
@@ -477,6 +480,16 @@ class SkwasmPictureRenderer implements PictureRenderer {
   SkwasmSurface surface;
 
   @override
-  FutureOr<DomImageBitmap> renderPicture(ScenePicture picture) =>
-    surface.renderPicture(picture as SkwasmPicture);
+  FutureOr<RenderResult> renderPictures(List<ScenePicture> pictures) =>
+    surface.renderPictures(pictures.cast<SkwasmPicture>());
+
+  @override
+  ScenePicture clipPicture(ScenePicture picture, ui.Rect clip) {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder, clip);
+    canvas.clipRect(clip);
+    canvas.drawPicture(picture);
+
+    return recorder.endRecording() as ScenePicture;
+  }
 }

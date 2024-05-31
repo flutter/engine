@@ -41,6 +41,7 @@ class TextContents final : public Contents {
   // |Contents|
   void SetInheritedOpacity(Scalar opacity) override;
 
+  // The offset is only used for computing the subpixel glyph position.
   void SetOffset(Vector2 offset);
 
   std::optional<Rect> GetTextFrameBounds() const;
@@ -52,6 +53,8 @@ class TextContents final : public Contents {
   void PopulateGlyphAtlas(
       const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
       Scalar scale) override;
+
+  void SetScale(Scalar scale) { scale_ = scale; }
 
   // |Contents|
   bool Render(const ContentContext& renderer,

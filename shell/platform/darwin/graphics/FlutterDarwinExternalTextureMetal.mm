@@ -15,6 +15,8 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrYUVABackendTextures.h"
 #include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
+#include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
 
 FLUTTER_ASSERT_ARC
@@ -131,8 +133,11 @@ FLUTTER_ASSERT_ARC
   if (_pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange ||
       _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange) {
     image = [self wrapNV12ExternalPixelBuffer:pixelBuffer context:context];
+  } else if (_pixelFormat == kCVPixelFormatType_32BGRA) {
+    image = [self wrapBGRAExternalPixelBuffer:pixelBuffer context:context];
   } else {
-    image = [self wrapRGBAExternalPixelBuffer:pixelBuffer context:context];
+    FML_LOG(ERROR) << "Unsupported pixel format: " << _pixelFormat;
+    return nullptr;
   }
 
   if (!image) {
@@ -233,7 +238,7 @@ FLUTTER_ASSERT_ARC
   return flutter::DlImage::Make(skImage);
 }
 
-- (sk_sp<flutter::DlImage>)wrapRGBAExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
+- (sk_sp<flutter::DlImage>)wrapBGRAExternalPixelBuffer:(CVPixelBufferRef)pixelBuffer
                                                context:(flutter::Texture::PaintContext&)context {
   SkISize textureSize =
       SkISize::Make(CVPixelBufferGetWidth(pixelBuffer), CVPixelBufferGetHeight(pixelBuffer));
@@ -290,22 +295,21 @@ FLUTTER_ASSERT_ARC
                         grContext:(nonnull GrDirectContext*)grContext
                             width:(size_t)width
                            height:(size_t)height {
+#if SLIMPELLER
+  return nullptr;
+#else   // SLIMPELLER
   GrMtlTextureInfo ySkiaTextureInfo;
   ySkiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)yTex};
 
   GrBackendTexture skiaBackendTextures[2];
-  skiaBackendTextures[0] = GrBackendTexture(/*width=*/width,
-                                            /*height=*/height,
-                                            /*mipMapped=*/skgpu::Mipmapped::kNo,
-                                            /*mtlInfo=*/ySkiaTextureInfo);
+  skiaBackendTextures[0] =
+      GrBackendTextures::MakeMtl(width, height, skgpu::Mipmapped::kNo, ySkiaTextureInfo);
 
   GrMtlTextureInfo uvSkiaTextureInfo;
   uvSkiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)uvTex};
 
-  skiaBackendTextures[1] = GrBackendTexture(/*width=*/width,
-                                            /*height=*/height,
-                                            /*mipMapped=*/skgpu::Mipmapped::kNo,
-                                            /*mtlInfo=*/uvSkiaTextureInfo);
+  skiaBackendTextures[1] =
+      GrBackendTextures::MakeMtl(width, height, skgpu::Mipmapped::kNo, uvSkiaTextureInfo);
   SkYUVAInfo yuvaInfo(skiaBackendTextures[0].dimensions(), SkYUVAInfo::PlaneConfig::kY_UV,
                       SkYUVAInfo::Subsampling::k444, colorSpace);
   GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
@@ -314,23 +318,27 @@ FLUTTER_ASSERT_ARC
   return SkImages::TextureFromYUVATextures(grContext, yuvaBackendTextures,
                                            /*imageColorSpace=*/nullptr,
                                            /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
+#endif  //  SLIMPELLER
 }
 
 + (sk_sp<SkImage>)wrapRGBATexture:(id<MTLTexture>)rgbaTex
                         grContext:(nonnull GrDirectContext*)grContext
                             width:(size_t)width
                            height:(size_t)height {
+#if SLIMPELLER
+  return nullptr;
+#else   // SLIMPELLER
+
   GrMtlTextureInfo skiaTextureInfo;
   skiaTextureInfo.fTexture = sk_cfp<const void*>{(__bridge_retained const void*)rgbaTex};
 
-  GrBackendTexture skiaBackendTexture(/*width=*/width,
-                                      /*height=*/height,
-                                      /*mipMapped=*/skgpu::Mipmapped ::kNo,
-                                      /*mtlInfo=*/skiaTextureInfo);
+  GrBackendTexture skiaBackendTexture =
+      GrBackendTextures::MakeMtl(width, height, skgpu::Mipmapped ::kNo, skiaTextureInfo);
 
   return SkImages::BorrowTextureFrom(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
                                      kBGRA_8888_SkColorType, kPremul_SkAlphaType,
                                      /*colorSpace=*/nullptr, /*releaseProc*/ nullptr,
                                      /*releaseContext*/ nullptr);
+#endif  //  SLIMPELLER
 }
 @end

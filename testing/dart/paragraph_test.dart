@@ -333,42 +333,10 @@ void main() {
     }
   });
 
-  test('can set disableRoundingHack to false in tests', () {
-    bool assertsEnabled = false;
-    assert(() {
-      assertsEnabled = true;
-      return true;
-    }());
-    if (!assertsEnabled){
-      return;
-    }
+  test('rounding hack disabled', () {
     const double fontSize = 1.25;
     const String text = '12345';
     assert((fontSize * text.length).truncate() != fontSize * text.length);
-    // ignore: deprecated_member_use
-    final bool roundingHackWasDisabled = ParagraphBuilder.shouldDisableRoundingHack;
-    if (roundingHackWasDisabled) {
-      ParagraphBuilder.setDisableRoundingHack(false);
-    }
-    // ignore: deprecated_member_use
-    assert(!ParagraphBuilder.shouldDisableRoundingHack);
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
-    builder.addText(text);
-    final Paragraph paragraph = builder.build()
-      ..layout(const ParagraphConstraints(width: text.length * fontSize));
-    expect(paragraph.computeLineMetrics().length, greaterThan(1));
-
-    if (roundingHackWasDisabled) {
-      ParagraphBuilder.setDisableRoundingHack(true);
-    }
-  });
-
-  test('rounding hack disabled by default', () {
-    const double fontSize = 1.25;
-    const String text = '12345';
-    assert((fontSize * text.length).truncate() != fontSize * text.length);
-    // ignore: deprecated_member_use
-    expect(ParagraphBuilder.shouldDisableRoundingHack, isTrue);
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
@@ -380,5 +348,36 @@ void main() {
       case final List<LineMetrics> metrics:
         expect(metrics, hasLength(1));
     }
+  });
+
+  test('kTextHeightNone unsets the height multiplier', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
+    builder.pushStyle(TextStyle(height: kTextHeightNone));
+    builder.addText('A');
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
+    expect(paragraph.height, fontSize);
+  });
+
+  test('kTextHeightNone ParagraphStyle', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: kTextHeightNone));
+    builder.addText('A');
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
+    expect(paragraph.height, fontSize);
+  });
+
+  test('kTextHeightNone StrutStyle', () {
+    const double fontSize = 10;
+    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      fontSize: 100,
+      strutStyle: StrutStyle(forceStrutHeight: true, height: kTextHeightNone, fontSize: fontSize),
+    ));
+    builder.addText('A');
+    final Paragraph paragraph = builder.build()
+      ..layout(const ParagraphConstraints(width: 1000));
+    expect(paragraph.height, fontSize);
   });
 }

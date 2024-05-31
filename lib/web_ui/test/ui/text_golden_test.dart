@@ -68,6 +68,11 @@ Future<void> testMain() async {
         layoutWidth: 50, paragraphHeight: 1.5);
   });
 
+  test('text styles - text style height overriding paragraph height', () async {
+    await testTextStyle('text style height and paragraph style height',
+      layoutWidth: 50, paragraphHeight: 1.5, height: 2.0);
+  });
+
   test('text styles - paragraph text height behavior', () async {
     await testTextStyle('paragraph text height behavior',
         layoutWidth: 50,
@@ -384,6 +389,16 @@ Future<void> testMain() async {
       'symbols',
       outerText: '← ↑ → ↓ ',
       innerText: '',
+    );
+  });
+
+  test('strut style - override height', () async {
+    await testTextStyle(
+      'strut style',
+      paragraphStrutStyle: ui.StrutStyle(
+        forceStrutHeight: true,
+        height: 2,
+      ),
     );
   });
 

@@ -2,46 +2,59 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 /// Tracks the [FlutterView]s focus changes.
 final class ViewFocusBinding {
-  /// Creates a [ViewFocusBinding] instance.
-  ViewFocusBinding._();
+  ViewFocusBinding(this._viewManager, this._onViewFocusChange);
 
-  /// The [ViewFocusBinding] singleton.
-  static final ViewFocusBinding instance = ViewFocusBinding._();
 
-  final List<ui.ViewFocusChangeCallback> _listeners = <ui.ViewFocusChangeCallback>[];
+  /// Wether [FlutterView] focus changes will be reported and performed.
+  ///
+  /// DO NOT rely on this bit as it will go away soon. You're warned :)!
+  @visibleForTesting
+  static bool isEnabled = false;
+
+  final FlutterViewManager _viewManager;
+  final ui.ViewFocusChangeCallback _onViewFocusChange;
+
   int? _lastViewId;
   ui.ViewFocusDirection _viewFocusDirection = ui.ViewFocusDirection.forward;
 
-  /// Subscribes the [listener] to [ui.ViewFocusEvent] events.
-  void addListener(ui.ViewFocusChangeCallback listener) {
-    if (_listeners.isEmpty) {
-      domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
-      domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
-      domDocument.body?.addEventListener(_focusin, _handleFocusin);
-      domDocument.body?.addEventListener(_focusout, _handleFocusout);
-    }
-    _listeners.add(listener);
+  StreamSubscription<int>? _onViewCreatedListener;
+
+  void init() {
+    domDocument.body?.addEventListener(_keyDown, _handleKeyDown);
+    domDocument.body?.addEventListener(_keyUp, _handleKeyUp);
+    domDocument.body?.addEventListener(_focusin, _handleFocusin);
+    domDocument.body?.addEventListener(_focusout, _handleFocusout);
+    _onViewCreatedListener = _viewManager.onViewCreated.listen(_handleViewCreated);
   }
 
-  /// Removes the [listener] from the [ui.ViewFocusEvent] events subscription.
-  void removeListener(ui.ViewFocusChangeCallback listener) {
-    _listeners.remove(listener);
-    if (_listeners.isEmpty) {
-      domDocument.body?.removeEventListener(_keyDown, _handleKeyDown);
-      domDocument.body?.removeEventListener(_keyUp, _handleKeyUp);
-      domDocument.body?.removeEventListener(_focusin, _handleFocusin);
-      domDocument.body?.removeEventListener(_focusout, _handleFocusout);
-    }
+  void dispose() {
+    domDocument.body?.removeEventListener(_keyDown, _handleKeyDown);
+    domDocument.body?.removeEventListener(_keyUp, _handleKeyUp);
+    domDocument.body?.removeEventListener(_focusin, _handleFocusin);
+    domDocument.body?.removeEventListener(_focusout, _handleFocusout);
+    _onViewCreatedListener?.cancel();
   }
 
-  void _notify(ui.ViewFocusEvent event) {
-    for (final ui.ViewFocusChangeCallback listener in _listeners) {
-      listener(event);
+  void changeViewFocus(int viewId, ui.ViewFocusState state) {
+    if (!isEnabled) {
+      return;
+    }
+    final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
+
+    if (state == ui.ViewFocusState.focused) {
+      // Only move the focus to the flutter view if nothing inside it is focused already.
+      if (viewId != _viewId(domDocument.activeElement)) {
+        viewElement?.focus();
+      }
+    } else {
+      viewElement?.blur();
     }
   }
 
@@ -67,10 +80,15 @@ final class ViewFocusBinding {
   });
 
   void _handleFocusChange(DomElement? focusedElement) {
+    if (!isEnabled) {
+      return;
+    }
+
     final int? viewId = _viewId(focusedElement);
     if (viewId == _lastViewId) {
       return;
     }
+
     final ui.ViewFocusEvent event;
     if (viewId == null) {
       event = ui.ViewFocusEvent(
@@ -85,18 +103,41 @@ final class ViewFocusBinding {
         direction: _viewFocusDirection,
       );
     }
+    _maybeMarkViewAsFocusable(_lastViewId, reachableByKeyboard: true);
+    _maybeMarkViewAsFocusable(viewId, reachableByKeyboard: false);
     _lastViewId = viewId;
-    _notify(event);
+    _onViewFocusChange(event);
   }
 
-  static int? _viewId(DomElement? element) {
-    final DomElement? viewElement = element?.closest(
-      DomManager.flutterViewTagName,
-    );
-    final String? viewIdAttribute = viewElement?.getAttribute(
-      GlobalHtmlAttributes.flutterViewIdAttributeName,
-    );
-    return viewIdAttribute == null ? null : int.tryParse(viewIdAttribute);
+  int? _viewId(DomElement? element) {
+    final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+    return viewManager.findViewForElement(element)?.viewId;
+  }
+
+  void _handleViewCreated(int viewId) {
+    _maybeMarkViewAsFocusable(viewId, reachableByKeyboard: true);
+  }
+
+  void _maybeMarkViewAsFocusable(
+    int? viewId, {
+    required bool reachableByKeyboard,
+  }) {
+    if (viewId == null) {
+      return;
+    }
+
+    final DomElement? rootElement = _viewManager[viewId]?.dom.rootElement;
+    if (EngineSemantics.instance.semanticsEnabled) {
+      rootElement?.removeAttribute('tabindex');
+    } else {
+      // A tabindex with value zero means the DOM element can be reached by using
+      // the keyboard (tab, shift + tab). When its value is -1 it is still focusable
+      // but can't be focused by the result of keyboard events This is specially
+      // important when the semantics tree is enabled as it puts DOM nodes inside
+      // the flutter view and having it with a zero tabindex messes the focus
+      // traversal order when pressing tab or shift tab.
+      rootElement?.setAttribute('tabindex', reachableByKeyboard ? 0 : -1);
+    }
   }
 
   static const String _focusin = 'focusin';

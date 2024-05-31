@@ -18,6 +18,9 @@ analyzer:
   exclude: # DIFFERENT FROM FLUTTER/FLUTTER
     # Fixture depends on dart:ui and raises false positives.
     - flutter_frontend_server/test/fixtures/lib/main.dart
+    - prebuilts
+    - third_party
+    - shell/platform/fuchsia
 
 linter:
   rules:
@@ -110,6 +113,7 @@ linter:
     # - lines_longer_than_80_chars # not required by flutter style
     - literal_only_boolean_expressions
     # - matching_super_parameters # blocked on https://github.com/dart-lang/language/issues/2509
+    - missing_code_block_language_in_doc_comment
     # - missing_whitespace_between_adjacent_strings # DIFFERENT FROM FLUTTER/FLUTTER (too many false positives)
     - no_adjacent_strings_in_list
     - no_default_cases

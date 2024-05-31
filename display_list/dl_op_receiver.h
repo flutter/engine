@@ -38,6 +38,52 @@ class DisplayList;
 /// Unlike DlCanvas, this interface has attribute state which is global across
 /// an entire DisplayList (not affected by save/restore).
 ///
+/// DISPLAYLIST DEPTH TRACKING
+///
+/// Each rendering call in the DisplayList stream is assumed to have a "depth"
+/// value relative to the beginning of its DisplayList. The depth value is
+/// implicitly allocated during recording and only reported in 2 places so
+/// it is important for a dispatcher to perform the same internal allocations
+/// if it is to make sense of the information reported by the save/saveLayer
+/// calls. This depth value is maintained as follows:
+///
+/// - The absolute depth value is never reported, only the total depth
+///   size of the entire DisplayList or one of its save/restore pairs
+///   is reported. Since the DisplayList might be dispatched recursively
+///   due to embedded drawDisplayList calls, these depth size values
+///   will often be relative to things like:
+///     - the start of a given save/saveLayer group
+///     - the start of a DisplayList dispatch or recursion
+///   as such, only totals for groups of DisplayList dispatched calls
+///   will be reported. These totals will be reported in:
+///     - the `DisplayList::total_depth()` method reporting the total
+///       depth accumulated for every operation in the DisplayList
+///     - the save/saveLayer dispatch calls will report the total
+///       depth accumulated for every call until their corresponding
+///       restore call.
+/// - The depth value is incremented for every drawing operation, including:
+///   - all draw* calls (including drawDisplayList)
+///   - drawDisplayList will also accumulate the total_depth() of the
+///     DisplayList object it is drawing (in other words it will skip enough
+///     depth values for each drawing call in the child).
+///     This bump is in addition to the depth value it records for being
+///     a rendering operation. Some implementations may need to surround
+///     the actual drawDisplayList with a protective saveLayer, but others
+///     may not - so the implicit depth value assigned to the drawDisplayList
+///     call itself may go unused, but must be accounted for.
+///   - a saveLayer call will also increment the depth value just like a
+///     rendering call. This is in addition to the depth of its content.
+///     It is doing so to reserve a depth for the drawing operation that
+///     copies its layer back to the parent.
+/// - Each save() or saveLayer() call will report the total depth of all
+///   rendering calls within its content (recorded before the corresponding
+///   restore) and report this total during dispatch. This information might
+///   be needed to assign depths to the clip operations that occur within
+///   its content. As there is no enclosing saveLayer/restore pair around
+///   the root of a DisplayList, the total depth of the DisplayList can
+///   be used to determine the appropriate clip depths for any clip ops
+///   appearing before the first save/saveLayer or after the last restore.
+///
 /// @see        DlSkCanvasDispatcher
 /// @see        impeller::DlDispatcher
 /// @see        DlOpSpy
@@ -118,10 +164,18 @@ class DlOpReceiver {
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
+  // Optional variant of save() that passes the total depth count of
+  // all rendering operations that occur until the next restore() call.
+  virtual void save(uint32_t total_content_depth) { save(); }
   // The |options| parameter can specify whether the existing rendering
   // attributes will be applied to the save layer surface while rendering
   // it back to the current surface. If the flag is false then this method
   // is equivalent to |SkCanvas::saveLayer| with a null paint object.
+  //
+  // The |options| parameter can also specify whether the bounds came from
+  // the caller who recorded the operation, or whether they were calculated
+  // by the DisplayListBuilder.
+  //
   // The |options| parameter may contain other options that indicate some
   // specific optimizations may be made by the underlying implementation
   // to avoid creating a temporary layer, these optimization options will
@@ -129,10 +183,45 @@ class DlOpReceiver {
   // specified in calling a |DisplayListBuilder| as they will be ignored.
   // The |backdrop| filter, if not null, is used to initialize the new
   // layer before further rendering happens.
-  virtual void saveLayer(const SkRect* bounds,
+  virtual void saveLayer(const SkRect& bounds,
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr) = 0;
+  // Optional variant of saveLayer() that passes the total depth count of
+  // all rendering operations that occur until the next restore() call.
+  virtual void saveLayer(const SkRect& bounds,
+                         const SaveLayerOptions& options,
+                         uint32_t total_content_depth,
+                         DlBlendMode max_content_blend_mode,
+                         const DlImageFilter* backdrop = nullptr) {
+    saveLayer(bounds, options, backdrop);
+  }
   virtual void restore() = 0;
+
+  // ---------------------------------------------------------------------
+  // Legacy helper method for older callers that use the null-ness of
+  // the bounds to indicate if they should be recorded or computed.
+  // This method will not be called on a |DlOpReceiver| that is passed
+  // to the |DisplayList::Dispatch()| method, so client receivers should
+  // ignore it for their implementation purposes.
+  //
+  // DlOpReceiver methods are generally meant to ONLY be output from a
+  // previously recorded DisplayList so this method is really only used
+  // from testing methods that bypass the public builder APIs for legacy
+  // convenience or for internal white-box testing of the DisplayList
+  // internals. Such methods should eventually be converted to using the
+  // public DisplayListBuilder/DlCanvas public interfaces where possible,
+  // as tracked in:
+  // https://github.com/flutter/flutter/issues/144070
+  virtual void saveLayer(const SkRect* bounds,
+                         const SaveLayerOptions options,
+                         const DlImageFilter* backdrop = nullptr) final {
+    if (bounds) {
+      saveLayer(*bounds, options.with_bounds_from_caller(), backdrop);
+    } else {
+      saveLayer(SkRect(), options.without_bounds_from_caller(), backdrop);
+    }
+  }
+  // ---------------------------------------------------------------------
 
   virtual void translate(SkScalar tx, SkScalar ty) = 0;
   virtual void scale(SkScalar sx, SkScalar sy) = 0;

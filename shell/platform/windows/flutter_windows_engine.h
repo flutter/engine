@@ -11,10 +11,12 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/synchronization/shared_mutex.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/app_lifecycle_state.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
@@ -22,6 +24,7 @@
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
+#include "flutter/shell/platform/windows/accessibility_plugin.h"
 #include "flutter/shell/platform/windows/compositor.h"
 #include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/egl/manager.h"
@@ -118,12 +121,18 @@ class FlutterWindowsEngine {
   // Returns false if stopping the engine fails, or if it was not running.
   virtual bool Stop();
 
-  // Create the view that is displaying this engine's content.
+  // Create a view that can display this engine's content.
+  //
+  // Returns null on failure.
   std::unique_ptr<FlutterWindowsView> CreateView(
       std::unique_ptr<WindowBindingHandler> window);
 
-  // The view displaying this engine's content, if any. This will be null for
-  // headless engines.
+  // Remove a view. The engine will no longer render into it.
+  virtual void RemoveView(FlutterViewId view_id);
+
+  // Get a view that displays this engine's content.
+  //
+  // Returns null if the view does not exist.
   FlutterWindowsView* view(FlutterViewId view_id) const;
 
   // Returns the currently configured Plugin Registrar.
@@ -338,8 +347,10 @@ class FlutterWindowsEngine {
   // Send the currently enabled accessibility features to the engine.
   void SendAccessibilityFeatures();
 
-  void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
-                                  const FlutterDesktopMessage* message);
+  // Present content to a view. Returns true if the content was presented.
+  //
+  // This is invoked on the raster thread.
+  bool Present(const FlutterPresentViewInfo* info);
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
@@ -351,8 +362,29 @@ class FlutterWindowsEngine {
   // AOT data, if any.
   UniqueAotDataPtr aot_data_;
 
-  // The view displaying the content running in this engine, if any.
-  FlutterWindowsView* view_ = nullptr;
+  // The ID that the next view will have.
+  FlutterViewId next_view_id_ = kImplicitViewId;
+
+  // The views displaying the content running in this engine, if any.
+  //
+  // This is read and mutated by the platform thread. This is read by the raster
+  // thread to present content to a view.
+  //
+  // Reads to this object on non-platform threads must be protected
+  // by acquiring a shared lock on |views_mutex_|.
+  //
+  // Writes to this object must only happen on the platform thread
+  // and must be protected by acquiring an exclusive lock on |views_mutex_|.
+  std::unordered_map<FlutterViewId, FlutterWindowsView*> views_;
+
+  // The mutex that protects the |views_| map.
+  //
+  // The raster thread acquires a shared lock to present to a view.
+  //
+  // The platform thread acquires a shared lock to access the view.
+  // The platform thread acquires an exclusive lock before adding
+  // a view to the engine or after removing a view from the engine.
+  std::unique_ptr<fml::SharedMutex> views_mutex_;
 
   // Task runner for tasks posted from the engine.
   std::unique_ptr<TaskRunner> task_runner_;
@@ -383,6 +415,9 @@ class FlutterWindowsEngine {
 
   // The plugin registrar managing internal plugins.
   std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
+
+  // Handler for accessibility events.
+  std::unique_ptr<AccessibilityPlugin> accessibility_plugin_;
 
   // Handler for cursor events.
   std::unique_ptr<CursorHandler> cursor_handler_;

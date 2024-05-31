@@ -11,7 +11,7 @@ _public_headers = [ "public/flutter_windows.h" ]
 _internal_headers = [ "flutter_windows_internal.h" ]
 
 config("relative_angle_headers") {
-  include_dirs = [ "//third_party/angle/include" ]
+  include_dirs = [ "//flutter/third_party/angle/include" ]
 }
 
 # Any files that are built by clients (client_wrapper code, library headers for
@@ -41,6 +41,8 @@ source_set("flutter_windows_source") {
   sources = [
     "accessibility_bridge_windows.cc",
     "accessibility_bridge_windows.h",
+    "accessibility_plugin.cc",
+    "accessibility_plugin.h",
     "compositor.h",
     "compositor_opengl.cc",
     "compositor_opengl.h",
@@ -85,6 +87,7 @@ source_set("flutter_windows_source") {
     "flutter_windows_texture_registrar.h",
     "flutter_windows_view.cc",
     "flutter_windows_view.h",
+    "flutter_windows_view_controller.cc",
     "flutter_windows_view_controller.h",
     "keyboard_handler_base.h",
     "keyboard_key_channel_handler.cc",
@@ -136,7 +139,7 @@ source_set("flutter_windows_source") {
 
   configs += [
     "//flutter/shell/platform/common:desktop_library_implementation",
-    "//third_party/angle:gl_prototypes",
+    "//flutter/third_party/angle:gl_prototypes",
   ]
 
   public_configs = [ ":relative_angle_headers" ]
@@ -159,13 +162,13 @@ source_set("flutter_windows_source") {
     "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/windows/client_wrapper:client_wrapper_windows",
+
+    # libEGL_static MUST be ordered before libGLESv2_static in this list. If
+    # reversed, a linker error will occur, reporting DllMain already defined in
+    # LIBCMTD.lib
+    "//flutter/third_party/angle:libEGL_static",
+    "//flutter/third_party/angle:libGLESv2_static",
     "//flutter/third_party/rapidjson",
-    "//third_party/angle:libEGL_static",  # the order of libEGL_static and
-                                          # libGLESv2_static is important.. if
-                                          # reversed, will cause a linker error
-                                          # DllMain already defined in
-                                          # LIBCMTD.lib
-    "//third_party/angle:libGLESv2_static",
   ]
 }
 

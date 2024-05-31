@@ -84,6 +84,7 @@ class HostBuffer {
   ///             host buffer.
   ///
   /// @param[in]  buffer        The buffer data.
+  /// @param[in]  alignment     Minimum alignment of the data being emplaced.
   ///
   /// @tparam     BufferType    The type of the buffer data.
   ///
@@ -91,10 +92,11 @@ class HostBuffer {
   ///
   template <class BufferType,
             class = std::enable_if_t<std::is_standard_layout_v<BufferType>>>
-  [[nodiscard]] BufferView Emplace(const BufferType& buffer) {
-    return Emplace(reinterpret_cast<const void*>(&buffer),  // buffer
-                   sizeof(BufferType),                      // size
-                   alignof(BufferType)                      // alignment
+  [[nodiscard]] BufferView Emplace(const BufferType& buffer,
+                                   size_t alignment = 0) {
+    return Emplace(reinterpret_cast<const void*>(&buffer),   // buffer
+                   sizeof(BufferType),                       // size
+                   std::max(alignment, alignof(BufferType))  // alignment
     );
   }
 
@@ -147,9 +149,7 @@ class HostBuffer {
 
   void MaybeCreateNewBuffer();
 
-  std::shared_ptr<DeviceBuffer>& GetCurrentBuffer() {
-    return device_buffers_[frame_index_][current_buffer_];
-  }
+  const std::shared_ptr<DeviceBuffer>& GetCurrentBuffer() const;
 
   [[nodiscard]] BufferView Emplace(const void* buffer, size_t length);
 

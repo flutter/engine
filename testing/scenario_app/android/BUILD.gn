@@ -7,7 +7,6 @@ import("//flutter/testing/rules/android.gni")
 _android_sources = [
   "app/build.gradle",
   "app/src/androidTest/java/dev/flutter/TestRunner.java",
-  "app/src/androidTest/java/dev/flutter/scenarios/EngineLaunchE2ETest.java",
   "app/src/androidTest/java/dev/flutter/scenarios/ExampleInstrumentedTest.java",
   "app/src/androidTest/java/dev/flutter/scenariosui/DrawSolidBlueScreenTest.java",
   "app/src/androidTest/java/dev/flutter/scenariosui/ExternalTextureTests.java",
@@ -30,7 +29,6 @@ _android_sources = [
   "app/src/main/java/dev/flutter/scenarios/PlatformViewsActivity.java",
   "app/src/main/java/dev/flutter/scenarios/SpawnMultiEngineActivity.java",
   "app/src/main/java/dev/flutter/scenarios/SpawnedEngineActivity.java",
-  "app/src/main/java/dev/flutter/scenarios/StrictModeFlutterActivity.java",
   "app/src/main/java/dev/flutter/scenarios/SurfacePlatformViewFactory.java",
   "app/src/main/java/dev/flutter/scenarios/TestActivity.java",
   "app/src/main/java/dev/flutter/scenarios/TestableFlutterActivity.java",

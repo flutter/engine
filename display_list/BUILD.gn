@@ -2,10 +2,13 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 config("display_list_config") {
   defines = []
@@ -57,6 +60,7 @@ source_set("display_list") {
     "effects/dl_path_effect.h",
     "effects/dl_runtime_effect.cc",
     "effects/dl_runtime_effect.h",
+    "geometry/dl_geometry_types.h",
     "geometry/dl_region.cc",
     "geometry/dl_region.h",
     "geometry/dl_rtree.cc",
@@ -74,8 +78,8 @@ source_set("display_list") {
     "skia/dl_sk_paint_dispatcher.cc",
     "skia/dl_sk_paint_dispatcher.h",
     "skia/dl_sk_types.h",
-    "utils/dl_bounds_accumulator.cc",
-    "utils/dl_bounds_accumulator.h",
+    "utils/dl_accumulation_rect.cc",
+    "utils/dl_accumulation_rect.h",
     "utils/dl_matrix_clip_tracker.cc",
     "utils/dl_matrix_clip_tracker.h",
     "utils/dl_receiver_utils.cc",
@@ -128,6 +132,7 @@ if (enable_unittests) {
       ":display_list_fixtures",
       "//flutter/display_list/testing:display_list_testing",
       "//flutter/testing",
+      "//flutter/testing:skia",
     ]
 
     if (!defined(defines)) {
@@ -141,8 +146,7 @@ if (enable_unittests) {
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
     if (is_fuchsia) {
-      libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 
@@ -173,8 +177,7 @@ if (enable_unittests) {
     # This is needed for //flutter/third_party/googletest for linking zircon
     # symbols.
     if (is_fuchsia) {
-      libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 
@@ -196,6 +199,18 @@ if (enable_unittests) {
     testonly = true
 
     sources = [ "benchmarking/dl_region_benchmarks.cc" ]
+
+    deps = [
+      ":display_list_fixtures",
+      "//flutter/benchmarking",
+      "//flutter/testing:testing_lib",
+    ]
+  }
+
+  executable("display_list_transform_benchmarks") {
+    testonly = true
+
+    sources = [ "benchmarking/dl_transform_benchmarks.cc" ]
 
     deps = [
       ":display_list_fixtures",

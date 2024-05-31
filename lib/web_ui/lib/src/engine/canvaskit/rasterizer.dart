@@ -27,7 +27,7 @@ abstract class ViewRasterizer {
   final RenderQueue queue = RenderQueue();
 
   /// The size of the current frame being rasterized.
-  ui.Size currentFrameSize = ui.Size.zero;
+  BitmapSize currentFrameSize = BitmapSize.zero;
 
   /// The context which is persisted between frames.
   final CompositorContext context = CompositorContext();
@@ -50,22 +50,25 @@ abstract class ViewRasterizer {
       return;
     }
 
-    currentFrameSize = frameSize;
+    // The [frameSize] may be slightly imprecise if the `devicePixelRatio` isn't
+    // an integer. For example, is you zoom to 110% in Chrome on a Macbook, the
+    // `devicePixelRatio` is `2.200000047683716`, so when the physical size is
+    // computed by multiplying the logical size by the devie pixel ratio, the
+    // result is slightly imprecise as well. Nevertheless, the number should
+    // be close to an integer, so round the frame size to be more precice.
+    final BitmapSize bitmapSize = BitmapSize.fromSize(frameSize);
+
+    currentFrameSize = bitmapSize;
     prepareToDraw();
     viewEmbedder.frameSize = currentFrameSize;
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize);
-    pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
+    pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize.toSize());
     final Frame compositorFrame =
         context.acquireFrame(pictureRecorder.recordingCanvas!, viewEmbedder);
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);
 
-    sceneHost.prepend(displayFactory.baseCanvas.hostElement);
-    await rasterizeToCanvas(
-        displayFactory.baseCanvas, <CkPicture>[pictureRecorder.endRecording()]);
-
-    await viewEmbedder.submitFrame();
+    await viewEmbedder.submitFrame(pictureRecorder.endRecording());
   }
 
   /// Do some initialization to prepare to draw a frame.
@@ -103,6 +106,11 @@ abstract class ViewRasterizer {
     viewEmbedder.dispose();
     displayFactory.dispose();
   }
+
+  /// Clears the state. Used in tests.
+  void debugClear() {
+    viewEmbedder.debugClear();
+  }
 }
 
 /// A [DisplayCanvas] is an abstraction for a canvas element which displays
@@ -131,6 +139,7 @@ abstract class DisplayCanvas {
 typedef RenderRequest = ({
   ui.Scene scene,
   Completer<void> completer,
+  FrameTimingRecorder? recorder,
 });
 
 /// A per-view queue of render requests. Only contains the current render

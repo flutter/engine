@@ -79,8 +79,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
     AppLifecycleState.instance.addListener(_setAppLifecycleState);
-    ViewFocusBinding.instance.addListener(invokeOnViewFocusChange);
-    domDocument.body?.append(accessibilityPlaceholder);
+    _viewFocusBinding.init();
+    domDocument.body?.prepend(accessibilityPlaceholder);
     _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
       // Send a metrics changed event to the framework when a view is disposed.
       // View creation/resize is handled by the `_didResize` handler in the
@@ -123,7 +123,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
     AppLifecycleState.instance.removeListener(_setAppLifecycleState);
-    ViewFocusBinding.instance.removeListener(invokeOnViewFocusChange);
+    _viewFocusBinding.dispose();
     accessibilityPlaceholder.remove();
     _onViewDisposedListener.cancel();
     viewManager.dispose();
@@ -228,6 +228,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
   }
 
+  late final ViewFocusBinding _viewFocusBinding =
+    ViewFocusBinding(viewManager, invokeOnViewFocusChange);
+
   @override
   ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
   ui.ViewFocusChangeCallback? _onViewFocusChange;
@@ -248,16 +251,14 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     );
   }
 
-
   @override
   void requestViewFocusChange({
     required int viewId,
     required ui.ViewFocusState state,
     required ui.ViewFocusDirection direction,
   }) {
-    // TODO(tugorez): implement this method. At the moment will be a no op call.
+    _viewFocusBinding.changeViewFocus(viewId, state);
   }
-
 
   /// A set of views which have rendered in the current `onBeginFrame` or
   /// `onDrawFrame` scope.
@@ -687,9 +688,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
         const StandardMessageCodec codec = StandardMessageCodec();
-        // TODO(yjbanov): Dispatch the announcement to the correct view?
-        //                https://github.com/flutter/flutter/issues/137445
-        implicitView?.accessibilityAnnouncements.handleMessage(codec, data);
+        final EngineSemantics semantics = EngineSemantics.instance;
+        if (semantics.semanticsEnabled) {
+          semantics.accessibilityAnnouncements.handleMessage(codec, data);
+        }
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 

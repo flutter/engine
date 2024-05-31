@@ -9,6 +9,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/tessellator/tessellator.h"
+#include "impeller/tessellator/tessellator_libtess.h"
 
 namespace impeller {
 namespace testing {
@@ -16,120 +17,123 @@ namespace testing {
 TEST(TessellatorTest, TessellatorBuilderReturnsCorrectResultStatus) {
   // Zero points.
   {
-    Tessellator t;
+    TessellatorLibtess t;
     auto path = PathBuilder{}.TakePath(FillType::kOdd);
-    Tessellator::Result result = t.Tessellate(
+    TessellatorLibtess::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(result, Tessellator::Result::kInputError);
+    ASSERT_EQ(result, TessellatorLibtess::Result::kInputError);
   }
 
   // One point.
   {
-    Tessellator t;
+    TessellatorLibtess t;
     auto path = PathBuilder{}.LineTo({0, 0}).TakePath(FillType::kOdd);
-    Tessellator::Result result = t.Tessellate(
+    TessellatorLibtess::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(result, Tessellator::Result::kSuccess);
+    ASSERT_EQ(result, TessellatorLibtess::Result::kSuccess);
   }
 
   // Two points.
   {
-    Tessellator t;
+    TessellatorLibtess t;
     auto path = PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kOdd);
-    Tessellator::Result result = t.Tessellate(
+    TessellatorLibtess::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(result, Tessellator::Result::kSuccess);
+    ASSERT_EQ(result, TessellatorLibtess::Result::kSuccess);
   }
 
   // Many points.
   {
-    Tessellator t;
+    TessellatorLibtess t;
     PathBuilder builder;
     for (int i = 0; i < 1000; i++) {
       auto coord = i * 1.0f;
       builder.AddLine({coord, coord}, {coord + 1, coord + 1});
     }
     auto path = builder.TakePath(FillType::kOdd);
-    Tessellator::Result result = t.Tessellate(
+    TessellatorLibtess::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return true; });
 
-    ASSERT_EQ(result, Tessellator::Result::kSuccess);
+    ASSERT_EQ(result, TessellatorLibtess::Result::kSuccess);
   }
 
   // Closure fails.
   {
-    Tessellator t;
+    TessellatorLibtess t;
     auto path = PathBuilder{}.AddLine({0, 0}, {0, 1}).TakePath(FillType::kOdd);
-    Tessellator::Result result = t.Tessellate(
+    TessellatorLibtess::Result result = t.Tessellate(
         path, 1.0f,
         [](const float* vertices, size_t vertices_count,
            const uint16_t* indices, size_t indices_count) { return false; });
 
-    ASSERT_EQ(result, Tessellator::Result::kInputError);
-  }
-
-  // More than uint16 points, odd fill mode.
-  {
-    Tessellator t;
-    PathBuilder builder = {};
-    for (auto i = 0; i < 1000; i++) {
-      builder.AddCircle(Point(i, i), 4);
-    }
-    auto path = builder.TakePath(FillType::kOdd);
-    bool no_indices = false;
-    size_t count = 0u;
-    Tessellator::Result result = t.Tessellate(
-        path, 1.0f,
-        [&no_indices, &count](const float* vertices, size_t vertices_count,
-                              const uint16_t* indices, size_t indices_count) {
-          no_indices = indices == nullptr;
-          count = vertices_count;
-          return true;
-        });
-
-    ASSERT_TRUE(no_indices);
-    ASSERT_TRUE(count >= USHRT_MAX);
-    ASSERT_EQ(result, Tessellator::Result::kSuccess);
+    ASSERT_EQ(result, TessellatorLibtess::Result::kInputError);
   }
 }
 
 TEST(TessellatorTest, TessellateConvex) {
   {
-    Tessellator t;
+    std::vector<Point> points;
+    std::vector<uint16_t> indices;
     // Sanity check simple rectangle.
-    auto pts = t.TessellateConvex(
-        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), 1.0);
+    Tessellator::TessellateConvexInternal(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 10, 10)).TakePath(), points,
+        indices, 1.0);
 
-    std::vector<Point> expected = {
-        {0, 0}, {10, 0}, {0, 10}, {10, 10},  //
-    };
-    EXPECT_EQ(pts, expected);
+    // Note: the origin point is repeated but not referenced in the indices
+    // below
+    std::vector<Point> expected = {{0, 0}, {10, 0}, {10, 10}, {0, 10}, {0, 0}};
+    std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
+    EXPECT_EQ(points, expected);
+    EXPECT_EQ(indices, expected_indices);
   }
 
   {
-    Tessellator t;
-    auto pts = t.TessellateConvex(PathBuilder{}
-                                      .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
-                                      .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
-                                      .TakePath(),
-                                  1.0);
+    std::vector<Point> points;
+    std::vector<uint16_t> indices;
+    Tessellator::TessellateConvexInternal(
+        PathBuilder{}
+            .AddRect(Rect::MakeLTRB(0, 0, 10, 10))
+            .AddRect(Rect::MakeLTRB(20, 20, 30, 30))
+            .TakePath(),
+        points, indices, 1.0);
 
-    std::vector<Point> expected = {{0, 0},   {10, 0},  {0, 10},  {10, 10},
-                                   {10, 10}, {20, 20}, {20, 20}, {30, 20},
-                                   {20, 30}, {30, 30}};
-    EXPECT_EQ(pts, expected);
+    std::vector<Point> expected = {{0, 0},   {10, 0},  {10, 10}, {0, 10},
+                                   {0, 0},   {20, 20}, {30, 20}, {30, 30},
+                                   {20, 30}, {20, 20}};
+    std::vector<uint16_t> expected_indices = {0, 1, 3, 2, 2, 5, 5, 6, 8, 7};
+    EXPECT_EQ(points, expected);
+    EXPECT_EQ(indices, expected_indices);
   }
+}
+
+// Filled Paths without an explicit close should still be closed
+TEST(TessellatorTest, TessellateConvexUnclosedPath) {
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+
+  // Create a rectangle that lacks an explicit close.
+  Path path = PathBuilder{}
+                  .LineTo({100, 0})
+                  .LineTo({100, 100})
+                  .LineTo({0, 100})
+                  .TakePath();
+  Tessellator::TessellateConvexInternal(path, points, indices, 1.0);
+
+  std::vector<Point> expected = {{0, 0}, {100, 0}, {100, 100}, {0, 100}};
+  std::vector<uint16_t> expected_indices = {0, 1, 3, 2};
+  EXPECT_EQ(points, expected);
+  EXPECT_EQ(indices, expected_indices);
 }
 
 TEST(TessellatorTest, CircleVertexCounts) {
@@ -189,7 +193,8 @@ TEST(TessellatorTest, FilledCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * radius;
-      double rcos = cos(angle) * radius;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radius;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -236,7 +241,9 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius + half_width);
-      double rcos = cos(angle) * (radius + half_width);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius + half_width);
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -256,7 +263,9 @@ TEST(TessellatorTest, StrokedCircleTessellationVertices) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
       double rsin = sin(angle) * (radius - half_width);
-      double rcos = cos(angle) * (radius - half_width);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * (radius - half_width);
       EXPECT_POINT_NEAR(vertices[i * 2 + 1],
                         Point(center.x - rcos, center.y - rsin))
           << "vertex " << i << ", angle = " << degrees << std::endl;
@@ -308,7 +317,9 @@ TEST(TessellatorTest, RoundCapLineTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      Point relative_along = along * cos(angle);
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      Point relative_along =
+          along * ((i == quadrant_count - 1) ? 0.0f : cos(angle));
       Point relative_across = across * sin(angle);
       EXPECT_POINT_NEAR(vertices[i * 2],  //
                         p0 - relative_along + relative_across)
@@ -372,7 +383,9 @@ TEST(TessellatorTest, FilledEllipseTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rcos = cos(angle) * half_size.width;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos =
+          (i == quadrant_count - 1) ? 0.0f : cos(angle) * half_size.width;
       double rsin = sin(angle) * half_size.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(center.x - rcos, center.y + rsin))
@@ -437,7 +450,8 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
     for (size_t i = 0; i < quadrant_count; i++) {
       double angle = kPiOver2 * i / (quadrant_count - 1);
       double degrees = angle * 180.0 / kPi;
-      double rcos = cos(angle) * radii.width;
+      // Note that cos(radians(90 degrees)) isn't exactly 0.0 like it should be
+      double rcos = (i == quadrant_count - 1) ? 0.0f : cos(angle) * radii.width;
       double rsin = sin(angle) * radii.height;
       EXPECT_POINT_NEAR(vertices[i * 2],
                         Point(middle_left - rcos, middle_bottom + rsin))
@@ -480,6 +494,21 @@ TEST(TessellatorTest, FilledRoundRectTessellationVertices) {
        Rect::MakeXYWH(5000, 10000, 3000, 2000), {50, 70});
   test(Matrix::MakeScale({0.002, 0.002, 0.0}),
        Rect::MakeXYWH(5000, 10000, 2000, 3000), {50, 70});
+}
+
+TEST(TessellatorTest, EarlyReturnEmptyConvexShape) {
+  // This path is not technically empty (it has a size in one dimension),
+  // but is otherwise completely flat.
+  PathBuilder builder;
+  builder.MoveTo({0, 0});
+  builder.MoveTo({10, 10}, /*relative=*/true);
+
+  std::vector<Point> points;
+  std::vector<uint16_t> indices;
+  Tessellator::TessellateConvexInternal(builder.TakePath(), points, indices,
+                                        3.0);
+
+  EXPECT_TRUE(points.empty());
 }
 
 #if !NDEBUG

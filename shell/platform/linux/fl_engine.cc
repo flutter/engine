@@ -59,9 +59,9 @@ struct _FlEngine {
   GDestroyNotify platform_message_handler_destroy_notify;
 
   // Function to call when a semantic node is received.
-  FlEngineUpdateSemanticsNodeHandler update_semantics_node_handler;
-  gpointer update_semantics_node_handler_data;
-  GDestroyNotify update_semantics_node_handler_destroy_notify;
+  FlEngineUpdateSemanticsHandler update_semantics_handler;
+  gpointer update_semantics_handler_data;
+  GDestroyNotify update_semantics_handler_destroy_notify;
 
   // Function to call right before the engine is restarted.
   FlEngineOnPreEngineRestartHandler on_pre_engine_restart_handler;
@@ -217,22 +217,14 @@ static void* fl_engine_gl_proc_resolver(void* user_data, const char* name) {
 
 static bool fl_engine_gl_make_current(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
-  g_autoptr(GError) error = nullptr;
-  gboolean result = fl_renderer_make_current(self->renderer, &error);
-  if (!result) {
-    g_warning("%s", error->message);
-  }
-  return result;
+  fl_renderer_make_current(self->renderer);
+  return true;
 }
 
 static bool fl_engine_gl_clear_current(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
-  g_autoptr(GError) error = nullptr;
-  gboolean result = fl_renderer_clear_current(self->renderer, &error);
-  if (!result) {
-    g_warning("%s", error->message);
-  }
-  return result;
+  fl_renderer_clear_current(self->renderer);
+  return true;
 }
 
 static uint32_t fl_engine_gl_get_fbo(void* user_data) {
@@ -248,12 +240,8 @@ static bool fl_engine_gl_present(void* user_data) {
 
 static bool fl_engine_gl_make_resource_current(void* user_data) {
   FlEngine* self = static_cast<FlEngine*>(user_data);
-  g_autoptr(GError) error = nullptr;
-  gboolean result = fl_renderer_make_resource_current(self->renderer, &error);
-  if (!result) {
-    g_warning("%s", error->message);
-  }
-  return result;
+  fl_renderer_make_resource_current(self->renderer);
+  return true;
 }
 
 // Called by the engine to retrieve an external texture.
@@ -333,13 +321,13 @@ static void fl_engine_platform_message_cb(const FlutterPlatformMessage* message,
 }
 
 // Called when a semantic node update is received from the engine.
-static void fl_engine_update_semantics_node_cb(const FlutterSemanticsNode* node,
-                                               void* user_data) {
+static void fl_engine_update_semantics_cb(const FlutterSemanticsUpdate2* update,
+                                          void* user_data) {
   FlEngine* self = FL_ENGINE(user_data);
 
-  if (self->update_semantics_node_handler != nullptr) {
-    self->update_semantics_node_handler(
-        self, node, self->update_semantics_node_handler_data);
+  if (self->update_semantics_handler != nullptr) {
+    self->update_semantics_handler(self, update,
+                                   self->update_semantics_handler_data);
   }
 }
 
@@ -425,12 +413,12 @@ static void fl_engine_dispose(GObject* object) {
   self->platform_message_handler_data = nullptr;
   self->platform_message_handler_destroy_notify = nullptr;
 
-  if (self->update_semantics_node_handler_destroy_notify) {
-    self->update_semantics_node_handler_destroy_notify(
-        self->update_semantics_node_handler_data);
+  if (self->update_semantics_handler_destroy_notify) {
+    self->update_semantics_handler_destroy_notify(
+        self->update_semantics_handler_data);
   }
-  self->update_semantics_node_handler_data = nullptr;
-  self->update_semantics_node_handler_destroy_notify = nullptr;
+  self->update_semantics_handler_data = nullptr;
+  self->update_semantics_handler_destroy_notify = nullptr;
 
   if (self->on_pre_engine_restart_handler_destroy_notify) {
     self->on_pre_engine_restart_handler_destroy_notify(
@@ -527,7 +515,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
   args.command_line_argv =
       reinterpret_cast<const char* const*>(command_line_args->pdata);
   args.platform_message_callback = fl_engine_platform_message_cb;
-  args.update_semantics_node_callback = fl_engine_update_semantics_node_cb;
+  args.update_semantics_callback2 = fl_engine_update_semantics_cb;
   args.custom_task_runners = &custom_task_runners;
   args.shutdown_dart_vm_when_done = true;
   args.on_pre_engine_restart_callback = fl_engine_on_pre_engine_restart_cb;
@@ -585,6 +573,26 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
     g_warning("Failed to enable accessibility features on Flutter engine");
   }
 
+  gdouble refresh_rate = fl_renderer_get_refresh_rate(self->renderer);
+  // FlutterEngineDisplay::refresh_rate expects 0 if the refresh rate is
+  // unknown.
+  if (refresh_rate <= 0.0) {
+    refresh_rate = 0.0;
+  }
+  FlutterEngineDisplay display = {};
+  display.struct_size = sizeof(FlutterEngineDisplay);
+  display.display_id = 0;
+  display.single_display = true;
+  display.refresh_rate = refresh_rate;
+
+  std::vector displays = {display};
+  result = self->embedder_api.NotifyDisplayUpdate(
+      self->engine, kFlutterEngineDisplaysUpdateTypeStartup, displays.data(),
+      displays.size());
+  if (result != kSuccess) {
+    g_warning("Failed to notify display update to Flutter engine: %d", result);
+  }
+
   return TRUE;
 }
 
@@ -610,21 +618,21 @@ void fl_engine_set_platform_message_handler(
   self->platform_message_handler_destroy_notify = destroy_notify;
 }
 
-void fl_engine_set_update_semantics_node_handler(
+void fl_engine_set_update_semantics_handler(
     FlEngine* self,
-    FlEngineUpdateSemanticsNodeHandler handler,
+    FlEngineUpdateSemanticsHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
-  if (self->update_semantics_node_handler_destroy_notify) {
-    self->update_semantics_node_handler_destroy_notify(
-        self->update_semantics_node_handler_data);
+  if (self->update_semantics_handler_destroy_notify) {
+    self->update_semantics_handler_destroy_notify(
+        self->update_semantics_handler_data);
   }
 
-  self->update_semantics_node_handler = handler;
-  self->update_semantics_node_handler_data = user_data;
-  self->update_semantics_node_handler_destroy_notify = destroy_notify;
+  self->update_semantics_handler = handler;
+  self->update_semantics_handler_data = user_data;
+  self->update_semantics_handler_destroy_notify = destroy_notify;
 }
 
 void fl_engine_set_on_pre_engine_restart_handler(
@@ -772,6 +780,10 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   event.width = width;
   event.height = height;
   event.pixel_ratio = pixel_ratio;
+  // TODO(dkwingsmt): Assign the correct view ID once the Linux embedder
+  // supports multiple views.
+  // https://github.com/flutter/flutter/issues/138178
+  event.view_id = flutter::kFlutterImplicitViewId;
   self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 

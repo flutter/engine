@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
@@ -33,6 +34,19 @@ using ::testing::NiceMock;
 using ::testing::Return;
 
 class FlutterWindowsEngineTest : public WindowsTest {};
+
+// The engine can be run without any views.
+TEST_F(FlutterWindowsEngineTest, RunHeadless) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  ASSERT_TRUE(engine->Run());
+  ASSERT_EQ(engine->view(kImplicitViewId), nullptr);
+  ASSERT_EQ(engine->view(123), nullptr);
+}
 
 TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
   FlutterWindowsEngineBuilder builder{GetContext()};
@@ -677,6 +691,61 @@ TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncement) {
   }
 }
 
+// Verify the app can send accessibility announcements while in headless mode.
+TEST_F(FlutterWindowsEngineTest, AccessibilityAnnouncementHeadless) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder{context};
+  builder.SetDartEntrypoint("sendAccessibilityAnnouncement");
+
+  bool done = false;
+  auto native_entry =
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { done = true; });
+  context.AddNativeFunction("Signal", native_entry);
+
+  EnginePtr engine{builder.RunHeadless()};
+  ASSERT_NE(engine, nullptr);
+
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine.get());
+  windows_engine->UpdateSemanticsEnabled(true);
+
+  // Rely on timeout mechanism in CI.
+  while (!done) {
+    windows_engine->task_runner()->ProcessTasks();
+  }
+}
+
+// Verify the engine does not crash if it receives an accessibility event
+// it does not support yet.
+TEST_F(FlutterWindowsEngineTest, AccessibilityTooltip) {
+  fml::testing::LogCapture log_capture;
+
+  auto& context = GetContext();
+  WindowsConfigBuilder builder{context};
+  builder.SetDartEntrypoint("sendAccessibilityTooltipEvent");
+
+  bool done = false;
+  auto native_entry =
+      CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { done = true; });
+  context.AddNativeFunction("Signal", native_entry);
+
+  ViewControllerPtr controller{builder.Run()};
+  ASSERT_NE(controller, nullptr);
+
+  auto engine = FlutterDesktopViewControllerGetEngine(controller.get());
+  auto windows_engine = reinterpret_cast<FlutterWindowsEngine*>(engine);
+  windows_engine->UpdateSemanticsEnabled(true);
+
+  // Rely on timeout mechanism in CI.
+  while (!done) {
+    windows_engine->task_runner()->ProcessTasks();
+  }
+
+  // Verify no error was logged.
+  // Regression test for:
+  // https://github.com/flutter/flutter/issues/144274
+  EXPECT_EQ(log_capture.str().find("tooltip"), std::string::npos);
+}
+
 class MockWindowsLifecycleManager : public WindowsLifecycleManager {
  public:
   MockWindowsLifecycleManager(FlutterWindowsEngine* engine)
@@ -1194,6 +1263,54 @@ TEST_F(FlutterWindowsEngineTest, ReceivePlatformViewMessage) {
   while (!received_call) {
     engine->task_runner()->ProcessTasks();
   }
+}
+
+TEST_F(FlutterWindowsEngineTest, AddViewFailureDoesNotHang) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  auto engine = builder.Build();
+
+  EngineModifier modifier{engine.get()};
+
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  modifier.embedder_api().AddView = MOCK_ENGINE_PROC(
+      AddView,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterAddViewInfo* info) { return kInternalInconsistency; });
+
+  ASSERT_TRUE(engine->Run());
+
+  // Create the first view. This is the implicit view and isn't added to the
+  // engine.
+  auto implicit_window = std::make_unique<NiceMock<MockWindowBindingHandler>>();
+
+  std::unique_ptr<FlutterWindowsView> implicit_view =
+      engine->CreateView(std::move(implicit_window));
+
+  EXPECT_TRUE(implicit_view);
+
+  // Create a second view. The embedder attempts to add it to the engine.
+  auto second_window = std::make_unique<NiceMock<MockWindowBindingHandler>>();
+
+  EXPECT_DEBUG_DEATH(engine->CreateView(std::move(second_window)),
+                     "FlutterEngineAddView returned an unexpected result");
+}
+
+TEST_F(FlutterWindowsEngineTest, RemoveViewFailureDoesNotHang) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("sendCreatePlatformViewMethod");
+  auto engine = builder.Build();
+
+  EngineModifier modifier{engine.get()};
+
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  modifier.embedder_api().RemoveView = MOCK_ENGINE_PROC(
+      RemoveView,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         const FlutterRemoveViewInfo* info) { return kInternalInconsistency; });
+
+  ASSERT_TRUE(engine->Run());
+  EXPECT_DEBUG_DEATH(engine->RemoveView(123),
+                     "FlutterEngineRemoveView returned an unexpected result");
 }
 
 }  // namespace testing

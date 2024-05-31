@@ -110,6 +110,28 @@ DebugReportVK::Result DebugReportVK::OnDebugCallback(
   if (data->messageIdNumber == 0x2c36905d) {
     return Result::kContinue;
   }
+  // This is a performance warning when a fragment stage does not consume all
+  // varyings from the vertex stage. We ignore this as we want to use a single
+  // vertex stage for the runtime effect shader without trying to determine if
+  // the fragment consumes it or not.
+  if (data->messageIdNumber == 0x609A13B) {
+    return Result::kContinue;
+  }
+  // TODO(149111): Fix VUID-VkShaderModuleCreateInfo-pCode-08737.
+  if (data->pMessageIdName != nullptr &&
+      strcmp(data->pMessageIdName,
+             "VUID-VkShaderModuleCreateInfo-pCode-08737") == 0) {
+    return Result::kContinue;
+  }
+  // TODO(149111): Fix
+  // VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849.
+  if (data->pMessageIdName != nullptr &&
+      strcmp(
+          data->pMessageIdName,
+          "VUID-VkPipelineShaderStageCreateInfo-pSpecializationInfo-06849") ==
+          0) {
+    return Result::kContinue;
+  }
 
   std::vector<std::pair<std::string, std::string>> items;
 

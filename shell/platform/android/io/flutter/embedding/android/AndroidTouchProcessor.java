@@ -1,5 +1,7 @@
 package io.flutter.embedding.android;
 
+import static io.flutter.Build.API_LEVELS;
+
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Matrix;
@@ -204,9 +206,7 @@ public class AndroidTouchProcessor {
   public boolean onGenericMotionEvent(@NonNull MotionEvent event, @NonNull Context context) {
     // Method isFromSource is only available in API 18+ (Jelly Bean MR2)
     // Mouse hover support is not implemented for API < 18.
-    boolean isPointerEvent =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2
-            && event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
+    boolean isPointerEvent = event.isFromSource(InputDevice.SOURCE_CLASS_POINTER);
     boolean isMovementEvent =
         (event.getActionMasked() == MotionEvent.ACTION_HOVER_MOVE
             || event.getActionMasked() == MotionEvent.ACTION_SCROLL);
@@ -429,7 +429,7 @@ public class AndroidTouchProcessor {
   }
 
   private float getHorizontalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return ViewConfiguration.get(context).getScaledHorizontalScrollFactor();
     } else {
       // Vertical scroll factor is not a typo. This is what View.java does in android.
@@ -438,14 +438,14 @@ public class AndroidTouchProcessor {
   }
 
   private float getVerticalScrollFactor(@NonNull Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    if (Build.VERSION.SDK_INT >= API_LEVELS.API_26) {
       return getVerticalScrollFactorAbove26(context);
     } else {
       return getVerticalScrollFactorPre26(context);
     }
   }
 
-  @TargetApi(26)
+  @TargetApi(API_LEVELS.API_26)
   private float getVerticalScrollFactorAbove26(@NonNull Context context) {
     return ViewConfiguration.get(context).getScaledVerticalScrollFactor();
   }

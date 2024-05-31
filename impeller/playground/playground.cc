@@ -7,6 +7,7 @@
 #include <optional>
 #include <sstream>
 
+#include "fml/closure.h"
 #include "fml/time/time_point.h"
 #include "impeller/playground/image/backends/skia/compressed_image_skia.h"
 #include "impeller/playground/image/decompressed_image.h"
@@ -33,7 +34,11 @@
 
 #if FML_OS_MACOSX
 #include "fml/platform/darwin/scoped_nsautorelease_pool.h"
-#endif
+#endif  // FML_OS_MACOSX
+
+#if IMPELLER_ENABLE_VULKAN
+#include "impeller/playground/backend/vulkan/playground_impl_vk.h"
+#endif  // IMPELLER_ENABLE_VULKAN
 
 namespace impeller {
 
@@ -107,8 +112,8 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
       return false;
 #endif  // IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kVulkan:
-#if IMPELLER_ENABLE_VULKAN && IMPELLER_ENABLE_VULKAN_PLAYGROUNDS
-      return true;
+#if IMPELLER_ENABLE_VULKAN
+      return PlaygroundImplVK::IsVulkanDriverPresent();
 #else   // IMPELLER_ENABLE_VULKAN
       return false;
 #endif  // IMPELLER_ENABLE_VULKAN
@@ -116,10 +121,11 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-void Playground::SetupContext(PlaygroundBackend backend) {
+void Playground::SetupContext(PlaygroundBackend backend,
+                              const PlaygroundSwitches& switches) {
   FML_CHECK(SupportsBackend(backend));
 
-  impl_ = PlaygroundImpl::Create(backend, switches_);
+  impl_ = PlaygroundImpl::Create(backend, switches);
   if (!impl_) {
     FML_LOG(WARNING) << "PlaygroundImpl::Create failed.";
     return;
@@ -141,6 +147,10 @@ void Playground::SetupWindow() {
   renderer_ = std::move(renderer);
 
   start_time_ = fml::TimePoint::Now().ToEpochDelta();
+}
+
+bool Playground::IsPlaygroundEnabled() const {
+  return switches_.enable_playground;
 }
 
 void Playground::TeardownWindow() {
@@ -404,27 +414,26 @@ static std::shared_ptr<Texture> CreateTextureForDecompressedImage(
     return nullptr;
   }
 
-  auto uploaded = texture->SetContents(decompressed_image.GetAllocation());
-  if (!uploaded) {
-    VALIDATION_LOG << "Could not upload texture to device memory for fixture.";
+  auto command_buffer = context->CreateCommandBuffer();
+  if (!command_buffer) {
+    FML_DLOG(ERROR) << "Could not create command buffer for mipmap generation.";
     return nullptr;
   }
+  command_buffer->SetLabel("Mipmap Command Buffer");
+
+  auto blit_pass = command_buffer->CreateBlitPass();
+  auto buffer_view = DeviceBuffer::AsBufferView(
+      context->GetResourceAllocator()->CreateBufferWithCopy(
+          *decompressed_image.GetAllocation()));
+  blit_pass->AddCopy(buffer_view, texture);
   if (enable_mipmapping) {
-    auto command_buffer = context->CreateCommandBuffer();
-    if (!command_buffer) {
-      FML_DLOG(ERROR)
-          << "Could not create command buffer for mipmap generation.";
-      return nullptr;
-    }
-    command_buffer->SetLabel("Mipmap Command Buffer");
-    auto blit_pass = command_buffer->CreateBlitPass();
     blit_pass->SetLabel("Mipmap Blit Pass");
     blit_pass->GenerateMipmap(texture);
-    blit_pass->EncodeCommands(context->GetResourceAllocator());
-    if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
-      FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
-      return nullptr;
-    }
+  }
+  blit_pass->EncodeCommands(context->GetResourceAllocator());
+  if (!context->GetCommandQueue()->Submit({command_buffer}).ok()) {
+    FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
+    return nullptr;
   }
   return texture;
 }
@@ -482,14 +491,24 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
   }
   texture->SetLabel("Texture cube");
 
+  auto cmd_buffer = renderer_->GetContext()->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
   for (size_t i = 0; i < fixture_names.size(); i++) {
-    auto uploaded =
-        texture->SetContents(images[i].GetAllocation()->GetMapping(),
-                             images[i].GetAllocation()->GetSize(), i);
-    if (!uploaded) {
-      VALIDATION_LOG << "Could not upload texture to device memory.";
-      return nullptr;
-    }
+    auto device_buffer =
+        renderer_->GetContext()->GetResourceAllocator()->CreateBufferWithCopy(
+            *images[i].GetAllocation());
+    blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), texture, {},
+                       "", /*slice=*/i);
+  }
+
+  if (!blit_pass->EncodeCommands(
+          renderer_->GetContext()->GetResourceAllocator()) ||
+      !renderer_->GetContext()
+           ->GetCommandQueue()
+           ->Submit({std::move(cmd_buffer)})
+           .ok()) {
+    VALIDATION_LOG << "Could not upload texture to device memory.";
+    return nullptr;
   }
 
   return texture;

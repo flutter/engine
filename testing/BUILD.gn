@@ -21,6 +21,8 @@ source_set("testing_lib") {
     "debugger_detection.h",
     "display_list_testing.cc",
     "display_list_testing.h",
+    "logger_listener.cc",
+    "logger_listener.h",
     "mock_canvas.cc",
     "mock_canvas.h",
     "post_task_sync.cc",
@@ -51,7 +53,7 @@ source_set("testing") {
 
   sources = [ "run_all_unittests.cc" ]
 
-  if (is_linux) {
+  if (enable_unittests && is_linux) {
     # So that we can call gtk_init in main().
     configs += [ "//flutter/shell/platform/linux/config:gtk" ]
   }
@@ -99,8 +101,7 @@ source_set("skia") {
 }
 
 dart_snapshot_kernel("vmservice_kernel") {
-  dart_main =
-      rebase_path("//flutter/shell/vmservice/empty.dart", root_build_dir)
+  dart_main = "//flutter/shell/vmservice/empty.dart"
   dart_kernel = "$target_gen_dir/assets/vmservice_kernel.bin"
 }
 
@@ -259,13 +260,13 @@ if (use_swiftshader) {
 
     configs -= [ "//build/config/clang:extra_warnings" ]
     configs += [
-      "//third_party/angle:gl_prototypes",
+      "//flutter/third_party/angle:gl_prototypes",
       "//flutter/third_party/swiftshader:swiftshader_config",
     ]
     deps += [
+      "//flutter/third_party/angle:libEGL_static",
+      "//flutter/third_party/angle:libGLESv2_static",
       "//flutter/third_party/swiftshader",
-      "//third_party/angle:libEGL_static",
-      "//third_party/angle:libGLESv2_static",
     ]
   }
 }

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math' as math;
@@ -10,8 +9,9 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import 'browser_detection.dart';
+import 'browser_detection.dart' show isIOS15, isMacOrIOS;
 import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'services.dart';
@@ -496,7 +496,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
 void applyWebkitClipFix(DomElement? containerElement) {
-  if (browserEngine == BrowserEngine.webkit) {
+  if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
 }
@@ -526,6 +526,20 @@ int clampInt(int value, int min, int max) {
 /// This function can be overridden in tests. This could be useful, for example,
 /// to verify that warnings are printed under certain circumstances.
 void Function(String) printWarning = domWindow.console.warn;
+
+/// Converts a 4x4 matrix into a human-readable String.
+String matrixString(List<num> matrix) {
+  final StringBuffer sb = StringBuffer();
+  for (int i = 0; i < 16; i++) {
+    sb.write(matrix[i]);
+    if ((i + 1) % 4 == 0) {
+      sb.write('\n');
+    } else {
+      sb.write(' ');
+    }
+  }
+  return sb.toString();
+}
 
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
@@ -659,15 +673,16 @@ int? tryViewId(Object? arguments) {
 ///     Input: [0, 1, 2, 3]
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
-  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
+  return data
+      .map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}')
+      .join(' ');
 }
 
 /// Sets a style property on [element].
 ///
 /// [name] is the name of the property. [value] is the value of the property.
 /// If [value] is null, removes the style property.
-void setElementStyle(
-    DomElement element, String name, String? value) {
+void setElementStyle(DomElement element, String name, String? value) {
   if (value == null) {
     element.style.removeProperty(name);
   } else {
@@ -676,7 +691,7 @@ void setElementStyle(
 }
 
 void setClipPath(DomElement element, String? value) {
-  if (browserEngine == BrowserEngine.webkit) {
+  if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
     } else {
@@ -720,7 +735,8 @@ void drawEllipse(
     double startAngle,
     double endAngle,
     bool antiClockwise) {
-  _ellipseFeatureDetected ??= getJsProperty<Object?>(context, 'ellipse') != null;
+  _ellipseFeatureDetected ??=
+      getJsProperty<Object?>(context, 'ellipse') != null;
   if (_ellipseFeatureDetected!) {
     context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
         endAngle, antiClockwise);
@@ -772,7 +788,8 @@ class LruCache<K extends Object, V extends Object> {
   /// A doubly linked list of the objects in the cache.
   ///
   /// This makes it fast to move a recently used object to the front.
-  final DoubleLinkedQueue<_LruCacheEntry<K, V>> _itemQueue = DoubleLinkedQueue<_LruCacheEntry<K, V>>();
+  final DoubleLinkedQueue<_LruCacheEntry<K, V>> _itemQueue =
+      DoubleLinkedQueue<_LruCacheEntry<K, V>>();
 
   @visibleForTesting
   DoubleLinkedQueue<_LruCacheEntry<K, V>> get debugItemQueue => _itemQueue;
@@ -781,7 +798,8 @@ class LruCache<K extends Object, V extends Object> {
   ///
   /// This makes it fast to find the node in the queue when we need to
   /// move the object to the front of the queue.
-  final Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> _itemMap = <K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>>{};
+  final Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> _itemMap =
+      <K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>>{};
 
   @visibleForTesting
   Map<K, DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>> get itemMap => _itemMap;
@@ -805,7 +823,7 @@ class LruCache<K extends Object, V extends Object> {
   /// Returns the cached value associated with the [key].
   ///
   /// If the value is not in the cache, returns null.
-  V? operator[](K key) {
+  V? operator [](K key) {
     return _itemMap[key]?.element.value;
   }
 
@@ -867,4 +885,36 @@ String tileModeString(ui.TileMode tileMode) {
     case ui.TileMode.decal:
       return 'decal';
   }
+}
+
+/// A size where both the width and height are integers.
+class BitmapSize {
+  const BitmapSize(this.width, this.height);
+
+  /// Returns a [BitmapSize] by rounding the width and height of a [ui.Size] to
+  /// the nearest integer.
+  BitmapSize.fromSize(ui.Size size)
+      : width = size.width.round(),
+        height = size.height.round();
+
+  final int width;
+  final int height;
+
+  @override
+  bool operator ==(Object other) {
+    return other is BitmapSize &&
+        other.width == width &&
+        other.height == height;
+  }
+
+  @override
+  int get hashCode => Object.hash(width, height);
+
+  ui.Size toSize() {
+    return ui.Size(width.toDouble(), height.toDouble());
+  }
+
+  bool get isEmpty => width == 0 || height == 0;
+
+  static const BitmapSize zero = BitmapSize(0, 0);
 }

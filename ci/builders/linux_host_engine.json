@@ -3,15 +3,15 @@
         {
             "archives": [
                 {
-                    "name": "host_debug",
-                    "base_path": "out/host_debug/zip_archives/",
+                    "name": "ci/host_debug",
+                    "base_path": "out/ci/host_debug/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/host_debug/zip_archives/linux-x64/artifacts.zip",
-                        "out/host_debug/zip_archives/linux-x64/linux-x64-embedder.zip",
-                        "out/host_debug/zip_archives/linux-x64/font-subset.zip",
-                        "out/host_debug/zip_archives/flutter_patched_sdk.zip",
-                        "out/host_debug/zip_archives/dart-sdk-linux-x64.zip"
+                        "out/ci/host_debug/zip_archives/linux-x64/artifacts.zip",
+                        "out/ci/host_debug/zip_archives/linux-x64/linux-x64-embedder.zip",
+                        "out/ci/host_debug/zip_archives/linux-x64/font-subset.zip",
+                        "out/ci/host_debug/zip_archives/flutter_patched_sdk.zip",
+                        "out/ci/host_debug/zip_archives/dart-sdk-linux-x64.zip"
                     ],
                     "realm": "production"
                 }
@@ -25,6 +25,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/host_debug",
                 "--runtime-mode",
                 "debug",
                 "--prebuilt-dart-sdk",
@@ -32,9 +34,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "host_debug",
+            "name": "ci/host_debug",
+            "description": "Produces debug mode Linux host-side tooling and builds host-side unit tests for Linux.",
             "ninja": {
-                "config": "host_debug",
+                "config": "ci/host_debug",
                 "targets": [
                     "flutter:unittests",
                     "flutter/build/archives:artifacts",
@@ -52,7 +55,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "host_debug",
+                        "ci/host_debug",
                         "--type",
                         "dart,dart-host",
                         "--engine-capture-core-dump"
@@ -63,8 +66,8 @@
         {
             "archives": [
                 {
-                    "name": "host_profile",
-                    "base_path": "out/host_profile/zip_archives/",
+                    "name": "ci/host_profile",
+                    "base_path": "out/ci/host_profile/zip_archives/",
                     "type": "gcs",
                     "include_paths": []
                 }
@@ -78,6 +81,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/host_profile",
                 "--runtime-mode",
                 "profile",
                 "--no-lto",
@@ -86,9 +91,10 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "host_profile",
+            "name": "ci/host_profile",
+            "description": "Produces profile mode Linux host-side tooling and builds host-side unit tests for Linux.",
             "ninja": {
-                "config": "host_profile",
+                "config": "ci/host_profile",
                 "targets": [
                     "flutter/build/dart:copy_dart_sdk",
                     "flutter/shell/testing",
@@ -103,7 +109,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "host_profile",
+                        "ci/host_profile",
                         "--type",
                         "dart,dart-host,engine",
                         "--engine-capture-core-dump"
@@ -114,11 +120,11 @@
         {
             "archives": [
                 {
-                    "name": "host_release",
-                    "base_path": "out/host_release/zip_archives/",
+                    "name": "ci/host_release",
+                    "base_path": "out/ci/host_release/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/host_release/zip_archives/flutter_patched_sdk_product.zip"
+                        "out/ci/host_release/zip_archives/flutter_patched_sdk_product.zip"
                     ],
                     "realm": "production"
                 }
@@ -138,6 +144,8 @@
                 "use_rbe": true
             },
             "gn": [
+                "--target-dir",
+                "ci/host_release",
                 "--runtime-mode",
                 "release",
                 "--prebuilt-dart-sdk",
@@ -145,13 +153,16 @@
                 "--rbe",
                 "--no-goma"
             ],
-            "name": "host_release",
+            "name": "ci/host_release",
+            "description": "Produces release mode Linux host-side tooling and builds host-side unit tests and benchmarks for Linux.",
             "ninja": {
-                "config": "host_release",
+                "config": "ci/host_release",
                 "targets": [
                     "flutter/build/dart:copy_dart_sdk",
                     "flutter/display_list:display_list_benchmarks",
                     "flutter/display_list:display_list_builder_benchmarks",
+                    "flutter/display_list:display_list_region_benchmarks",
+                    "flutter/display_list:display_list_transform_benchmarks",
                     "flutter/fml:fml_benchmarks",
                     "flutter/impeller/geometry:geometry_benchmarks",
                     "flutter/impeller/aiks:canvas_benchmarks",
@@ -171,7 +182,7 @@
                     "script": "flutter/testing/run_tests.py",
                     "parameters": [
                         "--variant",
-                        "host_release",
+                        "ci/host_release",
                         "--type",
                         "dart,dart-host,engine,benchmarks",
                         "--engine-capture-core-dump"
@@ -180,13 +191,17 @@
                 {
                     "language": "bash",
                     "name": "Generate metrics test",
-                    "script": "flutter/testing/benchmark/generate_metrics.sh"
+                    "script": "flutter/testing/benchmark/generate_metrics.sh",
+                    "parameters": [
+                        "ci/host_release"
+                    ]
                 },
                 {
                     "language": "bash",
                     "name": "Upload metrics dry-run",
                     "script": "flutter/testing/benchmark/upload_metrics.sh",
                     "parameters": [
+                        "ci/host_release",
                         "--no-upload"
                     ]
                 }
@@ -198,7 +213,8 @@
             {
                 "name": "Verify-export-symbols-release-binaries",
                 "parameters": [
-                    "src/out"
+                    "src/out/ci",
+                    "src/flutter/buildtools"
                 ],
                 "script": "flutter/testing/symbols/verify_exported.dart",
                 "language": "dart"

@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,7 +16,6 @@ import android.view.ViewTreeObserver.OnWindowFocusChangeListener;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
@@ -27,7 +25,6 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
-import io.flutter.util.ViewUtils;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,7 +104,7 @@ public class FlutterFragment extends Fragment
    * <p>This ID can be used to lookup {@code FlutterView} in the Android view hierarchy. For more,
    * see {@link android.view.View#findViewById}.
    */
-  public static final int FLUTTER_VIEW_ID = ViewUtils.generateViewId(0xF1F2);
+  public static final int FLUTTER_VIEW_ID = View.generateViewId();
 
   private static final String TAG = "FlutterFragment";
 
@@ -170,18 +167,15 @@ public class FlutterFragment extends Fragment
   protected static final String ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED =
       "should_automatically_handle_on_back_pressed";
 
-  @RequiresApi(18)
   private final OnWindowFocusChangeListener onWindowFocusChangeListener =
-      Build.VERSION.SDK_INT >= 18
-          ? new OnWindowFocusChangeListener() {
-            @Override
-            public void onWindowFocusChanged(boolean hasFocus) {
-              if (stillAttachedForEvent("onWindowFocusChanged")) {
-                delegate.onWindowFocusChanged(hasFocus);
-              }
-            }
+      new OnWindowFocusChangeListener() {
+        @Override
+        public void onWindowFocusChanged(boolean hasFocus) {
+          if (stillAttachedForEvent("onWindowFocusChanged")) {
+            delegate.onWindowFocusChanged(hasFocus);
           }
-          : null;
+        }
+      };
 
   /**
    * Creates a {@code FlutterFragment} with a default configuration.
@@ -1062,6 +1056,14 @@ public class FlutterFragment extends Fragment
     delegate.onAttach(context);
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
+      // When Android handles a back gesture, it pops an Activity or goes back
+      // to the home screen. When Flutter handles a back gesture, it pops a
+      // route inside of the Flutter part of the app. By default, Android
+      // handles back gestures, so this callback is disabled. If, for example,
+      // the Flutter app has routes for which it wants to handle the back
+      // gesture, then it will enable this callback using
+      // setFrameworkHandlesBack.
+      onBackPressedCallback.setEnabled(false);
     }
     context.registerComponentCallbacks(this);
   }
@@ -1128,20 +1130,15 @@ public class FlutterFragment extends Fragment
   @Override
   public void onViewCreated(View view, Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
-    if (Build.VERSION.SDK_INT >= 18) {
-      view.getViewTreeObserver().addOnWindowFocusChangeListener(onWindowFocusChangeListener);
-    }
+    view.getViewTreeObserver().addOnWindowFocusChangeListener(onWindowFocusChangeListener);
   }
 
   @Override
   public void onDestroyView() {
     super.onDestroyView();
-    if (Build.VERSION.SDK_INT >= 18) {
-      // onWindowFocusChangeListener is API 18+ only.
-      requireView()
-          .getViewTreeObserver()
-          .removeOnWindowFocusChangeListener(onWindowFocusChangeListener);
-    }
+    requireView()
+        .getViewTreeObserver()
+        .removeOnWindowFocusChangeListener(onWindowFocusChangeListener);
     if (stillAttachedForEvent("onDestroyView")) {
       delegate.onDestroyView();
     }
@@ -1674,14 +1671,27 @@ public class FlutterFragment extends Fragment
         // Unless we disable the callback, the dispatcher call will trigger it. This will then
         // trigger the fragment's onBackPressed() implementation, which will call through to the
         // dart side and likely call back through to this method, creating an infinite call loop.
-        onBackPressedCallback.setEnabled(false);
+        boolean enabledAtStart = onBackPressedCallback.isEnabled();
+        if (enabledAtStart) {
+          onBackPressedCallback.setEnabled(false);
+        }
         activity.getOnBackPressedDispatcher().onBackPressed();
-        onBackPressedCallback.setEnabled(true);
+        if (enabledAtStart) {
+          onBackPressedCallback.setEnabled(true);
+        }
         return true;
       }
     }
     // Hook for subclass. No-op if returns false.
     return false;
+  }
+
+  @Override
+  public void setFrameworkHandlesBack(boolean frameworkHandlesBack) {
+    if (!getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
+      return;
+    }
+    onBackPressedCallback.setEnabled(frameworkHandlesBack);
   }
 
   @VisibleForTesting

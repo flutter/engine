@@ -59,36 +59,65 @@ void sendAccessibilityAnnouncement() async {
     await semanticsChanged;
   }
 
-  // Serializers for data types are in the framework, so this will be hardcoded.
+  // Standard message codec magic number identifiers.
+  // See: https://github.com/flutter/flutter/blob/ee94fe262b63b0761e8e1f889ae52322fef068d2/packages/flutter/lib/src/services/message_codecs.dart#L262
   const int valueMap = 13, valueString = 7;
-  // Corresponds to:
-  // Map<String, Object> data =
-  // {"type": "announce", "data": {"message": ""}};
+
+  // Corresponds to: {"type": "announce", "data": {"message": "hello"}}
+  // See: https://github.com/flutter/flutter/blob/b781da9b5822de1461a769c3b245075359f5464d/packages/flutter/lib/src/semantics/semantics_event.dart#L86
   final Uint8List data = Uint8List.fromList([
-    valueMap, // _valueMap
-    2, // Size
-    // key: "type"
-    valueString,
-    'type'.length,
-    ...'type'.codeUnits,
-    // value: "announce"
-    valueString,
-    'announce'.length,
-    ...'announce'.codeUnits,
-    // key: "data"
-    valueString,
-    'data'.length,
-    ...'data'.codeUnits,
-    // value: map
-    valueMap, // _valueMap
-    1, // Size
-    // key: "message"
-    valueString,
-    'message'.length,
-    ...'message'.codeUnits,
-    // value: ""
-    valueString,
-    0, // Length of empty string == 0.
+    // Map with 2 entries
+    valueMap, 2,
+    // Map key: "type"
+    valueString, 'type'.length, ...'type'.codeUnits,
+    // Map value: "announce"
+    valueString, 'announce'.length, ...'announce'.codeUnits,
+    // Map key: "data"
+    valueString, 'data'.length, ...'data'.codeUnits,
+    // Map value: map with 1 entry
+    valueMap, 1,
+    // Map key: "message"
+    valueString, 'message'.length, ...'message'.codeUnits,
+    // Map value: "hello"
+    valueString, 'hello'.length, ...'hello'.codeUnits,
+  ]);
+  final ByteData byteData = data.buffer.asByteData();
+
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
+    'flutter/accessibility',
+    byteData,
+    (ByteData? _) => signal(),
+  );
+}
+
+@pragma('vm:entry-point')
+void sendAccessibilityTooltipEvent() async {
+  // Wait until semantics are enabled.
+  if (!ui.PlatformDispatcher.instance.semanticsEnabled) {
+    await semanticsChanged;
+  }
+
+  // Standard message codec magic number identifiers.
+  // See: https://github.com/flutter/flutter/blob/ee94fe262b63b0761e8e1f889ae52322fef068d2/packages/flutter/lib/src/services/message_codecs.dart#L262
+  const int valueMap = 13, valueString = 7;
+
+  // Corresponds to: {"type": "tooltip", "data": {"message": "hello"}}
+  // See: https://github.com/flutter/flutter/blob/b781da9b5822de1461a769c3b245075359f5464d/packages/flutter/lib/src/semantics/semantics_event.dart#L120
+  final Uint8List data = Uint8List.fromList([
+    // Map with 2 entries
+    valueMap, 2,
+    // Map key: "type"
+    valueString, 'type'.length, ...'type'.codeUnits,
+    // Map value: "tooltip"
+    valueString, 'tooltip'.length, ...'tooltip'.codeUnits,
+    // Map key: "data"
+    valueString, 'data'.length, ...'data'.codeUnits,
+    // Map value: map with 1 entry
+    valueMap, 1,
+    // Map key: "message"
+    valueString, 'message'.length, ...'message'.codeUnits,
+    // Map value: "hello"
+    valueString, 'hello'.length, ...'hello'.codeUnits,
   ]);
   final ByteData byteData = data.buffer.asByteData();
 
@@ -203,6 +232,47 @@ void sendCreatePlatformViewMethod() async {
 }
 
 @pragma('vm:entry-point')
+void sendGetKeyboardState() async {
+  // The keyboard method channel uses the standard method codec.
+  // See https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/services/message_codecs.dart#L262
+  // for the implementation of the encoding and magic number identifiers.
+  const int valueNull = 0;
+  const int valueString = 7;
+  const int valueMap = 13;
+
+  const String method = 'getKeyboardState';
+  final List<int> data = <int>[
+    // Method name
+    valueString, method.length, ...utf8.encode(method),
+    // Method arguments: null
+    valueNull, 2,
+  ];
+
+  final Completer<void> completer = Completer<void>();
+  final ByteData bytes = ByteData.sublistView(Uint8List.fromList(data));
+  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/keyboard', bytes, (ByteData? response) {
+    // For magic numbers for decoding a reply envelope, see:
+    // https://github.com/flutter/flutter/blob/67271f69f7f88a4edba6d8023099e3bd27a072d2/packages/flutter/lib/src/services/message_codecs.dart#L577-L587
+    const int replyEnvelopeSuccess = 0;
+
+    // Ensure the response is a success containing a map of keyboard states.
+    if (response == null) {
+      signalStringValue('Unexpected null response');
+    } else if (response.lengthInBytes < 2) {
+      signalStringValue('Unexpected response length of ${response.lengthInBytes} bytes');
+    } else if (response.getUint8(0) != replyEnvelopeSuccess) {
+      signalStringValue('Unexpected response envelope status: ${response.getUint8(0)}');
+    } else if (response.getUint8(1) != valueMap) {
+      signalStringValue('Unexpected response value magic number: ${response.getUint8(1)}');
+    } else {
+      signalStringValue('Success');
+    }
+    completer.complete();
+  });
+  await completer.future;
+}
+
+@pragma('vm:entry-point')
 void customEntrypoint() {}
 
 @pragma('vm:entry-point')
@@ -245,9 +315,58 @@ void drawHelloWorld() {
       ..addPicture(ui.Offset.zero, picture)
       ..pop();
 
-    ui.window.render(sceneBuilder.build());
+    ui.PlatformDispatcher.instance.implicitView?.render(sceneBuilder.build());
   };
 
   ui.PlatformDispatcher.instance.scheduleFrame();
   notifyFirstFrameScheduled();
+}
+
+ui.Picture _createColoredBox(ui.Color color, ui.Size size) {
+  final ui.Paint paint = ui.Paint();
+  paint.color = color;
+  final ui.PictureRecorder baseRecorder = ui.PictureRecorder();
+  final ui.Canvas canvas = ui.Canvas(baseRecorder);
+  canvas.drawRect(ui.Rect.fromLTRB(0.0, 0.0, size.width, size.height), paint);
+  return baseRecorder.endRecording();
+}
+
+@pragma('vm:entry-point')
+void renderImplicitView() {
+  ui.PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    final ui.Size size = ui.Size(800.0, 600.0);
+    final ui.Color red = ui.Color.fromARGB(127, 255, 0, 0);
+
+    final ui.SceneBuilder builder = ui.SceneBuilder();
+
+    builder.pushOffset(0.0, 0.0);
+
+    builder.addPicture(
+        ui.Offset(0.0, 0.0), _createColoredBox(red, size));
+
+    builder.pop();
+
+    ui.PlatformDispatcher.instance.implicitView?.render(builder.build());
+  };
+  ui.PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void signalViewIds() {
+  final Iterable<ui.FlutterView> views = ui.PlatformDispatcher.instance.views;
+  final List<int> viewIds =
+      views.map((ui.FlutterView view) => view.viewId).toList();
+
+  viewIds.sort();
+
+  signalStringValue('View IDs: [${viewIds.join(', ')}]');
+}
+
+@pragma('vm:entry-point')
+void onMetricsChangedSignalViewIds() {
+  ui.PlatformDispatcher.instance.onMetricsChanged = () {
+    signalViewIds();
+  };
+
+  signal();
 }

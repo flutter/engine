@@ -24,10 +24,10 @@ TEST_P(EntityPassTargetTest, SwapWithMSAATexture) {
   }
   auto content_context = GetContentContext();
   auto buffer = content_context->GetContext()->CreateCommandBuffer();
-  auto render_target = RenderTarget::CreateOffscreenMSAA(
-      *content_context->GetContext(),
-      *GetContentContext()->GetRenderTargetCache(), {100, 100},
-      /*mip_count=*/1);
+  auto render_target =
+      GetContentContext()->GetRenderTargetCache()->CreateOffscreenMSAA(
+          *content_context->GetContext(), {100, 100},
+          /*mip_count=*/1);
 
   auto entity_pass_target = EntityPassTarget(render_target, false, false);
 
@@ -71,7 +71,7 @@ TEST_P(EntityPassTargetTest, SwapWithMSAAImplicitResolve) {
     color0_tex_desc.sample_count = SampleCount::kCount4;
     color0_tex_desc.format = pixel_format;
     color0_tex_desc.size = ISize{100, 100};
-    color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
+    color0_tex_desc.usage = TextureUsage::kRenderTarget;
 
     auto color0_msaa_tex = allocator.CreateTexture(color0_tex_desc);
 

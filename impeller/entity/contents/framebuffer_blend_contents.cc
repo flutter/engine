@@ -52,13 +52,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   if (!src_snapshot.has_value()) {
     return true;
   }
-  auto coverage = src_snapshot->GetCoverage();
-  if (!coverage.has_value()) {
-    return true;
-  }
-  Rect src_coverage = coverage.value();
 
-  auto size = src_coverage.GetSize();
+  auto size = src_snapshot->texture->GetSize();
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.AddVertices({
       {Point(0, 0), Point(0, 0)},
@@ -73,7 +68,6 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   pass.SetCommandLabel("Framebuffer Advanced Blend Filter");
   pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
-  pass.SetStencilReference(entity.GetClipDepth());
 
   switch (blend_mode_) {
     case BlendMode::kScreen:
@@ -138,8 +132,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
           src_sampler_descriptor);
   FS::BindTextureSamplerSrc(pass, src_snapshot->texture, src_sampler);
 
-  frame_info.depth = entity.GetShaderClipDepth();
-  frame_info.mvp = pass.GetOrthographicTransform() * src_snapshot->transform;
+  frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(), pass,
+                                              src_snapshot->transform);
   frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 

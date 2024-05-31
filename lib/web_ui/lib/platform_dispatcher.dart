@@ -124,6 +124,8 @@ abstract class PlatformDispatcher {
 
   bool get nativeSpellCheckServiceDefined => false;
 
+  bool get supportsShowingSystemContextMenu => false;
+
   bool get brieflyShowPassword => true;
 
   VoidCallback? get onTextScaleFactorChanged;
@@ -502,6 +504,7 @@ class Locale {
   @override
   int get hashCode => Object.hash(languageCode, scriptCode, countryCode);
 
+  @keepToString
   @override
   String toString() => _rawToString('_');
 

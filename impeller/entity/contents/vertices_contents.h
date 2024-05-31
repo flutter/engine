@@ -5,27 +5,26 @@
 #ifndef FLUTTER_IMPELLER_ENTITY_CONTENTS_VERTICES_CONTENTS_H_
 #define FLUTTER_IMPELLER_ENTITY_CONTENTS_VERTICES_CONTENTS_H_
 
-#include <functional>
 #include <memory>
-#include <vector>
 
-#include "flutter/fml/macros.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
-#include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/vertices_geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/geometry/path.h"
-#include "impeller/geometry/point.h"
 
 namespace impeller {
 
-class VerticesContents final : public Contents {
+/// A vertices contents for (optional) per-color vertices + texture and any
+/// blend mode.
+class VerticesSimpleBlendContents final : public Contents {
  public:
-  VerticesContents();
+  VerticesSimpleBlendContents();
 
-  ~VerticesContents() override;
+  ~VerticesSimpleBlendContents() override;
+
+  using LazyTexture =
+      std::function<std::shared_ptr<Texture>(const ContentContext& renderer)>;
 
   void SetGeometry(std::shared_ptr<VerticesGeometry> geometry);
 
@@ -33,11 +32,15 @@ class VerticesContents final : public Contents {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  void SetSourceContents(std::shared_ptr<Contents> contents);
+  void SetTexture(std::shared_ptr<Texture> texture);
 
-  std::shared_ptr<VerticesGeometry> GetGeometry() const;
+  void SetLazyTexture(const LazyTexture& lazy_texture);
 
-  const std::shared_ptr<Contents>& GetSourceContents() const;
+  void SetSamplerDescriptor(SamplerDescriptor descriptor);
+
+  void SetTileMode(Entity::TileMode tile_mode_x, Entity::TileMode tile_mode_y);
+
+  void SetEffectTransform(Matrix transform);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -48,64 +51,20 @@ class VerticesContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  Scalar alpha_;
+  Scalar alpha_ = 1.0;
   std::shared_ptr<VerticesGeometry> geometry_;
+  std::shared_ptr<Texture> texture_;
   BlendMode blend_mode_ = BlendMode::kSource;
-  std::shared_ptr<Contents> src_contents_;
+  SamplerDescriptor descriptor_ = {};
+  Entity::TileMode tile_mode_x_ = Entity::TileMode::kClamp;
+  Entity::TileMode tile_mode_y_ = Entity::TileMode::kClamp;
+  Matrix inverse_matrix_ = {};
+  LazyTexture lazy_texture_;
 
-  VerticesContents(const VerticesContents&) = delete;
+  VerticesSimpleBlendContents(const VerticesSimpleBlendContents&) = delete;
 
-  VerticesContents& operator=(const VerticesContents&) = delete;
-};
-
-class VerticesColorContents final : public Contents {
- public:
-  explicit VerticesColorContents(const VerticesContents& parent);
-
-  ~VerticesColorContents() override;
-
-  // |Contents|
-  std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  bool Render(const ContentContext& renderer,
-              const Entity& entity,
-              RenderPass& pass) const override;
-
-  void SetAlpha(Scalar alpha);
-
- private:
-  const VerticesContents& parent_;
-  Scalar alpha_ = 1.0;
-
-  VerticesColorContents(const VerticesColorContents&) = delete;
-
-  VerticesColorContents& operator=(const VerticesColorContents&) = delete;
-};
-
-class VerticesUVContents final : public Contents {
- public:
-  explicit VerticesUVContents(const VerticesContents& parent);
-
-  ~VerticesUVContents() override;
-
-  // |Contents|
-  std::optional<Rect> GetCoverage(const Entity& entity) const override;
-
-  // |Contents|
-  bool Render(const ContentContext& renderer,
-              const Entity& entity,
-              RenderPass& pass) const override;
-
-  void SetAlpha(Scalar alpha);
-
- private:
-  const VerticesContents& parent_;
-  Scalar alpha_ = 1.0;
-
-  VerticesUVContents(const VerticesUVContents&) = delete;
-
-  VerticesUVContents& operator=(const VerticesUVContents&) = delete;
+  VerticesSimpleBlendContents& operator=(const VerticesSimpleBlendContents&) =
+      delete;
 };
 
 }  // namespace impeller

@@ -14,7 +14,6 @@
 #include "flutter/shell/platform/common/app_lifecycle_state.h"
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 
@@ -125,9 +124,10 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 /**
  * Attach a view controller to the engine as its default controller.
  *
- * Practically, since FlutterEngine can only be attached with one controller,
- * the given controller, if successfully attached, will always have the default
- * view ID kFlutterImplicitViewId.
+ * Since FlutterEngine can only handle the implicit view for now, the given
+ * controller will always be assigned to the implicit view, if there isn't an
+ * implicit view yet. If the engine already has an implicit view, this call
+ * throws an assertion.
  *
  * The engine holds a weak reference to the attached view controller.
  *
@@ -137,20 +137,23 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 - (void)addViewController:(FlutterViewController*)viewController;
 
 /**
+ * Notify the engine that a view for the given view controller has been loaded.
+ */
+- (void)viewControllerViewDidLoad:(FlutterViewController*)viewController;
+
+/**
  * Dissociate the given view controller from this engine.
  *
  * If the view controller is not associated with this engine, this call throws an
  * assertion.
- *
- * Practically, since FlutterEngine can only be attached with one controller for
- * now, the given controller must be the current view controller.
  */
 - (void)removeViewController:(FlutterViewController*)viewController;
 
 /**
  * The |FlutterViewController| associated with the given view ID, if any.
  */
-- (nullable FlutterViewController*)viewControllerForId:(FlutterViewId)viewId;
+- (nullable FlutterViewController*)viewControllerForIdentifier:
+    (FlutterViewIdentifier)viewIdentifier;
 
 /**
  * Informs the engine that the specified view controller's window metrics have changed.

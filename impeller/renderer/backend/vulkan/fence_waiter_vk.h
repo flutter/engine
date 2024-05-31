@@ -11,11 +11,7 @@
 #include <vector>
 
 #include "flutter/fml/closure.h"
-#include "flutter/fml/macros.h"
-#include "impeller/base/thread.h"
-#include "impeller/renderer/backend/vulkan/device_holder.h"
-#include "impeller/renderer/backend/vulkan/shared_object_vk.h"
-#include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/backend/vulkan/device_holder_vk.h"
 
 namespace impeller {
 
@@ -37,14 +33,14 @@ class FenceWaiterVK {
  private:
   friend class ContextVK;
 
-  std::weak_ptr<DeviceHolder> device_holder_;
+  std::weak_ptr<DeviceHolderVK> device_holder_;
   std::unique_ptr<std::thread> waiter_thread_;
   std::mutex wait_set_mutex_;
   std::condition_variable wait_set_cv_;
   WaitSet wait_set_;
   bool terminate_ = false;
 
-  explicit FenceWaiterVK(std::weak_ptr<DeviceHolder> device_holder);
+  explicit FenceWaiterVK(std::weak_ptr<DeviceHolderVK> device_holder);
 
   void Main();
 

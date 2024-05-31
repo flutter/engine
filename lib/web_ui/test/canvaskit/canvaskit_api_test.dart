@@ -529,6 +529,20 @@ void _imageFilterTests() {
       isNotNull,
     );
   });
+
+  test('MakeDilate', () {
+    expect(
+      canvasKit.ImageFilter.MakeDilate(1, 2, null),
+      isNotNull,
+    );
+  });
+
+  test('MakeErode', () {
+    expect(
+      canvasKit.ImageFilter.MakeErode(1, 2, null),
+      isNotNull,
+    );
+  });
 }
 
 void _mallocTests() {
@@ -1596,7 +1610,7 @@ void _paragraphTests() {
         ..weight = canvasKit.FontWeight.Bold)
       ..fontSize = 72
       ..heightMultiplier = 1.5
-      ..halfLeading = false
+      ..halfLeading = true
       ..leading = 0
       ..strutEnabled = true
       ..forceStrutHeight = false;
@@ -1673,7 +1687,7 @@ void _paragraphTests() {
       expect(actual, within<double>(distance: actual / 100, from: expected));
     }
 
-    expectAlmost(paragraph.getAlphabeticBaseline(), 85.5);
+    expectAlmost(paragraph.getAlphabeticBaseline(), 78.6);
     expect(paragraph.didExceedMaxLines(), isFalse);
     expectAlmost(paragraph.getHeight(), 108);
     expectAlmost(paragraph.getIdeographicBaseline(), 108);
@@ -1699,7 +1713,7 @@ void _paragraphTests() {
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
-    expectAlmost(lineMetrics.baseline, 85.5);
+    expectAlmost(lineMetrics.baseline, 78.6);
     expectAlmost(lineMetrics.height, 108);
     expectAlmost(lineMetrics.left, 2.5);
     expectAlmost(lineMetrics.width, 263);
@@ -1928,8 +1942,8 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final DomFinalizationRegistry registry = createDomFinalizationRegistry((String arg) {}.toJS);
-    registry.register(Object(), Object());
+    final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
+    registry.register(Object().toJSWrapper, Object().toJSWrapper);
   });
 }
 

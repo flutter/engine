@@ -2,22 +2,10 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/build/concurrent_jobs.gni")
 import("//flutter/build/dart/dart.gni")
 import("//flutter/common/config.gni")
 
 import("$dart_src/build/dart/copy_tree.gni")
-
-declare_args() {
-  # Maximum number of Dart processes to run in parallel.
-  #
-  # To avoid out-of-memory errors we explicitly reduce the number of jobs.
-  concurrent_dart_jobs = concurrent_jobs.dart
-}
-
-pool("dart_pool") {
-  depth = concurrent_dart_jobs
-}
 
 if (build_engine_artifacts) {
   if (flutter_prebuilt_dart_sdk) {

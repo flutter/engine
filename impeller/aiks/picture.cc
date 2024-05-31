@@ -60,25 +60,21 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
       RenderTargetAllocator(impeller_context->GetResourceAllocator());
   RenderTarget target;
   if (impeller_context->GetCapabilities()->SupportsOffscreenMSAA()) {
-    target = RenderTarget::CreateOffscreenMSAA(
-        *impeller_context,        // context
-        render_target_allocator,  // allocator
-        size,                     // size
+    target = render_target_allocator.CreateOffscreenMSAA(
+        *impeller_context,  // context
+        size,               // size
         /*mip_count=*/1,
         "Picture Snapshot MSAA",  // label
         RenderTarget::
-            kDefaultColorAttachmentConfigMSAA,  // color_attachment_config
-        std::nullopt                            // stencil_attachment_config
+            kDefaultColorAttachmentConfigMSAA  // color_attachment_config
     );
   } else {
-    target = RenderTarget::CreateOffscreen(
-        *impeller_context,        // context
-        render_target_allocator,  // allocator
-        size,                     // size
+    target = render_target_allocator.CreateOffscreen(
+        *impeller_context,  // context
+        size,               // size
         /*mip_count=*/1,
-        "Picture Snapshot",                           // label
-        RenderTarget::kDefaultColorAttachmentConfig,  // color_attachment_config
-        std::nullopt  // stencil_attachment_config
+        "Picture Snapshot",                          // label
+        RenderTarget::kDefaultColorAttachmentConfig  // color_attachment_config
     );
   }
   if (!target.IsValid()) {

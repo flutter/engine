@@ -25,6 +25,7 @@ namespace flutter {
 class FontCollection;
 class PlatformMessage;
 class PlatformMessageHandler;
+class PlatformIsolateManager;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -250,6 +251,9 @@ class PlatformConfigurationClient {
   virtual double GetScaledFontSize(double unscaled_font_size,
                                    int configuration_id) const = 0;
 
+  virtual std::shared_ptr<PlatformIsolateManager>
+  GetPlatformIsolateManager() = 0;
+
  protected:
   virtual ~PlatformConfigurationClient();
 };
@@ -258,8 +262,7 @@ class PlatformConfigurationClient {
 /// @brief      A class for holding and distributing platform-level information
 ///             to and from the Dart code in Flutter's framework.
 ///
-///             It handles communication between the engine and the framework,
-///             and owns the main window.
+///             It handles communication between the engine and the framework.
 ///
 ///             It communicates with the RuntimeController through the use of a
 ///             PlatformConfigurationClient interface, which the
@@ -311,7 +314,9 @@ class PlatformConfiguration final {
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  /// @return     Whether the view was added.
+  ///
+  bool AddView(int64_t view_id, const ViewportMetrics& view_metrics);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the framework that a view is no longer available.
@@ -323,7 +328,9 @@ class PlatformConfiguration final {
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view was removed.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Update the view metrics for the specified view.
@@ -477,13 +484,13 @@ class PlatformConfiguration final {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
-  /// @brief      Retrieves the Window with the given ID managed by the
-  ///             `PlatformConfiguration`.
+  /// @brief      Retrieves the viewport metrics with the given ID managed by
+  ///             the `PlatformConfiguration`.
   ///
-  /// @param[in] window_id The id of the window to find and return.
+  /// @param[in]  view_id The id of the view's viewport metrics to return.
   ///
-  /// @return     a pointer to the Window. Returns nullptr if the ID is not
-  ///             found.
+  /// @return     a pointer to the ViewportMetrics. Returns nullptr if the ID is
+  ///             not found.
   ///
   const ViewportMetrics* GetMetrics(int view_id);
 

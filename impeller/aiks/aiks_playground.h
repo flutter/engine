@@ -5,9 +5,8 @@
 #ifndef FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_H_
 #define FLUTTER_IMPELLER_AIKS_AIKS_PLAYGROUND_H_
 
-#include "flutter/fml/macros.h"
+#include "flutter/display_list/display_list.h"
 #include "impeller/aiks/aiks_context.h"
-#include "impeller/aiks/aiks_playground_inspector.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/typographer_context.h"
@@ -33,13 +32,14 @@ class AiksPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
+  bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
+
   static bool ImGuiBegin(const char* name,
                          bool* p_open,
                          ImGuiWindowFlags flags);
 
  private:
   std::shared_ptr<TypographerContext> typographer_context_;
-  AiksInspector inspector_;
 
   AiksPlayground(const AiksPlayground&) = delete;
 

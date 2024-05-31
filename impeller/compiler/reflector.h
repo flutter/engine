@@ -9,10 +9,8 @@
 #include <memory>
 #include <optional>
 
-#include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
 #include "fml/logging.h"
-#include "impeller/base/strings.h"
 #include "impeller/compiler/compiler_backend.h"
 #include "impeller/compiler/runtime_stage_data.h"
 #include "impeller/compiler/shader_bundle_data.h"
@@ -224,6 +222,9 @@ class Reflector {
 
   std::vector<size_t> ComputeOffsets(
       const spirv_cross::SmallVector<spirv_cross::Resource>& resources) const;
+
+  std::optional<size_t> GetOffset(spirv_cross::ID id,
+                                  const std::vector<size_t>& offsets) const;
 
   std::optional<nlohmann::json::object_t> ReflectType(
       const spirv_cross::TypeID& type_id) const;

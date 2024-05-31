@@ -29,6 +29,10 @@ EmbedderExternalViewEmbedder::EmbedderExternalViewEmbedder(
 
 EmbedderExternalViewEmbedder::~EmbedderExternalViewEmbedder() = default;
 
+void EmbedderExternalViewEmbedder::CollectView(int64_t view_id) {
+  render_target_caches_.erase(view_id);
+}
+
 void EmbedderExternalViewEmbedder::SetSurfaceTransformationCallback(
     SurfaceTransformationCallback surface_transformation_callback) {
   surface_transformation_callback_ = std::move(surface_transformation_callback);
@@ -59,13 +63,8 @@ void EmbedderExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void EmbedderExternalViewEmbedder::PrepareFlutterView(
-    int64_t flutter_view_id,
     SkISize frame_size,
     double device_pixel_ratio) {
-  // TODO(dkwingsmt): This class only supports rendering into the implicit
-  // view. Properly support multi-view in the future.
-  // https://github.com/flutter/flutter/issues/135530 item 4
-  FML_DCHECK(flutter_view_id == kFlutterImplicitViewId);
   Reset();
 
   pending_frame_size_ = frame_size;
@@ -119,6 +118,7 @@ DlCanvas* EmbedderExternalViewEmbedder::CompositeEmbeddedView(int64_t view_id) {
 }
 
 static FlutterBackingStoreConfig MakeBackingStoreConfig(
+    int64_t view_id,
     const SkISize& backing_store_size) {
   FlutterBackingStoreConfig config = {};
 
@@ -126,6 +126,7 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 
   config.size.width = backing_store_size.width();
   config.size.height = backing_store_size.height();
+  config.view_id = view_id;
 
   return config;
 }
@@ -289,6 +290,10 @@ class Layer {
 /// Implements https://flutter.dev/go/optimized-platform-view-layers
 class LayerBuilder {
  public:
+  using RenderTargetProvider =
+      std::function<std::unique_ptr<EmbedderRenderTarget>(
+          const SkISize& frame_size)>;
+
   explicit LayerBuilder(SkISize frame_size) : frame_size_(frame_size) {
     layers_.push_back(Layer());
   }
@@ -309,13 +314,10 @@ class LayerBuilder {
   }
 
   /// Prepares the render targets for all layers that have Flutter contents.
-  void PrepareBackingStore(
-      const std::function<std::unique_ptr<EmbedderRenderTarget>(
-          FlutterBackingStoreConfig)>& target_provider) {
-    auto config = MakeBackingStoreConfig(frame_size_);
+  void PrepareBackingStore(const RenderTargetProvider& target_provider) {
     for (auto& layer : layers_) {
       if (layer.has_flutter_contents()) {
-        layer.SetRenderTarget(target_provider(config));
+        layer.SetRenderTarget(target_provider(frame_size_));
       }
     }
   }
@@ -417,9 +419,14 @@ class LayerBuilder {
 };  // namespace
 
 void EmbedderExternalViewEmbedder::SubmitFlutterView(
+    int64_t flutter_view_id,
     GrDirectContext* context,
     const std::shared_ptr<impeller::AiksContext>& aiks_context,
     std::unique_ptr<SurfaceFrame> frame) {
+  // The unordered_map render_target_cache creates a new entry if the view ID is
+  // unrecognized.
+  EmbedderRenderTargetCache& render_target_cache =
+      render_target_caches_[flutter_view_id];
   SkRect _rect = SkRect::MakeIWH(pending_frame_size_.width(),
                                  pending_frame_size_.height());
   pending_surface_transformation_.mapRect(&_rect);
@@ -431,17 +438,16 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
     builder.AddExternalView(view.get());
   }
 
-  builder.PrepareBackingStore([&](FlutterBackingStoreConfig config) {
-    std::unique_ptr<EmbedderRenderTarget> target;
+  builder.PrepareBackingStore([&](const SkISize& frame_size) {
     if (!avoid_backing_store_cache_) {
-      target = render_target_cache_.GetRenderTarget(
-          EmbedderExternalView::RenderTargetDescriptor(
-              SkISize{static_cast<int32_t>(config.size.width),
-                      static_cast<int32_t>(config.size.height)}));
+      std::unique_ptr<EmbedderRenderTarget> target =
+          render_target_cache.GetRenderTarget(
+              EmbedderExternalView::RenderTargetDescriptor(frame_size));
+      if (target != nullptr) {
+        return target;
+      }
     }
-    if (target != nullptr) {
-      return target;
-    }
+    auto config = MakeBackingStoreConfig(flutter_view_id, frame_size);
     return create_render_target_callback_(context, aiks_context, config);
   });
 
@@ -458,17 +464,20 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
   //
   // @warning: Embedder may trample on our OpenGL context here.
   auto deferred_cleanup_render_targets =
-      render_target_cache_.ClearAllRenderTargetsInCache();
+      render_target_cache.ClearAllRenderTargetsInCache();
 
+#if !SLIMPELLER
   // The OpenGL context could have been trampled by the embedder at this point
   // as it attempted to collect old render targets and create new ones. Tell
   // Skia to not rely on existing bindings.
   if (context) {
     context->resetContext(kAll_GrBackendState);
   }
+#endif  //  !SLIMPELLER
 
   builder.Render();
 
+#if !SLIMPELLER
   // We are going to be transferring control back over to the embedder there
   // the context may be trampled upon again. Flush all operations to the
   // underlying rendering API.
@@ -477,18 +486,25 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
   if (context) {
     context->flushAndSubmit();
   }
+#endif  //  !SLIMPELLER
 
   {
+    auto presentation_time_optional = frame->submit_info().presentation_time;
+    uint64_t presentation_time =
+        presentation_time_optional.has_value()
+            ? presentation_time_optional->ToEpochDelta().ToNanoseconds()
+            : 0;
+
     // Submit the scribbled layer to the embedder for presentation.
     //
     // @warning: Embedder may trample on our OpenGL context here.
-    EmbedderLayers presented_layers(pending_frame_size_,
-                                    pending_device_pixel_ratio_,
-                                    pending_surface_transformation_);
+    EmbedderLayers presented_layers(
+        pending_frame_size_, pending_device_pixel_ratio_,
+        pending_surface_transformation_, presentation_time);
 
     builder.PushLayers(presented_layers);
 
-    presented_layers.InvokePresentCallback(present_callback_);
+    presented_layers.InvokePresentCallback(flutter_view_id, present_callback_);
   }
 
   // See why this is necessary in the comment where this collection in
@@ -500,7 +516,7 @@ void EmbedderExternalViewEmbedder::SubmitFlutterView(
   auto render_targets = builder.ClearAndCollectRenderTargets();
   for (auto& render_target : render_targets) {
     if (!avoid_backing_store_cache_) {
-      render_target_cache_.CacheRenderTarget(std::move(render_target));
+      render_target_cache.CacheRenderTarget(std::move(render_target));
     }
   }
 

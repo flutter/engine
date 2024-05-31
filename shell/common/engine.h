@@ -336,11 +336,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
-         std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
+         const std::shared_ptr<fml::ConcurrentTaskRunner>&
+             image_decoder_task_runner,
          const TaskRunners& task_runners,
          const Settings& settings,
          std::unique_ptr<Animator> animator,
-         fml::WeakPtr<IOManager> io_manager,
+         const fml::WeakPtr<IOManager>& io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
          std::unique_ptr<RuntimeController> runtime_controller,
          const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch);
@@ -396,7 +397,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
-         fml::RefPtr<SkiaUnrefQueue> unref_queue,
+         const fml::RefPtr<SkiaUnrefQueue>& unref_queue,
          fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
          const std::shared_ptr<fml::SyncSwitch>& gpu_disabled_switch,
@@ -720,8 +721,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  view_id           The ID of the new view.
   /// @param[in]  viewport_metrics  The initial viewport metrics for the view.
+  /// @param[in]  callback          Callback that will be invoked once
+  ///                               the engine attempts to add the view.
   ///
-  void AddView(int64_t view_id, const ViewportMetrics& view_metrics);
+  void AddView(int64_t view_id,
+               const ViewportMetrics& view_metrics,
+               std::function<void(bool added)> callback);
 
   //----------------------------------------------------------------------------
   /// @brief      Notify the Flutter application that a view is no
@@ -734,7 +739,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///
   /// @param[in]  view_id  The ID of the view.
   ///
-  void RemoveView(int64_t view_id);
+  /// @return     Whether the view was removed.
+  ///
+  bool RemoveView(int64_t view_id);
 
   //----------------------------------------------------------------------------
   /// @brief      Updates the viewport metrics for a view. The viewport metrics
@@ -838,7 +845,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   void ScheduleFrame() { ScheduleFrame(true); }
 
   // |RuntimeDelegate|
-  void EndWarmUpFrame() override;
+  void OnAllViewsRendered() override;
 
   // |RuntimeDelegate|
   FontCollection& GetFontCollection() override;
@@ -960,6 +967,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   }
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Shuts down all registered platform isolates. Must be called
+  ///             from the platform thread.
+  ///
+  void ShutdownPlatformIsolates();
 
  private:
   // |RuntimeDelegate|

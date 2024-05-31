@@ -138,8 +138,8 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   static SkVector map_vectors_affine(const SkMatrix& ctm,
                                      SkScalar x,
                                      SkScalar y) {
-    FML_DCHECK(SkScalarIsFinite(x) && x >= 0);
-    FML_DCHECK(SkScalarIsFinite(y) && y >= 0);
+    FML_DCHECK(std::isfinite(x) && x >= 0);
+    FML_DCHECK(std::isfinite(y) && y >= 0);
     FML_DCHECK(ctm.isFinite() && !ctm.hasPerspective());
 
     // The x and y scalars would have been used to expand a local space
@@ -231,7 +231,7 @@ class DlBlurImageFilter final : public DlImageFilter {
   static std::shared_ptr<DlImageFilter> Make(SkScalar sigma_x,
                                              SkScalar sigma_y,
                                              DlTileMode tile_mode) {
-    if (!SkScalarIsFinite(sigma_x) || !SkScalarIsFinite(sigma_y)) {
+    if (!std::isfinite(sigma_x) || !std::isfinite(sigma_y)) {
       return nullptr;
     }
     if (sigma_x < SK_ScalarNearlyZero && sigma_y < SK_ScalarNearlyZero) {
@@ -302,8 +302,8 @@ class DlDilateImageFilter final : public DlImageFilter {
 
   static std::shared_ptr<DlImageFilter> Make(SkScalar radius_x,
                                              SkScalar radius_y) {
-    if (SkScalarIsFinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
-        SkScalarIsFinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
+    if (std::isfinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
+        std::isfinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
       return std::make_shared<DlDilateImageFilter>(radius_x, radius_y);
     }
     return nullptr;
@@ -366,8 +366,8 @@ class DlErodeImageFilter final : public DlImageFilter {
 
   static std::shared_ptr<DlImageFilter> Make(SkScalar radius_x,
                                              SkScalar radius_y) {
-    if (SkScalarIsFinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
-        SkScalarIsFinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
+    if (std::isfinite(radius_x) && radius_x > SK_ScalarNearlyZero &&
+        std::isfinite(radius_y) && radius_y > SK_ScalarNearlyZero) {
       return std::make_shared<DlErodeImageFilter>(radius_x, radius_y);
     }
     return nullptr;
@@ -700,7 +700,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   SkRect* map_local_bounds(const SkRect& input_bounds,
                            SkRect& output_bounds) const override {
     if (!image_filter_) {
-      return nullptr;
+      output_bounds = input_bounds;
+      return &output_bounds;
     }
     return image_filter_->map_local_bounds(input_bounds, output_bounds);
   }
@@ -709,7 +710,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
                              const SkMatrix& ctm,
                              SkIRect& output_bounds) const override {
     if (!image_filter_) {
-      return nullptr;
+      output_bounds = input_bounds;
+      return &output_bounds;
     }
     return image_filter_->map_device_bounds(
         input_bounds, SkMatrix::Concat(ctm, matrix_), output_bounds);
@@ -719,7 +721,8 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
                                    const SkMatrix& ctm,
                                    SkIRect& input_bounds) const override {
     if (!image_filter_) {
-      return nullptr;
+      input_bounds = output_bounds;
+      return &input_bounds;
     }
     return image_filter_->get_input_device_bounds(
         output_bounds, SkMatrix::Concat(ctm, matrix_), input_bounds);

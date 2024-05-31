@@ -39,8 +39,10 @@ FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font_subset')
 
 ENCODING = 'UTF-8'
 
+LOG_FILE = os.path.join(OUT_DIR, 'run_tests.log')
 logger = logging.getLogger(__name__)
-logger_handler = logging.StreamHandler()
+console_logger_handler = logging.StreamHandler()
+file_logger_handler = logging.FileHandler(LOG_FILE)
 
 
 # Override print so that it uses the logger instead of stdout directly.
@@ -168,6 +170,37 @@ def find_executable_path(path):
       return bat_path
 
   raise Exception('Executable %s does not exist!' % path)
+
+
+def vulkan_validation_env(build_dir):
+  extra_env = {
+      # pylint: disable=line-too-long
+      # Note: built from //third_party/swiftshader
+      'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
+      # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
+      # and //third_party/vulkan_validation_layers.
+      'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
+      'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
+  }
+  return extra_env
+
+
+def metal_validation_env():
+  extra_env = {
+      # pylint: disable=line-too-long
+      # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+      'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
+      'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+          '1',  # Validates accesses to device and constant memory.
+      'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY': '1',  # Validates accesses to threadgroup memory.
+      'MTL_SHADER_VALIDATION_TEXTURE_USAGE': '1',  # Validates that texture references are not nil.
+  }
+  if is_aarm64():
+    extra_env.update({
+        'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
+        'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
+    })
+  return extra_env
 
 
 def build_engine_executable_command(
@@ -352,6 +385,10 @@ shuffle_flags = [
     '--gtest_shuffle',
 ]
 
+repeat_flags = [
+    '--repeat=2',
+]
+
 
 def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
   logger.info('Running Engine Unit-tests.')
@@ -359,10 +396,6 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
   if capture_core_dump and is_linux():
     import resource  # pylint: disable=import-outside-toplevel
     resource.setrlimit(resource.RLIMIT_CORE, (resource.RLIM_INFINITY, resource.RLIM_INFINITY))
-
-  repeat_flags = [
-      '--repeat=2',
-  ]
 
   def make_test(name, flags=None, extra_env=None):
     if flags is None:
@@ -472,31 +505,12 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
           shuffle_flags,
           coverage=coverage
       )
-    extra_env = {
-        # pylint: disable=line-too-long
-        # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-        'MTL_SHADER_VALIDATION': '1',  # Enables all shader validation tests.
-        'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-            '1',  # Validates accesses to device and constant memory.
-        'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-            '1',  # Validates accesses to threadgroup memory.
-        'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-            '1',  # Validates that texture references are not nil.
-        # Note: built from //third_party/swiftshader
-        'VK_ICD_FILENAMES': os.path.join(build_dir, 'vk_swiftshader_icd.json'),
-        # Note: built from //third_party/vulkan_validation_layers:vulkan_gen_json_files
-        # and //third_party/vulkan_validation_layers.
-        'VK_LAYER_PATH': os.path.join(build_dir, 'vulkan-data'),
-        'VK_INSTANCE_LAYERS': 'VK_LAYER_KHRONOS_validation',
-    }
-    if is_aarm64():
-      extra_env.update({
-          'METAL_DEBUG_ERROR_MODE': '0',  # Enables metal validation.
-          'METAL_DEVICE_WRAPPER_TYPE': '1',  # Enables metal validation.
-      })
-    mac_impeller_unittests_flags = shuffle_flags + [
+    extra_env = metal_validation_env()
+    extra_env.update(vulkan_validation_env(build_dir))
+    mac_impeller_unittests_flags = repeat_flags + [
+        '--gtest_filter=-*OpenGLES',  # These are covered in the golden tests.
+        '--',
         '--enable_vulkan_validation',
-        '--gtest_filter=-*OpenGLES'  # These are covered in the golden tests.
     ]
     # Impeller tests are only supported on macOS for now.
     run_engine_executable(
@@ -506,6 +520,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         mac_impeller_unittests_flags,
         coverage=coverage,
         extra_env=extra_env,
+        gtest=True,
         # TODO(https://github.com/flutter/flutter/issues/123733): Remove this allowlist.
         # See also https://github.com/flutter/flutter/issues/114872.
         allowed_failure_output=[
@@ -540,8 +555,9 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         executable_filter,
         shuffle_flags + [
             '--enable_vulkan_validation',
-            # TODO(https://github.com/flutter/flutter/issues/142642): Remove this.
-            '--gtest_filter=-*OpenGLES',
+            # TODO(https://github.com/flutter/flutter/issues/145036)
+            # TODO(https://github.com/flutter/flutter/issues/142642)
+            '--gtest_filter=*Metal',
         ],
         coverage=coverage,
         extra_env=extra_env,
@@ -691,10 +707,11 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
       BUILDROOT_DIR, 'flutter', 'shell', 'platform', 'android', 'test_runner'
   )
   gradle_bin = os.path.join(
-      BUILDROOT_DIR, 'third_party', 'gradle', 'bin', 'gradle.bat' if is_windows() else 'gradle'
+      BUILDROOT_DIR, 'flutter', 'third_party', 'gradle', 'bin',
+      'gradle.bat' if is_windows() else 'gradle'
   )
   flutter_jar = os.path.join(OUT_DIR, android_variant, 'flutter.jar')
-  android_home = os.path.join(BUILDROOT_DIR, 'third_party', 'android_tools', 'sdk')
+  android_home = os.path.join(BUILDROOT_DIR, 'flutter', 'third_party', 'android_tools', 'sdk')
   build_dir = os.path.join(OUT_DIR, android_variant, 'robolectric_tests', 'build')
   gradle_cache_dir = os.path.join(OUT_DIR, android_variant, 'robolectric_tests', '.gradle')
 
@@ -715,15 +732,30 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
   run_cmd(command, cwd=test_runner_dir, env=env)
 
 
-def run_android_tests(android_variant='android_debug_unopt', adb_path=None):
-  test_runner_name = 'flutter_shell_native_unittests'
+def run_android_unittest(test_runner_name, android_variant, adb_path):
   tests_path = os.path.join(OUT_DIR, android_variant, test_runner_name)
   remote_path = '/data/local/tmp'
   remote_tests_path = os.path.join(remote_path, test_runner_name)
+  run_cmd([adb_path, 'push', tests_path, remote_path], cwd=BUILDROOT_DIR)
+
+  try:
+    run_cmd([adb_path, 'shell', remote_tests_path])
+  except:
+    luci_test_outputs_path = os.environ.get('FLUTTER_TEST_OUTPUTS_DIR')
+    if luci_test_outputs_path:
+      print('>>>>> Test %s failed. Capturing logcat.' % test_runner_name)
+      logcat_path = os.path.join(luci_test_outputs_path, '%s_logcat' % test_runner_name)
+      logcat_file = open(logcat_path, 'w')
+      subprocess.run([adb_path, 'logcat', '-d'], stdout=logcat_file, check=False)
+    raise
+
+
+def run_android_tests(android_variant='android_debug_unopt', adb_path=None):
   if adb_path is None:
     adb_path = 'adb'
-  run_cmd([adb_path, 'push', tests_path, remote_path], cwd=BUILDROOT_DIR)
-  run_cmd([adb_path, 'shell', remote_tests_path])
+
+  run_android_unittest('flutter_shell_native_unittests', android_variant, adb_path)
+  run_android_unittest('impeller_toolkit_android_unittests', android_variant, adb_path)
 
   systrace_test = os.path.join(BUILDROOT_DIR, 'flutter', 'testing', 'android_systrace_test.py')
   scenario_apk = os.path.join(OUT_DIR, android_variant, 'firebase_apks', 'scenario_app.apk')
@@ -818,7 +850,7 @@ def gather_dart_tests(build_dir, test_filter):
       build_dir,
       os.path.join('dart-sdk', 'bin', 'dart'),
       None,
-      flags=['pub', 'get', '--offline'],
+      flags=['pub', '--suppress-analytics', 'get', '--offline'],
       cwd=dart_tests_dir,
   )
 
@@ -903,12 +935,14 @@ def build_dart_host_test_list(build_dir):
           os.path.join('flutter', 'flutter_frontend_server'),
           [
               build_dir,
-              os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
+              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
               os.path.join(build_dir, 'flutter_patched_sdk')
           ],
       ),
       (os.path.join('flutter', 'testing', 'litetest'), []),
+      (os.path.join('flutter', 'testing', 'pkg_test_demo'), []),
       (os.path.join('flutter', 'testing', 'skia_gold_client'), []),
+      (os.path.join('flutter', 'testing', 'scenario_app'), []),
       (
           os.path.join('flutter', 'tools', 'api_check'),
           [os.path.join(BUILDROOT_DIR, 'flutter')],
@@ -918,7 +952,7 @@ def build_dart_host_test_list(build_dir):
       (
           os.path.join('flutter', 'tools', 'const_finder'),
           [
-              os.path.join(build_dir, 'gen', 'frontend_server.dart.snapshot'),
+              os.path.join(build_dir, 'gen', 'frontend_server_aot.dart.snapshot'),
               os.path.join(build_dir, 'flutter_patched_sdk'),
               os.path.join(build_dir, 'dart-sdk', 'lib', 'libraries.json'),
           ],
@@ -952,7 +986,8 @@ def run_benchmark_tests(build_dir):
 def worker_init(queue, level):
   queue_handler = logging.handlers.QueueHandler(queue)
   log = logging.getLogger(__name__)
-  log.setLevel(level)
+  log.setLevel(logging.INFO)
+  queue_handler.setLevel(level)
   log.addHandler(queue_handler)
 
 
@@ -971,7 +1006,12 @@ def run_engine_tasks_in_parallel(tasks):
     max_processes = 60
 
   queue = multiprocessing.Queue()
-  queue_listener = logging.handlers.QueueListener(queue, logger_handler)
+  queue_listener = logging.handlers.QueueListener(
+      queue,
+      console_logger_handler,
+      file_logger_handler,
+      respect_handler_level=True,
+  )
   queue_listener.start()
 
   failures = []
@@ -1014,7 +1054,7 @@ class DirectoryChange():
     os.chdir(self.old_cwd)
 
 
-def run_impeller_golden_tests(build_dir: str):
+def run_impeller_golden_tests(build_dir: str, require_skia_gold: bool = False):
   """
   Executes the impeller golden image tests from in the `variant` build.
   """
@@ -1026,12 +1066,16 @@ def run_impeller_golden_tests(build_dir: str):
     )
   harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('tools'
                                                          ).joinpath('golden_tests_harvester')
+
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
-    run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir)
+    extra_env = metal_validation_env()
+    extra_env.update(vulkan_validation_env(build_dir))
+    run_cmd([tests_path, f'--working_dir={temp_dir}'], cwd=build_dir, env=extra_env)
+    dart_bin = os.path.join(build_dir, 'dart-sdk', 'bin', 'dart')
     golden_path = os.path.join('testing', 'impeller_golden_tests_output.txt')
     script_path = os.path.join('tools', 'dir_contents_diff', 'bin', 'dir_contents_diff.dart')
     diff_result = subprocess.run(
-        f'dart run {script_path} {golden_path} {temp_dir}',
+        f'{dart_bin} --disable-dart-dev {script_path} {golden_path} {temp_dir}',
         check=False,
         shell=True,
         stdout=subprocess.PIPE,
@@ -1042,10 +1086,36 @@ def run_impeller_golden_tests(build_dir: str):
       print(diff_result.stdout.decode())
       raise RuntimeError('impeller_golden_tests diff failure')
 
+    if not require_skia_gold:
+      print_divider('<')
+      print('Skipping any SkiaGoldClient invocation as the --no-skia-gold flag was set.')
+      return
+
+    # On release builds and local builds, we typically do not have GOLDCTL set,
+    # which on other words means that this invoking the SkiaGoldClient would
+    # throw. Skip this step in those cases and log a notice.
+    if 'GOLDCTL' not in os.environ:
+      # On CI, we never want to be running golden tests without Skia Gold.
+      # See https://github.com/flutter/flutter/issues/147180 as an example.
+      is_luci = 'LUCI_CONTEXT' in os.environ
+      if is_luci:
+        raise RuntimeError(
+            """
+The GOLDCTL environment variable is not set. This is required for Skia Gold tests.
+See https://github.com/flutter/engine/tree/main/testing/skia_gold_client#configuring-ci
+for more information.
+"""
+        )
+
+      print_divider('<')
+      print(
+          'Skipping the SkiaGoldClient invocation as the GOLDCTL environment variable is not set.'
+      )
+      return
+
     with DirectoryChange(harvester_path):
-      run_cmd(['dart', 'pub', 'get'])
       bin_path = Path('.').joinpath('bin').joinpath('golden_tests_harvester.dart')
-      run_cmd(['dart', 'run', str(bin_path), temp_dir])
+      run_cmd([dart_bin, '--disable-dart-dev', str(bin_path), temp_dir])
 
 
 def main():
@@ -1087,7 +1157,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       '--dart-filter',
       type=str,
       default='',
-      help='A list of Dart test scripts to run in flutter_tester.'
+      help='A list of Dart test script base file names to run in '
+      'flutter_tester (example: "image_filter_test.dart").'
   )
   parser.add_argument(
       '--dart-host-filter',
@@ -1165,12 +1236,30 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       default=False,
       help='Only emit output when there is an error.'
   )
+  parser.add_argument(
+      '--logs-dir',
+      dest='logs_dir',
+      type=str,
+      help='The directory that verbose logs will be copied to in --quiet mode.',
+  )
+  parser.add_argument(
+      '--no-skia-gold',
+      dest='no_skia_gold',
+      action='store_true',
+      default=False,
+      help='Do not compare golden images with Skia Gold.',
+  )
 
   args = parser.parse_args()
 
-  logger.addHandler(logger_handler)
-  if not args.quiet:
-    logger.setLevel(logging.INFO)
+  logger.addHandler(console_logger_handler)
+  logger.addHandler(file_logger_handler)
+  logger.setLevel(logging.INFO)
+  if args.quiet:
+    file_logger_handler.setLevel(logging.INFO)
+    console_logger_handler.setLevel(logging.WARNING)
+  else:
+    console_logger_handler.setLevel(logging.INFO)
 
   if args.type == 'all':
     types = all_types
@@ -1206,8 +1295,15 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     build_name = args.variant
     try:
       xvfb.start_virtual_x(build_name, build_dir)
+      extra_env = vulkan_validation_env(build_dir)
       run_engine_executable(
-          build_dir, 'impeller_unittests', engine_filter, shuffle_flags, coverage=args.coverage
+          build_dir,
+          'impeller_unittests',
+          engine_filter,
+          repeat_flags,
+          coverage=args.coverage,
+          extra_env=extra_env,
+          gtest=True
       )
     finally:
       xvfb.stop_virtual_x(build_name)
@@ -1259,11 +1355,22 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     run_engine_benchmarks(build_dir, engine_filter)
 
   variants_to_skip = ['host_release', 'host_profile']
-  if ('engine' in types or 'font-subset' in types) and args.variant not in variants_to_skip:
-    run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
+
+  def should_skip(variant):
+    matches = [variant for variant in variants_to_skip if variant in args.variant]
+    return len(matches) > 0
+
+  if ('engine' in types or 'font-subset' in types) and not should_skip(args.variant):
+    cmd = ['python3', 'test.py', '--variant', args.variant]
+    if 'arm64' in args.variant:
+      cmd += ['--target-cpu', 'arm64']
+    run_cmd(cmd, cwd=FONT_SUBSET_DIR)
 
   if 'impeller-golden' in types:
-    run_impeller_golden_tests(build_dir)
+    run_impeller_golden_tests(build_dir, require_skia_gold=not args.no_skia_gold)
+
+  if args.quiet and args.logs_dir:
+    shutil.copy(LOG_FILE, os.path.join(args.logs_dir, 'run_tests.log'))
 
   return 0 if success else 1
 

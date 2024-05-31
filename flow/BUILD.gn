@@ -2,11 +2,14 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 source_set("flow") {
   sources = [
@@ -155,7 +158,6 @@ if (enable_unittests) {
       "frame_timings_recorder_unittests.cc",
       "gl_context_switch_unittests.cc",
       "layers/backdrop_filter_layer_unittests.cc",
-      "layers/checkerboard_layertree_unittests.cc",
       "layers/clip_path_layer_unittests.cc",
       "layers/clip_rect_layer_unittests.cc",
       "layers/clip_rrect_layer_unittests.cc",

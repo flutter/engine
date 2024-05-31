@@ -2,9 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/testing/testing.gni")
+
+if (is_fuchsia) {
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
+}
 
 source_set("fml") {
   sources = [
@@ -64,6 +67,7 @@ source_set("fml") {
     "paths.cc",
     "paths.h",
     "posix_wrappers.h",
+    "process.h",
     "raster_thread_merger.cc",
     "raster_thread_merger.h",
     "shared_thread_merger.cc",
@@ -121,7 +125,7 @@ source_set("fml") {
 
   if (enable_backtrace) {
     # This abseil dependency is only used by backtrace.cc.
-    deps += [ "//third_party/abseil-cpp/absl/debugging:symbolize" ]
+    deps += [ "//flutter/third_party/abseil-cpp/absl/debugging:symbolize" ]
   }
 
   configs += [ "//flutter/third_party/icu:icu_config" ]
@@ -184,8 +188,6 @@ source_set("fml") {
       "platform/android/jni_weak_ref.h",
       "platform/android/message_loop_android.cc",
       "platform/android/message_loop_android.h",
-      "platform/android/ndk_helpers.cc",
-      "platform/android/ndk_helpers.h",
       "platform/android/paths_android.cc",
       "platform/android/paths_android.h",
       "platform/android/scoped_java_ref.cc",
@@ -226,16 +228,16 @@ source_set("fml") {
     ]
 
     public_deps += [
-      "$fuchsia_sdk_root/fidl:fuchsia.diagnostics",
-      "$fuchsia_sdk_root/fidl:fuchsia.logger",
-      "$fuchsia_sdk_root/pkg:async-cpp",
-      "$fuchsia_sdk_root/pkg:async-loop-cpp",
-      "$fuchsia_sdk_root/pkg:async-loop-default",
-      "$fuchsia_sdk_root/pkg:component_incoming_cpp",
-      "$fuchsia_sdk_root/pkg:syslog_structured_backend",
-      "$fuchsia_sdk_root/pkg:trace",
-      "$fuchsia_sdk_root/pkg:trace-engine",
-      "$fuchsia_sdk_root/pkg:zx",
+      "${fuchsia_sdk}/fidl/fuchsia.diagnostics:fuchsia.diagnostics_cpp",
+      "${fuchsia_sdk}/fidl/fuchsia.logger:fuchsia.logger_cpp",
+      "${fuchsia_sdk}/pkg/async-cpp",
+      "${fuchsia_sdk}/pkg/async-loop-cpp",
+      "${fuchsia_sdk}/pkg/async-loop-default",
+      "${fuchsia_sdk}/pkg/component_incoming_cpp",
+      "${fuchsia_sdk}/pkg/syslog_structured_backend",
+      "${fuchsia_sdk}/pkg/trace",
+      "${fuchsia_sdk}/pkg/trace-engine",
+      "${fuchsia_sdk}/pkg/zx",
     ]
   }
 
@@ -251,6 +253,7 @@ source_set("fml") {
       "platform/win/native_library_win.cc",
       "platform/win/paths_win.cc",
       "platform/win/posix_wrappers_win.cc",
+      "platform/win/process_win.cc",
     ]
   } else {
     sources += [
@@ -260,6 +263,7 @@ source_set("fml") {
       "platform/posix/native_library_posix.cc",
       "platform/posix/paths_posix.cc",
       "platform/posix/posix_wrappers_posix.cc",
+      "platform/posix/process_posix.cc",
     ]
   }
 }
@@ -285,6 +289,13 @@ source_set("command_line") {
   ]
 }
 
+config("string_conversion_config") {
+  if (is_win) {
+    # TODO(50053): Replace codecvt usage.
+    defines = [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
+  }
+}
+
 source_set("string_conversion") {
   sources = [
     "string_conversion.cc",
@@ -300,14 +311,12 @@ source_set("string_conversion") {
       "platform/win/wstring_conversion.cc",
       "platform/win/wstring_conversion.h",
     ]
-
-    # TODO(cbracken): https://github.com/flutter/flutter/issues/50053
-    defines += [ "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING" ]
   }
 
   deps = [ ":build_config" ]
 
   public_configs = [
+    ":string_conversion_config",
     "//flutter:config",
     "//flutter/common:flutter_config",
   ]
@@ -404,14 +413,13 @@ if (enable_unittests) {
 
     if (is_fuchsia) {
       deps += [
-        "$fuchsia_sdk_root/pkg:async-loop-testing",
-        "$fuchsia_sdk_root/pkg:sys_component_cpp_testing",
+        "${fuchsia_sdk}/pkg/async-loop-testing",
+        "${fuchsia_sdk}/pkg/sys_component_cpp_testing",
       ]
 
       # This is needed for //flutter/third_party/googletest for linking zircon
       # symbols.
-      libs =
-          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+      libs = [ "${fuchsia_arch_root}/sysroot/lib/libzircon.so" ]
     }
   }
 

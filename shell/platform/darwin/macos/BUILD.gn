@@ -15,7 +15,7 @@ shell_gpu_configuration("macos_gpu_configuration") {
   enable_software = true
   enable_gl = true
   enable_vulkan = false
-  enable_metal = shell_enable_metal
+  enable_metal = true
 }
 
 group("macos") {
@@ -66,6 +66,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterCompositor.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
+    "framework/Source/FlutterDisplayLink.h",
+    "framework/Source/FlutterDisplayLink.mm",
     "framework/Source/FlutterEmbedderKeyResponder.h",
     "framework/Source/FlutterEmbedderKeyResponder.mm",
     "framework/Source/FlutterEngine.mm",
@@ -101,6 +103,10 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterTextureRegistrar.mm",
     "framework/Source/FlutterThreadSynchronizer.h",
     "framework/Source/FlutterThreadSynchronizer.mm",
+    "framework/Source/FlutterTimeConverter.h",
+    "framework/Source/FlutterTimeConverter.mm",
+    "framework/Source/FlutterVSyncWaiter.h",
+    "framework/Source/FlutterVSyncWaiter.mm",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
@@ -173,6 +179,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterAppDelegateTest.mm",
     "framework/Source/FlutterAppLifecycleDelegateTest.mm",
     "framework/Source/FlutterChannelKeyResponderTest.mm",
+    "framework/Source/FlutterDisplayLinkTest.mm",
     "framework/Source/FlutterEmbedderExternalTextureTest.mm",
     "framework/Source/FlutterEmbedderKeyResponderTest.mm",
     "framework/Source/FlutterEngineTest.mm",
@@ -187,6 +194,7 @@ executable("flutter_desktop_darwin_unittests") {
     "framework/Source/FlutterTextInputPluginTest.mm",
     "framework/Source/FlutterTextInputSemanticsObjectTest.mm",
     "framework/Source/FlutterThreadSynchronizerTest.mm",
+    "framework/Source/FlutterVSyncWaiterTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/FlutterViewControllerTestUtils.h",
     "framework/Source/FlutterViewControllerTestUtils.mm",
@@ -304,6 +312,14 @@ action("_generate_symlinks") {
   }
 }
 
+group("universal_flutter_framework") {
+  visibility = [ ":*" ]
+  deps = [
+    ":_generate_symlinks",
+    ":_generate_symlinks_and_verify_framework_module",
+  ]
+}
+
 action("flutter_framework") {
   script = "//flutter/sky/tools/create_xcframework.py"
   outputs = [ "$root_out_dir/FlutterMacOS.xcframework" ]
@@ -315,7 +331,7 @@ action("flutter_framework") {
     "--location",
     rebase_path(root_out_dir),
   ]
-  deps = [ ":_generate_symlinks_and_verify_framework_module" ]
+  deps = [ ":universal_flutter_framework" ]
 }
 
 if (build_glfw_shell) {

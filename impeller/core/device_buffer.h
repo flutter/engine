@@ -12,7 +12,6 @@
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/range.h"
-#include "impeller/core/texture.h"
 
 namespace impeller {
 
@@ -31,11 +30,6 @@ class DeviceBuffer {
   /// @brief Create a buffer view of this entire buffer.
   static BufferView AsBufferView(std::shared_ptr<DeviceBuffer> buffer);
 
-  virtual std::shared_ptr<Texture> AsTexture(
-      Allocator& allocator,
-      const TextureDescriptor& descriptor,
-      uint16_t row_bytes) const;
-
   const DeviceBufferDescriptor& GetDeviceBufferDescriptor() const;
 
   virtual uint8_t* OnGetContents() const = 0;
@@ -48,6 +42,8 @@ class DeviceBuffer {
   ///
   /// If the range is not provided, the entire buffer is flushed.
   virtual void Flush(std::optional<Range> range = std::nullopt) const;
+
+  virtual void Invalidate(std::optional<Range> range = std::nullopt) const;
 
  protected:
   const DeviceBufferDescriptor desc_;

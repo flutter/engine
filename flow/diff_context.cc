@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/flow/diff_context.h"
+
 #include "flutter/flow/layers/layer.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
@@ -61,11 +63,17 @@ void DiffContext::MakeCurrentTransformIntegral() {
   // TODO(knopp): This is duplicated from LayerStack. Maybe should be part of
   // clip tracker?
   if (clip_tracker_.using_4x4_matrix()) {
-    clip_tracker_.setTransform(
-        RasterCacheUtil::GetIntegralTransCTM(clip_tracker_.matrix_4x4()));
+    SkM44 integral;
+    if (RasterCacheUtil::ComputeIntegralTransCTM(clip_tracker_.matrix_4x4(),
+                                                 &integral)) {
+      clip_tracker_.setTransform(integral);
+    }
   } else {
-    clip_tracker_.setTransform(
-        RasterCacheUtil::GetIntegralTransCTM(clip_tracker_.matrix_3x3()));
+    SkMatrix integral;
+    if (RasterCacheUtil::ComputeIntegralTransCTM(clip_tracker_.matrix_3x3(),
+                                                 &integral)) {
+      clip_tracker_.setTransform(integral);
+    }
   }
 }
 

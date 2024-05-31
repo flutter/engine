@@ -69,8 +69,9 @@
  * and can be used to perform additional work, such as mutating platform views. It is guaranteed be
  * called in the same CATransaction.
  */
-- (void)present:(nonnull NSArray<FlutterSurfacePresentInfo*>*)surfaces
-         notify:(nullable dispatch_block_t)notify;
+- (void)presentSurfaces:(nonnull NSArray<FlutterSurfacePresentInfo*>*)surfaces
+                 atTime:(CFTimeInterval)presentationTime
+                 notify:(nullable dispatch_block_t)notify;
 
 @end
 
@@ -87,7 +88,7 @@
 /**
  * Removes all cached surfaces replacing them with new ones.
  */
-- (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces;
+- (void)returnSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces;
 
 /**
  * Returns number of surfaces currently in cache. Used for tests.

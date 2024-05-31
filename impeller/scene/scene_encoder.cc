@@ -2,13 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/macros.h"
-
+#include "impeller/scene/scene_encoder.h"
 #include "flutter/fml/logging.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/scene/scene_context.h"
-#include "impeller/scene/scene_encoder.h"
 
 namespace impeller {
 namespace scene {
@@ -54,8 +51,7 @@ std::shared_ptr<CommandBuffer> SceneEncoder::BuildSceneCommandBuffer(
     ds_texture.type = TextureType::kTexture2DMultisample;
     ds_texture.format = PixelFormat::kD32FloatS8UInt;
     ds_texture.size = render_target.GetRenderTargetSize();
-    ds_texture.usage =
-        static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
+    ds_texture.usage = TextureUsage::kRenderTarget;
     ds_texture.sample_count = SampleCount::kCount4;
     ds_texture.storage_mode = StorageMode::kDeviceTransient;
     auto texture =

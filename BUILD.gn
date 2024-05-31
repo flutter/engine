@@ -141,6 +141,7 @@ group("flutter") {
       "//flutter/display_list:display_list_benchmarks",
       "//flutter/display_list:display_list_builder_benchmarks",
       "//flutter/display_list:display_list_region_benchmarks",
+      "//flutter/display_list:display_list_transform_benchmarks",
       "//flutter/fml:fml_benchmarks",
       "//flutter/impeller/aiks:canvas_benchmarks",
       "//flutter/impeller/geometry:geometry_benchmarks",
@@ -154,11 +155,6 @@ group("flutter") {
       (is_ios || is_android)) {
     public_deps += [ "//flutter/testing/scenario_app" ]
   }
-
-  if (is_android && flutter_runtime_mode == "profile" &&
-      current_cpu == "arm64") {
-    public_deps += [ "//flutter/testing/android_background_image" ]
-  }
 }
 
 group("unittests") {
@@ -166,8 +162,11 @@ group("unittests") {
 
   public_deps = []
   if (is_android) {
-    public_deps +=
-        [ "//flutter/shell/platform/android:flutter_shell_native_unittests" ]
+    public_deps += [
+      "//flutter/impeller/toolkit/android:apk_unittests",
+      "//flutter/impeller/toolkit/android:unittests",
+      "//flutter/shell/platform/android:flutter_shell_native_unittests",
+    ]
   }
 
   if (is_ios) {
@@ -284,7 +283,10 @@ if (build_engine_artifacts) {
 group("dist") {
   testonly = true
 
-  deps = [ "//flutter/sky/dist" ]
+  deps = [
+    "//flutter/lib/gpu/dist",
+    "//flutter/sky/dist",
+  ]
 }
 
 if (is_fuchsia && enable_unittests) {

@@ -10,7 +10,7 @@ import("$_skia_root/gn/toolchain/wasm.gni")
 import("flutter_defines.gni")
 
 if (is_fuchsia) {
-  import("//build/fuchsia/sdk.gni")
+  import("//flutter/tools/fuchsia/gn-sdk/src/gn_configs.gni")
 }
 
 # Skia public API, generally provided by :skia.
@@ -21,12 +21,11 @@ config("skia_public") {
     "SK_CODEC_DECODES_BMP",
     "SK_CODEC_DECODES_WBMP",
   ]
+  defines += flutter_defines
+
   cflags_objcc = []
   if (is_fuchsia || is_linux) {
     defines += [ "SK_R32_SHIFT=16" ]
-  }
-  if (skia_enable_flutter_defines) {
-    defines += flutter_defines
   }
 
   # TODO(zra): Try using this.
@@ -288,8 +287,8 @@ optional("fontmgr_fuchsia") {
 
   deps = []
 
-  if (is_fuchsia && using_fuchsia_sdk) {
-    deps += [ "//build/fuchsia/fidl:fuchsia.fonts" ]
+  if (is_fuchsia) {
+    deps += [ "${fuchsia_sdk}/fidl/fuchsia.fonts" ]
   } else {
     deps = [ "//sdk/fidl/fuchsia.fonts" ]
   }
@@ -345,9 +344,6 @@ optional("fontmgr_win") {
   ]
   public = [ "$_skia_root/include/ports/SkTypeface_win.h" ]
   sources = [
-    "$_skia_root/include/ports/SkFontMgr_indirect.h",
-    "$_skia_root/include/ports/SkRemotableFontMgr.h",
-    "$_skia_root/src/fonts/SkFontMgr_indirect.cpp",
     "$_skia_root/src/ports/SkFontMgr_win_dw.cpp",
     "$_skia_root/src/ports/SkScalerContext_win_dw.cpp",
     "$_skia_root/src/ports/SkScalerContext_win_dw.h",
@@ -430,6 +426,7 @@ optional("gpu") {
       if (defined(ndk_api) && ndk_api >= 26) {
         libs += [ "android" ]
       }
+      public_defines += [ "SK_EGL" ]
     } else if (skia_use_webgl) {
       sources += [
         "$_skia_root/src/gpu/ganesh/gl/webgl/GrGLMakeNativeInterface_webgl.cpp",
@@ -440,6 +437,15 @@ optional("gpu") {
         "$_skia_root/src/gpu/ganesh/gl/glx/GrGLMakeNativeInterface_glx.cpp",
       ]
       libs += [ "GL" ]
+      public_defines += [ "SK_GLX" ]
+    } else if (is_mac) {
+      sources += [
+        "$_skia_root/src/gpu/ganesh/gl/mac/GrGLMakeNativeInterface_mac.cpp",
+      ]
+    } else if (is_ios) {
+      sources += [
+        "$_skia_root/src/gpu/ganesh/gl/iOS/GrGLMakeNativeInterface_iOS.cpp",
+      ]
     } else if (is_win) {
       sources += [
         "$_skia_root/src/gpu/ganesh/gl/win/GrGLMakeNativeInterface_win.cpp",
@@ -459,11 +465,7 @@ optional("gpu") {
     public += skia_gpu_vk_public
     sources += skia_gpu_vk_private
     if (is_fuchsia) {
-      if (using_fuchsia_sdk) {
-        public_deps += [ "$fuchsia_sdk_root/pkg:vulkan" ]
-      } else {
-        public_deps += [ "$_skia_root/src/graphics/lib/vulkan" ]
-      }
+      public_deps += [ "${fuchsia_sdk}/pkg/vulkan" ]
     }
     if (is_android) {
       sources += skia_gpu_vk_android_private
@@ -504,6 +506,7 @@ optional("jpeg_decode") {
   sources = [
     "$_skia_root/src/codec/SkJpegCodec.cpp",
     "$_skia_root/src/codec/SkJpegDecoderMgr.cpp",
+    "$_skia_root/src/codec/SkJpegMetadataDecoderImpl.cpp",
     "$_skia_root/src/codec/SkJpegSourceMgr.cpp",
     "$_skia_root/src/codec/SkJpegUtility.cpp",
   ]

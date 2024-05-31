@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 {
     include: [
-        "gtest_runner.shard.cml",
+        "sys/testing/gtest_runner.shard.cml",
         "sys/component/realm_builder_absolute.shard.cml",
 
         // This test needs both the vulkan facet and the hermetic-tier-2 facet,
@@ -31,6 +31,7 @@
                 "fuchsia.logger.LogSink",
                 "fuchsia.scheduler.ProfileProvider",
                 "fuchsia.sysmem.Allocator",
+                "fuchsia.sysmem2.Allocator",
                 "fuchsia.tracing.provider.Registry",
                 "fuchsia.ui.input.ImeService",
                 "fuchsia.vulkan.loader.Loader",

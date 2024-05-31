@@ -8,8 +8,8 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../browser_detection.dart';
 import '../dom.dart';
 import '../mouse/prevent_default.dart';
 import '../platform_dispatcher.dart';
@@ -18,6 +18,8 @@ import '../semantics.dart';
 import '../services.dart';
 import '../text/paragraph.dart';
 import '../util.dart';
+import '../view_embedder/flutter_view_manager.dart';
+import '../window.dart';
 import 'autofill_hint.dart';
 import 'composition_aware_mixin.dart';
 import 'input_action.dart';
@@ -39,20 +41,14 @@ const int offScreenOffset = -9999;
 /// Blink and Webkit engines, bring an overlay on top of the text field when it
 /// is autofilled.
 bool browserHasAutofillOverlay() =>
-    browserEngine == BrowserEngine.blink ||
-    browserEngine == BrowserEngine.webkit;
+    ui_web.browser.browserEngine == ui_web.BrowserEngine.blink ||
+    ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit;
 
 /// `transparentTextEditing` class is configured to make the autofill overlay
 /// transparent.
 const String transparentTextEditingClass = 'transparentTextEditing';
 
 void _emptyCallback(dynamic _) {}
-
-/// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
-@visibleForTesting
-// TODO(mdebbar): There could be multiple views with multiple text editing hosts.
-//                https://github.com/flutter/flutter/issues/137344
-DomElement get defaultTextEditingRoot => EnginePlatformDispatcher.instance.implicitView!.dom.textEditingHost;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -147,6 +143,37 @@ void _styleAutofillElements(
   elementStyle.setProperty('caret-color', 'transparent');
 }
 
+void _ensureEditingElementInView(DomElement element, int viewId) {
+  final bool isAlreadyAppended = element.isConnected ?? false;
+  if (!isAlreadyAppended) {
+    // If the element is not already appended to a view, we don't need to move
+    // it anywhere.
+    return;
+  }
+
+  final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+  final EngineFlutterView? currentView = viewManager.findViewForElement(element);
+  if (currentView == null) {
+    // For some reason, the input element was in the DOM, but it wasn't part of
+    // any Flutter view. Should we throw?
+    return;
+  }
+
+  if (currentView.viewId != viewId) {
+    _insertEditingElementInView(element, viewId);
+  }
+}
+
+void _insertEditingElementInView(DomElement element, int viewId) {
+  final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+  final EngineFlutterView? view = viewManager[viewId];
+  assert(
+    view != null,
+    'Could not find View with id $viewId. This should never happen, please file a bug!',
+  );
+  view!.dom.textEditingHost.append(element);
+}
+
 /// Form that contains all the fields in the same AutofillGroup.
 ///
 /// An [EngineAutofillForm] will only be constructed when autofill is enabled
@@ -154,6 +181,7 @@ void _styleAutofillElements(
 /// static method.
 class EngineAutofillForm {
   EngineAutofillForm({
+    required this.viewId,
     required this.formElement,
     this.elements,
     this.items,
@@ -177,6 +205,9 @@ class EngineAutofillForm {
   /// See [formsOnTheDom].
   final String formIdentifier;
 
+  /// The ID of the view that this form is rendered into.
+  final int viewId;
+
   /// Creates an [EngineAutofillFrom] from the JSON representation of a Flutter
   /// framework `TextInputConfiguration` object.
   ///
@@ -189,6 +220,7 @@ class EngineAutofillForm {
   ///
   /// Returns null if autofill is disabled for the input field.
   static EngineAutofillForm? fromFrameworkMessage(
+    int viewId,
     Map<String, dynamic>? focusedElementAutofill,
     List<dynamic>? fields,
   ) {
@@ -312,6 +344,7 @@ class EngineAutofillForm {
     insertionReferenceNode ??= submitButton;
 
     return EngineAutofillForm(
+      viewId: viewId,
       formElement: formElement,
       elements: elements,
       items: items,
@@ -330,7 +363,7 @@ class EngineAutofillForm {
     }
 
     formElement.insertBefore(mainTextEditingElement, insertionReferenceNode);
-    defaultTextEditingRoot.append(formElement);
+    _insertEditingElementInView(formElement, viewId);
   }
 
   void storeForm() {
@@ -944,6 +977,7 @@ class EditingState {
 /// This corresponds to Flutter's [TextInputConfiguration].
 class InputConfiguration {
   InputConfiguration({
+    required this.viewId,
     this.inputType = EngineInputType.text,
     this.inputAction = 'TextInputAction.done',
     this.obscureText = false,
@@ -958,7 +992,8 @@ class InputConfiguration {
 
   InputConfiguration.fromFrameworkMessage(
       Map<String, dynamic> flutterInputConfiguration)
-      : inputType = EngineInputType.fromName(
+      : viewId = flutterInputConfiguration.tryInt('viewId') ?? kImplicitViewId,
+        inputType = EngineInputType.fromName(
           flutterInputConfiguration.readJson('inputType').readString('name'),
           isDecimal: flutterInputConfiguration.readJson('inputType').tryBool('decimal') ?? false,
           isMultiline: flutterInputConfiguration.readJson('inputType').tryBool('isMultiline') ?? false,
@@ -976,10 +1011,14 @@ class InputConfiguration {
                 flutterInputConfiguration.readJson('autofill'))
             : null,
         autofillGroup = EngineAutofillForm.fromFrameworkMessage(
+          flutterInputConfiguration.tryInt('viewId') ?? kImplicitViewId,
           flutterInputConfiguration.tryJson('autofill'),
           flutterInputConfiguration.tryList('fields'),
         ),
         enableDeltaModel = flutterInputConfiguration.tryBool('enableDeltaModel') ?? false;
+
+  /// The ID of the view that contains the text field.
+  final int viewId;
 
   /// The type of information being edited in the input control.
   final EngineInputType inputType;
@@ -1257,7 +1296,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      defaultTextEditingRoot.append(activeDomElement);
+      _insertEditingElementInView(activeDomElement, inputConfig.viewId);
       _appendedToForm = false;
     }
 
@@ -1293,6 +1332,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       autofill.applyToDomElement(activeDomElement, focusedElement: true);
     } else {
       activeDomElement.setAttribute('autocomplete', 'off');
+      // When the new input configuration contains a different view ID, we need
+      // to move the input element to the new view.
+      _ensureEditingElementInView(activeDomElement, inputConfiguration.viewId);
     }
 
     final String autocorrectValue = config.autocorrect ? 'on' : 'off';
@@ -1338,7 +1380,16 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   void updateElementPlacement(EditableTextGeometry textGeometry) {
     geometry = textGeometry;
     if (isEnabled) {
-      placeElement();
+      // On updates, we shouldn't go through the entire placeElement() flow if
+      // we are in the middle of IME composition, otherwise we risk interrupting it.
+      // Geometry updates occur when a multiline input expands or contracts. If
+      // we are in the middle of composition, we should just update the geometry.
+      // See: https://github.com/flutter/flutter/issues/98817
+      if (composingText != null) {
+        geometry?.applyToDomElement(activeDomElement);
+      } else {
+        placeElement();
+      }
     }
   }
 
@@ -1748,7 +1799,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      defaultTextEditingRoot.append(activeDomElement);
+      _insertEditingElementInView(activeDomElement, inputConfig.viewId);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(
         activeDomElement);
@@ -1941,13 +1992,13 @@ class TextInputSetClient extends TextInputCommand {
 DefaultTextEditingStrategy createDefaultTextEditingStrategy(HybridTextEditing textEditing) {
   DefaultTextEditingStrategy strategy;
 
-  if(operatingSystem == OperatingSystem.iOs) {
+  if(ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs) {
     strategy = IOSTextEditingStrategy(textEditing);
-  } else if(operatingSystem == OperatingSystem.android) {
+  } else if(ui_web.browser.operatingSystem == ui_web.OperatingSystem.android) {
     strategy = AndroidTextEditingStrategy(textEditing);
-  } else if(browserEngine == BrowserEngine.webkit) {
+  } else if(ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
     strategy = SafariDesktopTextEditingStrategy(textEditing);
-  } else if(browserEngine == BrowserEngine.firefox) {
+  } else if(ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
     strategy = FirefoxTextEditingStrategy(textEditing);
   } else {
     strategy = GloballyPositionedTextEditingStrategy(textEditing);
