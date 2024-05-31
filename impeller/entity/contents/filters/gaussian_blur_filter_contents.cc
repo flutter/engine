@@ -385,10 +385,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  Vector2 scaled_sigma =
-      (effect_transform.Basis() * entity.GetTransform().Basis() *
-       Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
-          .Abs();
+  Vector2 entity_scale_x = entity.GetTransform().Basis() * Vector2(1.0, 0.0);
+  Vector2 entity_scale_y = entity.GetTransform().Basis() * Vector2(0.0, 1.0);
+  Vector2 scaled_sigma = (Matrix::MakeScale({entity_scale_x.GetLength(),
+                                             entity_scale_y.GetLength(), 1.0}) *
+                          Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
+                             .Abs();
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));

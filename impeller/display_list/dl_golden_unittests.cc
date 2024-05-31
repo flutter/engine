@@ -159,5 +159,26 @@ TEST_P(DlGoldenTest, GaussianVsRRectBlurScaled) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DlGoldenTest, GaussianVsRRectBlurScaledRotated) {
+  Point content_scale = GetContentScale();
+  auto draw = [content_scale](DlCanvas* canvas,
+                              const std::vector<sk_sp<DlImage>>& images) {
+    canvas->Scale(content_scale.x, content_scale.y);
+    canvas->Translate(200, 200);
+    canvas->DrawPaint(DlPaint().setColor(DlColor(0xff112233)));
+    canvas->Scale(0.33, 0.33);
+    canvas->Translate(300, 300);
+    canvas->Rotate(45);
+    canvas->Translate(-300, -300);
+    DrawBlurGrid(canvas);
+  };
+
+  DisplayListBuilder builder;
+  std::vector<sk_sp<DlImage>> images;
+  draw(&builder, images);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace flutter
