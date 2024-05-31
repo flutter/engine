@@ -873,8 +873,12 @@ void Canvas::SaveLayer(const Paint& paint,
     paint.image_filter->Visit(mip_count_visitor);
     new_layer_pass.SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
   }
+  // When applying a save layer, absorb any pending distributed opacity.
+  Paint paint_copy = paint;
+  paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
+  transform_stack_.back().distributed_opacity = 1.0;
 
-  new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
+  new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint_copy));
 }
 
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,

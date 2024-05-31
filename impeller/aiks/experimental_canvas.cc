@@ -221,6 +221,12 @@ void ExperimentalCanvas::SaveLayer(
   if (!bounds.has_value()) {
     bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
   }
+
+  // When applying a save layer, absorb any pending distributed opacity.
+  Paint paint_copy = paint;
+  paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
+  transform_stack_.back().distributed_opacity = 1.0;
+
   Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
   auto target =
       CreateRenderTarget(renderer_,
@@ -228,7 +234,7 @@ void ExperimentalCanvas::SaveLayer(
                                        subpass_coverage.GetSize().height),
                          1u, Color::BlackTransparent());
   entity_pass_targets_.push_back(std::move(target));
-  save_layer_state_.push_back(SaveLayerState{paint, subpass_coverage});
+  save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
