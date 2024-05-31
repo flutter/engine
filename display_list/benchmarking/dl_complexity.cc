@@ -4,7 +4,9 @@
 
 #include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/benchmarking/dl_complexity_gl.h"
+#if !SLIMPELLER
 #include "flutter/display_list/benchmarking/dl_complexity_metal.h"
+#endif  // !SLIMPELLER
 #include "flutter/display_list/display_list.h"
 
 namespace flutter {
