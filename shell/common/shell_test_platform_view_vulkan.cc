@@ -129,6 +129,9 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
 
 bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
   GrVkBackendContext backend_context;
+  skgpu::VulkanExtensions no_extensions;
+  // For now, Skia crashes if fDeviceFeatures is set but fVkExtensions is not.
+  backend_context.fVkExtensions = &no_extensions;
   VkPhysicalDeviceFeatures features;
   // It may be tempting to put features into backend_context here
   // and pass just backend_context into the below function, however the pointers
