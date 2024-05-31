@@ -24,7 +24,11 @@ DisplayListComplexityCalculator* DisplayListComplexityCalculator::GetForBackend(
     GrBackendApi backend) {
   switch (backend) {
     case GrBackendApi::kMetal:
+#if !SLIMPELLER
       return DisplayListMetalComplexityCalculator::GetInstance();
+#else
+      return DisplayListNaiveComplexityCalculator::GetInstance();
+#endif  // !SLIMPELLER
     case GrBackendApi::kOpenGL:
       return DisplayListGLComplexityCalculator::GetInstance();
     default:
