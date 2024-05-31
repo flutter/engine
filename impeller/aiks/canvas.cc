@@ -845,13 +845,13 @@ void Canvas::SaveLayer(const Paint& paint,
                        ContentBoundsPromise bounds_promise,
                        uint32_t total_content_depth,
                        bool can_distribute_opacity) {
-  TRACE_EVENT0("flutter", "Canvas::saveLayer");
   if (can_distribute_opacity && !backdrop_filter &&
       Paint::CanApplyOpacityPeephole(paint)) {
     Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
     transform_stack_.back().distributed_opacity *= paint.color.alpha;
     return;
   }
+  TRACE_EVENT0("flutter", "Canvas::saveLayer");
 
   Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
 
