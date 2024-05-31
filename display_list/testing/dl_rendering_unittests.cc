@@ -2736,7 +2736,6 @@ class CanvasCompareTester {
     int pix_height = pix_size.height();
     int worst_pad_x = std::max(pad_left, pad_right);
     int worst_pad_y = std::max(pad_top, pad_bottom);
-    printf("shouldBoundsOverflow %p\n", tolerance);
     if (tolerance->overflows(pix_bounds, worst_pad_x, worst_pad_y)) {
       FML_LOG(ERROR) << "Computed bounds for " << info;
       FML_LOG(ERROR) << "pix bounds["                        //
