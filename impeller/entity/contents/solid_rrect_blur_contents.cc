@@ -51,8 +51,7 @@ Color SolidRRectBlurContents::GetColor() const {
 
 namespace {
 Scalar ScaleSigma(Scalar sigma) {
-  // 0.5 comes from the math in `blur_rrect.frag`.
-  return 0.5 * GaussianBlurFilterContents::ScaleSigma(sigma);
+  return GaussianBlurFilterContents::ScaleSigma(sigma);
 }
 }  // namespace
 

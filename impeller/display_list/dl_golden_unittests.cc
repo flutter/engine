@@ -148,7 +148,7 @@ TEST_P(DlGoldenTest, GaussianVsRRectBlurScaled) {
                               const std::vector<sk_sp<DlImage>>& images) {
     canvas->Transform2DAffine(content_scale.x, 0, 0, 0, content_scale.y, 0);
     canvas->DrawPaint(DlPaint().setColor(DlColor(0xff112233)));
-    canvas->Transform2DAffine(0.5, 0, 0, 0, 0.5, 0);
+    canvas->Transform2DAffine(0.33, 0, 0, 0, 0.33, 0);
     DrawBlurGrid(canvas);
   };
 
