@@ -5,4 +5,4 @@
 # On the main branch, this should always read 'none'.
 # On release branches, this should be the release version such as '3.21'
 # (without the quotes).
-none
+3.23
