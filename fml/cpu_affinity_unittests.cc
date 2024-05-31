@@ -31,7 +31,7 @@ TEST(CpuAffinity, NormalSlowMedFastCores) {
   ASSERT_EQ(tracker.GetIndices(CpuAffinity::kNotPerformance)[1], 1u);
   ASSERT_EQ(tracker.GetIndices(CpuAffinity::kNotEfficiency).size(), 2u);
   ASSERT_EQ(tracker.GetIndices(CpuAffinity::kNotEfficiency)[0], 1u);
-  ASSERT_EQ(tracker.GetIndices(CpuAffinity::kNotEfficiency)[0], 2u);
+  ASSERT_EQ(tracker.GetIndices(CpuAffinity::kNotEfficiency)[1], 2u);
 }
 
 TEST(CpuAffinity, NoCpuData) {
