@@ -6,11 +6,13 @@
 
 #include <pthread.h>
 #include <sys/resource.h>
+#include <sys/system_properties.h>
 #include <sys/time.h>
 #include <unistd.h>
 #include <mutex>
 #include <optional>
 #include <thread>
+
 #include "flutter/fml/logging.h"
 
 namespace fml {
@@ -19,6 +21,9 @@ namespace fml {
 /// requested.
 std::once_flag gCPUTrackerFlag;
 static CPUSpeedTracker* gCPUTracker;
+
+std::once_flag gCheckManufacturerFlag;
+static bool gIsBrokenKernel = false;
 
 // For each CPU index provided, attempts to open the file
 // /sys/devices/system/cpu/cpu$NUM/cpufreq/cpuinfo_max_freq and parse a number
@@ -38,6 +43,20 @@ void InitCPUInfo(size_t cpu_count) {
 }
 
 bool SetUpCPUTracker() {
+  // Determine if this is a QC. QC broke the linux kernel scheduler and
+  // the set affinity APIs can cause kernel panics. Unclear if other
+  // manufacturers will eventually have the same issue.
+  std::call_once(gCheckManufacturerFlag, []() {
+    char model_id[PROP_VALUE_MAX];
+    __system_property_get("ro.hardware", model_id);
+    if (strcmp(model_id, "qcom") == 0) {
+      gIsBrokenKernel = true;
+    }
+  });
+  if (gIsBrokenKernel) {
+    return false;
+  }
+
   // Populate CPU Info if uninitialized.
   auto count = std::thread::hardware_concurrency();
   std::call_once(gCPUTrackerFlag, [count]() { InitCPUInfo(count); });
