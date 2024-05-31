@@ -22,8 +22,8 @@
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
 #include "third_party/skia/include/gpu/vk/GrVkBackendContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
 #include "third_party/skia/include/gpu/vk/GrVkTypes.h"
+#include "third_party/skia/include/gpu/vk/VulkanExtensions.h"
 
 namespace flutter_runner {
 
@@ -132,11 +132,9 @@ bool VulkanSurfaceProducer::Initialize() {
   backend_context.fQueue = logical_device_->GetQueueHandle();
   backend_context.fGraphicsQueueIndex =
       logical_device_->GetGraphicsQueueIndex();
-  backend_context.fMinAPIVersion = application_->GetAPIVersion();
   backend_context.fMaxAPIVersion = application_->GetAPIVersion();
-  backend_context.fFeatures = features;
+  backend_context.fDeviceFeatures = features;
   backend_context.fGetProc = std::move(getProc);
-  backend_context.fOwnsInstanceAndDevice = false;
   backend_context.fMemoryAllocator = memory_allocator_;
 
   // The memory_requirements_2 extension is required on Fuchsia as the AMD
@@ -146,7 +144,7 @@ bool VulkanSurfaceProducer::Initialize() {
   };
   const int device_extensions_count =
       sizeof(device_extensions) / sizeof(device_extensions[0]);
-  GrVkExtensions vk_extensions;
+  skgpu::VulkanExtensions vk_extensions;
   vk_extensions.init(backend_context.fGetProc, backend_context.fInstance,
                      backend_context.fPhysicalDevice, 0, nullptr,
                      device_extensions_count, device_extensions);

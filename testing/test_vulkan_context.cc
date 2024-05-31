@@ -18,7 +18,7 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
-#include "third_party/skia/include/gpu/vk/GrVkExtensions.h"
+#include "third_party/skia/include/gpu/vk/VulkanExtensions.h"
 #include "vulkan/vulkan_core.h"
 
 namespace flutter {
@@ -88,7 +88,7 @@ TestVulkanContext::TestVulkanContext() {
           VK_MAKE_VERSION(1, 0, 0), application_->GetInstance(),
           device_->GetPhysicalDeviceHandle(), device_->GetHandle(), vk_, true);
 
-  GrVkExtensions extensions;
+  skgpu::VulkanExtensions extensions;
 
   GrVkBackendContext backend_context = {};
   backend_context.fInstance = application_->GetInstance();

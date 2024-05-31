@@ -13,7 +13,7 @@
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
-#include "include/gpu/vk/GrVkExtensions.h"
+#include "include/gpu/vk/VulkanExtensions.h"
 #include "third_party/skia/include/gpu/ganesh/vk/GrVkDirectContext.h"
 
 namespace flutter {
@@ -141,7 +141,7 @@ sk_sp<GrDirectContext> EmbedderSurfaceVulkan::CreateGrContext(
     return nullptr;
   }
 
-  GrVkExtensions extensions;
+  skgpu::VulkanExtensions extensions;
 
   GrVkBackendContext backend_context = {};
   backend_context.fInstance = instance;
