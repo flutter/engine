@@ -133,7 +133,7 @@ bool VulkanSurfaceProducer::Initialize() {
   backend_context.fGraphicsQueueIndex =
       logical_device_->GetGraphicsQueueIndex();
   backend_context.fMaxAPIVersion = application_->GetAPIVersion();
-  backend_context.fDeviceFeatures = features;
+  backend_context.fDeviceFeatures = &features;
   backend_context.fGetProc = std::move(getProc);
   backend_context.fMemoryAllocator = memory_allocator_;
 
