@@ -56,7 +56,7 @@ TEST_P(DlGoldenTest, Bug147807) {
   Point content_scale = GetContentScale();
   auto draw = [content_scale](DlCanvas* canvas,
                               const std::vector<sk_sp<DlImage>>& images) {
-    canvas->Transform2DAffine(content_scale.x, 0, 0, 0, content_scale.y, 0);
+    canvas->Scale(content_scale.x, content_scale.y);
     DlPaint paint;
     paint.setColor(DlColor(0xfffef7ff));
     canvas->DrawRect(SkRect::MakeLTRB(0, 0, 375, 667), paint);
@@ -130,7 +130,7 @@ TEST_P(DlGoldenTest, GaussianVsRRectBlur) {
   Point content_scale = GetContentScale();
   auto draw = [content_scale](DlCanvas* canvas,
                               const std::vector<sk_sp<DlImage>>& images) {
-    canvas->Transform2DAffine(content_scale.x, 0, 0, 0, content_scale.y, 0);
+    canvas->Scale(content_scale.x, content_scale.y);
     canvas->DrawPaint(DlPaint().setColor(DlColor(0xff112233)));
     DrawBlurGrid(canvas);
   };
@@ -146,9 +146,9 @@ TEST_P(DlGoldenTest, GaussianVsRRectBlurScaled) {
   Point content_scale = GetContentScale();
   auto draw = [content_scale](DlCanvas* canvas,
                               const std::vector<sk_sp<DlImage>>& images) {
-    canvas->Transform2DAffine(content_scale.x, 0, 0, 0, content_scale.y, 0);
+    canvas->Scale(content_scale.x, content_scale.y);
     canvas->DrawPaint(DlPaint().setColor(DlColor(0xff112233)));
-    canvas->Transform2DAffine(0.33, 0, 0, 0, 0.33, 0);
+    canvas->Scale(0.33, 0.33);
     DrawBlurGrid(canvas);
   };
 
