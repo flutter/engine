@@ -8,18 +8,18 @@ precision highp float;
 #include <impeller/types.glsl>
 
 uniform FragInfo {
-  f16vec4 color;
+  vec4 color;
   vec2 rect_size;
-  float blur_sigma;
   vec2 corner_radii;
+  float blur_sigma;
 }
 frag_info;
 
 in vec2 v_position;
 
-out f16vec4 frag_color;
+out vec4 frag_color;
 
-const int kSampleCount = 4;
+const float kSampleCount = 4.0;
 
 /// Closed form unidirectional rounded rect blur mask solution using the
 /// analytical Gaussian integral (with approximated erf).
@@ -61,8 +61,8 @@ float RRectBlurX(vec2 sample_position, vec2 half_size) {
   // of the left and right sides of the rrect relative to the sampling
   // X coordinate.
   vec2 integral = IPVec2FastGaussianIntegral(
-      float(sample_position.x) + vec2(-rrect_distance, rrect_distance),
-      float(frag_info.blur_sigma));
+      sample_position.x + vec2(-rrect_distance, rrect_distance),
+      frag_info.blur_sigma);
   // integral.y contains the evaluation of the indefinite gaussian integral
   // function at (X + rrect_distance) and integral.x contains the evaluation
   // of it at (X - rrect_distance). Subtracting the two produces the
@@ -85,21 +85,29 @@ float RRectBlur(vec2 sample_position, vec2 half_size) {
 
   // Sample the X blur kSampleCount times, weighted by the Gaussian function.
   float result = 0.0;
-  for (int sample_i = 0; sample_i < kSampleCount; sample_i++) {
-    float y = begin_y + interval * (float(sample_i) + 0.5);
-    result +=
-        RRectBlurX(vec2(sample_position.x, sample_position.y - y), half_size) *
-        IPGaussian(float(y), float(frag_info.blur_sigma)) * interval;
-  }
+  float sample_i = begin_y;
+  result = fma(RRectBlurX(vec2(sample_position.x, sample_position.y - sample_i),
+                          half_size),
+               IPGaussian(sample_i, frag_info.blur_sigma), result);
+  sample_i += interval;
+  result = fma(RRectBlurX(vec2(sample_position.x, sample_position.y - sample_i),
+                          half_size),
+               IPGaussian(sample_i, frag_info.blur_sigma), result) sample_i +=
+      interval;
+  result = fma(RRectBlurX(vec2(sample_position.x, sample_position.y - sample_i),
+                          half_size),
+               IPGaussian(sample_i, frag_info.blur_sigma), result);
+  sample_i += interval;
+  result = fma(RRectBlurX(vec2(sample_position.x, sample_position.y - sample_i),
+                          half_size),
+               IPGaussian(sample_i, frag_info.blur_sigma), result);
 
-  return result;
+  return result * interval;
 }
 
 void main() {
-  frag_color = frag_info.color;
-
   vec2 half_size = frag_info.rect_size * 0.5;
   vec2 sample_position = v_position - half_size;
 
-  frag_color *= float16_t(RRectBlur(sample_position, half_size));
+  frag_color = frag_info.color * RRectBlur(sample_position, half_size);
 }
