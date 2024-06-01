@@ -140,21 +140,23 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   return ColorSourceContents::DrawGeometry<VS>(
       renderer, entity, pass, pipeline_callback, frame_info,
       [this, &renderer, &entity](RenderPass& pass) {
-        FS::FragInfo frag_info;
-        frag_info.start_point = start_point_;
-        frag_info.end_point = end_point_;
-        frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
-        frag_info.decal_border_color = decal_border_color_;
-        frag_info.alpha =
-            GetOpacityFactor() * GetGeometry()->ComputeAlphaCoverage(entity);
-        frag_info.start_to_end = end_point_ - start_point_;
-        frag_info.inverse_dot_start_to_end =
-            CalculateInverseDotStartToEnd(start_point_, end_point_);
-
         auto& host_buffer = renderer.GetTransientsBuffer();
         auto colors = CreateGradientColors(colors_, stops_);
+        Scalar alpha =
+            GetOpacityFactor() * GetGeometry()->ComputeAlphaCoverage(entity);
 
-        frag_info.colors_length = colors.size();
+        FS::FragInfo frag_info;
+        Point start_to_end = end_point_ - start_point_;
+        frag_info.packed_points = Vector4(start_point_.x, start_point_.y,
+                                          start_to_end.x, start_to_end.y);
+        frag_info.packed_components =
+            Vector4(alpha,                                                   //
+                    static_cast<Scalar>(tile_mode_),                         //
+                    colors.size(),                                           //
+                    CalculateInverseDotStartToEnd(start_point_, end_point_)  //
+            );
+        frag_info.decal_border_color = decal_border_color_;
+
         auto color_buffer =
             host_buffer.Emplace(colors.data(), colors.size() * sizeof(StopData),
                                 DefaultUniformAlignment());
