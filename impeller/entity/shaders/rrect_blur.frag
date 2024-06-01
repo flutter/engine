@@ -105,7 +105,7 @@ float16_t RRectBlur(f16vec2 sample_position, f16vec2 half_size) {
 
   // Sample the X blur 4 times, weighted by the Gaussian function.
   f16vec4 samples =
-      f16vec4(begin_y, begin_y + interval, end_y - inverval, end_y);
+      f16vec4(begin_y, begin_y + interval, end_y - interval, end_y);
   f16vec4 sample_y = f16vec4(sample_position.y) - samples;
 
   f16vec4 integrations = RRectBlurX(sample_position.x, sample_y, half_size);
