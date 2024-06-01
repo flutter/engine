@@ -887,7 +887,7 @@ abstract class SemanticsUpdateBuilder {
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
-    required int headingLevel,
+    int headingLevel = 0,
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -958,7 +958,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required Int32List childrenInTraversalOrder,
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
-    required int headingLevel,
+    int headingLevel = 0,
   }) {
     assert(_matrix4IsValid(transform));
     assert (
