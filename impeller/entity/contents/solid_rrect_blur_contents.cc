@@ -107,14 +107,28 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
       entity.GetTransform() *
           Matrix::MakeTranslation(positive_rect.GetOrigin()));
 
+  Scalar scaled_blur_sigma = blur_sigma / 4000.0f;
   FS::FragInfo frag_info;
   frag_info.color = color;
-  frag_info.blur_sigma = blur_sigma;
-  frag_info.half_rect_size = Point(positive_rect.GetSize() * 0.5);
-  frag_info.corner_radii = {std::clamp(corner_radii_.width, kEhCloseEnough,
-                                       positive_rect.GetWidth() * 0.5f),
-                            std::clamp(corner_radii_.width, kEhCloseEnough,
-                                       positive_rect.GetHeight() * 0.5f)};
+  frag_info.blur_sigma = scaled_blur_sigma;
+  frag_info.half_rect_size = Point(positive_rect.GetSize() * 0.5 / 4000.0f);
+  Point corner_radii = Point{std::clamp(corner_radii_.width, kEhCloseEnough,
+                                        positive_rect.GetWidth() * 0.5f),
+                             std::clamp(corner_radii_.width, kEhCloseEnough,
+                                        positive_rect.GetHeight() * 0.5f)} /
+                       4000.0;
+  frag_info.corner_radii = corner_radii;
+  // sqrt(2 * pi)
+  constexpr Scalar kSqrtTwoPi = 2.50662827463;
+
+  frag_info.half_inv_variance =
+      1.0 / (scaled_blur_sigma * scaled_blur_sigma) * -0.5;
+  frag_info.gaussian_denominator = 1.0 / (kSqrtTwoPi * scaled_blur_sigma);
+
+  constexpr Scalar kSqrtThree = 1.73205080757;
+
+  frag_info.sqrt_three_over_sigma = -kSqrtThree / scaled_blur_sigma;
+
   pass.SetCommandLabel("RRect Shadow");
   pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
   pass.SetVertexBuffer(
