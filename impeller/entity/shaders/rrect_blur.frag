@@ -92,8 +92,8 @@ float RRectBlur(vec2 sample_position, vec2 half_size) {
   sample_i += interval;
   result = fma(RRectBlurX(vec2(sample_position.x, sample_position.y - sample_i),
                           half_size),
-               IPGaussian(sample_i, frag_info.blur_sigma), result) sample_i +=
-      interval;
+               IPGaussian(sample_i, frag_info.blur_sigma), result);
+  sample_i += interval;
   result = fma(RRectBlurX(vec2(sample_position.x, sample_position.y - sample_i),
                           half_size),
                IPGaussian(sample_i, frag_info.blur_sigma), result);
