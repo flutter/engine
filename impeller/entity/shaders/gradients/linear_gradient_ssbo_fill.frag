@@ -40,10 +40,9 @@ void main() {
   int colors_length = int(frag_info.packed_components.z);
   float inverse_dot_start_to_end = frag_info.packed_components.w;
 
-
   highp vec2 start_to_position = v_position - start_point;
-  highp float t = dot(start_to_position, start_to_end) *
-                  inverse_dot_start_to_end;
+  highp float t =
+      dot(start_to_position, start_to_end) * inverse_dot_start_to_end;
 
   if ((t < 0.0 || t > 1.0) && tile_mode == kTileModeDecal) {
     frag_color = frag_info.decal_border_color;
