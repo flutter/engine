@@ -110,7 +110,7 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
   FS::FragInfo frag_info;
   frag_info.color = color;
   frag_info.blur_sigma = blur_sigma;
-  frag_info.rect_size = Point(positive_rect.GetSize());
+  frag_info.half_rect_size = Point(positive_rect.GetSize() * 0.5);
   frag_info.corner_radii = {std::clamp(corner_radii_.width, kEhCloseEnough,
                                        positive_rect.GetWidth() * 0.5f),
                             std::clamp(corner_radii_.width, kEhCloseEnough,

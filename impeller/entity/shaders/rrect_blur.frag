@@ -9,7 +9,7 @@ precision mediump float;
 
 uniform FragInfo {
   vec4 color;
-  vec2 rect_size;
+  vec2 half_rect_size;
   vec2 corner_radii;
   float blur_sigma;
 }
@@ -64,7 +64,7 @@ vec4 RRectBlurX(float x, vec4 samples_y, vec2 half_size) {
   mediump vec4 unit_space_y = space_y / frag_info.corner_radii.y;
   mediump vec4 unit_space_x =
       sqrt(max(vec4(0.0), vec4(1.0) - (unit_space_y * unit_space_y)));
-  mediump vec4 rrect_distance =
+  highp vec4 rrect_distance =
       half_size.x - frag_info.corner_radii.x * (vec4(1.0) - unit_space_x);
 
   // Now we integrate the Gaussian over the range of the relative positions
@@ -112,7 +112,7 @@ float RRectBlur(vec2 sample_position, vec2 half_size) {
 }
 
 void main() {
-  highp vec2 half_size = frag_info.rect_size * 0.5;
+  highp vec2 half_size = frag_info.half_rect_size;
   highp vec2 sample_position = v_position - half_size;
 
   frag_color = frag_info.color * RRectBlur(sample_position, half_size);
