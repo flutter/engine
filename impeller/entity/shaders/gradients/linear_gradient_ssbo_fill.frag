@@ -41,29 +41,26 @@ void main() {
   float inverse_dot_start_to_end = frag_info.packed_components.w;
 
   highp vec2 start_to_position = v_position - start_point;
-  highp float t =
-      dot(start_to_position, start_to_end) * inverse_dot_start_to_end;
+  highp float t = IPFloatTile(
+      dot(start_to_position, start_to_end) * inverse_dot_start_to_end,
+      tile_mode);
 
-  if ((t < 0.0 || t > 1.0) && tile_mode == kTileModeDecal) {
-    frag_color = frag_info.decal_border_color;
-  } else {
-    t = IPFloatTile(t, tile_mode);
-
-    for (int i = 1; i < colors_length; i++) {
-      ColorPoint prev_point = color_data.colors[i - 1];
-      ColorPoint current_point = color_data.colors[i];
-      if (t >= prev_point.stop && t <= current_point.stop) {
-        if (current_point.inverse_delta > 1000.0) {
-          frag_color = current_point.color;
-        } else {
-          float ratio = (t - prev_point.stop) * current_point.inverse_delta;
-          frag_color = mix(prev_point.color, current_point.color, ratio);
-        }
-        break;
+  for (int i = 1; i < colors_length; i++) {
+    ColorPoint prev_point = color_data.colors[i - 1];
+    ColorPoint current_point = color_data.colors[i];
+    if (t >= prev_point.stop && t <= current_point.stop) {
+      if (current_point.inverse_delta > 1000.0) {
+        frag_color = current_point.color;
+      } else {
+        float ratio = (t - prev_point.stop) * current_point.inverse_delta;
+        frag_color = mix(prev_point.color, current_point.color, ratio);
       }
+      break;
     }
   }
 
+  frag_color = mix(frag_info.decal_border_color, frag_color,
+                   (t < 0.0 || t > 1.0) && tile_mode == kTileModeDecal);
   frag_color = IPPremultiply(frag_color) * alpha;
   frag_color = IPOrderedDither8x8(frag_color, gl_FragCoord.xy);
 }
