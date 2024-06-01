@@ -115,7 +115,6 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
                                        positive_rect.GetWidth() * 0.5f),
                             std::clamp(corner_radii_.width, kEhCloseEnough,
                                        positive_rect.GetHeight() * 0.5f)};
-
   pass.SetCommandLabel("RRect Shadow");
   pass.SetPipeline(renderer.GetRRectBlurPipeline(opts));
   pass.SetVertexBuffer(
