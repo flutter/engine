@@ -13,10 +13,12 @@ TextFrame::TextFrame() = default;
 TextFrame::TextFrame(std::vector<TextRun>& runs,
                      Rect bounds,
                      bool has_color,
-                     Color color)
+                     Color color,
+                     bool stroke)
     : runs_(std::move(runs)),
       bounds_(bounds),
       has_color_(has_color),
+      stroke_(stroke),
       color_(color) {}
 
 TextFrame::~TextFrame() = default;
@@ -92,12 +94,14 @@ Point TextFrame::ComputeSubpixelPosition(
 
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
                                             Scalar scale,
+                                             bool stroke,
                                             Point offset) const {
+                                              FML_LOG(ERROR) << "stroke: "<< stroke;
   for (const TextRun& run : GetRuns()) {
     const Font& font = run.GetFont();
     auto rounded_scale =
         RoundScaledFontSize(scale, font.GetMetrics().point_size);
-    auto& set = glyph_map[ScaledFont{font, rounded_scale, color_}];
+    auto& set = glyph_map[ScaledFont{font, rounded_scale, color_, stroke}];
     for (const TextRun::GlyphPosition& glyph_position :
          run.GetGlyphPositions()) {
       Point subpixel = ComputeSubpixelPosition(

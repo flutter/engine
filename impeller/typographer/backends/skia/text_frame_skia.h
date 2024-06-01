@@ -14,6 +14,7 @@ namespace impeller {
 
 std::shared_ptr<impeller::TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob,
+    bool stroke = false,
     flutter::DlColor color = flutter::DlColor::kBlack());
 
 }  // namespace impeller

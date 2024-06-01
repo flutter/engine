@@ -70,6 +70,7 @@ static Rect ToRect(const SkRect& rect) {
 
 std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     const sk_sp<SkTextBlob>& blob,
+    bool stroke,
     flutter::DlColor dl_color) {
   bool has_color = false;
   Color color = ToColor(dl_color);
@@ -115,7 +116,7 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     }
   }
   return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color,
-                                     has_color ? color : Color::Black());
+                                     has_color ? color : Color::Black(), stroke);
 }
 
 }  // namespace impeller

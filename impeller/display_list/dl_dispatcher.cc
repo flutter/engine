@@ -1253,7 +1253,7 @@ void TextFrameDispatcher::drawTextFrame(
     SkScalar x,
     SkScalar y) {
   renderer_.GetLazyGlyphAtlas()->AddTextFrame(
-      *text_frame, matrix_.GetMaxBasisLengthXY(), Point(x, y));
+      *text_frame, matrix_.GetMaxBasisLengthXY(), false, Point(x, y));
 }
 
 void TextFrameDispatcher::drawDisplayList(

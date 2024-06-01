@@ -132,6 +132,7 @@ class GlyphAtlas {
   ///
   const FontGlyphAtlas* GetFontGlyphAtlas(const Font& font,
                                           Scalar scale,
+                                          bool stroke,
                                           Color color) const;
 
  private:

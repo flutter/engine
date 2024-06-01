@@ -23,6 +23,7 @@ struct ScaledFont {
   Font font;
   Scalar scale;
   Color color;
+  bool stroke;
 };
 
 //------------------------------------------------------------------------------
@@ -55,7 +56,7 @@ struct FontGlyphPair {
 template <>
 struct std::hash<impeller::ScaledFont> {
   constexpr std::size_t operator()(const impeller::ScaledFont& sf) const {
-    return fml::HashCombine(sf.font.GetHash(), sf.scale, sf.color.ToARGB());
+    return fml::HashCombine(sf.font.GetHash(), sf.scale, sf.stroke, sf.color.ToARGB());
   }
 };
 
@@ -64,7 +65,7 @@ struct std::equal_to<impeller::ScaledFont> {
   constexpr bool operator()(const impeller::ScaledFont& lhs,
                             const impeller::ScaledFont& rhs) const {
     return lhs.font.IsEqual(rhs.font) && lhs.scale == rhs.scale &&
-           lhs.color == rhs.color;
+           lhs.color == rhs.color && lhs.stroke == rhs.stroke;
   }
 };
 

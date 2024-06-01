@@ -66,7 +66,7 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale, offset_);
+  lazy_glyph_atlas->AddTextFrame(*frame_, scale, stroke_, offset_);
   scale_ = scale;
 }
 
@@ -171,7 +171,7 @@ bool TextContents::Render(const ContentContext& renderer,
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
           const FontGlyphAtlas* font_atlas =
-              atlas->GetFontGlyphAtlas(font, rounded_scale, frame_->GetColor());
+              atlas->GetFontGlyphAtlas(font, rounded_scale, stroke_, frame_->GetColor());
           if (!font_atlas) {
             VALIDATION_LOG << "Could not find font in the atlas.";
             continue;

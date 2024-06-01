@@ -892,6 +892,7 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   text_contents->SetColor(paint.color);
   text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
   text_contents->SetOffset(position);
+  text_contents->SetStroke(paint.style == Paint::Style::kStroke);
 
   entity.SetTransform(GetCurrentTransform() *
                       Matrix::MakeTranslation(position));

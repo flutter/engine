@@ -23,12 +23,14 @@ class TextFrame {
   TextFrame(std::vector<TextRun>& runs,
             Rect bounds,
             bool has_color,
-            Color color);
+            Color color,
+            bool stroke);
 
   ~TextFrame();
 
   void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
                                    Scalar scale,
+                                   bool stroke,
                                    Point offset) const;
 
   static Point ComputeSubpixelPosition(
@@ -78,10 +80,15 @@ class TextFrame {
 
   TextFrame(const TextFrame& other) = default;
 
+  bool GetStroke() const {
+    return stroke_;
+  }
+
  private:
   std::vector<TextRun> runs_;
   Rect bounds_;
   bool has_color_;
+  bool stroke_;
   Color color_;
 };
 

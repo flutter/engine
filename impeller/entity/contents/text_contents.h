@@ -56,6 +56,8 @@ class TextContents final : public Contents {
 
   void SetScale(Scalar scale) { scale_ = scale; }
 
+  void SetStroke(bool stroke) { stroke_ = stroke; }
+
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
@@ -66,6 +68,7 @@ class TextContents final : public Contents {
   Scalar scale_ = 1.0;
   Color color_;
   Scalar inherited_opacity_ = 1.0;
+  bool stroke_ = false;
   Vector2 offset_;
   bool force_text_color_ = false;
 
