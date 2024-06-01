@@ -102,10 +102,21 @@ void testMain() {
     //                make sure it tests the right things:
     //                https://github.com/flutter/flutter/issues/147200
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    expect(
-      (node.element as DomHTMLInputElement).value,
-      isNull,
-    );
+    final TextField textFieldRole = node.primaryRole! as TextField;
+    final DomHTMLInputElement inputElement = textFieldRole.activeEditableElement as DomHTMLInputElement;
+    expect(inputElement.tagName.toLowerCase(), 'input');
+    expect(inputElement.value, '');
+    expect(inputElement.disabled, isFalse);
+  });
+
+  test('renders a disabled text field', () {
+    createTextFieldSemantics(isEnabled: false, value: 'hello');
+    expectSemanticsTree(owner(), '''<sem><input /></sem>''');
+    final SemanticsObject node = owner().debugSemanticsTree![0]!;
+    final TextField textFieldRole = node.primaryRole! as TextField;
+    final DomHTMLInputElement inputElement = textFieldRole.activeEditableElement as DomHTMLInputElement;
+    expect(inputElement.tagName.toLowerCase(), 'input');
+    expect(inputElement.disabled, isTrue);
   });
 
     // TODO(yjbanov): this test will need to be adjusted for Safari when we add
@@ -425,6 +436,7 @@ void testMain() {
         children: <SemanticsNodeUpdate>[
           builder.updateNode(
             id: 1,
+            isEnabled: true,
             isTextField: true,
             value: 'Hello',
             isFocused: focusFieldId == 1,
@@ -432,6 +444,7 @@ void testMain() {
           ),
           builder.updateNode(
             id: 2,
+            isEnabled: true,
             isTextField: true,
             value: 'World',
             isFocused: focusFieldId == 2,
@@ -882,6 +895,7 @@ void testMain() {
 SemanticsObject createTextFieldSemantics({
   required String value,
   String label = '',
+  bool isEnabled = true,
   bool isFocused = false,
   bool isMultiline = false,
   ui.Rect rect = const ui.Rect.fromLTRB(0, 0, 100, 50),
@@ -891,6 +905,7 @@ SemanticsObject createTextFieldSemantics({
   final SemanticsTester tester = SemanticsTester(owner());
   tester.updateNode(
     id: 0,
+    isEnabled: isEnabled,
     label: label,
     value: value,
     isTextField: true,
@@ -971,6 +986,7 @@ Map<int, SemanticsObject> createTwoFieldSemanticsForIos(SemanticsTester builder,
     children: <SemanticsNodeUpdate>[
       builder.updateNode(
         id: 1,
+        isEnabled: true,
         isTextField: true,
         value: 'Hello',
         label: 'Hello',
@@ -979,6 +995,7 @@ Map<int, SemanticsObject> createTwoFieldSemanticsForIos(SemanticsTester builder,
       ),
       builder.updateNode(
         id: 2,
+        isEnabled: true,
         isTextField: true,
         value: 'World',
         label: 'World',
@@ -999,6 +1016,7 @@ Map<int, SemanticsObject> createTwoFieldSemanticsForIos(SemanticsTester builder,
     children: <SemanticsNodeUpdate>[
       builder.updateNode(
         id: 1,
+        isEnabled: true,
         isTextField: true,
         value: 'Hello',
         label: 'Hello',
@@ -1007,6 +1025,7 @@ Map<int, SemanticsObject> createTwoFieldSemanticsForIos(SemanticsTester builder,
       ),
       builder.updateNode(
         id: 2,
+        isEnabled: true,
         isTextField: true,
         value: 'World',
         label: 'World',
