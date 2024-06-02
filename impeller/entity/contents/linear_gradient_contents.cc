@@ -56,7 +56,10 @@ bool LinearGradientContents::IsOpaque() const {
 
 // A much faster (in terms of ALU) linear gradient that uses vertex
 // interpolation to perform all color computation. Requires that the geometry of
-// the gradient is divided.
+// the gradient is divided into regions based on the stop values.
+// Currently restricted to rect geometry where the start and end points are
+// perfectly horizontal/vertical, but could easily be expanded to StC cases
+// provided that the start/end are on our outside the coverage rect.
 bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) const {
@@ -64,6 +67,7 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
   using FS = GradientPipeline::FragmentShader;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
+  options.primitive_type = PrimitiveType::kTriangle;
   Geometry& geometry = *GetGeometry();
 
   // We already know this is an axis aligned rectangle, so the coverage will
@@ -77,7 +81,7 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
   Rect rect = maybe_rect.value();
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  bool horizontal_axis = start_point_.x == end_point_.x;
+  bool horizontal_axis = start_point_.y == end_point_.y;
 
   // Step 1. Compute the locations of each breakpoint along the primary axis.
   if (stops_.size() == 2) {
@@ -86,10 +90,11 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
     // start, we could fix that via some normalization.
     vtx_builder.AddVertices(
         {{rect.GetLeftTop(), colors_[0]},
-         {rect.GetRightTop(), horizontal_axis ? colors_[0] : colors_[1]},
-         {rect.GetLeftBottom(), horizontal_axis ? colors_[1] : colors_[0]},
+         {rect.GetRightTop(), horizontal_axis ? colors_[1] : colors_[0]},
+         {rect.GetLeftBottom(), horizontal_axis ? colors_[0] : colors_[1]},
+         {rect.GetRightTop(), horizontal_axis ? colors_[1] : colors_[0]},
+         {rect.GetLeftBottom(), horizontal_axis ? colors_[0] : colors_[1]},
          {rect.GetRightBottom(), colors_[1]}});
-    options.primitive_type = PrimitiveType::kTriangleStrip;
   } else {
     // Otherwise, we need to compute a point along the primary axis.
     std::vector<Point> points(stops_.size());
@@ -98,21 +103,29 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
       points[i] = (1.0 - t) * start_point_ + t * end_point_;
     }
     // Now create a rectangle that joins each segment. That will be two
-    // triangles between each pair of points. For now just assume vertical but
-    // we'll fix this later.
-    options.primitive_type = PrimitiveType::kTriangle;
+    // triangles between each pair of points.
     vtx_builder.Reserve(6 * (stops_.size() - 1));
     for (auto i = 1u; i < points.size(); i++) {
       Rect section =
-          Rect::MakeXYWH(rect.GetX(), points[i - 1].y, rect.GetWidth(),
-                         abs(points[i].y - points[i - 1].y));
+          horizontal_axis
+              ? Rect::MakeXYWH(points[i - 1].x, rect.GetY(),
+                               abs(points[i].x - points[i - 1].x),
+                               rect.GetHeight())
+
+              : Rect::MakeXYWH(rect.GetX(), points[i - 1].y, rect.GetWidth(),
+                               abs(points[i].y - points[i - 1].y));
       vtx_builder.AddVertices({
           {section.GetLeftTop(), colors_[i - 1]},
-          {section.GetRightTop(), colors_[i - 1]},
-          {section.GetLeftBottom(), colors_[i]},
-          {section.GetRightTop(), colors_[i - 1]},
-          {section.GetLeftBottom(), colors_[i]},
-          {section.GetRightBottom(), colors_[i]},
+          {section.GetRightTop(),
+           horizontal_axis ? colors_[i] : colors_[i - 1]},
+          {section.GetLeftBottom(),
+           horizontal_axis ? colors_[i - 1] : colors_[i]},
+          {section.GetRightTop(),
+           horizontal_axis ? colors_[i] : colors_[i - 1]},
+          {section.GetLeftBottom(),
+           horizontal_axis ? colors_[i - 1] : colors_[i]},
+          {section.GetRightBottom(),
+           horizontal_axis ? colors_[i] : colors_[i - 1]},
       });
     }
   }
@@ -132,7 +145,8 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
-  frag_info.alpha = GetOpacityFactor();
+  frag_info.alpha =
+      GetOpacityFactor() * GetGeometry()->ComputeAlphaCoverage(entity);
 
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
@@ -143,7 +157,8 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
   if (GetGeometry()->IsAxisAlignedRect() &&
-      (start_point_.x == end_point_.x || start_point_.y == end_point_.y)) {
+      (start_point_.x == end_point_.x || start_point_.y == end_point_.y) &&
+      GetInverseEffectTransform().IsIdentity()) {
     return FastLinearGradient(renderer, entity, pass);
   }
   if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
