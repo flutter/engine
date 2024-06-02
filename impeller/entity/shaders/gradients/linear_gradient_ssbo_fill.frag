@@ -59,7 +59,7 @@ void main() {
   }
 
   frag_color = mix(frag_info.decal_border_color, frag_color,
-                   (t < 0.0 || t > 1.0) && tile_mode == kTileModeDecal);
+                   float((t < 0.0 || t > 1.0) && tile_mode == kTileModeDecal));
   frag_color = IPPremultiply(frag_color) * alpha;
   frag_color = IPOrderedDither8x8(frag_color, gl_FragCoord.xy);
 }
