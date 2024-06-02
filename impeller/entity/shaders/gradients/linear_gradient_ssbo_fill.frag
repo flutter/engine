@@ -45,18 +45,17 @@ void main() {
       dot(start_to_position, start_to_end) * inverse_dot_start_to_end,
       tile_mode);
 
+  ColorPoint prev_point = color_data.colors[0];
   for (int i = 1; i < colors_length; i++) {
-    ColorPoint prev_point = color_data.colors[i - 1];
     ColorPoint current_point = color_data.colors[i];
     if (t >= prev_point.stop && t <= current_point.stop) {
-      if (current_point.inverse_delta > 1000.0) {
-        frag_color = current_point.color;
-      } else {
-        float ratio = (t - prev_point.stop) * current_point.inverse_delta;
-        frag_color = mix(prev_point.color, current_point.color, ratio);
-      }
+      float ratio = (t - prev_point.stop) * current_point.inverse_delta;
+      frag_color = mix(current_point.color,
+                       mix(prev_point.color, current_point.color, ratio),
+                       float(current_point.inverse_delta > 1000.0));
       break;
     }
+    prev_point = current_point;
   }
 
   frag_color = mix(frag_info.decal_border_color, frag_color,
