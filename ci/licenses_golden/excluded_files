@@ -138,6 +138,7 @@
 ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/core/allocator_unittests.cc
+../../../flutter/impeller/display_list/aiks_dl_opacity_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_path_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.h
@@ -145,8 +146,10 @@
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
+../../../flutter/impeller/entity/contents/filters/blend_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
+../../../flutter/impeller/entity/contents/filters/matrix_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/host_buffer_unittests.cc
 ../../../flutter/impeller/entity/contents/test
 ../../../flutter/impeller/entity/contents/tiled_texture_contents_unittests.cc
@@ -201,10 +204,9 @@
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/toolkit/android/README.md
 ../../../flutter/impeller/toolkit/android/toolkit_android_unittests.cc
-../../../flutter/impeller/tools/build_metal_library.py
-../../../flutter/impeller/tools/check_licenses.py
 ../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
+../../../flutter/impeller/tools/metal_library.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
 ../../../flutter/lib/gpu/analysis_options.yaml
