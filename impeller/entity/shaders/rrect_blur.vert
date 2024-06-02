@@ -15,6 +15,8 @@ out vec2 v_position;
 
 void main() {
   gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
-  // The fragment stage uses local coordinates to compute the blur.
+  // The fragment stage uses local coordinates to compute the blur. This value
+  // is scaled by 4000.0 so that most coordinates remain in the range of [0, 1],
+  // which will increase the precision of half precision floating point values.
   v_position = position / 4000.0;
 }

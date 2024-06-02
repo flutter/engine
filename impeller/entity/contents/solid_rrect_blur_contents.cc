@@ -24,6 +24,15 @@ Scalar PadForSigma(Scalar sigma) {
   Scalar scalar = std::min((1.0f / 47.6f) * sigma + 2.5f, 3.5f);
   return sigma * scalar;
 }
+
+constexpr Scalar kSqrtThree = 1.73205080757;
+// sqrt(2 * pi)
+constexpr Scalar kSqrtTwoPi = 2.50662827463;
+
+/// A value used to scale all pixel coordinates to be closer to the range [0,
+/// 1], so that half precision math will be more accurate.
+constexpr Scalar kSpaceScalar = 4000.0;
+
 }  // namespace
 
 SolidRRectBlurContents::SolidRRectBlurContents() = default;
@@ -107,26 +116,21 @@ bool SolidRRectBlurContents::Render(const ContentContext& renderer,
       entity.GetTransform() *
           Matrix::MakeTranslation(positive_rect.GetOrigin()));
 
-  Scalar scaled_blur_sigma = blur_sigma / 4000.0f;
+  Scalar scaled_blur_sigma = blur_sigma / kSpaceScalar;
   FS::FragInfo frag_info;
   frag_info.color = color;
   frag_info.blur_sigma = scaled_blur_sigma;
-  frag_info.half_rect_size = Point(positive_rect.GetSize() * 0.5 / 4000.0f);
+  frag_info.half_rect_size =
+      Point(positive_rect.GetSize() * 0.5 / kSpaceScalar);
   Point corner_radii = Point{std::clamp(corner_radii_.width, kEhCloseEnough,
                                         positive_rect.GetWidth() * 0.5f),
                              std::clamp(corner_radii_.width, kEhCloseEnough,
                                         positive_rect.GetHeight() * 0.5f)} /
-                       4000.0;
+                       kSpaceScalar;
   frag_info.corner_radii = corner_radii;
-  // sqrt(2 * pi)
-  constexpr Scalar kSqrtTwoPi = 2.50662827463;
-
   frag_info.half_inv_variance =
       1.0 / (scaled_blur_sigma * scaled_blur_sigma) * -0.5;
   frag_info.gaussian_denominator = 1.0 / (kSqrtTwoPi * scaled_blur_sigma);
-
-  constexpr Scalar kSqrtThree = 1.73205080757;
-
   frag_info.sqrt_three_over_sigma = -kSqrtThree / scaled_blur_sigma;
 
   pass.SetCommandLabel("RRect Shadow");
