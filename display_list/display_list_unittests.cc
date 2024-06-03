@@ -4333,12 +4333,6 @@ TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
 }
 
 TEST_F(DisplayListTest, TextFrameOpacityPeephole) {
-  // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
-  // performance overlay can use Fuchsia's font manager instead of the empty
-  // default.
-#if defined(OS_FUCHSIA) || !defined(IMPELLER_SUPPORTS_RENDERING)
-  GTEST_SKIP() << "Rendering comparisons require a valid default font manager";
-#else
   // Single character can have opacity peephole applied.
   {
     std::string message = "A";
@@ -4361,7 +4355,6 @@ TEST_F(DisplayListTest, TextFrameOpacityPeephole) {
     auto dl = builder.Build();
     EXPECT_FALSE(dl->can_apply_group_opacity());
   }
-#endif  // defined(OS_FUCHSIA) || !defined(IMPELLER_SUPPORTS_RENDERING)
 }
 
 }  // namespace testing
