@@ -209,7 +209,6 @@ fml::StatusOr<sk_sp<SkData>> EncodeImage(const sk_sp<SkImage>& raster_image,
   if (!raster_image) {
     return fml::Status(fml::StatusCode::kInternal, "Missing raster image.");
   }
-  FML_LOG(ERROR) << "COLOR TYPE:" << raster_image->imageInfo().colorType();
 
   switch (format) {
     case kPNG: {
