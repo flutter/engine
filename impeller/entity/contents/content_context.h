@@ -28,13 +28,13 @@
 #include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
+#include "impeller/entity/fast_gradient.frag.h"
+#include "impeller/entity/fast_gradient.vert.h"
 #include "impeller/entity/filter_position.vert.h"
 #include "impeller/entity/filter_position_uv.vert.h"
 #include "impeller/entity/gaussian.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/gradient.frag.h"
-#include "impeller/entity/gradient.vert.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
@@ -79,7 +79,7 @@
 namespace impeller {
 
 using GradientPipeline =
-    RenderPipelineHandle<GradientVertexShader, GradientFragmentShader>;
+    RenderPipelineHandle<FastGradientVertexShader, FastGradientFragmentShader>;
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientFillFragmentShader>;
