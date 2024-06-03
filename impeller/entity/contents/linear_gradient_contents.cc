@@ -79,28 +79,23 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
     return false;
   }
   Rect rect = maybe_rect.value();
-
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   bool horizontal_axis = start_point_.y == end_point_.y;
 
-  // Step 1. Compute the locations of each breakpoint along the primary axis.
-  std::vector<Point> points(stops_.size());
-  for (auto i = 0u; i < stops_.size(); i++) {
-    Scalar t = stops_[i];
-    points[i] = (1.0 - t) * start_point_ + t * end_point_;
-  }
-  // Now create a rectangle that joins each segment. That will be two
-  // triangles between each pair of points.
+  // Compute the locations of each breakpoint along the primary axis, then
+  // create a rectangle that joins each segment. That will be two triangles
+  // between each pair of points.
+  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.Reserve(6 * (stops_.size() - 1));
-  for (auto i = 1u; i < points.size(); i++) {
-    Rect section =
-        horizontal_axis
-            ? Rect::MakeXYWH(points[i - 1].x, rect.GetY(),
-                             abs(points[i].x - points[i - 1].x),
-                             rect.GetHeight())
+  Point prev = start_point_;
+  for (auto i = 1u; i < stops_.size(); i++) {
+    Scalar t = stops_[i];
+    Point current = (1.0 - t) * start_point_ + t * end_point_;
+    Rect section = horizontal_axis
+                       ? Rect::MakeXYWH(prev.x, rect.GetY(), current.x - prev.x,
+                                        rect.GetHeight())
 
-            : Rect::MakeXYWH(rect.GetX(), points[i - 1].y, rect.GetWidth(),
-                             abs(points[i].y - points[i - 1].y));
+                       : Rect::MakeXYWH(rect.GetX(), prev.y, rect.GetWidth(),
+                                        current.y - prev.y);
     vtx_builder.AddVertices({
         {section.GetLeftTop(), colors_[i - 1]},
         {section.GetRightTop(), horizontal_axis ? colors_[i] : colors_[i - 1]},
@@ -109,9 +104,9 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
         {section.GetRightTop(), horizontal_axis ? colors_[i] : colors_[i - 1]},
         {section.GetLeftBottom(),
          horizontal_axis ? colors_[i - 1] : colors_[i]},
-        {section.GetRightBottom(),
-         horizontal_axis ? colors_[i] : colors_[i - 1]},
+        {section.GetRightBottom(), colors_[i]},
     });
+    prev = current;
   }
   auto& host_buffer = renderer.GetTransientsBuffer();
 
