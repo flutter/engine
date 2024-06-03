@@ -78,7 +78,7 @@
 
 namespace impeller {
 
-using GradientPipeline =
+using FastGradientPipeline =
     RenderPipelineHandle<FastGradientVertexShader, FastGradientFragmentShader>;
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
@@ -380,9 +380,9 @@ class ContentContext {
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGradientPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(gradient_pipelines_, opts);
+    return GetPipeline(fast_gradient_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
@@ -865,7 +865,7 @@ class ContentContext {
   // map.
 
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
-  mutable Variants<GradientPipeline> gradient_pipelines_;
+  mutable Variants<FastGradientPipeline> fast_gradient_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<ConicalGradientFillPipeline>

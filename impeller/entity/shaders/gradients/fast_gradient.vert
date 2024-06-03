@@ -13,6 +13,8 @@ frame_info;
 in vec2 position;
 in vec4 color;
 
+// The geometry of the fast gradient draws is designed so that the
+// varying unit will perform the correct color interpolation.
 out vec4 v_color;
 
 void main() {

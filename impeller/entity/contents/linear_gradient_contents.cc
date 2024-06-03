@@ -59,21 +59,21 @@ bool LinearGradientContents::IsOpaque() const {
 // the gradient is divided into regions based on the stop values.
 // Currently restricted to rect geometry where the start and end points are
 // perfectly horizontal/vertical, but could easily be expanded to StC cases
-// provided that the start/end are on our outside the coverage rect.
+// provided that the start/end are on or outside of the coverage rect.
 bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) const {
-  using VS = GradientPipeline::VertexShader;
-  using FS = GradientPipeline::FragmentShader;
+  using VS = FastGradientPipeline::VertexShader;
+  using FS = FastGradientPipeline::FragmentShader;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   options.primitive_type = PrimitiveType::kTriangle;
   Geometry& geometry = *GetGeometry();
 
   // We already know this is an axis aligned rectangle, so the coverage will
-  // be approximately the same as the geometry. For non AARs, we can force
-  // stencil then cover (not done here). We give an identity transform to
-  // avoid double transforming the gradient.
+  // be approximately the same as the geometry. For non axis-algined rectangles,
+  // we can force stencil then cover (not done here). We give an identity
+  // transform to avoid double transforming the gradient.
   std::optional<Rect> maybe_rect = geometry.GetCoverage(Matrix());
   if (!maybe_rect.has_value()) {
     return false;
@@ -82,7 +82,7 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
   bool horizontal_axis = start_point_.y == end_point_.y;
 
   // Compute the locations of each breakpoint along the primary axis, then
-  // create a rectangle that joins each segment. That will be two triangles
+  // create a rectangle that joins each segment. There will be two triangles
   // between each pair of points.
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.Reserve(6 * (stops_.size() - 1));
@@ -112,7 +112,7 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
 
   pass.SetLabel("LinearGradient");
   pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
-  pass.SetPipeline(renderer.GetGradientPipeline(options));
+  pass.SetPipeline(renderer.GetFastGradientPipeline(options));
   pass.SetStencilReference(0);
 
   // Take the pre-populated vertex shader uniform struct and set managed
@@ -134,6 +134,9 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
 bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
+  // TODO(148651): The fast path is overly restrictive, following the design in
+  // https://github.com/flutter/flutter/issues/148651 support for more cases can
+  // be gradually added.
   if (GetGeometry()->IsAxisAlignedRect() &&
       (start_point_.x == end_point_.x || start_point_.y == end_point_.y) &&
       GetInverseEffectTransform().IsIdentity()) {
