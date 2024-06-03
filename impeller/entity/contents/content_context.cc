@@ -263,7 +263,17 @@ ContentContext::ContentContext(
     desc.size = ISize{1, 1};
     empty_texture_ = GetContext()->GetResourceAllocator()->CreateTexture(desc);
     auto data = Color::BlackTransparent().ToR8G8B8A8();
-    if (!empty_texture_->SetContents(data.data(), 4)) {
+    auto cmd_buffer = GetContext()->CreateCommandBuffer();
+    auto blit_pass = cmd_buffer->CreateBlitPass();
+    auto& host_buffer = GetTransientsBuffer();
+    auto buffer_view = host_buffer.Emplace(data);
+    blit_pass->AddCopy(buffer_view, empty_texture_);
+
+    if (!blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) ||
+        !GetContext()
+             ->GetCommandQueue()
+             ->Submit({std::move(cmd_buffer)})
+             .ok()) {
       VALIDATION_LOG << "Failed to create empty texture.";
     }
   }
@@ -279,10 +289,6 @@ ContentContext::ContentContext(
           context_->GetCapabilities()->GetDefaultColorFormat()};
   const auto supports_decal = static_cast<Scalar>(
       context_->GetCapabilities()->SupportsDecalSamplerAddressMode());
-
-#ifdef IMPELLER_DEBUG
-  checkerboard_pipelines_.CreateDefault(*context_, options);
-#endif  // IMPELLER_DEBUG
 
   {
     solid_fill_pipelines_.CreateDefault(*context_, options);
@@ -438,8 +444,6 @@ ContentContext::ContentContext(
       {static_cast<Scalar>(
           GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
           PixelFormat::kA8UNormInt)});
-  glyph_atlas_color_pipelines_.CreateDefault(*context_, options);
-  geometry_color_pipelines_.CreateDefault(*context_, options);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});

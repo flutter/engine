@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
 
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
@@ -49,9 +51,8 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,                               // delegate
-                                               sk_ref_sp(context),                 // context
-                                               GetContext()->GetMsaaSampleCount()  // sample count
+  return std::make_unique<GPUSurfaceMetalSkia>(this,               // delegate
+                                               sk_ref_sp(context)  // context
   );
 }
 
@@ -117,3 +118,5 @@ bool IOSSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

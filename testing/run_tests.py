@@ -707,10 +707,11 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
       BUILDROOT_DIR, 'flutter', 'shell', 'platform', 'android', 'test_runner'
   )
   gradle_bin = os.path.join(
-      BUILDROOT_DIR, 'third_party', 'gradle', 'bin', 'gradle.bat' if is_windows() else 'gradle'
+      BUILDROOT_DIR, 'flutter', 'third_party', 'gradle', 'bin',
+      'gradle.bat' if is_windows() else 'gradle'
   )
   flutter_jar = os.path.join(OUT_DIR, android_variant, 'flutter.jar')
-  android_home = os.path.join(BUILDROOT_DIR, 'third_party', 'android_tools', 'sdk')
+  android_home = os.path.join(BUILDROOT_DIR, 'flutter', 'third_party', 'android_tools', 'sdk')
   build_dir = os.path.join(OUT_DIR, android_variant, 'robolectric_tests', 'build')
   gradle_cache_dir = os.path.join(OUT_DIR, android_variant, 'robolectric_tests', '.gradle')
 
@@ -1156,7 +1157,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       '--dart-filter',
       type=str,
       default='',
-      help='A list of Dart test scripts to run in flutter_tester.'
+      help='A list of Dart test script base file names to run in '
+      'flutter_tester (example: "image_filter_test.dart").'
   )
   parser.add_argument(
       '--dart-host-filter',

@@ -8,6 +8,7 @@
 #include <memory>
 #include <optional>
 
+#include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/fml/logging.h"
@@ -208,6 +209,13 @@ class SaveLayerOptions {
     return options;
   }
 
+  bool contains_backdrop_filter() const { return fHasBackdropFilter; }
+  SaveLayerOptions with_contains_backdrop_filter() const {
+    SaveLayerOptions options(this);
+    options.fHasBackdropFilter = true;
+    return options;
+  }
+
   SaveLayerOptions& operator=(const SaveLayerOptions& other) {
     flags_ = other.flags_;
     return *this;
@@ -226,6 +234,7 @@ class SaveLayerOptions {
       unsigned fCanDistributeOpacity : 1;
       unsigned fBoundsFromCaller : 1;
       unsigned fContentIsClipped : 1;
+      unsigned fHasBackdropFilter : 1;
     };
     uint32_t flags_;
   };
@@ -237,7 +246,9 @@ class DisplayListStorage {
   DisplayListStorage() = default;
   DisplayListStorage(DisplayListStorage&&) = default;
 
-  uint8_t* get() const { return ptr_.get(); }
+  uint8_t* get() { return ptr_.get(); }
+
+  const uint8_t* get() const { return ptr_.get(); }
 
   void realloc(size_t count) {
     ptr_.reset(static_cast<uint8_t*>(std::realloc(ptr_.release(), count)));
@@ -309,6 +320,26 @@ class DisplayList : public SkRefCnt {
     return modifies_transparent_black_;
   }
 
+  const DisplayListStorage& GetStorage() const { return storage_; }
+
+  /// @brief    Indicates if there are any saveLayer operations at the root
+  ///           surface level of the DisplayList that use a backdrop filter.
+  ///
+  /// This condition can be used to determine what kind of surface to create
+  /// for the root layer into which to render the DisplayList as some GPUs
+  /// can support surfaces that do or do not support the readback that would
+  /// be required for the backdrop filter to do its work.
+  bool root_has_backdrop_filter() const { return root_has_backdrop_filter_; }
+
+  /// @brief    Indicates the maximum DlBlendMode used on any rendering op
+  ///           in the root surface of the DisplayList.
+  ///
+  /// This condition can be used to determine what kind of surface to create
+  /// for the root layer into which to render the DisplayList as some GPUs
+  /// can support surfaces that do or do not support the readback that would
+  /// be required for the indicated blend mode to do its work.
+  DlBlendMode max_root_blend_mode() const { return max_root_blend_mode_; }
+
  private:
   DisplayList(DisplayListStorage&& ptr,
               size_t byte_count,
@@ -320,11 +351,13 @@ class DisplayList : public SkRefCnt {
               bool can_apply_group_opacity,
               bool is_ui_thread_safe,
               bool modifies_transparent_black,
+              DlBlendMode max_root_blend_mode,
+              bool root_has_backdrop_filter,
               sk_sp<const DlRTree> rtree);
 
   static uint32_t next_unique_id();
 
-  static void DisposeOps(uint8_t* ptr, uint8_t* end);
+  static void DisposeOps(const uint8_t* ptr, const uint8_t* end);
 
   const DisplayListStorage storage_;
   const size_t byte_count_;
@@ -341,12 +374,14 @@ class DisplayList : public SkRefCnt {
   const bool can_apply_group_opacity_;
   const bool is_ui_thread_safe_;
   const bool modifies_transparent_black_;
+  const bool root_has_backdrop_filter_;
+  const DlBlendMode max_root_blend_mode_;
 
   const sk_sp<const DlRTree> rtree_;
 
   void Dispatch(DlOpReceiver& ctx,
-                uint8_t* ptr,
-                uint8_t* end,
+                const uint8_t* ptr,
+                const uint8_t* end,
                 Culler& culler) const;
 
   friend class DisplayListBuilder;

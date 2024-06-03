@@ -4,7 +4,6 @@
 
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
-#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdlib>
@@ -21,9 +20,8 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
-#include "impeller/core/capture.h"
+#include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
-#include "impeller/entity/render_target_cache.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_asserts.h"
@@ -36,7 +34,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
-#include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/backends/stb/text_frame_stb.h"
 #include "impeller/typographer/backends/stb/typeface_stb.h"
 #include "impeller/typographer/backends/stb/typographer_context_stb.h"
@@ -496,30 +493,6 @@ TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderGroupOpacity) {
-  Canvas canvas;
-
-  Paint red;
-  red.color = Color::Red();
-  Paint green;
-  green.color = Color::Green().WithAlpha(0.5);
-  Paint blue;
-  blue.color = Color::Blue();
-
-  Paint alpha;
-  alpha.color = Color::Red().WithAlpha(0.5);
-
-  canvas.SaveLayer(alpha);
-
-  canvas.DrawRect(Rect::MakeXYWH(000, 000, 100, 100), red);
-  canvas.DrawRect(Rect::MakeXYWH(020, 020, 100, 100), green);
-  canvas.DrawRect(Rect::MakeXYWH(040, 040, 100, 100), blue);
-
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CoordinateConversionsAreCorrect) {
   Canvas canvas;
 
@@ -735,6 +708,26 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
 TEST_P(AiksTest, CanRenderTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameWithHalfScaling) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.Scale({0.5, 0.5, 1});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.Scale({2.625, 2.625, 1});
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -1636,45 +1629,6 @@ TEST_P(AiksTest, PaintWithFilters) {
   ASSERT_FALSE(paint.HasColorFilter());
 }
 
-TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
-  auto entity_pass = std::make_shared<EntityPass>();
-  auto rect = Rect::MakeLTRB(0, 0, 100, 100);
-  Paint paint;
-  paint.color = Color::White().WithAlpha(0.5);
-  paint.color_filter =
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Blue());
-
-  // Paint has color filter, can't elide.
-  auto delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-
-  paint.color_filter = nullptr;
-  paint.image_filter = ImageFilter::MakeBlur(Sigma(1.0), Sigma(1.0),
-                                             FilterContents::BlurStyle::kNormal,
-                                             Entity::TileMode::kClamp);
-
-  // Paint has image filter, can't elide.
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-
-  paint.image_filter = nullptr;
-  paint.color = Color::Red();
-
-  // Paint has no alpha, can't elide;
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-
-  // Positive test.
-  Entity entity;
-  entity.SetContents(SolidColorContents::Make(
-      PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  entity_pass->AddEntity(std::move(entity));
-  paint.color = Color::Red().WithAlpha(0.5);
-
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_TRUE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-}
-
 TEST_P(AiksTest, DrawPaintAbsorbsClears) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
@@ -2218,30 +2172,6 @@ TEST_P(AiksTest, CanRenderTinyOverlappingSubpasses) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-/// Tests that the debug checkerboard displays for offscreen textures when
-/// enabled. Most of the complexity here is just to future proof by making pass
-/// collapsing hard.
-TEST_P(AiksTest, CanRenderOffscreenCheckerboard) {
-  Canvas canvas;
-  canvas.debug_options.offscreen_texture_checkerboard = true;
-
-  canvas.DrawPaint({.color = Color::AntiqueWhite()});
-  canvas.DrawCircle({400, 300}, 200,
-                    {.color = Color::CornflowerBlue().WithAlpha(0.75)});
-
-  canvas.SaveLayer({.blend_mode = BlendMode::kMultiply});
-  {
-    canvas.DrawCircle({500, 400}, 200,
-                      {.color = Color::DarkBlue().WithAlpha(0.75)});
-    canvas.DrawCircle({550, 450}, 200,
-                      {.color = Color::LightCoral().WithAlpha(0.75),
-                       .blend_mode = BlendMode::kLuminosity});
-  }
-  canvas.Restore();
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, OpaqueEntitiesGetCoercedToSource) {
   Canvas canvas;
   canvas.Scale(Vector2(1.618, 1.618));
@@ -2622,38 +2552,6 @@ TEST_P(AiksTest, PipelineBlendSingleParameter) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CaptureContext) {
-  auto capture_context = CaptureContext::MakeAllowlist({"TestDocument"});
-
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
-    Canvas canvas;
-
-    capture_context.Rewind();
-    auto document = capture_context.GetDocument("TestDocument");
-
-    auto color = document.AddColor("Background color", Color::CornflowerBlue());
-    canvas.DrawPaint({.color = color});
-
-    if (AiksTest::ImGuiBegin("TestDocument", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize)) {
-      document.GetElement()->properties.Iterate([](CaptureProperty& property) {
-        property.Invoke({.color = [](CaptureColorProperty& p) {
-          ImGui::ColorEdit4(p.label.c_str(),
-                            reinterpret_cast<float*>(&p.value));
-        }});
-      });
-      ImGui::End();
-    }
-
-    return canvas.EndRecordingAsPicture();
-  };
-  OpenPlaygroundHere(callback);
-}
-
-TEST_P(AiksTest, CaptureInactivatedByDefault) {
-  ASSERT_FALSE(GetContext()->capture.IsActive());
-}
-
 // Regression test for https://github.com/flutter/flutter/issues/134678.
 TEST_P(AiksTest, ReleasesTextureOnTeardown) {
   auto context = MakeContext();
@@ -2798,19 +2696,29 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
 }
 
 TEST_P(AiksTest, MatrixImageFilterMagnify) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  auto image = std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
-  canvas.Translate({600, -200});
-  canvas.SaveLayer({
-      .image_filter = std::make_shared<MatrixImageFilter>(
-          Matrix::MakeScale({2, 2, 2}), SamplerDescriptor{}),
-  });
-  canvas.DrawImage(image, {0, 0},
-                   Paint{.color = Color::White().WithAlpha(0.5)});
-  canvas.Restore();
+  Scalar scale = 2.0;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Scale", &scale, 1, 2);
+      ImGui::End();
+    }
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    auto image =
+        std::make_shared<Image>(CreateTextureForFixture("airplane.jpg"));
+    canvas.Translate({600, -200});
+    canvas.SaveLayer({
+        .image_filter = std::make_shared<MatrixImageFilter>(
+            Matrix::MakeScale({scale, scale, 1}), SamplerDescriptor{}),
+    });
+    canvas.DrawImage(image, {0, 0},
+                     Paint{.color = Color::White().WithAlpha(0.5)});
+    canvas.Restore();
+    return canvas.EndRecordingAsPicture();
+  };
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 // Render a white circle at the top left corner of the screen.
@@ -3118,12 +3026,13 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
   auto texture =
       GetContext()->GetResourceAllocator()->CreateTexture(texture_descriptor);
 
-  ASSERT_TRUE(!!texture);
-  ASSERT_TRUE(texture->SetContents(mapping));
-
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
   auto command_buffer = GetContext()->CreateCommandBuffer();
   auto blit_pass = command_buffer->CreateBlitPass();
 
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(std::move(device_buffer)),
+                     texture);
   blit_pass->GenerateMipmap(texture);
   EXPECT_TRUE(blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()));
   EXPECT_TRUE(GetContext()->GetCommandQueue()->Submit({command_buffer}).ok());
@@ -3189,6 +3098,57 @@ TEST_P(AiksTest, StrokedPathWithMoveToThenCloseDrawnCorrectly) {
                             .stroke_cap = Cap::kRound,
                             .style = Paint::Style::kStroke,
                         });
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextWithLargePerspectiveTransform) {
+  // Verifies that text scales are clamped to work around
+  // https://github.com/flutter/flutter/issues/136112 .
+
+  Canvas canvas;
+  Paint save_paint;
+  canvas.SaveLayer(save_paint);
+  canvas.Transform(Matrix(2000, 0, 0, 0,   //
+                          0, 2000, 0, 0,   //
+                          0, 0, -1, 9000,  //
+                          0, 0, -1, 7000   //
+                          ));
+
+  ASSERT_TRUE(RenderTextInCanvasSkia(GetContext(), canvas, "Hello world",
+                                     "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, SetContentsWithRegion) {
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+
+  // Replace part of the texture with a red rectangle.
+  std::vector<uint8_t> bytes(100 * 100 * 4);
+  for (auto i = 0u; i < bytes.size(); i += 4) {
+    bytes[i] = 255;
+    bytes[i + 1] = 0;
+    bytes[i + 2] = 0;
+    bytes[i + 3] = 255;
+  }
+  auto mapping =
+      std::make_shared<fml::NonOwnedMapping>(bytes.data(), bytes.size());
+  auto device_buffer =
+      GetContext()->GetResourceAllocator()->CreateBufferWithCopy(*mapping);
+  auto cmd_buffer = GetContext()->CreateCommandBuffer();
+  auto blit_pass = cmd_buffer->CreateBlitPass();
+  blit_pass->AddCopy(DeviceBuffer::AsBufferView(device_buffer), bridge,
+                     IRect::MakeLTRB(50, 50, 150, 150));
+
+  auto did_submit =
+      blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) &&
+      GetContext()->GetCommandQueue()->Submit({std::move(cmd_buffer)}).ok();
+  ASSERT_TRUE(did_submit);
+
+  auto image = std::make_shared<Image>(bridge);
+
+  Canvas canvas;
+  canvas.DrawImage(image, {0, 0}, {});
+
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

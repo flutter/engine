@@ -10,24 +10,18 @@
 #include <optional>
 #include <unordered_map>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
-#include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/typographer_context.h"
-
-#ifdef IMPELLER_DEBUG
-#include "impeller/entity/checkerboard.frag.h"
-#include "impeller/entity/checkerboard.vert.h"
-#endif  // IMPELLER_DEBUG
 
 #include "impeller/entity/border_mask_blur.frag.h"
 #include "impeller/entity/clip.frag.h"
@@ -39,14 +33,12 @@
 #include "impeller/entity/gaussian.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/porter_duff_blend.vert.h"
-#include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
@@ -59,10 +51,7 @@
 #include "impeller/entity/texture_fill_strict_src.frag.h"
 #include "impeller/entity/texture_uv_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
-
-#include "impeller/typographer/glyph_atlas.h"
 
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
@@ -86,11 +75,6 @@
 #endif
 
 namespace impeller {
-
-#ifdef IMPELLER_DEBUG
-using CheckerboardPipeline =
-    RenderPipelineHandle<CheckerboardVertexShader, CheckerboardFragmentShader>;
-#endif  // IMPELLER_DEBUG
 
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
@@ -151,15 +135,11 @@ using YUVToRGBFilterPipeline =
 
 using GlyphAtlasPipeline =
     RenderPipelineHandle<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
-using GlyphAtlasColorPipeline =
-    RenderPipelineHandle<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
+
 using PorterDuffBlendPipeline =
     RenderPipelineHandle<PorterDuffBlendVertexShader,
                          PorterDuffBlendFragmentShader>;
 using ClipPipeline = RenderPipelineHandle<ClipVertexShader, ClipFragmentShader>;
-
-using GeometryColorPipeline =
-    RenderPipelineHandle<PositionColorVertexShader, VerticesFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline = RenderPipelineHandle<AdvancedBlendVertexShader,
@@ -396,13 +376,6 @@ class ContentContext {
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
-#ifdef IMPELLER_DEBUG
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(checkerboard_pipelines_, opts);
-  }
-#endif  // IMPELLER_DEBUG
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
@@ -519,16 +492,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(glyph_atlas_color_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
@@ -892,10 +855,6 @@ class ContentContext {
   // variants requested from that are lazily created and cached in the variants
   // map.
 
-#ifdef IMPELLER_DEBUG
-  mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
-#endif  // IMPELLER_DEBUG
-
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
@@ -927,8 +886,6 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-  mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
-  mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
@@ -1019,8 +976,8 @@ class ContentContext {
     }
 
     auto variant_future = pipeline->CreateVariant(
-        [&opts, variants_count =
-                    container.GetPipelineCount()](PipelineDescriptor& desc) {
+        /*async=*/false, [&opts, variants_count = container.GetPipelineCount()](
+                             PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));

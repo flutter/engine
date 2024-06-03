@@ -8,7 +8,7 @@
 #include "display_list/utils/dl_receiver_utils.h"
 #include "flutter/display_list/dl_op_receiver.h"
 #include "fml/logging.h"
-#include "impeller/aiks/canvas_type.h"
+#include "impeller/aiks/canvas.h"
 #include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
@@ -71,6 +71,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void saveLayer(const SkRect& bounds,
                  const flutter::SaveLayerOptions& options,
                  uint32_t total_content_depth,
+                 flutter::DlBlendMode max_content_mode,
                  const flutter::DlImageFilter* backdrop) override;
 
   // |flutter::DlOpReceiver|
@@ -275,7 +276,8 @@ class DlDispatcher : public DlDispatcherBase {
     // This dispatcher is used from test cases that might not supply
     // a content_depth parameter. Since this dispatcher doesn't use
     // the value, we just pass through a 0.
-    DlDispatcherBase::saveLayer(bounds, options, 0u, backdrop);
+    DlDispatcherBase::saveLayer(bounds, options, 0u,
+                                flutter::DlBlendMode::kLastMode, backdrop);
   }
   using DlDispatcherBase::saveLayer;
 
@@ -289,6 +291,7 @@ class ExperimentalDlDispatcher : public DlDispatcherBase {
  public:
   ExperimentalDlDispatcher(ContentContext& renderer,
                            RenderTarget& render_target,
+                           bool requires_readback,
                            IRect cull_rect);
 
   ~ExperimentalDlDispatcher() = default;

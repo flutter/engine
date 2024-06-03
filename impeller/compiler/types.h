@@ -11,7 +11,6 @@
 #include <optional>
 #include <string>
 
-#include "flutter/fml/macros.h"
 #include "shaderc/shaderc.hpp"
 #include "spirv_cross.hpp"
 #include "spirv_msl.hpp"
@@ -48,6 +47,7 @@ enum class SourceLanguage {
 struct UniformDescription {
   std::string name;
   size_t location = 0u;
+  size_t binding = 0u;
   spirv_cross::SPIRType::BaseType type = spirv_cross::SPIRType::BaseType::Float;
   size_t rows = 0u;
   size_t columns = 0u;
