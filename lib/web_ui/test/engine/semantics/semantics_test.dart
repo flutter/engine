@@ -1833,7 +1833,7 @@ void _testTextField() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.focus.index,
-      flags: 0 | ui.SemanticsFlag.isTextField.index,
+      flags: 0 | ui.SemanticsFlag.isTextField.index | ui.SemanticsFlag.isEnabled.index,
       value: 'hello',
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
