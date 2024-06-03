@@ -138,6 +138,7 @@
 ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/core/allocator_unittests.cc
+../../../flutter/impeller/display_list/aiks_dl_opacity_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_path_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.h
@@ -145,6 +146,7 @@
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
+../../../flutter/impeller/entity/contents/filters/blend_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents_unittests.cc
@@ -3444,6 +3446,7 @@
 ../../../fuchsia/sdk/linux/packages/cmd-buf-benchmark-test/meta.json
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
 ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/meta.json
+../../../fuchsia/sdk/linux/packages/realm_builder_server/meta.json
 ../../../fuchsia/sdk/linux/packages/vkcopy-test/meta.json
 ../../../fuchsia/sdk/linux/packages/vkext-test/meta.json
 ../../../fuchsia/sdk/linux/packages/vkloop-test/meta.json
