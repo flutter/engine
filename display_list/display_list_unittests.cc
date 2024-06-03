@@ -22,6 +22,7 @@
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 
+#include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "third_party/skia/include/core/SkBBHFactory.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
@@ -4329,6 +4330,38 @@ TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
   auto parent_dl = parent_builder.Build();
   EXPECT_EQ(parent_dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
   EXPECT_TRUE(parent_dl->root_has_backdrop_filter());
+}
+
+TEST_F(DisplayListTest, TextFrameOpacityPeephole) {
+  // TODO(https://github.com/flutter/flutter/issues/82202): Remove once the
+  // performance overlay can use Fuchsia's font manager instead of the empty
+  // default.
+#if defined(OS_FUCHSIA) || !defined(IMPELLER_SUPPORTS_RENDERING)
+  GTEST_SKIP() << "Rendering comparisons require a valid default font manager";
+#else
+  // Single character can have opacity peephole applied.
+  {
+    std::string message = "A";
+    sk_sp<SkTextBlob> blob = CreateTextBlob(message);
+    auto frame = impeller::MakeTextFrameFromTextBlobSkia(blob);
+    DisplayListBuilder builder;
+    builder.DrawTextFrame(frame, 0, 0, {});
+    auto dl = builder.Build();
+    EXPECT_TRUE(dl->can_apply_group_opacity());
+  }
+
+  // Multiple characters cannot have opacity peephole applied.
+  {
+    std::string message = "ABC";
+    sk_sp<SkTextBlob> blob = CreateTextBlob(message);
+
+    auto frame = impeller::MakeTextFrameFromTextBlobSkia(blob);
+    DisplayListBuilder builder;
+    builder.DrawTextFrame(frame, 0, 0, {});
+    auto dl = builder.Build();
+    EXPECT_FALSE(dl->can_apply_group_opacity());
+  }
+#endif  // defined(OS_FUCHSIA) || !defined(IMPELLER_SUPPORTS_RENDERING)
 }
 
 }  // namespace testing
