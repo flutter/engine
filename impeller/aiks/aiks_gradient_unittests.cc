@@ -744,13 +744,13 @@ TEST_P(AiksTest, FastGradientTestHorizontal) {
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
   paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {600, 0}, std::move(colors), std::move(stops),
+      {0, 0}, {300, 0}, std::move(colors), std::move(stops),
       Entity::TileMode::kClamp, {});
 
   paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  canvas.Translate({800, 0, 0});
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 600, 600), Size(4, 4), paint);
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 300, 300), paint);
+  canvas.Translate({400, 0, 0});
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), Size(4, 4), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -765,13 +765,13 @@ TEST_P(AiksTest, FastGradientTestVertical) {
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
   paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 0}, {0, 600}, std::move(colors), std::move(stops),
+      {0, 0}, {0, 300}, std::move(colors), std::move(stops),
       Entity::TileMode::kClamp, {});
 
   paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  canvas.Translate({800, 0, 0});
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 600, 600), Size(4, 4), paint);
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 300, 300), paint);
+  canvas.Translate({400, 0, 0});
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), Size(4, 4), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -786,13 +786,13 @@ TEST_P(AiksTest, FastGradientTestHorizontalReversed) {
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
   paint.color_source = ColorSource::MakeLinearGradient(
-      {600, 0}, {0, 0}, std::move(colors), std::move(stops),
+      {300, 0}, {0, 0}, std::move(colors), std::move(stops),
       Entity::TileMode::kClamp, {});
 
   paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  canvas.Translate({800, 0, 0});
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 600, 600), Size(4, 4), paint);
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 300, 300), paint);
+  canvas.Translate({400, 0, 0});
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), Size(4, 4), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -807,13 +807,13 @@ TEST_P(AiksTest, FastGradientTestVerticalReversed) {
   std::vector<Scalar> stops = {0.0, 0.1, 1.0};
 
   paint.color_source = ColorSource::MakeLinearGradient(
-      {0, 600}, {0, 0}, std::move(colors), std::move(stops),
+      {0, 300}, {0, 0}, std::move(colors), std::move(stops),
       Entity::TileMode::kClamp, {});
 
   paint.color = Color(1.0, 1.0, 1.0, 1.0);
-  canvas.DrawRect(Rect::MakeXYWH(0, 0, 600, 600), paint);
-  canvas.Translate({800, 0, 0});
-  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 600, 600), Size(4, 4), paint);
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 300, 300), paint);
+  canvas.Translate({400, 0, 0});
+  canvas.DrawRRect(Rect::MakeXYWH(0, 0, 300, 300), Size(4, 4), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
