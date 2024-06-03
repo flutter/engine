@@ -507,7 +507,13 @@ class JavaFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    return applyPatch(failures);
+    if (failures.first == _javaFormatErrorString) {
+      // _javaFormatErrorString is a string that indicates java formatting failed
+      // without creating a patch that can be applied.
+      return false;
+    } else {
+      return applyPatch(failures);
+    }
   }
 
   Future<String> _getJavaVersion() async {
@@ -530,13 +536,13 @@ class JavaFormatChecker extends FormatChecker {
       javaVersion = await _getJavaVersion();
     } on ProcessRunnerException {
       error('Cannot run Java, skipping Java file formatting!');
-      return const <String>[];
+      return const <String>[_javaFormatErrorString];
     }
     try {
       javaFormatVersion = await _getGoogleJavaFormatVersion();
     } on ProcessRunnerException {
       error('Cannot find google-java-format, skipping Java format check.');
-      return const <String>[];
+      return const <String>[javaFormatErrorString];
     }
     if (verbose) {
       message('Using $javaFormatVersion with Java $javaVersion');
