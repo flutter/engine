@@ -34,22 +34,20 @@ std::vector<LayerVariant> CopyLayers(const FlutterLayer** layers, size_t layer_c
 
 FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
                                      FlutterTimeConverter* time_converter,
-                                     FlutterPlatformViewController* platform_view_controller,
-                                     dispatch_queue_t main_queue)
+                                     FlutterPlatformViewController* platform_view_controller)
     : view_provider_(view_provider),
       time_converter_(time_converter),
-      platform_view_controller_(platform_view_controller),
-      main_queue_(main_queue) {
+      platform_view_controller_(platform_view_controller) {
   FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
 }
 
 void FlutterCompositor::AddView(FlutterViewId view_id) {
-  dispatch_assert_queue(main_queue_);
+  dispatch_assert_queue(dispatch_get_main_queue());
   presenters_.try_emplace(view_id);
 }
 
 void FlutterCompositor::RemoveView(FlutterViewId view_id) {
-  dispatch_assert_queue(main_queue_);
+  dispatch_assert_queue(dispatch_get_main_queue());
   presenters_.erase(view_id);
 }
 
@@ -116,12 +114,13 @@ bool FlutterCompositor::Present(FlutterViewIdentifier view_id,
                                 atTime:presentation_time
                                 notify:^{
                                   // Accessing presenters_ here does not need a
-                                  // lock to avoid race condition against AddView
-                                  // and RemoveView, since all three take place
-                                  // on the platform thread. (The macOS API
-                                  // requires platform view presenting to take
-                                  // place on the platform thread.)
-                                  dispatch_assert_queue(main_queue_);
+                                  // lock to avoid race condition against
+                                  // AddView and RemoveView, since all three
+                                  // take place on the platform thread. (The
+                                  // macOS API requires platform view presenting
+                                  // to take place on the platform thread,
+                                  // enforced by `FlutterThreadSynchronizer`.)
+                                  dispatch_assert_queue(dispatch_get_main_queue());
                                   auto found_presenter = presenters_.find(view_id);
                                   if (found_presenter != presenters_.end()) {
                                     found_presenter->second.PresentPlatformViews(

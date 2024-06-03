@@ -532,8 +532,7 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   // used when adding views, which might happen before runWithEntrypoint.
   _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
       [[FlutterViewEngineProvider alloc] initWithEngine:self],
-      [[FlutterTimeConverter alloc] initWithEngine:self], _platformViewController,
-      dispatch_get_main_queue());
+      [[FlutterTimeConverter alloc] initWithEngine:self], _platformViewController);
 
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
