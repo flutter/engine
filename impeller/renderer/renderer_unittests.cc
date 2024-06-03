@@ -3,12 +3,15 @@
 // found in the LICENSE file.
 
 #include "flutter/fml/logging.h"
+#include "flutter/fml/time/time_point.h"
 #include "impeller/core/device_buffer_descriptor.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/fixtures/array.frag.h"
 #include "impeller/fixtures/array.vert.h"
+#include "impeller/fixtures/baby.frag.h"
+#include "impeller/fixtures/baby.vert.h"
 #include "impeller/fixtures/box_fade.frag.h"
 #include "impeller/fixtures/box_fade.vert.h"
 #include "impeller/fixtures/colors.frag.h"
@@ -24,13 +27,10 @@
 #include "impeller/fixtures/sepia.frag.h"
 #include "impeller/fixtures/sepia.vert.h"
 #include "impeller/fixtures/swizzle.frag.h"
-#include "impeller/fixtures/test_texture.frag.h"
-#include "impeller/fixtures/test_texture.vert.h"
 #include "impeller/fixtures/texture.frag.h"
 #include "impeller/fixtures/texture.vert.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/playground_test.h"
-#include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -38,7 +38,6 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/renderer.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
-#include "impeller/tessellator/tessellator.h"
 #include "third_party/imgui/imgui.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -114,6 +113,59 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
     FS::BindContents2(pass, bridge, sampler);
 
     host_buffer->Reset();
+    return pass.Draw().ok();
+  };
+  OpenPlaygroundHere(callback);
+}
+
+TEST_P(RendererTest, BabysFirstTriangle) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  // Declare a shorthand for the shaders we are going to use.
+  using VS = BabyVertexShader;
+  using FS = BabyFragmentShader;
+
+  // Create a pipeline descriptor that uses the shaders together and default
+  // initializes the fixed function state.
+  //
+  // If the vertex shader outputs disagree with the fragment shader inputs, this
+  // will be a compile time error.
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+
+  // Modify the descriptor for our environment. This is specific to our test.
+  desc->SetSampleCount(SampleCount::kCount4);
+  desc->SetStencilAttachmentDescriptors(std::nullopt);
+
+  // Create a pipeline from our descriptor. This is expensive to do. So just do
+  // it once.
+  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
+
+  // Create a host side buffer to build the vertex and uniform information.
+  auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+
+  // Specify the vertex buffer information.
+  VertexBufferBuilder<VS::PerVertexData> vertex_buffer_builder;
+  vertex_buffer_builder.AddVertices({
+      {{-0.5, -0.5}, Color::Red(), Color::Green()},
+      {{0.0, 0.5}, Color::Green(), Color::Blue()},
+      {{0.5, -0.5}, Color::Blue(), Color::Red()},
+  });
+
+  auto vertex_buffer = vertex_buffer_builder.CreateVertexBuffer(
+      *context->GetResourceAllocator());
+
+  SinglePassCallback callback = [&](RenderPass& pass) {
+    pass.SetPipeline(pipeline);
+    pass.SetVertexBuffer(vertex_buffer);
+
+    FS::FragInfo frag_info;
+    frag_info.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+
+    auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
+    FS::BindFragInfo(pass, host_buffer->EmplaceUniform(frag_info));
+
     return pass.Draw().ok();
   };
   OpenPlaygroundHere(callback);
@@ -392,25 +444,14 @@ TEST_P(RendererTest, CanRenderInstanced) {
   using FS = InstancedDrawFragmentShader;
 
   VertexBufferBuilder<VS::PerVertexData> builder;
-
-  ASSERT_EQ(Tessellator::Result::kSuccess,
-            Tessellator{}.Tessellate(
-                PathBuilder{}
-                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                    .TakePath(FillType::kOdd),
-                1.0f,
-                [&builder](const float* vertices, size_t vertices_count,
-                           const uint16_t* indices, size_t indices_count) {
-                  for (auto i = 0u; i < vertices_count * 2; i += 2) {
-                    VS::PerVertexData data;
-                    data.vtx = {vertices[i], vertices[i + 1]};
-                    builder.AppendVertex(data);
-                  }
-                  for (auto i = 0u; i < indices_count; i++) {
-                    builder.AppendIndex(indices[i]);
-                  }
-                  return true;
-                }));
+  builder.AddVertices({
+      VS::PerVertexData{Point{10, 10}},
+      VS::PerVertexData{Point{10, 110}},
+      VS::PerVertexData{Point{110, 10}},
+      VS::PerVertexData{Point{10, 110}},
+      VS::PerVertexData{Point{110, 10}},
+      VS::PerVertexData{Point{110, 110}},
+  });
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -740,8 +781,9 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   bool first_frame = true;
   auto host_buffer = HostBuffer::Create(context->GetResourceAllocator());
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    const char* mip_filter_names[] = {"Nearest", "Linear"};
-    const MipFilter mip_filters[] = {MipFilter::kNearest, MipFilter::kLinear};
+    const char* mip_filter_names[] = {"Base", "Nearest", "Linear"};
+    const MipFilter mip_filters[] = {MipFilter::kBase, MipFilter::kNearest,
+                                     MipFilter::kLinear};
     const char* min_filter_names[] = {"Nearest", "Linear"};
     const MinMagFilter min_filters[] = {MinMagFilter::kNearest,
                                         MinMagFilter::kLinear};
@@ -986,43 +1028,6 @@ TEST_P(RendererTest, InactiveUniforms) {
     return true;
   };
   OpenPlaygroundHere(callback);
-}
-
-TEST_P(RendererTest, CanCreateCPUBackedTexture) {
-  if (GetParam() == PlaygroundBackend::kOpenGLES) {
-    GTEST_SKIP_("CPU backed textures are not supported on OpenGLES.");
-  }
-
-  auto context = GetContext();
-  auto allocator = context->GetResourceAllocator();
-  size_t dimension = 2;
-
-  do {
-    ISize size(dimension, dimension);
-    TextureDescriptor texture_descriptor;
-    texture_descriptor.storage_mode = StorageMode::kHostVisible;
-    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
-    texture_descriptor.size = size;
-    auto row_bytes =
-        std::max(static_cast<uint16_t>(size.width * 4),
-                 allocator->MinimumBytesPerRow(texture_descriptor.format));
-    auto buffer_size = size.height * row_bytes;
-
-    DeviceBufferDescriptor buffer_descriptor;
-    buffer_descriptor.storage_mode = StorageMode::kHostVisible;
-    buffer_descriptor.size = buffer_size;
-
-    auto buffer = allocator->CreateBuffer(buffer_descriptor);
-
-    ASSERT_TRUE(buffer);
-
-    auto texture = buffer->AsTexture(*allocator, texture_descriptor, row_bytes);
-
-    ASSERT_TRUE(texture);
-    ASSERT_TRUE(texture->IsValid());
-
-    dimension *= 2;
-  } while (dimension <= 8192);
 }
 
 TEST_P(RendererTest, DefaultIndexSize) {

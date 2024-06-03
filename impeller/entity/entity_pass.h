@@ -53,8 +53,6 @@ class EntityPass {
   /// `GetEntityForElement()`.
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
 
-  static const std::string kCaptureDocumentName;
-
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
       const Matrix& effect_transform,
@@ -111,13 +109,6 @@ class EntityPass {
   ///
   EntityPass* AddSubpass(std::unique_ptr<EntityPass> pass);
 
-  //----------------------------------------------------------------------------
-  /// @brief  Merges a given pass into this pass. Useful for drawing
-  ///         pre-recorded pictures that don't require rendering into a separate
-  ///         subpass.
-  ///
-  void AddSubpassInline(std::unique_ptr<EntityPass> pass);
-
   EntityPass* GetSuperpass() const;
 
   bool Render(ContentContext& renderer,
@@ -161,13 +152,13 @@ class EntityPass {
 
   void SetTransform(Matrix transform);
 
+  void SetClipHeight(size_t clip_height);
+
+  size_t GetClipHeight() const;
+
   void SetClipDepth(size_t clip_depth);
 
-  size_t GetClipDepth() const;
-
-  void SetNewClipDepth(size_t clip_depth);
-
-  uint32_t GetNewClipDepth() const;
+  uint32_t GetClipDepth() const;
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -180,8 +171,6 @@ class EntityPass {
   Color GetClearColorOrDefault(ISize size = ISize::Infinite()) const;
 
   void SetBackdropFilter(BackdropFilterProc proc);
-
-  void SetEnableOffscreenCheckerboard(bool enabled);
 
   int32_t GetRequiredMipCount() const { return required_mip_count_; }
 
@@ -238,7 +227,7 @@ class EntityPass {
   };
 
   bool RenderElement(Entity& element_entity,
-                     size_t clip_depth_floor,
+                     size_t clip_height_floor,
                      InlinePassContext& pass_context,
                      int32_t pass_depth,
                      ContentContext& renderer,
@@ -247,13 +236,12 @@ class EntityPass {
 
   EntityResult GetEntityForElement(const EntityPass::Element& element,
                                    ContentContext& renderer,
-                                   Capture& capture,
                                    InlinePassContext& pass_context,
                                    ISize root_pass_size,
                                    Point global_pass_position,
                                    uint32_t pass_depth,
                                    EntityPassClipStack& clip_coverage_stack,
-                                   size_t clip_depth_floor) const;
+                                   size_t clip_height_floor) const;
 
   //----------------------------------------------------------------------------
   /// @brief     OnRender is the internal command recording routine for
@@ -293,7 +281,7 @@ class EntityPass {
   ///                                      Used to cull Elements that we
   ///                                      know won't result in a visible
   ///                                      change.
-  /// @param[in]  clip_depth_floor         The clip depth that a value of
+  /// @param[in]  clip_height_floor         The clip depth that a value of
   ///                                      zero corresponds to in the given
   ///                                      `pass_target` clip buffer.
   ///                                      When new `pass_target`s are created
@@ -313,14 +301,13 @@ class EntityPass {
   ///                                      parent pass.
   ///
   bool OnRender(ContentContext& renderer,
-                Capture& capture,
                 ISize root_pass_size,
                 EntityPassTarget& pass_target,
                 Point global_pass_position,
                 Point local_pass_position,
                 uint32_t pass_depth,
                 EntityPassClipStack& clip_coverage_stack,
-                size_t clip_depth_floor = 0,
+                size_t clip_height_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 const std::optional<InlinePassContext::RenderPassResult>&
                     collapsed_parent_pass = std::nullopt) const;
@@ -337,27 +324,26 @@ class EntityPass {
 
   EntityPass* superpass_ = nullptr;
   Matrix transform_;
-  size_t clip_depth_ = 0u;
-  uint32_t new_clip_depth_ = 1u;
+  size_t clip_height_ = 0u;
+  uint32_t clip_depth_ = 1u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
-  bool enable_offscreen_debug_checkerboard_ = false;
   std::optional<Rect> bounds_limit_;
   ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
   int32_t required_mip_count_ = 1;
 
-  /// These values are incremented whenever something is added to the pass that
-  /// requires reading from the backdrop texture. Currently, this can happen in
-  /// the following scenarios:
+  /// These values indicate whether something has been added to the EntityPass
+  /// that requires reading from the backdrop texture. Currently, this can
+  /// happen in the following scenarios:
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
   /// These are tracked as separate values because we may ignore
-  /// blend_reads_from_pass_texture_ if the device supports framebuffer based
+  /// `blend_reads_from_pass_texture_` if the device supports framebuffer based
   /// advanced blends.
-  uint32_t advanced_blend_reads_from_pass_texture_ = 0;
-  uint32_t backdrop_filter_reads_from_pass_texture_ = 0;
+  bool advanced_blend_reads_from_pass_texture_ = false;
+  bool backdrop_filter_reads_from_pass_texture_ = false;
 
-  uint32_t GetTotalPassReads(ContentContext& renderer) const;
+  bool DoesBackdropGetRead(ContentContext& renderer) const;
 
   BackdropFilterProc backdrop_filter_proc_ = nullptr;
 

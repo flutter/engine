@@ -7,7 +7,6 @@
 
 #include "gtest/gtest.h"
 
-#include "impeller/entity/contents/checkerboard_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/contents.h"
@@ -22,11 +21,6 @@ namespace testing {
 using EntityTest = EntityPlayground;
 
 TEST_P(EntityTest, ClipContentsOptimizesFullScreenIntersectClips) {
-  if (!ContentContext::kEnableStencilThenCover) {
-    GTEST_SKIP();
-    return;
-  }
-
   // Set up mock environment.
 
   auto content_context = GetContentContext();

@@ -29,7 +29,7 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
   }
 
   if (!callback) {
-    callback = []() {};
+    callback = [](auto) {};
   }
 
   const auto& proc_table = GetProcTable();
@@ -41,7 +41,7 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
       data.release(),      //
       [](void* context, ASurfaceTransactionStats* stats) -> void {
         auto data = reinterpret_cast<TransactionInFlightData*>(context);
-        data->callback();
+        data->callback(stats);
         delete data;
       });
   proc_table.ASurfaceTransaction_apply(transaction_.get());
@@ -52,15 +52,24 @@ bool SurfaceTransaction::Apply(OnCompleteCallback callback) {
 }
 
 bool SurfaceTransaction::SetContents(const SurfaceControl* control,
-                                     const HardwareBuffer* buffer) {
+                                     const HardwareBuffer* buffer,
+                                     fml::UniqueFD acquire_fence) {
   if (control == nullptr || buffer == nullptr) {
     VALIDATION_LOG << "Invalid control or buffer.";
     return false;
   }
-  GetProcTable().ASurfaceTransaction_setBuffer(transaction_.get(),    //
-                                               control->GetHandle(),  //
-                                               buffer->GetHandle(),   //
-                                               -1);
+
+  const auto& proc_table = GetProcTable();
+
+  proc_table.ASurfaceTransaction_setEnableBackPressure(
+      transaction_.get(), control->GetHandle(), true);
+
+  proc_table.ASurfaceTransaction_setBuffer(
+      transaction_.get(),                                      //
+      control->GetHandle(),                                    //
+      buffer->GetHandle(),                                     //
+      acquire_fence.is_valid() ? acquire_fence.release() : -1  //
+  );
   return true;
 }
 

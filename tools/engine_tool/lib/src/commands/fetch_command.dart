@@ -4,13 +4,13 @@
 
 import '../dependencies.dart';
 import 'command.dart';
-import 'flags.dart';
 
 /// The root 'fetch' command.
 final class FetchCommand extends CommandBase {
   /// Constructs the 'fetch' command.
   FetchCommand({
     required super.environment,
+    super.usageLineLength,
   });
 
   @override
@@ -24,7 +24,6 @@ final class FetchCommand extends CommandBase {
 
   @override
   Future<int> run() {
-    final bool verbose = globalResults![verboseFlag] as bool;
-    return fetchDependencies(environment, verbose: verbose);
+    return fetchDependencies(environment);
   }
 }

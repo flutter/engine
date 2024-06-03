@@ -2,12 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:engine_build_configs/engine_build_configs.dart';
 
 import '../environment.dart';
-import '../logger.dart';
 import 'build_command.dart';
 import 'fetch_command.dart';
 import 'flags.dart';
@@ -17,7 +15,7 @@ import 'query_command.dart';
 import 'run_command.dart';
 import 'test_command.dart';
 
-const int _usageLineLength = 80;
+const int _usageLineLength = 100;
 
 /// The root command runner.
 final class ToolCommandRunner extends CommandRunner<int> {
@@ -26,15 +24,44 @@ final class ToolCommandRunner extends CommandRunner<int> {
   ToolCommandRunner({
     required this.environment,
     required this.configs,
+    this.help = false,
   }) : super(toolName, toolDescription, usageLineLength: _usageLineLength) {
     final List<Command<int>> commands = <Command<int>>[
-      FetchCommand(environment: environment),
-      FormatCommand(environment: environment),
-      QueryCommand(environment: environment, configs: configs),
-      BuildCommand(environment: environment, configs: configs),
-      RunCommand(environment: environment, configs: configs),
-      LintCommand(environment: environment),
-      TestCommand(environment: environment, configs: configs),
+      FetchCommand(
+        environment: environment,
+        usageLineLength: _usageLineLength,
+      ),
+      FormatCommand(
+        environment: environment,
+        usageLineLength: _usageLineLength,
+      ),
+      QueryCommand(
+        environment: environment,
+        configs: configs,
+        help: help,
+        usageLineLength: _usageLineLength,
+      ),
+      BuildCommand(
+        environment: environment,
+        configs: configs,
+        help: help,
+        usageLineLength: _usageLineLength,
+      ),
+      RunCommand(
+        environment: environment,
+        configs: configs,
+        usageLineLength: _usageLineLength,
+      ),
+      LintCommand(
+        environment: environment,
+        usageLineLength: _usageLineLength,
+      ),
+      TestCommand(
+        environment: environment,
+        configs: configs,
+        help: help,
+        usageLineLength: _usageLineLength,
+      ),
     ];
     commands.forEach(addCommand);
 
@@ -61,17 +88,15 @@ final class ToolCommandRunner extends CommandRunner<int> {
   /// Build configurations loaded from the engine from under ci/builders.
   final Map<String, BuilderConfig> configs;
 
+  /// Whether the invocation is for a help command
+  final bool help;
+
   @override
   Future<int> run(Iterable<String> args) async {
-    final ArgResults argResults = parse(args);
-    final bool verbose = argResults[verboseFlag]! as bool;
-    if (verbose) {
-      environment.logger.level = Logger.infoLevel;
-    }
     try {
-      return await runCommand(argResults) ?? 0;
-    } on FormatException catch (e) {
-      environment.logger.error(e);
+      return await runCommand(parse(args)) ?? 0;
+    } on FormatException catch (e, s) {
+      environment.logger.error('$e\n$s');
       return 1;
     } on UsageException catch (e) {
       environment.logger.error(e);

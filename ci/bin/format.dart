@@ -475,6 +475,7 @@ class JavaFormatChecker extends FormatChecker {
       path.absolute(
         path.join(
           srcDir.absolute.path,
+          'flutter',
           'third_party',
           'android_tools',
           'google-java-format',
@@ -975,9 +976,10 @@ final class HeaderFormatChecker extends FormatChecker {
     super.messageCallback,
   });
 
-  // $ENGINE/third_party/dart/tools/sdks/dart-sdk/bin/dart
+  // $ENGINE/flutter/third_party/dart/tools/sdks/dart-sdk/bin/dart
   late final String _dartBin = path.join(
     repoDir.absolute.parent.path,
+    'flutter',
     'third_party',
     'dart',
     'tools',

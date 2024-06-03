@@ -5,7 +5,7 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager, longestIncreasingSubsequence;
+import '../../engine.dart' show PlatformViewManager, configuration, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
@@ -49,7 +49,7 @@ class HtmlViewEmbedder {
 
   /// The maximum number of render canvases to create. Too many canvases can
   /// cause a performance burden.
-  static const int maximumCanvases = 8;
+  static int get maximumCanvases => configuration.canvasKitMaximumSurfaces;
 
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
@@ -63,12 +63,15 @@ class HtmlViewEmbedder {
   /// The most recent rendering.
   Rendering _activeRendering = Rendering();
 
+  /// Returns the most recent rendering. Only used in tests.
+  Rendering get debugActiveRendering => _activeRendering;
+
   DisplayCanvas? debugBoundsCanvas;
 
   /// The size of the frame, in physical pixels.
-  late ui.Size _frameSize;
+  late BitmapSize _frameSize;
 
-  set frameSize(ui.Size size) {
+  set frameSize(BitmapSize size) {
     _frameSize = size;
   }
 
@@ -90,7 +93,7 @@ class HtmlViewEmbedder {
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
     final CkPictureRecorder pictureRecorder = CkPictureRecorder();
-    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
+    pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
     _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
 
     // Do nothing if the params didn't change.
@@ -390,7 +393,13 @@ class HtmlViewEmbedder {
       debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
       final CkPictureRecorder boundsRecorder = CkPictureRecorder();
       final CkCanvas boundsCanvas = boundsRecorder.beginRecording(
-          ui.Rect.fromLTWH(0, 0, _frameSize.width, _frameSize.height));
+          ui.Rect.fromLTWH(
+        0,
+        0,
+        _frameSize.width.toDouble(),
+        _frameSize.height.toDouble(),
+        ),
+      );
       final CkPaint platformViewBoundsPaint = CkPaint()
         ..color = const ui.Color.fromARGB(100, 0, 255, 0);
       final CkPaint pictureBoundsPaint = CkPaint()
@@ -478,12 +487,11 @@ class HtmlViewEmbedder {
     final List<RenderingEntity> modifiedEntities =
         List<RenderingEntity>.from(rendering.entities);
     bool sawLastCanvas = false;
-    for (int i = rendering.entities.length - 1; i > 0; i--) {
+    for (int i = rendering.entities.length - 1; i >= 0; i--) {
       final RenderingEntity entity = modifiedEntities[i];
       if (entity is RenderingRenderCanvas) {
         if (!sawLastCanvas) {
           sawLastCanvas = true;
-          picturesForLastCanvas.insertAll(0, entity.pictures);
           continue;
         }
         modifiedEntities.removeAt(i);
@@ -494,14 +502,18 @@ class HtmlViewEmbedder {
         }
       }
     }
-    // Replace the pictures in the last canvas with all the pictures from the
-    // deleted canvases.
+
+    // Add all the pictures from the deleted canvases to the second-to-last
+    // canvas (or the last canvas if there is only one).
+    sawLastCanvas = (maximumCanvases == 1);
     for (int i = modifiedEntities.length - 1; i > 0; i--) {
       final RenderingEntity entity = modifiedEntities[i];
       if (entity is RenderingRenderCanvas) {
-        entity.pictures.clear();
-        entity.pictures.addAll(picturesForLastCanvas);
-        break;
+        if (sawLastCanvas) {
+          entity.pictures.addAll(picturesForLastCanvas);
+          break;
+        }
+        sawLastCanvas = true;
       }
     }
 

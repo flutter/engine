@@ -8,20 +8,25 @@
 #include <functional>
 #include <list>
 #include <unordered_map>
+#include <variant>
 
 #include "flutter/fml/macros.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTimeConverter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @class FlutterMutatorView;
+@class FlutterCursorCoordinator;
 
 namespace flutter {
 
-class PlatformViewLayer;
+struct BackingStoreLayer {
+  std::vector<FlutterRect> paint_region;
+};
 
-typedef std::pair<PlatformViewLayer, size_t> PlatformViewLayerWithIndex;
+using LayerVariant = std::variant<PlatformViewLayer, BackingStoreLayer>;
 
 // FlutterCompositor creates and manages the backing stores used for
 // rendering Flutter content and presents Flutter content and Platform views.
@@ -58,7 +63,7 @@ class FlutterCompositor {
 
   // Presents the FlutterLayers by updating the FlutterView specified by
   // `view_id` using the layer content.
-  bool Present(FlutterViewId view_id, const FlutterLayer** layers, size_t layers_count);
+  bool Present(FlutterViewIdentifier view_id, const FlutterLayer** layers, size_t layers_count);
 
  private:
   // A class that contains the information for a view to be presented.
@@ -67,12 +72,15 @@ class FlutterCompositor {
     ViewPresenter();
 
     void PresentPlatformViews(FlutterView* default_base_view,
-                              const std::vector<PlatformViewLayerWithIndex>& platform_views,
+                              const std::vector<LayerVariant>& layers,
                               const FlutterPlatformViewController* platform_views_controller);
 
    private:
     // Platform view to FlutterMutatorView that contains it.
     NSMapTable<NSView*, FlutterMutatorView*>* mutator_views_;
+
+    // Coordinates mouse cursor changes between platform views and overlays.
+    FlutterCursorCoordinator* cursor_coordinator_;
 
     // Presents the platform view layer represented by `layer`. `layer_index` is
     // used to position the layer in the z-axis. If the layer does not have a

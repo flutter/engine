@@ -2310,6 +2310,8 @@ TEST_F(EmbedderTest, CanPostTaskToAllNativeThreads) {
   ASSERT_EQ(captures.render_threads_count, 1u);
   ASSERT_EQ(captures.ui_threads_count, 1u);
   ASSERT_EQ(captures.worker_threads_count, worker_count + 1u /* for IO */);
+  EXPECT_GE(captures.worker_threads_count - 1, 2u);
+  EXPECT_LE(captures.worker_threads_count - 1, 4u);
 
   platform_task_runner->PostTask([&]() {
     engine.reset();
@@ -2337,6 +2339,7 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, nullptr), kInvalidArguments);
 
   // Invalid FlutterEngineAOTDataSourceType type specified.
+  // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
   data_in.type = static_cast<FlutterEngineAOTDataSourceType>(-1);
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
   ASSERT_EQ(data_out, nullptr);

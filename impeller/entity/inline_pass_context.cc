@@ -20,7 +20,6 @@ namespace impeller {
 InlinePassContext::InlinePassContext(
     const ContentContext& renderer,
     EntityPassTarget& pass_target,
-    uint32_t pass_texture_reads,
     uint32_t entity_count,
     std::optional<RenderPassResult> collapsed_parent_pass)
     : renderer_(renderer),
@@ -151,19 +150,16 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
   color0.store_action =
       is_msaa ? StoreAction::kMultisampleResolve : StoreAction::kStore;
 
-  if (ContentContext::kEnableStencilThenCover) {
-    auto depth = pass_target_.GetRenderTarget().GetDepthAttachment();
-    if (!depth.has_value()) {
-      VALIDATION_LOG << "Depth attachment unexpectedly missing from the "
-                        "EntityPass render target.";
-      return {};
-    }
-    depth->load_action = LoadAction::kClear;
-    depth->store_action = StoreAction::kDontCare;
-    pass_target_.target_.SetDepthAttachment(depth.value());
-  }
-
   auto depth = pass_target_.GetRenderTarget().GetDepthAttachment();
+  if (!depth.has_value()) {
+    VALIDATION_LOG << "Depth attachment unexpectedly missing from the "
+                      "EntityPass render target.";
+    return {};
+  }
+  depth->load_action = LoadAction::kClear;
+  depth->store_action = StoreAction::kDontCare;
+  pass_target_.target_.SetDepthAttachment(depth.value());
+
   auto stencil = pass_target_.GetRenderTarget().GetStencilAttachment();
   if (!depth.has_value() || !stencil.has_value()) {
     VALIDATION_LOG << "Stencil/Depth attachment unexpectedly missing from the "

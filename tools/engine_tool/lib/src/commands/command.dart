@@ -13,10 +13,21 @@ import 'flags.dart';
 /// The base class that all commands and subcommands should inherit from.
 abstract base class CommandBase extends Command<int> {
   /// Constructs the base command.
-  CommandBase({required this.environment});
+  CommandBase({
+    required this.environment,
+    this.help = false,
+    int? usageLineLength,
+  }) : argParser = ArgParser(usageLineLength: usageLineLength);
 
   /// The host system environment.
   final Environment environment;
+
+  /// Whether the Command is being constructed only to print the usage/help
+  /// message.
+  final bool help;
+
+  @override
+  final ArgParser argParser;
 }
 
 /// Adds the -c (--config) option to the parser.
@@ -30,7 +41,8 @@ void addConfigOption(
     configFlag,
     abbr: 'c',
     defaultsTo: defaultsTo,
-    help: 'Specify the build config to use',
+    help: 'Specify the build config to use. Run "et help build --verbose" to '
+        'see the full list of runnable configurations.',
     allowed: <String>[
       for (final Build config in builds)
         mangleConfigName(environment, config.name),

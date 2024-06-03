@@ -9,6 +9,7 @@
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/gl/GrGLDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/gl/GrGLMakeWebGLInterface.h"
 
 using namespace Skwasm;
 
@@ -101,7 +102,7 @@ void Surface::_init() {
   makeCurrent(_glContext);
   emscripten_webgl_enable_extension(_glContext, "WEBGL_debug_renderer_info");
 
-  _grContext = GrDirectContexts::MakeGL(GrGLMakeNativeInterface());
+  _grContext = GrDirectContexts::MakeGL(GrGLInterfaces::MakeWebGL());
 
   // WebGL should already be clearing the color and stencil buffers, but do it
   // again here to ensure Skia receives them in the expected state.
@@ -259,8 +260,8 @@ SKWASM_EXPORT void surface_renderPicturesOnWorker(Surface* surface,
                                                   uint32_t callbackId,
                                                   double rasterStart) {
   // This will release the pictures when they leave scope.
-  std::unique_ptr<sk_sp<SkPicture>> picturesPointer =
-      std::unique_ptr<sk_sp<SkPicture>>(pictures);
+  std::unique_ptr<sk_sp<SkPicture>[]> picturesPointer =
+      std::unique_ptr<sk_sp<SkPicture>[]>(pictures);
   surface->renderPicturesOnWorker(pictures, pictureCount, callbackId,
                                   rasterStart);
 }
