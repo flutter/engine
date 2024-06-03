@@ -67,16 +67,11 @@ static void GetMTLRenderPipelineDescriptor(const PipelineDescriptor& desc,
         FML_CHECK(!created_specialized_function);
         created_specialized_function = true;
         ShaderFunctionMTL::Cast(*entry.second)
-            .GetMTLFunctionSpecialized(constants, [callback,
-                                                   &descriptor](id<MTLFunction>
-                                                                    function) {
-              descriptor.fragmentFunction = function;
-              if (!descriptor.vertexFunction) {
-                FML_LOG(ERROR)
-                    << "Warning: Creating Descriptor with missing Vertex Main";
-              }
-              callback(descriptor);
-            });
+            .GetMTLFunctionSpecialized(
+                constants, [callback, descriptor](id<MTLFunction> function) {
+                  descriptor.fragmentFunction = function;
+                  callback(descriptor);
+                });
       }
     }
   }
