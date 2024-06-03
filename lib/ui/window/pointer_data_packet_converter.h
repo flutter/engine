@@ -75,10 +75,15 @@ struct PointerState {
 ///
 class PointerDataPacketConverter {
  public:
+  // Used by PointerDataPacketConverter to query the system status.
+  //
+  // Typically RuntimeController.
   class Delegate {
    public:
     Delegate() = default;
+
     virtual ~Delegate() = default;
+
     // Returns true if the specified view exists.
     virtual bool ViewExists(int64_t view_id) const = 0;
   };
