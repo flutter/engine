@@ -84,52 +84,35 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
   bool horizontal_axis = start_point_.y == end_point_.y;
 
   // Step 1. Compute the locations of each breakpoint along the primary axis.
-  if (stops_.size() == 2) {
-    // If there are exactly two stops then we have a nearly trivial gradient.
-    // Augment each vertex and submit. This is wrong if the gradient goes end ->
-    // start, we could fix that via some normalization.
-    vtx_builder.AddVertices(
-        {{rect.GetLeftTop(), colors_[0]},
-         {rect.GetRightTop(), horizontal_axis ? colors_[1] : colors_[0]},
-         {rect.GetLeftBottom(), horizontal_axis ? colors_[0] : colors_[1]},
-         {rect.GetRightTop(), horizontal_axis ? colors_[1] : colors_[0]},
-         {rect.GetLeftBottom(), horizontal_axis ? colors_[0] : colors_[1]},
-         {rect.GetRightBottom(), colors_[1]}});
-  } else {
-    // Otherwise, we need to compute a point along the primary axis.
-    std::vector<Point> points(stops_.size());
-    for (auto i = 0u; i < stops_.size(); i++) {
-      Scalar t = stops_[i];
-      points[i] = (1.0 - t) * start_point_ + t * end_point_;
-    }
-    // Now create a rectangle that joins each segment. That will be two
-    // triangles between each pair of points.
-    vtx_builder.Reserve(6 * (stops_.size() - 1));
-    for (auto i = 1u; i < points.size(); i++) {
-      Rect section =
-          horizontal_axis
-              ? Rect::MakeXYWH(points[i - 1].x, rect.GetY(),
-                               abs(points[i].x - points[i - 1].x),
-                               rect.GetHeight())
-
-              : Rect::MakeXYWH(rect.GetX(), points[i - 1].y, rect.GetWidth(),
-                               abs(points[i].y - points[i - 1].y));
-      vtx_builder.AddVertices({
-          {section.GetLeftTop(), colors_[i - 1]},
-          {section.GetRightTop(),
-           horizontal_axis ? colors_[i] : colors_[i - 1]},
-          {section.GetLeftBottom(),
-           horizontal_axis ? colors_[i - 1] : colors_[i]},
-          {section.GetRightTop(),
-           horizontal_axis ? colors_[i] : colors_[i - 1]},
-          {section.GetLeftBottom(),
-           horizontal_axis ? colors_[i - 1] : colors_[i]},
-          {section.GetRightBottom(),
-           horizontal_axis ? colors_[i] : colors_[i - 1]},
-      });
-    }
+  std::vector<Point> points(stops_.size());
+  for (auto i = 0u; i < stops_.size(); i++) {
+    Scalar t = stops_[i];
+    points[i] = (1.0 - t) * start_point_ + t * end_point_;
   }
+  // Now create a rectangle that joins each segment. That will be two
+  // triangles between each pair of points.
+  vtx_builder.Reserve(6 * (stops_.size() - 1));
+  for (auto i = 1u; i < points.size(); i++) {
+    Rect section =
+        horizontal_axis
+            ? Rect::MakeXYWH(points[i - 1].x, rect.GetY(),
+                             abs(points[i].x - points[i - 1].x),
+                             rect.GetHeight())
 
+            : Rect::MakeXYWH(rect.GetX(), points[i - 1].y, rect.GetWidth(),
+                             abs(points[i].y - points[i - 1].y));
+    vtx_builder.AddVertices({
+        {section.GetLeftTop(), colors_[i - 1]},
+        {section.GetRightTop(), horizontal_axis ? colors_[i] : colors_[i - 1]},
+        {section.GetLeftBottom(),
+         horizontal_axis ? colors_[i - 1] : colors_[i]},
+        {section.GetRightTop(), horizontal_axis ? colors_[i] : colors_[i - 1]},
+        {section.GetLeftBottom(),
+         horizontal_axis ? colors_[i - 1] : colors_[i]},
+        {section.GetRightBottom(),
+         horizontal_axis ? colors_[i] : colors_[i - 1]},
+    });
+  }
   auto& host_buffer = renderer.GetTransientsBuffer();
 
   pass.SetLabel("LinearGradient");
