@@ -26,8 +26,8 @@ Dart_Handle EncodeImage(CanvasImage* canvas_image,
                         int format,
                         Dart_Handle callback_handle);
 
-fml::StatusOr<sk_sp<SkData>>  EncodeImage(const sk_sp<SkImage>& raster_image,
-                          ImageByteFormat format);
+fml::StatusOr<sk_sp<SkData>> EncodeImage(const sk_sp<SkImage>& raster_image,
+                                         ImageByteFormat format);
 
 }  // namespace flutter
 
