@@ -1174,7 +1174,7 @@ static bool RequiresReadbackForBlends(
     const ContentContext& renderer,
     flutter::DlBlendMode max_root_blend_mode) {
   return !renderer.GetDeviceCapabilities().SupportsFramebufferFetch() &&
-         max_root_blend_mode >= flutter::DlBlendMode::kScreen;
+         ToBlendMode(max_root_blend_mode) > Entity::kLastPipelineBlendMode;
 }
 
 ExperimentalDlDispatcher::ExperimentalDlDispatcher(
