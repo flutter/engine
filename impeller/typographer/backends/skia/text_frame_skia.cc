@@ -116,7 +116,8 @@ std::shared_ptr<TextFrame> MakeTextFrameFromTextBlobSkia(
     }
   }
   return std::make_shared<TextFrame>(runs, ToRect(blob->bounds()), has_color,
-                                     has_color ? color : Color::Black(), stroke);
+                                     has_color ? color : Color::Black(),
+                                     stroke);
 }
 
 }  // namespace impeller

@@ -80,9 +80,7 @@ class TextFrame {
 
   TextFrame(const TextFrame& other) = default;
 
-  bool GetStroke() const {
-    return stroke_;
-  }
+  bool GetStroke() const { return stroke_; }
 
  private:
   std::vector<TextRun> runs_;

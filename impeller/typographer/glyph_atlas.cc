@@ -83,7 +83,8 @@ const FontGlyphAtlas* GlyphAtlas::GetFontGlyphAtlas(const Font& font,
                                                     Scalar scale,
                                                     bool stroke,
                                                     Color color) const {
-  const auto& found = font_atlas_map_.find(ScaledFont{font, scale, color, stroke});
+  const auto& found =
+      font_atlas_map_.find(ScaledFont{font, scale, color, stroke});
   if (found == font_atlas_map_.end()) {
     return nullptr;
   }

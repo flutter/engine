@@ -65,7 +65,8 @@ std::shared_ptr<TextFrame> MakeTextFrameSTB(
 
   std::vector<TextRun> runs = {run};
   return std::make_shared<TextFrame>(
-      runs, result.value_or(Rect::MakeLTRB(0, 0, 0, 0)), false, Color::Black(), false);
+      runs, result.value_or(Rect::MakeLTRB(0, 0, 0, 0)), false, Color::Black(),
+      false);
 }
 
 }  // namespace impeller

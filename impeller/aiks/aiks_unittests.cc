@@ -18,7 +18,6 @@
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
 #include "impeller/aiks/image_filter.h"
-#include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
@@ -715,6 +714,18 @@ TEST_P(AiksTest, CanRenderTextFrame) {
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokedTextFrame) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf",
+      {
+          .stroke = true,
+      }));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 

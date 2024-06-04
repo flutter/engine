@@ -39,7 +39,8 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const TextFrame& frame) {
   FontGlyphMap font_glyph_map;
-  frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale, /*stroke=*/false, {0, 0});
+  frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale, /*stroke=*/false,
+                                    {0, 0});
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);
 }
@@ -54,7 +55,8 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const std::vector<std::shared_ptr<TextFrame>>& frames) {
   FontGlyphMap font_glyph_map;
   for (auto& frame : frames) {
-    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, /*stroke=*/false, {0, 0});
+    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, /*stroke=*/false,
+                                       {0, 0});
   }
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);

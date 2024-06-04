@@ -56,7 +56,8 @@ struct FontGlyphPair {
 template <>
 struct std::hash<impeller::ScaledFont> {
   constexpr std::size_t operator()(const impeller::ScaledFont& sf) const {
-    return fml::HashCombine(sf.font.GetHash(), sf.scale, sf.stroke, sf.color.ToARGB());
+    return fml::HashCombine(sf.font.GetHash(), sf.scale, sf.stroke,
+                            sf.color.ToARGB());
   }
 };
 

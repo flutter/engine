@@ -207,7 +207,6 @@ static void DrawGlyph(SkCanvas* canvas,
   if (stroke) {
     glyph_paint.setStroke(true);
     glyph_paint.setStrokeWidth(2);
-
   }
   canvas->translate(glyph.subpixel_offset.x, glyph.subpixel_offset.y);
   canvas->drawGlyphs(1u,         // count
@@ -262,7 +261,8 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
       return false;
     }
 
-    DrawGlyph(canvas, pair.scaled_font, pair.glyph, bounds, pair.scaled_font.stroke, has_color);
+    DrawGlyph(canvas, pair.scaled_font, pair.glyph, bounds,
+              pair.scaled_font.stroke, has_color);
 
     // Writing to a malloc'd buffer and then copying to the staging buffers
     // benchmarks as substantially faster on a number of Android devices.
@@ -289,7 +289,9 @@ static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
   return blit_pass->ConvertTextureToShaderRead(texture);
 }
 
-static Rect ComputeGlyphSize(const SkFont& font, const SubpixelGlyph& glyph, bool stroke) {
+static Rect ComputeGlyphSize(const SkFont& font,
+                             const SubpixelGlyph& glyph,
+                             bool stroke) {
   SkRect scaled_bounds;
   SkPaint paint;
   if (stroke) {
@@ -334,8 +336,9 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
   std::vector<FontGlyphPair> new_glyphs;
   for (const auto& font_value : font_glyph_map) {
     const ScaledFont& scaled_font = font_value.first;
-    const FontGlyphAtlas* font_glyph_atlas = last_atlas->GetFontGlyphAtlas(
-        scaled_font.font, scaled_font.scale, scaled_font.stroke, scaled_font.color);
+    const FontGlyphAtlas* font_glyph_atlas =
+        last_atlas->GetFontGlyphAtlas(scaled_font.font, scaled_font.scale,
+                                      scaled_font.stroke, scaled_font.color);
 
     auto metrics = scaled_font.font.GetMetrics();
 
@@ -355,13 +358,15 @@ std::shared_ptr<GlyphAtlas> TypographerContextSkia::CreateGlyphAtlas(
       for (const SubpixelGlyph& glyph : font_value.second) {
         if (!font_glyph_atlas->FindGlyphBounds(glyph)) {
           new_glyphs.emplace_back(scaled_font, glyph);
-          glyph_sizes.push_back(ComputeGlyphSize(sk_font, glyph, scaled_font.stroke));
+          glyph_sizes.push_back(
+              ComputeGlyphSize(sk_font, glyph, scaled_font.stroke));
         }
       }
     } else {
       for (const SubpixelGlyph& glyph : font_value.second) {
         new_glyphs.emplace_back(scaled_font, glyph);
-        glyph_sizes.push_back(ComputeGlyphSize(sk_font, glyph, scaled_font.stroke));
+        glyph_sizes.push_back(
+            ComputeGlyphSize(sk_font, glyph, scaled_font.stroke));
       }
     }
   }

@@ -94,9 +94,9 @@ Point TextFrame::ComputeSubpixelPosition(
 
 void TextFrame::CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
                                             Scalar scale,
-                                             bool stroke,
+                                            bool stroke,
                                             Point offset) const {
-                                              FML_LOG(ERROR) << "stroke: "<< stroke;
+  FML_LOG(ERROR) << "stroke: " << stroke;
   for (const TextRun& run : GetRuns()) {
     const Font& font = run.GetFont();
     auto rounded_scale =
