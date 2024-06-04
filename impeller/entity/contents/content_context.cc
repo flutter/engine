@@ -294,17 +294,24 @@ ContentContext::ContentContext(
           context_->GetCapabilities()->GetDefaultColorFormat()};
   const auto supports_decal = static_cast<Scalar>(
       context_->GetCapabilities()->SupportsDecalSamplerAddressMode());
-
+  const Scalar use_alpha_texture = static_cast<Scalar>(
+      GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
+      PixelFormat::kA8UNormInt);
   {
     solid_fill_pipelines_.CreateDefault(*context_, options);
     texture_pipelines_.CreateDefault(*context_, options);
-    fast_gradient_pipelines_.CreateDefault(*context_, options);
+    fast_gradient_pipelines_.CreateDefault(*context_, options,
+                                           {use_alpha_texture});
 
     if (context_->GetCapabilities()->SupportsSSBO()) {
-      linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-      radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-      conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-      sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options,
+                                                         {use_alpha_texture});
+      radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options,
+                                                         {use_alpha_texture});
+      conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options,
+                                                          {use_alpha_texture});
+      sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options,
+                                                        {use_alpha_texture});
     } else {
       linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
       radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
@@ -445,11 +452,7 @@ ContentContext::ContentContext(
                                                  options_trianglestrip);
   srgb_to_linear_filter_pipelines_.CreateDefault(*context_,
                                                  options_trianglestrip);
-  glyph_atlas_pipelines_.CreateDefault(
-      *context_, options,
-      {static_cast<Scalar>(
-          GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
-          PixelFormat::kA8UNormInt)});
+  glyph_atlas_pipelines_.CreateDefault(*context_, options, {use_alpha_texture});
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});

@@ -7,6 +7,8 @@
 
 #include <impeller/types.glsl>
 
+layout(constant_id = 0) const float use_alpha_color_channel = 1.0;
+
 /// The dithering rate, which is 1.0 / 64.0, or 0.015625.
 const float kDitherRate = 1.0 / 64.0;
 
@@ -26,11 +28,17 @@ const float kImgSize = 8;
 /// - https://en.wikipedia.org/wiki/Ordered_dithering
 /// - https://surma.dev/things/ditherpunk/
 /// - https://shader-tutorial.dev/advanced/color-banding-dithering/
-#define IPOrderedDither8x8(output, coords, lut)                           \
-  {                                                                       \
-    float value = texture(lut, coords / kImgSize).r - 0.5;                \
-    output = vec4(clamp(output.rgb + value * kDitherRate, 0.0, output.a), \
-                  output.a);                                              \
+#define IPOrderedDither8x8(output, coords, lut)                             \
+  {                                                                         \
+    if (use_alpha_color_channel == 1.0) {                                   \
+      float value = texture(lut, coords / kImgSize).a - 0.5;                \
+      output = vec4(clamp(output.rgb + value * kDitherRate, 0.0, output.a), \
+                    output.a);                                              \
+    } else {                                                                \
+      float value = texture(lut, coords / kImgSize).r - 0.5;                \
+      output = vec4(clamp(output.rgb + value * kDitherRate, 0.0, output.a), \
+                    output.a);                                              \
+    }                                                                       \
   }
 
 #endif
