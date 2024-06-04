@@ -6,7 +6,6 @@
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 #include "impeller/core/host_buffer.h"
-#include "impeller/entity/contents/text_contents.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
