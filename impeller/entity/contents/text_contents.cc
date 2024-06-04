@@ -66,8 +66,26 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 void TextContents::PopulateGlyphAtlas(
     const std::shared_ptr<LazyGlyphAtlas>& lazy_glyph_atlas,
     Scalar scale) {
-  lazy_glyph_atlas->AddTextFrame(*frame_, scale, stroke_, offset_);
+  lazy_glyph_atlas->AddTextFrame(*frame_, scale, offset_, properties_);
   scale_ = scale;
+}
+
+void TextContents::SetTextProperties(Color color,
+                                     bool stroke,
+                                     Scalar stroke_width,
+                                     Cap stroke_cap,
+                                     Join stroke_join,
+                                     Scalar stroke_miter) {
+  if (frame_->HasColor()) {
+    properties_.color = color;
+  }
+  if (stroke) {
+    properties_.stroke = true;
+    properties_.stroke_width = stroke_width;
+    properties_.stroke_cap = stroke_cap;
+    properties_.stroke_join = stroke_join;
+    properties_.stroke_miter = stroke_miter;
+  }
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -170,8 +188,8 @@ bool TextContents::Render(const ContentContext& renderer,
           const Font& font = run.GetFont();
           Scalar rounded_scale = TextFrame::RoundScaledFontSize(
               scale_, font.GetMetrics().point_size);
-          const FontGlyphAtlas* font_atlas = atlas->GetFontGlyphAtlas(
-              font, rounded_scale, stroke_, frame_->GetColor());
+          const FontGlyphAtlas* font_atlas =
+              atlas->GetFontGlyphAtlas(font, rounded_scale);
           if (!font_atlas) {
             VALIDATION_LOG << "Could not find font in the atlas.";
             continue;
@@ -203,7 +221,7 @@ bool TextContents::Render(const ContentContext& renderer,
                 glyph_position, font.GetAxisAlignment(), offset_, scale_);
             std::optional<std::pair<Rect, Rect>> maybe_atlas_glyph_bounds =
                 font_atlas->FindGlyphBounds(
-                    SubpixelGlyph{glyph_position.glyph, subpixel});
+                    SubpixelGlyph{glyph_position.glyph, subpixel, properties_});
             if (!maybe_atlas_glyph_bounds.has_value()) {
               VALIDATION_LOG << "Could not find glyph position in the atlas.";
               continue;

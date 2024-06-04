@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "display_list/dl_color.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
@@ -39,8 +38,7 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const TextFrame& frame) {
   FontGlyphMap font_glyph_map;
-  frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale, /*stroke=*/false,
-                                    {0, 0});
+  frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0}, {});
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);
 }
@@ -55,8 +53,7 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const std::vector<std::shared_ptr<TextFrame>>& frames) {
   FontGlyphMap font_glyph_map;
   for (auto& frame : frames) {
-    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, /*stroke=*/false,
-                                       {0, 0});
+    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0}, {});
   }
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);
@@ -137,14 +134,14 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
   LazyGlyphAtlas lazy_atlas(TypographerContextSkia::Make());
 
-  lazy_atlas.AddTextFrame(*frame, 1.0f, /*stroke=*/false, {0, 0});
+  lazy_atlas.AddTextFrame(*frame, 1.0f, {0, 0}, {});
 
   frame = MakeTextFrameFromTextBlobSkia(
       SkTextBlob::MakeFromString("😀 ", emoji_font));
 
   ASSERT_TRUE(frame->GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
-  lazy_atlas.AddTextFrame(*frame, 1.0f, /*stroke=*/false, {0, 0});
+  lazy_atlas.AddTextFrame(*frame, 1.0f, {0, 0}, {});
 
   // Creates different atlases for color and red bitmap.
   auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
@@ -224,7 +221,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   size_t size_count = 8;
   for (size_t index = 0; index < size_count; index += 1) {
     MakeTextFrameFromTextBlobSkia(blob)->CollectUniqueFontGlyphPairs(
-        font_glyph_map, 0.6 * index, /*stroke=*/false, {0, 0});
+        font_glyph_map, 0.6 * index, {0, 0}, {});
   };
   auto atlas =
       context->CreateGlyphAtlas(*GetContext(), GlyphAtlas::Type::kAlphaBitmap,
@@ -305,11 +302,9 @@ TEST_P(TypographerTest, GlyphColorIsPartOfCacheKey) {
   // Create two frames with the same character and a different color, expect
   // that it adds a character.
   auto frame = MakeTextFrameFromTextBlobSkia(
-      SkTextBlob::MakeFromString("😂", emoji_font), false,
-      flutter::DlColor::kCyan());
+      SkTextBlob::MakeFromString("😂", emoji_font));
   auto frame_2 = MakeTextFrameFromTextBlobSkia(
-      SkTextBlob::MakeFromString("😂", emoji_font), false,
-      flutter::DlColor::kMagenta());
+      SkTextBlob::MakeFromString("😂", emoji_font));
 
   auto next_atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
                                      GlyphAtlas::Type::kColorBitmap, 1.0f,
@@ -332,11 +327,9 @@ TEST_P(TypographerTest, GlyphColorIsIgnoredForNonEmojiFonts) {
   // Create two frames with the same character and a different color, but as a
   // non-emoji font the text frame constructor will ignore it.
   auto frame =
-      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font),
-                                    false, flutter::DlColor::kCyan());
+      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
   auto frame_2 =
-      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font),
-                                    false, flutter::DlColor::kMagenta());
+      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
 
   auto next_atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
                                      GlyphAtlas::Type::kColorBitmap, 1.0f,
