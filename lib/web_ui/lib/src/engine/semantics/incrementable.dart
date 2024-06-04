@@ -28,7 +28,10 @@ class Incrementable extends PrimaryRoleManager {
     // the one being focused on, but the internal `<input>` element.
     addLiveRegion();
     addRouteName();
-    addLabelAndValue(preferredRepresentation: LabelRepresentation.ariaLabel);
+    addLabelAndValue(
+      preferredRepresentation: LabelRepresentation.ariaLabel,
+      labelSources: _incrementableLabelSources,
+    );
 
     append(_element);
     _element.type = 'range';
@@ -59,6 +62,12 @@ class Incrementable extends PrimaryRoleManager {
     EngineSemantics.instance.addGestureModeListener(_gestureModeListener);
     _focusManager.manage(semanticsObject.id, _element);
   }
+
+  // The incrementable role manager has custom reporting of the semantics value.
+  // We do not need to also render it as a label.
+  static final Set<LabelSource> _incrementableLabelSources = LabelAndValue
+      .allLabelSources
+      .difference(<LabelSource>{LabelSource.value});
 
   @override
   bool focusAsRouteDefault() {

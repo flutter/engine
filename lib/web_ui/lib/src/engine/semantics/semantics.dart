@@ -434,12 +434,20 @@ abstract class PrimaryRoleManager {
   ///
   /// If `labelRepresentation` is true, configures the [LabelAndValue] role with
   /// [LabelAndValue.labelRepresentation] set to true.
-  PrimaryRoleManager.withBasics(this.role, this.semanticsObject, { required LabelRepresentation preferredLabelRepresentation }) {
+  PrimaryRoleManager.withBasics(
+    this.role,
+    this.semanticsObject, {
+    required LabelRepresentation preferredLabelRepresentation,
+    Set<LabelSource> labelSources = LabelAndValue.allLabelSources,
+  }) {
     element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
     addRouteName();
-    addLabelAndValue(preferredRepresentation: preferredLabelRepresentation);
+    addLabelAndValue(
+      preferredRepresentation: preferredLabelRepresentation,
+      labelSources: labelSources,
+    );
   }
 
   /// Initializes a blank role for a [semanticsObject].
@@ -479,6 +487,10 @@ abstract class PrimaryRoleManager {
       ..position = 'absolute'
       ..overflow = 'visible';
     element.setAttribute('id', 'flt-semantic-node-${semanticsObject.id}');
+
+    if (semanticsObject.hasIdentifier) {
+      element.setAttribute('semantic-identifier', semanticsObject.identifier!);
+    }
 
     // The root node has some properties that other nodes do not.
     if (semanticsObject.id == 0 && !configuration.debugShowSemanticsNodes) {
@@ -562,8 +574,16 @@ abstract class PrimaryRoleManager {
   LabelAndValue? _labelAndValue;
 
   /// Adds generic label features.
-  void addLabelAndValue({ required LabelRepresentation preferredRepresentation }) {
-    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this, preferredRepresentation: preferredRepresentation));
+  void addLabelAndValue({
+    required LabelRepresentation preferredRepresentation,
+    Set<LabelSource> labelSources = LabelAndValue.allLabelSources,
+  }) {
+    addSecondaryRole(_labelAndValue = LabelAndValue(
+      semanticsObject,
+      this,
+      preferredRepresentation: preferredRepresentation,
+      labelSources: labelSources,
+    ));
   }
 
   /// Adds generic functionality for handling taps and clicks.
@@ -1097,6 +1117,21 @@ class SemanticsObject {
     _dirtyFields |= _platformViewIdIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get identifier => _identifier;
+  String? _identifier;
+
+  bool get hasIdentifier => _identifier != null && _identifier!.isNotEmpty;
+
+  static const int _identifierIndex = 1 << 24;
+
+  /// Whether the [identifier] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isIdentifierDirty => _isDirty(_identifierIndex);
+  void _markIdentifierDirty() {
+    _dirtyFields |= _identifierIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -1251,6 +1286,11 @@ class SemanticsObject {
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
+    }
+
+    if (_identifier != update.identifier) {
+      _identifier = update.identifier;
+      _markIdentifierDirty();
     }
 
     if (_value != update.value) {

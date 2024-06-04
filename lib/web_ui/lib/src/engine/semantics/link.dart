@@ -11,16 +11,22 @@ class Link extends PrimaryRoleManager {
     PrimaryRole.link,
     semanticsObject,
     preferredLabelRepresentation: LabelRepresentation.domText,
+    labelSources: _linkLabelSources,
   ) {
     addTappable();
   }
 
+  // The semantics value is consumed by the [Link] role manager, so there's no
+  // need to also render it as a label.
+  static final Set<LabelSource> _linkLabelSources = LabelAndValue.allLabelSources
+      .difference(<LabelSource>{LabelSource.value});
+
   @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
-    // TODO(chunhtai): Fill in the real link once the framework sends entire uri.
-    // https://github.com/flutter/flutter/issues/102535.
-    element.setAttribute('href', '#');
+    if (semanticsObject.hasValue) {
+      element.setAttribute('href', semanticsObject.value!);
+    }
     element.style.display = 'block';
     return element;
   }
