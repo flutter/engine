@@ -10,6 +10,9 @@
 /// The dithering rate, which is 1.0 / 64.0, or 0.015625.
 const float kDitherRate = 1.0 / 64.0;
 
+/// The dimensions of the dithering LUT.
+const float kImgSize = 8;
+
 /// Returns the closest color to the input color using 8x8 ordered dithering.
 ///
 /// Ordered dithering divides the output into a grid of cells, and then assigns
@@ -23,32 +26,11 @@ const float kDitherRate = 1.0 / 64.0;
 /// - https://en.wikipedia.org/wiki/Ordered_dithering
 /// - https://surma.dev/things/ditherpunk/
 /// - https://shader-tutorial.dev/advanced/color-banding-dithering/
-vec4 IPOrderedDither8x8(vec4 color, vec2 dest) {
-  // Get the x and y coordinates of the pixel in the 8x8 grid.
-  uint x = uint(dest.x) % 8;
-  uint y = uint(dest.y);
-  y ^= x;
-
-  // Get the dither value from the matrix.
-  uint m = (y & 1) << 5 |  //
-           (x & 1) << 4 |  //
-           (y & 2) << 2 |  //
-           (x & 2) << 1 |  //
-           (y & 4) >> 1 |  //
-           (x & 4) >> 2;   //
-
-  // Scale that dither to [0,1), then (-0.5,+0.5), here using 63/128 = 0.4921875
-  // as 0.5-epsilon. We want to make sure our dither is less than 0.5 in either
-  // direction to keep exact values like 0 and 1 unchanged after rounding.
-  float dither = float(m) * (2.0 / 128.0) - (63.0 / 128.0);
-
-  // Apply the dither to the color.
-  color.rgb += dither * kDitherRate;
-
-  // Clamp the color values to [0,1].
-  color.rgb = clamp(color.rgb, 0.0, 1.0);
-
-  return color;
-}
+#define IPOrderedDither8x8(output, coords, lut)                           \
+  {                                                                       \
+    float value = texture(lut, coords / kImgSize).r - 0.5;                \
+    output = vec4(clamp(output.rgb + value * kDitherRate, 0.0, output.a), \
+                  output.a);                                              \
+  }
 
 #endif

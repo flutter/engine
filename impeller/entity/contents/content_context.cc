@@ -12,6 +12,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
+#include "impeller/entity/contents/dithering_utils.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
@@ -269,6 +270,10 @@ ContentContext::ContentContext(
     auto buffer_view = host_buffer.Emplace(data);
     blit_pass->AddCopy(buffer_view, empty_texture_);
 
+    dither_lut_ = GenerateDitherLUT(
+        *context_->GetResourceAllocator(),
+        context_->GetCapabilities()->GetDefaultGlyphAtlasFormat(), blit_pass);
+
     if (!blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) ||
         !GetContext()
              ->GetCommandQueue()
@@ -468,6 +473,10 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::GetEmptyTexture() const {
   return empty_texture_;
+}
+
+std::shared_ptr<Texture> ContentContext::Get8x8OrderedDitherLUT() const {
+  return dither_lut_;
 }
 
 fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(

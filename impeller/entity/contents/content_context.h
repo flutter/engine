@@ -690,6 +690,9 @@ class ContentContext {
   // that don't always have a texture (due to blending).
   std::shared_ptr<Texture> GetEmptyTexture() const;
 
+  // Get the 8x8 ordered dither LUT.
+  std::shared_ptr<Texture> Get8x8OrderedDitherLUT() const;
+
   std::shared_ptr<Context> GetContext() const;
 
   const Capabilities& GetDeviceCapabilities() const;
@@ -1006,6 +1009,7 @@ class ContentContext {
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
   std::shared_ptr<Texture> empty_texture_;
+  std::shared_ptr<Texture> dither_lut_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

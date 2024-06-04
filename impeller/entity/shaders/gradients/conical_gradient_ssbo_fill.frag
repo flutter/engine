@@ -32,6 +32,8 @@ uniform FragInfo {
 }
 frag_info;
 
+uniform sampler2D dither_lut;
+
 highp in vec2 v_position;
 
 out vec4 frag_color;
@@ -65,5 +67,5 @@ void main() {
   }
 
   frag_color = IPPremultiply(result_color) * frag_info.alpha;
-  frag_color = IPOrderedDither8x8(frag_color, gl_FragCoord.xy);
+  IPOrderedDither8x8(frag_color, gl_FragCoord.xy, dither_lut);
 }

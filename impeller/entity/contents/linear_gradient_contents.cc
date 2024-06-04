@@ -127,6 +127,8 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
       GetOpacityFactor() * GetGeometry()->ComputeAlphaCoverage(entity);
 
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+  FS::BindDitherLut(pass, renderer.Get8x8OrderedDitherLUT(),
+                    renderer.GetContext()->GetSamplerLibrary()->GetSampler({}));
 
   return pass.Draw().ok();
 }
@@ -250,6 +252,9 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
         FS::BindFragInfo(
             pass, renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
         FS::BindColorData(pass, color_buffer);
+        FS::BindDitherLut(
+            pass, renderer.Get8x8OrderedDitherLUT(),
+            renderer.GetContext()->GetSamplerLibrary()->GetSampler({}));
 
         return true;
       });
