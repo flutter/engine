@@ -85,13 +85,13 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
 
 #ifdef IMPELLER_SUPPORTS_RENDERING
     if (impeller_enabled_) {
-      // if (ShouldRenderAsPath(dl_paints_[paint_id])) {
-      //   auto path = skia::textlayout::Paragraph::GetPath(blob.get());
-      //   auto transformed = path.makeTransform(SkMatrix::Translate(
-      //       x + blob->bounds().left(), y + blob->bounds().top()));
-      //   builder_->DrawPath(transformed, dl_paints_[paint_id]);
-      //   return;
-      // }
+      if (ShouldRenderAsPath(dl_paints_[paint_id])) {
+        auto path = skia::textlayout::Paragraph::GetPath(blob.get());
+        auto transformed = path.makeTransform(SkMatrix::Translate(
+            x + blob->bounds().left(), y + blob->bounds().top()));
+        builder_->DrawPath(transformed, dl_paints_[paint_id]);
+        return;
+      }
       builder_->DrawTextFrame(
           impeller::MakeTextFrameFromTextBlobSkia(
               blob, dl_paints_[paint_id].getDrawStyle() != DlDrawStyle::kFill,
@@ -209,15 +209,14 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     return path;
   }
 
-  // bool ShouldRenderAsPath(const DlPaint& paint) const {
-  //   FML_DCHECK(impeller_enabled_);
-  //   // Text with non-trivial color sources or stroke paint mode should be
-  //   // rendered as a path when running on Impeller for correctness. These
-  //   // filters rely on having the glyph coverage, whereas regular text is
-  //   // drawn as rectangular texture samples.
-  //   return ((paint.getColorSource() && !paint.getColorSource()->asColor()) ||
-  //           paint.getDrawStyle() != DlDrawStyle::kFill);
-  // }
+  bool ShouldRenderAsPath(const DlPaint& paint) const {
+    FML_DCHECK(impeller_enabled_);
+    // Text with non-trivial color sources should be rendered as a path when
+    // running on Impeller for correctness. These filters rely on having the
+    // glyph coverage, whereas regular text is drawn as rectangular texture
+    // samples.
+    return (paint.getColorSource() && !paint.getColorSource()->asColor());
+  }
 
   DlPaint toDlPaint(const DecorationStyle& decor_style,
                     DlDrawStyle draw_style = DlDrawStyle::kStroke) {
