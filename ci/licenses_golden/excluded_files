@@ -39,11 +39,13 @@
 ../../../flutter/display_list/effects/dl_image_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_mask_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_path_effect_unittests.cc
+../../../flutter/display_list/geometry/dl_geometry_types_unittests.cc
 ../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_paint_dispatcher_unittests.cc
 ../../../flutter/display_list/testing
+../../../flutter/display_list/utils/dl_accumulation_rect_unittests.cc
 ../../../flutter/display_list/utils/dl_matrix_clip_tracker_unittests.cc
 ../../../flutter/docs
 ../../../flutter/examples
@@ -138,6 +140,7 @@
 ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/core/allocator_unittests.cc
+../../../flutter/impeller/display_list/aiks_dl_opacity_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_path_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.h
@@ -145,6 +148,7 @@
 ../../../flutter/impeller/display_list/skia_conversions_unittests.cc
 ../../../flutter/impeller/docs
 ../../../flutter/impeller/entity/contents/clip_contents_unittests.cc
+../../../flutter/impeller/entity/contents/filters/blend_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/gaussian_blur_filter_contents_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/inputs/filter_input_unittests.cc
 ../../../flutter/impeller/entity/contents/filters/matrix_filter_contents_unittests.cc
@@ -3283,7 +3287,11 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.adc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio.signalprocessing/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.gpio/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.gpioimpl/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2c.businfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2c/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/meta.json
@@ -3293,6 +3301,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
@@ -3444,6 +3453,7 @@
 ../../../fuchsia/sdk/linux/packages/cmd-buf-benchmark-test/meta.json
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json
 ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/meta.json
+../../../fuchsia/sdk/linux/packages/realm_builder_server/meta.json
 ../../../fuchsia/sdk/linux/packages/vkcopy-test/meta.json
 ../../../fuchsia/sdk/linux/packages/vkext-test/meta.json
 ../../../fuchsia/sdk/linux/packages/vkloop-test/meta.json

@@ -18,10 +18,12 @@
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/display_list/skia_conversions.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
@@ -619,13 +621,15 @@ void DlDispatcherBase::save(uint32_t total_content_depth) {
 void DlDispatcherBase::saveLayer(const SkRect& bounds,
                                  const flutter::SaveLayerOptions& options,
                                  uint32_t total_content_depth,
+                                 flutter::DlBlendMode max_content_mode,
                                  const flutter::DlImageFilter* backdrop) {
   auto paint = options.renders_with_attributes() ? paint_ : Paint{};
   auto promise = options.content_is_clipped()
                      ? ContentBoundsPromise::kMayClipContents
                      : ContentBoundsPromise::kContainsContents;
   GetCanvas().SaveLayer(paint, skia_conversions::ToRect(bounds),
-                        ToImageFilter(backdrop), promise, total_content_depth);
+                        ToImageFilter(backdrop), promise, total_content_depth,
+                        options.can_distribute_opacity());
 }
 
 // |flutter::DlOpReceiver|
@@ -814,7 +818,7 @@ void DlDispatcherBase::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
+  if (skia_conversions::IsNearlySimpleRRect(rrect)) {
     GetCanvas().DrawRRect(skia_conversions::ToRect(rrect.rect()),
                           skia_conversions::ToSize(rrect.getSimpleRadii()),
                           paint_);
@@ -1028,7 +1032,8 @@ void DlDispatcherBase::drawDisplayList(
     save_paint.color = Color(0, 0, 0, opacity);
     GetCanvas().SaveLayer(
         save_paint, skia_conversions::ToRect(display_list->bounds()), nullptr,
-        ContentBoundsPromise::kContainsContents, display_list->total_depth());
+        ContentBoundsPromise::kContainsContents, display_list->total_depth(),
+        display_list->can_apply_group_opacity());
   } else {
     // The display list may alter the clip, which must be restored to the
     // current clip at the end of playback.
@@ -1167,11 +1172,24 @@ Canvas& DlDispatcher::GetCanvas() {
   return canvas_;
 }
 
-ExperimentalDlDispatcher::ExperimentalDlDispatcher(ContentContext& renderer,
-                                                   RenderTarget& render_target,
-                                                   bool requires_readback,
-                                                   IRect cull_rect)
-    : canvas_(renderer, render_target, requires_readback, cull_rect) {}
+static bool RequiresReadbackForBlends(
+    const ContentContext& renderer,
+    flutter::DlBlendMode max_root_blend_mode) {
+  return !renderer.GetDeviceCapabilities().SupportsFramebufferFetch() &&
+         ToBlendMode(max_root_blend_mode) > Entity::kLastPipelineBlendMode;
+}
+
+ExperimentalDlDispatcher::ExperimentalDlDispatcher(
+    ContentContext& renderer,
+    RenderTarget& render_target,
+    bool has_root_backdrop_filter,
+    flutter::DlBlendMode max_root_blend_mode,
+    IRect cull_rect)
+    : canvas_(renderer,
+              render_target,
+              has_root_backdrop_filter ||
+                  RequiresReadbackForBlends(renderer, max_root_blend_mode),
+              cull_rect) {}
 
 Canvas& ExperimentalDlDispatcher::GetCanvas() {
   return canvas_;

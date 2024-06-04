@@ -274,7 +274,7 @@ bool SurfaceMTL::Present() const {
     constexpr bool alwaysWaitForScheduling = true;
 #else
     constexpr bool alwaysWaitForScheduling = false;
-#endif  // FML_OS_IOS_SIM
+#endif  // defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
 
     // If the threads have been merged, or there is a pending frame capture,
     // then block on cmd buffer scheduling to ensure that the
@@ -288,7 +288,7 @@ bool SurfaceMTL::Present() const {
       [command_buffer waitUntilCompleted];
 #else
       [command_buffer waitUntilScheduled];
-#endif  //  defined(FML_OS_IOS_SIMULATOR) && defined(__x86_64__)
+#endif  // defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
       [drawable_ present];
     } else {
       // The drawable may come from a FlutterMetalLayer, so it can't be
