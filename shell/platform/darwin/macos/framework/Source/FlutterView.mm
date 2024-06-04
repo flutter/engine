@@ -107,8 +107,8 @@
 // and will not restore it back.
 - (void)cursorUpdate:(NSEvent*)event {
   // Make sure to not override cursor when over a platform view.
-  NSPoint mouseLoc = [[self superview] convertPoint:event.locationInWindow fromView:nil];
-  NSView* hitTestView = [self hitTest:mouseLoc];
+  NSPoint mouseLocation = [[self superview] convertPoint:event.locationInWindow fromView:nil];
+  NSView* hitTestView = [self hitTest:mouseLocation];
   if (hitTestView != self) {
     return;
   }
