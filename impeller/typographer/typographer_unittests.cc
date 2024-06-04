@@ -6,6 +6,7 @@
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/entity/contents/text_contents.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
@@ -339,8 +340,8 @@ TEST_P(TypographerTest, GlyphColorIsIgnoredForNonEmojiFonts) {
   auto frame_2 =
       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
   auto properties = {
-      GlyphProperties{.color = Color::Red()},
-      GlyphProperties{.color = Color::Blue()},
+      GlyphProperties{},
+      GlyphProperties{},
   };
 
   auto next_atlas =
