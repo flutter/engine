@@ -50,10 +50,13 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     GlyphAtlas::Type type,
     Scalar scale,
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
-    const std::vector<std::shared_ptr<TextFrame>>& frames) {
+    const std::vector<std::shared_ptr<TextFrame>>& frames,
+    const std::vector<GlyphProperties>& properties) {
   FontGlyphMap font_glyph_map;
+  size_t offset = 0;
   for (auto& frame : frames) {
-    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0}, {});
+    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0},
+                                       properties[offset++]);
   }
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);
@@ -305,10 +308,15 @@ TEST_P(TypographerTest, GlyphColorIsPartOfCacheKey) {
       SkTextBlob::MakeFromString("😂", emoji_font));
   auto frame_2 = MakeTextFrameFromTextBlobSkia(
       SkTextBlob::MakeFromString("😂", emoji_font));
+  auto properties = {
+      GlyphProperties{.color = Color::Red()},
+      GlyphProperties{.color = Color::Blue()},
+  };
 
-  auto next_atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                                     GlyphAtlas::Type::kColorBitmap, 1.0f,
-                                     atlas_context, {frame, frame_2});
+  auto next_atlas =
+      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                       GlyphAtlas::Type::kColorBitmap, 1.0f, atlas_context,
+                       {frame, frame_2}, properties);
 
   EXPECT_EQ(next_atlas->GetGlyphCount(), 2u);
 }
@@ -330,10 +338,15 @@ TEST_P(TypographerTest, GlyphColorIsIgnoredForNonEmojiFonts) {
       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
   auto frame_2 =
       MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
+  auto properties = {
+      GlyphProperties{.color = Color::Red()},
+      GlyphProperties{.color = Color::Blue()},
+  };
 
-  auto next_atlas = CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
-                                     GlyphAtlas::Type::kColorBitmap, 1.0f,
-                                     atlas_context, {frame, frame_2});
+  auto next_atlas =
+      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                       GlyphAtlas::Type::kColorBitmap, 1.0f, atlas_context,
+                       {frame, frame_2}, properties);
 
   EXPECT_EQ(next_atlas->GetGlyphCount(), 1u);
 }
