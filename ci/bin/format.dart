@@ -488,7 +488,7 @@ class JavaFormatChecker extends FormatChecker {
   late final File googleJavaFormatJar;
 
   // String to return if java formatting cant check java code for any reson.
-  static const String _javaFormatErrorString = "Java Formatting Error";
+  static const String _javaFormatErrorString = 'Java Formatting Error';
 
   Future<String> _getGoogleJavaFormatVersion() async {
     final ProcessRunnerResult result = await _processRunner
@@ -510,7 +510,7 @@ class JavaFormatChecker extends FormatChecker {
     if (failures.isEmpty) {
       return true;
     }
-    if (failures.first == _javaFormatErrorString) {
+    if (failures.length == 1 && failures.first == _javaFormatErrorString) {
       // _javaFormatErrorString is a string that indicates java formatting failed
       // without creating a patch that can be applied.
       return false;

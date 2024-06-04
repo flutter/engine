@@ -197,7 +197,10 @@ void main() {
     } finally {
       fixture.gitRemove();
     }
-  }, skip: false);
+    // TODO(mtolmacs): Fails if Java dependency is unavailable,
+    // https://github.com/flutter/flutter/issues/129221
+    // Java dependency is missing from some Mac bots so only skip those.
+  }, skip: platform.isMacOS);
 
   test('Can fix Python formatting errors', () {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.python);
