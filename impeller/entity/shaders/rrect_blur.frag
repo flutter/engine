@@ -8,22 +8,29 @@ precision highp float;
 #include <impeller/types.glsl>
 
 uniform FragInfo {
-  f16vec4 color;
+  vec4 color;
   vec2 rect_size;
-  float blur_sigma;
   vec2 corner_radii;
+  float blur_sigma;
 }
 frag_info;
 
 in vec2 v_position;
 
-out f16vec4 frag_color;
+out vec4 frag_color;
 
-const int kSampleCount = 4;
+vec4 IPVec2FastGaussianIntegral2(vec4 x, float sigma) {
+  return 1.0 / (1.0 + exp(-kSqrtThree / sigma * x));
+}
+
+vec4 IPGaussian4(vec4 x, float sigma) {
+  float variance = sigma * sigma;
+  return exp(-0.5f * x * x / variance) / (kSqrtTwoPi * sigma);
+}
 
 /// Closed form unidirectional rounded rect blur mask solution using the
 /// analytical Gaussian integral (with approximated erf).
-float RRectBlurX(vec2 sample_position, vec2 half_size) {
+vec4 RRectBlurX(float x, vec4 sample_positions, vec2 half_size) {
   // The vertical edge of the rrect consists of a flat portion and a curved
   // portion, the two of which vary in size depending on the size of the
   // corner radii, both adding up to half_size.y.
@@ -33,8 +40,8 @@ float RRectBlurX(vec2 sample_position, vec2 half_size) {
   // negative (and then clamped to 0) for positions that are located
   // vertically in the flat part of the rrect, and will be the relative
   // distance from the center of curvature otherwise.
-  float space_y =
-      min(0.0, half_size.y - frag_info.corner_radii.y - abs(sample_position.y));
+  vec4 space_y = min(vec4(0.0), half_size.y - frag_info.corner_radii.y -
+                                    abs(sample_positions));
   // space is now in the range [0.0, corner_radii.y]. If the y sample was
   // in the flat portion of the rrect, it will be 0.0
 
@@ -52,22 +59,29 @@ float RRectBlurX(vec2 sample_position, vec2 half_size) {
   // space_y was larger than corner_radii.y.
   // The calling function RRectBlur will never provide a Y sample outside
   // of that range, though, so the max(0.0) is mostly a precaution.
-  float unit_space_y = space_y / frag_info.corner_radii.y;
-  float unit_space_x = sqrt(max(0.0, 1.0 - unit_space_y * unit_space_y));
-  float rrect_distance =
+  vec4 unit_space_y = space_y / frag_info.corner_radii.y;
+  vec4 unit_space_x =
+      sqrt(max(vec4(0.0), vec4(1.0) - unit_space_y * unit_space_y));
+  vec4 rrect_distance =
       half_size.x - frag_info.corner_radii.x * (1.0 - unit_space_x);
 
   // Now we integrate the Gaussian over the range of the relative positions
   // of the left and right sides of the rrect relative to the sampling
   // X coordinate.
-  vec2 integral = IPVec2FastGaussianIntegral(
-      float(sample_position.x) + vec2(-rrect_distance, rrect_distance),
-      float(frag_info.blur_sigma));
+  vec4 integral_ab =
+      IPVec2FastGaussianIntegral2(x + vec4(-rrect_distance.x, rrect_distance.x,
+                                           -rrect_distance.y, rrect_distance.y),
+                                  float(frag_info.blur_sigma));
+  vec4 integral_cd =
+      IPVec2FastGaussianIntegral2(x + vec4(-rrect_distance.z, rrect_distance.z,
+                                           -rrect_distance.w, rrect_distance.w),
+                                  float(frag_info.blur_sigma));
   // integral.y contains the evaluation of the indefinite gaussian integral
   // function at (X + rrect_distance) and integral.x contains the evaluation
   // of it at (X - rrect_distance). Subtracting the two produces the
   // integral result over the range from one to the other.
-  return integral.y - integral.x;
+  return vec4(integral_ab.y - integral_ab.x, integral_ab.w - integral_ab.z,
+              integral_cd.y - integral_cd.x, integral_cd.w - integral_cd.z);
 }
 
 float RRectBlur(vec2 sample_position, vec2 half_size) {
@@ -81,25 +95,22 @@ float RRectBlur(vec2 sample_position, vec2 half_size) {
   // locations will be 0.0 anyway).
   float begin_y = max(-half_sampling_range, sample_position.y - half_size.y);
   float end_y = min(half_sampling_range, sample_position.y + half_size.y);
-  float interval = (end_y - begin_y) / kSampleCount;
+  float interval = (end_y - begin_y) * 0.25;
 
   // Sample the X blur kSampleCount times, weighted by the Gaussian function.
-  float result = 0.0;
-  for (int sample_i = 0; sample_i < kSampleCount; sample_i++) {
-    float y = begin_y + interval * (float(sample_i) + 0.5);
-    result +=
-        RRectBlurX(vec2(sample_position.x, sample_position.y - y), half_size) *
-        IPGaussian(float(y), float(frag_info.blur_sigma)) * interval;
-  }
+  vec4 sample_offsets =
+      vec4(begin_y + 0.5 * interval, begin_y + 1.5 * interval,
+           begin_y + 2.5 * interval, begin_y + 3.5 * interval);
 
-  return result;
+  vec4 rrect_blurs = RRectBlurX(sample_position.x,
+                                sample_position.y - sample_offsets, half_size);
+  vec4 gaussian_coef = IPGaussian4(sample_offsets, frag_info.blur_sigma);
+  vec4 result = interval * rrect_blurs * gaussian_coef;
+  return result.x + result.y + result.z + result.w;
 }
 
 void main() {
-  frag_color = frag_info.color;
-
   vec2 half_size = frag_info.rect_size * 0.5;
   vec2 sample_position = v_position - half_size;
-
-  frag_color *= float16_t(RRectBlur(sample_position, half_size));
+  frag_color = frag_info.color * RRectBlur(sample_position, half_size);
 }
