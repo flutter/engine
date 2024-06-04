@@ -266,11 +266,11 @@ bool SurfaceMTL::Present() const {
           flutterPrepareForPresent:command_buffer];
     }
 
-    // iOS simulators do not seem to give backpressure on Metal drawable
+    // Intel iOS simulators do not seem to give backpressure on Metal drawable
     // aquisition, which can result in Impeller running head of the GPU
     // workload by dozens of frames. Slow this process down by blocking
     // on submit until the last command buffer is at least scheduled.
-#if defined(FML_OS_IOS_SIMULATOR)
+#if defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
     constexpr bool alwaysWaitForScheduling = true;
 #else
     constexpr bool alwaysWaitForScheduling = false;
@@ -284,7 +284,11 @@ bool SurfaceMTL::Present() const {
         alwaysWaitForScheduling) {
       TRACE_EVENT0("flutter", "waitUntilScheduled");
       [command_buffer commit];
+#if defined(FML_OS_IOS_SIMULATOR) && defined(FML_ARCH_CPU_X86_64)
+      [command_buffer waitUntilCompleted];
+#else
       [command_buffer waitUntilScheduled];
+#endif  //  defined(FML_OS_IOS_SIMULATOR) && defined(__x86_64__)
       [drawable_ present];
     } else {
       // The drawable may come from a FlutterMetalLayer, so it can't be
