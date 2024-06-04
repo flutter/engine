@@ -6,6 +6,7 @@
 
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/dithering_utils.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -101,7 +102,8 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
             pass, renderer.GetTransientsBuffer().EmplaceUniform(frag_info));
         FS::BindDitherLut(
             pass, renderer.Get8x8OrderedDitherLUT(),
-            renderer.GetContext()->GetSamplerLibrary()->GetSampler({}));
+            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                CreateLUTDescriptor()));
         FS::BindColorData(pass, color_buffer);
 
         return true;

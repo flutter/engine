@@ -6,6 +6,7 @@
 
 #include "impeller/core/formats.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/dithering_utils.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
@@ -128,7 +129,8 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
 
   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
   FS::BindDitherLut(pass, renderer.Get8x8OrderedDitherLUT(),
-                    renderer.GetContext()->GetSamplerLibrary()->GetSampler({}));
+                    renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                        CreateLUTDescriptor()));
 
   return pass.Draw().ok();
 }
@@ -254,7 +256,8 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
         FS::BindColorData(pass, color_buffer);
         FS::BindDitherLut(
             pass, renderer.Get8x8OrderedDitherLUT(),
-            renderer.GetContext()->GetSamplerLibrary()->GetSampler({}));
+            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                CreateLUTDescriptor()));
 
         return true;
       });

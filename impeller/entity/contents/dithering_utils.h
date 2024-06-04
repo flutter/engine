@@ -7,10 +7,18 @@
 
 #include "impeller/core/allocator.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/core/texture.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
+
+SamplerDescriptor CreateLUTDescriptor() {
+  SamplerDescriptor desc;
+  desc.width_address_mode = SamplerAddressMode::kRepeat;
+  desc.height_address_mode = SamplerAddressMode::kRepeat;
+  return desc;
+}
 
 /// Generate an 8x8 lookup table for the ordered dither used by gradient
 /// shaders.
