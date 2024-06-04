@@ -632,6 +632,7 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
 }
 
 struct TextRenderOptions {
+  bool stroke = false;
   Scalar font_size = 50;
   Color color = Color::Yellow();
   Point position = Vector2(100, 200);
@@ -671,6 +672,9 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   Paint text_paint;
   text_paint.color = options.color;
   text_paint.mask_blur_descriptor = options.mask_blur_descriptor;
+  text_paint.stroke_width = 5;
+  text_paint.style =
+      options.stroke ? Paint::Style::kStroke : Paint::Style::kFill;
   canvas.DrawTextFrame(frame, options.position, text_paint);
   return true;
 }
