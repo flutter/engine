@@ -412,14 +412,20 @@ class CkImage implements ui.Image, StackTraceDebugger {
         videoFrame!.format != 'I422') {
       return readPixelsFromVideoFrame(videoFrame!, format);
     } else {
-      return _readPixelsFromSkImage(format);
+      ByteData? data = _readPixelsFromSkImage(format);
+      data ??= _readPixelsFromImageViaSurface(format);
+      if (data == null) {
+        return Future<ByteData>.error('Failed to encode the image into bytes.');
+      } else {
+        return Future<ByteData>.value(data);
+      }
     }
   }
 
   @override
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
-  Future<ByteData> _readPixelsFromSkImage(ui.ImageByteFormat format) {
+  ByteData? _readPixelsFromSkImage(ui.ImageByteFormat format) {
     final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba
         ? canvasKit.AlphaType.Unpremul
         : canvasKit.AlphaType.Premul;
@@ -430,11 +436,29 @@ class CkImage implements ui.Image, StackTraceDebugger {
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
     );
-    if (data == null) {
-      return Future<ByteData>.error('Failed to encode the image into bytes.');
-    } else {
-      return Future<ByteData>.value(data);
+    return data;
+  }
+
+  ByteData? _readPixelsFromImageViaSurface(ui.ImageByteFormat format) {
+    final Surface surface = CanvasKitRenderer.instance.pictureToImageSurface;
+    final CkSurface ckSurface =
+        surface.createOrUpdateSurface(BitmapSize(width, height));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.clear(const ui.Color(0x00000000));
+    ckCanvas.drawImage(this, ui.Offset.zero, CkPaint());
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
+    final SkImageInfo imageInfo = SkImageInfo(
+      alphaType: canvasKit.AlphaType.Premul,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+      width: width.toDouble(),
+      height: height.toDouble(),
+    );
+    final Uint8List? pixels = skImage.readPixels(0, 0, imageInfo);
+    if (pixels == null) {
+      throw StateError('Unable to convert read pixels from SkImage.');
     }
+    return pixels.buffer.asByteData();
   }
 
   static ByteData? _encodeImage({

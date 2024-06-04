@@ -251,7 +251,6 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
         final ui.FrameInfo frame = await codec.getNextFrame();
         final CkImage ckImage = frame.image as CkImage;
-        print('testing $testFile');
         final ByteData imageBytes = await ckImage.toByteData();
         expect(imageBytes.lengthInBytes, greaterThan(0));
 
