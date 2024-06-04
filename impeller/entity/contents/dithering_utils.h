@@ -13,12 +13,7 @@
 
 namespace impeller {
 
-SamplerDescriptor CreateLUTDescriptor() {
-  SamplerDescriptor desc;
-  desc.width_address_mode = SamplerAddressMode::kRepeat;
-  desc.height_address_mode = SamplerAddressMode::kRepeat;
-  return desc;
-}
+SamplerDescriptor CreateLUTDescriptor();
 
 /// Generate an 8x8 lookup table for the ordered dither used by gradient
 /// shaders.
