@@ -716,7 +716,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // that has determined its compatibility as indicated by |compatible|.
   void UpdateLayerOpacityCompatibility(bool compatible) {
     if (!compatible) {
-      current_info().layer_info->opacity_incompatible_op_detected = true;
+      current_layer().opacity_incompatible_op_detected = true;
     }
   }
 
@@ -777,7 +777,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
       case OpResult::kPreservesTransparency:
         break;
       case OpResult::kAffectsAll:
-        current_info().layer_info->affects_transparent_layer = true;
+        current_layer().affects_transparent_layer = true;
         break;
     }
     current_layer().update_blend_mode(mode);
