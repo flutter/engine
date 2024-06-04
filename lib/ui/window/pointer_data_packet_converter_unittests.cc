@@ -758,7 +758,8 @@ TEST(PointerDataPacketConverterTest, CanConvertTrackpadGesture) {
 
 TEST(PointerDataPacketConverterTest, CanConvertViewId) {
   TestDelegate delegate;
-  delegate.AddView(kImplicitViewId);
+  delegate.AddView(100);
+  delegate.AddView(200);
   PointerDataPacketConverter converter(delegate);
   auto packet = std::make_unique<PointerDataPacket>(2);
   PointerData data;
