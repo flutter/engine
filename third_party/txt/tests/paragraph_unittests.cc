@@ -206,7 +206,7 @@ TEST_F(PainterTest, DrawStrokedTextImpeller) {
 
   EXPECT_EQ(recorder.textFrameCount(), 1);
   EXPECT_EQ(recorder.blobCount(), 0);
-  EXPECT_EQ(recorder.pathCount(), 1);
+  EXPECT_EQ(recorder.pathCount(), 0);
 }
 
 TEST_F(PainterTest, DrawTextWithGradientImpeller) {
