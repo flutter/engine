@@ -124,7 +124,7 @@ if (enable_unittests) {
   test_fixtures("txt_fixtures") {
     fixtures = [
       "third_party/fonts/Roboto-Regular.ttf",
-      "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+      "third_party/fonts/NotoColorEmoji.ttf",
     ]
 
     if (host_os == "mac") {
