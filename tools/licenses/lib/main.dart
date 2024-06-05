@@ -462,11 +462,10 @@ class _RepositoryIcuLicenseFile extends _RepositorySingleLicenseFile {
     : super(parent, io, license);
 
   static final RegExp _pattern = RegExp(
-    r'^(UNICODE, INC\. LICENSE AGREEMENT - DATA FILES AND SOFTWARE\n+' // group
-    r'See Terms of Use (?:.|\n)+?'
+    r'^(UNICODE LICENSE V3\n+' // group
     r'COPYRIGHT AND PERMISSION NOTICE\n+'
     r'Copyright.+\n'
-    r'Distributed under the Terms of Use in .+\n+'
+    r'NOTICE TO USER(?:.|\n)+?'
     r')(Permission is hereby granted(?:.|\n)+?)' // template group
     r'\n+-+\n+'
     r'(Third-Party Software Licenses\n+' // group
