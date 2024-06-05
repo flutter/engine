@@ -141,7 +141,7 @@ Some cases where an explicit type should be considered:
 
   ```dart
   // Without 'num', the map would be inferred as 'Map<String, int>'.
-  const Map<String, num> map = {'one': 1, 'two': 2, 'three': 3};
+  const map = <String, num>{'one': 1, 'two': 2, 'three': 3};
   ```
 
 - Or, **when a reviewer requests it**!
