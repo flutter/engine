@@ -30,7 +30,7 @@ static const std::string kEmojiFontName =
 #if FML_OS_MACOSX
     "Apple Color Emoji";
 #else
-    "NotoColorEmoji";
+    "Noto Color Emoji";
 #endif
 
 
