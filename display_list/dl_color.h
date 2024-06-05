@@ -5,6 +5,8 @@
 #ifndef FLUTTER_DISPLAY_LIST_DL_COLOR_H_
 #define FLUTTER_DISPLAY_LIST_DL_COLOR_H_
 
+#include <algorithm>
+
 #include "third_party/skia/include/core/SkScalar.h"
 
 namespace flutter {
@@ -13,6 +15,15 @@ struct DlColor {
  public:
   constexpr DlColor() : argb_(0xFF000000) {}
   constexpr explicit DlColor(uint32_t argb) : argb_(argb) {}
+  constexpr static DlColor MakeARGB(SkScalar fAlpha,
+                                    SkScalar fRed,
+                                    SkScalar fGreen,
+                                    SkScalar fBlue) {
+    return DlColor((toC(fAlpha) << 24) +  //
+                   (toC(fRed) << 16) +    //
+                   (toC(fGreen) << 8) +   //
+                   (toC(fBlue)));
+  }
 
   static constexpr uint8_t toAlpha(SkScalar opacity) { return toC(opacity); }
   static constexpr SkScalar toOpacity(uint8_t alpha) { return toF(alpha); }
@@ -87,7 +98,18 @@ struct DlColor {
   uint32_t argb_;
 
   static float toF(uint8_t comp) { return comp * (1.0f / 255); }
-  static uint8_t toC(float fComp) { return round(fComp * 255); }
+  static uint8_t toC(float fComp) {
+    return round(std::clamp(fComp, 0.0f, 1.0f) * 255);
+  }
+  static uint32_t fromFloats(SkScalar fAlpha,
+                             SkScalar fRed,
+                             SkScalar fGreen,
+                             SkScalar fBlue) {
+    return ((toC(std::clamp(fAlpha, 0.0f, 1.0f)) << 24) +
+            (toC(std::clamp(fRed, 0.0f, 1.0f)) << 16) +
+            (toC(std::clamp(fGreen, 0.0f, 1.0f)) << 8) +
+            (toC(std::clamp(fBlue, 0.0f, 1.0f))));
+  }
 };
 
 }  // namespace flutter

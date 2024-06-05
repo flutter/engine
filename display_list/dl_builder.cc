@@ -1042,6 +1042,9 @@ bool DisplayListBuilder::QuickReject(const SkRect& bounds) const {
 void DisplayListBuilder::drawPaint() {
   OpResult result = PaintResult(current_, kDrawPaintFlags);
   if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
+    if (current_layer().update_clear_color(current_, false)) {
+      return;
+    }
     Push<DrawPaintOp>(0);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1054,6 +1057,9 @@ void DisplayListBuilder::DrawPaint(const DlPaint& paint) {
 void DisplayListBuilder::DrawColor(DlColor color, DlBlendMode mode) {
   OpResult result = PaintResult(DlPaint(color).setBlendMode(mode));
   if (result != OpResult::kNoEffect && AccumulateUnbounded()) {
+    if (current_layer().update_clear_color(color, mode)) {
+      return;
+    }
     Push<DrawColorOp>(0, color, mode);
     CheckLayerOpacityCompatibility(mode);
     UpdateLayerResult(result, mode);
@@ -1082,6 +1088,11 @@ void DisplayListBuilder::drawRect(const SkRect& rect) {
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(rect.makeSorted(), flags)) {
+    if (current_layer().still_clearing &&
+        current_info().global_state.rect_covers_cull(rect) &&
+        current_layer().update_clear_color(current_, true)) {
+      return;
+    }
     Push<DrawRectOp>(0, rect);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1096,6 +1107,11 @@ void DisplayListBuilder::drawOval(const SkRect& bounds) {
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(bounds.makeSorted(), flags)) {
+    if (current_layer().still_clearing &&
+        current_info().global_state.oval_covers_cull(bounds) &&
+        current_layer().update_clear_color(current_, true)) {
+      return;
+    }
     Push<DrawOvalOp>(0, bounds);
     CheckLayerOpacityCompatibility();
     UpdateLayerResult(result);
@@ -1112,6 +1128,11 @@ void DisplayListBuilder::drawCircle(const SkPoint& center, SkScalar radius) {
     SkRect bounds = SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
                                      center.fX + radius, center.fY + radius);
     if (AccumulateOpBounds(bounds, flags)) {
+      if (current_layer().still_clearing &&
+          current_info().global_state.oval_covers_cull(bounds) &&
+          current_layer().update_clear_color(current_, true)) {
+        return;
+      }
       Push<DrawCircleOp>(0, center, radius);
       CheckLayerOpacityCompatibility();
       UpdateLayerResult(result);
@@ -1134,6 +1155,11 @@ void DisplayListBuilder::drawRRect(const SkRRect& rrect) {
     OpResult result = PaintResult(current_, flags);
     if (result != OpResult::kNoEffect &&
         AccumulateOpBounds(rrect.getBounds(), flags)) {
+      if (current_layer().still_clearing &&
+          current_info().global_state.rrect_covers_cull(rrect) &&
+          current_layer().update_clear_color(current_, true)) {
+        return;
+      }
       Push<DrawRRectOp>(0, rrect);
       CheckLayerOpacityCompatibility();
       UpdateLayerResult(result);
@@ -1784,6 +1810,63 @@ bool DisplayListBuilder::AccumulateBounds(const SkRect& bounds,
   }
   layer.layer_info->layer_local_accumulator.accumulate(layer_bounds);
   return true;
+}
+
+bool DisplayListBuilder::LayerInfo::update_clear_color(DlColor color,
+                                                       DlBlendMode mode) {
+  if (still_clearing) {
+    switch (mode) {
+      case DlBlendMode::kSrc:
+        if (color.isTransparent()) {
+          clear_color = DlColor::kTransparent();
+          max_blend_mode = DlBlendMode::kClear;
+        } else {
+          clear_color = color;
+          max_blend_mode = DlBlendMode::kSrc;
+        }
+        return true;
+      case DlBlendMode::kSrcOver:
+        if (color.isTransparent()) {
+          // No changes to clear_color or max_blend_mode...
+        } else {
+          if (color.isOpaque() || clear_color.isTransparent()) {
+            clear_color = color;
+            max_blend_mode = DlBlendMode::kSrc;
+          } else {
+            DlScalar fSrc = color.getAlphaF();
+            DlScalar fDst = clear_color.getAlphaF() * (1.0f - fSrc);
+            DlScalar fRed =
+                color.getRedF() * fSrc + clear_color.getRedF() * fDst;
+            DlScalar fGreen =
+                color.getGreenF() * fSrc + clear_color.getGreenF() * fDst;
+            DlScalar fBlue =
+                color.getBlueF() * fSrc + clear_color.getBlueF() * fDst;
+            clear_color = DlColor::MakeARGB(fSrc + fDst, fRed, fGreen, fBlue);
+            max_blend_mode = DlBlendMode::kSrc;
+          }
+        }
+        return true;
+      default:
+        break;
+    }
+  }
+  return false;
+}
+
+bool DisplayListBuilder::LayerInfo::update_clear_color(const DlPaint& paint,
+                                                       bool has_geometry) {
+  if (paint.getColorSourcePtr() != nullptr ||
+      paint.getColorFilterPtr() != nullptr ||
+      paint.getImageFilterPtr() != nullptr) {
+    return false;
+  }
+  if (has_geometry) {
+    if (paint.getDrawStyle() != DlDrawStyle::kFill ||
+        paint.getMaskFilterPtr() != nullptr) {
+      return false;
+    }
+  }
+  return update_clear_color(paint.getColor(), paint.getBlendMode());
 }
 
 bool DisplayListBuilder::SaveInfo::AccumulateBoundsLocal(const SkRect& bounds) {

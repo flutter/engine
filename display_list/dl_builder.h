@@ -539,6 +539,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
     DlBlendMode max_blend_mode = DlBlendMode::kClear;
 
+    bool still_clearing;
+    DlColor clear_color = DlColor::kTransparent();
+
     bool opacity_incompatible_op_detected = false;
     bool affects_transparent_layer = false;
     bool contains_backdrop_filter = false;
@@ -553,6 +556,16 @@ class DisplayListBuilder final : public virtual DlCanvas,
         max_blend_mode = mode;
       }
     }
+
+    // Update the layer's clear color according to the indicated fill
+    // color and blend mode and return true if the operation was
+    // successfully merged into the layer clear information.
+    bool update_clear_color(DlColor color, DlBlendMode mode);
+
+    // Update the layer's clear color according to the indicated fill
+    // color and blend mode and return true if the operation was
+    // successfully merged into the layer clear information.
+    bool update_clear_color(const DlPaint& paint, bool has_geometry);
   };
 
   // The SaveInfo class stores internal data common to both Save and

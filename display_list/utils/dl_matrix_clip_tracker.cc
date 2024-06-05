@@ -270,4 +270,105 @@ SkRect DisplayListMatrixClipState::local_cull_rect() const {
   return ToSkRect(cull_rect_.TransformBounds(inverse));
 }
 
+bool DisplayListMatrixClipState::rect_covers_cull(const DlRect& content) const {
+  if (content.IsEmpty()) {
+    return false;
+  }
+  if (cull_rect_.IsEmpty()) {
+    return true;
+  }
+  DlPoint corners[4];
+  if (!getLocalCullCorners(corners)) {
+    return false;
+  }
+  for (auto corner : corners) {
+    if (!content.ContainsInclusive(corner)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool DisplayListMatrixClipState::oval_covers_cull(const DlRect& bounds) const {
+  if (bounds.IsEmpty()) {
+    return false;
+  }
+  if (cull_rect_.IsEmpty()) {
+    return true;
+  }
+  DlPoint corners[4];
+  if (!getLocalCullCorners(corners)) {
+    return false;
+  }
+  DlPoint center = bounds.GetCenter();
+  DlSize scale = 2.0 / bounds.GetSize();
+  for (auto corner : corners) {
+    if (!bounds.Contains(corner)) {
+      return false;
+    }
+    if (((corner - center) * scale).GetLengthSquared() >= 1.0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool DisplayListMatrixClipState::rrect_covers_cull(
+    const SkRRect& content) const {
+  if (content.isEmpty()) {
+    return false;
+  }
+  if (cull_rect_.IsEmpty()) {
+    return true;
+  }
+  if (content.isRect()) {
+    return rect_covers_cull(content.getBounds());
+  }
+  if (content.isOval()) {
+    return oval_covers_cull(content.getBounds());
+  }
+  if (!content.isSimple()) {
+    return false;
+  }
+  DlPoint corners[4];
+  if (!getLocalCullCorners(corners)) {
+    return false;
+  }
+  auto outer = content.getBounds();
+  DlScalar x_center = outer.centerX();
+  DlScalar y_center = outer.centerY();
+  auto radii = content.getSimpleRadii();
+  DlScalar inner_x = outer.width() * 0.5f - radii.fX;
+  DlScalar inner_y = outer.height() * 0.5f - radii.fY;
+  DlScalar scale_x = 1.0 / radii.fX;
+  DlScalar scale_y = 1.0 / radii.fY;
+  for (auto corner : corners) {
+    if (!outer.contains(corner.x, corner.y)) {
+      return false;
+    }
+    DlScalar x_rel = std::abs(corner.x - x_center) - inner_x;
+    DlScalar y_rel = std::abs(corner.y - y_center) - inner_y;
+    if (x_rel > 0.0f && y_rel > 0.0f) {
+      x_rel *= scale_x;
+      y_rel *= scale_y;
+      if (x_rel * x_rel + y_rel * y_rel >= 1.0f) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+bool DisplayListMatrixClipState::getLocalCullCorners(DlPoint corners[4]) const {
+  if (!is_matrix_invertable()) {
+    return false;
+  }
+  DlMatrix inverse = matrix_.Invert();
+  corners[0] = inverse * cull_rect_.GetLeftTop();
+  corners[1] = inverse * cull_rect_.GetRightTop();
+  corners[2] = inverse * cull_rect_.GetRightBottom();
+  corners[3] = inverse * cull_rect_.GetLeftBottom();
+  return true;
+}
+
 }  // namespace flutter

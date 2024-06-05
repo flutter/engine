@@ -45,5 +45,35 @@ TEST(DisplayListColor, DlColorDirectlyComparesToSkColor) {
   EXPECT_EQ(DlColor::kBlue(), SK_ColorBLUE);
 }
 
+TEST(DisplayListColor, ScalarFactory) {
+  // Test 9 standard colors with their Scalar equivalents
+  EXPECT_EQ(DlColor::MakeARGB(0.0f, 0.0f, 0.0f, 0.0f), DlColor::kTransparent());
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 0.0f, 0.0f, 0.0f), DlColor::kBlack());
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 1.0f, 1.0f, 1.0f), DlColor::kWhite());
+
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 1.0f, 0.0f, 0.0f), DlColor::kRed());
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 0.0f, 1.0f, 0.0f), DlColor::kGreen());
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 0.0f, 0.0f, 1.0f), DlColor::kBlue());
+
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 0.0f, 1.0f, 1.0f), DlColor::kCyan());
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 1.0f, 0.0f, 1.0f), DlColor::kMagenta());
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 1.0f, 1.0f, 0.0f), DlColor::kYellow());
+
+  // Test each component reduced to half intensity
+  EXPECT_EQ(DlColor::MakeARGB(0.5f, 1.0f, 1.0f, 1.0f),
+            DlColor::kWhite().withAlpha(0x80));
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 0.5f, 1.0f, 1.0f),
+            DlColor::kWhite().withRed(0x80));
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 1.0f, 0.5f, 1.0f),
+            DlColor::kWhite().withGreen(0x80));
+  EXPECT_EQ(DlColor::MakeARGB(1.0f, 1.0f, 1.0f, 0.5f),
+            DlColor::kWhite().withBlue(0x80));
+
+  // Test clamping to [0.0, 1.0]
+  EXPECT_EQ(DlColor::MakeARGB(-1.0f, -1.0f, -1.0f, -1.0f),
+            DlColor::kTransparent());
+  EXPECT_EQ(DlColor::MakeARGB(2.0f, 2.0f, 2.0f, 2.0f), DlColor::kWhite());
+}
+
 }  // namespace testing
 }  // namespace flutter
