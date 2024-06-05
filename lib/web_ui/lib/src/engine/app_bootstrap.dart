@@ -12,27 +12,26 @@ import 'view_embedder/flutter_view_manager.dart';
 /// The type of a function that initializes an engine (in Dart).
 typedef InitEngineFn = Future<void> Function([JsFlutterConfiguration? params]);
 
+typedef RunAppFn = Future<void> Function();
+
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
   /// Construct an AppBootstrap.
-  AppBootstrap({required InitEngineFn initializeEngine, required Function runApp}) :
+  AppBootstrap({required InitEngineFn initializeEngine, required RunAppFn runApp}) :
     _initializeEngine = initializeEngine, _runApp = runApp;
 
   // A function to initialize the engine.
   final InitEngineFn _initializeEngine;
 
   // A function to run the app.
-  //
-  // TODO(dit): Be more strict with the typedef of this function, so we can add
-  // typed params to the function. (See InitEngineFn).
-  final Function _runApp;
+  final RunAppFn _runApp;
 
   /// Immediately bootstraps the app.
   ///
   /// This calls `initEngine` and `runApp` in succession.
   Future<void> autoStart() async {
     await _initializeEngine();
-    await _runApp(); // ignore: avoid_dynamic_calls (covered by a TO-DO above)
+    await _runApp();
   }
 
   /// Creates an engine initializer that runs our encapsulated initEngine function.
@@ -58,7 +57,7 @@ class AppBootstrap {
   /// Creates an appRunner that runs our encapsulated runApp function.
   FlutterAppRunner _prepareAppRunner() {
     return FlutterAppRunner(runApp: ([RunAppFnParameters? params]) async {
-      await _runApp(); // ignore: avoid_dynamic_calls (covered by a TO-DO above)
+      await _runApp();
       return _prepareFlutterApp();
     });
   }
