@@ -13,9 +13,26 @@
 #include "runtime/test_font_data.h"
 #include "skia/paragraph_builder_skia.h"
 #include "testing/canvas_test.h"
+#include "testing/testing.h"
+#include "txt/platform.h"
 
 namespace flutter {
 namespace testing {
+
+static const std::string kEmojiFontFile =
+#if FML_OS_MACOSX
+    "Apple Color Emoji.ttc";
+#else
+    "NotoColorEmoji.ttf";
+#endif
+
+static const std::string kEmojiFontName =
+#if FML_OS_MACOSX
+    "Apple Color Emoji";
+#else
+    "NotoColorEmoji";
+#endif
+
 
 //------------------------------------------------------------------------------
 /// @brief      A custom |DlOpReceiver| that records some |DlOps| it receives.
@@ -90,11 +107,7 @@ class PainterTestBase : public CanvasTestBase<T> {
     t_style.color = SK_ColorBLACK;                // default
     t_style.font_weight = txt::FontWeight::w400;  // normal
     t_style.font_size = 14;                       // default
-#if FML_OS_MACOSX
-    t_style.font_families.push_back("Apple Color Emoji.ttc");
-#else
-    t_style.font_families.push_back("NotoColorEmoji.ttf");
-#endif
+    t_style.font_families.push_back(kEmojiFontName);
     return t_style;
   }
 
@@ -110,6 +123,7 @@ class PainterTestBase : public CanvasTestBase<T> {
   sk_sp<DisplayList> drawText(txt::TextStyle style, std::u16string text) const {
     auto pb_skia = makeParagraphBuilder();
     pb_skia.PushStyle(style);
+    pb_skia.AddText(text);
     pb_skia.Pop();
 
     auto builder = DisplayListBuilder();
@@ -141,6 +155,15 @@ class PainterTestBase : public CanvasTestBase<T> {
     for (auto& font : GetTestFontData()) {
       font_provider->RegisterTypeface(font);
     }
+    // Load emoji font.
+    {
+      auto c_font_fixture = std::string(kEmojiFontFile);
+      auto mapping =
+          flutter::testing::OpenFixtureAsSkData(c_font_fixture.c_str());
+          auto typeface = txt::GetDefaultFontManager()->makeFromData(mapping);
+      font_provider->RegisterTypeface(typeface);
+    }
+
     auto manager = sk_make_sp<txt::AssetFontManager>(std::move(font_provider));
     f_collection->SetAssetFontManager(manager);
     return f_collection;
