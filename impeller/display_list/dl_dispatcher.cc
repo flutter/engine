@@ -814,7 +814,7 @@ void DlDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::drawRRect(const SkRRect& rrect) {
+void DlDispatcher::drawRRect(const SkRRect& rrect) {
   if (skia_conversions::IsNearlySimpleRRect(rrect)) {
     canvas_.DrawRRect(skia_conversions::ToRect(rrect.rect()),
                       skia_conversions::ToSize(rrect.getSimpleRadii()), paint_);
