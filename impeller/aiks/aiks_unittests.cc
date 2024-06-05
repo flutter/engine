@@ -673,7 +673,7 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   Paint text_paint;
   text_paint.color = options.color;
   text_paint.mask_blur_descriptor = options.mask_blur_descriptor;
-  text_paint.stroke_width = 5;
+  text_paint.stroke_width = 1;
   text_paint.style =
       options.stroke ? Paint::Style::kStroke : Paint::Style::kFill;
   canvas.DrawTextFrame(frame, options.position, text_paint);
