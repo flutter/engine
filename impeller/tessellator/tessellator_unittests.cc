@@ -128,6 +128,19 @@ TEST(TessellatorTest, TessellateConvex) {
                                    {20, 30}, {30, 30}};
     EXPECT_EQ(pts, expected);
   }
+
+  {
+    Tessellator t;
+    PathBuilder builder{};
+    auto path = builder.MoveTo({10, 10})
+                    .Close()
+                    .AddRect(Rect::MakeLTRB(0, 0, 100, 100))
+                    .TakePath();
+    auto pts = t.TessellateConvex(path, 1.0);
+
+    std::vector<Point> expected = {{0, 0}, {10, 0}, {0, 10}, {10, 10}};
+    EXPECT_EQ(pts, expected);
+  }
 }
 
 TEST(TessellatorTest, CircleVertexCounts) {
