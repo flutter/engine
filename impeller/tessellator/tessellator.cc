@@ -220,22 +220,22 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
       output.emplace_back(first_point);
     }
 
-    // if (start != end) {
-    size_t a = start + 1;
-    size_t b = end - 1;
-    while (a < b) {
-      output.emplace_back(polyline.GetPoint(a));
-      output.emplace_back(polyline.GetPoint(b));
-      a++;
-      b--;
+    if (start != end) {
+      size_t a = start + 1;
+      size_t b = end - 1;
+      while (a < b) {
+        output.emplace_back(polyline.GetPoint(a));
+        output.emplace_back(polyline.GetPoint(b));
+        a++;
+        b--;
+      }
+      if (a == b) {
+        previous_contour_odd_points = false;
+        output.emplace_back(polyline.GetPoint(a));
+      } else {
+        previous_contour_odd_points = true;
+      }
     }
-    if (a == b) {
-      previous_contour_odd_points = false;
-      output.emplace_back(polyline.GetPoint(a));
-    } else {
-      previous_contour_odd_points = true;
-    }
-    // }
   }
   return output;
 }
