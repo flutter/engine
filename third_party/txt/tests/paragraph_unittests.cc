@@ -85,6 +85,19 @@ class PainterTestBase : public CanvasTestBase<T> {
     return t_style;
   }
 
+  txt::TextStyle makeEmoji() {
+    auto t_style = txt::TextStyle();
+    t_style.color = SK_ColorBLACK;                // default
+    t_style.font_weight = txt::FontWeight::w400;  // normal
+    t_style.font_size = 14;                       // default
+#if FML_OS_MACOSX
+    t_style.font_families.push_back("Apple Color Emoji.ttc");
+#else
+    t_style.font_families.push_back("NotoColorEmoji.ttf");
+#endif
+    return t_style;
+  }
+
   txt::TextStyle makeStyle() {
     auto t_style = txt::TextStyle();
     t_style.color = SK_ColorBLACK;                // default
@@ -92,6 +105,19 @@ class PainterTestBase : public CanvasTestBase<T> {
     t_style.font_size = 14;                       // default
     t_style.font_families.push_back("ahem");
     return t_style;
+  }
+
+  sk_sp<DisplayList> drawText(txt::TextStyle style, std::u16string text) const {
+    auto pb_skia = makeParagraphBuilder();
+    pb_skia.PushStyle(style);
+    pb_skia.Pop();
+
+    auto builder = DisplayListBuilder();
+    auto paragraph = pb_skia.Build();
+    paragraph->Layout(10000);
+    paragraph->Paint(&builder, 0, 0);
+
+    return builder.Build();
   }
 
   sk_sp<DisplayList> draw(txt::TextStyle style) const {
@@ -228,6 +254,27 @@ TEST_F(PainterTest, DrawTextWithGradientImpeller) {
   EXPECT_EQ(recorder.textFrameCount(), 0);
   EXPECT_EQ(recorder.blobCount(), 0);
   EXPECT_EQ(recorder.pathCount(), 1);
+}
+
+TEST_F(PainterTest, DrawEmojiTextWithGradientImpeller) {
+  PretendImpellerIsEnabled(true);
+
+  auto style = makeEmoji();
+  // how do you like my shtyle?
+  DlPaint foreground;
+  std::vector<DlColor> colors = {DlColor::kRed(), DlColor::kCyan()};
+  std::vector<float> stops = {0.0, 1.0};
+  foreground.setColorSource(DlColorSource::MakeLinear(
+      SkPoint::Make(0, 0), SkPoint::Make(100, 100), 2, colors.data(),
+      stops.data(), DlTileMode::kClamp));
+  style.foreground = foreground;
+
+  auto recorder = DlOpRecorder();
+  drawText(style, u"😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊")->Dispatch(recorder);
+
+  EXPECT_EQ(recorder.textFrameCount(), 1);
+  EXPECT_EQ(recorder.blobCount(), 0);
+  EXPECT_EQ(recorder.pathCount(), 0);
 }
 
 TEST_F(PainterTest, DrawTextBlobNoImpeller) {
