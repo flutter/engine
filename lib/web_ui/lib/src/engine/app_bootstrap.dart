@@ -32,7 +32,7 @@ class AppBootstrap {
   /// This calls `initEngine` and `runApp` in succession.
   Future<void> autoStart() async {
     await _initializeEngine();
-    await _runApp();
+    await _runApp(); // ignore: avoid_dynamic_calls (covered by a TO-DO above)
   }
 
   /// Creates an engine initializer that runs our encapsulated initEngine function.
@@ -58,7 +58,7 @@ class AppBootstrap {
   /// Creates an appRunner that runs our encapsulated runApp function.
   FlutterAppRunner _prepareAppRunner() {
     return FlutterAppRunner(runApp: ([RunAppFnParameters? params]) async {
-      await _runApp();
+      await _runApp(); // ignore: avoid_dynamic_calls (covered by a TO-DO above)
       return _prepareFlutterApp();
     });
   }
