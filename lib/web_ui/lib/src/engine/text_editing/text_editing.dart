@@ -1352,6 +1352,9 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
             handleBeforeInput));
 
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            handleBlur));
+
     addCompositionEventHandlers(activeDomElement);
 
     preventDefaultForMouseEvents();
@@ -1669,6 +1672,9 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
             handleBeforeInput));
 
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            handleBlur));
+
     addCompositionEventHandlers(activeDomElement);
 
     // Position the DOM element after it is focused.
@@ -1793,6 +1799,9 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
         handleBeforeInput));
 
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            handleBlur));
+
     addCompositionEventHandlers(activeDomElement);
 
     preventDefaultForMouseEvents();
@@ -1873,6 +1882,9 @@ class FirefoxTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(
         DomSubscription(
             activeDomElement, 'select', handleChange));
+
+    subscriptions.add(DomSubscription(activeDomElement, 'blur',
+            handleBlur));
 
     preventDefaultForMouseEvents();
   }
