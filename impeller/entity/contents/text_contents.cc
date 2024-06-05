@@ -77,7 +77,9 @@ void TextContents::SetTextProperties(Color color,
                                      Join stroke_join,
                                      Scalar stroke_miter) {
   if (frame_->HasColor()) {
-    properties_.color = color;
+    // Alpha is always applied when rendering, remove it here so
+    // we do not double-apply the alpha.
+    properties_.color = color.WithAlpha(1.0);
   }
   if (stroke) {
     properties_.stroke = true;

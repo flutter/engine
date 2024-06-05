@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "display_list/dl_paint.h"
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 #include "impeller/aiks/canvas.h"
@@ -667,7 +666,6 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   }
 
   // Create the Impeller text frame and draw it at the designated baseline.
-  flutter::DlPaint paint;
   auto frame = MakeTextFrameFromTextBlobSkia(blob);
 
   Paint text_paint;
@@ -908,7 +906,6 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     {
       auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
       ASSERT_NE(blob, nullptr);
-      flutter::DlPaint paint;
       auto frame = MakeTextFrameFromTextBlobSkia(blob);
       canvas.DrawTextFrame(frame, Point(), text_paint);
     }
