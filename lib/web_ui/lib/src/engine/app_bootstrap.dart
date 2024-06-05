@@ -12,19 +12,20 @@ import 'view_embedder/flutter_view_manager.dart';
 /// The type of a function that initializes an engine (in Dart).
 typedef InitEngineFn = Future<void> Function([JsFlutterConfiguration? params]);
 
-typedef RunAppFn = Future<void> Function();
+/// The signature of the `runApp` function passed to [AppBootstrap].
+typedef AppBootstrapRunAppFn = Future<void> Function();
 
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
   /// Construct an AppBootstrap.
-  AppBootstrap({required InitEngineFn initializeEngine, required RunAppFn runApp}) :
+  AppBootstrap({required InitEngineFn initializeEngine, required AppBootstrapRunAppFn runApp}) :
     _initializeEngine = initializeEngine, _runApp = runApp;
 
   // A function to initialize the engine.
   final InitEngineFn _initializeEngine;
 
   // A function to run the app.
-  final RunAppFn _runApp;
+  final AppBootstrapRunAppFn _runApp;
 
   /// Immediately bootstraps the app.
   ///
