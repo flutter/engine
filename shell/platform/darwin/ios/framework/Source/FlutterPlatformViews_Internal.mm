@@ -274,7 +274,6 @@ static BOOL _preparedOnce = NO;
 
 - (void)dealloc {
   CGPathRelease(pathSoFar_);
-  [super dealloc];
 }
 
 // In some scenarios, when we add this view as a maskView of the ChildClippingView, iOS added
