@@ -975,11 +975,12 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(event, pointerData);
 
       if (event.target == _viewTarget) {
-        // The event default is prevented so that the <flutter-view /> element doens't gain focus.
+        // Ensure smooth focus transitions between text fields within the Flutter view. 
+        // Without preventing the default and this delay, the engine may not have fully
+        // rendered the next input element, leading to the focus incorrectly returning to
+        // the main Flutter view instead.
+        // A zero-length timer is sufficient in all tested browsers to achieve this.
         event.preventDefault();
-        // We give time to TextFields to move the focus to the right <input /> or <textarea />
-        // elements. When requestViewFocus is called it will make sure that a child of the
-        // <flutter-view /> is focused, otherwise it will focus the <flutter-view /> itself.
         Timer(Duration.zero, () {
           EnginePlatformDispatcher.instance.requestViewFocusChange(
             viewId: _view.viewId,

@@ -1408,8 +1408,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         inputConfiguration.autofillGroup?.formElement != null) {
       _styleAutofillElements(activeDomElement, isOffScreen: true);
       inputConfiguration.autofillGroup?.storeForm();
-    }
-    _moveFocusToFlutterView(activeDomElement, _activeDomElementView);
+      _moveFocusToFlutterView(activeDomElement, _activeDomElementView);
+    } else {
+      _moveFocusToFlutterView(activeDomElement, _activeDomElementView, removeElement: true);
+		}
     domElement = null;
   }
 
@@ -1573,12 +1575,18 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
   /// The delay gives the engine the opportunity to focus another <input /> element.
   /// The delay should help prevent the keyboard from jumping when the focus goes from
   /// one text field to another.
-  static void _moveFocusToFlutterView(DomElement element, EngineFlutterView? view) {
+  static void _moveFocusToFlutterView(
+    DomElement element,
+    EngineFlutterView? view, {
+    bool removeElement = false,
+  }) {
     Timer(Duration.zero, () {
       if (element == domDocument.activeElement) {
         view?.dom.rootElement.focus(preventScroll: true);
       }
-      element.remove();
+      if (removeElement) {
+        element.remove();
+      }
     });
   }
 }
