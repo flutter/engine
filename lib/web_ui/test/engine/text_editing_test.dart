@@ -3725,10 +3725,7 @@ void clearForms() {
   formsOnTheDom.clear();
 }
 
-/// After stopped the focus remains on the input element to give the engine
-/// an oportunity to move the focus to the right element before sending it back
-/// to the flutter view. This helps preventing the keyboard from jumping when the focus
-/// goes from one text field to another.
+/// Waits until the text strategy closes and moves the focus accordingly.
 Future<void> waitForTextStrategyStopPropagation() async {
   await Future<void>.delayed(Duration.zero);
 }
