@@ -975,7 +975,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(event, pointerData);
 
       if (event.target == _viewTarget) {
-        // Ensure smooth focus transitions between text fields within the Flutter view. 
+        // Ensure smooth focus transitions between text fields within the Flutter view.
         // Without preventing the default and this delay, the engine may not have fully
         // rendered the next input element, leading to the focus incorrectly returning to
         // the main Flutter view instead.
