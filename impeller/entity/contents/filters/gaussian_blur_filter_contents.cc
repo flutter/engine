@@ -379,6 +379,22 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
   return input_coverage.value().Expand(Point(local_padding.x, local_padding.y));
 }
 
+namespace {
+struct DecomposedMatrix {
+  Vector2 scale;
+  Scalar rotation;
+};
+
+DecomposedMatrix DecomposeMatrix(const Matrix& matrix) {
+  Vector2 entity_scale_x = matrix * Vector2(1.0, 0.0);
+  Vector2 entity_scale_y = matrix * Vector2(0.0, 1.0);
+  return DecomposedMatrix{
+      .scale = Vector2(entity_scale_x.GetLength(), entity_scale_y.GetLength()),
+      .rotation = atan2(entity_scale_x.y, entity_scale_x.x),
+  };
+}
+}  // namespace
+
 std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
@@ -390,13 +406,14 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  Vector2 entity_scale_x = entity.GetTransform().Basis() * Vector2(1.0, 0.0);
-  Vector2 entity_scale_y = entity.GetTransform().Basis() * Vector2(0.0, 1.0);
-  Vector2 scaled_sigma = (effect_transform.Basis() *
-                          Matrix::MakeScale({entity_scale_x.GetLength(),
-                                             entity_scale_y.GetLength(), 1.0}) *
-                          Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
-                             .Abs();
+  DecomposedMatrix decomposed_entity_transform =
+      DecomposeMatrix(entity.GetTransform().Basis());
+  Vector2 scaled_sigma =
+      (effect_transform.Basis() *
+       Matrix::MakeScale({decomposed_entity_transform.scale.x,
+                          decomposed_entity_transform.scale.y, 1.0}) *
+       Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
+          .Abs();
   scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
   scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
