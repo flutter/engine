@@ -90,8 +90,7 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
         // If there is no path, this is an emoji and should be drawn as is,
         // ignoring the color source.
         if (path.isEmpty()) {
-          builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(
-                                      blob, dl_paints_[paint_id].getColor()),
+          builder_->DrawTextFrame(impeller::MakeTextFrameFromTextBlobSkia(blob),
                                   x, y, dl_paints_[paint_id]);
 
           return;
