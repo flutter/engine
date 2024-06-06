@@ -39,11 +39,13 @@
 ../../../flutter/display_list/effects/dl_image_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_mask_filter_unittests.cc
 ../../../flutter/display_list/effects/dl_path_effect_unittests.cc
+../../../flutter/display_list/geometry/dl_geometry_types_unittests.cc
 ../../../flutter/display_list/geometry/dl_region_unittests.cc
 ../../../flutter/display_list/geometry/dl_rtree_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_conversions_unittests.cc
 ../../../flutter/display_list/skia/dl_sk_paint_dispatcher_unittests.cc
 ../../../flutter/display_list/testing
+../../../flutter/display_list/utils/dl_accumulation_rect_unittests.cc
 ../../../flutter/display_list/utils/dl_matrix_clip_tracker_unittests.cc
 ../../../flutter/docs
 ../../../flutter/examples
@@ -3423,6 +3425,9 @@
 ../../../fuchsia/sdk/linux/obj/arm64-api-20/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-20/sysroot/dist/lib/hwasan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/arm64-api-20/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-21/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-21/sysroot/dist/lib/hwasan/ld.so.1
+../../../fuchsia/sdk/linux/obj/arm64-api-21/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-15/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-15/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-16/sysroot/dist/lib/asan/ld.so.1
@@ -3435,6 +3440,8 @@
 ../../../fuchsia/sdk/linux/obj/riscv64-api-19/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-20/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/riscv64-api-20/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-21/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/riscv64-api-21/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-15/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-15/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-16/sysroot/dist/lib/asan/ld.so.1
@@ -3447,6 +3454,8 @@
 ../../../fuchsia/sdk/linux/obj/x64-api-19/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-20/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/obj/x64-api-20/sysroot/dist/lib/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-21/sysroot/dist/lib/asan/ld.so.1
+../../../fuchsia/sdk/linux/obj/x64-api-21/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/packages/blobs
 ../../../fuchsia/sdk/linux/packages/cmd-buf-benchmark-test/meta.json
 ../../../fuchsia/sdk/linux/packages/heapdump-collector/meta.json

@@ -18,10 +18,12 @@
 #include "impeller/display_list/dl_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
 #include "impeller/display_list/skia_conversions.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
@@ -124,12 +126,11 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.label = "Nearest Sampler";
       break;
     case flutter::DlImageSampling::kLinear:
-    // Impeller doesn't support cubic sampling, but linear is closer to correct
-    // than nearest for this case.
-    case flutter::DlImageSampling::kCubic:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
+      desc.mip_filter = impeller::MipFilter::kBase;
       desc.label = "Linear Sampler";
       break;
+    case flutter::DlImageSampling::kCubic:
     case flutter::DlImageSampling::kMipmapLinear:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.mip_filter = impeller::MipFilter::kLinear;
@@ -1171,11 +1172,24 @@ Canvas& DlDispatcher::GetCanvas() {
   return canvas_;
 }
 
-ExperimentalDlDispatcher::ExperimentalDlDispatcher(ContentContext& renderer,
-                                                   RenderTarget& render_target,
-                                                   bool requires_readback,
-                                                   IRect cull_rect)
-    : canvas_(renderer, render_target, requires_readback, cull_rect) {}
+static bool RequiresReadbackForBlends(
+    const ContentContext& renderer,
+    flutter::DlBlendMode max_root_blend_mode) {
+  return !renderer.GetDeviceCapabilities().SupportsFramebufferFetch() &&
+         ToBlendMode(max_root_blend_mode) > Entity::kLastPipelineBlendMode;
+}
+
+ExperimentalDlDispatcher::ExperimentalDlDispatcher(
+    ContentContext& renderer,
+    RenderTarget& render_target,
+    bool has_root_backdrop_filter,
+    flutter::DlBlendMode max_root_blend_mode,
+    IRect cull_rect)
+    : canvas_(renderer,
+              render_target,
+              has_root_backdrop_filter ||
+                  RequiresReadbackForBlends(renderer, max_root_blend_mode),
+              cull_rect) {}
 
 Canvas& ExperimentalDlDispatcher::GetCanvas() {
   return canvas_;
