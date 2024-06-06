@@ -175,6 +175,12 @@ class ColorSourceContents : public Contents {
               ContentContextOptions::StencilMode::kStencilEvenOddFill;
           break;
         default:
+          if (force_stencil) {
+            pass.SetCommandLabel("Stencil preparation (NonZero)");
+            options.stencil_mode =
+                ContentContextOptions::StencilMode::kStencilNonZeroFill;
+            break;
+          }
           FML_UNREACHABLE();
       }
       pass.SetPipeline(renderer.GetClipPipeline(options));
