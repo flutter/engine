@@ -686,9 +686,8 @@ TEST_P(AiksTest, GaussianBlurRotatedNonUniform) {
     }
 
     Canvas canvas;
-    Paint paint = {
-      .color = Color::Green(),
-      .image_filter =
+    Paint paint = {.color = Color::Green(),
+                   .image_filter =
                        ImageFilter::MakeBlur(Sigma(50.0), Sigma(0.0),
                                              FilterContents::BlurStyle::kNormal,
                                              tile_modes[selected_tile_mode])};

@@ -494,9 +494,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       input_snapshot.has_value() &&
       input_snapshot.value().transform.IsTranslationScaleOnly()) {
     // Only process the uvs where the blur is happening, not the whole texture.
-    std::optional<Rect> uvs = MakeReferenceUVs(input_snapshot_coverage.value(),
-                                               source_expanded_coverage_hint.value())
-                                  .Intersection(Rect::MakeSize(Size(1, 1)));
+    std::optional<Rect> uvs =
+        MakeReferenceUVs(input_snapshot_coverage.value(),
+                         source_expanded_coverage_hint.value())
+            .Intersection(Rect::MakeSize(Size(1, 1)));
     FML_DCHECK(uvs.has_value());
     if (uvs.has_value()) {
       blur_uvs[0] = uvs->GetLeftTop();
@@ -561,8 +562,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Entity blur_output_entity = Entity::FromSnapshot(
       Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
-               .transform = entity.GetTransform() *
-                            input_snapshot->transform *
+               .transform = entity.GetTransform() * input_snapshot->transform *
                             padding_snapshot_adjustment *
                             Matrix::MakeScale(1 / effective_scalar),
                .sampler_descriptor = sampler_desc,
