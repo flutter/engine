@@ -1176,6 +1176,22 @@ TEST(GeometryTest, SeparatedVector2GetAlignment) {
   }
 }
 
+TEST(GeometryTest, SeparatedVector2AngleTo) {
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(5, 0)));
+    Radians expected = Radians{0};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
+
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(0, -5)));
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
+}
+
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
   {
     Vector3 p(1, 2, 4);

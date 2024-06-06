@@ -19,17 +19,17 @@ namespace impeller {
 ///         it's sometimes adventageous to track the direction and magnitude
 ///         for offsets separately.
 struct SeparatedVector2 {
-  /// The normalized direction of the ray.
+  /// The normalized direction of the vector.
   Vector2 direction;
 
-  /// The magnitude of the ray.
+  /// The magnitude of the vector.
   Scalar magnitude = 0.0;
 
   SeparatedVector2();
   SeparatedVector2(Vector2 direction, Scalar magnitude);
   explicit SeparatedVector2(Vector2 vector);
 
-  /// Returns the vector representation of the ray.
+  /// Returns the vector representation of the vector.
   Vector2 GetVector() const;
 
   /// Returns the scalar alignment of the two vectors.
