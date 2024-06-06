@@ -1707,7 +1707,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(activeDomElement, 'blur',
             (_) {
               final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-              if (windowHasFocus && isFastCallback) {
+              if (windowHasFocus || isFastCallback) {
                 activeDomElement.focus();
               } else {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
