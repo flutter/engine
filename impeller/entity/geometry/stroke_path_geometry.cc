@@ -278,12 +278,11 @@ class StrokeGenerator {
 
       // If the angle to the next segment is too sharp, round out the join.
       if (!is_end_of_component) {
-        /// The angle threshold
-        constexpr Scalar kAngleThreshold = 5 * kPi / 180;
+        constexpr Scalar kAngleThreshold = 10 * kPi / 180;
         // `std::cosf` is not constexpr-able, unfortunately, so we have to bake
         // the alignment constant.
         constexpr Scalar kAlignmentThreshold =
-            0.996195;  // std::cosf(kThresholdAngle) -- 5 degrees
+            0.984807753012208;  // std::cosf(kThresholdAngle) -- 10 degrees
 
         // Use a cheap dot product to determine whether the angle is too sharp.
         if (previous_offset.GetAlignment(offset) < kAlignmentThreshold) {
