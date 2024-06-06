@@ -277,20 +277,32 @@ class StrokeGenerator {
                              contour_end_point_i, contour);
 
       // If the angle to the next segment is too sharp, round out the join.
-      // TODO(bdero): std::cosf is not constexpr-able, unfortunately. Move this
-      //              to a baked constant before merging...
-      constexpr Scalar kThresholdAngle = 5 * kPi / 180;
-      const Scalar threshold = std::cosf(kThresholdAngle);
-      // Use a cheap dot product to determine whether the angle is too sharp.
-      if (previous_offset.GetAlignment(offset) < threshold) {
-        Scalar angle_total = previous_offset.AngleTo(offset).radians;
-        for (Scalar angle = kThresholdAngle; angle < angle_total;
-             angle += kThresholdAngle) {
-          Point offset = previous_offset.GetVector().Rotate(Radians(angle));
-          vtx.position = polyline.GetPoint(point_i) + offset;
-          vtx_builder.AppendVertex(vtx.position);
-          vtx.position = polyline.GetPoint(point_i) - offset;
-          vtx_builder.AppendVertex(vtx.position);
+      if (!is_end_of_component) {
+        /// The angle threshold
+        constexpr Scalar kAngleThreshold = 5 * kPi / 180;
+        // `std::cosf` is not constexpr-able, unfortunately, so we have to bake
+        // the alignment constant.
+        constexpr Scalar kAlignmentThreshold =
+            0.996195;  // std::cosf(kThresholdAngle) -- 5 degrees
+
+        // Use a cheap dot product to determine whether the angle is too sharp.
+        if (previous_offset.GetAlignment(offset) < kAlignmentThreshold) {
+          Scalar angle_total = previous_offset.AngleTo(offset).radians;
+          Scalar angle = kAngleThreshold;
+
+          // Bridge the large angle with additional geometry at
+          // `kAngleThreshold` interval.
+          while (angle < std::abs(angle_total)) {
+            Scalar signed_angle = angle_total < 0 ? -angle : angle;
+            Point offset =
+                previous_offset.GetVector().Rotate(Radians(signed_angle));
+            vtx.position = polyline.GetPoint(point_i) + offset;
+            vtx_builder.AppendVertex(vtx.position);
+            vtx.position = polyline.GetPoint(point_i) - offset;
+            vtx_builder.AppendVertex(vtx.position);
+
+            angle += kAngleThreshold;
+          }
         }
       }
 
