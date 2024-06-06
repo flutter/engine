@@ -141,11 +141,12 @@ class ColorSourceContents : public Contents {
     GeometryResult::Mode geometry_mode = GetGeometry()->GetResultMode();
     Geometry& geometry = *GetGeometry();
 
-    const bool is_stencil_then_cover =
+    bool is_stencil_then_cover =
         geometry_mode == GeometryResult::Mode::kNonZero ||
         geometry_mode == GeometryResult::Mode::kEvenOdd;
     if (!is_stencil_then_cover && force_stencil) {
       geometry_mode = GeometryResult::Mode::kNonZero;
+      is_stencil_then_cover = true;
     }
 
     if (is_stencil_then_cover) {
