@@ -359,15 +359,14 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
     return {};
   }
 
-  std::optional<Rect> input_coverage = inputs[0]->GetCoverage(entity);
-  if (!input_coverage.has_value()) {
+  Entity snapshot_entity = entity.Clone();
+  snapshot_entity.SetTransform(Matrix());
+  std::optional<Rect> source_coverage = inputs[0]->GetCoverage(snapshot_entity);
+  if (!source_coverage.has_value()) {
     return {};
   }
 
-  Vector2 entity_scale_x = entity.GetTransform().Basis() * Vector2(1.0, 0.0);
-  Vector2 entity_scale_y = entity.GetTransform().Basis() * Vector2(0.0, 1.0);
-  Vector2 scaled_sigma = (Matrix::MakeScale({entity_scale_x.GetLength(),
-                                             entity_scale_y.GetLength(), 1.0}) *
+  Vector2 scaled_sigma = (effect_transform.Basis() *
                           Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
                              .Abs();
   scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
@@ -375,8 +374,13 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
-  Vector2 local_padding = (entity.GetTransform().Basis() * padding).Abs();
-  return input_coverage.value().Expand(Point(local_padding.x, local_padding.y));
+  std::optional<Rect> expanded_source_coverage =
+      source_coverage->Expand(Point(padding.x, padding.y));
+  if (expanded_source_coverage.has_value()) {
+    return expanded_source_coverage->TransformBounds(entity.GetTransform());
+  }
+
+  return std::nullopt;
 }
 
 std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
