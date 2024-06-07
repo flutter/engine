@@ -103,6 +103,11 @@ struct PipelineBuilder {
       color0.format = context.GetCapabilities()->GetDefaultColorFormat();
       color0.blending_enabled = true;
       desc.SetColorAttachmentDescriptor(0u, color0);
+
+      ColorAttachmentDescriptor color1;
+      color1.format = context.GetCapabilities()->GetDefaultColorFormat();
+      color1.blending_enabled = false;
+      desc.SetColorAttachmentDescriptor(1u, color1);
     }
 
     // Setup default depth buffer descriptions.

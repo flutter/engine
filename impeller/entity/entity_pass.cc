@@ -934,12 +934,27 @@ bool EntityPass::OnRender(
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
       if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
-        auto src_contents = result.entity.GetContents();
+        auto blend_mode = result.entity.GetBlendMode();
+        result.entity.SetUseScratchSpace(true);
+        result.entity.SetBlendMode(BlendMode::kSource);
+        // Render the original entity to the scratch space.
+          if (!RenderElement(result.entity, clip_height_floor, pass_context,
+                        pass_depth, renderer, clip_coverage_stack,
+                        global_pass_position)) {
+          // Specific validation logs are handled in `render_element()`.
+          return false;
+        }
+
+        // Now flush the entity back onto color attachment0 via the scratch
+        // space blend.
+
         auto contents = std::make_shared<FramebufferBlendContents>();
-        contents->SetChildContents(src_contents);
-        contents->SetBlendMode(result.entity.GetBlendMode());
+        contents->SetDestRect(result.entity.GetCoverage().value());
+        contents->SetBlendMode(blend_mode);
+        result.entity.SetTransform(Matrix());
         result.entity.SetContents(std::move(contents));
         result.entity.SetBlendMode(BlendMode::kSource);
+        result.entity.SetUseScratchSpace(false);
       } else {
         // End the active pass and flush the buffer before rendering "advanced"
         // blends. Advanced blends work by binding the current render target

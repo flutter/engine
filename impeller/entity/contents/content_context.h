@@ -63,8 +63,11 @@
 #include "impeller/entity/advanced_blend.frag.h"
 #include "impeller/entity/advanced_blend.vert.h"
 
-#include "impeller/entity/framebuffer_blend.frag.h"
-#include "impeller/entity/framebuffer_blend.vert.h"
+// #include "impeller/entity/framebuffer_blend.frag.h"
+// #include "impeller/entity/framebuffer_blend.vert.h"
+
+#include "impeller/entity/scratch_space_blend.frag.h"
+#include "impeller/entity/scratch_space_blend.vert.h"
 
 #include "impeller/entity/vertices_uber.frag.h"
 
@@ -185,51 +188,51 @@ using BlendSoftLightPipeline =
     RenderPipelineHandle<AdvancedBlendVertexShader,
                          AdvancedBlendFragmentShader>;
 // Framebuffer Advanced Blends
-using FramebufferBlendColorPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendColorBurnPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendColorDodgePipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendDarkenPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendDifferencePipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendExclusionPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendHardLightPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendHuePipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendLightenPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendLuminosityPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendMultiplyPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendOverlayPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendSaturationPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendScreenPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
-using FramebufferBlendSoftLightPipeline =
-    RenderPipelineHandle<FramebufferBlendVertexShader,
-                         FramebufferBlendFragmentShader>;
+using ScratchSpaceBlendColorPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendColorBurnPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendColorDodgePipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendDarkenPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendDifferencePipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendExclusionPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendHardLightPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendHuePipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendLightenPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendLuminosityPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendMultiplyPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendOverlayPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendSaturationPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendScreenPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
+using ScratchSpaceBlendSoftLightPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceBlendFragmentShader>;
 
 /// Draw Vertices/Atlas Uber Shader
 using VerticesUberShader = RenderPipelineHandle<PorterDuffBlendVertexShader,
@@ -314,6 +317,8 @@ struct ContentContextOptions {
   bool depth_write_enabled = false;
   bool wireframe = false;
   bool is_for_rrect_blur_clear = false;
+  bool scratch_space = false;
+  bool scratch_flush = false;
 
   struct Hash {
     constexpr uint64_t operator()(const ContentContextOptions& o) const {
@@ -329,6 +334,8 @@ struct ContentContextOptions {
              (o.wireframe ? 1llu : 0llu) << 1 |
              (o.has_depth_stencil_attachments ? 1llu : 0llu) << 2 |
              (o.depth_write_enabled ? 1llu : 0llu) << 3 |
+             (o.scratch_space ? 1llu : 0llu) << 4 |
+             (o.scratch_flush ? 1llu : 0llu) << 5 |
              // enums
              static_cast<uint64_t>(o.color_attachment_pixel_format) << 8 |
              static_cast<uint64_t>(o.primitive_type) << 16 |
@@ -353,7 +360,9 @@ struct ContentContextOptions {
              lhs.has_depth_stencil_attachments ==
                  rhs.has_depth_stencil_attachments &&
              lhs.wireframe == rhs.wireframe &&
-             lhs.is_for_rrect_blur_clear == rhs.is_for_rrect_blur_clear;
+             lhs.is_for_rrect_blur_clear == rhs.is_for_rrect_blur_clear &&
+             lhs.scratch_space == rhs.scratch_space &&
+             lhs.scratch_flush == rhs.scratch_flush;
     }
   };
 
@@ -592,91 +601,91 @@ class ContentContext {
 
   // Framebuffer Advanced Blends
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendColorPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorBurnPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendColorBurnPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colorburn_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorDodgePipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendColorDodgePipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colordodge_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendDarkenPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendDarkenPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_darken_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendDifferencePipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendDifferencePipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_difference_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendExclusionPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendExclusionPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_exclusion_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendHardLightPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendHardLightPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hardlight_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferBlendHuePipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetScratchSpaceBlendHuePipeline(
       ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hue_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendLightenPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendLuminosityPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendMultiplyPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendMultiplyPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_multiply_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendOverlayPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendOverlayPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_overlay_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendSaturationPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendScreenPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
+  GetScratchSpaceBlendSoftLightPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
@@ -915,35 +924,35 @@ class ContentContext {
   mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
   // Framebuffer Advanced blends.
-  mutable Variants<FramebufferBlendColorPipeline>
+  mutable Variants<ScratchSpaceBlendColorPipeline>
       framebuffer_blend_color_pipelines_;
-  mutable Variants<FramebufferBlendColorBurnPipeline>
+  mutable Variants<ScratchSpaceBlendColorBurnPipeline>
       framebuffer_blend_colorburn_pipelines_;
-  mutable Variants<FramebufferBlendColorDodgePipeline>
+  mutable Variants<ScratchSpaceBlendColorDodgePipeline>
       framebuffer_blend_colordodge_pipelines_;
-  mutable Variants<FramebufferBlendDarkenPipeline>
+  mutable Variants<ScratchSpaceBlendDarkenPipeline>
       framebuffer_blend_darken_pipelines_;
-  mutable Variants<FramebufferBlendDifferencePipeline>
+  mutable Variants<ScratchSpaceBlendDifferencePipeline>
       framebuffer_blend_difference_pipelines_;
-  mutable Variants<FramebufferBlendExclusionPipeline>
+  mutable Variants<ScratchSpaceBlendExclusionPipeline>
       framebuffer_blend_exclusion_pipelines_;
-  mutable Variants<FramebufferBlendHardLightPipeline>
+  mutable Variants<ScratchSpaceBlendHardLightPipeline>
       framebuffer_blend_hardlight_pipelines_;
-  mutable Variants<FramebufferBlendHuePipeline>
+  mutable Variants<ScratchSpaceBlendHuePipeline>
       framebuffer_blend_hue_pipelines_;
-  mutable Variants<FramebufferBlendLightenPipeline>
+  mutable Variants<ScratchSpaceBlendLightenPipeline>
       framebuffer_blend_lighten_pipelines_;
-  mutable Variants<FramebufferBlendLuminosityPipeline>
+  mutable Variants<ScratchSpaceBlendLuminosityPipeline>
       framebuffer_blend_luminosity_pipelines_;
-  mutable Variants<FramebufferBlendMultiplyPipeline>
+  mutable Variants<ScratchSpaceBlendMultiplyPipeline>
       framebuffer_blend_multiply_pipelines_;
-  mutable Variants<FramebufferBlendOverlayPipeline>
+  mutable Variants<ScratchSpaceBlendOverlayPipeline>
       framebuffer_blend_overlay_pipelines_;
-  mutable Variants<FramebufferBlendSaturationPipeline>
+  mutable Variants<ScratchSpaceBlendSaturationPipeline>
       framebuffer_blend_saturation_pipelines_;
-  mutable Variants<FramebufferBlendScreenPipeline>
+  mutable Variants<ScratchSpaceBlendScreenPipeline>
       framebuffer_blend_screen_pipelines_;
-  mutable Variants<FramebufferBlendSoftLightPipeline>
+  mutable Variants<ScratchSpaceBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
   mutable Variants<VerticesUberShader> vertices_uber_shader_;
 

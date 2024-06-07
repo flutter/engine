@@ -76,6 +76,10 @@ class Entity {
   /// @brief  Get the global transform matrix for this Entity.
   const Matrix& GetTransform() const;
 
+  void SetUseScratchSpace(bool value) { use_scratch_space_ = value; }
+
+  bool GetUseScratchSpace() const { return use_scratch_space_; }
+
   /// @brief  Get the vertex shader transform used for drawing this Entity.
   Matrix GetShaderTransform(const RenderPass& pass) const;
 
@@ -131,6 +135,7 @@ class Entity {
   Matrix transform_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
+  bool use_scratch_space_;
   uint32_t clip_depth_ = 1u;
 };
 

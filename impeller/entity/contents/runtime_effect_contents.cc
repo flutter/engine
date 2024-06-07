@@ -163,6 +163,8 @@ RuntimeEffectContents::CreatePipeline(const ContentContext& renderer,
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   desc.SetColorAttachmentDescriptor(
       0u, {.format = color_attachment_format, .blending_enabled = true});
+  desc.SetColorAttachmentDescriptor(
+      1u, {.format = color_attachment_format, .blending_enabled = false});
 
   desc.SetStencilAttachmentDescriptors(StencilAttachmentDescriptor{});
   desc.SetStencilPixelFormat(stencil_attachment_format);

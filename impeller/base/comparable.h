@@ -90,6 +90,28 @@ bool DeepCompareMap(const std::map<Key, std::shared_ptr<ComparableType>>& lhs,
   return true;
 }
 
+template <
+    class Key,
+    class ComparableType>
+bool DeepCompareMap(const std::map<Key, ComparableType>& lhs,
+                    const std::map<Key, ComparableType>& rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+
+  for (auto i = lhs.begin(), j = rhs.begin(); i != lhs.end(); i++, j++) {
+    if (i->first != j->first) {
+      return false;
+    }
+
+    if (!(i->second == j->second)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 }  // namespace impeller
 
 namespace std {

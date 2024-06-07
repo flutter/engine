@@ -17,15 +17,11 @@ void FramebufferBlendContents::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
 }
 
-void FramebufferBlendContents::SetChildContents(
-    std::shared_ptr<Contents> child_contents) {
-  child_contents_ = std::move(child_contents);
-}
-
 // |Contents|
 std::optional<Rect> FramebufferBlendContents::GetCoverage(
     const Entity& entity) const {
-  return child_contents_->GetCoverage(entity);
+  // dst rect is already transformed.
+  return dest_rect_;
 }
 
 bool FramebufferBlendContents::Render(const ContentContext& renderer,
@@ -35,110 +31,81 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
     return false;
   }
 
-  using VS = FramebufferBlendScreenPipeline::VertexShader;
-  using FS = FramebufferBlendScreenPipeline::FragmentShader;
+  using VS = ScratchSpaceBlendScreenPipeline::VertexShader;
 
   auto& host_buffer = renderer.GetTransientsBuffer();
 
-  auto src_snapshot = child_contents_->RenderToSnapshot(
-      renderer,                                    // renderer
-      entity,                                      // entity
-      Rect::MakeSize(pass.GetRenderTargetSize()),  // coverage_limit
-      std::nullopt,                                // sampler_descriptor
-      true,                                        // msaa_enabled
-      /*mip_count=*/1,
-      "FramebufferBlendContents Snapshot");  // label
-
-  if (!src_snapshot.has_value()) {
-    return true;
-  }
-
-  auto size = src_snapshot->texture->GetSize();
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.AddVertices({
-      {Point(0, 0), Point(0, 0)},
-      {Point(size.width, 0), Point(1, 0)},
-      {Point(0, size.height), Point(0, 1)},
-      {Point(size.width, size.height), Point(1, 1)},
+      {dest_rect_.GetLeftTop(),},
+      {dest_rect_.GetRightTop()},
+      {dest_rect_.GetLeftBottom()},
+      {dest_rect_.GetRightBottom()},
   });
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kSource;
   options.primitive_type = PrimitiveType::kTriangleStrip;
+  options.scratch_flush = true;
 
-  pass.SetCommandLabel("Framebuffer Advanced Blend Filter");
+  pass.SetCommandLabel("Scratch Space Blend");
   pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
   switch (blend_mode_) {
     case BlendMode::kScreen:
-      pass.SetPipeline(renderer.GetFramebufferBlendScreenPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendScreenPipeline(options));
       break;
     case BlendMode::kOverlay:
-      pass.SetPipeline(renderer.GetFramebufferBlendOverlayPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendOverlayPipeline(options));
       break;
     case BlendMode::kDarken:
-      pass.SetPipeline(renderer.GetFramebufferBlendDarkenPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendDarkenPipeline(options));
       break;
     case BlendMode::kLighten:
-      pass.SetPipeline(renderer.GetFramebufferBlendLightenPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendLightenPipeline(options));
       break;
     case BlendMode::kColorDodge:
-      pass.SetPipeline(renderer.GetFramebufferBlendColorDodgePipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendColorDodgePipeline(options));
       break;
     case BlendMode::kColorBurn:
-      pass.SetPipeline(renderer.GetFramebufferBlendColorBurnPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendColorBurnPipeline(options));
       break;
     case BlendMode::kHardLight:
-      pass.SetPipeline(renderer.GetFramebufferBlendHardLightPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendHardLightPipeline(options));
       break;
     case BlendMode::kSoftLight:
-      pass.SetPipeline(renderer.GetFramebufferBlendSoftLightPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendSoftLightPipeline(options));
       break;
     case BlendMode::kDifference:
-      pass.SetPipeline(renderer.GetFramebufferBlendDifferencePipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendDifferencePipeline(options));
       break;
     case BlendMode::kExclusion:
-      pass.SetPipeline(renderer.GetFramebufferBlendExclusionPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendExclusionPipeline(options));
       break;
     case BlendMode::kMultiply:
-      pass.SetPipeline(renderer.GetFramebufferBlendMultiplyPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendMultiplyPipeline(options));
       break;
     case BlendMode::kHue:
-      pass.SetPipeline(renderer.GetFramebufferBlendHuePipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendHuePipeline(options));
       break;
     case BlendMode::kSaturation:
-      pass.SetPipeline(renderer.GetFramebufferBlendSaturationPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendSaturationPipeline(options));
       break;
     case BlendMode::kColor:
-      pass.SetPipeline(renderer.GetFramebufferBlendColorPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendColorPipeline(options));
       break;
     case BlendMode::kLuminosity:
-      pass.SetPipeline(renderer.GetFramebufferBlendLuminosityPipeline(options));
+      pass.SetPipeline(renderer.GetScratchSpaceBlendLuminosityPipeline(options));
       break;
     default:
       return false;
   }
 
   VS::FrameInfo frame_info;
-  FS::FragInfo frag_info;
-
-  auto src_sampler_descriptor = src_snapshot->sampler_descriptor;
-  if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
-    src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
-    src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
-  }
-  const std::unique_ptr<const Sampler>& src_sampler =
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-          src_sampler_descriptor);
-  FS::BindTextureSamplerSrc(pass, src_snapshot->texture, src_sampler);
 
   frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(), pass,
-                                              src_snapshot->transform);
-  frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
+                                              entity.GetTransform()); // Already transformed
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
-
-  frag_info.src_input_alpha = src_snapshot->opacity;
-  FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
   return pass.Draw().ok();
 }

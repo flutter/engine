@@ -15,6 +15,7 @@
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -25,19 +26,12 @@
 
 namespace impeller {
 
-void ContentContextOptions::ApplyToPipelineDescriptor(
-    PipelineDescriptor& desc) const {
-  auto pipeline_blend = blend_mode;
-  if (blend_mode > Entity::kLastPipelineBlendMode) {
-    VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
-                   << " as a pipeline blend.";
-    pipeline_blend = BlendMode::kSourceOver;
-  }
-
-  desc.SetSampleCount(sample_count);
-
-  ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
-  color0.format = color_attachment_pixel_format;
+static ColorAttachmentDescriptor UpdateDescriptor(
+    ColorAttachmentDescriptor color0,
+    PixelFormat pixel_format,
+    bool is_for_rrect_blur_clear,
+    BlendMode pipeline_blend) {
+  color0.format = pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
 
@@ -139,7 +133,51 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     default:
       FML_UNREACHABLE();
   }
-  desc.SetColorAttachmentDescriptor(0u, color0);
+  return color0;
+}
+
+void ContentContextOptions::ApplyToPipelineDescriptor(
+    PipelineDescriptor& desc) const {
+  auto pipeline_blend = blend_mode;
+  if (blend_mode > Entity::kLastPipelineBlendMode) {
+    VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
+                   << " as a pipeline blend.";
+    pipeline_blend = BlendMode::kSourceOver;
+  }
+
+  desc.SetSampleCount(sample_count);
+
+  if (scratch_space) {
+    ColorAttachmentDescriptor color0 = UpdateDescriptor(
+        *desc.GetColorAttachmentDescriptor(0u), color_attachment_pixel_format,
+        false, BlendMode::kDestination);
+    ColorAttachmentDescriptor color1 = UpdateDescriptor(
+        *desc.GetColorAttachmentDescriptor(1u), color_attachment_pixel_format,
+        is_for_rrect_blur_clear, pipeline_blend);
+
+    desc.SetColorAttachmentDescriptor(0u, color0);
+    desc.SetColorAttachmentDescriptor(1u, color1);
+  } else if (scratch_flush) {
+    ColorAttachmentDescriptor color0 = UpdateDescriptor(
+        *desc.GetColorAttachmentDescriptor(0u), color_attachment_pixel_format,
+        is_for_rrect_blur_clear, BlendMode::kSource);
+    ColorAttachmentDescriptor color1 = UpdateDescriptor(
+        *desc.GetColorAttachmentDescriptor(1u), color_attachment_pixel_format,
+        is_for_rrect_blur_clear, BlendMode::kSource);
+
+    desc.SetColorAttachmentDescriptor(0u, color0);
+    desc.SetColorAttachmentDescriptor(1u, color1);
+  } else {
+    ColorAttachmentDescriptor color0 = UpdateDescriptor(
+        *desc.GetColorAttachmentDescriptor(0u), color_attachment_pixel_format,
+        is_for_rrect_blur_clear, pipeline_blend);
+    ColorAttachmentDescriptor color1 = UpdateDescriptor(
+        *desc.GetColorAttachmentDescriptor(1u), color_attachment_pixel_format,
+        false, BlendMode::kDestination);
+
+    desc.SetColorAttachmentDescriptor(0u, color0);
+    desc.SetColorAttachmentDescriptor(1u, color1);
+  }
 
   if (!has_depth_stencil_attachments) {
     desc.ClearDepthAttachment();
@@ -215,7 +253,6 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
 
   desc.SetPrimitiveType(primitive_type);
-
   desc.SetPolygonMode(wireframe ? PolygonMode::kLine : PolygonMode::kFill);
 }
 

@@ -19,7 +19,8 @@ frag_info;
 
 in highp vec2 v_uv;
 
-out f16vec4 frag_color;
+layout (location = 0) out f16vec4 frag_color;
+layout (location = 1) out f16vec4 scratch_space;
 
 void main() {
   f16vec4 value = texture(glyph_atlas_sampler, v_uv);
@@ -37,4 +38,5 @@ void main() {
       frag_color = value.rrrr * frag_info.text_color;
     }
   }
+  scratch_space = f16vec4(0);
 }

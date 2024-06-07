@@ -8,11 +8,19 @@ precision mediump float;
 
 uniform FragInfo {
   vec4 color;
+  bool use_scratch_space;
 }
 frag_info;
 
-out vec4 frag_color;
+layout (location = 0) out vec4 frag_color;
+layout (location = 1) out vec4 scratch_space;
 
 void main() {
-  frag_color = frag_info.color;
+  if (frag_info.use_scratch_space) {
+    scratch_space = frag_info.color;
+    frag_color = vec4(0);
+  } else {
+    scratch_space = vec4(0);
+    frag_color = frag_info.color;
+  }
 }

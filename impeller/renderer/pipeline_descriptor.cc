@@ -52,7 +52,7 @@ std::size_t PipelineDescriptor::GetHash() const {
 bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
   return label_ == other.label_ && sample_count_ == other.sample_count_ &&
          DeepCompareMap(entrypoints_, other.entrypoints_) &&
-         color_attachment_descriptors_ == other.color_attachment_descriptors_ &&
+         DeepCompareMap(color_attachment_descriptors_, other.color_attachment_descriptors_) &&
          DeepComparePointer(vertex_descriptor_, other.vertex_descriptor_) &&
          stencil_pixel_format_ == other.stencil_pixel_format_ &&
          depth_pixel_format_ == other.depth_pixel_format_ &&

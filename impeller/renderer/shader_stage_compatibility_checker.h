@@ -8,6 +8,7 @@
 #include <cstddef>
 
 #include "impeller/core/shader_types.h"
+#include "impeller/entity/scratch_space_blend.vert.h"
 
 namespace impeller {
 /// This is a classed use to check that the input slots of fragment shaders
@@ -63,6 +64,7 @@ class ShaderStageCompatibilityChecker {
 // an empty array for output slots.
 struct ClipVertexShader;
 struct SolidFillVertexShader;
+struct ScratchSpaceBlendVertexShader;
 
 template <typename FragmentShaderT>
 class ShaderStageCompatibilityChecker<ClipVertexShader, FragmentShaderT> {
@@ -71,6 +73,11 @@ class ShaderStageCompatibilityChecker<ClipVertexShader, FragmentShaderT> {
 };
 template <typename FragmentShaderT>
 class ShaderStageCompatibilityChecker<SolidFillVertexShader, FragmentShaderT> {
+ public:
+  static constexpr bool Check() { return true; }
+};
+template <typename FragmentShaderT>
+class ShaderStageCompatibilityChecker<ScratchSpaceBlendVertexShader, FragmentShaderT> {
  public:
   static constexpr bool Check() { return true; }
 };

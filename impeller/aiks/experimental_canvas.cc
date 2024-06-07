@@ -35,12 +35,13 @@ static void SetClipScissor(std::optional<Rect> clip_coverage,
 }
 
 static void ApplyFramebufferBlend(Entity& entity) {
-  auto src_contents = entity.GetContents();
-  auto contents = std::make_shared<FramebufferBlendContents>();
-  contents->SetChildContents(src_contents);
-  contents->SetBlendMode(entity.GetBlendMode());
-  entity.SetContents(std::move(contents));
-  entity.SetBlendMode(BlendMode::kSource);
+  // TODO
+  // auto src_contents = entity.GetContents();
+  // auto contents = std::make_shared<FramebufferBlendContents>();
+  // contents->SetChildContents(src_contents);
+  // contents->SetBlendMode(entity.GetBlendMode());
+  // entity.SetContents(std::move(contents));
+  // entity.SetBlendMode(BlendMode::kSource);
 }
 
 }  // namespace

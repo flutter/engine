@@ -112,10 +112,33 @@ static std::optional<RenderTarget> WrapTextureWithRenderTarget(
   color0.clear_color = Color::DarkSlateGray();
   color0.load_action = LoadAction::kClear;
   color0.store_action = StoreAction::kMultisampleResolve;
-  color0.resolve_texture = std::move(resolve_tex);
+  color0.resolve_texture = resolve_tex;
 
   auto render_target_desc = std::make_optional<RenderTarget>();
   render_target_desc->SetColorAttachment(color0, 0u);
+
+  // Scratch Space.
+  TextureDescriptor scratch_space_tex_desc;
+  scratch_space_tex_desc.storage_mode = StorageMode::kDeviceTransient;
+  scratch_space_tex_desc.type = TextureType::kTexture2DMultisample;
+  scratch_space_tex_desc.sample_count = SampleCount::kCount4;
+  scratch_space_tex_desc.format = resolve_tex->GetTextureDescriptor().format;
+  scratch_space_tex_desc.size = resolve_tex->GetSize();
+  scratch_space_tex_desc.usage = TextureUsage::kRenderTarget;
+
+  auto scratch_space_tex = allocator.CreateTexture(scratch_space_tex_desc);
+  if (!scratch_space_tex) {
+    VALIDATION_LOG << "Could not Scratch Space color texture.";
+    return std::nullopt;
+  }
+  scratch_space_tex->SetLabel("ScratchSpaceMSAA");
+
+  ColorAttachment color1;
+  color1.texture = scratch_space_tex;
+  color1.clear_color = Color::BlackTransparent();
+  color1.load_action = LoadAction::kClear;
+  color1.store_action = StoreAction::kDontCare;
+  render_target_desc->SetColorAttachment(color1, 1u);
 
   return render_target_desc;
 }

@@ -730,125 +730,126 @@ std::optional<Entity> BlendFilterContents::CreateFramebufferAdvancedBlend(
       }
     }
 
-    {
-      using VS = FramebufferBlendScreenPipeline::VertexShader;
-      using FS = FramebufferBlendScreenPipeline::FragmentShader;
+    // {
+    //   using VS = FramebufferBlendScreenPipeline::VertexShader;
+    //   using FS = FramebufferBlendScreenPipeline::FragmentShader;
 
-      // Next, we render the second contents to a snapshot, or create a 1x1
-      // texture for the foreground color.
-      std::shared_ptr<Texture> src_texture;
-      if (foreground_color.has_value()) {
-        src_texture = foreground_texture;
-      } else {
-        auto src_snapshot =
-            inputs[0]->GetSnapshot("ForegroundAdvancedBlend", renderer, entity);
-        if (!src_snapshot.has_value()) {
-          return false;
-        }
-        // This doesn't really handle the case where the transforms are wildly
-        // different, but we only need to support blending two contents together
-        // in limited circumstances (mask blur).
-        src_texture = src_snapshot->texture;
-      }
+    //   // Next, we render the second contents to a snapshot, or create a 1x1
+    //   // texture for the foreground color.
+    //   std::shared_ptr<Texture> src_texture;
+    //   if (foreground_color.has_value()) {
+    //     src_texture = foreground_texture;
+    //   } else {
+    //     auto src_snapshot =
+    //         inputs[0]->GetSnapshot("ForegroundAdvancedBlend", renderer, entity);
+    //     if (!src_snapshot.has_value()) {
+    //       return false;
+    //     }
+    //     // This doesn't really handle the case where the transforms are wildly
+    //     // different, but we only need to support blending two contents together
+    //     // in limited circumstances (mask blur).
+    //     src_texture = src_snapshot->texture;
+    //   }
 
-      VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-      vtx_builder.AddVertices({
-          {Point(0, 0), Point(0, 0)},
-          {Point(1, 0), Point(1, 0)},
-          {Point(0, 1), Point(0, 1)},
-          {Point(1, 1), Point(1, 1)},
-      });
+    //   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    //   vtx_builder.AddVertices({
+    //       {Point(0, 0), Point(0, 0)},
+    //       {Point(1, 0), Point(1, 0)},
+    //       {Point(0, 1), Point(0, 1)},
+    //       {Point(1, 1), Point(1, 1)},
+    //   });
 
-      auto options = OptionsFromPass(pass);
-      options.blend_mode = BlendMode::kSource;
-      options.primitive_type = PrimitiveType::kTriangleStrip;
+    //   auto options = OptionsFromPass(pass);
+    //   options.blend_mode = BlendMode::kSource;
+    //   options.primitive_type = PrimitiveType::kTriangleStrip;
 
-      pass.SetCommandLabel("Framebuffer Advanced Blend Filter");
-      pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
+    //   pass.SetCommandLabel("Framebuffer Advanced Blend Filter");
+    //   pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
 
-      switch (blend_mode) {
-        case BlendMode::kScreen:
-          pass.SetPipeline(renderer.GetFramebufferBlendScreenPipeline(options));
-          break;
-        case BlendMode::kOverlay:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendOverlayPipeline(options));
-          break;
-        case BlendMode::kDarken:
-          pass.SetPipeline(renderer.GetFramebufferBlendDarkenPipeline(options));
-          break;
-        case BlendMode::kLighten:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendLightenPipeline(options));
-          break;
-        case BlendMode::kColorDodge:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendColorDodgePipeline(options));
-          break;
-        case BlendMode::kColorBurn:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendColorBurnPipeline(options));
-          break;
-        case BlendMode::kHardLight:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendHardLightPipeline(options));
-          break;
-        case BlendMode::kSoftLight:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendSoftLightPipeline(options));
-          break;
-        case BlendMode::kDifference:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendDifferencePipeline(options));
-          break;
-        case BlendMode::kExclusion:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendExclusionPipeline(options));
-          break;
-        case BlendMode::kMultiply:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendMultiplyPipeline(options));
-          break;
-        case BlendMode::kHue:
-          pass.SetPipeline(renderer.GetFramebufferBlendHuePipeline(options));
-          break;
-        case BlendMode::kSaturation:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendSaturationPipeline(options));
-          break;
-        case BlendMode::kColor:
-          pass.SetPipeline(renderer.GetFramebufferBlendColorPipeline(options));
-          break;
-        case BlendMode::kLuminosity:
-          pass.SetPipeline(
-              renderer.GetFramebufferBlendLuminosityPipeline(options));
-          break;
-        default:
-          return false;
-      }
+    //   switch (blend_mode) {
+    //     case BlendMode::kScreen:
+    //       pass.SetPipeline(renderer.GetFramebufferBlendScreenPipeline(options));
+    //       break;
+    //     case BlendMode::kOverlay:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendOverlayPipeline(options));
+    //       break;
+    //     case BlendMode::kDarken:
+    //       pass.SetPipeline(renderer.GetFramebufferBlendDarkenPipeline(options));
+    //       break;
+    //     case BlendMode::kLighten:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendLightenPipeline(options));
+    //       break;
+    //     case BlendMode::kColorDodge:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendColorDodgePipeline(options));
+    //       break;
+    //     case BlendMode::kColorBurn:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendColorBurnPipeline(options));
+    //       break;
+    //     case BlendMode::kHardLight:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendHardLightPipeline(options));
+    //       break;
+    //     case BlendMode::kSoftLight:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendSoftLightPipeline(options));
+    //       break;
+    //     case BlendMode::kDifference:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendDifferencePipeline(options));
+    //       break;
+    //     case BlendMode::kExclusion:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendExclusionPipeline(options));
+    //       break;
+    //     case BlendMode::kMultiply:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendMultiplyPipeline(options));
+    //       break;
+    //     case BlendMode::kHue:
+    //       pass.SetPipeline(renderer.GetFramebufferBlendHuePipeline(options));
+    //       break;
+    //     case BlendMode::kSaturation:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendSaturationPipeline(options));
+    //       break;
+    //     case BlendMode::kColor:
+    //       pass.SetPipeline(renderer.GetFramebufferBlendColorPipeline(options));
+    //       break;
+    //     case BlendMode::kLuminosity:
+    //       pass.SetPipeline(
+    //           renderer.GetFramebufferBlendLuminosityPipeline(options));
+    //       break;
+    //     default:
+    //       return false;
+    //   }
 
-      VS::FrameInfo frame_info;
-      FS::FragInfo frag_info;
+    //   VS::FrameInfo frame_info;
+    //   FS::FragInfo frag_info;
 
-      auto src_sampler_descriptor = SamplerDescriptor{};
-      if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
-        src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
-        src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
-      }
-      const std::unique_ptr<const Sampler>& src_sampler =
-          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-              src_sampler_descriptor);
-      FS::BindTextureSamplerSrc(pass, src_texture, src_sampler);
+    //   auto src_sampler_descriptor = SamplerDescriptor{};
+    //   if (renderer.GetDeviceCapabilities().SupportsDecalSamplerAddressMode()) {
+    //     src_sampler_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+    //     src_sampler_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+    //   }
+    //   const std::unique_ptr<const Sampler>& src_sampler =
+    //       renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+    //           src_sampler_descriptor);
+    //   FS::BindTextureSamplerSrc(pass, src_texture, src_sampler);
 
-      frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-      frame_info.src_y_coord_scale = src_texture->GetYCoordScale();
-      VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+    //   frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    //   frame_info.src_y_coord_scale = src_texture->GetYCoordScale();
+    //   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 
-      frag_info.src_input_alpha = 1.0;
-      FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+    //   frag_info.src_input_alpha = 1.0;
+    //   FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-      return pass.Draw().ok();
-    }
+    //   return pass.Draw().ok();
+    // }
+    return true;
   };
 
   std::shared_ptr<CommandBuffer> cmd_buffer =

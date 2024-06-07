@@ -38,7 +38,9 @@ class FramebufferBlendContents final : public ColorSourceContents {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  void SetChildContents(std::shared_ptr<Contents> child_contents);
+  void SetDestRect(Rect rect) {
+    dest_rect_ = rect;
+  }
 
  private:
   // |Contents|
@@ -50,7 +52,7 @@ class FramebufferBlendContents final : public ColorSourceContents {
               RenderPass& pass) const override;
 
   BlendMode blend_mode_;
-  std::shared_ptr<Contents> child_contents_;
+  Rect dest_rect_;
 
   FramebufferBlendContents(const FramebufferBlendContents&) = delete;
 

@@ -396,6 +396,29 @@ RenderTarget RenderTargetAllocator::CreateOffscreenMSAA(
 
   target.SetColorAttachment(color0, 0u);
 
+  // Set scratch space transient texture as attachment 1.
+  {
+    TextureDescriptor scratch_space_desc;
+    scratch_space_desc.storage_mode = StorageMode::kDeviceTransient;
+    scratch_space_desc.format = pixel_format;
+    scratch_space_desc.size = size;
+    scratch_space_desc.compression_type = CompressionType::kLossy;
+    scratch_space_desc.usage = TextureUsage::kRenderTarget;
+    auto scratch_space_texture = allocator_->CreateTexture(scratch_space_desc);
+    if (!color0_resolve_tex) {
+      VALIDATION_LOG << "Could not create color texture.";
+      return {};
+    }
+
+    ColorAttachment scratch_space;
+    scratch_space.clear_color = Color::BlackTransparent();
+    scratch_space.load_action = LoadAction::kClear;
+    scratch_space.store_action = StoreAction::kDontCare;
+    scratch_space.texture = scratch_space_texture;
+
+    target.SetColorAttachment(scratch_space, 1u);
+  }
+
   // Create MSAA stencil texture.
 
   if (stencil_attachment_config.has_value()) {
