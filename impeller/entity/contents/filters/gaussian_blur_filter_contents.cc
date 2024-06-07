@@ -375,13 +375,8 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
-  std::optional<Rect> expanded_source_coverage =
-      source_coverage->Expand(padding);
-  if (expanded_source_coverage.has_value()) {
-    return expanded_source_coverage->TransformBounds(entity.GetTransform());
-  }
-
-  return std::nullopt;
+  Rect expanded_source_coverage = source_coverage->Expand(padding);
+  return expanded_source_coverage.TransformBounds(entity.GetTransform());
 }
 
 std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
