@@ -5,7 +5,6 @@
 #ifndef FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_
 #define FLUTTER_IMPELLER_TYPOGRAPHER_TEXT_FRAME_H_
 
-#include "flutter/fml/macros.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_run.h"
 
@@ -25,7 +24,16 @@ class TextFrame {
 
   ~TextFrame();
 
-  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map, Scalar scale) const;
+  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
+                                   Scalar scale,
+                                   Point offset,
+                                   const GlyphProperties& properties) const;
+
+  static Point ComputeSubpixelPosition(
+      const TextRun::GlyphPosition& glyph_position,
+      AxisAlignment alignment,
+      Point offset,
+      Scalar scale);
 
   static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
 
@@ -52,14 +60,13 @@ class TextFrame {
   const std::vector<TextRun>& GetRuns() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Whether any of the glyphs of this run are potentially
-  /// overlapping
+  /// @brief      Returns the paint color this text frame was recorded with.
   ///
-  ///             It is always safe to return true from this method. Generally,
-  ///             any large blobs of text should return true to avoid
-  ///             computationally complex calculations. This information is used
-  ///             to apply opacity peephole optimizations to text blobs.
-  bool MaybeHasOverlapping() const;
+  ///             Non-bitmap/COLR fonts always use a black text color here, but
+  ///             COLR fonts can potentially use the paint color in the glyph
+  ///             atlas, so this color must be considered as part of the cache
+  ///             key.
+  bool HasColor() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The type of atlas this run should be emplaced in.
@@ -72,7 +79,7 @@ class TextFrame {
  private:
   std::vector<TextRun> runs_;
   Rect bounds_;
-  bool has_color_ = false;
+  bool has_color_;
 };
 
 }  // namespace impeller

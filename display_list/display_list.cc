@@ -19,36 +19,45 @@ DisplayList::DisplayList()
       op_count_(0),
       nested_byte_count_(0),
       nested_op_count_(0),
+      total_depth_(0),
       unique_id_(0),
       bounds_({0, 0, 0, 0}),
       can_apply_group_opacity_(true),
       is_ui_thread_safe_(true),
-      modifies_transparent_black_(false) {}
+      modifies_transparent_black_(false),
+      root_has_backdrop_filter_(false),
+      max_root_blend_mode_(DlBlendMode::kClear) {}
 
 DisplayList::DisplayList(DisplayListStorage&& storage,
                          size_t byte_count,
-                         unsigned int op_count,
+                         uint32_t op_count,
                          size_t nested_byte_count,
-                         unsigned int nested_op_count,
+                         uint32_t nested_op_count,
+                         uint32_t total_depth,
                          const SkRect& bounds,
                          bool can_apply_group_opacity,
                          bool is_ui_thread_safe,
                          bool modifies_transparent_black,
+                         DlBlendMode max_root_blend_mode,
+                         bool root_has_backdrop_filter,
                          sk_sp<const DlRTree> rtree)
     : storage_(std::move(storage)),
       byte_count_(byte_count),
       op_count_(op_count),
       nested_byte_count_(nested_byte_count),
       nested_op_count_(nested_op_count),
+      total_depth_(total_depth),
       unique_id_(next_unique_id()),
       bounds_(bounds),
       can_apply_group_opacity_(can_apply_group_opacity),
       is_ui_thread_safe_(is_ui_thread_safe),
       modifies_transparent_black_(modifies_transparent_black),
+      root_has_backdrop_filter_(root_has_backdrop_filter),
+      max_root_blend_mode_(max_root_blend_mode),
       rtree_(std::move(rtree)) {}
 
 DisplayList::~DisplayList() {
-  uint8_t* ptr = storage_.get();
+  const uint8_t* ptr = storage_.get();
   DisposeOps(ptr, ptr + byte_count_);
 }
 
@@ -139,7 +148,7 @@ class VectorCuller final : public Culler {
 };
 
 void DisplayList::Dispatch(DlOpReceiver& receiver) const {
-  uint8_t* ptr = storage_.get();
+  const uint8_t* ptr = storage_.get();
   Dispatch(receiver, ptr, ptr + byte_count_, NopCuller::instance);
 }
 
@@ -159,7 +168,7 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
   }
   const DlRTree* rtree = this->rtree().get();
   FML_DCHECK(rtree != nullptr);
-  uint8_t* ptr = storage_.get();
+  const uint8_t* ptr = storage_.get();
   std::vector<int> rect_indices;
   rtree->search(cull_rect, &rect_indices);
   VectorCuller culler(rtree, rect_indices);
@@ -167,8 +176,8 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
 }
 
 void DisplayList::Dispatch(DlOpReceiver& receiver,
-                           uint8_t* ptr,
-                           uint8_t* end,
+                           const uint8_t* ptr,
+                           const uint8_t* end,
                            Culler& culler) const {
   DispatchContext context = {
       .receiver = receiver,
@@ -204,7 +213,7 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
   }
 }
 
-void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
+void DisplayList::DisposeOps(const uint8_t* ptr, const uint8_t* end) {
   while (ptr < end) {
     auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
@@ -231,15 +240,15 @@ void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
   }
 }
 
-static bool CompareOps(uint8_t* ptrA,
-                       uint8_t* endA,
-                       uint8_t* ptrB,
-                       uint8_t* endB) {
+static bool CompareOps(const uint8_t* ptrA,
+                       const uint8_t* endA,
+                       const uint8_t* ptrB,
+                       const uint8_t* endB) {
   // These conditions are checked by the caller...
   FML_DCHECK((endA - ptrA) == (endB - ptrB));
   FML_DCHECK(ptrA != ptrB);
-  uint8_t* bulk_start_a = ptrA;
-  uint8_t* bulk_start_b = ptrB;
+  const uint8_t* bulk_start_a = ptrA;
+  const uint8_t* bulk_start_b = ptrB;
   while (ptrA < endA && ptrB < endB) {
     auto opA = reinterpret_cast<const DLOp*>(ptrA);
     auto opB = reinterpret_cast<const DLOp*>(ptrB);
@@ -307,8 +316,8 @@ bool DisplayList::Equals(const DisplayList* other) const {
   if (byte_count_ != other->byte_count_ || op_count_ != other->op_count_) {
     return false;
   }
-  uint8_t* ptr = storage_.get();
-  uint8_t* o_ptr = other->storage_.get();
+  const uint8_t* ptr = storage_.get();
+  const uint8_t* o_ptr = other->storage_.get();
   if (ptr == o_ptr) {
     return true;
   }

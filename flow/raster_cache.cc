@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#if !SLIMPELLER
+
 #include "flutter/flow/raster_cache.h"
 
 #include <cstddef>
@@ -264,18 +266,6 @@ size_t RasterCache::GetPictureCachedEntriesCount() const {
   return display_list_cached_entries_count;
 }
 
-void RasterCache::SetCheckboardCacheImages(bool checkerboard) {
-  if (checkerboard_images_ == checkerboard) {
-    return;
-  }
-
-  checkerboard_images_ = checkerboard;
-
-  // Clear all existing entries so previously rasterized items (with or without
-  // a checkerboard) will be refreshed in subsequent passes.
-  Clear();
-}
-
 void RasterCache::TraceStatsToTimeline() const {
 #if !FLUTTER_RELEASE
   FML_TRACE_COUNTER(
@@ -321,3 +311,5 @@ RasterCacheMetrics& RasterCache::GetMetricsForKind(RasterCacheKeyKind kind) {
 }
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER

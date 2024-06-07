@@ -19,6 +19,12 @@ using UnitlessTime = int;
 // returns the time of that frame.
 using Generator = std::function<UnitlessTime(int)>;
 
+namespace {
+
+constexpr int64_t kImplicitViewId = 0;
+
+}
+
 //----------------------------------------------------------------------------
 /// Simulate n input events where the i-th one is delivered at delivery_time(i).
 ///
@@ -124,7 +130,9 @@ static void TestSimulatedInputEvents(
     for (int i = 0, j = 0; i < num_events; j += 1) {
       double t = j * frame_time;
       while (i < num_events && delivery_time(i) <= t) {
-        ShellTest::DispatchFakePointerData(shell.get());
+        // Use a different x every time for the pointer data converter to
+        // generate non-empty events.
+        ShellTest::DispatchFakePointerData(shell.get(), /*x=*/i);
         i += 1;
       }
       ShellTest::VSyncFlush(shell.get(), &will_draw_new_frame);
@@ -146,6 +154,7 @@ static void TestSimulatedInputEvents(
 
   // Make sure that all events have been consumed so
   // https://github.com/flutter/flutter/issues/40863 won't happen again.
+  ASSERT_GT(events_consumed_at_frame.size(), 0u);
   ASSERT_EQ(events_consumed_at_frame.back(), num_events);
 }
 
@@ -181,6 +190,7 @@ void CreateSimulatedPointerData(PointerData& data,
   data.platformData = 0;
   data.scroll_delta_x = 0.0;
   data.scroll_delta_y = 0.0;
+  data.view_id = kImplicitViewId;
 }
 
 TEST_F(ShellTest, MissAtMostOneFrameForIrregularInputEvents) {

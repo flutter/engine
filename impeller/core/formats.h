@@ -9,7 +9,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <type_traits>
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
@@ -136,14 +135,6 @@ constexpr bool IsStencilWritable(PixelFormat format) {
     default:
       return false;
   }
-}
-
-/// Returns `true` if the pixel format has an implicit `clamp(x, 0, 1)` in the
-/// pixel format. This is important for example when performing the `Plus` blend
-/// where we don't want alpha values over 1.0.
-constexpr bool IsAlphaClampedToOne(PixelFormat pixel_format) {
-  return !(pixel_format == PixelFormat::kR32G32B32A32Float ||
-           pixel_format == PixelFormat::kR16G16B16A16Float);
 }
 
 constexpr const char* PixelFormatToString(PixelFormat format) {
@@ -412,19 +403,32 @@ struct Viewport {
   }
 };
 
+/// @brief      Describes how the texture should be sampled when the texture
+///             is being shrunk (minified) or expanded (magnified) to fit to
+///             the sample point.
 enum class MinMagFilter {
   /// Select nearest to the sample point. Most widely supported.
   kNearest,
+
   /// Select two points and linearly interpolate between them. Some formats
   /// may not support this.
   kLinear,
 };
 
+/// @brief      Options for selecting and filtering between mipmap levels.
 enum class MipFilter {
-  /// Sample from the nearest mip level.
+  /// @brief    The texture is sampled as if it only had a single mipmap level.
+  ///
+  ///           All samples are read from level 0.
+  kBase,
+
+  /// @brief    The nearst mipmap level is selected.
   kNearest,
-  /// Sample from the two nearest mip levels and linearly interpolate between
-  /// them.
+
+  /// @brief    Sample from the two nearest mip levels and linearly interpolate.
+  ///
+  ///           If the filter falls between levels, both levels are sampled, and
+  ///           their results linearly interpolated between levels.
   kLinear,
 };
 

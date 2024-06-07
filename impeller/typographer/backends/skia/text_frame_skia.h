@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_TYPOGRAPHER_BACKENDS_SKIA_TEXT_FRAME_SKIA_H_
 
 #include "impeller/typographer/text_frame.h"
+
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace impeller {

@@ -42,6 +42,7 @@ enum class SemanticsAction : int32_t {
   kMoveCursorForwardByWord = 1 << 19,
   kMoveCursorBackwardByWord = 1 << 20,
   kSetText = 1 << 21,
+  kFocus = 1 << 22,
 };
 
 const int kVerticalScrollSemanticsActions =
@@ -142,6 +143,7 @@ struct SemanticsNode {
   std::vector<int32_t> childrenInTraversalOrder;
   std::vector<int32_t> childrenInHitTestOrder;
   std::vector<int32_t> customAccessibilityActions;
+  int32_t headingLevel = 0;
 };
 
 // Contains semantic nodes that need to be updated.

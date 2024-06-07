@@ -32,8 +32,7 @@ void PlatformView::DispatchPlatformMessage(
 
 void PlatformView::DispatchPointerDataPacket(
     std::unique_ptr<PointerDataPacket> packet) {
-  delegate_.OnPlatformViewDispatchPointerDataPacket(
-      pointer_data_packet_converter_.Convert(std::move(packet)));
+  delegate_.OnPlatformViewDispatchPointerDataPacket(std::move(packet));
 }
 
 void PlatformView::DispatchSemanticsAction(int32_t node_id,
@@ -85,6 +84,17 @@ void PlatformView::NotifyDestroyed() {
 
 void PlatformView::ScheduleFrame() {
   delegate_.OnPlatformViewScheduleFrame();
+}
+
+void PlatformView::AddView(int64_t view_id,
+                           const ViewportMetrics& viewport_metrics,
+                           AddViewCallback callback) {
+  delegate_.OnPlatformViewAddView(view_id, viewport_metrics,
+                                  std::move(callback));
+}
+
+void PlatformView::RemoveView(int64_t view_id, RemoveViewCallback callback) {
+  delegate_.OnPlatformViewRemoveView(view_id, std::move(callback));
 }
 
 sk_sp<GrDirectContext> PlatformView::CreateResourceContext() const {

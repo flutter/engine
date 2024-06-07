@@ -78,6 +78,23 @@ class BlendFilterContents : public ColorFilterContents {
       std::optional<Scalar> alpha,
       ColorFilterContents::AbsorbOpacity absorb_opacity) const;
 
+  /// @brief Implements the advanced blends filters in terms of the framebuffer
+  ///        blend filters.
+  ///
+  ///        This requires device support for frameuffer fetch,
+  ///        `Capabilities::SupportsFramebufferFetch` must be true
+  ///        This allows a substantial reduction in the number of bootstrapped
+  ///        shaders.
+  std::optional<Entity> CreateFramebufferAdvancedBlend(
+      const FilterInput::Vector& inputs,
+      const ContentContext& renderer,
+      const Entity& entity,
+      const Rect& coverage,
+      std::optional<Color> foreground_color,
+      BlendMode blend_mode,
+      std::optional<Scalar> alpha,
+      ColorFilterContents::AbsorbOpacity absorb_opacity) const;
+
   /// @brief Optimized porter-duff blend that avoids a second subpass when there
   ///        is only a single input and a foreground color.
   ///
@@ -93,6 +110,7 @@ class BlendFilterContents : public ColorFilterContents {
       ColorFilterContents::AbsorbOpacity absorb_opacity) const;
 
   BlendMode blend_mode_ = BlendMode::kSourceOver;
+  AdvancedBlendProc advanced_blend_proc_;
   std::optional<Color> foreground_color_;
 
   BlendFilterContents(const BlendFilterContents&) = delete;

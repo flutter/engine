@@ -26,6 +26,7 @@ final class FormatCommand extends CommandBase {
   // ignore: public_member_api_docs
   FormatCommand({
     required super.environment,
+    super.usageLineLength,
   }) {
     argParser
       ..addFlag(
@@ -123,7 +124,7 @@ class _FormatStreamer {
       return;
     }
     final String l = line.trim();
-    if (l == 'To fix, run `et format` or:') {
+    if (l == 'To fix, run `et format --all` or:') {
       inADiff = true;
     }
     if (l.isNotEmpty && (!inADiff || dryRun)) {

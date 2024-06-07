@@ -9,8 +9,9 @@ import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import 'browser_detection.dart';
+import 'browser_detection.dart' show isIOS15, isMacOrIOS;
 import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'services.dart';
@@ -495,7 +496,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
 void applyWebkitClipFix(DomElement? containerElement) {
-  if (browserEngine == BrowserEngine.webkit) {
+  if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
 }
@@ -690,7 +691,7 @@ void setElementStyle(DomElement element, String name, String? value) {
 }
 
 void setClipPath(DomElement element, String? value) {
-  if (browserEngine == BrowserEngine.webkit) {
+  if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
     } else {
@@ -884,4 +885,36 @@ String tileModeString(ui.TileMode tileMode) {
     case ui.TileMode.decal:
       return 'decal';
   }
+}
+
+/// A size where both the width and height are integers.
+class BitmapSize {
+  const BitmapSize(this.width, this.height);
+
+  /// Returns a [BitmapSize] by rounding the width and height of a [ui.Size] to
+  /// the nearest integer.
+  BitmapSize.fromSize(ui.Size size)
+      : width = size.width.round(),
+        height = size.height.round();
+
+  final int width;
+  final int height;
+
+  @override
+  bool operator ==(Object other) {
+    return other is BitmapSize &&
+        other.width == width &&
+        other.height == height;
+  }
+
+  @override
+  int get hashCode => Object.hash(width, height);
+
+  ui.Size toSize() {
+    return ui.Size(width.toDouble(), height.toDouble());
+  }
+
+  bool get isEmpty => width == 0 || height == 0;
+
+  static const BitmapSize zero = BitmapSize(0, 0);
 }

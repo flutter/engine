@@ -5,9 +5,11 @@
 #import "flutter/shell/platform/darwin/ios/ios_context_software.h"
 #include "ios_context.h"
 
+FLUTTER_ASSERT_ARC
+
 namespace flutter {
 
-IOSContextSoftware::IOSContextSoftware() : IOSContext(MsaaSampleCount::kNone) {}
+IOSContextSoftware::IOSContextSoftware() = default;
 
 // |IOSContext|
 IOSContextSoftware::~IOSContextSoftware() = default;

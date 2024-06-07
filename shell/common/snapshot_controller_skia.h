@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_COMMON_SNAPSHOT_CONTROLLER_SKIA_H_
 #define FLUTTER_SHELL_COMMON_SNAPSHOT_CONTROLLER_SKIA_H_
 
+#if !SLIMPELLER
+
 #include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -15,10 +17,18 @@ class SnapshotControllerSkia : public SnapshotController {
   explicit SnapshotControllerSkia(const SnapshotController::Delegate& delegate)
       : SnapshotController(delegate) {}
 
-  sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
-                                    SkISize size) override;
+  void MakeRasterSnapshot(
+      sk_sp<DisplayList> display_list,
+      SkISize picture_size,
+      std::function<void(const sk_sp<DlImage>&)> callback) override;
+
+  sk_sp<DlImage> MakeRasterSnapshotSync(sk_sp<DisplayList> display_list,
+                                        SkISize size) override;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) override;
+
+  void CacheRuntimeStage(
+      const std::shared_ptr<impeller::RuntimeStage>& runtime_stage) override;
 
  private:
   sk_sp<DlImage> DoMakeRasterSnapshot(
@@ -29,5 +39,7 @@ class SnapshotControllerSkia : public SnapshotController {
 };
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_SHELL_COMMON_SNAPSHOT_CONTROLLER_SKIA_H_

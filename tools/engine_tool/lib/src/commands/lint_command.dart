@@ -41,6 +41,7 @@ final class LintCommand extends CommandBase {
   /// Constructs the 'lint' command.
   LintCommand({
     required super.environment,
+    super.usageLineLength,
   }) {
     final String engineFlutterPath = environment.engine.flutterDir.path;
     _linters[Linter.dart] = _LinterDescription(
@@ -83,7 +84,6 @@ final class LintCommand extends CommandBase {
     if (environment.platform.isWindows) {
       environment.logger
           .fatal('lint command is not supported on Windows (for now).');
-      return 1;
     }
     final WorkerPool wp =
         WorkerPool(environment, ProcessTaskProgressReporter(environment));

@@ -3,8 +3,8 @@
 // found in the LICENSE file.
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import 'browser_detection.dart';
 import 'dom.dart';
 import 'services.dart';
 
@@ -23,7 +23,7 @@ class ClipboardMessageHandler {
     const MethodCodec codec = JSONMethodCodec();
     bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
-        .setData(methodCall.arguments['text'] as String?)
+        .setData((methodCall.arguments as Map<String, Object?>)['text'] as String?)
         .then((bool success) {
       if (success) {
         callback!(codec.encodeSuccessEnvelope(true));
@@ -132,7 +132,7 @@ abstract class CopyToClipboardStrategy {
 /// APIs and the browser.
 abstract class PasteFromClipboardStrategy {
   factory PasteFromClipboardStrategy() {
-    return (browserEngine == BrowserEngine.firefox ||
+    return (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox ||
             domWindow.navigator.clipboard == null)
         ? ExecCommandPasteStrategy()
         : ClipboardAPIPasteStrategy();

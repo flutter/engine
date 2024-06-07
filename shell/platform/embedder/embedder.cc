@@ -75,6 +75,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #ifdef IMPELLER_SUPPORTS_RENDERING
 #include "flutter/shell/platform/embedder/embedder_render_target_impeller.h"  // nogncheck
 #include "flutter/shell/platform/embedder/embedder_surface_gl_impeller.h"  // nogncheck
+#include "flutter/shell/platform/embedder/embedder_surface_gl_skia.h"  // nogncheck
 #include "impeller/core/texture.h"                        // nogncheck
 #include "impeller/renderer/backend/gles/context_gles.h"  // nogncheck
 #include "impeller/renderer/backend/gles/texture_gles.h"  // nogncheck
@@ -84,7 +85,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #endif  // SHELL_ENABLE_GL
 
 #ifdef SHELL_ENABLE_METAL
-#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal_skia.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h"
 #include "third_party/skia/include/gpu/ganesh/mtl/GrMtlTypes.h"
 #include "third_party/skia/include/ports/SkCFObject.h"
@@ -447,7 +448,7 @@ InferOpenGLPlatformViewCreationCallback(
   bool fbo_reset_after_present =
       SAFE_ACCESS(open_gl_config, fbo_reset_after_present, false);
 
-  flutter::EmbedderSurfaceGL::GLDispatchTable gl_dispatch_table = {
+  flutter::EmbedderSurfaceGLSkia::GLDispatchTable gl_dispatch_table = {
       gl_make_current,                     // gl_make_current_callback
       gl_clear_current,                    // gl_clear_current_callback
       gl_present,                          // gl_present_callback
@@ -479,7 +480,7 @@ InferOpenGLPlatformViewCreationCallback(
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
-            std::make_unique<flutter::EmbedderSurfaceGL>(
+            std::make_unique<flutter::EmbedderSurfaceGLSkia>(
                 gl_dispatch_table, fbo_reset_after_present,
                 view_embedder),       // embedder_surface
             platform_dispatch_table,  // embedder platform dispatch table
@@ -550,15 +551,20 @@ InferMetalPlatformViewCreationCallback(
             config->metal.present_command_queue),
         metal_dispatch_table, view_embedder);
   } else {
-    flutter::EmbedderSurfaceMetal::MetalDispatchTable metal_dispatch_table = {
-        .present = metal_present,
-        .get_texture = metal_get_texture,
-    };
-    embedder_surface = std::make_unique<flutter::EmbedderSurfaceMetal>(
+#if !SLIMPELLER
+    flutter::EmbedderSurfaceMetalSkia::MetalDispatchTable metal_dispatch_table =
+        {
+            .present = metal_present,
+            .get_texture = metal_get_texture,
+        };
+    embedder_surface = std::make_unique<flutter::EmbedderSurfaceMetalSkia>(
         const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
         const_cast<flutter::GPUMTLCommandQueueHandle>(
             config->metal.present_command_queue),
         metal_dispatch_table, view_embedder);
+#else   //  !SLIMPELLER
+    FML_LOG(FATAL) << "Impeller opt-out unavailable.";
+#endif  //  !SLIMPELLER
   }
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
@@ -913,7 +919,7 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
     GrDirectContext* context,
     const FlutterBackingStoreConfig& config,
     const FlutterMetalBackingStore* metal) {
-#ifdef SHELL_ENABLE_METAL
+#if defined(SHELL_ENABLE_METAL) && !SLIMPELLER
   GrMtlTextureInfo texture_info;
   if (!metal->texture.texture) {
     FML_LOG(ERROR) << "Embedder supplied null Metal texture.";
@@ -935,12 +941,10 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
       context,                   // context
       backend_texture,           // back-end texture
       kTopLeft_GrSurfaceOrigin,  // surface origin
-      // TODO(dnfield): Update this when embedders support MSAA, see
-      // https://github.com/flutter/flutter/issues/100392
-      1,                       // sample count
-      kBGRA_8888_SkColorType,  // color type
-      nullptr,                 // color space
-      &surface_properties,     // surface properties
+      1,                         // sample count
+      kBGRA_8888_SkColorType,    // color type
+      nullptr,                   // color space
+      &surface_properties,       // surface properties
       static_cast<SkSurfaces::TextureReleaseProc>(
           metal->texture.destruction_callback),  // release proc
       metal->texture.user_data                   // release context
@@ -1774,6 +1778,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     icu_data_path = SAFE_ACCESS(args, icu_data_path, nullptr);
   }
 
+#if !SLIMPELLER
   if (SAFE_ACCESS(args, persistent_cache_path, nullptr) != nullptr) {
     std::string persistent_cache_path =
         SAFE_ACCESS(args, persistent_cache_path, nullptr);
@@ -1783,6 +1788,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
   if (SAFE_ACCESS(args, is_persistent_cache_read_only, false)) {
     flutter::PersistentCache::gIsReadOnly = true;
   }
+#endif  //  !SLIMPELLER
 
   fml::CommandLine command_line;
   if (SAFE_ACCESS(args, command_line_argc, 0) != 0 &&
@@ -2229,7 +2235,7 @@ FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
-  flutter::Shell::AddViewCallback callback =
+  flutter::PlatformView::AddViewCallback callback =
       [c_callback = info->add_view_callback,
        user_data = info->user_data](bool added) {
         FlutterAddViewResult result = {};
@@ -2239,7 +2245,8 @@ FlutterEngineResult FlutterEngineAddView(FLUTTER_API_SYMBOL(FlutterEngine)
         c_callback(&result);
       };
 
-  embedder_engine->GetShell().AddView(view_id, metrics, callback);
+  embedder_engine->GetShell().GetPlatformView()->AddView(view_id, metrics,
+                                                         callback);
   return kSuccess;
 }
 
@@ -2271,7 +2278,7 @@ FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
   }
 
-  flutter::Shell::RemoveViewCallback callback =
+  flutter::PlatformView::RemoveViewCallback callback =
       [c_callback = info->remove_view_callback,
        user_data = info->user_data](bool removed) {
         FlutterRemoveViewResult result = {};
@@ -2281,7 +2288,8 @@ FlutterEngineResult FlutterEngineRemoveView(FLUTTER_API_SYMBOL(FlutterEngine)
         c_callback(&result);
       };
 
-  embedder_engine->GetShell().RemoveView(info->view_id, callback);
+  embedder_engine->GetShell().GetPlatformView()->RemoveView(info->view_id,
+                                                            callback);
   return kSuccess;
 }
 
@@ -2455,7 +2463,8 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
         SAFE_ACCESS(current, signal_kind, kFlutterPointerSignalKindNone));
     pointer_data.scroll_delta_x = SAFE_ACCESS(current, scroll_delta_x, 0.0);
     pointer_data.scroll_delta_y = SAFE_ACCESS(current, scroll_delta_y, 0.0);
-    FlutterPointerDeviceKind device_kind = SAFE_ACCESS(current, device_kind, 0);
+    FlutterPointerDeviceKind device_kind =
+        SAFE_ACCESS(current, device_kind, kFlutterPointerDeviceKindMouse);
     // For backwards compatibility with embedders written before the device
     // kind and buttons were exposed, if the device kind is not set treat it
     // as a mouse, with a synthesized primary button state based on the phase.
@@ -3375,6 +3384,8 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
   SET_PROC(SetNextFrameCallback, FlutterEngineSetNextFrameCallback);
+  SET_PROC(AddView, FlutterEngineAddView);
+  SET_PROC(RemoveView, FlutterEngineRemoveView);
 #undef SET_PROC
 
   return kSuccess;

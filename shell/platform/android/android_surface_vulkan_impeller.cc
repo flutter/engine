@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
+#include "flutter/impeller/renderer/backend/vulkan/swapchain/swapchain_vk.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
 
@@ -23,6 +24,8 @@ AndroidSurfaceVulkanImpeller::AndroidSurfaceVulkanImpeller(
   auto& context_vk =
       impeller::ContextVK::Cast(*android_context->GetImpellerContext());
   surface_context_vk_ = context_vk.CreateSurfaceContext();
+  eager_gpu_surface_ =
+      std::make_unique<GPUSurfaceVulkanImpeller>(surface_context_vk_);
 }
 
 AndroidSurfaceVulkanImpeller::~AndroidSurfaceVulkanImpeller() = default;
@@ -43,6 +46,14 @@ std::unique_ptr<Surface> AndroidSurfaceVulkanImpeller::CreateGPUSurface(
 
   if (!native_window_ || !native_window_->IsValid()) {
     return nullptr;
+  }
+
+  if (eager_gpu_surface_) {
+    auto gpu_surface = std::move(eager_gpu_surface_);
+    if (!gpu_surface->IsValid()) {
+      return nullptr;
+    }
+    return gpu_surface;
   }
 
   std::unique_ptr<GPUSurfaceVulkanImpeller> gpu_surface =
@@ -71,22 +82,26 @@ bool AndroidSurfaceVulkanImpeller::ResourceContextClearCurrent() {
 
 bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
     fml::RefPtr<AndroidNativeWindow> window) {
-  native_window_ = std::move(window);
-  bool success = native_window_ && native_window_->IsValid();
-  if (success) {
-    auto surface =
-        surface_context_vk_->CreateAndroidSurface(native_window_->handle());
-
-    if (!surface) {
-      FML_LOG(ERROR) << "Could not create a vulkan surface.";
-      return false;
-    }
-    auto size = native_window_->GetSize();
-    return surface_context_vk_->SetWindowSurface(
-        std::move(surface), impeller::ISize{size.width(), size.height()});
+  if (window && (native_window_ == window)) {
+    return OnScreenSurfaceResize(window->GetSize());
   }
 
   native_window_ = nullptr;
+
+  if (!window || !window->IsValid()) {
+    return false;
+  }
+
+  auto swapchain = impeller::SwapchainVK::Create(
+      std::reinterpret_pointer_cast<impeller::Context>(
+          surface_context_vk_->GetParent()),
+      window->handle());
+
+  if (surface_context_vk_->SetSwapchain(std::move(swapchain))) {
+    native_window_ = std::move(window);
+    return true;
+  }
+
   return false;
 }
 

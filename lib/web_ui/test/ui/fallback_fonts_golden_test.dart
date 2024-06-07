@@ -247,6 +247,20 @@ void testMain() {
       ]);
     });
 
+    // https://github.com/flutter/flutter/issues/148797
+    test('can find Tibetan script glyphs (Dzongkha)', () async {
+      await checkDownloadedFamiliesForString('འཛམ་གླིང་སྤྱི་ཚོགས', <String>[
+        'Noto Serif Tibetan',
+      ]);
+    });
+
+    // https://github.com/flutter/flutter/issues/149616
+    test('can find Ethiopic script glyphs ()', () async {
+      await checkDownloadedFamiliesForString('ኢትዮጵያ', <String>[
+        'Noto Sans Ethiopic',
+      ]);
+    });
+
     test('findMinimumFontsForCodePoints for all supported code points',
         () async {
       // Collect all supported code points from all fallback fonts in the Noto
@@ -310,6 +324,7 @@ void testMain() {
             'Noto Sans Egyptian Hieroglyphs',
             'Noto Sans Elbasan',
             'Noto Sans Elymaic',
+            'Noto Sans Ethiopic',
             'Noto Sans Georgian',
             'Noto Sans Glagolitic',
             'Noto Sans Gothic',
@@ -418,6 +433,7 @@ void testMain() {
             'Noto Sans Warang Citi',
             'Noto Sans Yi',
             'Noto Sans Zanabazar Square',
+            'Noto Serif Tibetan',
           }));
 
       // Construct random paragraphs out of supported code points.

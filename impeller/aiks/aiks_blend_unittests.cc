@@ -132,11 +132,8 @@ TEST_P(AiksTest, PaintBlendModeIsRespected) {
 
 // Bug: https://github.com/flutter/flutter/issues/142549
 TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
-  }
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
-            PixelFormat::kR16G16B16A16Float);
+            PixelFormat::kB10G10R10A10XR);
   auto texture = CreateTextureForFixture("airplane.jpg",
                                          /*enable_mipmapping=*/true);
 
@@ -158,11 +155,8 @@ TEST_P(AiksTest, BlendModePlusAlphaWideGamut) {
 
 // Bug: https://github.com/flutter/flutter/issues/142549
 TEST_P(AiksTest, BlendModePlusAlphaColorFilterWideGamut) {
-  if (GetParam() != PlaygroundBackend::kMetal) {
-    GTEST_SKIP_("This backend doesn't yet support wide gamut.");
-  }
   EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
-            PixelFormat::kR16G16B16A16Float);
+            PixelFormat::kB10G10R10A10XR);
   auto texture = CreateTextureForFixture("airplane.jpg",
                                          /*enable_mipmapping=*/true);
 
@@ -578,6 +572,21 @@ TEST_P(AiksTest, ForegroundAdvancedBlendAppliesTransformCorrectly) {
   canvas.DrawImage(std::make_shared<Image>(texture), {200, 200},
                    {.color_filter = ColorFilter::MakeBlend(
                         BlendMode::kColorDodge, Color::Orange())});
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, FramebufferAdvancedBlendCoverage) {
+  auto texture = CreateTextureForFixture("airplane.jpg",
+                                         /*enable_mipmapping=*/true);
+
+  // Draw with an advanced blend that can use FramebufferBlendContents and
+  // verify that the scale transform is correctly applied to the image.
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::DarkGray()});
+  canvas.Scale(Vector2(0.4, 0.4));
+  canvas.DrawImage(std::make_shared<Image>(texture), {20, 20},
+                   {.blend_mode = BlendMode::kMultiply});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

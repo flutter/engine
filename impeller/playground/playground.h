@@ -8,8 +8,6 @@
 #include <chrono>
 #include <memory>
 
-#include "flutter/fml/closure.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/status.h"
 #include "flutter/fml/time/time_delta.h"
 #include "impeller/core/runtime_types.h"
@@ -63,6 +61,8 @@ class Playground {
   void SetupWindow();
 
   void TeardownWindow();
+
+  bool IsPlaygroundEnabled() const;
 
   Point GetCursorPosition() const;
 

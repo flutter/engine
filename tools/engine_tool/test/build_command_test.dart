@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert' as convert;
 
 import 'package:engine_build_configs/engine_build_configs.dart';
 import 'package:engine_tool/src/build_utils.dart';
 import 'package:engine_tool/src/commands/command_runner.dart';
 import 'package:engine_tool/src/environment.dart';
+import 'package:engine_tool/src/logger.dart';
 import 'package:litetest/litetest.dart';
 import 'package:path/path.dart' as path;
 import 'package:platform/platform.dart';
@@ -51,7 +53,7 @@ void main() {
       cannedProcesses: cannedProcesses,
     );
     try {
-      final List<Build> result = runnableBuilds(testEnv.environment, configs);
+      final List<Build> result = runnableBuilds(testEnv.environment, configs, true);
       expect(result.length, equals(8));
       expect(result[0].name, equals('ci/build_name'));
     } finally {
@@ -167,9 +169,36 @@ void main() {
       expect(result, equals(0));
       expect(testEnv.processHistory[0].command[0],
           contains(path.join('tools', 'gn')));
-      expect(testEnv.processHistory[0].command[4], equals('--rbe'));
+      expect(testEnv.processHistory[0].command[2], equals('--rbe'));
       expect(testEnv.processHistory[1].command[0],
           contains(path.join('reclient', 'bootstrap')));
+    } finally {
+      testEnv.cleanup();
+    }
+  });
+
+  test('build command fails when rbe is enabled but not supported', () async {
+    final TestEnvironment testEnv = TestEnvironment.withTestEngine(
+      cannedProcesses: cannedProcesses,
+      // Intentionally omit withRbe: true.
+      // That means the //flutter/build/rbe directory will not be created.
+    );
+    try {
+      final ToolCommandRunner runner = ToolCommandRunner(
+        environment: testEnv.environment,
+        configs: configs,
+      );
+      final int result = await runner.run(<String>[
+        'build',
+        '--config',
+        'ci/android_debug_rbe_arm64',
+        '--rbe',
+      ]);
+      expect(result, equals(1));
+      expect(
+        testEnv.testLogs.map((LogRecord r) => r.message).join(),
+        contains('RBE was requested but no RBE config was found'),
+      );
     } finally {
       testEnv.cleanup();
     }
@@ -349,13 +378,17 @@ void main() {
         '//flutter/fml:fml_arc_unittests',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory.length, greaterThanOrEqualTo(2));
-      expect(testEnv.processHistory[3].command[0], contains('ninja'));
-      expect(testEnv.processHistory[3].command[2], endsWith('/host_debug'));
-      expect(
-        testEnv.processHistory[3].command[5],
-        equals('flutter/fml:fml_arc_unittests'),
-      );
+      expect(testEnv.processHistory, containsCommand((List<String> command) {
+        return command.length > 3 &&
+            command[0].contains('ninja') &&
+            command[1].contains('-C') &&
+            command[2].endsWith('/host_debug') &&
+            // TODO(matanlurey): Tighten this up to be more specific.
+            // The reason we need a broad check is because the test fixture
+            // always returns multiple targets for gn desc, even though that is
+            // not the actual behavior.
+            command.sublist(3).contains('flutter/fml:fml_arc_unittests');
+      }));
     } finally {
       testEnv.cleanup();
     }
@@ -377,23 +410,82 @@ void main() {
         '//flutter/...',
       ]);
       expect(result, equals(0));
-      expect(testEnv.processHistory.length, greaterThanOrEqualTo(2));
-      expect(testEnv.processHistory[3].command[0], contains('ninja'));
-      expect(testEnv.processHistory[3].command[2], endsWith('/host_debug'));
-      expect(
-        testEnv.processHistory[3].command[5],
-        equals('flutter/display_list:display_list_unittests'),
-      );
-      expect(
-        testEnv.processHistory[3].command[6],
-        equals('flutter/flow:flow_unittests'),
-      );
-      expect(
-        testEnv.processHistory[3].command[7],
-        equals('flutter/fml:fml_arc_unittests'),
-      );
+      expect(testEnv.processHistory, containsCommand((List<String> command) {
+        return command.length > 5 &&
+            command[0].contains('ninja') &&
+            command[1].contains('-C') &&
+            command[2].endsWith('/host_debug') &&
+            command[3] == 'flutter/display_list:display_list_unittests' &&
+            command[4] == 'flutter/flow:flow_unittests' &&
+            command[5] == 'flutter/fml:fml_arc_unittests';
+      }));
     } finally {
       testEnv.cleanup();
+    }
+  });
+
+  test('et help build line length is not too big', () async {
+    final List<String> prints = <String>[];
+    await runZoned(
+      () async {
+        final TestEnvironment testEnv = TestEnvironment.withTestEngine(
+          cannedProcesses: cannedProcesses,
+          verbose: true,
+        );
+        try {
+          final ToolCommandRunner runner = ToolCommandRunner(
+            environment: testEnv.environment,
+            configs: configs,
+            help: true,
+          );
+          final int result = await runner.run(<String>[
+            'help', 'build',
+          ]);
+          expect(result, equals(0));
+        } finally {
+          testEnv.cleanup();
+        }
+      },
+      zoneSpecification: ZoneSpecification(
+        print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+          prints.addAll(line.split('\n'));
+        },
+      ),
+    );
+    for (final String line in prints) {
+      expect(line.length, lessThanOrEqualTo(100));
+    }
+  });
+
+  test('non-verbose "et help build" does not contain ci builds', () async {
+    final List<String> prints = <String>[];
+    await runZoned(
+      () async {
+        final TestEnvironment testEnv = TestEnvironment.withTestEngine(
+          cannedProcesses: cannedProcesses,
+        );
+        try {
+          final ToolCommandRunner runner = ToolCommandRunner(
+            environment: testEnv.environment,
+            configs: configs,
+            help: true,
+          );
+          final int result = await runner.run(<String>[
+            'help', 'build',
+          ]);
+          expect(result, equals(0));
+        } finally {
+          testEnv.cleanup();
+        }
+      },
+      zoneSpecification: ZoneSpecification(
+        print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
+          prints.addAll(line.split('\n'));
+        },
+      ),
+    );
+    for (final String line in prints) {
+      expect(line.contains('[ci/'), isFalse);
     }
   });
 }

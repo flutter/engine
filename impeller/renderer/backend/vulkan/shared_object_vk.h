@@ -7,7 +7,6 @@
 
 #include <memory>
 
-#include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 namespace impeller {
@@ -30,6 +29,8 @@ class SharedObjectVKT : public SharedObjectVK {
   operator Resource() const { return Get(); }
 
   const Resource& Get() const { return *resource_; }
+
+  const UniqueResource& GetUniqueWrapper() const { return resource_; }
 
  private:
   UniqueResource resource_;
