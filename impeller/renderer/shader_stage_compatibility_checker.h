@@ -5,7 +5,10 @@
 #ifndef FLUTTER_IMPELLER_RENDERER_SHADER_STAGE_COMPATIBILITY_CHECKER_H_
 #define FLUTTER_IMPELLER_RENDERER_SHADER_STAGE_COMPATIBILITY_CHECKER_H_
 
-#include "impeller/entity/solid_fill.vert.h"
+#include <cstddef>
+
+#include "impeller/core/shader_types.h"
+
 namespace impeller {
 /// This is a classed use to check that the input slots of fragment shaders
 /// match the output slots of the vertex shaders.
