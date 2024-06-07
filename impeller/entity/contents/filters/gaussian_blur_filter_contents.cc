@@ -437,8 +437,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
-    return Entity::FromSnapshot(input_snapshot.value(),
-                                entity.GetBlendMode());  // No blur to render.
+    Entity result =
+        Entity::FromSnapshot(input_snapshot.value(),
+                             entity.GetBlendMode());  // No blur to render.
+    result.SetTransform(entity.GetTransform() * input_snapshot->transform);
+    return result;
   }
 
   // In order to avoid shimmering in downsampling step, we should have mips.
