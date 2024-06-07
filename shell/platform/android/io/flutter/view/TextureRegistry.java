@@ -8,7 +8,6 @@ import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.view.Surface;
 import android.view.SurfaceHolder;
-
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -83,9 +82,9 @@ public interface TextureRegistry {
     /**
      * Direct access to the surface object.
      *
-     * <p>When using this API, you will usually need to implement {@link SurfaceHolder.Callback}
-     * and provide it to {@link #setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback)} in order
-     * to be notified when a new surface has been created, such as after a backgrounded app has been\
+     * <p>When using this API, you will usually need to implement {@link SurfaceHolder.Callback} and
+     * provide it to {@link #setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback)} in order to
+     * be notified when a new surface has been created, such as after a backgrounded app has been\
      * resumed.
      *
      * <p>NOTE: You should not cache the returned surface but instead invoke getSurface each time
@@ -103,9 +102,7 @@ public interface TextureRegistry {
      */
     void setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback callback);
 
-    /**
-     * Callback invoked by {@link #setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback)}.
-     */
+    /** Callback invoked by {@link #setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback)}. */
     interface OnSurfaceRecreatedCallback {
       /**
        * Invoked when a new surface was forcibly recreated by {@link SurfaceProducer}.

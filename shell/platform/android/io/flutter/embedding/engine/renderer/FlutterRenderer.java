@@ -27,7 +27,6 @@ import androidx.annotation.VisibleForTesting;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
-
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
@@ -82,8 +81,7 @@ public class FlutterRenderer implements TextureRegistry {
   private final Set<WeakReference<TextureRegistry.OnTrimMemoryListener>> onTrimMemoryListeners =
       new HashSet<>();
 
-  @NonNull
-  private final List<SurfaceProducer> producers = new ArrayList<>();
+  @NonNull private final List<SurfaceProducer> producers = new ArrayList<>();
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -102,15 +100,18 @@ public class FlutterRenderer implements TextureRegistry {
   public FlutterRenderer(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
     this.flutterJNI.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
-    ProcessLifecycleOwner.get().getLifecycle().addObserver(new DefaultLifecycleObserver() {
-      @Override
-      public void onResume(@NonNull LifecycleOwner owner) {
-        Log.v(TAG, "onResume called; notifying SurfaceProducers");
-        for (SurfaceProducer producer : producers) {
-          producer.surfaceRecreated();
-        }
-      }
-    });
+    ProcessLifecycleOwner.get()
+        .getLifecycle()
+        .addObserver(
+            new DefaultLifecycleObserver() {
+              @Override
+              public void onResume(@NonNull LifecycleOwner owner) {
+                Log.v(TAG, "onResume called; notifying SurfaceProducers");
+                for (SurfaceProducer producer : producers) {
+                  producer.surfaceRecreated();
+                }
+              }
+            });
   }
 
   /**
