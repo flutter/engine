@@ -419,12 +419,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Entity snapshot_entity = entity.Clone();
   snapshot_entity.SetTransform(Matrix());
   std::optional<Rect> source_expanded_coverage_hint;
-  FML_DCHECK(expanded_coverage_hint.has_value());
   if (expanded_coverage_hint.has_value()) {
     source_expanded_coverage_hint =
         expanded_coverage_hint->TransformBounds(entity.GetTransform().Invert());
-  } else {
-    return std::nullopt;
   }
 
   std::optional<Snapshot> input_snapshot =
