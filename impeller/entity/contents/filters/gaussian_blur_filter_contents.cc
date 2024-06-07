@@ -263,7 +263,8 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
           Entity::FromSnapshot(input_snapshot, entity.GetBlendMode());
       Entity result;
       Matrix blurred_transform = blur_entity.GetTransform();
-      Matrix snapshot_transform = snapshot_entity.GetTransform();
+      Matrix snapshot_transform =
+          entity.GetTransform() * snapshot_entity.GetTransform();
       result.SetContents(Contents::MakeAnonymous(
           fml::MakeCopyable([blur_entity = blur_entity.Clone(),
                              blurred_transform, snapshot_transform,
