@@ -61,7 +61,8 @@ final class SurfaceTextureSurfaceProducer
   }
 
   @Override
-  public void setOnSurfaceRecreatedCallback(TextureRegistry.SurfaceProducer.OnSurfaceRecreatedCallback callback) {
+  public void setOnSurfaceRecreatedCallback(
+      TextureRegistry.SurfaceProducer.OnSurfaceRecreatedCallback callback) {
     // Intentionally blank: SurfaceTextures don't need to be recreated.
   }
 
