@@ -7,6 +7,8 @@ package io.flutter.view;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.view.Surface;
+import android.view.SurfaceHolder;
+
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -79,7 +81,12 @@ public interface TextureRegistry {
     int getHeight();
 
     /**
-     * Get a Surface that can be used to update the texture contents.
+     * Direct access to the surface object.
+     *
+     * <p>When using this API, you will usually need to implement {@link SurfaceHolder.Callback}
+     * and provide it to {@link #setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback)} in order
+     * to be notified when a new surface has been created, such as after a backgrounded app has been\
+     * resumed.
      *
      * <p>NOTE: You should not cache the returned surface but instead invoke getSurface each time
      * you need to draw. The surface may change when the texture is resized or has its format
@@ -89,6 +96,37 @@ public interface TextureRegistry {
      */
     Surface getSurface();
 
+    /**
+     * Sets a callback that is notified when
+     *
+     * @param callback The callback to notify, or null to remove the callback.
+     */
+    void setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback callback);
+
+    /**
+     * Callback invoked by {@link #setOnSurfaceRecreatedCallback(OnSurfaceRecreatedCallback)}.
+     */
+    interface OnSurfaceRecreatedCallback {
+      /**
+       * Invoked when a new surface was forcibly recreated by {@link SurfaceProducer}.
+       *
+       * <p>Typically plugins will use this callback as a signal to redraw.
+       */
+      void onSurfaceRecreated();
+    }
+
+    /**
+     * @deprecated This method is not officially part of the public API surface and will be removed.
+     */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    void surfaceRecreated();
+
+    /**
+     * @deprecated This method is not officially part of the public API surface and will be removed.
+     */
+    @Deprecated
+    @SuppressWarnings("DeprecatedIsStillUsed")
     void scheduleFrame();
   };
 

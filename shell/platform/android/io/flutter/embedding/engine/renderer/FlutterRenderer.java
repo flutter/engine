@@ -24,6 +24,10 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
+
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
@@ -79,6 +83,9 @@ public class FlutterRenderer implements TextureRegistry {
       new HashSet<>();
 
   @NonNull
+  private final List<SurfaceProducer> producers = new ArrayList<>();
+
+  @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
       new FlutterUiDisplayListener() {
         @Override
@@ -95,6 +102,15 @@ public class FlutterRenderer implements TextureRegistry {
   public FlutterRenderer(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
     this.flutterJNI.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
+    ProcessLifecycleOwner.get().getLifecycle().addObserver(new DefaultLifecycleObserver() {
+      @Override
+      public void onResume(@NonNull LifecycleOwner owner) {
+        Log.v(TAG, "onResume called; notifying SurfaceProducers");
+        for (SurfaceProducer producer : producers) {
+          producer.surfaceRecreated();
+        }
+      }
+    });
   }
 
   /**
@@ -211,6 +227,7 @@ public class FlutterRenderer implements TextureRegistry {
       Log.v(TAG, "New SurfaceTextureSurfaceProducer ID: " + texture.id());
       entry = producer;
     }
+    producers.add(entry);
     return entry;
   }
 
@@ -453,6 +470,7 @@ public class FlutterRenderer implements TextureRegistry {
         new HashMap<ImageReader, PerImageReader>();
     private PerImage lastDequeuedImage = null;
     private PerImageReader lastReaderDequeuedFrom = null;
+    private SurfaceProducer.OnSurfaceRecreatedCallback callback = null;
 
     /** Internal class: state held per Image produced by ImageReaders. */
     private class PerImage {
@@ -730,6 +748,18 @@ public class FlutterRenderer implements TextureRegistry {
 
     ImageReaderSurfaceProducer(long id) {
       this.id = id;
+    }
+
+    @Override
+    public void surfaceRecreated() {
+      if (callback != null) {
+        callback.onSurfaceRecreated();
+      }
+    }
+
+    @Override
+    public void setOnSurfaceRecreatedCallback(SurfaceProducer.OnSurfaceRecreatedCallback callback) {
+      this.callback = callback;
     }
 
     @Override
