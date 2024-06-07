@@ -56,6 +56,16 @@ final class SurfaceTextureSurfaceProducer
   }
 
   @Override
+  public void surfaceRecreated() {
+    // Intentionally blank: SurfaceTextures don't need to be recreated.
+  }
+
+  @Override
+  public void setOnSurfaceRecreatedCallback(TextureRegistry.SurfaceProducer.OnSurfaceRecreatedCallback callback) {
+    // Intentionally blank: SurfaceTextures don't need to be recreated.
+  }
+
+  @Override
   @NonNull
   public SurfaceTexture getSurfaceTexture() {
     return texture.surfaceTexture();
