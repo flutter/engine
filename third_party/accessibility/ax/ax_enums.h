@@ -371,6 +371,7 @@ enum class Action {
   // Expand the expandable node.
   kExpand,
 
+  // Notifies a node that it gains input focus.
   kFocus,
 
   // Return the content of this image object in the image_data attribute.

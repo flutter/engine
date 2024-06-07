@@ -418,6 +418,9 @@ void AccessibilityBridge::SetActionsFromFlutterUpdate(
   if (actions & FlutterSemanticsAction::kFlutterSemanticsActionCustomAction) {
     node_data.AddAction(ax::mojom::Action::kCustomAction);
   }
+  if (actions & FlutterSemanticsAction::kFocus) {
+    node_data.AddAction(ax::mojom::Action::kFocus);
+  }
 }
 
 void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
