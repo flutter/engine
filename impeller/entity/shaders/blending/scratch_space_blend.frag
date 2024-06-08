@@ -52,4 +52,5 @@ void main() {
   f16vec3 blend_result = AdvancedBlend(dst.rgb, src.rgb, int(blend_type));
 
   frag_color = IPApplyBlendedColor(dst, src, blend_result);
+  scratch_space = vec4(0);
 }

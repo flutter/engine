@@ -56,11 +56,9 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   FS::FragInfo frag_info;
   frag_info.color =
       GetColor().Premultiply() * GetGeometry()->ComputeAlphaCoverage(entity);
-  frag_info.use_scratch_space = entity.GetUseScratchSpace();
 
   PipelineBuilderCallback pipeline_callback =
       [&](ContentContextOptions options) {
-        options.scratch_space = entity.GetUseScratchSpace();
         return renderer.GetSolidFillPipeline(options);
       };
   return ColorSourceContents::DrawGeometry<VS>(

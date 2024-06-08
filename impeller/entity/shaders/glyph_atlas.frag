@@ -38,5 +38,5 @@ void main() {
       frag_color = value.rrrr * frag_info.text_color;
     }
   }
-  scratch_space = f16vec4(0);
+  scratch_space = frag_color;
 }

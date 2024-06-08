@@ -35,6 +35,7 @@ ContentContextOptions OptionsFromPassAndEntity(const RenderPass& pass,
                                                const Entity& entity) {
   ContentContextOptions opts = OptionsFromPass(pass);
   opts.blend_mode = entity.GetBlendMode();
+  opts.scratch_space = entity.GetUseScratchSpace();
   return opts;
 }
 
