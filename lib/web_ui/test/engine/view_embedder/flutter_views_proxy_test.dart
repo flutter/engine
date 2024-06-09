@@ -36,9 +36,9 @@ Future<void> doTests() async {
     }
 
     setUp(() {
-      view = EngineFlutterView(platformDispatcher, createDomElement('div'));
-      viewId = view.viewId;
       hostElement = createDomElement('div');
+      view = EngineFlutterView(platformDispatcher, hostElement);
+      viewId = view.viewId;
     });
 
     tearDown(() {
@@ -55,6 +55,17 @@ Future<void> doTests() async {
         final int viewId = registerViewWithOptions(<String, Object?>{
           'hostElement': hostElement,
         });
+
+        final JSAny? element = views.getHostElement(viewId);
+
+        expect(element, hostElement);
+      });
+
+      test('can retrieve hostElement for an implicit view', () {
+        final view = EngineFlutterView.implicit(platformDispatcher, hostElement);
+        final viewId = view.viewId;
+        viewManager.registerView(view);
+        addTearDown(() => viewManager.unregisterView(viewId));
 
         final JSAny? element = views.getHostElement(viewId);
 

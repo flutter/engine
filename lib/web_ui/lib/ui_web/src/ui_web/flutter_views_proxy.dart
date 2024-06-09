@@ -23,7 +23,7 @@ class FlutterViewManagerProxy {
   /// can add their own custom HTML elements (for example: file inputs for the
   /// file_selector plugin).
   JSAny? getHostElement(int viewId) {
-    return _viewManager.getOptions(viewId)?.hostElement as JSAny?;
+    return _viewManager.getHostElement(viewId) as JSAny?;
   }
 
   /// Returns the `initialData` configuration value passed from JS when `viewId` was added.

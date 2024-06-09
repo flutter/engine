@@ -99,6 +99,10 @@ class FlutterViewManager {
     return _jsViewOptions[viewId];
   }
 
+  DomElement? getHostElement(int viewId) {
+    return _viewData[viewId]?.embeddingStrategy.hostElement;
+  }
+
   EngineFlutterView? findViewForElement(DomElement? element) {
     const String viewRootSelector =
         '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
