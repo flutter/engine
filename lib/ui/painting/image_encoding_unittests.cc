@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "png.h"
+
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "flutter/lib/ui/painting/image_encoding_impl.h"
 
@@ -44,6 +46,74 @@ class MockDlImage : public DlImage {
   MOCK_METHOD(SkISize, dimensions, (), (const, override));
   MOCK_METHOD(size_t, GetApproximateByteSize, (), (const, override));
 };
+
+struct PngMemoryReader {
+  const uint8_t* data;
+  size_t offset;
+  size_t size;
+};
+
+void PngMemoryRead(png_structp png_ptr,
+                   png_bytep out_bytes,
+                   png_size_t byte_count_to_read) {
+  PngMemoryReader* memory_reader =
+      reinterpret_cast<PngMemoryReader*>(png_get_io_ptr(png_ptr));
+  if (memory_reader->offset + byte_count_to_read > memory_reader->size) {
+    png_error(png_ptr, "Read error in PngMemoryRead");
+  }
+  memcpy(out_bytes, memory_reader->data + memory_reader->offset,
+         byte_count_to_read);
+  memory_reader->offset += byte_count_to_read;
+}
+
+std::vector<uint32_t> ReadPngFromMemory(const uint8_t* png_data,
+                                        size_t png_size) {
+  png_structp png =
+      png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+  FML_CHECK(png);
+
+  png_infop info = png_create_info_struct(png);
+  FML_CHECK(info);
+
+  if (setjmp(png_jmpbuf(png))) {
+    FML_CHECK(false);
+  }
+
+  PngMemoryReader memory_reader = {
+      .data = png_data, .offset = 0, .size = png_size};
+  png_set_read_fn(png, &memory_reader, PngMemoryRead);
+
+  png_read_info(png, info);
+
+  int width = png_get_image_width(png, info);
+  int height = png_get_image_height(png, info);
+  png_byte color_type = png_get_color_type(png, info);
+  png_byte bit_depth = png_get_bit_depth(png, info);
+
+  if (bit_depth == 16) {
+    png_set_strip_16(png);
+  }
+  if (color_type == PNG_COLOR_TYPE_PALETTE) {
+    png_set_palette_to_rgb(png);
+  }
+
+  png_read_update_info(png, info);
+  png_size_t rowbytes = png_get_rowbytes(png, info);
+  std::vector<uint32_t> result(width * height);
+  std::vector<png_bytep> row_pointers;
+  row_pointers.reserve(height);
+
+  for (int i = 0; i < height; ++i) {
+    row_pointers.push_back(
+        reinterpret_cast<png_bytep>(result.data() + i * width));
+  }
+
+  png_read_image(png, row_pointers.data());
+
+  png_destroy_read_struct(&png, &info, nullptr);
+
+  return result;
+}
 
 }  // namespace
 
@@ -482,13 +552,19 @@ TEST(ImageEncodingImpellerTest, PngEncodingBGRA10XR) {
   paint.setColor(SK_ColorBLUE);
   paint.setAntiAlias(true);
 
-  canvas->clear(SK_ColorWHITE);
-  canvas->drawCircle(width / 2, height / 2, 100, paint);
+  canvas->clear(SK_ColorRED);
+  canvas->drawCircle(width / 2, height / 2, 25, paint);
 
   sk_sp<SkImage> image = surface->makeImageSnapshot();
 
   fml::StatusOr<sk_sp<SkData>> png = EncodeImage(image, ImageByteFormat::kPNG);
-  EXPECT_TRUE(png.ok());
+  ASSERT_TRUE(png.ok());
+  std::vector<uint32_t> pixels =
+      ReadPngFromMemory(png.value()->bytes(), png.value()->size());
+
+  EXPECT_EQ(pixels[0], 0xff0000ff);
+  int middle = 100 * 50 + 50;
+  EXPECT_EQ(pixels[middle], 0xffff0000);
 }
 
 #endif  // IMPELLER_SUPPORTS_RENDERING
