@@ -40,6 +40,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   color0.format = color_attachment_pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
+  color0.write_mask = ColorWriteMaskBits::kAll;
 
   switch (pipeline_blend) {
     case BlendMode::kClear:
