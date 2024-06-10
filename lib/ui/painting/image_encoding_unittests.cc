@@ -66,17 +66,25 @@ void PngMemoryRead(png_structp png_ptr,
   memory_reader->offset += byte_count_to_read;
 }
 
-std::vector<uint32_t> ReadPngFromMemory(const uint8_t* png_data,
-                                        size_t png_size) {
+fml::StatusOr<std::vector<uint32_t>> ReadPngFromMemory(const uint8_t* png_data,
+                                                       size_t png_size) {
   png_structp png =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
-  FML_CHECK(png);
+  if (!png) {
+    return fml::Status(fml::StatusCode::kAborted, "unknown");
+  }
 
   png_infop info = png_create_info_struct(png);
-  FML_CHECK(info);
+  if (!info) {
+    png_destroy_read_struct(&png, nullptr, nullptr);
+    return fml::Status(fml::StatusCode::kAborted, "unknown");
+  }
+
+  fml::ScopedCleanupClosure png_cleanup(
+      [&png, &info]() { png_destroy_read_struct(&png, &info, nullptr); });
 
   if (setjmp(png_jmpbuf(png))) {
-    FML_CHECK(false);
+    return fml::Status(fml::StatusCode::kAborted, "unknown");
   }
 
   PngMemoryReader memory_reader = {
@@ -109,8 +117,6 @@ std::vector<uint32_t> ReadPngFromMemory(const uint8_t* png_data,
   }
 
   png_read_image(png, row_pointers.data());
-
-  png_destroy_read_struct(&png, &info, nullptr);
 
   return result;
 }
@@ -559,12 +565,12 @@ TEST(ImageEncodingImpellerTest, PngEncodingBGRA10XR) {
 
   fml::StatusOr<sk_sp<SkData>> png = EncodeImage(image, ImageByteFormat::kPNG);
   ASSERT_TRUE(png.ok());
-  std::vector<uint32_t> pixels =
+  fml::StatusOr<std::vector<uint32_t>> pixels =
       ReadPngFromMemory(png.value()->bytes(), png.value()->size());
-
-  EXPECT_EQ(pixels[0], 0xff0000ff);
+  ASSERT_TRUE(pixels.ok());
+  EXPECT_EQ(pixels.value()[0], 0xff0000ff);
   int middle = 100 * 50 + 50;
-  EXPECT_EQ(pixels[middle], 0xffff0000);
+  EXPECT_EQ(pixels.value()[middle], 0xffff0000);
 }
 
 #endif  // IMPELLER_SUPPORTS_RENDERING
