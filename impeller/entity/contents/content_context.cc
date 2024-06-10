@@ -69,6 +69,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
+      color0.write_mask = ColorWriteMaskBits::kNone;
       break;
     case BlendMode::kSourceOver:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
