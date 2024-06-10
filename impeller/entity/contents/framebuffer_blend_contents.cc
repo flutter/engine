@@ -5,6 +5,7 @@
 #include "framebuffer_blend_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/geometry/color.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -45,6 +46,9 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kSource;
+  if (blend_mode_ == BlendMode::kSourceOver) {
+    options.blend_mode = BlendMode::kSourceOver;
+  }
   options.primitive_type = PrimitiveType::kTriangleStrip;
   options.scratch_flush = true;
 
@@ -98,7 +102,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
       pass.SetPipeline(renderer.GetScratchSpaceBlendLuminosityPipeline(options));
       break;
     default:
-      return false;
+      pass.SetPipeline(renderer.GetScratchSpaceFlush(options));
+      break;
   }
 
   VS::FrameInfo frame_info;
@@ -106,6 +111,14 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   frame_info.mvp = Entity::GetShaderTransform(entity.GetShaderClipDepth(), pass,
                                               entity.GetTransform()); // Already transformed
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+
+  if (blend_mode_ == BlendMode::kSourceOver) {
+    using FS = ScratchSpaceFlushPipeline::FragmentShader;
+    FS::FragInfo frag_info;
+    frag_info.alpha = alpha_;
+
+    FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+  }
 
   return pass.Draw().ok();
 }

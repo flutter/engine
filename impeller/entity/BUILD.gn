@@ -89,6 +89,7 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
     "shaders/blending/framebuffer_blend.vert",
     "shaders/blending/framebuffer_blend.frag",
     "shaders/blending/scratch_space_blend.frag",
+    "shaders/blending/scratch_space_flush.frag",
     "shaders/blending/scratch_space_blend.vert",
   ]
 }

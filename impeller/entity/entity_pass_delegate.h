@@ -26,6 +26,10 @@ class EntityPassDelegate {
 
   virtual bool CanElide() = 0;
 
+  virtual Scalar GetAlpha() {
+    return 1.0;
+  }
+
   /// @brief  Whether or not this entity pass can be collapsed into the parent.
   ///         If true, this method may modify the entities for the current pass.
   virtual bool CanCollapseIntoParentPass(EntityPass* entity_pass) = 0;

@@ -150,6 +150,14 @@ class EntityPass {
   ///
   size_t GetElementCount() const;
 
+  bool GetIsScratchSpace() const {
+    return scratch_space_;
+  }
+
+  void SetScratchSpace(bool value) {
+    scratch_space_ = value;
+  }
+
   void SetTransform(Matrix transform);
 
   void SetClipHeight(size_t clip_height);
@@ -328,6 +336,7 @@ class EntityPass {
   uint32_t clip_depth_ = 1u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool flood_clip_ = false;
+  bool scratch_space_ = false;
   std::optional<Rect> bounds_limit_;
   ContentBoundsPromise bounds_promise_ = ContentBoundsPromise::kUnknown;
   int32_t required_mip_count_ = 1;

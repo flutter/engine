@@ -17,7 +17,8 @@ frag_info;
 
 in vec2 v_position;
 
-out f16vec4 frag_color;
+layout (location = 0) out f16vec4 frag_color;
+layout (location = 1) out f16vec4 scratch_space;
 
 const int kSampleCount = 4;
 
@@ -102,4 +103,5 @@ void main() {
   vec2 sample_position = v_position - half_size;
 
   frag_color *= float16_t(RRectBlur(sample_position, half_size));
+  scratch_space = frag_color;
 }

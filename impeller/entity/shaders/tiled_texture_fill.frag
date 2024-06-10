@@ -20,7 +20,8 @@ frag_info;
 
 in highp vec2 v_texture_coords;
 
-out f16vec4 frag_color;
+layout (location = 0) out f16vec4 frag_color;
+layout (location = 1) out f16vec4 scratch_space;
 
 void main() {
   if (supports_decal == 1.0) {
@@ -37,4 +38,5 @@ void main() {
                      ) *
                  float16_t(frag_info.alpha);
   }
+  frag_color = scratch_space;
 }

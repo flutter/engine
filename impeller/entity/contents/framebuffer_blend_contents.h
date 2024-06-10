@@ -42,6 +42,10 @@ class FramebufferBlendContents final : public ColorSourceContents {
     dest_rect_ = rect;
   }
 
+  void SetAlpha(Scalar alpha) {
+    alpha_ = alpha;
+  }
+
  private:
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -53,6 +57,7 @@ class FramebufferBlendContents final : public ColorSourceContents {
 
   BlendMode blend_mode_;
   Rect dest_rect_;
+  Scalar alpha_;
 
   FramebufferBlendContents(const FramebufferBlendContents&) = delete;
 

@@ -29,7 +29,8 @@ frag_info;
 in vec2 v_texture_coords;
 in f16vec4 v_color;
 
-out f16vec4 frag_color;
+layout (location = 0) out f16vec4 frag_color;
+layout (location = 1) out f16vec4 scratch_space;
 
 f16vec4 Sample(f16sampler2D texture_sampler,
                vec2 texture_coords,
@@ -51,4 +52,5 @@ void main() {
       dst * (frag_info.dst_coeff + src.a * frag_info.dst_coeff_src_alpha +
              src * frag_info.dst_coeff_src_color);
   frag_color *= frag_info.output_alpha;
+  scratch_space = frag_color;
 }

@@ -16,10 +16,12 @@ frag_info;
 
 in highp vec2 v_texture_coords;
 
-out f16vec4 frag_color;
+layout (location = 0) out f16vec4 frag_color;
+layout (location = 1) out f16vec4 scratch_space;
 
 void main() {
   f16vec4 sampled =
       texture(texture_sampler, v_texture_coords, float16_t(kDefaultMipBias));
   frag_color = sampled * float16_t(frag_info.alpha);
+  scratch_space = frag_color;
 }

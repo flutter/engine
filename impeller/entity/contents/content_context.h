@@ -68,6 +68,7 @@
 
 #include "impeller/entity/scratch_space_blend.frag.h"
 #include "impeller/entity/scratch_space_blend.vert.h"
+#include "impeller/entity/scratch_space_flush.frag.h"
 
 #include "impeller/entity/vertices_uber.frag.h"
 
@@ -187,6 +188,10 @@ using BlendScreenPipeline = RenderPipelineHandle<AdvancedBlendVertexShader,
 using BlendSoftLightPipeline =
     RenderPipelineHandle<AdvancedBlendVertexShader,
                          AdvancedBlendFragmentShader>;
+// Framebuffer Flush
+using ScratchSpaceFlushPipeline =
+    RenderPipelineHandle<ScratchSpaceBlendVertexShader,
+                         ScratchSpaceFlushFragmentShader>;
 // Framebuffer Advanced Blends
 using ScratchSpaceBlendColorPipeline =
     RenderPipelineHandle<ScratchSpaceBlendVertexShader,
@@ -600,6 +605,12 @@ class ContentContext {
   }
 
   // Framebuffer Advanced Blends
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetScratchSpaceFlush(
+      ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
+    return GetPipeline(scratch_space_flush_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetScratchSpaceBlendColorPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
@@ -924,6 +935,7 @@ class ContentContext {
   mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
   // Framebuffer Advanced blends.
+  mutable Variants<ScratchSpaceFlushPipeline> scratch_space_flush_pipelines_;
   mutable Variants<ScratchSpaceBlendColorPipeline>
       framebuffer_blend_color_pipelines_;
   mutable Variants<ScratchSpaceBlendColorBurnPipeline>

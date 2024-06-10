@@ -160,7 +160,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   } else if (scratch_flush) {
     ColorAttachmentDescriptor color0 = UpdateDescriptor(
         *desc.GetColorAttachmentDescriptor(0u), color_attachment_pixel_format,
-        is_for_rrect_blur_clear, BlendMode::kSource);
+        is_for_rrect_blur_clear, pipeline_blend);
     ColorAttachmentDescriptor color1 = UpdateDescriptor(
         *desc.GetColorAttachmentDescriptor(1u), color_attachment_pixel_format,
         is_for_rrect_blur_clear, BlendMode::kSource);
@@ -370,6 +370,8 @@ ContentContext::ContentContext(
   }
 
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
+    scratch_space_flush_pipelines_.CreateDefault(*context_,
+                                                 options_trianglestrip);
     framebuffer_blend_color_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal});

@@ -25,9 +25,13 @@ bool PaintPassDelegate::CanElide() {
   return paint_.blend_mode == BlendMode::kDestination;
 }
 
+Scalar PaintPassDelegate::GetAlpha() {
+  return paint_.color.alpha;
+}
+
 // |EntityPassDelgate|
 bool PaintPassDelegate::CanCollapseIntoParentPass(EntityPass* entity_pass) {
-  return false;
+  return !entity_pass->GetIsScratchSpace();;
 }
 
 // |EntityPassDelgate|

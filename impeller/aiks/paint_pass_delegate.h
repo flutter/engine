@@ -23,6 +23,9 @@ class PaintPassDelegate final : public EntityPassDelegate {
   bool CanElide() override;
 
   // |EntityPassDelgate|
+  Scalar GetAlpha() override;
+
+  // |EntityPassDelgate|
   bool CanCollapseIntoParentPass(EntityPass* entity_pass) override;
 
   // |EntityPassDelgate|
