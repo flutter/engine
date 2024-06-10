@@ -93,9 +93,13 @@ source_set("flutter_linux_sources") {
              "key_mapping.h",
            ]
 
-  configs += [ "//flutter/shell/platform/linux/config:gtk" ]
+  configs += [
+    "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:atk-bridge",
+  ]
 
   sources = [
+    "fl_accessible_application.cc",
     "fl_accessible_node.cc",
     "fl_accessible_text_field.cc",
     "fl_backing_store_provider.cc",
@@ -132,7 +136,6 @@ source_set("flutter_linux_sources") {
     "fl_settings.cc",
     "fl_settings_plugin.cc",
     "fl_settings_portal.cc",
-    "fl_socket_accessible.cc",
     "fl_standard_message_codec.cc",
     "fl_standard_method_codec.cc",
     "fl_string_codec.cc",
@@ -168,6 +171,7 @@ source_set("flutter_linux_sources") {
 source_set("flutter_linux") {
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:atk-bridge",
     "//flutter/shell/platform/linux/config:epoxy",
   ]
 
@@ -249,6 +253,7 @@ executable("flutter_linux_unittests") {
 
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
+    "//flutter/shell/platform/linux/config:atk-bridge",
     "//flutter/shell/platform/linux/config:epoxy",
   ]
 

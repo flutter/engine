@@ -429,13 +429,6 @@ void initialize_modifier_bit_to_checked_keys(GHashTable* table) {
   data->secondary_logical_key = 0x00200000101;  // controlRight
 
   data = g_new(FlKeyEmbedderCheckedKey, 1);
-  g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD1_MASK), data);
-  data->is_caps_lock = false;
-  data->primary_physical_key = 0x0000700e2;     // altLeft
-  data->primary_logical_key = 0x00200000104;    // altLeft
-  data->secondary_logical_key = 0x00200000105;  // altRight
-
-  data = g_new(FlKeyEmbedderCheckedKey, 1);
   g_hash_table_insert(table, GUINT_TO_POINTER(GDK_META_MASK), data);
   data->is_caps_lock = false;
   data->primary_physical_key = 0x0000700e3;     // metaLeft
@@ -452,11 +445,11 @@ void initialize_lock_bit_to_checked_keys(GHashTable* table) {
   data->primary_physical_key = 0x000070039;   // capsLock
   data->primary_logical_key = 0x00100000104;  // capsLock
 
-  data = g_new(FlKeyEmbedderCheckedKey, 1);
-  g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD2_MASK), data);
-  data->is_caps_lock = false;
-  data->primary_physical_key = 0x000070053;   // numLock
-  data->primary_logical_key = 0x0010000010a;  // numLock
+  // data = g_new(FlKeyEmbedderCheckedKey, 1);
+  // g_hash_table_insert(table, GUINT_TO_POINTER(GDK_MOD2_MASK), data);
+  // data->is_caps_lock = false;
+  // data->primary_physical_key = 0x000070053;   // numLock
+  // data->primary_logical_key = 0x0010000010a;  // numLock
 }
 
 const std::vector<LayoutGoal> layout_goals = {

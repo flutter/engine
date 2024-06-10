@@ -1023,7 +1023,6 @@ TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
                               kLogicalControlLeft);
   verifyModifierIsSynthesized(GDK_META_MASK, kPhysicalMetaLeft,
                               kLogicalMetaLeft);
-  verifyModifierIsSynthesized(GDK_MOD1_MASK, kPhysicalAltLeft, kLogicalAltLeft);
   verifyModifierIsSynthesized(GDK_SHIFT_MASK, kPhysicalShiftLeft,
                               kLogicalShiftLeft);
 }

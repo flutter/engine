@@ -34,7 +34,7 @@ GLogWriterOutput log_writer(GLogLevelFlags log_level,
 
 void fl_ensure_gtk_init(GLogWriterFunc writer) {
   if (!gtk_initialized) {
-    gtk_init(0, nullptr);
+    gtk_init();
     g_log_set_writer_func(log_writer, nullptr, nullptr);
     gtk_initialized = true;
   }

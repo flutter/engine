@@ -44,16 +44,38 @@ void fl_scrolling_manager_set_last_mouse_position(FlScrollingManager* manager,
                                                   gdouble y);
 
 /**
+ * fl_scrolling_manager_handle_scroll_begin_event:
+ * @manager: the #FlScrollingManager self.
+ * @event_time: event time.
+ *
+ * Inform the scrolling manager of a scroll begin event.
+ */
+void fl_scrolling_manager_handle_scroll_begin_event(FlScrollingManager* manager,
+                                                    guint32 event_time);
+
+/**
  * fl_scrolling_manager_handle_scroll_event:
  * @manager: an #FlScrollingManager.
- * @event: the scroll event.
- * @scale_factor: the GTK scaling factor of the window.
+ * @event_time: event time.
+ * @dx: X delta.
+ * @dy: Y delta.
  *
  * Inform the scrolling manager of a scroll event.
  */
 void fl_scrolling_manager_handle_scroll_event(FlScrollingManager* manager,
-                                              GdkEventScroll* event,
-                                              gint scale_factor);
+                                              guint32 event_time,
+                                              gdouble dx,
+                                              gdouble dy);
+
+/**
+ * fl_scrolling_manager_handle_scroll_end_event:
+ * @manager: the #FlScrollingManager self.
+ * @event_time: event time.
+ *
+ * Inform the scrolling manager of a scroll end event.
+ */
+void fl_scrolling_manager_handle_scroll_end_event(FlScrollingManager* manager,
+                                                  guint32 event_time);
 
 /**
  * fl_scrolling_manager_handle_rotation_begin:

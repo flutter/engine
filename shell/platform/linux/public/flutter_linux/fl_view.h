@@ -18,7 +18,7 @@
 G_BEGIN_DECLS
 
 G_MODULE_EXPORT
-G_DECLARE_FINAL_TYPE(FlView, fl_view, FL, VIEW, GtkBox)
+G_DECLARE_FINAL_TYPE(FlView, fl_view, FL, VIEW, GtkGLArea)
 
 /**
  * FlView:

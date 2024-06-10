@@ -7,8 +7,8 @@
 struct _FlRendererGdk {
   FlRenderer parent_instance;
 
-  // Window being rendered on.
-  GdkWindow* window;
+  // Surface being rendered on.
+  GdkSurface* surface;
 
   // OpenGL rendering context used by GDK.
   GdkGLContext* gdk_context;
@@ -41,9 +41,9 @@ static void fl_renderer_gdk_clear_current(FlRenderer* renderer) {
 
 static gdouble fl_renderer_gdk_get_refresh_rate(FlRenderer* renderer) {
   FlRendererGdk* self = FL_RENDERER_GDK(renderer);
-  GdkDisplay* display = gdk_window_get_display(self->window);
+  GdkDisplay* display = gdk_surface_get_display(self->surface);
   GdkMonitor* monitor =
-      gdk_display_get_monitor_at_window(display, self->window);
+      gdk_display_get_monitor_at_surface(display, self->surface);
   if (monitor == nullptr) {
     return -1.0;
   }
@@ -78,15 +78,15 @@ static void fl_renderer_gdk_class_init(FlRendererGdkClass* klass) {
 
 static void fl_renderer_gdk_init(FlRendererGdk* self) {}
 
-FlRendererGdk* fl_renderer_gdk_new(GdkWindow* window) {
+FlRendererGdk* fl_renderer_gdk_new(GdkSurface* surface) {
   FlRendererGdk* self =
       FL_RENDERER_GDK(g_object_new(fl_renderer_gdk_get_type(), nullptr));
-  self->window = window;
+  self->surface = surface;
   return self;
 }
 
 gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
-  self->gdk_context = gdk_window_create_gl_context(self->window, error);
+  self->gdk_context = gdk_surface_create_gl_context(self->surface, error);
   if (self->gdk_context == nullptr) {
     return FALSE;
   }
@@ -94,7 +94,7 @@ gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
     return FALSE;
   }
 
-  self->main_context = gdk_window_create_gl_context(self->window, error);
+  self->main_context = gdk_surface_create_gl_context(self->surface, error);
   if (self->main_context == nullptr) {
     return FALSE;
   }
@@ -102,7 +102,7 @@ gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
     return FALSE;
   }
 
-  self->resource_context = gdk_window_create_gl_context(self->window, error);
+  self->resource_context = gdk_surface_create_gl_context(self->surface, error);
   if (self->resource_context == nullptr) {
     return FALSE;
   }

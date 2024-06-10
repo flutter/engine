@@ -19,23 +19,23 @@ struct _FlMockIMContext {
 
 G_DEFINE_TYPE(FlMockIMContext, fl_mock_im_context, GTK_TYPE_IM_CONTEXT)
 
-static void fl_mock_im_context_set_client_window(GtkIMContext* context,
-                                                 GdkWindow* window) {
+static void fl_mock_im_context_set_client_widget(GtkIMContext* context,
+                                                 GtkWidget* widget) {
   FlMockIMContext* self = FL_MOCK_IM_CONTEXT(context);
-  self->mock->gtk_im_context_set_client_window(context, window);
+  self->mock->gtk_im_context_set_client_widget(context, widget);
 }
 
 static void fl_mock_im_context_get_preedit_string(GtkIMContext* context,
-                                                  gchar** str,
+                                                  char** str,
                                                   PangoAttrList** attrs,
-                                                  gint* cursor_pos) {
+                                                  int* cursor_pos) {
   FlMockIMContext* self = FL_MOCK_IM_CONTEXT(context);
   self->mock->gtk_im_context_get_preedit_string(context, str, attrs,
                                                 cursor_pos);
 }
 
 static gboolean fl_mock_im_context_filter_keypress(GtkIMContext* context,
-                                                   GdkEventKey* event) {
+                                                   GdkEvent* event) {
   FlMockIMContext* self = FL_MOCK_IM_CONTEXT(context);
   return self->mock->gtk_im_context_filter_keypress(context, event);
 }
@@ -67,25 +67,30 @@ static void fl_mock_im_context_set_use_preedit(GtkIMContext* context,
   self->mock->gtk_im_context_set_use_preedit(context, use_preedit);
 }
 
-static void fl_mock_im_context_set_surrounding(GtkIMContext* context,
-                                               const gchar* text,
-                                               gint len,
-                                               gint cursor_index) {
+static void fl_mock_im_context_set_surrounding_with_selection(
+    GtkIMContext* context,
+    const char* text,
+    int len,
+    int cursor_index,
+    int anchor_index) {
   FlMockIMContext* self = FL_MOCK_IM_CONTEXT(context);
-  self->mock->gtk_im_context_set_surrounding(context, text, len, cursor_index);
+  self->mock->gtk_im_context_set_surrounding_with_selection(
+      context, text, len, cursor_index, anchor_index);
 }
 
-static gboolean fl_mock_im_context_get_surrounding(GtkIMContext* context,
-                                                   gchar** text,
-                                                   gint* cursor_index) {
+static gboolean fl_mock_im_context_get_surrounding_with_selection(
+    GtkIMContext* context,
+    char** text,
+    int* cursor_index,
+    int* anchor_index) {
   FlMockIMContext* self = FL_MOCK_IM_CONTEXT(context);
-  return self->mock->gtk_im_context_get_surrounding(context, text,
-                                                    cursor_index);
+  return self->mock->gtk_im_context_get_surrounding_with_selection(
+      context, text, cursor_index, anchor_index);
 }
 
 static void fl_mock_im_context_class_init(FlMockIMContextClass* klass) {
   GtkIMContextClass* im_context_class = GTK_IM_CONTEXT_CLASS(klass);
-  im_context_class->set_client_window = fl_mock_im_context_set_client_window;
+  im_context_class->set_client_widget = fl_mock_im_context_set_client_widget;
   im_context_class->get_preedit_string = fl_mock_im_context_get_preedit_string;
   im_context_class->filter_keypress = fl_mock_im_context_filter_keypress;
   im_context_class->focus_in = fl_mock_im_context_focus_in;
@@ -94,8 +99,10 @@ static void fl_mock_im_context_class_init(FlMockIMContextClass* klass) {
   im_context_class->set_cursor_location =
       fl_mock_im_context_set_cursor_location;
   im_context_class->set_use_preedit = fl_mock_im_context_set_use_preedit;
-  im_context_class->set_surrounding = fl_mock_im_context_set_surrounding;
-  im_context_class->get_surrounding = fl_mock_im_context_get_surrounding;
+  im_context_class->set_surrounding_with_selection =
+      fl_mock_im_context_set_surrounding_with_selection;
+  im_context_class->get_surrounding_with_selection =
+      fl_mock_im_context_get_surrounding_with_selection;
 }
 
 static void fl_mock_im_context_init(FlMockIMContext* self) {}
