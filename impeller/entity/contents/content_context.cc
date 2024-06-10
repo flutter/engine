@@ -59,10 +59,12 @@ static ColorAttachmentDescriptor UpdateDescriptor(
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
     case BlendMode::kDestination:
-      color0.dst_alpha_blend_factor = BlendFactor::kOne;
-      color0.dst_color_blend_factor = BlendFactor::kOne;
-      color0.src_alpha_blend_factor = BlendFactor::kZero;
-      color0.src_color_blend_factor = BlendFactor::kZero;
+      color0.blending_enabled = false;
+      color0.write_mask = ColorWriteMaskBits::kNone;
+      // color0.dst_alpha_blend_factor = BlendFactor::kOne;
+      // color0.dst_color_blend_factor = BlendFactor::kOne;
+      // color0.src_alpha_blend_factor = BlendFactor::kZero;
+      // color0.src_color_blend_factor = BlendFactor::kZero;
       break;
     case BlendMode::kSourceOver:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
@@ -173,7 +175,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         is_for_rrect_blur_clear, pipeline_blend);
     ColorAttachmentDescriptor color1 = UpdateDescriptor(
         *desc.GetColorAttachmentDescriptor(1u), color_attachment_pixel_format,
-        false, BlendMode::kDestination);
+        false, BlendMode::kSource);
 
     desc.SetColorAttachmentDescriptor(0u, color0);
     desc.SetColorAttachmentDescriptor(1u, color1);
