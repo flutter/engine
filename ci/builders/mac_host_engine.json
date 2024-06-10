@@ -15,7 +15,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -84,8 +84,7 @@
                         "--engine-capture-core-dump"
                     ]
                 }
-            ],
-            "timeout": 90
+            ]
         },
         {
             "archives": [
@@ -101,7 +100,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -164,8 +163,7 @@
                         "--engine-capture-core-dump"
                     ]
                 }
-            ],
-            "timeout": 90
+            ]
         },
         {
             "archives": [
@@ -182,7 +180,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14",
+                "os=Mac-13",
                 "cpu=x86",
                 "mac_model=Macmini8,1"
             ],
@@ -253,8 +251,7 @@
                         "dart,dart-host,engine"
                     ]
                 }
-            ],
-            "timeout": 90
+            ]
         },
         {
             "archives": [
@@ -271,7 +268,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -324,8 +321,7 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            },
-            "timeout": 90
+            }
         },
         {
             "archives": [
@@ -341,7 +337,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14",
+                "os=Mac-13",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -390,8 +386,7 @@
                 "$flutter/osx_sdk": {
                     "sdk_version": "15a240d"
                 }
-            },
-            "timeout": 90
+            }
         },
         {
             "archives": [
@@ -414,7 +409,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-13|Mac-14",
+                "os=Mac-13",
                 "cpu=arm64"
             ],
             "gclient_variables": {
@@ -483,8 +478,7 @@
                         "impeller-golden"
                     ]
                 }
-            ],
-            "timeout": 90
+            ]
         }
     ],
     "generators": {
