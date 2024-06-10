@@ -195,7 +195,7 @@ class BrowserDetection {
   bool get isEdge => userAgent.contains('Edg/');
 
   /// Whether we are running from a wasm module compiled with dart2wasm.
-  bool get isWasm => const bool.fromEnvironment('dart.tool.dart2wasm');
+  bool get isWasm => !const bool.fromEnvironment('dart.library.html');
 }
 
 /// A short-hand accessor to the [BrowserDetection.instance] singleton.
