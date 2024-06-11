@@ -53,9 +53,9 @@ struct PngMemoryReader {
   size_t size;
 };
 
-void PngMemoryRead(png_structp png_ptr,
-                   png_bytep out_bytes,
-                   png_size_t byte_count_to_read) {
+[[maybe_unused]] void PngMemoryRead(png_structp png_ptr,
+                                    png_bytep out_bytes,
+                                    png_size_t byte_count_to_read) {
   PngMemoryReader* memory_reader =
       reinterpret_cast<PngMemoryReader*>(png_get_io_ptr(png_ptr));
   if (memory_reader->offset + byte_count_to_read > memory_reader->size) {
