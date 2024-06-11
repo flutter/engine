@@ -17,7 +17,9 @@ class FlutterViewManagerProxy {
   // The proxied viewManager instance.
   final FlutterViewManager _viewManager;
 
-  /// Returns the `hostElement` configuration value passed from JS when `viewId` was added.
+  /// Returns the host element for [viewId].
+  /// In a multi-view app, it is the `hostElement` value passed from JS when [viewId] was added.
+  /// In an implicit view app, it is either the provided `hostElement` or the <body> element.
   ///
   /// This is useful for plugins and apps to have a safe DOM Element where they
   /// can add their own custom HTML elements (for example: file inputs for the
