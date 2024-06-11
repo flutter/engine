@@ -86,14 +86,13 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
       DlColor(Color{0.1294, 0.5882, 0.9529, 0.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  auto gradient = DlColorSource::MakeLinear(
-      {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kDecal);
+  paint.setColorSource(DlColorSource::MakeLinear(
+      {0, 0}, {200, 200}, 2, colors.data(), stops.data(), DlTileMode::kDecal));
   // Overlay the gradient with 25% green. This should appear as the entire
   // rectangle being drawn with 25% green, including the border area outside the
   // decal gradient.
-  auto filter = DlBlendColorFilter::Make(DlColor::kGreen().withAlpha(64),
-                                         DlBlendMode::kSrcOver);
-  paint.setColorFilter(filter);
+  paint.setColorFilter(DlBlendColorFilter::Make(DlColor::kGreen().withAlpha(64),
+                                                DlBlendMode::kSrcOver));
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -111,9 +110,8 @@ static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test,
                                  DlColor(Color{0.2, 0.2, 0.2, 1.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  auto color_source = DlColorSource::MakeLinear(
-      {0, 0}, {800, 500}, 2, colors.data(), stops.data(), DlTileMode::kClamp);
-  // paint.dither = use_dithering;
+  paint.setColorSource(DlColorSource::MakeLinear(
+      {0, 0}, {800, 500}, 2, colors.data(), stops.data(), DlTileMode::kClamp));
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 800, 500), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
@@ -226,8 +224,9 @@ void CanRenderLinearGradientWithOverlappingStops(AiksTest* aiks_test,
       DlColor(Color{0.1294, 0.5882, 0.9529, 1.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 0.5, 0.5, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeLinear(
-      {0, 0}, {500, 500}, 2, colors.data(), stops.data(), tile_mode));
+  paint.setColorSource(DlColorSource::MakeLinear({0, 0}, {500, 500},
+                                                 stops.size(), colors.data(),
+                                                 stops.data(), tile_mode));
 
   paint.setColor(DlColor::kWhite());
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 500, 500), paint);
