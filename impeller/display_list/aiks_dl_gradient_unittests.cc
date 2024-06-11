@@ -48,6 +48,17 @@ void CanRenderLinearGradient(AiksTest* aiks_test, DlTileMode tile_mode) {
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
+
+static Matrix ToMatrix(const SkMatrix& m) {
+  return Matrix{
+      // clang-format off
+      m[0], m[3], 0, m[6],
+      m[1], m[4], 0, m[7],
+      0,    0,    1, 0,
+      m[2], m[5], 0, m[8],
+      // clang-format on
+  };
+}
 }  // namespace
 
 TEST_P(AiksTest, CanRenderLinearGradientClamp) {
@@ -706,7 +717,7 @@ TEST_P(AiksTest, GradientStrokesRenderCorrectly) {
       if (!builder.GetTransform().invert(&screen_to_canvas)) {
         return nullptr;
       }
-      Matrix ip_matrix = Matrix();  // TODO
+      Matrix ip_matrix = ToMatrix(screen_to_canvas);
       Point point_a = ip_matrix * handle_a * GetContentScale();
       Point point_b = ip_matrix * handle_b * GetContentScale();
 
