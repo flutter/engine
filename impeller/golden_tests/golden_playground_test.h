@@ -28,8 +28,7 @@ class GoldenPlaygroundTest
   using AiksPlaygroundCallback =
       std::function<std::optional<Picture>(AiksContext& renderer)>;
 
-  using AiksDlPlaygroundCallback =
-      std::function<sk_sp<flutter::DisplayList>()>;
+  using AiksDlPlaygroundCallback = std::function<sk_sp<flutter::DisplayList>()>;
 
   GoldenPlaygroundTest();
 
