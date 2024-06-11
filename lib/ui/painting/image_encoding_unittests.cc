@@ -106,7 +106,6 @@ fml::StatusOr<std::vector<uint32_t>> ReadPngFromMemory(const uint8_t* png_data,
   }
 
   png_read_update_info(png, info);
-  png_size_t rowbytes = png_get_rowbytes(png, info);
   std::vector<uint32_t> result(width * height);
   std::vector<png_bytep> row_pointers;
   row_pointers.reserve(height);
