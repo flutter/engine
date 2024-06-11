@@ -38,6 +38,12 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    AiksDlPlaygroundCallback
+        callback) {  // NOLINT(performance-unnecessary-value-param)
+  return false;
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
     const sk_sp<flutter::DisplayList>& list) {
   return false;
 }

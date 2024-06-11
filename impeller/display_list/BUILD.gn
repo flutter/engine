@@ -54,6 +54,7 @@ template("display_list_unittests_component") {
   predefined_sources = [
     "aiks_dl_opacity_unittests.cc",
     "aiks_dl_path_unittests.cc",
+    "aiks_dl_gradient_unittests.cc",
     "dl_golden_unittests.cc",
     "dl_playground.cc",
     "dl_playground.h",

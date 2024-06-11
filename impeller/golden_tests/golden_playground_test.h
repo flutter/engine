@@ -28,6 +28,9 @@ class GoldenPlaygroundTest
   using AiksPlaygroundCallback =
       std::function<std::optional<Picture>(AiksContext& renderer)>;
 
+  using AiksDlPlaygroundCallback =
+      std::function<sk_sp<flutter::DisplayList>()>;
+
   GoldenPlaygroundTest();
 
   ~GoldenPlaygroundTest() override;
@@ -44,6 +47,8 @@ class GoldenPlaygroundTest
   bool OpenPlaygroundHere(Picture picture);
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+
+  bool OpenPlaygroundHere(AiksDlPlaygroundCallback callback);
 
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
 

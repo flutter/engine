@@ -19,6 +19,9 @@ class AiksPlayground : public PlaygroundTest {
   using AiksPlaygroundCallback =
       std::function<std::optional<Picture>(AiksContext& renderer)>;
 
+  using AiksDlPlaygroundCallback =
+      std::function<sk_sp<flutter::DisplayList>()>;
+
   AiksPlayground();
 
   ~AiksPlayground();
@@ -31,6 +34,8 @@ class AiksPlayground : public PlaygroundTest {
   bool OpenPlaygroundHere(Picture picture);
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+
+  bool OpenPlaygroundHere(AiksDlPlaygroundCallback callback);
 
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
 
