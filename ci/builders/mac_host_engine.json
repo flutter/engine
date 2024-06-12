@@ -271,7 +271,7 @@
             ],
             "drone_dimensions": [
                 "device_type=none",
-                "os=Mac-14",
+                "os=Mac-13|Mac-14",
                 "cpu=x86"
             ],
             "gclient_variables": {
@@ -322,11 +322,10 @@
             },
             "properties": {
                 "$flutter/osx_sdk": {
-                    "sdk_version": "15a240d",
-                    "cleanup_cache": true
+                    "sdk_version": "15a240d"
                 }
             },
-            "timeout": 90
+            "timeout": 4
         },
         {
             "archives": [
