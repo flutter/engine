@@ -62,8 +62,3 @@ android {
         implementation "org.mockito:mockito-android:$mockitoVersion"
     }
 }
-
-dependencies {
-    implementation 'androidx.lifecycle:lifecycle-process:2.2.0'
-}
-
