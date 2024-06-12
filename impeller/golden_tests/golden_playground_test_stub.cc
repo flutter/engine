@@ -38,8 +38,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    AiksDlPlaygroundCallback
-        callback) {  // NOLINT(performance-unnecessary-value-param)
+    const AiksDlPlaygroundCallback& callback) {
   return false;
 }
 

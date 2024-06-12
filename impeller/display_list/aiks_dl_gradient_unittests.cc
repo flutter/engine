@@ -29,6 +29,8 @@ namespace impeller {
 namespace testing {
 
 namespace {
+
+/// Test body for linear gradient tile mode tests (ex. CanRenderLinearGradientClamp).
 void CanRenderLinearGradient(AiksTest* aiks_test, DlTileMode tile_mode) {
   DisplayListBuilder builder;
   Point scale = aiks_test->GetContentScale();
@@ -49,7 +51,7 @@ void CanRenderLinearGradient(AiksTest* aiks_test, DlTileMode tile_mode) {
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
 
-static Matrix ToMatrix(const SkMatrix& m) {
+Matrix ToMatrix(const SkMatrix& m) {
   return Matrix{
       // clang-format off
       m[0], m[3], 0, m[6],
@@ -116,7 +118,7 @@ static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test) {
 
 TEST_P(AiksTest, CanRenderLinearGradientWithDitheringEnabled) {
   CanRenderLinearGradientWithDithering(this);
-}  // namespace
+}
 
 static void CanRenderRadialGradientWithDithering(AiksTest* aiks_test) {
   DisplayListBuilder builder;
@@ -301,12 +303,7 @@ TEST_P(AiksTest, CanRenderLinearGradientManyColorsUnevenStops) {
                                      DlTileMode::kMirror, DlTileMode::kDecal};
 
     static int selected_tile_mode = 0;
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
+    static Matrix matrix;
     if (AiksTest::ImGuiBegin("Controls", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
@@ -377,12 +374,7 @@ TEST_P(AiksTest, CanRenderRadialGradient) {
                                      DlTileMode::kMirror, DlTileMode::kDecal};
 
     static int selected_tile_mode = 0;
-    static Matrix matrix = {
-        1, 0, 0, 0,  //
-        0, 1, 0, 0,  //
-        0, 0, 1, 0,  //
-        0, 0, 0, 1   //
-    };
+    static Matrix matrix;
     if (AiksTest::ImGuiBegin("Controls", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
       ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,

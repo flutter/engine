@@ -211,8 +211,7 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
-    AiksDlPlaygroundCallback
-        callback) {  // NOLINT(performance-unnecessary-value-param)
+    const AiksDlPlaygroundCallback& callback) {
   AiksContext renderer(GetContext(), typographer_context_);
 
   std::optional<Picture> picture;

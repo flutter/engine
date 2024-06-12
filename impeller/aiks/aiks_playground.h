@@ -34,7 +34,7 @@ class AiksPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
 
-  bool OpenPlaygroundHere(AiksDlPlaygroundCallback callback);
+  bool OpenPlaygroundHere(const AiksDlPlaygroundCallback& callback);
 
   bool OpenPlaygroundHere(const sk_sp<flutter::DisplayList>& list);
 
