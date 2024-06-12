@@ -193,7 +193,7 @@ static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test,
                                  DlColor(Color{0.0, 0.0, 0.0, 1.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeConical({100, 100}, 100, {0, 1}, 0, 2,
+  paint.setColorSource(DlColorSource::MakeConical({0, 1}, 0, {100, 100}, 100, 2,
                                                   colors.data(), stops.data(),
                                                   DlTileMode::kMirror));
   // paint.dither = use_dithering;
