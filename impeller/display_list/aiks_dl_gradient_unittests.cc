@@ -98,16 +98,14 @@ TEST_P(AiksTest, CanRenderLinearGradientDecalWithColorFilter) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
-static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test,
-                                                 bool use_dithering) {
+static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test) {
   DisplayListBuilder builder;
   DlPaint paint;
   builder.Translate(100.0, 100.0);
 
   // 0xffcccccc --> 0xff333333, taken from
   // https://github.com/flutter/flutter/issues/118073#issue-1521699748
-  std::vector<DlColor> colors = {DlColor(Color{0.8, 0.8, 0.8, 1.0}.ToARGB()),
-                                 DlColor(Color{0.2, 0.2, 0.2, 1.0}.ToARGB())};
+  std::vector<DlColor> colors = {DlColor(0xFFCCCCCC), DlColor(0xFF333333)};
   std::vector<Scalar> stops = {0.0, 1.0};
 
   paint.setColorSource(DlColorSource::MakeLinear(
@@ -116,16 +114,11 @@ static void CanRenderLinearGradientWithDithering(AiksTest* aiks_test,
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, CanRenderLinearGradientWithDitheringDisabled) {
-  CanRenderLinearGradientWithDithering(this, false);
-}
-
 TEST_P(AiksTest, CanRenderLinearGradientWithDitheringEnabled) {
-  CanRenderLinearGradientWithDithering(this, true);
+  CanRenderLinearGradientWithDithering(this);
 }  // namespace
 
-static void CanRenderRadialGradientWithDithering(AiksTest* aiks_test,
-                                                 bool use_dithering) {
+static void CanRenderRadialGradientWithDithering(AiksTest* aiks_test) {
   DisplayListBuilder builder;
   DlPaint paint;
   builder.Translate(100.0, 100.0);
@@ -137,22 +130,15 @@ static void CanRenderRadialGradientWithDithering(AiksTest* aiks_test,
 
   paint.setColorSource(DlColorSource::MakeRadial(
       {600, 600}, 600, 2, colors.data(), stops.data(), DlTileMode::kClamp));
-  // always true on gradients now.
-  // paint.dither = use_dithering;
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 1200, 1200), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, CanRenderRadialGradientWithDitheringDisabled) {
-  CanRenderRadialGradientWithDithering(this, false);
-}
-
 TEST_P(AiksTest, CanRenderRadialGradientWithDitheringEnabled) {
-  CanRenderRadialGradientWithDithering(this, true);
+  CanRenderRadialGradientWithDithering(this);
 }
 
-static void CanRenderSweepGradientWithDithering(AiksTest* aiks_test,
-                                                bool use_dithering) {
+static void CanRenderSweepGradientWithDithering(AiksTest* aiks_test) {
   DisplayListBuilder builder;
   builder.Scale(aiks_test->GetContentScale().x, aiks_test->GetContentScale().y);
   DlPaint paint;
@@ -167,22 +153,15 @@ static void CanRenderSweepGradientWithDithering(AiksTest* aiks_test,
       {100, 100}, /*start=*/45, /*end=*/135, 2, colors.data(), stops.data(),
       DlTileMode::kMirror));
 
-  // paint.dither = use_dithering;
-
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, CanRenderSweepGradientWithDitheringDisabled) {
-  CanRenderSweepGradientWithDithering(this, false);
-}
-
 TEST_P(AiksTest, CanRenderSweepGradientWithDitheringEnabled) {
-  CanRenderSweepGradientWithDithering(this, true);
+  CanRenderSweepGradientWithDithering(this);
 }
 
-static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test,
-                                                  bool use_dithering) {
+static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test) {
   DisplayListBuilder builder;
   builder.Scale(aiks_test->GetContentScale().x, aiks_test->GetContentScale().y);
   DlPaint paint;
@@ -196,18 +175,13 @@ static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test,
   paint.setColorSource(DlColorSource::MakeConical({0, 1}, 0, {100, 100}, 100, 2,
                                                   colors.data(), stops.data(),
                                                   DlTileMode::kMirror));
-  // paint.dither = use_dithering;
 
   builder.DrawRect(SkRect::MakeXYWH(0, 0, 600, 600), paint);
   ASSERT_TRUE(aiks_test->OpenPlaygroundHere(builder.Build()));
 }
 
-TEST_P(AiksTest, CanRenderConicalGradientWithDitheringDisabled) {
-  CanRenderConicalGradientWithDithering(this, false);
-}
-
 TEST_P(AiksTest, CanRenderConicalGradientWithDitheringEnabled) {
-  CanRenderConicalGradientWithDithering(this, true);
+  CanRenderConicalGradientWithDithering(this);
 }
 
 namespace {
