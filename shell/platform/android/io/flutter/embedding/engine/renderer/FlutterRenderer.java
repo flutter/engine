@@ -106,7 +106,7 @@ public class FlutterRenderer implements TextureRegistry {
             new DefaultLifecycleObserver() {
               @Override
               public void onResume(@NonNull LifecycleOwner owner) {
-                Log.w(TAG, "onResume called; notifying SurfaceProducers");
+                Log.v(TAG, "onResume called; notifying SurfaceProducers");
                 for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
                   if (producer.callback != null) {
                     producer.callback.onSurfaceCreated();
@@ -694,6 +694,9 @@ public class FlutterRenderer implements TextureRegistry {
       }
       cleanup();
       createNewReader = true;
+      if (this.callback != null) {
+        this.callback.onSurfaceDestroyed();
+      }
     }
 
     private void releaseInternal() {
@@ -720,9 +723,6 @@ public class FlutterRenderer implements TextureRegistry {
           lastReaderDequeuedFrom = null;
         }
         imageReaderQueue.clear();
-      }
-      if (this.callback != null) {
-        this.callback.onSurfaceDestroyed();
       }
     }
 
