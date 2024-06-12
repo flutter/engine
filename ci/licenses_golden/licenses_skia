@@ -1,4 +1,4 @@
-Signature: 6903fc87c223b73921aee8a25343c538
+Signature: 1a883762a39db1842afa2b576a2fb978
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8091,8 +8091,8 @@ ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PaintParamsKey.h + ..
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PipelineData.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PipelineData.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/Precompile.cpp + ../../../flutter/third_party/skia/LICENSE
-ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/Precompile.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PrecompileBasePriv.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PrecompileInternal.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PublicPrecompile.cpp + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/PublicPrecompile.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/src/gpu/graphite/QueueManager.cpp + ../../../flutter/third_party/skia/LICENSE
@@ -8309,8 +8309,8 @@ FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PaintParamsKey.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PipelineData.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PipelineData.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/Precompile.cpp
-FILE: ../../../flutter/third_party/skia/src/gpu/graphite/Precompile.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PrecompileBasePriv.h
+FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PrecompileInternal.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PublicPrecompile.cpp
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/PublicPrecompile.h
 FILE: ../../../flutter/third_party/skia/src/gpu/graphite/QueueManager.cpp
@@ -9511,6 +9511,8 @@ ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSem
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/include/gpu/gl/epoxy/GrGLMakeEpoxyEGLInterface.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/include/gpu/graphite/precompile/PaintOptions.h + ../../../flutter/third_party/skia/LICENSE
+ORIGIN: ../../../flutter/third_party/skia/include/gpu/graphite/precompile/Precompile.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_coretext.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_factory.h + ../../../flutter/third_party/skia/LICENSE
 ORIGIN: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_harfbuzz.h + ../../../flutter/third_party/skia/LICENSE
@@ -9574,6 +9576,8 @@ FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSemap
 FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlBackendSurface.h
 FILE: ../../../flutter/third_party/skia/include/gpu/ganesh/mtl/GrMtlDirectContext.h
 FILE: ../../../flutter/third_party/skia/include/gpu/gl/epoxy/GrGLMakeEpoxyEGLInterface.h
+FILE: ../../../flutter/third_party/skia/include/gpu/graphite/precompile/PaintOptions.h
+FILE: ../../../flutter/third_party/skia/include/gpu/graphite/precompile/Precompile.h
 FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_coretext.h
 FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_factory.h
 FILE: ../../../flutter/third_party/skia/modules/skshaper/include/SkShaper_harfbuzz.h
