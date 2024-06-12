@@ -112,7 +112,7 @@ public interface TextureRegistry {
        * texture being resized, the format being changed, or the application being resumed after
        * being suspended in the background.
        */
-      void onSurfaceChanged();
+      void onSurfaceCreated();
 
       /**
        * Invoked when a previous surface is now invalid.

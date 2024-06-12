@@ -109,7 +109,7 @@ public class FlutterRenderer implements TextureRegistry {
                 Log.w(TAG, "onResume called; notifying SurfaceProducers");
                 for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
                   if (producer.callback != null) {
-                    producer.callback.onSurfaceChanged();
+                    producer.callback.onSurfaceCreated();
                   }
                 }
               }
