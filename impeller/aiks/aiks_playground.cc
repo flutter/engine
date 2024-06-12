@@ -81,7 +81,8 @@ bool AiksPlayground::OpenPlaygroundHere(
   return OpenPlaygroundHere(std::move(picture));
 }
 
-bool AiksPlayground::OpenPlaygroundHere(const AiksDlPlaygroundCallback& callback) {
+bool AiksPlayground::OpenPlaygroundHere(
+    const AiksDlPlaygroundCallback& callback) {
   AiksContext renderer(GetContext(), typographer_context_);
 
   if (!renderer.IsValid()) {

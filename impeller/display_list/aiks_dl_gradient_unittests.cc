@@ -30,7 +30,8 @@ namespace testing {
 
 namespace {
 
-/// Test body for linear gradient tile mode tests (ex. CanRenderLinearGradientClamp).
+/// Test body for linear gradient tile mode tests (ex.
+/// CanRenderLinearGradientClamp).
 void CanRenderLinearGradient(AiksTest* aiks_test, DlTileMode tile_mode) {
   DisplayListBuilder builder;
   Point scale = aiks_test->GetContentScale();
