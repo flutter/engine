@@ -172,7 +172,7 @@ static void CanRenderConicalGradientWithDithering(AiksTest* aiks_test) {
                                  DlColor(Color{0.0, 0.0, 0.0, 1.0}.ToARGB())};
   std::vector<Scalar> stops = {0.0, 1.0};
 
-  paint.setColorSource(DlColorSource::MakeConical({100, 100}, 100, {0, 1}, 0, 2,
+  paint.setColorSource(DlColorSource::MakeConical({0, 1}, 0, {100, 100}, 100, 2,
                                                   colors.data(), stops.data(),
                                                   DlTileMode::kMirror));
 
@@ -588,8 +588,8 @@ TEST_P(AiksTest, CanRenderConicalGradient) {
     builder.Save();
     builder.Translate((i % 3) * size, i / 3 * size);
     paint.setColorSource(DlColorSource::MakeConical(
-        std::get<0>(array[i]), std::get<1>(array[i]), std::get<2>(array[i]),
-        std::get<3>(array[i]), stops.size(), colors.data(), stops.data(),
+        std::get<2>(array[i]), std::get<3>(array[i]), std::get<0>(array[i]),
+        std::get<1>(array[i]), stops.size(), colors.data(), stops.data(),
         DlTileMode::kClamp));
     builder.DrawRect(SkRect::MakeXYWH(0, 0, size, size), paint);
     builder.Restore();
