@@ -307,7 +307,7 @@ float map(vec3 pos) {
 }
 
 vec3 calcNormal(vec3 pos, vec3 n) {
-  // if you sample the noise field along each axis, a small amount of distnace
+  // if you sample the noise field along each axis, a small amount of distance
   // away from the position you're interested, you'll get a gradient
   vec2 e = vec2(0.0001, 0.0);
   /* -500.0 was added without comment, but it gives bump */
