@@ -1590,7 +1590,8 @@ public class PlatformViewsControllerTest {
 
           @NonNull
           @Override
-          public SurfaceTextureEntry registerSurfaceTexture(@NonNull SurfaceTexture surfaceTexture) {
+          public SurfaceTextureEntry registerSurfaceTexture(
+              @NonNull SurfaceTexture surfaceTexture) {
             return new SurfaceTextureEntry() {
               @NonNull
               @Override

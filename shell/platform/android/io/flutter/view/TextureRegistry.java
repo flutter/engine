@@ -7,7 +7,6 @@ package io.flutter.view;
 import android.graphics.SurfaceTexture;
 import android.media.Image;
 import android.view.Surface;
-
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -96,9 +95,9 @@ public interface TextureRegistry {
     Surface getSurface();
 
     /**
-     * Sets a callback that is notified when a previously created {@link Surface} returned by
-     * {@link SurfaceProducer#getSurface()} is no longer valid, either due to being destroyed or
-     * being changed.
+     * Sets a callback that is notified when a previously created {@link Surface} returned by {@link
+     * SurfaceProducer#getSurface()} is no longer valid, either due to being destroyed or being
+     * changed.
      *
      * @param callback The callback to notify, or null to remove the callback.
      */
