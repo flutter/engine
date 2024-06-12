@@ -56,14 +56,8 @@ final class SurfaceTextureSurfaceProducer
   }
 
   @Override
-  public void surfaceRecreated() {
-    // Intentionally blank: SurfaceTextures don't need to be recreated.
-  }
-
-  @Override
-  public void setOnSurfaceRecreatedCallback(
-      TextureRegistry.SurfaceProducer.OnSurfaceRecreatedCallback callback) {
-    // Intentionally blank: SurfaceTextures don't need to be recreated.
+  public void setCallback(Callback callback) {
+    // Intentionally blank: SurfaceTextures don't get platform notifications or cleanup.
   }
 
   @Override

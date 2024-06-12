@@ -81,7 +81,7 @@ public class FlutterRenderer implements TextureRegistry {
   private final Set<WeakReference<TextureRegistry.OnTrimMemoryListener>> onTrimMemoryListeners =
       new HashSet<>();
 
-  @NonNull private final List<SurfaceProducer> producers = new ArrayList<>();
+  @NonNull private final List<ImageReaderSurfaceProducer> imageReaderProducers = new ArrayList<>();
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -106,9 +106,11 @@ public class FlutterRenderer implements TextureRegistry {
             new DefaultLifecycleObserver() {
               @Override
               public void onResume(@NonNull LifecycleOwner owner) {
-                Log.v(TAG, "onResume called; notifying SurfaceProducers");
-                for (SurfaceProducer producer : producers) {
-                  producer.surfaceRecreated();
+                Log.w(TAG, "onResume called; notifying SurfaceProducers");
+                for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
+                  if (producer.callback != null) {
+                    producer.callback.onSurfaceChanged();
+                  }
                 }
               }
             });
@@ -214,6 +216,7 @@ public class FlutterRenderer implements TextureRegistry {
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
       addOnTrimMemoryListener(producer);
+      imageReaderProducers.add(producer);
       Log.v(TAG, "New ImageReaderSurfaceProducer ID: " + id);
       entry = producer;
     } else {
@@ -228,7 +231,6 @@ public class FlutterRenderer implements TextureRegistry {
       Log.v(TAG, "New SurfaceTextureSurfaceProducer ID: " + texture.id());
       entry = producer;
     }
-    producers.add(entry);
     return entry;
   }
 
@@ -471,7 +473,7 @@ public class FlutterRenderer implements TextureRegistry {
         new HashMap<ImageReader, PerImageReader>();
     private PerImage lastDequeuedImage = null;
     private PerImageReader lastReaderDequeuedFrom = null;
-    private SurfaceProducer.OnSurfaceRecreatedCallback callback = null;
+    private Callback callback = null;
 
     /** Internal class: state held per Image produced by ImageReaders. */
     private class PerImage {
@@ -697,6 +699,7 @@ public class FlutterRenderer implements TextureRegistry {
     private void releaseInternal() {
       cleanup();
       released = true;
+      imageReaderProducers.remove(this);
     }
 
     private void cleanup() {
@@ -717,6 +720,9 @@ public class FlutterRenderer implements TextureRegistry {
           lastReaderDequeuedFrom = null;
         }
         imageReaderQueue.clear();
+      }
+      if (this.callback != null) {
+        this.callback.onSurfaceDestroyed();
       }
     }
 
@@ -752,14 +758,7 @@ public class FlutterRenderer implements TextureRegistry {
     }
 
     @Override
-    public void surfaceRecreated() {
-      if (callback != null) {
-        callback.onSurfaceRecreated();
-      }
-    }
-
-    @Override
-    public void setOnSurfaceRecreatedCallback(SurfaceProducer.OnSurfaceRecreatedCallback callback) {
+    public void setCallback(Callback callback) {
       this.callback = callback;
     }
 
