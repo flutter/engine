@@ -35,7 +35,7 @@ public final class FlutterEngineRule extends TestWatcher {
     when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(false);
 
     // Create an engine.
-    ctx = = ApplicationProvider.getApplicationContext();
+    ctx = ApplicationProvider.getApplicationContext();
     flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, flutterJNI);
 
     // Place it in the engine cache.
