@@ -18,8 +18,8 @@ import org.junit.runner.Description;
  * Prepares and returns a {@link FlutterEngine} and {@link Intent} primed with an engine for tests.
  */
 public final class FlutterEngineRule extends TestWatcher {
-  private static final Context ctx = ApplicationProvider.getApplicationContext();
   private static final String cachedEngineId = "flutter_engine_rule_cached_engine";
+  private Context ctx;
   private FlutterJNI flutterJNI;
   private FlutterEngine flutterEngine;
   private boolean jniIsAttached = true;
@@ -35,6 +35,7 @@ public final class FlutterEngineRule extends TestWatcher {
     when(mockFlutterLoader.automaticallyRegisterPlugins()).thenReturn(false);
 
     // Create an engine.
+    ctx = = ApplicationProvider.getApplicationContext();
     flutterEngine = new FlutterEngine(ctx, mockFlutterLoader, flutterJNI);
 
     // Place it in the engine cache.
