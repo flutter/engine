@@ -3,7 +3,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -35,7 +35,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -68,7 +68,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -100,7 +100,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -132,7 +132,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -165,7 +165,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -199,7 +199,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -257,6 +257,33 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
+        "os=Linux",
+        "device_type=none"
+      ],
+      "gclient_variables": {
+        "use_rbe": true
+      },
+      "gn": [
+        "--runtime-mode",
+        "debug",
+        "--unoptimized",
+        "--android",
+        "--android-cpu=arm64",
+        "--no-stripped",
+        "--no-lto",
+        "--rbe",
+        "--no-goma"
+      ],
+      "name": "linux/android_debug_unopt_arm64",
+      "description": "Builds an unoptimized debug mode engine that targets 64-bit arm Android from a Linux host.",
+      "ninja": {
+        "config": "android_debug_unopt_arm64",
+        "targets": []
+      }
+    },
+    {
+      "cas_archive": false,
+      "drone_dimensions": [
         "os=Windows-10",
         "device_type=none"
       ],
@@ -283,7 +310,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -316,7 +343,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -400,7 +427,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -484,7 +511,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -515,7 +542,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -547,7 +574,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -579,7 +606,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -687,7 +714,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {
@@ -768,7 +795,7 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-        "os=Mac-13",
+        "os=Mac-13|Mac-14",
         "device_type=none"
       ],
       "gclient_variables": {

@@ -40,6 +40,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   color0.format = color_attachment_pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
+  color0.write_mask = ColorWriteMaskBits::kAll;
 
   switch (pipeline_blend) {
     case BlendMode::kClear:
@@ -69,6 +70,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
+      color0.write_mask = ColorWriteMaskBits::kNone;
       break;
     case BlendMode::kSourceOver:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
@@ -293,6 +295,7 @@ ContentContext::ContentContext(
   {
     solid_fill_pipelines_.CreateDefault(*context_, options);
     texture_pipelines_.CreateDefault(*context_, options);
+    fast_gradient_pipelines_.CreateDefault(*context_, options);
 
     if (context_->GetCapabilities()->SupportsSSBO()) {
       linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);

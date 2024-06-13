@@ -18,7 +18,6 @@
 #include "impeller/aiks/color_filter.h"
 #include "impeller/aiks/image.h"
 #include "impeller/aiks/image_filter.h"
-#include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/device_buffer.h"
 #include "impeller/entity/contents/solid_color_contents.h"
@@ -312,97 +311,6 @@ TEST_P(AiksTest, CanRenderSimpleClips) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-TEST_P(AiksTest, CanRenderNestedClips) {
-  Canvas canvas;
-  Paint paint;
-  paint.color = Color::Fuchsia();
-  canvas.Save();
-  canvas.ClipPath(PathBuilder{}.AddCircle({200, 400}, 300).TakePath());
-  canvas.Restore();
-  canvas.ClipPath(PathBuilder{}.AddCircle({600, 400}, 300).TakePath());
-  canvas.ClipPath(PathBuilder{}.AddCircle({400, 600}, 300).TakePath());
-  canvas.DrawRect(Rect::MakeXYWH(200, 200, 400, 400), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderDifferenceClips) {
-  Paint paint;
-  Canvas canvas;
-  canvas.Translate({400, 400});
-
-  // Limit drawing to face circle with a clip.
-  canvas.ClipPath(PathBuilder{}.AddCircle(Point(), 200).TakePath());
-  canvas.Save();
-
-  // Cut away eyes/mouth using difference clips.
-  canvas.ClipPath(PathBuilder{}.AddCircle({-100, -50}, 30).TakePath(),
-                  Entity::ClipOperation::kDifference);
-  canvas.ClipPath(PathBuilder{}.AddCircle({100, -50}, 30).TakePath(),
-                  Entity::ClipOperation::kDifference);
-  canvas.ClipPath(PathBuilder{}
-                      .AddQuadraticCurve({-100, 50}, {0, 150}, {100, 50})
-                      .TakePath(),
-                  Entity::ClipOperation::kDifference);
-
-  // Draw a huge yellow rectangle to prove the clipping works.
-  paint.color = Color::Yellow();
-  canvas.DrawRect(Rect::MakeXYWH(-1000, -1000, 2000, 2000), paint);
-
-  // Remove the difference clips and draw hair that partially covers the eyes.
-  canvas.Restore();
-  paint.color = Color::Maroon();
-  canvas.DrawPath(PathBuilder{}
-                      .MoveTo({200, -200})
-                      .HorizontalLineTo(-200)
-                      .VerticalLineTo(-40)
-                      .CubicCurveTo({0, -40}, {0, -80}, {200, -80})
-                      .TakePath(),
-                  paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderWithContiguousClipRestores) {
-  Canvas canvas;
-
-  // Cover the whole canvas with red.
-  canvas.DrawPaint({.color = Color::Red()});
-
-  canvas.Save();
-
-  // Append two clips, the second resulting in empty coverage.
-  canvas.ClipPath(
-      PathBuilder{}.AddRect(Rect::MakeXYWH(100, 100, 100, 100)).TakePath());
-  canvas.ClipPath(
-      PathBuilder{}.AddRect(Rect::MakeXYWH(300, 300, 100, 100)).TakePath());
-
-  // Restore to no clips.
-  canvas.Restore();
-
-  // Replace the whole canvas with green.
-  canvas.DrawPaint({.color = Color::Green()});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, ClipsUseCurrentTransform) {
-  std::array<Color, 5> colors = {Color::White(), Color::Black(),
-                                 Color::SkyBlue(), Color::Red(),
-                                 Color::Yellow()};
-  Canvas canvas;
-  Paint paint;
-
-  canvas.Translate(Vector3(300, 300));
-  for (int i = 0; i < 15; i++) {
-    canvas.Scale(Vector3(0.8, 0.8));
-
-    paint.color = colors[i % colors.size()];
-    canvas.ClipPath(PathBuilder{}.AddCircle({0, 0}, 300).TakePath());
-    canvas.DrawRect(Rect::MakeXYWH(-300, -300, 600, 600), paint);
-  }
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CanSaveLayerStandalone) {
   Canvas canvas;
 
@@ -489,30 +397,6 @@ TEST_P(AiksTest, CanEmptyPictureConvertToImage) {
     paint.color = Color{0.1, 0.1, 0.1, 0.2};
     canvas.DrawRect(Rect::MakeSize(ISize{1000, 1000}), paint);
   }
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, CanRenderGroupOpacity) {
-  Canvas canvas;
-
-  Paint red;
-  red.color = Color::Red();
-  Paint green;
-  green.color = Color::Green().WithAlpha(0.5);
-  Paint blue;
-  blue.color = Color::Blue();
-
-  Paint alpha;
-  alpha.color = Color::Red().WithAlpha(0.5);
-
-  canvas.SaveLayer(alpha);
-
-  canvas.DrawRect(Rect::MakeXYWH(000, 000, 100, 100), red);
-  canvas.DrawRect(Rect::MakeXYWH(020, 020, 100, 100), green);
-  canvas.DrawRect(Rect::MakeXYWH(040, 040, 100, 100), blue);
-
-  canvas.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -656,6 +540,7 @@ TEST_P(AiksTest, CanRenderRoundedRectWithNonUniformRadii) {
 }
 
 struct TextRenderOptions {
+  bool stroke = false;
   Scalar font_size = 50;
   Color color = Color::Yellow();
   Point position = Vector2(100, 200);
@@ -695,6 +580,9 @@ bool RenderTextInCanvasSkia(const std::shared_ptr<Context>& context,
   Paint text_paint;
   text_paint.color = options.color;
   text_paint.mask_blur_descriptor = options.mask_blur_descriptor;
+  text_paint.stroke_width = 1;
+  text_paint.style =
+      options.stroke ? Paint::Style::kStroke : Paint::Style::kFill;
   canvas.DrawTextFrame(frame, options.position, text_paint);
   return true;
 }
@@ -732,6 +620,38 @@ bool RenderTextInCanvasSTB(const std::shared_ptr<Context>& context,
 TEST_P(AiksTest, CanRenderTextFrame) {
   Canvas canvas;
   canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderStrokedTextFrame) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf",
+      {
+          .stroke = true,
+      }));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameWithHalfScaling) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.Scale({0.5, 0.5, 1});
+  ASSERT_TRUE(RenderTextInCanvasSkia(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderTextFrameWithFractionScaling) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color(0.1, 0.1, 0.1, 1.0)});
+  canvas.Scale({2.625, 2.625, 1});
   ASSERT_TRUE(RenderTextInCanvasSkia(
       GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
       "Roboto-Regular.ttf"));
@@ -1631,45 +1551,6 @@ TEST_P(AiksTest, PaintWithFilters) {
   paint.color_filter = nullptr;
 
   ASSERT_FALSE(paint.HasColorFilter());
-}
-
-TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
-  auto entity_pass = std::make_shared<EntityPass>();
-  auto rect = Rect::MakeLTRB(0, 0, 100, 100);
-  Paint paint;
-  paint.color = Color::White().WithAlpha(0.5);
-  paint.color_filter =
-      ColorFilter::MakeBlend(BlendMode::kSourceOver, Color::Blue());
-
-  // Paint has color filter, can't elide.
-  auto delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-
-  paint.color_filter = nullptr;
-  paint.image_filter = ImageFilter::MakeBlur(Sigma(1.0), Sigma(1.0),
-                                             FilterContents::BlurStyle::kNormal,
-                                             Entity::TileMode::kClamp);
-
-  // Paint has image filter, can't elide.
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-
-  paint.image_filter = nullptr;
-  paint.color = Color::Red();
-
-  // Paint has no alpha, can't elide;
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_FALSE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
-
-  // Positive test.
-  Entity entity;
-  entity.SetContents(SolidColorContents::Make(
-      PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
-  entity_pass->AddEntity(std::move(entity));
-  paint.color = Color::Red().WithAlpha(0.5);
-
-  delegate = std::make_shared<OpacityPeepholePassDelegate>(paint);
-  ASSERT_TRUE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
 }
 
 TEST_P(AiksTest, DrawPaintAbsorbsClears) {

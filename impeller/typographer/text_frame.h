@@ -20,14 +20,20 @@ class TextFrame {
  public:
   TextFrame();
 
-  TextFrame(std::vector<TextRun>& runs,
-            Rect bounds,
-            bool has_color,
-            Color color);
+  TextFrame(std::vector<TextRun>& runs, Rect bounds, bool has_color);
 
   ~TextFrame();
 
-  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map, Scalar scale) const;
+  void CollectUniqueFontGlyphPairs(FontGlyphMap& glyph_map,
+                                   Scalar scale,
+                                   Point offset,
+                                   const GlyphProperties& properties) const;
+
+  static Point ComputeSubpixelPosition(
+      const TextRun::GlyphPosition& glyph_position,
+      AxisAlignment alignment,
+      Point offset,
+      Scalar scale);
 
   static Scalar RoundScaledFontSize(Scalar scale, Scalar point_size);
 
@@ -54,23 +60,13 @@ class TextFrame {
   const std::vector<TextRun>& GetRuns() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Whether any of the glyphs of this run are potentially
-  /// overlapping
-  ///
-  ///             It is always safe to return true from this method. Generally,
-  ///             any large blobs of text should return true to avoid
-  ///             computationally complex calculations. This information is used
-  ///             to apply opacity peephole optimizations to text blobs.
-  bool MaybeHasOverlapping() const;
-
-  //----------------------------------------------------------------------------
   /// @brief      Returns the paint color this text frame was recorded with.
   ///
   ///             Non-bitmap/COLR fonts always use a black text color here, but
   ///             COLR fonts can potentially use the paint color in the glyph
   ///             atlas, so this color must be considered as part of the cache
   ///             key.
-  Color GetColor() const;
+  bool HasColor() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The type of atlas this run should be emplaced in.
@@ -84,7 +80,6 @@ class TextFrame {
   std::vector<TextRun> runs_;
   Rect bounds_;
   bool has_color_;
-  Color color_;
 };
 
 }  // namespace impeller

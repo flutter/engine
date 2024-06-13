@@ -48,6 +48,18 @@ TEST_P(AiksTest, CanRenderThickCurvedStrokes) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderThinCurvedStrokes) {
+  Canvas canvas;
+  Paint paint;
+  paint.color = Color::Red();
+  // Impeller doesn't support hairlines yet, but size this guarantees
+  // the smallest possible stroke width.
+  paint.stroke_width = 0.01;
+  paint.style = Paint::Style::kStroke;
+  canvas.DrawPath(PathBuilder{}.AddCircle({100, 100}, 50).TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
   Canvas canvas;
 
@@ -74,6 +86,25 @@ TEST_P(AiksTest, CanRenderStrokePathWithCubicLine) {
 
   PathBuilder builder;
   builder.AddCubicCurve({0, 200}, {50, 400}, {350, 0}, {400, 200});
+
+  canvas.DrawPath(builder.TakePath(), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderQuadraticStrokeWithInstantTurn) {
+  Canvas canvas;
+
+  Paint paint;
+  paint.color = Color::Red();
+  paint.style = Paint::Style::kStroke;
+  paint.stroke_cap = Cap::kRound;
+  paint.stroke_width = 50;
+
+  // Should draw a diagonal pill shape. If flat on either end, the stroke is
+  // rendering wrong.
+  PathBuilder builder;
+  builder.MoveTo({250, 250});
+  builder.QuadraticCurveTo({100, 100}, {250, 250});
 
   canvas.DrawPath(builder.TakePath(), paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));

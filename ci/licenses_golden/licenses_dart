@@ -1,4 +1,4 @@
-Signature: 84ff125e90248a2b70df48bde8bc00b6
+Signature: 61bc7e830d6adeb094fecdf2df51800f
 
 ====================================================================================================
 LIBRARY: dart
@@ -2480,8 +2480,6 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/signal_handler_fuchsia.cc +
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/thread_interrupter_fuchsia.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/token_position.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/token_position.h + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/uri.cc + ../../../flutter/third_party/dart/LICENSE
-ORIGIN: ../../../flutter/third_party/dart/runtime/vm/uri.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/virtual_memory_fuchsia.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/developer/service.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/js_util/js_util.dart + ../../../flutter/third_party/dart/LICENSE
@@ -2690,8 +2688,6 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/signal_handler_fuchsia.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/thread_interrupter_fuchsia.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/token_position.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/token_position.h
-FILE: ../../../flutter/third_party/dart/runtime/vm/uri.cc
-FILE: ../../../flutter/third_party/dart/runtime/vm/uri.h
 FILE: ../../../flutter/third_party/dart/runtime/vm/virtual_memory_fuchsia.cc
 FILE: ../../../flutter/third_party/dart/sdk/lib/developer/service.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/js_util/js_util.dart
@@ -4084,6 +4080,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: dart
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/bin/native_assets_api_impl.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/include/bin/native_assets_api.h + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/platform/uri.cc + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/runtime/platform/uri.h + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/tools/dartfuzz/flag_fuzzer.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.cc + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.h + ../../../flutter/third_party/dart/LICENSE
@@ -4093,10 +4093,15 @@ ORIGIN: ../../../flutter/third_party/dart/runtime/vm/os.cc + ../../../flutter/th
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart + ../../../flutter/third_party/dart/LICENSE
+ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_time_patch.dart + ../../../flutter/third_party/dart/LICENSE
 ORIGIN: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart + ../../../flutter/third_party/dart/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.cc
 FILE: ../../../flutter/third_party/dart/runtime/bin/ifaddrs.h
+FILE: ../../../flutter/third_party/dart/runtime/bin/native_assets_api_impl.cc
+FILE: ../../../flutter/third_party/dart/runtime/include/bin/native_assets_api.h
+FILE: ../../../flutter/third_party/dart/runtime/platform/uri.cc
+FILE: ../../../flutter/third_party/dart/runtime/platform/uri.h
 FILE: ../../../flutter/third_party/dart/runtime/tools/dartfuzz/flag_fuzzer.dart
 FILE: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.cc
 FILE: ../../../flutter/third_party/dart/runtime/vm/compiler/backend/dart_calling_conventions.h
@@ -4106,6 +4111,7 @@ FILE: ../../../flutter/third_party/dart/runtime/vm/os.cc
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_dev_runtime/private/ddc_only.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/dart2js_only.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_runtime/lib/synced/invocation_mirror_constants.dart
+FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/js_shared/lib/date_time_patch.dart
 FILE: ../../../flutter/third_party/dart/sdk/lib/_internal/wasm/lib/compact_hash.dart
 ----------------------------------------------------------------------------------------------------
 Copyright (c) 2024, the Dart project authors.  Please see the AUTHORS file
@@ -4745,7 +4751,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/fca7dd796e81569271eba5cfaaec4e42e26e60dd
+You may obtain a copy of this library's Source Code Form from: https://dart.googlesource.com/sdk/+/115a9a2b26cde755c7d25bcc5860102552f4700a
 /third_party/fallback_root_certificates/
 
 ====================================================================================================
