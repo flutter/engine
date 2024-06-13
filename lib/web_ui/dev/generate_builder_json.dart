@@ -113,7 +113,7 @@ Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
       suite.runConfig.browser == BrowserName.chrome ||
       suite.runConfig.browser == BrowserName.firefox
     ),
-    ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-13|Mac-14', cpu: 'arm64', (TestSuite suite) =>
+    ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-13', cpu: 'arm64', (TestSuite suite) =>
       suite.runConfig.browser == BrowserName.safari
     ),
     ..._getTestStepsForPlatform(suites, 'Windows', (TestSuite suite) =>
@@ -154,7 +154,7 @@ Iterable<dynamic> _getTestStepsForPlatform(
           if (suite.runConfig.browser == BrowserName.chrome)
             <String, dynamic>{
               'dependency': 'chrome_and_driver',
-              'version': '119.0.6045.9',
+              'version': '125.0.6422.141',
             },
           if (suite.runConfig.browser == BrowserName.firefox)
             <String, dynamic>{
