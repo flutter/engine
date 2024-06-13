@@ -401,7 +401,7 @@ TEST_P(GaussianBlurFilterContentsTest,
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
       EXPECT_TRUE(RectNear(contents_coverage.value(),
-                           Rect::MakeXYWH(98.f, 78.f, 204.0f, 204.f)));
+                           Rect::MakeXYWH(94.f, 74.f, 212.0f, 212.f)));
     }
   }
 }
@@ -438,7 +438,7 @@ TEST_P(GaussianBlurFilterContentsTest, TextureContentsWithEffectTransform) {
     if (result_coverage.has_value() && contents_coverage.has_value()) {
       EXPECT_TRUE(RectNear(result_coverage.value(), contents_coverage.value()));
       EXPECT_TRUE(RectNear(contents_coverage.value(),
-                           Rect::MakeXYWH(49.f, 39.f, 102.f, 102.f)));
+                           Rect::MakeXYWH(94.f, 74.f, 212.f, 212.f)));
     }
   }
 }
