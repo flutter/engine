@@ -28,7 +28,7 @@ bool RenderTextInCanvasSkia(DlCanvas* canvas,
                             const std::string& text,
                             const std::string_view& font_fixture,
                             SkPoint position,
-                            TextRenderOptions options = {}) {
+                            const TextRenderOptions& options = {}) {
   auto c_font_fixture = std::string(font_fixture);
   auto mapping = flutter::testing::OpenFixtureAsSkData(c_font_fixture.c_str());
   if (!mapping) {
