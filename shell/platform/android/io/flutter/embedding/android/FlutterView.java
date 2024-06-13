@@ -1449,6 +1449,7 @@ public class FlutterView extends FrameLayout
         .send();
   }
 
+  @SuppressLint("NewApi")
   private void sendViewportMetricsToFlutter() {
     if (!isAttachedToFlutterEngine()) {
       Log.w(
@@ -1456,6 +1457,26 @@ public class FlutterView extends FrameLayout
           "Tried to send viewport metrics from Android to Flutter but this "
               + "FlutterView was not attached to a FlutterEngine.");
       return;
+    }
+
+    Activity activity = ViewUtils.getActivity(getContext());
+    if (activity != null && Build.VERSION.SDK_INT >= API_LEVELS.API_34 && Build.VERSION.PREVIEW_SDK_INT >= 1) {
+      WindowInsets insets = activity.getWindow().getDecorView().getRootWindowInsets();
+      if (insets != null) {
+        List<Rect> rects = insets.getBoundingRects(WindowInsets.Type.captionBar());
+        if (rects.isEmpty()) {
+          Log.w(TAG, "No rects");
+        }
+        for (Rect rect : rects) {
+          Log.w(TAG, String.format("Rect reaches (%d,%d) - (%d,%d)", rect.left, rect.top, rect.right, rect.bottom));
+        }
+        if (rects.size() == 1) {
+          int dip = rects.get(0).bottom;
+          viewportMetrics.viewPaddingTop = dip;
+        }
+      }
+    } else {
+      Log.w(TAG, "Activity is null, OR API level is <35");
     }
 
     viewportMetrics.devicePixelRatio = getResources().getDisplayMetrics().density;
