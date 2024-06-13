@@ -109,6 +109,9 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
     cursor_name = kFallbackCursor;
   }
 
+#if GTK_CHECK_VERSION(4, 0, 0)
+  return FL_METHOD_RESPONSE(fl_method_not_implemented_response_new());
+#else
   GdkWindow* window =
       gtk_widget_get_window(gtk_widget_get_toplevel(GTK_WIDGET(self->view)));
   g_autoptr(GdkCursor) cursor =
@@ -116,6 +119,7 @@ FlMethodResponse* activate_system_cursor(FlMouseCursorPlugin* self,
   gdk_window_set_cursor(window, cursor);
 
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+#endif
 }
 
 // Called when a method call is received from Flutter.
