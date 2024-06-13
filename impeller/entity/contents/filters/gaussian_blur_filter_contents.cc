@@ -352,33 +352,6 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
   return output_limit.Expand(Point(blur_radii.x, blur_radii.y));
 }
 
-std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
-    const FilterInput::Vector& inputs,
-    const Entity& entity,
-    const Matrix& effect_transform) const {
-  if (inputs.empty()) {
-    return {};
-  }
-
-  Entity snapshot_entity = entity.Clone();
-  snapshot_entity.SetTransform(Matrix());
-  std::optional<Rect> source_coverage = inputs[0]->GetCoverage(snapshot_entity);
-  if (!source_coverage.has_value()) {
-    return {};
-  }
-
-  Vector2 scaled_sigma = (effect_transform.Basis() *
-                          Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
-                             .Abs();
-  scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
-  scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
-  Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
-                                CalculateBlurRadius(scaled_sigma.y));
-  Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
-  Rect expanded_source_coverage = source_coverage->Expand(padding);
-  return expanded_source_coverage.TransformBounds(entity.GetTransform());
-}
-
 namespace {
 Vector2 ExtractScale(const Matrix& matrix) {
   Vector2 entity_scale_x = matrix * Vector2(1.0, 0.0);
@@ -386,6 +359,33 @@ Vector2 ExtractScale(const Matrix& matrix) {
   return Vector2(entity_scale_x.GetLength(), entity_scale_y.GetLength());
 }
 }  // namespace
+
+std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
+    const FilterInput::Vector& inputs,
+    const Entity& entity,
+    const Matrix& effect_transform) const {
+  if (inputs.empty()) {
+    return {};
+  }
+  std::optional<Rect> input_coverage = inputs[0]->GetCoverage(entity);
+  if (!input_coverage.has_value()) {
+    return {};
+  }
+
+  const Vector2 source_space_scalar =
+      ExtractScale(entity.GetTransform().Basis());
+  Vector2 scaled_sigma = (Matrix::MakeScale(source_space_scalar) *
+                          Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
+                             .Abs();
+  scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
+  scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
+  Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
+                                CalculateBlurRadius(scaled_sigma.y));
+  Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
+  Vector2 local_padding =
+      (Matrix::MakeScale(source_space_scalar) * padding).Abs();
+  return input_coverage.value().Expand(Point(local_padding.x, local_padding.y));
+}
 
 // A brief overview how this works:
 // 1) Snapshot the filter input.
@@ -422,7 +422,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
-  Vector2 local_padding = (entity.GetTransform().Basis() * padding).Abs();
+  Vector2 local_padding =
+      (Matrix::MakeScale(source_space_scalar) * padding).Abs();
 
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
