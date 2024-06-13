@@ -10,18 +10,17 @@
 #include <optional>
 #include <unordered_map>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
-#include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/typographer_context.h"
 
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -29,6 +28,8 @@
 #include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
+#include "impeller/entity/fast_gradient.frag.h"
+#include "impeller/entity/fast_gradient.vert.h"
 #include "impeller/entity/filter_position.vert.h"
 #include "impeller/entity/filter_position_uv.vert.h"
 #include "impeller/entity/gaussian.frag.h"
@@ -54,8 +55,6 @@
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 
-#include "impeller/typographer/glyph_atlas.h"
-
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
@@ -79,6 +78,8 @@
 
 namespace impeller {
 
+using FastGradientPipeline =
+    RenderPipelineHandle<FastGradientVertexShader, FastGradientFragmentShader>;
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientFillFragmentShader>;
@@ -378,6 +379,11 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
 
   std::shared_ptr<Tessellator> GetTessellator() const;
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(fast_gradient_pipelines_, opts);
+  }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -859,6 +865,7 @@ class ContentContext {
   // map.
 
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<FastGradientPipeline> fast_gradient_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<ConicalGradientFillPipeline>

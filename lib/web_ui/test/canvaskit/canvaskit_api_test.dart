@@ -529,6 +529,20 @@ void _imageFilterTests() {
       isNotNull,
     );
   });
+
+  test('MakeDilate', () {
+    expect(
+      canvasKit.ImageFilter.MakeDilate(1, 2, null),
+      isNotNull,
+    );
+  });
+
+  test('MakeErode', () {
+    expect(
+      canvasKit.ImageFilter.MakeErode(1, 2, null),
+      isNotNull,
+    );
+  });
 }
 
 void _mallocTests() {
@@ -1929,7 +1943,7 @@ void _paragraphTests() {
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
     final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
-    registry.register(Object().toJSWrapper, Object().toJSWrapper);
+    registry.register(Object().toExternalReference, Object().toExternalReference);
   });
 }
 

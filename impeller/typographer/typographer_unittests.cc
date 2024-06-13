@@ -10,6 +10,7 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
+#include "impeller/typographer/font_glyph_pair.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/rectangle_packer.h"
 #include "third_party/skia/include/core/SkFont.h"
@@ -37,7 +38,26 @@ static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
     const std::shared_ptr<GlyphAtlasContext>& atlas_context,
     const TextFrame& frame) {
   FontGlyphMap font_glyph_map;
-  frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale);
+  frame.CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0}, {});
+  return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
+                                               atlas_context, font_glyph_map);
+}
+
+static std::shared_ptr<GlyphAtlas> CreateGlyphAtlas(
+    Context& context,
+    const TypographerContext* typographer_context,
+    HostBuffer& host_buffer,
+    GlyphAtlas::Type type,
+    Scalar scale,
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context,
+    const std::vector<std::shared_ptr<TextFrame>>& frames,
+    const std::vector<GlyphProperties>& properties) {
+  FontGlyphMap font_glyph_map;
+  size_t offset = 0;
+  for (auto& frame : frames) {
+    frame->CollectUniqueFontGlyphPairs(font_glyph_map, scale, {0, 0},
+                                       properties[offset++]);
+  }
   return typographer_context->CreateGlyphAtlas(context, type, host_buffer,
                                                atlas_context, font_glyph_map);
 }
@@ -79,9 +99,10 @@ TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   ASSERT_EQ(atlas->GetGlyphCount(), 4llu);
 
   std::optional<impeller::ScaledFont> first_scaled_font;
-  std::optional<impeller::Glyph> first_glyph;
+  std::optional<impeller::SubpixelGlyph> first_glyph;
   Rect first_rect;
-  atlas->IterateGlyphs([&](const ScaledFont& scaled_font, const Glyph& glyph,
+  atlas->IterateGlyphs([&](const ScaledFont& scaled_font,
+                           const SubpixelGlyph& glyph,
                            const Rect& rect) -> bool {
     first_scaled_font = scaled_font;
     first_glyph = glyph;
@@ -116,14 +137,14 @@ TEST_P(TypographerTest, LazyAtlasTracksColor) {
 
   LazyGlyphAtlas lazy_atlas(TypographerContextSkia::Make());
 
-  lazy_atlas.AddTextFrame(*frame, 1.0f);
+  lazy_atlas.AddTextFrame(*frame, 1.0f, {0, 0}, {});
 
   frame = MakeTextFrameFromTextBlobSkia(
       SkTextBlob::MakeFromString("😀 ", emoji_font));
 
   ASSERT_TRUE(frame->GetAtlasType() == GlyphAtlas::Type::kColorBitmap);
 
-  lazy_atlas.AddTextFrame(*frame, 1.0f);
+  lazy_atlas.AddTextFrame(*frame, 1.0f, {0, 0}, {});
 
   // Creates different atlases for color and red bitmap.
   auto color_atlas = lazy_atlas.CreateOrGetGlyphAtlas(
@@ -203,7 +224,7 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
   size_t size_count = 8;
   for (size_t index = 0; index < size_count; index += 1) {
     MakeTextFrameFromTextBlobSkia(blob)->CollectUniqueFontGlyphPairs(
-        font_glyph_map, 0.6 * index);
+        font_glyph_map, 0.6 * index, {0, 0}, {});
   };
   auto atlas =
       context->CreateGlyphAtlas(*GetContext(), GlyphAtlas::Type::kAlphaBitmap,
@@ -213,14 +234,15 @@ TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
 
   std::set<uint16_t> unique_glyphs;
   std::vector<uint16_t> total_glyphs;
-  atlas->IterateGlyphs(
-      [&](const ScaledFont& scaled_font, const Glyph& glyph, const Rect& rect) {
-        unique_glyphs.insert(glyph.index);
-        total_glyphs.push_back(glyph.index);
-        return true;
-      });
+  atlas->IterateGlyphs([&](const ScaledFont& scaled_font,
+                           const SubpixelGlyph& glyph, const Rect& rect) {
+    unique_glyphs.insert(glyph.glyph.index);
+    total_glyphs.push_back(glyph.glyph.index);
+    return true;
+  });
 
-  EXPECT_EQ(unique_glyphs.size() * size_count, atlas->GetGlyphCount());
+  // These numbers may be different due to subpixel positions.
+  EXPECT_LE(unique_glyphs.size() * size_count, atlas->GetGlyphCount());
   EXPECT_EQ(total_glyphs.size(), atlas->GetGlyphCount());
 
   EXPECT_TRUE(atlas->GetGlyphCount() > 0);
@@ -265,20 +287,68 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   ASSERT_EQ(old_packer, new_packer);
 }
 
-TEST_P(TypographerTest, MaybeHasOverlapping) {
+TEST_P(TypographerTest, GlyphColorIsPartOfCacheKey) {
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
+#if FML_OS_MACOSX
+  auto mapping = flutter::testing::OpenFixtureAsSkData("Apple Color Emoji.ttc");
+#else
+  auto mapping = flutter::testing::OpenFixtureAsSkData("NotoColorEmoji.ttf");
+#endif
+  ASSERT_TRUE(mapping);
+  sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
+  SkFont emoji_font(font_mgr->makeFromData(mapping), 50.0);
+
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kColorBitmap);
+
+  // Create two frames with the same character and a different color, expect
+  // that it adds a character.
+  auto frame = MakeTextFrameFromTextBlobSkia(
+      SkTextBlob::MakeFromString("😂", emoji_font));
+  auto frame_2 = MakeTextFrameFromTextBlobSkia(
+      SkTextBlob::MakeFromString("😂", emoji_font));
+  auto properties = {
+      GlyphProperties{.color = Color::Red()},
+      GlyphProperties{.color = Color::Blue()},
+  };
+
+  auto next_atlas =
+      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                       GlyphAtlas::Type::kColorBitmap, 1.0f, atlas_context,
+                       {frame, frame_2}, properties);
+
+  EXPECT_EQ(next_atlas->GetGlyphCount(), 2u);
+}
+
+TEST_P(TypographerTest, GlyphColorIsIgnoredForNonEmojiFonts) {
+  auto host_buffer = HostBuffer::Create(GetContext()->GetResourceAllocator());
   sk_sp<SkFontMgr> font_mgr = txt::GetDefaultFontManager();
   sk_sp<SkTypeface> typeface =
       font_mgr->matchFamilyStyle("Arial", SkFontStyle::Normal());
   SkFont sk_font(typeface, 0.5f);
 
-  auto frame =
-      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("1", sk_font));
-  // Single character has no overlapping
-  ASSERT_FALSE(frame->MaybeHasOverlapping());
+  auto context = TypographerContextSkia::Make();
+  auto atlas_context =
+      context->CreateGlyphAtlasContext(GlyphAtlas::Type::kColorBitmap);
 
-  auto frame_2 = MakeTextFrameFromTextBlobSkia(
-      SkTextBlob::MakeFromString("123456789", sk_font));
-  ASSERT_FALSE(frame_2->MaybeHasOverlapping());
+  // Create two frames with the same character and a different color, but as a
+  // non-emoji font the text frame constructor will ignore it.
+  auto frame =
+      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
+  auto frame_2 =
+      MakeTextFrameFromTextBlobSkia(SkTextBlob::MakeFromString("A", sk_font));
+  auto properties = {
+      GlyphProperties{},
+      GlyphProperties{},
+  };
+
+  auto next_atlas =
+      CreateGlyphAtlas(*GetContext(), context.get(), *host_buffer,
+                       GlyphAtlas::Type::kColorBitmap, 1.0f, atlas_context,
+                       {frame, frame_2}, properties);
+
+  EXPECT_EQ(next_atlas->GetGlyphCount(), 1u);
 }
 
 TEST_P(TypographerTest, RectanglePackerAddsNonoverlapingRectangles) {
