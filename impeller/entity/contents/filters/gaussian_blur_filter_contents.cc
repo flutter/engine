@@ -387,6 +387,14 @@ Vector2 ExtractScale(const Matrix& matrix) {
 }
 }  // namespace
 
+// A brief overview how this works:
+// 1) Snapshot the filter input.
+// 2) Perform downsample pass. This also inserts the gutter around the input
+//    snapshot since the blur can render outside the bounds of the snapshot.
+// 3) Perform 1D horizontal blur pass.
+// 4) Perform 1D vertical blur pass.
+// 5) Apply the blur style to the blur result. This may just mask the output or
+//    draw the original snapshot over the result.
 std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
@@ -398,6 +406,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     return std::nullopt;
   }
 
+  // Source space here is scaled by the entity's transform. This is a
+  // requirement for text to be rendered correctly. You can think of this as
+  // "scaled source space" or "un-rotated local space". The entity's rotation is
+  // applied to the result of the blur as part of the result's transform.
   const Vector2 source_space_scalar =
       ExtractScale(entity.GetTransform().Basis());
 
