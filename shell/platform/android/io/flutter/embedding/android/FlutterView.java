@@ -1460,7 +1460,9 @@ public class FlutterView extends FrameLayout
     }
 
     Activity activity = ViewUtils.getActivity(getContext());
-    if (activity != null && Build.VERSION.SDK_INT >= API_LEVELS.API_34 && Build.VERSION.PREVIEW_SDK_INT >= 1) {
+    if (activity != null
+        && Build.VERSION.SDK_INT >= API_LEVELS.API_34
+        && Build.VERSION.PREVIEW_SDK_INT >= 1) {
       WindowInsets insets = activity.getWindow().getDecorView().getRootWindowInsets();
       if (insets != null) {
         List<Rect> rects = insets.getBoundingRects(WindowInsets.Type.captionBar());
@@ -1468,7 +1470,10 @@ public class FlutterView extends FrameLayout
           Log.w(TAG, "No rects");
         }
         for (Rect rect : rects) {
-          Log.w(TAG, String.format("Rect reaches (%d,%d) - (%d,%d)", rect.left, rect.top, rect.right, rect.bottom));
+          Log.w(
+              TAG,
+              String.format(
+                  "Rect reaches (%d,%d) - (%d,%d)", rect.left, rect.top, rect.right, rect.bottom));
         }
         if (rects.size() == 1) {
           int dip = rects.get(0).bottom;
