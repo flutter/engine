@@ -68,6 +68,11 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterRespectCTM) {
                                /*respect_ctm=*/true);
     ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
                                        "Roboto-Regular.ttf",
+                                       SkPoint::Make(101, 101), options));
+    options.mask_filter = nullptr;
+    options.color = DlColor::kRed();
+    ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
+                                       "Roboto-Regular.ttf",
                                        SkPoint::Make(100, 100), options));
   };
 
@@ -87,6 +92,11 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
     options.mask_filter =
         DlBlurMaskFilter::Make(DlBlurStyle::kNormal, /*sigma=*/10,
                                /*respect_ctm=*/false);
+    ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
+                                       "Roboto-Regular.ttf",
+                                       SkPoint::Make(101, 101), options));
+    options.mask_filter = nullptr;
+    options.color = DlColor::kRed();
     ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
                                        "Roboto-Regular.ttf",
                                        SkPoint::Make(100, 100), options));
