@@ -268,8 +268,14 @@ public class FlutterRendererTest {
 
   @Test
   public void itConvertsDisplayFeatureArrayToPrimitiveArrays() {
+    // Intentionally do not use 'engineRule' in this test, because we are testing a very narrow
+    // API (the side-effects of 'setViewportMetrics'). Under normal construction, the engine will
+    // invoke 'setViewportMetrics' a number of times automatically, making testing the side-effects
+    // of the method call more difficult than needed.
+    FlutterJNI fakeFlutterJNI = mock(FlutterJNI.class);
+    FlutterRenderer flutterRenderer = new FlutterRenderer(fakeFlutterJNI);
+
     // Setup the test.
-    FlutterRenderer flutterRenderer = engineRule.getFlutterEngine().getRenderer();
     FlutterRenderer.ViewportMetrics metrics = new FlutterRenderer.ViewportMetrics();
     metrics.width = 1000;
     metrics.height = 1000;
@@ -284,7 +290,6 @@ public class FlutterRendererTest {
             new Rect(50, 60, 70, 80), FlutterRenderer.DisplayFeatureType.CUTOUT));
 
     // Execute the behavior under test.
-    clearInvocations(fakeFlutterJNI);
     flutterRenderer.setViewportMetrics(metrics);
 
     // Verify behavior under test.
