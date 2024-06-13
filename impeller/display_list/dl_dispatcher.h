@@ -12,6 +12,7 @@
 #include "impeller/aiks/experimental_canvas.h"
 #include "impeller/aiks/paint.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/geometry/color.h"
 
 namespace impeller {
 
@@ -291,7 +292,8 @@ class ExperimentalDlDispatcher : public DlDispatcherBase {
  public:
   ExperimentalDlDispatcher(ContentContext& renderer,
                            RenderTarget& render_target,
-                           bool requires_readback,
+                           bool has_root_backdrop_filter,
+                           flutter::DlBlendMode max_root_blend_mode,
                            IRect cull_rect);
 
   ~ExperimentalDlDispatcher() = default;
@@ -366,10 +368,29 @@ class TextFrameDispatcher : public flutter::IgnoreAttributeDispatchHelper,
   void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
                        SkScalar opacity) override;
 
+  // |flutter::DlOpReceiver|
+  void setDrawStyle(flutter::DlDrawStyle style) override;
+
+  // |flutter::DlOpReceiver|
+  void setColor(flutter::DlColor color) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeWidth(SkScalar width) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeMiter(SkScalar limit) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeCap(flutter::DlStrokeCap cap) override;
+
+  // |flutter::DlOpReceiver|
+  void setStrokeJoin(flutter::DlStrokeJoin join) override;
+
  private:
   const ContentContext& renderer_;
   Matrix matrix_;
   std::vector<Matrix> stack_;
+  Paint paint_;
 };
 
 }  // namespace impeller

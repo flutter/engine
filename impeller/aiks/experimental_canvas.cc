@@ -194,6 +194,7 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
+  entry.distributed_opacity = transform_stack_.back().distributed_opacity;
   FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
       << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
       << " after allocating " << total_content_depth;
@@ -207,12 +208,25 @@ void ExperimentalCanvas::SaveLayer(
     std::optional<Rect> bounds,
     const std::shared_ptr<ImageFilter>& backdrop_filter,
     ContentBoundsPromise bounds_promise,
-    uint32_t total_content_depth) {
+    uint32_t total_content_depth,
+    bool can_distribute_opacity) {
+  if (can_distribute_opacity && !backdrop_filter &&
+      Paint::CanApplyOpacityPeephole(paint)) {
+    Save(total_content_depth);
+    transform_stack_.back().distributed_opacity *= paint.color.alpha;
+    return;
+  }
   // Can we always guarantee that we get a bounds? Does a lack of bounds
   // indicate something?
   if (!bounds.has_value()) {
     bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
   }
+
+  // When applying a save layer, absorb any pending distributed opacity.
+  Paint paint_copy = paint;
+  paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
+  transform_stack_.back().distributed_opacity = 1.0;
+
   Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
   auto target =
       CreateRenderTarget(renderer_,
@@ -220,7 +234,7 @@ void ExperimentalCanvas::SaveLayer(
                                        subpass_coverage.GetSize().height),
                          1u, Color::BlackTransparent());
   entity_pass_targets_.push_back(std::move(target));
-  save_layer_state_.push_back(SaveLayerState{paint, subpass_coverage});
+  save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 
   CanvasStackEntry entry;
   entry.transform = transform_stack_.back().transform;
@@ -374,9 +388,17 @@ void ExperimentalCanvas::DrawTextFrame(
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-  text_contents->SetColor(paint.color);
   text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
   text_contents->SetScale(GetCurrentTransform().GetMaxBasisLengthXY());
+  text_contents->SetColor(paint.color);
+  text_contents->SetOffset(position);
+  text_contents->SetTextProperties(paint.color,                           //
+                                   paint.style == Paint::Style::kStroke,  //
+                                   paint.stroke_width,                    //
+                                   paint.stroke_cap,                      //
+                                   paint.stroke_join,                     //
+                                   paint.stroke_miter                     //
+  );
 
   entity.SetTransform(GetCurrentTransform() *
                       Matrix::MakeTranslation(position));
@@ -395,6 +417,8 @@ void ExperimentalCanvas::DrawTextFrame(
 
 void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
                                                       bool reuse_depth) {
+  entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
+
   auto transform = entity.GetTransform();
   entity.SetTransform(
       Matrix::MakeTranslation(Vector3(-GetGlobalPassPosition())) * transform);
