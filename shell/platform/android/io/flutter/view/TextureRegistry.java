@@ -122,11 +122,7 @@ public interface TextureRegistry {
       void onSurfaceDestroyed();
     }
 
-    /**
-     * @deprecated This method is not officially part of the public API surface and will be removed.
-     */
-    @Deprecated
-    @SuppressWarnings("DeprecatedIsStillUsed")
+    /** This method is not officially part of the public API surface and will be deprecated. */
     void scheduleFrame();
   }
 
