@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
-
 uniform FrameInfo {
   mat4 mvp;
 }
 frame_info;
 
-in vec2 position;
+in vec2 vertex_position;
+out vec2 v_screen_position;
 
 void main() {
-  gl_Position = frame_info.mvp * vec4(position, 0.0, 1.0);
+  v_screen_position = vertex_position;
+  gl_Position = frame_info.mvp * vec4(vertex_position, 0.0, 1.0);
 }
