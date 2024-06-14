@@ -357,6 +357,7 @@ bool EntityPass::Render(ContentContext& renderer,
   fml::ScopedCleanupClosure reset_state([&renderer]() {
     renderer.GetLazyGlyphAtlas()->ResetTextFrames();
     renderer.GetRenderTargetCache()->End();
+    renderer.GetShadowCache()->End();
   });
 
   auto root_render_target = render_target;

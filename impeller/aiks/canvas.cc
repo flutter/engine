@@ -361,125 +361,136 @@ void Canvas::DrawPaint(const Paint& paint) {
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Size corner_radii,
                                      const Paint& paint) {
-  if (paint.color_source.GetType() != ColorSource::Type::kColor ||
-      paint.style != Paint::Style::kFill) {
-    return false;
-  }
+  return false;
+  // if (paint.color_source.GetType() != ColorSource::Type::kColor ||
+  //     paint.style != Paint::Style::kFill) {
+  //   return false;
+  // }
 
-  if (!paint.mask_blur_descriptor.has_value()) {
-    return false;
-  }
+  // if (!paint.mask_blur_descriptor.has_value()) {
+  //   return false;
+  // }
 
-  // A blur sigma that is not positive enough should not result in a blur.
-  if (paint.mask_blur_descriptor->sigma.sigma <= kEhCloseEnough) {
-    return false;
-  }
+  // // A blur sigma that is not positive enough should not result in a blur.
+  // if (paint.mask_blur_descriptor->sigma.sigma <= kEhCloseEnough) {
+  //   return false;
+  // }
 
-  // For symmetrically mask blurred solid RRects, absorb the mask blur and use
-  // a faster SDF approximation.
+  // // For symmetrically mask blurred solid RRects, absorb the mask blur and
+  // use
+  // // a faster SDF approximation.
 
-  Color rrect_color =
-      paint.HasColorFilter()
-          // Absorb the color filter, if any.
-          ? paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color)
-          : paint.color;
+  // Color rrect_color =
+  //     paint.HasColorFilter()
+  //         // Absorb the color filter, if any.
+  //         ? paint.GetColorFilter()->GetCPUColorFilterProc()(paint.color)
+  //         : paint.color;
 
-  Paint rrect_paint = {.mask_blur_descriptor = paint.mask_blur_descriptor};
+  // Paint rrect_paint = {.mask_blur_descriptor = paint.mask_blur_descriptor};
 
-  // In some cases, we need to render the mask blur to a separate layer.
-  //
-  //   1. If the blur style is normal, we'll be drawing using one draw call and
-  //      no clips. And so we can just wrap the RRect contents with the
-  //      ImageFilter, which will get applied to the result as per usual.
-  //
-  //   2. If the blur style is solid, we combine the non-blurred RRect with the
-  //      blurred RRect via two separate draw calls, and so we need to defer any
-  //      fancy blending, translucency, or image filtering until after these two
-  //      draws have been combined in a separate layer.
-  //
-  //   3. If the blur style is outer or inner, we apply the blur style via a
-  //      clip. The ImageFilter needs to be applied to the mask blurred result.
-  //      And so if there's an ImageFilter, we need to defer applying it until
-  //      after the clipped RRect blur has been drawn to a separate texture.
-  //      However, since there's only one draw call that produces color, we
-  //      don't need to worry about the blend mode or translucency (unlike with
-  //      BlurStyle::kSolid).
-  //
-  if ((paint.mask_blur_descriptor->style !=
-           FilterContents::BlurStyle::kNormal &&
-       paint.image_filter) ||
-      (paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kSolid &&
-       (!rrect_color.IsOpaque() ||
-        paint.blend_mode != BlendMode::kSourceOver))) {
-    Rect render_bounds = rect;
-    if (paint.mask_blur_descriptor->style !=
-        FilterContents::BlurStyle::kInner) {
-      render_bounds =
-          render_bounds.Expand(paint.mask_blur_descriptor->sigma.sigma * 4.0);
-    }
-    // Defer the alpha, blend mode, and image filter to a separate layer.
-    SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
-               .blend_mode = paint.blend_mode,
-               .image_filter = paint.image_filter},
-              render_bounds, nullptr, ContentBoundsPromise::kContainsContents,
-              1u);
-    rrect_paint.color = rrect_color.WithAlpha(1);
-  } else {
-    rrect_paint.color = rrect_color;
-    rrect_paint.blend_mode = paint.blend_mode;
-    rrect_paint.image_filter = paint.image_filter;
-    Save(1u);
-  }
+  // // In some cases, we need to render the mask blur to a separate layer.
+  // //
+  // //   1. If the blur style is normal, we'll be drawing using one draw call
+  // and
+  // //      no clips. And so we can just wrap the RRect contents with the
+  // //      ImageFilter, which will get applied to the result as per usual.
+  // //
+  // //   2. If the blur style is solid, we combine the non-blurred RRect with
+  // the
+  // //      blurred RRect via two separate draw calls, and so we need to defer
+  // any
+  // //      fancy blending, translucency, or image filtering until after these
+  // two
+  // //      draws have been combined in a separate layer.
+  // //
+  // //   3. If the blur style is outer or inner, we apply the blur style via a
+  // //      clip. The ImageFilter needs to be applied to the mask blurred
+  // result.
+  // //      And so if there's an ImageFilter, we need to defer applying it
+  // until
+  // //      after the clipped RRect blur has been drawn to a separate texture.
+  // //      However, since there's only one draw call that produces color, we
+  // //      don't need to worry about the blend mode or translucency (unlike
+  // with
+  // //      BlurStyle::kSolid).
+  // //
+  // if ((paint.mask_blur_descriptor->style !=
+  //          FilterContents::BlurStyle::kNormal &&
+  //      paint.image_filter) ||
+  //     (paint.mask_blur_descriptor->style == FilterContents::BlurStyle::kSolid
+  //     &&
+  //      (!rrect_color.IsOpaque() ||
+  //       paint.blend_mode != BlendMode::kSourceOver))) {
+  //   Rect render_bounds = rect;
+  //   if (paint.mask_blur_descriptor->style !=
+  //       FilterContents::BlurStyle::kInner) {
+  //     render_bounds =
+  //         render_bounds.Expand(paint.mask_blur_descriptor->sigma.sigma
+  //         * 4.0);
+  //   }
+  //   // Defer the alpha, blend mode, and image filter to a separate layer.
+  //   SaveLayer({.color = Color::White().WithAlpha(rrect_color.alpha),
+  //              .blend_mode = paint.blend_mode,
+  //              .image_filter = paint.image_filter},
+  //             render_bounds, nullptr,
+  //             ContentBoundsPromise::kContainsContents, 1u);
+  //   rrect_paint.color = rrect_color.WithAlpha(1);
+  // } else {
+  //   rrect_paint.color = rrect_color;
+  //   rrect_paint.blend_mode = paint.blend_mode;
+  //   rrect_paint.image_filter = paint.image_filter;
+  //   Save(1u);
+  // }
 
-  auto draw_blurred_rrect = [this, &rect, &corner_radii, &rrect_paint]() {
-    auto contents = std::make_shared<SolidRRectBlurContents>();
+  // auto draw_blurred_rrect = [this, &rect, &corner_radii, &rrect_paint]() {
+  //   auto contents = std::make_shared<SolidRRectBlurContents>();
 
-    contents->SetColor(rrect_paint.color);
-    contents->SetSigma(rrect_paint.mask_blur_descriptor->sigma);
-    contents->SetRRect(rect, corner_radii);
+  //   contents->SetColor(rrect_paint.color);
+  //   contents->SetSigma(rrect_paint.mask_blur_descriptor->sigma);
+  //   contents->SetRRect(rect, corner_radii);
 
-    Entity blurred_rrect_entity;
-    blurred_rrect_entity.SetTransform(GetCurrentTransform());
-    blurred_rrect_entity.SetBlendMode(rrect_paint.blend_mode);
+  //   Entity blurred_rrect_entity;
+  //   blurred_rrect_entity.SetTransform(GetCurrentTransform());
+  //   blurred_rrect_entity.SetBlendMode(rrect_paint.blend_mode);
 
-    rrect_paint.mask_blur_descriptor = std::nullopt;
-    blurred_rrect_entity.SetContents(
-        rrect_paint.WithFilters(std::move(contents)));
-    AddRenderEntityToCurrentPass(std::move(blurred_rrect_entity));
-  };
+  //   rrect_paint.mask_blur_descriptor = std::nullopt;
+  //   blurred_rrect_entity.SetContents(
+  //       rrect_paint.WithFilters(std::move(contents)));
+  //   AddRenderEntityToCurrentPass(std::move(blurred_rrect_entity));
+  // };
 
-  switch (rrect_paint.mask_blur_descriptor->style) {
-    case FilterContents::BlurStyle::kNormal: {
-      draw_blurred_rrect();
-      break;
-    }
-    case FilterContents::BlurStyle::kSolid: {
-      // First, draw the blurred RRect.
-      draw_blurred_rrect();
-      // Then, draw the non-blurred RRect on top.
-      Entity entity;
-      entity.SetTransform(GetCurrentTransform());
-      entity.SetBlendMode(rrect_paint.blend_mode);
-      entity.SetContents(CreateContentsForGeometryWithFilters(
-          rrect_paint, Geometry::MakeRoundRect(rect, corner_radii)));
-      AddRenderEntityToCurrentPass(std::move(entity), true);
-      break;
-    }
-    case FilterContents::BlurStyle::kOuter: {
-      ClipRRect(rect, corner_radii, Entity::ClipOperation::kDifference);
-      draw_blurred_rrect();
-      break;
-    }
-    case FilterContents::BlurStyle::kInner: {
-      ClipRRect(rect, corner_radii, Entity::ClipOperation::kIntersect);
-      draw_blurred_rrect();
-      break;
-    }
-  }
+  // switch (rrect_paint.mask_blur_descriptor->style) {
+  //   case FilterContents::BlurStyle::kNormal: {
+  //     draw_blurred_rrect();
+  //     break;
+  //   }
+  //   case FilterContents::BlurStyle::kSolid: {
+  //     // First, draw the blurred RRect.
+  //     draw_blurred_rrect();
+  //     // Then, draw the non-blurred RRect on top.
+  //     Entity entity;
+  //     entity.SetTransform(GetCurrentTransform());
+  //     entity.SetBlendMode(rrect_paint.blend_mode);
+  //     entity.SetContents(CreateContentsForGeometryWithFilters(
+  //         rrect_paint, Geometry::MakeRoundRect(rect, corner_radii)));
+  //     AddRenderEntityToCurrentPass(std::move(entity), true);
+  //     break;
+  //   }
+  //   case FilterContents::BlurStyle::kOuter: {
+  //     ClipRRect(rect, corner_radii, Entity::ClipOperation::kDifference);
+  //     draw_blurred_rrect();
+  //     break;
+  //   }
+  //   case FilterContents::BlurStyle::kInner: {
+  //     ClipRRect(rect, corner_radii, Entity::ClipOperation::kIntersect);
+  //     draw_blurred_rrect();
+  //     break;
+  //   }
+  // }
 
-  Restore();
+  // Restore();
 
-  return true;
+  // return true;
 }
 
 void Canvas::DrawLine(const Point& p0, const Point& p1, const Paint& paint) {

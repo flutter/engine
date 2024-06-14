@@ -15,6 +15,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
+#include "impeller/entity/shadow_cache.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
@@ -751,6 +752,8 @@ class ContentContext {
   /// allocate their own device buffers.
   HostBuffer& GetTransientsBuffer() const { return *host_buffer_; }
 
+  std::shared_ptr<ShadowCache> GetShadowCache() const { return shadow_cache_; }
+
  private:
   std::shared_ptr<Context> context_;
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
@@ -1006,6 +1009,7 @@ class ContentContext {
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
   std::shared_ptr<Texture> empty_texture_;
+  std::shared_ptr<ShadowCache> shadow_cache_ = std::make_shared<ShadowCache>();
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

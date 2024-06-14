@@ -201,6 +201,7 @@ impeller_component("entity") {
     "inline_pass_context.h",
     "render_target_cache.cc",
     "render_target_cache.h",
+    "shadow_cache.h",
   ]
 
   public_deps = [

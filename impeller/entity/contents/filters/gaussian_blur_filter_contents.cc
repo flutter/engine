@@ -9,6 +9,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/shadow_cache.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
@@ -399,6 +400,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
   Vector2 local_padding = (entity.GetTransform().Basis() * padding).Abs();
+  Matrix padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
 
   // Apply as much of the desired padding as possible from the source. This may
   // be ignored so must be accounted for in the downsample pass by adding a
@@ -424,155 +426,177 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
         expanded_coverage_hint->TransformBounds(entity.GetTransform().Invert());
   }
 
-  std::optional<Snapshot> input_snapshot =
-      inputs[0]->GetSnapshot("GaussianBlur", renderer, snapshot_entity,
-                             /*coverage_limit=*/source_expanded_coverage_hint,
-                             /*mip_count=*/mip_count);
-  if (!input_snapshot.has_value()) {
-    return std::nullopt;
+  auto shadow_cache = renderer.GetShadowCache();
+  // TODO: how do we get this data here?
+  auto key = ShadowKey{.rect = Rect::MakeLTRB(0, 0, 10, 10),
+                       .corner_radii = Size(10, 10),
+                       .rrect_color = Color::Aqua(),
+                       .sigma = sigma_x_};
+
+  auto data = shadow_cache->GetData(key);
+  if (data.has_value()) {
+    FML_LOG(ERROR) << "CACHE HIT";
   }
-
-  if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
-    Entity result =
-        Entity::FromSnapshot(input_snapshot.value(),
-                             entity.GetBlendMode());  // No blur to render.
-    result.SetTransform(entity.GetTransform() * input_snapshot->transform);
-    return result;
-  }
-
-  // In order to avoid shimmering in downsampling step, we should have mips.
-  if (input_snapshot->texture->GetMipCount() <= 1) {
-    FML_DLOG(ERROR) << kNoMipsError;
-  }
-  FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
-
-  Scalar desired_scalar =
-      std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
-  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
-  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
-  // pass.
-  Vector2 downsample_scalar(desired_scalar, desired_scalar);
-  Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
-  Rect source_rect_padded = source_rect.Expand(padding);
-  Matrix padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
-  // TODO(gaaclarke): The padding could be removed if we know it's not needed or
-  //   resized to account for the expanded_clip_coverage. There doesn't appear
-  //   to be the math to make those calculations though. The following
-  //   optimization works, but causes a shimmer as a result of
-  //   https://github.com/flutter/flutter/issues/140193 so it isn't applied.
-  //
-  //   !input_snapshot->GetCoverage()->Expand(-local_padding)
-  //     .Contains(coverage_hint.value()))
-  Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
-  ISize subpass_size =
-      ISize(round(downsampled_size.x), round(downsampled_size.y));
-  Vector2 effective_scalar =
-      Vector2(subpass_size) / source_rect_padded.GetSize();
-
-  Quad uvs = CalculateUVs(inputs[0], snapshot_entity, source_rect_padded,
-                          input_snapshot->texture->GetSize());
-
-  std::shared_ptr<CommandBuffer> command_buffer =
-      renderer.GetContext()->CreateCommandBuffer();
-  if (!command_buffer) {
-    return std::nullopt;
-  }
-
-  fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
-      renderer, command_buffer, input_snapshot->texture,
-      input_snapshot->sampler_descriptor, uvs, subpass_size, tile_mode_);
-
-  if (!pass1_out.ok()) {
-    return std::nullopt;
-  }
-
-  Vector2 pass1_pixel_size =
-      1.0 / Vector2(pass1_out.value().GetRenderTargetTexture()->GetSize());
-
-  std::optional<Rect> input_snapshot_coverage = input_snapshot->GetCoverage();
-  Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
-  FML_DCHECK(input_snapshot.value().transform.IsTranslationScaleOnly());
-  if (source_expanded_coverage_hint.has_value() &&
-      input_snapshot_coverage.has_value()) {
-    // Only process the uvs where the blur is happening, not the whole texture.
-    std::optional<Rect> uvs =
-        MakeReferenceUVs(input_snapshot_coverage.value(),
-                         source_expanded_coverage_hint.value())
-            .Intersection(Rect::MakeSize(Size(1, 1)));
-    FML_DCHECK(uvs.has_value());
-    if (uvs.has_value()) {
-      blur_uvs[0] = uvs->GetLeftTop();
-      blur_uvs[1] = uvs->GetRightTop();
-      blur_uvs[2] = uvs->GetLeftBottom();
-      blur_uvs[3] = uvs->GetRightBottom();
+  if (!data.has_value()) {
+    FML_LOG(ERROR) << "CACHE MISS";
+    std::optional<Snapshot> input_snapshot =
+        inputs[0]->GetSnapshot("GaussianBlur", renderer, snapshot_entity,
+                               /*coverage_limit=*/source_expanded_coverage_hint,
+                               /*mip_count=*/mip_count);
+    if (!input_snapshot.has_value()) {
+      return std::nullopt;
     }
+
+    if (scaled_sigma.x < kEhCloseEnough && scaled_sigma.y < kEhCloseEnough) {
+      Entity result =
+          Entity::FromSnapshot(input_snapshot.value(),
+                               entity.GetBlendMode());  // No blur to render.
+      result.SetTransform(entity.GetTransform() * input_snapshot->transform);
+      return result;
+    }
+
+    // In order to avoid shimmering in downsampling step, we should have mips.
+    if (input_snapshot->texture->GetMipCount() <= 1) {
+      FML_DLOG(ERROR) << kNoMipsError;
+    }
+    FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
+
+    Scalar desired_scalar = std::min(CalculateScale(scaled_sigma.x),
+                                     CalculateScale(scaled_sigma.y));
+    // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
+    // gutter from the expanded_coverage_hint, we can skip the downsample pass.
+    // pass.
+    Vector2 downsample_scalar(desired_scalar, desired_scalar);
+    Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
+    Rect source_rect_padded = source_rect.Expand(padding);
+    // TODO(gaaclarke): The padding could be removed if we know it's not needed
+    // or
+    //   resized to account for the expanded_clip_coverage. There doesn't appear
+    //   to be the math to make those calculations though. The following
+    //   optimization works, but causes a shimmer as a result of
+    //   https://github.com/flutter/flutter/issues/140193 so it isn't applied.
+    //
+    //   !input_snapshot->GetCoverage()->Expand(-local_padding)
+    //     .Contains(coverage_hint.value()))
+    Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
+    ISize subpass_size =
+        ISize(round(downsampled_size.x), round(downsampled_size.y));
+    Vector2 effective_scalar =
+        Vector2(subpass_size) / source_rect_padded.GetSize();
+
+    Quad uvs = CalculateUVs(inputs[0], snapshot_entity, source_rect_padded,
+                            input_snapshot->texture->GetSize());
+
+    std::shared_ptr<CommandBuffer> command_buffer =
+        renderer.GetContext()->CreateCommandBuffer();
+    if (!command_buffer) {
+      return std::nullopt;
+    }
+
+    fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
+        renderer, command_buffer, input_snapshot->texture,
+        input_snapshot->sampler_descriptor, uvs, subpass_size, tile_mode_);
+
+    if (!pass1_out.ok()) {
+      return std::nullopt;
+    }
+
+    Vector2 pass1_pixel_size =
+        1.0 / Vector2(pass1_out.value().GetRenderTargetTexture()->GetSize());
+
+    std::optional<Rect> input_snapshot_coverage = input_snapshot->GetCoverage();
+    Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
+    FML_DCHECK(input_snapshot.value().transform.IsTranslationScaleOnly());
+    if (source_expanded_coverage_hint.has_value() &&
+        input_snapshot_coverage.has_value()) {
+      // Only process the uvs where the blur is happening, not the whole
+      // texture.
+      std::optional<Rect> uvs =
+          MakeReferenceUVs(input_snapshot_coverage.value(),
+                           source_expanded_coverage_hint.value())
+              .Intersection(Rect::MakeSize(Size(1, 1)));
+      FML_DCHECK(uvs.has_value());
+      if (uvs.has_value()) {
+        blur_uvs[0] = uvs->GetLeftTop();
+        blur_uvs[1] = uvs->GetRightTop();
+        blur_uvs[2] = uvs->GetLeftBottom();
+        blur_uvs[3] = uvs->GetRightBottom();
+      }
+    }
+
+    fml::StatusOr<RenderTarget> pass2_out = MakeBlurSubpass(
+        renderer, command_buffer, /*input_pass=*/pass1_out.value(),
+        input_snapshot->sampler_descriptor, tile_mode_,
+        BlurParameters{
+            .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
+            .blur_sigma = scaled_sigma.y * effective_scalar.y,
+            .blur_radius = ScaleBlurRadius(blur_radius.y, effective_scalar.y),
+            .step_size = 1,
+        },
+        /*destination_target=*/std::nullopt, blur_uvs);
+
+    if (!pass2_out.ok()) {
+      return std::nullopt;
+    }
+
+    // Only ping pong if the first pass actually created a render target.
+    auto pass3_destination =
+        pass2_out.value().GetRenderTargetTexture() !=
+                pass1_out.value().GetRenderTargetTexture()
+            ? std::optional<RenderTarget>(pass1_out.value())
+            : std::optional<RenderTarget>(std::nullopt);
+
+    fml::StatusOr<RenderTarget> pass3_out = MakeBlurSubpass(
+        renderer, command_buffer, /*input_pass=*/pass2_out.value(),
+        input_snapshot->sampler_descriptor, tile_mode_,
+        BlurParameters{
+            .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
+            .blur_sigma = scaled_sigma.x * effective_scalar.x,
+            .blur_radius = ScaleBlurRadius(blur_radius.x, effective_scalar.x),
+            .step_size = 1,
+        },
+        pass3_destination, blur_uvs);
+
+    if (!pass3_out.ok()) {
+      return std::nullopt;
+    }
+
+    if (!renderer.GetContext()
+             ->GetCommandQueue()
+             ->Submit(/*buffers=*/{command_buffer})
+             .ok()) {
+      return std::nullopt;
+    }
+    // The ping-pong approach requires that each render pass output has the same
+    // size.
+    FML_DCHECK((pass1_out.value().GetRenderTargetSize() ==
+                pass2_out.value().GetRenderTargetSize()) &&
+               (pass2_out.value().GetRenderTargetSize() ==
+                pass3_out.value().GetRenderTargetSize()));
+
+    auto transform = input_snapshot->transform * padding_snapshot_adjustment *
+                     Matrix::MakeScale(1 / effective_scalar);
+
+    shadow_cache->StoreData(key, input_snapshot.value(),
+                            pass3_out.value().GetRenderTargetTexture(),
+                            transform);
   }
-
-  fml::StatusOr<RenderTarget> pass2_out = MakeBlurSubpass(
-      renderer, command_buffer, /*input_pass=*/pass1_out.value(),
-      input_snapshot->sampler_descriptor, tile_mode_,
-      BlurParameters{
-          .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-          .blur_sigma = scaled_sigma.y * effective_scalar.y,
-          .blur_radius = ScaleBlurRadius(blur_radius.y, effective_scalar.y),
-          .step_size = 1,
-      },
-      /*destination_target=*/std::nullopt, blur_uvs);
-
-  if (!pass2_out.ok()) {
-    return std::nullopt;
-  }
-
-  // Only ping pong if the first pass actually created a render target.
-  auto pass3_destination = pass2_out.value().GetRenderTargetTexture() !=
-                                   pass1_out.value().GetRenderTargetTexture()
-                               ? std::optional<RenderTarget>(pass1_out.value())
-                               : std::optional<RenderTarget>(std::nullopt);
-
-  fml::StatusOr<RenderTarget> pass3_out = MakeBlurSubpass(
-      renderer, command_buffer, /*input_pass=*/pass2_out.value(),
-      input_snapshot->sampler_descriptor, tile_mode_,
-      BlurParameters{
-          .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-          .blur_sigma = scaled_sigma.x * effective_scalar.x,
-          .blur_radius = ScaleBlurRadius(blur_radius.x, effective_scalar.x),
-          .step_size = 1,
-      },
-      pass3_destination, blur_uvs);
-
-  if (!pass3_out.ok()) {
-    return std::nullopt;
-  }
-
-  if (!renderer.GetContext()
-           ->GetCommandQueue()
-           ->Submit(/*buffers=*/{command_buffer})
-           .ok()) {
-    return std::nullopt;
-  }
-
-  // The ping-pong approach requires that each render pass output has the same
-  // size.
-  FML_DCHECK((pass1_out.value().GetRenderTargetSize() ==
-              pass2_out.value().GetRenderTargetSize()) &&
-             (pass2_out.value().GetRenderTargetSize() ==
-              pass3_out.value().GetRenderTargetSize()));
+  auto shadow_data = shadow_cache->GetData(key).value();
+  // auto transform = shadow_cache->GetTransform();
 
   SamplerDescriptor sampler_desc = MakeSamplerDescriptor(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
-  Entity blur_output_entity = Entity::FromSnapshot(
-      Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
-               .transform = entity.GetTransform() * input_snapshot->transform *
-                            padding_snapshot_adjustment *
-                            Matrix::MakeScale(1 / effective_scalar),
+  auto blur_output_entity = Entity::FromSnapshot(
+      Snapshot{.texture = shadow_data.texture,
+               .transform = entity.GetTransform() * shadow_data.transform,
                .sampler_descriptor = sampler_desc,
-               .opacity = input_snapshot->opacity},
+               .opacity = 1.0},
       entity.GetBlendMode());
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
-                        input_snapshot.value(), std::move(blur_output_entity),
-                        mask_geometry_);
+                        shadow_data.input_snapshot,
+                        std::move(blur_output_entity), mask_geometry_);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
