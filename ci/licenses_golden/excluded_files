@@ -140,6 +140,8 @@
 ../../../flutter/impeller/compiler/shader_bundle_unittests.cc
 ../../../flutter/impeller/compiler/switches_unittests.cc
 ../../../flutter/impeller/core/allocator_unittests.cc
+../../../flutter/impeller/display_list/aiks_dl_clip_unittests.cc
+../../../flutter/impeller/display_list/aiks_dl_gradient_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_opacity_unittests.cc
 ../../../flutter/impeller/display_list/aiks_dl_path_unittests.cc
 ../../../flutter/impeller/display_list/dl_golden_unittests.cc
@@ -1398,6 +1400,7 @@
 ../../../flutter/third_party/dart/runtime/observatory/tests
 ../../../flutter/third_party/dart/runtime/observatory/update_sources.py
 ../../../flutter/third_party/dart/runtime/observatory/web/third_party/README.md
+../../../flutter/third_party/dart/runtime/platform/uri_test.cc
 ../../../flutter/third_party/dart/runtime/tests
 ../../../flutter/third_party/dart/runtime/tools/.gitignore
 ../../../flutter/third_party/dart/runtime/tools/android_finder.py
@@ -1568,7 +1571,6 @@
 ../../../flutter/third_party/dart/runtime/vm/unicode_test.cc
 ../../../flutter/third_party/dart/runtime/vm/unit_test.cc
 ../../../flutter/third_party/dart/runtime/vm/unit_test.h
-../../../flutter/third_party/dart/runtime/vm/uri_test.cc
 ../../../flutter/third_party/dart/runtime/vm/utils_test.cc
 ../../../flutter/third_party/dart/runtime/vm/virtual_memory_test.cc
 ../../../flutter/third_party/dart/runtime/vm/zone_test.cc
@@ -2806,7 +2808,6 @@
 ../../../flutter/third_party/skia/modules/svg/utils/BUILD.bazel
 ../../../flutter/third_party/skia/package.json
 ../../../flutter/third_party/skia/platform_tools
-../../../flutter/third_party/skia/public.bzl
 ../../../flutter/third_party/skia/relnotes/README.md
 ../../../flutter/third_party/skia/requirements.txt
 ../../../flutter/third_party/skia/resources
@@ -3248,6 +3249,7 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo.test/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.buildinfo/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.buttons/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.camera/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2.hal/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.camera2/meta.json
@@ -3295,15 +3297,18 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.pci/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.bus/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.platform.device/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.registers/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.rtc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.trippoint/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.usb.phy/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.images2/meta.json
