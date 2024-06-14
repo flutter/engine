@@ -55,8 +55,8 @@ TEST_P(AiksTest, DrawAtlasNoColor) {
 
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
-                    nullptr, 4, DlBlendMode::kSrcOver, DlImageSampling::kLinear,
-                    nullptr);
+                    nullptr, 4, DlBlendMode::kSrcOver,
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -71,7 +71,7 @@ TEST_P(AiksTest, DrawAtlasWithColorAdvanced) {
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
                     colors.data(), 4, DlBlendMode::kModulate,
-                    DlImageSampling::kLinear, nullptr);
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -87,7 +87,7 @@ TEST_P(AiksTest, DrawAtlasWithColorSimple) {
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
                     colors.data(), 4, DlBlendMode::kSrcATop,
-                    DlImageSampling::kLinear, nullptr);
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -102,8 +102,8 @@ TEST_P(AiksTest, DrawAtlasWithOpacity) {
   paint.setAlpha(128);
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
-                    nullptr, 4, DlBlendMode::kSrcOver, DlImageSampling::kLinear,
-                    nullptr, &paint);
+                    nullptr, 4, DlBlendMode::kSrcOver,
+                    DlImageSampling::kNearestNeighbor, nullptr, &paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -118,8 +118,8 @@ TEST_P(AiksTest, DrawAtlasNoColorFullSize) {
   DisplayListBuilder builder;
   builder.Scale(GetContentScale().x, GetContentScale().y);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
-                    nullptr, 1, DlBlendMode::kSrcOver, DlImageSampling::kLinear,
-                    nullptr);
+                    nullptr, 1, DlBlendMode::kSrcOver,
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -133,7 +133,7 @@ TEST_P(AiksTest, DrawAtlasAdvancedAndTransform) {
   builder.Scale(0.25, 0.25);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
                     nullptr, 4, DlBlendMode::kModulate,
-                    DlImageSampling::kLinear, nullptr);
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -149,7 +149,7 @@ TEST_P(AiksTest, DrawAtlasWithColorAdvancedAndTransform) {
   builder.Scale(0.25, 0.25);
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
                     colors.data(), 4, DlBlendMode::kModulate,
-                    DlImageSampling::kLinear, nullptr);
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -166,7 +166,7 @@ TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
 
   builder.DrawAtlas(atlas, transforms.data(), texture_coordinates.data(),
                     colors.data(), 4, DlBlendMode::kPlus,
-                    DlImageSampling::kLinear, nullptr);
+                    DlImageSampling::kNearestNeighbor, nullptr);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
