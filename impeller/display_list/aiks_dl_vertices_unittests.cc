@@ -76,7 +76,7 @@ TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
   matrix.setTranslateY(100);
   paint.setColorSource(std::make_shared<DlImageColorSource>(
       image, DlTileMode::kClamp, DlTileMode::kClamp, DlImageSampling::kLinear,
-      matrix));
+      &matrix));
 
   std::vector<SkPoint> positions = {SkPoint::Make(0, 0),
                                     SkPoint::Make(size.width, 0),
