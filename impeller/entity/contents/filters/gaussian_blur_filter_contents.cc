@@ -245,7 +245,8 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
                       const std::shared_ptr<FilterInput>& input,
                       const Snapshot& input_snapshot,
                       Entity blur_entity,
-                      const std::shared_ptr<Geometry>& geometry) {
+                      const std::shared_ptr<Geometry>& geometry,
+                      Vector2 source_space_scalar) {
   switch (blur_style) {
     case FilterContents::BlurStyle::kNormal:
       return blur_entity;
@@ -266,22 +267,25 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
       Matrix snapshot_transform =
           entity.GetTransform() * snapshot_entity.GetTransform();
       result.SetContents(Contents::MakeAnonymous(
-          fml::MakeCopyable([blur_entity = blur_entity.Clone(),
-                             blurred_transform, snapshot_transform,
-                             snapshot_entity = std::move(snapshot_entity)](
-                                const ContentContext& renderer,
-                                const Entity& entity,
-                                RenderPass& pass) mutable {
-            bool result = true;
-            blur_entity.SetClipDepth(entity.GetClipDepth());
-            blur_entity.SetTransform(entity.GetTransform() * blurred_transform);
-            result = result && blur_entity.Render(renderer, pass);
-            snapshot_entity.SetTransform(entity.GetTransform() *
-                                         snapshot_transform);
-            snapshot_entity.SetClipDepth(entity.GetClipDepth());
-            result = result && snapshot_entity.Render(renderer, pass);
-            return result;
-          }),
+          fml::MakeCopyable(
+              [blur_entity = blur_entity.Clone(), blurred_transform,
+               source_space_scalar, snapshot_transform,
+               snapshot_entity = std::move(snapshot_entity)](
+                  const ContentContext& renderer, const Entity& entity,
+                  RenderPass& pass) mutable {
+                bool result = true;
+                blur_entity.SetClipDepth(entity.GetClipDepth());
+                blur_entity.SetTransform(entity.GetTransform() *
+                                         blurred_transform);
+                result = result && blur_entity.Render(renderer, pass);
+                snapshot_entity.SetTransform(
+                    entity.GetTransform() *
+                    Matrix::MakeScale(1.f / source_space_scalar) *
+                    snapshot_transform);
+                snapshot_entity.SetClipDepth(entity.GetClipDepth());
+                result = result && snapshot_entity.Render(renderer, pass);
+                return result;
+              }),
           fml::MakeCopyable([blur_entity = blur_entity.Clone(),
                              blurred_transform](const Entity& entity) mutable {
             blur_entity.SetTransform(entity.GetTransform() * blurred_transform);
@@ -602,7 +606,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
                         input_snapshot.value(), std::move(blur_output_entity),
-                        mask_geometry_);
+                        mask_geometry_, source_space_scalar);
 }
 
 Scalar GaussianBlurFilterContents::CalculateBlurRadius(Scalar sigma) {
