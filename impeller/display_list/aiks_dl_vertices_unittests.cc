@@ -36,7 +36,9 @@ std::shared_ptr<DlVertices> MakeVertices(
   if (texture_coordinates.size() > 0) {
     builder.store_texture_coordinates(texture_coordinates.data());
   }
-  builder.store_indices(indices.data());
+  if (indices.size() > 0) {
+    builder.store_indices(indices.data());
+  }
   builder.store_vertices(vertices.data());
   return builder.build();
 }
