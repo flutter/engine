@@ -60,6 +60,7 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterRespectCTM) {
   impeller::Point content_scale = GetContentScale();
   auto draw = [&](DlCanvas* canvas,
                   const std::vector<std::unique_ptr<DlImage>>& images) {
+    canvas->DrawColor(DlColor(0xff111111));
     canvas->Scale(content_scale.x, content_scale.y);
     canvas->Scale(2, 2);
     TextRenderOptions options;
@@ -86,6 +87,7 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
   impeller::Point content_scale = GetContentScale();
   auto draw = [&](DlCanvas* canvas,
                   const std::vector<std::unique_ptr<DlImage>>& images) {
+    canvas->DrawColor(DlColor(0xff111111));
     canvas->Scale(content_scale.x, content_scale.y);
     canvas->Scale(2, 2);
     TextRenderOptions options;
