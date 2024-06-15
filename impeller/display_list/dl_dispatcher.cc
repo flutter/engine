@@ -802,6 +802,29 @@ void DlDispatcherBase::drawLine(const SkPoint& p0, const SkPoint& p1) {
                        skia_conversions::ToPoint(p1), paint_);
 }
 
+void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
+                                      const DlPoint& p1,
+                                      DlScalar on_length,
+                                      DlScalar off_length) {
+  Scalar length = p0.GetDistance(p1);
+  if (length > 0.0f && on_length > 0.0f && off_length > 0.0f) {
+    Point delta = (p1 - p0) / length;  // length > 0 already tested
+    Scalar consumed = 0.0f;
+    while (consumed < length) {
+      Scalar dash_end = consumed + on_length;
+      if (dash_end < length) {
+        GetCanvas().DrawLine(p0 + delta * consumed, p0 + delta * dash_end,
+                             paint_);
+      } else {
+        GetCanvas().DrawLine(p0 + delta * consumed, p1, paint_);
+      }
+      consumed = dash_end + off_length;
+    }
+  } else {
+    drawLine(flutter::ToSkPoint(p0), flutter::ToSkPoint(p1));
+  }
+}
+
 // |flutter::DlOpReceiver|
 void DlDispatcherBase::drawRect(const SkRect& rect) {
   GetCanvas().DrawRect(skia_conversions::ToRect(rect), paint_);
