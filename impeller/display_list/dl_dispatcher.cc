@@ -807,7 +807,12 @@ void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
                                       DlScalar on_length,
                                       DlScalar off_length) {
   Scalar length = p0.GetDistance(p1);
-  if (length > 0.0f && on_length > 0.0f && off_length > 0.0f) {
+  // Reasons to defer to regular DrawLine:
+  //   length is non-positive - drawLine will draw appropriate "dot"
+  //   off_length is non-positive - no gaps, drawLine will draw it solid
+  //   on_length is negative - invalid dashing
+  // Note that a 0 length "on" dash will draw "dot"s every "off" distance apart
+  if (length > 0.0f && on_length >= 0.0f && off_length > 0.0f) {
     Point delta = (p1 - p0) / length;  // length > 0 already tested
     Scalar consumed = 0.0f;
     while (consumed < length) {
