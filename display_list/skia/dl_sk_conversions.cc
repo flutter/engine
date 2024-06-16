@@ -230,6 +230,10 @@ sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter) {
       }
       return skia_filter->makeWithLocalMatrix(lm_filter->matrix());
     }
+    case DlImageFilterType::kFragmentProgram:
+      // UNSUPPORTED.
+      return nullptr;
+      break;
   }
 }
 

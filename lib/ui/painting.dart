@@ -3756,6 +3756,13 @@ abstract class ImageFilter {
     return _ComposeImageFilter(innerFilter: inner, outerFilter: outer);
   }
 
+  factory ImageFilter.shader(FragmentShader shader) {
+    if (!_impellerEnabled) {
+      throw StateError('ImageFilter.shader only support with Impeller rendering engine.');
+    }
+    return _FragmentShaderImageFilter(shader);
+  }
+
   // Converts this to a native DlImageFilter. See the comments of this method in
   // subclasses for the exact type of DlImageFilter this method converts to.
   _ImageFilter _toNativeImageFilter();
@@ -3929,6 +3936,35 @@ class _ComposeImageFilter implements ImageFilter {
   int get hashCode => Object.hash(innerFilter, outerFilter);
 }
 
+class _FragmentShaderImageFilter implements ImageFilter {
+  _FragmentShaderImageFilter(this.shader);
+
+  final FragmentShader shader;
+
+  late final _ImageFilter nativeFilter = _ImageFilter.shader(this);
+
+  @override
+  _ImageFilter _toNativeImageFilter() => nativeFilter;
+
+  @override
+  String get _shortDescription => 'shader';
+
+  @override
+  String toString() => 'ImageFilter.shader()';
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is _FragmentShaderImageFilter
+        && other.shader == shader;
+  }
+
+  @override
+  int get hashCode => shader.hashCode;
+}
+
 /// An [ImageFilter] that is backed by a native DlImageFilter.
 ///
 /// This is a private class, rather than being the implementation of the public
@@ -3988,6 +4024,12 @@ base class _ImageFilter extends NativeFieldWrapperClass1 {
     _initComposed(nativeFilterOuter, nativeFilterInner);
   }
 
+  _ImageFilter.shader(_FragmentShaderImageFilter filter)
+    : creator = filter {
+      _constructor();
+      _initShader(filter.shader);
+    }
+
   @Native<Void Function(Handle)>(symbol: 'ImageFilter::Create')
   external void _constructor();
 
@@ -4008,6 +4050,9 @@ base class _ImageFilter extends NativeFieldWrapperClass1 {
 
   @Native<Void Function(Pointer<Void>, Pointer<Void>, Pointer<Void>)>(symbol: 'ImageFilter::initComposeFilter')
   external void _initComposed(_ImageFilter outerFilter, _ImageFilter innerFilter);
+
+  @Native<Void Function(Pointer<Void>, Pointer<Void>)>(symbol: 'ImageFilter::initShader')
+  external void _initShader(FragmentShader shader);
 
   /// The original Dart object that created the native wrapper, which retains
   /// the values used for the filter.

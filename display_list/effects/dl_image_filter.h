@@ -7,6 +7,7 @@
 
 #include <utility>
 
+#include "display_list/effects/dl_color_source.h"
 #include "flutter/display_list/dl_attributes.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/dl_tile_mode.h"
@@ -34,6 +35,7 @@ enum class DlImageFilterType {
   kCompose,
   kColorFilter,
   kLocalMatrix,
+  kFragmentProgram,
 };
 
 class DlBlurImageFilter;
@@ -43,6 +45,7 @@ class DlMatrixImageFilter;
 class DlLocalMatrixImageFilter;
 class DlComposeImageFilter;
 class DlColorFilterImageFilter;
+class DlFragmentProgramImageFilter;
 
 class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
  public:
@@ -82,6 +85,12 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   // Return a DlColorFilterImageFilter pointer to this object iff it is a
   // ColorFilter type of ImageFilter, otherwise return nullptr.
   virtual const DlColorFilterImageFilter* asColorFilter() const {
+    return nullptr;
+  }
+
+  // Return a DlComposeImageFilter pointer to this object iff it is a
+  // DlFragmentProgramImageFilter type of ImageFilter, otherwise return nullptr.
+  virtual const DlFragmentProgramImageFilter* asFragmentProgramFilter() const {
     return nullptr;
   }
 
@@ -739,6 +748,66 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
  private:
   SkMatrix matrix_;
   std::shared_ptr<DlImageFilter> image_filter_;
+};
+
+class DlFragmentProgramImageFilter final : public DlImageFilter {
+ public:
+  explicit DlFragmentProgramImageFilter(
+      std::shared_ptr<DlColorSource> runtime_effect)
+      : runtime_effect_(std::move(runtime_effect)) {
+    FML_DCHECK(!!runtime_effect_->asRuntimeEffect());
+  }
+
+  std::shared_ptr<DlImageFilter> shared() const override {
+    return std::make_shared<DlFragmentProgramImageFilter>(this->runtime_effect_);
+  }
+
+  static std::shared_ptr<const DlImageFilter> Make(
+      std::shared_ptr<DlColorSource> runtime_effect) {
+    return std::make_shared<DlFragmentProgramImageFilter>(
+        std::move(runtime_effect));
+  }
+
+  DlImageFilterType type() const override {
+    return DlImageFilterType::kFragmentProgram;
+  }
+  size_t size() const override { return sizeof(*this); }
+
+  bool modifies_transparent_black() const override { return false; }
+
+  const std::shared_ptr<DlColorSource>& GetRuntimeEffect() const {
+    return runtime_effect_;
+  }
+
+  SkRect* map_local_bounds(const SkRect& input_bounds,
+                           SkRect& output_bounds) const override {
+    output_bounds = input_bounds;
+    return &output_bounds;
+  }
+
+  SkIRect* map_device_bounds(const SkIRect& input_bounds,
+                             const SkMatrix& ctm,
+                             SkIRect& output_bounds) const override {
+    output_bounds = input_bounds;
+    return &output_bounds;
+  }
+
+  SkIRect* get_input_device_bounds(const SkIRect& output_bounds,
+                                   const SkMatrix& ctm,
+                                   SkIRect& input_bounds) const override {
+    input_bounds = output_bounds;
+    return &input_bounds;
+  }
+
+  const DlFragmentProgramImageFilter* asFragmentProgramFilter() const override {
+    return this;
+  }
+
+ protected:
+  bool equals_(const DlImageFilter& other) const override { return false; }
+
+ private:
+  std::shared_ptr<DlColorSource> runtime_effect_;
 };
 
 }  // namespace flutter

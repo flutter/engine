@@ -4,9 +4,13 @@
 
 #include "flutter/lib/ui/painting/image_filter.h"
 
+#include "display_list/dl_sampling_options.h"
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/ui_dart_state.h"
+#include "lib/ui/painting/fragment_program.h"
+#include "lib/ui/painting/fragment_shader.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
@@ -82,6 +86,12 @@ void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
 void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
   FML_DCHECK(outer && inner);
   filter_ = DlComposeImageFilter::Make(outer->filter(), inner->filter());
+}
+
+void ImageFilter::initShader(ReusableFragmentShader* shader) {
+  FML_DCHECK(shader);
+  filter_ = DlFragmentProgramImageFilter::Make(
+      shader->shader(DlImageSampling::kNearestNeighbor));
 }
 
 }  // namespace flutter

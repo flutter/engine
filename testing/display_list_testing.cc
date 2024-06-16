@@ -6,6 +6,7 @@
 
 #include <iomanip>
 
+#include "display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/display_list.h"
 
 namespace flutter {
@@ -632,6 +633,12 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
       os_ << std::endl;
       outdent(25);
       startl() << ")";
+      break;
+    }
+    case flutter::DlImageFilterType::kFragmentProgram: {
+      const DlFragmentProgramImageFilter* fragment = filter.asFragmentProgramFilter();
+      FML_DCHECK(fragment);
+      os_ << "DlFragmentProgramImageFilter()";
       break;
     }
   }

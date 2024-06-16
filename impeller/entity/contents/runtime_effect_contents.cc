@@ -156,6 +156,9 @@ RuntimeEffectContents::CreatePipeline(const ContentContext& renderer,
       std::make_shared<VertexDescriptor>();
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
+  // for (auto x : runtime_stage_->GetDescriptorSetLayouts()) {
+  //   FML_LOG(ERROR) << "layout: " << static_cast<int>(x.descriptor_type) << ", " <<static_cast<int>(x.binding);
+  // }
   vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
   vertex_descriptor->RegisterDescriptorSetLayouts(
       runtime_stage_->GetDescriptorSetLayouts().data(),
@@ -209,9 +212,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     size_t buffer_index = 0;
     size_t buffer_offset = 0;
 
+    size_t start_index = 64;
     for (const auto& uniform : runtime_stage_->GetUniforms()) {
       std::shared_ptr<ShaderMetadata> metadata = MakeShaderMetadata(uniform);
-
       switch (uniform.type) {
         case kSampledImage: {
           // Sampler uniforms are ordered in the IPLR according to their
@@ -254,7 +257,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
                      Context::BackendType::kVulkan);
           ShaderUniformSlot uniform_slot;
           uniform_slot.name = uniform.name.c_str();
-          uniform_slot.binding = uniform.location;
+          uniform_slot.binding = start_index;
 
           // TODO(jonahwilliams): rewrite this to emplace directly into
           // HostBuffer.
@@ -280,6 +283,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           pass.BindResource(ShaderStage::kFragment,
                             DescriptorType::kUniformBuffer, uniform_slot,
                             ShaderMetadata{}, std::move(buffer_view));
+          start_index++;
         }
       }
     }
@@ -299,13 +303,14 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
           SampledImageSlot image_slot;
           image_slot.name = uniform.name.c_str();
-          image_slot.binding = uniform.binding;
+          image_slot.binding = start_index;
           image_slot.texture_index = uniform.location - minimum_sampler_index;
           pass.BindResource(ShaderStage::kFragment,
                             DescriptorType::kSampledImage, image_slot,
                             *metadata, input.texture, sampler);
 
           sampler_index++;
+          start_index++;
           break;
         }
         default:

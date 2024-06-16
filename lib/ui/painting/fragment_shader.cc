@@ -101,6 +101,7 @@ std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
   // continually changed on the UI thread. So we take a copy of the uniforms
   // before handing it to the DisplayList for consumption on the render thread.
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  FML_LOG(ERROR) << "Uniform data size: " << uniform_data_->size();
   uniform_data->resize(uniform_data_->size());
   memcpy(uniform_data->data(), uniform_data_->bytes(), uniform_data->size());
 

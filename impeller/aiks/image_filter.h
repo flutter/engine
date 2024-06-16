@@ -8,9 +8,11 @@
 #include "impeller/aiks/color_filter.h"
 #include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/sigma.h"
+#include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
 
@@ -23,6 +25,7 @@ class ErodeImageFilter;
 class MatrixImageFilter;
 class ComposeImageFilter;
 class ColorImageFilter;
+class RuntimeEffectImageFilter;
 
 class ImageFilterVisitor {
  public:
@@ -33,6 +36,7 @@ class ImageFilterVisitor {
   virtual void Visit(const MatrixImageFilter& filter) = 0;
   virtual void Visit(const ComposeImageFilter& filter) = 0;
   virtual void Visit(const ColorImageFilter& filter) = 0;
+  virtual void Visit(const RuntimeEffectImageFilter& filter) = 0;
 };
 
 /*******************************************************************************
@@ -70,6 +74,11 @@ class ImageFilter {
   static std::shared_ptr<ImageFilter> MakeLocalMatrix(
       const Matrix& matrix,
       const ImageFilter& internal_filter);
+
+  static std::shared_ptr<ImageFilter> MakeRuntimeEffect(
+      std::shared_ptr<RuntimeStage> runtime_stage,
+      std::shared_ptr<std::vector<uint8_t>> uniforms,
+      std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
 
   /// @brief  Generate a new FilterContents using this filter's configuration.
   ///
@@ -269,6 +278,35 @@ class LocalMatrixImageFilter : public ImageFilter {
  private:
   Matrix matrix_;
   std::shared_ptr<ImageFilter> internal_filter_;
+};
+
+/*******************************************************************************
+ ******* RuntimeEffectImageFilter
+ ******************************************************************************/
+
+class RuntimeEffectImageFilter : public ImageFilter {
+ public:
+  RuntimeEffectImageFilter(
+      std::shared_ptr<RuntimeStage> runtime_stage,
+      std::shared_ptr<std::vector<uint8_t>> uniforms,
+      std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
+
+  ~RuntimeEffectImageFilter() = default;
+
+  // |ImageFilter|
+  std::shared_ptr<FilterContents> WrapInput(
+      const FilterInput::Ref& input) const override;
+
+  // |ImageFilter|
+  std::shared_ptr<ImageFilter> Clone() const override;
+
+  // |ImageFilter|
+  void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+
+ private:
+  std::shared_ptr<RuntimeStage> runtime_stage_;
+  std::shared_ptr<std::vector<uint8_t>> uniforms_;
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs_;
 };
 
 }  // namespace impeller

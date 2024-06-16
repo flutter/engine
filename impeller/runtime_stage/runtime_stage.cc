@@ -4,7 +4,6 @@
 
 #include "impeller/runtime_stage/runtime_stage.h"
 
-#include <array>
 #include <memory>
 
 #include "fml/mapping.h"
@@ -117,19 +116,25 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
       [payload = payload_](auto, auto) {}  //
   );
 
+  uint32_t binding_location = 64;
   for (const auto& uniform : GetUniforms()) {
     if (uniform.type == kStruct) {
       descriptor_set_layouts_.push_back(DescriptorSetLayout{
-          static_cast<uint32_t>(uniform.location),
+          binding_location,
           DescriptorType::kUniformBuffer,
           ShaderStage::kFragment,
       });
-    } else if (uniform.type == kSampledImage) {
+      binding_location++;
+    }
+  }
+  for (const auto& uniform : GetUniforms()) {
+    if (uniform.type == kSampledImage) {
       descriptor_set_layouts_.push_back(DescriptorSetLayout{
-          static_cast<uint32_t>(uniform.binding),
+          binding_location,
           DescriptorType::kSampledImage,
           ShaderStage::kFragment,
       });
+      binding_location++;
     }
   }
 
