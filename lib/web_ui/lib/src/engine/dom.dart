@@ -3080,10 +3080,11 @@ extension DomScreenOrientationExtension on DomScreenOrientation {
 // remove the listener.
 class DomSubscription {
   DomSubscription(
-      this.target, String typeString, DartDomEventListener dartListener)
+      this.target, String typeString, DartDomEventListener dartListener,
+      {bool userCapture = false})
       : type = typeString.toJS,
         listener = createDomEventListener(dartListener) {
-    target._addEventListener1(type, listener);
+    target.addEventListener(typeString, listener, userCapture);
   }
 
   final JSString type;

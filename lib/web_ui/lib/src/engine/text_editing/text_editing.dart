@@ -1687,6 +1687,11 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
 
     // Record start time of blur subscription.
     final Stopwatch blurWatch = Stopwatch()..start();
+    final Stopwatch touchWatch = Stopwatch()..start();
+
+    subscriptions.add(DomSubscription(domDocument, 'touchstart', userCapture: true, (_) {
+      touchWatch.reset();
+    }));
 
     // On iOS, blur is trigerred in the following cases:
     //
@@ -1695,10 +1700,14 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     //    so we close the input connection with the framework.
     // 2. The user taps on another focusable element. In this case, we refocus
     //    the input field and wait for the framework to manage the focus change.
-    // 3. The virtual keyboard is closed by tapping "done". We can't detect this
-    //    programmatically, so we end up refocusing the input field. This is
-    //    okay because the virtual keyboard will hide, and as soon as the user
-    //    taps the text field again, the virtual keyboard will come up.
+    // 3. The virtual keyboard is closed by tapping "done". We detect this by
+    //    whether or not the window has touched just before the blur event. If
+    //    the window has been touched just now, we know that the user has not
+    //    tapped the "done" button on the virtual keyboard. In this case, we
+    //    refocus the input field and wait for the framework to manage the focus
+    //    change. If the window has not been touched, we know that the user has
+    //    tapped the "done" button, so we close the input connection with the
+    //    framework.
     // 4. Safari sometimes sends a blur event immediately after activating the
     //    input field. In this case, we want to keep the focus on the input field.
     //    In order to detect this, we measure how much time has passed since the
@@ -1707,7 +1716,8 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     subscriptions.add(DomSubscription(activeDomElement, 'blur',
             (_) {
               final bool isFastCallback = blurWatch.elapsed < _blurFastCallbackInterval;
-              if (windowHasFocus || isFastCallback) {
+              final bool isTouchWindowJustNow = touchWatch.elapsed < _blurFastCallbackInterval;
+              if (windowHasFocus && (isFastCallback || isTouchWindowJustNow)) {
                 activeDomElement.focus();
               } else {
                 owner.sendTextConnectionClosedToFrameworkIfAny();
