@@ -320,7 +320,7 @@ TEST_P(AiksTest, DrawVerticesSolidColorTrianglesWithIndices) {
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
 
-  paint.setColor(flutter::DlColor::kWhite());
+  paint.setColor(flutter::DlColor::kRed());
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
