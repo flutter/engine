@@ -221,6 +221,18 @@ TEST_P(DlGoldenTest, DashedLinesTest) {
     draw_one(DlStrokeCap::kSquare, 400.0f, 150.0f, 15.0f, 10.0f);
     draw_one(DlStrokeCap::kRound, 150.0f, 400.0f, 15.0f, 10.0f);
     draw_one(DlStrokeCap::kRound, 400.0f, 400.0f, 0.0f, 11.0f);
+
+    // Make sure the rendering op responds appropriately to clipping
+    canvas->Save();
+    SkPath clip_path = SkPath();
+    clip_path.moveTo(275.0f, 225.0f);
+    clip_path.lineTo(325.0f, 275.0f);
+    clip_path.lineTo(275.0f, 325.0f);
+    clip_path.lineTo(225.0f, 275.0f);
+    canvas->ClipPath(clip_path);
+    canvas->DrawColor(DlColor::kYellow());
+    draw_one(DlStrokeCap::kRound, 275.0f, 275.0f, 15.0f, 10.0f);
+    canvas->Restore();
   };
 
   DisplayListBuilder builder;

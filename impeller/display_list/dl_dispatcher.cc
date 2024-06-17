@@ -814,17 +814,28 @@ void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
   // Note that a 0 length "on" dash will draw "dot"s every "off" distance apart
   if (length > 0.0f && on_length >= 0.0f && off_length > 0.0f) {
     Point delta = (p1 - p0) / length;  // length > 0 already tested
+    PathBuilder builder;
+
     Scalar consumed = 0.0f;
     while (consumed < length) {
+      builder.MoveTo(p0 + delta * consumed);
+
       Scalar dash_end = consumed + on_length;
       if (dash_end < length) {
-        GetCanvas().DrawLine(p0 + delta * consumed, p0 + delta * dash_end,
-                             paint_);
+        builder.LineTo(p0 + delta * dash_end);
       } else {
-        GetCanvas().DrawLine(p0 + delta * consumed, p1, paint_);
+        builder.LineTo(p1);
+        // Should happen anyway due to the math, but let's make it explicit
+        // in case of bit errors. We're done with this line.
+        break;
       }
+
       consumed = dash_end + off_length;
     }
+
+    Paint stroke_paint = paint_;
+    stroke_paint.style = Paint::Style::kStroke;
+    GetCanvas().DrawPath(builder.TakePath(), stroke_paint);
   } else {
     drawLine(flutter::ToSkPoint(p0), flutter::ToSkPoint(p1));
   }
