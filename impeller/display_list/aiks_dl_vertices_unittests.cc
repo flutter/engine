@@ -26,7 +26,6 @@ std::shared_ptr<DlVertices> MakeVertices(
     std::vector<uint16_t> indices,
     std::vector<SkPoint> texture_coordinates,
     std::vector<DlColor> colors) {
-  // DlVertexMode mode, int vertex_count, Flags flags, int index_count
   DlVertices::Builder::Flags flags(
       {{texture_coordinates.size() > 0, colors.size() > 0}});
   DlVertices::Builder builder(mode, vertices.size(), flags, indices.size());
@@ -135,9 +134,8 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
       SkPoint::Make(0, 0),           SkPoint::Make(size.width, size.height),
   };
   std::vector<DlColor> colors = {
-      DlColor::kRed().withAlpha(128),   DlColor::kBlue().withAlpha(128),
-      DlColor::kGreen().withAlpha(128), DlColor::kRed().withAlpha(128),
-      DlColor::kBlue().withAlpha(128),  DlColor::kGreen().withAlpha(128),
+      DlColor::kRed(), DlColor::kBlue(), DlColor::kGreen(),
+      DlColor::kRed(), DlColor::kBlue(), DlColor::kGreen(),
   };
 
   auto vertices =
