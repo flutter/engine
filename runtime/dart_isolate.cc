@@ -1175,11 +1175,6 @@ static void* NativeAssetsDlopenRelative(const char* path, char** error) {
                                                  error);
 }
 
-// This code can't live as DartFFI::InitForIsolateGroup in
-// lib/ffi/native_assets.cc with target "//flutter/lib/ffi:ffi", because it
-// would have a cyclic import with "//flutter/runtime:runtime" by using
-// DartIsolateGroupData. Because of the function pointers, it also cannot
-// capture the script_uri in a lambda.
 static void InitDartFFIForIsolateGroup() {
   NativeAssetsApi native_assets;
   memset(&native_assets, 0, sizeof(native_assets));
@@ -1218,9 +1213,9 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     isolate_data.release();
     // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
-    success = InitializeIsolate(embedder_isolate, isolate, error);
-
     InitDartFFIForIsolateGroup();
+
+    success = InitializeIsolate(embedder_isolate, isolate, error);
   }
   if (!success) {
     Dart_ShutdownIsolate();
