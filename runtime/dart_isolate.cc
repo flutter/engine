@@ -642,32 +642,6 @@ bool DartIsolate::UpdateThreadPoolNames() const {
   return true;
 }
 
-static void* NativeAssetsDlopenRelative(const char* path, char** error) {
-  auto* isolate_group_data =
-      static_cast<std::shared_ptr<DartIsolateGroupData>*>(
-          Dart_CurrentIsolateGroupData());
-  const std::string& script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
-  return dart::bin::NativeAssets::DlopenRelative(path, script_uri.data(),
-                                                 error);
-}
-
-// This code can't live as DartFFI::InitForIsolateGroup in
-// lib/ffi/native_assets.cc with target "//flutter/lib/ffi:ffi", because it
-// would have a cyclic import with "//flutter/runtime:runtime" by using
-// DartIsolateGroupData. Because of the function pointers, it also cannot
-// capture the script_uri in a lambda.
-static void InitDartFFIForIsolateGroup() {
-  NativeAssetsApi native_assets;
-  memset(&native_assets, 0, sizeof(native_assets));
-  native_assets.dlopen_absolute = &dart::bin::NativeAssets::DlopenAbsolute;
-  native_assets.dlopen_relative = &NativeAssetsDlopenRelative;
-  native_assets.dlopen_system = &dart::bin::NativeAssets::DlopenSystem;
-  native_assets.dlopen_executable = &dart::bin::NativeAssets::DlopenExecutable;
-  native_assets.dlopen_process = &dart::bin::NativeAssets::DlopenProcess;
-  native_assets.dlsym = &dart::bin::NativeAssets::Dlsym;
-  Dart_InitializeNativeAssetsResolver(&native_assets);
-};
-
 bool DartIsolate::LoadLibraries() {
   TRACE_EVENT0("flutter", "DartIsolate::LoadLibraries");
   if (phase_ != Phase::Initialized) {
@@ -678,8 +652,6 @@ bool DartIsolate::LoadLibraries() {
 
   DartIO::InitForIsolate(may_insecurely_connect_to_all_domains_,
                          domain_network_policy_);
-
-  InitDartFFIForIsolateGroup();
 
   DartUI::InitForIsolate(GetIsolateGroupData().GetSettings());
 
@@ -1194,6 +1166,32 @@ bool DartIsolate::DartIsolateInitializeCallback(void** child_callback_data,
   return true;
 }
 
+static void* NativeAssetsDlopenRelative(const char* path, char** error) {
+  auto* isolate_group_data =
+      static_cast<std::shared_ptr<DartIsolateGroupData>*>(
+          Dart_CurrentIsolateGroupData());
+  const std::string& script_uri = (*isolate_group_data)->GetAdvisoryScriptURI();
+  return dart::bin::NativeAssets::DlopenRelative(path, script_uri.data(),
+                                                 error);
+}
+
+// This code can't live as DartFFI::InitForIsolateGroup in
+// lib/ffi/native_assets.cc with target "//flutter/lib/ffi:ffi", because it
+// would have a cyclic import with "//flutter/runtime:runtime" by using
+// DartIsolateGroupData. Because of the function pointers, it also cannot
+// capture the script_uri in a lambda.
+static void InitDartFFIForIsolateGroup() {
+  NativeAssetsApi native_assets;
+  memset(&native_assets, 0, sizeof(native_assets));
+  native_assets.dlopen_absolute = &dart::bin::NativeAssets::DlopenAbsolute;
+  native_assets.dlopen_relative = &NativeAssetsDlopenRelative;
+  native_assets.dlopen_system = &dart::bin::NativeAssets::DlopenSystem;
+  native_assets.dlopen_executable = &dart::bin::NativeAssets::DlopenExecutable;
+  native_assets.dlopen_process = &dart::bin::NativeAssets::DlopenProcess;
+  native_assets.dlsym = &dart::bin::NativeAssets::Dlsym;
+  Dart_InitializeNativeAssetsResolver(&native_assets);
+};
+
 Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     std::unique_ptr<std::shared_ptr<DartIsolateGroupData>> isolate_group_data,
     std::unique_ptr<std::shared_ptr<DartIsolate>> isolate_data,
@@ -1221,6 +1219,8 @@ Dart_Isolate DartIsolate::CreateDartIsolateGroup(
     // NOLINTEND(clang-analyzer-cplusplus.NewDeleteLeaks)
 
     success = InitializeIsolate(embedder_isolate, isolate, error);
+
+    InitDartFFIForIsolateGroup();
   }
   if (!success) {
     Dart_ShutdownIsolate();
