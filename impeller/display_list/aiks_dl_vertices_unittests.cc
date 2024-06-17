@@ -134,8 +134,12 @@ TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
       SkPoint::Make(0, 0),           SkPoint::Make(size.width, size.height),
   };
   std::vector<DlColor> colors = {
-      DlColor::kRed(), DlColor::kBlue(), DlColor::kGreen(),
-      DlColor::kRed(), DlColor::kBlue(), DlColor::kGreen(),
+      DlColor::kRed().modulateOpacity(0.5),
+      DlColor::kBlue().modulateOpacity(0.5),
+      DlColor::kGreen().modulateOpacity(0.5),
+      DlColor::kRed().modulateOpacity(0.5),
+      DlColor::kBlue().modulateOpacity(0.5),
+      DlColor::kGreen().modulateOpacity(0.5),
   };
 
   auto vertices =
