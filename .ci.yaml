@@ -30,10 +30,10 @@ platform_properties:
           {"dependency": "open_jdk", "version": "version:17"}
         ]
       device_type: none
-      os: Mac-13|Mac-14
+      os: Mac-14
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "15a240d"
+          "sdk_version": "16a5171c"
         }
   windows:
     properties:
@@ -360,10 +360,10 @@ targets:
         ]
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "15a240d"
+          "sdk_version": "16a5171c"
         }
     drone_dimensions:
-      - os=Mac-13|Mac-14
+      - os=Mac-14
 
   - name: Linux mac_clangd
     recipe: engine_v2/engine_v2
@@ -389,10 +389,10 @@ targets:
       config_name: mac_ios_engine
       $flutter/osx_sdk : >-
         {
-          "sdk_version": "15a240d"
+          "sdk_version": "16a5171c"
         }
     drone_dimensions:
-      - os=Mac-13|Mac-14
+      - os=Mac-14
       - cpu=x86
 
   - name: Mac impeller-cmake-example
