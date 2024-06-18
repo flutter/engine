@@ -614,5 +614,18 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesComplex) {
   EXPECT_NEAR(output, fast_output, 0.1);
 }
 
+TEST(GaussianBlurFilterContentsTest, ChopHugeBlurs) {
+  Scalar sigma = 30.5f;
+  int32_t blur_radius = static_cast<int32_t>(
+      std::ceil(GaussianBlurFilterContents::CalculateBlurRadius(sigma)));
+  BlurParameters parameters = {.blur_uv_offset = Point(1, 0),
+                               .blur_sigma = sigma,
+                               .blur_radius = blur_radius,
+                               .step_size = 1};
+  GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
+      GenerateBlurInfo(parameters);
+  EXPECT_EQ(kernel_samples.sample_count, 50);
+}
+
 }  // namespace testing
 }  // namespace impeller

@@ -653,6 +653,18 @@ GaussianBlurPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
     x_offset = 1;
   }
 
+  // This is a safe-guard to make sure we don't overflow the fragment shader.
+  // The kernel size is multiplied by 2 since we'll use the lerp hack on the
+  // result. In practice this isn't throwing away much data since the blur radii
+  // are around 53 before the down-sampling and max sigma of 500 kick in.
+  //
+  // TODO(https://github.com/flutter/flutter/issues/150462): Come up with a more
+  // wholistic remedy for this.  A proper downsample size should not make this
+  // required. Or we can increase the kernel size.
+  if (result.sample_count > (2 * (kMaxKernelSize - 1))) {
+    result.sample_count = 2 * (kMaxKernelSize - 1);
+  }
+
   Scalar tally = 0.0f;
   for (int i = 0; i < result.sample_count; ++i) {
     int x = x_offset + (i * parameters.step_size) - parameters.blur_radius;
