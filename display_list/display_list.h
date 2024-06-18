@@ -69,9 +69,6 @@ namespace flutter {
   V(SetColor)                       \
   V(SetBlendMode)                   \
                                     \
-  V(SetPodPathEffect)               \
-  V(ClearPathEffect)                \
-                                    \
   V(ClearColorFilter)               \
   V(SetPodColorFilter)              \
                                     \
@@ -111,6 +108,7 @@ namespace flutter {
   V(DrawColor)                      \
                                     \
   V(DrawLine)                       \
+  V(DrawDashedLine)                 \
   V(DrawRect)                       \
   V(DrawOval)                       \
   V(DrawCircle)                     \

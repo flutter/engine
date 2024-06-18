@@ -15,7 +15,6 @@
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
-#include "flutter/display_list/effects/dl_path_effect.h"
 #include "flutter/display_list/image/dl_image.h"
 
 #include "flutter/impeller/geometry/path.h"
@@ -157,7 +156,6 @@ class DlOpReceiver {
   // filter so that the color inversion happens after the ColorFilter.
   virtual void setInvertColors(bool invert) = 0;
   virtual void setBlendMode(DlBlendMode mode) = 0;
-  virtual void setPathEffect(const DlPathEffect* effect) = 0;
   virtual void setMaskFilter(const DlMaskFilter* filter) = 0;
   virtual void setImageFilter(const DlImageFilter* filter) = 0;
 
@@ -343,6 +341,10 @@ class DlOpReceiver {
   virtual void drawColor(DlColor color, DlBlendMode mode) = 0;
   virtual void drawPaint() = 0;
   virtual void drawLine(const SkPoint& p0, const SkPoint& p1) = 0;
+  virtual void drawDashedLine(const DlPoint& p0,
+                              const DlPoint& p1,
+                              DlScalar on_length,
+                              DlScalar off_length) = 0;
   virtual void drawRect(const SkRect& rect) = 0;
   virtual void drawOval(const SkRect& bounds) = 0;
   virtual void drawCircle(const SkPoint& center, SkScalar radius) = 0;
