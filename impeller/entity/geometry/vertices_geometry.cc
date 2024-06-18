@@ -5,6 +5,7 @@
 #include "impeller/entity/geometry/vertices_geometry.h"
 
 #include <cstdint>
+#include <cstring>
 #include <utility>
 
 #include "impeller/core/buffer_view.h"
@@ -173,7 +174,7 @@ GeometryResult VerticesGeometry::GetPositionUVColorBuffer(
               .texture_coords = uv,
               .color = has_colors ? colors_[i] : Color::BlackTransparent(),
           };
-          std::memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
+          memcpy(vtx_contents++, &vertex_data, sizeof(VS::PerVertexData));
         }
       });
 

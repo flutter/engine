@@ -161,7 +161,7 @@ Point QuadraticPathComponent::SolveDerivative(Scalar time) const {
 void QuadraticPathComponent::ToLinearPathComponents(
     Scalar scale,
     VertexWriter& writer) const {
-  Scalar line_count = std::ceilf(ComputeQuadradicSubdivisions(scale, *this));
+  Scalar line_count = ceilf(ComputeQuadradicSubdivisions(scale, *this));
   for (size_t i = 1; i < line_count; i += 1) {
     writer.Write(Solve(i / line_count));
   }
@@ -179,8 +179,7 @@ void QuadraticPathComponent::AppendPolylinePoints(
 void QuadraticPathComponent::ToLinearPathComponents(
     Scalar scale_factor,
     const PointProc& proc) const {
-  Scalar line_count =
-      std::ceilf(ComputeQuadradicSubdivisions(scale_factor, *this));
+  Scalar line_count = ceilf(ComputeQuadradicSubdivisions(scale_factor, *this));
   for (size_t i = 1; i < line_count; i += 1) {
     proc(Solve(i / line_count));
   }
@@ -235,7 +234,7 @@ void CubicPathComponent::AppendPolylinePoints(
 
 void CubicPathComponent::ToLinearPathComponents(Scalar scale,
                                                 VertexWriter& writer) const {
-  Scalar line_count = std::ceilf(ComputeCubicSubdivisions(scale, *this));
+  Scalar line_count = ceilf(ComputeCubicSubdivisions(scale, *this));
   for (size_t i = 1; i < line_count; i++) {
     writer.Write(Solve(i / line_count));
   }
@@ -259,7 +258,7 @@ CubicPathComponent CubicPathComponent::Subsegment(Scalar t0, Scalar t1) const {
 
 void CubicPathComponent::ToLinearPathComponents(Scalar scale,
                                                 const PointProc& proc) const {
-  Scalar line_count = std::ceilf(ComputeCubicSubdivisions(scale, *this));
+  Scalar line_count = ceilf(ComputeCubicSubdivisions(scale, *this));
   for (size_t i = 1; i < line_count; i++) {
     proc(Solve(i / line_count));
   }

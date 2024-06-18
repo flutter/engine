@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_GEOMETRY_POINT_H_
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <ostream>
@@ -224,8 +225,8 @@ struct TPoint {
   }
 
   constexpr TPoint Rotate(const Radians& angle) const {
-    const auto cos_a = std::cosf(angle.radians);
-    const auto sin_a = std::sinf(angle.radians);
+    const auto cos_a = cosf(angle.radians);
+    const auto sin_a = sinf(angle.radians);
     return {x * cos_a - y * sin_a, x * sin_a + y * cos_a};
   }
 
