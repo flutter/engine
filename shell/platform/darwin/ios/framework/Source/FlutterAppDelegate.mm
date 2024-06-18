@@ -144,6 +144,22 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (void)openURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
     completionHandler:(void (^)(BOOL success))completion {
+  [self handleOpenURL:url options:options completionHandler:completion];
+}
+
+- (BOOL)application:(UIApplication*)application
+            openURL:(NSURL*)url
+            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
+    return YES;
+  }
+
+  return [self handleOpenURL:url options:options];
+}
+- (void)handleOpenURL:(NSURL*)url
+              options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
+    completionHandler:(void (^)(BOOL success))completion {
+  
   if (![self isFlutterDeepLinkingEnabled]) {
     completion(NO);
   } else {
@@ -157,33 +173,17 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   }
 }
 
-- (BOOL)application:(UIApplication*)application
-            openURL:(NSURL*)url
-            options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  if ([_lifeCycleDelegate application:application openURL:url options:options]) {
-    return YES;
-  }
-
-  return [self handleOpenURL:url options:options];
-}
-
 - (BOOL)handleOpenURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  __block BOOL openURLSuccess = NO;
-  __block BOOL openURLCompleted = NO;
-  CFTimeInterval start = CACurrentMediaTime();
-
-  [self openURL:url
-                options:options
-      completionHandler:^(BOOL success) {
-        openURLSuccess = success;
-        openURLCompleted = YES;
-      }];
-
-  while (!openURLCompleted && CACurrentMediaTime() - start <= 5.0) {
-    [NSRunLoop.currentRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
-  }
-  return openURLSuccess;
+  if (![self isFlutterDeepLinkingEnabled]) {
+    return NO;
+  } 
+  [self handleOpenURL:url options:options completionHandler:^(BOOL success) {
+      if(!success) {  // throw it back to iOS
+      [UIApplication.sharedApplication openURL: url];
+      }
+  }];
+  return YES;
 }
 
 - (BOOL)application:(UIApplication*)application handleOpenURL:(NSURL*)url {

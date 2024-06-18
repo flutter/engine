@@ -1880,6 +1880,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                              result:^(id _Nullable result) {
                                BOOL success =
                                    [result isKindOfClass:[NSNumber class]] && [result boolValue];
+                                NSLog(@"openDeepLink !!success: %d", success);
                                if (!success) {
                                  // Logging the error if the result is not successful
                                  FML_LOG(ERROR) << "Failed to handle route information in Flutter.";
