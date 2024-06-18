@@ -624,7 +624,7 @@ TEST(GaussianBlurFilterContentsTest, ChopHugeBlurs) {
                                .step_size = 1};
   GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
       GenerateBlurInfo(parameters);
-  EXPECT_EQ(kernel_samples.sample_count, 50);
+  EXPECT_EQ(kernel_samples.sample_count, 98);
 }
 
 }  // namespace testing
