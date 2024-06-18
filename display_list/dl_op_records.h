@@ -731,7 +731,6 @@ static_assert(sizeof(DrawRectOp) == 20);
 static_assert(sizeof(DrawOvalOp) == 20);
 static_assert(sizeof(DrawRRectOp) == 56);
 
-
 // 4 byte header + 32 byte payload + 4 byte padding
 struct DrawPathOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawPath;
