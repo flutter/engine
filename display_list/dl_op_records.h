@@ -123,6 +123,7 @@ struct DLOp {
 DEFINE_SET_BOOL_OP(AntiAlias)
 DEFINE_SET_BOOL_OP(InvertColors)
 #undef DEFINE_SET_BOOL_OP
+static_assert(sizeof(SetAntiAliasOp) == 8);
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 #define DEFINE_SET_ENUM_OP(name)                                         \
@@ -140,6 +141,7 @@ DEFINE_SET_BOOL_OP(InvertColors)
 DEFINE_SET_ENUM_OP(Cap)
 DEFINE_SET_ENUM_OP(Join)
 #undef DEFINE_SET_ENUM_OP
+static_assert(sizeof(SetStrokeCapOp) == 8);
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct SetStyleOp final : DLOp {
@@ -153,6 +155,8 @@ struct SetStyleOp final : DLOp {
     ctx.receiver.setDrawStyle(style);
   }
 };
+static_assert(sizeof(SetStyleOp) == 8);
+
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct SetStrokeWidthOp final : DLOp {
   static constexpr auto kType = DisplayListOpType::kSetStrokeWidth;
@@ -165,6 +169,8 @@ struct SetStrokeWidthOp final : DLOp {
     ctx.receiver.setStrokeWidth(width);
   }
 };
+static_assert(sizeof(SetStrokeWidthOp) == 8);
+
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct SetStrokeMiterOp final : DLOp {
   static constexpr auto kType = DisplayListOpType::kSetStrokeMiter;
@@ -177,6 +183,7 @@ struct SetStrokeMiterOp final : DLOp {
     ctx.receiver.setStrokeMiter(limit);
   }
 };
+static_assert(sizeof(SetStrokeMiterOp) == 8);
 
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct SetColorOp final : DLOp {
@@ -188,6 +195,8 @@ struct SetColorOp final : DLOp {
 
   void dispatch(DispatchContext& ctx) const { ctx.receiver.setColor(color); }
 };
+static_assert(sizeof(SetColorOp) == 8);
+
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct SetBlendModeOp final : DLOp {
   static constexpr auto kType = DisplayListOpType::kSetBlendMode;
@@ -200,6 +209,7 @@ struct SetBlendModeOp final : DLOp {
     ctx.receiver.setBlendMode(mode);
   }
 };
+static_assert(sizeof(SetBlendModeOp) == 8);
 
 // Clear: 4 byte header + unused 4 byte payload uses 8 bytes
 //        (4 bytes unused)
@@ -232,9 +242,11 @@ DEFINE_SET_CLEAR_DLATTR_OP(ImageFilter, ImageFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
+static_assert(sizeof(ClearColorFilterOp) == 4);
+static_assert(sizeof(SetPodColorFilterOp) == 4);
 
-// 4 byte header + 80 bytes for the embedded DlImageColorSource
-// uses 84 total bytes (4 bytes unused)
+// 4 byte header + 88 bytes for the embedded DlImageColorSource
+// uses 96 total bytes (4 bytes unused)
 struct SetImageColorSourceOp : DLOp {
   static constexpr auto kType = DisplayListOpType::kSetImageColorSource;
 
@@ -251,9 +263,8 @@ struct SetImageColorSourceOp : DLOp {
     ctx.receiver.setColorSource(&source);
   }
 };
+static_assert(sizeof(SetImageColorSourceOp) == 96);
 
-// 56 bytes: 4 byte header, 4 byte padding, 8 for vtable, 8 * 2 for sk_sps, 24
-// for the std::vector.
 struct SetRuntimeEffectColorSourceOp : DLOp {
   static constexpr auto kType = DisplayListOpType::kSetRuntimeEffectColorSource;
 
@@ -274,6 +285,7 @@ struct SetRuntimeEffectColorSourceOp : DLOp {
                                      : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(SetRuntimeEffectColorSourceOp) == 64);
 
 #ifdef IMPELLER_ENABLE_3D
 struct SetSceneColorSourceOp : DLOp {
@@ -313,6 +325,7 @@ struct SetSharedImageFilterOp : DLOp {
                                          : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(SetSharedImageFilterOp) == 24);
 
 // The base struct for all save() and saveLayer() ops
 // 4 byte header + 12 byte payload packs exactly into 16 bytes
@@ -340,6 +353,8 @@ struct SaveOpBase : DLOp {
     return needed;
   }
 };
+static_assert(sizeof(SaveOpBase) == 16);
+
 // 16 byte SaveOpBase with no additional data (options is unsed here)
 struct SaveOp final : SaveOpBase {
   static constexpr auto kType = DisplayListOpType::kSave;
@@ -352,6 +367,8 @@ struct SaveOp final : SaveOpBase {
     }
   }
 };
+static_assert(sizeof(SaveOp) == 16);
+
 // The base struct for all saveLayer() ops
 // 16 byte SaveOpBase + 20 byte payload packs into 36 bytes
 struct SaveLayerOpBase : SaveOpBase {
@@ -361,6 +378,8 @@ struct SaveLayerOpBase : SaveOpBase {
   SkRect rect;
   DlBlendMode max_blend_mode = DlBlendMode::kClear;
 };
+static_assert(sizeof(SaveLayerOpBase) == 36);
+
 // 36 byte SaveLayerOpBase with no additional data packs into 40 bytes
 // of buffer storage with 4 bytes unused.
 struct SaveLayerOp final : SaveLayerOpBase {
@@ -376,6 +395,8 @@ struct SaveLayerOp final : SaveLayerOpBase {
     }
   }
 };
+static_assert(sizeof(SaveLayerOp) == 36);
+
 // 36 byte SaveLayerOpBase + 4 bytes for alignment + 16 byte payload packs
 // into minimum 56 bytes
 struct SaveLayerBackdropOp final : SaveLayerOpBase {
@@ -402,6 +423,8 @@ struct SaveLayerBackdropOp final : SaveLayerOpBase {
                : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(SaveLayerBackdropOp) == 56);
+
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct RestoreOp final : DLOp {
   static constexpr auto kType = DisplayListOpType::kRestore;
@@ -419,6 +442,7 @@ struct RestoreOp final : DLOp {
     ctx.save_infos.pop_back();
   }
 };
+static_assert(sizeof(RestoreOp) == 4);
 
 struct TransformClipOpBase : DLOp {
   static constexpr uint32_t kDepthInc = 0;
@@ -428,6 +452,8 @@ struct TransformClipOpBase : DLOp {
     return context.next_render_index <= context.next_restore_index;
   }
 };
+static_assert(sizeof(TransformClipOpBase) == 4);
+
 // 4 byte header + 8 byte payload uses 12 bytes but is rounded up to 16 bytes
 // (4 bytes unused)
 struct TranslateOp final : TransformClipOpBase {
@@ -444,6 +470,8 @@ struct TranslateOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(TranslateOp) == 12);
+
 // 4 byte header + 8 byte payload uses 12 bytes but is rounded up to 16 bytes
 // (4 bytes unused)
 struct ScaleOp final : TransformClipOpBase {
@@ -460,6 +488,8 @@ struct ScaleOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(ScaleOp) == 12);
+
 // 4 byte header + 4 byte payload packs into minimum 8 bytes
 struct RotateOp final : TransformClipOpBase {
   static constexpr auto kType = DisplayListOpType::kRotate;
@@ -474,6 +504,8 @@ struct RotateOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(RotateOp) == 8);
+
 // 4 byte header + 8 byte payload uses 12 bytes but is rounded up to 16 bytes
 // (4 bytes unused)
 struct SkewOp final : TransformClipOpBase {
@@ -490,6 +522,8 @@ struct SkewOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(SkewOp) == 12);
+
 // 4 byte header + 24 byte payload uses 28 bytes but is rounded up to 32 bytes
 // (4 bytes unused)
 struct Transform2DAffineOp final : TransformClipOpBase {
@@ -511,6 +545,8 @@ struct Transform2DAffineOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(Transform2DAffineOp) == 28);
+
 // 4 byte header + 64 byte payload uses 68 bytes which is rounded up to 72 bytes
 // (4 bytes unused)
 struct TransformFullPerspectiveOp final : TransformClipOpBase {
@@ -542,6 +578,7 @@ struct TransformFullPerspectiveOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(TransformFullPerspectiveOp) == 68);
 
 // 4 byte header with no payload.
 struct TransformResetOp final : TransformClipOpBase {
@@ -555,6 +592,7 @@ struct TransformResetOp final : TransformClipOpBase {
     }
   }
 };
+static_assert(sizeof(TransformResetOp) == 4);
 
 // 4 byte header + 4 byte common payload packs into minimum 8 bytes
 // SkRect is 16 more bytes, which packs efficiently into 24 bytes total
@@ -588,6 +626,8 @@ DEFINE_CLIP_SHAPE_OP(RRect, Intersect)
 DEFINE_CLIP_SHAPE_OP(Rect, Difference)
 DEFINE_CLIP_SHAPE_OP(RRect, Difference)
 #undef DEFINE_CLIP_SHAPE_OP
+static_assert(sizeof(ClipIntersectRectOp) == 24);
+static_assert(sizeof(ClipIntersectRRectOp) == 60);
 
 #define DEFINE_CLIP_PATH_OP(clipop)                                       \
   struct Clip##clipop##PathOp final : TransformClipOpBase {               \
@@ -620,6 +660,7 @@ DEFINE_CLIP_SHAPE_OP(RRect, Difference)
 DEFINE_CLIP_PATH_OP(Intersect)
 DEFINE_CLIP_PATH_OP(Difference)
 #undef DEFINE_CLIP_PATH_OP
+static_assert(sizeof(ClipIntersectPathOp) == 40);
 
 struct DrawOpBase : DLOp {
   static constexpr uint32_t kDepthInc = 1;
@@ -629,6 +670,7 @@ struct DrawOpBase : DLOp {
     return ctx.cur_index >= ctx.next_render_index;
   }
 };
+static_assert(sizeof(DrawOpBase) == 4);
 
 // 4 byte header + no payload uses minimum 8 bytes (4 bytes unused)
 struct DrawPaintOp final : DrawOpBase {
@@ -642,6 +684,8 @@ struct DrawPaintOp final : DrawOpBase {
     }
   }
 };
+static_assert(sizeof(DrawPaintOp) == 4);
+
 // 4 byte header + 8 byte payload uses 12 bytes but is rounded up to 16 bytes
 // (4 bytes unused)
 struct DrawColorOp final : DrawOpBase {
@@ -658,6 +702,7 @@ struct DrawColorOp final : DrawOpBase {
     }
   }
 };
+static_assert(sizeof(DrawColorOp) == 12);
 
 // The common data is a 4 byte header with an unused 4 bytes
 // SkRect is 16 more bytes, using 20 bytes which rounds up to 24 bytes total
@@ -682,9 +727,12 @@ DEFINE_DRAW_1ARG_OP(Rect, SkRect, rect)
 DEFINE_DRAW_1ARG_OP(Oval, SkRect, oval)
 DEFINE_DRAW_1ARG_OP(RRect, SkRRect, rrect)
 #undef DEFINE_DRAW_1ARG_OP
+static_assert(sizeof(DrawRectOp) == 20);
+static_assert(sizeof(DrawOvalOp) == 20);
+static_assert(sizeof(DrawRRectOp) == 56);
 
-// 4 byte header + 128 byte payload uses 132 bytes but is rounded
-// up to 136 bytes (4 bytes unused)
+
+// 4 byte header + 32 byte payload + 4 byte padding
 struct DrawPathOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawPath;
 
@@ -707,6 +755,7 @@ struct DrawPathOp final : DrawOpBase {
                                              : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(DrawPathOp) == 40);
 
 // The common data is a 4 byte header with an unused 4 bytes
 // 2 x SkPoint is 16 more bytes, using 20 bytes rounding up to 24 bytes total
@@ -734,6 +783,32 @@ DEFINE_DRAW_2ARG_OP(Line, SkPoint, p0, SkPoint, p1)
 DEFINE_DRAW_2ARG_OP(Circle, SkPoint, center, SkScalar, radius)
 DEFINE_DRAW_2ARG_OP(DRRect, SkRRect, outer, SkRRect, inner)
 #undef DEFINE_DRAW_2ARG_OP
+static_assert(sizeof(DrawLineOp) == 20);
+static_assert(sizeof(DrawCircleOp) == 16);
+static_assert(sizeof(DrawDRRectOp) == 108);
+
+// 4 byte header + 24 byte payload packs into 32 bytes (4 bytes unused)
+struct DrawDashedLineOp final : DrawOpBase {
+  static constexpr auto kType = DisplayListOpType::kDrawDashedLine;
+
+  DrawDashedLineOp(const DlPoint& p0,
+                   const DlPoint& p1,
+                   DlScalar on_length,
+                   DlScalar off_length)
+      : p0(p0), p1(p1), on_length(on_length), off_length(off_length) {}
+
+  const DlPoint p0;
+  const DlPoint p1;
+  const SkScalar on_length;
+  const SkScalar off_length;
+
+  void dispatch(DispatchContext& ctx) const {
+    if (op_needed(ctx)) {
+      ctx.receiver.drawDashedLine(p0, p1, on_length, off_length);
+    }
+  }
+};
+static_assert(sizeof(DrawDashedLineOp) == 28);
 
 // 4 byte header + 24 byte payload packs into 32 bytes (4 bytes unused)
 struct DrawDashedLineOp final : DrawOpBase {
@@ -775,6 +850,7 @@ struct DrawArcOp final : DrawOpBase {
     }
   }
 };
+static_assert(sizeof(DrawArcOp) == 32);
 
 // 4 byte header + 4 byte fixed payload packs efficiently into 8 bytes
 // But then there is a list of points following the structure which
@@ -801,6 +877,9 @@ DEFINE_DRAW_POINTS_OP(Points, kPoints);
 DEFINE_DRAW_POINTS_OP(Lines, kLines);
 DEFINE_DRAW_POINTS_OP(Polygon, kPolygon);
 #undef DEFINE_DRAW_POINTS_OP
+static_assert(sizeof(DrawPointsOp) == 8);
+static_assert(sizeof(DrawLinesOp) == 8);
+static_assert(sizeof(DrawPolygonOp) == 8);
 
 // 4 byte header + 4 byte payload packs efficiently into 8 bytes
 // The DlVertices object will be pod-allocated after this structure
@@ -824,9 +903,8 @@ struct DrawVerticesOp final : DrawOpBase {
     }
   }
 };
+static_assert(sizeof(DrawVerticesOp) == 8);
 
-// 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
-// (4 bytes unused)
 #define DEFINE_DRAW_IMAGE_OP(name, with_attributes)                      \
   struct name##Op final : DrawOpBase {                                   \
     static constexpr auto kType = DisplayListOpType::k##name;            \
@@ -856,9 +934,8 @@ struct DrawVerticesOp final : DrawOpBase {
 DEFINE_DRAW_IMAGE_OP(DrawImage, false)
 DEFINE_DRAW_IMAGE_OP(DrawImageWithAttr, true)
 #undef DEFINE_DRAW_IMAGE_OP
+static_assert(sizeof(DrawImageOp) == 24);
 
-// 4 byte header + 72 byte payload uses 76 bytes but is rounded up to 80 bytes
-// (4 bytes unused)
 struct DrawImageRectOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawImageRect;
 
@@ -898,6 +975,7 @@ struct DrawImageRectOp final : DrawOpBase {
                : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(DrawImageRectOp) == 56);
 
 // 4 byte header + 44 byte payload packs efficiently into 48 bytes
 #define DEFINE_DRAW_IMAGE_NINE_OP(name, render_with_attributes)            \
@@ -932,9 +1010,8 @@ struct DrawImageRectOp final : DrawOpBase {
 DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNine, false)
 DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNineWithAttr, true)
 #undef DEFINE_DRAW_IMAGE_NINE_OP
+static_assert(sizeof(DrawImageNineOp) == 48);
 
-// 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
-// (4 bytes unused)
 // Each of these is then followed by a number of lists.
 // SkRSXform list is a multiple of 16 bytes so it is always packed well
 // SkRect list is also a multiple of 16 bytes so it also packs well
@@ -978,8 +1055,9 @@ struct DrawAtlasBaseOp : DrawOpBase {
     return ret;
   }
 };
+static_assert(sizeof(DrawAtlasBaseOp) == 24);
 
-// Packs into 48 bytes as per DrawAtlasBaseOp
+// Packs into 24 bytes as per DrawAtlasBaseOp
 // with array data following the struct also as per DrawAtlasBaseOp
 struct DrawAtlasOp final : DrawAtlasBaseOp {
   static constexpr auto kType = DisplayListOpType::kDrawAtlas;
@@ -1017,11 +1095,9 @@ struct DrawAtlasOp final : DrawAtlasBaseOp {
                : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(DrawAtlasOp) == 24);
 
-// Packs into 48 bytes as per DrawAtlasBaseOp plus
-// an additional 16 bytes for the cull rect resulting in a total
-// of 56 bytes for the Culled drawAtlas.
-// Also with array data following the struct as per DrawAtlasBaseOp
+// Has array data following the struct as per DrawAtlasBaseOp
 struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   static constexpr auto kType = DisplayListOpType::kDrawAtlasCulled;
 
@@ -1063,9 +1139,8 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
                : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(DrawAtlasCulledOp) == 40);
 
-// 4 byte header + ptr aligned payload uses 12 bytes round up to 16
-// (4 bytes unused)
 struct DrawDisplayListOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawDisplayList;
 
@@ -1089,6 +1164,7 @@ struct DrawDisplayListOp final : DrawOpBase {
                : DisplayListCompare::kNotEqual;
   }
 };
+static_assert(sizeof(DrawDisplayListOp) == 16);
 
 // 4 byte header + 8 payload bytes + an aligned pointer take 24 bytes
 // (4 unused to align the pointer)
@@ -1108,6 +1184,7 @@ struct DrawTextBlobOp final : DrawOpBase {
     }
   }
 };
+static_assert(sizeof(DrawTextBlobOp) == 24);
 
 struct DrawTextFrameOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawTextFrame;
@@ -1127,8 +1204,8 @@ struct DrawTextFrameOp final : DrawOpBase {
     }
   }
 };
+static_assert(sizeof(DrawTextFrameOp) == 32);
 
-// 4 byte header + 140 byte payload packs evenly into 140 bytes
 #define DEFINE_DRAW_SHADOW_OP(name, transparent_occluder)                    \
   struct Draw##name##Op final : DrawOpBase {                                 \
     static constexpr auto kType = DisplayListOpType::kDraw##name;            \
@@ -1166,6 +1243,7 @@ struct DrawTextFrameOp final : DrawOpBase {
 DEFINE_DRAW_SHADOW_OP(Shadow, false)
 DEFINE_DRAW_SHADOW_OP(ShadowTransparentOccluder, true)
 #undef DEFINE_DRAW_SHADOW_OP
+static_assert(sizeof(DrawShadowOp) == 48);
 
 #pragma pack(pop, DLOpPackLabel)
 
