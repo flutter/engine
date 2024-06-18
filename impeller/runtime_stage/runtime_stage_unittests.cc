@@ -225,6 +225,37 @@ TEST_P(RuntimeStageTest, CanReadUniforms) {
   }
 }
 
+TEST_P(RuntimeStageTest, CanReadUniformsUBOAndSampler) {
+  const std::shared_ptr<fml::Mapping> fixture =
+      flutter::testing::OpenFixtureAsMapping("uniforms_and_sampler.frag.iplr");
+  ASSERT_TRUE(fixture);
+  ASSERT_GT(fixture->GetSize(), 0u);
+  auto stages = RuntimeStage::DecodeRuntimeStages(fixture);
+  auto stage = stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+
+  ASSERT_TRUE(stage->IsValid());
+  switch (GetBackend()) {
+    case PlaygroundBackend::kMetal:
+      [[fallthrough]];
+    case PlaygroundBackend::kOpenGLES: {
+      break;
+      case PlaygroundBackend::kVulkan: {
+        EXPECT_EQ(stage->GetUniforms().size(), 2u);
+        auto uni = stage->GetUniform(RuntimeStage::kVulkanUBOName);
+        ASSERT_TRUE(uni);
+        // Struct must be offset at 65.
+        EXPECT_EQ(uni->type, RuntimeUniformType::kStruct);
+        EXPECT_EQ(uni->binding, 65u);
+        // Sampler should be offset at 64 but due to current bug
+        // has offset of 0, the correct offset is computed at runtime.
+        auto sampler_uniform = stage->GetUniform("u_texture");
+        EXPECT_EQ(sampler_uniform->type, RuntimeUniformType::kSampledImage);
+        EXPECT_EQ(sampler_uniform->binding, 64u);
+      }
+    }
+  }
+}
+
 TEST_P(RuntimeStageTest, CanRegisterStage) {
   const std::shared_ptr<fml::Mapping> fixture =
       flutter::testing::OpenFixtureAsMapping("ink_sparkle.frag.iplr");
