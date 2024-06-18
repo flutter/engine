@@ -568,7 +568,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     if (shouldBold) {
       accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
     } else {
-      accessibilityFeatureFlags &= AccessibilityFeature.BOLD_TEXT.value;
+      accessibilityFeatureFlags &= ~AccessibilityFeature.BOLD_TEXT.value;
     }
     sendLatestAccessibilityFlagsToFlutter();
   }
