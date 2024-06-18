@@ -70,7 +70,7 @@ final class ViewFocusBinding {
 
   late final DomEventListener _handleKeyDown = createDomEventListener((DomEvent event) {
     event as DomKeyboardEvent;
-    if (event.shiftKey) {
+    if (event.shiftKey ?? false) {
       _viewFocusDirection = ui.ViewFocusDirection.backward;
     }
   });
