@@ -159,7 +159,6 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (void)handleOpenURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
     completionHandler:(void (^)(BOOL success))completion {
-  
   if (![self isFlutterDeepLinkingEnabled]) {
     completion(NO);
   } else {
@@ -177,12 +176,14 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
   if (![self isFlutterDeepLinkingEnabled]) {
     return NO;
-  } 
-  [self handleOpenURL:url options:options completionHandler:^(BOOL success) {
-      if(!success) {  // throw it back to iOS
-      [UIApplication.sharedApplication openURL: url];
-      }
-  }];
+  }
+  [self handleOpenURL:url
+                options:options
+      completionHandler:^(BOOL success) {
+        if (!success) {  // throw it back to iOS
+          [UIApplication.sharedApplication openURL:url];
+        }
+      }];
   return YES;
 }
 
