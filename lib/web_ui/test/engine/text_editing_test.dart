@@ -471,7 +471,35 @@ Future<void> testMain() async {
 
       // Input action is triggered!
       expect(lastInputAction, 'TextInputAction.done');
-      // And default behavior of keyboard event shouldn't have been prevented.
+      // And default behavior of keyboard event should have been prevented.
+      // Only TextInputAction.newline should not prevent default behavior
+      // for a multiline field.
+      expect(event.defaultPrevented, isTrue);
+    });
+
+    test('Does not prevent default behavior when TextInputAction.newline', () {
+      // Regression test for https://github.com/flutter/flutter/issues/145051.
+      final InputConfiguration config = InputConfiguration(
+        viewId: kImplicitViewId,
+        inputAction: 'TextInputAction.newline',
+        inputType: EngineInputType.multilineNone,
+      );
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      // No input action so far.
+      expect(lastInputAction, isNull);
+
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+      expect(lastInputAction, 'TextInputAction.newline');
+      // And default behavior of keyboard event should't have been prevented.
       expect(event.defaultPrevented, isFalse);
     });
 
@@ -497,8 +525,10 @@ Future<void> testMain() async {
 
       // Input action is triggered!
       expect(lastInputAction, 'TextInputAction.done');
-      // And default behavior of keyboard event shouldn't have been prevented.
-      expect(event.defaultPrevented, isFalse);
+      // And default behavior of keyboard event should have been prevented.
+      // Only TextInputAction.newline should not prevent default behavior
+      // for a multiline field.
+      expect(event.defaultPrevented, isTrue);
     });
 
     test('Triggers input action and prevent new line key event for single line field', () {
@@ -2520,8 +2550,10 @@ Future<void> testMain() async {
         spy.messages[0].methodArguments,
         <dynamic>[clientId, 'TextInputAction.next'],
       );
-      // And default behavior of keyboard event shouldn't have been prevented.
-      expect(event.defaultPrevented, isFalse);
+      // And default behavior of keyboard event should have been prevented.
+      // Only TextInputAction.newline should not prevent default behavior
+      // for a multiline field.
+      expect(event.defaultPrevented, isTrue);
     });
 
     test('inserts element in the correct view', () async {
