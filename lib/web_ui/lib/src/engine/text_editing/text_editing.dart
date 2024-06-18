@@ -1352,8 +1352,11 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
     subscriptions.add(DomSubscription(activeDomElement, 'beforeinput',
             handleBeforeInput));
 
-    subscriptions.add(DomSubscription(activeDomElement, 'blur',
-            handleBlur));
+    if (this is! SafariDesktopTextEditingStrategy) {
+      // handleBlur causes Safari to reopen autofill dialogs after autofill,
+      // so we don't attach the listener there.
+      subscriptions.add(DomSubscription(activeDomElement, 'blur', handleBlur));
+    }
 
     addCompositionEventHandlers(activeDomElement);
 
