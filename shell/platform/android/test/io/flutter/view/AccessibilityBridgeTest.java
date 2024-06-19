@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -1348,6 +1349,31 @@ public class AccessibilityBridgeTest {
             /*platformViewsAccessibilityDelegate=*/ null);
 
     verify(mockChannel).setAccessibilityFeatures(1 << 3);
+    reset(mockChannel);
+
+    // Now verify that clearing the BOLD_TEXT flag doesn't touch any of the other flags.
+    // Ensure the DISABLE_ANIMATION flag will be set
+    Settings.Global.putFloat(null, "transition_animation_scale", 0.0f);
+    // Ensure the BOLD_TEXT flag will be cleared
+    config.fontWeightAdjustment = 0;
+
+    accessibilityBridge =
+        setUpBridge(
+            /*rootAccessibilityView=*/ mockRootView,
+            /*accessibilityChannel=*/ mockChannel,
+            /*accessibilityManager=*/ mockManager,
+            /*contentResolver=*/ null,
+            /*accessibilityViewEmbedder=*/ mockViewEmbedder,
+            /*platformViewsAccessibilityDelegate=*/ null);
+
+    // setAccessibilityFeatures() will be called multiple times from AccessibilityBridge's
+    // constructor, verify that the latest argument is correct
+    ArgumentCaptor<Integer> captor = ArgumentCaptor.forClass(Integer.class);
+    verify(mockChannel, atLeastOnce()).setAccessibilityFeatures(captor.capture());
+    assertEquals(1 << 2 /* DISABLE_ANIMATION */, captor.getValue().intValue());
+
+    // Set back to default
+    Settings.Global.putFloat(null, "transition_animation_scale", 1.0f);
   }
 
   @Test
