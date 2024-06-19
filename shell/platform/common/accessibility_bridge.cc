@@ -280,6 +280,7 @@ void AccessibilityBridge::ConvertFlutterUpdate(const SemanticsNode& node,
   SetIntAttributesFromFlutterUpdate(node_data, node);
   SetIntListAttributesFromFlutterUpdate(node_data, node);
   SetStringListAttributesFromFlutterUpdate(node_data, node);
+  SetIdentifierFromFlutterUpdate(node_data, node);
   SetNameFromFlutterUpdate(node_data, node);
   SetValueFromFlutterUpdate(node_data, node);
   SetTooltipFromFlutterUpdate(node_data, node);
@@ -519,6 +520,11 @@ void AccessibilityBridge::SetStringListAttributesFromFlutterUpdate(
   }
 }
 
+void AccessibilityBridge::SetIdentifierFromFlutterUpdate(ui::AXNodeData& node_data,
+                                                   const SemanticsNode& node) {
+  node_data.AddStringAttribute(ax::mojom::StringAttribute::kAuthorUniqueId, node.identifier);
+}
+
 void AccessibilityBridge::SetNameFromFlutterUpdate(ui::AXNodeData& node_data,
                                                    const SemanticsNode& node) {
   node_data.SetName(node.label);
@@ -587,6 +593,9 @@ AccessibilityBridge::FromFlutterSemanticsNode(
   result.scroll_extent_min = flutter_node.scroll_extent_min;
   result.elevation = flutter_node.elevation;
   result.thickness = flutter_node.thickness;
+  if (flutter_node.identifier) {
+    result.identifier = std::string(flutter_node.identifier);
+  }
   if (flutter_node.label) {
     result.label = std::string(flutter_node.label);
   }

@@ -806,12 +806,9 @@ LRESULT FlutterWindow::OnGetObject(UINT const message,
   }
 
   gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
-  // TODO(schectman): UIA is currently disabled by default.
-  // https://github.com/flutter/flutter/issues/114547
   if (root_view) {
     CreateAxFragmentRoot();
     if (is_uia_request) {
-#ifdef FLUTTER_ENGINE_USE_UIA
       // Retrieve UIA object for the root view.
       Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
       if (SUCCEEDED(
@@ -824,7 +821,6 @@ LRESULT FlutterWindow::OnGetObject(UINT const message,
       } else {
         FML_LOG(ERROR) << "Failed to query AX fragment root.";
       }
-#endif  // FLUTTER_ENGINE_USE_UIA
     } else if (is_msaa_request) {
       // Create the accessibility root if it does not already exist.
       // Return the IAccessible for the root view.

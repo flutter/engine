@@ -1461,6 +1461,8 @@ const char* ToString(ax::mojom::StringAttribute string_attribute) {
       return "url";
     case ax::mojom::StringAttribute::kValue:
       return "value";
+    case ax::mojom::StringAttribute::kAuthorUniqueId:
+      return "authorUniqueId";
   }
 
   return "";

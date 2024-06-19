@@ -1520,6 +1520,9 @@ std::string AXNodeData::ToString() const {
         break;
       case ax::mojom::StringAttribute::kNone:
         break;
+      case ax::mojom::StringAttribute::kAuthorUniqueId:
+        result += " author_unique_id=" + value;
+        break;
     }
   }
 

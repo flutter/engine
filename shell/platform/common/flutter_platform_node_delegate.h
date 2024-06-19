@@ -102,6 +102,9 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   const ui::AXUniqueId& GetUniqueId() const override { return unique_id_; }
 
   // |ui::AXPlatformNodeDelegateBase|
+  std::u16string GetAuthorUniqueId() const override;
+
+  // |ui::AXPlatformNodeDelegateBase|
   const ui::AXNodeData& GetData() const override;
 
   // |ui::AXPlatformNodeDelegateBase|

@@ -555,6 +555,7 @@ enum class StringAttribute {
   kValue,
   kMinValue = kNone,
   kMaxValue = kValue,
+  kAuthorUniqueId,
 };
 
 enum class IntAttribute {
