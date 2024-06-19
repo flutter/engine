@@ -104,6 +104,7 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
       desc.type = ToType(i->type());
       if (desc.type == kStruct) {
         ubo_id = desc.location;
+        desc.binding = desc.location;
       }
       desc.dimensions = RuntimeUniformDimensions{
           static_cast<size_t>(i->rows()), static_cast<size_t>(i->columns())};
