@@ -12,6 +12,9 @@
 
 namespace impeller {
 
+// Comes from gaussian.frag.
+static constexpr int32_t kGaussianBlurMaxKernelSize = 50;
+
 struct BlurParameters {
   Point blur_uv_offset;
   Scalar blur_sigma;
@@ -19,13 +22,20 @@ struct BlurParameters {
   int step_size;
 };
 
-GaussianBlurPipeline::FragmentShader::KernelSamples GenerateBlurInfo(
-    BlurParameters parameters);
+/// This can hold 2x the max kernel size since it will get reduced with the
+/// lerp hack.
+struct LargeKernelSamples {
+  int sample_count;
+  GaussianBlurPipeline::FragmentShader::KernelSample
+      samples[kGaussianBlurMaxKernelSize * 2];
+};
+
+LargeKernelSamples GenerateBlurInfo(BlurParameters parameters);
 
 /// This will shrink the size of a kernel by roughly half by sampling between
 /// samples and relying on linear interpolation between the samples.
 GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
-    GaussianBlurPipeline::FragmentShader::KernelSamples samples);
+    LargeKernelSamples samples);
 
 /// Performs a bidirectional Gaussian blur.
 ///
