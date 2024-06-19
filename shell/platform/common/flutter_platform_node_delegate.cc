@@ -4,8 +4,8 @@
 
 #include "flutter_platform_node_delegate.h"
 
-#include <utility>
 #include <codecvt>
+#include <utility>
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/third_party/accessibility/ax/ax_action_data.h"
@@ -64,7 +64,8 @@ const ui::AXNodeData& FlutterPlatformNodeDelegate::GetData() const {
 
 std::u16string FlutterPlatformNodeDelegate::GetAuthorUniqueId() const {
   std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(GetData().GetStringAttribute(ax::mojom::StringAttribute::kAuthorUniqueId));
+  return convert.from_bytes(GetData().GetStringAttribute(
+      ax::mojom::StringAttribute::kAuthorUniqueId));
 }
 
 gfx::NativeViewAccessible FlutterPlatformNodeDelegate::GetParent() {
