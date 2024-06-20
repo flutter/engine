@@ -11,7 +11,8 @@
 
 namespace vulkan {
 
-skgpu::VulkanGetProc CreateSkiaGetProc(const fml::RefPtr<vulkan::VulkanProcTable>& vk);
+skgpu::VulkanGetProc CreateSkiaGetProc(
+    const fml::RefPtr<vulkan::VulkanProcTable>& vk);
 
 }  // namespace vulkan
 

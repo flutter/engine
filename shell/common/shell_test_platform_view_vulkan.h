@@ -11,8 +11,8 @@
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
-#include "third_party/skia/include/gpu/vk/VulkanTypes.h"
 #include "third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h"
+#include "third_party/skia/include/gpu/vk/VulkanTypes.h"
 
 namespace flutter {
 namespace testing {
