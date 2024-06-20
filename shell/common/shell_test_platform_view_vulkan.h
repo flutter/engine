@@ -11,6 +11,7 @@
 #include "flutter/vulkan/vulkan_application.h"
 #include "flutter/vulkan/vulkan_device.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
+#include "third_party/skia/include/gpu/vk/VulkanBackendContext.h"
 #include "third_party/skia/include/gpu/vk/VulkanMemoryAllocator.h"
 #include "third_party/skia/include/gpu/vk/VulkanTypes.h"
 
