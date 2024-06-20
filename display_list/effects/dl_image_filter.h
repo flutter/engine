@@ -35,7 +35,7 @@ enum class DlImageFilterType {
   kCompose,
   kColorFilter,
   kLocalMatrix,
-  kFragmentProgram,
+  kRuntimeEffect,
 };
 
 class DlBlurImageFilter;
@@ -45,7 +45,7 @@ class DlMatrixImageFilter;
 class DlLocalMatrixImageFilter;
 class DlComposeImageFilter;
 class DlColorFilterImageFilter;
-class DlFragmentProgramImageFilter;
+class DlRuntimeEffectImageFilter;
 
 class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
  public:
@@ -88,9 +88,9 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
     return nullptr;
   }
 
-  // Return a DlComposeImageFilter pointer to this object iff it is a
-  // DlFragmentProgramImageFilter type of ImageFilter, otherwise return nullptr.
-  virtual const DlFragmentProgramImageFilter* asFragmentProgramFilter() const {
+  // Return a DlRuntimeEffectImageFilter pointer to this object iff it is a
+  // DlRuntimeEffectImageFilter type of ImageFilter, otherwise return nullptr.
+  virtual const DlRuntimeEffectImageFilter* asRuntimeEffectFilter() const {
     return nullptr;
   }
 
@@ -750,27 +750,26 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   std::shared_ptr<DlImageFilter> image_filter_;
 };
 
-class DlFragmentProgramImageFilter final : public DlImageFilter {
+class DlRuntimeEffectImageFilter final : public DlImageFilter {
  public:
-  explicit DlFragmentProgramImageFilter(
+  explicit DlRuntimeEffectImageFilter(
       std::shared_ptr<DlColorSource> runtime_effect)
       : runtime_effect_(std::move(runtime_effect)) {
     FML_DCHECK(!!runtime_effect_->asRuntimeEffect());
   }
 
   std::shared_ptr<DlImageFilter> shared() const override {
-    return std::make_shared<DlFragmentProgramImageFilter>(
-        this->runtime_effect_);
+    return std::make_shared<DlRuntimeEffectImageFilter>(this->runtime_effect_);
   }
 
   static std::shared_ptr<const DlImageFilter> Make(
       std::shared_ptr<DlColorSource> runtime_effect) {
-    return std::make_shared<DlFragmentProgramImageFilter>(
+    return std::make_shared<DlRuntimeEffectImageFilter>(
         std::move(runtime_effect));
   }
 
   DlImageFilterType type() const override {
-    return DlImageFilterType::kFragmentProgram;
+    return DlImageFilterType::kRuntimeEffect;
   }
   size_t size() const override { return sizeof(*this); }
 
@@ -800,7 +799,7 @@ class DlFragmentProgramImageFilter final : public DlImageFilter {
     return &input_bounds;
   }
 
-  const DlFragmentProgramImageFilter* asFragmentProgramFilter() const override {
+  const DlRuntimeEffectImageFilter* asRuntimeEffectFilter() const override {
     return this;
   }
 

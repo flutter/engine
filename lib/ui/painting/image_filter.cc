@@ -90,7 +90,7 @@ void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
 
 void ImageFilter::initShader(ReusableFragmentShader* shader) {
   FML_DCHECK(shader);
-  filter_ = DlFragmentProgramImageFilter::Make(
+  filter_ = DlRuntimeEffectImageFilter::Make(
       shader->shader(DlImageSampling::kNearestNeighbor));
 }
 

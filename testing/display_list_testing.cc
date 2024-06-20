@@ -632,10 +632,10 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
       startl() << ")";
       break;
     }
-    case flutter::DlImageFilterType::kFragmentProgram: {
-      const DlFragmentProgramImageFilter* fragment = filter.asFragmentProgramFilter();
-      FML_DCHECK(fragment);
-      os_ << "DlFragmentProgramImageFilter()";
+    case flutter::DlImageFilterType::kRuntimeEffect: {
+      const DlRuntimeEffectImageFilter* runtime_effect = filter.asRuntimeEffectFilter();
+      FML_DCHECK(runtime_effect);
+      os_ << "DlRuntimeEffectImageFilter()";
       break;
     }
   }

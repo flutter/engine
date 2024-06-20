@@ -600,8 +600,8 @@ static std::shared_ptr<ImageFilter> ToImageFilter(
       auto matrix = ToMatrix(local_matrix_filter->matrix());
       return ImageFilter::MakeLocalMatrix(matrix, *image_filter);
     }
-    case flutter::DlImageFilterType::kFragmentProgram:
-      auto fragment_program_filter = filter->asFragmentProgramFilter();
+    case flutter::DlImageFilterType::kRuntimeEffect:
+      auto fragment_program_filter = filter->asRuntimeEffectFilter();
       FML_DCHECK(fragment_program_filter);
       const flutter::DlRuntimeEffectColorSource* runtime_effect_color_source =
           fragment_program_filter->GetRuntimeEffect()->asRuntimeEffect();
