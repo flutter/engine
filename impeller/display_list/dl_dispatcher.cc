@@ -479,12 +479,6 @@ void DlDispatcherBase::setBlendMode(flutter::DlBlendMode dl_mode) {
   paint_.blend_mode = ToBlendMode(dl_mode);
 }
 
-// |flutter::DlOpReceiver|
-void DlDispatcherBase::setPathEffect(const flutter::DlPathEffect* effect) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
-}
-
 static FilterContents::BlurStyle ToBlurStyle(flutter::DlBlurStyle blur_style) {
   switch (blur_style) {
     case flutter::DlBlurStyle::kNormal:
@@ -512,6 +506,7 @@ void DlDispatcherBase::setMaskFilter(const flutter::DlMaskFilter* filter) {
       paint_.mask_blur_descriptor = {
           .style = ToBlurStyle(blur->style()),
           .sigma = Sigma(blur->sigma()),
+          .respect_ctm = blur->respectCTM(),
       };
       break;
     }
@@ -837,6 +832,45 @@ void DlDispatcherBase::drawPaint() {
 void DlDispatcherBase::drawLine(const SkPoint& p0, const SkPoint& p1) {
   GetCanvas().DrawLine(skia_conversions::ToPoint(p0),
                        skia_conversions::ToPoint(p1), paint_);
+}
+
+void DlDispatcherBase::drawDashedLine(const DlPoint& p0,
+                                      const DlPoint& p1,
+                                      DlScalar on_length,
+                                      DlScalar off_length) {
+  Scalar length = p0.GetDistance(p1);
+  // Reasons to defer to regular DrawLine:
+  //   length is non-positive - drawLine will draw appropriate "dot"
+  //   off_length is non-positive - no gaps, drawLine will draw it solid
+  //   on_length is negative - invalid dashing
+  // Note that a 0 length "on" dash will draw "dot"s every "off" distance apart
+  if (length > 0.0f && on_length >= 0.0f && off_length > 0.0f) {
+    Point delta = (p1 - p0) / length;  // length > 0 already tested
+    PathBuilder builder;
+
+    Scalar consumed = 0.0f;
+    while (consumed < length) {
+      builder.MoveTo(p0 + delta * consumed);
+
+      Scalar dash_end = consumed + on_length;
+      if (dash_end < length) {
+        builder.LineTo(p0 + delta * dash_end);
+      } else {
+        builder.LineTo(p1);
+        // Should happen anyway due to the math, but let's make it explicit
+        // in case of bit errors. We're done with this line.
+        break;
+      }
+
+      consumed = dash_end + off_length;
+    }
+
+    Paint stroke_paint = paint_;
+    stroke_paint.style = Paint::Style::kStroke;
+    GetCanvas().DrawPath(builder.TakePath(), stroke_paint);
+  } else {
+    drawLine(flutter::ToSkPoint(p0), flutter::ToSkPoint(p1));
+  }
 }
 
 // |flutter::DlOpReceiver|
