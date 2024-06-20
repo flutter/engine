@@ -191,7 +191,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.Image createImageFromTextureSource(Object object,  { required int width, required int height }) {
+  ui.Image createImageFromTextureSource(Object object,  { required int width, required int height, required bool transferOwnership }) {
     throw Exception('Skwasm not implemented on this platform.');
   }
 }

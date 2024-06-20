@@ -452,22 +452,11 @@ Future<void> testMain() async {
       image.addEventListener('load', loadListener);
       image.src = url;
       await completer.future;
-
-      if (isSkwasm) {
-        // Send something we can actually transfer to a worker, unfortunately we can't transfer an element.
-        final DomImageBitmap bitmap =
-            await createImageBitmap(image as JSObject);
-        expect(bitmap.width.toDartInt, 150);
-        expect(bitmap.height.toDartInt, 150);
-
-        final ui.Image uiImage = renderer.createImageFromTextureSource(bitmap,
-            width: 150, height: 150);
-        return uiImage;
-      } else {
-        final ui.Image uiImage = renderer.createImageFromTextureSource(image,
-            width: 150, height: 150);
-        return uiImage;
-      }
+      
+      final ui.Image uiImage = await renderer.createImageFromTextureSource(image,
+          width: 150, height: 150, transferOwnership: false);
+      return uiImage;
+      
     });
   }
 

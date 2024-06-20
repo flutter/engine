@@ -45,9 +45,16 @@ FutureOr<ui.Image> createImageFromImageBitmap(JSAny imageSource) {
   );
 }
 
-/// Creates a [ui.Image] from a valid texture source (for example HTMLImageElement | HTMLVideoElement | HTMLCanvasElement).
-ui.Image createImageFromTextureSource(Object object,  { required int width, required int height }) {
+/// Creates a [ui.Image] from a valid texture source (for example 
+/// HTMLImageElement | HTMLVideoElement | HTMLCanvasElement).
+/// 
+/// By default, the ownership of the texture will be not be transferred to the 
+/// renderer, and a copy of the texture source will be made. If this is not 
+/// desired, the ownership of the object can be transferred to the renderer and 
+/// the engine will take ownership of the ImageBitmap object and consume its
+/// contents.
+FutureOr<ui.Image> createImageFromTextureSource(Object object,  { required int width, required int height, bool transferOwnership = false }) {
   return renderer.createImageFromTextureSource(
-    object, width: width, height: height,
+    object, width: width, height: height, transferOwnership: transferOwnership
   );
 }

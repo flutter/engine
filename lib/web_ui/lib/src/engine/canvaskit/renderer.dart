@@ -239,8 +239,12 @@ class CanvasKitRenderer implements Renderer {
   }
 
   @override
-  ui.Image createImageFromTextureSource(Object object,
-      {required int width, required int height}) {
+  FutureOr<ui.Image> createImageFromTextureSource(Object object,
+      {required int width, required int height, required bool transferOwnership}) async {
+        if(!transferOwnership) {
+          final DomImageBitmap bitmap = await createImageBitmap(object.toJSAnyShallow, (x:0, y: 0, width: width, height: height));
+          return createImageFromImageBitmap(bitmap);
+        }
     final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
         object,
         SkPartialImageInfo(
