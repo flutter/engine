@@ -338,22 +338,6 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   }
   UpdateCurrentOpacityCompatibility();
 }
-void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
-  if (effect == nullptr) {
-    current_.setPathEffect(nullptr);
-    Push<ClearPathEffectOp>(0);
-  } else {
-    current_.setPathEffect(effect->shared());
-    switch (effect->type()) {
-      case DlPathEffectType::kDash: {
-        const DlDashPathEffect* dash_effect = effect->asDash();
-        void* pod = Push<SetPodPathEffectOp>(dash_effect->size());
-        new (pod) DlDashPathEffect(dash_effect);
-        break;
-      }
-    }
-  }
-}
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
     current_.setMaskFilter(nullptr);
@@ -404,9 +388,6 @@ void DisplayListBuilder::SetAttributesFromPaint(
   }
   if (flags.applies_image_filter()) {
     setImageFilter(paint.getImageFilter().get());
-  }
-  if (flags.applies_path_effect()) {
-    setPathEffect(paint.getPathEffect().get());
   }
   if (flags.applies_mask_filter()) {
     setMaskFilter(paint.getMaskFilter().get());
@@ -1099,6 +1080,29 @@ void DisplayListBuilder::DrawLine(const SkPoint& p0,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawLineFlags);
   drawLine(p0, p1);
 }
+void DisplayListBuilder::drawDashedLine(const DlPoint& p0,
+                                        const DlPoint& p1,
+                                        DlScalar on_length,
+                                        DlScalar off_length) {
+  SkRect bounds = SkRect::MakeLTRB(p0.x, p0.y, p1.x, p1.y).makeSorted();
+  DisplayListAttributeFlags flags =
+      (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
+                                                        : kDrawHVLineFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
+    Push<DrawDashedLineOp>(0, p0, p1, on_length, off_length);
+    CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
+  }
+}
+void DisplayListBuilder::DrawDashedLine(const DlPoint& p0,
+                                        const DlPoint& p1,
+                                        DlScalar on_length,
+                                        DlScalar off_length,
+                                        const DlPaint& paint) {
+  SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawLineFlags);
+  drawDashedLine(p0, p1, on_length, off_length);
+}
 void DisplayListBuilder::drawRect(const SkRect& rect) {
   DisplayListAttributeFlags flags = kDrawRectFlags;
   OpResult result = PaintResult(current_, flags);
@@ -1703,14 +1707,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
 
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(current_.getPathEffectPtr(), is_stroked);
-    if (current_.getPathEffect()) {
-      auto effect_bounds = current_.getPathEffect()->effect_bounds(bounds);
-      if (!effect_bounds.has_value()) {
-        return false;
-      }
-      bounds = effect_bounds.value();
-    }
+        flags.GeometryFlags(is_stroked);
 
     if (is_stroked) {
       // Determine the max multiplier to the stroke width first.
