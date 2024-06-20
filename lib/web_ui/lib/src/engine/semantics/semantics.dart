@@ -620,9 +620,9 @@ abstract class PrimaryRoleManager {
 
   void _updateIdentifier() {
     if (semanticsObject.hasIdentifier) {
-      setAttribute('semantics-identifier', semanticsObject.identifier!);
+      setAttribute('flt-semantics-identifier', semanticsObject.identifier!);
     } else {
-      removeAttribute('semantics-identifier');
+      removeAttribute('flt-semantics-identifier');
     }
   }
 

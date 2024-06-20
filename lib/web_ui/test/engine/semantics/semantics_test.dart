@@ -111,7 +111,7 @@ void runSemanticsTests() {
 }
 
 void _testPrimaryRoleManager() {
-  test('Sets id and semantics-identifier on the element', () {
+  test('Sets id and flt-semantics-identifier on the element', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -146,7 +146,7 @@ void _testPrimaryRoleManager() {
     tester.expectSemantics('''
 <sem id="flt-semantic-node-0">
   <sem-c>
-    <sem id="flt-semantic-node-372" semantics-identifier="test-id-123"></sem>
+    <sem id="flt-semantic-node-372" flt-semantics-identifier="test-id-123"></sem>
     <sem id="flt-semantic-node-599"></sem>
   </sem-c>
 </sem>''');
@@ -165,8 +165,8 @@ void _testPrimaryRoleManager() {
 <sem id="flt-semantic-node-0">
   <sem-c>
     <sem id="flt-semantic-node-372"></sem>
-    <sem id="flt-semantic-node-599" semantics-identifier="test-id-211"></sem>
-    <sem id="flt-semantic-node-612" semantics-identifier="test-id-333"></sem>
+    <sem id="flt-semantic-node-599" flt-semantics-identifier="test-id-211"></sem>
+    <sem id="flt-semantic-node-612" flt-semantics-identifier="test-id-333"></sem>
   </sem-c>
 </sem>''');
   });
