@@ -7,7 +7,8 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl.dart' if (dart.library.html) 'package:ui/src/engine/skwasm/skwasm_stub.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart'
+    if (dart.library.html) 'package:ui/src/engine/skwasm/skwasm_stub.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
@@ -103,17 +104,18 @@ abstract class Renderer {
     Float32List? matrix4,
   ]);
 
-  ui.ImageFilter createBlurImageFilter({
-    double sigmaX = 0.0,
-    double sigmaY = 0.0,
-    ui.TileMode tileMode = ui.TileMode.clamp});
-  ui.ImageFilter createDilateImageFilter({ double radiusX = 0.0, double radiusY = 0.0});
-  ui.ImageFilter createErodeImageFilter({ double radiusX = 0.0, double radiusY = 0.0});
-  ui.ImageFilter createMatrixImageFilter(
-    Float64List matrix4, {
-    ui.FilterQuality filterQuality = ui.FilterQuality.low
-  });
-  ui.ImageFilter composeImageFilters({required ui.ImageFilter outer, required ui.ImageFilter inner});
+  ui.ImageFilter createBlurImageFilter(
+      {double sigmaX = 0.0,
+      double sigmaY = 0.0,
+      ui.TileMode tileMode = ui.TileMode.clamp});
+  ui.ImageFilter createDilateImageFilter(
+      {double radiusX = 0.0, double radiusY = 0.0});
+  ui.ImageFilter createErodeImageFilter(
+      {double radiusX = 0.0, double radiusY = 0.0});
+  ui.ImageFilter createMatrixImageFilter(Float64List matrix4,
+      {ui.FilterQuality filterQuality = ui.FilterQuality.low});
+  ui.ImageFilter composeImageFilters(
+      {required ui.ImageFilter outer, required ui.ImageFilter inner});
 
   Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
@@ -129,20 +131,15 @@ abstract class Renderer {
 
   FutureOr<ui.Image> createImageFromImageBitmap(DomImageBitmap imageSource);
 
-  ui.Image createImageFromTextureSource(Object object,  { required int width, required int height });
- 
+  ui.Image createImageFromTextureSource(Object object,
+      {required int width, required int height});
 
-  void decodeImageFromPixels(
-    Uint8List pixels,
-    int width,
-    int height,
-    ui.PixelFormat format,
-    ui.ImageDecoderCallback callback, {
-    int? rowBytes,
-    int? targetWidth,
-    int? targetHeight,
-    bool allowUpscaling = true
-  });
+  void decodeImageFromPixels(Uint8List pixels, int width, int height,
+      ui.PixelFormat format, ui.ImageDecoderCallback callback,
+      {int? rowBytes,
+      int? targetWidth,
+      int? targetHeight,
+      bool allowUpscaling = true});
 
   ui.ImageShader createImageShader(
     ui.Image image,
