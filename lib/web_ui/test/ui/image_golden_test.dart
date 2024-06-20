@@ -13,7 +13,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
 import 'package:ui/ui.dart' as ui;
-import 'package:ui/ui_web/src/ui_web/images.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 import '../common/fake_asset_manager.dart';
