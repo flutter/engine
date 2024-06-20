@@ -448,6 +448,10 @@ class ImageFilter {
 
   factory ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) =>
     engine.renderer.composeImageFilters(outer: outer, inner: inner);
+
+  factory ImageFilter.shader(FragmentShader shader) {
+    throw UnsupportedError('ImageFilter.shader only supported with Impeller rendering engine.');
+  }
 }
 
 enum ColorSpace {

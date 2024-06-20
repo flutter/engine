@@ -3790,7 +3790,7 @@ abstract class ImageFilter {
   /// caught and used for feature detection.
   factory ImageFilter.shader(FragmentShader shader) {
     if (!_impellerEnabled) {
-      throw UnsupportedError('ImageFilter.shader only support with Impeller rendering engine.');
+      throw UnsupportedError('ImageFilter.shader only supported with Impeller rendering engine.');
     }
     if (shader._floats.length < 2 || !shader._validateImageFilter()) {
       throw StateError(

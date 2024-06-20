@@ -633,7 +633,7 @@ void DisplayListStreamDispatcher::out(const DlImageFilter& filter) {
       break;
     }
     case flutter::DlImageFilterType::kRuntimeEffect: {
-      const DlRuntimeEffectImageFilter* runtime_effect = filter.asRuntimeEffectFilter();
+      [[maybe_unused]] const DlRuntimeEffectImageFilter* runtime_effect = filter.asRuntimeEffectFilter();
       FML_DCHECK(runtime_effect);
       os_ << "DlRuntimeEffectImageFilter()";
       break;
