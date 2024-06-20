@@ -44,3 +44,10 @@ FutureOr<ui.Image> createImageFromImageBitmap(JSAny imageSource) {
     imageSource as DomImageBitmap,
   );
 }
+
+/// Creates a [ui.Image] from a valid texture source (for example HTMLImageElement | HTMLVideoElement | HTMLCanvasElement).
+ui.Image createImageFromTextureSource(Object object,  { required int width, required int height }) {
+  return renderer.createImageFromTextureSource(
+    object, width: width, height: height,
+  );
+}

@@ -472,6 +472,16 @@ class SkwasmRenderer implements Renderer {
       surface.handle,
     ));
   }
+
+  @override
+  ui.Image createImageFromTextureSource(Object textureSource, { required int width, required int height }) {
+    return SkwasmImage(imageCreateFromTextureSource(
+      textureSource as JSObject,
+      width,
+      height,
+      surface.handle,
+    ));
+  }
 }
 
 class SkwasmPictureRenderer implements PictureRenderer {

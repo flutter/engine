@@ -239,6 +239,23 @@ class CanvasKitRenderer implements Renderer {
   }
 
   @override
+  ui.Image createImageFromTextureSource(Object object,  { required int width, required int height }) {
+    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(object, 
+      SkPartialImageInfo(
+        width: width.toDouble(), 
+        height: height.toDouble(), 
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB, 
+      ));
+      
+    if (skImage == null) {
+      throw Exception('Failed to convert image bitmap to an SkImage.');
+    }
+    return CkImage(skImage);
+  }
+
+  @override
   void decodeImageFromPixels(Uint8List pixels, int width, int height,
           ui.PixelFormat format, ui.ImageDecoderCallback callback,
           {int? rowBytes,

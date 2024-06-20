@@ -129,6 +129,9 @@ abstract class Renderer {
 
   FutureOr<ui.Image> createImageFromImageBitmap(DomImageBitmap imageSource);
 
+  ui.Image createImageFromTextureSource(Object object,  { required int width, required int height });
+ 
+
   void decodeImageFromPixels(
     Uint8List pixels,
     int width,

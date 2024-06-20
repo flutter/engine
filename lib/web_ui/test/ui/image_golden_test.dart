@@ -13,6 +13,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web/images.dart';
 import 'package:web_engine_tester/golden_tester.dart';
 
 import '../common/fake_asset_manager.dart';
@@ -417,6 +418,44 @@ Future<void> testMain() async {
         expect(bitmap.height.toDartInt, 0);
       }
       return uiImage;
+    });
+  }
+
+  // This API doesn't work in headless Firefox due to requiring WebGL
+  // See https://github.com/flutter/flutter/issues/109265
+  if (!isFirefox && !isHtml) {
+    emitImageTests('svg_image_bitmap_texture_source', () async {
+      final DomBlob svgBlob = createDomBlob(<String>[
+  '''
+  <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
+    <path d="M25,75  A50,50 0 1,0 125 75 L75,25 Z" stroke="blue" stroke-width="10" fill="red"></path>
+  </svg>
+  '''
+      ], <String, String>{'type': 'image/svg+xml'});
+      final String url = domWindow.URL.createObjectURL(svgBlob);
+      final DomHTMLImageElement image = createDomHTMLImageElement();
+      final Completer<void> completer = Completer<void>();
+      late final DomEventListener loadListener;
+      loadListener = createDomEventListener((DomEvent event) {
+        completer.complete();
+        image.removeEventListener('load', loadListener);
+      });
+      image.addEventListener('load', loadListener);
+      image.src = url;
+      await completer.future;
+
+      if(isSkwasm) {
+        // Send something we can actually transfer to a worker, unfortunately we can't transfer an element.
+        final DomImageBitmap bitmap = await createImageBitmap(image as JSObject);
+        expect(bitmap.width.toDartInt, 150);
+        expect(bitmap.height.toDartInt, 150);
+    
+        final ui.Image uiImage = renderer.createImageFromTextureSource(bitmap, width: 150, height: 150);
+        return uiImage;
+      } else {
+        final ui.Image uiImage = renderer.createImageFromTextureSource(image, width: 150, height: 150);
+        return uiImage;
+      }
     });
   }
 

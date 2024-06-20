@@ -189,4 +189,9 @@ class SkwasmRenderer implements Renderer {
   ui.Image createImageFromImageBitmap(DomImageBitmap imageSource) {
     throw UnimplementedError('Skwasm not implemented on this platform.');
   }
+
+  @override
+  ui.Image createImageFromTextureSource(Object object,  { required int width, required int height }) {
+    throw Exception('Skwasm not implemented on this platform.');
+  }
 }
