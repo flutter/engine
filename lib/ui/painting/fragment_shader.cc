@@ -9,15 +9,8 @@
 
 #include "flutter/display_list/dl_tile_mode.h"
 #include "flutter/display_list/effects/dl_color_source.h"
-#include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
-#include "flutter/lib/ui/ui_dart_state.h"
-#include "third_party/skia/include/core/SkString.h"
 #include "third_party/tonic/converter/dart_converter.h"
-#include "third_party/tonic/dart_args.h"
-#include "third_party/tonic/dart_binding_macros.h"
-#include "third_party/tonic/dart_library_natives.h"
-#include "third_party/tonic/typed_data/typed_list.h"
 
 namespace flutter {
 
@@ -55,7 +48,7 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
 }
 
 bool ReusableFragmentShader::ValidateSamplers() {
-  for (auto i = 0u; i < samplers_.size(); i += 1) {
+  for (auto i = 0u; i < samplers_.size(); i++) {
     if (samplers_[i] == nullptr) {
       return false;
     }
@@ -101,7 +94,6 @@ std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
   // continually changed on the UI thread. So we take a copy of the uniforms
   // before handing it to the DisplayList for consumption on the render thread.
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
-  FML_LOG(ERROR) << "Uniform data size: " << uniform_data_->size();
   uniform_data->resize(uniform_data_->size());
   memcpy(uniform_data->data(), uniform_data_->bytes(), uniform_data->size());
 
@@ -110,6 +102,24 @@ std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
   // is a double-sanity-check.
   FML_DCHECK(source->isUIThreadSafe());
   return source;
+}
+
+// Image filters require at least one uniform sampler input to bind
+// the input texture.
+bool ReusableFragmentShader::ValidateImageFilter() {
+  if (samplers_.size() < 1) {
+    return false;
+  }
+  // The first sampler does not need to be set.
+  for (auto i = 1u; i < samplers_.size(); i++) {
+    if (samplers_[i] == nullptr) {
+      return false;
+    }
+    // The samplers should have been checked as they were added, this
+    // is a double-sanity-check.
+    FML_DCHECK(samplers_[i]->isUIThreadSafe());
+  }
+  return true;
 }
 
 void ReusableFragmentShader::Dispose() {

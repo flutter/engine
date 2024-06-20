@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/filters/runtime_effect_filter_contents.h"
 #include <cstring>
+#include "impeller/base/validation.h"
 #include "impeller/entity/contents/anonymous_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
 #include "impeller/entity/geometry/geometry.h"
@@ -29,9 +30,19 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
+  // The shader is required to have at least one sampler, the first of
+  // which is treated as the input and a vec2 size uniform to compute the
+  // offsets. These are validated at the dart:ui layer, but to avoid crashes we
+  // check here too.
+  if (texture_inputs_.size() < 1 || uniforms_->size() < 16) {
+    VALIDATION_LOG
+        << "Invalid fragment shader in RuntimeEffectFilterContents. "
+        << "Shader must have at least one sampler and a vec2 size uniform.";
+    return std::nullopt;
+  }
   texture_inputs_[0].texture = input_snapshot->texture;
-  //  ISize size = input_snapshot->texture->GetSize();
-  // memcpy(uniforms_->data(), &size, sizeof(ISize));
+  Size size = Size(input_snapshot->texture->GetSize());
+  memcpy(uniforms_->data(), &size, sizeof(Size));
 
   //----------------------------------------------------------------------------
   /// Create AnonymousContents for rendering.

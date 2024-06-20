@@ -3756,9 +3756,46 @@ abstract class ImageFilter {
     return _ComposeImageFilter(innerFilter: inner, outerFilter: outer);
   }
 
+  /// Creates an image filter from a [FragmentShader].
+  ///
+  /// The fragment shader provided here has additional requirements to be used
+  /// by the engine for filtering. The first uniform value must be a vec2, this
+  /// will be set by the engine to the size of the bound texture. There must
+  /// also be at least one sampler2D uniform, the first of which will be set by
+  /// the engine to contain the filter input.
+  ///
+  /// For example, the following is a valid fragment shader that can be used
+  /// with this API. Note that the uniform names are not required to have any
+  /// particular value.
+  ///
+  /// ```glsl
+  /// #include <flutter/runtime_effect.glsl>
+  ///
+  /// uniform vec2 u_size;
+  /// uniform float u_time;
+  ///
+  /// uniform sampler2D u_texture_input;
+  ///
+  /// out vec4 frag_color;
+  ///
+  /// void main() {
+  ///   frag_color = texture(u_texture_input, FlutterFragCoord().xy / u_size) * u_time;
+  ///
+  /// }
+  ///
+  /// ```
+  ///
+  /// This API is only supported when using the Impeller rendering engine. On
+  /// other backends a [UnsupportedError] will be thrown. This error can be
+  /// caught and used for feature detection.
   factory ImageFilter.shader(FragmentShader shader) {
     if (!_impellerEnabled) {
-      throw StateError('ImageFilter.shader only support with Impeller rendering engine.');
+      throw UnsupportedError('ImageFilter.shader only support with Impeller rendering engine.');
+    }
+    if (shader._floats.length < 2 || !shader._validateImageFilter()) {
+      throw StateError(
+        'ImageFilter.shader requires that the first uniform is a '
+        'vec2 and at least one sampler uniform is present.');
     }
     return _FragmentShaderImageFilter(shader);
   }
@@ -4690,6 +4727,9 @@ base class FragmentShader extends Shader {
 
   @Native<Bool Function(Pointer<Void>)>(symbol: 'ReusableFragmentShader::ValidateSamplers')
   external bool _validateSamplers();
+
+  @Native<Bool Function(Pointer<Void>)>(symbol: 'ReusableFragmentShader::ValidateImageFilter')
+  external bool _validateImageFilter();
 
   @Native<Void Function(Pointer<Void>)>(symbol: 'ReusableFragmentShader::Dispose')
   external void _dispose();
