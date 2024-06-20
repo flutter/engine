@@ -452,11 +452,11 @@ Future<void> testMain() async {
       image.addEventListener('load', loadListener);
       image.src = url;
       await completer.future;
-      
+
       final ui.Image uiImage = await renderer.createImageFromTextureSource(image,
           width: 150, height: 150, transferOwnership: false);
       return uiImage;
-      
+
     });
   }
 
