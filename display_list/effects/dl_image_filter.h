@@ -759,7 +759,8 @@ class DlFragmentProgramImageFilter final : public DlImageFilter {
   }
 
   std::shared_ptr<DlImageFilter> shared() const override {
-    return std::make_shared<DlFragmentProgramImageFilter>(this->runtime_effect_);
+    return std::make_shared<DlFragmentProgramImageFilter>(
+        this->runtime_effect_);
   }
 
   static std::shared_ptr<const DlImageFilter> Make(

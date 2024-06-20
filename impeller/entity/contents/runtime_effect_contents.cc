@@ -157,7 +157,8 @@ RuntimeEffectContents::CreatePipeline(const ContentContext& renderer,
   vertex_descriptor->SetStageInputs(VS::kAllShaderStageInputs,
                                     VS::kInterleavedBufferLayout);
   // for (auto x : runtime_stage_->GetDescriptorSetLayouts()) {
-  //   FML_LOG(ERROR) << "layout: " << static_cast<int>(x.descriptor_type) << ", " <<static_cast<int>(x.binding);
+  //   FML_LOG(ERROR) << "layout: " << static_cast<int>(x.descriptor_type) << ",
+  //   " <<static_cast<int>(x.binding);
   // }
   vertex_descriptor->RegisterDescriptorSetLayouts(VS::kDescriptorSetLayouts);
   vertex_descriptor->RegisterDescriptorSetLayouts(

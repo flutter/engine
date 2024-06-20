@@ -30,7 +30,7 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
     return std::nullopt;
   }
   texture_inputs_[0].texture = input_snapshot->texture;
-//  ISize size = input_snapshot->texture->GetSize();
+  //  ISize size = input_snapshot->texture->GetSize();
   // memcpy(uniforms_->data(), &size, sizeof(ISize));
 
   //----------------------------------------------------------------------------
