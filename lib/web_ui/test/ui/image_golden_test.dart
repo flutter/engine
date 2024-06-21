@@ -70,7 +70,9 @@ Future<void> testMain() async {
   setUp(() {
     assetScope = fakeAssetManager.pushAssetScope();
     assetScope.setAsset(
-        'glitch_shader', ByteData.sublistView(utf8.encode(kGlitchShaderSksl)));
+      'glitch_shader',
+      ByteData.sublistView(utf8.encode(kGlitchShaderSksl))
+    );
   });
 
   tearDown(() {
@@ -104,19 +106,14 @@ Future<void> testMain() async {
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
-        canvas.drawImage(image, ui.Offset.zero,
-            ui.Paint()..filterQuality = ui.FilterQuality.none);
-        canvas.drawImage(image, const ui.Offset(150, 0),
-            ui.Paint()..filterQuality = ui.FilterQuality.low);
-        canvas.drawImage(image, const ui.Offset(0, 150),
-            ui.Paint()..filterQuality = ui.FilterQuality.medium);
-        canvas.drawImage(image, const ui.Offset(150, 150),
-            ui.Paint()..filterQuality = ui.FilterQuality.high);
+        canvas.drawImage(image, ui.Offset.zero, ui.Paint()..filterQuality = ui.FilterQuality.none);
+        canvas.drawImage(image, const ui.Offset(150, 0), ui.Paint()..filterQuality = ui.FilterQuality.low);
+        canvas.drawImage(image, const ui.Offset(0, 150), ui.Paint()..filterQuality = ui.FilterQuality.medium);
+        canvas.drawImage(image, const ui.Offset(150, 150), ui.Paint()..filterQuality = ui.FilterQuality.high);
 
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-        await matchGoldenFile('${name}_canvas_drawImage.png',
-            region: drawRegion);
+        await matchGoldenFile('${name}_canvas_drawImage.png', region: drawRegion);
       });
 
       test('drawImageRect', () async {
@@ -126,30 +123,33 @@ Future<void> testMain() async {
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
         const ui.Rect srcRect = ui.Rect.fromLTRB(50, 50, 100, 100);
         canvas.drawImageRect(
-            image,
-            srcRect,
-            const ui.Rect.fromLTRB(0, 0, 150, 150),
-            ui.Paint()..filterQuality = ui.FilterQuality.none);
+          image,
+          srcRect,
+          const ui.Rect.fromLTRB(0, 0, 150, 150),
+          ui.Paint()..filterQuality = ui.FilterQuality.none
+        );
         canvas.drawImageRect(
-            image,
-            srcRect,
-            const ui.Rect.fromLTRB(150, 0, 300, 150),
-            ui.Paint()..filterQuality = ui.FilterQuality.low);
+          image,
+          srcRect,
+          const ui.Rect.fromLTRB(150, 0, 300, 150),
+          ui.Paint()..filterQuality = ui.FilterQuality.low
+        );
         canvas.drawImageRect(
-            image,
-            srcRect,
-            const ui.Rect.fromLTRB(0, 150, 150, 300),
-            ui.Paint()..filterQuality = ui.FilterQuality.medium);
+          image,
+          srcRect,
+          const ui.Rect.fromLTRB(0, 150, 150, 300),
+          ui.Paint()..filterQuality = ui.FilterQuality.medium
+        );
         canvas.drawImageRect(
-            image,
-            srcRect,
-            const ui.Rect.fromLTRB(150, 150, 300, 300),
-            ui.Paint()..filterQuality = ui.FilterQuality.high);
+          image,
+          srcRect,
+          const ui.Rect.fromLTRB(150, 150, 300, 300),
+          ui.Paint()..filterQuality = ui.FilterQuality.high
+        );
 
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-        await matchGoldenFile('${name}_canvas_drawImageRect.png',
-            region: drawRegion);
+        await matchGoldenFile('${name}_canvas_drawImageRect.png', region: drawRegion);
       });
 
       test('drawImageNine', () async {
@@ -157,21 +157,23 @@ Future<void> testMain() async {
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
-        canvas.drawImageNine(image, const ui.Rect.fromLTRB(50, 50, 100, 100),
-            drawRegion, ui.Paint());
+        canvas.drawImageNine(
+          image,
+          const ui.Rect.fromLTRB(50, 50, 100, 100),
+          drawRegion,
+          ui.Paint()
+        );
 
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-        await matchGoldenFile('${name}_canvas_drawImageNine.png',
-            region: drawRegion);
+        await matchGoldenFile('${name}_canvas_drawImageNine.png', region: drawRegion);
       });
 
       test('image_shader_cubic_rotated', () async {
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
         final Float64List matrix = Matrix4.rotationZ(pi / 6).toFloat64();
-        Future<void> drawOvalWithShader(
-            ui.Rect rect, ui.FilterQuality quality) async {
+        Future<void> drawOvalWithShader(ui.Rect rect, ui.FilterQuality quality) async {
           final ui.Image image = await generateImage();
           final ui.ImageShader shader = ui.ImageShader(
             image,
@@ -180,35 +182,32 @@ Future<void> testMain() async {
             matrix,
             filterQuality: quality,
           );
-          canvas.drawOval(rect, ui.Paint()..shader = shader);
+          canvas.drawOval(
+            rect,
+            ui.Paint()..shader = shader
+          );
         }
 
         // Draw image shader with all four qualities.
-        await drawOvalWithShader(
-            const ui.Rect.fromLTRB(0, 0, 150, 100), ui.FilterQuality.none);
-        await drawOvalWithShader(
-            const ui.Rect.fromLTRB(150, 0, 300, 100), ui.FilterQuality.low);
+        await drawOvalWithShader(const ui.Rect.fromLTRB(0, 0, 150, 100), ui.FilterQuality.none);
+        await drawOvalWithShader(const ui.Rect.fromLTRB(150, 0, 300, 100), ui.FilterQuality.low);
 
         // Note that for images that CanvasKit handles lazily (ones created via
         // `createImageFromImageBitmap` or `instantiateImageCodecFromUrl`)
         // there is a CanvasKit bug that this just renders a black oval instead of
         // actually texturing it with the image.
         // See https://g-issues.skia.org/issues/338095525
-        await drawOvalWithShader(
-            const ui.Rect.fromLTRB(0, 100, 150, 200), ui.FilterQuality.medium);
-        await drawOvalWithShader(
-            const ui.Rect.fromLTRB(150, 100, 300, 200), ui.FilterQuality.high);
+        await drawOvalWithShader(const ui.Rect.fromLTRB(0, 100, 150, 200), ui.FilterQuality.medium);
+        await drawOvalWithShader(const ui.Rect.fromLTRB(150, 100, 300, 200), ui.FilterQuality.high);
 
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
-        await matchGoldenFile('${name}_image_shader_cubic_rotated.png',
-            region: drawRegion);
+        await matchGoldenFile('${name}_image_shader_cubic_rotated.png', region: drawRegion);
       });
 
       test('fragment_shader_sampler', () async {
         final ui.Image image = await generateImage();
 
-        final ui.FragmentProgram program =
-            await renderer.createFragmentProgram('glitch_shader');
+        final ui.FragmentProgram program = await renderer.createFragmentProgram('glitch_shader');
         final ui.FragmentShader shader = program.fragmentShader();
 
         // Resolution
@@ -223,13 +222,11 @@ Future<void> testMain() async {
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
-        canvas.drawCircle(
-            const ui.Offset(150, 150), 100, ui.Paint()..shader = shader);
+        canvas.drawCircle(const ui.Offset(150, 150), 100, ui.Paint()..shader = shader);
 
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-        await matchGoldenFile('${name}_fragment_shader_sampler.png',
-            region: drawRegion);
+        await matchGoldenFile('${name}_fragment_shader_sampler.png', region: drawRegion);
       }, skip: isHtml); // HTML doesn't support fragment shaders
 
       test('drawVertices with image shader', () async {
@@ -270,13 +267,11 @@ Future<void> testMain() async {
 
         final ui.PictureRecorder recorder = ui.PictureRecorder();
         final ui.Canvas canvas = ui.Canvas(recorder, drawRegion);
-        canvas.drawVertices(
-            vertices, ui.BlendMode.srcOver, ui.Paint()..shader = shader);
+        canvas.drawVertices(vertices, ui.BlendMode.srcOver, ui.Paint()..shader = shader);
 
         await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-        await matchGoldenFile('${name}_drawVertices_imageShader.png',
-            region: drawRegion);
+        await matchGoldenFile('${name}_drawVertices_imageShader.png', region: drawRegion);
       }, skip: isHtml); // https://github.com/flutter/flutter/issues/127454;
 
       test('toByteData_rgba', () async {
@@ -290,8 +285,7 @@ Future<void> testMain() async {
       test('toByteData_png', () async {
         final ui.Image image = await generateImage();
 
-        final ByteData? pngData =
-            await image.toByteData(format: ui.ImageByteFormat.png);
+        final ByteData? pngData = await image.toByteData(format: ui.ImageByteFormat.png);
         expect(pngData, isNotNull);
         expect(pngData!.lengthInBytes, isNonZero);
       }, skip: isHtml); // https://github.com/flutter/flutter/issues/126611
@@ -305,10 +299,8 @@ Future<void> testMain() async {
       for (int x = 0; x < 15; x++) {
         final ui.Offset center = ui.Offset(x * 10 + 5, y * 10 + 5);
         final ui.Color color = ui.Color.fromRGBO(
-            (center.dx * 256 / 150).round(),
-            (center.dy * 256 / 150).round(),
-            0,
-            1);
+          (center.dx * 256 / 150).round(),
+          (center.dy * 256 / 150).round(), 0, 1);
         canvas.drawCircle(center, 5, ui.Paint()..color = color);
       }
     }
@@ -316,7 +308,10 @@ Future<void> testMain() async {
   });
 
   Uint8List generatePixelData(
-      int width, int height, ui.Color Function(double, double) generator) {
+    int width,
+    int height,
+    ui.Color Function(double, double) generator
+  ) {
     final Uint8List data = Uint8List(width * height * 4);
     int outputIndex = 0;
     for (int y = 0; y < height; y++) {
@@ -346,8 +341,7 @@ Future<void> testMain() async {
       );
     });
     final Completer<ui.Image> completer = Completer<ui.Image>();
-    ui.decodeImageFromPixels(
-        pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
+    ui.decodeImageFromPixels(pixels, 150, 150, ui.PixelFormat.rgba8888, completer.complete);
     return completer.future;
   });
 
@@ -380,7 +374,8 @@ Future<void> testMain() async {
 
   emitImageTests('codec_uri', () async {
     final ui.Codec codec = await renderer.instantiateImageCodecFromUrl(
-        Uri(path: '/test_images/mandrill_128.png'));
+      Uri(path: '/test_images/mandrill_128.png')
+    );
     expect(codec.frameCount, 1);
 
     final ui.FrameInfo info = await codec.getNextFrame();
@@ -392,14 +387,12 @@ Future<void> testMain() async {
   if (!isFirefox) {
     emitImageTests('svg_image_bitmap', () async {
       final DomBlob svgBlob = createDomBlob(<String>[
-        '''
+  '''
   <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150">
     <path d="M25,75  A50,50 0 1,0 125 75 L75,25 Z" stroke="blue" stroke-width="10" fill="red"></path>
   </svg>
   '''
-      ], <String, String>{
-        'type': 'image/svg+xml'
-      });
+      ], <String, String>{'type': 'image/svg+xml'});
       final String url = domWindow.URL.createObjectURL(svgBlob);
       final DomHTMLImageElement image = createDomHTMLImageElement();
       final Completer<void> completer = Completer<void>();
@@ -416,8 +409,7 @@ Future<void> testMain() async {
 
       expect(bitmap.width.toDartInt, 150);
       expect(bitmap.height.toDartInt, 150);
-      final ui.Image uiImage =
-          await renderer.createImageFromImageBitmap(bitmap);
+      final ui.Image uiImage = await renderer.createImageFromImageBitmap(bitmap);
 
       if (isSkwasm) {
         // Skwasm transfers the bitmap to the web worker, so it should be disposed/consumed.
@@ -453,16 +445,14 @@ Future<void> testMain() async {
       image.src = url;
       await completer.future;
 
-      final ui.Image uiImage = await renderer.createImageFromTextureSource(image,
-          width: 150, height: 150, transferOwnership: false);
+      final ui.Image uiImage =
+          await renderer.createImageFromTextureSource(image.toJSAnyShallow, width: 150, height: 150, transferOwnership: false);
       return uiImage;
-
     });
   }
 
   emitImageTests('codec_list_resized', () async {
-    final ByteBuffer data =
-        await httpFetchByteBuffer('/test_images/mandrill_128.png');
+    final ByteBuffer data = await httpFetchByteBuffer('/test_images/mandrill_128.png');
     final ui.Codec codec = await renderer.instantiateImageCodec(
       data.asUint8List(),
       targetWidth: 150,

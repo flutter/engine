@@ -53,7 +53,7 @@ FutureOr<ui.Image> createImageFromImageBitmap(JSAny imageSource) {
 /// will be made. If this is not desired, the ownership of the object can be
 /// transferred to the renderer and the engine will take ownership of the
 /// texture source and consume its contents.
-FutureOr<ui.Image> createImageFromTextureSource(Object object,  { required int width, required int height, bool transferOwnership = false }) {
+FutureOr<ui.Image> createImageFromTextureSource(JSAny object,  { required int width, required int height, bool transferOwnership = false }) {
   return renderer.createImageFromTextureSource(
     object, width: width, height: height, transferOwnership: transferOwnership
   );

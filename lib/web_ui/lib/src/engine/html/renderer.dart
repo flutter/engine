@@ -373,7 +373,7 @@ class HtmlRenderer implements Renderer {
   }
 
   @override
-  FutureOr<ui.Image> createImageFromTextureSource(Object object,  { required int width, required int height, required bool transferOwnership }) {
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny object,  { required int width, required int height, required bool transferOwnership }) {
     throw Exception('Not implemented for HTML renderer');
   }
 }

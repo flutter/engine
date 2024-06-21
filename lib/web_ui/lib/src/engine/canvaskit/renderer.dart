@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -239,10 +240,10 @@ class CanvasKitRenderer implements Renderer {
   }
 
   @override
-  FutureOr<ui.Image> createImageFromTextureSource(Object object,
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny object,
       {required int width, required int height, required bool transferOwnership}) async {
         if (!transferOwnership) {
-          final DomImageBitmap bitmap = await createImageBitmap(object.toJSAnyShallow, (x:0, y: 0, width: width, height: height));
+          final DomImageBitmap bitmap = await createImageBitmap(object, (x:0, y: 0, width: width, height: height));
           return createImageFromImageBitmap(bitmap);
         }
     final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(

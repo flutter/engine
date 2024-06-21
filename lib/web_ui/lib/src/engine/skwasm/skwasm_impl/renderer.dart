@@ -474,9 +474,9 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  FutureOr<ui.Image> createImageFromTextureSource(Object textureSource, { required int width, required int height, required bool transferOwnership }) async {
+  FutureOr<ui.Image> createImageFromTextureSource(JSAny textureSource, { required int width, required int height, required bool transferOwnership }) async {
     if (!transferOwnership) {
-      textureSource = await createImageBitmap(textureSource.toJSAnyShallow, (x: 0, y: 0, width: width, height: height));
+      textureSource = (await createImageBitmap(textureSource, (x: 0, y: 0, width: width, height: height))).toJSAnyShallow;
     }
     return SkwasmImage(imageCreateFromTextureSource(
       textureSource as JSObject,
