@@ -1523,6 +1523,8 @@ ax::mojom::StringAttribute ParseStringAttribute(const char* string_attribute) {
     return ax::mojom::StringAttribute::kUrl;
   if (0 == strcmp(string_attribute, "value"))
     return ax::mojom::StringAttribute::kValue;
+  if (0 == strcmp(string_attribute, "authorUniqueId"))
+    return ax::mojom::StringAttribute::kAuthorUniqueId;
   return ax::mojom::StringAttribute::kNone;
 }
 
