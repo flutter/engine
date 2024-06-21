@@ -241,7 +241,7 @@ class CanvasKitRenderer implements Renderer {
   @override
   FutureOr<ui.Image> createImageFromTextureSource(Object object,
       {required int width, required int height, required bool transferOwnership}) async {
-        if(!transferOwnership) {
+        if (!transferOwnership) {
           final DomImageBitmap bitmap = await createImageBitmap(object.toJSAnyShallow, (x:0, y: 0, width: width, height: height));
           return createImageFromImageBitmap(bitmap);
         }
