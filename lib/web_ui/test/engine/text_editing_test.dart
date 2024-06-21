@@ -929,6 +929,15 @@ Future<void> testMain() async {
           textEditing!.strategy.domElement, 'abcd', 2, 3);
       expect(textEditing!.isEditing, isTrue);
 
+      // touchstart event is dispatched to the DOM element.
+      domDocument.dispatchEvent(createDomEvent('Event', 'touchstart'));
+      // No connection close message sent.
+      expect(spy.messages, hasLength(0));
+      await Future<void>.delayed(Duration.zero);
+      // DOM element still keeps the focus.
+      expect(defaultTextEditingRoot.ownerDocument?.activeElement,
+          textEditing!.strategy.domElement);
+
       // Delay for not to be a fast callback with blur.
       await Future<void>.delayed(const Duration(milliseconds: 200));
       // DOM element is blurred.
