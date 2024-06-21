@@ -476,6 +476,7 @@ class CkFragmentShader implements ui.FragmentShader, CkShader {
     }());
     ref?.dispose();
     ref = null;
+    free(floats);
   }
 
   bool _debugDisposed = false;
