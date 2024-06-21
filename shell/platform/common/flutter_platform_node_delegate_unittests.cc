@@ -46,6 +46,7 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   root.actions = static_cast<FlutterSemanticsAction>(0);
   root.text_selection_base = -1;
   root.text_selection_extent = -1;
+  root.identifier = "";
   root.label = "root";
   root.hint = "";
   root.value = "";
