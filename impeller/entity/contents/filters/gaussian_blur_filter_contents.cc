@@ -81,13 +81,20 @@ Vector2 ExtractScale(const Matrix& matrix) {
 }
 
 struct BlurInfo {
+  /// The scalar that is used to get from source space to unrotated local space.
   Vector2 source_space_scalar;
+  /// Sigma when considering an entity's scale and the effect transform.
   Vector2 scaled_sigma;
+  /// Blur radius in source pixels based on scaled_sigma.
   Vector2 blur_radius;
+  /// The halo padding in source space.
   Vector2 padding;
+  /// Padding in unrotated local space.
   Vector2 local_padding;
 };
 
+/// Calculates sigma derivatives necessary for rendering or calculating
+/// coverage.
 BlurInfo CalculateBlurInfo(const Entity& entity,
                            const Matrix& effect_transform,
                            Vector2 sigma) {
@@ -119,6 +126,7 @@ BlurInfo CalculateBlurInfo(const Entity& entity,
   };
 }
 
+/// Perform FilterInput::GetSnapshot with safety checks.
 std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
                                     const ContentContext& renderer,
                                     const Entity& entity,
@@ -149,11 +157,18 @@ std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
 }
 
 struct DownsamplePassArgs {
+  /// The output size of the down-sampling pass.
   ISize subpass_size;
+  /// The UVs that will be used for drawing to the down-sampling pass.
+  /// This effectively is chopping out a region of the input.
   Quad uvs;
+  /// The effective scalar of the down-sample pass.
+  /// This isn't usually exactly as we'd calculate because it has to be rounded
+  /// to integer boundaries for generating the texture for the output.
   Vector2 effective_scalar;
 };
 
+/// Calculates info required for the down-sampling pass.
 DownsamplePassArgs CalculateDownsamplePassArgs(
     Vector2 scaled_sigma,
     Vector2 padding,
