@@ -69,6 +69,50 @@ void SetTileMode(SamplerDescriptor* descriptor,
   }
 }
 
+struct DownsamplePassArgs {
+  ISize subpass_size;
+  Quad uvs;
+  Vector2 effective_scalar;
+};
+
+DownsamplePassArgs CalculateDownsamplePassArgs(
+    Vector2 scaled_sigma,
+    Vector2 padding,
+    ISize input_snapshot_size,
+    const std::shared_ptr<FilterInput>& input,
+    const Entity& snapshot_entity) {
+  Scalar desired_scalar =
+      std::min(GaussianBlurFilterContents::CalculateScale(scaled_sigma.x),
+               GaussianBlurFilterContents::CalculateScale(scaled_sigma.y));
+  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
+  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
+  // pass.
+  Vector2 downsample_scalar(desired_scalar, desired_scalar);
+  Rect source_rect = Rect::MakeSize(input_snapshot_size);
+  Rect source_rect_padded = source_rect.Expand(padding);
+  // TODO(gaaclarke): The padding could be removed if we know it's not needed or
+  //   resized to account for the expanded_clip_coverage. There doesn't appear
+  //   to be the math to make those calculations though. The following
+  //   optimization works, but causes a shimmer as a result of
+  //   https://github.com/flutter/flutter/issues/140193 so it isn't applied.
+  //
+  //   !input_snapshot->GetCoverage()->Expand(-local_padding)
+  //     .Contains(coverage_hint.value()))
+  Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
+  ISize subpass_size =
+      ISize(round(downsampled_size.x), round(downsampled_size.y));
+  Vector2 effective_scalar =
+      Vector2(subpass_size) / source_rect_padded.GetSize();
+
+  Quad uvs = GaussianBlurFilterContents::CalculateUVs(
+      input, snapshot_entity, source_rect_padded, input_snapshot_size);
+  return {
+      .subpass_size = subpass_size,
+      .uvs = uvs,
+      .effective_scalar = effective_scalar,
+  };
+}
+
 /// Makes a subpass that will render the scaled down input and add the
 /// transparent gutter required for the blur halo.
 fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
@@ -476,31 +520,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
   FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
 
-  Scalar desired_scalar =
-      std::min(CalculateScale(scaled_sigma.x), CalculateScale(scaled_sigma.y));
-  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
-  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
-  // pass.
-  Vector2 downsample_scalar(desired_scalar, desired_scalar);
-  Rect source_rect = Rect::MakeSize(input_snapshot->texture->GetSize());
-  Rect source_rect_padded = source_rect.Expand(padding);
   Matrix padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
-  // TODO(gaaclarke): The padding could be removed if we know it's not needed or
-  //   resized to account for the expanded_clip_coverage. There doesn't appear
-  //   to be the math to make those calculations though. The following
-  //   optimization works, but causes a shimmer as a result of
-  //   https://github.com/flutter/flutter/issues/140193 so it isn't applied.
-  //
-  //   !input_snapshot->GetCoverage()->Expand(-local_padding)
-  //     .Contains(coverage_hint.value()))
-  Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
-  ISize subpass_size =
-      ISize(round(downsampled_size.x), round(downsampled_size.y));
-  Vector2 effective_scalar =
-      Vector2(subpass_size) / source_rect_padded.GetSize();
-
-  Quad uvs = CalculateUVs(inputs[0], snapshot_entity, source_rect_padded,
-                          input_snapshot->texture->GetSize());
+  DownsamplePassArgs downsample_pass_args = CalculateDownsamplePassArgs(
+      scaled_sigma, padding, input_snapshot->texture->GetSize(), inputs[0],
+      snapshot_entity);
 
   std::shared_ptr<CommandBuffer> command_buffer =
       renderer.GetContext()->CreateCommandBuffer();
@@ -510,7 +533,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
       renderer, command_buffer, input_snapshot->texture,
-      input_snapshot->sampler_descriptor, uvs, subpass_size, tile_mode_);
+      input_snapshot->sampler_descriptor, downsample_pass_args.uvs,
+      downsample_pass_args.subpass_size, tile_mode_);
 
   if (!pass1_out.ok()) {
     return std::nullopt;
@@ -543,8 +567,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       input_snapshot->sampler_descriptor, tile_mode_,
       BlurParameters{
           .blur_uv_offset = Point(0.0, pass1_pixel_size.y),
-          .blur_sigma = scaled_sigma.y * effective_scalar.y,
-          .blur_radius = ScaleBlurRadius(blur_radius.y, effective_scalar.y),
+          .blur_sigma =
+              scaled_sigma.y * downsample_pass_args.effective_scalar.y,
+          .blur_radius = ScaleBlurRadius(
+              blur_radius.y, downsample_pass_args.effective_scalar.y),
           .step_size = 1,
       },
       /*destination_target=*/std::nullopt, blur_uvs);
@@ -564,8 +590,10 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       input_snapshot->sampler_descriptor, tile_mode_,
       BlurParameters{
           .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
-          .blur_sigma = scaled_sigma.x * effective_scalar.x,
-          .blur_radius = ScaleBlurRadius(blur_radius.x, effective_scalar.x),
+          .blur_sigma =
+              scaled_sigma.x * downsample_pass_args.effective_scalar.x,
+          .blur_radius = ScaleBlurRadius(
+              blur_radius.x, downsample_pass_args.effective_scalar.x),
           .step_size = 1,
       },
       pass3_destination, blur_uvs);
@@ -593,11 +621,12 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Entity blur_output_entity = Entity::FromSnapshot(
       Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
-               .transform = entity.GetTransform() *                         //
-                            Matrix::MakeScale(1.f / source_space_scalar) *  //
-                            input_snapshot->transform *                     //
-                            padding_snapshot_adjustment *                   //
-                            Matrix::MakeScale(1 / effective_scalar),
+               .transform =
+                   entity.GetTransform() *                         //
+                   Matrix::MakeScale(1.f / source_space_scalar) *  //
+                   input_snapshot->transform *                     //
+                   padding_snapshot_adjustment *                   //
+                   Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
       entity.GetBlendMode());
