@@ -27,6 +27,7 @@
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
 #include "impeller/playground/widgets.h"
@@ -2169,6 +2170,30 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
                    Entity::ClipOperation::kIntersect);
   canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
   canvas.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_example_filter.frag.iplr");
+
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+  ASSERT_TRUE(runtime_stage->IsDirty());
+
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(sizeof(Vector2));
+
+  Paint paint;
+  paint.color = Color::Aqua();
+  paint.image_filter = ImageFilter::MakeRuntimeEffect(
+      runtime_stage, uniform_data, texture_inputs);
+
+  Canvas canvas;
+  canvas.DrawRect(Rect::MakeXYWH(0, 0, 400, 400), paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
