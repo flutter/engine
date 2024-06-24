@@ -45,9 +45,11 @@ static vk::UniqueSampler CreateSampler(
       break;
     case MipFilter::kNearest:
       sampler_info.mipmapMode = vk::SamplerMipmapMode::eNearest;
+      sampler_info.minLod = desc.min_lod;
       break;
     case MipFilter::kLinear:
       sampler_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
+      sampler_info.minLod = desc.min_lod;
       break;
   }
 

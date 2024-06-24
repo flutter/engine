@@ -4,6 +4,7 @@
 
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/sampler_mtl.h"
 
@@ -36,6 +37,9 @@ const std::unique_ptr<const Sampler>& SamplerLibraryMTL::GetSampler(
   }
   if (!descriptor.label.empty()) {
     desc.label = @(descriptor.label.c_str());
+  }
+  if (descriptor.mip_filter != MipFilter::kBase) {
+    desc.lodMinClamp = descriptor.min_lod;
   }
 
   auto mtl_sampler = [device_ newSamplerStateWithDescriptor:desc];

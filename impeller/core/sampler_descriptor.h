@@ -21,6 +21,14 @@ struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
   SamplerAddressMode height_address_mode = SamplerAddressMode::kClampToEdge;
   SamplerAddressMode depth_address_mode = SamplerAddressMode::kClampToEdge;
 
+  /// The minimum lod of the texture will be clamped to this value.
+  ///
+  /// This value is ignored with a mip_filter of MipFilter::kBase.
+  ///
+  /// Defaults to 0, the base mip level. Only supported on Vulkan and
+  /// Metal backends.
+  size_t min_lod = 0;
+
   std::string label = "NN Clamp Sampler";
 
   SamplerDescriptor();
@@ -34,7 +42,7 @@ struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
   std::size_t GetHash() const override {
     return fml::HashCombine(min_filter, mag_filter, mip_filter,
                             width_address_mode, height_address_mode,
-                            depth_address_mode);
+                            depth_address_mode, min_lod);
   }
 
   // Comparable<SamplerDescriptor>
@@ -43,7 +51,7 @@ struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
            mip_filter == o.mip_filter &&
            width_address_mode == o.width_address_mode &&
            height_address_mode == o.height_address_mode &&
-           depth_address_mode == o.depth_address_mode;
+           depth_address_mode == o.depth_address_mode && min_lod == o.min_lod;
   }
 };
 
