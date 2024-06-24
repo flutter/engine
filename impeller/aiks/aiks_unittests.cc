@@ -2185,11 +2185,10 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   ASSERT_TRUE(runtime_stage->IsDirty());
 
   std::vector<RuntimeEffectContents::TextureInput> texture_inputs = {
-    RuntimeEffectContents::TextureInput{
-      .sampler_descriptor = SamplerDescriptor{},
-      .texture = nullptr,
-    }
-  };
+      RuntimeEffectContents::TextureInput{
+          .sampler_descriptor = SamplerDescriptor{},
+          .texture = nullptr,
+      }};
 
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
   uniform_data->resize(sizeof(Vector2));
