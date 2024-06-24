@@ -74,6 +74,35 @@ Vector2 Clamp(Vector2 vec2, Scalar min, Scalar max) {
                  std::clamp(vec2.y, /*lo=*/min, /*hi=*/max));
 }
 
+std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
+                                    const ContentContext& renderer,
+                                    const Entity& entity,
+                                    const std::optional<Rect>& coverage_hint) {
+  int32_t mip_count = GaussianBlurFilterContents::kBlurFilterRequiredMipCount;
+  if (renderer.GetContext()->GetBackendType() ==
+      Context::BackendType::kOpenGLES) {
+    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
+    // generation on opengles.
+    mip_count = 1;
+  }
+
+  std::optional<Snapshot> input_snapshot =
+      input->GetSnapshot("GaussianBlur", renderer, entity,
+                         /*coverage_limit=*/coverage_hint,
+                         /*mip_count=*/mip_count);
+  if (!input_snapshot.has_value()) {
+    return std::nullopt;
+  }
+
+  // In order to avoid shimmering in downsampling step, we should have mips.
+  if (input_snapshot->texture->GetMipCount() <= 1) {
+    FML_DLOG(ERROR) << GaussianBlurFilterContents::kNoMipsError;
+  }
+  FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
+
+  return input_snapshot;
+}
+
 struct DownsamplePassArgs {
   ISize subpass_size;
   Quad uvs;
@@ -482,14 +511,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
     expanded_coverage_hint = coverage_hint->Expand(local_padding);
   }
 
-  int32_t mip_count = kBlurFilterRequiredMipCount;
-  if (renderer.GetContext()->GetBackendType() ==
-      Context::BackendType::kOpenGLES) {
-    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
-    // generation on opengles.
-    mip_count = 1;
-  }
-
   Entity snapshot_entity = entity.Clone();
   snapshot_entity.SetTransform(Matrix::MakeScale(source_space_scalar));
   std::optional<Rect> source_expanded_coverage_hint;
@@ -499,10 +520,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
         entity.GetTransform().Invert());
   }
 
-  std::optional<Snapshot> input_snapshot =
-      inputs[0]->GetSnapshot("GaussianBlur", renderer, snapshot_entity,
-                             /*coverage_limit=*/source_expanded_coverage_hint,
-                             /*mip_count=*/mip_count);
+  std::optional<Snapshot> input_snapshot = GetSnapshot(
+      inputs[0], renderer, snapshot_entity, source_expanded_coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -516,12 +535,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                         input_snapshot->transform);
     return result;
   }
-
-  // In order to avoid shimmering in downsampling step, we should have mips.
-  if (input_snapshot->texture->GetMipCount() <= 1) {
-    FML_DLOG(ERROR) << kNoMipsError;
-  }
-  FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
 
   DownsamplePassArgs downsample_pass_args = CalculateDownsamplePassArgs(
       scaled_sigma, padding, input_snapshot->texture->GetSize(), inputs[0],
