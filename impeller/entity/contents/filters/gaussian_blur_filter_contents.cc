@@ -120,8 +120,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const std::shared_ptr<CommandBuffer>& command_buffer,
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
-    const Quad& uvs,
-    const ISize& subpass_size,
+    const DownsamplePassArgs& pass_args,
     Entity::TileMode tile_mode) {
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
@@ -139,6 +138,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
         TextureFillFragmentShader::FragInfo frag_info;
         frag_info.alpha = 1.0;
 
+        const Quad& uvs = pass_args.uvs;
         BindVertices<TextureFillVertexShader>(pass, host_buffer,
                                               {
                                                   {Point(0, 0), uvs[0]},
@@ -162,8 +162,9 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
         return pass.Draw().ok();
       };
-  fml::StatusOr<RenderTarget> render_target = renderer.MakeSubpass(
-      "Gaussian Blur Filter", subpass_size, command_buffer, subpass_callback);
+  fml::StatusOr<RenderTarget> render_target =
+      renderer.MakeSubpass("Gaussian Blur Filter", pass_args.subpass_size,
+                           command_buffer, subpass_callback);
   return render_target;
 }
 
@@ -532,8 +533,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
       renderer, command_buffer, input_snapshot->texture,
-      input_snapshot->sampler_descriptor, downsample_pass_args.uvs,
-      downsample_pass_args.subpass_size, tile_mode_);
+      input_snapshot->sampler_descriptor, downsample_pass_args, tile_mode_);
 
   if (!pass1_out.ok()) {
     return std::nullopt;
@@ -624,7 +624,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                    entity.GetTransform() *                         //
                    Matrix::MakeScale(1.f / source_space_scalar) *  //
                    input_snapshot->transform *                     //
-                   Matrix::MakeTranslation(-padding) *                   //
+                   Matrix::MakeTranslation(-padding) *             //
                    Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
