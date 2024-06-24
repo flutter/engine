@@ -28,7 +28,7 @@ struct BlurParameters {
 /// can hold 2x the max kernel size since it will get reduced with the lerp
 /// hack.
 struct KernelSamples {
-  static constexpr int kMaxKernelSize = (kGaussianBlurMaxKernelSize * 2) - 1;
+  static constexpr int kMaxKernelSize = kGaussianBlurMaxKernelSize * 2;
   int sample_count;
   GaussianBlurPipeline::FragmentShader::KernelSample samples[kMaxKernelSize];
 };
