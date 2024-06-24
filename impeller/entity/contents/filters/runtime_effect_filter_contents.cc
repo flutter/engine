@@ -34,7 +34,7 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
   // which is treated as the input and a vec2 size uniform to compute the
   // offsets. These are validated at the dart:ui layer, but to avoid crashes we
   // check here too.
-  if (texture_inputs_.size() < 1 || uniforms_->size() < 16) {
+  if (texture_inputs_.size() < 1 || uniforms_->size() < 8) {
     VALIDATION_LOG
         << "Invalid fragment shader in RuntimeEffectFilterContents. "
         << "Shader must have at least one sampler and a vec2 size uniform.";
