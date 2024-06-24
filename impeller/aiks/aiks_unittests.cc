@@ -20,6 +20,7 @@
 #include "impeller/aiks/image_filter.h"
 #include "impeller/aiks/testing/context_spy.h"
 #include "impeller/core/device_buffer.h"
+#include "impeller/core/sampler_descriptor.h"
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
@@ -2183,7 +2184,13 @@ TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   ASSERT_TRUE(runtime_stage);
   ASSERT_TRUE(runtime_stage->IsDirty());
 
-  std::vector<RuntimeEffectContents::TextureInput> texture_inputs;
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs = {
+    RuntimeEffectContents::TextureInput{
+      .sampler_descriptor = SamplerDescriptor{},
+      .texture = nullptr,
+    }
+  };
+
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
   uniform_data->resize(sizeof(Vector2));
 
