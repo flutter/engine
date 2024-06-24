@@ -7,8 +7,6 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-// import '../../common/test_initialization.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
