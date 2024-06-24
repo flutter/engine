@@ -2176,7 +2176,7 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 
 TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
   auto runtime_stages =
-      OpenAssetAsRuntimeStage("runtime_stage_example_filter.frag.iplr");
+      OpenAssetAsRuntimeStage("runtime_stage_filter_example.frag.iplr");
 
   auto runtime_stage =
       runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
