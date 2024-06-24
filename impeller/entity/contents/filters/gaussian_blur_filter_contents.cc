@@ -349,8 +349,7 @@ GaussianBlurFilterContents::GaussianBlurFilterContents(
     Entity::TileMode tile_mode,
     BlurStyle mask_blur_style,
     const std::shared_ptr<Geometry>& mask_geometry)
-    : sigma_x_(sigma_x),
-      sigma_y_(sigma_y),
+    : sigma_(sigma_x, sigma_y),
       tile_mode_(tile_mode),
       mask_blur_style_(mask_blur_style),
       mask_geometry_(mask_geometry) {
@@ -391,7 +390,7 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
     const Matrix& effect_transform,
     const Rect& output_limit) const {
-  Vector2 scaled_sigma = {ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)};
+  Vector2 scaled_sigma = {ScaleSigma(sigma_.x), ScaleSigma(sigma_.y)};
   Vector2 blur_radius = {CalculateBlurRadius(scaled_sigma.x),
                          CalculateBlurRadius(scaled_sigma.y)};
   Vector3 blur_radii =
@@ -422,7 +421,7 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
   const Vector2 source_space_scalar =
       ExtractScale(entity.GetTransform().Basis());
   Vector2 scaled_sigma = (Matrix::MakeScale(source_space_scalar) *
-                          Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
+                          Vector2(ScaleSigma(sigma_.x), ScaleSigma(sigma_.y)))
                              .Abs();
   scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
   scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
@@ -462,7 +461,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Vector2 scaled_sigma =
       (effect_transform.Basis() * Matrix::MakeScale(source_space_scalar) *  //
-       Vector2(ScaleSigma(sigma_x_), ScaleSigma(sigma_y_)))
+       Vector2(ScaleSigma(sigma_.x), ScaleSigma(sigma_.y)))
           .Abs();
   scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
   scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
