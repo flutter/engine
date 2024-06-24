@@ -461,7 +461,7 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
                                .blur_sigma = 1,
                                .blur_radius = 5,
                                .step_size = 1};
-  LargeKernelSamples samples = GenerateBlurInfo(parameters);
+  KernelSamples samples = GenerateBlurInfo(parameters);
   EXPECT_EQ(samples.sample_count, 9);
 
   // Coefficients should add up to 1.
@@ -481,7 +481,7 @@ TEST(GaussianBlurFilterContentsTest, Coefficients) {
 }
 
 TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesSimple) {
-  LargeKernelSamples kernel_samples = {
+  KernelSamples kernel_samples = {
       .sample_count = 5,
       .samples =
           {
@@ -566,7 +566,7 @@ TEST(GaussianBlurFilterContentsTest, LerpHackKernelSamplesComplex) {
                                .blur_sigma = sigma,
                                .blur_radius = blur_radius,
                                .step_size = 1};
-  LargeKernelSamples kernel_samples = GenerateBlurInfo(parameters);
+  KernelSamples kernel_samples = GenerateBlurInfo(parameters);
   EXPECT_EQ(kernel_samples.sample_count, 33);
   GaussianBlurPipeline::FragmentShader::KernelSamples fast_kernel_samples =
       LerpHackKernelSamples(kernel_samples);
@@ -620,8 +620,10 @@ TEST(GaussianBlurFilterContentsTest, ChopHugeBlurs) {
                                .blur_sigma = sigma,
                                .blur_radius = blur_radius,
                                .step_size = 1};
-  LargeKernelSamples kernel_samples = GenerateBlurInfo(parameters);
-  EXPECT_EQ(kernel_samples.sample_count, 98);
+  KernelSamples kernel_samples = GenerateBlurInfo(parameters);
+  GaussianBlurPipeline::FragmentShader::KernelSamples frag_kernel_samples =
+      LerpHackKernelSamples(kernel_samples);
+  EXPECT_TRUE(frag_kernel_samples.sample_count <= kGaussianBlurMaxKernelSize);
 }
 
 }  // namespace testing

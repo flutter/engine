@@ -172,7 +172,7 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
             pass, host_buffer.EmplaceUniform(frame_info));
         GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
             LerpHackKernelSamples(GenerateBlurInfo(blur_info));
-        FML_CHECK(kernel_samples.sample_count < kGaussianBlurMaxKernelSize);
+        FML_CHECK(kernel_samples.sample_count <= kGaussianBlurMaxKernelSize);
         GaussianBlurFragmentShader::BindKernelSamples(
             pass, host_buffer.EmplaceUniform(kernel_samples));
         return pass.Draw().ok();
@@ -637,8 +637,8 @@ Scalar GaussianBlurFilterContents::ScaleSigma(Scalar sigma) {
   return clamped * scalar;
 }
 
-LargeKernelSamples GenerateBlurInfo(BlurParameters parameters) {
-  LargeKernelSamples result;
+KernelSamples GenerateBlurInfo(BlurParameters parameters) {
+  KernelSamples result;
   result.sample_count =
       ((2 * parameters.blur_radius) / parameters.step_size) + 1;
 
@@ -658,11 +658,9 @@ LargeKernelSamples GenerateBlurInfo(BlurParameters parameters) {
   // TODO(https://github.com/flutter/flutter/issues/150462): Come up with a more
   // wholistic remedy for this.  A proper downsample size should not make this
   // required. Or we can increase the kernel size.
-  if (result.sample_count > (2 * (kGaussianBlurMaxKernelSize - 1))) {
-    result.sample_count = 2 * (kGaussianBlurMaxKernelSize - 1);
+  if (result.sample_count > KernelSamples::kMaxKernelSize) {
+    result.sample_count = KernelSamples::kMaxKernelSize;
   }
-
-  FML_CHECK(result.sample_count < kGaussianBlurMaxKernelSize * 2);
 
   Scalar tally = 0.0f;
   for (int i = 0; i < result.sample_count; ++i) {
@@ -687,11 +685,12 @@ LargeKernelSamples GenerateBlurInfo(BlurParameters parameters) {
 // This works by shrinking the kernel size by 2 and relying on lerp to read
 // between the samples.
 GaussianBlurPipeline::FragmentShader::KernelSamples LerpHackKernelSamples(
-    LargeKernelSamples parameters) {
+    KernelSamples parameters) {
   GaussianBlurPipeline::FragmentShader::KernelSamples result;
   result.sample_count = ((parameters.sample_count - 1) / 2) + 1;
   int32_t middle = result.sample_count / 2;
   int32_t j = 0;
+  FML_DCHECK(result.sample_count <= kGaussianBlurMaxKernelSize);
   for (int i = 0; i < result.sample_count; i++) {
     if (i == middle) {
       result.samples[i] = parameters.samples[j++];
