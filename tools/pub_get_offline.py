@@ -87,6 +87,8 @@ def check_package(package):
 
 
 EXCLUDED_DIRS = [
+    # FIXME: Do not submit this change, it's for PR testing only.
+    os.path.join(ENGINE_DIR),
     os.path.join(ENGINE_DIR, 'lib'),
     os.path.join(ENGINE_DIR, 'prebuilts'),
     os.path.join(ENGINE_DIR, 'shell', 'platform', 'fuchsia'),
@@ -119,6 +121,9 @@ def find_unlisted_packages():
 
 
 def main():
+  # Intentionally use the Dart SDK prebuilt instead of the Flutter prebuilt
+  # (i.e. prebuilts/{platform}/dart-sdk/bin/dart) because the script has to run
+  # in a monorepo build *before* the newer Dart SDK has been built from source.
   dart_sdk_bin = os.path.join(
       SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
   )
