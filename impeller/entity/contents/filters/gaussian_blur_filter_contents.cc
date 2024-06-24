@@ -520,7 +520,6 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
   FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
 
-  Matrix padding_snapshot_adjustment = Matrix::MakeTranslation(-padding);
   DownsamplePassArgs downsample_pass_args = CalculateDownsamplePassArgs(
       scaled_sigma, padding, input_snapshot->texture->GetSize(), inputs[0],
       snapshot_entity);
@@ -625,7 +624,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                    entity.GetTransform() *                         //
                    Matrix::MakeScale(1.f / source_space_scalar) *  //
                    input_snapshot->transform *                     //
-                   padding_snapshot_adjustment *                   //
+                   Matrix::MakeTranslation(-padding) *                   //
                    Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
