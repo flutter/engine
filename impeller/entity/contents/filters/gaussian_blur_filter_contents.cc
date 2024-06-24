@@ -69,6 +69,11 @@ void SetTileMode(SamplerDescriptor* descriptor,
   }
 }
 
+Vector2 Clamp(Vector2 vec2, Scalar min, Scalar max) {
+  return Vector2(std::clamp(vec2.x, /*lo=*/min, /*hi=*/max),
+                 std::clamp(vec2.y, /*lo=*/min, /*hi=*/max));
+}
+
 struct DownsamplePassArgs {
   ISize subpass_size;
   Quad uvs;
@@ -423,8 +428,7 @@ std::optional<Rect> GaussianBlurFilterContents::GetFilterCoverage(
   Vector2 scaled_sigma = (Matrix::MakeScale(source_space_scalar) *
                           Vector2(ScaleSigma(sigma_.x), ScaleSigma(sigma_.y)))
                              .Abs();
-  scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
-  scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
+  scaled_sigma = Clamp(scaled_sigma, 0, kMaxSigma);
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
@@ -463,8 +467,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       (effect_transform.Basis() * Matrix::MakeScale(source_space_scalar) *  //
        Vector2(ScaleSigma(sigma_.x), ScaleSigma(sigma_.y)))
           .Abs();
-  scaled_sigma.x = std::min(scaled_sigma.x, kMaxSigma);
-  scaled_sigma.y = std::min(scaled_sigma.y, kMaxSigma);
+  scaled_sigma = Clamp(scaled_sigma, 0, kMaxSigma);
   Vector2 blur_radius = Vector2(CalculateBlurRadius(scaled_sigma.x),
                                 CalculateBlurRadius(scaled_sigma.y));
   Vector2 padding(ceil(blur_radius.x), ceil(blur_radius.y));
