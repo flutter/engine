@@ -392,6 +392,49 @@ void main() async {
     shader.dispose();
   });
 
+  test('ImageFilter.shader errors if shader does not have correct uniform layout', () async {
+    if (!impellerEnabled) {
+      print('Skipped for Skia');
+      return;
+    }
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'no_uniforms.frag.iplr',
+    );
+    final FragmentShader shader = program.fragmentShader();
+
+    Object? error;
+    try {
+      ImageFilter.shader(shader);
+    } catch (err) {
+      error = err;
+    }
+    expect(error is StateError, true);
+  });
+
+  test('ImageFilter.shader can be applied to canvas operations', () async {
+    if (!impellerEnabled) {
+      print('Skipped for Skia');
+      return;
+    }
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'filter_shader.frag.iplr',
+    );
+    final FragmentShader shader = program.fragmentShader();
+    final PictureRecorder recorder = PictureRecorder();
+    final Canvas canvas = Canvas(recorder);
+    canvas.drawPaint(
+      Paint()
+        ..color = const Color(0xFFFF0000)
+        ..imageFilter = ImageFilter.shader(shader)
+    );
+    final Image image = await recorder.endRecording().toImage(1, 1);
+    final ByteData data = (await image.toByteData())!;
+    final Color color = Color(data.buffer.asUint32List()[0]);
+    print(color);
+
+    expect(color, const Color(0xFF00FF00));
+  });
+
   if (impellerEnabled) {
     print('Skipped for Impeller - https://github.com/flutter/flutter/issues/122823');
     return;
