@@ -5,7 +5,7 @@
 # The `flutter/engine` repository is a quasi-monorepo, with multiple Dart tools
 # and packages that are all interdependent. Third party dependencies are managed
 # by the `DEPS` file in the root of the repository, and are synced to either the
-# `third_party` (i.e. `//flutter/third_party`) or `../third_party` (i.e. 
+# `third_party` (i.e. `//flutter/third_party`) or `../third_party` (i.e.
 # `//third_party`) directories by `gclient sync`.
 #
 # Every dependency declared here are dependencies used by _one or more_ of the
