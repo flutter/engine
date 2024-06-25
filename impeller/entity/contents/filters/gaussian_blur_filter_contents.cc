@@ -226,7 +226,7 @@ struct DownsamplePassArgs {
   Vector2 effective_scalar;
   /// The coverage hint that is aligned with the downsample scalar.
   /// This is in the scaled source space and includes the padding.
-  std::optional<Rect> aligned_coverage_hint;
+  Rect aligned_coverage_hint;
 };
 
 /// Calculates info required for the down-sampling pass.
@@ -253,7 +253,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
 
-  std::optional<Rect> aligned_coverage_hint;
+  Rect aligned_coverage_hint;
   if (source_expanded_coverage_hint.has_value()) {
     int32_t divisor = std::round(1.0f / desired_scalar);
     aligned_coverage_hint = Rect::MakeLTRB(
@@ -262,17 +262,14 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
         source_expanded_coverage_hint->GetRight(),
         source_expanded_coverage_hint->GetBottom());
     aligned_coverage_hint = Rect::MakeXYWH(
-        aligned_coverage_hint->GetX(), aligned_coverage_hint->GetY(),
-        CeilToDivisible(aligned_coverage_hint->GetWidth(), divisor),
-        CeilToDivisible(aligned_coverage_hint->GetHeight(), divisor));
+        aligned_coverage_hint.GetX(), aligned_coverage_hint.GetY(),
+        CeilToDivisible(aligned_coverage_hint.GetWidth(), divisor),
+        CeilToDivisible(aligned_coverage_hint.GetHeight(), divisor));
+  } else {
+    aligned_coverage_hint = Rect::MakeSize(input_snapshot.texture->GetSize());
   }
-
-  ISize source_expanded_coverage_size =
-      ISize(aligned_coverage_hint->GetSize().width,
-            aligned_coverage_hint->GetSize().height);
-  ISize source_size = aligned_coverage_hint.has_value()
-                          ? source_expanded_coverage_size
-                          : input_snapshot.texture->GetSize();
+  ISize source_size = ISize(aligned_coverage_hint.GetSize().width,
+                            aligned_coverage_hint.GetSize().height);
   Vector2 downsampled_size = source_size * downsample_scalar;
   Scalar int_part;
   FML_DCHECK(std::modf(downsampled_size.x, &int_part) == 0.0f);
@@ -723,18 +720,17 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   Entity blur_output_entity = Entity::FromSnapshot(
-      Snapshot{
-          .texture = pass3_out.value().GetRenderTargetTexture(),
-          .transform =
-              entity.GetTransform() *                                   //
-              Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
-              input_snapshot->transform *                               //
-              Matrix::MakeTranslation(
-                  {downsample_pass_args.aligned_coverage_hint->GetX(),
-                   downsample_pass_args.aligned_coverage_hint->GetY(), 0}) *
-              Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
-          .sampler_descriptor = sampler_desc,
-          .opacity = input_snapshot->opacity},
+      Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
+               .transform =
+                   entity.GetTransform() *                                   //
+                   Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
+                   input_snapshot->transform *                               //
+                   Matrix::MakeTranslation(
+                       {downsample_pass_args.aligned_coverage_hint.GetX(),
+                        downsample_pass_args.aligned_coverage_hint.GetY(), 0}) *
+                   Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
       entity.GetBlendMode());
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
