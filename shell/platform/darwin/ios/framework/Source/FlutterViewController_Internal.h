@@ -65,7 +65,7 @@ typedef void (^FlutterKeyboardAnimationCallback)(fml::TimePoint);
 // handled.
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())nextAction API_AVAILABLE(ios(13.4));
-- (void)openDeepLink:(NSURL*)url completionHandler:(void (^)(BOOL success))completion;
+- (void)sendDeepLinkToFramework:(NSURL*)url completionHandler:(void (^)(BOOL success))completion;
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
 - (int32_t)accessibilityFlags;

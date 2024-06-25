@@ -141,49 +141,37 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   return isDeepLinkingEnabled ? [isDeepLinkingEnabled boolValue] : NO;
 }
 
-- (void)openURL:(NSURL*)url
-              options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
-    completionHandler:(void (^)(BOOL success))completion {
-  [self handleOpenURL:url options:options completionHandler:completion];
-}
-
+// This method is called when openning a URL with custom schemes.
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+  NSLog(@"application:openURL:");
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   }
-
-  return [self handleOpenURL:url options:options];
-}
-- (void)handleOpenURL:(NSURL*)url
-              options:(NSDictionary<UIApplicationOpenExternalURLOptionsKey, id>*)options
-    completionHandler:(void (^)(BOOL success))completion {
-  if (![self isFlutterDeepLinkingEnabled]) {
-    completion(NO);
-  } else {
-    FlutterViewController* flutterViewController = [self rootFlutterViewController];
-    if (flutterViewController) {
-      [flutterViewController openDeepLink:url completionHandler:completion];
-    } else {
-      FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
-      completion(NO);
-    }
-  }
+  return [self handleOpenURL:url options:options throwBackToiOS:NO];
 }
 
 - (BOOL)handleOpenURL:(NSURL*)url
-              options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
+              options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
+       throwBackToiOS:(BOOL)throwBack {
   if (![self isFlutterDeepLinkingEnabled]) {
     return NO;
   }
-  [self handleOpenURL:url
-                options:options
-      completionHandler:^(BOOL success) {
-        if (!success) {  // throw it back to iOS
-          [UIApplication.sharedApplication openURL:url];
-        }
-      }];
+
+  FlutterViewController* flutterViewController = [self rootFlutterViewController];
+  if (flutterViewController) {
+    [flutterViewController sendDeepLinkToFramework:url
+                                 completionHandler:^(BOOL success) {
+                                   if (!success && throwBack) {
+                                     // throw it back to iOS
+                                     [UIApplication.sharedApplication openURL:url];
+                                   }
+                                 }];
+  } else {
+    FML_LOG(ERROR) << "Attempting to open an URL without a Flutter RootViewController.";
+    return NO;
+  }
   return YES;
 }
 
@@ -228,7 +216,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  return [self handleOpenURL:userActivity.webpageURL options:@{}];
+  return [self handleOpenURL:userActivity.webpageURL options:@{} throwBackToiOS:YES];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
