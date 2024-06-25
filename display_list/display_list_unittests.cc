@@ -1155,8 +1155,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
   RUN_TESTS2(
       receiver.drawPoints(PointMode::kPoints, TestPointCount, kTestPoints);
       , false);
-  RUN_TESTS2(receiver.drawVertices(TestVertices1.get(), DlBlendMode::kSrc);
-             , false);
+  RUN_TESTS2(receiver.drawVertices(kTestVertices1, DlBlendMode::kSrc);, false);
   RUN_TESTS(receiver.drawImage(TestImage1, {0, 0}, kLinearSampling, true););
   RUN_TESTS2(receiver.drawImage(TestImage1, {0, 0}, kLinearSampling, false);
              , true);
@@ -3270,7 +3269,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawArc({10, 10, 20, 20}, 45, 90, true, paint);
           SkPoint pts[] = {{10, 10}, {20, 20}};
           builder.DrawPoints(PointMode::kLines, 2, pts, paint);
-          builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
+          builder.DrawVertices(kTestVertices1, DlBlendMode::kSrcOver, paint);
           builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
                             &paint);
           builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
