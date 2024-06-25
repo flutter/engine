@@ -141,7 +141,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   return isDeepLinkingEnabled ? [isDeepLinkingEnabled boolValue] : NO;
 }
 
-// This method is called when opening a URL with custom schemes.
+// This method is called when opening an URL with custom schemes.
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
@@ -151,7 +151,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   return [self handleOpenURL:url options:options throwBackToiOS:NO];
 }
 
-// Helper function for opening a URL.
+// Helper function for opening an URL.
 - (BOOL)handleOpenURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
        throwBackToiOS:(BOOL)throwBack {
