@@ -188,6 +188,32 @@ Quad CalculateBlurUVs(
   return blur_uvs;
 }
 
+Scalar CeilToDivisible(Scalar val, Scalar divisor) {
+  if (divisor == 0.0f) {
+    return val;
+  }
+
+  Scalar remainder = fmod(val, divisor);
+  if (remainder != 0.0f) {
+    return val + (divisor - remainder);
+  } else {
+    return val;
+  }
+}
+
+Scalar FloorToDivisible(Scalar val, Scalar divisor) {
+  if (divisor == 0.0f) {
+    return val;
+  }
+
+  Scalar remainder = fmod(val, divisor);
+  if (remainder != 0.0f) {
+    return val - remainder;
+  } else {
+    return val;
+  }
+}
+
 struct DownsamplePassArgs {
   /// The output size of the down-sampling pass.
   ISize subpass_size;
@@ -205,7 +231,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
     Vector2 scaled_sigma,
     Vector2 padding,
     const Snapshot& input_snapshot,
-    const std::optional<Rect>& source_expanded_coverage_hint,
+    std::optional<Rect>& source_expanded_coverage_hint,
     const std::shared_ptr<FilterInput>& input,
     const Entity& snapshot_entity) {
   Scalar desired_scalar =
@@ -223,13 +249,32 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
+
+  if (source_expanded_coverage_hint.has_value()) {
+    int32_t divisor = std::round(1.0f / desired_scalar);
+    source_expanded_coverage_hint = Rect::MakeLTRB(
+        FloorToDivisible(source_expanded_coverage_hint->GetLeft(), divisor),
+        FloorToDivisible(source_expanded_coverage_hint->GetTop(), divisor),
+        source_expanded_coverage_hint->GetRight(),
+        source_expanded_coverage_hint->GetBottom());
+    source_expanded_coverage_hint = Rect::MakeXYWH(
+        source_expanded_coverage_hint->GetX(),
+        source_expanded_coverage_hint->GetY(),
+        CeilToDivisible(source_expanded_coverage_hint->GetWidth(), divisor),
+        CeilToDivisible(source_expanded_coverage_hint->GetHeight(), divisor));
+  }
+
   ISize source_expanded_coverage_size =
-      ISize(ceil(source_expanded_coverage_hint->GetSize().width),
-            ceil(source_expanded_coverage_hint->GetSize().height));
+      ISize(source_expanded_coverage_hint->GetSize().width,
+            source_expanded_coverage_hint->GetSize().height);
   ISize source_size = source_expanded_coverage_hint.has_value()
                           ? source_expanded_coverage_size
                           : input_snapshot.texture->GetSize();
   Vector2 downsampled_size = source_size * downsample_scalar;
+  Scalar int_part;
+  FML_DCHECK(std::modf(downsampled_size.x, &int_part) == 0.0f);
+  FML_DCHECK(std::modf(downsampled_size.y, &int_part) == 0.0f);
+  (void)int_part;
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
   Vector2 effective_scalar = Vector2(subpass_size) / source_size;
