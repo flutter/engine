@@ -277,6 +277,7 @@ allowed_hosts = [
 ]
 
 deps = {
+  # TODO(camsim99): Update to latest buildroot commit when https://github.com/flutter/buildroot/pull/870 lands.
   'src': 'https://github.com/flutter/buildroot.git' + '@' + '9a4ba8138aed94000ac5070590a21030008903bb',
 
   'src/flutter/third_party/depot_tools':
@@ -774,7 +775,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/sdk/all/${{platform}}',
-        'version': 'version:34v7'
+        'version': 'version:35v1'
        }
      ],
      'condition': 'download_android_deps',
