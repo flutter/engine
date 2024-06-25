@@ -224,6 +224,9 @@ struct DownsamplePassArgs {
   /// This isn't usually exactly as we'd calculate because it has to be rounded
   /// to integer boundaries for generating the texture for the output.
   Vector2 effective_scalar;
+  /// The coverage hint that is aligned with the downsample scalar.
+  /// This is in the scaled source space and includes the padding.
+  std::optional<Rect> aligned_coverage_hint;
 };
 
 /// Calculates info required for the down-sampling pass.
@@ -231,7 +234,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
     Vector2 scaled_sigma,
     Vector2 padding,
     const Snapshot& input_snapshot,
-    std::optional<Rect>& source_expanded_coverage_hint,
+    const std::optional<Rect>& source_expanded_coverage_hint,
     const std::shared_ptr<FilterInput>& input,
     const Entity& snapshot_entity) {
   Scalar desired_scalar =
@@ -250,24 +253,24 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
 
+  std::optional<Rect> aligned_coverage_hint;
   if (source_expanded_coverage_hint.has_value()) {
     int32_t divisor = std::round(1.0f / desired_scalar);
-    source_expanded_coverage_hint = Rect::MakeLTRB(
+    aligned_coverage_hint = Rect::MakeLTRB(
         FloorToDivisible(source_expanded_coverage_hint->GetLeft(), divisor),
         FloorToDivisible(source_expanded_coverage_hint->GetTop(), divisor),
         source_expanded_coverage_hint->GetRight(),
         source_expanded_coverage_hint->GetBottom());
-    source_expanded_coverage_hint = Rect::MakeXYWH(
-        source_expanded_coverage_hint->GetX(),
-        source_expanded_coverage_hint->GetY(),
-        CeilToDivisible(source_expanded_coverage_hint->GetWidth(), divisor),
-        CeilToDivisible(source_expanded_coverage_hint->GetHeight(), divisor));
+    aligned_coverage_hint = Rect::MakeXYWH(
+        aligned_coverage_hint->GetX(), aligned_coverage_hint->GetY(),
+        CeilToDivisible(aligned_coverage_hint->GetWidth(), divisor),
+        CeilToDivisible(aligned_coverage_hint->GetHeight(), divisor));
   }
 
   ISize source_expanded_coverage_size =
-      ISize(source_expanded_coverage_hint->GetSize().width,
-            source_expanded_coverage_hint->GetSize().height);
-  ISize source_size = source_expanded_coverage_hint.has_value()
+      ISize(aligned_coverage_hint->GetSize().width,
+            aligned_coverage_hint->GetSize().height);
+  ISize source_size = aligned_coverage_hint.has_value()
                           ? source_expanded_coverage_size
                           : input_snapshot.texture->GetSize();
   Vector2 downsampled_size = source_size * downsample_scalar;
@@ -275,15 +278,16 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   FML_DCHECK(std::modf(downsampled_size.x, &int_part) == 0.0f);
   FML_DCHECK(std::modf(downsampled_size.y, &int_part) == 0.0f);
   (void)int_part;
-  ISize subpass_size =
-      ISize(round(downsampled_size.x), round(downsampled_size.y));
+  ISize subpass_size = ISize(downsampled_size.x, downsampled_size.y);
   Vector2 effective_scalar = Vector2(subpass_size) / source_size;
+  FML_DCHECK(effective_scalar == downsample_scalar);
 
-  Quad uvs = CalculateBlurUVs(input_snapshot, source_expanded_coverage_hint);
+  Quad uvs = CalculateBlurUVs(input_snapshot, aligned_coverage_hint);
   return {
       .subpass_size = subpass_size,
       .uvs = uvs,
       .effective_scalar = effective_scalar,
+      .aligned_coverage_hint = aligned_coverage_hint,
   };
 }
 
@@ -719,17 +723,18 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       MinMagFilter::kLinear, SamplerAddressMode::kClampToEdge);
 
   Entity blur_output_entity = Entity::FromSnapshot(
-      Snapshot{.texture = pass3_out.value().GetRenderTargetTexture(),
-               .transform =
-                   entity.GetTransform() *                                   //
-                   Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
-                   input_snapshot->transform *                               //
-                   Matrix::MakeTranslation(
-                       {source_expanded_coverage_hint->GetX(),
-                        source_expanded_coverage_hint->GetY(), 0}) *
-                   Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
-               .sampler_descriptor = sampler_desc,
-               .opacity = input_snapshot->opacity},
+      Snapshot{
+          .texture = pass3_out.value().GetRenderTargetTexture(),
+          .transform =
+              entity.GetTransform() *                                   //
+              Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
+              input_snapshot->transform *                               //
+              Matrix::MakeTranslation(
+                  {downsample_pass_args.aligned_coverage_hint->GetX(),
+                   downsample_pass_args.aligned_coverage_hint->GetY(), 0}) *
+              Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
+          .sampler_descriptor = sampler_desc,
+          .opacity = input_snapshot->opacity},
       entity.GetBlendMode());
 
   return ApplyBlurStyle(mask_blur_style_, entity, inputs[0],
