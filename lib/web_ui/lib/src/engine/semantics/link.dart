@@ -19,10 +19,18 @@ class Link extends PrimaryRoleManager {
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
     element.style.display = 'block';
+    return element;
+  }
+
+  @override
+  void update() {
+    super.update();
+
     if (semanticsObject.hasLinkUri) {
       element.setAttribute('href', semanticsObject.linkUri!);
+    } else {
+      element.removeAttribute('href');
     }
-    return element;
   }
 
   @override
