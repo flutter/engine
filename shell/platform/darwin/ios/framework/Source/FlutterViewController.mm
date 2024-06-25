@@ -1386,12 +1386,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGRect viewBounds = self.view.bounds;
   CGFloat scale = [self flutterScreenIfViewLoaded].scale;
 
-  // Purposefully place this not visible.
-  _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
-  _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
-
   // First time since creation that the dimensions of its view is known.
   bool firstViewBoundsUpdate = !_viewportMetrics.physical_width;
+
+  // Make the scroll view invisible the first time the view is laid out.
+  if (firstViewBoundsUpdate) {
+    _scrollView.get().frame = CGRectMake(0.0, 0.0, viewBounds.size.width, 0.0);
+    _scrollView.get().contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
+  }
+
   _viewportMetrics.device_pixel_ratio = scale;
   [self setViewportMetricsSize];
   [self setViewportMetricsPaddings];

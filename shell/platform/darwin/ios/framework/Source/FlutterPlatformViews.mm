@@ -556,15 +556,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // down to the logical resoltion before applying it to the layer of PlatformView.
   transformMatrix.postScale(1 / screenScale, 1 / screenScale);
 
-  // Reverse the offset of the clipView.
-  // The clipView's frame includes the final translate of the final transform matrix.
-  // Thus, this translate needs to be reversed so the platform view can layout at the correct
-  // offset.
-  //
-  // Note that the transforms are not applied to the clipping paths because clipping paths happen on
-  // the mask view, whose origin is always (0,0) to the flutter_view.
-  transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
-
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
@@ -604,14 +595,12 @@ void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
 
   const MutatorsStack& mutatorStack = params.mutatorsStack();
   UIView* clippingView = root_views_[view_id].get();
-  // The frame of the clipping view should be the final bounding rect.
-  // Because the translate matrix in the Mutator Stack also includes the offset,
-  // when we apply the transforms matrix in |ApplyMutators|, we need
-  // to remember to do a reverse translate.
   const SkRect& rect = params.finalBoundingRect();
   CGFloat screenScale = [UIScreen mainScreen].scale;
-  clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
-                                  rect.width() / screenScale, rect.height() / screenScale);
+  CGRect clipping_rect = CGRectMake(0, 0, rect.width() / screenScale, rect.height() / screenScale);
+  if (!CGRectEqualToRect(clipping_rect, clippingView.frame)) {
+    clippingView.frame = clipping_rect;
+  }
   ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
