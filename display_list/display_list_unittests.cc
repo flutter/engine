@@ -4697,14 +4697,16 @@ TEST_F(DisplayListTest, ClipPathRRectNonCulling) {
 
 TEST_F(DisplayListTest, RecordLargeVertices) {
   constexpr size_t vertex_count = 2000000;
-  SkPoint* points = (SkPoint*)malloc(vertex_count * sizeof(SkPoint));
-  DlColor* colors = (DlColor*)malloc(vertex_count * sizeof(DlColor));
+  auto points = std::vector<SkPoint>();
+  points.reserve(vertex_count);
+  auto colors = std::vector<DlColor>();
+  colors.reserve(vertex_count);
   for (size_t i = 0; i < vertex_count; i++) {
     colors[i] = DlColor(-i);
     points[i] = ((i & 1) == 0) ? SkPoint::Make(-i, i) : SkPoint::Make(i, i);
   }
   auto vertices = DlVertices::Make(DlVertexMode::kTriangleStrip, vertex_count,
-                                   points, points, colors);
+                                   points.data(), points.data(), colors.data());
   ASSERT_GT(vertices->size(), 1u << 24);
   auto backdrop = DlBlurImageFilter::Make(5.0f, 5.0f, DlTileMode::kDecal);
 
