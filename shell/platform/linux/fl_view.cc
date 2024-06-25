@@ -6,8 +6,12 @@
 
 #include "flutter/shell/platform/linux/fl_view_private.h"
 
+#include <atk/atk.h>
+#include <gtk/gtk-a11y.h>
+
 #include <cstring>
 
+#include "flutter/shell/platform/linux/fl_accessible_node.h"
 #include "flutter/shell/platform/linux/fl_backing_store_provider.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event.h"
@@ -19,6 +23,7 @@
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
 #include "flutter/shell/platform/linux/fl_scrolling_view_delegate.h"
+#include "flutter/shell/platform/linux/fl_socket_accessible.h"
 #include "flutter/shell/platform/linux/fl_text_input_plugin.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
@@ -64,6 +69,9 @@ struct _FlView {
   gulong keymap_keys_changed_cb_id;  // Signal connection ID for
                                      // keymap-keys-changed
   gulong window_state_cb_id;  // Signal connection ID for window-state-changed
+
+  // Accessible tree from Flutter, exposed as an AtkPlug.
+  FlViewAccessible* view_accessible;
 };
 
 enum { kPropFlutterProject = 1, kPropLast };
@@ -124,6 +132,25 @@ static void init_scrolling(FlView* self) {
       fl_scrolling_manager_new(FL_SCROLLING_VIEW_DELEGATE(self));
 }
 
+static FlutterPointerDeviceKind get_device_kind(GdkEvent* event) {
+  GdkDevice* device = gdk_event_get_source_device(event);
+  GdkInputSource source = gdk_device_get_source(device);
+  switch (source) {
+    case GDK_SOURCE_PEN:
+    case GDK_SOURCE_ERASER:
+    case GDK_SOURCE_CURSOR:
+    case GDK_SOURCE_TABLET_PAD:
+      return kFlutterPointerDeviceKindStylus;
+    case GDK_SOURCE_TOUCHSCREEN:
+      return kFlutterPointerDeviceKindTouch;
+    case GDK_SOURCE_TOUCHPAD:  // trackpad device type is reserved for gestures
+    case GDK_SOURCE_TRACKPOINT:
+    case GDK_SOURCE_KEYBOARD:
+    case GDK_SOURCE_MOUSE:
+      return kFlutterPointerDeviceKindMouse;
+  }
+}
+
 // Converts a GDK button event into a Flutter event and sends it to the engine.
 static gboolean send_pointer_button_event(FlView* self, GdkEvent* event) {
   guint event_time = gdk_event_get_time(event);
@@ -180,7 +207,8 @@ static gboolean send_pointer_button_event(FlView* self, GdkEvent* event) {
                                               event_state, event_time);
   fl_engine_send_mouse_pointer_event(
       self->engine, phase, event_time * kMicrosecondsPerMillisecond,
-      event_x * scale_factor, event_y * scale_factor, 0, 0, self->button_state);
+      event_x * scale_factor, event_y * scale_factor,
+      get_device_kind((GdkEvent*)event), 0, 0, self->button_state);
 
   return TRUE;
 }
@@ -197,7 +225,8 @@ static void check_pointer_inside(FlView* self, GdkEvent* event) {
       fl_engine_send_mouse_pointer_event(
           self->engine, kAdd,
           gdk_event_get_time(event) * kMicrosecondsPerMillisecond,
-          x * scale_factor, y * scale_factor, 0, 0, self->button_state);
+          x * scale_factor, y * scale_factor, get_device_kind(event), 0, 0,
+          self->button_state);
     }
   }
 }
@@ -231,9 +260,7 @@ static void update_semantics_cb(FlEngine* engine,
                                 gpointer user_data) {
   FlView* self = FL_VIEW(user_data);
 
-  AtkObject* accessible = gtk_widget_get_accessible(GTK_WIDGET(self));
-  fl_view_accessible_handle_update_semantics(FL_VIEW_ACCESSIBLE(accessible),
-                                             update);
+  fl_view_accessible_handle_update_semantics(self->view_accessible, update);
 }
 
 // Invoked by the engine right before the engine is restarted.
@@ -320,13 +347,14 @@ static void fl_view_scrolling_delegate_iface_init(
     FlScrollingViewDelegateInterface* iface) {
   iface->send_mouse_pointer_event =
       [](FlScrollingViewDelegate* view_delegate, FlutterPointerPhase phase,
-         size_t timestamp, double x, double y, double scroll_delta_x,
+         size_t timestamp, double x, double y,
+         FlutterPointerDeviceKind device_kind, double scroll_delta_x,
          double scroll_delta_y, int64_t buttons) {
         FlView* self = FL_VIEW(view_delegate);
         if (self->engine != nullptr) {
           fl_engine_send_mouse_pointer_event(self->engine, phase, timestamp, x,
-                                             y, scroll_delta_x, scroll_delta_y,
-                                             buttons);
+                                             y, device_kind, scroll_delta_x,
+                                             scroll_delta_y, buttons);
         }
       };
   iface->send_pointer_pan_zoom_event =
@@ -413,7 +441,8 @@ static gboolean motion_notify_event_cb(FlView* self,
   fl_engine_send_mouse_pointer_event(
       self->engine, self->button_state != 0 ? kMove : kHover,
       event_time * kMicrosecondsPerMillisecond, event_x * scale_factor,
-      event_y * scale_factor, 0, 0, self->button_state);
+      event_y * scale_factor, get_device_kind((GdkEvent*)event), 0, 0,
+      self->button_state);
 
   return TRUE;
 }
@@ -456,8 +485,8 @@ static gboolean leave_notify_event_cb(FlView* self,
     gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(self));
     fl_engine_send_mouse_pointer_event(
         self->engine, kRemove, event_time * kMicrosecondsPerMillisecond,
-        event_x * scale_factor, event_y * scale_factor, 0, 0,
-        self->button_state);
+        event_x * scale_factor, event_y * scale_factor,
+        get_device_kind((GdkEvent*)event), 0, 0, self->button_state);
     self->pointer_inside = FALSE;
   }
 
@@ -586,6 +615,11 @@ static void realize_cb(FlView* self) {
   }
 
   handle_geometry_changed(self);
+
+  self->view_accessible = fl_view_accessible_new(self->engine);
+  fl_socket_accessible_embed(
+      FL_SOCKET_ACCESSIBLE(gtk_widget_get_accessible(GTK_WIDGET(self))),
+      atk_plug_get_id(ATK_PLUG(self->view_accessible)));
 }
 
 static gboolean render_cb(FlView* self, GdkGLContext* context) {
@@ -691,6 +725,7 @@ static void fl_view_dispose(GObject* object) {
   }
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
+  g_clear_object(&self->view_accessible);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -733,7 +768,7 @@ static void fl_view_class_init(FlViewClass* klass) {
                                    G_PARAM_STATIC_STRINGS)));
 
   gtk_widget_class_set_accessible_type(GTK_WIDGET_CLASS(klass),
-                                       fl_view_accessible_get_type());
+                                       fl_socket_accessible_get_type());
 }
 
 static void fl_view_init(FlView* self) {

@@ -62,8 +62,6 @@ static const std::string kAllowedDartFlags[] = {
     "--trace-reload",
     "--trace-reload-verbose",
     "--write-service-info",
-    "--null_assertions",
-    "--strict_null_safety_checks",
     "--max_subtype_cache_entries",
     "--enable-asserts",
 };
@@ -519,28 +517,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
         &resource_cache_max_bytes_threshold);
     settings.resource_cache_max_bytes_threshold =
         std::stoi(resource_cache_max_bytes_threshold);
-  }
-
-  if (command_line.HasOption(FlagForSwitch(Switch::MsaaSamples))) {
-    std::string msaa_samples;
-    command_line.GetOptionValue(FlagForSwitch(Switch::MsaaSamples),
-                                &msaa_samples);
-    if (msaa_samples == "0") {
-      settings.msaa_samples = 0;
-    } else if (msaa_samples == "1") {
-      settings.msaa_samples = 1;
-    } else if (msaa_samples == "2") {
-      settings.msaa_samples = 2;
-    } else if (msaa_samples == "4") {
-      settings.msaa_samples = 4;
-    } else if (msaa_samples == "8") {
-      settings.msaa_samples = 8;
-    } else if (msaa_samples == "16") {
-      settings.msaa_samples = 16;
-    } else {
-      FML_DLOG(ERROR) << "Invalid value for --msaa-samples: '" << msaa_samples
-                      << "' (expected 0, 1, 2, 4, 8, or 16).";
-    }
   }
 
   settings.enable_platform_isolates =

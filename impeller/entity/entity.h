@@ -7,7 +7,6 @@
 
 #include <cstdint>
 
-#include "impeller/core/capture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/matrix.h"
@@ -33,7 +32,8 @@ class Entity {
     /// rather than local space, and so some filters (namely,
     /// MatrixFilterContents) need to interpret the given EffectTransform as the
     /// current transform matrix.
-    kSubpass,
+    kSubpassAppendSnapshotTransform,
+    kSubpassPrependSnapshotTransform,
   };
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
@@ -101,13 +101,7 @@ class Entity {
 
   void SetClipDepth(uint32_t clip_depth);
 
-  void IncrementStencilDepth(uint32_t increment);
-
   uint32_t GetClipDepth() const;
-
-  void SetNewClipDepth(uint32_t clip_depth);
-
-  uint32_t GetNewClipDepth() const;
 
   float GetShaderClipDepth() const;
 
@@ -129,10 +123,6 @@ class Entity {
 
   Scalar DeriveTextScale() const;
 
-  Capture& GetCapture() const;
-
-  void SetCapture(Capture capture) const;
-
   Entity Clone() const;
 
  private:
@@ -141,9 +131,7 @@ class Entity {
   Matrix transform_;
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
-  uint32_t clip_depth_ = 0u;
-  uint32_t new_clip_depth_ = 1u;
-  mutable Capture capture_;
+  uint32_t clip_depth_ = 1u;
 };
 
 }  // namespace impeller

@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_TYPOGRAPHER_RECTANGLE_PACKER_H_
 
 #include "flutter/fml/logging.h"
+#include "impeller/geometry/scalar.h"
 
 #include <cstdint>
 
@@ -27,7 +28,7 @@ class RectanglePacker {
   //----------------------------------------------------------------------------
   /// @brief     Return an empty packer with area specified by width and height.
   ///
-  static std::unique_ptr<RectanglePacker> Factory(int width, int height);
+  static std::shared_ptr<RectanglePacker> Factory(int width, int height);
 
   virtual ~RectanglePacker() {}
 
@@ -41,19 +42,19 @@ class RectanglePacker {
   ///
   /// @return     Return true on success; false on failure.
   ///
-  virtual bool addRect(int width, int height, IPoint16* loc) = 0;
+  virtual bool AddRect(int width, int height, IPoint16* loc) = 0;
 
   //----------------------------------------------------------------------------
   /// @brief     Returns how much area has been filled with rectangles.
   ///
   /// @return    Percentage as a decimal between 0.0 and 1.0
   ///
-  virtual float percentFull() const = 0;
+  virtual Scalar PercentFull() const = 0;
 
   //----------------------------------------------------------------------------
   /// @brief     Empty out all previously added rectangles.
   ///
-  virtual void reset() = 0;
+  virtual void Reset() = 0;
 
  protected:
   RectanglePacker(int width, int height) : width_(width), height_(height) {

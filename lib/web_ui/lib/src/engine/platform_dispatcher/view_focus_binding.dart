@@ -3,12 +3,20 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'package:meta/meta.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 /// Tracks the [FlutterView]s focus changes.
 final class ViewFocusBinding {
   ViewFocusBinding(this._viewManager, this._onViewFocusChange);
+
+
+  /// Wether [FlutterView] focus changes will be reported and performed.
+  ///
+  /// DO NOT rely on this bit as it will go away soon. You're warned :)!
+  @visibleForTesting
+  static bool isEnabled = false;
 
   final FlutterViewManager _viewManager;
   final ui.ViewFocusChangeCallback _onViewFocusChange;
@@ -35,12 +43,15 @@ final class ViewFocusBinding {
   }
 
   void changeViewFocus(int viewId, ui.ViewFocusState state) {
+    if (!isEnabled) {
+      return;
+    }
     final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
 
     if (state == ui.ViewFocusState.focused) {
       // Only move the focus to the flutter view if nothing inside it is focused already.
       if (viewId != _viewId(domDocument.activeElement)) {
-        viewElement?.focus();
+        viewElement?.focus(preventScroll: true);
       }
     } else {
       viewElement?.blur();
@@ -59,7 +70,7 @@ final class ViewFocusBinding {
 
   late final DomEventListener _handleKeyDown = createDomEventListener((DomEvent event) {
     event as DomKeyboardEvent;
-    if (event.shiftKey) {
+    if (event.shiftKey ?? false) {
       _viewFocusDirection = ui.ViewFocusDirection.backward;
     }
   });
@@ -69,6 +80,10 @@ final class ViewFocusBinding {
   });
 
   void _handleFocusChange(DomElement? focusedElement) {
+    if (!isEnabled) {
+      return;
+    }
+
     final int? viewId = _viewId(focusedElement);
     if (viewId == _lastViewId) {
       return;

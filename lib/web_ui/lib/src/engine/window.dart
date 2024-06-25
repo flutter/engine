@@ -135,11 +135,6 @@ base class EngineFlutterView implements ui.FlutterView {
     semantics.updateSemantics(update);
   }
 
-  // TODO(yjbanov): How should this look like for multi-view?
-  //                https://github.com/flutter/flutter/issues/137445
-  late final AccessibilityAnnouncements accessibilityAnnouncements =
-      AccessibilityAnnouncements(hostElement: dom.announcementsHost);
-
   late final GlobalHtmlAttributes _globalHtmlAttributes = GlobalHtmlAttributes(
     rootElement: dom.rootElement,
     hostElement: embeddingStrategy.hostElement,
@@ -394,6 +389,9 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 
   @override
   bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
+
+  @override
+  bool get supportsShowingSystemContextMenu => platformDispatcher.supportsShowingSystemContextMenu;
 
   @override
   bool get brieflyShowPassword => platformDispatcher.brieflyShowPassword;

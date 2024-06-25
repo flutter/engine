@@ -103,7 +103,7 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
       FML_DCHECK(restoration_index < subpass_state.clip_coverage.size());
 
       // We only need to restore the area that covers the coverage of the
-      // clip rect at target depth + 1.
+      // clip rect at target height + 1.
       std::optional<Rect> restore_coverage =
           (restoration_index + 1 < subpass_state.clip_coverage.size())
               ? subpass_state.clip_coverage[restoration_index + 1].coverage
@@ -123,18 +123,6 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
 
     } break;
   }
-
-#ifdef IMPELLER_ENABLE_CAPTURE
-  {
-    auto element_entity_coverage = entity.GetCoverage();
-    if (element_entity_coverage.has_value()) {
-      element_entity_coverage =
-          element_entity_coverage->Shift(global_pass_position);
-      entity.GetCapture().AddRect("Coverage", *element_entity_coverage,
-                                  {.readonly = true});
-    }
-  }
-#endif
 
   RecordEntity(entity, global_clip_coverage.type,
                subpass_state.clip_coverage.back().coverage);

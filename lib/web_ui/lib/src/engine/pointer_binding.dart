@@ -9,9 +9,10 @@ import 'dart:math' as math;
 import 'package:meta/meta.dart';
 import 'package:ui/src/engine/keyboard_binding.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../engine.dart' show registerHotRestartListener;
-import 'browser_detection.dart';
+import 'browser_detection.dart' show isIosSafari;
 import 'dom.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding/event_position_helper.dart';
@@ -498,6 +499,7 @@ abstract class _BaseAdapter {
   final List<_Listener> _listeners = <_Listener>[];
   DomWheelEvent? _lastWheelEvent;
   bool _lastWheelEventWasTrackpad = false;
+  bool _lastWheelEventAllowedDefault = false;
 
   DomEventTarget get _viewTarget => _view.dom.rootElement;
   DomEventTarget get _globalTarget => _view.embeddingStrategy.globalEventTarget;
@@ -588,7 +590,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/platform/mac/PlatformEventFactoryMac.mm
     // https://searchfox.org/mozilla-central/source/dom/events/WheelEvent.h
     // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
-    if (browserEngine == BrowserEngine.firefox) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
       // Firefox has restricted the wheelDelta properties, they do not provide
       // enough information to accurately disambiguate trackpad events from mouse
       // wheel events.
@@ -656,7 +658,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         deltaX *= _view.physicalSize.width;
         deltaY *= _view.physicalSize.height;
       case domDeltaPixel:
-        if (operatingSystem == OperatingSystem.macOs) {
+        if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
           // Safari and Firefox seem to report delta in logical pixels while
           // Chrome uses physical pixels.
           deltaX *= _view.devicePixelRatio;
@@ -669,7 +671,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     final List<ui.PointerData> data = <ui.PointerData>[];
     final ui.Offset offset = computeEventOffsetToTarget(event, _view);
     bool ignoreCtrlKey = false;
-    if (operatingSystem == OperatingSystem.macOs) {
+    if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
       ignoreCtrlKey = (_keyboardConverter?.keyIsPressed(kPhysicalControlLeft) ?? false) ||
                       (_keyboardConverter?.keyIsPressed(kPhysicalControlRight) ?? false);
     }
@@ -705,6 +707,10 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
         pressureMax: 1.0,
         scrollDeltaX: deltaX,
         scrollDeltaY: deltaY,
+        onRespond: ({bool allowPlatformDefault = false}) {
+          // Once `allowPlatformDefault` is `true`, never go back to `false`!
+          _lastWheelEventAllowedDefault |= allowPlatformDefault;
+        },
       );
     }
     _lastWheelEvent = event;
@@ -721,17 +727,21 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     ));
   }
 
-  void _handleWheelEvent(DomEvent e) {
-    assert(domInstanceOfString(e, 'WheelEvent'));
-    final DomWheelEvent event = e as DomWheelEvent;
+  void _handleWheelEvent(DomEvent event) {
+    assert(domInstanceOfString(event, 'WheelEvent'));
     if (_debugLogPointerEvents) {
       print(event.type);
     }
-    _callback(e, _convertWheelEventToPointerData(event));
-    // Prevent default so mouse wheel event doesn't get converted to
-    // a scroll event that semantic nodes would process.
-    //
-    event.preventDefault();
+    _lastWheelEventAllowedDefault = false;
+    // [ui.PointerData] can set the `_lastWheelEventAllowedDefault` variable
+    // to true, when the framework says so. See the implementation of `respond`
+    // when creating the PointerData object above.
+    _callback(event, _convertWheelEventToPointerData(event as DomWheelEvent));
+    // This works because the `_callback` is handled synchronously in the
+    // framework, so it's able to modify `_lastWheelEventAllowedDefault`.
+    if (!_lastWheelEventAllowedDefault) {
+      event.preventDefault();
+    }
   }
 
   /// For browsers that report delta line instead of pixels such as FireFox
@@ -972,6 +982,22 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(event, pointerData);
+
+      if (event.target == _viewTarget) {
+        // Ensure smooth focus transitions between text fields within the Flutter view.
+        // Without preventing the default and this delay, the engine may not have fully
+        // rendered the next input element, leading to the focus incorrectly returning to
+        // the main Flutter view instead.
+        // A zero-length timer is sufficient in all tested browsers to achieve this.
+        event.preventDefault();
+        Timer(Duration.zero, () {
+          EnginePlatformDispatcher.instance.requestViewFocusChange(
+            viewId: _view.viewId,
+            state: ui.ViewFocusState.focused,
+            direction: ui.ViewFocusDirection.undefined,
+          );
+        });
+      }
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp

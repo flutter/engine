@@ -52,13 +52,8 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   if (!src_snapshot.has_value()) {
     return true;
   }
-  auto coverage = src_snapshot->GetCoverage();
-  if (!coverage.has_value()) {
-    return true;
-  }
-  Rect src_coverage = coverage.value();
 
-  auto size = src_coverage.GetSize();
+  auto size = src_snapshot->texture->GetSize();
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
   vtx_builder.AddVertices({
       {Point(0, 0), Point(0, 0)},
@@ -116,10 +111,6 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
       break;
     case BlendMode::kColor:
       pass.SetPipeline(renderer.GetFramebufferBlendColorPipeline(options));
-      break;
-    case BlendMode::kPlusAdvanced:
-      pass.SetPipeline(
-          renderer.GetFramebufferBlendPlusAdvancedPipeline(options));
       break;
     case BlendMode::kLuminosity:
       pass.SetPipeline(renderer.GetFramebufferBlendLuminosityPipeline(options));
