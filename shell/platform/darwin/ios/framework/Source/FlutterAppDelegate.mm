@@ -145,13 +145,13 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 - (BOOL)application:(UIApplication*)application
             openURL:(NSURL*)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options {
-  NSLog(@"application:openURL:");
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   }
   return [self handleOpenURL:url options:options throwBackToiOS:NO];
 }
 
+// Helper function for openning a URL.
 - (BOOL)handleOpenURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
        throwBackToiOS:(BOOL)throwBack {
