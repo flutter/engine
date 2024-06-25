@@ -156,6 +156,38 @@ std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
   return input_snapshot;
 }
 
+/// Returns `rect` relative to `reference`, where Rect::MakeXYWH(0,0,1,1) will
+/// be returned when `rect` == `reference`.
+Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
+  Rect result = Rect::MakeOriginSize(rect.GetOrigin() - reference.GetOrigin(),
+                                     rect.GetSize());
+  return result.Scale(1.0f / Vector2(reference.GetSize()));
+}
+
+Quad CalculateBlurUVs(
+    const Snapshot& input_snapshot,
+    const std::optional<Rect>& source_expanded_coverage_hint) {
+  std::optional<Rect> input_snapshot_coverage = input_snapshot.GetCoverage();
+  Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
+  FML_DCHECK(input_snapshot.transform.IsTranslationScaleOnly());
+  if (source_expanded_coverage_hint.has_value() &&
+      input_snapshot_coverage.has_value()) {
+    // Only process the uvs where the blur is happening, not the whole texture.
+    std::optional<Rect> uvs =
+        MakeReferenceUVs(input_snapshot_coverage.value(),
+                         source_expanded_coverage_hint.value())
+            .Intersection(Rect::MakeSize(Size(1, 1)));
+    FML_DCHECK(uvs.has_value());
+    if (uvs.has_value()) {
+      blur_uvs[0] = uvs->GetLeftTop();
+      blur_uvs[1] = uvs->GetRightTop();
+      blur_uvs[2] = uvs->GetLeftBottom();
+      blur_uvs[3] = uvs->GetRightBottom();
+    }
+  }
+  return blur_uvs;
+}
+
 struct DownsamplePassArgs {
   /// The output size of the down-sampling pass.
   ISize subpass_size;
@@ -172,7 +204,8 @@ struct DownsamplePassArgs {
 DownsamplePassArgs CalculateDownsamplePassArgs(
     Vector2 scaled_sigma,
     Vector2 padding,
-    ISize input_snapshot_size,
+    const Snapshot& input_snapshot,
+    const std::optional<Rect>& source_expanded_coverage_hint,
     const std::shared_ptr<FilterInput>& input,
     const Entity& snapshot_entity) {
   Scalar desired_scalar =
@@ -182,8 +215,6 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
-  Rect source_rect = Rect::MakeSize(input_snapshot_size);
-  Rect source_rect_padded = source_rect.Expand(padding);
   // TODO(gaaclarke): The padding could be removed if we know it's not needed or
   //   resized to account for the expanded_clip_coverage. There doesn't appear
   //   to be the math to make those calculations though. The following
@@ -192,14 +223,18 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
-  Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
+  ISize source_expanded_coverage_size =
+      ISize(ceil(source_expanded_coverage_hint->GetSize().width),
+            ceil(source_expanded_coverage_hint->GetSize().height));
+  ISize source_size = source_expanded_coverage_hint.has_value()
+                          ? source_expanded_coverage_size
+                          : input_snapshot.texture->GetSize();
+  Vector2 downsampled_size = source_size * downsample_scalar;
   ISize subpass_size =
       ISize(round(downsampled_size.x), round(downsampled_size.y));
-  Vector2 effective_scalar =
-      Vector2(subpass_size) / source_rect_padded.GetSize();
+  Vector2 effective_scalar = Vector2(subpass_size) / source_size;
 
-  Quad uvs = GaussianBlurFilterContents::CalculateUVs(
-      input, snapshot_entity, source_rect_padded, input_snapshot_size);
+  Quad uvs = CalculateBlurUVs(input_snapshot, source_expanded_coverage_hint);
   return {
       .subpass_size = subpass_size,
       .uvs = uvs,
@@ -324,38 +359,6 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
     return renderer.MakeSubpass("Gaussian Blur Filter", subpass_size,
                                 command_buffer, subpass_callback);
   }
-}
-
-/// Returns `rect` relative to `reference`, where Rect::MakeXYWH(0,0,1,1) will
-/// be returned when `rect` == `reference`.
-Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
-  Rect result = Rect::MakeOriginSize(rect.GetOrigin() - reference.GetOrigin(),
-                                     rect.GetSize());
-  return result.Scale(1.0f / Vector2(reference.GetSize()));
-}
-
-Quad CalculateBlurUVs(
-    const Snapshot& input_snapshot,
-    const std::optional<Rect>& source_expanded_coverage_hint) {
-  std::optional<Rect> input_snapshot_coverage = input_snapshot.GetCoverage();
-  Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
-  FML_DCHECK(input_snapshot.transform.IsTranslationScaleOnly());
-  if (source_expanded_coverage_hint.has_value() &&
-      input_snapshot_coverage.has_value()) {
-    // Only process the uvs where the blur is happening, not the whole texture.
-    std::optional<Rect> uvs =
-        MakeReferenceUVs(input_snapshot_coverage.value(),
-                         source_expanded_coverage_hint.value())
-            .Intersection(Rect::MakeSize(Size(1, 1)));
-    FML_DCHECK(uvs.has_value());
-    if (uvs.has_value()) {
-      blur_uvs[0] = uvs->GetLeftTop();
-      blur_uvs[1] = uvs->GetRightTop();
-      blur_uvs[2] = uvs->GetLeftBottom();
-      blur_uvs[3] = uvs->GetRightBottom();
-    }
-  }
-  return blur_uvs;
 }
 
 int ScaleBlurRadius(Scalar radius, Scalar scalar) {
@@ -597,8 +600,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   }
 
   DownsamplePassArgs downsample_pass_args = CalculateDownsamplePassArgs(
-      blur_info.scaled_sigma, blur_info.padding,
-      input_snapshot->texture->GetSize(), inputs[0], snapshot_entity);
+      blur_info.scaled_sigma, blur_info.padding, input_snapshot.value(),
+      source_expanded_coverage_hint, inputs[0], snapshot_entity);
 
   fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
       renderer, command_buffer, input_snapshot->texture,
@@ -611,8 +614,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
   Vector2 pass1_pixel_size =
       1.0 / Vector2(pass1_out.value().GetRenderTargetTexture()->GetSize());
 
-  Quad blur_uvs =
-      CalculateBlurUVs(input_snapshot.value(), source_expanded_coverage_hint);
+  Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
 
   fml::StatusOr<RenderTarget> pass2_out = MakeBlurSubpass(
       renderer, command_buffer, /*input_pass=*/pass1_out.value(),
@@ -677,7 +679,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                    entity.GetTransform() *                                   //
                    Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
                    input_snapshot->transform *                               //
-                   Matrix::MakeTranslation(-blur_info.padding) *             //
+                   Matrix::MakeTranslation(
+                       {source_expanded_coverage_hint->GetX(),
+                        source_expanded_coverage_hint->GetY(), 0}) *
                    Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
