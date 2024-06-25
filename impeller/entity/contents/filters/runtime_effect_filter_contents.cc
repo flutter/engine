@@ -26,7 +26,7 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
   }
 
   auto input_snapshot =
-      inputs[0]->GetSnapshot("RuntimeEffectContents", renderer, entity);
+      inputs[0]->GetSnapshot("RuntimeEffectContents", renderer, {});
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
@@ -71,6 +71,7 @@ std::optional<Entity> RuntimeEffectFilterContents::RenderFilter(
   Entity sub_entity;
   sub_entity.SetContents(std::move(contents));
   sub_entity.SetBlendMode(entity.GetBlendMode());
+  sub_entity.SetTransform(entity.GetTransform());
   return sub_entity;
 }
 

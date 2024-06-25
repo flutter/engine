@@ -31,6 +31,7 @@
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
+#include "impeller/playground/playground.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
@@ -2176,6 +2177,9 @@ TEST_P(AiksTest, CanRenderClippedRuntimeEffects) {
 }
 
 TEST_P(AiksTest, CanRenderRuntimeEffectFilter) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    GTEST_SKIP() << "Not currently supported on OpenGLES backend.";
+  }
   auto runtime_stages =
       OpenAssetAsRuntimeStage("runtime_stage_filter_example.frag.iplr");
 
