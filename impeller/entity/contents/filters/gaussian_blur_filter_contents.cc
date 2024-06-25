@@ -164,7 +164,7 @@ Rect MakeReferenceUVs(const Rect& reference, const Rect& rect) {
   return result.Scale(1.0f / Vector2(reference.GetSize()));
 }
 
-Quad CalculateBlurUVs(
+Quad CalculateSnapshotUVs(
     const Snapshot& input_snapshot,
     const std::optional<Rect>& source_expanded_coverage_hint) {
   std::optional<Rect> input_snapshot_coverage = input_snapshot.GetCoverage();
@@ -279,7 +279,7 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   Vector2 effective_scalar = Vector2(subpass_size) / source_size;
   FML_DCHECK(effective_scalar == downsample_scalar);
 
-  Quad uvs = CalculateBlurUVs(input_snapshot, aligned_coverage_hint);
+  Quad uvs = CalculateSnapshotUVs(input_snapshot, aligned_coverage_hint);
   return {
       .subpass_size = subpass_size,
       .uvs = uvs,
