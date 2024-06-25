@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:expect/variations.dart' as v;
 import 'src/test_suite.dart';
 
-export 'package:async_helper/async_minitest.dart' hide test;
+export 'src/async_minitest.dart' hide test;
 export 'package:expect/expect.dart';
 export 'src/matchers.dart';
 
@@ -21,3 +22,5 @@ void test(
 }) {
   _testSuite.test(name, body, skip: skip);
 }
+
+final bool assertStatementsEnabled = v.asserts;
