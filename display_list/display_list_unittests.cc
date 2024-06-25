@@ -1155,8 +1155,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
   RUN_TESTS2(
       receiver.drawPoints(PointMode::kPoints, TestPointCount, kTestPoints);
       , false);
-  RUN_TESTS2(receiver.drawVertices(TestVertices1.get(), DlBlendMode::kSrc);
-             , false);
+  RUN_TESTS2(receiver.drawVertices(kTestVertices1, DlBlendMode::kSrc);, false);
   RUN_TESTS(receiver.drawImage(TestImage1, {0, 0}, kLinearSampling, true););
   RUN_TESTS2(receiver.drawImage(TestImage1, {0, 0}, kLinearSampling, false);
              , true);
@@ -3270,7 +3269,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawArc({10, 10, 20, 20}, 45, 90, true, paint);
           SkPoint pts[] = {{10, 10}, {20, 20}};
           builder.DrawPoints(PointMode::kLines, 2, pts, paint);
-          builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
+          builder.DrawVertices(kTestVertices1, DlBlendMode::kSrcOver, paint);
           builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
                             &paint);
           builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
@@ -4420,7 +4419,9 @@ class ClipExpector : public virtual DlOpReceiver,
 
   template <typename T>
   void check(T shape, ClipOp clip_op, bool is_aa) {
-    ASSERT_LT(index_, clip_expectations_.size()) << label();
+    ASSERT_LT(index_, clip_expectations_.size())
+        << label() << std::endl
+        << "extra clip shape = " << shape;
     auto expected = clip_expectations_[index_];
     EXPECT_EQ(expected.clip_op, clip_op) << label();
     EXPECT_EQ(expected.is_aa, is_aa) << label();
@@ -4442,6 +4443,30 @@ class ClipExpector : public virtual DlOpReceiver,
            ":" + std::to_string(line_);
   }
 };
+
+TEST_F(DisplayListTest, ClipRectCullingPixel6a) {
+  // These particular values create bit errors if we use the path that
+  // tests for inclusion in local space, but work OK if we use a forward
+  // path that tests for inclusion in device space, due to the fact that
+  // the extra matrix inversion is just enough math to cause the transform
+  // to place the local space cull corners just outside the original rect.
+  // The test in device space only works under a simple scale, such as we
+  // use for DPR adjustments (and which are not always inversion friendly).
+
+  auto frame = SkRect::MakeLTRB(0.0f, 0.0f, 1080.0f, 2400.0f);
+  DlScalar DPR = 2.625f;
+  auto clip = SkRect::MakeLTRB(0.0f, 0.0f, 1080.0f / DPR, 2400.0f / DPR);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(frame, ClipOp::kIntersect, false);
+  cull_builder.Scale(DPR, DPR);
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(frame, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
 
 TEST_F(DisplayListTest, ClipRectCulling) {
   auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
@@ -4668,6 +4693,35 @@ TEST_F(DisplayListTest, ClipPathRRectNonCulling) {
   // Builder will not cull this clip, but it will turn it into a ClipRRect
   expector.addExpectation(rrect, ClipOp::kIntersect, false);
   cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, RecordLargeVertices) {
+  constexpr size_t vertex_count = 2000000;
+  auto points = std::vector<SkPoint>();
+  points.reserve(vertex_count);
+  auto colors = std::vector<DlColor>();
+  colors.reserve(vertex_count);
+  for (size_t i = 0; i < vertex_count; i++) {
+    colors.emplace_back(DlColor(-i));
+    points.emplace_back(((i & 1) == 0) ? SkPoint::Make(-i, i)
+                                       : SkPoint::Make(i, i));
+  }
+  ASSERT_EQ(points.size(), vertex_count);
+  ASSERT_EQ(colors.size(), vertex_count);
+  auto vertices = DlVertices::Make(DlVertexMode::kTriangleStrip, vertex_count,
+                                   points.data(), points.data(), colors.data());
+  ASSERT_GT(vertices->size(), 1u << 24);
+  auto backdrop = DlBlurImageFilter::Make(5.0f, 5.0f, DlTileMode::kDecal);
+
+  for (int i = 0; i < 1000; i++) {
+    DisplayListBuilder builder;
+    for (int j = 0; j < 16; j++) {
+      builder.SaveLayer(nullptr, nullptr, backdrop.get());
+      builder.DrawVertices(vertices, DlBlendMode::kSrcOver, DlPaint());
+      builder.Restore();
+    }
+    auto dl = builder.Build();
+  }
 }
 
 }  // namespace testing
