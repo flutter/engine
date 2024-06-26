@@ -257,10 +257,11 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
 
+  std::optional<Rect> snapshot_coverage = input_snapshot.GetCoverage();
   if (input_snapshot.transform.IsIdentity() &&
       source_expanded_coverage_hint.has_value() &&
-      input_snapshot.GetCoverage()->Contains(
-          source_expanded_coverage_hint.value())) {
+      snapshot_coverage.has_value() &&
+      snapshot_coverage->Contains(source_expanded_coverage_hint.value())) {
     // If the snapshot's transform is the identity transform and we have
     // coverage hint that fits inside of the snapshots coverage that means the
     // coverage hint was ignored so we will trim out the area we are interested
