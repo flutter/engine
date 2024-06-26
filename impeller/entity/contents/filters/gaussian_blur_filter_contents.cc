@@ -14,6 +14,8 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 namespace impeller {
 
 using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
@@ -224,9 +226,11 @@ struct DownsamplePassArgs {
   /// This isn't usually exactly as we'd calculate because it has to be rounded
   /// to integer boundaries for generating the texture for the output.
   Vector2 effective_scalar;
-  /// The coverage hint that is aligned with the downsample scalar.
-  /// This is in the scaled source space and includes the padding.
-  Rect aligned_coverage_hint;
+  /// Transforms from unrotated local space to position the output from the
+  /// down-sample pass.
+  /// This can differ if we request a coverage hint but it is rejected, as is
+  /// the case with backdrop filters.
+  Matrix transform;
 };
 
 /// Calculates info required for the down-sampling pass.
@@ -254,38 +258,59 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //     .Contains(coverage_hint.value()))
 
   Rect aligned_coverage_hint;
-  if (source_expanded_coverage_hint.has_value()) {
-    int32_t divisor = std::round(1.0f / desired_scalar);
-    aligned_coverage_hint = Rect::MakeLTRB(
-        FloorToDivisible(source_expanded_coverage_hint->GetLeft(), divisor),
-        FloorToDivisible(source_expanded_coverage_hint->GetTop(), divisor),
-        source_expanded_coverage_hint->GetRight(),
-        source_expanded_coverage_hint->GetBottom());
-    aligned_coverage_hint = Rect::MakeXYWH(
-        aligned_coverage_hint.GetX(), aligned_coverage_hint.GetY(),
-        CeilToDivisible(aligned_coverage_hint.GetWidth(), divisor),
-        CeilToDivisible(aligned_coverage_hint.GetHeight(), divisor));
-  } else {
-    aligned_coverage_hint = Rect::MakeSize(input_snapshot.texture->GetSize());
-  }
-  ISize source_size = ISize(aligned_coverage_hint.GetSize().width,
-                            aligned_coverage_hint.GetSize().height);
-  Vector2 downsampled_size = source_size * downsample_scalar;
-  Scalar int_part;
-  FML_DCHECK(std::modf(downsampled_size.x, &int_part) == 0.0f);
-  FML_DCHECK(std::modf(downsampled_size.y, &int_part) == 0.0f);
-  (void)int_part;
-  ISize subpass_size = ISize(downsampled_size.x, downsampled_size.y);
-  Vector2 effective_scalar = Vector2(subpass_size) / source_size;
-  FML_DCHECK(effective_scalar == downsample_scalar);
+  if (input_snapshot.transform.IsIdentity()) {
+    if (source_expanded_coverage_hint.has_value()) {
+      int32_t divisor = std::round(1.0f / desired_scalar);
+      aligned_coverage_hint = Rect::MakeLTRB(
+          FloorToDivisible(source_expanded_coverage_hint->GetLeft(), divisor),
+          FloorToDivisible(source_expanded_coverage_hint->GetTop(), divisor),
+          source_expanded_coverage_hint->GetRight(),
+          source_expanded_coverage_hint->GetBottom());
+      aligned_coverage_hint = Rect::MakeXYWH(
+          aligned_coverage_hint.GetX(), aligned_coverage_hint.GetY(),
+          CeilToDivisible(aligned_coverage_hint.GetWidth(), divisor),
+          CeilToDivisible(aligned_coverage_hint.GetHeight(), divisor));
+    } else {
+      aligned_coverage_hint = Rect::MakeSize(input_snapshot.texture->GetSize());
+    }
+    ISize source_size = ISize(aligned_coverage_hint.GetSize().width,
+                              aligned_coverage_hint.GetSize().height);
+    Vector2 downsampled_size = source_size * downsample_scalar;
+    Scalar int_part;
+    FML_DCHECK(std::modf(downsampled_size.x, &int_part) == 0.0f);
+    FML_DCHECK(std::modf(downsampled_size.y, &int_part) == 0.0f);
+    (void)int_part;
+    ISize subpass_size = ISize(downsampled_size.x, downsampled_size.y);
+    Vector2 effective_scalar = Vector2(subpass_size) / source_size;
+    FML_DCHECK(effective_scalar == downsample_scalar);
 
-  Quad uvs = CalculateSnapshotUVs(input_snapshot, aligned_coverage_hint);
-  return {
-      .subpass_size = subpass_size,
-      .uvs = uvs,
-      .effective_scalar = effective_scalar,
-      .aligned_coverage_hint = aligned_coverage_hint,
-  };
+    Quad uvs = CalculateSnapshotUVs(input_snapshot, aligned_coverage_hint);
+    return {
+        .subpass_size = subpass_size,
+        .uvs = uvs,
+        .effective_scalar = effective_scalar,
+        .transform = Matrix::MakeTranslation(
+            {aligned_coverage_hint.GetX(), aligned_coverage_hint.GetY(), 0})};
+  } else {
+    //////////////////////////////////////////////////////////////////////////////
+    auto input_snapshot_size = input_snapshot.texture->GetSize();
+    Rect source_rect = Rect::MakeSize(input_snapshot_size);
+    Rect source_rect_padded = source_rect.Expand(padding);
+    Vector2 downsampled_size = source_rect_padded.GetSize() * downsample_scalar;
+    ISize subpass_size =
+        ISize(round(downsampled_size.x), round(downsampled_size.y));
+    Vector2 effective_scalar =
+        Vector2(subpass_size) / source_rect_padded.GetSize();
+    Quad uvs = GaussianBlurFilterContents::CalculateUVs(
+        input, snapshot_entity, source_rect_padded, input_snapshot_size);
+    return {
+        .subpass_size = subpass_size,
+        .uvs = uvs,
+        .effective_scalar = effective_scalar,
+        .transform =
+            input_snapshot.transform * Matrix::MakeTranslation(-padding),
+    };
+  }
 }
 
 /// Makes a subpass that will render the scaled down input and add the
@@ -724,10 +749,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                .transform =
                    entity.GetTransform() *                                   //
                    Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
-                   input_snapshot->transform *                               //
-                   Matrix::MakeTranslation(
-                       {downsample_pass_args.aligned_coverage_hint.GetX(),
-                        downsample_pass_args.aligned_coverage_hint.GetY(), 0}) *
+                   downsample_pass_args.transform *                          //
                    Matrix::MakeScale(1 / downsample_pass_args.effective_scalar),
                .sampler_descriptor = sampler_desc,
                .opacity = input_snapshot->opacity},
