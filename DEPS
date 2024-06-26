@@ -1136,7 +1136,7 @@ hooks = [
       'python3',
       'src/flutter/ci/impeller_cmake_build_test.py',
       '--path',
-      'third_party/impeller-cmake-example',
+      'flutter/third_party/impeller-cmake-example',
       '--setup',
     ]
   },
