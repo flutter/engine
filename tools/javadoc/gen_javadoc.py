@@ -25,9 +25,7 @@ def JavadocBin():
         SCRIPT_DIR, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'javadoc.exe'
     )
   else:
-    return os.path.join(
-        SCRIPT_DIR, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'javadoc'
-    )
+    return os.path.join(SCRIPT_DIR, '..', '..', 'third_party', 'java', 'openjdk', 'bin', 'javadoc')
 
 
 def main():

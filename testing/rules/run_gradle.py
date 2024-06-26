@@ -26,9 +26,7 @@ ANDROID_HOME = os.path.normpath(
 
 if platform.system() == 'Darwin':
   JAVA_HOME = os.path.normpath(
-      os.path.join(
-          SCRIPT_PATH, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home'
-      )
+      os.path.join(SCRIPT_PATH, '..', '..', 'third_party', 'java', 'openjdk', 'Contents', 'Home')
   )
 else:
   JAVA_HOME = os.path.normpath(
