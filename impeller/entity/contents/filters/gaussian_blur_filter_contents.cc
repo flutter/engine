@@ -14,8 +14,6 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
-#pragma GCC diagnostic ignored "-Wunused-function"
-
 namespace impeller {
 
 using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
