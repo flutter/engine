@@ -257,22 +257,25 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   //   !input_snapshot->GetCoverage()->Expand(-local_padding)
   //     .Contains(coverage_hint.value()))
 
-  Rect aligned_coverage_hint;
-  if (input_snapshot.transform.IsIdentity()) {
-    if (source_expanded_coverage_hint.has_value()) {
-      int32_t divisor = std::round(1.0f / desired_scalar);
-      aligned_coverage_hint = Rect::MakeLTRB(
-          FloorToDivisible(source_expanded_coverage_hint->GetLeft(), divisor),
-          FloorToDivisible(source_expanded_coverage_hint->GetTop(), divisor),
-          source_expanded_coverage_hint->GetRight(),
-          source_expanded_coverage_hint->GetBottom());
-      aligned_coverage_hint = Rect::MakeXYWH(
-          aligned_coverage_hint.GetX(), aligned_coverage_hint.GetY(),
-          CeilToDivisible(aligned_coverage_hint.GetWidth(), divisor),
-          CeilToDivisible(aligned_coverage_hint.GetHeight(), divisor));
-    } else {
-      aligned_coverage_hint = Rect::MakeSize(input_snapshot.texture->GetSize());
-    }
+  if (input_snapshot.transform.IsIdentity() &&
+      source_expanded_coverage_hint.has_value()) {
+    // If the snapshot's transform is the identity transform and we have
+    // coverage hint, that means the coverage hint was ignored so we will trim
+    // out the area we are interested in the downsample pass. This usually means
+    // we have a backdrop image filter.
+    //
+    // The region we cut out will be aligned with the down-sample divisor to
+    // avoid pixel alignment problems that create shimmering.
+    int32_t divisor = std::round(1.0f / desired_scalar);
+    Rect aligned_coverage_hint = Rect::MakeLTRB(
+        FloorToDivisible(source_expanded_coverage_hint->GetLeft(), divisor),
+        FloorToDivisible(source_expanded_coverage_hint->GetTop(), divisor),
+        source_expanded_coverage_hint->GetRight(),
+        source_expanded_coverage_hint->GetBottom());
+    aligned_coverage_hint = Rect::MakeXYWH(
+        aligned_coverage_hint.GetX(), aligned_coverage_hint.GetY(),
+        CeilToDivisible(aligned_coverage_hint.GetWidth(), divisor),
+        CeilToDivisible(aligned_coverage_hint.GetHeight(), divisor));
     ISize source_size = ISize(aligned_coverage_hint.GetSize().width,
                               aligned_coverage_hint.GetSize().height);
     Vector2 downsampled_size = source_size * downsample_scalar;
