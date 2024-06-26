@@ -1562,13 +1562,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
                                                                  toView:mockFlutterView];
   XCTAssertTrue([gMockPlatformView.superview.superview isKindOfClass:ChildClippingView.class]);
   ChildClippingView* childClippingView = (ChildClippingView*)gMockPlatformView.superview.superview;
-  // The childclippingview's frame is set based on flow, but the platform view's frame is set based
-  // on quartz. Although they should be the same, but we should tolerate small floating point
-  // errors.
-  XCTAssertLessThan(fabs(platformViewRectInFlutterView.origin.x - childClippingView.frame.origin.x),
-                    kFloatCompareEpsilon);
-  XCTAssertLessThan(fabs(platformViewRectInFlutterView.origin.y - childClippingView.frame.origin.y),
-                    kFloatCompareEpsilon);
+  // The childclippingview's frame has a zero origin, and the transform positions it instead.
+  XCTAssertEqual(childClippingView.frame.origin.x, 0);
+  XCTAssertEqual(childClippingView.frame.origin.y, 0);
   XCTAssertLessThan(
       fabs(platformViewRectInFlutterView.size.width - childClippingView.frame.size.width),
       kFloatCompareEpsilon);
