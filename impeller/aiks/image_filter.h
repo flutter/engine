@@ -87,6 +87,10 @@ class ImageFilter {
   virtual std::shared_ptr<ImageFilter> Clone() const = 0;
 
   virtual void Visit(ImageFilterVisitor& visitor) = 0;
+
+  virtual int GetRequiredMipCount() const {
+    return 1;
+  }
 };
 
 /*******************************************************************************
@@ -111,6 +115,10 @@ class BlurImageFilter : public ImageFilter {
 
   // |ImageFilter|
   void Visit(ImageFilterVisitor& visitor) override { visitor.Visit(*this); }
+
+  int GetRequiredMipCount() const override {
+    return 4;
+  }
 
  private:
   Sigma sigma_x_;
