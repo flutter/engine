@@ -261,8 +261,8 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
       source_expanded_coverage_hint.has_value()) {
     // If the snapshot's transform is the identity transform and we have
     // coverage hint, that means the coverage hint was ignored so we will trim
-    // out the area we are interested in the downsample pass. This usually means
-    // we have a backdrop image filter.
+    // out the area we are interested in the down-sample pass. This usually
+    // means we have a backdrop image filter.
     //
     // The region we cut out will be aligned with the down-sample divisor to
     // avoid pixel alignment problems that create shimmering.
