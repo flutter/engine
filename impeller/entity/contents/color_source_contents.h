@@ -12,6 +12,7 @@
 #include "impeller/entity/geometry/geometry.h"
 #include "impeller/entity/geometry/rect_geometry.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/renderer/render_pass.h"
 
 namespace impeller {
 
@@ -111,6 +112,19 @@ class ColorSourceContents : public Contents {
   using PipelineBuilderCallback =
       std::function<std::shared_ptr<Pipeline<PipelineDescriptor>>(
           ContentContextOptions)>;
+  using CreateGeometryCallback =
+      std::function<GeometryResult(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass,
+                                   const Geometry& geom)>;
+
+  static GeometryResult DefaultCreateGeometryCallback(
+      const ContentContext& renderer,
+      const Entity& entity,
+      RenderPass& pass,
+      const Geometry& geom) {
+    return geom.GetPositionBuffer(renderer, entity, pass);
+  }
 
   template <typename VertexShaderT>
   bool DrawGeometry(const ContentContext& renderer,
@@ -119,17 +133,22 @@ class ColorSourceContents : public Contents {
                     const PipelineBuilderCallback& pipeline_callback,
                     typename VertexShaderT::FrameInfo frame_info,
                     const BindFragmentCallback& bind_fragment_callback,
-                    bool enable_uvs = false,
-                    Rect texture_coverage = {},
-                    const Matrix& effect_transform = {}) const {
+                    bool force_stencil = false,
+                    const CreateGeometryCallback& create_geom_callback =
+                        DefaultCreateGeometryCallback) const {
     auto options = OptionsFromPassAndEntity(pass, entity);
 
     GeometryResult::Mode geometry_mode = GetGeometry()->GetResultMode();
     Geometry& geometry = *GetGeometry();
 
-    const bool is_stencil_then_cover =
+    bool is_stencil_then_cover =
         geometry_mode == GeometryResult::Mode::kNonZero ||
         geometry_mode == GeometryResult::Mode::kEvenOdd;
+    if (!is_stencil_then_cover && force_stencil) {
+      geometry_mode = GeometryResult::Mode::kNonZero;
+      is_stencil_then_cover = true;
+    }
+
     if (is_stencil_then_cover) {
       pass.SetStencilReference(0);
 
@@ -156,6 +175,12 @@ class ColorSourceContents : public Contents {
               ContentContextOptions::StencilMode::kStencilEvenOddFill;
           break;
         default:
+          if (force_stencil) {
+            pass.SetCommandLabel("Stencil preparation (NonZero)");
+            options.stencil_mode =
+                ContentContextOptions::StencilMode::kStencilNonZeroFill;
+            break;
+          }
           FML_UNREACHABLE();
       }
       pass.SetPipeline(renderer.GetClipPipeline(options));
@@ -181,10 +206,7 @@ class ColorSourceContents : public Contents {
     }
 
     GeometryResult geometry_result =
-        enable_uvs
-            ? geometry.GetPositionUVBuffer(texture_coverage, effect_transform,
-                                           renderer, entity, pass)
-            : geometry.GetPositionBuffer(renderer, entity, pass);
+        create_geom_callback(renderer, entity, pass, geometry);
     if (geometry_result.vertex_buffer.vertex_count == 0u) {
       return true;
     }
@@ -201,13 +223,9 @@ class ColorSourceContents : public Contents {
     // the stencil buffer (happens below in this method).
     if (geometry_result.mode == GeometryResult::Mode::kPreventOverdraw) {
       options.stencil_mode =
-          ContentContextOptions::StencilMode::kLegacyClipIncrement;
+          ContentContextOptions::StencilMode::kOverdrawPreventionIncrement;
     }
-    if constexpr (ContentContext::kEnableStencilThenCover) {
-      pass.SetStencilReference(0);
-    } else {
-      pass.SetStencilReference(entity.GetClipDepth());
-    }
+    pass.SetStencilReference(0);
 
     VertexShaderT::BindFrameInfo(
         pass, renderer.GetTransientsBuffer().EmplaceUniform(frame_info));
@@ -232,13 +250,8 @@ class ColorSourceContents : public Contents {
     if (geometry_result.mode == GeometryResult::Mode::kPreventOverdraw) {
       auto restore = ClipRestoreContents();
       restore.SetRestoreCoverage(GetCoverage(entity));
-      if constexpr (ContentContext::kEnableStencilThenCover) {
-        Entity restore_entity = entity.Clone();
-        restore_entity.SetClipDepth(0);
-        return restore.Render(renderer, restore_entity, pass);
-      } else {
-        return restore.Render(renderer, entity, pass);
-      }
+      Entity restore_entity = entity.Clone();
+      return restore.Render(renderer, restore_entity, pass);
     }
     return true;
   }

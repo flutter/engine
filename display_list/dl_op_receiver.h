@@ -15,7 +15,6 @@
 #include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/display_list/effects/dl_image_filter.h"
 #include "flutter/display_list/effects/dl_mask_filter.h"
-#include "flutter/display_list/effects/dl_path_effect.h"
 #include "flutter/display_list/image/dl_image.h"
 
 #include "flutter/impeller/geometry/path.h"
@@ -37,6 +36,52 @@ class DisplayList;
 ///
 /// Unlike DlCanvas, this interface has attribute state which is global across
 /// an entire DisplayList (not affected by save/restore).
+///
+/// DISPLAYLIST DEPTH TRACKING
+///
+/// Each rendering call in the DisplayList stream is assumed to have a "depth"
+/// value relative to the beginning of its DisplayList. The depth value is
+/// implicitly allocated during recording and only reported in 2 places so
+/// it is important for a dispatcher to perform the same internal allocations
+/// if it is to make sense of the information reported by the save/saveLayer
+/// calls. This depth value is maintained as follows:
+///
+/// - The absolute depth value is never reported, only the total depth
+///   size of the entire DisplayList or one of its save/restore pairs
+///   is reported. Since the DisplayList might be dispatched recursively
+///   due to embedded drawDisplayList calls, these depth size values
+///   will often be relative to things like:
+///     - the start of a given save/saveLayer group
+///     - the start of a DisplayList dispatch or recursion
+///   as such, only totals for groups of DisplayList dispatched calls
+///   will be reported. These totals will be reported in:
+///     - the `DisplayList::total_depth()` method reporting the total
+///       depth accumulated for every operation in the DisplayList
+///     - the save/saveLayer dispatch calls will report the total
+///       depth accumulated for every call until their corresponding
+///       restore call.
+/// - The depth value is incremented for every drawing operation, including:
+///   - all draw* calls (including drawDisplayList)
+///   - drawDisplayList will also accumulate the total_depth() of the
+///     DisplayList object it is drawing (in other words it will skip enough
+///     depth values for each drawing call in the child).
+///     This bump is in addition to the depth value it records for being
+///     a rendering operation. Some implementations may need to surround
+///     the actual drawDisplayList with a protective saveLayer, but others
+///     may not - so the implicit depth value assigned to the drawDisplayList
+///     call itself may go unused, but must be accounted for.
+///   - a saveLayer call will also increment the depth value just like a
+///     rendering call. This is in addition to the depth of its content.
+///     It is doing so to reserve a depth for the drawing operation that
+///     copies its layer back to the parent.
+/// - Each save() or saveLayer() call will report the total depth of all
+///   rendering calls within its content (recorded before the corresponding
+///   restore) and report this total during dispatch. This information might
+///   be needed to assign depths to the clip operations that occur within
+///   its content. As there is no enclosing saveLayer/restore pair around
+///   the root of a DisplayList, the total depth of the DisplayList can
+///   be used to determine the appropriate clip depths for any clip ops
+///   appearing before the first save/saveLayer or after the last restore.
 ///
 /// @see        DlSkCanvasDispatcher
 /// @see        impeller::DlDispatcher
@@ -111,13 +156,15 @@ class DlOpReceiver {
   // filter so that the color inversion happens after the ColorFilter.
   virtual void setInvertColors(bool invert) = 0;
   virtual void setBlendMode(DlBlendMode mode) = 0;
-  virtual void setPathEffect(const DlPathEffect* effect) = 0;
   virtual void setMaskFilter(const DlMaskFilter* filter) = 0;
   virtual void setImageFilter(const DlImageFilter* filter) = 0;
 
   // All of the following methods are nearly 1:1 with their counterparts
   // in |SkCanvas| and have the same behavior and output.
   virtual void save() = 0;
+  // Optional variant of save() that passes the total depth count of
+  // all rendering operations that occur until the next restore() call.
+  virtual void save(uint32_t total_content_depth) { save(); }
   // The |options| parameter can specify whether the existing rendering
   // attributes will be applied to the save layer surface while rendering
   // it back to the current surface. If the flag is false then this method
@@ -137,6 +184,15 @@ class DlOpReceiver {
   virtual void saveLayer(const SkRect& bounds,
                          const SaveLayerOptions options,
                          const DlImageFilter* backdrop = nullptr) = 0;
+  // Optional variant of saveLayer() that passes the total depth count of
+  // all rendering operations that occur until the next restore() call.
+  virtual void saveLayer(const SkRect& bounds,
+                         const SaveLayerOptions& options,
+                         uint32_t total_content_depth,
+                         DlBlendMode max_content_blend_mode,
+                         const DlImageFilter* backdrop = nullptr) {
+    saveLayer(bounds, options, backdrop);
+  }
   virtual void restore() = 0;
 
   // ---------------------------------------------------------------------
@@ -285,6 +341,10 @@ class DlOpReceiver {
   virtual void drawColor(DlColor color, DlBlendMode mode) = 0;
   virtual void drawPaint() = 0;
   virtual void drawLine(const SkPoint& p0, const SkPoint& p1) = 0;
+  virtual void drawDashedLine(const DlPoint& p0,
+                              const DlPoint& p1,
+                              DlScalar on_length,
+                              DlScalar off_length) = 0;
   virtual void drawRect(const SkRect& rect) = 0;
   virtual void drawOval(const SkRect& bounds) = 0;
   virtual void drawCircle(const SkPoint& center, SkScalar radius) = 0;
@@ -298,7 +358,8 @@ class DlOpReceiver {
   virtual void drawPoints(PointMode mode,
                           uint32_t count,
                           const SkPoint points[]) = 0;
-  virtual void drawVertices(const DlVertices* vertices, DlBlendMode mode) = 0;
+  virtual void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                            DlBlendMode mode) = 0;
   virtual void drawImage(const sk_sp<DlImage> image,
                          const SkPoint point,
                          DlImageSampling sampling,

@@ -19,6 +19,7 @@
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/separated_vector.h"
 #include "impeller/geometry/size.h"
 
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
@@ -66,10 +67,12 @@ TEST(GeometryTest, MakeRow) {
 
 TEST(GeometryTest, RotationMatrix) {
   auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
-  auto expect = Matrix{0.707,  0.707, 0, 0,  //
-                       -0.707, 0.707, 0, 0,  //
-                       0,      0,     1, 0,  //
-                       0,      0,     0, 1};
+  // clang-format off
+  auto expect = Matrix{k1OverSqrt2,  k1OverSqrt2, 0, 0,
+                       -k1OverSqrt2, k1OverSqrt2, 0, 0,
+                       0,            0,           1, 0,
+                       0,            0,           0, 1};
+  // clang-format on
   ASSERT_MATRIX_NEAR(rotation, expect);
 }
 
@@ -77,10 +80,12 @@ TEST(GeometryTest, InvertMultMatrix) {
   {
     auto rotation = Matrix::MakeRotationZ(Radians{kPiOver4});
     auto invert = rotation.Invert();
-    auto expect = Matrix{0.707, -0.707, 0, 0,  //
-                         0.707, 0.707,  0, 0,  //
-                         0,     0,      1, 0,  //
-                         0,     0,      0, 1};
+    // clang-format off
+    auto expect = Matrix{k1OverSqrt2, -k1OverSqrt2, 0, 0,
+                         k1OverSqrt2, k1OverSqrt2,  0, 0,
+                         0,           0,            1, 0,
+                         0,           0,            0, 1};
+    // clang-format on
     ASSERT_MATRIX_NEAR(invert, expect);
   }
   {
@@ -952,6 +957,36 @@ TEST(GeometryTest, PointAbs) {
   ASSERT_POINT_NEAR(a_abs, expected);
 }
 
+TEST(GeometryTest, PointRotate) {
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPiOver2});
+    auto expected = Point(0, 1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{-kPiOver2});
+    auto expected = Point(0, -1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPi});
+    auto expected = Point(-1, 0);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+
+  {
+    Point a(1, 0);
+    auto rotated = a.Rotate(Radians{kPi * 1.5});
+    auto expected = Point(0, -1);
+    ASSERT_POINT_NEAR(rotated, expected);
+  }
+}
+
 TEST(GeometryTest, PointAngleTo) {
   // Negative result in the CCW (with up = -Y) direction.
   {
@@ -1105,6 +1140,56 @@ TEST(GeometryTest, Vector4Lerp) {
   Vector4 result = p.Lerp({5, 10, 15, 20}, 0.75);
   Vector4 expected(4, 8, 12, 16);
   ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, SeparatedVector2NormalizesWithConstructor) {
+  SeparatedVector2 v(Vector2(10, 0));
+  ASSERT_POINT_NEAR(v.direction, Vector2(1, 0));
+  ASSERT_NEAR(v.magnitude, 10, kEhCloseEnough);
+}
+
+TEST(GeometryTest, SeparatedVector2GetVector) {
+  SeparatedVector2 v(Vector2(10, 0));
+  ASSERT_POINT_NEAR(v.GetVector(), Vector2(10, 0));
+}
+
+TEST(GeometryTest, SeparatedVector2GetAlignment) {
+  // Parallel
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(5, 0)));
+    ASSERT_NEAR(actual, 1, kEhCloseEnough);
+  }
+
+  // Perpendicular
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(0, 5)));
+    ASSERT_NEAR(actual, 0, kEhCloseEnough);
+  }
+
+  // Opposite parallel
+  {
+    SeparatedVector2 v(Vector2(0, 10));
+    Scalar actual = v.GetAlignment(SeparatedVector2(Vector2(0, -5)));
+    ASSERT_NEAR(actual, -1, kEhCloseEnough);
+  }
+}
+
+TEST(GeometryTest, SeparatedVector2AngleTo) {
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(5, 0)));
+    Radians expected = Radians{0};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
+
+  {
+    SeparatedVector2 v(Vector2(10, 0));
+    Radians actual = v.AngleTo(SeparatedVector2(Vector2(0, -5)));
+    Radians expected = Radians{-kPi / 2};
+    ASSERT_NEAR(actual.radians, expected.radians, kEhCloseEnough);
+  }
 }
 
 TEST(GeometryTest, CanUseVector3AssignmentOperators) {
@@ -1476,7 +1561,6 @@ const std::map<BlendMode, Color> ColorBlendTestData::kExpectedResults[sizeof(
         {BlendMode::kHue, {0.617208, 0.655639, 0.724659, 0.9375}},
         {BlendMode::kSaturation, {0.617208, 0.655639, 0.724659, 0.9375}},
         {BlendMode::kColor, {0.617208, 0.655639, 0.724659, 0.9375}},
-        {BlendMode::kPlusAdvanced, {1, 1, 1, 1}},
         {BlendMode::kLuminosity, {0.878431, 0.916863, 0.985882, 0.9375}},
     },
     {
@@ -1508,7 +1592,6 @@ const std::map<BlendMode, Color> ColorBlendTestData::kExpectedResults[sizeof(
         {BlendMode::kHue, {0.266235, 0.748588, 0.373686, 0.9375}},
         {BlendMode::kSaturation, {0.339345, 0.629787, 0.811502, 0.9375}},
         {BlendMode::kColor, {0.241247, 0.765953, 0.348698, 0.9375}},
-        {BlendMode::kPlusAdvanced, {0.441176, 1, 0.844118, 1}},
         {BlendMode::kLuminosity, {0.346988, 0.622282, 0.776792, 0.9375}},
     },
     {
@@ -1540,7 +1623,6 @@ const std::map<BlendMode, Color> ColorBlendTestData::kExpectedResults[sizeof(
         {BlendMode::kHue, {0.417208, 0.455639, 0.524659, 0.9375}},
         {BlendMode::kSaturation, {0.417208, 0.455639, 0.524659, 0.9375}},
         {BlendMode::kColor, {0.417208, 0.455639, 0.524659, 0.9375}},
-        {BlendMode::kPlusAdvanced, {0.294118, 0.438235, 0.697059, 1}},
         {BlendMode::kLuminosity, {0.0784314, 0.116863, 0.185882, 0.9375}},
     },
 };

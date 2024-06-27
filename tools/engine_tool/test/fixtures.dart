@@ -21,8 +21,9 @@ String testConfig(String osDimension, String osPlatform) => '''
       "gclient_variables": {
         "variable": false
       },
-      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "gn": ["--gn-arg", "--lto", "--no-rbe"],
       "name": "ci/build_name",
+      "description": "This is a very long description that will test that the help message is wrapped correctly at an appropriate number of characters.",
       "ninja": {
         "config": "build_name",
         "targets": ["ninja_target"]
@@ -53,7 +54,7 @@ String testConfig(String osDimension, String osPlatform) => '''
       "drone_dimensions": [
         "os=$osDimension"
       ],
-      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "gn": ["--gn-arg", "--lto", "--no-rbe"],
       "name": "$osPlatform/host_debug",
       "ninja": {
         "config": "host_debug",
@@ -64,7 +65,7 @@ String testConfig(String osDimension, String osPlatform) => '''
       "drone_dimensions": [
         "os=$osDimension"
       ],
-      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "gn": ["--gn-arg", "--lto", "--no-rbe"],
       "name": "$osPlatform/android_debug_arm64",
       "ninja": {
         "config": "android_debug_arm64",
@@ -75,7 +76,7 @@ String testConfig(String osDimension, String osPlatform) => '''
       "drone_dimensions": [
         "os=$osDimension"
       ],
-      "gn": ["--gn-arg", "--lto", "--no-goma", "--rbe"],
+      "gn": ["--gn-arg", "--lto", "--rbe"],
       "name": "ci/android_debug_rbe_arm64",
       "ninja": {
         "config": "android_debug_rbe_arm64",
@@ -129,7 +130,7 @@ const String configsToTestNamespacing = '''
       "drone_dimensions": [
         "os=Linux"
       ],
-      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "gn": ["--gn-arg", "--lto", "--no-rbe"],
       "name": "linux/host_debug",
       "ninja": {
         "config": "local_host_debug",
@@ -140,7 +141,7 @@ const String configsToTestNamespacing = '''
       "drone_dimensions": [
         "os=Linux"
       ],
-      "gn": ["--gn-arg", "--lto", "--goma", "--no-rbe"],
+      "gn": ["--gn-arg", "--lto", "--no-rbe"],
       "name": "ci/host_debug",
       "ninja": {
         "config": "ci/host_debug",

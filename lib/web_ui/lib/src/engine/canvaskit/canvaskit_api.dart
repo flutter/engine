@@ -1353,7 +1353,7 @@ extension SkPaintExtension on SkPaint {
 
   @JS('setColorInt')
   external JSVoid _setColorInt(JSNumber color);
-  void setColorInt(double color) => _setColorInt(color.toJS);
+  void setColorInt(int color) => _setColorInt(color.toJS);
 
   external JSVoid setShader(SkShader? shader);
   external JSVoid setMaskFilter(SkMaskFilter? maskFilter);
@@ -1493,6 +1493,18 @@ extension SkImageFilterNamespaceExtension on SkImageFilterNamespace {
   external SkImageFilter MakeCompose(
     SkImageFilter outer,
     SkImageFilter inner,
+  );
+
+  external SkImageFilter MakeDilate(
+    double radiusX,
+    double radiusY,
+    void input, // we don't use this yet
+  );
+
+  external SkImageFilter MakeErode(
+    double radiusX,
+    double radiusY,
+    void input, // we don't use this yet
   );
 }
 
@@ -3606,13 +3618,13 @@ SkRuntimeEffect? MakeRuntimeEffect(String program) =>
 extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
   @JS('makeShader')
   external SkShader? _makeShader(JSAny uniforms);
-  SkShader? makeShader(List<Object> uniforms) =>
+  SkShader? makeShader(SkFloat32List uniforms) =>
       _makeShader(uniforms.toJSAnyShallow);
 
   @JS('makeShaderWithChildren')
   external SkShader? _makeShaderWithChildren(JSAny uniforms, JSAny children);
   SkShader? makeShaderWithChildren(
-      List<Object> uniforms, List<Object?> children) =>
+          SkFloat32List uniforms, List<Object?> children) =>
           _makeShaderWithChildren(uniforms.toJSAnyShallow,
               children.toJSAnyShallow);
 }

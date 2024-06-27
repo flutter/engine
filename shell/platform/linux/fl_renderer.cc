@@ -153,6 +153,11 @@ void fl_renderer_clear_current(FlRenderer* self) {
   FL_RENDERER_GET_CLASS(self)->clear_current(self);
 }
 
+gdouble fl_renderer_get_refresh_rate(FlRenderer* self) {
+  g_return_val_if_fail(FL_IS_RENDERER(self), -1.0);
+  return FL_RENDERER_GET_CLASS(self)->get_refresh_rate(self);
+}
+
 guint32 fl_renderer_get_fbo(FlRenderer* self) {
   g_return_val_if_fail(FL_IS_RENDERER(self), 0);
 
@@ -314,6 +319,16 @@ void fl_renderer_render(FlRenderer* self, int width, int height) {
 
   g_return_if_fail(FL_IS_RENDERER(self));
 
+  // Save bindings that are set by this function.  All bindings must be restored
+  // to their original values because Skia expects that its bindings have not
+  // been altered.
+  GLint saved_texture_binding;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &saved_texture_binding);
+  GLint saved_vao_binding;
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &saved_vao_binding);
+  GLint saved_array_buffer_binding;
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &saved_array_buffer_binding);
+
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
 
@@ -364,6 +379,10 @@ void fl_renderer_render(FlRenderer* self, int width, int height) {
   }
 
   glFlush();
+
+  glBindTexture(GL_TEXTURE_2D, saved_texture_binding);
+  glBindVertexArray(saved_vao_binding);
+  glBindBuffer(GL_ARRAY_BUFFER, saved_array_buffer_binding);
 }
 
 void fl_renderer_cleanup(FlRenderer* self) {

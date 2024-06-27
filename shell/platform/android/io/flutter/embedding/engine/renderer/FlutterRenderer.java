@@ -7,6 +7,7 @@ package io.flutter.embedding.engine.renderer;
 import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
+import android.content.ComponentCallbacks2;
 import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
@@ -17,22 +18,26 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterJNI;
 import io.flutter.view.TextureRegistry;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
@@ -61,6 +66,9 @@ public class FlutterRenderer implements TextureRegistry {
    */
   @VisibleForTesting public static boolean debugForceSurfaceProducerGlTextures = false;
 
+  /** Whether to disable clearing of the Surface used to render platform views. */
+  @VisibleForTesting public static boolean debugDisableSurfaceClear = false;
+
   private static final String TAG = "FlutterRenderer";
 
   @NonNull private final FlutterJNI flutterJNI;
@@ -72,6 +80,8 @@ public class FlutterRenderer implements TextureRegistry {
   @NonNull
   private final Set<WeakReference<TextureRegistry.OnTrimMemoryListener>> onTrimMemoryListeners =
       new HashSet<>();
+
+  @NonNull private final List<ImageReaderSurfaceProducer> imageReaderProducers = new ArrayList<>();
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -90,6 +100,20 @@ public class FlutterRenderer implements TextureRegistry {
   public FlutterRenderer(@NonNull FlutterJNI flutterJNI) {
     this.flutterJNI = flutterJNI;
     this.flutterJNI.addIsDisplayingFlutterUiListener(flutterUiDisplayListener);
+    ProcessLifecycleOwner.get()
+        .getLifecycle()
+        .addObserver(
+            new DefaultLifecycleObserver() {
+              @Override
+              public void onResume(@NonNull LifecycleOwner owner) {
+                Log.v(TAG, "onResume called; notifying SurfaceProducers");
+                for (ImageReaderSurfaceProducer producer : imageReaderProducers) {
+                  if (producer.callback != null) {
+                    producer.callback.onSurfaceCreated();
+                  }
+                }
+              }
+            });
   }
 
   /**
@@ -192,6 +216,7 @@ public class FlutterRenderer implements TextureRegistry {
       final ImageReaderSurfaceProducer producer = new ImageReaderSurfaceProducer(id);
       registerImageTexture(id, producer);
       addOnTrimMemoryListener(producer);
+      imageReaderProducers.add(producer);
       Log.v(TAG, "New ImageReaderSurfaceProducer ID: " + id);
       entry = producer;
     } else {
@@ -414,16 +439,17 @@ public class FlutterRenderer implements TextureRegistry {
     // Flip when debugging to see verbose logs.
     private static final boolean VERBOSE_LOGS = false;
 
-    // If we cleanup the ImageReaders on memory pressure it breaks VirtualDisplay
-    // backed platform views. Disable for now as this is only necessary to work
-    // around a Samsung-specific Android 14 bug.
-    private static final boolean CLEANUP_ON_MEMORY_PRESSURE = false;
+    // We must always cleanup on memory pressure on Android 14 due to a bug in Android.
+    // It is safe to do on all versions so we unconditionally have this set to true.
+    private static final boolean CLEANUP_ON_MEMORY_PRESSURE = true;
 
     private final long id;
 
     private boolean released;
     // Will be true in tests and on Android API < 33.
     private boolean ignoringFence = false;
+
+    private boolean trimOnMemoryPressure = CLEANUP_ON_MEMORY_PRESSURE;
 
     // The requested width and height are updated by setSize.
     private int requestedWidth = 1;
@@ -438,14 +464,16 @@ public class FlutterRenderer implements TextureRegistry {
     private long lastDequeueTime = 0;
     private long lastQueueTime = 0;
     private long lastScheduleTime = 0;
+    private int numTrims = 0;
 
     private Object lock = new Object();
     // REQUIRED: The following fields must only be accessed when lock is held.
-    private final LinkedList<PerImageReader> imageReaderQueue = new LinkedList<PerImageReader>();
+    private final ArrayDeque<PerImageReader> imageReaderQueue = new ArrayDeque<PerImageReader>();
     private final HashMap<ImageReader, PerImageReader> perImageReaders =
         new HashMap<ImageReader, PerImageReader>();
     private PerImage lastDequeuedImage = null;
     private PerImageReader lastReaderDequeuedFrom = null;
+    private Callback callback = null;
 
     /** Internal class: state held per Image produced by ImageReaders. */
     private class PerImage {
@@ -461,7 +489,7 @@ public class FlutterRenderer implements TextureRegistry {
     /** Internal class: state held per ImageReader. */
     private class PerImageReader {
       public final ImageReader reader;
-      private final LinkedList<PerImage> imageQueue = new LinkedList<PerImage>();
+      private final ArrayDeque<PerImage> imageQueue = new ArrayDeque<PerImage>();
       private boolean closed = false;
 
       private final ImageReader.OnImageAvailableListener onImageAvailableListener =
@@ -484,7 +512,8 @@ public class FlutterRenderer implements TextureRegistry {
 
       public PerImageReader(ImageReader reader) {
         this.reader = reader;
-        reader.setOnImageAvailableListener(onImageAvailableListener, new Handler());
+        reader.setOnImageAvailableListener(
+            onImageAvailableListener, new Handler(Looper.getMainLooper()));
       }
 
       PerImage queueImage(Image image) {
@@ -654,16 +683,26 @@ public class FlutterRenderer implements TextureRegistry {
 
     @Override
     public void onTrimMemory(int level) {
-      if (!CLEANUP_ON_MEMORY_PRESSURE) {
+      if (!trimOnMemoryPressure) {
         return;
+      }
+      if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+        return;
+      }
+      synchronized (lock) {
+        numTrims++;
       }
       cleanup();
       createNewReader = true;
+      if (this.callback != null) {
+        this.callback.onSurfaceDestroyed();
+      }
     }
 
     private void releaseInternal() {
       cleanup();
       released = true;
+      imageReaderProducers.remove(this);
     }
 
     private void cleanup() {
@@ -716,6 +755,11 @@ public class FlutterRenderer implements TextureRegistry {
 
     ImageReaderSurfaceProducer(long id) {
       this.id = id;
+    }
+
+    @Override
+    public void setCallback(Callback callback) {
+      this.callback = callback;
     }
 
     @Override
@@ -870,6 +914,13 @@ public class FlutterRenderer implements TextureRegistry {
     public int numImageReaders() {
       synchronized (lock) {
         return imageReaderQueue.size();
+      }
+    }
+
+    @VisibleForTesting
+    public int numTrims() {
+      synchronized (lock) {
+        return numTrims;
       }
     }
 

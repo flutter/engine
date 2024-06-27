@@ -85,9 +85,6 @@ struct GLProc {
     FML_CHECK(IsAvailable()) << "GL function " << name << " is not available. "
                              << "This is likely due to a missing extension.";
 #endif  // IMPELLER_DEBUG
-#ifdef IMPELLER_TRACE_ALL_GL_CALLS
-    TRACE_EVENT0("impeller", name);
-#endif  // IMPELLER_TRACE_ALL_GL_CALLS
     return function(std::forward<Args>(args)...);
   }
 
@@ -162,6 +159,7 @@ struct GLProc {
   PROC(IsShader);                            \
   PROC(IsTexture);                           \
   PROC(LinkProgram);                         \
+  PROC(PixelStorei);                         \
   PROC(RenderbufferStorage);                 \
   PROC(Scissor);                             \
   PROC(ShaderBinary);                        \
@@ -170,6 +168,7 @@ struct GLProc {
   PROC(StencilMaskSeparate);                 \
   PROC(StencilOpSeparate);                   \
   PROC(TexImage2D);                          \
+  PROC(TexSubImage2D);                       \
   PROC(TexParameteri);                       \
   PROC(TexParameterfv);                      \
   PROC(Uniform1fv);                          \

@@ -78,7 +78,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addFontSizeObserver();
     _addLocaleChangedListener();
     registerHotRestartListener(dispose);
-    AppLifecycleState.instance.addListener(_setAppLifecycleState);
+    _appLifecycleState.addListener(_setAppLifecycleState);
     _viewFocusBinding.init();
     domDocument.body?.prepend(accessibilityPlaceholder);
     _onViewDisposedListener = viewManager.onViewDisposed.listen((_) {
@@ -122,7 +122,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _disconnectFontSizeObserver();
     _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
-    AppLifecycleState.instance.removeListener(_setAppLifecycleState);
+    _appLifecycleState.removeListener(_setAppLifecycleState);
     _viewFocusBinding.dispose();
     accessibilityPlaceholder.remove();
     _onViewDisposedListener.cancel();
@@ -154,6 +154,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ];
 
   late final FlutterViewManager viewManager = FlutterViewManager(this);
+
+  late final AppLifecycleState _appLifecycleState =
+      AppLifecycleState.create(viewManager);
 
   /// The current list of windows.
   @override
@@ -535,7 +538,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             if (renderer is CanvasKitRenderer) {
               assert(
                 decoded.arguments is int,
-                'Argument to Skia.setResourceCacheMaxBytes must be an int, but was ${decoded.arguments.runtimeType}',
+                'Argument to Skia.setResourceCacheMaxBytes must be an int, but was ${(decoded.arguments as Object?).runtimeType}',
               );
               final int cacheSizeInBytes = decoded.arguments as int;
               CanvasKitRenderer.instance.resourceCacheMaxBytes =
@@ -688,9 +691,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
         const StandardMessageCodec codec = StandardMessageCodec();
-        // TODO(yjbanov): Dispatch the announcement to the correct view?
-        //                https://github.com/flutter/flutter/issues/137445
-        implicitView?.accessibilityAnnouncements.handleMessage(codec, data);
+        final EngineSemantics semantics = EngineSemantics.instance;
+        if (semantics.semanticsEnabled) {
+          semantics.accessibilityAnnouncements.handleMessage(codec, data);
+        }
         replyToPlatformMessage(callback, codec.encodeMessage(true));
         return;
 
