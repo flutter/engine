@@ -234,7 +234,10 @@ void ExperimentalCanvas::SaveLayer(
 
   int required_mip_count = 1;
   std::shared_ptr<FilterContents> backdrop_filter_contents_;
+  Point local_position = {0, 0};
   if (backdrop_filter) {
+    local_position = clip_coverage_stack_.CurrentClipCoverage()->GetOrigin() -
+                     GetGlobalPassPosition();
     EntityPass::BackdropFilterProc backdrop_filter_proc =
         [backdrop_filter = backdrop_filter->Clone()](
             const FilterInput::Ref& input, const Matrix& effect_transform,
@@ -332,7 +335,13 @@ void ExperimentalCanvas::SaveLayer(
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
   transform_stack_.back().distributed_opacity = 1.0;
 
+  // Backdrop Filter must expand bounds to at least the clip stack.
   Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
+  if (backdrop_filter_contents_) {
+    subpass_coverage =
+        clip_coverage_stack_.CurrentClipCoverage().value_or(subpass_coverage);
+  }
+
   render_passes_.push_back(LazyRenderingConfig(
       renderer_,                                                        //
       CreateRenderTarget(renderer_,                                     //
@@ -363,8 +372,8 @@ void ExperimentalCanvas::SaveLayer(
     // Render the backdrop entity.
     Entity backdrop_entity;
     backdrop_entity.SetContents(std::move(backdrop_filter_contents_));
-    backdrop_entity.SetTransform(Matrix::MakeTranslation(
-        Vector3(-GetGlobalPassPosition())));
+    backdrop_entity.SetTransform(
+        Matrix::MakeTranslation(Vector3(-local_position)));
     backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
 
     backdrop_entity.Render(
@@ -429,14 +438,15 @@ bool ExperimentalCanvas::Restore() {
     //
     // See also this bug: https://github.com/flutter/flutter/issues/144213
     Point subpass_texture_position =
-        (save_layer_state.coverage.GetOrigin() - GetGlobalPassPosition()).Round();
+        (save_layer_state.coverage.GetOrigin() - GetGlobalPassPosition())
+            .Round();
 
     Entity element_entity;
     element_entity.SetClipDepth(++current_depth_);
     element_entity.SetContents(std::move(contents));
     element_entity.SetBlendMode(save_layer_state.paint.blend_mode);
-    element_entity.SetTransform(Matrix::MakeTranslation(
-        Vector3(subpass_texture_position)));
+    element_entity.SetTransform(
+        Matrix::MakeTranslation(Vector3(subpass_texture_position)));
 
     if (element_entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
       if (renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
