@@ -63,9 +63,6 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
   /// `RenderPasses` are created, so we just set them to `kDontCare` here.
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
-  if (size.IsEmpty()) {
-    FML_LOG(ERROR) << "WARNING EMPTY RT";
-  }
 
   if (context->GetBackendType() == Context::BackendType::kOpenGLES) {
     // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
@@ -200,9 +197,9 @@ void ExperimentalCanvas::Save(uint32_t total_content_depth) {
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_depth = current_depth_ + total_content_depth;
   entry.distributed_opacity = transform_stack_.back().distributed_opacity;
-  // FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
-  //     << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
-  //     << " after allocating " << total_content_depth;
+  FML_CHECK(entry.clip_depth <= transform_stack_.back().clip_depth)
+      << entry.clip_depth << " <=? " << transform_stack_.back().clip_depth
+      << " after allocating " << total_content_depth;
   entry.clip_height = transform_stack_.back().clip_height;
   entry.rendering_mode = Entity::RenderingMode::kDirect;
   transform_stack_.emplace_back(entry);
@@ -233,11 +230,14 @@ void ExperimentalCanvas::SaveLayer(
   }
 
   int required_mip_count = 1;
-  std::shared_ptr<FilterContents> backdrop_filter_contents_;
+  std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
   if (backdrop_filter) {
-    local_position = clip_coverage_stack_.CurrentClipCoverage()->GetOrigin() -
-                     GetGlobalPassPosition();
+    auto current_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+    if (current_clip_coverage.has_value()) {
+      local_position =
+          current_clip_coverage->GetOrigin() - GetGlobalPassPosition();
+    }
     EntityPass::BackdropFilterProc backdrop_filter_proc =
         [backdrop_filter = backdrop_filter->Clone()](
             const FilterInput::Ref& input, const Matrix& effect_transform,
@@ -262,7 +262,7 @@ void ExperimentalCanvas::SaveLayer(
 
     ISize restore_size =
         rendering_config.inline_pass_context->GetTexture()->GetSize();
-    backdrop_filter_contents_ = backdrop_filter_proc(
+    backdrop_filter_contents = backdrop_filter_proc(
         FilterInput::Make(rendering_config.inline_pass_context->GetTexture()),
         transform_stack_.back().transform.Basis(),
         // When the subpass has a translation that means the math with
@@ -335,11 +335,12 @@ void ExperimentalCanvas::SaveLayer(
   paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
   transform_stack_.back().distributed_opacity = 1.0;
 
-  // Backdrop Filter must expand bounds to at least the clip stack.
+  // Backdrop Filter must expand bounds to at least the clip stack, otherwise
+  // the coverage of the parent render pass.
   Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
-  if (backdrop_filter_contents_) {
-    subpass_coverage =
-        clip_coverage_stack_.CurrentClipCoverage().value_or(subpass_coverage);
+  if (backdrop_filter_contents) {
+    subpass_coverage = clip_coverage_stack_.CurrentClipCoverage().value_or(
+        save_layer_state_.back().coverage);
   }
 
   render_passes_.push_back(LazyRenderingConfig(
@@ -368,10 +369,10 @@ void ExperimentalCanvas::SaveLayer(
   // the subpass will affect in the parent pass.
   clip_coverage_stack_.PushSubpass(subpass_coverage, GetClipHeight());
 
-  if (backdrop_filter_contents_) {
+  if (backdrop_filter_contents) {
     // Render the backdrop entity.
     Entity backdrop_entity;
-    backdrop_entity.SetContents(std::move(backdrop_filter_contents_));
+    backdrop_entity.SetContents(std::move(backdrop_filter_contents));
     backdrop_entity.SetTransform(
         Matrix::MakeTranslation(Vector3(-local_position)));
     backdrop_entity.SetClipDepth(std::numeric_limits<uint32_t>::max());
