@@ -375,53 +375,12 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
 
 bool Render1DBlur(const ContentContext& renderer,
                   RenderPass& pass,
+                  const Quad& blur_vertices,
                   const Quad& blur_uvs,
                   const SamplerDescriptor& sampler_descriptor,
                   const std::shared_ptr<Texture>& input_texture,
-                  const BlurParameters& blur_info) {
-  GaussianBlurVertexShader::FrameInfo frame_info{
-      .mvp = Matrix::MakeOrthographic(ISize(1, 1)),
-      .texture_sampler_y_coord_scale = 1.0};
-
-  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
-
-  ContentContextOptions options = OptionsFromPass(pass);
-  options.primitive_type = PrimitiveType::kTriangleStrip;
-  pass.SetPipeline(renderer.GetGaussianBlurPipeline(options));
-
-  BindVertices<GaussianBlurVertexShader>(pass, host_buffer,
-                                         {
-                                             {blur_uvs[0], blur_uvs[0]},
-                                             {blur_uvs[1], blur_uvs[1]},
-                                             {blur_uvs[2], blur_uvs[2]},
-                                             {blur_uvs[3], blur_uvs[3]},
-                                         });
-
-  SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
-  linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
-  linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
-  GaussianBlurFragmentShader::BindTextureSampler(
-      pass, input_texture,
-      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-          linear_sampler_descriptor));
-  GaussianBlurVertexShader::BindFrameInfo(
-      pass, host_buffer.EmplaceUniform(frame_info));
-  GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
-      LerpHackKernelSamples(GenerateBlurInfo(blur_info));
-  FML_CHECK(kernel_samples.sample_count <= kGaussianBlurMaxKernelSize);
-  GaussianBlurFragmentShader::BindKernelSamples(
-      pass, host_buffer.EmplaceUniform(kernel_samples));
-  return pass.Draw().ok();
-}
-
-bool Render1DBlur2(const ContentContext& renderer,
-                   RenderPass& pass,
-                   const Quad& blur_uvs,
-                   const SamplerDescriptor& sampler_descriptor,
-                   const std::shared_ptr<Texture>& input_texture,
-                   const BlurParameters& blur_info,
-                   const Matrix& mvp,
-                   const Quad& blur_vertices) {
+                  const BlurParameters& blur_info,
+                  const Matrix& mvp) {
   GaussianBlurVertexShader::FrameInfo frame_info{
       .mvp = mvp, .texture_sampler_y_coord_scale = 1.0};
 
@@ -473,8 +432,9 @@ fml::StatusOr<RenderTarget> MakeBlurSubpass(
   ISize subpass_size = input_texture->GetSize();
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
-        return Render1DBlur(renderer, pass, blur_uvs, sampler_descriptor,
-                            input_texture, blur_info);
+        return Render1DBlur(renderer, pass, blur_uvs, blur_uvs,
+                            sampler_descriptor, input_texture, blur_info,
+                            Matrix::MakeOrthographic(ISize(1, 1)));
       };
   if (destination_target.has_value()) {
     return renderer.MakeSubpass("Gaussian Blur Filter",
@@ -801,8 +761,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
               Point(0, 0), Point(texture->GetSize().width, 0),
               Point(0, texture->GetSize().height),
               Point(texture->GetSize().width, texture->GetSize().height)};
-          return Render1DBlur2(
-              renderer, pass, blur_uvs, sampler_desc, texture,
+          return Render1DBlur(
+              renderer, pass, blur_vertices, blur_uvs, sampler_desc, texture,
               BlurParameters{
                   .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
                   .blur_sigma = blur_info.scaled_sigma.x *
@@ -812,7 +772,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                                       downsample_pass_args.effective_scalar.x),
                   .step_size = 1,
               },
-              entity.GetShaderTransform(pass), blur_vertices);
+              entity.GetShaderTransform(pass));
         },
         /*coverage_proc=*/
         [texture](const Entity& entity) {
