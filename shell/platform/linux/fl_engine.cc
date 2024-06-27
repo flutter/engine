@@ -400,6 +400,7 @@ static void fl_engine_dispose(GObject* object) {
   }
 
   fl_binary_messenger_shutdown(self->binary_messenger);
+  fl_texture_registrar_shutdown(self->texture_registrar);
 
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
