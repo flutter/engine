@@ -218,7 +218,12 @@ void ExperimentalCanvas::SaveLayer(
     bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
   }
 
-  if (bounds->IsEmpty()) {
+  // SaveLayer is a no-op, depending on the bounds promise. Should DL elide
+  // this?
+  if (bounds->IsEmpty() ||
+      (backdrop_filter &&
+       clip_coverage_stack_.CurrentClipCoverage().has_value() &&
+       clip_coverage_stack_.CurrentClipCoverage()->IsEmpty())) {
     return;
   }
 
