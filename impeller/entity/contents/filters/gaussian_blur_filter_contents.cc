@@ -414,6 +414,48 @@ bool Render1DBlur(const ContentContext& renderer,
   return pass.Draw().ok();
 }
 
+bool Render1DBlur2(const ContentContext& renderer,
+                   RenderPass& pass,
+                   const Quad& blur_uvs,
+                   const SamplerDescriptor& sampler_descriptor,
+                   const std::shared_ptr<Texture>& input_texture,
+                   const BlurParameters& blur_info,
+                   const Matrix& mvp,
+                   const Quad& blur_vertices) {
+  GaussianBlurVertexShader::FrameInfo frame_info{
+      .mvp = mvp, .texture_sampler_y_coord_scale = 1.0};
+
+  HostBuffer& host_buffer = renderer.GetTransientsBuffer();
+
+  ContentContextOptions options = OptionsFromPass(pass);
+  options.primitive_type = PrimitiveType::kTriangleStrip;
+  pass.SetPipeline(renderer.GetGaussianBlurPipeline(options));
+
+  BindVertices<GaussianBlurVertexShader>(pass, host_buffer,
+                                         {
+                                             {blur_vertices[0], blur_uvs[0]},
+                                             {blur_vertices[1], blur_uvs[1]},
+                                             {blur_vertices[2], blur_uvs[2]},
+                                             {blur_vertices[3], blur_uvs[3]},
+                                         });
+
+  SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
+  linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
+  linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
+  GaussianBlurFragmentShader::BindTextureSampler(
+      pass, input_texture,
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+          linear_sampler_descriptor));
+  GaussianBlurVertexShader::BindFrameInfo(
+      pass, host_buffer.EmplaceUniform(frame_info));
+  GaussianBlurPipeline::FragmentShader::KernelSamples kernel_samples =
+      LerpHackKernelSamples(GenerateBlurInfo(blur_info));
+  FML_CHECK(kernel_samples.sample_count <= kGaussianBlurMaxKernelSize);
+  GaussianBlurFragmentShader::BindKernelSamples(
+      pass, host_buffer.EmplaceUniform(kernel_samples));
+  return pass.Draw().ok();
+}
+
 fml::StatusOr<RenderTarget> MakeBlurSubpass(
     const ContentContext& renderer,
     const std::shared_ptr<CommandBuffer>& command_buffer,
@@ -755,7 +797,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
          downsample_pass_args](const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) {
           Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
-          return Render1DBlur(
+          Quad blur_vertices = {
+              Point(0, 0), Point(texture->GetSize().width, 0),
+              Point(0, texture->GetSize().height),
+              Point(texture->GetSize().width, texture->GetSize().height)};
+          return Render1DBlur2(
               renderer, pass, blur_uvs, sampler_desc, texture,
               BlurParameters{
                   .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
@@ -765,7 +811,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
                       ScaleBlurRadius(blur_info.blur_radius.x,
                                       downsample_pass_args.effective_scalar.x),
                   .step_size = 1,
-              });
+              },
+              entity.GetShaderTransform(pass), blur_vertices);
         },
         /*coverage_proc=*/
         [texture](const Entity& entity) {
