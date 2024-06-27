@@ -544,27 +544,27 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    // if (!subpass->backdrop_filter_proc_ &&
-    //     subpass->delegate_->CanCollapseIntoParentPass(subpass)) {
-    //   // Directly render into the parent target and move on.
-    //   if (!subpass->OnRender(
-    //           renderer,                      // renderer
-    //           root_pass_size,                // root_pass_size
-    //           pass_context.GetPassTarget(),  // pass_target
-    //           global_pass_position,          // global_pass_position
-    //           Point(),                       // local_pass_position
-    //           pass_depth,                    // pass_depth
-    //           clip_coverage_stack,           // clip_coverage_stack
-    //           clip_height_,                  // clip_height_floor
-    //           nullptr,                       // backdrop_filter_contents
-    //           pass_context.GetRenderPass(pass_depth)  // collapsed_parent_pass
-    //           )) {
-    //     // Validation error messages are triggered for all `OnRender()` failure
-    //     // cases.
-    //     return EntityPass::EntityResult::Failure();
-    //   }
-    //   return EntityPass::EntityResult::Skip();
-    // }
+    if (!subpass->backdrop_filter_proc_ &&
+        subpass->delegate_->CanCollapseIntoParentPass(subpass)) {
+      // Directly render into the parent target and move on.
+      if (!subpass->OnRender(
+              renderer,                      // renderer
+              root_pass_size,                // root_pass_size
+              pass_context.GetPassTarget(),  // pass_target
+              global_pass_position,          // global_pass_position
+              Point(),                       // local_pass_position
+              pass_depth,                    // pass_depth
+              clip_coverage_stack,           // clip_coverage_stack
+              clip_height_,                  // clip_height_floor
+              nullptr,                       // backdrop_filter_contents
+              pass_context.GetRenderPass(pass_depth)  // collapsed_parent_pass
+              )) {
+        // Validation error messages are triggered for all `OnRender()` failure
+        // cases.
+        return EntityPass::EntityResult::Failure();
+      }
+      return EntityPass::EntityResult::Skip();
+    }
 
     std::shared_ptr<Contents> subpass_backdrop_filter_contents = nullptr;
     if (subpass->backdrop_filter_proc_) {
