@@ -23,4 +23,4 @@ void test(
   _testSuite.test(name, body, skip: skip);
 }
 
-final bool assertStatementsEnabled = v.asserts;
+final bool assertStatementsEnabled = v.enabledAsserts;
