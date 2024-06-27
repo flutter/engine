@@ -416,12 +416,27 @@ bool ExperimentalCanvas::Restore() {
 
     lazy_render_pass.inline_pass_context->EndPass();
 
+    // Round the subpass texture position for pixel alignment with the parent
+    // pass render target. By default, we draw subpass textures with nearest
+    // sampling, so aligning here is important for avoiding visual nearest
+    // sampling errors caused by limited floating point precision when
+    // straddling a half pixel boundary.
+    //
+    // We do this in lieu of expanding/rounding out the subpass coverage in
+    // order to keep the bounds wrapping consistently tight around subpass
+    // elements. Which is necessary to avoid intense flickering in cases
+    // where a subpass texture has a large blur filter with clamp sampling.
+    //
+    // See also this bug: https://github.com/flutter/flutter/issues/144213
+    Point subpass_texture_position =
+        (save_layer_state.coverage.GetOrigin() - GetGlobalPassPosition()).Round();
+
     Entity element_entity;
     element_entity.SetClipDepth(++current_depth_);
     element_entity.SetContents(std::move(contents));
     element_entity.SetBlendMode(save_layer_state.paint.blend_mode);
     element_entity.SetTransform(Matrix::MakeTranslation(
-        Vector3(save_layer_state.coverage.GetOrigin())));
+        Vector3(subpass_texture_position)));
 
     if (element_entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
       if (renderer_.GetDeviceCapabilities().SupportsFramebufferFetch()) {
