@@ -1044,12 +1044,11 @@ void DisplayListBuilder::ClipPath(const SkPath& path,
       this->clipRect(rect, clip_op, is_aa);
       return;
     }
-    SkRRect rrect;
     if (path.isOval(&rect)) {
-      rrect.setOval(rect);
-      this->clipRRect(rrect, clip_op, is_aa);
+      this->clipOval(rect, clip_op, is_aa);
       return;
     }
+    SkRRect rrect;
     if (path.isRRect(&rrect)) {
       this->clipRRect(rrect, clip_op, is_aa);
       return;
@@ -1224,6 +1223,24 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   drawDRRect(outer, inner);
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
+  {
+    SkRect rect;
+    if (path.isRect(&rect)) {
+      drawRect(rect);
+      return;
+    }
+    if (path.isOval(&rect)) {
+      drawOval(rect);
+      return;
+    }
+  }
+  {
+    SkRRect rrect;
+    if (path.isRRect(&rrect)) {
+      drawRRect(rrect);
+      return;
+    }
+  }
   DisplayListAttributeFlags flags = kDrawPathFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect) {
