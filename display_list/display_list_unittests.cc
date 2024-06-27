@@ -3439,11 +3439,9 @@ TEST_F(DisplayListTest, ImpellerPathPreferenceIsHonored) {
   };
 
   DisplayListBuilder builder;
-  builder.DrawPath(SkPath::Rect(SkRect::MakeLTRB(0, 0, 100, 100)), DlPaint());
-  builder.ClipPath(SkPath::Rect(SkRect::MakeLTRB(0, 0, 100, 100)),
-                   ClipOp::kIntersect, true);
-  builder.DrawShadow(SkPath::Rect(SkRect::MakeLTRB(20, 20, 80, 80)),
-                     DlColor::kBlue(), 1.0f, true, 1.0f);
+  builder.DrawPath(kTestPath1, DlPaint());
+  builder.ClipPath(kTestPath1, ClipOp::kIntersect, true);
+  builder.DrawShadow(kTestPath1, DlColor::kBlue(), 1.0f, true, 1.0f);
   auto display_list = builder.Build();
 
   {
@@ -4856,6 +4854,236 @@ TEST_F(DisplayListTest, RecordLargeVertices) {
     }
     auto dl = builder.Build();
   }
+}
+
+TEST_F(DisplayListTest, DrawRectRRectPromoteToDrawRect) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+
+  DisplayListBuilder builder;
+  builder.DrawRRect(SkRRect::MakeRect(rect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, DrawOvalRRectPromoteToDrawOval) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+
+  DisplayListBuilder builder;
+  builder.DrawRRect(SkRRect::MakeOval(rect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawOval(rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, DrawRectPathPromoteToDrawRect) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+
+  DisplayListBuilder builder;
+  builder.DrawPath(SkPath::Rect(rect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, DrawOvalPathPromoteToDrawOval) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+
+  DisplayListBuilder builder;
+  builder.DrawPath(SkPath::Oval(rect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawOval(rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, DrawRRectPathPromoteToDrawRRect) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect rrect = SkRRect::MakeRectXY(rect, 2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.DrawPath(SkPath::RRect(rrect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRRect(rrect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, DrawRectRRectPathPromoteToDrawRect) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect rrect = SkRRect::MakeRect(rect);
+
+  DisplayListBuilder builder;
+  builder.DrawPath(SkPath::RRect(rrect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawRect(rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, DrawOvalRRectPathPromoteToDrawOval) {
+  SkRect rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect rrect = SkRRect::MakeOval(rect);
+
+  DisplayListBuilder builder;
+  builder.DrawPath(SkPath::RRect(rrect), DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.DrawOval(rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipRectRRectPromoteToClipRect) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipRRect(SkRRect::MakeRect(clip_rect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipRect(clip_rect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipOvalRRectPromoteToClipOval) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipRRect(SkRRect::MakeOval(clip_rect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipOval(clip_rect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipRectPathPromoteToClipRect) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipPath(SkPath::Rect(clip_rect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipRect(clip_rect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipOvalPathPromoteToClipOval) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipPath(SkPath::Oval(clip_rect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipOval(clip_rect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipRRectPathPromoteToClipRRect) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2.0f, 2.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipPath(SkPath::RRect(clip_rrect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipRRect(clip_rrect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipRectRRectPathPromoteToClipRect) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect clip_rrect = SkRRect::MakeRect(clip_rect);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipPath(SkPath::RRect(clip_rrect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipRect(clip_rect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
+}
+
+TEST_F(DisplayListTest, ClipOvalRRectPathPromoteToClipOval) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect clip_rrect = SkRRect::MakeOval(clip_rect);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+
+  DisplayListBuilder builder;
+  builder.ClipPath(SkPath::RRect(clip_rrect), ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  DisplayListBuilder expected;
+  expected.ClipOval(clip_rect, ClipOp::kIntersect, false);
+  expected.DrawRect(draw_rect, DlPaint());
+  auto expect_dl = expected.Build();
+
+  DisplayListsEQ_Verbose(dl, expect_dl);
 }
 
 }  // namespace testing

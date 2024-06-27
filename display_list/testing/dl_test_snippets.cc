@@ -666,8 +666,11 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
            {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath1); }},
            {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath2); }},
            {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPath3); }},
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRect); }},
-           {1, 40, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathOval); }},
+           // oval and rect paths are redirected to drawRect and drawOval
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRect); }},
+           {1, 24, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathOval); }},
+           // rrect path is redirected to drawRRect
+           {1, 56, 1, [](DlOpReceiver& r) { r.drawPath(kTestPathRRect); }},
        }},
       {"DrawArc",
        {
