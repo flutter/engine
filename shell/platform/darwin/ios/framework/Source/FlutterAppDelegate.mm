@@ -148,13 +148,15 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
   if ([_lifeCycleDelegate application:application openURL:url options:options]) {
     return YES;
   }
-  return [self handleOpenURL:url options:options throwBackToiOS:NO];
+
+  // Relaying to the system here will case an infinite loop, so we don't do it here.
+  return [self handleOpenURL:url options:options relayToSystemIfUnhandled:NO];
 }
 
-// Helper function for opening an URL.
+// Helper function for opening an URL, either with a custom scheme or a http/https scheme.
 - (BOOL)handleOpenURL:(NSURL*)url
               options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
-       throwBackToiOS:(BOOL)throwBack {
+       relayToSystemIfUnhandled:(BOOL)throwBack {
   if (![self isFlutterDeepLinkingEnabled]) {
     return NO;
   }
@@ -205,6 +207,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
                         completionHandler:completionHandler];
 }
 
+// This method is called when opening an URL with a http/https scheme.
 - (BOOL)application:(UIApplication*)application
     continueUserActivity:(NSUserActivity*)userActivity
       restorationHandler:
@@ -216,7 +219,7 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
     return YES;
   }
 
-  return [self handleOpenURL:userActivity.webpageURL options:@{} throwBackToiOS:YES];
+  return [self handleOpenURL:userActivity.webpageURL options:@{} relayToSystemIfUnhandled:YES];
 }
 
 #pragma mark - FlutterPluginRegistry methods. All delegating to the rootViewController
