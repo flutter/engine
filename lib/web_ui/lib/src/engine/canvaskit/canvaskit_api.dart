@@ -3702,6 +3702,6 @@ Future<CanvasKitModule> _downloadOneOf(Iterable<String> urls) async {
 /// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
 /// file was successfully downloaded, or `false` if it failed.
 Future<CanvasKitModule> _downloadCanvasKitJs(String url) async {
-  // final Object scriptUrl = createTrustedScriptUrl(url);
-  return (await importModule(url).toDart) as CanvasKitModule;
+  final Object scriptUrl = createTrustedScriptUrl(url);
+  return (await importModule(scriptUrl).toDart) as CanvasKitModule;
 }
