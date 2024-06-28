@@ -31,67 +31,43 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             'opportunity to add breakpoints or inspect loaded code before '
             'running the code.',
       )
-      ..addFlag(
-        'verbose',
-        abbr: 'v',
-        help: 'Enable verbose output.'
-      )
+      ..addFlag('verbose', abbr: 'v', help: 'Enable verbose output.')
       ..addFlag(
         'watch',
         abbr: 'w',
         help: 'Run in watch mode so the tests re-run whenever a change is '
             'made.',
       )
-      ..addFlag(
-        'list',
-        help:
-            'Lists the bundles that would be compiled and the suites that '
-            'will be run as part of this invocation, without actually '
-            'compiling or running them.'
-      )
-      ..addFlag(
-        'generate-builder-json',
-        help:
-            'Generates JSON for the engine_v2 builders to build and copy all'
-            'artifacts, compile all test bundles, and run all test suites on'
-            'all platforms.'
-      )
-      ..addFlag(
-        'compile',
-        help:
-            'Compile test bundles. If this is specified on its own, we will '
-            'only compile and not run the suites.'
-      )
-      ..addFlag(
-        'run',
-        help:
-            'Run test suites. If this is specified on its own, we will only '
-            'run the suites and not compile the bundles.'
-      )
-      ..addFlag(
-        'copy-artifacts',
-        help:
-            'Copy artifacts needed for test suites. If this is specified on '
-            'its own, we will only copy the artifacts and not compile or run'
-            'the tests bundles or suites.'
-      )
-      ..addFlag(
-        'profile',
-        help:
-            'Use artifacts from the profile build instead of release.'
-      )
-      ..addFlag(
-        'debug',
-        help: 'Use artifacts from the debug build instead of release.'
-      )
-      ..addFlag(
-        'dwarf',
-        help: 'Debug wasm modules using embedded DWARF data.'
-      )
+      ..addFlag('list',
+          help: 'Lists the bundles that would be compiled and the suites that '
+              'will be run as part of this invocation, without actually '
+              'compiling or running them.')
+      ..addFlag('generate-builder-json',
+          help:
+              'Generates JSON for the engine_v2 builders to build and copy all'
+              'artifacts, compile all test bundles, and run all test suites on'
+              'all platforms.')
+      ..addFlag('compile',
+          help:
+              'Compile test bundles. If this is specified on its own, we will '
+              'only compile and not run the suites.')
+      ..addFlag('run',
+          help:
+              'Run test suites. If this is specified on its own, we will only '
+              'run the suites and not compile the bundles.')
+      ..addFlag('copy-artifacts',
+          help:
+              'Copy artifacts needed for test suites. If this is specified on '
+              'its own, we will only copy the artifacts and not compile or run'
+              'the tests bundles or suites.')
+      ..addFlag('profile',
+          help: 'Use artifacts from the profile build instead of release.')
+      ..addFlag('debug',
+          help: 'Use artifacts from the debug build instead of release.')
+      ..addFlag('dwarf', help: 'Debug wasm modules using embedded DWARF data.')
       ..addFlag(
         'require-skia-gold',
-        help:
-            'Whether we require Skia Gold to be available or not. When this '
+        help: 'Whether we require Skia Gold to be available or not. When this '
             'flag is true, the tests will fail if Skia Gold is not available.',
       )
       ..addFlag(
@@ -128,20 +104,18 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       ..addFlag(
         'fail-early',
         help: 'If set, causes the test runner to exit upon the first test '
-              'failure. If not set, the test runner will continue running '
-              'test despite failures and will report them after all tests '
-              'finish.',
+            'failure. If not set, the test runner will continue running '
+            'test despite failures and will report them after all tests '
+            'finish.',
       )
       ..addOption(
         'canvaskit-path',
         help: 'Optional. The path to a local build of CanvasKit to use in '
-              'tests. If omitted, the test runner uses the default CanvasKit '
-              'build.',
+            'tests. If omitted, the test runner uses the default CanvasKit '
+            'build.',
       )
-      ..addFlag(
-        'wasm',
-        help: 'Whether the test we are running are compiled to webassembly.'
-      );
+      ..addFlag('wasm',
+          help: 'Whether the test we are running are compiled to webassembly.');
   }
 
   @override
@@ -165,7 +139,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get isVerbose => boolArg('verbose');
 
   /// The target test files to run.
-  List<FilePath> get targetFiles => argResults!.rest.map((String t) => FilePath.fromCwd(t)).toList();
+  List<FilePath> get targetFiles =>
+      argResults!.rest.map((String t) => FilePath.fromCwd(t)).toList();
 
   /// When running screenshot tests, require Skia Gold to be available and
   /// reachable.
@@ -176,18 +151,19 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get doUpdateScreenshotGoldens => boolArg('update-screenshot-goldens');
 
   /// Path to a CanvasKit build. Overrides the default CanvasKit.
-  String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
+  String? get overridePathToCanvasKit =>
+      argResults!['canvaskit-path'] as String?;
 
   final FeltConfig config = FeltConfig.fromFile(
-    path.join(environment.webUiTestDir.path, 'felt_config.yaml')
-  );
+      path.join(environment.webUiTestDir.path, 'felt_config.yaml'));
 
   BrowserSuiteFilter? makeBrowserFilter() {
     final List<String>? browserArgs = argResults!['browser'] as List<String>?;
     if (browserArgs == null || browserArgs.isEmpty) {
       return null;
     }
-    final Set<BrowserName> browserNames = Set<BrowserName>.from(browserArgs.map((String arg) => BrowserName.values.byName(arg)));
+    final Set<BrowserName> browserNames = Set<BrowserName>.from(
+        browserArgs.map((String arg) => BrowserName.values.byName(arg)));
     return BrowserSuiteFilter(allowList: browserNames);
   }
 
@@ -196,7 +172,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     if (compilerArgs == null || compilerArgs.isEmpty) {
       return null;
     }
-    final Set<Compiler> compilers = Set<Compiler>.from(compilerArgs.map((String arg) => Compiler.values.byName(arg)));
+    final Set<Compiler> compilers = Set<Compiler>.from(
+        compilerArgs.map((String arg) => Compiler.values.byName(arg)));
     return CompilerFilter(allowList: compilers);
   }
 
@@ -205,16 +182,19 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     if (rendererArgs == null || rendererArgs.isEmpty) {
       return null;
     }
-    final Set<Renderer> renderers = Set<Renderer>.from(rendererArgs.map((String arg) => Renderer.values.byName(arg)));
+    final Set<Renderer> renderers = Set<Renderer>.from(
+        rendererArgs.map((String arg) => Renderer.values.byName(arg)));
     return RendererFilter(allowList: renderers);
   }
 
   CanvasKitVariantFilter? makeCanvasKitVariantFilter() {
-    final List<String>? variantArgs = argResults!['canvaskit-variant'] as List<String>?;
+    final List<String>? variantArgs =
+        argResults!['canvaskit-variant'] as List<String>?;
     if (variantArgs == null || variantArgs.isEmpty) {
       return null;
     }
-    final Set<CanvasKitVariant> variants = Set<CanvasKitVariant>.from(variantArgs.map((String arg) => CanvasKitVariant.values.byName(arg)));
+    final Set<CanvasKitVariant> variants = Set<CanvasKitVariant>.from(
+        variantArgs.map((String arg) => CanvasKitVariant.values.byName(arg)));
     return CanvasKitVariantFilter(allowList: variants);
   }
 
@@ -224,7 +204,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       return null;
     }
 
-    final Iterable<String> allSuiteNames = config.testSuites.map((TestSuite suite) => suite.name);
+    final Iterable<String> allSuiteNames =
+        config.testSuites.map((TestSuite suite) => suite.name);
     for (final String suiteName in suiteNameArgs) {
       if (!allSuiteNames.contains(suiteName)) {
         throw ToolExit('No suite found named $suiteName');
@@ -239,9 +220,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       return null;
     }
 
-    final Iterable<String> allBundleNames = config.testSuites.map(
-      (TestSuite suite) => suite.testBundle.name
-    );
+    final Iterable<String> allBundleNames =
+        config.testSuites.map((TestSuite suite) => suite.testBundle.name);
     for (final String bundleName in bundleNameArgs) {
       if (!allBundleNames.contains(bundleName)) {
         throw ToolExit('No bundle found named $bundleName');
@@ -279,7 +259,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     final BrowserSuiteFilter? browserFilter = makeBrowserFilter();
     final CompilerFilter? compilerFilter = makeCompilerFilter();
     final RendererFilter? rendererFilter = makeRendererFilter();
-    final CanvasKitVariantFilter? canvaskitVariantFilter = makeCanvasKitVariantFilter();
+    final CanvasKitVariantFilter? canvaskitVariantFilter =
+        makeCanvasKitVariantFilter();
     final SuiteNameFilter? suiteNameFilter = makeSuiteNameFilter();
     final BundleNameFilter? bundleNameFilter = makeBundleNameFilter();
     final FileFilter? fileFilter = makeFileFilter();
@@ -300,12 +281,14 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       print('Filtering suites...');
     }
     final List<SuiteFilter> filters = suiteFilters;
-    final List<TestSuite> filteredSuites = config.testSuites.where((TestSuite suite) {
+    final List<TestSuite> filteredSuites =
+        config.testSuites.where((TestSuite suite) {
       for (final SuiteFilter filter in filters) {
         final SuiteFilterResult result = filter.filterSuite(suite);
         if (!result.isAccepted) {
           if (isVerbose) {
-            print('  ${suite.name.ansiCyan} rejected for reason: ${result.rejectReason}');
+            print(
+                '  ${suite.name.ansiCyan} rejected for reason: ${result.rejectReason}');
           }
           return false;
         }
@@ -317,13 +300,17 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   List<TestBundle> _filterBundlesForSuites(List<TestSuite> suites) {
     final Set<TestBundle> seenBundles =
-      Set<TestBundle>.from(suites.map((TestSuite suite) => suite.testBundle));
-    return config.testBundles.where((TestBundle bundle) => seenBundles.contains(bundle)).toList();
+        Set<TestBundle>.from(suites.map((TestSuite suite) => suite.testBundle));
+    return config.testBundles
+        .where((TestBundle bundle) => seenBundles.contains(bundle))
+        .toList();
   }
 
   ArtifactDependencies _artifactsForSuites(List<TestSuite> suites) {
-    return suites.fold(ArtifactDependencies.none(),
-      (ArtifactDependencies deps, TestSuite suite) => deps | suite.artifactDependencies);
+    return suites.fold(
+        ArtifactDependencies.none(),
+        (ArtifactDependencies deps, TestSuite suite) =>
+            deps | suite.artifactDependencies);
   }
 
   @override
@@ -376,10 +363,12 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       shouldCopyArtifacts = true;
     }
 
-    final Set<FilePath>? testFiles = targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
+    final Set<FilePath>? testFiles =
+        targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      if (shouldCopyArtifacts) CopyArtifactsStep(artifacts, runtimeMode: runtimeMode),
+      if (shouldCopyArtifacts)
+        CopyArtifactsStep(artifacts, runtimeMode: runtimeMode),
       if (shouldCompile)
         for (final TestBundle bundle in bundles)
           CompileBundleStep(
@@ -407,7 +396,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         print('');
         print('Initial test succeeded!');
       }
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       if (isWatchMode) {
         // The error is printed but not rethrown in watch mode because
         // failures are expected. The idea is that the developer corrects the

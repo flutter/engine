@@ -38,7 +38,8 @@ Future<ui.Codec> createImageCodecFromUrl(
 /// See https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap
 FutureOr<ui.Image> createImageFromImageBitmap(JSAny imageSource) {
   if (!domInstanceOfString(imageSource, 'ImageBitmap')) {
-    throw ArgumentError('Image source $imageSource is not an ImageBitmap.', 'imageSource');
+    throw ArgumentError(
+        'Image source $imageSource is not an ImageBitmap.', 'imageSource');
   }
   return renderer.createImageFromImageBitmap(
     imageSource as DomImageBitmap,
@@ -53,8 +54,8 @@ FutureOr<ui.Image> createImageFromImageBitmap(JSAny imageSource) {
 /// will be made. If this is not desired, the ownership of the object can be
 /// transferred to the renderer and the engine will take ownership of the
 /// texture source and consume its contents.
-FutureOr<ui.Image> createImageFromTextureSource(JSAny object,  { required int width, required int height, bool transferOwnership = false }) {
-  return renderer.createImageFromTextureSource(
-    object, width: width, height: height, transferOwnership: transferOwnership
-  );
+FutureOr<ui.Image> createImageFromTextureSource(JSAny object,
+    {required int width, required int height, bool transferOwnership = false}) {
+  return renderer.createImageFromTextureSource(object,
+      width: width, height: height, transferOwnership: transferOwnership);
 }

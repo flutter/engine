@@ -27,7 +27,8 @@ import 'dimensions_provider.dart';
 /// to be effective.
 class CustomElementDimensionsProvider extends DimensionsProvider {
   /// Creates a [CustomElementDimensionsProvider] from a [_hostElement].
-  CustomElementDimensionsProvider(this._hostElement, {
+  CustomElementDimensionsProvider(
+    this._hostElement, {
     Stream<double>? onDprChange,
   }) {
     // Send a resize event when the page DPR changes.
@@ -85,7 +86,8 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
 
   @override
   ui.Size computePhysicalSize() {
-    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final double devicePixelRatio =
+        EngineFlutterDisplay.instance.devicePixelRatio;
     return ui.Size(
       _hostElement.clientWidth * devicePixelRatio,
       _hostElement.clientHeight * devicePixelRatio,

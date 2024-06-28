@@ -66,7 +66,8 @@ class _BrowserAppLifecycleState extends AppLifecycleState {
   _BrowserAppLifecycleState(this._viewManager);
 
   final FlutterViewManager _viewManager;
-  final List<StreamSubscription<void>> _subscriptions = <StreamSubscription<void>>[];
+  final List<StreamSubscription<void>> _subscriptions =
+      <StreamSubscription<void>>[];
 
   @override
   void activate() {

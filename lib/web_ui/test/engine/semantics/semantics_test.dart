@@ -20,7 +20,8 @@ import 'semantics_tester.dart';
 DateTime _testTime = DateTime(2018, 12, 17);
 
 EngineSemantics semantics() => EngineSemantics.instance;
-EngineSemanticsOwner owner() => EnginePlatformDispatcher.instance.implicitView!.semantics;
+EngineSemanticsOwner owner() =>
+    EnginePlatformDispatcher.instance.implicitView!.semantics;
 
 DomElement get platformViewsHost =>
     EnginePlatformDispatcher.instance.implicitView!.dom.platformViewsHost;
@@ -303,9 +304,12 @@ void _testEngineSemanticsOwner() {
   //   </flt-announcement-host>
   // </body>
   test('places accessibility announcements in the <body> tag', () {
-    final AccessibilityAnnouncements accessibilityAnnouncements = semantics().accessibilityAnnouncements;
-    final DomElement politeElement = accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite);
-    final DomElement assertiveElement = accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive);
+    final AccessibilityAnnouncements accessibilityAnnouncements =
+        semantics().accessibilityAnnouncements;
+    final DomElement politeElement =
+        accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite);
+    final DomElement assertiveElement =
+        accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive);
     final DomElement announcementHost = politeElement.parent!;
 
     // Polite and assertive elements share the same host.
@@ -409,7 +413,10 @@ void _testEngineSemanticsOwner() {
     semantics().semanticsEnabled = false;
   });
 
-  void renderSemantics({String? label, String? tooltip, Set<ui.SemanticsFlag> flags = const <ui.SemanticsFlag>{}}) {
+  void renderSemantics(
+      {String? label,
+      String? tooltip,
+      Set<ui.SemanticsFlag> flags = const <ui.SemanticsFlag>{}}) {
     int flagValues = 0;
     for (final ui.SemanticsFlag flag in flags) {
       flagValues = flagValues | flag.index;
@@ -502,7 +509,8 @@ void _testEngineSemanticsOwner() {
 </sem>''');
 
     // Update
-    renderSemantics(label: 'Hello', flags: <ui.SemanticsFlag>{ ui.SemanticsFlag.isLink });
+    renderSemantics(
+        label: 'Hello', flags: <ui.SemanticsFlag>{ui.SemanticsFlag.isLink});
 
     tree = owner().debugSemanticsTree!;
     expect(tree.length, 2);
@@ -627,7 +635,7 @@ void _testEngineSemanticsOwner() {
       SemanticsUpdatePhase.idle,
     );
 
-    void pumpSemantics({ required String label }) {
+    void pumpSemantics({required String label}) {
       final SemanticsTester tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
@@ -648,7 +656,8 @@ void _testEngineSemanticsOwner() {
     final SemanticsObject semanticsObject = owner().debugSemanticsTree![1]!;
 
     expect(
-      reason: 'Should be in postUpdate phase while calling post-update callbacks',
+      reason:
+          'Should be in postUpdate phase while calling post-update callbacks',
       capturedPostUpdateCallbackPhase,
       SemanticsUpdatePhase.postUpdate,
     );
@@ -659,7 +668,8 @@ void _testEngineSemanticsOwner() {
     );
 
     // Rudely replace the role manager with a mock, and trigger an update.
-    final MockRoleManager mockRoleManager = MockRoleManager(PrimaryRole.generic, semanticsObject);
+    final MockRoleManager mockRoleManager =
+        MockRoleManager(PrimaryRole.generic, semanticsObject);
     semanticsObject.primaryRole = mockRoleManager;
 
     pumpSemantics(label: 'World');
@@ -880,7 +890,9 @@ void _testText() {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.primaryRole!.secondaryRoleManagers!
+          .map((RoleManager m) => m.runtimeType)
+          .toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -913,7 +925,9 @@ void _testText() {
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.generic);
     expect(
-      node.primaryRole!.secondaryRoleManagers!.map((RoleManager m) => m.runtimeType).toList(),
+      node.primaryRole!.secondaryRoleManagers!
+          .map((RoleManager m) => m.runtimeType)
+          .toList(),
       <Type>[
         Focusable,
         LiveRegion,
@@ -945,29 +959,29 @@ void _testLabels() {
       'hint',
     );
     expect(
-      computeDomSemanticsLabel(tooltip: 'tooltip', label: 'label', hint: 'hint', value: 'value'),
-      '''
+        computeDomSemanticsLabel(
+            tooltip: 'tooltip', label: 'label', hint: 'hint', value: 'value'),
+        '''
 tooltip
-label hint value'''
-    );
+label hint value''');
     expect(
-      computeDomSemanticsLabel(tooltip: 'tooltip', hint: 'hint', value: 'value'),
-      '''
+        computeDomSemanticsLabel(
+            tooltip: 'tooltip', hint: 'hint', value: 'value'),
+        '''
 tooltip
-hint value'''
-    );
+hint value''');
     expect(
-      computeDomSemanticsLabel(tooltip: 'tooltip', label: 'label', value: 'value'),
-      '''
+        computeDomSemanticsLabel(
+            tooltip: 'tooltip', label: 'label', value: 'value'),
+        '''
 tooltip
-label value'''
-    );
+label value''');
     expect(
-      computeDomSemanticsLabel(tooltip: 'tooltip', label: 'label', hint: 'hint'),
-      '''
+        computeDomSemanticsLabel(
+            tooltip: 'tooltip', label: 'label', hint: 'hint'),
+        '''
 tooltip
-label hint'''
-    );
+label hint''');
   });
 
   test('computeDomSemanticsLabel collapses empty labels to null', () {
@@ -1100,7 +1114,8 @@ void _testContainer() {
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     if (isSafari) {
       // macOS 13 returns different values than macOS 12.
-      expect(parentElement.style.transformOrigin, anyOf(contains('0px 0px 0px'), contains('0px 0px')));
+      expect(parentElement.style.transformOrigin,
+          anyOf(contains('0px 0px 0px'), contains('0px 0px')));
     } else {
       expect(parentElement.style.transformOrigin, '0px 0px 0px');
     }
@@ -1280,7 +1295,8 @@ void _testContainer() {
   </sem-c>
 </sem>''');
 
-    final DomElement root = owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+    final DomElement root =
+        owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
     expect(root.style.pointerEvents, 'none');
 
     final DomElement child1 =
@@ -1294,7 +1310,8 @@ void _testContainer() {
     semantics().semanticsEnabled = false;
   });
 
-  test('descendant nodes are removed from the node map, unless reparented', () async {
+  test('descendant nodes are removed from the node map, unless reparented',
+      () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -1342,7 +1359,8 @@ void _testContainer() {
     </sem-c>
   </sem>''');
 
-      expect(owner().debugSemanticsTree!.keys.toList(), unorderedEquals(<int>[0, 1, 2, 3, 4, 5, 6]));
+      expect(owner().debugSemanticsTree!.keys.toList(),
+          unorderedEquals(<int>[0, 1, 2, 3, 4, 5, 6]));
     }
 
     // Remove node #2 => expect nodes #2 and #5 to be removed and #6 reparented.
@@ -1374,7 +1392,8 @@ void _testContainer() {
     </sem-c>
   </sem>''');
 
-      expect(owner().debugSemanticsTree!.keys.toList(), unorderedEquals(<int>[0, 1, 3, 4, 6]));
+      expect(owner().debugSemanticsTree!.keys.toList(),
+          unorderedEquals(<int>[0, 1, 3, 4, 6]));
     }
 
     semantics().semanticsEnabled = false;
@@ -1448,8 +1467,10 @@ void _testVerticalScrolling() {
 
   test('scrollable node dispatches scroll events', () async {
     Future<ui.SemanticsActionEvent> captureSemanticsEvent() {
-      final Completer<ui.SemanticsActionEvent> completer = Completer<ui.SemanticsActionEvent>();
-      ui.PlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      final Completer<ui.SemanticsActionEvent> completer =
+          Completer<ui.SemanticsActionEvent>();
+      ui.PlatformDispatcher.instance.onSemanticsActionEvent =
+          (ui.SemanticsActionEvent event) {
         completer.complete(event);
       };
       return completer.future;
@@ -1510,7 +1531,8 @@ void _testVerticalScrolling() {
 
     expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
-    Future<ui.SemanticsActionEvent> capturedEventFuture = captureSemanticsEvent();
+    Future<ui.SemanticsActionEvent> capturedEventFuture =
+        captureSemanticsEvent();
     scrollable.scrollTop = 20;
     expect(scrollable.scrollTop, 20);
     ui.SemanticsActionEvent capturedEvent = await capturedEventFuture;
@@ -1599,8 +1621,10 @@ void _testHorizontalScrolling() {
 
   test('scrollable node dispatches scroll events', () async {
     Future<ui.SemanticsActionEvent> captureSemanticsEvent() {
-      final Completer<ui.SemanticsActionEvent> completer = Completer<ui.SemanticsActionEvent>();
-      ui.PlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+      final Completer<ui.SemanticsActionEvent> completer =
+          Completer<ui.SemanticsActionEvent>();
+      ui.PlatformDispatcher.instance.onSemanticsActionEvent =
+          (ui.SemanticsActionEvent event) {
         completer.complete(event);
       };
       return completer.future;
@@ -1660,7 +1684,8 @@ void _testHorizontalScrolling() {
     }
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
-    Future<ui.SemanticsActionEvent> capturedEventFuture = captureSemanticsEvent();
+    Future<ui.SemanticsActionEvent> capturedEventFuture =
+        captureSemanticsEvent();
     scrollable.scrollLeft = 20;
     expect(scrollable.scrollLeft, 20);
     ui.SemanticsActionEvent capturedEvent = await capturedEventFuture;
@@ -1814,7 +1839,7 @@ void _testIncrementables() {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    void pumpSemantics({ required bool isFocused }) {
+    void pumpSemantics({required bool isFocused}) {
       final SemanticsTester tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
@@ -1831,12 +1856,14 @@ void _testIncrementables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
     pumpSemantics(isFocused: false);
-    final DomElement element = owner().debugSemanticsTree![0]!.element.querySelector('input')!;
+    final DomElement element =
+        owner().debugSemanticsTree![0]!.element.querySelector('input')!;
     expect(capturedActions, isEmpty);
 
     pumpSemantics(isFocused: true);
@@ -1884,7 +1911,6 @@ void _testTextField() {
   <input />
 </sem>''');
 
-
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
 
     // TODO(yjbanov): this used to attempt to test that value="hello" but the
@@ -1926,16 +1952,19 @@ void _testTextField() {
 
     owner().updateSemantics(builder.build());
 
-    final DomElement textField =
-        owner().semanticsHost.querySelector('input[data-semantics-role="text-field"]')!;
+    final DomElement textField = owner()
+        .semanticsHost
+        .querySelector('input[data-semantics-role="text-field"]')!;
 
-    expect(owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
+    expect(
+        owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
 
     textField.focus();
 
     expect(owner().semanticsHost.ownerDocument?.activeElement, textField);
     expect(await logger.idLog.first, 0);
-    expect(await logger.actionLog.first, ui.SemanticsAction.didGainAccessibilityFocus);
+    expect(await logger.actionLog.first,
+        ui.SemanticsAction.didGainAccessibilityFocus);
 
     semantics().semanticsEnabled = false;
   }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
@@ -2190,7 +2219,7 @@ void _testCheckables() {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    void pumpSemantics({ required bool isFocused }) {
+    void pumpSemantics({required bool isFocused}) {
       final SemanticsTester tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
@@ -2211,7 +2240,8 @@ void _testCheckables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -2322,9 +2352,7 @@ void _testTappable() {
 
     updateTappable(enabled: false);
     expectSemanticsTree(
-      owner(),
-      '<sem role="button" aria-disabled="true"></sem>'
-    );
+        owner(), '<sem role="button" aria-disabled="true"></sem>');
 
     updateTappable(enabled: true);
     expectSemanticsTree(
@@ -2374,7 +2402,7 @@ void _testTappable() {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    void pumpSemantics({ required bool isFocused }) {
+    void pumpSemantics({required bool isFocused}) {
       final SemanticsTester tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
@@ -2395,7 +2423,8 @@ void _testTappable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -2431,7 +2460,8 @@ void _testTappable() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -2650,7 +2680,8 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    LiveRegion.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    LiveRegion.debugOverrideAccessibilityAnnouncements(
+        mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2673,7 +2704,8 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    LiveRegion.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    LiveRegion.debugOverrideAccessibilityAnnouncements(
+        mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2695,7 +2727,8 @@ void _testLiveRegion() {
 
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
-    LiveRegion.debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+    LiveRegion.debugOverrideAccessibilityAnnouncements(
+        mockAccessibilityAnnouncements);
 
     ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2779,7 +2812,8 @@ void _testPlatformView() {
       owner(),
       '<sem aria-owns="flt-pv-5"></sem>',
     );
-    final DomElement element = owner().semanticsHost.querySelector('flt-semantics')!;
+    final DomElement element =
+        owner().semanticsHost.querySelector('flt-semantics')!;
     expect(element.style.pointerEvents, 'none');
 
     semantics().semanticsEnabled = false;
@@ -2838,7 +2872,8 @@ void _testPlatformView() {
         rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
         childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
         childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
-        transform: Float64List.fromList(Matrix4.diagonal3Values(dpr, dpr, 1).storage));
+        transform:
+            Float64List.fromList(Matrix4.diagonal3Values(dpr, dpr, 1).storage));
     updateNode(
       builder,
       id: 1,
@@ -2867,7 +2902,8 @@ void _testPlatformView() {
   </sem-c>
 </sem>''');
 
-    final DomElement root = owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+    final DomElement root =
+        owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
     expect(root.style.pointerEvents, 'none');
 
     final DomElement child1 =
@@ -2980,7 +3016,9 @@ void _testDialog() {
     updateNode(
       builder,
       label: 'this is a dialog label',
-      flags: 0 | ui.SemanticsFlag.scopesRoute.index | ui.SemanticsFlag.namesRoute.index,
+      flags: 0 |
+          ui.SemanticsFlag.scopesRoute.index |
+          ui.SemanticsFlag.namesRoute.index,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
@@ -3017,7 +3055,9 @@ void _testDialog() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      flags: 0 | ui.SemanticsFlag.scopesRoute.index | ui.SemanticsFlag.namesRoute.index,
+      flags: 0 |
+          ui.SemanticsFlag.scopesRoute.index |
+          ui.SemanticsFlag.namesRoute.index,
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
       childrenInHitTestOrder: Int32List.fromList(<int>[1]),
@@ -3056,7 +3096,7 @@ void _testDialog() {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    void pumpSemantics({ required String label }) {
+    void pumpSemantics({required String label}) {
       final SemanticsTester tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
@@ -3199,7 +3239,8 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3262,7 +3303,8 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3323,7 +3365,8 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3378,7 +3421,8 @@ void _testDialog() {
   </flt-semantics-container>
 </flt-semantics>''');
 
-    final DomElement span = owner().debugSemanticsTree![2]!.element.querySelectorAll('span').single;
+    final DomElement span =
+        owner().debugSemanticsTree![2]!.element.querySelectorAll('span').single;
     expect(span.tabIndex, -1);
     expect(domDocument.activeElement, span);
 
@@ -3393,7 +3437,8 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3434,12 +3479,14 @@ void _testFocusable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
+        (ui.SemanticsActionEvent event) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
     expect(capturedActions, isEmpty);
 
-    final AccessibilityFocusManager manager = AccessibilityFocusManager(owner());
+    final AccessibilityFocusManager manager =
+        AccessibilityFocusManager(owner());
     expect(capturedActions, isEmpty);
 
     final DomElement element = createDomElement('test-element');
@@ -3489,8 +3536,9 @@ void _testFocusable() {
     pumpSemantics(); // triggers post-update callbacks
     expect(domDocument.activeElement, element);
     expect(
-      reason: 'Nothing should be sent to the framework on focus re-request.',
-      capturedActions, isEmpty);
+        reason: 'Nothing should be sent to the framework on focus re-request.',
+        capturedActions,
+        isEmpty);
     capturedActions.clear();
 
     // Stop managing
@@ -3498,8 +3546,8 @@ void _testFocusable() {
     pumpSemantics(); // triggers post-update callbacks
     expect(
       reason: 'There should be no notification to the framework because the '
-              'framework should already know. Otherwise, it would not have '
-              'asked to stop managing the node.',
+          'framework should already know. Otherwise, it would not have '
+          'asked to stop managing the node.',
       capturedActions,
       isEmpty,
     );
@@ -3510,8 +3558,9 @@ void _testFocusable() {
     manager.changeFocus(true);
     pumpSemantics(); // triggers post-update callbacks
     expect(
-      reason: 'Attempting to request focus on a node that is not managed should '
-              'not result in any notifications to the framework.',
+      reason:
+          'Attempting to request focus on a node that is not managed should '
+          'not result in any notifications to the framework.',
       capturedActions,
       isEmpty,
     );

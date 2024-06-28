@@ -9,27 +9,34 @@ import 'dart:convert';
 import 'dart:ffi';
 
 final class RawSkString extends Opaque {}
+
 typedef SkStringHandle = Pointer<RawSkString>;
 
 final class RawSkString16 extends Opaque {}
+
 typedef SkString16Handle = Pointer<RawSkString16>;
 
-@Native<SkStringHandle Function(Size)>(symbol: 'skString_allocate', isLeaf: true)
+@Native<SkStringHandle Function(Size)>(
+    symbol: 'skString_allocate', isLeaf: true)
 external SkStringHandle skStringAllocate(int size);
 
-@Native<Pointer<Int8> Function(SkStringHandle)>(symbol: 'skString_getData', isLeaf: true)
+@Native<Pointer<Int8> Function(SkStringHandle)>(
+    symbol: 'skString_getData', isLeaf: true)
 external Pointer<Int8> skStringGetData(SkStringHandle handle);
 
 @Native<Void Function(SkStringHandle)>(symbol: 'skString_free', isLeaf: true)
 external void skStringFree(SkStringHandle handle);
 
-@Native<SkString16Handle Function(Size)>(symbol: 'skString16_allocate', isLeaf: true)
+@Native<SkString16Handle Function(Size)>(
+    symbol: 'skString16_allocate', isLeaf: true)
 external SkString16Handle skString16Allocate(int size);
 
-@Native<Pointer<Int16> Function(SkString16Handle)>(symbol: 'skString16_getData', isLeaf: true)
+@Native<Pointer<Int16> Function(SkString16Handle)>(
+    symbol: 'skString16_getData', isLeaf: true)
 external Pointer<Int16> skString16GetData(SkString16Handle handle);
 
-@Native<Void Function(SkString16Handle)>(symbol: 'skString16_free', isLeaf: true)
+@Native<Void Function(SkString16Handle)>(
+    symbol: 'skString16_free', isLeaf: true)
 external void skString16Free(SkString16Handle handle);
 
 SkStringHandle skStringFromDartString(String string) {

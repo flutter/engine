@@ -76,8 +76,8 @@ void _chopCubicAt(
       bufferPos += 6;
 
       // watch out in case the renormalized t isn't in range
-      if ((t = validUnitDivide(
-              tValues[i + 1] - tValues[i], 1.0 - tValues[i])) ==
+      if ((t =
+              validUnitDivide(tValues[i + 1] - tValues[i], 1.0 - tValues[i])) ==
           null) {
         // Can't renormalize last point, just create a degenerate cubic.
         outPts[bufferPos + 4] = outPts[bufferPos + 5] =

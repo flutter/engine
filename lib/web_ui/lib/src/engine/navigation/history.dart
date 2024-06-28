@@ -18,7 +18,8 @@ import '../services/message_codecs.dart';
 BrowserHistory createHistoryForExistingState(ui_web.UrlStrategy? urlStrategy) {
   if (urlStrategy != null) {
     final Object? state = urlStrategy.getState();
-    if (SingleEntryBrowserHistory._isOriginEntry(state) || SingleEntryBrowserHistory._isFlutterEntry(state)) {
+    if (SingleEntryBrowserHistory._isOriginEntry(state) ||
+        SingleEntryBrowserHistory._isFlutterEntry(state)) {
       return SingleEntryBrowserHistory(urlStrategy: urlStrategy);
     }
   }

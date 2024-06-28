@@ -195,22 +195,22 @@ class KeyData {
   @override
   String toString() {
     return 'KeyData(${type.label}, '
-           'physical: 0x${physical.toRadixString(16)}, '
-           'logical: ${_logicalToString()}, '
-           'character: ${_escapeCharacter()}${_quotedCharCode()}'
-           '${synthesized ? ', synthesized' : ''})';
+        'physical: 0x${physical.toRadixString(16)}, '
+        'logical: ${_logicalToString()}, '
+        'character: ${_escapeCharacter()}${_quotedCharCode()}'
+        '${synthesized ? ', synthesized' : ''})';
   }
 
   /// Returns a complete textual description of the information in this object.
   String toStringFull() {
     return '$runtimeType('
-           'type: ${type.label}, '
-           'deviceType: ${deviceType.label}, '
-           'timeStamp: $timeStamp, '
-           'physical: 0x${physical.toRadixString(16)}, '
-           'logical: 0x${logical.toRadixString(16)}, '
-           'character: ${_escapeCharacter()}, '
-           'synthesized: $synthesized'
-           ')';
+        'type: ${type.label}, '
+        'deviceType: ${deviceType.label}, '
+        'timeStamp: $timeStamp, '
+        'physical: 0x${physical.toRadixString(16)}, '
+        'logical: 0x${logical.toRadixString(16)}, '
+        'character: ${_escapeCharacter()}, '
+        'synthesized: $synthesized'
+        ')';
   }
 }

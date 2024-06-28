@@ -23,8 +23,7 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
     this.location = 0,
     this.onPreventDefault,
     this.onStopPropagation,
-  }) : modifierState =
-        <String>{
+  }) : modifierState = <String>{
           if (altKey) 'Alt',
           if (ctrlKey) 'Control',
           if (shiftKey) 'Shift',
@@ -79,6 +78,7 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
     onPreventDefault?.call();
     _defaultPrevented = true;
   }
+
   VoidCallback? onPreventDefault;
 
   @override
@@ -89,6 +89,7 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
   void stopPropagation() {
     onStopPropagation?.call();
   }
+
   VoidCallback? onStopPropagation;
 
   static bool get lastDefaultPrevented => _lastEvent?.defaultPrevented ?? false;

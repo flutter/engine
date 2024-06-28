@@ -16,12 +16,13 @@ typedef CanvasHandle = Pointer<RawCanvas>;
 @Native<Void Function(CanvasHandle)>(symbol: 'canvas_save', isLeaf: true)
 external void canvasSave(CanvasHandle canvas);
 
-@Native<Void Function(
-  CanvasHandle,
-  RawRect,
-  PaintHandle,
-  ImageFilterHandle,
-)>(symbol: 'canvas_saveLayer', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      RawRect,
+      PaintHandle,
+      ImageFilterHandle,
+    )>(symbol: 'canvas_saveLayer', isLeaf: true)
 external void canvasSaveLayer(
   CanvasHandle canvas,
   RawRect rect,
@@ -131,14 +132,9 @@ external void canvasDrawPath(
     symbol: 'canvas_drawPicture', isLeaf: true)
 external void canvasDrawPicture(CanvasHandle canvas, PictureHandle picture);
 
-@Native<Void Function(
-  CanvasHandle,
-  ImageHandle,
-  Float,
-  Float,
-  PaintHandle,
-  Int
-)>(symbol: 'canvas_drawImage', isLeaf: true)
+@Native<
+    Void Function(CanvasHandle, ImageHandle, Float, Float, PaintHandle,
+        Int)>(symbol: 'canvas_drawImage', isLeaf: true)
 external void canvasDrawImage(
   CanvasHandle handle,
   ImageHandle image,
@@ -148,14 +144,15 @@ external void canvasDrawImage(
   int filterQuality,
 );
 
-@Native<Void Function(
-  CanvasHandle,
-  ImageHandle,
-  Pointer<Float>,
-  Pointer<Float>,
-  PaintHandle,
-  Int,
-)>(symbol: 'canvas_drawImageRect', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      ImageHandle,
+      Pointer<Float>,
+      Pointer<Float>,
+      PaintHandle,
+      Int,
+    )>(symbol: 'canvas_drawImageRect', isLeaf: true)
 external void canvasDrawImageRect(
   CanvasHandle handle,
   ImageHandle image,
@@ -165,14 +162,15 @@ external void canvasDrawImageRect(
   int filterQuality,
 );
 
-@Native<Void Function(
-  CanvasHandle,
-  ImageHandle,
-  Pointer<Int32>,
-  Pointer<Float>,
-  PaintHandle,
-  Int,
-)>(symbol: 'canvas_drawImageNine', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      ImageHandle,
+      Pointer<Int32>,
+      Pointer<Float>,
+      PaintHandle,
+      Int,
+    )>(symbol: 'canvas_drawImageNine', isLeaf: true)
 external void canvasDrawImageNine(
   CanvasHandle handle,
   ImageHandle image,
@@ -193,12 +191,13 @@ external void canvasDrawShadow(
   bool transparentOccluder,
 );
 
-@Native<Void Function(
-  CanvasHandle,
-  ParagraphHandle,
-  Float,
-  Float,
-)>(symbol: 'canvas_drawParagraph', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      ParagraphHandle,
+      Float,
+      Float,
+    )>(symbol: 'canvas_drawParagraph', isLeaf: true)
 external void canvasDrawParagraph(
   CanvasHandle handle,
   ParagraphHandle paragraphHandle,
@@ -206,12 +205,13 @@ external void canvasDrawParagraph(
   double y,
 );
 
-@Native<Void Function(
-  CanvasHandle,
-  VerticesHandle,
-  Int,
-  PaintHandle,
-)>(symbol: 'canvas_drawVertices', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      VerticesHandle,
+      Int,
+      PaintHandle,
+    )>(symbol: 'canvas_drawVertices', isLeaf: true)
 external void canvasDrawVertices(
   CanvasHandle handle,
   VerticesHandle vertices,
@@ -219,13 +219,14 @@ external void canvasDrawVertices(
   PaintHandle paint,
 );
 
-@Native<Void Function(
-  CanvasHandle,
-  Int,
-  RawPointArray,
-  Int,
-  PaintHandle,
-)>(symbol: 'canvas_drawPoints', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      Int,
+      RawPointArray,
+      Int,
+      PaintHandle,
+    )>(symbol: 'canvas_drawPoints', isLeaf: true)
 external void canvasDrawPoints(
   CanvasHandle handle,
   int pointMode,
@@ -234,17 +235,18 @@ external void canvasDrawPoints(
   PaintHandle paint,
 );
 
-@Native<Void Function(
-  CanvasHandle,
-  ImageHandle,
-  RawRSTransformArray,
-  RawRect,
-  RawColorArray,
-  Int,
-  Int,
-  RawRect,
-  PaintHandle,
-)>(symbol: 'canvas_drawAtlas', isLeaf: true)
+@Native<
+    Void Function(
+      CanvasHandle,
+      ImageHandle,
+      RawRSTransformArray,
+      RawRect,
+      RawColorArray,
+      Int,
+      Int,
+      RawRect,
+      PaintHandle,
+    )>(symbol: 'canvas_drawAtlas', isLeaf: true)
 external void canvasDrawAtlas(
   CanvasHandle handle,
   ImageHandle atlas,

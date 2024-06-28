@@ -40,7 +40,7 @@ Future<BrowserInstallation> getOrInstallChrome(
   // set the environment variable CHROME_EXECUTABLE.
   if (io.Platform.environment.containsKey(_chromeExecutableVar)) {
     infoLog.writeln('Using Chrome from $_chromeExecutableVar variable: '
-      '${io.Platform.environment[_chromeExecutableVar]}');
+        '${io.Platform.environment[_chromeExecutableVar]}');
     return BrowserInstallation(
       version: 'cipd',
       executable: io.Platform.environment[_chromeExecutableVar]!,
@@ -209,9 +209,7 @@ class ChromeInstaller {
       }
 
       stopwatch.stop();
-      print(
-        'The unzip took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.'
-      );
+      print('The unzip took ${stopwatch.elapsedMilliseconds ~/ 1000} seconds.');
     } else {
       // We have to unzip into a temporary directory and then copy the files
       // out because our tests expect the files to be direct children of the

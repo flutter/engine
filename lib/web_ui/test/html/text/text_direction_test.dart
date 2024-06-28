@@ -36,18 +36,20 @@ Future<void> testMain() async {
     });
 
     test('text and digits', () {
-      expect(split('Lorem11 ${rtlWord1}22 33ipsum44dolor ${rtlWord2}55$rtlWord1'), <_Bidi>[
-        _Bidi('Lorem11', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi(rtlWord1, rtl, ffRtl),
-        _Bidi('22', ltr, ffPrevious),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('33ipsum44dolor', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi(rtlWord2, rtl, ffRtl),
-        _Bidi('55', ltr, ffPrevious),
-        _Bidi(rtlWord1, rtl, ffRtl),
-      ]);
+      expect(
+          split('Lorem11 ${rtlWord1}22 33ipsum44dolor ${rtlWord2}55$rtlWord1'),
+          <_Bidi>[
+            _Bidi('Lorem11', ltr, ffLtr),
+            _Bidi(' ', null, ffSandwich),
+            _Bidi(rtlWord1, rtl, ffRtl),
+            _Bidi('22', ltr, ffPrevious),
+            _Bidi(' ', null, ffSandwich),
+            _Bidi('33ipsum44dolor', ltr, ffLtr),
+            _Bidi(' ', null, ffSandwich),
+            _Bidi(rtlWord2, rtl, ffRtl),
+            _Bidi('55', ltr, ffPrevious),
+            _Bidi(rtlWord1, rtl, ffRtl),
+          ]);
     });
 
     test('Mashriqi digits', () {
@@ -99,7 +101,8 @@ Future<void> testMain() async {
         _Bidi('result', ltr, ffLtr),
       ]);
 
-      expect(split('Calculate $rtlWord1 2.2 + 4.5 and write the result'), <_Bidi>[
+      expect(
+          split('Calculate $rtlWord1 2.2 + 4.5 and write the result'), <_Bidi>[
         _Bidi('Calculate', ltr, ffLtr),
         _Bidi(' ', null, ffSandwich),
         _Bidi(rtlWord1, rtl, ffRtl),

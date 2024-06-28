@@ -25,7 +25,8 @@ class LiveRegion extends RoleManager {
   static AccessibilityAnnouncements? _accessibilityAnnouncementsOverride;
 
   @visibleForTesting
-  static void debugOverrideAccessibilityAnnouncements(AccessibilityAnnouncements? value) {
+  static void debugOverrideAccessibilityAnnouncements(
+      AccessibilityAnnouncements? value) {
     _accessibilityAnnouncementsOverride = value;
   }
 

@@ -73,7 +73,8 @@ class PersistedColorFilter extends PersistedContainerSurface
   void apply() {
     ResourceManager.instance.removeResource(_filterElement);
     _filterElement = null;
-    final EngineHtmlColorFilter? engineValue = createHtmlColorFilter(filter as EngineColorFilter);
+    final EngineHtmlColorFilter? engineValue =
+        createHtmlColorFilter(filter as EngineColorFilter);
     if (engineValue == null) {
       rootElement!.style.backgroundColor = '';
       childContainer?.style.visibility = 'visible';
@@ -213,15 +214,15 @@ class SvgFilterBuilder {
   static int _filterIdCounter = 0;
 
   final String id;
-  final SVGSVGElement root = kSvgResourceHeader.cloneNode(false) as
-      SVGSVGElement;
+  final SVGSVGElement root =
+      kSvgResourceHeader.cloneNode(false) as SVGSVGElement;
   final SVGFilterElement filter = createSVGFilterElement();
 
   set colorInterpolationFilters(String filters) {
     filter.setAttribute('color-interpolation-filters', filters);
   }
 
-  void setFeColorMatrix(List<double> matrix, { required String result }) {
+  void setFeColorMatrix(List<double> matrix, {required String result}) {
     final SVGFEColorMatrixElement element = createSVGFEColorMatrixElement();
     element.type!.baseVal = kMatrixType;
     element.result!.baseVal = result;
@@ -301,8 +302,10 @@ class SvgFilterBuilder {
     if (ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit) {
       element.x!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, 0);
       element.y!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, 0);
-      element.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, width);
-      element.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, height);
+      element.width!.baseVal!
+          .newValueSpecifiedUnits(svgLengthTypeNumber, width);
+      element.height!.baseVal!
+          .newValueSpecifiedUnits(svgLengthTypeNumber, height);
     }
     filter.append(element);
   }
@@ -344,10 +347,26 @@ SvgFilter _srcInColorFilterToSvg(ui.Color? color) {
   builder.colorInterpolationFilters = 'sRGB';
   builder.setFeColorMatrix(
     const <double>[
-      0, 0, 0, 0, 1,
-      0, 0, 0, 0, 1,
-      0, 0, 0, 0, 1,
-      0, 0, 0, 1, 0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
     ],
     result: 'destalpha',
   );
@@ -453,10 +472,26 @@ SvgFilter _modulateColorFilterToSvg(ui.Color color) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeColorMatrix(
     <double>[
-      0, 0, 0, 0, r,
-      0, 0, 0, 0, g,
-      0, 0, 0, 0, b,
-      0, 0, 0, 1, 0,
+      0,
+      0,
+      0,
+      0,
+      r,
+      0,
+      0,
+      0,
+      0,
+      g,
+      0,
+      0,
+      0,
+      0,
+      b,
+      0,
+      0,
+      0,
+      1,
+      0,
     ],
     result: 'recolor',
   );

@@ -10,8 +10,8 @@ import 'semantics.dart';
 class Heading extends PrimaryRoleManager {
   Heading(SemanticsObject semanticsObject)
       : super.blank(PrimaryRole.heading, semanticsObject) {
-        addHeadingRole();
-      }
+    addHeadingRole();
+  }
 
   @override
   void update() {

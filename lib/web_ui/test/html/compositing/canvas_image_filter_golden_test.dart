@@ -28,8 +28,8 @@ Future<void> testMain() async {
         createFlutterLogoTestImage(),
         const Offset(10, 10),
         makePaint()
-          ..colorFilter =
-              const EngineColorFilter.mode(Color(0x40000000), BlendMode.dstATop));
+          ..colorFilter = const EngineColorFilter.mode(
+              Color(0x40000000), BlendMode.dstATop));
     await canvasScreenshot(canvas, 'image_color_fiter_dstatop', region: region);
   });
 

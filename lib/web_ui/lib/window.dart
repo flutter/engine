@@ -25,7 +25,8 @@ abstract class FlutterView {
   List<DisplayFeature> get displayFeatures;
   Display get display;
   void render(Scene scene, {Size? size});
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update) =>
+      platformDispatcher.updateSemantics(update);
 }
 
 abstract class SingletonFlutterWindow extends FlutterView {
@@ -192,7 +193,8 @@ class GestureSettings {
   }) {
     return GestureSettings(
       physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
-      physicalDoubleTapSlop: physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
+      physicalDoubleTapSlop:
+          physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
     );
   }
 
@@ -202,13 +204,14 @@ class GestureSettings {
       return false;
     }
     return other is GestureSettings &&
-      other.physicalTouchSlop == physicalTouchSlop &&
-      other.physicalDoubleTapSlop == physicalDoubleTapSlop;
+        other.physicalTouchSlop == physicalTouchSlop &&
+        other.physicalDoubleTapSlop == physicalDoubleTapSlop;
   }
 
   @override
   int get hashCode => Object.hash(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
-  String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
+  String toString() =>
+      'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
 }

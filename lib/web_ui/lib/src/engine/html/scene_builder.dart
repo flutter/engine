@@ -7,7 +7,8 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import '../../engine.dart' show FrameTimingRecorder, kProfileApplyFrame, kProfilePrerollFrame;
+import '../../engine.dart'
+    show FrameTimingRecorder, kProfileApplyFrame, kProfilePrerollFrame;
 import '../display.dart';
 import '../dom.dart';
 import '../profiler.dart';
@@ -222,8 +223,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    return _pushSurface<PersistedImageFilter>(
-        PersistedImageFilter(oldLayer as PersistedImageFilter?, filter, offset));
+    return _pushSurface<PersistedImageFilter>(PersistedImageFilter(
+        oldLayer as PersistedImageFilter?, filter, offset));
   }
 
   /// Pushes a backdrop filter operation onto the operation stack.
@@ -241,8 +242,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.BlendMode blendMode = ui.BlendMode.srcOver,
     ui.BackdropFilterEngineLayer? oldLayer,
   }) {
-    return _pushSurface<PersistedBackdropFilter>(PersistedBackdropFilter(
-        oldLayer as PersistedBackdropFilter?, filter));
+    return _pushSurface<PersistedBackdropFilter>(
+        PersistedBackdropFilter(oldLayer as PersistedBackdropFilter?, filter));
   }
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -261,7 +262,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   }) {
     return _pushSurface<PersistedShaderMask>(PersistedShaderMask(
         oldLayer as PersistedShaderMask?,
-        shader, maskRect, blendMode, filterQuality));
+        shader,
+        maskRect,
+        blendMode,
+        filterQuality));
   }
 
   /// Add a retained engine layer subtree from previous frames.
@@ -276,7 +280,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   void addRetained(ui.EngineLayer retainedLayer) {
     final PersistedContainerSurface retainedSurface =
         retainedLayer as PersistedContainerSurface;
-    assert(debugAssertSurfaceState(retainedSurface,
+    assert(debugAssertSurfaceState(
+      retainedSurface,
       PersistedSurfaceState.active,
       PersistedSurfaceState.released,
     ));
@@ -474,7 +479,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    final FrameTimingRecorder? recorder =
+        FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     recorder?.recordBuildFinish();
     recorder?.recordRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {
@@ -492,7 +498,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       }
       commitScene(_persistedScene);
       _lastFrameScene = _persistedScene;
-      return SurfaceScene(_persistedScene.rootElement, timingRecorder: recorder);
+      return SurfaceScene(_persistedScene.rootElement,
+          timingRecorder: recorder);
     });
   }
 

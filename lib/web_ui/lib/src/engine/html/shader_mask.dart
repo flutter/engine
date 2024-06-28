@@ -39,7 +39,8 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   DomElement? _shaderElement;
-  final bool isWebKit = ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit;
+  final bool isWebKit =
+      ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit;
 
   @override
   void adoptElements(PersistedShaderMask oldSurface) {
@@ -267,10 +268,26 @@ SvgFilter _srcInImageToSvg(String imageUrl, double width, double height) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeColorMatrix(
     const <double>[
-      0, 0, 0, 0, 1,
-      0, 0, 0, 0, 1,
-      0, 0, 0, 0, 1,
-      0, 0, 0, 1, 0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0,
     ],
     result: 'destalpha',
   );

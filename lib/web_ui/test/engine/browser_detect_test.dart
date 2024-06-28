@@ -14,27 +14,30 @@ void testMain() {
   group('detectBrowserEngineByVendorAgent', () {
     test('Should detect Blink', () {
       // Chrome Version 89.0.4389.90 (Official Build) (x86_64) / MacOS
-      final ui_web.BrowserEngine browserEngine = ui_web.browser.detectBrowserEngineByVendorAgent(
-          'Google Inc.',
-          'mozilla/5.0 (macintosh; intel mac os x 11_2_3) applewebkit/537.36 '
-              '(khtml, like gecko) chrome/89.0.4389.90 safari/537.36');
+      final ui_web.BrowserEngine browserEngine =
+          ui_web.browser.detectBrowserEngineByVendorAgent(
+              'Google Inc.',
+              'mozilla/5.0 (macintosh; intel mac os x 11_2_3) applewebkit/537.36 '
+                  '(khtml, like gecko) chrome/89.0.4389.90 safari/537.36');
       expect(browserEngine, ui_web.BrowserEngine.blink);
     });
 
     test('Should detect Firefox', () {
       // 85.0.2 (64-bit) / MacOS
-      final ui_web.BrowserEngine browserEngine = ui_web.browser.detectBrowserEngineByVendorAgent(
-          '',
-          'mozilla/5.0 (macintosh; intel mac os x 10.16; rv:85.0) '
-              'gecko/20100101 firefox/85.0');
+      final ui_web.BrowserEngine browserEngine =
+          ui_web.browser.detectBrowserEngineByVendorAgent(
+              '',
+              'mozilla/5.0 (macintosh; intel mac os x 10.16; rv:85.0) '
+                  'gecko/20100101 firefox/85.0');
       expect(browserEngine, ui_web.BrowserEngine.firefox);
     });
 
     test('Should detect Safari', () {
-      final ui_web.BrowserEngine browserEngine = ui_web.browser.detectBrowserEngineByVendorAgent(
-          'Apple Computer, Inc.',
-          'mozilla/5.0 (macintosh; intel mac os x 10_15_6) applewebkit/605.1.15 '
-              '(khtml, like gecko) version/14.0.3 safari/605.1.15');
+      final ui_web.BrowserEngine browserEngine =
+          ui_web.browser.detectBrowserEngineByVendorAgent(
+              'Apple Computer, Inc.',
+              'mozilla/5.0 (macintosh; intel mac os x 10_15_6) applewebkit/605.1.15 '
+                  '(khtml, like gecko) version/14.0.3 safari/605.1.15');
       expect(browserEngine, ui_web.BrowserEngine.webkit);
     });
   });

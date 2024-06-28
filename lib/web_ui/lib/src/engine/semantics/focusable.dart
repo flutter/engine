@@ -58,7 +58,8 @@ class Focusable extends RoleManager {
       if (!_focusManager.isManaging) {
         _focusManager.manage(semanticsObject.id, owner.element);
       }
-      _focusManager.changeFocus(semanticsObject.hasFocus && (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
+      _focusManager.changeFocus(semanticsObject.hasFocus &&
+          (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
     } else {
       _focusManager.stopManaging();
     }
@@ -185,8 +186,8 @@ class AccessibilityFocusManager {
     EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
       target.semanticsNodeId,
       acquireFocus
-        ? ui.SemanticsAction.didGainAccessibilityFocus
-        : ui.SemanticsAction.didLoseAccessibilityFocus,
+          ? ui.SemanticsAction.didGainAccessibilityFocus
+          : ui.SemanticsAction.didLoseAccessibilityFocus,
       null,
     );
   }
@@ -203,9 +204,8 @@ class AccessibilityFocusManager {
       // Nothing is being managed right now.
       assert(() {
         printWarning(
-          'Cannot change focus to $value. No element is being managed by this '
-          'AccessibilityFocusManager.'
-        );
+            'Cannot change focus to $value. No element is being managed by this '
+            'AccessibilityFocusManager.');
         return true;
       }());
       return;

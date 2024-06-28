@@ -4,7 +4,8 @@
 
 import 'package:meta/meta.dart';
 
-import 'package:ui/src/engine/dom.dart' show DomNavigatorExtension, DomWindowExtension, domWindow;
+import 'package:ui/src/engine/dom.dart'
+    show DomNavigatorExtension, DomWindowExtension, domWindow;
 
 /// The HTML engine used by the current browser.
 enum BrowserEngine {
@@ -14,8 +15,10 @@ enum BrowserEngine {
   /// Blink is assumed in case when a more precise browser engine wasn't
   /// detected.
   blink,
+
   /// The engine that powers Safari.
   webkit,
+
   /// The engine that powers Firefox.
   firefox,
 }
@@ -27,14 +30,19 @@ enum BrowserEngine {
 enum OperatingSystem {
   /// iOS: <http://www.apple.com/ios/>
   iOs,
+
   /// Android: <https://www.android.com/>
   android,
+
   /// Linux: <https://www.linux.org/>
   linux,
+
   /// Windows: <https://www.microsoft.com/windows/>
   windows,
+
   /// MacOs: <https://www.apple.com/macos/>
   macOs,
+
   /// We were unable to detect the current operating system.
   unknown,
 }

@@ -84,8 +84,8 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
     final ui.Rect outerRect = adjustRectForDom(rrect.outerRect, paint);
-    final DomElement element = buildDrawRectElement(
-        outerRect, paint, 'draw-rrect', currentTransform);
+    final DomElement element =
+        buildDrawRectElement(outerRect, paint, 'draw-rrect', currentTransform);
     applyRRectBorderRadius(element.style, rrect);
     currentElement.append(element);
   }
@@ -234,8 +234,8 @@ DomHTMLElement buildDrawRectElement(
     ui.Rect rect, SurfacePaintData paint, String tagName, Matrix4 transform) {
   assert(rect.left <= rect.right);
   assert(rect.top <= rect.bottom);
-  final DomHTMLElement rectangle = domDocument.createElement(tagName) as
-      DomHTMLElement;
+  final DomHTMLElement rectangle =
+      domDocument.createElement(tagName) as DomHTMLElement;
   assert(() {
     rectangle.setAttribute('flt-rect', '$rect');
     rectangle.setAttribute('flt-paint', '$paint');
@@ -248,7 +248,8 @@ DomHTMLElement buildDrawRectElement(
     effectiveTransform = 'translate(${rect.left}px, ${rect.top}px)';
   } else {
     // Clone to avoid mutating `transform`.
-    final Matrix4 translated = transform.clone()..translate(rect.left, rect.top);
+    final Matrix4 translated = transform.clone()
+      ..translate(rect.left, rect.top);
     effectiveTransform = matrix4ToCssTransform(translated);
   }
   final DomCSSStyleDeclaration style = rectangle.style;
@@ -261,7 +262,8 @@ DomHTMLElement buildDrawRectElement(
 
   if (paint.maskFilter != null) {
     final double sigma = paint.maskFilter!.webOnlySigma;
-    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit && !isStroke) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
+        !isStroke) {
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
@@ -287,16 +289,16 @@ DomHTMLElement buildDrawRectElement(
 
 String _getBackgroundImageCssValue(ui.Shader? shader, ui.Rect bounds) {
   final String url = _getBackgroundImageUrl(shader, bounds);
-  return (url != '') ? "url('$url'": '';
+  return (url != '') ? "url('$url'" : '';
 }
 
 String _getBackgroundImageUrl(ui.Shader? shader, ui.Rect bounds) {
-  if(shader != null) {
-    if(shader is EngineImageShader) {
+  if (shader != null) {
+    if (shader is EngineImageShader) {
       return shader.image.imgElement.src ?? '';
     }
 
-    if(shader is EngineGradient) {
+    if (shader is EngineGradient) {
       return shader.createImageBitmap(bounds, 1, true) as String;
     }
   }
@@ -348,7 +350,8 @@ SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
     svgPath.setAttribute('stroke', colorValueToCssString(paint.color));
     svgPath.setAttribute('stroke-width', '${paint.strokeWidth ?? 1.0}');
     if (paint.strokeCap != null) {
-      svgPath.setAttribute('stroke-linecap', '${stringForStrokeCap(paint.strokeCap)}');
+      svgPath.setAttribute(
+          'stroke-linecap', '${stringForStrokeCap(paint.strokeCap)}');
     }
     svgPath.setAttribute('fill', 'none');
   } else {

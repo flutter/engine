@@ -20,22 +20,23 @@ import 'package:ui/src/engine.dart';
 /// 4. GC decides to perform a GC cycle and collects CkPaint.
 /// 5. The finalizer function is called with the SkPaint as the sole argument.
 /// 6. We call `delete` on SkPaint.
-DomFinalizationRegistry _finalizationRegistry = DomFinalizationRegistry(
-  (ExternalDartReference boxedUniq) {
-    // ignore: cast_nullable_to_non_nullable
-    final UniqueRef<Object> uniq = boxedUniq.toDartObject as UniqueRef<Object>;
-    uniq.collect();
-  }.toJS
-);
+DomFinalizationRegistry _finalizationRegistry =
+    DomFinalizationRegistry((ExternalDartReference boxedUniq) {
+  // ignore: cast_nullable_to_non_nullable
+  final UniqueRef<Object> uniq = boxedUniq.toDartObject as UniqueRef<Object>;
+  uniq.collect();
+}.toJS);
 
-NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemoryFinalizationRegistry();
+NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry =
+    NativeMemoryFinalizationRegistry();
 
 /// An indirection to [DomFinalizationRegistry] to enable tests provide a
 /// mock implementation of a finalization registry.
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
-      _finalizationRegistry.register(owner.toExternalReference, ref.toExternalReference);
+      _finalizationRegistry.register(
+          owner.toExternalReference, ref.toExternalReference);
     }
   }
 }
@@ -81,7 +82,8 @@ class UniqueRef<T extends Object> {
   /// [SkPicture] exists that still references it. On the other hand, [SkPaint]
   /// is deleted eagerly.
   void dispose() {
-    assert(!isDisposed, 'A native object reference cannot be disposed more than once.');
+    assert(!isDisposed,
+        'A native object reference cannot be disposed more than once.');
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('$_debugOwnerLabel Deleted');
     }

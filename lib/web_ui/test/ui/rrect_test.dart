@@ -51,11 +51,11 @@ Future<void> testMain() async {
   test('RRect.webOnlyUniformRadii returns true when all corner radii are equal',
       () {
     final RRect rect1 = RRect.fromRectAndCorners(
-        const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
-        topLeft: const Radius.elliptical(5, 5),
-        topRight: const Radius.elliptical(5, 5),
-        bottomLeft: const Radius.elliptical(5, 5),
-        bottomRight: const Radius.elliptical(5, 5),
+      const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
+      topLeft: const Radius.elliptical(5, 5),
+      topRight: const Radius.elliptical(5, 5),
+      bottomLeft: const Radius.elliptical(5, 5),
+      bottomRight: const Radius.elliptical(5, 5),
     );
     expect(rect1.webOnlyUniformRadii, isTrue);
 

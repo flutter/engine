@@ -28,7 +28,8 @@ CommandRunner<bool> runner = CommandRunner<bool>(
 
 Future<void> main(List<String> rawArgs) async {
   // Remove --clean from the list as that's processed by the wrapper script.
-  final List<String> args = rawArgs.where((String arg) => arg != '--clean').toList();
+  final List<String> args =
+      rawArgs.where((String arg) => arg != '--clean').toList();
 
   if (args.isEmpty) {
     // The felt tool was invoked with no arguments. Print usage.

@@ -30,7 +30,8 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
   static const int _maxRetryCount = 10;
 
   @override
-  Future<Process> spawnDriverProcess() => Process.start('safaridriver', <String>['-p', portNumber.toString()]);
+  Future<Process> spawnDriverProcess() =>
+      Process.start('safaridriver', <String>['-p', portNumber.toString()]);
 
   @override
   Future<void> prepare() async {
@@ -46,7 +47,8 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
   Future<void> _startDriverProcess() async {
     _retryCount += 1;
     if (_retryCount > 1) {
-      await Future<void>.delayed(const Duration(seconds: _waitBetweenRetryInSeconds));
+      await Future<void>.delayed(
+          const Duration(seconds: _waitBetweenRetryInSeconds));
     }
     portNumber = await pickUnusedPort();
 
@@ -60,7 +62,8 @@ class SafariMacOsEnvironment extends WebDriverBrowserEnvironment {
         .listen((String error) {
       print('[Webdriver][Error] $error');
       if (_retryCount > _maxRetryCount) {
-        print('[Webdriver][Error] Failed to start after $_maxRetryCount tries.');
+        print(
+            '[Webdriver][Error] Failed to start after $_maxRetryCount tries.');
       } else if (error.contains('Operation not permitted')) {
         _driverProcess.kill();
         _startDriverProcess();

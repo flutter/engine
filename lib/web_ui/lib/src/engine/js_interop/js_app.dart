@@ -21,7 +21,8 @@ extension JsFlutterViewOptionsExtension on JsFlutterViewOptions {
   @JS('hostElement')
   external DomElement? get _hostElement;
   DomElement get hostElement {
-    assert (_hostElement != null, '`hostElement` passed to addView cannot be null.');
+    assert(_hostElement != null,
+        '`hostElement` passed to addView cannot be null.');
     return _hostElement!;
   }
 

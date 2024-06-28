@@ -7,7 +7,8 @@ import 'dart:async';
 import 'package:ui/src/engine.dart';
 
 abstract class FallbackFontRegistry {
-  List<int> getMissingCodePoints(List<int> codePoints, List<String> fontFamilies);
+  List<int> getMissingCodePoints(
+      List<int> codePoints, List<String> fontFamilies);
   Future<void> loadFallbackFont(String familyName, String string);
   void updateFallbackFontFamilies(List<String> families);
 }
@@ -15,19 +16,23 @@ abstract class FallbackFontRegistry {
 /// Global static font fallback data.
 class FontFallbackManager {
   factory FontFallbackManager(FallbackFontRegistry registry) =>
-    FontFallbackManager._(
-      registry,
-      getFallbackFontList(configuration.useColorEmoji)
-    );
+      FontFallbackManager._(
+          registry, getFallbackFontList(configuration.useColorEmoji));
 
-  FontFallbackManager._(this.registry, this.fallbackFonts) :
-    _notoSansSC = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans SC'),
-    _notoSansTC = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans TC'),
-    _notoSansHK = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans HK'),
-    _notoSansJP = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans JP'),
-    _notoSansKR = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans KR'),
-    _notoSymbols = fallbackFonts.singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols') {
-      downloadQueue = FallbackFontDownloadQueue(this);
+  FontFallbackManager._(this.registry, this.fallbackFonts)
+      : _notoSansSC = fallbackFonts
+            .singleWhere((NotoFont font) => font.name == 'Noto Sans SC'),
+        _notoSansTC = fallbackFonts
+            .singleWhere((NotoFont font) => font.name == 'Noto Sans TC'),
+        _notoSansHK = fallbackFonts
+            .singleWhere((NotoFont font) => font.name == 'Noto Sans HK'),
+        _notoSansJP = fallbackFonts
+            .singleWhere((NotoFont font) => font.name == 'Noto Sans JP'),
+        _notoSansKR = fallbackFonts
+            .singleWhere((NotoFont font) => font.name == 'Noto Sans KR'),
+        _notoSymbols = fallbackFonts
+            .singleWhere((NotoFont font) => font.name == 'Noto Sans Symbols') {
+    downloadQueue = FallbackFontDownloadQueue(this);
   }
 
   final FallbackFontRegistry registry;
@@ -94,9 +99,11 @@ class FontFallbackManager {
     for (final int rune in text.runes) {
       // Filter out code points that don't need checking.
       if (!(rune < 160 || // ASCII and Unicode control points.
-          knownCoveredCodePoints.contains(rune) || // Points we've already covered
-          codePointsWithNoKnownFont.contains(rune)) // Points that don't have a fallback font
-      ) {
+              knownCoveredCodePoints
+                  .contains(rune) || // Points we've already covered
+              codePointsWithNoKnownFont
+                  .contains(rune)) // Points that don't have a fallback font
+          ) {
         runesToCheck.add(rune);
       }
     }
@@ -106,7 +113,7 @@ class FontFallbackManager {
 
     final List<int> codePoints = runesToCheck.toList();
     final List<int> missingCodePoints =
-      registry.getMissingCodePoints(codePoints, fontFamilies);
+        registry.getMissingCodePoints(codePoints, fontFamilies);
 
     if (missingCodePoints.isNotEmpty) {
       addMissingCodePoints(codePoints);
@@ -135,7 +142,8 @@ class FontFallbackManager {
     if (_codePointsToCheckAgainstFallbackFonts.isEmpty) {
       return;
     }
-    final List<int> codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
+    final List<int> codePoints =
+        _codePointsToCheckAgainstFallbackFonts.toList();
     _codePointsToCheckAgainstFallbackFonts.clear();
     findFontsForMissingCodePoints(codePoints);
   }
@@ -315,7 +323,8 @@ class FontFallbackManager {
   late final List<FallbackFontComponent> fontComponents =
       _decodeFontComponents(encodedFontSets);
 
-  late final _UnicodePropertyLookup<FallbackFontComponent> codePointToComponents =
+  late final _UnicodePropertyLookup<FallbackFontComponent>
+      codePointToComponents =
       _UnicodePropertyLookup<FallbackFontComponent>.fromPackedData(
           encodedFontSetRanges, fontComponents);
 

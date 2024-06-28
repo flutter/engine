@@ -226,12 +226,18 @@ Future<void> testMain() async {
 
 /// Holds information about how a fragment.
 class _Fragment {
-  _Fragment(this.text, this.type, this.textDirection, this.fragmentFlow, this.style, {
+  _Fragment(
+    this.text,
+    this.type,
+    this.textDirection,
+    this.fragmentFlow,
+    this.style, {
     this.nl = 0,
     this.sp = 0,
   });
 
-  factory _Fragment._fromLayoutFragment(String text, LayoutFragment layoutFragment) {
+  factory _Fragment._fromLayoutFragment(
+      String text, LayoutFragment layoutFragment) {
     return _Fragment(
       text.substring(layoutFragment.start, layoutFragment.end),
       layoutFragment.type,
@@ -256,7 +262,8 @@ class _Fragment {
   final int sp;
 
   @override
-  int get hashCode => Object.hash(text, type, textDirection, fragmentFlow, style, nl, sp);
+  int get hashCode =>
+      Object.hash(text, type, textDirection, fragmentFlow, style, nl, sp);
 
   @override
   bool operator ==(Object other) {

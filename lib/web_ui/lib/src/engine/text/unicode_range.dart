@@ -155,7 +155,8 @@ class UnicodePropertyLookup<P> {
     }
 
     final int rangeIndex = _binarySearch(char);
-    final P result = rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
+    final P result =
+        rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
     // Cache the result.
     _cache[char] = result;
     return result;

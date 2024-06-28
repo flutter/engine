@@ -5,7 +5,8 @@ import 'dart:math' as math;
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart' show PlatformViewManager, configuration, longestIncreasingSubsequence;
+import '../../engine.dart'
+    show PlatformViewManager, configuration, longestIncreasingSubsequence;
 import '../display.dart';
 import '../dom.dart';
 import '../html/path_to_svg_clip.dart';
@@ -393,11 +394,11 @@ class HtmlViewEmbedder {
       debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
       final CkPictureRecorder boundsRecorder = CkPictureRecorder();
       final CkCanvas boundsCanvas = boundsRecorder.beginRecording(
-          ui.Rect.fromLTWH(
-        0,
-        0,
-        _frameSize.width.toDouble(),
-        _frameSize.height.toDouble(),
+        ui.Rect.fromLTWH(
+          0,
+          0,
+          _frameSize.width.toDouble(),
+          _frameSize.height.toDouble(),
         ),
       );
       final CkPaint platformViewBoundsPaint = CkPaint()

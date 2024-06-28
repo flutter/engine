@@ -5,6 +5,7 @@
 import '../dom.dart';
 
 /// Listener for DOM events that prevents the default browser behavior.
-final DomEventListener preventDefaultListener = createDomEventListener((DomEvent event) {
+final DomEventListener preventDefaultListener =
+    createDomEventListener((DomEvent event) {
   event.preventDefault();
 });

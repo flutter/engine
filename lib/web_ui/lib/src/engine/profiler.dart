@@ -149,6 +149,7 @@ class Instrumentation {
 
     _enabled = value;
   }
+
   static bool _enabled = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_INSTRUMENTATION',
   );

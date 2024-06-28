@@ -23,15 +23,19 @@ import '../window.dart';
 ///
 /// It also takes into account semantics being enabled to fix the case where
 /// offsetX, offsetY == 0 (TalkBack events).
-ui.Offset computeEventOffsetToTarget(DomMouseEvent event, EngineFlutterView view) {
+ui.Offset computeEventOffsetToTarget(
+    DomMouseEvent event, EngineFlutterView view) {
   final DomElement actualTarget = view.dom.rootElement;
   // On a TalkBack event
-  if (EngineSemantics.instance.semanticsEnabled && event.offsetX == 0 && event.offsetY == 0) {
+  if (EngineSemantics.instance.semanticsEnabled &&
+      event.offsetX == 0 &&
+      event.offsetY == 0) {
     return _computeOffsetForTalkbackEvent(event, actualTarget);
   }
 
   // On one of our text-editing nodes
-  final bool isInput = view.dom.textEditingHost.contains(event.target! as DomNode);
+  final bool isInput =
+      view.dom.textEditingHost.contains(event.target! as DomNode);
   if (isInput) {
     final EditableTextGeometry? inputGeometry = textEditing.strategy.geometry;
     if (inputGeometry != null) {
@@ -64,14 +68,17 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, EngineFlutterView view
 /// sent from the framework, which includes information on how to transform the
 /// underlying input element. We transform the `event.offset` points we receive
 /// using the values from the input's transform matrix.
-ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inputGeometry) {
+ui.Offset _computeOffsetForInputs(
+    DomMouseEvent event, EditableTextGeometry inputGeometry) {
   final DomElement targetElement = event.target! as DomHTMLElement;
   final DomHTMLElement domElement = textEditing.strategy.activeDomElement;
-  assert(targetElement == domElement, 'The targeted input element must be the active input element');
+  assert(targetElement == domElement,
+      'The targeted input element must be the active input element');
   final Float32List transformValues = inputGeometry.globalTransform;
   assert(transformValues.length == 16);
   final Matrix4 transform = Matrix4.fromFloat32List(transformValues);
-  final Vector3 transformedPoint = transform.perspectiveTransform(x: event.offsetX, y: event.offsetY, z: 0);
+  final Vector3 transformedPoint =
+      transform.perspectiveTransform(x: event.offsetX, y: event.offsetY, z: 0);
 
   return ui.Offset(transformedPoint.x, transformedPoint.y);
 }
@@ -106,7 +113,8 @@ ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inpu
 /// up the offsetParent elements of actualTarget adding their offset and scroll
 /// positions. Finally, we deduct that from clientX, clientY of the event.
 // TODO(dit): Make this understand 3D transforms, https://github.com/flutter/flutter/issues/117091
-ui.Offset _computeOffsetForTalkbackEvent(DomMouseEvent event, DomElement actualTarget) {
+ui.Offset _computeOffsetForTalkbackEvent(
+    DomMouseEvent event, DomElement actualTarget) {
   assert(EngineSemantics.instance.semanticsEnabled);
   // Use clientX/clientY as the position of the event (this is relative to
   // the top left of the page, including scroll)
@@ -114,7 +122,7 @@ ui.Offset _computeOffsetForTalkbackEvent(DomMouseEvent event, DomElement actualT
   double offsetY = event.clientY;
   // Compute the scroll offset of actualTarget
   DomHTMLElement parent = actualTarget as DomHTMLElement;
-  while(parent.offsetParent != null){
+  while (parent.offsetParent != null) {
     offsetX -= parent.offsetLeft - parent.scrollLeft;
     offsetY -= parent.offsetTop - parent.scrollTop;
     parent = parent.offsetParent!;

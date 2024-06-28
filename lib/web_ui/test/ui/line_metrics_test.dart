@@ -40,7 +40,8 @@ Future<void> testMain() async {
       fontSize: fontSize,
       maxLines: 1,
       ellipsis: 'BBB',
-    ))..addText('A' * 100);
+    ))
+      ..addText('A' * 100);
     final ui.Paragraph paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100.0));
 
@@ -61,7 +62,8 @@ Future<void> testMain() async {
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontSize: 10,
       height: 1.5,
-    ))..addText('A' * 10);
+    ))
+      ..addText('A' * 10);
     final ui.Paragraph paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 
@@ -80,15 +82,18 @@ Future<void> testMain() async {
       fontSize: fontSize,
       maxLines: 1,
       ellipsis: 'BBB',
-    ))..addText('A' * 100);
+    ))
+      ..addText('A' * 100);
     final ui.Paragraph paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100.0));
 
     expect(paragraph.getGlyphInfoAt(-1), isNull);
 
     // The last 3 characters on the first line are ellipsized with BBB.
-    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const ui.TextRange(start: 0, end: 1));
-    expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange, const ui.TextRange(start: 6, end: 7));
+    expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange,
+        const ui.TextRange(start: 0, end: 1));
+    expect(paragraph.getGlyphInfoAt(6)?.graphemeClusterCodeUnitRange,
+        const ui.TextRange(start: 6, end: 7));
     expect(paragraph.getGlyphInfoAt(7), isNull);
     expect(paragraph.getGlyphInfoAt(200), isNull);
   });
@@ -98,17 +103,21 @@ Future<void> testMain() async {
     final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontSize: fontSize,
       fontFamily: 'FlutterTest',
-    ))..addText('Test\nTest');
+    ))
+      ..addText('Test\nTest');
     final ui.Paragraph paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 
-    final ui.GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const ui.Offset(99.0, 99.0));
+    final ui.GlyphInfo? bottomRight =
+        paragraph.getClosestGlyphInfoForOffset(const ui.Offset(99.0, 99.0));
     final ui.GlyphInfo? last = paragraph.getGlyphInfoAt(8);
     expect(bottomRight, equals(last));
     expect(bottomRight, isNot(paragraph.getGlyphInfoAt(0)));
 
-    expect(bottomRight?.graphemeClusterLayoutBounds, const ui.Rect.fromLTWH(30, 10, 10, 10));
-    expect(bottomRight?.graphemeClusterCodeUnitRange, const ui.TextRange(start: 8, end: 9));
+    expect(bottomRight?.graphemeClusterLayoutBounds,
+        const ui.Rect.fromLTWH(30, 10, 10, 10));
+    expect(bottomRight?.graphemeClusterCodeUnitRange,
+        const ui.TextRange(start: 8, end: 9));
     expect(bottomRight?.writingDirection, ui.TextDirection.ltr);
   });
 
@@ -132,8 +141,11 @@ Future<void> testMain() async {
     }
   }, skip: isHtml); // The rounding hack doesn't apply to the html renderer
 
-  test('overrides with flutter test font when debugEmulateFlutterTesterEnvironment is enabled', () {
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+  test(
+      'overrides with flutter test font when debugEmulateFlutterTesterEnvironment is enabled',
+      () {
+    final ui.ParagraphBuilder builder =
+        ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 10.0,
       fontFamily: 'Roboto',
@@ -152,8 +164,11 @@ Future<void> testMain() async {
     expect(metrics!.width, 40.0);
   });
 
-  test('uses flutter test font by default when debugEmulateFlutterTesterEnvironment is enabled', () {
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+  test(
+      'uses flutter test font by default when debugEmulateFlutterTesterEnvironment is enabled',
+      () {
+    final ui.ParagraphBuilder builder =
+        ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 10.0,
     ));
@@ -171,10 +186,13 @@ Future<void> testMain() async {
     expect(metrics!.width, 40.0);
   });
 
-  test('uses specified font when debugEmulateFlutterTesterEnvironment is disabled', () {
+  test(
+      'uses specified font when debugEmulateFlutterTesterEnvironment is disabled',
+      () {
     debugEmulateFlutterTesterEnvironment = false;
 
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+    final ui.ParagraphBuilder builder =
+        ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 16.0,
       fontFamily: 'Roboto',

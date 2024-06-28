@@ -17,11 +17,13 @@ class CleanCommand extends Command<bool> with ArgUtils<bool> {
       ..addFlag(
         'flutter',
         defaultsTo: true,
-        help: 'Cleans up the .dart_tool directory under engine/src/flutter. Enabled by default.',
+        help:
+            'Cleans up the .dart_tool directory under engine/src/flutter. Enabled by default.',
       )
       ..addFlag(
         'ninja',
-        help: 'Also clean up the engine out directory with ninja output. Disabled by default.',
+        help:
+            'Also clean up the engine out directory with ninja output. Disabled by default.',
       );
   }
 
@@ -38,24 +40,22 @@ class CleanCommand extends Command<bool> with ArgUtils<bool> {
   @override
   FutureOr<bool> run() async {
     // This is the old path that tests used to be built into. Clean this path too.
-    final String legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
+    final String legacyBuildPath =
+        path.join(environment.webUiRootDir.path, 'build');
     final List<io.FileSystemEntity> thingsToBeCleaned = <io.FileSystemEntity>[
       environment.webUiDartToolDir,
       environment.webUiBuildDir,
       io.Directory(legacyBuildPath),
-      io.File(path.join(environment.webUiRootDir.path, '.dart_tool', 'package_config.json')),
+      io.File(path.join(
+          environment.webUiRootDir.path, '.dart_tool', 'package_config.json')),
       io.File(path.join(environment.webUiRootDir.path, 'pubspec.lock')),
-      if (_alsoCleanNinja)
-        environment.outDir,
-      if(_alsoCleanFlutterRepo)
-        environment.engineDartToolDir,
+      if (_alsoCleanNinja) environment.outDir,
+      if (_alsoCleanFlutterRepo) environment.engineDartToolDir,
     ];
 
-    await Future.wait(
-      thingsToBeCleaned
+    await Future.wait(thingsToBeCleaned
         .where((io.FileSystemEntity entity) => entity.existsSync())
-        .map((io.FileSystemEntity entity) => entity.delete(recursive: true))
-    );
+        .map((io.FileSystemEntity entity) => entity.delete(recursive: true)));
     return true;
   }
 }

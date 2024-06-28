@@ -24,7 +24,8 @@ void testMain() {
 
   test('PathRef.getRRect with radius larger than rect', () {
     final SurfacePath path = SurfacePath();
-    final RRect rrect = RRect.fromLTRBR(0, 0, 10, 10, const Radius.circular(20));
+    final RRect rrect =
+        RRect.fromLTRBR(0, 0, 10, 10, const Radius.circular(20));
     path.addRRect(rrect);
     expect(
       path.toRoundedRect(),
@@ -44,14 +45,16 @@ void testMain() {
 
   test('PathRef.getRRect elliptical', () {
     final SurfacePath path = SurfacePath();
-    final RRect rrect = RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(2, 4));
+    final RRect rrect =
+        RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(2, 4));
     path.addRRect(rrect);
     expect(path.toRoundedRect(), rrect);
   });
 
   test('PathRef.getRRect elliptical zero x', () {
     final SurfacePath path = SurfacePath();
-    final RRect rrect = RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(0, 3));
+    final RRect rrect =
+        RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(0, 3));
     path.addRRect(rrect);
     expect(path.toRoundedRect(), isNull);
     expect(path.toRect(), rrect.outerRect);
@@ -59,21 +62,23 @@ void testMain() {
 
   test('PathRef.getRRect elliptical zero y', () {
     final SurfacePath path = SurfacePath();
-    final RRect rrect = RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(3, 0));
+    final RRect rrect =
+        RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(3, 0));
     path.addRRect(rrect);
     expect(path.toRoundedRect(), isNull);
     expect(path.toRect(), rrect.outerRect);
   });
 
-  test('PathRef.getRect returns a Rect from a valid Path and null otherwise', () {
+  test('PathRef.getRect returns a Rect from a valid Path and null otherwise',
+      () {
     final SurfacePath path = SurfacePath();
     // Draw a line
-    path.moveTo(0,0);
-    path.lineTo(10,0);
+    path.moveTo(0, 0);
+    path.lineTo(10, 0);
     expect(path.pathRef.getRect(), isNull);
     // Draw two other lines to get a valid rectangle
-    path.lineTo(10,10);
-    path.lineTo(0,10);
+    path.lineTo(10, 10);
+    path.lineTo(0, 10);
     expect(path.pathRef.getRect(), const Rect.fromLTWH(0, 0, 10, 10));
   });
 
@@ -81,10 +86,10 @@ void testMain() {
   test('PathRef.getRect returns Rect with positive width and height', () {
     final SurfacePath path = SurfacePath();
     // Draw a rectangle starting from bottom right corner
-    path.moveTo(10,10);
-    path.lineTo(0,10);
-    path.lineTo(0,0);
-    path.lineTo(10,0);
+    path.moveTo(10, 10);
+    path.lineTo(0, 10);
+    path.lineTo(0, 0);
+    path.lineTo(10, 0);
     // pathRef.getRect() should return a rectangle with positive height and width
     expect(path.pathRef.getRect(), const Rect.fromLTWH(0, 0, 10, 10));
   });
@@ -95,7 +100,8 @@ void testMain() {
   // https://github.com/flutter/flutter/issues/76885
   test('PathRef.getRRect with nearly zero corner', () {
     final SurfacePath path = SurfacePath();
-    final RRect original = RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(0.00000001, 5));
+    final RRect original =
+        RRect.fromLTRBR(0, 0, 10, 10, const Radius.elliptical(0.00000001, 5));
     path.addRRect(original);
     expect(path.toRoundedRect(), original);
   }, skip: issue76885Exists);

@@ -90,11 +90,12 @@ class NormalizedGradient {
       bias[colorIndex + 2] -= t * scale[colorIndex + 2];
       bias[colorIndex + 3] -= t * scale[colorIndex + 3];
     }
-    return NormalizedGradient._(normalizedCount, thresholds, scale, bias, isOpaque);
+    return NormalizedGradient._(
+        normalizedCount, thresholds, scale, bias, isOpaque);
   }
 
-  NormalizedGradient._(
-      this.thresholdCount, this._thresholds, this._scale, this._bias, this.isOpaque);
+  NormalizedGradient._(this.thresholdCount, this._thresholds, this._scale,
+      this._bias, this.isOpaque);
 
   final Float32List _thresholds;
   final Float32List _bias;
@@ -108,7 +109,8 @@ class NormalizedGradient {
       final Object biasId = gl.getUniformLocation(glProgram.program, 'bias_$i');
       gl.setUniform4f(biasId, _bias[i * 4], _bias[i * 4 + 1], _bias[i * 4 + 2],
           _bias[i * 4 + 3]);
-      final Object scaleId = gl.getUniformLocation(glProgram.program, 'scale_$i');
+      final Object scaleId =
+          gl.getUniformLocation(glProgram.program, 'scale_$i');
       gl.setUniform4f(scaleId, _scale[i * 4], _scale[i * 4 + 1],
           _scale[i * 4 + 2], _scale[i * 4 + 3]);
     }

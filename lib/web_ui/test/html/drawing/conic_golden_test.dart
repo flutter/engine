@@ -14,12 +14,13 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old golden tester padding
+  const Rect region =
+      Rect.fromLTWH(8, 8, 600, 800); // Compensate for old golden tester padding
 
   Future<void> testPath(Path path, String goldenFileName) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
-    final BitmapCanvas bitmapCanvas = BitmapCanvas(canvasBounds,
-        RenderStrategy());
+    final BitmapCanvas bitmapCanvas =
+        BitmapCanvas(canvasBounds, RenderStrategy());
     final RecordingCanvas canvas = RecordingCanvas(canvasBounds);
 
     SurfacePaint paint = SurfacePaint()

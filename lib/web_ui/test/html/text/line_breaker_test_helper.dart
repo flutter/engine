@@ -21,18 +21,21 @@ String _checkReplacement(String line, {required bool isV8}) {
 
   // Special cases for rules LB8, LB11, LB13, LB14, LB15, LB16, LB17 to allow
   // line breaks after spaces.
-  final RegExp spacesRegex = RegExp(r'SPACE \(SP\) × \[(8|11|13|14|15|16|17)\.');
+  final RegExp spacesRegex =
+      RegExp(r'SPACE \(SP\) × \[(8|11|13|14|15|16|17)\.');
   if (replacement.contains(spacesRegex)) {
     replacement = replacement
         .replaceAll('0020 ×', '0020 ÷') // SPACE (SP)
-        .replaceAllMapped(spacesRegex, (Match m) => 'SPACE (SP) ÷ [${m.group(1)}.');
+        .replaceAllMapped(
+            spacesRegex, (Match m) => 'SPACE (SP) ÷ [${m.group(1)}.');
   }
 
   if (!isV8) {
     // Some test cases contradict rule LB25, so we are fixing them with the few
     // regexes below.
 
-    final RegExp lb25Regex1 = RegExp(r'\((CP_CP30|CL)\)(.*?) ÷ \[999\.0\] (PERCENT|DOLLAR)');
+    final RegExp lb25Regex1 =
+        RegExp(r'\((CP_CP30|CL)\)(.*?) ÷ \[999\.0\] (PERCENT|DOLLAR)');
     if (replacement.contains(lb25Regex1)) {
       replacement = replacement
           .replaceAll(' ÷ 0024', ' × 0024') // DOLLAR SIGN (PR)
@@ -68,12 +71,16 @@ String _checkReplacement(String line, {required bool isV8}) {
     // v8BreakIterator deviates from the spec around Hiragana and Katakana
     // letters.
 
-    final RegExp hiragana21Regex = RegExp(r' × \[21\.03\] (HIRAGANA LETTER|KATAKANA LETTER|KATAKANA-HIRAGANA)');
-    if (replacement.contains(hiragana21Regex) && !replacement.contains('(BB)') && !replacement.contains('(PR)')) {
+    final RegExp hiragana21Regex = RegExp(
+        r' × \[21\.03\] (HIRAGANA LETTER|KATAKANA LETTER|KATAKANA-HIRAGANA)');
+    if (replacement.contains(hiragana21Regex) &&
+        !replacement.contains('(BB)') &&
+        !replacement.contains('(PR)')) {
       replacement = replacement
           .replaceAll(' × 3041', ' ÷ 3041') // HIRAGANA LETTER (CJ)
           .replaceAll(' × 30E5', ' ÷ 30E5') // KATAKANA LETTER (CJ)
-          .replaceAll(' × 30FC', ' ÷ 30FC') // KATAKANA-HIRAGANA PROLONGED SOUND MARK (CJ)
+          .replaceAll(' × 30FC',
+              ' ÷ 30FC') // KATAKANA-HIRAGANA PROLONGED SOUND MARK (CJ)
           .replaceAllMapped(
             hiragana21Regex,
             (Match m) => ' ÷ [21.03] ${m.group(1)}',
@@ -87,7 +94,8 @@ String _checkReplacement(String line, {required bool isV8}) {
             ' ÷ [16.0] HIRAGANA LETTER',
           );
     }
-    final RegExp hiraganaPercentRegex = RegExp(r'HIRAGANA .*? ÷ \[999\.0\] PERCENT');
+    final RegExp hiraganaPercentRegex =
+        RegExp(r'HIRAGANA .*? ÷ \[999\.0\] PERCENT');
     if (replacement.contains(hiraganaPercentRegex)) {
       replacement = replacement
           .replaceAll(' ÷ 0025', ' × 0025') // PERCENT SIGN (PO)
@@ -100,7 +108,8 @@ String _checkReplacement(String line, {required bool isV8}) {
     // v8BreakIterator also deviates from the spec around hyphens, commas and
     // full stops.
 
-    final RegExp hyphenRegex = RegExp(r'\((HY|IS)\)(.*?) ÷ \[999\.0\] (DIGIT|NUMBER|SECTION|THAI|<reserved-50005>)');
+    final RegExp hyphenRegex = RegExp(
+        r'\((HY|IS)\)(.*?) ÷ \[999\.0\] (DIGIT|NUMBER|SECTION|THAI|<reserved-50005>)');
     if (replacement.contains(hyphenRegex)) {
       replacement = replacement
           .replaceAll(' ÷ 0030', ' × 0030') // DIGIT ZERO (NU)

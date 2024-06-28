@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'dart:math' as math;
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -55,15 +54,11 @@ void testMain() {
     test('moveto/lineto convexity', () {
       final List<LineTestCase> testCases = <LineTestCase>[
         LineTestCase('', SPathConvexityType.kConvex),
-        LineTestCase(
-            '0 0', SPathConvexityType.kConvex),
-        LineTestCase(
-            '0 0 10 10', SPathConvexityType.kConvex),
+        LineTestCase('0 0', SPathConvexityType.kConvex),
+        LineTestCase('0 0 10 10', SPathConvexityType.kConvex),
         LineTestCase('0 0 10 10 20 20 0 0 10 10', SPathConvexityType.kConcave),
-        LineTestCase(
-            '0 0 10 10 10 20', SPathConvexityType.kConvex),
-        LineTestCase(
-            '0 0 10 10 10 0', SPathConvexityType.kConvex),
+        LineTestCase('0 0 10 10 10 20', SPathConvexityType.kConvex),
+        LineTestCase('0 0 10 10 10 0', SPathConvexityType.kConvex),
         LineTestCase('0 0 10 10 10 0 0 10', SPathConvexityType.kConcave),
         LineTestCase('0 0 10 0 0 10 -10 -10', SPathConvexityType.kConcave),
       ];

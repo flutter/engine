@@ -271,86 +271,54 @@ class PointerDataConverter {
       print('>> view=$viewId device=$device change=$change buttons=$buttons');
     }
     final bool isDown = buttons != 0;
-    if (signalKind == null ||
-      signalKind == ui.PointerSignalKind.none) {
+    if (signalKind == null || signalKind == ui.PointerSignalKind.none) {
       switch (change) {
         case ui.PointerChange.add:
           assert(!globalPointerState.pointers.containsKey(device));
-          globalPointerState.ensurePointerDeviceState(device, physicalX, physicalY);
+          globalPointerState.ensurePointerDeviceState(
+              device, physicalX, physicalY);
           assert(!_locationHasChanged(device, physicalX, physicalY));
-          result.add(
-            _generateCompletePointerData(
-              viewId: viewId,
-              timeStamp: timeStamp,
-              change: change,
-              kind: kind,
-              signalKind: signalKind,
-              device: device,
-              physicalX: physicalX,
-              physicalY: physicalY,
-              buttons: buttons,
-              obscured: obscured,
-              pressure: pressure,
-              pressureMin: pressureMin,
-              pressureMax: pressureMax,
-              distance: distance,
-              distanceMax: distanceMax,
-              size: size,
-              radiusMajor: radiusMajor,
-              radiusMinor: radiusMinor,
-              radiusMin: radiusMin,
-              radiusMax: radiusMax,
-              orientation: orientation,
-              tilt: tilt,
-              platformData: platformData,
-              scrollDeltaX: scrollDeltaX,
-              scrollDeltaY: scrollDeltaY,
-              scale: scale,
-            )
-          );
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: physicalX,
+            physicalY: physicalY,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+          ));
         case ui.PointerChange.hover:
-          final bool alreadyAdded = globalPointerState.pointers.containsKey(device);
-          globalPointerState.ensurePointerDeviceState(device, physicalX, physicalY);
+          final bool alreadyAdded =
+              globalPointerState.pointers.containsKey(device);
+          globalPointerState.ensurePointerDeviceState(
+              device, physicalX, physicalY);
           assert(!isDown);
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
-            result.add(
-              _synthesizePointerData(
-                viewId: viewId,
-                timeStamp: timeStamp,
-                change: ui.PointerChange.add,
-                kind: kind,
-                device: device,
-                physicalX: physicalX,
-                physicalY: physicalY,
-                buttons: buttons,
-                obscured: obscured,
-                pressure: pressure,
-                pressureMin: pressureMin,
-                pressureMax: pressureMax,
-                distance: distance,
-                distanceMax: distanceMax,
-                size: size,
-                radiusMajor: radiusMajor,
-                radiusMinor: radiusMinor,
-                radiusMin: radiusMin,
-                radiusMax: radiusMax,
-                orientation: orientation,
-                tilt: tilt,
-                platformData: platformData,
-                scrollDeltaX: scrollDeltaX,
-                scrollDeltaY: scrollDeltaY,
-                scale: scale,
-              )
-            );
-          }
-          result.add(
-            _generateCompletePointerData(
+            result.add(_synthesizePointerData(
               viewId: viewId,
               timeStamp: timeStamp,
-              change: change,
+              change: ui.PointerChange.add,
               kind: kind,
-              signalKind: signalKind,
               device: device,
               physicalX: physicalX,
               physicalY: physicalY,
@@ -372,94 +340,89 @@ class PointerDataConverter {
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
               scale: scale,
-            )
-          );
+            ));
+          }
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: physicalX,
+            physicalY: physicalY,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+          ));
           globalPointerState.activeButtons = buttons;
         case ui.PointerChange.down:
-          final bool alreadyAdded = globalPointerState.pointers.containsKey(device);
-          final _PointerDeviceState state = globalPointerState.ensurePointerDeviceState(
-              device, physicalX, physicalY);
+          final bool alreadyAdded =
+              globalPointerState.pointers.containsKey(device);
+          final _PointerDeviceState state = globalPointerState
+              .ensurePointerDeviceState(device, physicalX, physicalY);
           assert(isDown);
           state.startNewPointer();
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.
-            result.add(
-              _synthesizePointerData(
-                viewId: viewId,
-                timeStamp: timeStamp,
-                change: ui.PointerChange.add,
-                kind: kind,
-                device: device,
-                physicalX: physicalX,
-                physicalY: physicalY,
-                buttons: buttons,
-                obscured: obscured,
-                pressure: pressure,
-                pressureMin: pressureMin,
-                pressureMax: pressureMax,
-                distance: distance,
-                distanceMax: distanceMax,
-                size: size,
-                radiusMajor: radiusMajor,
-                radiusMinor: radiusMinor,
-                radiusMin: radiusMin,
-                radiusMax: radiusMax,
-                orientation: orientation,
-                tilt: tilt,
-                platformData: platformData,
-                scrollDeltaX: scrollDeltaX,
-                scrollDeltaY: scrollDeltaY,
-                scale: scale,
-              )
-            );
+            result.add(_synthesizePointerData(
+              viewId: viewId,
+              timeStamp: timeStamp,
+              change: ui.PointerChange.add,
+              kind: kind,
+              device: device,
+              physicalX: physicalX,
+              physicalY: physicalY,
+              buttons: buttons,
+              obscured: obscured,
+              pressure: pressure,
+              pressureMin: pressureMin,
+              pressureMax: pressureMax,
+              distance: distance,
+              distanceMax: distanceMax,
+              size: size,
+              radiusMajor: radiusMajor,
+              radiusMinor: radiusMinor,
+              radiusMin: radiusMin,
+              radiusMax: radiusMax,
+              orientation: orientation,
+              tilt: tilt,
+              platformData: platformData,
+              scrollDeltaX: scrollDeltaX,
+              scrollDeltaY: scrollDeltaY,
+              scale: scale,
+            ));
           }
           if (_locationHasChanged(device, physicalX, physicalY)) {
             assert(alreadyAdded);
             // Synthesize a hover of the pointer to the down location before
             // sending the down event, if necessary.
-            result.add(
-              _synthesizePointerData(
-                viewId: viewId,
-                timeStamp: timeStamp,
-                change: ui.PointerChange.hover,
-                kind: kind,
-                device: device,
-                physicalX: physicalX,
-                physicalY: physicalY,
-                buttons: 0,
-                obscured: obscured,
-                pressure: 0.0,
-                pressureMin: pressureMin,
-                pressureMax: pressureMax,
-                distance: distance,
-                distanceMax: distanceMax,
-                size: size,
-                radiusMajor: radiusMajor,
-                radiusMinor: radiusMinor,
-                radiusMin: radiusMin,
-                radiusMax: radiusMax,
-                orientation: orientation,
-                tilt: tilt,
-                platformData: platformData,
-                scrollDeltaX: scrollDeltaX,
-                scrollDeltaY: scrollDeltaY,
-                scale: scale,
-              )
-            );
-          }
-          result.add(
-            _generateCompletePointerData(
+            result.add(_synthesizePointerData(
               viewId: viewId,
               timeStamp: timeStamp,
-              change: change,
+              change: ui.PointerChange.hover,
               kind: kind,
-              signalKind: signalKind,
               device: device,
               physicalX: physicalX,
               physicalY: physicalY,
-              buttons: buttons,
+              buttons: 0,
               obscured: obscured,
-              pressure: pressure,
+              pressure: 0.0,
               pressureMin: pressureMin,
               pressureMax: pressureMax,
               distance: distance,
@@ -475,47 +438,74 @@ class PointerDataConverter {
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
               scale: scale,
-            )
-          );
+            ));
+          }
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: physicalX,
+            physicalY: physicalY,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+          ));
           globalPointerState.activeButtons = buttons;
         case ui.PointerChange.move:
           assert(globalPointerState.pointers.containsKey(device));
           assert(isDown);
-          result.add(
-            _generateCompletePointerData(
-              viewId: viewId,
-              timeStamp: timeStamp,
-              change: change,
-              kind: kind,
-              signalKind: signalKind,
-              device: device,
-              physicalX: physicalX,
-              physicalY: physicalY,
-              buttons: buttons,
-              obscured: obscured,
-              pressure: pressure,
-              pressureMin: pressureMin,
-              pressureMax: pressureMax,
-              distance: distance,
-              distanceMax: distanceMax,
-              size: size,
-              radiusMajor: radiusMajor,
-              radiusMinor: radiusMinor,
-              radiusMin: radiusMin,
-              radiusMax: radiusMax,
-              orientation: orientation,
-              tilt: tilt,
-              platformData: platformData,
-              scrollDeltaX: scrollDeltaX,
-              scrollDeltaY: scrollDeltaY,
-              scale: scale,
-            )
-          );
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: physicalX,
+            physicalY: physicalY,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+          ));
           globalPointerState.activeButtons = buttons;
         case ui.PointerChange.up:
         case ui.PointerChange.cancel:
           assert(globalPointerState.pointers.containsKey(device));
-          final _PointerDeviceState state = globalPointerState.pointers[device]!;
+          final _PointerDeviceState state =
+              globalPointerState.pointers[device]!;
           assert(!isDown);
           // Cancel events can have different coordinates due to various
           // reasons (window lost focus which is accompanied by window
@@ -529,43 +519,151 @@ class PointerDataConverter {
           if (_locationHasChanged(device, physicalX, physicalY)) {
             // Synthesize a move of the pointer to the up location before
             // sending the up event, if necessary.
-            result.add(
-              _synthesizePointerData(
-                viewId: viewId,
-                timeStamp: timeStamp,
-                change: ui.PointerChange.move,
-                kind: kind,
-                device: device,
-                physicalX: physicalX,
-                physicalY: physicalY,
-                buttons: globalPointerState.activeButtons,
-                obscured: obscured,
-                pressure: pressure,
-                pressureMin: pressureMin,
-                pressureMax: pressureMax,
-                distance: distance,
-                distanceMax: distanceMax,
-                size: size,
-                radiusMajor: radiusMajor,
-                radiusMinor: radiusMinor,
-                radiusMin: radiusMin,
-                radiusMax: radiusMax,
-                orientation: orientation,
-                tilt: tilt,
-                platformData: platformData,
-                scrollDeltaX: scrollDeltaX,
-                scrollDeltaY: scrollDeltaY,
-                scale: scale,
-              )
-            );
-          }
-          result.add(
-            _generateCompletePointerData(
+            result.add(_synthesizePointerData(
               viewId: viewId,
               timeStamp: timeStamp,
-              change: change,
+              change: ui.PointerChange.move,
               kind: kind,
-              signalKind: signalKind,
+              device: device,
+              physicalX: physicalX,
+              physicalY: physicalY,
+              buttons: globalPointerState.activeButtons,
+              obscured: obscured,
+              pressure: pressure,
+              pressureMin: pressureMin,
+              pressureMax: pressureMax,
+              distance: distance,
+              distanceMax: distanceMax,
+              size: size,
+              radiusMajor: radiusMajor,
+              radiusMinor: radiusMinor,
+              radiusMin: radiusMin,
+              radiusMax: radiusMax,
+              orientation: orientation,
+              tilt: tilt,
+              platformData: platformData,
+              scrollDeltaX: scrollDeltaX,
+              scrollDeltaY: scrollDeltaY,
+              scale: scale,
+            ));
+          }
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: physicalX,
+            physicalY: physicalY,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+          ));
+          if (kind == ui.PointerDeviceKind.touch) {
+            // The browser sends a new device ID for each touch gesture. To
+            // avoid memory leaks, we send a "remove" event when the gesture is
+            // over (i.e. when "up" or "cancel" is received).
+            result.add(_synthesizePointerData(
+              viewId: viewId,
+              timeStamp: timeStamp,
+              change: ui.PointerChange.remove,
+              kind: kind,
+              device: device,
+              physicalX: physicalX,
+              physicalY: physicalY,
+              buttons: 0,
+              obscured: obscured,
+              pressure: 0.0,
+              pressureMin: pressureMin,
+              pressureMax: pressureMax,
+              distance: distance,
+              distanceMax: distanceMax,
+              size: size,
+              radiusMajor: radiusMajor,
+              radiusMinor: radiusMinor,
+              radiusMin: radiusMin,
+              radiusMax: radiusMax,
+              orientation: orientation,
+              tilt: tilt,
+              platformData: platformData,
+              scrollDeltaX: scrollDeltaX,
+              scrollDeltaY: scrollDeltaY,
+              scale: scale,
+            ));
+            globalPointerState.pointers.remove(device);
+          }
+        case ui.PointerChange.remove:
+          assert(globalPointerState.pointers.containsKey(device));
+          final _PointerDeviceState state =
+              globalPointerState.pointers[device]!;
+          assert(!isDown);
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: state.x,
+            physicalY: state.y,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+          ));
+          globalPointerState.pointers.remove(device);
+        case ui.PointerChange.panZoomStart:
+        case ui.PointerChange.panZoomUpdate:
+        case ui.PointerChange.panZoomEnd:
+          // Pointer pan/zoom events are not generated on web.
+          assert(false);
+      }
+    } else {
+      switch (signalKind) {
+        case ui.PointerSignalKind.scroll:
+        case ui.PointerSignalKind.scrollInertiaCancel:
+        case ui.PointerSignalKind.scale:
+          final bool alreadyAdded =
+              globalPointerState.pointers.containsKey(device);
+          globalPointerState.ensurePointerDeviceState(
+              device, physicalX, physicalY);
+          if (!alreadyAdded) {
+            // Synthesizes an add pointer data.
+            result.add(_synthesizePointerData(
+              viewId: viewId,
+              timeStamp: timeStamp,
+              change: ui.PointerChange.add,
+              kind: kind,
               device: device,
               physicalX: physicalX,
               physicalY: physicalY,
@@ -587,98 +685,18 @@ class PointerDataConverter {
               scrollDeltaX: scrollDeltaX,
               scrollDeltaY: scrollDeltaY,
               scale: scale,
-            )
-          );
-          if (kind == ui.PointerDeviceKind.touch) {
-            // The browser sends a new device ID for each touch gesture. To
-            // avoid memory leaks, we send a "remove" event when the gesture is
-            // over (i.e. when "up" or "cancel" is received).
-            result.add(
-              _synthesizePointerData(
-                viewId: viewId,
-                timeStamp: timeStamp,
-                change: ui.PointerChange.remove,
-                kind: kind,
-                device: device,
-                physicalX: physicalX,
-                physicalY: physicalY,
-                buttons: 0,
-                obscured: obscured,
-                pressure: 0.0,
-                pressureMin: pressureMin,
-                pressureMax: pressureMax,
-                distance: distance,
-                distanceMax: distanceMax,
-                size: size,
-                radiusMajor: radiusMajor,
-                radiusMinor: radiusMinor,
-                radiusMin: radiusMin,
-                radiusMax: radiusMax,
-                orientation: orientation,
-                tilt: tilt,
-                platformData: platformData,
-                scrollDeltaX: scrollDeltaX,
-                scrollDeltaY: scrollDeltaY,
-                scale: scale,
-              )
-            );
-            globalPointerState.pointers.remove(device);
+            ));
           }
-        case ui.PointerChange.remove:
-          assert(globalPointerState.pointers.containsKey(device));
-          final _PointerDeviceState state = globalPointerState.pointers[device]!;
-          assert(!isDown);
-          result.add(
-            _generateCompletePointerData(
-              viewId: viewId,
-              timeStamp: timeStamp,
-              change: change,
-              kind: kind,
-              signalKind: signalKind,
-              device: device,
-              physicalX: state.x,
-              physicalY: state.y,
-              buttons: buttons,
-              obscured: obscured,
-              pressure: pressure,
-              pressureMin: pressureMin,
-              pressureMax: pressureMax,
-              distance: distance,
-              distanceMax: distanceMax,
-              size: size,
-              radiusMajor: radiusMajor,
-              radiusMinor: radiusMinor,
-              radiusMin: radiusMin,
-              radiusMax: radiusMax,
-              orientation: orientation,
-              tilt: tilt,
-              platformData: platformData,
-              scrollDeltaX: scrollDeltaX,
-              scrollDeltaY: scrollDeltaY,
-              scale: scale,
-            )
-          );
-          globalPointerState.pointers.remove(device);
-        case ui.PointerChange.panZoomStart:
-        case ui.PointerChange.panZoomUpdate:
-        case ui.PointerChange.panZoomEnd:
-          // Pointer pan/zoom events are not generated on web.
-          assert(false);
-      }
-    } else {
-      switch (signalKind) {
-        case ui.PointerSignalKind.scroll:
-        case ui.PointerSignalKind.scrollInertiaCancel:
-        case ui.PointerSignalKind.scale:
-          final bool alreadyAdded = globalPointerState.pointers.containsKey(device);
-          globalPointerState.ensurePointerDeviceState(device, physicalX, physicalY);
-          if (!alreadyAdded) {
-            // Synthesizes an add pointer data.
-            result.add(
-              _synthesizePointerData(
+          if (_locationHasChanged(device, physicalX, physicalY)) {
+            // Synthesize a hover/move of the pointer to the scroll location
+            // before sending the scroll event, if necessary, so that clients
+            // don't have to worry about native ordering of hover and scroll
+            // events.
+            if (isDown) {
+              result.add(_synthesizePointerData(
                 viewId: viewId,
                 timeStamp: timeStamp,
-                change: ui.PointerChange.add,
+                change: ui.PointerChange.move,
                 kind: kind,
                 device: device,
                 physicalX: physicalX,
@@ -701,111 +719,70 @@ class PointerDataConverter {
                 scrollDeltaX: scrollDeltaX,
                 scrollDeltaY: scrollDeltaY,
                 scale: scale,
-              )
-            );
-          }
-          if (_locationHasChanged(device, physicalX, physicalY)) {
-            // Synthesize a hover/move of the pointer to the scroll location
-            // before sending the scroll event, if necessary, so that clients
-            // don't have to worry about native ordering of hover and scroll
-            // events.
-            if (isDown) {
-              result.add(
-                _synthesizePointerData(
-                  viewId: viewId,
-                  timeStamp: timeStamp,
-                  change: ui.PointerChange.move,
-                  kind: kind,
-                  device: device,
-                  physicalX: physicalX,
-                  physicalY: physicalY,
-                  buttons: buttons,
-                  obscured: obscured,
-                  pressure: pressure,
-                  pressureMin: pressureMin,
-                  pressureMax: pressureMax,
-                  distance: distance,
-                  distanceMax: distanceMax,
-                  size: size,
-                  radiusMajor: radiusMajor,
-                  radiusMinor: radiusMinor,
-                  radiusMin: radiusMin,
-                  radiusMax: radiusMax,
-                  orientation: orientation,
-                  tilt: tilt,
-                  platformData: platformData,
-                  scrollDeltaX: scrollDeltaX,
-                  scrollDeltaY: scrollDeltaY,
-                  scale: scale,
-                )
-              );
+              ));
             } else {
-              result.add(
-                _synthesizePointerData(
-                  viewId: viewId,
-                  timeStamp: timeStamp,
-                  change: ui.PointerChange.hover,
-                  kind: kind,
-                  device: device,
-                  physicalX: physicalX,
-                  physicalY: physicalY,
-                  buttons: buttons,
-                  obscured: obscured,
-                  pressure: pressure,
-                  pressureMin: pressureMin,
-                  pressureMax: pressureMax,
-                  distance: distance,
-                  distanceMax: distanceMax,
-                  size: size,
-                  radiusMajor: radiusMajor,
-                  radiusMinor: radiusMinor,
-                  radiusMin: radiusMin,
-                  radiusMax: radiusMax,
-                  orientation: orientation,
-                  tilt: tilt,
-                  platformData: platformData,
-                  scrollDeltaX: scrollDeltaX,
-                  scrollDeltaY: scrollDeltaY,
-                  scale: scale,
-                )
-              );
+              result.add(_synthesizePointerData(
+                viewId: viewId,
+                timeStamp: timeStamp,
+                change: ui.PointerChange.hover,
+                kind: kind,
+                device: device,
+                physicalX: physicalX,
+                physicalY: physicalY,
+                buttons: buttons,
+                obscured: obscured,
+                pressure: pressure,
+                pressureMin: pressureMin,
+                pressureMax: pressureMax,
+                distance: distance,
+                distanceMax: distanceMax,
+                size: size,
+                radiusMajor: radiusMajor,
+                radiusMinor: radiusMinor,
+                radiusMin: radiusMin,
+                radiusMax: radiusMax,
+                orientation: orientation,
+                tilt: tilt,
+                platformData: platformData,
+                scrollDeltaX: scrollDeltaX,
+                scrollDeltaY: scrollDeltaY,
+                scale: scale,
+              ));
             }
           }
-          result.add(
-            _generateCompletePointerData(
-              viewId: viewId,
-              timeStamp: timeStamp,
-              change: change,
-              kind: kind,
-              signalKind: signalKind,
-              device: device,
-              physicalX: physicalX,
-              physicalY: physicalY,
-              buttons: buttons,
-              obscured: obscured,
-              pressure: pressure,
-              pressureMin: pressureMin,
-              pressureMax: pressureMax,
-              distance: distance,
-              distanceMax: distanceMax,
-              size: size,
-              radiusMajor: radiusMajor,
-              radiusMinor: radiusMinor,
-              radiusMin: radiusMin,
-              radiusMax: radiusMax,
-              orientation: orientation,
-              tilt: tilt,
-              platformData: platformData,
-              scrollDeltaX: scrollDeltaX,
-              scrollDeltaY: scrollDeltaY,
-              scale: scale,
-              onRespond: onRespond,
-            )
-          );
+          result.add(_generateCompletePointerData(
+            viewId: viewId,
+            timeStamp: timeStamp,
+            change: change,
+            kind: kind,
+            signalKind: signalKind,
+            device: device,
+            physicalX: physicalX,
+            physicalY: physicalY,
+            buttons: buttons,
+            obscured: obscured,
+            pressure: pressure,
+            pressureMin: pressureMin,
+            pressureMax: pressureMax,
+            distance: distance,
+            distanceMax: distanceMax,
+            size: size,
+            radiusMajor: radiusMajor,
+            radiusMinor: radiusMinor,
+            radiusMin: radiusMin,
+            radiusMax: radiusMax,
+            orientation: orientation,
+            tilt: tilt,
+            platformData: platformData,
+            scrollDeltaX: scrollDeltaX,
+            scrollDeltaY: scrollDeltaY,
+            scale: scale,
+            onRespond: onRespond,
+          ));
         case ui.PointerSignalKind.none:
           assert(false); // This branch should already have 'none' filtered out.
         case ui.PointerSignalKind.unknown:
-        // Ignore unknown signals.
+          // Ignore unknown signals.
           break;
       }
     }

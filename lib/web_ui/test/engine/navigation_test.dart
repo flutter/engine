@@ -23,7 +23,8 @@ void main() {
 
 void testMain() {
   group('without implicit view', () {
-    test('Handles navigation gracefully when no implicit view exists', () async {
+    test('Handles navigation gracefully when no implicit view exists',
+        () async {
       expect(EnginePlatformDispatcher.instance.implicitView, isNull);
 
       final Completer<ByteData?> completer = Completer<ByteData?>();

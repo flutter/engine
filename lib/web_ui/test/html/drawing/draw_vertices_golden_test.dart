@@ -32,8 +32,8 @@ Future<void> testMain() async {
     glRenderer = null;
   });
 
-  Future<void> testVertices(
-      String fileName, Vertices vertices, BlendMode blendMode, Paint paint) async {
+  Future<void> testVertices(String fileName, Vertices vertices,
+      BlendMode blendMode, Paint paint) async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.drawVertices(
@@ -59,8 +59,11 @@ Future<void> testMain() async {
           200.0,
           420.0
         ]));
-    await testVertices('draw_vertices_hairline_triangle', vertices,
-        BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
+    await testVertices(
+        'draw_vertices_hairline_triangle',
+        vertices,
+        BlendMode.srcOver,
+        Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   });
 
   test(
@@ -144,8 +147,8 @@ Future<void> testMain() async {
           ..style = PaintingStyle.fill
           ..color = const Color(0xFF00FF00));
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw hairline triangleFan.', () async {
     final Vertices vertices = Vertices.raw(
@@ -165,8 +168,11 @@ Future<void> testMain() async {
           420.0
         ]));
 
-    await testVertices('draw_vertices_hairline_triangle_fan', vertices,
-        BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
+    await testVertices(
+        'draw_vertices_hairline_triangle_fan',
+        vertices,
+        BlendMode.srcOver,
+        Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   });
 
   test('Should draw hairline triangleStrip.', () async {
@@ -186,8 +192,11 @@ Future<void> testMain() async {
           200.0,
           420.0
         ]));
-    await testVertices('draw_vertices_hairline_triangle_strip', vertices,
-        BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
+    await testVertices(
+        'draw_vertices_hairline_triangle_strip',
+        vertices,
+        BlendMode.srcOver,
+        Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   });
 
   test('Should draw triangles with colors.', () async {
@@ -220,8 +229,8 @@ Future<void> testMain() async {
     await testVertices('draw_vertices_triangles', vertices, BlendMode.srcOver,
         Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw triangles with colors and indices.', () async {
     final Int32List colors = Int32List.fromList(
@@ -251,10 +260,11 @@ Future<void> testMain() async {
     rc.drawVertices(
         vertices as SurfaceVertices, BlendMode.srcOver, SurfacePaint());
 
-    await canvasScreenshot(rc, 'draw_vertices_triangles_indexed', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'draw_vertices_triangles_indexed',
+        canvasRect: screenRect);
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw triangleFan with colors.', () async {
     final Int32List colors = Int32List.fromList(<int>[
@@ -283,11 +293,14 @@ Future<void> testMain() async {
         ]),
         colors: colors);
 
-    await testVertices('draw_vertices_triangle_fan', vertices,
-        BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
+    await testVertices(
+        'draw_vertices_triangle_fan',
+        vertices,
+        BlendMode.srcOver,
+        Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw triangleStrip with colors.', () async {
     final Int32List colors = Int32List.fromList(<int>[
@@ -315,11 +328,14 @@ Future<void> testMain() async {
           420.0
         ]),
         colors: colors);
-    await testVertices('draw_vertices_triangle_strip', vertices,
-        BlendMode.srcOver, Paint()..color = const Color.fromARGB(255, 0, 128, 0));
+    await testVertices(
+        'draw_vertices_triangle_strip',
+        vertices,
+        BlendMode.srcOver,
+        Paint()..color = const Color.fromARGB(255, 0, 128, 0));
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   Future<void> testTexture(TileMode tileMode, String filename) async {
     final Uint16List indices = Uint16List.fromList(<int>[0, 1, 2, 3, 4, 0]);
@@ -348,8 +364,8 @@ Future<void> testMain() async {
     final HtmlImage img = await createTestImage();
     final SurfacePaint paint = SurfacePaint();
 
-    final EngineImageShader imgShader = EngineImageShader(img, tileMode, tileMode,
-        Float64List.fromList(matrix4), FilterQuality.high);
+    final EngineImageShader imgShader = EngineImageShader(img, tileMode,
+        tileMode, Float64List.fromList(matrix4), FilterQuality.high);
 
     paint.shader = imgShader;
 
@@ -364,20 +380,20 @@ Future<void> testMain() async {
   test('Should draw triangle with texture and indices', () async {
     await testTexture(TileMode.clamp, 'draw_vertices_texture');
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw triangle with texture and indices', () async {
     await testTexture(TileMode.mirror, 'draw_vertices_texture_mirror');
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw triangle with texture and indices', () async {
     await testTexture(TileMode.repeated, 'draw_vertices_texture_repeated');
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 }
 
 Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
@@ -395,9 +411,11 @@ Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
   ctx.fill();
   final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   final Completer<HtmlImage> completer = Completer<HtmlImage>();
-  imageElement.addEventListener('load', createDomEventListener((DomEvent event) {
+  imageElement.addEventListener('load',
+      createDomEventListener((DomEvent event) {
     completer.complete(HtmlImage(imageElement, width, height));
   }));
-  imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src =
+      js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return completer.future;
 }

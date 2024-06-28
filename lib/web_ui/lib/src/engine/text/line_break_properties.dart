@@ -8,7 +8,8 @@ import 'unicode_range.dart';
 
 export 'package:web_unicode/web_unicode.dart' show LineCharProperty;
 
-UnicodePropertyLookup<LineCharProperty> get lineLookup => ensureLineLookupInitialized();
+UnicodePropertyLookup<LineCharProperty> get lineLookup =>
+    ensureLineLookupInitialized();
 
 /// Initializes [lineLookup], if it's not already initialized.
 ///
@@ -17,13 +18,12 @@ UnicodePropertyLookup<LineCharProperty> get lineLookup => ensureLineLookupInitia
 /// frame is rendered will reduce jank by moving the initialization out of
 /// the frame.
 UnicodePropertyLookup<LineCharProperty> ensureLineLookupInitialized() {
-  return _lineLookup ??=
-    UnicodePropertyLookup<LineCharProperty>.fromPackedData(
-      packedLineBreakProperties,
-      singleLineBreakRangesCount,
-      LineCharProperty.values,
-      defaultLineCharProperty,
-    );
+  return _lineLookup ??= UnicodePropertyLookup<LineCharProperty>.fromPackedData(
+    packedLineBreakProperties,
+    singleLineBreakRangesCount,
+    LineCharProperty.values,
+    defaultLineCharProperty,
+  );
 }
 
 UnicodePropertyLookup<LineCharProperty>? _lineLookup;

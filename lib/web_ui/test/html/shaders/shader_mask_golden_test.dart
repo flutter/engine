@@ -47,7 +47,8 @@ Future<void> testMain() async {
 
   setUp(() async {
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final DomNode scene in sceneHost.querySelectorAll('flt-scene').cast<DomNode>()) {
+    for (final DomNode scene
+        in sceneHost.querySelectorAll('flt-scene').cast<DomNode>()) {
       scene.remove();
     }
     initWebGl();
@@ -161,7 +162,10 @@ void _renderCirclesScene(BlendMode blendMode) {
   final EngineGradient shader = GradientLinear(
       Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
       Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
-      colors, stops, TileMode.clamp, Matrix4.identity().storage);
+      colors,
+      stops,
+      TileMode.clamp,
+      Matrix4.identity().storage);
 
   builder.pushShaderMask(shader, shaderBounds, blendMode);
   final Picture circles2 = _drawTestPictureWithCircles(region, 180, 10);
@@ -171,8 +175,7 @@ void _renderCirclesScene(BlendMode blendMode) {
   sceneHost.append(builder.build().webOnlyRootElement!);
 }
 
-Picture _drawTestPictureWithText(
-    Rect region, double offsetX, double offsetY) {
+Picture _drawTestPictureWithText(Rect region, double offsetX, double offsetY) {
   final EnginePictureRecorder recorder = EnginePictureRecorder();
   final RecordingCanvas canvas = recorder.beginRecording(region);
   const String text = 'Shader test';
@@ -215,7 +218,10 @@ void _renderTextScene(BlendMode blendMode) {
   final EngineGradient shader = GradientLinear(
       Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
       Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
-      colors, stops, TileMode.clamp, Matrix4.identity().storage);
+      colors,
+      stops,
+      TileMode.clamp,
+      Matrix4.identity().storage);
 
   builder.pushShaderMask(shader, shaderBounds, blendMode);
 

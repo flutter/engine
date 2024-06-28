@@ -54,7 +54,8 @@ class LicensesCommand extends Command<bool> {
       RegExp(r'// Copyright 2013 The Flutter Authors\. All rights reserved\.');
 
   void _expectLicenseHeader(io.File file) {
-    final List<String> head = file.readAsStringSync().split('\n').take(3).toList();
+    final List<String> head =
+        file.readAsStringSync().split('\n').take(3).toList();
 
     _expect(head.length >= 3, 'File too short: ${file.path}');
     _expect(
@@ -81,8 +82,12 @@ class LicensesCommand extends Command<bool> {
   List<io.File> _flatListSourceFiles(io.Directory directory) {
     // This is the old path that tests used to be built into. Ignore anything
     // within this path.
-    final String legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
-    return directory.listSync(recursive: true).whereType<io.File>().where((io.File f) {
+    final String legacyBuildPath =
+        path.join(environment.webUiRootDir.path, 'build');
+    return directory
+        .listSync(recursive: true)
+        .whereType<io.File>()
+        .where((io.File f) {
       if (!f.path.endsWith('.dart') && !f.path.endsWith('.js')) {
         // Not a source file we're checking.
         return false;

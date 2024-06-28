@@ -130,10 +130,10 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..rect(0, 0, overlayWidth, overlayHeight)
     ..fill();
 
-  final double physicalScreenWidth =
-      domWindow.innerWidth! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
-  final double physicalScreenHeight =
-      domWindow.innerHeight! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
+  final double physicalScreenWidth = domWindow.innerWidth! *
+      EngineFlutterDisplay.instance.browserDevicePixelRatio;
+  final double physicalScreenHeight = domWindow.innerHeight! *
+      EngineFlutterDisplay.instance.browserDevicePixelRatio;
   final double physicsScreenPixelCount =
       physicalScreenWidth * physicalScreenHeight;
 
@@ -147,7 +147,8 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     for (final DebugSurfaceStats oneSurfaceStats in statsMap.values) {
       totals.aggregate(oneSurfaceStats);
       if (oneSurfaceStats.surface is PersistedPicture) {
-        final PersistedPicture picture = oneSurfaceStats.surface! as PersistedPicture;
+        final PersistedPicture picture =
+            oneSurfaceStats.surface! as PersistedPicture;
         pixelCount += picture.bitmapPixelCount;
       }
     }
@@ -290,19 +291,19 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
   // A microtask will fire after the DOM is flushed, letting us probe into
   // actual <canvas> tags.
   scheduleMicrotask(() {
-    final Iterable<DomElement> canvasElements = domDocument.querySelectorAll('canvas');
+    final Iterable<DomElement> canvasElements =
+        domDocument.querySelectorAll('canvas');
     final StringBuffer canvasInfo = StringBuffer();
-    final int pixelCount = canvasElements
-        .cast<DomCanvasElement>()
-        .map<int>((DomCanvasElement e) {
+    final int pixelCount =
+        canvasElements.cast<DomCanvasElement>().map<int>((DomCanvasElement e) {
       final int pixels = (e.width! * e.height!).toInt();
       canvasInfo.writeln('    - ${e.width!} x ${e.height!} = $pixels pixels');
       return pixels;
     }).fold(0, (int total, int pixels) => total + pixels);
-    final double physicalScreenWidth =
-        domWindow.innerWidth! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
-    final double physicalScreenHeight =
-        domWindow.innerHeight! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final double physicalScreenWidth = domWindow.innerWidth! *
+        EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final double physicalScreenHeight = domWindow.innerHeight! *
+        EngineFlutterDisplay.instance.browserDevicePixelRatio;
     final double physicsScreenPixelCount =
         physicalScreenWidth * physicalScreenHeight;
     final double screenPixelRatio = pixelCount / physicsScreenPixelCount;

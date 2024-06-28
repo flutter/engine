@@ -27,11 +27,12 @@ import '../../browser_detection.dart';
 ///  method.addStatement('${u1.name} = vec4(1.0, 1.0, 1.0, 0.0);');
 ///  source = builder.build();
 class ShaderBuilder {
-  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
+  ShaderBuilder(this.version)
+      : isWebGl2 = version == WebGLVersion.webgl2,
         _isFragmentShader = false;
 
-  ShaderBuilder.fragment(this.version) :
-        isWebGl2 = version == WebGLVersion.webgl2,
+  ShaderBuilder.fragment(this.version)
+      : isWebGl2 = version == WebGLVersion.webgl2,
         _isFragmentShader = true;
 
   /// WebGL version.
@@ -132,8 +133,11 @@ class ShaderBuilder {
       case ShaderStorageQualifier.kConst:
         _buffer.write('const ');
       case ShaderStorageQualifier.kAttribute:
-        _buffer.write(isWebGl2 ? 'in '
-            : _isFragmentShader ? 'varying ' : 'attribute ');
+        _buffer.write(isWebGl2
+            ? 'in '
+            : _isFragmentShader
+                ? 'varying '
+                : 'attribute ');
       case ShaderStorageQualifier.kUniform:
         _buffer.write('uniform ');
       case ShaderStorageQualifier.kVarying:
@@ -226,7 +230,9 @@ class ShaderBuilder {
 
   String _precisionToString(int precision) => precision == ShaderPrecision.kLow
       ? 'lowp'
-      : precision == ShaderPrecision.kMedium ? 'mediump' : 'highp';
+      : precision == ShaderPrecision.kMedium
+          ? 'mediump'
+          : 'highp';
 
   String get texture2DFunction => isWebGl2 ? 'texture' : 'texture2D';
 }
@@ -268,15 +274,14 @@ class ShaderMethod {
   /// from floor.
   ///   float destination = 1.0 - source;
   ///   destination = abs((destination - 2.0 * floor(destination * 0.5)) - 1.0);
-  void addTileStatements(String source, String destination,
-      ui.TileMode tileMode) {
-    switch(tileMode) {
+  void addTileStatements(
+      String source, String destination, ui.TileMode tileMode) {
+    switch (tileMode) {
       case ui.TileMode.repeated:
         addStatement('float $destination = fract($source);');
       case ui.TileMode.mirror:
         addStatement('float $destination = ($source - 1.0);');
-        addStatement(
-            '$destination = '
+        addStatement('$destination = '
             'abs(($destination - 2.0 * floor($destination * 0.5)) - 1.0);');
       case ui.TileMode.clamp:
       case ui.TileMode.decal:
@@ -408,7 +413,8 @@ const List<String> _kReservedWords = <String>[
   'image2DArrayShadow', 'image2DShadow', 'image3D', 'imageBuffer',
   'imageCube', 'inline', 'input', 'interface', 'long',
   'namespace', 'noinline', 'output', 'packed', 'partition', 'public',
-  'row_major', 'sampler3DRect', 'short', 'sizeof', 'static', 'superp', 'template', 'this',
+  'row_major', 'sampler3DRect', 'short', 'sizeof', 'static', 'superp',
+  'template', 'this',
   'typedef', 'uimage1D', 'uimage1DArray', 'uimage2D', 'uimage2DArray',
   'uimage3D', 'uimageBuffer', 'uimageCube', 'union', 'unsigned',
   'using', 'volatile',

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
@@ -394,13 +393,13 @@ void testMain() {
     test('Computes contains for cubic curves', () {
       final Path path = Path();
       path.moveTo(10, 25);
-      path.cubicTo(10, 20, 10, 20,  20, 15);
+      path.cubicTo(10, 20, 10, 20, 20, 15);
       path.lineTo(25, 20);
-      path.cubicTo(30, 20, 30, 20,  30, 25);
+      path.cubicTo(30, 20, 30, 20, 30, 25);
       path.lineTo(30, 35);
-      path.cubicTo(30, 40, 30, 40,  25, 40);
+      path.cubicTo(30, 40, 30, 40, 25, 40);
       path.lineTo(15, 40);
-      path.cubicTo(10, 40, 10,  40, 10, 35);
+      path.cubicTo(10, 40, 10, 40, 10, 35);
       path.close();
       expect(path.contains(const Offset(10, 20)), isFalse);
       expect(path.contains(const Offset(30, 40)), isFalse);
@@ -432,7 +431,8 @@ void testMain() {
     test('Should hit test correctly for malformed rrect', () {
       // Correctly formed rrect.
       final Path path1 = Path()
-        ..addRRect(RRect.fromLTRBR(50, 50, 100, 100, const Radius.circular(20)));
+        ..addRRect(
+            RRect.fromLTRBR(50, 50, 100, 100, const Radius.circular(20)));
       expect(path1.contains(const Offset(75, 75)), isTrue);
       expect(path1.contains(const Offset(52, 75)), isTrue);
       expect(path1.contains(const Offset(50, 50)), isFalse);
@@ -441,7 +441,8 @@ void testMain() {
       expect(path1.contains(const Offset(50, 100)), isFalse);
 
       final Path path2 = Path()
-        ..addRRect(RRect.fromLTRBR(50, 50, 100, 100, const Radius.circular(100)));
+        ..addRRect(
+            RRect.fromLTRBR(50, 50, 100, 100, const Radius.circular(100)));
       expect(path2.contains(const Offset(75, 75)), isTrue);
       expect(path2.contains(const Offset(52, 75)), isTrue);
       expect(path2.contains(const Offset(50, 50)), isFalse);
@@ -562,8 +563,8 @@ void testMain() {
         ..close();
       final SurfacePath path2 = Path.from(path1) as SurfacePath;
       final Rect bounds = path2.pathRef.getBounds();
-      final SurfacePath transformedPath = path2.transform(
-          Matrix4.identity().scaled(0.5, 0.5).toFloat64());
+      final SurfacePath transformedPath =
+          path2.transform(Matrix4.identity().scaled(0.5, 0.5).toFloat64());
       expect(transformedPath.pathRef.getBounds(), isNot(bounds));
     });
   });

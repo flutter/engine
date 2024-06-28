@@ -31,7 +31,7 @@ class SharedCanvas {
   GlContext checkOutContext(int width, int height) {
     assert(!_checkedOut);
     _checkedOut = true;
-    if(_canvas == null) {
+    if (_canvas == null) {
       _canvas = OffScreenCanvas(width, height);
     } else {
       _canvas!.resize(width, height);
@@ -44,6 +44,7 @@ class SharedCanvas {
     _checkedOut = false;
   }
 }
+
 SharedCanvas _sharedCanvas = SharedCanvas();
 
 abstract class EngineGradient implements ui.Gradient {
@@ -51,8 +52,8 @@ abstract class EngineGradient implements ui.Gradient {
   EngineGradient._();
 
   /// Creates a fill style to be used in painting.
-  Object createPaintStyle(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density);
+  Object createPaintStyle(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density);
 
   /// Creates a CanvasImageSource to paint gradient.
   Object createImageBitmap(
@@ -86,28 +87,33 @@ class GradientSweep extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final GlContext gl = _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
+    final GlContext gl =
+        _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     final NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    final GlProgram glProgram = gl.cacheProgram(VertexShaders.writeBaseVertexShader(),
+    final GlProgram glProgram = gl.cacheProgram(
+        VertexShaders.writeBaseVertexShader(),
         _createSweepFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 
     final Object tileOffset =
         gl.getUniformLocation(glProgram.program, 'u_tile_offset');
-    final double centerX = (center.dx - shaderBounds.left) / (shaderBounds.width);
-    final double centerY = (center.dy - shaderBounds.top) / (shaderBounds.height);
+    final double centerX =
+        (center.dx - shaderBounds.left) / (shaderBounds.width);
+    final double centerY =
+        (center.dy - shaderBounds.top) / (shaderBounds.height);
     gl.setUniform2f(tileOffset, 2 * (shaderBounds.width * (centerX - 0.5)),
         2 * (shaderBounds.height * (0.5 - centerY)));
-    final Object angleRange = gl.getUniformLocation(glProgram.program, 'angle_range');
+    final Object angleRange =
+        gl.getUniformLocation(glProgram.program, 'angle_range');
     gl.setUniform2f(angleRange, startAngle, endAngle);
     normalizedGradient.setupUniforms(gl, glProgram);
 
     final Object gradientMatrix =
-          gl.getUniformLocation(glProgram.program, 'm_gradient');
+        gl.getUniformLocation(glProgram.program, 'm_gradient');
     final Matrix4 gradientTransform = Matrix4.identity();
     if (matrix4 != null) {
       final Matrix4 m4 = Matrix4.zero()
@@ -142,8 +148,8 @@ class GradientSweep extends EngineGradient {
   }
 
   @override
-  Object createPaintStyle(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  Object createPaintStyle(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
@@ -167,8 +173,7 @@ class GradientSweep extends EngineGradient {
         'float angle = atan(-localCoord.y, -localCoord.x) + ${math.pi};');
     method.addStatement('float sweep = angle_range.y - angle_range.x;');
     method.addStatement('angle = (angle - angle_range.x) / sweep;');
-    method.addStatement(
-        'float st = angle;');
+    method.addStatement('float st = angle;');
 
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
@@ -214,8 +219,8 @@ class GradientLinear extends EngineGradient {
   final FastMatrix32? matrix4;
 
   @override
-  Object createPaintStyle(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  Object createPaintStyle(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     if (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
@@ -223,8 +228,8 @@ class GradientLinear extends EngineGradient {
     }
   }
 
-  DomCanvasGradient _createCanvasGradient(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  DomCanvasGradient _createCanvasGradient(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     final FastMatrix32? matrix4 = this.matrix4;
     DomCanvasGradient gradient;
     final double offsetX = shaderBounds!.left;
@@ -262,13 +267,15 @@ class GradientLinear extends EngineGradient {
     assert(widthInPixels > 0 && heightInPixels > 0);
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final GlContext gl = _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
+    final GlContext gl =
+        _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     final NormalizedGradient normalizedGradient =
         NormalizedGradient(colors, stops: colorStops);
 
-    final GlProgram glProgram = gl.cacheProgram(VertexShaders.writeBaseVertexShader(),
+    final GlProgram glProgram = gl.cacheProgram(
+        VertexShaders.writeBaseVertexShader(),
         _createLinearFragmentShader(normalizedGradient, tileMode));
     gl.useProgram(glProgram);
 
@@ -347,7 +354,8 @@ class GradientLinear extends EngineGradient {
         gl.getUniformLocation(glProgram.program, 'm_gradient');
     gl.setUniformMatrix4fv(gradientMatrix, false, gradientTransform.storage);
 
-    final Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
+    final Object uRes =
+        gl.getUniformLocation(glProgram.program, 'u_resolution');
     gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
 
     final Object result = () {
@@ -378,8 +386,8 @@ class GradientLinear extends EngineGradient {
   }
 
   /// Creates a linear gradient with tiling repeat or mirror.
-  DomCanvasPattern _createGlGradient(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  DomCanvasPattern _createGlGradient(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
@@ -498,17 +506,18 @@ class GradientRadial extends EngineGradient {
   final Float32List? matrix4;
 
   @override
-  Object createPaintStyle(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
-    if (matrix4 == null && (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal)) {
+  Object createPaintStyle(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    if (matrix4 == null &&
+        (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal)) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
       return _createGlGradient(ctx, shaderBounds, density);
     }
   }
 
-  Object _createCanvasGradient(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  Object _createCanvasGradient(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     final double offsetX = shaderBounds!.left;
     final double offsetY = shaderBounds.top;
     final DomCanvasGradient gradient = ctx!.createRadialGradient(
@@ -533,7 +542,8 @@ class GradientRadial extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final GlContext gl = _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
+    final GlContext gl =
+        _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
     gl.setViewportSize(widthInPixels, heightInPixels);
 
     final NormalizedGradient normalizedGradient =
@@ -547,11 +557,14 @@ class GradientRadial extends EngineGradient {
 
     final Object tileOffset =
         gl.getUniformLocation(glProgram.program, 'u_tile_offset');
-    final double centerX = (center.dx - shaderBounds.left) / (shaderBounds.width);
-    final double centerY = (center.dy - shaderBounds.top) / (shaderBounds.height);
+    final double centerX =
+        (center.dx - shaderBounds.left) / (shaderBounds.width);
+    final double centerY =
+        (center.dy - shaderBounds.top) / (shaderBounds.height);
     gl.setUniform2f(tileOffset, 2 * (shaderBounds.width * (centerX - 0.5)),
         2 * (shaderBounds.height * (0.5 - centerY)));
-    final Object radiusUniform = gl.getUniformLocation(glProgram.program, 'u_radius');
+    final Object radiusUniform =
+        gl.getUniformLocation(glProgram.program, 'u_radius');
     gl.setUniform1f(radiusUniform, radius);
     normalizedGradient.setupUniforms(gl, glProgram);
 
@@ -593,8 +606,8 @@ class GradientRadial extends EngineGradient {
   }
 
   /// Creates a radial gradient with tiling repeat or mirror.
-  DomCanvasPattern _createGlGradient(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  DomCanvasPattern _createGlGradient(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
@@ -615,8 +628,7 @@ class GradientRadial extends EngineGradient {
     method.addStatement(
         'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);');
     method.addStatement('float dist = length(localCoord);');
-    method.addStatement(
-        'float st = abs(dist / u_radius);');
+    method.addStatement('float st = abs(dist / u_radius);');
     final String probeName =
         _writeSharedGradientShader(builder, method, gradient, tileMode);
     method.addStatement('${fragColor.name} = $probeName * scale + bias;');
@@ -642,8 +654,8 @@ class GradientConical extends GradientRadial {
   final double focalRadius;
 
   @override
-  Object createPaintStyle(DomCanvasRenderingContext2D? ctx,
-      ui.Rect? shaderBounds, double density) {
+  Object createPaintStyle(
+      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
     if ((tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) &&
         focalRadius == 0.0 &&
         focal == ui.Offset.zero) {
@@ -732,7 +744,9 @@ abstract class EngineImageFilter implements ui.ImageFilter {
 }
 
 class _BlurEngineImageFilter extends EngineImageFilter {
-  _BlurEngineImageFilter({ this.sigmaX = 0.0, this.sigmaY = 0.0, this.tileMode = ui.TileMode.clamp }) : super._();
+  _BlurEngineImageFilter(
+      {this.sigmaX = 0.0, this.sigmaY = 0.0, this.tileMode = ui.TileMode.clamp})
+      : super._();
 
   final double sigmaX;
   final double sigmaY;
@@ -763,7 +777,8 @@ class _BlurEngineImageFilter extends EngineImageFilter {
 }
 
 class _MatrixEngineImageFilter extends EngineImageFilter {
-  _MatrixEngineImageFilter({ required Float64List matrix, required this.filterQuality })
+  _MatrixEngineImageFilter(
+      {required Float64List matrix, required this.filterQuality})
       : webMatrix = Float64List.fromList(matrix),
         super._();
 
@@ -779,9 +794,9 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is _MatrixEngineImageFilter
-        && other.filterQuality == filterQuality
-        && listEquals<double>(other.webMatrix, webMatrix);
+    return other is _MatrixEngineImageFilter &&
+        other.filterQuality == filterQuality &&
+        listEquals<double>(other.webMatrix, webMatrix);
   }
 
   @override
@@ -869,7 +884,7 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
     if (blendMode == ui.BlendMode.saturation ||
         blendMode == ui.BlendMode.multiply ||
         blendMode == ui.BlendMode.modulate) {
-          filterElement!.style.backgroundColor = color.toCssString();
+      filterElement!.style.backgroundColor = color.toCssString();
     }
     return svgFilter.element;
   }
@@ -899,22 +914,25 @@ EngineHtmlColorFilter? createHtmlColorFilter(EngineColorFilter? colorFilter) {
     return null;
   }
   switch (colorFilter.type) {
-      case ColorFilterType.mode:
-        if (colorFilter.color == null || colorFilter.blendMode == null) {
-          return null;
-        }
-        return ModeHtmlColorFilter(colorFilter.color!, colorFilter.blendMode!);
-      case ColorFilterType.matrix:
-        if (colorFilter.matrix == null) {
-          return null;
-        }
-        assert(colorFilter.matrix!.length == 20, 'Color Matrix must have 20 entries.');
-        return MatrixHtmlColorFilter(colorFilter.matrix!);
-      case ColorFilterType.linearToSrgbGamma:
-        throw UnimplementedError('ColorFilter.linearToSrgbGamma not implemented for HTML renderer');
-      case ColorFilterType.srgbToLinearGamma:
-        throw UnimplementedError('ColorFilter.srgbToLinearGamma not implemented for HTML renderer.');
-      default:
-        throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
-    }
+    case ColorFilterType.mode:
+      if (colorFilter.color == null || colorFilter.blendMode == null) {
+        return null;
+      }
+      return ModeHtmlColorFilter(colorFilter.color!, colorFilter.blendMode!);
+    case ColorFilterType.matrix:
+      if (colorFilter.matrix == null) {
+        return null;
+      }
+      assert(colorFilter.matrix!.length == 20,
+          'Color Matrix must have 20 entries.');
+      return MatrixHtmlColorFilter(colorFilter.matrix!);
+    case ColorFilterType.linearToSrgbGamma:
+      throw UnimplementedError(
+          'ColorFilter.linearToSrgbGamma not implemented for HTML renderer');
+    case ColorFilterType.srgbToLinearGamma:
+      throw UnimplementedError(
+          'ColorFilter.srgbToLinearGamma not implemented for HTML renderer.');
+    default:
+      throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
+  }
 }

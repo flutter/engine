@@ -139,7 +139,8 @@ class CanvasKitCanvas implements ui.Canvas {
 
   @override
   ui.Rect getLocalClipBounds() {
-    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getLocalToDevice());
+    final Matrix4 transform =
+        Matrix4.fromFloat32List(_canvas.getLocalToDevice());
     if (transform.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
@@ -390,11 +391,12 @@ class CanvasKitCanvas implements ui.Canvas {
 
     Uint32List? unsignedColors;
     if (colors != null) {
-      unsignedColors = colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
+      unsignedColors =
+          colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
     }
 
-    _drawAtlas(paint, atlas, rstTransforms, rects,
-        unsignedColors, blendMode ?? ui.BlendMode.src);
+    _drawAtlas(paint, atlas, rstTransforms, rects, unsignedColors,
+        blendMode ?? ui.BlendMode.src);
   }
 
   // TODO(hterkelsen): Pass a cull_rect once CanvasKit supports that.

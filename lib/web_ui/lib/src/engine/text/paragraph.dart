@@ -126,8 +126,8 @@ class ParagraphLine {
     required this.textDirection,
     required this.paragraph,
     this.displayText,
-  }) : assert(trailingNewlines <= endIndex - startIndex),
-       lineMetrics = EngineLineMetrics(
+  })  : assert(trailingNewlines <= endIndex - startIndex),
+        lineMetrics = EngineLineMetrics(
           hardBreak: hardBreak,
           ascent: ascent,
           descent: descent,
@@ -158,8 +158,9 @@ class ParagraphLine {
   /// ellipsized, this returns [startIndex];
   late final int visibleEndIndex = switch (fragments) {
     [] => startIndex,
-    [...final List<LayoutFragment> rest, EllipsisFragment()]
-    || final List<LayoutFragment> rest => rest.last.end,
+    [...final List<LayoutFragment> rest, EllipsisFragment()] ||
+    final List<LayoutFragment> rest =>
+      rest.last.end,
   };
 
   /// The number of new line characters at the end of the line.
@@ -245,9 +246,11 @@ class ParagraphLine {
 
   // This will be called at most once to lazily populate _graphemeStarts.
   List<int> _fromDomSegmenter(String fragmentText) {
-    final DomSegmenter domSegmenter = createIntlSegmenter(granularity: 'grapheme');
+    final DomSegmenter domSegmenter =
+        createIntlSegmenter(granularity: 'grapheme');
     final List<int> graphemeStarts = <int>[];
-    final Iterator<DomSegment> segments = domSegmenter.segment(fragmentText).iterator();
+    final Iterator<DomSegment> segments =
+        domSegmenter.segment(fragmentText).iterator();
     while (segments.moveNext()) {
       graphemeStarts.add(segments.current.index + startIndex);
     }
@@ -256,7 +259,9 @@ class ParagraphLine {
   }
 
   List<int> _breakTextIntoGraphemes(String text) {
-    final List<int> graphemeStarts = domIntl.Segmenter == null ? _fallbackGraphemeStartIterable(text) : _fromDomSegmenter(text);
+    final List<int> graphemeStarts = domIntl.Segmenter == null
+        ? _fallbackGraphemeStartIterable(text)
+        : _fromDomSegmenter(text);
     // Add the end index of the fragment to the list if the text is not empty.
     if (graphemeStarts.isNotEmpty) {
       graphemeStarts.add(visibleEndIndex);
@@ -271,8 +276,9 @@ class ParagraphLine {
   /// For example, `graphemeStarts[n]` gives the UTF16 offset of the `n`-th
   /// grapheme in the line.
   late final List<int> graphemeStarts = visibleEndIndex == startIndex
-    ? const <int>[]
-    : _breakTextIntoGraphemes(paragraph.plainText.substring(startIndex, visibleEndIndex));
+      ? const <int>[]
+      : _breakTextIntoGraphemes(
+          paragraph.plainText.substring(startIndex, visibleEndIndex));
 
   /// Translate a UTF16 code unit in the paragaph (`offset`), to a grapheme
   /// offset with in the current line.
@@ -289,19 +295,24 @@ class ParagraphLine {
     final List<int> lineGraphemeBreaks = graphemeStarts;
     assert(offset >= lineGraphemeBreaks[start]);
     assert(offset < lineGraphemeBreaks.last, '$offset, $lineGraphemeBreaks');
-    assert(end == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[end]);
+    assert(
+        end == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[end]);
     while (low + 2 <= high) {
       // high >= low + 2, so low + 1 <= mid <= high - 1
       final int mid = (low + high) ~/ 2;
       switch (lineGraphemeBreaks[mid] - offset) {
-        case > 0: high = mid;
-        case < 0: low = mid;
-        case == 0: return mid;
+        case > 0:
+          high = mid;
+        case < 0:
+          low = mid;
+        case == 0:
+          return mid;
       }
     }
 
     assert(lineGraphemeBreaks[low] <= offset);
-    assert(high == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[high]);
+    assert(
+        high == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[high]);
     return low;
   }
 
@@ -313,12 +324,15 @@ class ParagraphLine {
       return null;
     }
 
-    final int startIndex = graphemeStartIndexBefore(codeUnitOffset, 0, graphemeStarts.length);
+    final int startIndex =
+        graphemeStartIndexBefore(codeUnitOffset, 0, graphemeStarts.length);
     assert(startIndex < graphemeStarts.length - 1);
-    return ui.TextRange(start: graphemeStarts[startIndex], end: graphemeStarts[startIndex + 1]);
+    return ui.TextRange(
+        start: graphemeStarts[startIndex], end: graphemeStarts[startIndex + 1]);
   }
 
-  LayoutFragment? closestFragmentTo(LayoutFragment targetFragment, bool searchLeft) {
+  LayoutFragment? closestFragmentTo(
+      LayoutFragment targetFragment, bool searchLeft) {
     ({LayoutFragment fragment, double distance})? closestFragment;
     for (final LayoutFragment fragment in fragments) {
       assert(fragment is! EllipsisFragment);
@@ -329,14 +343,16 @@ class ParagraphLine {
         continue;
       }
       final double distance = searchLeft
-        ? targetFragment.left - fragment.right
-        : fragment.left - targetFragment.right;
+          ? targetFragment.left - fragment.right
+          : fragment.left - targetFragment.right;
       final double? minDistance = closestFragment?.distance;
       switch (distance) {
         case > 0.0 when minDistance == null || minDistance > distance:
           closestFragment = (fragment: fragment, distance: distance);
-        case == 0.0: return fragment;
-        case _: continue;
+        case == 0.0:
+          return fragment;
+        case _:
+          continue;
       }
     }
     return closestFragment?.fragment;
@@ -654,12 +670,15 @@ class EngineTextStyle implements ui.TextStyle {
 
   static final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
   String get effectiveFontFamily {
-    final String fontFamily = this.fontFamily.isEmpty ? StyleManager.defaultFontFamily : this.fontFamily;
+    final String fontFamily = this.fontFamily.isEmpty
+        ? StyleManager.defaultFontFamily
+        : this.fontFamily;
     // In the flutter tester environment, we use predictable-size test fonts.
     // This makes widget tests predictable and less flaky.
     String result = fontFamily;
     assert(() {
-      if (ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)) {
+      if (ui_web.debugEmulateFlutterTesterEnvironment &&
+          !_testFonts.contains(fontFamily)) {
         result = _testFonts.first;
       }
       return true;
@@ -700,28 +719,28 @@ class EngineTextStyle implements ui.TextStyle {
     if (identical(this, other)) {
       return true;
     }
-    return other is EngineTextStyle
-        && other.color == color
-        && other.decoration == decoration
-        && other.decorationColor == decorationColor
-        && other.decorationStyle == decorationStyle
-        && other.fontWeight == fontWeight
-        && other.fontStyle == fontStyle
-        && other.textBaseline == textBaseline
-        && other.leadingDistribution == leadingDistribution
-        && other.fontFamily == fontFamily
-        && other.fontSize == fontSize
-        && other.letterSpacing == letterSpacing
-        && other.wordSpacing == wordSpacing
-        && other.height == height
-        && other.decorationThickness == decorationThickness
-        && other.locale == locale
-        && other.background == background
-        && other.foreground == foreground
-        && listEquals<ui.Shadow>(other.shadows, shadows)
-        && listEquals<String>(other.fontFamilyFallback, fontFamilyFallback)
-        && listEquals<ui.FontFeature>(other.fontFeatures, fontFeatures)
-        && listEquals<ui.FontVariation>(other.fontVariations, fontVariations);
+    return other is EngineTextStyle &&
+        other.color == color &&
+        other.decoration == decoration &&
+        other.decorationColor == decorationColor &&
+        other.decorationStyle == decorationStyle &&
+        other.fontWeight == fontWeight &&
+        other.fontStyle == fontStyle &&
+        other.textBaseline == textBaseline &&
+        other.leadingDistribution == leadingDistribution &&
+        other.fontFamily == fontFamily &&
+        other.fontSize == fontSize &&
+        other.letterSpacing == letterSpacing &&
+        other.wordSpacing == wordSpacing &&
+        other.height == height &&
+        other.decorationThickness == decorationThickness &&
+        other.locale == locale &&
+        other.background == background &&
+        other.foreground == foreground &&
+        listEquals<ui.Shadow>(other.shadows, shadows) &&
+        listEquals<String>(other.fontFamilyFallback, fontFamilyFallback) &&
+        listEquals<ui.FontFeature>(other.fontFeatures, fontFeatures) &&
+        listEquals<ui.FontVariation>(other.fontVariations, fontVariations);
   }
 
   @override
@@ -731,31 +750,30 @@ class EngineTextStyle implements ui.TextStyle {
     final List<ui.FontVariation>? fontVariations = this.fontVariations;
     final List<String>? fontFamilyFallback = this.fontFamilyFallback;
     return Object.hash(
-      color,
-      decoration,
-      decorationColor,
-      decorationStyle,
-      fontWeight,
-      fontStyle,
-      textBaseline,
-      leadingDistribution,
-      fontFamily,
-      fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback),
-      fontSize,
-      letterSpacing,
-      wordSpacing,
-      height,
-      locale,
-      background,
-      foreground,
-      shadows == null ? null : Object.hashAll(shadows),
-      decorationThickness,
-      // Object.hash goes up to 20 arguments, but we have 21
-      Object.hash(
-        fontFeatures == null ? null : Object.hashAll(fontFeatures),
-        fontVariations == null ? null : Object.hashAll(fontVariations),
-      )
-    );
+        color,
+        decoration,
+        decorationColor,
+        decorationStyle,
+        fontWeight,
+        fontStyle,
+        textBaseline,
+        leadingDistribution,
+        fontFamily,
+        fontFamilyFallback == null ? null : Object.hashAll(fontFamilyFallback),
+        fontSize,
+        letterSpacing,
+        wordSpacing,
+        height,
+        locale,
+        background,
+        foreground,
+        shadows == null ? null : Object.hashAll(shadows),
+        decorationThickness,
+        // Object.hash goes up to 20 arguments, but we have 21
+        Object.hash(
+          fontFeatures == null ? null : Object.hashAll(fontFeatures),
+          fontVariations == null ? null : Object.hashAll(fontVariations),
+        ));
   }
 
   @override
@@ -850,16 +868,16 @@ class EngineStrutStyle implements ui.StrutStyle {
   int get hashCode {
     final List<String>? fontFamilyFallback = _fontFamilyFallback;
     return Object.hash(
-        _fontFamily,
-        fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
-        _fontSize,
-        _height,
-        _leading,
-        _leadingDistribution,
-        _fontWeight,
-        _fontStyle,
-        _forceStrutHeight,
-      );
+      _fontFamily,
+      fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
+      _fontSize,
+      _height,
+      _leading,
+      _leadingDistribution,
+      _fontWeight,
+      _fontStyle,
+      _forceStrutHeight,
+    );
   }
 }
 

@@ -45,8 +45,8 @@ import 'vector_math.dart';
 /// to prevent reallocation.
 class CanvasPool extends _SaveStackTracking {
   /// Initializes canvas pool for target size and dpi.
-  CanvasPool(this._widthInBitmapPixels, this._heightInBitmapPixels,
-      this._density);
+  CanvasPool(
+      this._widthInBitmapPixels, this._heightInBitmapPixels, this._density);
 
   DomCanvasRenderingContext2D? _context;
   ContextStateHandle? _contextHandle;
@@ -154,10 +154,10 @@ class CanvasPool extends _SaveStackTracking {
       // * To satisfy the invariant: pixel size = css size * device pixel ratio.
       // * To make sure that when we scale the canvas by devicePixelRatio (see
       //   _initializeViewport below) the pixels line up.
-      final double cssWidth =
-          _widthInBitmapPixels / EngineFlutterDisplay.instance.browserDevicePixelRatio;
-      final double cssHeight =
-          _heightInBitmapPixels / EngineFlutterDisplay.instance.browserDevicePixelRatio;
+      final double cssWidth = _widthInBitmapPixels /
+          EngineFlutterDisplay.instance.browserDevicePixelRatio;
+      final double cssHeight = _heightInBitmapPixels /
+          EngineFlutterDisplay.instance.browserDevicePixelRatio;
       canvas = _allocCanvas(_widthInBitmapPixels, _heightInBitmapPixels);
       _canvas = canvas;
 
@@ -384,7 +384,8 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   /// Returns effective dpi (browser DPI and pixel density due to transform).
-  double get dpi => EngineFlutterDisplay.instance.browserDevicePixelRatio * _density;
+  double get dpi =>
+      EngineFlutterDisplay.instance.browserDevicePixelRatio * _density;
 
   void _resetTransform() {
     final DomCanvasElement? canvas = _canvas;
@@ -402,7 +403,6 @@ class CanvasPool extends _SaveStackTracking {
     }
     return _canvas!.toDataURL();
   }
-
 
   @override
   void save() {
@@ -608,7 +608,8 @@ class CanvasPool extends _SaveStackTracking {
   }
 
   // Float buffer used for path iteration.
-  static final Float32List _runBuffer = Float32List(PathRefIterator.kMaxBufferSize);
+  static final Float32List _runBuffer =
+      Float32List(PathRefIterator.kMaxBufferSize);
 
   /// 'Runs' the given [path] by applying all of its commands to the canvas.
   void _runPath(DomCanvasRenderingContext2D ctx, SurfacePath path) {
@@ -675,11 +676,11 @@ class CanvasPool extends _SaveStackTracking {
         case SPath.kLineVerb:
           ctx.lineTo(p[2] + offsetX, p[3] + offsetY);
         case SPath.kCubicVerb:
-          ctx.bezierCurveTo(p[2] + offsetX, p[3] + offsetY,
-              p[4] + offsetX, p[5] + offsetY, p[6] + offsetX, p[7] + offsetY);
+          ctx.bezierCurveTo(p[2] + offsetX, p[3] + offsetY, p[4] + offsetX,
+              p[5] + offsetY, p[6] + offsetX, p[7] + offsetY);
         case SPath.kQuadVerb:
-          ctx.quadraticCurveTo(p[2] + offsetX, p[3] + offsetY,
-              p[4] + offsetX, p[5] + offsetY);
+          ctx.quadraticCurveTo(
+              p[2] + offsetX, p[3] + offsetY, p[4] + offsetX, p[5] + offsetY);
         case SPath.kConicVerb:
           final double w = iter.conicWeight;
           final Conic conic = Conic(p[0], p[1], p[2], p[3], p[4], p[5], w);
@@ -690,8 +691,8 @@ class CanvasPool extends _SaveStackTracking {
             final double p1y = points[i].dy;
             final double p2x = points[i + 1].dx;
             final double p2y = points[i + 1].dy;
-            ctx.quadraticCurveTo(p1x + offsetX, p1y + offsetY,
-                p2x + offsetX, p2y + offsetY);
+            ctx.quadraticCurveTo(
+                p1x + offsetX, p1y + offsetY, p2x + offsetX, p2y + offsetY);
           }
         case SPath.kCloseVerb:
           ctx.closePath();
@@ -704,9 +705,9 @@ class CanvasPool extends _SaveStackTracking {
   /// Draws a rounded rectangle filled or stroked based on [style].
   void drawRRect(ui.RRect roundRect, ui.PaintingStyle? style) {
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    RRectToCanvasRenderer(context).render(
-        shaderBounds == null ? roundRect
-            : roundRect.shift(ui.Offset(-shaderBounds.left, -shaderBounds.top)));
+    RRectToCanvasRenderer(context).render(shaderBounds == null
+        ? roundRect
+        : roundRect.shift(ui.Offset(-shaderBounds.left, -shaderBounds.top)));
     contextHandle.paint(style);
   }
 
@@ -731,12 +732,14 @@ class CanvasPool extends _SaveStackTracking {
   void drawOval(ui.Rect rect, ui.PaintingStyle? style) {
     context.beginPath();
     final ui.Rect? shaderBounds = contextHandle._shaderBounds;
-    final double cx = shaderBounds == null ? rect.center.dx :
-        rect.center.dx - shaderBounds.left;
-    final double cy = shaderBounds == null ? rect.center.dy :
-        rect.center.dy - shaderBounds.top;
-    drawEllipse(context, cx, cy, rect.width / 2,
-        rect.height / 2, 0, 0, 2.0 * math.pi, false);
+    final double cx = shaderBounds == null
+        ? rect.center.dx
+        : rect.center.dx - shaderBounds.left;
+    final double cy = shaderBounds == null
+        ? rect.center.dy
+        : rect.center.dy - shaderBounds.top;
+    drawEllipse(context, cx, cy, rect.width / 2, rect.height / 2, 0, 0,
+        2.0 * math.pi, false);
     contextHandle.paint(style);
   }
 
@@ -756,8 +759,8 @@ class CanvasPool extends _SaveStackTracking {
     if (shaderBounds == null) {
       _runPath(context, path as SurfacePath);
     } else {
-      _runPathWithOffset(context, path as SurfacePath,
-          -shaderBounds.left, -shaderBounds.top);
+      _runPathWithOffset(
+          context, path as SurfacePath, -shaderBounds.left, -shaderBounds.top);
     }
     contextHandle.paintPath(style, path.fillType);
   }
@@ -769,7 +772,8 @@ class CanvasPool extends _SaveStackTracking {
   /// Draws a shadow for a Path representing the given material elevation.
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
-    final SurfaceShadowData? shadow = computeShadow(path.getBounds(), elevation);
+    final SurfaceShadowData? shadow =
+        computeShadow(path.getBounds(), elevation);
     if (shadow != null) {
       // On April 2020 Web canvas 2D did not support shadow color alpha. So
       // instead we apply alpha separately using globalAlpha, then paint a
@@ -787,7 +791,8 @@ class CanvasPool extends _SaveStackTracking {
 
       // TODO(hterkelsen): Shadows with transparent occluders are not supported
       // on webkit since filter is unsupported.
-      if (transparentOccluder && ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit) {
+      if (transparentOccluder &&
+          ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit) {
         // We paint shadows using a path and a mask filter instead of the
         // built-in shadow* properties. This is because the color alpha of the
         // paint is added to the shadow. The effect we're looking for is to just
@@ -841,7 +846,8 @@ class CanvasPool extends _SaveStackTracking {
     // towards the threshold. Setting width and height to zero tricks Webkit
     // into thinking that this canvas has a zero size so it doesn't count it
     // towards the threshold.
-    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit && _canvas != null) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
+        _canvas != null) {
       _canvas!.width = _canvas!.height = 0;
     }
     _clearActiveCanvasList();
@@ -871,6 +877,7 @@ class ContextStateHandle {
   /// Associated canvas element context tracked by this context state.
   final DomCanvasRenderingContext2D context;
   final CanvasPool _canvasPool;
+
   /// Dpi of context.
   final double density;
   ui.BlendMode? _currentBlendMode = ui.BlendMode.srcOver;
@@ -955,7 +962,9 @@ class ContextStateHandle {
   /// This is used in screenshot tests to test Safari codepaths.
   static bool debugEmulateWebKitMaskFilter = false;
 
-  bool get _renderMaskFilterForWebkit => ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit || debugEmulateWebKitMaskFilter;
+  bool get _renderMaskFilterForWebkit =>
+      ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit ||
+      debugEmulateWebKitMaskFilter;
 
   /// Sets paint properties on the current canvas.
   ///
@@ -977,17 +986,18 @@ class ContextStateHandle {
     if (paint.shader != null) {
       if (paint.shader is EngineGradient) {
         final EngineGradient engineShader = paint.shader! as EngineGradient;
-        final Object paintStyle =
-            engineShader.createPaintStyle(_canvasPool.context, shaderBounds, density);
+        final Object paintStyle = engineShader.createPaintStyle(
+            _canvasPool.context, shaderBounds, density);
         fillStyle = paintStyle;
         strokeStyle = paintStyle;
         _shaderBounds = shaderBounds;
         // Align pattern origin to destination.
         context.translate(shaderBounds!.left, shaderBounds.top);
       } else if (paint.shader is EngineImageShader) {
-        final EngineImageShader imageShader = paint.shader! as EngineImageShader;
-        final Object paintStyle =
-            imageShader.createPaintStyle(_canvasPool.context, shaderBounds, density);
+        final EngineImageShader imageShader =
+            paint.shader! as EngineImageShader;
+        final Object paintStyle = imageShader.createPaintStyle(
+            _canvasPool.context, shaderBounds, density);
         fillStyle = paintStyle;
         strokeStyle = paintStyle;
         if (imageShader.requiresTileOffset) {
@@ -1019,7 +1029,8 @@ class ContextStateHandle {
         context.save();
         context.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
         // Shadow color must be fully opaque.
-        context.shadowColor = ui.Color(paint.color).withAlpha(255).toCssString();
+        context.shadowColor =
+            ui.Color(paint.color).withAlpha(255).toCssString();
 
         // On the web a shadow must always be painted together with the shape
         // that casts it. In order to paint just the shadow, we offset the shape
@@ -1038,7 +1049,8 @@ class ContextStateHandle {
         //
         // transformedShadowDelta = M*shadowDelta - M*origin.
         final Float32List tempVector = Float32List(2);
-        tempVector[0] = kOutsideTheBoundsOffset * EngineFlutterDisplay.instance.devicePixelRatio;
+        tempVector[0] = kOutsideTheBoundsOffset *
+            EngineFlutterDisplay.instance.devicePixelRatio;
         _canvasPool.currentTransform.transform2(tempVector);
         final double shadowOffsetX = tempVector[0];
         final double shadowOffsetY = tempVector[1];

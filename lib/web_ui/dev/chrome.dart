@@ -35,12 +35,7 @@ class ChromeEnvironment implements BrowserEnvironment {
     Uri url, {
     bool debug = false,
   }) async {
-    return Chrome(
-      url,
-      _installation,
-      debug: debug,
-      useDwarf: _useDwarf
-    );
+    return Chrome(url, _installation, debug: debug, useDwarf: _useDwarf);
   }
 
   @override
@@ -99,20 +94,14 @@ class Chrome extends Browser {
       final List<String> args = <String>[
         '--user-data-dir=$dir',
         url.toString(),
-        if (!debug)
-          '--headless',
-        if (isChromeNoSandbox)
-          '--no-sandbox',
+        if (!debug) '--headless',
+        if (isChromeNoSandbox) '--no-sandbox',
         // When headless, this is the actual size of the viewport.
-        if (!debug)
-          '--window-size=$kMaxScreenshotWidth,$kMaxScreenshotHeight',
+        if (!debug) '--window-size=$kMaxScreenshotWidth,$kMaxScreenshotHeight',
         // When debugging, run in maximized mode so there's enough room for DevTools.
-        if (debug)
-          '--start-maximized',
-        if (debug)
-          '--auto-open-devtools-for-tabs',
-        if (useDwarf)
-          '--devtools-flags=enabledExperiments=wasmDWARFDebugging',
+        if (debug) '--start-maximized',
+        if (debug) '--auto-open-devtools-for-tabs',
+        if (useDwarf) '--devtools-flags=enabledExperiments=wasmDWARFDebugging',
         // Always run unit tests at a 1x scale factor
         '--force-device-scale-factor=1',
         if (!useDwarf)
@@ -132,8 +121,7 @@ class Chrome extends Browser {
         // headless Chrome, the default is to use SwiftShader as a software renderer
         // for WebGL contexts. In order to work around this limitation, we can force
         // GPU rendering with this flag.
-        if (environment.isMacosArm)
-          '--use-angle=metal',
+        if (environment.isMacosArm) '--use-angle=metal',
       ];
 
       final Process process =
@@ -152,11 +140,8 @@ class Chrome extends Browser {
   Chrome._(this._process, this.remoteDebuggerUrl);
 
   static Future<String> generateUserDirectory(
-    BrowserInstallation installation,
-    bool useDwarf
-  ) async {
-    final String userDirectoryPath = environment
-        .webUiDartToolDir
+      BrowserInstallation installation, bool useDwarf) async {
+    final String userDirectoryPath = environment.webUiDartToolDir
         .createTempSync('test_chrome_user_data_')
         .resolveSymbolicLinksSync();
     if (!useDwarf) {
@@ -182,23 +167,23 @@ class Chrome extends Browser {
     }
     if (!dwarfExtensionInstallDirectory.existsSync()) {
       print('DWARF debugging requested. Launching Chrome. Please install the '
-            'extension and then exit Chrome when the installation is complete...');
-      final Process addExtension = await Process.start(
-        installation.executable,
-        <String>[
-          '--user-data-dir=${baselineUserDirectory.path}',
-          'https://goo.gle/wasm-debugging-extension',
-          '--bwsi',
-          '--no-first-run',
-          '--no-default-browser-check',
-          '--disable-default-apps',
-          '--disable-translate',
-        ]
-      );
+          'extension and then exit Chrome when the installation is complete...');
+      final Process addExtension =
+          await Process.start(installation.executable, <String>[
+        '--user-data-dir=${baselineUserDirectory.path}',
+        'https://goo.gle/wasm-debugging-extension',
+        '--bwsi',
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-default-apps',
+        '--disable-translate',
+      ]);
       await addExtension.exitCode;
     }
-    for (final FileSystemEntity input in baselineUserDirectory.listSync(recursive: true)) {
-      final String relative = path.relative(input.path, from: baselineUserDirectory.path);
+    for (final FileSystemEntity input
+        in baselineUserDirectory.listSync(recursive: true)) {
+      final String relative =
+          path.relative(input.path, from: baselineUserDirectory.path);
       final String outputPath = path.join(userDirectoryPath, relative);
       if (input is Directory) {
         await Directory(outputPath).create(recursive: true);
@@ -281,7 +266,6 @@ class Chrome extends Browser {
 
     return screenshot;
   }
-
 }
 
 /// Used by [Chrome] to detect a glibc bug and retry launching the
@@ -296,48 +280,51 @@ class Chrome extends Browser {
 ///     Inconsistency detected by ld.so: ../elf/dl-tls.c: 493: _dl_allocate_tls_init: Assertion `listp->slotinfo[cnt].gen <= GL(dl_tls_generation)' failed!
 const String _kGlibcError = 'Inconsistency detected by ld.so';
 
-Future<Process> _spawnChromiumProcess(String executable, List<String> args, { String? workingDirectory }) async {
+Future<Process> _spawnChromiumProcess(String executable, List<String> args,
+    {String? workingDirectory}) async {
   // Keep attempting to launch the browser until one of:
   // - Chrome launched successfully, in which case we just return from the loop.
   // - The tool detected an unretriable Chrome error, in which case we throw ToolExit.
   while (true) {
-    final Process process = await Process.start(executable, args, workingDirectory: workingDirectory);
+    final Process process = await Process.start(executable, args,
+        workingDirectory: workingDirectory);
 
     process.stdout
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .listen((String line) {
-        print('[CHROME STDOUT]: $line');
-      });
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen((String line) {
+      print('[CHROME STDOUT]: $line');
+    });
 
     // Wait until the DevTools are listening before trying to connect. This is
     // only required for flutter_test --platform=chrome and not flutter run.
     bool hitGlibcBug = false;
     await process.stderr
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .map((String line) {
-        print('[CHROME STDERR]:$line');
-        if (line.contains(_kGlibcError)) {
-          hitGlibcBug = true;
-        }
-        return line;
-      })
-      .firstWhere((String line) => line.startsWith('DevTools listening'), orElse: () {
-        if (hitGlibcBug) {
-          const String message = 'Encountered glibc bug '
-              'https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
-              'Will try launching browser again.';
-          print(message);
-          return message;
-        }
-        print('Failed to launch browser. Command used to launch it: ${args.join(' ')}');
-        throw Exception(
-          'Failed to launch browser. Make sure you are using an up-to-date '
-          'Chrome or Edge. Otherwise, consider using -d web-server instead '
-          'and filing an issue at https://github.com/flutter/flutter/issues.',
-        );
-      });
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .map((String line) {
+      print('[CHROME STDERR]:$line');
+      if (line.contains(_kGlibcError)) {
+        hitGlibcBug = true;
+      }
+      return line;
+    }).firstWhere((String line) => line.startsWith('DevTools listening'),
+            orElse: () {
+      if (hitGlibcBug) {
+        const String message = 'Encountered glibc bug '
+            'https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
+            'Will try launching browser again.';
+        print(message);
+        return message;
+      }
+      print(
+          'Failed to launch browser. Command used to launch it: ${args.join(' ')}');
+      throw Exception(
+        'Failed to launch browser. Make sure you are using an up-to-date '
+        'Chrome or Edge. Otherwise, consider using -d web-server instead '
+        'and filing an issue at https://github.com/flutter/flutter/issues.',
+      );
+    });
 
     if (!hitGlibcBug) {
       return process;
@@ -367,11 +354,13 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
 Future<Uri> getRemoteDebuggerUrl(Uri base) async {
   try {
     final HttpClient client = HttpClient();
-    final HttpClientRequest request = await client.getUrl(base.resolve('/json/list'));
+    final HttpClientRequest request =
+        await client.getUrl(base.resolve('/json/list'));
     final HttpClientResponse response = await request.close();
     final List<dynamic>? jsonObject =
         await json.fuse(utf8).decoder.bind(response).single as List<dynamic>?;
-    return base.resolve((jsonObject!.first as Map<dynamic, dynamic>)['devtoolsFrontendUrl'] as String);
+    return base.resolve((jsonObject!.first
+        as Map<dynamic, dynamic>)['devtoolsFrontendUrl'] as String);
   } catch (_) {
     // If we fail to talk to the remote debugger protocol, give up and return
     // the raw URL rather than crashing.

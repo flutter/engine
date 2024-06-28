@@ -94,7 +94,8 @@ Future<void> testMain() async {
     expect(paragraph.width, 50);
     expect(paragraph.height, 10);
     expectLines(paragraph, <TestLine>[
-      l('12345', 0, 5, hardBreak: true, width: 50.0, left: 0.0, height: 10.0, baseline: 8.0),
+      l('12345', 0, 5,
+          hardBreak: true, width: 50.0, left: 0.0, height: 10.0, baseline: 8.0),
     ]);
   });
 
@@ -107,8 +108,18 @@ Future<void> testMain() async {
     expect(paragraph.width, 70);
     expect(paragraph.height, 20);
     expectLines(paragraph, <TestLine>[
-      l('foo bar ', 0, 8, hardBreak: false, width: 70.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('baz', 8, 11, hardBreak: true, width: 30.0, left: 0.0, height: 10.0, baseline: 18.0),
+      l('foo bar ', 0, 8,
+          hardBreak: false,
+          width: 70.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('baz', 8, 11,
+          hardBreak: true,
+          width: 30.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
     ]);
   });
 
@@ -123,8 +134,18 @@ Future<void> testMain() async {
     expect(paragraph.width, 50);
     expect(paragraph.height, 20);
     expectLines(paragraph, <TestLine>[
-      l('12345', 0, 5, hardBreak: false, width: 50.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('67890', 5, 10, hardBreak: true, width: 50.0, left: 0.0, height: 10.0, baseline: 18.0),
+      l('12345', 0, 5,
+          hardBreak: false,
+          width: 50.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('67890', 5, 10,
+          hardBreak: true,
+          width: 50.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
     ]);
 
     // The first word is force-broken twice.
@@ -135,9 +156,24 @@ Future<void> testMain() async {
     expect(paragraph.width, 50);
     expect(paragraph.height, 30);
     expectLines(paragraph, <TestLine>[
-      l('abcde', 0, 5, hardBreak: false, width: 50.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('fghij', 5, 10, hardBreak: false, width: 50.0, left: 0.0, height: 10.0, baseline: 18.0),
-      l('k lm', 10, 14, hardBreak: true, width: 40.0, left: 0.0, height: 10.0, baseline: 28.0),
+      l('abcde', 0, 5,
+          hardBreak: false,
+          width: 50.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('fghij', 5, 10,
+          hardBreak: false,
+          width: 50.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
+      l('k lm', 10, 14,
+          hardBreak: true,
+          width: 40.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 28.0),
     ]);
 
     // Constraints enough only for "abcdef" but not for the trailing space.
@@ -148,8 +184,18 @@ Future<void> testMain() async {
     expect(paragraph.width, 60);
     expect(paragraph.height, 20);
     expectLines(paragraph, <TestLine>[
-      l('abcdef ', 0, 7, hardBreak: false, width: 60.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('gh', 7, 9, hardBreak: true, width: 20.0, left: 0.0, height: 10.0, baseline: 18.0),
+      l('abcdef ', 0, 7,
+          hardBreak: false,
+          width: 60.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('gh', 7, 9,
+          hardBreak: true,
+          width: 20.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
     ]);
 
     // Constraints aren't enough even for a single character. In this case,
@@ -161,8 +207,18 @@ Future<void> testMain() async {
     expect(paragraph.width, 8);
     expect(paragraph.height, 20);
     expectLines(paragraph, <TestLine>[
-      l('A', 0, 1, hardBreak: false, width: 10.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('A', 1, 2, hardBreak: true, width: 10.0, left: 0.0, height: 10.0, baseline: 18.0),
+      l('A', 0, 1,
+          hardBreak: false,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('A', 1, 2,
+          hardBreak: true,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
     ]);
 
     // Extremely narrow constraints with new line in the middle.
@@ -173,9 +229,24 @@ Future<void> testMain() async {
     expect(paragraph.width, 8);
     expect(paragraph.height, 30);
     expectLines(paragraph, <TestLine>[
-      l('A', 0, 1, hardBreak: false, width: 10.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('A', 1, 3, hardBreak: true, width: 10.0, left: 0.0, height: 10.0, baseline: 18.0),
-      l('A', 3, 4, hardBreak: true, width: 10.0, left: 0.0, height: 10.0, baseline: 28.0),
+      l('A', 0, 1,
+          hardBreak: false,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('A', 1, 3,
+          hardBreak: true,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
+      l('A', 3, 4,
+          hardBreak: true,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 28.0),
     ]);
 
     // Extremely narrow constraints with new line in the end.
@@ -186,10 +257,26 @@ Future<void> testMain() async {
     expect(paragraph.width, 8);
     expect(paragraph.height, 40);
     expectLines(paragraph, <TestLine>[
-      l('A', 0, 1, hardBreak: false, width: 10.0, left: 0.0, height: 10.0, baseline: 8.0),
-      l('A', 1, 2, hardBreak: false, width: 10.0, left: 0.0, height: 10.0, baseline: 18.0),
-      l('A', 2, 4, hardBreak: true, width: 10.0, left: 0.0, height: 10.0, baseline: 28.0),
-      l('', 4, 4, hardBreak: true, width: 0.0, left: 0.0, height: 10.0, baseline: 38.0),
+      l('A', 0, 1,
+          hardBreak: false,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 8.0),
+      l('A', 1, 2,
+          hardBreak: false,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 18.0),
+      l('A', 2, 4,
+          hardBreak: true,
+          width: 10.0,
+          left: 0.0,
+          height: 10.0,
+          baseline: 28.0),
+      l('', 4, 4,
+          hardBreak: true, width: 0.0, left: 0.0, height: 10.0, baseline: 38.0),
     ]);
   });
 
@@ -700,7 +787,8 @@ Future<void> testMain() async {
     plain(ahemStyle, 'Lorem').layout(constrain(double.infinity));
     plain(ahemStyle, 'ipsum dolor').layout(constrain(150.0));
     // Try different styles too.
-    plain(EngineParagraphStyle(fontWeight: ui.FontWeight.bold), 'sit amet').layout(constrain(300.0));
+    plain(EngineParagraphStyle(fontWeight: ui.FontWeight.bold), 'sit amet')
+        .layout(constrain(300.0));
 
     expect(textContext.canvas!.width, isZero);
     expect(textContext.canvas!.height, isZero);

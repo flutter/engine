@@ -34,9 +34,12 @@ typedef SegmentationResult = ({
 
 typedef SegmentationCacheSpec = ({int cacheSize, int maxTextLength});
 
-const SegmentationCacheSpec kSmallParagraphCacheSpec = (cacheSize: 100000, maxTextLength: 10);
-const SegmentationCacheSpec kMediumParagraphCacheSpec = (cacheSize: 10000, maxTextLength: 100);
-const SegmentationCacheSpec kLargeParagraphCacheSpec = (cacheSize: 20, maxTextLength: 50000);
+const SegmentationCacheSpec kSmallParagraphCacheSpec =
+    (cacheSize: 100000, maxTextLength: 10);
+const SegmentationCacheSpec kMediumParagraphCacheSpec =
+    (cacheSize: 10000, maxTextLength: 100);
+const SegmentationCacheSpec kLargeParagraphCacheSpec =
+    (cacheSize: 20, maxTextLength: 50000);
 
 typedef SegmentationCache = ({
   LruCache<String, SegmentationResult> small,
@@ -50,9 +53,12 @@ typedef SegmentationCache = ({
 /// their text contents remain the same. This cache is effective at
 /// short-circuiting the segmentation of such paragraphs.
 final SegmentationCache segmentationCache = (
-  small: LruCache<String, SegmentationResult>(kSmallParagraphCacheSpec.cacheSize),
-  medium: LruCache<String, SegmentationResult>(kMediumParagraphCacheSpec.cacheSize),
-  large: LruCache<String, SegmentationResult>(kLargeParagraphCacheSpec.cacheSize),
+  small:
+      LruCache<String, SegmentationResult>(kSmallParagraphCacheSpec.cacheSize),
+  medium:
+      LruCache<String, SegmentationResult>(kMediumParagraphCacheSpec.cacheSize),
+  large:
+      LruCache<String, SegmentationResult>(kLargeParagraphCacheSpec.cacheSize),
 );
 
 extension SegmentationCacheExtensions on SegmentationCache {
@@ -98,7 +104,8 @@ void injectClientICU(SkParagraphBuilder builder) {
 ///
 /// Caches results in [segmentationCache].
 SegmentationResult segmentText(String text) {
-  final LruCache<String, SegmentationResult>? cache = segmentationCache.getCacheForText(text);
+  final LruCache<String, SegmentationResult>? cache =
+      segmentationCache.getCacheForText(text);
   final SegmentationResult? cachedResult = cache?[text];
 
   final SegmentationResult result;
@@ -107,7 +114,8 @@ SegmentationResult segmentText(String text) {
   } else {
     result = (
       words: fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.word),
-      graphemes: fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
+      graphemes:
+          fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
       breaks: fragmentUsingV8LineBreaker(text),
     );
   }
@@ -126,8 +134,10 @@ enum IntlSegmenterGranularity {
   word,
 }
 
-final Map<IntlSegmenterGranularity, DomSegmenter> _intlSegmenters = <IntlSegmenterGranularity, DomSegmenter>{
-  IntlSegmenterGranularity.grapheme: createIntlSegmenter(granularity: 'grapheme'),
+final Map<IntlSegmenterGranularity, DomSegmenter> _intlSegmenters =
+    <IntlSegmenterGranularity, DomSegmenter>{
+  IntlSegmenterGranularity.grapheme:
+      createIntlSegmenter(granularity: 'grapheme'),
   IntlSegmenterGranularity.word: createIntlSegmenter(granularity: 'word'),
 };
 
@@ -136,7 +146,8 @@ Uint32List fragmentUsingIntlSegmenter(
   IntlSegmenterGranularity granularity,
 ) {
   final DomSegmenter segmenter = _intlSegmenters[granularity]!;
-  final DomIteratorWrapper<DomSegment> iterator = segmenter.segment(text).iterator();
+  final DomIteratorWrapper<DomSegment> iterator =
+      segmenter.segment(text).iterator();
 
   final List<int> breaks = <int>[];
   while (iterator.moveNext()) {

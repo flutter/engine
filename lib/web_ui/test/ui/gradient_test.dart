@@ -63,57 +63,54 @@ Future<void> testMain() async {
       () {
     expect(
       () => Gradient.radial(
-            Offset.zero,
-            0.0,
-            <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
-            <double>[0.0, 1.0],
-            TileMode.mirror,
-            null,
-            Offset.zero,
-            1.0,
-          ),
+        Offset.zero,
+        0.0,
+        <Color>[const Color(0xFFFFFFFF), const Color(0xFFFFFFFF)],
+        <double>[0.0, 1.0],
+        TileMode.mirror,
+        null,
+        Offset.zero,
+        1.0,
+      ),
       throwsA(const TypeMatcher<AssertionError>()),
     );
   });
 
   test('gradients throw on invalid color stops', () {
     expect(
-      () => Gradient.linear(
-        Offset.zero,
-        const Offset(1.0, 1.0),
-        const <Color>[
-          Color(0x11111111),
-          Color(0x22222222),
-          Color(0x33333333),
-        ],
-        const <double>[0.0, 1.0],
-      ),
-      throwsArgumentError
-    );
+        () => Gradient.linear(
+              Offset.zero,
+              const Offset(1.0, 1.0),
+              const <Color>[
+                Color(0x11111111),
+                Color(0x22222222),
+                Color(0x33333333),
+              ],
+              const <double>[0.0, 1.0],
+            ),
+        throwsArgumentError);
     expect(
-      () => Gradient.radial(
-        Offset.zero,
-        5.0,
-        const <Color>[
-          Color(0x11111111),
-          Color(0x22222222),
-          Color(0x33333333),
-        ],
-        const <double>[0.0, 1.0],
-      ),
-      throwsArgumentError
-    );
+        () => Gradient.radial(
+              Offset.zero,
+              5.0,
+              const <Color>[
+                Color(0x11111111),
+                Color(0x22222222),
+                Color(0x33333333),
+              ],
+              const <double>[0.0, 1.0],
+            ),
+        throwsArgumentError);
     expect(
-      () => Gradient.sweep(
-        Offset.zero,
-        const <Color>[
-          Color(0x11111111),
-          Color(0x22222222),
-          Color(0x33333333),
-        ],
-        const <double>[0.0, 1.0],
-      ),
-      throwsArgumentError
-    );
+        () => Gradient.sweep(
+              Offset.zero,
+              const <Color>[
+                Color(0x11111111),
+                Color(0x22222222),
+                Color(0x33333333),
+              ],
+              const <double>[0.0, 1.0],
+            ),
+        throwsArgumentError);
   });
 }

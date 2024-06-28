@@ -29,10 +29,10 @@ Future<void> testMain() async {
   }
 
   test('Picture.toImage().toByteData()', () async {
-    final Image testImage = await createTestImageByColor(const Color(0xFFCCDD00));
+    final Image testImage =
+        await createTestImageByColor(const Color(0xFFCCDD00));
 
-    final ByteData bytes =
-        (await testImage.toByteData())!;
+    final ByteData bytes = (await testImage.toByteData())!;
     expect(
       bytes.buffer.asUint32List(),
       <int>[0xFF00DDCC, 0xFF00DDCC, 0xFF00DDCC, 0xFF00DDCC],
@@ -51,7 +51,8 @@ Future<void> testMain() async {
   });
 
   test('Image.toByteData(format: ImageByteFormat.rawStraightRgba)', () async {
-    final Image testImage = await createTestImageByColor(const Color(0xAAFFFF00));
+    final Image testImage =
+        await createTestImageByColor(const Color(0xAAFFFF00));
 
     final ByteData bytes =
         (await testImage.toByteData(format: ImageByteFormat.rawStraightRgba))!;

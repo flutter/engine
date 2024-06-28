@@ -1121,7 +1121,8 @@ void testMain() {
       ]);
     });
 
-    test('sinks platform view under the canvas if it does not overlap with the picture',
+    test(
+        'sinks platform view under the canvas if it does not overlap with the picture',
         () async {
       ui_web.platformViewRegistry.registerViewFactory(
         'test-view',

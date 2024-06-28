@@ -10,7 +10,8 @@ typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
-typedef SemanticsActionEventCallback = void Function(SemanticsActionEvent action);
+typedef SemanticsActionEventCallback = void Function(
+    SemanticsActionEvent action);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
@@ -25,7 +26,8 @@ class RootIsolateToken {
 }
 
 abstract class PlatformDispatcher {
-  static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
+  static PlatformDispatcher get instance =>
+      engine.EnginePlatformDispatcher.instance;
 
   VoidCallback? get onPlatformConfigurationChanged;
   set onPlatformConfigurationChanged(VoidCallback? callback);
@@ -66,16 +68,13 @@ abstract class PlatformDispatcher {
   set onReportTimings(TimingsCallback? callback);
 
   void sendPlatformMessage(
-      String name,
-      ByteData? data,
-      PlatformMessageResponseCallback? callback,
+    String name,
+    ByteData? data,
+    PlatformMessageResponseCallback? callback,
   );
 
   void sendPortPlatformMessage(
-    String name,
-    ByteData? data,
-    int identifier,
-    Object port);
+      String name, ByteData? data, int identifier, Object port);
 
   void registerBackgroundIsolate(RootIsolateToken token);
 
@@ -90,7 +89,8 @@ abstract class PlatformDispatcher {
 
   void scheduleFrame();
 
-  void scheduleWarmUpFrame({required VoidCallback beginFrame, required VoidCallback drawFrame});
+  void scheduleWarmUpFrame(
+      {required VoidCallback beginFrame, required VoidCallback drawFrame});
 
   AccessibilityFeatures get accessibilityFeatures;
 
@@ -208,27 +208,33 @@ class FrameTiming {
     ]);
   }
 
-  FrameTiming._(this._data)
-      : assert(_data.length == _dataLength);
+  FrameTiming._(this._data) : assert(_data.length == _dataLength);
 
-  static final int _dataLength = FramePhase.values.length + _FrameTimingInfo.values.length;
+  static final int _dataLength =
+      FramePhase.values.length + _FrameTimingInfo.values.length;
 
   int timestampInMicroseconds(FramePhase phase) => _data[phase.index];
 
-  Duration _rawDuration(FramePhase phase) => Duration(microseconds: _data[phase.index]);
+  Duration _rawDuration(FramePhase phase) =>
+      Duration(microseconds: _data[phase.index]);
 
-  int _rawInfo(_FrameTimingInfo info) => _data[FramePhase.values.length + info.index];
+  int _rawInfo(_FrameTimingInfo info) =>
+      _data[FramePhase.values.length + info.index];
 
   Duration get buildDuration =>
-      _rawDuration(FramePhase.buildFinish) - _rawDuration(FramePhase.buildStart);
+      _rawDuration(FramePhase.buildFinish) -
+      _rawDuration(FramePhase.buildStart);
 
   Duration get rasterDuration =>
-      _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.rasterStart);
+      _rawDuration(FramePhase.rasterFinish) -
+      _rawDuration(FramePhase.rasterStart);
 
-  Duration get vsyncOverhead => _rawDuration(FramePhase.buildStart) - _rawDuration(FramePhase.vsyncStart);
+  Duration get vsyncOverhead =>
+      _rawDuration(FramePhase.buildStart) - _rawDuration(FramePhase.vsyncStart);
 
   Duration get totalSpan =>
-      _rawDuration(FramePhase.rasterFinish) - _rawDuration(FramePhase.vsyncStart);
+      _rawDuration(FramePhase.rasterFinish) -
+      _rawDuration(FramePhase.vsyncStart);
 
   int get layerCacheCount => _rawInfo(_FrameTimingInfo.layerCacheCount);
 
@@ -244,7 +250,8 @@ class FrameTiming {
 
   int get frameNumber => _data.last;
 
-  final List<int> _data;  // some elements in microseconds, some in bytes, some are counts
+  final List<int>
+      _data; // some elements in microseconds, some in bytes, some are counts
 
   String _formatMS(Duration duration) => '${duration.inMicroseconds * 0.001}ms';
 
@@ -292,7 +299,8 @@ abstract class ViewPadding {
   double get right;
   double get bottom;
 
-  static const ViewPadding zero = ViewPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  static const ViewPadding zero =
+      ViewPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
@@ -316,7 +324,7 @@ abstract class ViewConstraints {
   double get maxHeight;
   bool isSatisfiedBy(Size size);
   bool get isTight;
-  ViewConstraints operator/(double factor);
+  ViewConstraints operator /(double factor);
 }
 
 @Deprecated(
@@ -344,8 +352,10 @@ class DisplayFeature {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is DisplayFeature && bounds == other.bounds &&
-        type == other.type && state == other.state;
+    return other is DisplayFeature &&
+        bounds == other.bounds &&
+        type == other.type &&
+        state == other.state;
   }
 
   @override
@@ -388,12 +398,14 @@ class Locale {
         assert(countryCode != ''),
         _countryCode = countryCode;
 
-  String get languageCode => _deprecatedLanguageSubtagMap[_languageCode] ?? _languageCode;
+  String get languageCode =>
+      _deprecatedLanguageSubtagMap[_languageCode] ?? _languageCode;
   final String _languageCode;
 
   // This map is generated by //flutter/tools/gen_locale.dart
   // Mappings generated for language subtag registry as of 2019-02-27.
-  static const Map<String, String> _deprecatedLanguageSubtagMap = <String, String>{
+  static const Map<String, String> _deprecatedLanguageSubtagMap =
+      <String, String>{
     'in': 'id', // Indonesian; deprecated 1989-01-01
     'iw': 'he', // Hebrew; deprecated 1989-01-01
     'ji': 'yi', // Yiddish; deprecated 1989-01-01
@@ -476,12 +488,14 @@ class Locale {
 
   final String? scriptCode;
 
-  String? get countryCode => _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
+  String? get countryCode =>
+      _deprecatedRegionSubtagMap[_countryCode] ?? _countryCode;
   final String? _countryCode;
 
   // This map is generated by //flutter/tools/gen_locale.dart
   // Mappings generated for language subtag registry as of 2019-02-27.
-  static const Map<String, String> _deprecatedRegionSubtagMap = <String, String>{
+  static const Map<String, String> _deprecatedRegionSubtagMap =
+      <String, String>{
     'BU': 'MM', // Burma; deprecated 1989-12-05
     'DD': 'DE', // German Democratic Republic; deprecated 1990-10-30
     'FX': 'FR', // Metropolitan France; deprecated 1997-07-14
@@ -495,10 +509,10 @@ class Locale {
     if (identical(this, other)) {
       return true;
     }
-    return other is Locale
-        && other.languageCode == languageCode
-        && other.scriptCode == scriptCode
-        && other.countryCode == countryCode;
+    return other is Locale &&
+        other.languageCode == languageCode &&
+        other.scriptCode == scriptCode &&
+        other.countryCode == countryCode;
   }
 
   @override
@@ -555,12 +569,14 @@ class SemanticsActionEvent {
       type: type ?? this.type,
       viewId: viewId ?? this.viewId,
       nodeId: nodeId ?? this.nodeId,
-      arguments: arguments == _noArgumentPlaceholder ? this.arguments : arguments,
+      arguments:
+          arguments == _noArgumentPlaceholder ? this.arguments : arguments,
     );
   }
 
   @override
-  String toString() => 'SemanticsActionEvent($type, view: $viewId, node: $nodeId)';
+  String toString() =>
+      'SemanticsActionEvent($type, view: $viewId, node: $nodeId)';
 }
 
 final class ViewFocusEvent {

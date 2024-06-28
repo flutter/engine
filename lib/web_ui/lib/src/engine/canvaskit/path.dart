@@ -274,9 +274,15 @@ class CkPath implements ui.Path {
     // `transform` on the copy.
     final SkPath shiftedPath = skiaObject.copy();
     shiftedPath.transform(
-      1.0, 0.0, offset.dx,
-      0.0, 1.0, offset.dy,
-      0.0, 0.0, 1.0,
+      1.0,
+      0.0,
+      offset.dx,
+      0.0,
+      1.0,
+      offset.dy,
+      0.0,
+      0.0,
+      1.0,
     );
     return CkPath.fromSkPath(shiftedPath, _fillType);
   }

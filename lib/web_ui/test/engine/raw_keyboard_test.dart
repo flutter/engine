@@ -41,19 +41,22 @@ void testMain() {
 
       String? channelReceived;
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         channelReceived = channel;
-        dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
+        dataReceived = const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>?;
       };
 
       DomKeyboardEvent event;
 
       // Dispatch a keydown event first so that KeyboardBinding will recognize the keyup event.
       // and will not set preventDefault on it.
-      event = dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+      event = dispatchKeyboardEvent('keydown',
+          key: 'SomeKey', code: 'SomeCode', keyCode: 1);
 
-      event = dispatchKeyboardEvent('keyup', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+      event = dispatchKeyboardEvent('keyup',
+          key: 'SomeKey', code: 'SomeCode', keyCode: 1);
 
       expect(event.defaultPrevented, isFalse);
       expect(channelReceived, 'flutter/keyevent');
@@ -75,16 +78,17 @@ void testMain() {
 
       String? channelReceived;
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         channelReceived = channel;
-        dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
+        dataReceived = const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>?;
       };
 
       DomKeyboardEvent event;
 
-      event =
-          dispatchKeyboardEvent('keydown', key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+      event = dispatchKeyboardEvent('keydown',
+          key: 'SomeKey', code: 'SomeCode', keyCode: 1);
 
       expect(channelReceived, 'flutter/keyevent');
       expect(dataReceived, <String, dynamic>{
@@ -105,9 +109,10 @@ void testMain() {
       RawKeyboard.initialize();
 
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+        dataReceived = const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>?;
       };
 
       DomKeyboardEvent event;
@@ -154,13 +159,16 @@ void testMain() {
     });
 
     // Regression test for https://github.com/flutter/flutter/issues/125672.
-    test('updates meta state for Meta key and wrong DOM event metaKey value (Linux)', () {
+    test(
+        'updates meta state for Meta key and wrong DOM event metaKey value (Linux)',
+        () {
       RawKeyboard.initialize();
 
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+        dataReceived = const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>?;
       };
 
       // Purposely send an incoherent DOM event where Meta key is pressed but event.metaKey is not set to true.
@@ -187,9 +195,10 @@ void testMain() {
       RawKeyboard.initialize();
 
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        dataReceived = const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>?;
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+        dataReceived = const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>?;
       };
 
       // Purposely send a DOM event where Meta key is pressed but event.metaKey is not set to true.
@@ -218,9 +227,10 @@ void testMain() {
       RawKeyboard.initialize();
 
       final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+        messages.add(const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>);
       };
 
       DomKeyboardEvent event;
@@ -271,8 +281,8 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         count += 1;
       };
 
@@ -295,10 +305,11 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         count += 1;
-        final ByteData response = const JSONMessageCodec().encodeMessage(<String, dynamic>{'handled': true})!;
+        final ByteData response = const JSONMessageCodec()
+            .encodeMessage(<String, dynamic>{'handled': true})!;
         callback!(response);
       };
 
@@ -314,14 +325,16 @@ void testMain() {
       RawKeyboard.instance!.dispose();
     });
 
-    test("Doesn't prevent default when key is not handled by the framework", () {
+    test("Doesn't prevent default when key is not handled by the framework",
+        () {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         count += 1;
-        final ByteData response = const JSONMessageCodec().encodeMessage(<String, dynamic>{'handled': false})!;
+        final ByteData response = const JSONMessageCodec()
+            .encodeMessage(<String, dynamic>{'handled': false})!;
         callback!(response);
       };
 
@@ -341,8 +354,8 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         count += 1;
       };
 
@@ -367,10 +380,11 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         count += 1;
-        final ByteData response = const JSONMessageCodec().encodeMessage(<String, dynamic>{'handled': true})!;
+        final ByteData response = const JSONMessageCodec()
+            .encodeMessage(<String, dynamic>{'handled': true})!;
         callback!(response);
       };
 
@@ -393,8 +407,8 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         count += 1;
         final ByteData response = const JSONMessageCodec()
             .encodeMessage(<String, dynamic>{'handled': true})!;
@@ -424,9 +438,10 @@ void testMain() {
         RawKeyboard.initialize(onMacOs: true);
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-            ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+          messages.add(const JSONMessageCodec().decodeMessage(data)
+              as Map<String, dynamic>);
         };
 
         dispatchKeyboardEvent(
@@ -547,9 +562,10 @@ void testMain() {
         RawKeyboard.initialize(onMacOs: true);
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-            ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+          messages.add(const JSONMessageCodec().decodeMessage(data)
+              as Map<String, dynamic>);
         };
 
         dispatchKeyboardEvent(
@@ -629,9 +645,10 @@ void testMain() {
         RawKeyboard.initialize();
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-            ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+          messages.add(const JSONMessageCodec().decodeMessage(data)
+              as Map<String, dynamic>);
         };
 
         dispatchKeyboardEvent(
@@ -655,13 +672,15 @@ void testMain() {
       },
     );
 
-    testFakeAsync('On macOS, do not synthesize keyup for meta keys', (FakeAsync async) {
+    testFakeAsync('On macOS, do not synthesize keyup for meta keys',
+        (FakeAsync async) {
       RawKeyboard.initialize(onMacOs: true);
 
       final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
-        messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+        messages.add(const JSONMessageCodec().decodeMessage(data)
+            as Map<String, dynamic>);
       };
 
       dispatchKeyboardEvent(
@@ -723,9 +742,10 @@ void testMain() {
         RawKeyboard.initialize(); // onMacOs: false
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel, ByteData? data,
-            ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
+            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+          messages.add(const JSONMessageCodec().decodeMessage(data)
+              as Map<String, dynamic>);
         };
 
         dispatchKeyboardEvent(
@@ -776,7 +796,6 @@ void testMain() {
         RawKeyboard.instance!.dispose();
       },
     );
-
   });
 }
 
@@ -810,7 +829,7 @@ DomKeyboardEvent dispatchKeyboardEvent(
 }) {
   target ??= domWindow;
 
-  final DomKeyboardEvent event = createDomKeyboardEvent(type, <String, Object> {
+  final DomKeyboardEvent event = createDomKeyboardEvent(type, <String, Object>{
     if (key != null) 'key': key,
     if (code != null) 'code': code,
     'location': location,

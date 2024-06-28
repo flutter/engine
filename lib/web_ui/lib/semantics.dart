@@ -35,27 +35,45 @@ class SemanticsAction {
   static const int _kFocusIndex = 1 << 22;
 
   static const SemanticsAction tap = SemanticsAction._(_kTapIndex, 'tap');
-  static const SemanticsAction longPress = SemanticsAction._(_kLongPressIndex, 'longPress');
-  static const SemanticsAction scrollLeft = SemanticsAction._(_kScrollLeftIndex, 'scrollLeft');
-  static const SemanticsAction scrollRight = SemanticsAction._(_kScrollRightIndex, 'scrollRight');
-  static const SemanticsAction scrollUp = SemanticsAction._(_kScrollUpIndex, 'scrollUp');
-  static const SemanticsAction scrollDown = SemanticsAction._(_kScrollDownIndex, 'scrollDown');
-  static const SemanticsAction increase = SemanticsAction._(_kIncreaseIndex, 'increase');
-  static const SemanticsAction decrease = SemanticsAction._(_kDecreaseIndex, 'decrease');
-  static const SemanticsAction showOnScreen = SemanticsAction._(_kShowOnScreenIndex, 'showOnScreen');
-  static const SemanticsAction moveCursorForwardByCharacter = SemanticsAction._(_kMoveCursorForwardByCharacterIndex, 'moveCursorForwardByCharacter');
-  static const SemanticsAction moveCursorBackwardByCharacter = SemanticsAction._(_kMoveCursorBackwardByCharacterIndex, 'moveCursorBackwardByCharacter');
-  static const SemanticsAction setText = SemanticsAction._(_kSetTextIndex, 'setText');
-  static const SemanticsAction setSelection = SemanticsAction._(_kSetSelectionIndex, 'setSelection');
+  static const SemanticsAction longPress =
+      SemanticsAction._(_kLongPressIndex, 'longPress');
+  static const SemanticsAction scrollLeft =
+      SemanticsAction._(_kScrollLeftIndex, 'scrollLeft');
+  static const SemanticsAction scrollRight =
+      SemanticsAction._(_kScrollRightIndex, 'scrollRight');
+  static const SemanticsAction scrollUp =
+      SemanticsAction._(_kScrollUpIndex, 'scrollUp');
+  static const SemanticsAction scrollDown =
+      SemanticsAction._(_kScrollDownIndex, 'scrollDown');
+  static const SemanticsAction increase =
+      SemanticsAction._(_kIncreaseIndex, 'increase');
+  static const SemanticsAction decrease =
+      SemanticsAction._(_kDecreaseIndex, 'decrease');
+  static const SemanticsAction showOnScreen =
+      SemanticsAction._(_kShowOnScreenIndex, 'showOnScreen');
+  static const SemanticsAction moveCursorForwardByCharacter = SemanticsAction._(
+      _kMoveCursorForwardByCharacterIndex, 'moveCursorForwardByCharacter');
+  static const SemanticsAction moveCursorBackwardByCharacter = SemanticsAction
+      ._(_kMoveCursorBackwardByCharacterIndex, 'moveCursorBackwardByCharacter');
+  static const SemanticsAction setText =
+      SemanticsAction._(_kSetTextIndex, 'setText');
+  static const SemanticsAction setSelection =
+      SemanticsAction._(_kSetSelectionIndex, 'setSelection');
   static const SemanticsAction copy = SemanticsAction._(_kCopyIndex, 'copy');
   static const SemanticsAction cut = SemanticsAction._(_kCutIndex, 'cut');
   static const SemanticsAction paste = SemanticsAction._(_kPasteIndex, 'paste');
-  static const SemanticsAction didGainAccessibilityFocus = SemanticsAction._(_kDidGainAccessibilityFocusIndex, 'didGainAccessibilityFocus');
-  static const SemanticsAction didLoseAccessibilityFocus = SemanticsAction._(_kDidLoseAccessibilityFocusIndex, 'didLoseAccessibilityFocus');
-  static const SemanticsAction customAction = SemanticsAction._(_kCustomActionIndex, 'customAction');
-  static const SemanticsAction dismiss = SemanticsAction._(_kDismissIndex, 'dismiss');
-  static const SemanticsAction moveCursorForwardByWord = SemanticsAction._(_kMoveCursorForwardByWordIndex, 'moveCursorForwardByWord');
-  static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(_kMoveCursorBackwardByWordIndex, 'moveCursorBackwardByWord');
+  static const SemanticsAction didGainAccessibilityFocus = SemanticsAction._(
+      _kDidGainAccessibilityFocusIndex, 'didGainAccessibilityFocus');
+  static const SemanticsAction didLoseAccessibilityFocus = SemanticsAction._(
+      _kDidLoseAccessibilityFocusIndex, 'didLoseAccessibilityFocus');
+  static const SemanticsAction customAction =
+      SemanticsAction._(_kCustomActionIndex, 'customAction');
+  static const SemanticsAction dismiss =
+      SemanticsAction._(_kDismissIndex, 'dismiss');
+  static const SemanticsAction moveCursorForwardByWord = SemanticsAction._(
+      _kMoveCursorForwardByWordIndex, 'moveCursorForwardByWord');
+  static const SemanticsAction moveCursorBackwardByWord = SemanticsAction._(
+      _kMoveCursorBackwardByWordIndex, 'moveCursorBackwardByWord');
   static const SemanticsAction focus = SemanticsAction._(_kFocusIndex, 'focus');
 
   static const Map<int, SemanticsAction> _kActionById = <int, SemanticsAction>{
@@ -84,7 +102,8 @@ class SemanticsAction {
     _kFocusIndex: focus,
   };
 
-  static List<SemanticsAction> get values => _kActionById.values.toList(growable: false);
+  static List<SemanticsAction> get values =>
+      _kActionById.values.toList(growable: false);
 
   static SemanticsAction? fromIndex(int index) => _kActionById[index];
 
@@ -127,34 +146,61 @@ class SemanticsFlag {
   static const int _kHasExpandedStateIndex = 1 << 26;
   static const int _kIsExpandedIndex = 1 << 27;
 
-  static const SemanticsFlag hasCheckedState = SemanticsFlag._(_kHasCheckedStateIndex, 'hasCheckedState');
-  static const SemanticsFlag isChecked = SemanticsFlag._(_kIsCheckedIndex, 'isChecked');
-  static const SemanticsFlag isSelected = SemanticsFlag._(_kIsSelectedIndex, 'isSelected');
-  static const SemanticsFlag isButton = SemanticsFlag._(_kIsButtonIndex, 'isButton');
-  static const SemanticsFlag isTextField = SemanticsFlag._(_kIsTextFieldIndex, 'isTextField');
-  static const SemanticsFlag isSlider = SemanticsFlag._(_kIsSliderIndex, 'isSlider');
-  static const SemanticsFlag isKeyboardKey = SemanticsFlag._(_kIsKeyboardKeyIndex, 'isKeyboardKey');
-  static const SemanticsFlag isReadOnly = SemanticsFlag._(_kIsReadOnlyIndex, 'isReadOnly');
+  static const SemanticsFlag hasCheckedState =
+      SemanticsFlag._(_kHasCheckedStateIndex, 'hasCheckedState');
+  static const SemanticsFlag isChecked =
+      SemanticsFlag._(_kIsCheckedIndex, 'isChecked');
+  static const SemanticsFlag isSelected =
+      SemanticsFlag._(_kIsSelectedIndex, 'isSelected');
+  static const SemanticsFlag isButton =
+      SemanticsFlag._(_kIsButtonIndex, 'isButton');
+  static const SemanticsFlag isTextField =
+      SemanticsFlag._(_kIsTextFieldIndex, 'isTextField');
+  static const SemanticsFlag isSlider =
+      SemanticsFlag._(_kIsSliderIndex, 'isSlider');
+  static const SemanticsFlag isKeyboardKey =
+      SemanticsFlag._(_kIsKeyboardKeyIndex, 'isKeyboardKey');
+  static const SemanticsFlag isReadOnly =
+      SemanticsFlag._(_kIsReadOnlyIndex, 'isReadOnly');
   static const SemanticsFlag isLink = SemanticsFlag._(_kIsLinkIndex, 'isLink');
-  static const SemanticsFlag isFocusable = SemanticsFlag._(_kIsFocusableIndex, 'isFocusable');
-  static const SemanticsFlag isFocused = SemanticsFlag._(_kIsFocusedIndex, 'isFocused');
-  static const SemanticsFlag hasEnabledState = SemanticsFlag._(_kHasEnabledStateIndex, 'hasEnabledState');
-  static const SemanticsFlag isEnabled = SemanticsFlag._(_kIsEnabledIndex, 'isEnabled');
-  static const SemanticsFlag isInMutuallyExclusiveGroup = SemanticsFlag._(_kIsInMutuallyExclusiveGroupIndex, 'isInMutuallyExclusiveGroup');
-  static const SemanticsFlag isHeader = SemanticsFlag._(_kIsHeaderIndex, 'isHeader');
-  static const SemanticsFlag isObscured = SemanticsFlag._(_kIsObscuredIndex, 'isObscured');
-  static const SemanticsFlag isMultiline = SemanticsFlag._(_kIsMultilineIndex, 'isMultiline');
-  static const SemanticsFlag scopesRoute = SemanticsFlag._(_kScopesRouteIndex, 'scopesRoute');
-  static const SemanticsFlag namesRoute = SemanticsFlag._(_kNamesRouteIndex, 'namesRoute');
-  static const SemanticsFlag isHidden = SemanticsFlag._(_kIsHiddenIndex, 'isHidden');
-  static const SemanticsFlag isImage = SemanticsFlag._(_kIsImageIndex, 'isImage');
-  static const SemanticsFlag isLiveRegion = SemanticsFlag._(_kIsLiveRegionIndex, 'isLiveRegion');
-  static const SemanticsFlag hasToggledState = SemanticsFlag._(_kHasToggledStateIndex, 'hasToggledState');
-  static const SemanticsFlag isToggled = SemanticsFlag._(_kIsToggledIndex, 'isToggled');
-  static const SemanticsFlag hasImplicitScrolling = SemanticsFlag._(_kHasImplicitScrollingIndex, 'hasImplicitScrolling');
-  static const SemanticsFlag isCheckStateMixed = SemanticsFlag._(_kIsCheckStateMixedIndex, 'isCheckStateMixed');
-  static const SemanticsFlag hasExpandedState = SemanticsFlag._(_kHasExpandedStateIndex, 'hasExpandedState');
-  static const SemanticsFlag isExpanded = SemanticsFlag._(_kIsExpandedIndex, 'isExpanded');
+  static const SemanticsFlag isFocusable =
+      SemanticsFlag._(_kIsFocusableIndex, 'isFocusable');
+  static const SemanticsFlag isFocused =
+      SemanticsFlag._(_kIsFocusedIndex, 'isFocused');
+  static const SemanticsFlag hasEnabledState =
+      SemanticsFlag._(_kHasEnabledStateIndex, 'hasEnabledState');
+  static const SemanticsFlag isEnabled =
+      SemanticsFlag._(_kIsEnabledIndex, 'isEnabled');
+  static const SemanticsFlag isInMutuallyExclusiveGroup = SemanticsFlag._(
+      _kIsInMutuallyExclusiveGroupIndex, 'isInMutuallyExclusiveGroup');
+  static const SemanticsFlag isHeader =
+      SemanticsFlag._(_kIsHeaderIndex, 'isHeader');
+  static const SemanticsFlag isObscured =
+      SemanticsFlag._(_kIsObscuredIndex, 'isObscured');
+  static const SemanticsFlag isMultiline =
+      SemanticsFlag._(_kIsMultilineIndex, 'isMultiline');
+  static const SemanticsFlag scopesRoute =
+      SemanticsFlag._(_kScopesRouteIndex, 'scopesRoute');
+  static const SemanticsFlag namesRoute =
+      SemanticsFlag._(_kNamesRouteIndex, 'namesRoute');
+  static const SemanticsFlag isHidden =
+      SemanticsFlag._(_kIsHiddenIndex, 'isHidden');
+  static const SemanticsFlag isImage =
+      SemanticsFlag._(_kIsImageIndex, 'isImage');
+  static const SemanticsFlag isLiveRegion =
+      SemanticsFlag._(_kIsLiveRegionIndex, 'isLiveRegion');
+  static const SemanticsFlag hasToggledState =
+      SemanticsFlag._(_kHasToggledStateIndex, 'hasToggledState');
+  static const SemanticsFlag isToggled =
+      SemanticsFlag._(_kIsToggledIndex, 'isToggled');
+  static const SemanticsFlag hasImplicitScrolling =
+      SemanticsFlag._(_kHasImplicitScrollingIndex, 'hasImplicitScrolling');
+  static const SemanticsFlag isCheckStateMixed =
+      SemanticsFlag._(_kIsCheckStateMixedIndex, 'isCheckStateMixed');
+  static const SemanticsFlag hasExpandedState =
+      SemanticsFlag._(_kHasExpandedStateIndex, 'hasExpandedState');
+  static const SemanticsFlag isExpanded =
+      SemanticsFlag._(_kIsExpandedIndex, 'isExpanded');
 
   static const Map<int, SemanticsFlag> _kFlagById = <int, SemanticsFlag>{
     _kHasCheckedStateIndex: hasCheckedState,
@@ -187,7 +233,8 @@ class SemanticsFlag {
     _kIsExpandedIndex: isExpanded,
   };
 
-  static List<SemanticsFlag> get values => _kFlagById.values.toList(growable: false);
+  static List<SemanticsFlag> get values =>
+      _kFlagById.values.toList(growable: false);
 
   static SemanticsFlag? fromIndex(int index) => _kFlagById[index];
 
@@ -251,7 +298,8 @@ class LocaleStringAttribute extends StringAttribute {
 class SemanticsUpdateBuilder {
   SemanticsUpdateBuilder();
 
-  final List<engine.SemanticsNodeUpdate> _nodeUpdates = <engine.SemanticsNodeUpdate>[];
+  final List<engine.SemanticsNodeUpdate> _nodeUpdates =
+      <engine.SemanticsNodeUpdate>[];
   void updateNode({
     required int id,
     required int flags,

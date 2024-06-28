@@ -50,7 +50,8 @@ Future<void> testMain() async {
     // The rectangle should paint without clipping since we restored
     // context.
     rc.drawRect(const Rect.fromLTWH(0, 0, 4, 200), paint);
-    await canvasScreenshot(rc, 'context_save_restore_transform', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'context_save_restore_transform',
+        canvasRect: screenRect);
   });
 
   test('Should restore clip path', () async {
@@ -70,11 +71,14 @@ Future<void> testMain() async {
     rc.save();
     rc.restore();
     // The rectangle should be clipped against oval.
-    rc.drawRect(const Rect.fromLTWH(0, 0, 300, 300), badPaint as engine.SurfacePaint);
+    rc.drawRect(
+        const Rect.fromLTWH(0, 0, 300, 300), badPaint as engine.SurfacePaint);
     rc.restore();
     // The rectangle should paint without clipping since we restored
     // context.
-    rc.drawRect(const Rect.fromLTWH(0, 0, 200, 200), goodPaint as engine.SurfacePaint);
-    await canvasScreenshot(rc, 'context_save_restore_clip', canvasRect: screenRect);
+    rc.drawRect(
+        const Rect.fromLTWH(0, 0, 200, 200), goodPaint as engine.SurfacePaint);
+    await canvasScreenshot(rc, 'context_save_restore_clip',
+        canvasRect: screenRect);
   });
 }

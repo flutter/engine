@@ -10,8 +10,10 @@ import 'unicode_range.dart';
 enum FragmentFlow {
   /// The fragment flows from left to right regardless of its surroundings.
   ltr,
+
   /// The fragment flows from right to left regardless of its surroundings.
   rtl,
+
   /// The fragment flows the same as the previous fragment.
   ///
   /// If it's the first fragment in a line, then it flows the same as the
@@ -19,6 +21,7 @@ enum FragmentFlow {
   ///
   /// E.g. digits.
   previous,
+
   /// If the previous and next fragments flow in the same direction, then this
   /// fragment flows in that same direction. Otherwise, it flows the same as the
   /// paragraph direction.
@@ -38,7 +41,8 @@ class BidiFragmenter extends TextFragmenter {
 }
 
 class BidiFragment extends TextFragment {
-  const BidiFragment(super.start, super.end, this.textDirection, this.fragmentFlow);
+  const BidiFragment(
+      super.start, super.end, this.textDirection, this.fragmentFlow);
 
   final ui.TextDirection? textDirection;
   final FragmentFlow fragmentFlow;
@@ -64,11 +68,14 @@ class BidiFragment extends TextFragment {
 // This data was taken from the source code of the Closure library:
 //
 // - https://github.com/google/closure-library/blob/9d24a6c1809a671c2e54c328897ebeae15a6d172/closure/goog/i18n/bidi.js#L203-L234
-final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePropertyLookup<ui.TextDirection?>(
+final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup =
+    UnicodePropertyLookup<ui.TextDirection?>(
   <UnicodeRange<ui.TextDirection>>[
     // LTR
-    const UnicodeRange<ui.TextDirection>(kChar_A, kChar_Z, ui.TextDirection.ltr),
-    const UnicodeRange<ui.TextDirection>(kChar_a, kChar_z, ui.TextDirection.ltr),
+    const UnicodeRange<ui.TextDirection>(
+        kChar_A, kChar_Z, ui.TextDirection.ltr),
+    const UnicodeRange<ui.TextDirection>(
+        kChar_a, kChar_z, ui.TextDirection.ltr),
     const UnicodeRange<ui.TextDirection>(0x00C0, 0x00D6, ui.TextDirection.ltr),
     const UnicodeRange<ui.TextDirection>(0x00D8, 0x00F6, ui.TextDirection.ltr),
     const UnicodeRange<ui.TextDirection>(0x00F8, 0x02B8, ui.TextDirection.ltr),
@@ -121,7 +128,8 @@ List<BidiFragment> _computeBidiFragments(String text) {
 
     if (charTextDirection != textDirection) {
       // We've reached the end of a text direction fragment.
-      fragments.add(BidiFragment(fragmentStart, i, textDirection, fragmentFlow));
+      fragments
+          .add(BidiFragment(fragmentStart, i, textDirection, fragmentFlow));
       fragmentStart = i;
       textDirection = charTextDirection;
 
@@ -135,7 +143,8 @@ List<BidiFragment> _computeBidiFragments(String text) {
     }
   }
 
-  fragments.add(BidiFragment(fragmentStart, text.length, textDirection, fragmentFlow));
+  fragments.add(
+      BidiFragment(fragmentStart, text.length, textDirection, fragmentFlow));
   return fragments;
 }
 
@@ -147,7 +156,8 @@ ui.TextDirection? _getTextDirection(String text, int i) {
     return ui.TextDirection.ltr;
   }
 
-  final ui.TextDirection? textDirection = _textDirectionLookup.findForChar(codePoint);
+  final ui.TextDirection? textDirection =
+      _textDirectionLookup.findForChar(codePoint);
   if (textDirection != null) {
     return textDirection;
   }
@@ -164,7 +174,8 @@ FragmentFlow _getFragmentFlow(String text, int i) {
     return FragmentFlow.rtl;
   }
 
-  final ui.TextDirection? textDirection = _textDirectionLookup.findForChar(codePoint);
+  final ui.TextDirection? textDirection =
+      _textDirectionLookup.findForChar(codePoint);
   switch (textDirection) {
     case ui.TextDirection.ltr:
       return FragmentFlow.ltr;

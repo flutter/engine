@@ -13,7 +13,8 @@ import '../../common/test_initialization.dart';
 import 'semantics_tester.dart';
 
 EngineSemantics semantics() => EngineSemantics.instance;
-EngineSemanticsOwner owner() => EnginePlatformDispatcher.instance.implicitView!.semantics;
+EngineSemanticsOwner owner() =>
+    EnginePlatformDispatcher.instance.implicitView!.semantics;
 
 void main() {
   internalBootstrapBrowserTest(() {
@@ -31,7 +32,8 @@ Future<void> testMain() async {
             .instance.accessibilityFeatures.accessibleNavigation,
         isFalse);
 
-    final DomElement placeholder = domDocument.querySelector('flt-semantics-placeholder')!;
+    final DomElement placeholder =
+        domDocument.querySelector('flt-semantics-placeholder')!;
 
     expect(placeholder.isConnected, isTrue);
 
@@ -42,7 +44,8 @@ Future<void> testMain() async {
 
     expect(semantics().semanticsEnabled, isTrue);
     expect(
-      EnginePlatformDispatcher.instance.accessibilityFeatures.accessibleNavigation,
+      EnginePlatformDispatcher
+          .instance.accessibilityFeatures.accessibleNavigation,
       isTrue,
     );
 

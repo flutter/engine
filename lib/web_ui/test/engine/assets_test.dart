@@ -34,7 +34,8 @@ void testMain() {
     });
 
     test('assetsDir changes the directory where assets are stored', () {
-      final ui_web.AssetManager assets = ui_web.AssetManager(assetsDir: 'static');
+      final ui_web.AssetManager assets =
+          ui_web.AssetManager(assetsDir: 'static');
 
       expect(assets.getAssetUrl('asset.txt'), 'static/asset.txt');
     });
@@ -46,7 +47,8 @@ void testMain() {
     });
 
     test('assetBase can be relative', () {
-      final ui_web.AssetManager assets = ui_web.AssetManager(assetBase: 'base/');
+      final ui_web.AssetManager assets =
+          ui_web.AssetManager(assetBase: 'base/');
 
       expect(assets.getAssetUrl('asset.txt'), 'base/assets/asset.txt');
     });

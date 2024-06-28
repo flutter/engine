@@ -28,15 +28,14 @@ Future<void> testMain() async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder, region);
     canvas.drawArc(
-      const Rect.fromLTRB(100, 100, 200, 200),
-      math.pi / 3.0,
-      4.0 * math.pi / 3.0,
-      false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0
-        ..color = const Color(0xFFFF00FF)
-    );
+        const Rect.fromLTRB(100, 100, 200, 200),
+        math.pi / 3.0,
+        4.0 * math.pi / 3.0,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0
+          ..color = const Color(0xFFFF00FF));
 
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
@@ -47,13 +46,12 @@ Future<void> testMain() async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder, region);
     canvas.drawCircle(
-      const Offset(150, 150),
-      50,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0
-        ..color = const Color(0xFFFF0000)
-    );
+        const Offset(150, 150),
+        50,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0
+          ..color = const Color(0xFFFF0000));
 
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
@@ -64,12 +62,11 @@ Future<void> testMain() async {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder, region);
     canvas.drawOval(
-      const Rect.fromLTRB(100, 125, 200, 175),
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3.0
-        ..color = const Color(0xFF00FFFF)
-    );
+        const Rect.fromLTRB(100, 125, 200, 175),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3.0
+          ..color = const Color(0xFF00FFFF));
 
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
 

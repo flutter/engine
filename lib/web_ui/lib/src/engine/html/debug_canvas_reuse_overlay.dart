@@ -64,8 +64,8 @@ class DebugCanvasReuseOverlay {
             ..append(
               createDomHTMLButtonElement()
                 ..text = 'Reset'
-                ..addEventListener('click',
-                    createDomEventListener((_) => _reset())),
+                ..addEventListener(
+                    'click', createDomEventListener((_) => _reset())),
             ),
         ),
     );

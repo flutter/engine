@@ -22,7 +22,8 @@ import 'native_memory.dart';
 class ManagedSkColorFilter {
   ManagedSkColorFilter(CkColorFilter ckColorFilter)
       : colorFilter = ckColorFilter {
-    _ref = UniqueRef<SkColorFilter>(this, colorFilter._initRawColorFilter(), 'ColorFilter');
+    _ref = UniqueRef<SkColorFilter>(
+        this, colorFilter._initRawColorFilter(), 'ColorFilter');
   }
 
   final CkColorFilter colorFilter;
@@ -56,7 +57,8 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
   /// the caller's responsibility to manage the lifecycle of the returned value.
   SkImageFilter initRawImageFilter() {
     final SkColorFilter skColorFilter = _initRawColorFilter();
-    final SkImageFilter result = canvasKit.ImageFilter.MakeColorFilter(skColorFilter, null);
+    final SkImageFilter result =
+        canvasKit.ImageFilter.MakeColorFilter(skColorFilter, null);
 
     // The underlying SkColorFilter is now owned by the SkImageFilter, so we
     // need to drop the reference to allow it to be collected.
@@ -114,7 +116,6 @@ SkColorFilter createSkColorFilterFromColorAndBlendMode(
   }
   return filter;
 }
-
 
 class CkBlendModeColorFilter extends CkColorFilter {
   const CkBlendModeColorFilter(this.color, this.blendMode);
@@ -251,22 +252,23 @@ class CkComposeColorFilter extends CkColorFilter {
 /// avoid repainting.
 CkColorFilter? createCkColorFilter(EngineColorFilter colorFilter) {
   switch (colorFilter.type) {
-      case ColorFilterType.mode:
-        if (colorFilter.color == null || colorFilter.blendMode == null) {
-          return null;
-        }
-        return CkBlendModeColorFilter(colorFilter.color!, colorFilter.blendMode!);
-      case ColorFilterType.matrix:
-        if (colorFilter.matrix == null) {
-          return null;
-        }
-        assert(colorFilter.matrix!.length == 20, 'Color Matrix must have 20 entries.');
-        return CkMatrixColorFilter(colorFilter.matrix!);
-      case ColorFilterType.linearToSrgbGamma:
-        return const CkLinearToSrgbGammaColorFilter();
-      case ColorFilterType.srgbToLinearGamma:
-        return const CkSrgbToLinearGammaColorFilter();
-      default:
-        throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
-    }
+    case ColorFilterType.mode:
+      if (colorFilter.color == null || colorFilter.blendMode == null) {
+        return null;
+      }
+      return CkBlendModeColorFilter(colorFilter.color!, colorFilter.blendMode!);
+    case ColorFilterType.matrix:
+      if (colorFilter.matrix == null) {
+        return null;
+      }
+      assert(colorFilter.matrix!.length == 20,
+          'Color Matrix must have 20 entries.');
+      return CkMatrixColorFilter(colorFilter.matrix!);
+    case ColorFilterType.linearToSrgbGamma:
+      return const CkLinearToSrgbGammaColorFilter();
+    case ColorFilterType.srgbToLinearGamma:
+      return const CkSrgbToLinearGammaColorFilter();
+    default:
+      throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
+  }
 }

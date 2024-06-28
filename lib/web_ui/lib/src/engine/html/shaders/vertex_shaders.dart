@@ -61,7 +61,8 @@ abstract final class VertexShaders {
       final ShaderMethod method = builder.addMethod('main');
       method.addStatement(
           'gl_Position = ((u_ctransform * position) * u_scale) + u_shift;');
-      method.addStatement('v_texcoord = vec2((u_textransform.z + position.x) * u_textransform.x, '
+      method.addStatement(
+          'v_texcoord = vec2((u_textransform.z + position.x) * u_textransform.x, '
           '((u_textransform.w + position.y) * u_textransform.y));');
       _textureVertexShader = builder.build();
     }

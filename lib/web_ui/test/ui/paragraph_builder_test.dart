@@ -48,19 +48,22 @@ Future<void> testMain() async {
     final Paragraph paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
 
-    final TextRange downstreamWordBoundary = paragraph.getWordBoundary(const TextPosition(
+    final TextRange downstreamWordBoundary =
+        paragraph.getWordBoundary(const TextPosition(
       offset: 5,
     ));
     expect(downstreamWordBoundary, const TextRange(start: 5, end: 6));
 
-    final TextRange upstreamWordBoundary = paragraph.getWordBoundary(const TextPosition(
+    final TextRange upstreamWordBoundary =
+        paragraph.getWordBoundary(const TextPosition(
       offset: 5,
       affinity: TextAffinity.upstream,
     ));
     expect(upstreamWordBoundary, const TextRange(start: 0, end: 5));
   });
 
-  test('getLineBoundary at the last character position gives correct results', () {
+  test('getLineBoundary at the last character position gives correct results',
+      () {
     final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle());
     builder.addText('hello world');
 
@@ -78,7 +81,8 @@ Future<void> testMain() async {
     builder.addText('');
     final Paragraph paragraph = builder.build();
     expect(
-      () => paragraph.layout(const ParagraphConstraints(width: double.infinity)),
+      () =>
+          paragraph.layout(const ParagraphConstraints(width: double.infinity)),
       returnsNormally,
     );
   });
@@ -86,7 +90,8 @@ Future<void> testMain() async {
   test('kTextHeightNone unsets the height multiplier', () {
     const double fontSize = 10;
     const String text = 'A';
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
+    final ParagraphBuilder builder =
+        ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
     builder.pushStyle(TextStyle(height: kTextHeightNone));
     builder.addText(text);
     final Paragraph paragraph = builder.build()
@@ -98,7 +103,10 @@ Future<void> testMain() async {
   test('kTextHeightNone ParagraphStyle', () {
     const double fontSize = 10;
     final ParagraphBuilder builder = ParagraphBuilder(
-      ParagraphStyle(fontSize: fontSize, height: kTextHeightNone, fontFamily: 'FlutterTest'),
+      ParagraphStyle(
+          fontSize: fontSize,
+          height: kTextHeightNone,
+          fontFamily: 'FlutterTest'),
     );
     builder.addText('A');
     final Paragraph paragraph = builder.build()
@@ -107,21 +115,26 @@ Future<void> testMain() async {
     expect(paragraph.height, lessThan(2 * fontSize));
   });
 
-  test('kTextHeightNone StrutStyle', () {
-    const double fontSize = 10;
-    final ParagraphBuilder builder = ParagraphBuilder(
-      ParagraphStyle(
-        fontSize: 100,
-        fontFamily: 'FlutterTest',
-        strutStyle: StrutStyle(forceStrutHeight: true, height: kTextHeightNone, fontSize: fontSize),
-      ),
-    );
-    builder.addText('A');
-    final Paragraph paragraph = builder.build()
-      ..layout(const ParagraphConstraints(width: 1000));
-    // The height should be much smaller than fontSize * 10.
-    expect(paragraph.height, lessThan(2 * fontSize));
-  },
+  test(
+    'kTextHeightNone StrutStyle',
+    () {
+      const double fontSize = 10;
+      final ParagraphBuilder builder = ParagraphBuilder(
+        ParagraphStyle(
+          fontSize: 100,
+          fontFamily: 'FlutterTest',
+          strutStyle: StrutStyle(
+              forceStrutHeight: true,
+              height: kTextHeightNone,
+              fontSize: fontSize),
+        ),
+      );
+      builder.addText('A');
+      final Paragraph paragraph = builder.build()
+        ..layout(const ParagraphConstraints(width: 1000));
+      // The height should be much smaller than fontSize * 10.
+      expect(paragraph.height, lessThan(2 * fontSize));
+    },
     skip: isHtml, // The HTML renderer does not support struts.
   );
 }

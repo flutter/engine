@@ -26,9 +26,11 @@ class StubPictureRenderer implements PictureRenderer {
   @override
   Future<RenderResult> renderPictures(List<ScenePicture> pictures) async {
     renderedPictures.addAll(pictures);
-    final List<DomImageBitmap> bitmaps = await Future.wait(pictures.map((ScenePicture picture) {
+    final List<DomImageBitmap> bitmaps =
+        await Future.wait(pictures.map((ScenePicture picture) {
       final ui.Rect cullRect = picture.cullRect;
-      final Future<DomImageBitmap> bitmap = createImageBitmap(scratchCanvasElement as JSObject, (
+      final Future<DomImageBitmap> bitmap =
+          createImageBitmap(scratchCanvasElement as JSObject, (
         x: 0,
         y: 0,
         width: cullRect.width.toInt(),
@@ -79,15 +81,13 @@ class StubFlutterView implements ui.FlutterView {
   ui.PlatformDispatcher get platformDispatcher => throw UnimplementedError();
 
   @override
-  void render(ui.Scene scene, {ui.Size? size}) {
-  }
+  void render(ui.Scene scene, {ui.Size? size}) {}
 
   @override
   ui.ViewPadding get systemGestureInsets => throw UnimplementedError();
 
   @override
-  void updateSemantics(ui.SemanticsUpdate update) {
-  }
+  void updateSemantics(ui.SemanticsUpdate update) {}
 
   @override
   int get viewId => throw UnimplementedError();
@@ -204,19 +204,19 @@ void testMain() {
   });
 
   test('SceneView clips pictures that are outside the window screen', () async {
-      final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
-        -50,
-        -50,
-        100,
-        120,
-      ));
+    final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
+      -50,
+      -50,
+      100,
+      120,
+    ));
 
-      final EngineRootLayer rootLayer = EngineRootLayer();
-      rootLayer.slices.add(PictureSlice(picture));
-      final EngineScene scene = EngineScene(rootLayer);
-      await sceneView.renderScene(scene, null);
+    final EngineRootLayer rootLayer = EngineRootLayer();
+    rootLayer.slices.add(PictureSlice(picture));
+    final EngineScene scene = EngineScene(rootLayer);
+    await sceneView.renderScene(scene, null);
 
-      expect(stubPictureRenderer.renderedPictures.length, 1);
-      expect(stubPictureRenderer.clipRequests.containsKey(picture), true);
+    expect(stubPictureRenderer.renderedPictures.length, 1);
+    expect(stubPictureRenderer.clipRequests.containsKey(picture), true);
   });
 }

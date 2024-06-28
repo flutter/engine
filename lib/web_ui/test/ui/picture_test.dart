@@ -38,8 +38,8 @@ Future<void> testMain() async {
   test('approximateBytesUsed is available for onCreate', () async {
     int pictureSize = -1;
 
-    ui.Picture.onCreate = (ui.Picture picture) =>
-      pictureSize = picture.approximateBytesUsed;
+    ui.Picture.onCreate =
+        (ui.Picture picture) => pictureSize = picture.approximateBytesUsed;
 
     _createPicture();
 

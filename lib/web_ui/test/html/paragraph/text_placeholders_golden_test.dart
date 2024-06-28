@@ -76,7 +76,8 @@ Future<void> testMain() async {
     );
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
-    return goldenTester.diffCanvasScreenshot(canvas, 'text_align_with_placeholders');
+    return goldenTester.diffCanvasScreenshot(
+        canvas, 'text_align_with_placeholders');
   });
 }
 

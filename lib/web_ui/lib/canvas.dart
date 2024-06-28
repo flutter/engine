@@ -29,11 +29,10 @@ abstract class Vertices {
     List<Offset>? textureCoordinates,
     List<int>? indices,
   }) {
-    return engine.renderer.createVertices(mode,
-      positions,
-      textureCoordinates: textureCoordinates,
-      colors: colors,
-      indices: indices);
+    return engine.renderer.createVertices(mode, positions,
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices);
   }
   factory Vertices.raw(
     VertexMode mode,
@@ -42,11 +41,10 @@ abstract class Vertices {
     Float32List? textureCoordinates,
     Uint16List? indices,
   }) {
-    return engine.renderer.createVerticesRaw(mode,
-      positions,
-      textureCoordinates: textureCoordinates,
-      colors: colors,
-      indices: indices);
+    return engine.renderer.createVerticesRaw(mode, positions,
+        textureCoordinates: textureCoordinates,
+        colors: colors,
+        indices: indices);
   }
 
   void dispose();
@@ -61,7 +59,7 @@ abstract class PictureRecorder {
 
 abstract class Canvas {
   factory Canvas(PictureRecorder recorder, [Rect? cullRect]) =>
-    engine.renderer.createCanvas(recorder, cullRect);
+      engine.renderer.createCanvas(recorder, cullRect);
   void save();
   void saveLayer(Rect? bounds, Paint paint);
   void restore();

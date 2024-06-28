@@ -33,8 +33,8 @@ const double kEpsilon = 0.000000001;
 class SurfacePathMetrics extends IterableBase<ui.PathMetric>
     implements ui.PathMetrics {
   SurfacePathMetrics(PathRef path, bool forceClosed)
-      : _iterator =
-            SurfacePathMetricIterator._(_SurfacePathMeasure(PathRef.shallowCopy(path), forceClosed));
+      : _iterator = SurfacePathMetricIterator._(
+            _SurfacePathMeasure(PathRef.shallowCopy(path), forceClosed));
 
   final SurfacePathMetricIterator _iterator;
 

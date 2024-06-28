@@ -41,9 +41,8 @@ void testMain() {
         final List<String> fontFamilyList = <String>[];
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -60,9 +59,8 @@ void testMain() {
 
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -81,9 +79,8 @@ void testMain() {
 
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -100,9 +97,7 @@ void testMain() {
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
           FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{
-              'weight': 'bold'
-            })
+            FontAsset(testFontUrl, <String, String>{'weight': 'bold'})
           ])
         ]));
 
@@ -125,9 +120,8 @@ void testMain() {
 
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -152,9 +146,8 @@ void testMain() {
 
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -179,9 +172,8 @@ void testMain() {
 
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
@@ -207,9 +199,8 @@ void testMain() {
 
         final HtmlFontCollection collection = HtmlFontCollection();
         await collection.loadAssetFonts(FontManifest(<FontFamily>[
-          FontFamily(testFontFamily, <FontAsset>[
-            FontAsset(testFontUrl, <String, String>{})
-          ])
+          FontFamily(testFontFamily,
+              <FontAsset>[FontAsset(testFontUrl, <String, String>{})])
         ]));
         domDocument.fonts!
             .forEach((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {

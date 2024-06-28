@@ -89,14 +89,14 @@ Future<void> testMain() async {
   }
 
   test('renders pixels that are not aligned inside the canvas', () async {
-    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 60, 60),
-        RenderStrategy());
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 60, 60), RenderStrategy());
 
     drawMisalignedLines(canvas);
 
     appendToScene();
 
-    await matchGoldenFile('misaligned_pixels_in_canvas_test.png', region: region);
+    await matchGoldenFile('misaligned_pixels_in_canvas_test.png',
+        region: region);
   });
 
   test('compensates for misalignment of the canvas', () async {
@@ -105,8 +105,8 @@ Future<void> testMain() async {
     // shift its position back to 0.0 and at the same time it will it will
     // compensate by shifting the contents of the canvas in the opposite
     // direction.
-    canvas = BitmapCanvas(const Rect.fromLTWH(0.5, 0.5, 60, 60),
-        RenderStrategy());
+    canvas =
+        BitmapCanvas(const Rect.fromLTWH(0.5, 0.5, 60, 60), RenderStrategy());
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     drawMisalignedLines(canvas);
 
@@ -116,8 +116,7 @@ Future<void> testMain() async {
   });
 
   test('fill the whole canvas with color even when transformed', () async {
-    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50),
-        RenderStrategy());
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
     canvas.drawColor(const Color.fromRGBO(0, 255, 0, 1.0), BlendMode.src);
@@ -129,8 +128,7 @@ Future<void> testMain() async {
   });
 
   test('fill the whole canvas with paint even when transformed', () async {
-    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50),
-        RenderStrategy());
+    canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
     canvas.drawPaint(SurfacePaintData()
@@ -160,7 +158,8 @@ Future<void> testMain() async {
   test('renders clipped DOM text with high quality', () async {
     final CanvasParagraph paragraph =
         (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))
-          ..addText('Am I blurry?')).build() as CanvasParagraph;
+              ..addText('Am I blurry?'))
+            .build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
     final Rect canvasSize = Rect.fromLTRB(
@@ -171,8 +170,8 @@ Future<void> testMain() async {
     );
     final Rect outerClip =
         Rect.fromLTRB(0.5, 0.5, canvasSize.right, canvasSize.bottom);
-    final Rect innerClip = Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
-        canvasSize.right, canvasSize.bottom);
+    final Rect innerClip = Rect.fromLTRB(
+        0.5, canvasSize.bottom / 2 + 0.5, canvasSize.right, canvasSize.bottom);
 
     canvas = BitmapCanvas(canvasSize, RenderStrategy());
     canvas.debugChildOverdraw = true;
@@ -182,7 +181,10 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((DomElement e) => e.innerText).toList(),
+      canvas.rootElement
+          .querySelectorAll('flt-paragraph')
+          .map<String>((DomElement e) => e.innerText)
+          .toList(),
       <String>['Am I blurry?', 'Am I blurry?'],
       reason: 'Expected to render text using HTML',
     );
@@ -204,8 +206,9 @@ Future<void> testMain() async {
       fontSize: 18,
     ));
 
-    const String text = 'This text is intentionally very long to make sure that it '
-      'breaks into multiple lines.';
+    const String text =
+        'This text is intentionally very long to make sure that it '
+        'breaks into multiple lines.';
     builder.addText(text);
 
     final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
@@ -224,15 +227,16 @@ Future<void> testMain() async {
     const double l = 50.0;
 
     final Path path = (Path()
-      ..moveTo(-l, -l)
-      ..lineTo(0, -r)
-      ..lineTo(l, -l)
-      ..lineTo(r, 0)
-      ..lineTo(l, l)
-      ..lineTo(0, r)
-      ..lineTo(-l, l)
-      ..lineTo(-r, 0)
-      ..close()).shift(const Offset(250, 250));
+          ..moveTo(-l, -l)
+          ..lineTo(0, -r)
+          ..lineTo(l, -l)
+          ..lineTo(r, 0)
+          ..lineTo(l, l)
+          ..lineTo(0, r)
+          ..lineTo(-l, l)
+          ..lineTo(-r, 0)
+          ..close())
+        .shift(const Offset(250, 250));
 
     final SurfacePaintData borderPaint = SurfacePaintData()
       ..color = black.value
@@ -240,17 +244,24 @@ Future<void> testMain() async {
 
     canvas.drawPath(path, pathPaint);
     canvas.drawParagraph(paragraph, const Offset(180, 50));
-    canvas.drawRect(Rect.fromLTWH(180, 50, paragraph.width, paragraph.height), borderPaint);
+    canvas.drawRect(
+        Rect.fromLTWH(180, 50, paragraph.width, paragraph.height), borderPaint);
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
+      canvas.rootElement
+          .querySelectorAll('flt-paragraph')
+          .map<String?>((DomElement e) => e.text)
+          .toList(),
       <String>[text],
       reason: 'Expected to render text using HTML',
     );
 
     final SceneBuilder sb = SceneBuilder();
-    sb.pushTransform(Matrix4.diagonal3Values(EngineFlutterDisplay.instance.browserDevicePixelRatio,
-        EngineFlutterDisplay.instance.browserDevicePixelRatio, 1.0).toFloat64());
+    sb.pushTransform(Matrix4.diagonal3Values(
+            EngineFlutterDisplay.instance.browserDevicePixelRatio,
+            EngineFlutterDisplay.instance.browserDevicePixelRatio,
+            1.0)
+        .toFloat64());
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).toFloat64());
     sb.pushOffset(0, -500);
     sb.pushClipRect(canvasSize);
@@ -282,7 +293,8 @@ Future<void> testMain() async {
   test('does not allocate bitmap canvas just for text', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
 
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'));
+    final ParagraphBuilder builder =
+        ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'));
     builder.addText('Hello');
     final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));

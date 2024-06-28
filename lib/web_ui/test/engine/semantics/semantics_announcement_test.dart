@@ -19,8 +19,10 @@ void testMain() {
   late AccessibilityAnnouncements accessibilityAnnouncements;
 
   setUp(() {
-    final DomElement announcementsHost = createDomElement('flt-announcement-host');
-    accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsHost);
+    final DomElement announcementsHost =
+        createDomElement('flt-announcement-host');
+    accessibilityAnnouncements =
+        AccessibilityAnnouncements(hostElement: announcementsHost);
     setLiveMessageDurationForTest(const Duration(milliseconds: 10));
     expect(
       announcementsHost.querySelector('flt-announcement-polite'),
@@ -43,24 +45,38 @@ void testMain() {
       });
     }
 
-    void sendAnnouncementMessage({required String message, int? assertiveness}) {
-      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(<dynamic, dynamic>{
-        'data': <dynamic, dynamic>{
-          'message': message,
-          'assertiveness': assertiveness,
-        },
-      }));
+    void sendAnnouncementMessage(
+        {required String message, int? assertiveness}) {
+      accessibilityAnnouncements.handleMessage(
+          codec,
+          codec.encodeMessage(<dynamic, dynamic>{
+            'data': <dynamic, dynamic>{
+              'message': message,
+              'assertiveness': assertiveness,
+            },
+          }));
     }
 
     void expectMessages({String polite = '', String assertive = ''}) {
-      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, polite);
-      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, assertive);
+      expect(
+          accessibilityAnnouncements
+              .ariaLiveElementFor(Assertiveness.polite)
+              .text,
+          polite);
+      expect(
+          accessibilityAnnouncements
+              .ariaLiveElementFor(Assertiveness.assertive)
+              .text,
+          assertive);
     }
 
     void expectNoMessages() => expectMessages();
 
-    test('Default value of aria-live is polite when assertiveness is not specified', () async {
-      accessibilityAnnouncements.handleMessage(codec, encodeMessageOnly(message: 'polite message'));
+    test(
+        'Default value of aria-live is polite when assertiveness is not specified',
+        () async {
+      accessibilityAnnouncements.handleMessage(
+          codec, encodeMessageOnly(message: 'polite message'));
       expectMessages(polite: 'polite message');
 
       await Future<void>.delayed(liveMessageDuration);
@@ -106,7 +122,9 @@ void testMain() {
       expectNoMessages();
     });
 
-    test('Repeated announcements are modified to ensure screen readers announce them', () async {
+    test(
+        'Repeated announcements are modified to ensure screen readers announce them',
+        () async {
       sendAnnouncementMessage(message: 'Hello');
       expectMessages(polite: 'Hello');
       await Future<void>.delayed(liveMessageDuration);
@@ -124,7 +142,8 @@ void testMain() {
     });
 
     test('announce() polite', () async {
-      accessibilityAnnouncements.announce('polite message', Assertiveness.polite);
+      accessibilityAnnouncements.announce(
+          'polite message', Assertiveness.polite);
       expectMessages(polite: 'polite message');
 
       await Future<void>.delayed(liveMessageDuration);
@@ -132,7 +151,8 @@ void testMain() {
     });
 
     test('announce() assertive', () async {
-      accessibilityAnnouncements.announce('assertive message', Assertiveness.assertive);
+      accessibilityAnnouncements.announce(
+          'assertive message', Assertiveness.assertive);
       expectMessages(assertive: 'assertive message');
 
       await Future<void>.delayed(liveMessageDuration);

@@ -14,7 +14,7 @@ import '../pipeline.dart';
 import '../utils.dart';
 
 class CopyArtifactsStep implements PipelineStep {
-  CopyArtifactsStep(this.artifactDeps, { required this.runtimeMode });
+  CopyArtifactsStep(this.artifactDeps, {required this.runtimeMode});
 
   final ArtifactDependencies artifactDeps;
   final RuntimeMode runtimeMode;
@@ -114,11 +114,12 @@ class CopyArtifactsStep implements PipelineStep {
       'assets',
       'fallback_fonts',
     );
-    for (final io.File file in
-      fallbackFontsSource.listSync(recursive: true).whereType<io.File>()
-    ) {
-      final String relativePath = pathlib.relative(file.path, from: fallbackFontsSource.path);
-      final io.File destinationFile = io.File(pathlib.join(fallbackFontsDestinationPath, relativePath));
+    for (final io.File file
+        in fallbackFontsSource.listSync(recursive: true).whereType<io.File>()) {
+      final String relativePath =
+          pathlib.relative(file.path, from: fallbackFontsSource.path);
+      final io.File destinationFile =
+          io.File(pathlib.join(fallbackFontsDestinationPath, relativePath));
       if (!destinationFile.parent.existsSync()) {
         destinationFile.parent.createSync(recursive: true);
       }
@@ -136,7 +137,8 @@ class CopyArtifactsStep implements PipelineStep {
       'images',
     ));
 
-    for (final io.File imageFile in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
+    for (final io.File imageFile
+        in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
       final io.File destination = io.File(pathlib.join(
         environment.webTestsArtifactsDir.path,
         'test_images',
@@ -159,13 +161,10 @@ class CopyArtifactsStep implements PipelineStep {
     );
 
     for (final io.File sourceFile in flutterJsInputDirectory
-      .listSync(recursive: true)
-      .whereType<io.File>()
-    ) {
-      final String relativePath = pathlib.relative(
-        sourceFile.path,
-        from: flutterJsInputDirectory.path
-      );
+        .listSync(recursive: true)
+        .whereType<io.File>()) {
+      final String relativePath =
+          pathlib.relative(sourceFile.path, from: flutterJsInputDirectory.path);
       final String targetPath = pathlib.join(
         targetDirectoryPath,
         relativePath,
@@ -178,7 +177,8 @@ class CopyArtifactsStep implements PipelineStep {
     }
   }
 
-  Future<void> copyCanvasKitFiles(String sourcePath, String destinationPath) async {
+  Future<void> copyCanvasKitFiles(
+      String sourcePath, String destinationPath) async {
     final String sourceDirectoryPath = pathlib.join(
       outBuildPath,
       sourcePath,
@@ -207,8 +207,10 @@ class CopyArtifactsStep implements PipelineStep {
           // Sourcemaps are only generated under certain build conditions, so
           // they are optional.
           continue;
-        } {
-          throw ToolExit('Built CanvasKit artifact not found at path "$sourceFile".');
+        }
+        {
+          throw ToolExit(
+              'Built CanvasKit artifact not found at path "$sourceFile".');
         }
       }
       await targetFile.create(recursive: true);
@@ -243,8 +245,10 @@ class CopyArtifactsStep implements PipelineStep {
           // Sourcemaps are only generated under certain build conditions, so
           // they are optional.
           continue;
-        } {
-          throw ToolExit('Built Skwasm artifact not found at path "$sourceFile".');
+        }
+        {
+          throw ToolExit(
+              'Built Skwasm artifact not found at path "$sourceFile".');
         }
       }
       final io.File targetFile = io.File(pathlib.join(
@@ -311,13 +315,12 @@ class CopyArtifactsStep implements PipelineStep {
     }
 
     int exitCode = await runProcess(
-      environment.dartExecutable,
-      <String>[
-        'pub',
-        'get',
-      ],
-      workingDirectory: environment.webEngineTesterRootDir.path
-    );
+        environment.dartExecutable,
+        <String>[
+          'pub',
+          'get',
+        ],
+        workingDirectory: environment.webEngineTesterRootDir.path);
 
     if (exitCode != 0) {
       throw ToolExit(

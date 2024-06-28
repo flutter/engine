@@ -40,7 +40,8 @@ Future<void> testMain() async {
 
 Future<void> _testSuccessfulPayloads() async {
   test('httpFetch fetches a text file', () async {
-    final HttpFetchResponse response = await httpFetch('/lib/src/engine/alarm_clock.dart');
+    final HttpFetchResponse response =
+        await httpFetch('/lib/src/engine/alarm_clock.dart');
     expect(response.status, 200);
     expect(response.contentLength, greaterThan(0));
     expect(response.hasPayload, isTrue);
@@ -117,7 +118,8 @@ Future<void> _testSuccessfulPayloads() async {
       expect(response.url, url);
 
       final List<int> result = <int>[];
-      await response.payload.read<JSUint8Array>((JSUint8Array chunk) => result.addAll(chunk.toDart));
+      await response.payload.read<JSUint8Array>(
+          (JSUint8Array chunk) => result.addAll(chunk.toDart));
       expect(result, hasLength(length));
       expect(
         result,
@@ -138,7 +140,8 @@ Future<void> _testSuccessfulPayloads() async {
   });
 
   test('httpFetchByteBuffer fetches a binary file as ByteBuffer', () async {
-    final ByteBuffer response = await httpFetchByteBuffer('/test_images/1x1.png');
+    final ByteBuffer response =
+        await httpFetchByteBuffer('/test_images/1x1.png');
     expect(
       response.asUint8List().sublist(0, 8),
       <int>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A],
@@ -163,7 +166,7 @@ Future<void> _testHttpErrorCodes() async {
       // HttpFetchNoPayloadError thrown.
       response.payload;
       fail('Expected HttpFetchNoPayloadError');
-    } on HttpFetchNoPayloadError catch(error) {
+    } on HttpFetchNoPayloadError catch (error) {
       expect(error.status, 404);
       expect(error.url, '/file_not_found');
       expect(
@@ -185,7 +188,7 @@ Future<void> _testHttpErrorCodes() async {
       try {
         await testFunction();
         fail('Expected HttpFetchNoPayloadError');
-      } on HttpFetchNoPayloadError catch(error) {
+      } on HttpFetchNoPayloadError catch (error) {
         expect(error.status, 404);
         expect(error.url, '/file_not_found');
         expect(
@@ -214,7 +217,7 @@ Future<void> _testNetworkErrors() async {
       try {
         await testFunction();
         fail('Expected HttpFetchError');
-      } on HttpFetchError catch(error) {
+      } on HttpFetchError catch (error) {
         expect(error.url, badUrl);
         expect(
           error.toString(),
@@ -222,9 +225,8 @@ Future<void> _testNetworkErrors() async {
           // error message. So this only checks for the common error prefix, but
           // not the entire error message.
           startsWith(
-            'Flutter Web engine failed to complete HTTP request to fetch '
-            '"https://user:password@example.com/": TypeError: '
-          ),
+              'Flutter Web engine failed to complete HTTP request to fetch '
+              '"https://user:password@example.com/": TypeError: '),
         );
       }
     }

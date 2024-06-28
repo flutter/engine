@@ -28,7 +28,8 @@ void doTests() {
       );
 
       expect(rootElement.getAttribute('flt-view-id'), '123');
-      expect(hostElement.getAttribute('flt-renderer'), 'canvaskit (auto-selected)');
+      expect(hostElement.getAttribute('flt-renderer'),
+          'canvaskit (auto-selected)');
       expect(hostElement.getAttribute('flt-build-mode'), 'release');
       expect(hostElement.getAttribute('spellcheck'), 'false');
 
@@ -40,7 +41,8 @@ void doTests() {
       );
 
       expect(rootElement.getAttribute('flt-view-id'), '456');
-      expect(hostElement.getAttribute('flt-renderer'), 'html (requested explicitly)');
+      expect(hostElement.getAttribute('flt-renderer'),
+          'html (requested explicitly)');
       expect(hostElement.getAttribute('flt-build-mode'), 'debug');
       expect(hostElement.getAttribute('spellcheck'), 'false');
     });

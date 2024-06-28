@@ -462,7 +462,8 @@ class SurfacePath implements ui.Path {
     // e.g. canvas.drawArc(0, 359.99, ...)
     // -vs- canvas.drawArc(0, 359.9, ...)
     // Detect this edge case, and tweak the stop vector.
-    if (SPath.nearlyEqual(cosStart, cosStop) && SPath.nearlyEqual(sinStart, sinStop)) {
+    if (SPath.nearlyEqual(cosStart, cosStop) &&
+        SPath.nearlyEqual(sinStart, sinStop)) {
       final double sweep = sweepAngle.abs() * 180.0 / math.pi;
       if (sweep <= 360 && sweep > 359) {
         // Use tiny angle (in radians) to tweak.
@@ -643,7 +644,8 @@ class SurfacePath implements ui.Path {
       final ui.Offset lastPoint = pathRef.atPoint(pointCount - 1);
       final double lastPointX = lastPoint.dx;
       final double lastPointY = lastPoint.dy;
-      if (!SPath.nearlyEqual(px, lastPointX) || !SPath.nearlyEqual(py, lastPointY)) {
+      if (!SPath.nearlyEqual(px, lastPointX) ||
+          !SPath.nearlyEqual(py, lastPointY)) {
         lineTo(px, py);
       }
     }
@@ -790,8 +792,7 @@ class SurfacePath implements ui.Path {
     }
 
     // The arc may be slightly bigger than 1/4 circle, so allow up to 1/3rd.
-    final int segments =
-        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil();
+    final int segments = (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil();
     final double thetaWidth = thetaArc / segments;
     final double t = math.tan(thetaWidth / 2.0);
     if (!t.isFinite) {
@@ -805,11 +806,12 @@ class SurfacePath implements ui.Path {
     // to start outside their marks. A round rect may lose convexity as a
     // result. If the input values are on integers, place the conic on
     // integers as well.
-    final bool expectIntegers = SPath.nearlyEqual(math.pi / 2 - thetaWidth.abs(), 0) &&
-        SPath.isInteger(rx) &&
-        SPath.isInteger(ry) &&
-        SPath.isInteger(x) &&
-        SPath.isInteger(y);
+    final bool expectIntegers =
+        SPath.nearlyEqual(math.pi / 2 - thetaWidth.abs(), 0) &&
+            SPath.isInteger(rx) &&
+            SPath.isInteger(ry) &&
+            SPath.isInteger(x) &&
+            SPath.isInteger(y);
 
     for (int i = 0; i < segments; i++) {
       final double endTheta = startTheta + thetaWidth;
@@ -1165,8 +1167,10 @@ class SurfacePath implements ui.Path {
       } else {
         final double x = points[p];
         final double y = points[p + 1];
-        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + (matrix4[12] + offsetX);
-        points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + (matrix4[13] + offsetY);
+        points[p] =
+            (matrix4[0] * x) + (matrix4[4] * y) + (matrix4[12] + offsetX);
+        points[p + 1] =
+            (matrix4[1] * x) + (matrix4[5] * y) + (matrix4[13] + offsetY);
       }
     }
     _resetAfterEdit();
@@ -1206,7 +1210,9 @@ class SurfacePath implements ui.Path {
     final ui.Rect bounds = getBounds();
     final double x = point.dx;
     final double y = point.dy;
-    if (x < bounds.left || y < bounds.top || x > bounds.right ||
+    if (x < bounds.left ||
+        y < bounds.top ||
+        x > bounds.right ||
         y > bounds.bottom) {
       return false;
     }
@@ -1258,7 +1264,8 @@ class SurfacePath implements ui.Path {
         } else {
           for (int index = 0; index < last; ++index) {
             final ui.Offset test = tangents[index];
-            final double crossProduct = test.dx * tangent.dy - test.dy * tangent.dx;
+            final double crossProduct =
+                test.dx * tangent.dy - test.dy * tangent.dx;
             if (SPath.nearlyEqual(crossProduct, 0) &&
                 SPath.scalarSignedAsInt(tangent.dx * test.dx) <= 0 &&
                 SPath.scalarSignedAsInt(tangent.dy * test.dy) <= 0) {
@@ -1547,8 +1554,7 @@ class SurfacePath implements ui.Path {
   ///
   /// Used for web optimization of physical shape represented as
   /// a persistent div.
-  ui.Rect? toCircle() =>
-      pathRef.isOval == -1 ? null : pathRef.getBounds();
+  ui.Rect? toCircle() => pathRef.isOval == -1 ? null : pathRef.getBounds();
 
   /// Returns if Path is empty.
   /// Empty Path may have FillType but has no points, verbs or weights.

@@ -23,11 +23,7 @@ String generateBuilderJson(FeltConfig config) {
 Map<String, dynamic> _getArtifactBuildStep() {
   return <String, dynamic>{
     'name': 'web_tests/artifacts',
-    'drone_dimensions': <String>[
-      'device_type=none',
-      'os=Linux',
-      'cores=32'
-    ],
+    'drone_dimensions': <String>['device_type=none', 'os=Linux', 'cores=32'],
     'gclient_variables': <String, dynamic>{
       'download_android_deps': false,
       'download_emsdk': true,
@@ -39,9 +35,7 @@ Map<String, dynamic> _getArtifactBuildStep() {
     ],
     'ninja': <String, dynamic>{
       'config': 'wasm_release',
-      'targets': <String>[
-        'flutter/web_sdk:flutter_web_sdk_archive'
-      ]
+      'targets': <String>['flutter/web_sdk:flutter_web_sdk_archive']
     },
     'archives': <dynamic>[
       <String, dynamic>{
@@ -58,18 +52,13 @@ Map<String, dynamic> _getArtifactBuildStep() {
       'tasks': <dynamic>[
         <String, dynamic>{
           'name': 'check licenses',
-          'parameters': <String>[
-            'check-licenses'
-          ],
-          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
-
+          'parameters': <String>['check-licenses'],
+          'scripts': <String>['flutter/lib/web_ui/dev/felt'],
         },
         <String, dynamic>{
           'name': 'web engine analysis',
-          'parameters': <String>[
-            'analyze'
-          ],
-          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
+          'parameters': <String>['analyze'],
+          'scripts': <String>['flutter/lib/web_ui/dev/felt'],
         },
         <String, dynamic>{
           'name': 'copy artifacts for web tests',
@@ -77,7 +66,7 @@ Map<String, dynamic> _getArtifactBuildStep() {
             'test',
             '--copy-artifacts',
           ],
-          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
+          'scripts': <String>['flutter/lib/web_ui/dev/felt'],
         },
       ]
     },
@@ -100,7 +89,7 @@ Map<String, dynamic> _getBundleBuildStep(TestBundle bundle) {
             '--compile',
             '--bundle=${bundle.name}',
           ],
-          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
+          'scripts': <String>['flutter/lib/web_ui/dev/felt'],
         }
       ]
     },
@@ -109,16 +98,20 @@ Map<String, dynamic> _getBundleBuildStep(TestBundle bundle) {
 
 Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
   return <dynamic>[
-    ..._getTestStepsForPlatform(suites, 'Linux', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.chrome ||
-      suite.runConfig.browser == BrowserName.firefox
-    ),
-    ..._getTestStepsForPlatform(suites, 'Mac', specificOS: 'Mac-13', cpu: 'arm64', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.safari
-    ),
-    ..._getTestStepsForPlatform(suites, 'Windows', (TestSuite suite) =>
-      suite.runConfig.browser == BrowserName.chrome
-    ),
+    ..._getTestStepsForPlatform(
+        suites,
+        'Linux',
+        (TestSuite suite) =>
+            suite.runConfig.browser == BrowserName.chrome ||
+            suite.runConfig.browser == BrowserName.firefox),
+    ..._getTestStepsForPlatform(
+        suites,
+        'Mac',
+        specificOS: 'Mac-13',
+        cpu: 'arm64',
+        (TestSuite suite) => suite.runConfig.browser == BrowserName.safari),
+    ..._getTestStepsForPlatform(suites, 'Windows',
+        (TestSuite suite) => suite.runConfig.browser == BrowserName.chrome),
   ];
 }
 
@@ -129,9 +122,7 @@ Iterable<dynamic> _getTestStepsForPlatform(
   String? specificOS,
   String? cpu,
 }) {
-  return suites
-    .where(filter)
-    .map((TestSuite suite) => <String, dynamic>{
+  return suites.where(filter).map((TestSuite suite) => <String, dynamic>{
         'name': '$platform run ${suite.name} suite',
         'recipe': 'engine_v2/tester_engine',
         'drone_dimensions': <String>[
@@ -165,14 +156,9 @@ Iterable<dynamic> _getTestStepsForPlatform(
         'tasks': <dynamic>[
           <String, dynamic>{
             'name': 'run suite ${suite.name}',
-            'parameters': <String>[
-              'test',
-              '--run',
-              '--suite=${suite.name}'
-            ],
+            'parameters': <String>['test', '--run', '--suite=${suite.name}'],
             'script': 'flutter/lib/web_ui/dev/felt',
           }
         ]
-      }
-    );
+      });
 }

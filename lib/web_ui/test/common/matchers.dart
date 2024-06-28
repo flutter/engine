@@ -238,14 +238,12 @@ const Matcher isAssertionError = TypeMatcher<AssertionError>();
 Matcher hasHtml(String htmlPattern) {
   final html.DocumentFragment originalDom = html.parseFragment(htmlPattern);
   if (originalDom.children.isEmpty) {
-    fail(
-      'Test HTML pattern is empty.\n'
-      'The pattern must contain exacly one top-level element, but was: $htmlPattern');
+    fail('Test HTML pattern is empty.\n'
+        'The pattern must contain exacly one top-level element, but was: $htmlPattern');
   }
   if (originalDom.children.length > 1) {
-    fail(
-      'Test HTML pattern has more than one top-level element.\n'
-      'The pattern must contain exacly one top-level element, but was: $htmlPattern');
+    fail('Test HTML pattern has more than one top-level element.\n'
+        'The pattern must contain exacly one top-level element, but was: $htmlPattern');
   }
   return HtmlPatternMatcher(originalDom.children.single);
 }
@@ -277,7 +275,8 @@ class _Breadcrumbs {
   String toString() {
     return switch (kind) {
       _Breadcrumb.root => '<root>',
-      _Breadcrumb.element => parent!.kind == _Breadcrumb.root ? '@$name' : '$parent > $name',
+      _Breadcrumb.element =>
+        parent!.kind == _Breadcrumb.root ? '@$name' : '$parent > $name',
       _Breadcrumb.attribute => '$parent#$name',
       _Breadcrumb.styleProperty => '$parent#style($name)',
     };
@@ -298,7 +297,8 @@ class HtmlPatternMatcher extends Matcher {
     final List<String> mismatches = <String>[];
     matchState['mismatches'] = mismatches;
 
-    final html.Element element = html.parseFragment(object.outerHTML).children.single;
+    final html.Element element =
+        html.parseFragment(object.outerHTML).children.single;
     matchElements(_Breadcrumbs.root, mismatches, element, pattern);
     return mismatches.isEmpty;
   }
@@ -325,13 +325,13 @@ class HtmlPatternMatcher extends Matcher {
     return aName == bName;
   }
 
-  void matchElements(_Breadcrumbs parent, List<String> mismatches, html.Element element, html.Element pattern) {
+  void matchElements(_Breadcrumbs parent, List<String> mismatches,
+      html.Element element, html.Element pattern) {
     final _Breadcrumbs breadcrumb = parent.element(pattern.localName!);
 
     if (!_areTagsEqual(element, pattern)) {
       mismatches.add(
-        '$breadcrumb: unexpected tag name <${element.localName}> (expected <${pattern.localName}>).'
-      );
+          '$breadcrumb: unexpected tag name <${element.localName}> (expected <${pattern.localName}>).');
       // Don't bother matching anything else. If tags are different, it's likely
       // we're comparing apples to oranges at this point.
       return;
@@ -341,8 +341,10 @@ class HtmlPatternMatcher extends Matcher {
     matchChildren(breadcrumb, mismatches, element, pattern);
   }
 
-  void matchAttributes(_Breadcrumbs parent, List<String> mismatches, html.Element element, html.Element pattern) {
-    for (final MapEntry<Object, String> attribute in pattern.attributes.entries) {
+  void matchAttributes(_Breadcrumbs parent, List<String> mismatches,
+      html.Element element, html.Element pattern) {
+    for (final MapEntry<Object, String> attribute
+        in pattern.attributes.entries) {
       final String expectedName = attribute.key as String;
       final String expectedValue = attribute.value;
       final _Breadcrumbs breadcrumb = parent.attribute(expectedName);
@@ -352,14 +354,14 @@ class HtmlPatternMatcher extends Matcher {
         matchStyle(parent, mismatches, element, pattern);
       } else {
         if (!element.attributes.containsKey(expectedName)) {
-          mismatches.add('$breadcrumb: attribute $expectedName="$expectedValue" missing.');
+          mismatches.add(
+              '$breadcrumb: attribute $expectedName="$expectedValue" missing.');
         } else {
           final String? actualValue = element.attributes[expectedName];
           if (actualValue != expectedValue) {
             mismatches.add(
-              '$breadcrumb: expected attribute value $expectedName="$expectedValue", '
-              'but found $expectedName="$actualValue".'
-            );
+                '$breadcrumb: expected attribute value $expectedName="$expectedValue", '
+                'but found $expectedName="$actualValue".');
           }
         }
       }
@@ -380,20 +382,19 @@ class HtmlPatternMatcher extends Matcher {
     return result;
   }
 
-  void matchStyle(_Breadcrumbs parent, List<String> mismatches, html.Element element, html.Element pattern) {
+  void matchStyle(_Breadcrumbs parent, List<String> mismatches,
+      html.Element element, html.Element pattern) {
     final Map<String, String> expected = parseStyle(pattern);
     final Map<String, String> actual = parseStyle(element);
     for (final MapEntry<String, String> entry in expected.entries) {
       final _Breadcrumbs breadcrumb = parent.styleProperty(entry.key);
       if (!actual.containsKey(entry.key)) {
         mismatches.add(
-          '$breadcrumb: style property ${entry.key}="${entry.value}" missing.'
-        );
+            '$breadcrumb: style property ${entry.key}="${entry.value}" missing.');
       } else if (actual[entry.key] != entry.value) {
         mismatches.add(
-          '$breadcrumb: expected style property ${entry.key}="${entry.value}", '
-          'but found ${entry.key}="${actual[entry.key]}".'
-        );
+            '$breadcrumb: expected style property ${entry.key}="${entry.value}", '
+            'but found ${entry.key}="${actual[entry.key]}".');
       }
     }
   }
@@ -432,14 +433,14 @@ class HtmlPatternMatcher extends Matcher {
     return cleanNodes;
   }
 
-  void matchChildren(_Breadcrumbs parent, List<String> mismatches, html.Element element, html.Element pattern) {
+  void matchChildren(_Breadcrumbs parent, List<String> mismatches,
+      html.Element element, html.Element pattern) {
     final List<html.Node> actualChildNodes = _cleanUpNodeList(element.nodes);
     final List<html.Node> expectedChildNodes = _cleanUpNodeList(pattern.nodes);
 
     if (actualChildNodes.length != expectedChildNodes.length) {
       mismatches.add(
-        '$parent: expected ${expectedChildNodes.length} child nodes, but found ${actualChildNodes.length}.'
-      );
+          '$parent: expected ${expectedChildNodes.length} child nodes, but found ${actualChildNodes.length}.');
       return;
     }
 
@@ -452,13 +453,11 @@ class HtmlPatternMatcher extends Matcher {
       } else if (expectedChild is html.Text && actualChild is html.Text) {
         if (expectedChild.data != actualChild.data) {
           mismatches.add(
-            '$parent: expected text content "${expectedChild.data}", but found "${actualChild.data}".'
-          );
+              '$parent: expected text content "${expectedChild.data}", but found "${actualChild.data}".');
         }
       } else {
         mismatches.add(
-          '$parent: expected child type ${expectedChild.runtimeType}, but found ${actualChild.runtimeType}.'
-        );
+            '$parent: expected child type ${expectedChild.runtimeType}, but found ${actualChild.runtimeType}.');
       }
     }
   }
@@ -477,7 +476,8 @@ class HtmlPatternMatcher extends Matcher {
     Map<Object?, Object?> matchState,
     bool verbose,
   ) {
-    mismatchDescription.add('The following DOM structure did not match the expected pattern:\n');
+    mismatchDescription.add(
+        'The following DOM structure did not match the expected pattern:\n');
     mismatchDescription.add('${(object! as DomElement).outerHTML!}\n\n');
     mismatchDescription.add('Specifically:\n');
 

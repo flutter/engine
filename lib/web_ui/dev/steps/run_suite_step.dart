@@ -11,8 +11,10 @@ import 'package:path/path.dart' as pathlib;
 import 'package:skia_gold_client/skia_gold_client.dart';
 import 'package:test_api/backend.dart' as hack;
 // TODO(ditman): Fix ignores when https://github.com/flutter/flutter/issues/143599 is resolved.
-import 'package:test_core/src/executable.dart' as test; // ignore: implementation_imports
-import 'package:test_core/src/runner/hack_register_platform.dart' as hack; // ignore: implementation_imports
+import 'package:test_core/src/executable.dart'
+    as test; // ignore: implementation_imports
+import 'package:test_core/src/runner/hack_register_platform.dart'
+    as hack; // ignore: implementation_imports
 
 import '../browser.dart';
 import '../common.dart';
@@ -29,7 +31,8 @@ import '../utils.dart';
 /// running them prior to this step locally, or by having the build graph copy
 /// them from another bot.
 class RunSuiteStep implements PipelineStep {
-  RunSuiteStep(this.suite, {
+  RunSuiteStep(
+    this.suite, {
     required this.startPaused,
     required this.isVerbose,
     required this.doUpdateScreenshotGoldens,
@@ -73,7 +76,8 @@ class RunSuiteStep implements PipelineStep {
       environment.webUiRootDir.path,
       browserEnvironment.packageTestConfigurationYamlFile,
     );
-    final String bundleBuildPath = getBundleBuildDirectory(suite.testBundle).path;
+    final String bundleBuildPath =
+        getBundleBuildDirectory(suite.testBundle).path;
     final List<String> testArgs = <String>[
       ...<String>['-r', 'compact'],
       // Disable concurrency. Running with concurrency proved to be flaky.
@@ -153,17 +157,20 @@ class RunSuiteStep implements PipelineStep {
       'results.json',
     ));
     if (!resultsJsonFile.existsSync()) {
-      throw ToolExit('Could not find built bundle ${suite.testBundle.name.ansiMagenta} for suite ${suite.name.ansiCyan}.');
+      throw ToolExit(
+          'Could not find built bundle ${suite.testBundle.name.ansiMagenta} for suite ${suite.name.ansiCyan}.');
     }
     final String jsonString = resultsJsonFile.readAsStringSync();
-    final jsonContents = const JsonDecoder().convert(jsonString) as Map<String, Object?>;
+    final jsonContents =
+        const JsonDecoder().convert(jsonString) as Map<String, Object?>;
     final results = jsonContents['results']! as Map<String, Object?>;
     final List<String> testPaths = <String>[];
     results.forEach((Object? k, Object? v) {
       final String result = v! as String;
       final String testPath = k! as String;
       if (testFiles != null) {
-        if (!testFiles!.contains(FilePath.fromTestSet(suite.testBundle.testSet, testPath))) {
+        if (!testFiles!.contains(
+            FilePath.fromTestSet(suite.testBundle.testSet, testPath))) {
           return;
         }
       }
@@ -191,10 +198,11 @@ class RunSuiteStep implements PipelineStep {
     if (workDirectory.existsSync()) {
       workDirectory.deleteSync(recursive: true);
     }
-    final bool isWasm = suite.testBundle.compileConfigs.first.compiler == Compiler.dart2wasm;
+    final bool isWasm =
+        suite.testBundle.compileConfigs.first.compiler == Compiler.dart2wasm;
     final SkiaGoldClient skiaClient = SkiaGoldClient(
       workDirectory,
-      dimensions: <String, String> {
+      dimensions: <String, String>{
         'Browser': suite.runConfig.browser.name,
         if (isWasm) 'Wasm': 'true',
         'Renderer': renderer.name,

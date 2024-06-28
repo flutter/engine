@@ -29,18 +29,15 @@ Future<void> testMain() async {
 
   test('draws arcs with largeArc , anticlockwise variations', () async {
     paintArc(canvas, Offset.zero, distance: 20);
-    paintArc(canvas, const Offset(200, 0),
-        largeArc: true, distance: 20);
+    paintArc(canvas, const Offset(200, 0), largeArc: true, distance: 20);
     paintArc(canvas, const Offset(0, 150), clockwise: true, distance: 20);
     paintArc(canvas, const Offset(200, 150),
         largeArc: true, clockwise: true, distance: 20);
     paintArc(canvas, const Offset(0, 300), distance: -20);
-    paintArc(canvas, const Offset(200, 300),
-        largeArc: true, distance: -20);
+    paintArc(canvas, const Offset(200, 300), largeArc: true, distance: -20);
     paintArc(canvas, const Offset(0, 400), clockwise: true, distance: -20);
     paintArc(canvas, const Offset(200, 400),
         largeArc: true, clockwise: true, distance: -20);
-
 
     domDocument.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_arc_to_point.png', region: region);
@@ -51,11 +48,16 @@ Future<void> testMain() async {
     final Path p = Path()
       ..fillType = PathFillType.evenOdd
       ..addRect(rect)
-      ..addArc(Rect.fromCircle(center: rect.center,
-          radius: rect.size.shortestSide / 2), 0.25 * math.pi, 1.5 * math.pi);
-    canvas.drawPath(p, SurfacePaintData()
-      ..color = 0xFFFF9800 // orange
-      ..style = PaintingStyle.fill);
+      ..addArc(
+          Rect.fromCircle(
+              center: rect.center, radius: rect.size.shortestSide / 2),
+          0.25 * math.pi,
+          1.5 * math.pi);
+    canvas.drawPath(
+        p,
+        SurfacePaintData()
+          ..color = 0xFFFF9800 // orange
+          ..style = PaintingStyle.fill);
 
     domDocument.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_addarc.png', region: region);
@@ -71,9 +73,11 @@ Future<void> testMain() async {
     path.arcTo(const Rect.fromLTRB(50, 50, 250, 250), 5.759586531581287,
         4.71238898038469 - 5.759586531581287, true);
     path.lineTo(149.999999999999997, 20);
-    canvas.drawPath(path, SurfacePaintData()
-      ..color = 0xFFFF9800 // orange
-      ..style = PaintingStyle.fill);
+    canvas.drawPath(
+        path,
+        SurfacePaintData()
+          ..color = 0xFFFF9800 // orange
+          ..style = PaintingStyle.fill);
 
     domDocument.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_addarc_ccw.png', region: region);
@@ -81,8 +85,7 @@ Future<void> testMain() async {
 }
 
 void paintArc(BitmapCanvas canvas, Offset offset,
-      {bool largeArc = false, bool clockwise = false, double distance = 0}) {
-
+    {bool largeArc = false, bool clockwise = false, double distance = 0}) {
   final Offset startP =
       Offset(75 - distance + offset.dx, 75 - distance + offset.dy);
   final Offset endP =

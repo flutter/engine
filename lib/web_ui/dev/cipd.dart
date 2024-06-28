@@ -59,23 +59,26 @@ data:
   final String cipdCommand = isDryRun ? 'pkg-build' : 'create';
   // CIPD won't fully shut up even in 'error' mode
   final String logLevel = isVerbose ? 'debug' : 'warning';
-  return runProcess('cipd', <String>[
-    cipdCommand,
-    '--pkg-def',
-    path.basename(configFile.path),
-    '--json-output',
-    '${path.basenameWithoutExtension(configFile.path)}.json',
-    '--log-level',
-    logLevel,
-    if (!isDryRun) ...<String>[
-      '--tag',
-      'version:$version',
-      '--ref',
-      version,
-    ],
-    if (isDryRun) ...<String>[
-      '--out',
-      '${path.basenameWithoutExtension(configFile.path)}.zip',
-    ],
-  ], workingDirectory: directory.path);
+  return runProcess(
+      'cipd',
+      <String>[
+        cipdCommand,
+        '--pkg-def',
+        path.basename(configFile.path),
+        '--json-output',
+        '${path.basenameWithoutExtension(configFile.path)}.json',
+        '--log-level',
+        logLevel,
+        if (!isDryRun) ...<String>[
+          '--tag',
+          'version:$version',
+          '--ref',
+          version,
+        ],
+        if (isDryRun) ...<String>[
+          '--out',
+          '${path.basenameWithoutExtension(configFile.path)}.zip',
+        ],
+      ],
+      workingDirectory: directory.path);
 }

@@ -63,7 +63,8 @@ class CkVertices implements ui.Vertices {
 
     Uint32List? unsignedColors;
     if (colors != null) {
-      unsignedColors = colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
+      unsignedColors =
+          colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
     }
 
     return CkVertices._(

@@ -25,10 +25,8 @@ void testMain() {
       expect(vertices.debugDisposed, isFalse);
 
       final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(
-        recorder,
-        const ui.Rect.fromLTRB(0, 0, 100, 100)
-      );
+      final ui.Canvas canvas =
+          ui.Canvas(recorder, const ui.Rect.fromLTRB(0, 0, 100, 100));
       canvas.drawVertices(
         vertices,
         ui.BlendMode.srcOver,

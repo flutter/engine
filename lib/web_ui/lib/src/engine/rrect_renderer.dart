@@ -203,8 +203,8 @@ class RRectToCanvasRenderer extends RRectRenderer {
   @override
   void ellipse(double centerX, double centerY, double radiusX, double radiusY,
       double rotation, double startAngle, double endAngle, bool antiClockwise) {
-    drawEllipse(context, centerX, centerY, radiusX, radiusY, rotation, startAngle,
-        endAngle, antiClockwise);
+    drawEllipse(context, centerX, centerY, radiusX, radiusY, rotation,
+        startAngle, endAngle, antiClockwise);
   }
 }
 
@@ -236,12 +236,21 @@ class RRectToPathRenderer extends RRectRenderer {
   }
 }
 
-typedef RRectRendererEllipseCallback = void Function(double centerX, double centerY, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, bool antiClockwise);
+typedef RRectRendererEllipseCallback = void Function(
+    double centerX,
+    double centerY,
+    double radiusX,
+    double radiusY,
+    double rotation,
+    double startAngle,
+    double endAngle,
+    bool antiClockwise);
 typedef RRectRendererCallback = void Function(double x, double y);
 
 /// Converts RRect to path primitives with callbacks.
 class RRectMetricsRenderer extends RRectRenderer {
-  RRectMetricsRenderer({this.moveToCallback, this.lineToCallback, this.ellipseCallback});
+  RRectMetricsRenderer(
+      {this.moveToCallback, this.lineToCallback, this.ellipseCallback});
 
   final RRectRendererEllipseCallback? ellipseCallback;
   final RRectRendererCallback? lineToCallback;
@@ -250,8 +259,17 @@ class RRectMetricsRenderer extends RRectRenderer {
   void beginPath() {}
 
   @override
-  void ellipse(double centerX, double centerY, double radiusX, double radiusY, double rotation, double startAngle, double endAngle, bool antiClockwise) => ellipseCallback!(
-      centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle, antiClockwise);
+  void ellipse(
+          double centerX,
+          double centerY,
+          double radiusX,
+          double radiusY,
+          double rotation,
+          double startAngle,
+          double endAngle,
+          bool antiClockwise) =>
+      ellipseCallback!(centerX, centerY, radiusX, radiusY, rotation, startAngle,
+          endAngle, antiClockwise);
 
   @override
   void lineTo(double x, double y) => lineToCallback!(x, y);

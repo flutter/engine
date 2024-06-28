@@ -4,6 +4,7 @@
 
 @JS()
 library dom_manager_test; // We need this to mess with the ShadowDOM.
+
 import 'dart:js_interop';
 
 import 'package:test/bootstrap/browser.dart';
@@ -24,21 +25,27 @@ void doTests() {
 
       // Check tag names.
 
-      expect(domManager.rootElement.tagName, equalsIgnoringCase(DomManager.flutterViewTagName));
-      expect(domManager.platformViewsHost.tagName, equalsIgnoringCase(DomManager.glassPaneTagName));
-      expect(domManager.textEditingHost.tagName, equalsIgnoringCase(DomManager.textEditingHostTagName));
-      expect(domManager.semanticsHost.tagName, equalsIgnoringCase(DomManager.semanticsHostTagName));
+      expect(domManager.rootElement.tagName,
+          equalsIgnoringCase(DomManager.flutterViewTagName));
+      expect(domManager.platformViewsHost.tagName,
+          equalsIgnoringCase(DomManager.glassPaneTagName));
+      expect(domManager.textEditingHost.tagName,
+          equalsIgnoringCase(DomManager.textEditingHostTagName));
+      expect(domManager.semanticsHost.tagName,
+          equalsIgnoringCase(DomManager.semanticsHostTagName));
 
       // Check parent-child relationships.
 
-      final List<DomElement> rootChildren = domManager.rootElement.children.toList();
+      final List<DomElement> rootChildren =
+          domManager.rootElement.children.toList();
       expect(rootChildren.length, 4);
       expect(rootChildren[0], domManager.platformViewsHost);
       expect(rootChildren[1], domManager.textEditingHost);
       expect(rootChildren[2], domManager.semanticsHost);
       expect(rootChildren[3].tagName, equalsIgnoringCase('style'));
 
-      final List<DomElement> shadowChildren = domManager.renderingHost.childNodes.cast<DomElement>().toList();
+      final List<DomElement> shadowChildren =
+          domManager.renderingHost.childNodes.cast<DomElement>().toList();
       expect(shadowChildren.length, 2);
       expect(shadowChildren[0], domManager.sceneHost);
       expect(shadowChildren[1].tagName, equalsIgnoringCase('style'));
@@ -54,8 +61,7 @@ void doTests() {
 
       regularTextField.focus();
       DomCSSStyleDeclaration? style = domWindow.getComputedStyle(
-          domManager.rootElement.querySelector('input')!,
-          '::placeholder');
+          domManager.rootElement.querySelector('input')!, '::placeholder');
       expect(style, isNotNull);
       expect(style.opacity, isNot('0'));
 
@@ -92,7 +98,8 @@ void doTests() {
     test('Initializes and attaches a shadow root', () {
       final DomManager domManager = DomManager(devicePixelRatio: 3.0);
 
-      expect(domInstanceOfString(domManager.renderingHost, 'ShadowRoot'), isTrue);
+      expect(
+          domInstanceOfString(domManager.renderingHost, 'ShadowRoot'), isTrue);
       expect(domManager.renderingHost.host, domManager.platformViewsHost);
       expect(domManager.renderingHost, domManager.platformViewsHost.shadowRoot);
 

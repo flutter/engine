@@ -30,7 +30,6 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
     return port;
   }
 
-
   @override
   Future<void> prepare() async {
     portNumber = await pickUnusedPort();
@@ -62,7 +61,10 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
     while (true) {
       try {
         final WebDriver driver = await createDriver(
-          uri: driverUri, desired: <String, dynamic>{'browserName': packageTestRuntime.identifier});
+            uri: driverUri,
+            desired: <String, dynamic>{
+              'browserName': packageTestRuntime.identifier
+            });
         return WebDriverBrowser(driver, url);
       } on SocketException {
         // Sometimes we may try to connect before the web driver port is ready.

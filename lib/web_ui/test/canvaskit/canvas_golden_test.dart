@@ -168,14 +168,16 @@ void testMain() {
       CkPicture makeTextPicture(String text, ui.Offset offset) {
         final CkPictureRecorder recorder = CkPictureRecorder();
         final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
-        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle());
+        final CkParagraphBuilder builder =
+            CkParagraphBuilder(CkParagraphStyle());
         builder.addText(text);
         final CkParagraph paragraph = builder.build();
         paragraph.layout(const ui.ParagraphConstraints(width: 100));
         canvas.drawRect(
-          ui.Rect.fromLTWH(offset.dx, offset.dy, paragraph.width, paragraph.height).inflate(10),
-          CkPaint()..color = const ui.Color(0xFF00FF00)
-        );
+            ui.Rect.fromLTWH(
+                    offset.dx, offset.dy, paragraph.width, paragraph.height)
+                .inflate(10),
+            CkPaint()..color = const ui.Color(0xFF00FF00));
         canvas.drawParagraph(paragraph, offset);
         return recorder.endRecording();
       }
@@ -202,7 +204,8 @@ void testMain() {
       // The image is rendered after the platform view so that it's rendered into
       // a separate surface, which is what triggers the bug. If the bug is present
       // the image will not appear on the UI.
-      sb.addPicture(const ui.Offset(0, 50), imageToPicture(helloImage, ui.Offset.zero));
+      sb.addPicture(
+          const ui.Offset(0, 50), imageToPicture(helloImage, ui.Offset.zero));
       sb.pop();
 
       // The below line should not throw an error.
@@ -241,7 +244,8 @@ void drawTestPicture(CkCanvas canvas) {
       ..close(),
     true,
   );
-  canvas.drawColor(const ui.Color.fromARGB(255, 100, 100, 0), ui.BlendMode.srcOver);
+  canvas.drawColor(
+      const ui.Color.fromARGB(255, 100, 100, 0), ui.BlendMode.srcOver);
   canvas.restore(); // remove clips
 
   canvas.translate(60, 0);
@@ -332,7 +336,8 @@ void drawTestPicture(CkCanvas canvas) {
 
   canvas.translate(60, 0);
   canvas.save();
-  canvas.clipRect(const ui.Rect.fromLTRB(0, 0, 50, 30), ui.ClipOp.intersect, true);
+  canvas.clipRect(
+      const ui.Rect.fromLTRB(0, 0, 50, 30), ui.ClipOp.intersect, true);
   canvas.drawPaint(CkPaint()..color = const ui.Color(0xFF6688AA));
   canvas.restore();
 
@@ -415,15 +420,16 @@ void drawTestPicture(CkCanvas canvas) {
     canvas.drawCircle(ui.Offset.zero, 5, CkPaint());
   }
   canvas.restoreToCount(restorePoint);
-  canvas.drawCircle(ui.Offset.zero, 7, CkPaint()..color = const ui.Color(0xFFFF0000));
+  canvas.drawCircle(
+      ui.Offset.zero, 7, CkPaint()..color = const ui.Color(0xFFFF0000));
 
   canvas.translate(60, 0);
   canvas.drawLine(ui.Offset.zero, const ui.Offset(30, 30), CkPaint());
   canvas.save();
   canvas.rotate(-math.pi / 8);
   canvas.drawLine(ui.Offset.zero, const ui.Offset(30, 30), CkPaint());
-  canvas.drawCircle(
-      const ui.Offset(30, 30), 7, CkPaint()..color = const ui.Color(0xFF00AA00));
+  canvas.drawCircle(const ui.Offset(30, 30), 7,
+      CkPaint()..color = const ui.Color(0xFF00AA00));
   canvas.restore();
 
   canvas.translate(60, 0);
@@ -433,14 +439,18 @@ void drawTestPicture(CkCanvas canvas) {
   final CkPaint semitransparent = CkPaint()..color = const ui.Color(0x66000000);
 
   canvas.saveLayer(kDefaultRegion, semitransparent);
-  canvas.drawLine(const ui.Offset(10, 10), const ui.Offset(50, 50), thickStroke);
-  canvas.drawLine(const ui.Offset(50, 10), const ui.Offset(10, 50), thickStroke);
+  canvas.drawLine(
+      const ui.Offset(10, 10), const ui.Offset(50, 50), thickStroke);
+  canvas.drawLine(
+      const ui.Offset(50, 10), const ui.Offset(10, 50), thickStroke);
   canvas.restore();
 
   canvas.translate(60, 0);
   canvas.saveLayerWithoutBounds(semitransparent);
-  canvas.drawLine(const ui.Offset(10, 10), const ui.Offset(50, 50), thickStroke);
-  canvas.drawLine(const ui.Offset(50, 10), const ui.Offset(10, 50), thickStroke);
+  canvas.drawLine(
+      const ui.Offset(10, 10), const ui.Offset(50, 50), thickStroke);
+  canvas.drawLine(
+      const ui.Offset(50, 10), const ui.Offset(10, 50), thickStroke);
   canvas.restore();
 
   // To test saveLayerWithFilter we draw three circles with only the middle one
@@ -486,7 +496,8 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.restore();
 
   canvas.translate(60, 0);
-  final CkParagraph p = makeSimpleText('Hello', fontSize: 18, color: const ui.Color(0xFF0000AA));
+  final CkParagraph p =
+      makeSimpleText('Hello', fontSize: 18, color: const ui.Color(0xFF0000AA));
   canvas.drawParagraph(
     p,
     const ui.Offset(10, 20),
