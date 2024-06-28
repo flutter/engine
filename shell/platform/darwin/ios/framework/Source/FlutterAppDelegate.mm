@@ -155,8 +155,8 @@ static NSString* const kRestorationStateAppModificationKey = @"mod-date";
 
 // Helper function for opening an URL, either with a custom scheme or a http/https scheme.
 - (BOOL)handleOpenURL:(NSURL*)url
-              options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
-       relayToSystemIfUnhandled:(BOOL)throwBack {
+                     options:(NSDictionary<UIApplicationOpenURLOptionsKey, id>*)options
+    relayToSystemIfUnhandled:(BOOL)throwBack {
   if (![self isFlutterDeepLinkingEnabled]) {
     return NO;
   }
