@@ -83,11 +83,7 @@ class SafariPointerEventWorkaround {
     // We only need to attach the listener once.
     if (_listener == null) {
       _listener = createDomEventListener((_) {});
-      domDocument.addEventListenerWithOptions(
-        'touchstart', _listener!,
-        <String, Object>{
-          'passive': true,
-        });
+      domDocument.addEventListener('touchstart', _listener);
     }
   }
 
@@ -522,12 +518,10 @@ abstract class _BaseAdapter {
 
   /// Adds a listener for the given [eventName] to [target].
   ///
-  /// In general, all events should use `_viewTarget` as their `target`.
-  /// In order for the browser to fire 'move' and 'up' events outside of the app,
-  /// we must `setPointerCapture` on the `target` on 'down'/'start' events.
-  ///
-  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
-  /// See also: https://jsfiddle.net/ditman/7towxaqp
+  /// Generally speaking, down and leave events should use [_rootElement]
+  /// as the [target], while move and up events should use [domWindow]
+  /// instead, because the browser doesn't fire the latter two for DOM elements
+  /// when the pointer is outside the window.
   void addEventListener(
     DomEventTarget target,
     String eventName,
@@ -983,9 +977,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addPointerEventListener(_viewTarget, 'pointerdown', (DomPointerEvent event) {
       final int device = _getPointerId(event);
-      // Ensure pointer events for `event.pointerId` are relative to `_viewTarget`.
-      // See this fiddle: https://jsfiddle.net/ditman/7towxaqp
-      // _viewTarget.setPointerCapture(event.pointerId);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final _SanitizedDetails? up =
@@ -1002,7 +993,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(event, pointerData);
     });
 
-    _addPointerEventListener(_viewTarget, 'pointermove', (DomPointerEvent event) {
+    // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
+    _addPointerEventListener(_globalTarget, 'pointermove', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -1029,7 +1021,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     }, checkModifiers: false);
 
-    _addPointerEventListener(_viewTarget, 'pointerup', (DomPointerEvent event) {
+    // TODO(dit): This must happen in the flutterViewElement, https://github.com/flutter/flutter/issues/116561
+    _addPointerEventListener(_globalTarget, 'pointerup', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
