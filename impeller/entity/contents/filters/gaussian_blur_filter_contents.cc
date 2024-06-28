@@ -239,9 +239,6 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   Scalar desired_scalar =
       std::min(GaussianBlurFilterContents::CalculateScale(scaled_sigma.x),
                GaussianBlurFilterContents::CalculateScale(scaled_sigma.y));
-  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
-  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
-  // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
   // TODO(gaaclarke): The padding could be removed if we know it's not needed or
   //   resized to account for the expanded_clip_coverage. There doesn't appear
@@ -538,9 +535,6 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
 }
 }  // namespace
 
-std::string_view GaussianBlurFilterContents::kNoMipsError =
-    "Applying gaussian blur without mipmap.";
-
 GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_x,
     Scalar sigma_y,
@@ -680,8 +674,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       blur_info.scaled_sigma, blur_info.padding, input_snapshot.value(),
       source_expanded_coverage_hint, inputs[0], snapshot_entity);
 
-  // If the blur is scaled by more than 0.5, generate mipmaps. Otherwise, the
-  // bilinear filtering is sufficient to preserve quality.
+  // If a blur scalar is less than 0.5, generate mipmaps. Otherwise, the
+  // bilinear filtering of the base mip level is sufficient to preserve quality.
   bool generated_mips = false;
   if (downsample_pass_args.effective_scalar.x < 0.5 ||
       downsample_pass_args.effective_scalar.y < 0.5) {

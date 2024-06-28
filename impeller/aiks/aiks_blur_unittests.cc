@@ -1081,7 +1081,6 @@ TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
-  fml::testing::LogCapture log_capture;
   size_t blur_required_mip_count =
       GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
 
@@ -1107,22 +1106,11 @@ TEST_P(AiksTest, GaussianBlurMipMapNestedLayer) {
     max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
   size_t blur_required_mip_count =
       GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-  fml::testing::LogCapture log_capture;
   Canvas canvas;
   canvas.SaveLayer(
       {.image_filter = ImageFilter::MakeBlur(Sigma(30), Sigma(30),
@@ -1142,22 +1130,11 @@ TEST_P(AiksTest, GaussianBlurMipMapImageFilter) {
     max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
 }
 
 TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
   size_t blur_required_mip_count =
       GetParam() == PlaygroundBackend::kOpenGLES ? 1 : 4;
-  fml::testing::LogCapture log_capture;
   Canvas canvas;
   canvas.DrawPath(PathBuilder{}
                       .MoveTo({100, 100})
@@ -1183,16 +1160,6 @@ TEST_P(AiksTest, GaussianBlurMipMapSolidColor) {
     max_mip_count = std::max(it->config.mip_count, max_mip_count);
   }
   EXPECT_EQ(max_mip_count, blur_required_mip_count);
-  // The log is FML_DLOG, so only check in debug builds.
-#ifndef NDEBUG
-  if (GetParam() != PlaygroundBackend::kOpenGLES) {
-    EXPECT_EQ(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  } else {
-    EXPECT_NE(log_capture.str().find(GaussianBlurFilterContents::kNoMipsError),
-              std::string::npos);
-  }
-#endif
 }
 
 TEST_P(AiksTest, MaskBlurDoesntStretchContents) {
