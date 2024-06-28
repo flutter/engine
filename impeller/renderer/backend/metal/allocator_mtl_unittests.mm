@@ -45,13 +45,21 @@ TEST_P(AllocatorMTLTest, DebugTraceMemoryStatistics) {
     desc.storage_mode = StorageMode::kDevicePrivate;
     auto texture_2 = allocator->CreateTexture(desc);
 
+#ifdef IMPELLER_DEBUG
     EXPECT_EQ(allocator->DebugGetHeapUsage(), 4u);
+#else
+    EXPECT_EQ(allocator->DebugGetHeapUsage(), 0u);
+#endif  // IMPELLER_DEBUG
 
     // Host storage texture increases allocated size.
     desc.storage_mode = StorageMode::kHostVisible;
     auto texture_3 = allocator->CreateTexture(desc);
 
+#ifdef IMPELLER_DEBUG
     EXPECT_EQ(allocator->DebugGetHeapUsage(), 8u);
+#else
+    EXPECT_EQ(allocator->DebugGetHeapUsage(), 0u);
+#endif  // IMPELLER_DEBUG
   }
 
   // After all textures are out of scope, memory has been decremented.

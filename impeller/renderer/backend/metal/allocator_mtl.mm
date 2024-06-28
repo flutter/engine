@@ -95,11 +95,7 @@ void DebugAllocatorStats::Increment(size_t size) {
 }
 
 void DebugAllocatorStats::Decrement(size_t size) {
-  if (size > size_) {
-    size_ = 0;
-  } else {
-    size_ -= size;
-  }
+  size_ -= size;
 }
 
 size_t DebugAllocatorStats::GetAllocationSizeMB() {
