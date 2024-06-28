@@ -91,11 +91,11 @@ static bool SupportsLossyTextureCompression(id<MTLDevice> device) {
 }
 
 void DebugAllocatorStats::Increment(size_t size) {
-  size_ += size;
+  size_.fetch_add(size, std::memory_order_relaxed);
 }
 
 void DebugAllocatorStats::Decrement(size_t size) {
-  size_ -= size;
+  size_.fetch_sub(size, std::memory_order_relaxed);
 }
 
 size_t DebugAllocatorStats::GetAllocationSizeMB() {
