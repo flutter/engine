@@ -38,8 +38,8 @@ void main(List<String> args) async {
   // Parse the command-line arguments.
   final results = _args.parse(args);
   final String iosEngineVariant;
-  if (args.length == 1) {
-    iosEngineVariant = args[0];
+  if (results.rest case [final variant]) {
+    iosEngineVariant = variant;
   } else if (ffi.Abi.current() == ffi.Abi.macosArm64) {
     iosEngineVariant = 'ios_debug_sim_unopt_arm64';
   } else {
@@ -163,7 +163,7 @@ Future<void> _run(
       iosEngineVariant: iosEngineVariant,
       xcodeBuildExtraArgs: [
         ..._skipTestsForImpeller,
-        _infplistFPathForImpeller,
+        _infoPlistFPathForImpeller(engine),
       ],
     );
     cleanup.add(process.kill);
@@ -378,12 +378,23 @@ final _skipTestsForImpeller = [
   'ScenariosUITests/TwoPlatformViewClipRRectTests/testPlatformView',
   'ScenariosUITests/TwoPlatformViewsWithOtherBackDropFilterTests/testPlatformView',
   'ScenariosUITests/UnobstructedPlatformViewTests/testMultiplePlatformViewsWithOverlays',
-].map((name) => '-skip-testing $name').toList();
+].map((name) => '-skip-testing:$name').toList();
 
 /// Plist with `FTEEnableImpeller=YES`; all projects in the workspace require this file.
 ///
 /// For example, `FlutterAppExtensionTestHost` has a dummy file under the below directory.
-final _infplistFPathForImpeller = path.join('Scenarios', 'Info_Impeller.plist');
+String _infoPlistFPathForImpeller(Engine engine) {
+  final infoPath = path.join(
+    engine.flutterDir.path,
+    'testing',
+    'scenario_app',
+    'ios',
+    'Scenarios',
+    'Scenarios',
+    'Info_Impeller.plist',
+  );
+  return 'INFOPLIST_FILE=$infoPath';
+}
 
 @useResult
 String _zipAndStoreFailedTestResults({
