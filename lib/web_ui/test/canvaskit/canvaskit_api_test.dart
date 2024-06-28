@@ -363,7 +363,8 @@ half4 main(vec2 fragCoord) {
     const String kInvalidSkSlProgram = '';
 
     // Invalid SkSL returns null.
-    final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
+    final SkRuntimeEffect? invalidEffect =
+        MakeRuntimeEffect(kInvalidSkSlProgram);
     expect(invalidEffect, isNull);
 
     final SkFloat32List emptyUniforms = mallocFloat32List(0);
@@ -392,8 +393,8 @@ return u_color;
     uniformData[2] = 0.0;
     uniformData[3] = 1.0;
 
-    final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
-      !.makeShader(uniforms);
+    final SkShader? shaderWithUniform =
+        MakeRuntimeEffect(kSkSlProgramWithUniforms)!.makeShader(uniforms);
 
     expect(shaderWithUniform, isNotNull);
   });
@@ -1161,7 +1162,8 @@ void _canvasTests() {
 
   test('clipRRect', () {
     canvas.clipRRect(
-      Float32List.fromList(<double>[0.9, 0.9, 99.1, 99.1, 1, 2, 3, 4, 5, 6, 7, 8]),
+      Float32List.fromList(
+          <double>[0.9, 0.9, 99.1, 99.1, 1, 2, 3, 4, 5, 6, 7, 8]),
       canvasKit.ClipOp.Intersect,
       true,
     );
@@ -1374,7 +1376,7 @@ void _canvasTests() {
     canvas.rotate(90, 10, 20);
     expect(canvas.getLocalToDevice(), <double>[
       0, -1, 0, 30, // tx = 10 - (-20) == 30
-      1, 0, 0, 10,  // ty = 20 - 10 == 10
+      1, 0, 0, 10, // ty = 20 - 10 == 10
       0, 0, 1, 0,
       0, 0, 0, 1,
     ]);
@@ -1383,52 +1385,124 @@ void _canvasTests() {
   test('scale', () {
     canvas.scale(2, 3);
     expect(canvas.getLocalToDevice(), <double>[
-      2, 0, 0, 0,
-      0, 3, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
+      2,
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
     ]);
   });
 
   test('skew', () {
     canvas.skew(4, 5);
     expect(canvas.getLocalToDevice(), <double>[
-      1, 4, 0, 0,
-      5, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
+      1,
+      4,
+      0,
+      0,
+      5,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
     ]);
   });
 
   test('concat', () {
     canvas.concat(toSkM44FromFloat32(Matrix4.identity().storage));
     expect(canvas.getLocalToDevice(), <double>[
-      1, 0, 0, 0,
-      0, 1, 0, 0,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
     ]);
     canvas.concat(Float32List.fromList(<double>[
-      11, 12, 13, 14,
-      21, 22, 23, 24,
-      31, 32, 33, 34,
-      41, 42, 43, 44,
+      11,
+      12,
+      13,
+      14,
+      21,
+      22,
+      23,
+      24,
+      31,
+      32,
+      33,
+      34,
+      41,
+      42,
+      43,
+      44,
     ]));
     expect(canvas.getLocalToDevice(), <double>[
-      11, 12, 13, 14,
-      21, 22, 23, 24,
-      31, 32, 33, 34,
-      41, 42, 43, 44,
+      11,
+      12,
+      13,
+      14,
+      21,
+      22,
+      23,
+      24,
+      31,
+      32,
+      33,
+      34,
+      41,
+      42,
+      43,
+      44,
     ]);
   });
 
   test('translate', () {
     canvas.translate(4, 5);
     expect(canvas.getLocalToDevice(), <double>[
-      1, 0, 0, 4,
-      0, 1, 0, 5,
-      0, 0, 1, 0,
-      0, 0, 0, 1,
+      1,
+      0,
+      0,
+      4,
+      0,
+      1,
+      0,
+      5,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
     ]);
   });
 
@@ -1461,7 +1535,8 @@ void _canvasTests() {
     builder.addText('Hello there');
     final CkParagraph paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100));
-    ui.TextRange range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream));
+    ui.TextRange range = paragraph.getWordBoundary(
+        const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream));
     expect(range.start, 0);
     expect(range.end, 5);
 
@@ -1492,8 +1567,7 @@ void _canvasTests() {
     final CkPicture picture =
         CkPicture(otherRecorder.finishRecordingAsPicture());
     final CkImage image = await picture.toImage(1, 1) as CkImage;
-    final ByteData rawData =
-        await image.toByteData();
+    final ByteData rawData = await image.toByteData();
     expect(rawData.lengthInBytes, greaterThan(0));
     expect(
       rawData.buffer.asUint32List(),
@@ -1611,8 +1685,7 @@ void _paragraphTests() {
         SkFontFeature()
           ..name = 'tnum'
           ..value = 1,
-      ]
-    ;
+      ];
     props.strutStyle = SkStrutStyleProperties()
       ..fontFamilies = <String>['Roboto', 'Noto']
       ..fontStyle = (SkFontStyle()
@@ -1626,7 +1699,8 @@ void _paragraphTests() {
       ..forceStrutHeight = false;
 
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontCollection(
+    final SkParagraphBuilder builder =
+        canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
       CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
@@ -1642,16 +1716,14 @@ void _paragraphTests() {
     builder.pushStyle(canvasKit.TextStyle(SkTextStyleProperties()
       ..color = Float32List.fromList(<double>[1, 0, 0, 1])
       ..fontSize = 24
-      ..fontFamilies = <String>['Roboto', 'serif']
-    ));
+      ..fontFamilies = <String>['Roboto', 'serif']));
     builder.addText('World');
     builder.pop();
     builder.pushPaintStyle(
       canvasKit.TextStyle(SkTextStyleProperties()
         ..color = Float32List.fromList(<double>[1, 0, 0, 1])
         ..fontSize = 60
-        ..fontFamilies = <String>['Roboto', 'serif']
-      ),
+        ..fontFamilies = <String>['Roboto', 'serif']),
       SkPaint()..setColorInt(0xFF0000FF),
       SkPaint()..setColorInt(0xFFFF0000),
     );
@@ -1679,7 +1751,12 @@ void _paragraphTests() {
       skCanvas.drawColorInt(0xFFCCCCCC, toSkBlendMode(ui.BlendMode.srcOver));
       skCanvas.drawParagraph(paragraph, 20, 20);
       skCanvas.drawRect(
-        Float32List.fromList(<double>[20, 20, 20 + paragraph.getMaxIntrinsicWidth(), 20 + paragraph.getHeight()]),
+        Float32List.fromList(<double>[
+          20,
+          20,
+          20 + paragraph.getMaxIntrinsicWidth(),
+          20 + paragraph.getHeight()
+        ]),
         SkPaint()
           ..setStyle(toSkPaintStyle(ui.PaintingStyle.stroke))
           ..setStrokeWidth(1)
@@ -1705,12 +1782,10 @@ void _paragraphTests() {
     expectAlmost(paragraph.getMaxIntrinsicWidth(), 263);
     expectAlmost(paragraph.getMinIntrinsicWidth(), 135);
     expectAlmost(paragraph.getMaxWidth(), 500);
-    final SkRectWithDirection rectWithDirection =
-      paragraph.getRectsForRange(
-        1,
-        3,
-        canvasKit.RectHeightStyle.Tight,
-        canvasKit.RectWidthStyle.Max).single;
+    final SkRectWithDirection rectWithDirection = paragraph
+        .getRectsForRange(
+            1, 3, canvasKit.RectHeightStyle.Tight, canvasKit.RectWidthStyle.Max)
+        .single;
     expect(
       rectWithDirection.rect,
       hasLength(4),
@@ -1718,8 +1793,7 @@ void _paragraphTests() {
     expect(paragraph.getRectsForPlaceholders(), hasLength(1));
     expect(paragraph.getLineMetrics(), hasLength(1));
 
-    final SkLineMetrics lineMetrics =
-        paragraph.getLineMetrics().single;
+    final SkLineMetrics lineMetrics = paragraph.getLineMetrics().single;
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
@@ -1838,18 +1912,14 @@ void _paragraphTests() {
         majorVersion: webGLVersion.toDouble(),
       ),
     );
-    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext);
+    final SkGrContext grContext = canvasKit.MakeGrContext(glContext);
     final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
-      grContext,
-      100,
-      100,
-      SkColorSpaceSRGB,
-      sampleCount,
-      stencilBits
-    );
+        grContext, 100, 100, SkColorSpaceSRGB, sampleCount, stencilBits);
 
     expect(skSurface, isNotNull);
-  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+  },
+      skip:
+          isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   test('MakeRenderTarget test', () {
     final DomCanvasElement canvas = createDomCanvasElement(
@@ -1864,11 +1934,13 @@ void _paragraphTests() {
         majorVersion: webGLVersion.toDouble(),
       ),
     ).toInt();
-    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext.toDouble());
+    final SkGrContext grContext = canvasKit.MakeGrContext(glContext.toDouble());
     final SkSurface? surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
 
     expect(surface, isNotNull);
-  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+  },
+      skip:
+          isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   group('getCanvasKitJsFileNames', () {
     JSAny? oldV8BreakIterator = v8BreakIterator;
@@ -1889,8 +1961,10 @@ void _paragraphTests() {
       intlSegmenter = Object().toJSBox; // Any non-null value.
       browserSupportsImageDecoder = true;
 
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full),
+          <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium),
+          <String>['chromium/canvaskit.js']);
       expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>[
         'chromium/canvaskit.js',
         'canvaskit.js',
@@ -1899,12 +1973,16 @@ void _paragraphTests() {
 
     test('in older versions of Chromium-based browsers', () {
       v8BreakIterator = Object().toJSBox; // Any non-null value.
-      intlSegmenter = null; // Older versions of Chromium didn't have the Intl.Segmenter API.
+      intlSegmenter =
+          null; // Older versions of Chromium didn't have the Intl.Segmenter API.
       browserSupportsImageDecoder = true;
 
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full),
+          <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium),
+          <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto),
+          <String>['canvaskit.js']);
     });
 
     test('in other browsers', () {
@@ -1912,23 +1990,32 @@ void _paragraphTests() {
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = true;
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full),
+          <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium),
+          <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto),
+          <String>['canvaskit.js']);
 
       v8BreakIterator = Object().toJSBox;
       browserSupportsImageDecoder = false;
       // TODO(mdebbar): we don't check image codecs for now.
       // https://github.com/flutter/flutter/issues/122331
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['chromium/canvaskit.js', 'canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full),
+          <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium),
+          <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto),
+          <String>['chromium/canvaskit.js', 'canvaskit.js']);
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = false;
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
-      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full),
+          <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium),
+          <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto),
+          <String>['canvaskit.js']);
     });
   });
 
@@ -1952,11 +2039,12 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
-    registry.register(Object().toExternalReference, Object().toExternalReference);
+    final DomFinalizationRegistry registry =
+        DomFinalizationRegistry((String arg) {}.toJS);
+    registry.register(
+        Object().toExternalReference, Object().toExternalReference);
   });
 }
-
 
 @JS('window.Intl.v8BreakIterator')
 external JSAny? get v8BreakIterator;

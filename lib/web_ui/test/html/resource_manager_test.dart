@@ -69,7 +69,8 @@ void testMain() {
     ];
     resources.forEach(resourceManager.addResource);
 
-    final DomElement resourcesHost = domManager.renderingHost.firstElementChild!;
+    final DomElement resourcesHost =
+        domManager.renderingHost.firstElementChild!;
     expect(
       resourcesHost.tagName.toLowerCase(),
       ResourceManager.resourcesHostTagName.toLowerCase(),

@@ -33,21 +33,20 @@ ui.Image generateAtlas() {
   canvas.save();
   canvas.clipRect(kBlueSquareRegion);
   canvas.drawRect(
-    // Inset the square by one pixel so it doesn't bleed into the other sprites.
-    kBlueSquareRegion.deflate(1.0),
-    ui.Paint()..color = const ui.Color(0xFF0000FF)
-  );
+      // Inset the square by one pixel so it doesn't bleed into the other sprites.
+      kBlueSquareRegion.deflate(1.0),
+      ui.Paint()..color = const ui.Color(0xFF0000FF));
   canvas.restore();
 
   // Draw the circle
   canvas.save();
   canvas.clipRect(kRedCircleRegion);
   canvas.drawCircle(
-    kRedCircleRegion.center,
-    // Make the circle one pixel smaller than the bounds to it doesn't bleed
-    // into the other shapes.
-    (kRedCircleRegion.width / 2.0) - 1.0,
-    ui.Paint()..color = const ui.Color(0xFFFF0000));
+      kRedCircleRegion.center,
+      // Make the circle one pixel smaller than the bounds to it doesn't bleed
+      // into the other shapes.
+      (kRedCircleRegion.width / 2.0) - 1.0,
+      ui.Paint()..color = const ui.Color(0xFFFF0000));
   canvas.restore();
 
   // Draw the star
@@ -65,49 +64,44 @@ ui.Image generateAtlas() {
   // Rotate two fifths of the circle each time
   const double rotation = 4.0 * math.pi / 5.0;
   final ui.Path starPath = ui.Path();
-  starPath.moveTo(
-    starCenter.dx + radius * math.cos(theta),
-    starCenter.dy + radius * math.sin(theta)
-  );
+  starPath.moveTo(starCenter.dx + radius * math.cos(theta),
+      starCenter.dy + radius * math.sin(theta));
   for (int i = 0; i < 5; i++) {
     theta += rotation;
-    starPath.lineTo(
-      starCenter.dx + radius * math.cos(theta),
-      starCenter.dy + radius * math.sin(theta)
-    );
+    starPath.lineTo(starCenter.dx + radius * math.cos(theta),
+        starCenter.dy + radius * math.sin(theta));
   }
   canvas.drawPath(
-    starPath,
-    ui.Paint()
-      ..color = const ui.Color(0xFFFF00FF)
-      ..style = ui.PaintingStyle.fill
-  );
+      starPath,
+      ui.Paint()
+        ..color = const ui.Color(0xFFFF00FF)
+        ..style = ui.PaintingStyle.fill);
   canvas.restore();
 
   // Draw the Squiggle
   canvas.save();
   canvas.clipRect(kGreenSquiggleRegion);
   final ui.Path squigglePath = ui.Path();
-  squigglePath.moveTo(kGreenSquiggleRegion.topCenter.dx, kGreenSquiggleRegion.topCenter.dy + 2.0);
+  squigglePath.moveTo(kGreenSquiggleRegion.topCenter.dx,
+      kGreenSquiggleRegion.topCenter.dy + 2.0);
   squigglePath.cubicTo(
-    kGreenSquiggleRegion.left - 10.0, kGreenSquiggleRegion.top + kGreenSquiggleRegion.height * 0.33,
-    kGreenSquiggleRegion.right + 10.0, kGreenSquiggleRegion.top + kGreenSquiggleRegion.height * 0.66,
-    kGreenSquiggleRegion.bottomCenter.dx, kGreenSquiggleRegion.bottomCenter.dy - 2.0
-  );
+      kGreenSquiggleRegion.left - 10.0,
+      kGreenSquiggleRegion.top + kGreenSquiggleRegion.height * 0.33,
+      kGreenSquiggleRegion.right + 10.0,
+      kGreenSquiggleRegion.top + kGreenSquiggleRegion.height * 0.66,
+      kGreenSquiggleRegion.bottomCenter.dx,
+      kGreenSquiggleRegion.bottomCenter.dy - 2.0);
   canvas.drawPath(
-    squigglePath,
-    ui.Paint()
-      ..color = const ui.Color(0xFF00FF00)
-      ..style = ui.PaintingStyle.stroke
-      ..strokeWidth = 5.0
-  );
+      squigglePath,
+      ui.Paint()
+        ..color = const ui.Color(0xFF00FF00)
+        ..style = ui.PaintingStyle.stroke
+        ..strokeWidth = 5.0);
   canvas.restore();
 
   final ui.Picture picture = recorder.endRecording();
   return picture.toImageSync(
-    kTotalAtlasRegion.width.toInt(),
-    kTotalAtlasRegion.height.toInt()
-  );
+      kTotalAtlasRegion.width.toInt(), kTotalAtlasRegion.height.toInt());
 }
 
 Future<void> testMain() async {
@@ -131,21 +125,20 @@ Future<void> testMain() async {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder, region);
     final ui.Image atlas = generateAtlas();
-    final List<ui.RSTransform> transforms = List<ui.RSTransform>.generate(
-      12, (int index) {
-        const double radius = 100;
-        const double rotation = math.pi / 6.0;
-        final double angle = rotation * index;
-        final double scos = math.sin(angle);
-        final double ssin = math.cos(angle);
-        return ui.RSTransform(
-          scos,
-          ssin,
-          region.center.dx + radius * scos,
-          region.center.dy + radius * ssin,
-        );
-      }
-    );
+    final List<ui.RSTransform> transforms =
+        List<ui.RSTransform>.generate(12, (int index) {
+      const double radius = 100;
+      const double rotation = math.pi / 6.0;
+      final double angle = rotation * index;
+      final double scos = math.sin(angle);
+      final double ssin = math.cos(angle);
+      return ui.RSTransform(
+        scos,
+        ssin,
+        region.center.dx + radius * scos,
+        region.center.dy + radius * ssin,
+      );
+    });
     final List<ui.Rect> rects = <ui.Rect>[
       kBlueSquareRegion,
       kRedCircleRegion,
@@ -160,8 +153,7 @@ Future<void> testMain() async {
       kMagentaStarRegion,
       kGreenSquiggleRegion,
     ];
-    canvas.drawAtlas(
-      atlas, transforms, rects, null, null, null, ui.Paint());
+    canvas.drawAtlas(atlas, transforms, rects, null, null, null, ui.Paint());
 
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
     await matchGoldenFile('ui_draw_atlas.png', region: region);
@@ -210,15 +202,8 @@ Future<void> testMain() async {
       final int rgb = 0xFF << (8 * (i % 3));
       colors[i] = 0xFF000000 | rgb;
     }
-    canvas.drawRawAtlas(
-      atlas,
-      transforms,
-      rawRects,
-      colors,
-      ui.BlendMode.dstIn,
-      null,
-      ui.Paint()
-    );
+    canvas.drawRawAtlas(atlas, transforms, rawRects, colors, ui.BlendMode.dstIn,
+        null, ui.Paint());
 
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
     await matchGoldenFile('ui_draw_atlas_raw.png', region: region);

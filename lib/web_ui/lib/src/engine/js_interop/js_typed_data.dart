@@ -24,14 +24,15 @@ class JSUint8Array1 {
   );
 }
 
-JSUint8Array createUint8ArrayFromBuffer(JSArrayBuffer buffer)
-  => JSUint8Array1._create1(buffer) as JSUint8Array;
+JSUint8Array createUint8ArrayFromBuffer(JSArrayBuffer buffer) =>
+    JSUint8Array1._create1(buffer) as JSUint8Array;
 
 JSUint8Array createUint8ArrayFromSubBuffer(
   JSArrayBuffer buffer,
   int start,
   int length,
-) => JSUint8Array1._create3(buffer, start.toJS, length.toJS) as JSUint8Array;
+) =>
+    JSUint8Array1._create3(buffer, start.toJS, length.toJS) as JSUint8Array;
 
-JSUint8Array createUint8ArrayFromLength(int length)
-  => JSUint8Array1._create1(length.toJS) as JSUint8Array;
+JSUint8Array createUint8ArrayFromLength(int length) =>
+    JSUint8Array1._create1(length.toJS) as JSUint8Array;

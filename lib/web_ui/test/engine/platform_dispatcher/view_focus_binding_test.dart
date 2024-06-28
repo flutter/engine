@@ -29,16 +29,17 @@ void testMain() {
       EngineSemantics.instance.semanticsEnabled = false;
     });
 
-    test('The view is focusable and reachable by keyboard when registered', () async {
+    test('The view is focusable and reachable by keyboard when registered',
+        () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
-
 
       // The root element should have a tabindex="0" to make the flutter view
       // focusable and reachable by the keyboard.
       expect(view.dom.rootElement.getAttribute('tabindex'), '0');
     });
 
-    test('The view is focusable but not reachable by keyboard when focused', () async {
+    test('The view is focusable but not reachable by keyboard when focused',
+        () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
       view.dom.rootElement.focus();
@@ -48,7 +49,8 @@ void testMain() {
       expect(view.dom.rootElement.getAttribute('tabindex'), '-1');
     });
 
-    test('marks the focusable views as reachable by the keyboard or not', () async {
+    test('marks the focusable views as reachable by the keyboard or not',
+        () async {
       final EngineFlutterView view1 = createAndRegisterView(dispatcher);
       final EngineFlutterView view2 = createAndRegisterView(dispatcher);
 
@@ -68,7 +70,8 @@ void testMain() {
       expect(view2.dom.rootElement.getAttribute('tabindex'), '0');
     });
 
-    test('never marks the views as focusable with semantincs enabled', () async {
+    test('never marks the views as focusable with semantincs enabled',
+        () async {
       EngineSemantics.instance.semanticsEnabled = true;
 
       final EngineFlutterView view1 = createAndRegisterView(dispatcher);
@@ -99,7 +102,8 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
     });
 
     test('fires a focus event - a view was unfocused', () async {
@@ -112,11 +116,13 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
 
       expect(dispatchedViewFocusEvents[1].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[1].state, ui.ViewFocusState.unfocused);
-      expect(dispatchedViewFocusEvents[1].direction, ui.ViewFocusDirection.undefined);
+      expect(dispatchedViewFocusEvents[1].direction,
+          ui.ViewFocusDirection.undefined);
     });
 
     test('fires a focus event - focus transitions between views', () async {
@@ -135,15 +141,18 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view1.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
 
       expect(dispatchedViewFocusEvents[1].viewId, view2.viewId);
       expect(dispatchedViewFocusEvents[1].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[1].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[1].direction,
+          ui.ViewFocusDirection.forward);
 
       expect(dispatchedViewFocusEvents[2].viewId, view1.viewId);
       expect(dispatchedViewFocusEvents[2].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[2].direction, ui.ViewFocusDirection.backward);
+      expect(dispatchedViewFocusEvents[2].direction,
+          ui.ViewFocusDirection.backward);
     });
 
     test('fires a focus event - focus transitions on and off views', () async {
@@ -158,15 +167,18 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view1.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
 
       expect(dispatchedViewFocusEvents[1].viewId, view2.viewId);
       expect(dispatchedViewFocusEvents[1].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[1].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[1].direction,
+          ui.ViewFocusDirection.forward);
 
       expect(dispatchedViewFocusEvents[2].viewId, view2.viewId);
       expect(dispatchedViewFocusEvents[2].state, ui.ViewFocusState.unfocused);
-      expect(dispatchedViewFocusEvents[2].direction, ui.ViewFocusDirection.undefined);
+      expect(dispatchedViewFocusEvents[2].direction,
+          ui.ViewFocusDirection.undefined);
     });
 
     test('requestViewFocusChange focuses the view', () {
@@ -184,7 +196,8 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
     });
 
     test('requestViewFocusChange blurs the view', () {
@@ -208,11 +221,13 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
 
       expect(dispatchedViewFocusEvents[1].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[1].state, ui.ViewFocusState.unfocused);
-      expect(dispatchedViewFocusEvents[1].direction, ui.ViewFocusDirection.undefined);
+      expect(dispatchedViewFocusEvents[1].direction,
+          ui.ViewFocusDirection.undefined);
     });
 
     test('requestViewFocusChange does nothing if the view does not exist', () {
@@ -228,7 +243,8 @@ void testMain() {
       expect(dispatchedViewFocusEvents, isEmpty);
     });
 
-    test('requestViewFocusChange does nothing if the view is already focused', () {
+    test('requestViewFocusChange does nothing if the view is already focused',
+        () {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
       dispatcher.requestViewFocusChange(
@@ -246,7 +262,8 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
     });
 
     test('requestViewFocusChange does not move the focus to the view', () {
@@ -268,7 +285,8 @@ void testMain() {
 
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
-      expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
+      expect(dispatchedViewFocusEvents[0].direction,
+          ui.ViewFocusDirection.forward);
     });
   });
 }
@@ -296,7 +314,8 @@ extension on DomElement {
     bool shiftKey = false,
   }) {
     dispatchEvent(
-      createDomKeyboardEvent(type, <String, Object>{'key': key, 'shiftKey': shiftKey}),
+      createDomKeyboardEvent(
+          type, <String, Object>{'key': key, 'shiftKey': shiftKey}),
     );
   }
 }

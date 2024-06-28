@@ -109,6 +109,7 @@ class PathRef {
 
   /// Bounds of points that define path.
   ui.Rect? fBounds;
+
   /// Computed tight bounds of path (may exclude curve control points).
   ui.Rect? cachedBounds;
   int _fPointsCapacity = 0;
@@ -204,6 +205,7 @@ class PathRef {
       return _fVerbsLength == 4 ? _detectRect() : null;
     }
   }
+
   bool get isRectCCW => fRRectOrOvalIsCCW;
 
   bool get hasComputedBounds => !fBoundsIsDirty;
@@ -253,7 +255,8 @@ class PathRef {
 
   /// Returns horizontal/vertical line bounds or null if not a line.
   ui.Rect? getStraightLine() {
-    if (_fVerbsLength != 2 || _fVerbs[0] != SPath.kMoveVerb ||
+    if (_fVerbsLength != 2 ||
+        _fVerbs[0] != SPath.kMoveVerb ||
         _fVerbs[1] != SPath.kLineVerb) {
       return null;
     }
@@ -319,12 +322,10 @@ class PathRef {
         assert(() {
           if (verb == SPath.kLineVerb) {
             final bool isVerticalOrHorizontal =
-              SPath.nearlyEqual(pts[2], pts[0]) ||
-              SPath.nearlyEqual(pts[3], pts[1]);
-            assert(
-              isVerticalOrHorizontal,
-              'An RRect path must only contain vertical and horizontal lines.'
-            );
+                SPath.nearlyEqual(pts[2], pts[0]) ||
+                    SPath.nearlyEqual(pts[3], pts[1]);
+            assert(isVerticalOrHorizontal,
+                'An RRect path must only contain vertical and horizontal lines.');
           } else {
             assert(verb == SPath.kCloseVerb);
           }
@@ -351,8 +352,8 @@ class PathRef {
   }
 
   @override
-  int get hashCode => Object.hash(fSegmentMask,
-      fPoints, _conicWeights, _fVerbs);
+  int get hashCode =>
+      Object.hash(fSegmentMask, fPoints, _conicWeights, _fVerbs);
 
   bool equals(PathRef ref) {
     // We explicitly check fSegmentMask as a quick-reject. We could skip it,

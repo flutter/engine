@@ -30,7 +30,8 @@ void testMain() {
   test('createDomHTMLStyleElement sets a nonce value, when passed', () {
     expect(styleElement.nonce, isEmpty);
 
-    final DomHTMLStyleElement style = createDomHTMLStyleElement('a-nonce-value');
+    final DomHTMLStyleElement style =
+        createDomHTMLStyleElement('a-nonce-value');
     expect(style.nonce, 'a-nonce-value');
   });
 

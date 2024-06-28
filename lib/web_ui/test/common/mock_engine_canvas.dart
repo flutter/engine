@@ -233,7 +233,8 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawPoints(PointMode pointMode, Float32List points, SurfacePaintData paint) {
+  void drawPoints(
+      PointMode pointMode, Float32List points, SurfacePaintData paint) {
     _called('drawPoints', arguments: <String, dynamic>{
       'pointMode': pointMode,
       'points': points,

@@ -33,14 +33,15 @@ Future<void> testMain() async {
     test('renders MaskFilter.blur in $browser', () async {
       const double screenWidth = 800.0;
       const double screenHeight = 150.0;
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+      const ui.Rect screenRect =
+          ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
       ContextStateHandle.debugEmulateWebKitMaskFilter = isWebkit;
       final RecordingCanvas rc = RecordingCanvas(screenRect);
       rc.translate(0, 75);
 
       final SurfacePaint paint = SurfacePaint()
-          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       rc.translate(50, 0);
       rc.drawRect(
@@ -118,14 +119,15 @@ Future<void> testMain() async {
     test('renders transformed MaskFilter.blur in $browser', () async {
       const double screenWidth = 300.0;
       const double screenHeight = 300.0;
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+      const ui.Rect screenRect =
+          ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
       ContextStateHandle.debugEmulateWebKitMaskFilter = isWebkit;
       final RecordingCanvas rc = RecordingCanvas(screenRect);
       rc.translate(150, 150);
 
       final SurfacePaint paint = SurfacePaint()
-          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       const List<ui.Color> colors = <ui.Color>[
         ui.Color(0xFF000000),
@@ -156,15 +158,17 @@ Future<void> testMain() async {
   testMaskFilterBlur(isWebkit: true);
 
   for (final int testDpr in <int>[1, 2, 4]) {
-    test('MaskFilter.blur blurs correctly for device-pixel ratio $testDpr', () async {
-      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(testDpr.toDouble());
+    test('MaskFilter.blur blurs correctly for device-pixel ratio $testDpr',
+        () async {
+      EngineFlutterDisplay.instance
+          .debugOverrideDevicePixelRatio(testDpr.toDouble());
       const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 150, 150);
 
       final RecordingCanvas rc = RecordingCanvas(screenRect);
       rc.translate(0, 75);
 
       final SurfacePaint paint = SurfacePaint()
-          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       rc.translate(75, 0);
       rc.drawRect(

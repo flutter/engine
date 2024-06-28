@@ -352,11 +352,8 @@ void testMain() {
     final CkFragmentProgram program = CkFragmentProgram.fromBytes('test', data);
 
     expect(program.effect, isNotNull);
-    expect(
-      program.floatCount,
-      70,
-      reason: 'Columns, rows and array elements should be accounted for'
-    );
+    expect(program.floatCount, 70,
+        reason: 'Columns, rows and array elements should be accounted for');
     expect(program.textureCount, 0);
     expect(program.uniforms, hasLength(7));
     expect(program.name, 'test');

@@ -154,7 +154,8 @@ class SurfaceCanvas implements ui.Canvas {
     if (destBounds == null) {
       return ui.Rect.largest;
     }
-    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
+    final Matrix4 transform =
+        Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
     if (transform.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
@@ -314,14 +315,15 @@ class SurfaceCanvas implements ui.Canvas {
   // source (image) and dest (screen) in the order (src0, dst0, src1, dst1).
   // The area from src0 => src1 of the image is painted on the screen from dst0 => dst1
   // The slices for each dimension are generated independently.
-  List<double> _initSlices(double img0, double imgC0, double imgC1, double img1, double dst0, double dst1) {
+  List<double> _initSlices(double img0, double imgC0, double imgC1, double img1,
+      double dst0, double dst1) {
     final double imageDim = img1 - img0;
     final double destDim = dst1 - dst0;
 
     if (imageDim == destDim) {
       // If the src and dest are the same size then we do not need scaling
       // We return 4 values for a single slice
-      return <double>[ img0, dst0, img1, dst1 ];
+      return <double>[img0, dst0, img1, dst1];
     }
 
     final double edge0Dim = imgC0 - img0;
@@ -334,8 +336,14 @@ class SurfaceCanvas implements ui.Canvas {
       // this produces only 2 slices which is 8 values
       final double dstC = dst0 + destDim * edge0Dim / edgesDim;
       return <double>[
-        img0,  dst0, imgC0, dstC,
-        imgC1, dstC, img1,  dst1,
+        img0,
+        dst0,
+        imgC0,
+        dstC,
+        imgC1,
+        dstC,
+        img1,
+        dst1,
       ];
     }
 
@@ -344,9 +352,18 @@ class SurfaceCanvas implements ui.Canvas {
     final double dstC0 = dst0 + edge0Dim;
     final double dstC1 = dst1 - edge1Dim;
     return <double>[
-      img0,  dst0,  imgC0, dstC0,
-      imgC0, dstC0, imgC1, dstC1,
-      imgC1, dstC1, img1,  dst1
+      img0,
+      dst0,
+      imgC0,
+      dstC0,
+      imgC0,
+      dstC0,
+      imgC1,
+      dstC1,
+      imgC1,
+      dstC1,
+      img1,
+      dst1
     ];
   }
 

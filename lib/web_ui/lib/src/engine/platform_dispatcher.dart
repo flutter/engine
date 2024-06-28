@@ -97,9 +97,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   @visibleForTesting
   final DomElement accessibilityPlaceholder = EngineSemantics
-    .instance
-    .semanticsHelper
-    .prepareAccessibilityPlaceholder();
+      .instance.semanticsHelper
+      .prepareAccessibilityPlaceholder();
 
   PlatformConfiguration configuration = PlatformConfiguration(
     locales: parseBrowserLanguages(),
@@ -232,7 +231,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   late final ViewFocusBinding _viewFocusBinding =
-    ViewFocusBinding(viewManager, invokeOnViewFocusChange);
+      ViewFocusBinding(viewManager, invokeOnViewFocusChange);
 
   @override
   ui.ViewFocusChangeCallback? get onViewFocusChange => _onViewFocusChange;
@@ -788,7 +787,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   @override
-  void scheduleWarmUpFrame({required ui.VoidCallback beginFrame, required ui.VoidCallback drawFrame}) {
+  void scheduleWarmUpFrame(
+      {required ui.VoidCallback beginFrame,
+      required ui.VoidCallback drawFrame}) {
     Timer.run(beginFrame);
     // We use timers here to ensure that microtasks flush in between.
     //
@@ -825,7 +826,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
-    final EngineFlutterView? target = (view ?? implicitView) as EngineFlutterView?;
+    final EngineFlutterView? target =
+        (view ?? implicitView) as EngineFlutterView?;
     assert(target != null, 'Calling render without a FlutterView');
     if (target == null) {
       // If there is no view to render into, then this is a no-op.

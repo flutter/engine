@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -20,7 +19,8 @@ Future<void> testMain() async {
   setUpUnitTests(withImplicitView: true);
 
   test('does not crash on empty spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('');
 
@@ -35,7 +35,8 @@ Future<void> testMain() async {
   });
 
   test('measures spans in the same line correctly', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(fontSize: 12.0));
       // 12.0 * 6 = 72.0 (with spaces)
       // 12.0 * 5 = 60.0 (without spaces)
@@ -49,7 +50,8 @@ Future<void> testMain() async {
       builder.pushStyle(EngineTextStyle.only(fontSize: 11.0));
       // 11.0 * 5 = 55.0
       builder.addText('dolor');
-    })..layout(constrain(double.infinity));
+    })
+          ..layout(constrain(double.infinity));
 
     expect(paragraph.maxIntrinsicWidth, 205.0);
     expect(paragraph.minIntrinsicWidth, 65.0); // "ipsum"
@@ -60,13 +62,15 @@ Future<void> testMain() async {
   });
 
   test('breaks lines correctly at the end of spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.addText('Lorem ');
       builder.pushStyle(EngineTextStyle.only(fontSize: 15.0));
       builder.addText('sit ');
       builder.pop();
       builder.addText('.');
-    })..layout(constrain(60.0));
+    })
+          ..layout(constrain(60.0));
 
     expect(paragraph.maxIntrinsicWidth, 130.0);
     expect(paragraph.minIntrinsicWidth, 50.0); // "Lorem"
@@ -79,11 +83,13 @@ Future<void> testMain() async {
   });
 
   test('breaks lines correctly in the middle of spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.addText('Lorem ipsum ');
       builder.pushStyle(EngineTextStyle.only(fontSize: 11.0));
       builder.addText('sit dolor');
-    })..layout(constrain(100.0));
+    })
+          ..layout(constrain(100.0));
 
     expect(paragraph.maxIntrinsicWidth, 219.0);
     expect(paragraph.minIntrinsicWidth, 55.0); // "dolor"
@@ -96,7 +102,8 @@ Future<void> testMain() async {
   });
 
   test('handles space-only spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: red));
       builder.addText('Lorem ');
       builder.pop();
@@ -113,13 +120,18 @@ Future<void> testMain() async {
     expect(paragraph.minIntrinsicWidth, 50.0); // "Lorem" or "ipsum"
     expect(paragraph.width, 80.0);
     expectLines(paragraph, <TestLine>[
-      l('Lorem      ', 0, 11, hardBreak: false, width: 50.0, widthWithTrailingSpaces: 110.0, left: 0.0),
+      l('Lorem      ', 0, 11,
+          hardBreak: false,
+          width: 50.0,
+          widthWithTrailingSpaces: 110.0,
+          left: 0.0),
       l('ipsum', 11, 16, hardBreak: true, width: 50.0, left: 0.0),
     ]);
   });
 
   test('should not break at span end if it is not a line break', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: red));
       builder.addText('Lorem');
       builder.pop();
@@ -131,7 +143,8 @@ Future<void> testMain() async {
       builder.addText('su');
       builder.pushStyle(EngineTextStyle.only(color: white));
       builder.addText('m');
-    })..layout(constrain(50.0));
+    })
+          ..layout(constrain(50.0));
 
     expect(paragraph.maxIntrinsicWidth, 110.0);
     expect(paragraph.minIntrinsicWidth, 50.0); // "Lorem" or "ipsum"
@@ -148,9 +161,12 @@ Future<void> testMain() async {
       fontSize: 10,
       textAlign: ui.TextAlign.center,
     );
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
-      builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.baseline, baseline: ui.TextBaseline.alphabetic);
-    })..layout(constrain(500.0));
+    final CanvasParagraph paragraph =
+        rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+      builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.baseline,
+          baseline: ui.TextBaseline.alphabetic);
+    })
+          ..layout(constrain(500.0));
 
     expect(paragraph.maxIntrinsicWidth, 300.0);
     expect(paragraph.minIntrinsicWidth, 300.0);
@@ -166,16 +182,19 @@ Future<void> testMain() async {
       fontSize: 10,
       textAlign: ui.TextAlign.center,
     );
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.addText('abcd');
       builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.bottom);
-    })..layout(constrain(400.0));
+    })
+          ..layout(constrain(400.0));
 
     expect(paragraph.maxIntrinsicWidth, 340.0);
     expect(paragraph.minIntrinsicWidth, 300.0);
     expect(paragraph.height, 50.0);
     expectLines(paragraph, <TestLine>[
-      l('abcd$placeholderChar', 0, 5, hardBreak: true, width: 340.0, left: 30.0),
+      l('abcd$placeholderChar', 0, 5,
+          hardBreak: true, width: 340.0, left: 30.0),
     ]);
   });
 
@@ -185,11 +204,13 @@ Future<void> testMain() async {
       fontSize: 10,
       textAlign: ui.TextAlign.center,
     );
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.addText('Lorem\n');
       builder.addPlaceholder(300.0, 40.0, ui.PlaceholderAlignment.bottom);
       builder.addText('ipsum');
-    })..layout(constrain(300.0));
+    })
+          ..layout(constrain(300.0));
 
     // The placeholder's width + "ipsum"
     expect(paragraph.maxIntrinsicWidth, 300.0 + 50.0);
@@ -197,13 +218,16 @@ Future<void> testMain() async {
     expect(paragraph.height, 10.0 + 40.0 + 10.0);
     expectLines(paragraph, <TestLine>[
       l('Lorem', 0, 6, hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
-      l(placeholderChar, 6, 7, hardBreak: false, width: 300.0, height: 40.0, left: 0.0),
-      l('ipsum', 7, 12, hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
+      l(placeholderChar, 6, 7,
+          hardBreak: false, width: 300.0, height: 40.0, left: 0.0),
+      l('ipsum', 7, 12,
+          hardBreak: true, width: 50.0, height: 10.0, left: 125.0),
     ]);
   });
 
   test('correctly force-breaks consecutive non-breakable spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (ui.ParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(fontSize: 1));
       builder.addText('A');
       builder.pop(); // Back to fontSize: 10
@@ -224,7 +248,8 @@ Future<void> testMain() async {
   });
 
   test('does not make prohibited line breaks', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(ahemStyle, (ui.ParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('AAA B');
       builder.pushStyle(EngineTextStyle.only(color: green));

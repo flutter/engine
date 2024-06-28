@@ -66,7 +66,8 @@ Future<void> testMain() async {
 
     group('update', () {
       test('throws assertion error if called with different viewIds', () {
-        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final PersistedPlatformView differentView =
+            PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(() {
           view.update(differentView);
         }, throwsAssertionError);
@@ -75,17 +76,20 @@ Future<void> testMain() async {
 
     group('canUpdateAsMatch', () {
       test('returns true when viewId is the same', () {
-        final PersistedPlatformView sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
+        final PersistedPlatformView sameView =
+            PersistedPlatformView(0, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(sameView), isTrue);
       });
 
       test('returns false when viewId is different', () {
-        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final PersistedPlatformView differentView =
+            PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(differentView), isFalse);
       });
 
       test('returns false when other view is not a PlatformView', () {
-        final PersistedOpacity anyView = PersistedOpacity(null, 1, ui.Offset.zero)..build();
+        final PersistedOpacity anyView =
+            PersistedOpacity(null, 1, ui.Offset.zero)..build();
         expect(view.canUpdateAsMatch(anyView), isFalse);
       });
     });

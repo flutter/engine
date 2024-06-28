@@ -132,13 +132,11 @@ void testMain() {
         expect(mobileSemanticsEnabler.semanticsActivationTimer, isNull);
 
         // Send a click off center
-        placeholder!.dispatchEvent(createDomMouseEvent(
-          'click',
-          <Object?, Object?>{
-            'clientX': 0,
-            'clientY': 0,
-          }
-        ));
+        placeholder!
+            .dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
+          'clientX': 0,
+          'clientY': 0,
+        }));
         expect(mobileSemanticsEnabler.semanticsActivationTimer, isNull);
 
         // Send a click at center
@@ -150,17 +148,16 @@ void testMain() {
         final int midY = (activatingElementRect.top +
                 (activatingElementRect.bottom - activatingElementRect.top) / 2)
             .toInt();
-        placeholder!.dispatchEvent(createDomMouseEvent(
-          'click',
-          <Object?, Object?>{
-            'clientX': midX,
-            'clientY': midY,
-          }
-        ));
+        placeholder!
+            .dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
+          'clientX': midX,
+          'clientY': midY,
+        }));
         expect(mobileSemanticsEnabler.semanticsActivationTimer, isNotNull);
       });
     },
     // We can run `MobileSemanticsEnabler` tests in mobile browsers and in desktop Chrome.
-    skip: isDesktop && ui_web.browser.browserEngine != ui_web.BrowserEngine.blink,
+    skip:
+        isDesktop && ui_web.browser.browserEngine != ui_web.BrowserEngine.blink,
   );
 }

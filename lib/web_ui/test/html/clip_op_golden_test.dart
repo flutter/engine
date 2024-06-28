@@ -34,7 +34,8 @@ Future<void> testMain() async {
       ..strokeWidth = 1;
     canvas.save();
     try {
-      final Rect borderRect = Rect.fromLTRB(0, 10, region.width, region.height).shift(shift);
+      final Rect borderRect =
+          Rect.fromLTRB(0, 10, region.width, region.height).shift(shift);
       canvas.clipRect(titleRect, ClipOp.difference);
       canvas.drawRect(borderRect, paint);
     } finally {

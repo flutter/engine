@@ -43,7 +43,7 @@ Future<BrowserInstallation> getOrInstallFirefox(
   // environment variable FIREFOX_EXECUTABLE.
   if (io.Platform.environment.containsKey(_firefoxExecutableVar)) {
     infoLog.writeln('Using Firefox from $_firefoxExecutableVar variable: '
-      '${io.Platform.environment[_firefoxExecutableVar]}');
+        '${io.Platform.environment[_firefoxExecutableVar]}');
     return BrowserInstallation(
       version: 'cipd',
       executable: io.Platform.environment[_firefoxExecutableVar]!,
@@ -170,8 +170,8 @@ class FirefoxInstaller {
       Uri.parse(url),
     ));
 
-    final io.File downloadedFile =
-        io.File(path.join(versionDir.path, PlatformBinding.instance.getFirefoxDownloadFilename(version)));
+    final io.File downloadedFile = io.File(path.join(versionDir.path,
+        PlatformBinding.instance.getFirefoxDownloadFilename(version)));
     final io.IOSink sink = downloadedFile.openWrite();
     await download.stream.pipe(sink);
     await sink.flush();
@@ -207,7 +207,8 @@ class FirefoxInstaller {
     final String sourcePath = '$volumeName/Firefox.app';
     final String targetPath = path.dirname(dmgFile.path);
     try {
-      final io.ProcessResult installResult = await io.Process.run('cp', <String>[
+      final io.ProcessResult installResult =
+          await io.Process.run('cp', <String>[
         '-r',
         sourcePath,
         targetPath,
@@ -225,7 +226,8 @@ class FirefoxInstaller {
   }
 
   Future<String> _hdiUtilMount(io.File dmgFile) async {
-    final io.ProcessResult mountResult = await io.Process.run('hdiutil', <String>[
+    final io.ProcessResult mountResult =
+        await io.Process.run('hdiutil', <String>[
       'attach',
       '-readonly',
       dmgFile.path,
@@ -233,15 +235,16 @@ class FirefoxInstaller {
     if (mountResult.exitCode != 0) {
       throw BrowserInstallerException(
           'Failed to mount Firefox disk image ${dmgFile.path}.\n'
-              'Exit code ${mountResult.exitCode}.\n${mountResult.stderr}');
+          'Exit code ${mountResult.exitCode}.\n${mountResult.stderr}');
     }
 
-    final List<String> processOutput = (mountResult.stdout as String).split('\n');
+    final List<String> processOutput =
+        (mountResult.stdout as String).split('\n');
     final String? volumePath = _volumeFromMountResult(processOutput);
     if (volumePath == null) {
       throw BrowserInstallerException(
           'Failed to parse mount dmg result ${processOutput.join('\n')}.\n'
-              'Expected /Volumes/{volume name}');
+          'Expected /Volumes/{volume name}');
     }
     return volumePath;
   }
@@ -259,14 +262,15 @@ class FirefoxInstaller {
   }
 
   Future<void> _hdiUtilUnmount(String volumeName) async {
-    final io.ProcessResult unmountResult = await io.Process.run('hdiutil', <String>[
+    final io.ProcessResult unmountResult =
+        await io.Process.run('hdiutil', <String>[
       'unmount',
       volumeName,
     ]);
     if (unmountResult.exitCode != 0) {
       throw BrowserInstallerException(
           'Failed to unmount Firefox disk image $volumeName.\n'
-              'Exit code ${unmountResult.exitCode}. ${unmountResult.stderr}');
+          'Exit code ${unmountResult.exitCode}. ${unmountResult.stderr}');
     }
   }
 
@@ -321,7 +325,8 @@ Future<String> fetchLatestFirefoxVersionMacOS() async {
   return version.substring(version.lastIndexOf('/') + 1);
 }
 
-Future<BrowserInstallation> getInstaller({String requestedVersion = 'latest'}) async {
+Future<BrowserInstallation> getInstaller(
+    {String requestedVersion = 'latest'}) async {
   FirefoxInstaller? installer;
   try {
     installer = requestedVersion == 'latest'

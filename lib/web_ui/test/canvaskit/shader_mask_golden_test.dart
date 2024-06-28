@@ -64,15 +64,16 @@ void testMain() {
       builder.pushClipPath(clipPath);
 
       // Apply a shader mask.
-      builder.pushShaderMask(shader, const ui.Rect.fromLTRB(0, 0, 200, 250),
-          ui.BlendMode.color);
+      builder.pushShaderMask(
+          shader, const ui.Rect.fromLTRB(0, 0, 200, 250), ui.BlendMode.color);
 
       // Draw another red circle and apply it to the scene.
       // This one should be grey since we have the color filter.
       final CkPictureRecorder recorder2 = CkPictureRecorder();
       final CkCanvas canvas2 = recorder2.beginRecording(region);
 
-      canvas2.drawRect(const ui.Rect.fromLTWH(25, 75, 100, 100),
+      canvas2.drawRect(
+        const ui.Rect.fromLTWH(25, 75, 100, 100),
         CkPaint()..color = const ui.Color.fromARGB(255, 0, 255, 0),
       );
 
@@ -132,15 +133,16 @@ void testMain() {
       builder.pushClipPath(clipPath);
 
       // Apply a shader mask.
-      builder.pushShaderMask(shader, const ui.Rect.fromLTRB(50, 50, 200, 250),
-          ui.BlendMode.color);
+      builder.pushShaderMask(
+          shader, const ui.Rect.fromLTRB(50, 50, 200, 250), ui.BlendMode.color);
 
       // Draw another red circle and apply it to the scene.
       // This one should be grey since we have the color filter.
       final CkPictureRecorder recorder2 = CkPictureRecorder();
       final CkCanvas canvas2 = recorder2.beginRecording(region);
 
-      canvas2.drawRect(const ui.Rect.fromLTWH(25, 75, 100, 100),
+      canvas2.drawRect(
+        const ui.Rect.fromLTWH(25, 75, 100, 100),
         CkPaint()..color = const ui.Color.fromARGB(255, 0, 255, 0),
       );
 

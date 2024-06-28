@@ -142,10 +142,9 @@ void expectWords(String text, List<String> expectedWords) {
   // Forward word break lookup.
   for (final String word in expectedWords) {
     final int nextBreak = WordBreaker.nextBreakIndex(text, strIndex);
-    expect(
-      nextBreak, strIndex + word.length,
-      reason: 'Forward word break lookup: expecting to move to the end of "$word" in "$text".'
-    );
+    expect(nextBreak, strIndex + word.length,
+        reason:
+            'Forward word break lookup: expecting to move to the end of "$word" in "$text".');
     strIndex += word.length;
   }
 
@@ -153,10 +152,9 @@ void expectWords(String text, List<String> expectedWords) {
   strIndex = text.length;
   for (final String word in expectedWords.reversed) {
     final int prevBreak = WordBreaker.prevBreakIndex(text, strIndex);
-    expect(
-      prevBreak, strIndex - word.length,
-      reason: 'Backward word break lookup: expecting to move to the start of "$word" in "$text".'
-    );
+    expect(prevBreak, strIndex - word.length,
+        reason:
+            'Backward word break lookup: expecting to move to the start of "$word" in "$text".');
     strIndex -= word.length;
   }
 }

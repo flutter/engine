@@ -43,26 +43,26 @@ void testMain() {
 
     // Hash the same values via a list
     final int hashValueFromList = hashList(<int>[
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
     ]);
 
     // Hash a slightly smaller number to verify that the hash code is different.
@@ -90,30 +90,32 @@ void testMain() {
     );
 
     final int slightlyDifferentHashValueFromList = hashList(<int>[
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt,
-        _kBiggestExactJavaScriptInt - 1,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt,
+      _kBiggestExactJavaScriptInt - 1,
     ]);
 
     expect(hashValueFromArgs, equals(hashValueFromList));
-    expect(slightlyDifferentHashValueFromArgs, equals(slightlyDifferentHashValueFromList));
-    expect(hashValueFromArgs, isNot(equals(slightlyDifferentHashValueFromArgs)));
+    expect(slightlyDifferentHashValueFromArgs,
+        equals(slightlyDifferentHashValueFromList));
+    expect(
+        hashValueFromArgs, isNot(equals(slightlyDifferentHashValueFromArgs)));
   });
 }

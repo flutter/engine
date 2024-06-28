@@ -47,7 +47,8 @@ Future<void> testMain() async {
     );
     final double maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
-    canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
+    canvas.drawParagraph(
+        paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('basic bidi starting with ltr', () {
@@ -57,7 +58,8 @@ Future<void> testMain() async {
     const double height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -65,11 +67,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
@@ -80,23 +87,30 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_start_ltr');
   });
 
   test('basic bidi starting with ltr (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -104,11 +118,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintBasicBidiStartingWithLtr(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintBasicBidiStartingWithLtr(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
@@ -119,13 +138,19 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintBasicBidiStartingWithLtr(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintBasicBidiStartingWithLtr(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_start_ltr_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_bidi_start_ltr_dom');
   });
 
   void paintBasicBidiStartingWithRtl(
@@ -151,7 +176,8 @@ Future<void> testMain() async {
     );
     final double maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
-    canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
+    canvas.drawParagraph(
+        paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('basic bidi starting with rtl', () {
@@ -161,7 +187,8 @@ Future<void> testMain() async {
     const double height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -169,11 +196,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
@@ -184,23 +216,30 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_start_rtl');
   });
 
   test('basic bidi starting with rtl (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -208,11 +247,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintBasicBidiStartingWithRtl(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintBasicBidiStartingWithRtl(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
@@ -223,13 +267,19 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintBasicBidiStartingWithRtl(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintBasicBidiStartingWithRtl(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_start_rtl_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_bidi_start_rtl_dom');
   });
 
   void paintMultilineBidi(
@@ -259,7 +309,8 @@ Future<void> testMain() async {
     );
     final double maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
-    canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
+    canvas.drawParagraph(
+        paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('multiline bidi', () {
@@ -269,7 +320,8 @@ Future<void> testMain() async {
     const double height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -277,11 +329,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintMultilineBidi(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintMultilineBidi(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintMultilineBidi(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintMultilineBidi(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintMultilineBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintMultilineBidi(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintMultilineBidi(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintMultilineBidi(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintMultilineBidi(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintMultilineBidi(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
@@ -292,22 +349,29 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintMultilineBidi(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintMultilineBidi(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintMultilineBidi(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintMultilineBidi(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintMultilineBidi(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintMultilineBidi(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintMultilineBidi(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintMultilineBidi(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintMultilineBidi(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintMultilineBidi(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_multiline');
   });
 
   test('multiline bidi (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -315,11 +379,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintMultilineBidi(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintMultilineBidi(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintMultilineBidi(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintMultilineBidi(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintMultilineBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintMultilineBidi(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintMultilineBidi(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintMultilineBidi(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintMultilineBidi(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintMultilineBidi(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
@@ -330,13 +399,19 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintMultilineBidi(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintMultilineBidi(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintMultilineBidi(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintMultilineBidi(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintMultilineBidi(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintMultilineBidi(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintMultilineBidi(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintMultilineBidi(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintMultilineBidi(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintMultilineBidi(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_multiline_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_bidi_multiline_dom');
   });
 
   void paintMultSpanBidi(
@@ -357,7 +432,8 @@ Future<void> testMain() async {
     // $_rtlWord2 34 ipsum
     // dolor 56
     // '''
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final CanvasParagraph paragraph =
+        rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('Lorem ');
       builder.pushStyle(EngineTextStyle.only(color: green));
@@ -373,7 +449,8 @@ Future<void> testMain() async {
     });
     final double maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
-    canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
+    canvas.drawParagraph(
+        paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('multi span bidi', () {
@@ -383,7 +460,8 @@ Future<void> testMain() async {
     const double height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -391,11 +469,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintMultSpanBidi(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintMultSpanBidi(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintMultSpanBidi(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintMultSpanBidi(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintMultSpanBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintMultSpanBidi(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintMultSpanBidi(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintMultSpanBidi(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintMultSpanBidi(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintMultSpanBidi(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
@@ -406,23 +489,30 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintMultSpanBidi(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintMultSpanBidi(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintMultSpanBidi(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintMultSpanBidi(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintMultSpanBidi(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintMultSpanBidi(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintMultSpanBidi(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintMultSpanBidi(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintMultSpanBidi(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintMultSpanBidi(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_multispan');
   });
 
   test('multi span bidi (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 900);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -430,11 +520,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintMultSpanBidi(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintMultSpanBidi(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintMultSpanBidi(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintMultSpanBidi(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintMultSpanBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintMultSpanBidi(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintMultSpanBidi(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintMultSpanBidi(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintMultSpanBidi(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintMultSpanBidi(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
@@ -445,13 +540,19 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintMultSpanBidi(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintMultSpanBidi(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintMultSpanBidi(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintMultSpanBidi(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintMultSpanBidi(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintMultSpanBidi(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintMultSpanBidi(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintMultSpanBidi(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintMultSpanBidi(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintMultSpanBidi(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_multispan_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_bidi_multispan_dom');
   });
 
   void paintBidiWithSelection(
@@ -502,7 +603,8 @@ Future<void> testMain() async {
     const double height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -510,11 +612,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintBidiWithSelection(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintBidiWithSelection(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintBidiWithSelection(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintBidiWithSelection(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintBidiWithSelection(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintBidiWithSelection(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintBidiWithSelection(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintBidiWithSelection(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintBidiWithSelection(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintBidiWithSelection(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
@@ -525,23 +632,30 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintBidiWithSelection(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintBidiWithSelection(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintBidiWithSelection(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintBidiWithSelection(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintBidiWithSelection(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintBidiWithSelection(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintBidiWithSelection(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintBidiWithSelection(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintBidiWithSelection(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintBidiWithSelection(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_selection');
   });
 
   test('bidi with selection (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
 
     const double height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final Rect ltrBox =
+        const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -549,11 +663,16 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // LTR with different text align values:
-    paintBidiWithSelection(canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
-    paintBidiWithSelection(canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
-    paintBidiWithSelection(canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
-    paintBidiWithSelection(canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
-    paintBidiWithSelection(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
+    paintBidiWithSelection(
+        canvas, ltrBox, 0 * height, TextDirection.ltr, TextAlign.left);
+    paintBidiWithSelection(
+        canvas, ltrBox, 1 * height, TextDirection.ltr, TextAlign.right);
+    paintBidiWithSelection(
+        canvas, ltrBox, 2 * height, TextDirection.ltr, TextAlign.center);
+    paintBidiWithSelection(
+        canvas, ltrBox, 3 * height, TextDirection.ltr, TextAlign.start);
+    paintBidiWithSelection(
+        canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
     final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
@@ -564,12 +683,18 @@ Future<void> testMain() async {
         ..style = PaintingStyle.stroke,
     );
     // RTL with different text align values:
-    paintBidiWithSelection(canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
-    paintBidiWithSelection(canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
-    paintBidiWithSelection(canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
-    paintBidiWithSelection(canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
-    paintBidiWithSelection(canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
+    paintBidiWithSelection(
+        canvas, rtlBox, 0 * height, TextDirection.rtl, TextAlign.left);
+    paintBidiWithSelection(
+        canvas, rtlBox, 1 * height, TextDirection.rtl, TextAlign.right);
+    paintBidiWithSelection(
+        canvas, rtlBox, 2 * height, TextDirection.rtl, TextAlign.center);
+    paintBidiWithSelection(
+        canvas, rtlBox, 3 * height, TextDirection.rtl, TextAlign.start);
+    paintBidiWithSelection(
+        canvas, rtlBox, 4 * height, TextDirection.rtl, TextAlign.end);
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_bidi_selection_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_bidi_selection_dom');
   });
 }

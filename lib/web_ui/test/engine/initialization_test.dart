@@ -21,14 +21,18 @@ void main() {
   // Prepare _flutter.loader.didCreateEngineInitializer, so it's ready in the page ASAP.
   loader = js_util.jsify(<String, Object>{
     'loader': <String, Object>{
-      'didCreateEngineInitializer': () { print('not mocked'); }.toJS,
+      'didCreateEngineInitializer': () {
+        print('not mocked');
+      }.toJS,
     },
   });
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  test('bootstrapEngine calls _flutter.loader.didCreateEngineInitializer callback', () async {
+  test(
+      'bootstrapEngine calls _flutter.loader.didCreateEngineInitializer callback',
+      () async {
     JSAny? engineInitializer;
 
     void didCreateEngineInitializerMock(JSAny? obj) {
@@ -49,11 +53,15 @@ void testMain() {
 
     // Check that the object we captured is actually a loader
     expect(engineInitializer, isNotNull);
-    expect(js_util.hasProperty(engineInitializer!, 'initializeEngine'), isTrue, reason: 'Missing FlutterEngineInitializer method: initializeEngine.');
-    expect(js_util.hasProperty(engineInitializer!, 'autoStart'), isTrue, reason: 'Missing FlutterEngineInitializer method: autoStart.');
+    expect(js_util.hasProperty(engineInitializer!, 'initializeEngine'), isTrue,
+        reason: 'Missing FlutterEngineInitializer method: initializeEngine.');
+    expect(js_util.hasProperty(engineInitializer!, 'autoStart'), isTrue,
+        reason: 'Missing FlutterEngineInitializer method: autoStart.');
   });
 
-  test('bootstrapEngine does auto-start when _flutter.loader.didCreateEngineInitializer does not exist', () async {
+  test(
+      'bootstrapEngine does auto-start when _flutter.loader.didCreateEngineInitializer does not exist',
+      () async {
     loader = null;
 
     bool pluginsRegistered = false;
@@ -61,6 +69,7 @@ void testMain() {
     void registerPluginsMock() {
       pluginsRegistered = true;
     }
+
     void runAppMock() {
       appRan = true;
     }
@@ -74,8 +83,10 @@ void testMain() {
     );
 
     // Check that the object we captured is actually a loader
-    expect(pluginsRegistered, isTrue, reason: 'Plugins should be immediately registered in autoStart mode.');
-    expect(appRan, isTrue, reason: 'App should run immediately in autoStart mode');
+    expect(pluginsRegistered, isTrue,
+        reason: 'Plugins should be immediately registered in autoStart mode.');
+    expect(appRan, isTrue,
+        reason: 'App should run immediately in autoStart mode');
   });
 
   // We cannot test anymore, because by now the engine has registered some stuff that can't be rewound back.

@@ -64,7 +64,8 @@ abstract final class SPath {
       (value1 - value2).abs() < SPath.scalarNearlyZero;
 
   // Snaps a value to zero if almost zero (within tolerance).
-  static double snapToZero(double value) => SPath.nearlyEqual(value, 0.0) ? 0.0 : value;
+  static double snapToZero(double value) =>
+      SPath.nearlyEqual(value, 0.0) ? 0.0 : value;
 
   static bool isInteger(double value) => value.floor() == value;
 }
@@ -313,7 +314,8 @@ class Convexicator {
       const double nearlyZeroSquared =
           SPath.scalarNearlyZero * SPath.scalarNearlyZero;
       if (SPath.nearlyEqual(lengthSquared(lastX, lastY), nearlyZeroSquared) ||
-          SPath.nearlyEqual(lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
+          SPath.nearlyEqual(
+              lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
         // Length of either vector is smaller than tolerance to be able
         // to compute direction.
         return DirChange.kUnknown;
@@ -375,10 +377,10 @@ class Convexicator {
     int lastSy = kValueNeverReturnedBySign;
     for (int outerLoop = 0; outerLoop < 2; ++outerLoop) {
       while (pointIndex != lastPointIndex) {
-        final double vecX = pathRef.pointXAt(pointIndex) -
-            pathRef.pointXAt(currentPoint);
-        final double vecY = pathRef.pointYAt(pointIndex) -
-            pathRef.pointYAt(currentPoint);
+        final double vecX =
+            pathRef.pointXAt(pointIndex) - pathRef.pointXAt(currentPoint);
+        final double vecY =
+            pathRef.pointYAt(pointIndex) - pathRef.pointYAt(currentPoint);
         if (!(vecX == 0 && vecY == 0)) {
           // Give up if vector construction failed.
           // give up if vector construction failed

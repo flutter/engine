@@ -109,7 +109,8 @@ abstract final class LabelRepresentationBehavior {
 ///
 ///     <flt-semantics aria-label="Hello, World!"></flt-semantics>
 final class AriaLabelRepresentation extends LabelRepresentationBehavior {
-  AriaLabelRepresentation._(PrimaryRoleManager owner) : super(LabelRepresentation.ariaLabel, owner);
+  AriaLabelRepresentation._(PrimaryRoleManager owner)
+      : super(LabelRepresentation.ariaLabel, owner);
 
   String? _previousLabel;
 
@@ -143,7 +144,8 @@ final class AriaLabelRepresentation extends LabelRepresentationBehavior {
 /// no ARIA role set, or the role does not size the element, then the
 /// [SizedSpanRepresentation] representation can be used.
 final class DomTextRepresentation extends LabelRepresentationBehavior {
-  DomTextRepresentation._(PrimaryRoleManager owner) : super(LabelRepresentation.domText, owner);
+  DomTextRepresentation._(PrimaryRoleManager owner)
+      : super(LabelRepresentation.domText, owner);
 
   DomText? _domText;
   String? _previousLabel;
@@ -233,7 +235,8 @@ typedef _Measurement = ({
 /// * Use an existing non-text role, e.g. "heading". Sizes correctly, but breaks
 ///   the message (reads "heading").
 final class SizedSpanRepresentation extends LabelRepresentationBehavior {
-  SizedSpanRepresentation._(PrimaryRoleManager owner) : super(LabelRepresentation.sizedSpan, owner) {
+  SizedSpanRepresentation._(PrimaryRoleManager owner)
+      : super(LabelRepresentation.sizedSpan, owner) {
     _domText.style
       // `inline-block` is needed for two reasons:
       // - It supports measuring the true size of the text. Pure `block` would
@@ -405,7 +408,8 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       }
     }
 
-    assert(_resizeQueue == null, '_resizeQueue must be empty after it is processed.');
+    assert(_resizeQueue == null,
+        '_resizeQueue must be empty after it is processed.');
   }
 
   // The structure of the sized span label looks like this:
@@ -431,7 +435,8 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 /// interactive controls. In such case the value is reported via that element's
 /// `value` attribute rather than rendering it separately.
 class LabelAndValue extends RoleManager {
-  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner, { required this.preferredRepresentation })
+  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner,
+      {required this.preferredRepresentation})
       : super(Role.labelAndValue, semanticsObject, owner);
 
   /// The preferred representation of the label in the DOM.
@@ -465,14 +470,17 @@ class LabelAndValue extends RoleManager {
   /// screen reader. If the are no children, use the representation preferred
   /// by the primary role manager.
   LabelRepresentationBehavior _getEffectiveRepresentation() {
-    final LabelRepresentation effectiveRepresentation = semanticsObject.hasChildren
-      ? LabelRepresentation.ariaLabel
-      : preferredRepresentation;
+    final LabelRepresentation effectiveRepresentation =
+        semanticsObject.hasChildren
+            ? LabelRepresentation.ariaLabel
+            : preferredRepresentation;
 
     LabelRepresentationBehavior? representation = _representation;
-    if (representation == null || representation.kind != effectiveRepresentation) {
+    if (representation == null ||
+        representation.kind != effectiveRepresentation) {
       representation?.cleanUp();
-      _representation = representation = effectiveRepresentation.createBehavior(owner);
+      _representation =
+          representation = effectiveRepresentation.createBehavior(owner);
     }
     return representation;
   }
@@ -484,7 +492,8 @@ class LabelAndValue extends RoleManager {
   String? _computeLabel() {
     // If the node is incrementable the value is reported to the browser via
     // the respective role manager. We do not need to also render it again here.
-    final bool shouldDisplayValue = !semanticsObject.isIncrementable && semanticsObject.hasValue;
+    final bool shouldDisplayValue =
+        !semanticsObject.isIncrementable && semanticsObject.hasValue;
 
     return computeDomSemanticsLabel(
       tooltip: semanticsObject.hasTooltip ? semanticsObject.tooltip : null,
@@ -523,7 +532,8 @@ String? computeDomSemanticsLabel({
   String? hint,
   String? value,
 }) {
-  final String? labelHintValue = _computeLabelHintValue(label: label, hint: hint, value: value);
+  final String? labelHintValue =
+      _computeLabelHintValue(label: label, hint: hint, value: value);
 
   if (tooltip == null && labelHintValue == null) {
     return null;
@@ -552,8 +562,8 @@ String? _computeLabelHintValue({
   String? value,
 }) {
   final String combinedValue = <String?>[label, hint, value]
-    .whereType<String>() // poor man's null filter
-    .where((String element) => element.trim().isNotEmpty)
-    .join(' ');
+      .whereType<String>() // poor man's null filter
+      .where((String element) => element.trim().isNotEmpty)
+      .join(' ');
   return combinedValue.isNotEmpty ? combinedValue : null;
 }

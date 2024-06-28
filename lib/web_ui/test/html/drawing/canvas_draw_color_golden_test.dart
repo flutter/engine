@@ -47,11 +47,14 @@ Future<void> testMain() async {
     final Picture testPicture = _drawTestPicture(region);
     builder.addPicture(Offset.zero, testPicture);
     await sceneScreenshot(builder, 'canvas_draw_paint', region: region);
-  }, skip: true); // TODO(ferhat): matchGolden fails when a div covers viewport.);
+  },
+      skip:
+          true); // TODO(ferhat): matchGolden fails when a div covers viewport.);
 }
 
 Picture _drawTestPicture(Rect region, {bool useColor = false}) {
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
+  final EnginePictureRecorder recorder =
+      PictureRecorder() as EnginePictureRecorder;
   const Rect r = Rect.fromLTWH(0, 0, 200, 200);
   final RecordingCanvas canvas = recorder.beginRecording(r);
 
@@ -59,8 +62,7 @@ Picture _drawTestPicture(Rect region, {bool useColor = false}) {
       region.deflate(8.0),
       Paint() as SurfacePaint
         ..style = PaintingStyle.fill
-        ..color = const Color(0xFFE0E0E0)
-  );
+        ..color = const Color(0xFFE0E0E0));
 
   canvas.transform(Matrix4.translationValues(50, 50, 0).storage);
 
@@ -73,7 +75,8 @@ Picture _drawTestPicture(Rect region, {bool useColor = false}) {
   }
 
   canvas.drawCircle(
-      Offset(r.width/2, r.height/2), r.width/2,
+      Offset(r.width / 2, r.height / 2),
+      r.width / 2,
       Paint() as SurfacePaint
         ..style = PaintingStyle.fill
         ..color = const Color.fromRGBO(255, 0, 0, 1));

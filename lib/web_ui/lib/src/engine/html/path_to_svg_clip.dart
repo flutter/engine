@@ -32,7 +32,8 @@ SVGSVGElement pathToSvgClipPath(ui.Path path,
     double scaleX = 1.0,
     double scaleY = 1.0}) {
   _clipIdCounter += 1;
-  final SVGSVGElement root = kSvgResourceHeader.cloneNode(false) as SVGSVGElement;
+  final SVGSVGElement root =
+      kSvgResourceHeader.cloneNode(false) as SVGSVGElement;
   final SVGDefsElement defs = createSVGDefsElement();
   root.append(defs);
 
@@ -56,7 +57,10 @@ SVGSVGElement pathToSvgClipPath(ui.Path path,
   } else {
     svgPath.setAttribute('clip-rule', 'nonzero');
   }
-  svgPath.setAttribute('d', pathToSvg((path as SurfacePath).pathRef, offsetX: offsetX, offsetY: offsetY));
+  svgPath.setAttribute(
+      'd',
+      pathToSvg((path as SurfacePath).pathRef,
+          offsetX: offsetX, offsetY: offsetY));
   return root;
 }
 

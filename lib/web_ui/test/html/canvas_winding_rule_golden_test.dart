@@ -31,11 +31,11 @@ Future<void> testMain() async {
     domDocument.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_path_winding.png', region: region);
   });
-
 }
 
 void paintPaths(BitmapCanvas canvas) {
-  canvas.drawRect(const Rect.fromLTRB(0, 0, 500, 500),
+  canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 500, 500),
       SurfacePaintData()
         ..color = 0xFFFFFFFF
         ..style = PaintingStyle.fill); // white

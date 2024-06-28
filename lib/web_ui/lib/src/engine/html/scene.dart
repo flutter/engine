@@ -10,7 +10,8 @@ class SurfaceScene implements ui.Scene {
   /// or extended directly.
   ///
   /// To create a Scene object, use a [SceneBuilder].
-  SurfaceScene(this.webOnlyRootElement, {
+  SurfaceScene(
+    this.webOnlyRootElement, {
     required this.timingRecorder,
   });
 
@@ -46,7 +47,8 @@ class PersistedScene extends PersistedContainerSurface {
   void recomputeTransformAndClip() {
     // Must be the true DPR from the browser, nothing overridable.
     // See: https://github.com/flutter/flutter/issues/143124
-    final double browserDpr = EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final double browserDpr =
+        EngineFlutterDisplay.instance.browserDevicePixelRatio;
     // The scene clip is the size of the entire window **in Logical pixels**.
     //
     // Even though the majority of the engine uses `physicalSize`, there are some

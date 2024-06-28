@@ -46,13 +46,16 @@ mixin CompositionAwareMixin {
 
   void addCompositionEventHandlers(DomHTMLElement domElement) {
     domElement.addEventListener(_kCompositionStart, _compositionStartListener);
-    domElement.addEventListener(_kCompositionUpdate, _compositionUpdateListener);
+    domElement.addEventListener(
+        _kCompositionUpdate, _compositionUpdateListener);
     domElement.addEventListener(_kCompositionEnd, _compositionEndListener);
   }
 
   void removeCompositionEventHandlers(DomHTMLElement domElement) {
-    domElement.removeEventListener(_kCompositionStart, _compositionStartListener);
-    domElement.removeEventListener(_kCompositionUpdate, _compositionUpdateListener);
+    domElement.removeEventListener(
+        _kCompositionStart, _compositionStartListener);
+    domElement.removeEventListener(
+        _kCompositionUpdate, _compositionUpdateListener);
     domElement.removeEventListener(_kCompositionEnd, _compositionEndListener);
   }
 
@@ -71,11 +74,14 @@ mixin CompositionAwareMixin {
   }
 
   EditingState determineCompositionState(EditingState editingState) {
-    if (editingState.extentOffset == null || composingText == null || editingState.text == null) {
+    if (editingState.extentOffset == null ||
+        composingText == null ||
+        editingState.text == null) {
       return editingState;
     }
 
-    final int composingBase = editingState.extentOffset! - composingText!.length;
+    final int composingBase =
+        editingState.extentOffset! - composingText!.length;
 
     if (composingBase < 0) {
       return editingState;

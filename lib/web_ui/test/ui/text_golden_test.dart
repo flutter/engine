@@ -70,7 +70,7 @@ Future<void> testMain() async {
 
   test('text styles - text style height overriding paragraph height', () async {
     await testTextStyle('text style height and paragraph style height',
-      layoutWidth: 50, paragraphHeight: 1.5, height: 2.0);
+        layoutWidth: 50, paragraphHeight: 1.5, height: 2.0);
   });
 
   test('text styles - paragraph text height behavior', () async {
@@ -132,8 +132,7 @@ Future<void> testMain() async {
   });
 
   test('text styles - decoration', () async {
-    await testTextStyle('decoration',
-        decoration: ui.TextDecoration.underline);
+    await testTextStyle('decoration', decoration: ui.TextDecoration.underline);
   });
 
   test('text styles - decoration style', () async {
@@ -157,8 +156,7 @@ Future<void> testMain() async {
 
   // TODO(yjbanov): not sure how to test this.
   test('text styles - baseline', () async {
-    await testTextStyle('baseline',
-        textBaseline: ui.TextBaseline.ideographic);
+    await testTextStyle('baseline', textBaseline: ui.TextBaseline.ideographic);
   });
 
   test('text styles - font family', () async {
@@ -166,8 +164,7 @@ Future<void> testMain() async {
   });
 
   test('text styles - non-existent font family', () async {
-    await testTextStyle('non-existent font family',
-        fontFamily: 'DoesNotExist');
+    await testTextStyle('non-existent font family', fontFamily: 'DoesNotExist');
   });
 
   test('text styles - family fallback', () async {
@@ -192,7 +189,8 @@ Future<void> testMain() async {
     // an explicit non-zero size that should override paragraph properties,
     // so this time "Hello" should disappear, but "World!" should still be
     // visible.
-    await testTextStyle('zero paragraph font size', paragraphFontSize: 0, fontSize: 14);
+    await testTextStyle('zero paragraph font size',
+        paragraphFontSize: 0, fontSize: 14);
   });
 
   test('text styles - letter spacing', () async {
@@ -252,16 +250,12 @@ Future<void> testMain() async {
 
   test('text styles - locale ja', () async {
     await testTextStyle('locale ja',
-        innerText: '次 化 刃 直 入 令',
-        outerText: '',
-        locale: const ui.Locale('ja'));
+        innerText: '次 化 刃 直 入 令', outerText: '', locale: const ui.Locale('ja'));
   });
 
   test('text styles - locale ko', () async {
     await testTextStyle('locale ko',
-        innerText: '次 化 刃 直 入 令',
-        outerText: '',
-        locale: const ui.Locale('ko'));
+        innerText: '次 化 刃 直 入 令', outerText: '', locale: const ui.Locale('ko'));
   });
 
   test('text styles - background', () async {
@@ -531,29 +525,28 @@ Future<void> testMain() async {
     const double testWidth = 300;
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
-    final ui.ParagraphBuilder builder =
-      ui.ParagraphBuilder(ui.ParagraphStyle(
-        fontSize: 40.0,
-        textDirection: ui.TextDirection.ltr,
-      ));
+    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
+      fontSize: 40.0,
+      textDirection: ui.TextDirection.ltr,
+    ));
 
     builder.pushStyle(ui.TextStyle(
-        fontFamily: 'RobotoVariable',
+      fontFamily: 'RobotoVariable',
     ));
     builder.addText('Normal\n');
     builder.pop();
 
     ui.FontVariation weight(double w) => ui.FontVariation('wght', w);
     builder.pushStyle(ui.TextStyle(
-        fontFamily: 'RobotoVariable',
-        fontVariations: <ui.FontVariation>[weight(900)],
+      fontFamily: 'RobotoVariable',
+      fontVariations: <ui.FontVariation>[weight(900)],
     ));
     builder.addText('Heavy\n');
     builder.pop();
 
     builder.pushStyle(ui.TextStyle(
-        fontFamily: 'RobotoVariable',
-        fontVariations: <ui.FontVariation>[weight(100)],
+      fontFamily: 'RobotoVariable',
+      fontVariations: <ui.FontVariation>[weight(100)],
     ));
     builder.addText('Light\n');
     builder.pop();
@@ -751,6 +744,7 @@ Future<void> testSampleText(String language, String text,
     paragraphHeight = paragraph.height;
     return recorder.endRecording();
   }
+
   // Render once to trigger font downloads.
   renderPicture();
   await renderer.fontCollection.fontFallbackManager?.debugWhenIdle();

@@ -56,7 +56,8 @@ Future<void> testMain() async {
 
       call = mockCanvas.methodCallLog[1];
       expect(call.methodName, 'drawParagraph');
-      final Map<dynamic, dynamic> arguments = call.arguments as Map<dynamic, dynamic>;
+      final Map<dynamic, dynamic> arguments =
+          call.arguments as Map<dynamic, dynamic>;
       expect(arguments['paragraph'], paragraph);
       expect(arguments['offset'], const ui.Offset(10, 10));
     });

@@ -137,14 +137,11 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     }
 
     // Subscribe to text and selection changes.
-    subscriptions.add(
-        DomSubscription(activeDomElement, 'input', handleChange));
-    subscriptions.add(
-        DomSubscription(activeDomElement, 'keydown',
-            maybeSendAction));
-    subscriptions.add(
-        DomSubscription(domDocument, 'selectionchange',
-            handleChange));
+    subscriptions.add(DomSubscription(activeDomElement, 'input', handleChange));
+    subscriptions
+        .add(DomSubscription(activeDomElement, 'keydown', maybeSendAction));
+    subscriptions
+        .add(DomSubscription(domDocument, 'selectionchange', handleChange));
     preventDefaultForMouseEvents();
   }
 
@@ -171,8 +168,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   }
 
   @override
-  void placeForm() {
-  }
+  void placeForm() {}
 
   @override
   void updateElementPlacement(EditableTextGeometry textGeometry) {
@@ -209,7 +205,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// used to detect text box invocation. This is because Safari issues touch
 /// events even when Voiceover is enabled.
 class TextField extends PrimaryRoleManager {
-  TextField(SemanticsObject semanticsObject) : super.blank(PrimaryRole.textField, semanticsObject) {
+  TextField(SemanticsObject semanticsObject)
+      : super.blank(PrimaryRole.textField, semanticsObject) {
     _setupDomElement();
   }
 
@@ -305,22 +302,26 @@ class TextField extends PrimaryRoleManager {
     _initializeEditableElement();
     activeEditableElement.addEventListener('focus',
         createDomEventListener((DomEvent event) {
-          if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
-            return;
-          }
+      if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
+        return;
+      }
 
-          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsObject.id, ui.SemanticsAction.didGainAccessibilityFocus, null);
-        }));
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+          semanticsObject.id,
+          ui.SemanticsAction.didGainAccessibilityFocus,
+          null);
+    }));
     activeEditableElement.addEventListener('blur',
         createDomEventListener((DomEvent event) {
-          if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
-            return;
-          }
+      if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
+        return;
+      }
 
-          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsObject.id, ui.SemanticsAction.didLoseAccessibilityFocus, null);
-        }));
+      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+          semanticsObject.id,
+          ui.SemanticsAction.didLoseAccessibilityFocus,
+          null);
+    }));
   }
 
   /// Safari on iOS reports text field activation via pointer events.
@@ -352,15 +353,13 @@ class TextField extends PrimaryRoleManager {
     num? lastPointerDownOffsetX;
     num? lastPointerDownOffsetY;
 
-    addEventListener('pointerdown',
-        createDomEventListener((DomEvent event) {
-          final DomPointerEvent pointerEvent = event as DomPointerEvent;
-          lastPointerDownOffsetX = pointerEvent.clientX;
-          lastPointerDownOffsetY = pointerEvent.clientY;
-        }), true);
+    addEventListener('pointerdown', createDomEventListener((DomEvent event) {
+      final DomPointerEvent pointerEvent = event as DomPointerEvent;
+      lastPointerDownOffsetX = pointerEvent.clientX;
+      lastPointerDownOffsetY = pointerEvent.clientY;
+    }), true);
 
-    addEventListener('pointerup',
-        createDomEventListener((DomEvent event) {
+    addEventListener('pointerup', createDomEventListener((DomEvent event) {
       final DomPointerEvent pointerEvent = event as DomPointerEvent;
 
       if (lastPointerDownOffsetX != null) {
@@ -396,7 +395,8 @@ class TextField extends PrimaryRoleManager {
     }
 
     _initializeEditableElement();
-    activeEditableElement.style.transform = 'translate(${offScreenOffset}px, ${offScreenOffset}px)';
+    activeEditableElement.style.transform =
+        'translate(${offScreenOffset}px, ${offScreenOffset}px)';
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = Timer(_delayBeforePlacement, () {
       editableElement?.style.transform = '';
@@ -438,15 +438,13 @@ class TextField extends PrimaryRoleManager {
         ..height = '${semanticsObject.rect!.height}px';
 
       if (semanticsObject.hasFocus) {
-        if (domDocument.activeElement !=
-            activeEditableElement) {
+        if (domDocument.activeElement != activeEditableElement) {
           semanticsObject.owner.addOneTimePostUpdateCallback(() {
             activeEditableElement.focus();
           });
         }
         SemanticsTextEditingStrategy._instance?.activate(this);
-      } else if (domDocument.activeElement ==
-          activeEditableElement) {
+      } else if (domDocument.activeElement == activeEditableElement) {
         if (!isIosSafari) {
           SemanticsTextEditingStrategy._instance?.deactivate(this);
           // Only apply text, because this node is not focused.

@@ -31,13 +31,15 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   SkwasmPath.fromHandle(PathHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawPath> _registry =
-    SkwasmFinalizationRegistry<RawPath>(pathDispose);
+      SkwasmFinalizationRegistry<RawPath>(pathDispose);
 
   @override
-  ui.PathFillType get fillType => ui.PathFillType.values[pathGetFillType(handle)];
+  ui.PathFillType get fillType =>
+      ui.PathFillType.values[pathGetFillType(handle)];
 
   @override
-  set fillType(ui.PathFillType fillType) => pathSetFillType(handle, fillType.index);
+  set fillType(ui.PathFillType fillType) =>
+      pathSetFillType(handle, fillType.index);
 
   @override
   void moveTo(double x, double y) => pathMoveTo(handle, x, y);
@@ -53,51 +55,36 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
 
   @override
   void quadraticBezierTo(double x1, double y1, double x2, double y2) =>
-    pathQuadraticBezierTo(handle, x1, y1, x2, y2);
+      pathQuadraticBezierTo(handle, x1, y1, x2, y2);
 
   @override
   void relativeQuadraticBezierTo(double x1, double y1, double x2, double y2) =>
-    pathRelativeQuadraticBezierTo(handle, x1, y1, x2, y2);
+      pathRelativeQuadraticBezierTo(handle, x1, y1, x2, y2);
 
   @override
   void cubicTo(
-    double x1,
-    double y1,
-    double x2,
-    double y2,
-    double x3,
-    double y3) =>
-    pathCubicTo(handle, x1, y1, x2, y2, x3, y3);
+          double x1, double y1, double x2, double y2, double x3, double y3) =>
+      pathCubicTo(handle, x1, y1, x2, y2, x3, y3);
 
   @override
   void relativeCubicTo(
-      double x1,
-      double y1,
-      double x2,
-      double y2,
-      double x3,
-      double y3) =>
-    pathRelativeCubicTo(handle, x1, y1, x2, y2, x3, y3);
+          double x1, double y1, double x2, double y2, double x3, double y3) =>
+      pathRelativeCubicTo(handle, x1, y1, x2, y2, x3, y3);
 
   @override
   void conicTo(double x1, double y1, double x2, double y2, double w) =>
-    pathConicTo(handle, x1, y1, x2, y2, w);
+      pathConicTo(handle, x1, y1, x2, y2, w);
 
   @override
   void relativeConicTo(double x1, double y1, double x2, double y2, double w) =>
-    pathRelativeConicTo(handle, x1, y1, x2, y2, w);
+      pathRelativeConicTo(handle, x1, y1, x2, y2, w);
 
   @override
   void arcTo(
       ui.Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
     withStackScope((StackScope s) {
-      pathArcToOval(
-          handle,
-          s.convertRectToNative(rect),
-          ui.toDegrees(startAngle),
-          ui.toDegrees(sweepAngle),
-          forceMoveTo
-      );
+      pathArcToOval(handle, s.convertRectToNative(rect),
+          ui.toDegrees(startAngle), ui.toDegrees(sweepAngle), forceMoveTo);
     });
   }
 
@@ -113,16 +100,8 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
         largeArc ? PathArcSize.large : PathArcSize.small;
     final PathDirection pathDirection =
         clockwise ? PathDirection.clockwise : PathDirection.counterClockwise;
-    pathArcToRotated(
-        handle,
-        radius.x,
-        radius.y,
-        ui.toDegrees(rotation),
-        arcSize.index,
-        pathDirection.index,
-        arcEnd.dx,
-        arcEnd.dy
-    );
+    pathArcToRotated(handle, radius.x, radius.y, ui.toDegrees(rotation),
+        arcSize.index, pathDirection.index, arcEnd.dx, arcEnd.dy);
   }
 
   @override
@@ -137,16 +116,8 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
         largeArc ? PathArcSize.large : PathArcSize.small;
     final PathDirection pathDirection =
         clockwise ? PathDirection.clockwise : PathDirection.counterClockwise;
-    pathRelativeArcToRotated(
-        handle,
-        radius.x,
-        radius.y,
-        ui.toDegrees(rotation),
-        arcSize.index,
-        pathDirection.index,
-        arcEndDelta.dx,
-        arcEndDelta.dy
-    );
+    pathRelativeArcToRotated(handle, radius.x, radius.y, ui.toDegrees(rotation),
+        arcSize.index, pathDirection.index, arcEndDelta.dx, arcEndDelta.dy);
   }
 
   @override
@@ -166,19 +137,16 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   @override
   void addArc(ui.Rect rect, double startAngle, double sweepAngle) {
     withStackScope((StackScope s) {
-      pathAddArc(
-        handle,
-        s.convertRectToNative(rect),
-        ui.toDegrees(startAngle),
-        ui.toDegrees(sweepAngle)
-      );
+      pathAddArc(handle, s.convertRectToNative(rect), ui.toDegrees(startAngle),
+          ui.toDegrees(sweepAngle));
     });
   }
 
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
     withStackScope((StackScope s) {
-      pathAddPolygon(handle, s.convertPointArrayToNative(points), points.length, close);
+      pathAddPolygon(
+          handle, s.convertPointArrayToNative(points), points.length, close);
     });
   }
 
@@ -199,7 +167,8 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
     _addPath(path, offset, true, matrix4: matrix4);
   }
 
-  void _addPath(ui.Path path, ui.Offset offset, bool extend, {Float64List? matrix4}) {
+  void _addPath(ui.Path path, ui.Offset offset, bool extend,
+      {Float64List? matrix4}) {
     assert(path is SkwasmPath);
     withStackScope((StackScope s) {
       final Pointer<Float> convertedMatrix =
@@ -220,8 +189,8 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   bool contains(ui.Offset point) => pathContains(handle, point.dx, point.dy);
 
   @override
-  ui.Path shift(ui.Offset offset) =>
-    transform(Matrix4.translationValues(offset.dx, offset.dy, 0.0).toFloat64());
+  ui.Path shift(ui.Offset offset) => transform(
+      Matrix4.translationValues(offset.dx, offset.dy, 0.0).toFloat64());
 
   @override
   ui.Path transform(Float64List matrix4) {
@@ -242,11 +211,9 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   }
 
   static SkwasmPath combine(
-    ui.PathOperation operation,
-    SkwasmPath path1,
-    SkwasmPath path2) =>
-    SkwasmPath.fromHandle(pathCombine(
-        operation.index, path1.handle, path2.handle));
+          ui.PathOperation operation, SkwasmPath path1, SkwasmPath path2) =>
+      SkwasmPath.fromHandle(
+          pathCombine(operation.index, path1.handle, path2.handle));
 
   @override
   ui.PathMetrics computeMetrics({bool forceClosed = false}) {

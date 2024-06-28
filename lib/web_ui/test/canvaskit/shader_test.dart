@@ -61,7 +61,9 @@ void testMain() {
     });
 
     test('Image shader initialize/dispose cycle', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
+      final SkImage skImage =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       final CkImageShader imageShader = ui.ImageShader(
         image,
@@ -73,7 +75,8 @@ void testMain() {
 
       final UniqueRef<SkShader> ref = imageShader.ref!;
       expect(imageShader.debugDisposed, false);
-      expect(imageShader.getSkShader(ui.FilterQuality.none), same(ref.nativeObject));
+      expect(imageShader.getSkShader(ui.FilterQuality.none),
+          same(ref.nativeObject));
       expect(ref.isDisposed, false);
       expect(image.debugDisposed, false);
       imageShader.dispose();
@@ -84,7 +87,9 @@ void testMain() {
     });
 
     test('Image shader withQuality', () {
-      final SkImage skImage = canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!.makeImageAtCurrentFrame();
+      final SkImage skImage =
+          canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
+              .makeImageAtCurrentFrame();
       final CkImage image = CkImage(skImage);
       final CkImageShader imageShader = ui.ImageShader(
         image,
@@ -95,7 +100,8 @@ void testMain() {
       expect(imageShader, isA<CkImageShader>());
 
       final UniqueRef<SkShader> ref1 = imageShader.ref!;
-      expect(imageShader.getSkShader(ui.FilterQuality.none), same(ref1.nativeObject));
+      expect(imageShader.getSkShader(ui.FilterQuality.none),
+          same(ref1.nativeObject));
 
       // Request the same quality as the default quality (none).
       expect(imageShader.getSkShader(ui.FilterQuality.none), isNotNull);
@@ -108,7 +114,9 @@ void testMain() {
       expect(imageShader.getSkShader(ui.FilterQuality.medium), isNotNull);
       final UniqueRef<SkShader> ref3 = imageShader.ref!;
       expect(ref1, isNot(same(ref3)));
-      expect(ref1.isDisposed, true, reason: 'The previous reference must be released to avoid a memory leak');
+      expect(ref1.isDisposed, true,
+          reason:
+              'The previous reference must be released to avoid a memory leak');
       expect(image.debugDisposed, false);
       expect(imageShader.ref!.nativeObject, same(ref3.nativeObject));
 
@@ -130,4 +138,7 @@ void testMain() {
   });
 }
 
-const List<ui.Color> testColors = <ui.Color>[ui.Color(0xFFFFFF00), ui.Color(0xFFFFFFFF)];
+const List<ui.Color> testColors = <ui.Color>[
+  ui.Color(0xFFFFFF00),
+  ui.Color(0xFFFFFFFF)
+];

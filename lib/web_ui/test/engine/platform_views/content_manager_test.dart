@@ -32,7 +32,8 @@ void testMain() {
       test('recognizes viewTypes after registering them', () async {
         expect(contentManager.knowsViewType(viewType), isFalse);
 
-        contentManager.registerFactory(viewType, (int id) => createDomHTMLDivElement());
+        contentManager.registerFactory(
+            viewType, (int id) => createDomHTMLDivElement());
 
         expect(contentManager.knowsViewType(viewType), isTrue);
       });
@@ -42,7 +43,8 @@ void testMain() {
       test('recognizes viewIds after *rendering* them', () async {
         expect(contentManager.knowsViewId(viewId), isFalse);
 
-        contentManager.registerFactory(viewType, (int id) => createDomHTMLDivElement());
+        contentManager.registerFactory(
+            viewType, (int id) => createDomHTMLDivElement());
 
         expect(contentManager.knowsViewId(viewId), isFalse);
 
@@ -52,8 +54,10 @@ void testMain() {
       });
 
       test('forgets viewIds after clearing them', () {
-        contentManager.registerFactory(viewType, (int id) => createDomHTMLDivElement());
-        final DomElement view = contentManager.renderContent(viewType, viewId, null);
+        contentManager.registerFactory(
+            viewType, (int id) => createDomHTMLDivElement());
+        final DomElement view =
+            contentManager.renderContent(viewType, viewId, null);
 
         expect(contentManager.knowsViewId(viewId), isTrue);
 
@@ -100,7 +104,8 @@ void testMain() {
 
       test('refuse to render views for unregistered factories', () async {
         expect(
-          () => contentManager.renderContent(unregisteredViewType, viewId, null),
+          () =>
+              contentManager.renderContent(unregisteredViewType, viewId, null),
           throwsA(const TypeMatcher<AssertionError>().having(
             (AssertionError error) => error.message,
             'assertion message',
@@ -120,7 +125,8 @@ void testMain() {
         expect(userContent.style.width, '100%');
       });
 
-      test('slot property has the same value as createPlatformViewSlot', () async {
+      test('slot property has the same value as createPlatformViewSlot',
+          () async {
         final DomElement content =
             contentManager.renderContent(viewType, viewId, null);
         final DomElement slot = createPlatformViewSlot(viewId);
@@ -131,7 +137,8 @@ void testMain() {
                 'The slot attribute of the rendered content must match the name attribute of the SLOT of a given viewId');
       });
 
-      test('do not modify style.height / style.width if passed by the user (anotherViewType)',
+      test(
+          'do not modify style.height / style.width if passed by the user (anotherViewType)',
           () async {
         final DomElement content =
             contentManager.renderContent(anotherViewType, viewId, null);

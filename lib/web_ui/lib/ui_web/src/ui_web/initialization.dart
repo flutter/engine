@@ -33,7 +33,8 @@ Future<void> bootstrapEngine({
   final AppBootstrap bootstrap = AppBootstrap(
     initializeEngine: ([JsFlutterConfiguration? configuration]) async {
       await initializeEngineServices(jsConfiguration: configuration);
-    }, runApp: () async {
+    },
+    runApp: () async {
       if (registerPlugins != null) {
         registerPlugins();
       }

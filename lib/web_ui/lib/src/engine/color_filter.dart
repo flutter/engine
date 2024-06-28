@@ -29,8 +29,8 @@ class EngineColorFilter implements SceneImageFilter, ui.ColorFilter {
   /// to the [Paint.blendMode], using the output of this filter as the source
   /// and the background as the destination.
   const EngineColorFilter.mode(ui.Color this.color, ui.BlendMode this.blendMode)
-    : matrix = null,
-      type = ColorFilterType.mode;
+      : matrix = null,
+        type = ColorFilterType.mode;
 
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.

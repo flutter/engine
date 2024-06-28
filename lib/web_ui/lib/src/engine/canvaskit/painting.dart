@@ -148,8 +148,7 @@ class CkPaint implements ui.Paint {
         _effectiveColorFilter = _invertColorFilter;
       } else {
         _effectiveColorFilter = ManagedSkColorFilter(
-          CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!)
-        );
+            CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
       }
     }
     skiaObject.setColorFilter(_effectiveColorFilter?.skiaObject);
@@ -240,8 +239,7 @@ class CkPaint implements ui.Paint {
         _effectiveColorFilter = _invertColorFilter;
       } else {
         _effectiveColorFilter = ManagedSkColorFilter(
-          CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!)
-        );
+            CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
       }
     }
 
@@ -276,8 +274,7 @@ class CkPaint implements ui.Paint {
     final CkManagedSkImageFilterConvertible? filter;
     if (value is ui.ColorFilter) {
       filter = createCkColorFilter(value as EngineColorFilter);
-    }
-    else {
+    } else {
       filter = value as CkManagedSkImageFilterConvertible?;
     }
 
@@ -326,7 +323,8 @@ class CkPaint implements ui.Paint {
         }
         if (strokeJoin == ui.StrokeJoin.miter) {
           if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
-            result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+            result.write(
+                ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
           }
         } else {
           result.write(' $strokeJoin');
@@ -384,7 +382,8 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
   1.0, 1.0, 1.0, 1.0, 0
 ]);
 
-final ManagedSkColorFilter _invertColorFilter = ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
+final ManagedSkColorFilter _invertColorFilter =
+    ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
 
 class CkFragmentProgram implements ui.FragmentProgram {
   CkFragmentProgram(this.name, this.effect, this.uniforms, this.floatCount,
@@ -463,7 +462,8 @@ class CkFragmentShader implements ui.FragmentShader, CkShader {
     final ui.ImageShader sampler = ui.ImageShader(image, ui.TileMode.clamp,
         ui.TileMode.clamp, toMatrix64(Matrix4.identity().storage));
     samplers[index] = (sampler as CkShader).getSkShader(ui.FilterQuality.none);
-    setFloat(lastFloatIndex + 2 * index, (sampler as CkImageShader).imageWidth.toDouble());
+    setFloat(lastFloatIndex + 2 * index,
+        (sampler as CkImageShader).imageWidth.toDouble());
     setFloat(lastFloatIndex + 2 * index + 1, sampler.imageHeight.toDouble());
   }
 

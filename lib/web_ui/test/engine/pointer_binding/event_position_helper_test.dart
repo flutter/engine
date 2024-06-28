@@ -20,10 +20,12 @@ void doTests() {
   late EngineFlutterView view;
   late DomElement rootElement;
   late DomElement eventSource;
-  final StreamController<DomEvent> events = StreamController<DomEvent>.broadcast();
+  final StreamController<DomEvent> events =
+      StreamController<DomEvent>.broadcast();
 
   /// Dispatches an event `e` on `target`, and returns it after it's gone through the browser.
-  Future<DomPointerEvent> dispatchAndCatch(DomElement target, DomPointerEvent e) async {
+  Future<DomPointerEvent> dispatchAndCatch(
+      DomElement target, DomPointerEvent e) async {
     final Future<DomEvent> nextEvent = events.stream.first;
     target.dispatchEvent(e);
     return (await nextEvent) as DomPointerEvent;
@@ -31,7 +33,8 @@ void doTests() {
 
   group('computeEventOffsetToTarget', () {
     setUp(() {
-      view = EngineFlutterView(EnginePlatformDispatcher.instance, domDocument.body!);
+      view = EngineFlutterView(
+          EnginePlatformDispatcher.instance, domDocument.body!);
       rootElement = view.dom.rootElement;
       eventSource = createDomElement('div-event-source');
       rootElement.append(eventSource);
@@ -52,7 +55,8 @@ void doTests() {
         ..top = '100px'
         ..left = '120px';
 
-      rootElement.addEventListener('click', createDomEventListener((DomEvent e) {
+      rootElement.addEventListener('click',
+          createDomEventListener((DomEvent e) {
         events.add(e);
       }));
     });
@@ -63,14 +67,13 @@ void doTests() {
 
     test('Event dispatched by target returns offsetX, offsetY', () async {
       // Fire an event contained within target...
-      final DomMouseEvent event = await dispatchAndCatch(rootElement, createDomPointerEvent(
-        'click',
-        <String, Object>{
-          'bubbles': true,
-          'clientX': 10,
-          'clientY': 20,
-        }
-      ));
+      final DomMouseEvent event = await dispatchAndCatch(
+          rootElement,
+          createDomPointerEvent('click', <String, Object>{
+            'bubbles': true,
+            'clientX': 10,
+            'clientY': 20,
+          }));
 
       expect(event.offsetX, 10);
       expect(event.offsetY, 20);
@@ -81,16 +84,16 @@ void doTests() {
       expect(offset.dy, event.offsetY);
     });
 
-    test('Event dispatched on child re-computes offset (offsetX/Y invalid)', () async {
+    test('Event dispatched on child re-computes offset (offsetX/Y invalid)',
+        () async {
       // Fire an event contained within target...
-      final DomMouseEvent event = await dispatchAndCatch(eventSource, createDomPointerEvent(
-        'click',
-        <String, Object>{
-          'bubbles': true, // So it can be caught in `target`
-          'clientX': 140, // x = 20px into `eventSource`.
-          'clientY': 110, // y = 10px into `eventSource`.
-        }
-      ));
+      final DomMouseEvent event = await dispatchAndCatch(
+          eventSource,
+          createDomPointerEvent('click', <String, Object>{
+            'bubbles': true, // So it can be caught in `target`
+            'clientX': 140, // x = 20px into `eventSource`.
+            'clientY': 110, // y = 10px into `eventSource`.
+          }));
 
       expect(event.offsetX, 20);
       expect(event.offsetY, 10);
@@ -105,7 +108,9 @@ void doTests() {
       // Fill this in to test _computeOffsetForTalkbackEvent
     }, skip: 'To be implemented!');
 
-    test('Event dispatched on text editing node computes offset with framework geometry', () async {
+    test(
+        'Event dispatched on text editing node computes offset with framework geometry',
+        () async {
       // Fill this in to test _computeOffsetForInputs
     }, skip: 'To be implemented!');
   });

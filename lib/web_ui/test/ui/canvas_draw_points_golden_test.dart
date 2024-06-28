@@ -34,8 +34,7 @@ Future<void> testMain() async {
     canvas = ui.Canvas(recorder, region);
   });
 
-  tearDown(() {
-  });
+  tearDown(() {});
 
   test('draws points in all 3 modes', () async {
     final ui.Paint paint = ui.Paint();
@@ -98,22 +97,26 @@ Future<void> testMain() async {
   });
 
   test('Should draw points with strokeWidth', () async {
-    final ui.Paint nullStrokePaint =
-      ui.Paint()..color = const ui.Color(0xffff0000);
-    canvas.drawRawPoints(ui.PointMode.lines, Float32List.fromList(<double>[
-      30.0, 20.0, 200.0, 20.0]), nullStrokePaint);
+    final ui.Paint nullStrokePaint = ui.Paint()
+      ..color = const ui.Color(0xffff0000);
+    canvas.drawRawPoints(
+        ui.PointMode.lines,
+        Float32List.fromList(<double>[30.0, 20.0, 200.0, 20.0]),
+        nullStrokePaint);
     final ui.Paint strokePaint1 = ui.Paint()
       ..strokeWidth = 1.0
       ..color = const ui.Color(0xff0000ff);
-    canvas.drawRawPoints(ui.PointMode.lines, Float32List.fromList(<double>[
-      30.0, 30.0, 200.0, 30.0]), strokePaint1);
+    canvas.drawRawPoints(ui.PointMode.lines,
+        Float32List.fromList(<double>[30.0, 30.0, 200.0, 30.0]), strokePaint1);
     final ui.Paint strokePaint3 = ui.Paint()
       ..strokeWidth = 3.0
       ..color = const ui.Color(0xff00a000);
-    canvas.drawRawPoints(ui.PointMode.lines, Float32List.fromList(<double>[
-      30.0, 40.0, 200.0, 40.0]), strokePaint3);
-    canvas.drawRawPoints(ui.PointMode.points, Float32List.fromList(<double>[
-      30.0, 50.0, 40.0, 50.0, 50.0, 50.0]), strokePaint3);
+    canvas.drawRawPoints(ui.PointMode.lines,
+        Float32List.fromList(<double>[30.0, 40.0, 200.0, 40.0]), strokePaint3);
+    canvas.drawRawPoints(
+        ui.PointMode.points,
+        Float32List.fromList(<double>[30.0, 50.0, 40.0, 50.0, 50.0, 50.0]),
+        strokePaint3);
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
     await matchGoldenFile('ui_canvas_draw_points_stroke.png', region: region);
   });

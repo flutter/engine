@@ -74,7 +74,8 @@ class SurfaceVertices implements ui.Vertices {
       return result!;
     }
 
-    throw StateError('Vertices.debugDisposed is only available when asserts are enabled.');
+    throw StateError(
+        'Vertices.debugDisposed is only available when asserts are enabled.');
   }
 }
 
@@ -241,7 +242,8 @@ class _WebGlRenderer implements GlRenderer {
       } else {
         gl.bufferData(vertices.colors, gl.kStaticDraw);
       }
-      final Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
+      final Object colorLoc =
+          gl.getAttributeLocation(glProgram.program, 'color');
       vertexAttribPointerGlContext(
         gl.glContext,
         colorLoc,
@@ -378,7 +380,8 @@ class _WebGlRenderer implements GlRenderer {
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
     // clipspace range and flip the Y axis.
-    final Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
+    final Object resolution =
+        gl.getUniformLocation(glProgram.program, 'u_scale');
     gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
         -2.0 / heightInPixels.toDouble(), 1, 1);
     final Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
@@ -427,7 +430,8 @@ class _WebGlRenderer implements GlRenderer {
     gl.bufferElementData(VertexShaders.vertexIndicesForRect, gl.kStaticDraw);
 
     if (gl.containsUniform(glProgram.program, 'u_resolution')) {
-      final Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
+      final Object uRes =
+          gl.getUniformLocation(glProgram.program, 'u_resolution');
       gl.setUniform2f(
           uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
     }
@@ -435,8 +439,8 @@ class _WebGlRenderer implements GlRenderer {
     gl.clear();
     gl.viewport(0, 0, widthInPixels.toDouble(), heightInPixels.toDouble());
 
-    gl.drawElements(
-        gl.kTriangles, VertexShaders.vertexIndicesForRect.length, gl.kUnsignedShort);
+    gl.drawElements(gl.kTriangles, VertexShaders.vertexIndicesForRect.length,
+        gl.kUnsignedShort);
   }
 
   /// This fragment shader enables Int32List of colors to be passed directly
@@ -458,8 +462,7 @@ class _WebGlRenderer implements GlRenderer {
   }
 
   @override
-  void drawHairline(
-      DomCanvasRenderingContext2D? ctx, Float32List positions) {
+  void drawHairline(DomCanvasRenderingContext2D? ctx, Float32List positions) {
     final int pointCount = positions.length ~/ 2;
     ctx!.lineWidth = 1.0;
     ctx.beginPath();

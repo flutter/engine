@@ -63,7 +63,8 @@ class FakeAssetScope {
   FakeAssetScope._(this._parent);
 
   final FakeAssetScope? _parent;
-  final Map<String, Future<ByteData> Function()> _assetFetcherMap = <String, Future<ByteData> Function()>{};
+  final Map<String, Future<ByteData> Function()> _assetFetcherMap =
+      <String, Future<ByteData> Function()>{};
 
   void setAsset(String assetKey, ByteData assetData) {
     _assetFetcherMap[assetKey] = () async => assetData;
@@ -98,7 +99,8 @@ const String ahemFontUrl = '/assets/fonts/ahem.ttf';
 const String robotoFontFamily = 'Roboto';
 const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 const String robotoVariableFontFamily = 'RobotoVariable';
-const String robotoVariableFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
+const String robotoVariableFontUrl =
+    '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
 
 /// The list of test fonts, in the form of font family name - font file url pairs.
 /// This list does not include embedded test fonts, which need to be loaded and

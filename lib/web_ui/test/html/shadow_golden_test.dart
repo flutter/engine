@@ -131,8 +131,7 @@ Future<void> testMain() async {
       }
 
       for (int i = 0; i < 10; i++) {
-        paintBitmapCanvasComplexPathShadow(
-            i.toDouble(), Offset(50.0 * i, 180));
+        paintBitmapCanvasComplexPathShadow(i.toDouble(), Offset(50.0 * i, 180));
       }
 
       builder.pop();

@@ -29,9 +29,9 @@ Future<void> testMain() async {
 
     test('returns normally from invalid font buffer', () async {
       await expectLater(
-        () async => ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
-        returnsNormally
-      );
+          () async =>
+              ui.loadFontFromList(Uint8List(0), fontFamily: 'test-font'),
+          returnsNormally);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
         skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
@@ -52,7 +52,8 @@ Future<void> testMain() async {
       const ui.ParagraphConstraints constraints =
           ui.ParagraphConstraints(width: 30.0);
 
-      final CanvasParagraphBuilder canvasBuilder = CanvasParagraphBuilder(style);
+      final CanvasParagraphBuilder canvasBuilder =
+          CanvasParagraphBuilder(style);
       canvasBuilder.addText('test');
       // Triggers the measuring and verifies the ruler cache has been populated.
       canvasBuilder.build().layout(constraints);
@@ -71,11 +72,12 @@ Future<void> testMain() async {
         skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
 
     test('loading font should send font change message', () async {
-      final ui.PlatformMessageCallback? oldHandler = ui.PlatformDispatcher.instance.onPlatformMessage;
+      final ui.PlatformMessageCallback? oldHandler =
+          ui.PlatformDispatcher.instance.onPlatformMessage;
       String? actualName;
       String? message;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String name, ByteData? data,
-          ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (String name,
+          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
         actualName = name;
         final ByteBuffer buffer = data!.buffer;
         final Uint8List list =
@@ -85,7 +87,9 @@ Future<void> testMain() async {
       final ByteBuffer response = await httpFetchByteBuffer(testFontUrl);
       await ui.loadFontFromList(response.asUint8List(), fontFamily: 'Blehm');
       final Completer<void> completer = Completer<void>();
-      domWindow.requestAnimationFrame((_) { completer.complete();});
+      domWindow.requestAnimationFrame((_) {
+        completer.complete();
+      });
       await completer.future;
       ui.PlatformDispatcher.instance.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
@@ -98,8 +102,8 @@ Future<void> testMain() async {
 
 bool _containsFontFamily(String family) {
   bool found = false;
-  domDocument.fonts!.forEach((DomFontFace fontFace,
-      DomFontFace fontFaceAgain, DomFontFaceSet fontFaceSet) {
+  domDocument.fonts!.forEach((DomFontFace fontFace, DomFontFace fontFaceAgain,
+      DomFontFaceSet fontFaceSet) {
     if (fontFace.family == family) {
       found = true;
     }

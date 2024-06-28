@@ -145,36 +145,36 @@ Future<void> testMain() async {
   test('pushImageFilter matrix', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     builder.pushImageFilter(
-      ui.ImageFilter.matrix(
-          (
-              Matrix4.identity()
-                ..translate(40, 10)
-                ..rotateZ(math.pi / 6)
-                ..scale(0.75, 0.75)
-          ).toFloat64()),
+      ui.ImageFilter.matrix((Matrix4.identity()
+            ..translate(40, 10)
+            ..rotateZ(math.pi / 6)
+            ..scale(0.75, 0.75))
+          .toFloat64()),
     );
     _drawTestPicture(builder);
     builder.pop();
 
     domDocument.body!.append(builder.build().webOnlyRootElement!);
 
-    await matchGoldenFile('compositing_image_filter_matrix.png', region: region);
+    await matchGoldenFile('compositing_image_filter_matrix.png',
+        region: region);
   });
 
   test('pushImageFilter using mode ColorFilter', () async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     // Applying the colorFilter should turn all the circles red.
-    builder.pushImageFilter(
-        const ui.ColorFilter.mode(
-          ui.Color(0xFFFF0000),
-          ui.BlendMode.srcIn,
-        ));
+    builder.pushImageFilter(const ui.ColorFilter.mode(
+      ui.Color(0xFFFF0000),
+      ui.BlendMode.srcIn,
+    ));
     _drawTestPicture(builder);
     builder.pop();
 
     domDocument.body!.append(builder.build().webOnlyRootElement!);
 
-    await matchGoldenFile('compositing_image_filter_using_mode_color_filter.png', region: region);
+    await matchGoldenFile(
+        'compositing_image_filter_using_mode_color_filter.png',
+        region: region);
   });
 
   test('pushImageFilter using matrix ColorFilter', () async {
@@ -193,7 +193,9 @@ Future<void> testMain() async {
 
     domDocument.body!.append(builder.build().webOnlyRootElement!);
 
-    await matchGoldenFile('compositing_image_filter_using_matrix_color_filter.png', region: region);
+    await matchGoldenFile(
+        'compositing_image_filter_using_matrix_color_filter.png',
+        region: region);
   });
 
   group('Cull rect computation', () {
@@ -213,7 +215,8 @@ void _testCullRectComputation() {
     builder.build();
 
     final PersistedPicture picture = enumeratePictures().single;
-    expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, 0, 500, 100));
+    expect(
+        picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, 0, 500, 100));
   }, skip: '''
   TODO(https://github.com/flutter/flutter/issues/40395)
   Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500''');
@@ -223,7 +226,8 @@ void _testCullRectComputation() {
   test('intersects with screen bounds', () async {
     final ui.SceneBuilder builder = ui.SceneBuilder();
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(
+          ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
     });
     builder.build();
 
@@ -236,8 +240,8 @@ void _testCullRectComputation() {
   test('fully outside screen bounds', () async {
     final ui.SceneBuilder builder = ui.SceneBuilder();
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(
-          const ui.Offset(-100, -100), 20, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(const ui.Offset(-100, -100), 20,
+          SurfacePaint()..style = ui.PaintingStyle.fill);
     });
     builder.build();
 
@@ -251,13 +255,14 @@ void _testCullRectComputation() {
   test('limits to paint bounds if no clip layers', () async {
     final ui.SceneBuilder builder = ui.SceneBuilder();
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(
-          const ui.Offset(50, 50), 10, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(const ui.Offset(50, 50), 10,
+          SurfacePaint()..style = ui.PaintingStyle.fill);
     });
     builder.build();
 
     final PersistedPicture picture = enumeratePictures().single;
-    expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(40, 40, 60, 60));
+    expect(
+        picture.optimalLocalCullRect, const ui.Rect.fromLTRB(40, 40, 60, 60));
   });
 
   // Draw a picture smaller than the screen. Offset it such that it remains
@@ -268,15 +273,16 @@ void _testCullRectComputation() {
 
     builder.pushOffset(10, 10);
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(
-          const ui.Offset(50, 50), 10, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(const ui.Offset(50, 50), 10,
+          SurfacePaint()..style = ui.PaintingStyle.fill);
     });
     builder.pop();
 
     builder.build();
 
     final PersistedPicture picture = enumeratePictures().single;
-    expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(40, 40, 60, 60));
+    expect(
+        picture.optimalLocalCullRect, const ui.Rect.fromLTRB(40, 40, 60, 60));
   });
 
   // Draw a picture smaller than the screen. Offset it such that the picture
@@ -287,16 +293,18 @@ void _testCullRectComputation() {
 
     builder.pushOffset(0, 90);
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(
+          ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
     });
     builder.pop();
 
     builder.build();
 
     final PersistedPicture picture = enumeratePictures().single;
+    expect(picture.debugExactGlobalCullRect,
+        const ui.Rect.fromLTRB(0, 70, 20, 100));
     expect(
-        picture.debugExactGlobalCullRect, const ui.Rect.fromLTRB(0, 70, 20, 100));
-    expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, -20, 20, 10));
+        picture.optimalLocalCullRect, const ui.Rect.fromLTRB(0, -20, 20, 10));
   }, skip: '''
   TODO(https://github.com/flutter/flutter/issues/40395)
   Needs ability to set iframe to 500,100 size. Current screen seems to be 500,500''');
@@ -326,7 +334,8 @@ void _testCullRectComputation() {
         region: region);
 
     final PersistedPicture picture = enumeratePictures().single;
-    expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(40, 40, 70, 70));
+    expect(
+        picture.optimalLocalCullRect, const ui.Rect.fromLTRB(40, 40, 70, 70));
   });
 
   // Draw a picture inside a layer clip but position the picture such that its
@@ -343,8 +352,8 @@ void _testCullRectComputation() {
     );
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(
-          const ui.Offset(80, 55), 30, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(const ui.Offset(80, 55), 30,
+          SurfacePaint()..style = ui.PaintingStyle.fill);
     });
 
     builder.pop(); // pushClipRect
@@ -356,7 +365,8 @@ void _testCullRectComputation() {
         region: region);
 
     final PersistedPicture picture = enumeratePictures().single;
-    expect(picture.optimalLocalCullRect, const ui.Rect.fromLTRB(50, 40, 70, 70));
+    expect(
+        picture.optimalLocalCullRect, const ui.Rect.fromLTRB(50, 40, 70, 70));
   });
 
   // Draw a picture inside a layer clip that's positioned inside the clip using
@@ -375,7 +385,8 @@ void _testCullRectComputation() {
     builder.pushOffset(55, 70);
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(
+          ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
     });
 
     builder.pop(); // pushOffset
@@ -407,7 +418,8 @@ void _testCullRectComputation() {
     builder.pushOffset(100, 50);
 
     drawWithBitmapCanvas(builder, (RecordingCanvas canvas) {
-      canvas.drawCircle(ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
+      canvas.drawCircle(
+          ui.Offset.zero, 20, SurfacePaint()..style = ui.PaintingStyle.fill);
     });
 
     builder.pop(); // pushOffset
@@ -463,7 +475,8 @@ void _testCullRectComputation() {
     expect(
       picture.optimalLocalCullRect,
       within(
-          distance: 0.05, from: const ui.Rect.fromLTRB(-14.1, -14.1, 14.1, 14.1)),
+          distance: 0.05,
+          from: const ui.Rect.fromLTRB(-14.1, -14.1, 14.1, 14.1)),
     );
   });
 
@@ -625,7 +638,9 @@ void _testCullRectComputation() {
       final CanvasParagraph paragraph =
           (ui.ParagraphBuilder(ui.ParagraphStyle(fontFamily: 'Roboto'))
                 // Use a decoration to force rendering in DOM mode.
-                ..pushStyle(ui.TextStyle(decoration: ui.TextDecoration.lineThrough, decorationColor: const ui.Color(0x00000000)))
+                ..pushStyle(ui.TextStyle(
+                    decoration: ui.TextDecoration.lineThrough,
+                    decorationColor: const ui.Color(0x00000000)))
                 ..addText('Am I blurry?'))
               .build() as CanvasParagraph;
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
@@ -638,8 +653,8 @@ void _testCullRectComputation() {
       );
       final ui.Rect outerClip =
           ui.Rect.fromLTRB(0.5, 0.5, canvasSize.right, canvasSize.bottom);
-      final ui.Rect innerClip = ui.Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
-          canvasSize.right, canvasSize.bottom);
+      final ui.Rect innerClip = ui.Rect.fromLTRB(0.5,
+          canvasSize.bottom / 2 + 0.5, canvasSize.right, canvasSize.bottom);
       final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
 
       builder.pushClipRect(outerClip);
@@ -697,8 +712,8 @@ void _drawTestPicture(ui.SceneBuilder builder) {
   final EnginePictureRecorder recorder = EnginePictureRecorder();
   final RecordingCanvas canvas =
       recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 100, 100));
-  canvas.drawCircle(
-      const ui.Offset(10, 10), 10, SurfacePaint()..style = ui.PaintingStyle.fill);
+  canvas.drawCircle(const ui.Offset(10, 10), 10,
+      SurfacePaint()..style = ui.PaintingStyle.fill);
   canvas.drawCircle(
       const ui.Offset(60, 10),
       10,

@@ -18,7 +18,9 @@ void testMain() {
     expect(cache.length, 0);
   });
 
-  test('$LruCache adds up to a maximum number of items in most recently used first order', () {
+  test(
+      '$LruCache adds up to a maximum number of items in most recently used first order',
+      () {
     final LruCache<String, int> cache = LruCache<String, int>(3);
     cache.cache('a', 1);
     expect(cache.debugItemQueue.toList(), <TestCacheEntry>[
@@ -76,7 +78,8 @@ void testMain() {
     ]);
   });
 
-  test('$LruCache updates and promotes entry to most recently used position', () {
+  test('$LruCache updates and promotes entry to most recently used position',
+      () {
     final LruCache<String, int> cache = LruCache<String, int>(3);
     cache.cache('a', 1);
     cache.cache('b', 2);

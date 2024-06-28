@@ -48,7 +48,8 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await canvasScreenshot(rc, 'path_transform_with_line', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'path_transform_with_line',
+        canvasRect: screenRect);
   });
 
   test('Should draw transformed line.', () async {
@@ -73,7 +74,8 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await canvasScreenshot(rc, 'path_transform_with_rect', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'path_transform_with_rect',
+        canvasRect: screenRect);
   });
 
   test('Should draw transformed quadratic curve.', () async {
@@ -99,7 +101,8 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await canvasScreenshot(rc, 'path_transform_with_quadratic_curve', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'path_transform_with_quadratic_curve',
+        canvasRect: screenRect);
   });
 
   test('Should draw transformed conic.', () async {
@@ -136,7 +139,8 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await canvasScreenshot(rc, 'path_transform_with_conic', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'path_transform_with_conic',
+        canvasRect: screenRect);
   });
 
   test('Should draw transformed arc.', () async {
@@ -169,7 +173,8 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await canvasScreenshot(rc, 'path_transform_with_arc', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'path_transform_with_arc',
+        canvasRect: screenRect);
   });
 
   test('Should draw transformed rrect.', () async {
@@ -177,7 +182,8 @@ Future<void> testMain() async {
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
 
     final Path path = Path();
-    path.addRRect(RRect.fromLTRBR(50, 50, 300, 200, const Radius.elliptical(4, 8)));
+    path.addRRect(
+        RRect.fromLTRBR(50, 50, 300, 200, const Radius.elliptical(4, 8)));
 
     rc.drawPath(
         path,
@@ -197,6 +203,7 @@ Future<void> testMain() async {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.0
           ..color = const Color.fromRGBO(0, 128, 255, 1.0));
-    await canvasScreenshot(rc, 'path_transform_with_rrect', canvasRect: screenRect);
+    await canvasScreenshot(rc, 'path_transform_with_rrect',
+        canvasRect: screenRect);
   });
 }

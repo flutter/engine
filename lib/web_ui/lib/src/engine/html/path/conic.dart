@@ -240,7 +240,9 @@ class Conic {
     }
     final double w0 = dz0 / root;
     final double w2 = dz2 / root;
-    if (SPath.nearlyEqual(dz0, 0) || SPath.nearlyEqual(dz1, 0) || SPath.nearlyEqual(dz2, 0)) {
+    if (SPath.nearlyEqual(dz0, 0) ||
+        SPath.nearlyEqual(dz1, 0) ||
+        SPath.nearlyEqual(dz2, 0)) {
       return false;
     }
     // Now we can construct the 2 conics by projecting 3D down to 2D.

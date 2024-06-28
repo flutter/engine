@@ -44,7 +44,8 @@ class Scrollable extends PrimaryRoleManager {
   /// [canonicalNeutralScrollPosition] so the browser believes
   /// that the scrollable area still has some more content, and doesn't override
   /// scrollTop/scrollLetf with zero.
-  final DomElement _scrollOverflowElement = createDomElement('flt-semantics-scroll-overflow');
+  final DomElement _scrollOverflowElement =
+      createDomElement('flt-semantics-scroll-overflow');
 
   /// Listens to HTML "scroll" gestures detected by the browser.
   ///
@@ -173,7 +174,8 @@ class Scrollable extends PrimaryRoleManager {
       // Place the _scrollOverflowElement at the end of the content and
       // make sure that when we neutralize the scrolling position,
       // it doesn't scroll into the visible area.
-      final int verticalOffset = rect.height.ceil() + canonicalNeutralScrollPosition;
+      final int verticalOffset =
+          rect.height.ceil() + canonicalNeutralScrollPosition;
       _scrollOverflowElement.style
         ..transform = 'translate(0px,${verticalOffset}px)'
         ..width = '${rect.width.round()}px'
@@ -190,7 +192,8 @@ class Scrollable extends PrimaryRoleManager {
       // Place the _scrollOverflowElement at the end of the content and
       // make sure that when we neutralize the scrolling position,
       // it doesn't scroll into the visible area.
-      final int horizontalOffset = rect.width.ceil() + canonicalNeutralScrollPosition;
+      final int horizontalOffset =
+          rect.width.ceil() + canonicalNeutralScrollPosition;
       _scrollOverflowElement.style
         ..transform = 'translate(${horizontalOffset}px,0px)'
         ..width = '${canonicalNeutralScrollPosition}px'

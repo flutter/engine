@@ -36,15 +36,15 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
     if (contentType == null) {
       final String fileHeader;
       if (data.isNotEmpty) {
-        fileHeader = '[${bytesToHexString(data.sublist(0, math.min(10, data.length)))}]';
+        fileHeader =
+            '[${bytesToHexString(data.sublist(0, math.min(10, data.length)))}]';
       } else {
         fileHeader = 'empty';
       }
       throw ImageCodecException(
-        'Failed to detect image file format using the file header.\n'
-        'File header was $fileHeader.\n'
-        'Image source: $debugSource'
-      );
+          'Failed to detect image file format using the file header.\n'
+          'File header was $fileHeader.\n'
+          'Image source: $debugSource');
     }
 
     final CkBrowserImageDecoder decoder = CkBrowserImageDecoder._(
@@ -80,7 +80,8 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
   }
 }
 
-Future<ByteData> readPixelsFromVideoFrame(VideoFrame videoFrame, ui.ImageByteFormat format) async {
+Future<ByteData> readPixelsFromVideoFrame(
+    VideoFrame videoFrame, ui.ImageByteFormat format) async {
   if (format == ui.ImageByteFormat.png) {
     final Uint8List png = await encodeVideoFrameAsPng(videoFrame);
     return png.buffer.asByteData();
@@ -159,14 +160,16 @@ void _bgrToRawRgba(ByteBuffer pixels) {
   }
 }
 
-bool _shouldReadPixelsUnmodified(VideoFrame videoFrame, ui.ImageByteFormat format) {
+bool _shouldReadPixelsUnmodified(
+    VideoFrame videoFrame, ui.ImageByteFormat format) {
   if (format == ui.ImageByteFormat.rawUnmodified) {
     return true;
   }
 
   // Do not convert if the requested format is RGBA and the video frame is
   // encoded as either RGBA or RGBX.
-  final bool isRgbFrame = videoFrame.format == 'RGBA' || videoFrame.format == 'RGBX';
+  final bool isRgbFrame =
+      videoFrame.format == 'RGBA' || videoFrame.format == 'RGBX';
   return format == ui.ImageByteFormat.rawStraightRgba && isRgbFrame;
 }
 
@@ -187,10 +190,11 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
   final int width = videoFrame.displayWidth.toInt();
   final int height = videoFrame.displayHeight.toInt();
-  final DomCanvasElement canvas = createDomCanvasElement(width: width, height:
-      height);
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
   final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 = canvas.toDataURL().substring('data:image/png;base64,'.length);
+  final String pngBase64 =
+      canvas.toDataURL().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);
 }

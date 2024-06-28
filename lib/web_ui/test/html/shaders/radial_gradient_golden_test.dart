@@ -83,7 +83,8 @@ Future<void> testMain() async {
     Color(0xFFFF8C42),
     Color(0xFFFFF275),
     Color(0xFF6699CC),
-    Color(0xFF656D78),];
+    Color(0xFF656D78),
+  ];
   const List<double> colorStops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
   test('Should draw with radial gradient with TileMode.repeated.', () async {
@@ -100,8 +101,8 @@ Future<void> testMain() async {
         shaderRect: shaderRect,
         region: const Rect.fromLTWH(0, 0, 600, 800));
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 
   test('Should draw with radial gradient with TileMode.mirrored.', () async {
     const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
@@ -117,6 +118,6 @@ Future<void> testMain() async {
         shaderRect: shaderRect,
         region: const Rect.fromLTWH(0, 0, 600, 800));
   },
-  // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
-  skip: isFirefox);
+      // TODO(yjbanov): https://github.com/flutter/flutter/issues/86623
+      skip: isFirefox);
 }

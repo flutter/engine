@@ -181,7 +181,11 @@ class PersistedSurfaceException implements Exception {
 bool debugAssertSurfaceState(
     PersistedSurface surface, PersistedSurfaceState state1,
     [PersistedSurfaceState? state2, PersistedSurfaceState? state3]) {
-  final List<PersistedSurfaceState?> validStates = <PersistedSurfaceState?>[state1, state2, state3];
+  final List<PersistedSurfaceState?> validStates = <PersistedSurfaceState?>[
+    state1,
+    state2,
+    state3
+  ];
 
   if (validStates.contains(surface.state)) {
     return true;
@@ -1053,8 +1057,7 @@ abstract class PersistedContainerSurface extends PersistedSurface {
       final bool isStationary =
           indexInNew != -1 && stationaryIndices.contains(i);
       final PersistedSurface child = _children[i];
-      final DomHTMLElement childElement =
-          child.rootElement! as DomHTMLElement;
+      final DomHTMLElement childElement = child.rootElement! as DomHTMLElement;
       if (!isStationary) {
         if (refNode == null) {
           containerElement!.append(childElement);
@@ -1222,7 +1225,8 @@ class _PersistedSurfaceMatch {
   String toString() {
     String result = super.toString();
     assert(() {
-      result = '_PersistedSurfaceMatch(${newChild!.runtimeType}#${newChild!.hashCode}: $oldChildIndex, quality: $matchQuality)';
+      result =
+          '_PersistedSurfaceMatch(${newChild!.runtimeType}#${newChild!.hashCode}: $oldChildIndex, quality: $matchQuality)';
       return true;
     }());
     return result;
@@ -1235,6 +1239,7 @@ class _PersistedSurfaceMatch {
 class PrerollSurfaceContext {
   /// Number of active color filters in parent surfaces.
   int activeColorFilterCount = 0;
+
   /// Number of active shader masks in parent surfaces.
   int activeShaderMaskCount = 0;
 }

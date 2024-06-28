@@ -25,8 +25,7 @@ Future<void> testMain() async {
       Rect.fromLTWH(8, 8, 600, 400); // Compensate for old golden tester padding
 
   Future<void> testPath(Path path, String goldenFileName,
-      {SurfacePaint? paint,
-      PaintMode mode = PaintMode.kStrokeAndFill}) async {
+      {SurfacePaint? paint, PaintMode mode = PaintMode.kStrokeAndFill}) async {
     const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 400);
     final BitmapCanvas bitmapCanvas =
         BitmapCanvas(canvasBounds, RenderStrategy());
@@ -72,8 +71,7 @@ Future<void> testMain() async {
     sceneElement.append(bitmapCanvas.rootElement);
     sceneElement.append(svgElement);
 
-    await matchGoldenFile('$goldenFileName.png',
-        region: region);
+    await matchGoldenFile('$goldenFileName.png', region: region);
 
     bitmapCanvas.rootElement.remove();
     svgElement.remove();
@@ -111,14 +109,12 @@ Future<void> testMain() async {
   test('render arcs', () async {
     final List<ArcSample> arcs = <ArcSample>[
       ArcSample(Offset.zero, distance: 20),
-      ArcSample(const Offset(200, 0),
-          largeArc: true, distance: 20),
+      ArcSample(const Offset(200, 0), largeArc: true, distance: 20),
       ArcSample(Offset.zero, clockwise: true, distance: 20),
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: 20),
       ArcSample(Offset.zero, distance: -20),
-      ArcSample(const Offset(200, 0),
-          largeArc: true, distance: -20),
+      ArcSample(const Offset(200, 0), largeArc: true, distance: -20),
       ArcSample(Offset.zero, clockwise: true, distance: -20),
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: -20)
@@ -144,8 +140,7 @@ Future<void> testMain() async {
     path.lineTo(83, 0);
     path.quadraticBezierTo(98, 0, 99.97, 7.8);
     path.arcToPoint(const Offset(162, 7.8),
-        radius: const Radius.circular(32),
-        clockwise: false);
+        radius: const Radius.circular(32), clockwise: false);
     path.lineTo(200, 7.8);
     path.lineTo(200, 80);
     path.lineTo(0, 80);
@@ -187,13 +182,14 @@ DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
   final SVGSVGElement root = createSVGSVGElement();
   root.style.transform = 'translate(200px, 0px)';
   root.setAttribute('viewBox', '0 0 ${bounds.right} ${bounds.bottom}');
-  root.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.right);
-  root.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.bottom);
+  root.width!.baseVal!
+      .newValueSpecifiedUnits(svgLengthTypeNumber, bounds.right);
+  root.height!.baseVal!
+      .newValueSpecifiedUnits(svgLengthTypeNumber, bounds.bottom);
 
   final SVGPathElement pathElement = createSVGPathElement();
   root.append(pathElement);
-  if (paint.style == PaintingStyle.stroke ||
-      paint.strokeWidth != 0.0) {
+  if (paint.style == PaintingStyle.stroke || paint.strokeWidth != 0.0) {
     pathElement.setAttribute('stroke', paint.color.toCssString());
     pathElement.setAttribute('stroke-width', paint.strokeWidth);
     if (!enableFill) {
@@ -203,7 +199,8 @@ DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
   if (paint.style == PaintingStyle.fill) {
     pathElement.setAttribute('fill', paint.color.toCssString());
   }
-  pathElement.setAttribute('d', pathToSvg((path as SurfacePath).pathRef)); // This is what we're testing!
+  pathElement.setAttribute('d',
+      pathToSvg((path as SurfacePath).pathRef)); // This is what we're testing!
   return root;
 }
 

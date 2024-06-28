@@ -102,26 +102,40 @@ void testMain() {
       });
       const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
 
-      test('The default test font is used when a non-test fontFamily is specified', () {
+      test(
+          'The default test font is used when a non-test fontFamily is specified',
+          () {
         final String defaultTestFontFamily = testFonts.first;
 
-        expect(CkTextStyle(fontFamily: 'BogusFontFamily').effectiveFontFamily, defaultTestFontFamily);
-        expect(CkParagraphStyle(fontFamily: 'BogusFontFamily').getTextStyle().effectiveFontFamily, defaultTestFontFamily);
-        expect(CkStrutStyle(fontFamily: 'BogusFontFamily'), CkStrutStyle(fontFamily: defaultTestFontFamily));
+        expect(CkTextStyle(fontFamily: 'BogusFontFamily').effectiveFontFamily,
+            defaultTestFontFamily);
+        expect(
+            CkParagraphStyle(fontFamily: 'BogusFontFamily')
+                .getTextStyle()
+                .effectiveFontFamily,
+            defaultTestFontFamily);
+        expect(CkStrutStyle(fontFamily: 'BogusFontFamily'),
+            CkStrutStyle(fontFamily: defaultTestFontFamily));
       });
 
       test('The default test font is used when fontFamily is unspecified', () {
         final String defaultTestFontFamily = testFonts.first;
 
         expect(CkTextStyle().effectiveFontFamily, defaultTestFontFamily);
-        expect(CkParagraphStyle().getTextStyle().effectiveFontFamily, defaultTestFontFamily);
+        expect(CkParagraphStyle().getTextStyle().effectiveFontFamily,
+            defaultTestFontFamily);
         expect(CkStrutStyle(), CkStrutStyle(fontFamily: defaultTestFontFamily));
       });
 
       test('Can specify test fontFamily to use', () {
         for (final String testFont in testFonts) {
-          expect(CkTextStyle(fontFamily: testFont).effectiveFontFamily, testFont);
-          expect(CkParagraphStyle(fontFamily: testFont).getTextStyle().effectiveFontFamily, testFont);
+          expect(
+              CkTextStyle(fontFamily: testFont).effectiveFontFamily, testFont);
+          expect(
+              CkParagraphStyle(fontFamily: testFont)
+                  .getTextStyle()
+                  .effectiveFontFamily,
+              testFont);
         }
       });
     });

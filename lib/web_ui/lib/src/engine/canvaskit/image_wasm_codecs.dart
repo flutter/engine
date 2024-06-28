@@ -20,7 +20,8 @@ import 'package:ui/ui.dart' as ui;
 /// Wraps `SkAnimatedImage`.
 class CkAnimatedImage implements ui.Codec {
   /// Decodes an image from a list of encoded bytes.
-  CkAnimatedImage.decodeFromBytes(this._bytes, this.src, {this.targetWidth, this.targetHeight}) {
+  CkAnimatedImage.decodeFromBytes(this._bytes, this.src,
+      {this.targetWidth, this.targetHeight}) {
     final SkAnimatedImage skAnimatedImage = createSkAnimatedImage();
     _ref = UniqueRef<SkAnimatedImage>(this, skAnimatedImage, 'Codec');
   }
@@ -46,9 +47,11 @@ class CkAnimatedImage implements ui.Codec {
 
     if (targetWidth != null || targetHeight != null) {
       if (animatedImage.getFrameCount() > 1) {
-        printWarning('targetWidth and targetHeight for multi-frame images not supported');
+        printWarning(
+            'targetWidth and targetHeight for multi-frame images not supported');
       } else {
-        animatedImage = _resizeAnimatedImage(animatedImage, targetWidth, targetHeight);
+        animatedImage =
+            _resizeAnimatedImage(animatedImage, targetWidth, targetHeight);
         if (animatedImage == null) {
           throw ImageCodecException(
             'Failed to decode re-sized image data.\n'
@@ -64,7 +67,8 @@ class CkAnimatedImage implements ui.Codec {
     return animatedImage;
   }
 
-  SkAnimatedImage? _resizeAnimatedImage(SkAnimatedImage animatedImage, int? targetWidth, int? targetHeight) {
+  SkAnimatedImage? _resizeAnimatedImage(
+      SkAnimatedImage animatedImage, int? targetWidth, int? targetHeight) {
     final SkImage image = animatedImage.makeImageAtCurrentFrame();
     final CkImage ckImage = scaleImage(image, targetWidth, targetHeight);
     final Uint8List? resizedBytes = ckImage.skImage.encodeToBytes();
@@ -73,7 +77,8 @@ class CkAnimatedImage implements ui.Codec {
       throw ImageCodecException('Failed to re-size image');
     }
 
-    final SkAnimatedImage? resizedAnimatedImage = canvasKit.MakeAnimatedImageFromEncoded(resizedBytes);
+    final SkAnimatedImage? resizedAnimatedImage =
+        canvasKit.MakeAnimatedImageFromEncoded(resizedBytes);
     return resizedAnimatedImage;
   }
 

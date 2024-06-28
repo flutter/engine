@@ -37,7 +37,9 @@ Future<void> testMain() async {
     await canvasScreenshot(rc, 'draw_image');
   });
 
-  test('Images from raw data are composited when picture is roundtripped through toImage', () async {
+  test(
+      'Images from raw data are composited when picture is roundtripped through toImage',
+      () async {
     final Uint8List imageData = base64Decode(base64PngData);
     final Codec codec = await instantiateImageCodec(imageData);
     final FrameInfo frameInfo = await codec.getNextFrame();
@@ -379,8 +381,7 @@ Future<void> testMain() async {
     try {
       sceneElement.append(builder.build().webOnlyRootElement!);
       domDocument.body!.append(sceneElement);
-      await matchGoldenFile('draw_nine_slice.png',
-          region: region);
+      await matchGoldenFile('draw_nine_slice.png', region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // screenshot.
@@ -418,8 +419,7 @@ Future<void> testMain() async {
     try {
       sceneElement.append(builder.build().webOnlyRootElement!);
       domDocument.body!.append(sceneElement);
-      await matchGoldenFile('draw_nine_slice_empty_center.png',
-          region: region);
+      await matchGoldenFile('draw_nine_slice_empty_center.png', region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // screenshot.
@@ -460,8 +460,7 @@ Future<void> testMain() async {
     canvas.transform(transform.storage);
     canvas.drawImage(createTestImage(), const Offset(0, 100), SurfacePaint());
     await canvasScreenshot(canvas, 'draw_3d_image',
-        region: region,
-        setupPerspective: true);
+        region: region, setupPerspective: true);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/61245
@@ -476,12 +475,13 @@ Future<void> testMain() async {
       ..setEntry(3, 2, 0.0005); // perspective
     canvas.transform(transform.storage);
     canvas.clipRect(region, ClipOp.intersect);
-    canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 200), SurfacePaint()..color = const Color(0x801080E0));
+    canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 200),
+        SurfacePaint()..color = const Color(0x801080E0));
     canvas.drawImage(createTestImage(), const Offset(0, 100), SurfacePaint());
-    canvas.drawRect(const Rect.fromLTWH(50, 150, 50, 20), SurfacePaint()..color = const Color(0x80000000));
+    canvas.drawRect(const Rect.fromLTWH(50, 150, 50, 20),
+        SurfacePaint()..color = const Color(0x80000000));
     await canvasScreenshot(canvas, 'draw_3d_image_clipped',
-        region: region,
-        setupPerspective: true);
+        region: region, setupPerspective: true);
   });
 
   test('Should render rect with perspective transform', () async {
@@ -496,15 +496,20 @@ Future<void> testMain() async {
       ..setEntry(3, 2, 0.001); // perspective
     canvas.transform(transform.storage);
     canvas.clipRect(region, ClipOp.intersect);
-    canvas.drawRect(const Rect.fromLTWH(0, 60, 120, 40), SurfacePaint()..color = const Color(0x801080E0));
-    canvas.drawRect(const Rect.fromLTWH(300, 250, 120, 40), SurfacePaint()..color = const Color(0x80E010E0));
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(0, 120, 160, 40), const Radius.circular(5)),
+    canvas.drawRect(const Rect.fromLTWH(0, 60, 120, 40),
         SurfacePaint()..color = const Color(0x801080E0));
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(300, 320, 90, 40), const Radius.circular(20)),
+    canvas.drawRect(const Rect.fromLTWH(300, 250, 120, 40),
+        SurfacePaint()..color = const Color(0x80E010E0));
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(0, 120, 160, 40), const Radius.circular(5)),
+        SurfacePaint()..color = const Color(0x801080E0));
+    canvas.drawRRect(
+        RRect.fromRectAndRadius(
+            const Rect.fromLTWH(300, 320, 90, 40), const Radius.circular(20)),
         SurfacePaint()..color = const Color(0x80E010E0));
     await canvasScreenshot(canvas, 'draw_3d_rect_clipped',
-        region: region,
-        setupPerspective: true);
+        region: region, setupPerspective: true);
   });
 
   test('Should render color and ovals with perspective transform', () async {
@@ -524,11 +529,12 @@ Future<void> testMain() async {
         SurfacePaint()..color = const Color(0x801080E0));
     canvas.drawOval(const Rect.fromLTWH(300, 290, 90, 40),
         SurfacePaint()..color = const Color(0x80E010E0));
-    canvas.drawCircle(const Offset(60, 240), 50, SurfacePaint()..color = const Color(0x801080E0));
-    canvas.drawCircle(const Offset(360, 370), 30, SurfacePaint()..color = const Color(0x80E010E0));
+    canvas.drawCircle(const Offset(60, 240), 50,
+        SurfacePaint()..color = const Color(0x801080E0));
+    canvas.drawCircle(const Offset(360, 370), 30,
+        SurfacePaint()..color = const Color(0x80E010E0));
     await canvasScreenshot(canvas, 'draw_3d_oval_clipped',
-        region: region,
-        setupPerspective: true);
+        region: region, setupPerspective: true);
   });
 
   test('Should render path with perspective transform', () async {
@@ -554,12 +560,14 @@ Future<void> testMain() async {
     path.close();
     canvas.drawPath(path, SurfacePaint()..color = const Color(0x801080E0));
 
-    canvas.drawCircle(const Offset(50, 50), 4, SurfacePaint()..color = const Color(0xFF000000));
-    canvas.drawCircle(const Offset(100, 100), 4, SurfacePaint()..color = const Color(0xFF000000));
-    canvas.drawCircle(const Offset(100, 50), 4, SurfacePaint()..color = const Color(0xFF000000));
+    canvas.drawCircle(const Offset(50, 50), 4,
+        SurfacePaint()..color = const Color(0xFF000000));
+    canvas.drawCircle(const Offset(100, 100), 4,
+        SurfacePaint()..color = const Color(0xFF000000));
+    canvas.drawCircle(const Offset(100, 50), 4,
+        SurfacePaint()..color = const Color(0xFF000000));
     await canvasScreenshot(canvas, 'draw_3d_path',
-        region: region,
-        setupPerspective: true);
+        region: region, setupPerspective: true);
   });
 
   test('Should render path with perspective transform', () async {
@@ -586,14 +594,17 @@ Future<void> testMain() async {
     path.close();
     canvas.drawPath(path, SurfacePaint()..color = const Color(0x801080E0));
 
-    canvas.drawCircle(const Offset(50, 50), 4, SurfacePaint()..color = const Color(0xFF000000));
-    canvas.drawCircle(const Offset(100, 100), 4, SurfacePaint()..color = const Color(0xFF000000));
-    canvas.drawCircle(const Offset(100, 50), 4, SurfacePaint()..color = const Color(0xFF000000));
+    canvas.drawCircle(const Offset(50, 50), 4,
+        SurfacePaint()..color = const Color(0xFF000000));
+    canvas.drawCircle(const Offset(100, 100), 4,
+        SurfacePaint()..color = const Color(0xFF000000));
+    canvas.drawCircle(const Offset(100, 50), 4,
+        SurfacePaint()..color = const Color(0xFF000000));
     await canvasScreenshot(canvas, 'draw_3d_path_clipped',
-        region: region,
-        setupPerspective: true);
+        region: region, setupPerspective: true);
   });
 }
+
 // 9 slice test image that has a shiny/glass look.
 const String base64PngData = 'iVBORw0KGgoAAAANSUh'
     'EUgAAADwAAAA8CAYAAAA6/NlyAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPo'
@@ -747,7 +758,8 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
   final DomHTMLImageElement imageElement = createDomHTMLImageElement();
-  imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src =
+      js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }
 

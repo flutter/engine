@@ -202,7 +202,8 @@ Specifically:
     expectDom(
       '<div id="other" style="width: 12px; transform: scale(2)"></div>',
       expectMismatch(
-        hasHtml('<div id="this" foo="bar" style="width: 12px; transform: scale(2); height: 20px"></div>'),
+        hasHtml(
+            '<div id="this" foo="bar" style="width: 12px; transform: scale(2); height: 20px"></div>'),
         '''
 The following DOM structure did not match the expected pattern:
 <div id="other" style="width: 12px; transform: scale(2)"></div>
@@ -328,12 +329,15 @@ class _ExpectMismatch extends Matcher {
     bool verbose,
   ) {
     if (matchState.containsKey('matched')) {
-      mismatchDescription.add('Expected a mismatch, but the HTML pattern matched.');
+      mismatchDescription
+          .add('Expected a mismatch, but the HTML pattern matched.');
     }
     if (matchState.containsKey('mismatchDescription')) {
       mismatchDescription.add('Mismatch description was wrong.\n');
-      mismatchDescription.add('  Expected: ${matchState['expectedMismatchDescription']}\n');
-      mismatchDescription.add('  Actual  : ${matchState['mismatchDescription']}\n');
+      mismatchDescription
+          .add('  Expected: ${matchState['expectedMismatchDescription']}\n');
+      mismatchDescription
+          .add('  Actual  : ${matchState['mismatchDescription']}\n');
     }
 
     return mismatchDescription;
@@ -353,7 +357,8 @@ class _TestDescription implements Description {
   }
 
   @override
-  Description addAll(String start, String separator, String end, Iterable<Object?> list) {
+  Description addAll(
+      String start, String separator, String end, Iterable<Object?> list) {
     throw UnimplementedError();
   }
 

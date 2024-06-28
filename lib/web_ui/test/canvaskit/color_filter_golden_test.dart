@@ -59,7 +59,8 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, greyCircle);
 
-      await matchSceneGolden('canvaskit_colorfilter.png', builder.build(), region: region);
+      await matchSceneGolden('canvaskit_colorfilter.png', builder.build(),
+          region: region);
     });
 
     test('invertColors inverts the colors', () async {
@@ -95,7 +96,8 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, invertedCircle);
 
-      await matchSceneGolden('canvaskit_invertcolors.png', builder.build(), region: region);
+      await matchSceneGolden('canvaskit_invertcolors.png', builder.build(),
+          region: region);
     });
 
     test('ColorFilter.matrix works for inverse matrix', () async {
@@ -124,12 +126,14 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, invertedSquares);
 
-      await matchSceneGolden('canvaskit_inverse_colormatrix.png', builder.build(), region: region);
+      await matchSceneGolden(
+          'canvaskit_inverse_colormatrix.png', builder.build(),
+          region: region);
     });
 
     test('ColorFilter color with 0 opacity', () async {
       final LayerSceneBuilder builder = LayerSceneBuilder();
-      builder.pushOffset(0,0);
+      builder.pushOffset(0, 0);
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(region);
 
@@ -141,7 +145,8 @@ void testMain() {
       final CkPicture redCircle1 = recorder.endRecording();
       builder.addPicture(ui.Offset.zero, redCircle1);
 
-      builder.pushColorFilter(ui.ColorFilter.mode(const ui.Color(0x00000000).withOpacity(0), ui.BlendMode.srcOver));
+      builder.pushColorFilter(ui.ColorFilter.mode(
+          const ui.Color(0x00000000).withOpacity(0), ui.BlendMode.srcOver));
 
       // Draw another red circle and apply it to the scene.
       // This one should also be red with the color filter doing nothing

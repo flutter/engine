@@ -34,11 +34,11 @@ class StubPicture implements ScenePicture {
 }
 
 class StubCompositePicture extends StubPicture {
-  StubCompositePicture(this.children) : super(
-    children.fold(null, (ui.Rect? previousValue, StubPicture child) {
-      return previousValue?.expandToInclude(child.cullRect) ?? child.cullRect;
-    })!
-  );
+  StubCompositePicture(this.children)
+      : super(children.fold(null, (ui.Rect? previousValue, StubPicture child) {
+          return previousValue?.expandToInclude(child.cullRect) ??
+              child.cullRect;
+        })!);
 
   final List<StubPicture> children;
 }
@@ -72,13 +72,22 @@ class StubSceneCanvas implements SceneCanvas {
   void clipRRect(ui.RRect rrect, {bool doAntiAlias = true}) {}
 
   @override
-  void clipRect(ui.Rect rect, {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {}
+  void clipRect(ui.Rect rect,
+      {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {}
 
   @override
-  void drawArc(ui.Rect rect, double startAngle, double sweepAngle, bool useCenter, ui.Paint paint) {}
+  void drawArc(ui.Rect rect, double startAngle, double sweepAngle,
+      bool useCenter, ui.Paint paint) {}
 
   @override
-  void drawAtlas(ui.Image atlas, List<ui.RSTransform> transforms, List<ui.Rect> rects, List<ui.Color>? colors, ui.BlendMode? blendMode, ui.Rect? cullRect, ui.Paint paint) {}
+  void drawAtlas(
+      ui.Image atlas,
+      List<ui.RSTransform> transforms,
+      List<ui.Rect> rects,
+      List<ui.Color>? colors,
+      ui.BlendMode? blendMode,
+      ui.Rect? cullRect,
+      ui.Paint paint) {}
 
   @override
   void drawCircle(ui.Offset c, double radius, ui.Paint paint) {}
@@ -93,10 +102,12 @@ class StubSceneCanvas implements SceneCanvas {
   void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) {}
 
   @override
-  void drawImageNine(ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {}
+  void drawImageNine(
+      ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {}
 
   @override
-  void drawImageRect(ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {}
+  void drawImageRect(
+      ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {}
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {}
@@ -114,25 +125,36 @@ class StubSceneCanvas implements SceneCanvas {
   void drawPath(ui.Path path, ui.Paint paint) {}
 
   @override
-  void drawPoints(ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {}
+  void drawPoints(
+      ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {}
 
   @override
   void drawRRect(ui.RRect rrect, ui.Paint paint) {}
 
   @override
-  void drawRawAtlas(ui.Image atlas, Float32List rstTransforms, Float32List rects, Int32List? colors, ui.BlendMode? blendMode, ui.Rect? cullRect, ui.Paint paint) {}
+  void drawRawAtlas(
+      ui.Image atlas,
+      Float32List rstTransforms,
+      Float32List rects,
+      Int32List? colors,
+      ui.BlendMode? blendMode,
+      ui.Rect? cullRect,
+      ui.Paint paint) {}
 
   @override
-  void drawRawPoints(ui.PointMode pointMode, Float32List points, ui.Paint paint) {}
+  void drawRawPoints(
+      ui.PointMode pointMode, Float32List points, ui.Paint paint) {}
 
   @override
   void drawRect(ui.Rect rect, ui.Paint paint) {}
 
   @override
-  void drawShadow(ui.Path path, ui.Color color, double elevation, bool transparentOccluder) {}
+  void drawShadow(ui.Path path, ui.Color color, double elevation,
+      bool transparentOccluder) {}
 
   @override
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {}
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {}
 
   @override
   ui.Rect getDestinationClipBounds() {
@@ -170,7 +192,8 @@ class StubSceneCanvas implements SceneCanvas {
   void saveLayer(ui.Rect? bounds, ui.Paint paint) {}
 
   @override
-  void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter backdropFilter) {}
+  void saveLayerWithFilter(
+      ui.Rect? bounds, ui.Paint paint, ui.ImageFilter backdropFilter) {}
 
   @override
   void scale(double sx, [double? sy]) {}

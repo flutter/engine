@@ -15,7 +15,8 @@ import '../dom.dart';
 abstract class EngineInputType {
   const EngineInputType();
 
-  static EngineInputType fromName(String name, {bool isDecimal = false, bool isMultiline = false}) {
+  static EngineInputType fromName(String name,
+      {bool isDecimal = false, bool isMultiline = false}) {
     switch (name) {
       case 'TextInputType.number':
         return isDecimal ? decimal : number;
@@ -39,7 +40,8 @@ abstract class EngineInputType {
   static const NoTextInputType none = NoTextInputType();
 
   /// Multi-line no text input.
-  static const MultilineNoTextInputType multilineNone = MultilineNoTextInputType();
+  static const MultilineNoTextInputType multilineNone =
+      MultilineNoTextInputType();
 
   /// Single-line text input type.
   static const TextInputType text = TextInputType();

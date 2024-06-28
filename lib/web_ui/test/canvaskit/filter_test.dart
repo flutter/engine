@@ -16,24 +16,60 @@ void main() {
 
 void testMain() {
   List<CkColorFilter> createColorFilters() {
-     return <CkColorFilter>[
-       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.srcOver))!,
-       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.dstOver))!,
-       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x87654321), ui.BlendMode.dstOver))!,
-       createCkColorFilter(const EngineColorFilter.matrix(<double>[
-          1, 0, 0, 0, 0,
-          0, 1, 0, 0, 0,
-          0, 0, 1, 0, 0,
-          0, 0, 0, 1, 0,
-       ]))!,
-       createCkColorFilter(EngineColorFilter.matrix(Float32List.fromList(<double>[
-          2, 0, 0, 0, 0,
-          0, 2, 0, 0, 0,
-          0, 0, 2, 0, 0,
-          0, 0, 0, 2, 0,
-       ])))!,
-       createCkColorFilter(const EngineColorFilter.linearToSrgbGamma())!,
-       createCkColorFilter(const EngineColorFilter.srgbToLinearGamma())!,
+    return <CkColorFilter>[
+      createCkColorFilter(const EngineColorFilter.mode(
+          ui.Color(0x12345678), ui.BlendMode.srcOver))!,
+      createCkColorFilter(const EngineColorFilter.mode(
+          ui.Color(0x12345678), ui.BlendMode.dstOver))!,
+      createCkColorFilter(const EngineColorFilter.mode(
+          ui.Color(0x87654321), ui.BlendMode.dstOver))!,
+      createCkColorFilter(const EngineColorFilter.matrix(<double>[
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+      ]))!,
+      createCkColorFilter(
+          EngineColorFilter.matrix(Float32List.fromList(<double>[
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+      ])))!,
+      createCkColorFilter(const EngineColorFilter.linearToSrgbGamma())!,
+      createCkColorFilter(const EngineColorFilter.srgbToLinearGamma())!,
     ];
   }
 
@@ -44,7 +80,8 @@ void testMain() {
       CkImageFilter.blur(sigmaX: 6, sigmaY: 5, tileMode: ui.TileMode.decal),
       CkImageFilter.dilate(radiusX: 5, radiusY: 6),
       CkImageFilter.erode(radiusX: 7, radiusY: 8),
-      for (final CkColorFilter colorFilter in createColorFilters()) CkImageFilter.color(colorFilter: colorFilter),
+      for (final CkColorFilter colorFilter in createColorFilters())
+        CkImageFilter.color(colorFilter: colorFilter),
     ];
     filters.add(CkImageFilter.compose(outer: filters[0], inner: filters[1]));
     filters.add(CkImageFilter.compose(outer: filters[1], inner: filters[3]));
@@ -55,7 +92,8 @@ void testMain() {
 
   group('ImageFilters', () {
     test('can be constructed', () {
-      final CkImageFilter imageFilter = CkImageFilter.blur(sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
+      final CkImageFilter imageFilter = CkImageFilter.blur(
+          sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
       expect(imageFilter, isA<CkImageFilter>());
       SkImageFilter? skFilter;
       imageFilter.imageFilter((SkImageFilter value) {
@@ -63,7 +101,6 @@ void testMain() {
       });
       expect(skFilter, isNotNull);
     });
-
 
     test('== operator', () {
       final List<ui.ImageFilter> filters1 = <ui.ImageFilter>[
@@ -88,24 +125,29 @@ void testMain() {
 
     test('reuses the Skia filter', () {
       final CkPaint paint = CkPaint();
-      paint.imageFilter = CkImageFilter.blur(sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
+      paint.imageFilter = CkImageFilter.blur(
+          sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
 
-      final CkManagedSkImageFilterConvertible managedFilter1 = paint.imageFilter! as CkManagedSkImageFilterConvertible;
+      final CkManagedSkImageFilterConvertible managedFilter1 =
+          paint.imageFilter! as CkManagedSkImageFilterConvertible;
 
-      paint.imageFilter = CkImageFilter.blur(sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
-      final CkManagedSkImageFilterConvertible managedFilter2 = paint.imageFilter! as CkManagedSkImageFilterConvertible;
+      paint.imageFilter = CkImageFilter.blur(
+          sigmaX: 5, sigmaY: 10, tileMode: ui.TileMode.clamp);
+      final CkManagedSkImageFilterConvertible managedFilter2 =
+          paint.imageFilter! as CkManagedSkImageFilterConvertible;
 
       expect(managedFilter1, same(managedFilter2));
     });
 
     test('does not throw for both sigmaX and sigmaY set to 0', () async {
-      final CkImageFilter imageFilter = CkImageFilter.blur(sigmaX: 0, sigmaY: 0, tileMode: ui.TileMode.clamp);
+      final CkImageFilter imageFilter =
+          CkImageFilter.blur(sigmaX: 0, sigmaY: 0, tileMode: ui.TileMode.clamp);
       expect(imageFilter, isNotNull);
 
       const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 
       final LayerSceneBuilder builder = LayerSceneBuilder();
-      builder.pushOffset(0,0);
+      builder.pushOffset(0, 0);
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(region);
 
@@ -132,20 +174,19 @@ void testMain() {
 
       builder.addPicture(ui.Offset.zero, redCircle2);
 
-      await matchSceneGolden('canvaskit_zero_sigma_blur.png', builder.build(), region: region);
+      await matchSceneGolden('canvaskit_zero_sigma_blur.png', builder.build(),
+          region: region);
     });
 
     test('using a colorFilter', () async {
       final CkColorFilter colorFilter = createCkColorFilter(
-        const EngineColorFilter.mode(
-          ui.Color.fromARGB(255, 0, 255, 0),
-          ui.BlendMode.srcIn
-          ))!;
+          const EngineColorFilter.mode(
+              ui.Color.fromARGB(255, 0, 255, 0), ui.BlendMode.srcIn))!;
 
       const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 
       final LayerSceneBuilder builder = LayerSceneBuilder();
-      builder.pushOffset(0,0);
+      builder.pushOffset(0, 0);
 
       builder.pushImageFilter(colorFilter);
 
@@ -212,6 +253,5 @@ void testMain() {
 
       expect(() => paint.maskFilter = filter, isNot(throwsException));
     });
-
   });
 }

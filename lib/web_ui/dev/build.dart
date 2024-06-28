@@ -17,7 +17,8 @@ const Map<String, String> targetAliases = <String, String>{
   'sdk': 'flutter/web_sdk',
   'web_sdk': 'flutter/web_sdk',
   'canvaskit': 'flutter/third_party/canvaskit:canvaskit_group',
-  'canvaskit_chromium': 'flutter/third_party/canvaskit:canvaskit_chromium_group',
+  'canvaskit_chromium':
+      'flutter/third_party/canvaskit:canvaskit_chromium_group',
   'skwasm': 'flutter/third_party/canvaskit:skwasm_group',
   'archive': 'flutter/web_sdk:flutter_web_sdk_archive',
 };
@@ -30,11 +31,9 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       help: 'Run the build in watch mode so it rebuilds whenever a change is '
           'made. Disabled by default.',
     );
-    argParser.addFlag(
-      'host',
-      help: 'Build the host build instead of the wasm build, which is '
-          'currently needed for `flutter run --local-engine` to work.'
-    );
+    argParser.addFlag('host',
+        help: 'Build the host build instead of the wasm build, which is '
+            'currently needed for `flutter run --local-engine` to work.');
     argParser.addFlag(
       'profile',
       help: 'Build in profile mode instead of release mode. In this mode, the '
@@ -82,7 +81,8 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       NinjaPipelineStep(
         host: host,
         runtimeMode: runtimeMode,
-        targets: targets.map((String target) => targetAliases[target] ?? target),
+        targets:
+            targets.map((String target) => targetAliases[target] ?? target),
       ),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -133,10 +133,8 @@ class GnPipelineStep extends ProcessStep {
       return <String>[
         '--web',
         '--runtime-mode=${runtimeMode.name}',
-        if (runtimeMode == RuntimeMode.debug)
-          '--unoptimized',
-        if (embedDwarf)
-          '--wasm-use-dwarf',
+        if (runtimeMode == RuntimeMode.debug) '--unoptimized',
+        if (embedDwarf) '--wasm-use-dwarf',
       ];
     }
   }

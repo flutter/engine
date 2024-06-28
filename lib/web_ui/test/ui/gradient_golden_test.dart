@@ -30,19 +30,18 @@ Future<void> testMain() async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder, region);
       canvas.drawRect(
-        const Rect.fromLTRB(50, 50, 250, 250),
-        Paint()
-          ..shader = Gradient.linear(
-            const Offset(50, 50),
-            const Offset(250, 250),
-            <Color>[
-              const Color(0xFFFF0000),
-              const Color(0xFF00FF00),
-              const Color(0xFF0000FF),
-            ],
-            <double>[0.0, 0.5, 1.0],
-          )
-        );
+          const Rect.fromLTRB(50, 50, 250, 250),
+          Paint()
+            ..shader = Gradient.linear(
+              const Offset(50, 50),
+              const Offset(250, 250),
+              <Color>[
+                const Color(0xFFFF0000),
+                const Color(0xFF00FF00),
+                const Color(0xFF0000FF),
+              ],
+              <double>[0.0, 0.5, 1.0],
+            ));
 
       await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
@@ -53,19 +52,18 @@ Future<void> testMain() async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder, region);
       canvas.drawRect(
-        const Rect.fromLTRB(50, 50, 250, 250),
-        Paint()
-          ..shader = Gradient.radial(
-            const Offset(150, 150),
-            100,
-            <Color>[
-              const Color(0xFFFF0000),
-              const Color(0xFF00FF00),
-              const Color(0xFF0000FF),
-            ],
-            <double>[0.0, 0.5, 1.0],
-          )
-        );
+          const Rect.fromLTRB(50, 50, 250, 250),
+          Paint()
+            ..shader = Gradient.radial(
+              const Offset(150, 150),
+              100,
+              <Color>[
+                const Color(0xFFFF0000),
+                const Color(0xFF00FF00),
+                const Color(0xFF0000FF),
+              ],
+              <double>[0.0, 0.5, 1.0],
+            ));
 
       await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
@@ -76,23 +74,22 @@ Future<void> testMain() async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder, region);
       canvas.drawRect(
-        const Rect.fromLTRB(50, 50, 250, 250),
-        Paint()
-          ..shader = Gradient.radial(
-            const Offset(200, 200),
-            100,
-            <Color>[
-              const Color(0xFFFF0000),
-              const Color(0xFF00FF00),
-              const Color(0xFF0000FF),
-            ],
-            <double>[0.0, 0.5, 1.0],
-            TileMode.clamp,
-            null,
-            const Offset(50, 50),
-            5,
-          )
-        );
+          const Rect.fromLTRB(50, 50, 250, 250),
+          Paint()
+            ..shader = Gradient.radial(
+              const Offset(200, 200),
+              100,
+              <Color>[
+                const Color(0xFFFF0000),
+                const Color(0xFF00FF00),
+                const Color(0xFF0000FF),
+              ],
+              <double>[0.0, 0.5, 1.0],
+              TileMode.clamp,
+              null,
+              const Offset(50, 50),
+              5,
+            ));
 
       await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
@@ -103,25 +100,26 @@ Future<void> testMain() async {
       final PictureRecorder recorder = PictureRecorder();
       final Canvas canvas = Canvas(recorder, region);
       canvas.drawRect(
-        const Rect.fromLTRB(50, 50, 250, 250),
-        Paint()
-          ..shader = Gradient.sweep(
-            const Offset(150, 150),
-            <Color>[
-              const Color(0xFFFF0000),
-              const Color(0xFF00FF00),
-              const Color(0xFF0000FF),
-            ],
-            <double>[0.0, 0.5, 1.0],
-            TileMode.clamp,
-            math.pi / 3.0,
-            4.0 * math.pi / 3.0,
-          )
-        );
+          const Rect.fromLTRB(50, 50, 250, 250),
+          Paint()
+            ..shader = Gradient.sweep(
+              const Offset(150, 150),
+              <Color>[
+                const Color(0xFFFF0000),
+                const Color(0xFF00FF00),
+                const Color(0xFF0000FF),
+              ],
+              <double>[0.0, 0.5, 1.0],
+              TileMode.clamp,
+              math.pi / 3.0,
+              4.0 * math.pi / 3.0,
+            ));
 
       await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
       await matchGoldenFile('sweep_gradient_paint.png', region: region);
     });
-  }, skip: isFirefox && isHtml); // https://github.com/flutter/flutter/issues/86623
+  },
+      skip: isFirefox &&
+          isHtml); // https://github.com/flutter/flutter/issues/86623
 }

@@ -26,7 +26,8 @@ Future<void> testMain() async {
   final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher.instance;
 
   setUp(() {
-    myWindow = EngineFlutterView.implicit(dispatcher, createDomHTMLDivElement());
+    myWindow =
+        EngineFlutterView.implicit(dispatcher, createDomHTMLDivElement());
     dispatcher.viewManager.registerView(myWindow);
   });
 
@@ -43,6 +44,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onTextScaleFactorChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -59,6 +61,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onPlatformBrightnessChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -75,6 +78,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onMetricsChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -91,6 +95,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onLocaleChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -107,6 +112,7 @@ Future<void> testMain() async {
       void callback(Duration _) {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onBeginFrame = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -123,6 +129,7 @@ Future<void> testMain() async {
       void callback(List<dynamic> _) {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onReportTimings = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -139,6 +146,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onDrawFrame = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -155,17 +163,19 @@ Future<void> testMain() async {
       void callback(ui.PointerDataPacket _) {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onPointerDataPacket = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(myWindow.onPointerDataPacket, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(const ui.PointerDataPacket());
+    EnginePlatformDispatcher.instance
+        .invokeOnPointerDataPacket(const ui.PointerDataPacket());
   });
 
   test('invokeOnKeyData returns normally when onKeyData is null', () {
-    const  ui.KeyData keyData = ui.KeyData(
+    const ui.KeyData keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -188,6 +198,7 @@ Future<void> testMain() async {
         expect(Zone.current, innerZone);
         return false;
       }
+
       myWindow.onKeyData = onKeyData;
 
       // Test that the getter returns the exact same onKeyData, e.g. it doesn't
@@ -195,7 +206,7 @@ Future<void> testMain() async {
       expect(myWindow.onKeyData, same(onKeyData));
     });
 
-    const  ui.KeyData keyData = ui.KeyData(
+    const ui.KeyData keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -217,6 +228,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onSemanticsEnabledChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -233,13 +245,16 @@ Future<void> testMain() async {
       void callback(ui.SemanticsActionEvent _) {
         expect(Zone.current, innerZone);
       }
+
       ui.PlatformDispatcher.instance.onSemanticsActionEvent = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
-      expect(ui.PlatformDispatcher.instance.onSemanticsActionEvent, same(callback));
+      expect(ui.PlatformDispatcher.instance.onSemanticsActionEvent,
+          same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
+    EnginePlatformDispatcher.instance
+        .invokeOnSemanticsAction(0, ui.SemanticsAction.tap, null);
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
@@ -249,6 +264,7 @@ Future<void> testMain() async {
       void callback() {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onAccessibilityFeaturesChanged = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
@@ -265,13 +281,15 @@ Future<void> testMain() async {
       void callback(String _, ByteData? __, void Function(ByteData?)? ___) {
         expect(Zone.current, innerZone);
       }
+
       myWindow.onPlatformMessage = callback;
 
       // Test that the getter returns the exact same callback, e.g. it doesn't wrap it.
       expect(myWindow.onPlatformMessage, same(callback));
     });
 
-    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('foo', null, (ByteData? data) {
+    EnginePlatformDispatcher.instance.invokeOnPlatformMessage('foo', null,
+        (ByteData? data) {
       // Not testing anything here.
     });
   });
@@ -317,7 +335,8 @@ Future<void> testMain() async {
   // Emulates the framework sending a request for screen orientation lock.
   Future<bool> sendSetPreferredOrientations(List<dynamic> orientations) {
     final Completer<bool> completer = Completer<bool>();
-    final ByteData? inputData = const JSONMethodCodec().encodeMethodCall(MethodCall(
+    final ByteData? inputData =
+        const JSONMethodCodec().encodeMethodCall(MethodCall(
       'SystemChrome.setPreferredOrientations',
       orientations,
     ));
@@ -343,22 +362,25 @@ Future<void> testMain() async {
     bool simulateError = false;
 
     // The `orientation` property cannot be overridden, so this test overrides the entire `screen`.
-    js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
-      'orientation': <Object?, Object?>{
-        'lock': (String lockType) {
-          lockCalls.add(lockType);
-          return futureToPromise(() async {
-            if (simulateError) {
-              throw Error();
-            }
-            return 0.toJS;
-          }());
-        }.toJS,
-        'unlock': () {
-          unlockCount += 1;
-        }.toJS,
-      },
-    }));
+    js_util.setProperty(
+        domWindow,
+        'screen',
+        js_util.jsify(<Object?, Object?>{
+          'orientation': <Object?, Object?>{
+            'lock': (String lockType) {
+              lockCalls.add(lockType);
+              return futureToPromise(() async {
+                if (simulateError) {
+                  throw Error();
+                }
+                return 0.toJS;
+              }());
+            }.toJS,
+            'unlock': () {
+              unlockCount += 1;
+            }.toJS,
+          },
+        }));
 
     // Sanity-check the test setup.
     expect(lockCalls, <String>[]);
@@ -370,25 +392,37 @@ Future<void> testMain() async {
     lockCalls.clear();
     unlockCount = 0;
 
-    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitUp']), isTrue);
+    expect(
+        await sendSetPreferredOrientations(
+            <dynamic>['DeviceOrientation.portraitUp']),
+        isTrue);
     expect(lockCalls, <String>[ScreenOrientation.lockTypePortraitPrimary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
 
-    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitDown']), isTrue);
+    expect(
+        await sendSetPreferredOrientations(
+            <dynamic>['DeviceOrientation.portraitDown']),
+        isTrue);
     expect(lockCalls, <String>[ScreenOrientation.lockTypePortraitSecondary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
 
-    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.landscapeLeft']), isTrue);
+    expect(
+        await sendSetPreferredOrientations(
+            <dynamic>['DeviceOrientation.landscapeLeft']),
+        isTrue);
     expect(lockCalls, <String>[ScreenOrientation.lockTypeLandscapePrimary]);
     expect(unlockCount, 0);
     lockCalls.clear();
     unlockCount = 0;
 
-    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.landscapeRight']), isTrue);
+    expect(
+        await sendSetPreferredOrientations(
+            <dynamic>['DeviceOrientation.landscapeRight']),
+        isTrue);
     expect(lockCalls, <String>[ScreenOrientation.lockTypeLandscapeSecondary]);
     expect(unlockCount, 0);
     lockCalls.clear();
@@ -401,7 +435,10 @@ Future<void> testMain() async {
     unlockCount = 0;
 
     simulateError = true;
-    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitDown']), isFalse);
+    expect(
+        await sendSetPreferredOrientations(
+            <dynamic>['DeviceOrientation.portraitDown']),
+        isFalse);
     expect(lockCalls, <String>[ScreenOrientation.lockTypePortraitSecondary]);
     expect(unlockCount, 0);
 
@@ -409,19 +446,25 @@ Future<void> testMain() async {
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/66128.
-  test("setPreferredOrientation responds even if browser doesn't support api", () async {
+  test("setPreferredOrientation responds even if browser doesn't support api",
+      () async {
     final DomScreen? original = domWindow.screen;
 
     // The `orientation` property cannot be overridden, so this test overrides the entire `screen`.
-    js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
-      'orientation': null,
-    }));
+    js_util.setProperty(
+        domWindow,
+        'screen',
+        js_util.jsify(<Object?, Object?>{
+          'orientation': null,
+        }));
     expect(domWindow.screen!.orientation, isNull);
     expect(await sendSetPreferredOrientations(<dynamic>[]), isFalse);
     js_util.setProperty(domWindow, 'screen', original);
   });
 
-  test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
+  test(
+      'SingletonFlutterWindow implements locale, locales, and locale change notifications',
+      () async {
     // This will count how many times we notified about locale changes.
     int localeChangedCount = 0;
     myWindow.onLocaleChanged = () {
@@ -456,7 +499,7 @@ Future<void> testMain() async {
       myWindow.sendPlatformMessage(
         'flutter/service_worker',
         ByteData(0),
-        (ByteData? outputData) { },
+        (ByteData? outputData) {},
       );
     });
 
@@ -480,11 +523,13 @@ Future<void> testMain() async {
     domDocument.head!.append(existingMeta);
     expect(existingMeta.isConnected, isTrue);
 
-    final EngineFlutterWindow implicitView = EngineFlutterView.implicit(dispatcher, null);
+    final EngineFlutterWindow implicitView =
+        EngineFlutterView.implicit(dispatcher, null);
     // The existing viewport meta tag should've been removed.
     expect(existingMeta.isConnected, isFalse);
     // And a new one should've been added.
-    final DomHTMLMetaElement? newMeta = domDocument.head!.querySelector('meta[name="viewport"]') as DomHTMLMetaElement?;
+    final DomHTMLMetaElement? newMeta = domDocument.head!
+        .querySelector('meta[name="viewport"]') as DomHTMLMetaElement?;
     expect(newMeta, isNotNull);
     newMeta!;
     expect(newMeta.getAttribute('flt-viewport'), isNotNull);
@@ -498,8 +543,10 @@ Future<void> testMain() async {
 
   test('auto-view-id', () {
     final DomElement host = createDomHTMLDivElement();
-    final EngineFlutterView implicit1 = EngineFlutterView.implicit(dispatcher, host);
-    final EngineFlutterView implicit2 = EngineFlutterView.implicit(dispatcher, host);
+    final EngineFlutterView implicit1 =
+        EngineFlutterView.implicit(dispatcher, host);
+    final EngineFlutterView implicit2 =
+        EngineFlutterView.implicit(dispatcher, host);
 
     expect(implicit1.viewId, kImplicitViewId);
     expect(implicit2.viewId, kImplicitViewId);
@@ -675,26 +722,28 @@ Future<void> testMain() async {
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(null);
     });
 
-    test('JsViewConstraints are passed and used to compute physicalConstraints', () async {
-      view = EngineFlutterView(
-        EnginePlatformDispatcher.instance,
-        host,
-        viewConstraints: JsViewConstraints(
-          minHeight: 320,
-          maxHeight: double.infinity,
-        ));
+    test('JsViewConstraints are passed and used to compute physicalConstraints',
+        () async {
+      view = EngineFlutterView(EnginePlatformDispatcher.instance, host,
+          viewConstraints: JsViewConstraints(
+            minHeight: 320,
+            maxHeight: double.infinity,
+          ));
 
       // All the metrics until now have been expressed in logical pixels, because
       // they're coming from CSS/the browser, which works in logical pixels.
-      expect(view.physicalConstraints, const ViewConstraints(
-        minHeight: 320,
-        // ignore: avoid_redundant_argument_values
-        maxHeight: double.infinity,
-        minWidth: 640,
-        maxWidth: 640,
-      // However the framework expects physical pixels, so we multiply our expectations
-      // by the current DPR (2.5)
-      ) * dpr);
+      expect(
+          view.physicalConstraints,
+          const ViewConstraints(
+                minHeight: 320,
+                // ignore: avoid_redundant_argument_values
+                maxHeight: double.infinity,
+                minWidth: 640,
+                maxWidth: 640,
+                // However the framework expects physical pixels, so we multiply our expectations
+                // by the current DPR (2.5)
+              ) *
+              dpr);
     });
   });
 }

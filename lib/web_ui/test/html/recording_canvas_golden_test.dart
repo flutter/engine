@@ -28,14 +28,14 @@ Future<void> testMain() async {
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-  final SurfacePaint testPaint = SurfacePaint()..color = const Color(0xFFFF0000);
+  final SurfacePaint testPaint = SurfacePaint()
+    ..color = const Color(0xFFFF0000);
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> checkScreenshot(RecordingCanvas rc, String fileName,
-      { Rect region = const Rect.fromLTWH(0, 0, 500, 500) }) async {
-
-    final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
-        RenderStrategy());
+      {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
+    final EngineCanvas engineCanvas =
+        BitmapCanvas(screenRect, RenderStrategy());
 
     // Draws the estimated bounds so we can spot the bug in Gold.
     engineCanvas
@@ -221,7 +221,8 @@ Future<void> testMain() async {
 
   test('drawColor should cover full size', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final SurfacePaint testPaint = SurfacePaint()..color = const Color(0xFF80FF00);
+    final SurfacePaint testPaint = SurfacePaint()
+      ..color = const Color(0xFF80FF00);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.drawColor(const Color(0xFFFF0000), BlendMode.multiply);
     rc.drawRect(const Rect.fromLTRB(10, 60, 30, 80), testPaint);
@@ -315,17 +316,18 @@ Future<void> testMain() async {
       rc.pictureBounds!.width,
       lessThan(widthConstraint),
       reason: 'The given width constraint $widthConstraint is more than the '
-              'test string needs, so the width of the visible text is actually '
-              'smaller than the given width.',
+          'test string needs, so the width of the visible text is actually '
+          'smaller than the given width.',
     );
     expect(
       rc.pictureBounds,
-      Rect.fromLTRB(textLeft, textTop, textLeft + paragraph.maxIntrinsicWidth, 21.0),
+      Rect.fromLTRB(
+          textLeft, textTop, textLeft + paragraph.maxIntrinsicWidth, 21.0),
     );
     await checkScreenshot(rc, 'draw_paragraph');
-  },  // TODO(mdebbar): https://github.com/flutter/flutter/issues/65789
+  }, // TODO(mdebbar): https://github.com/flutter/flutter/issues/65789
       skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
-            ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs);
+          ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs);
 
   test('Computes paint bounds for multi-line draw paragraph', () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
@@ -344,18 +346,19 @@ Future<void> testMain() async {
     expect(
       rc.pictureBounds!.width,
       lessThan(widthConstraint),
-      reason: 'The test string "A short sentence." is broken up into two lines, '
-              '"A short" and "sentence.". The longest line contains '
-              '$lettersInLongestWord characters, each  ${fontWidth}px wide. '
-              'That line is ${longestLineWidth}px wide, which is less than '
-              '$widthConstraint.',
+      reason:
+          'The test string "A short sentence." is broken up into two lines, '
+          '"A short" and "sentence.". The longest line contains '
+          '$lettersInLongestWord characters, each  ${fontWidth}px wide. '
+          'That line is ${longestLineWidth}px wide, which is less than '
+          '$widthConstraint.',
     );
     expect(
       rc.pictureBounds,
       const Rect.fromLTRB(textLeft, textTop, textLeft + longestLineWidth, 35.0),
     );
     await checkScreenshot(rc, 'draw_paragraph_multi_line');
-  },  // TODO(mdebbar): https://github.com/flutter/flutter/issues/65789
+  }, // TODO(mdebbar): https://github.com/flutter/flutter/issues/65789
       skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
           ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs);
 
@@ -417,8 +420,7 @@ Future<void> testMain() async {
 
     expect(
       rc.pictureBounds,
-      within(
-          distance: 0.05, from: const Rect.fromLTRB(0.0, 8.5, 123.5, 134.1)),
+      within(distance: 0.05, from: const Rect.fromLTRB(0.0, 8.5, 123.5, 134.1)),
     );
     await checkScreenshot(rc, 'path_with_shadow');
   });
@@ -480,7 +482,8 @@ Future<void> testMain() async {
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/46339.
-  test('Should draw a Rect for straight line when strokeWidth is zero.', () async {
+  test('Should draw a Rect for straight line when strokeWidth is zero.',
+      () async {
     final RecordingCanvas rc = RecordingCanvas(screenRect);
 
     final Path path = Path();
@@ -562,8 +565,8 @@ Future<void> testMain() async {
     rc.translate(50.0, 100.0);
     final Path path = Path();
     // Draw a vertical small line (caret).
-    path.addPolygon(const <Offset>[Offset(0, 10), Offset(20,5), Offset(50,10)],
-        false);
+    path.addPolygon(
+        const <Offset>[Offset(0, 10), Offset(20, 5), Offset(50, 10)], false);
     path.lineTo(60, 80);
     path.lineTo(0, 80);
     path.close();
@@ -779,7 +782,7 @@ class TestImage implements Image {
   bool isCloneOf(Image other) => other == this;
 
   @override
-  List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
+  List<StackTrace> /*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
 
   @override
   ColorSpace get colorSpace => ColorSpace.sRGB;

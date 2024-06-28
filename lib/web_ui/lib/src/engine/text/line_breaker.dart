@@ -55,7 +55,8 @@ abstract class LineBreakFragmenter extends TextFragmenter {
 }
 
 /// Flutter web's custom implementation of [LineBreakFragmenter].
-class FWLineBreakFragmenter extends TextFragmenter implements LineBreakFragmenter {
+class FWLineBreakFragmenter extends TextFragmenter
+    implements LineBreakFragmenter {
   FWLineBreakFragmenter(super.text);
 
   @override
@@ -66,7 +67,8 @@ class FWLineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
 
 /// An implementation of [LineBreakFragmenter] that uses V8's
 /// `v8BreakIterator` API to find line breaks in the given [text].
-class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmenter {
+class V8LineBreakFragmenter extends TextFragmenter
+    implements LineBreakFragmenter {
   V8LineBreakFragmenter(super.text) : assert(domIntl.v8BreakIterator != null);
 
   final DomV8BreakIterator _v8BreakIterator = createV8BreakIterator();
@@ -77,7 +79,8 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
   }
 }
 
-List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, JSString jsText, DomV8BreakIterator iterator) {
+List<LineBreakFragment> breakLinesUsingV8BreakIterator(
+    String text, JSString jsText, DomV8BreakIterator iterator) {
   final List<LineBreakFragment> breaks = <LineBreakFragment>[];
   int fragmentStart = 0;
 
@@ -133,14 +136,19 @@ List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, JSString jsT
   }
 
   if (breaks.isEmpty || breaks.last.type == LineBreakType.mandatory) {
-    breaks.add(LineBreakFragment(text.length, text.length, LineBreakType.endOfText, trailingNewlines: 0, trailingSpaces: 0));
+    breaks.add(LineBreakFragment(
+        text.length, text.length, LineBreakType.endOfText,
+        trailingNewlines: 0, trailingSpaces: 0));
   }
 
   return breaks;
 }
 
 class LineBreakFragment extends TextFragment {
-  const LineBreakFragment(super.start, super.end, this.type, {
+  const LineBreakFragment(
+    super.start,
+    super.end,
+    this.type, {
     required this.trailingNewlines,
     required this.trailingSpaces,
   });
@@ -150,7 +158,8 @@ class LineBreakFragment extends TextFragment {
   final int trailingSpaces;
 
   @override
-  int get hashCode => Object.hash(start, end, type, trailingNewlines, trailingSpaces);
+  int get hashCode =>
+      Object.hash(start, end, type, trailingNewlines, trailingSpaces);
 
   @override
   bool operator ==(Object other) {

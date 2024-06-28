@@ -11,7 +11,8 @@ import 'canvaskit_api.dart';
 import 'native_memory.dart';
 import 'path.dart';
 
-class CkPathMetrics extends IterableBase<ui.PathMetric> implements ui.PathMetrics {
+class CkPathMetrics extends IterableBase<ui.PathMetric>
+    implements ui.PathMetrics {
   CkPathMetrics(this._path, this._forceClosed);
 
   final CkPath _path;
@@ -26,11 +27,14 @@ class CkPathMetrics extends IterableBase<ui.PathMetric> implements ui.PathMetric
 
 class CkContourMeasureIter implements Iterator<ui.PathMetric> {
   CkContourMeasureIter(this._metrics) {
-    _ref = UniqueRef<SkContourMeasureIter>(this, SkContourMeasureIter(
-      _metrics._path.skiaObject,
-      _metrics._forceClosed,
-      1.0,
-    ), 'Iterator<PathMetric>');
+    _ref = UniqueRef<SkContourMeasureIter>(
+        this,
+        SkContourMeasureIter(
+          _metrics._path.skiaObject,
+          _metrics._forceClosed,
+          1.0,
+        ),
+        'Iterator<PathMetric>');
   }
 
   final CkPathMetrics _metrics;
@@ -73,7 +77,8 @@ class CkContourMeasureIter implements Iterator<ui.PathMetric> {
 }
 
 class CkContourMeasure implements ui.PathMetric {
-  CkContourMeasure(this._metrics, SkContourMeasure skiaObject, this.contourIndex) {
+  CkContourMeasure(
+      this._metrics, SkContourMeasure skiaObject, this.contourIndex) {
     _ref = UniqueRef<SkContourMeasure>(this, skiaObject, 'PathMetric');
   }
 

@@ -110,6 +110,7 @@ HtmlImage createTestImage() {
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
   final DomHTMLImageElement imageElement = createDomHTMLImageElement();
-  imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
+  imageElement.src =
+      js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

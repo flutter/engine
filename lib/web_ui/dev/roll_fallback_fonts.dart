@@ -22,8 +22,7 @@ import 'utils.dart';
 
 const String expectedUrlPrefix = 'https://fonts.gstatic.com/s/';
 
-class RollFallbackFontsCommand extends Command<bool>
-    with ArgUtils<bool> {
+class RollFallbackFontsCommand extends Command<bool> with ArgUtils<bool> {
   RollFallbackFontsCommand() {
     argParser.addOption(
       'key',
@@ -33,10 +32,11 @@ class RollFallbackFontsCommand extends Command<bool>
     );
     argParser.addFlag(
       'dry-run',
-      help: 'Whether or not to push changes to CIPD. When --dry-run is set, the '
-            'script will download everything and attempt to prepare the bundle '
-            'but will stop before publishing. When not set, the bundle will be '
-            'published.',
+      help:
+          'Whether or not to push changes to CIPD. When --dry-run is set, the '
+          'script will download everything and attempt to prepare the bundle '
+          'but will stop before publishing. When not set, the bundle will be '
+          'published.',
       negatable: false,
     );
   }
@@ -46,7 +46,7 @@ class RollFallbackFontsCommand extends Command<bool>
 
   @override
   final String description = 'Generate fallback font data from GoogleFonts and '
-                             'upload fonts to cipd.';
+      'upload fonts to cipd.';
 
   String get apiKey => stringArg('key');
   bool get isDryRun => boolArg('dry-run');
@@ -76,16 +76,19 @@ class RollFallbackFontsCommand extends Command<bool>
     for (final Map<String, Object?> fontData in fontDatas) {
       if (fallbackFonts.contains(fontData['family'])) {
         final files = fontData['files']! as Map<String, Object?>;
-        final Uri uri = Uri.parse(files['regular']! as String)
-            .replace(scheme: 'https');
+        final Uri uri =
+            Uri.parse(files['regular']! as String).replace(scheme: 'https');
         urlForFamily[fontData['family']! as String] = uri;
       }
     }
     final Map<String, String> charsetForFamily = <String, String>{};
-    final io.Directory fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
+    final io.Directory fontDir =
+        await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
     print('Downloading fonts into temp directory: ${fontDir.path}');
-    final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
-    final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
+    final AccumulatorSink<crypto.Digest> hashSink =
+        AccumulatorSink<crypto.Digest>();
+    final ByteConversionSink hasher =
+        crypto.sha256.startChunkedConversion(hashSink);
     for (final String family in fallbackFonts) {
       print('Downloading $family...');
       final Uri? uri = urlForFamily[family];
@@ -99,11 +102,11 @@ class RollFallbackFontsCommand extends Command<bool>
       }
       final String urlString = uri.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
-        throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
+        throw ToolExit(
+            'Unexpected url format received from Google Fonts API: $urlString.');
       }
       final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
-      final io.File fontFile =
-          io.File(path.join(fontDir.path, urlSuffix));
+      final io.File fontFile = io.File(path.join(fontDir.path, urlSuffix));
 
       final Uint8List bodyBytes = fontResponse.bodyBytes;
       if (!_checkForLicenseAttribution(bodyBytes)) {
@@ -159,7 +162,8 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln('// dev/roll_fallback_fonts.dart');
     sb.writeln("import 'noto_font.dart';");
     sb.writeln();
-    sb.writeln('List<NotoFont> getFallbackFontList(bool useColorEmoji) => <NotoFont>[');
+    sb.writeln(
+        'List<NotoFont> getFallbackFontList(bool useColorEmoji) => <NotoFont>[');
 
     for (final _Font font in fonts) {
       final String family = font.family;
@@ -300,9 +304,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     final String versionString = digest.toString();
     const String packageName = 'flutter/flutter_font_fallbacks';
     if (await cipdKnowsPackageVersion(
-      package: packageName,
-      versionTag: versionString)) {
-        print('Package already exists with hash $versionString. Skipping upload');
+        package: packageName, versionTag: versionString)) {
+      print('Package already exists with hash $versionString. Skipping upload');
     } else {
       print('Uploading fallback fonts to CIPD with hash $versionString');
       await uploadDirectoryToCipd(

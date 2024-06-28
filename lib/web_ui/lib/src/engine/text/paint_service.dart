@@ -77,7 +77,8 @@ class TextPaintService {
     final EngineTextStyle style = fragment.style;
 
     final String text = fragment.getText(paragraph);
-    canvas.drawText(text, x, y, style: style.foreground?.style, shadows: style.shadows);
+    canvas.drawText(text, x, y,
+        style: style.foreground?.style, shadows: style.shadows);
 
     canvas.tearDownPaint();
   }

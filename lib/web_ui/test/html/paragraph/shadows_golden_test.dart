@@ -33,7 +33,7 @@ Future<void> testMain() async {
           fontSize: 32.0,
           color: blue,
           shadows: <Shadow>[
-            const Shadow(color: red, blurRadius:2.0, offset: Offset(4.0, 2.0)),
+            const Shadow(color: red, blurRadius: 2.0, offset: Offset(4.0, 2.0)),
             const Shadow(color: green, blurRadius: 3.0),
           ],
         ));

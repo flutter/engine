@@ -161,7 +161,8 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     ui.ImageFilterEngineLayer? oldLayer,
     ui.Offset offset = ui.Offset.zero,
   }) {
-    return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter, offset));
+    return pushLayer<ImageFilterEngineLayer>(
+        ImageFilterEngineLayer(filter, offset));
   }
 
   @override

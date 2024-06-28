@@ -33,7 +33,8 @@ Future<void> testMain() async {
     CanvasParagraph paragraph;
 
     // Single-line multi-span.
-    paragraph = rich(EngineParagraphStyle(fontFamily: 'Roboto'), (CanvasParagraphBuilder builder) {
+    paragraph = rich(EngineParagraphStyle(fontFamily: 'Roboto'),
+        (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('Lorem ');
       builder.pushStyle(EngineTextStyle.only(
@@ -49,7 +50,8 @@ Future<void> testMain() async {
     offset = offset.translate(0, paragraph.height + 10);
 
     // Multi-line single-span.
-    paragraph = rich(EngineParagraphStyle(fontFamily: 'Roboto'), (CanvasParagraphBuilder builder) {
+    paragraph = rich(EngineParagraphStyle(fontFamily: 'Roboto'),
+        (CanvasParagraphBuilder builder) {
       builder.addText('Lorem ipsum dolor sit');
     })
       ..layout(constrain(90.0));
@@ -57,7 +59,8 @@ Future<void> testMain() async {
     offset = offset.translate(0, paragraph.height + 10);
 
     // Multi-line multi-span.
-    paragraph = rich(EngineParagraphStyle(fontFamily: 'Roboto'), (CanvasParagraphBuilder builder) {
+    paragraph = rich(EngineParagraphStyle(fontFamily: 'Roboto'),
+        (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('Lorem ipsum ');
       builder.pushStyle(EngineTextStyle.only(background: Paint()..color = red));
@@ -115,7 +118,8 @@ Future<void> testMain() async {
   });
 
   test('respects alignment in DOM mode', () {
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
 
     Offset offset = Offset.zero;
     CanvasParagraph paragraph;
@@ -169,7 +173,8 @@ Future<void> testMain() async {
 
     void drawParagraphAt(Offset offset, TextAlign align) {
       paragraph = rich(
-        EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 20.0, textAlign: align),
+        EngineParagraphStyle(
+            fontFamily: 'Roboto', fontSize: 20.0, textAlign: align),
         build,
       )..layout(constrain(150.0));
       canvas.save();
@@ -193,9 +198,11 @@ Future<void> testMain() async {
   });
 
   test('alignment and transform (DOM)', () {
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     testAlignAndTransform(canvas);
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_align_transform_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_align_transform_dom');
   });
 
   void testGiantParagraphStyles(EngineCanvas canvas) {
@@ -208,7 +215,8 @@ Future<void> testMain() async {
         builder.addText('ipsum');
       },
     )..layout(constrain(double.infinity));
-    final Rect rect = Rect.fromLTRB(0.0, 0.0, paragraph.maxIntrinsicWidth, paragraph.height);
+    final Rect rect =
+        Rect.fromLTRB(0.0, 0.0, paragraph.maxIntrinsicWidth, paragraph.height);
     canvas.drawRect(rect, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph, Offset.zero);
   }
@@ -217,14 +225,17 @@ Future<void> testMain() async {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
     testGiantParagraphStyles(canvas);
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_paragraph_style');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_giant_paragraph_style');
   });
 
   test('giant paragraph style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     testGiantParagraphStyles(canvas);
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_paragraph_style_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_giant_paragraph_style_dom');
   });
 
   test('giant font size on the body tag (DOM)', () async {
@@ -234,7 +245,8 @@ Future<void> testMain() async {
     final String oldBodyFontSize = domDocument.body!.style.fontSize;
     domDocument.body!.style.fontSize = '100px';
 
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     Offset offset = const Offset(10.0, 10.0);
 
     final CanvasParagraph paragraph = rich(
@@ -246,7 +258,8 @@ Future<void> testMain() async {
         builder.addText('ipsum');
       },
     )..layout(constrain(double.infinity));
-    final Rect rect = Rect.fromLTWH(offset.dx, offset.dy, paragraph.maxIntrinsicWidth, paragraph.height);
+    final Rect rect = Rect.fromLTWH(
+        offset.dx, offset.dy, paragraph.maxIntrinsicWidth, paragraph.height);
     canvas.drawRect(rect, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph, offset);
     offset = offset.translate(paragraph.maxIntrinsicWidth, 0.0);
@@ -262,10 +275,13 @@ Future<void> testMain() async {
     final CanvasParagraph paragraph2 = rich(
       EngineParagraphStyle(),
       (CanvasParagraphBuilder builder) {
-        builder.addPlaceholder(placeholderWidth, placeholderHeight, PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic);
+        builder.addPlaceholder(
+            placeholderWidth, placeholderHeight, PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic);
       },
     )..layout(constrain(double.infinity));
-    final Rect rect2 = Rect.fromLTWH(offset.dx, offset.dy, paragraph2.maxIntrinsicWidth, paragraph2.height);
+    final Rect rect2 = Rect.fromLTWH(
+        offset.dx, offset.dy, paragraph2.maxIntrinsicWidth, paragraph2.height);
     canvas.drawRect(rect2, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph2, offset);
     // Draw a rect in the placeholder.
@@ -278,7 +294,8 @@ Future<void> testMain() async {
       SurfacePaintData()..color = red.value,
     );
 
-    await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
+    await takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
 
     // Restore the old font size value.
     domDocument.body!.style.fontSize = oldBodyFontSize;
@@ -357,7 +374,8 @@ Future<void> testMain() async {
     )..layout(constrain(double.infinity));
     canvas.drawParagraph(paragraph, const Offset(20, 20));
 
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_letter_spacing_thai');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_letter_spacing_thai');
   });
 
   test('draws text decorations', () {
@@ -485,7 +503,8 @@ Future<void> testMain() async {
 
   test('font features (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     testFontFeatures(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_features_dom');
   });
@@ -528,9 +547,11 @@ Future<void> testMain() async {
 
   test('font variations (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 600, 500);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     testFontVariations(canvas);
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_font_variations_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_font_variations_dom');
   });
 
   void testBackgroundStyle(EngineCanvas canvas) {
@@ -538,16 +559,21 @@ Future<void> testMain() async {
       EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 40.0),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: black));
-        builder.pushStyle(EngineTextStyle.only(background: Paint()..color = blue));
+        builder
+            .pushStyle(EngineTextStyle.only(background: Paint()..color = blue));
         builder.addText('Lor');
-        builder.pushStyle(EngineTextStyle.only(background: Paint()..color = black, color: white));
+        builder.pushStyle(EngineTextStyle.only(
+            background: Paint()..color = black, color: white));
         builder.addText('em ');
         builder.pop();
-        builder.pushStyle(EngineTextStyle.only(background: Paint()..color = green));
+        builder.pushStyle(
+            EngineTextStyle.only(background: Paint()..color = green));
         builder.addText('ipsu');
-        builder.pushStyle(EngineTextStyle.only(background: Paint()..color = yellow));
+        builder.pushStyle(
+            EngineTextStyle.only(background: Paint()..color = yellow));
         builder.addText('m\ndo');
-        builder.pushStyle(EngineTextStyle.only(background: Paint()..color = red));
+        builder
+            .pushStyle(EngineTextStyle.only(background: Paint()..color = red));
         builder.addText('lor sit');
       },
     );
@@ -564,9 +590,11 @@ Future<void> testMain() async {
 
   test('background style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     testBackgroundStyle(canvas);
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_background_style_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_background_style_dom');
   });
 
   void testForegroundStyle(EngineCanvas canvas) {
@@ -576,16 +604,31 @@ Future<void> testMain() async {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem');
         builder.pop();
-        builder.pushStyle(EngineTextStyle.only(foreground: Paint()..color = red..style = PaintingStyle.stroke));
+        builder.pushStyle(EngineTextStyle.only(
+            foreground: Paint()
+              ..color = red
+              ..style = PaintingStyle.stroke));
         builder.addText('ipsum\n');
         builder.pop();
-        builder.pushStyle(EngineTextStyle.only(foreground: Paint()..color = blue..style = PaintingStyle.stroke..strokeWidth = 0.0));
+        builder.pushStyle(EngineTextStyle.only(
+            foreground: Paint()
+              ..color = blue
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 0.0));
         builder.addText('dolor');
         builder.pop();
-        builder.pushStyle(EngineTextStyle.only(foreground: Paint()..color = green..style = PaintingStyle.stroke..strokeWidth = 2.0));
+        builder.pushStyle(EngineTextStyle.only(
+            foreground: Paint()
+              ..color = green
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.0));
         builder.addText('sit\n');
         builder.pop();
-        builder.pushStyle(EngineTextStyle.only(foreground: Paint()..color = yellow..style = PaintingStyle.stroke..strokeWidth = 4.0));
+        builder.pushStyle(EngineTextStyle.only(
+            foreground: Paint()
+              ..color = yellow
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 4.0));
         builder.addText('amet');
       },
     );
@@ -602,15 +645,18 @@ Future<void> testMain() async {
 
   test('foreground style (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 200);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas =
+        DomCanvas(domDocument.createElement('flt-picture'));
     testForegroundStyle(canvas);
-    return takeScreenshot(canvas, bounds, 'canvas_paragraph_foreground_style_dom');
+    return takeScreenshot(
+        canvas, bounds, 'canvas_paragraph_foreground_style_dom');
   });
 
   test('paragraph bounds hug the text inside the paragraph', () async {
     const Rect bounds = Rect.fromLTWH(0, 0, 150, 100);
 
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(EngineParagraphStyle(
+    final CanvasParagraphBuilder builder =
+        CanvasParagraphBuilder(EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 20,
       textAlign: TextAlign.center,

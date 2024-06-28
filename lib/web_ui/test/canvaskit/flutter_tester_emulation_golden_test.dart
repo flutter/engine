@@ -22,13 +22,13 @@ void testMain() {
   group('flutter_tester emulation', () {
     setUpCanvasKitTest(withImplicitView: true);
 
-    test('defaults to FlutterTest font family',
-        () async {
+    test('defaults to FlutterTest font family', () async {
       final CkPictureRecorder recorder = CkPictureRecorder();
       final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
       canvas.translate(10, 10);
 
-      void drawTextWithOutline(String text, {
+      void drawTextWithOutline(
+        String text, {
         String? paragraphFontFamily,
         String? textFontFamily,
         List<String>? textFontFallbacks,
@@ -38,7 +38,9 @@ void testMain() {
       }) {
         final CkStrutStyle? strutStyle;
 
-        if (strutStyleFontFamily != null || strutStyleFontFallbacks != null || strutStyleFontSize != null) {
+        if (strutStyleFontFamily != null ||
+            strutStyleFontFallbacks != null ||
+            strutStyleFontSize != null) {
           strutStyle = CkStrutStyle(
             fontFamily: strutStyleFontFamily,
             fontFamilyFallback: strutStyleFontFallbacks,
@@ -53,7 +55,8 @@ void testMain() {
           strutStyle: strutStyle,
         ));
 
-        final bool needsTextStyle = textFontFamily != null || textFontFallbacks != null;
+        final bool needsTextStyle =
+            textFontFamily != null || textFontFallbacks != null;
 
         if (needsTextStyle) {
           builder.pushStyle(CkTextStyle(
@@ -72,7 +75,8 @@ void testMain() {
         paragraph.layout(const ui.ParagraphConstraints(width: 10000));
         canvas.drawParagraph(paragraph, ui.Offset.zero);
         canvas.drawRect(
-          ui.Rect.fromLTWH(-4, -4, paragraph.maxIntrinsicWidth + 8, paragraph.height + 8),
+          ui.Rect.fromLTWH(
+              -4, -4, paragraph.maxIntrinsicWidth + 8, paragraph.height + 8),
           CkPaint()
             ..style = ui.PaintingStyle.stroke
             ..strokeWidth = 1,

@@ -3685,7 +3685,8 @@ extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
       ExternalDartReference target, ExternalDartReference value);
 
   @JS('register')
-  external JSVoid registerWithToken(ExternalDartReference target, ExternalDartReference value, ExternalDartReference token);
+  external JSVoid registerWithToken(ExternalDartReference target,
+      ExternalDartReference value, ExternalDartReference token);
 
   @JS('unregister')
   external JSVoid unregister(ExternalDartReference token);

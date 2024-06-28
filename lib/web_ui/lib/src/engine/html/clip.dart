@@ -74,7 +74,8 @@ mixin _DomClip on PersistedContainerSurface {
 class PersistedClipRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRectEngineLayer {
-  PersistedClipRect(PersistedClipRect? super.oldLayer, this.rect, this.clipBehavior);
+  PersistedClipRect(
+      PersistedClipRect? super.oldLayer, this.rect, this.clipBehavior);
   final ui.Clip? clipBehavior;
   final ui.Rect rect;
 

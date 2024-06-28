@@ -12,8 +12,8 @@ final FlutterViewManagerProxy views = FlutterViewManagerProxy(
 /// This class exposes web-only attributes for the registered views in a multi-view app.
 class FlutterViewManagerProxy {
   FlutterViewManagerProxy({
-      required FlutterViewManager viewManager,
-    }) : _viewManager = viewManager;
+    required FlutterViewManager viewManager,
+  }) : _viewManager = viewManager;
   // The proxied viewManager instance.
   final FlutterViewManager _viewManager;
 

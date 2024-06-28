@@ -57,14 +57,14 @@ class Edge extends Browser {
 
       // Debug is not a valid option for Edge. Remove it.
       String pathToOpen = url.toString();
-      if(pathToOpen.contains('debug')) {
+      if (pathToOpen.contains('debug')) {
         final int index = pathToOpen.indexOf('debug');
-        pathToOpen = pathToOpen.substring(0, index-1);
+        pathToOpen = pathToOpen.substring(0, index - 1);
       }
 
       final Process process = await Process.start(
         installation.executable,
-        <String>[pathToOpen,'-k'],
+        <String>[pathToOpen, '-k'],
       );
 
       return process;
@@ -79,5 +79,5 @@ class Edge extends Browser {
   Future<void> get onExit => _process.onExit;
 
   @override
-  Future<void> close()  => _process.close();
+  Future<void> close() => _process.close();
 }

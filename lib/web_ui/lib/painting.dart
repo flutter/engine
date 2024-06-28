@@ -8,11 +8,13 @@ part of ui;
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {
     if (colors.length != 2) {
-      throw ArgumentError('"colors" must have length 2 if "colorStops" is omitted.');
+      throw ArgumentError(
+          '"colors" must have length 2 if "colorStops" is omitted.');
     }
   } else {
     if (colors.length != colorStops.length) {
-      throw ArgumentError('"colors" and "colorStops" arguments must have equal length.');
+      throw ArgumentError(
+          '"colors" and "colorStops" arguments must have equal length.');
     }
   }
 }
@@ -297,14 +299,10 @@ abstract class Gradient implements Shader {
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
   ]) {
-    final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
-    return engine.renderer.createLinearGradient(
-      from,
-      to,
-      colors,
-      colorStops,
-      tileMode,
-      matrix);
+    final Float32List? matrix =
+        matrix4 == null ? null : engine.toMatrix32(matrix4);
+    return engine.renderer
+        .createLinearGradient(from, to, colors, colorStops, tileMode, matrix);
   }
 
   factory Gradient.radial(
@@ -320,15 +318,16 @@ abstract class Gradient implements Shader {
     _validateColorStops(colors, colorStops);
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
-    final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
+    final Float32List? matrix32 =
+        matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       return engine.renderer.createRadialGradient(
-        center, radius, colors, colorStops, tileMode, matrix32);
+          center, radius, colors, colorStops, tileMode, matrix32);
     } else {
       assert(center != Offset.zero ||
           focal != Offset.zero); // will result in exception(s) in Skia side
-      return engine.renderer.createConicalGradient(
-        focal, focalRadius, center, radius, colors, colorStops, tileMode, matrix32);
+      return engine.renderer.createConicalGradient(focal, focalRadius, center,
+          radius, colors, colorStops, tileMode, matrix32);
     }
   }
   factory Gradient.sweep(
@@ -339,14 +338,15 @@ abstract class Gradient implements Shader {
     double startAngle = 0.0,
     double endAngle = math.pi * 2,
     Float64List? matrix4,
-  ]) => engine.renderer.createSweepGradient(
-    center,
-    colors,
-    colorStops,
-    tileMode,
-    startAngle,
-    endAngle,
-    matrix4 != null ? engine.toMatrix32(matrix4) : null);
+  ]) =>
+      engine.renderer.createSweepGradient(
+          center,
+          colors,
+          colorStops,
+          tileMode,
+          startAngle,
+          endAngle,
+          matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
 typedef ImageEventCallback = void Function(Image image);
@@ -357,7 +357,8 @@ abstract class Image {
 
   int get width;
   int get height;
-  Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
+  Future<ByteData?> toByteData(
+      {ImageByteFormat format = ImageByteFormat.rawRgba});
   void dispose();
   bool get debugDisposed;
 
@@ -374,10 +375,14 @@ abstract class Image {
 }
 
 class ColorFilter implements ImageFilter {
-  const factory ColorFilter.mode(Color color, BlendMode blendMode) = engine.EngineColorFilter.mode;
-  const factory ColorFilter.matrix(List<double> matrix) = engine.EngineColorFilter.matrix;
-  const factory ColorFilter.linearToSrgbGamma() = engine.EngineColorFilter.linearToSrgbGamma;
-  const factory ColorFilter.srgbToLinearGamma() = engine.EngineColorFilter.srgbToLinearGamma;
+  const factory ColorFilter.mode(Color color, BlendMode blendMode) =
+      engine.EngineColorFilter.mode;
+  const factory ColorFilter.matrix(List<double> matrix) =
+      engine.EngineColorFilter.matrix;
+  const factory ColorFilter.linearToSrgbGamma() =
+      engine.EngineColorFilter.linearToSrgbGamma;
+  const factory ColorFilter.srgbToLinearGamma() =
+      engine.EngineColorFilter.srgbToLinearGamma;
 }
 
 // These enum values must be kept in sync with SkBlurStyle.
@@ -402,9 +407,9 @@ class MaskFilter {
 
   @override
   bool operator ==(Object other) {
-    return other is MaskFilter
-        && other._style == _style
-        && other._sigma == _sigma;
+    return other is MaskFilter &&
+        other._style == _style &&
+        other._sigma == _sigma;
   }
 
   @override
@@ -423,31 +428,33 @@ enum FilterQuality {
 }
 
 class ImageFilter {
-  factory ImageFilter.blur({
-    double sigmaX = 0.0,
-    double sigmaY = 0.0,
-    TileMode tileMode = TileMode.clamp
-  }) => engine.renderer.createBlurImageFilter(
-    sigmaX: sigmaX,
-    sigmaY: sigmaY,
-    tileMode: tileMode
-  );
+  factory ImageFilter.blur(
+          {double sigmaX = 0.0,
+          double sigmaY = 0.0,
+          TileMode tileMode = TileMode.clamp}) =>
+      engine.renderer.createBlurImageFilter(
+          sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
 
-  factory ImageFilter.dilate({ double radiusX = 0.0, double radiusY = 0.0 }) =>
-    engine.renderer.createDilateImageFilter(radiusX: radiusX, radiusY: radiusY);
+  factory ImageFilter.dilate({double radiusX = 0.0, double radiusY = 0.0}) =>
+      engine.renderer
+          .createDilateImageFilter(radiusX: radiusX, radiusY: radiusY);
 
-  factory ImageFilter.erode({ double radiusX = 0.0, double radiusY = 0.0 }) =>
-    engine.renderer.createErodeImageFilter(radiusX: radiusX, radiusY: radiusY);
+  factory ImageFilter.erode({double radiusX = 0.0, double radiusY = 0.0}) =>
+      engine.renderer
+          .createErodeImageFilter(radiusX: radiusX, radiusY: radiusY);
 
-  factory ImageFilter.matrix(Float64List matrix4, {FilterQuality filterQuality = FilterQuality.medium}) {
+  factory ImageFilter.matrix(Float64List matrix4,
+      {FilterQuality filterQuality = FilterQuality.medium}) {
     if (matrix4.length != 16) {
       throw ArgumentError('"matrix4" must have 16 entries.');
     }
-    return engine.renderer.createMatrixImageFilter(matrix4, filterQuality: filterQuality);
+    return engine.renderer
+        .createMatrixImageFilter(matrix4, filterQuality: filterQuality);
   }
 
-  factory ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) =>
-    engine.renderer.composeImageFilters(outer: outer, inner: inner);
+  factory ImageFilter.compose(
+          {required ImageFilter outer, required ImageFilter inner}) =>
+      engine.renderer.composeImageFilters(outer: outer, inner: inner);
 }
 
 enum ColorSpace {
@@ -496,22 +503,22 @@ Future<Codec> instantiateImageCodec(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) => engine.renderer.instantiateImageCodec(
-  list,
-  targetWidth: targetWidth,
-  targetHeight: targetHeight,
-  allowUpscaling: allowUpscaling);
+}) =>
+    engine.renderer.instantiateImageCodec(list,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling);
 
 Future<Codec> instantiateImageCodecFromBuffer(
   ImmutableBuffer buffer, {
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) => engine.renderer.instantiateImageCodec(
-  buffer._list!,
-  targetWidth: targetWidth,
-  targetHeight: targetHeight,
-  allowUpscaling: allowUpscaling);
+}) =>
+    engine.renderer.instantiateImageCodec(buffer._list!,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling);
 
 Future<Codec> instantiateImageCodecWithSize(
   ImmutableBuffer buffer, {
@@ -520,7 +527,8 @@ Future<Codec> instantiateImageCodecWithSize(
   if (getTargetSize == null) {
     return engine.renderer.instantiateImageCodec(buffer._list!);
   } else {
-    final Codec codec = await engine.renderer.instantiateImageCodec(buffer._list!);
+    final Codec codec =
+        await engine.renderer.instantiateImageCodec(buffer._list!);
     try {
       final FrameInfo info = await codec.getNextFrame();
       try {
@@ -528,7 +536,9 @@ Future<Codec> instantiateImageCodecWithSize(
         final int height = info.image.height;
         final TargetImageSize targetSize = getTargetSize(width, height);
         return engine.renderer.instantiateImageCodec(buffer._list!,
-            targetWidth: targetSize.width, targetHeight: targetSize.height, allowUpscaling: false);
+            targetWidth: targetSize.width,
+            targetHeight: targetSize.height,
+            allowUpscaling: false);
       } finally {
         info.image.dispose();
       }
@@ -538,7 +548,8 @@ Future<Codec> instantiateImageCodecWithSize(
   }
 }
 
-typedef TargetImageSizeCallback = TargetImageSize Function(int intrinsicWidth, int intrinsicHeight);
+typedef TargetImageSizeCallback = TargetImageSize Function(
+    int intrinsicWidth, int intrinsicHeight);
 
 class TargetImageSize {
   const TargetImageSize({this.width, this.height})
@@ -570,7 +581,8 @@ void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
   _decodeImageFromListAsync(list, callback);
 }
 
-Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback callback) async {
+Future<void> _decodeImageFromListAsync(
+    Uint8List list, ImageDecoderCallback callback) async {
   final Codec codec = await instantiateImageCodec(list);
   final FrameInfo frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
@@ -595,7 +607,8 @@ Future<Codec> createBmp(
     case PixelFormat.rgba8888:
       swapRedBlue = false;
     case PixelFormat.rgbaFloat32:
-      throw UnimplementedError('RGB conversion from rgbaFloat32 data is not implemented');
+      throw UnimplementedError(
+          'RGB conversion from rgbaFloat32 data is not implemented');
   }
 
   // See https://en.wikipedia.org/wiki/BMP_file_format for format examples.
@@ -649,7 +662,8 @@ Future<Codec> createBmp(
   for (int rowCount = height - 1; rowCount >= 0; rowCount -= 1) {
     int sourcePixel = rowCount * rowBytes;
     for (int colCount = 0; colCount < width; colCount += 1) {
-      bmpData.setUint32(destinationByte, combinedPixels[sourcePixel], Endian.little);
+      bmpData.setUint32(
+          destinationByte, combinedPixels[sourcePixel], Endian.little);
       destinationByte += 4;
       sourcePixel += 1;
     }
@@ -670,23 +684,21 @@ void decodeImageFromPixels(
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) => engine.renderer.decodeImageFromPixels(
-  pixels,
-  width,
-  height,
-  format,
-  callback,
-  rowBytes: rowBytes,
-  targetWidth: targetWidth,
-  targetHeight: targetHeight,
-  allowUpscaling: allowUpscaling);
+}) =>
+    engine.renderer.decodeImageFromPixels(
+        pixels, width, height, format, callback,
+        rowBytes: rowBytes,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling);
 
 class Shadow {
   const Shadow({
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
+  }) : assert(blurRadius >= 0.0,
+            'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
   final Color color;
@@ -778,13 +790,9 @@ abstract class ImageShader implements Shader {
     TileMode tmy,
     Float64List matrix4, {
     FilterQuality? filterQuality,
-  }) => engine.renderer.createImageShader(
-    image,
-    tmx,
-    tmy,
-    matrix4,
-    filterQuality
-  );
+  }) =>
+      engine.renderer
+          .createImageShader(image, tmx, tmy, matrix4, filterQuality);
 
   @override
   void dispose();
@@ -802,11 +810,13 @@ class ImmutableBuffer {
   }
 
   static Future<ImmutableBuffer> fromAsset(String assetKey) async {
-    throw UnsupportedError('ImmutableBuffer.fromAsset is not supported on the web.');
+    throw UnsupportedError(
+        'ImmutableBuffer.fromAsset is not supported on the web.');
   }
 
   static Future<ImmutableBuffer> fromFilePath(String path) async {
-    throw UnsupportedError('ImmutableBuffer.fromFilePath is not supported on the web.');
+    throw UnsupportedError(
+        'ImmutableBuffer.fromFilePath is not supported on the web.');
   }
 
   Uint8List? _list;
@@ -822,6 +832,7 @@ class ImmutableBuffer {
     }());
     return disposed;
   }
+
   void dispose() => _list = null;
 }
 
@@ -833,7 +844,7 @@ class ImageDescriptor {
     required int height,
     int? rowBytes,
     required PixelFormat pixelFormat,
-  })   : _width = width,
+  })  : _width = width,
         _height = height,
         _rowBytes = rowBytes,
         _format = pixelFormat {
@@ -859,13 +870,14 @@ class ImageDescriptor {
   final PixelFormat? _format;
 
   Never _throw(String parameter) {
-    throw UnsupportedError('ImageDescriptor.$parameter is not supported on web.');
+    throw UnsupportedError(
+        'ImageDescriptor.$parameter is not supported on web.');
   }
 
   int get width => _width ?? _throw('width');
   int get height => _height ?? _throw('height');
-  int get bytesPerPixel =>
-      throw UnsupportedError('ImageDescriptor.bytesPerPixel is not supported on web.');
+  int get bytesPerPixel => throw UnsupportedError(
+      'ImageDescriptor.bytesPerPixel is not supported on web.');
   void dispose() => _data = null;
   Future<Codec> instantiateCodec({int? targetWidth, int? targetHeight}) async {
     if (_data == null) {

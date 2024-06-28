@@ -58,8 +58,7 @@ Future<void> testMain() async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     final Picture backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
-    builder.pushColorFilter(
-        EngineColorFilter.matrix(colorMatrix));
+    builder.pushColorFilter(EngineColorFilter.matrix(colorMatrix));
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
@@ -72,11 +71,10 @@ Future<void> testMain() async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     final Picture backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
-    builder.pushColorFilter(
-        const ColorFilter.mode(
-          Color(0xFFFF0000),
-          BlendMode.srcIn,
-        ));
+    builder.pushColorFilter(const ColorFilter.mode(
+      Color(0xFFFF0000),
+      BlendMode.srcIn,
+    ));
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();

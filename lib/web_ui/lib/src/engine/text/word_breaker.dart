@@ -60,7 +60,8 @@ abstract final class WordBreaker {
 
     // Do not break within CRLF.
     // WB3: CR × LF
-    if (immediateLeft == WordCharProperty.CR && immediateRight == WordCharProperty.LF) {
+    if (immediateLeft == WordCharProperty.CR &&
+        immediateRight == WordCharProperty.LF) {
       return false;
     }
 
@@ -213,12 +214,14 @@ abstract final class WordBreaker {
     }
 
     // WB9: AHLetter × Numeric
-    if (_isAHLetter(immediateLeft) && immediateRight == WordCharProperty.Numeric) {
+    if (_isAHLetter(immediateLeft) &&
+        immediateRight == WordCharProperty.Numeric) {
       return false;
     }
 
     // WB10: Numeric × AHLetter
-    if (immediateLeft == WordCharProperty.Numeric && _isAHLetter(immediateRight)) {
+    if (immediateLeft == WordCharProperty.Numeric &&
+        _isAHLetter(immediateRight)) {
       return false;
     }
 
@@ -325,6 +328,7 @@ abstract final class WordBreaker {
   }
 
   static bool _isAHLetter(WordCharProperty? property) {
-    return _oneOf(property, WordCharProperty.ALetter, WordCharProperty.HebrewLetter);
+    return _oneOf(
+        property, WordCharProperty.ALetter, WordCharProperty.HebrewLetter);
   }
 }

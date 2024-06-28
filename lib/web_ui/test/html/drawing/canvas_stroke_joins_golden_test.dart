@@ -27,17 +27,16 @@ Future<void> testMain() async {
   });
 
   test('draws stroke joins', () async {
-
     paintStrokeJoins(canvas);
 
     domDocument.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_stroke_joins.png', region: region);
   });
-
 }
 
 void paintStrokeJoins(BitmapCanvas canvas) {
-  canvas.drawRect(const Rect.fromLTRB(0, 0, 300, 300),
+  canvas.drawRect(
+      const Rect.fromLTRB(0, 0, 300, 300),
       SurfacePaintData()
         ..color = 0xFFFFFFFF
         ..style = PaintingStyle.fill); // white
@@ -46,11 +45,22 @@ void paintStrokeJoins(BitmapCanvas canvas) {
   Offset mid = const Offset(120, 10);
   Offset end = const Offset(120, 20);
 
-  final List<StrokeCap> strokeCaps = <StrokeCap>[StrokeCap.butt, StrokeCap.round, StrokeCap.square];
+  final List<StrokeCap> strokeCaps = <StrokeCap>[
+    StrokeCap.butt,
+    StrokeCap.round,
+    StrokeCap.square
+  ];
   for (final StrokeCap cap in strokeCaps) {
-    final List<StrokeJoin> joints = <StrokeJoin>[StrokeJoin.miter, StrokeJoin.bevel, StrokeJoin.round];
+    final List<StrokeJoin> joints = <StrokeJoin>[
+      StrokeJoin.miter,
+      StrokeJoin.bevel,
+      StrokeJoin.round
+    ];
     const List<Color> colors = <Color>[
-        Color(0xFFF44336), Color(0xFF4CAF50), Color(0xFF2196F3)]; // red, green, blue
+      Color(0xFFF44336),
+      Color(0xFF4CAF50),
+      Color(0xFF2196F3)
+    ]; // red, green, blue
     for (int i = 0; i < joints.length; i++) {
       final StrokeJoin join = joints[i];
       final Color color = colors[i % colors.length];
@@ -59,7 +69,9 @@ void paintStrokeJoins(BitmapCanvas canvas) {
       path.moveTo(start.dx, start.dy);
       path.lineTo(mid.dx, mid.dy);
       path.lineTo(end.dx, end.dy);
-      canvas.drawPath(path, SurfacePaintData()
+      canvas.drawPath(
+          path,
+          SurfacePaintData()
             ..style = PaintingStyle.stroke
             ..strokeWidth = 4
             ..color = color.value

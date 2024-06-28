@@ -82,7 +82,8 @@ class PlatformViewManager {
   ///
   /// Throws an [AssertionError] if [viewId] hasn't been rendered before.
   DomElement getViewById(int viewId) {
-    assert(knowsViewId(viewId), 'No view has been rendered for viewId: $viewId');
+    assert(
+        knowsViewId(viewId), 'No view has been rendered for viewId: $viewId');
     // `_contents[viewId]` is the <flt-platform-view> element created by us. The
     // first (and only) child of that is the element created by the user-supplied
     // factory function.
@@ -147,10 +148,9 @@ class PlatformViewManager {
     _viewIdToType[viewId] = viewType;
 
     return _contents.putIfAbsent(viewId, () {
-      final DomElement wrapper = domDocument
-          .createElement('flt-platform-view')
-            ..id = getPlatformViewDomId(viewId)
-            ..setAttribute('slot', slotName);
+      final DomElement wrapper = domDocument.createElement('flt-platform-view')
+        ..id = getPlatformViewDomId(viewId)
+        ..setAttribute('slot', slotName);
 
       final Function factoryFunction = _factories[viewType]!;
       final DomElement content;

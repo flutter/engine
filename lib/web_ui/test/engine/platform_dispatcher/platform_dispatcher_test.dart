@@ -41,8 +41,7 @@ void testMain() {
           MockHighContrastSupport();
       HighContrastSupport.instance = mockHighContrast;
 
-      final EnginePlatformDispatcher dispatcher =
-          EnginePlatformDispatcher();
+      final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
 
       expect(dispatcher.accessibilityFeatures.highContrast, isTrue);
       mockHighContrast.isEnabled = false;
@@ -350,7 +349,8 @@ void testMain() {
 
       dispatcher.viewManager.disposeAndUnregisterView(view2.viewId);
 
-      expect(onMetricsChangedCalled, isTrue, reason: 'onMetricsChanged should have been called.');
+      expect(onMetricsChangedCalled, isTrue,
+          reason: 'onMetricsChanged should have been called.');
 
       dispatcher.dispose();
     });
@@ -375,7 +375,8 @@ void testMain() {
     });
 
     test('invokeOnViewFocusChange calls onViewFocusChange', () {
-      final List<ui.ViewFocusEvent> dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
+      final List<ui.ViewFocusEvent> dispatchedViewFocusEvents =
+          <ui.ViewFocusEvent>[];
       const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
         viewId: 0,
         state: ui.ViewFocusState.focused,
@@ -411,7 +412,8 @@ void testMain() {
 
     test('adds the accesibility placeholder', () {
       expect(dispatcher.accessibilityPlaceholder.isConnected, isTrue);
-      expect(domDocument.body!.children.first, dispatcher.accessibilityPlaceholder);
+      expect(domDocument.body!.children.first,
+          dispatcher.accessibilityPlaceholder);
     });
 
     test('removes the accesibility placeholder', () {

@@ -101,7 +101,8 @@ class BrowserProcess {
   final Completer<void> _onExitCompleter = Completer<void>();
 
   /// Standard IO streams for the underlying browser process.
-  final List<StreamSubscription<void>> _ioSubscriptions = <StreamSubscription<void>>[];
+  final List<StreamSubscription<void>> _ioSubscriptions =
+      <StreamSubscription<void>>[];
 
   /// Kills the browser process.
   ///

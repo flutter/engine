@@ -27,7 +27,8 @@ class FilePath {
   FilePath.fromWebUi(String relativePath)
       : _absolutePath = path.join(environment.webUiRootDir.path, relativePath);
   FilePath.fromTestSet(TestSet testSet, String relativePath)
-      : _absolutePath = path.join(getTestSetDirectory(testSet).path, relativePath);
+      : _absolutePath =
+            path.join(getTestSetDirectory(testSet).path, relativePath);
 
   final String _absolutePath;
 
@@ -121,7 +122,9 @@ Future<ProcessManager> startProcess(
     // `inheritStdio` mode which lets it print directly to the terminal.
     // This allows sub-processes such as `ninja` to use all kinds of terminal
     // features like printing colors, printing progress on the same line, etc.
-    mode: evalOutput ? io.ProcessStartMode.normal : io.ProcessStartMode.inheritStdio,
+    mode: evalOutput
+        ? io.ProcessStartMode.normal
+        : io.ProcessStartMode.inheritStdio,
     environment: environment,
   );
   processesToCleanUp.add(process);
@@ -146,7 +149,8 @@ class ProcessManager {
     required this.process,
     required bool evalOutput,
     required bool failureIsSuccess,
-  }) : _evalOutput = evalOutput, _failureIsSuccess = failureIsSuccess {
+  })  : _evalOutput = evalOutput,
+        _failureIsSuccess = failureIsSuccess {
     if (_evalOutput) {
       _forwardStream(process.stdout, _stdout);
       _forwardStream(process.stderr, _stderr);
@@ -182,9 +186,9 @@ class ProcessManager {
 
   void _forwardStream(Stream<List<int>> stream, StringSink buffer) {
     stream
-      .transform(utf8.decoder)
-      .transform(const LineSplitter())
-      .listen(buffer.writeln);
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(buffer.writeln);
   }
 
   /// Waits for the [process] to exit. Returns the exit code.
@@ -297,7 +301,8 @@ class ProcessException implements Exception {
     message
       ..writeln(description)
       ..writeln('Command: $executable ${arguments.join(' ')}')
-      ..writeln('Working directory: ${workingDirectory ?? io.Directory.current.path}');
+      ..writeln(
+          'Working directory: ${workingDirectory ?? io.Directory.current.path}');
     if (exitCode != null) {
       message.writeln('Exit code: $exitCode');
     }
@@ -317,7 +322,8 @@ mixin ArgUtils<T> on Command<T> {
     final bool isProfile = boolArg('profile');
     final bool isDebug = boolArg('debug');
     if (isProfile && isDebug) {
-      throw ToolExit('Cannot specify both --profile and --debug at the same time.');
+      throw ToolExit(
+          'Cannot specify both --profile and --debug at the same time.');
     }
     if (isProfile) {
       return RuntimeMode.profile;
@@ -330,11 +336,11 @@ mixin ArgUtils<T> on Command<T> {
 }
 
 io.Directory getBuildDirectoryForRuntimeMode(RuntimeMode runtimeMode) =>
-  switch (runtimeMode) {
-    RuntimeMode.debug => environment.wasmDebugUnoptOutDir,
-    RuntimeMode.profile => environment.wasmProfileOutDir,
-    RuntimeMode.release => environment.wasmReleaseOutDir,
-  };
+    switch (runtimeMode) {
+      RuntimeMode.debug => environment.wasmDebugUnoptOutDir,
+      RuntimeMode.profile => environment.wasmProfileOutDir,
+      RuntimeMode.release => environment.wasmReleaseOutDir,
+    };
 
 /// There might be proccesses started during the tests.
 ///
@@ -378,31 +384,25 @@ Future<void> cleanup() async {
 }
 
 io.Directory getTestSetDirectory(TestSet testSet) {
-  return io.Directory(
-    path.join(
-      environment.webUiTestDir.path,
-      testSet.directory,
-    )
-  );
+  return io.Directory(path.join(
+    environment.webUiTestDir.path,
+    testSet.directory,
+  ));
 }
 
 io.Directory getBundleBuildDirectory(TestBundle bundle) {
-  return io.Directory(
-    path.join(
-      environment.webUiBuildDir.path,
-      'test_bundles',
-      bundle.name,
-    )
-  );
+  return io.Directory(path.join(
+    environment.webUiBuildDir.path,
+    'test_bundles',
+    bundle.name,
+  ));
 }
 
 io.Directory getSkiaGoldDirectoryForSuite(TestSuite suite) {
-  return io.Directory(
-    path.join(
-      environment.webUiSkiaGoldDirectory.path,
-      suite.name,
-    )
-  );
+  return io.Directory(path.join(
+    environment.webUiSkiaGoldDirectory.path,
+    suite.name,
+  ));
 }
 
 extension AnsiColors on String {
@@ -416,8 +416,8 @@ extension AnsiColors on String {
 
   static const String _noColorCode = '\u001b[39m';
 
-  String _wrapText(String prefix, String suffix) => shouldEscape
-    ? '$prefix$this$suffix' : this;
+  String _wrapText(String prefix, String suffix) =>
+      shouldEscape ? '$prefix$this$suffix' : this;
 
   String _colorText(String colorCode) => _wrapText(colorCode, _noColorCode);
 

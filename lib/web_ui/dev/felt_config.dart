@@ -5,10 +5,7 @@
 import 'dart:io' as io;
 import 'package:yaml/yaml.dart';
 
-enum Compiler {
-  dart2js,
-  dart2wasm
-}
+enum Compiler { dart2js, dart2wasm }
 
 enum Renderer {
   html,
@@ -60,21 +57,20 @@ class RunConfiguration {
 }
 
 class ArtifactDependencies {
-  ArtifactDependencies({
-    required this.canvasKit,
-    required this.canvasKitChromium,
-    required this.skwasm
-  });
+  ArtifactDependencies(
+      {required this.canvasKit,
+      required this.canvasKitChromium,
+      required this.skwasm});
 
-  ArtifactDependencies.none() :
-    canvasKit = false,
-    canvasKitChromium = false,
-    skwasm = false;
+  ArtifactDependencies.none()
+      : canvasKit = false,
+        canvasKitChromium = false,
+        skwasm = false;
   final bool canvasKit;
   final bool canvasKitChromium;
   final bool skwasm;
 
-  ArtifactDependencies operator|(ArtifactDependencies other) {
+  ArtifactDependencies operator |(ArtifactDependencies other) {
     return ArtifactDependencies(
       canvasKit: canvasKit || other.canvasKit,
       canvasKitChromium: canvasKitChromium || other.canvasKitChromium,
@@ -82,7 +78,7 @@ class ArtifactDependencies {
     );
   }
 
-  ArtifactDependencies operator&(ArtifactDependencies other) {
+  ArtifactDependencies operator &(ArtifactDependencies other) {
     return ArtifactDependencies(
       canvasKit: canvasKit && other.canvasKit,
       canvasKitChromium: canvasKitChromium && other.canvasKitChromium,
@@ -93,11 +89,7 @@ class ArtifactDependencies {
 
 class TestSuite {
   TestSuite(
-    this.name,
-    this.testBundle,
-    this.runConfig,
-    this.artifactDependencies
-  );
+      this.name, this.testBundle, this.runConfig, this.artifactDependencies);
 
   String name;
   TestBundle testBundle;
@@ -119,13 +111,17 @@ class FeltConfig {
     final YamlMap yaml = loadYaml(configFile.readAsStringSync()) as YamlMap;
 
     final List<CompileConfiguration> compileConfigs = <CompileConfiguration>[];
-    final Map<String, CompileConfiguration> compileConfigsByName = <String, CompileConfiguration>{};
+    final Map<String, CompileConfiguration> compileConfigsByName =
+        <String, CompileConfiguration>{};
     for (final dynamic node in yaml['compile-configs'] as YamlList) {
       final YamlMap configYaml = node as YamlMap;
       final String name = configYaml['name'] as String;
-      final Compiler compiler = Compiler.values.byName(configYaml['compiler'] as String);
-      final Renderer renderer = Renderer.values.byName(configYaml['renderer'] as String);
-      final CompileConfiguration config = CompileConfiguration(name, compiler, renderer);
+      final Compiler compiler =
+          Compiler.values.byName(configYaml['compiler'] as String);
+      final Renderer renderer =
+          Renderer.values.byName(configYaml['renderer'] as String);
+      final CompileConfiguration config =
+          CompileConfiguration(name, compiler, renderer);
       compileConfigs.add(config);
       if (compileConfigsByName.containsKey(name)) {
         throw AssertionError('Duplicate compile config name: $name');
@@ -155,16 +151,20 @@ class FeltConfig {
       final String testSetName = testBundleYaml['test-set'] as String;
       final TestSet? testSet = testSetsByName[testSetName];
       if (testSet == null) {
-        throw AssertionError('Test set not found with name: `$testSetName` (referenced by test bundle: `$name`)');
+        throw AssertionError(
+            'Test set not found with name: `$testSetName` (referenced by test bundle: `$name`)');
       }
       final dynamic compileConfigsValue = testBundleYaml['compile-configs'];
       final List<CompileConfiguration> compileConfigs;
       if (compileConfigsValue is String) {
-        compileConfigs = <CompileConfiguration>[compileConfigsByName[compileConfigsValue]!];
+        compileConfigs = <CompileConfiguration>[
+          compileConfigsByName[compileConfigsValue]!
+        ];
       } else {
-        compileConfigs = (compileConfigsValue as List<dynamic>).map(
-          (dynamic configName) => compileConfigsByName[configName as String]!
-        ).toList();
+        compileConfigs = (compileConfigsValue as List<dynamic>)
+            .map((dynamic configName) =>
+                compileConfigsByName[configName as String]!)
+            .toList();
       }
       final TestBundle bundle = TestBundle(name, testSet, compileConfigs);
       testBundles.add(bundle);
@@ -175,16 +175,19 @@ class FeltConfig {
     }
 
     final List<RunConfiguration> runConfigs = <RunConfiguration>[];
-    final Map<String, RunConfiguration> runConfigsByName = <String, RunConfiguration>{};
+    final Map<String, RunConfiguration> runConfigsByName =
+        <String, RunConfiguration>{};
     for (final dynamic node in yaml['run-configs'] as YamlList) {
       final YamlMap runConfigYaml = node as YamlMap;
       final String name = runConfigYaml['name'] as String;
-      final BrowserName browser = BrowserName.values.byName(runConfigYaml['browser'] as String);
+      final BrowserName browser =
+          BrowserName.values.byName(runConfigYaml['browser'] as String);
       final dynamic variantNode = runConfigYaml['canvaskit-variant'];
       final CanvasKitVariant? variant = variantNode == null
-        ? null
-        : CanvasKitVariant.values.byName(variantNode as String);
-      final RunConfiguration runConfig = RunConfiguration(name, browser, variant);
+          ? null
+          : CanvasKitVariant.values.byName(variantNode as String);
+      final RunConfiguration runConfig =
+          RunConfiguration(name, browser, variant);
       runConfigs.add(runConfig);
       if (runConfigsByName.containsKey(name)) {
         throw AssertionError('Duplicate run config name: $name');
@@ -199,12 +202,14 @@ class FeltConfig {
       final String testBundleName = testSuiteYaml['test-bundle'] as String;
       final TestBundle? bundle = testBundlesByName[testBundleName];
       if (bundle == null) {
-        throw AssertionError('Test bundle not found with name: `$testBundleName` (referenced by test suite: `$name`)');
+        throw AssertionError(
+            'Test bundle not found with name: `$testBundleName` (referenced by test suite: `$name`)');
       }
       final String runConfigName = testSuiteYaml['run-config'] as String;
       final RunConfiguration? runConfig = runConfigsByName[runConfigName];
       if (runConfig == null) {
-        throw AssertionError('Run config not found with name: `$runConfigName` (referenced by test suite: `$name`)');
+        throw AssertionError(
+            'Run config not found with name: `$runConfigName` (referenced by test suite: `$name`)');
       }
       bool canvasKit = false;
       bool canvasKitChromium = false;
@@ -215,17 +220,20 @@ class FeltConfig {
           switch (dep as String) {
             case 'canvaskit':
               if (canvasKit) {
-                throw AssertionError('Artifact dep $dep listed twice in suite $name.');
+                throw AssertionError(
+                    'Artifact dep $dep listed twice in suite $name.');
               }
               canvasKit = true;
             case 'canvaskit_chromium':
               if (canvasKitChromium) {
-                throw AssertionError('Artifact dep $dep listed twice in suite $name.');
+                throw AssertionError(
+                    'Artifact dep $dep listed twice in suite $name.');
               }
               canvasKitChromium = true;
             case 'skwasm':
               if (skwasm) {
-                throw AssertionError('Artifact dep $dep listed twice in suite $name.');
+                throw AssertionError(
+                    'Artifact dep $dep listed twice in suite $name.');
               }
               skwasm = true;
             default:
@@ -234,14 +242,14 @@ class FeltConfig {
         }
       }
       final ArtifactDependencies artifactDeps = ArtifactDependencies(
-        canvasKit: canvasKit,
-        canvasKitChromium: canvasKitChromium,
-        skwasm: skwasm
-      );
+          canvasKit: canvasKit,
+          canvasKitChromium: canvasKitChromium,
+          skwasm: skwasm);
       final TestSuite suite = TestSuite(name, bundle, runConfig, artifactDeps);
       testSuites.add(suite);
     }
-    return FeltConfig(compileConfigs, testSets, testBundles, runConfigs, testSuites);
+    return FeltConfig(
+        compileConfigs, testSets, testBundles, runConfigs, testSuites);
   }
 
   List<CompileConfiguration> compileConfigs;

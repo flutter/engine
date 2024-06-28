@@ -30,12 +30,16 @@ void testMain() {
     test('matrix tests all values on ==', () {
       final Matrix4 matrix = Matrix4.identity();
       final Float64List storage = matrix.toFloat64();
-      final ImageFilter filter1a = ImageFilter.matrix(storage, filterQuality: FilterQuality.none);
-      final ImageFilter filter1b = ImageFilter.matrix(storage, filterQuality: FilterQuality.high);
+      final ImageFilter filter1a =
+          ImageFilter.matrix(storage, filterQuality: FilterQuality.none);
+      final ImageFilter filter1b =
+          ImageFilter.matrix(storage, filterQuality: FilterQuality.high);
 
       storage[0] = 2.0;
-      final ImageFilter filter2a = ImageFilter.matrix(storage, filterQuality: FilterQuality.none);
-      final ImageFilter filter2b = ImageFilter.matrix(storage, filterQuality: FilterQuality.high);
+      final ImageFilter filter2a =
+          ImageFilter.matrix(storage, filterQuality: FilterQuality.none);
+      final ImageFilter filter2b =
+          ImageFilter.matrix(storage, filterQuality: FilterQuality.high);
 
       expect(filter1a, filter1a);
       expect(filter1a, isNot(equals(filter1b)));
@@ -59,9 +63,12 @@ void testMain() {
     });
 
     test('blur tests all values on ==', () {
-      final ImageFilter filter1 = ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0, tileMode: TileMode.decal);
-      final ImageFilter filter2 = ImageFilter.blur(sigmaX: 2.0, sigmaY: 3.0, tileMode: TileMode.decal);
-      final ImageFilter filter3 = ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0, tileMode: TileMode.mirror);
+      final ImageFilter filter1 =
+          ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0, tileMode: TileMode.decal);
+      final ImageFilter filter2 =
+          ImageFilter.blur(sigmaX: 2.0, sigmaY: 3.0, tileMode: TileMode.decal);
+      final ImageFilter filter3 =
+          ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0, tileMode: TileMode.mirror);
 
       expect(filter1, filter1);
       expect(filter1, isNot(equals(filter2)));

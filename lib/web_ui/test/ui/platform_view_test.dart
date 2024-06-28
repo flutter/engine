@@ -29,14 +29,12 @@ Future<void> testMain() async {
   const String platformViewType = 'test-platform-view';
 
   setUp(() {
-    ui_web.platformViewRegistry.registerViewFactory(
-      platformViewType,
-      (int viewId) {
-        final DomElement element = createDomHTMLDivElement();
-        element.style.backgroundColor = 'blue';
-        return element;
-      }
-    );
+    ui_web.platformViewRegistry.registerViewFactory(platformViewType,
+        (int viewId) {
+      final DomElement element = createDomHTMLDivElement();
+      element.style.backgroundColor = 'blue';
+      return element;
+    });
   });
 
   tearDown(() {
@@ -49,12 +47,11 @@ Future<void> testMain() async {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      const ui.Offset(50, 50),
-      50,
-      ui.Paint()
-        ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFFFF0000)
-    );
+        const ui.Offset(50, 50),
+        50,
+        ui.Paint()
+          ..style = ui.PaintingStyle.fill
+          ..color = const ui.Color(0xFFFF0000));
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
@@ -77,12 +74,11 @@ Future<void> testMain() async {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      const ui.Offset(50, 50),
-      50,
-      ui.Paint()
-        ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFF00FF00)
-    );
+        const ui.Offset(50, 50),
+        50,
+        ui.Paint()
+          ..style = ui.PaintingStyle.fill
+          ..color = const ui.Color(0xFF00FF00));
 
     final ui.Picture picture = recorder.endRecording();
 
@@ -109,12 +105,11 @@ Future<void> testMain() async {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      const ui.Offset(50, 50),
-      50,
-      ui.Paint()
-        ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFFFF0000)
-    );
+        const ui.Offset(50, 50),
+        50,
+        ui.Paint()
+          ..style = ui.PaintingStyle.fill
+          ..color = const ui.Color(0xFFFF0000));
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
@@ -138,12 +133,11 @@ Future<void> testMain() async {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.drawCircle(
-      const ui.Offset(50, 50),
-      50,
-      ui.Paint()
-        ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFFFF0000)
-    );
+        const ui.Offset(50, 50),
+        50,
+        ui.Paint()
+          ..style = ui.PaintingStyle.fill
+          ..color = const ui.Color(0xFFFF0000));
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);

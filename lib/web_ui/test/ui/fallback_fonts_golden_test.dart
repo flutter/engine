@@ -479,10 +479,12 @@ void testMain() {
       }
     });
 
-    test('fallback fonts do not download when debugDisableFontFallbacks is set', () async {
+    test('fallback fonts do not download when debugDisableFontFallbacks is set',
+        () async {
       debugDisableFontFallbacks = true;
 
-      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks, <String>['Roboto']);
+      expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
+          <String>['Roboto']);
 
       // Creating this paragraph would cause us to start to download the
       // fallback font if we didn't disable font fallbacks.

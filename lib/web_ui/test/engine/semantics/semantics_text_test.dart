@@ -16,7 +16,8 @@ import 'semantics_tester.dart';
 
 DateTime _testTime = DateTime(2023, 2, 17);
 EngineSemantics semantics() => EngineSemantics.instance;
-EngineSemanticsOwner owner() => EnginePlatformDispatcher.instance.implicitView!.semantics;
+EngineSemanticsOwner owner() =>
+    EnginePlatformDispatcher.instance.implicitView!.semantics;
 
 void main() {
   internalBootstrapBrowserTest(() {
@@ -45,8 +46,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem><span>Hello</span></sem>'''
-      );
+        <sem><span>Hello</span></sem>''');
 
       final SemanticsObject node = owner().debugSemanticsTree![0]!;
       expect(node.primaryRole?.role, PrimaryRole.generic);
@@ -69,8 +69,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem><span>World</span></sem>'''
-      );
+        <sem><span>World</span></sem>''');
     }
 
     // Empty the label - expect the <span> to be removed.
@@ -117,8 +116,7 @@ Future<void> testMain() async {
         <sem-c>
           <sem><span>I am a child</span></sem>
         </sem-c>
-      </sem>'''
-    );
+      </sem>''');
 
     semantics().semanticsEnabled = false;
   });
@@ -140,8 +138,7 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem><span>I am a leaf</span></sem>'''
-      );
+        <sem><span>I am a leaf</span></sem>''');
     }
 
     // Add a child - expect <span> to be removed from the parent.
@@ -168,8 +165,7 @@ Future<void> testMain() async {
           <sem-c>
             <sem><span>I am a child</span></sem>
           </sem-c>
-        </sem>'''
-      );
+        </sem>''');
     }
 
     // Remove the child - expect the <span> to be readded to the former parent.
@@ -184,14 +180,14 @@ Future<void> testMain() async {
       tester.apply();
 
       expectSemanticsTree(owner(), '''
-        <sem><span>I am a leaf again</span></sem>'''
-      );
+        <sem><span>I am a leaf again</span></sem>''');
     }
 
     semantics().semanticsEnabled = false;
   });
 
-  test('focusAsRouteDefault focuses on <span> when sized span is used', () async {
+  test('focusAsRouteDefault focuses on <span> when sized span is used',
+      () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -206,8 +202,7 @@ Future<void> testMain() async {
     tester.apply();
 
     expectSemanticsTree(owner(), '''
-      <sem><span>Hello</span></sem>'''
-    );
+      <sem><span>Hello</span></sem>''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     final DomElement span = node.element.querySelector('span')!;
@@ -220,7 +215,8 @@ Future<void> testMain() async {
     semantics().semanticsEnabled = false;
   });
 
-  test('focusAsRouteDefault focuses on <flt-semantics> when DOM text is used', () async {
+  test('focusAsRouteDefault focuses on <flt-semantics> when DOM text is used',
+      () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -242,8 +238,7 @@ Future<void> testMain() async {
     lav.update();
 
     expectSemanticsTree(owner(), '''
-      <sem>Hello</sem>'''
-    );
+      <sem>Hello</sem>''');
 
     expect(node.element.getAttribute('tabindex'), isNull);
     node.primaryRole!.focusAsRouteDefault();
@@ -253,7 +248,8 @@ Future<void> testMain() async {
     semantics().semanticsEnabled = false;
   });
 
-  test('focusAsRouteDefault focuses on <flt-semantics> when aria-label is used', () async {
+  test('focusAsRouteDefault focuses on <flt-semantics> when aria-label is used',
+      () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -275,8 +271,7 @@ Future<void> testMain() async {
     lav.update();
 
     expectSemanticsTree(owner(), '''
-      <sem aria-label="Hello"></sem>'''
-    );
+      <sem aria-label="Hello"></sem>''');
 
     expect(node.element.getAttribute('tabindex'), isNull);
     node.primaryRole!.focusAsRouteDefault();

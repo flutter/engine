@@ -103,8 +103,10 @@ class FlutterViewManager {
     const String viewRootSelector =
         '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
     final DomElement? viewRoot = element?.closest(viewRootSelector);
-    final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
-    final int? viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
+    final String? viewIdAttribute =
+        viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+    final int? viewId =
+        viewIdAttribute == null ? null : int.parse(viewIdAttribute);
     return viewId == null ? null : _viewData[viewId];
   }
 

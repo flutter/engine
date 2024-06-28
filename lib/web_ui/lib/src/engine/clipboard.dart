@@ -23,7 +23,8 @@ class ClipboardMessageHandler {
     const MethodCodec codec = JSONMethodCodec();
     bool errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
-        .setData((methodCall.arguments as Map<String, Object?>)['text'] as String?)
+        .setData(
+            (methodCall.arguments as Map<String, Object?>)['text'] as String?)
         .then((bool success) {
       if (success) {
         callback!(codec.encodeSuccessEnvelope(true));
@@ -70,7 +71,9 @@ class ClipboardMessageHandler {
   void hasStringsMethodCall(ui.PlatformMessageResponseCallback? callback) {
     const MethodCodec codec = JSONMethodCodec();
     _pasteFromClipboardStrategy.getData().then((String data) {
-      final Map<String, dynamic> map = <String, dynamic>{'value': data.isNotEmpty};
+      final Map<String, dynamic> map = <String, dynamic>{
+        'value': data.isNotEmpty
+      };
       callback!(codec.encodeSuccessEnvelope(map));
     }).catchError((dynamic error) {
       if (error is UnimplementedError) {

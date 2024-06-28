@@ -72,13 +72,12 @@ class Matrix4 {
     ..setRotationZ(radians);
 
   /// Translation matrix.
-  factory Matrix4.translation(Vector3 translation) => Matrix4.identity()
-    ..setTranslation(translation);
+  factory Matrix4.translation(Vector3 translation) =>
+      Matrix4.identity()..setTranslation(translation);
 
   /// Translation matrix.
   factory Matrix4.translationValues(double x, double y, double z) =>
-      Matrix4.identity()
-        ..setTranslationRaw(x, y, z);
+      Matrix4.identity()..setTranslationRaw(x, y, z);
 
   /// Scale matrix.
   factory Matrix4.diagonal3Values(double x, double y, double z) =>
@@ -347,30 +346,20 @@ class Matrix4 {
   /// Returns the determinant of this matrix.
   double determinant() {
     final Float32List m = _m4storage;
-    final double det2_01_01 =
-        m[0] * m[5] - m[1] * m[4];
-    final double det2_01_02 =
-        m[0] * m[6] - m[2] * m[4];
-    final double det2_01_03 =
-        m[0] * m[7] - m[3] * m[4];
-    final double det2_01_12 =
-        m[1] * m[6] - m[2] * m[5];
-    final double det2_01_13 =
-        m[1] * m[7] - m[3] * m[5];
-    final double det2_01_23 =
-        m[2] * m[7] - m[3] * m[6];
-    final double det3_201_012 = m[8] * det2_01_12 -
-        m[9] * det2_01_02 +
-        m[10] * det2_01_01;
-    final double det3_201_013 = m[8] * det2_01_13 -
-        m[9] * det2_01_03 +
-        m[11] * det2_01_01;
-    final double det3_201_023 = m[8] * det2_01_23 -
-        m[10] * det2_01_03 +
-        m[11] * det2_01_02;
-    final double det3_201_123 = m[9] * det2_01_23 -
-        m[10] * det2_01_13 +
-        m[11] * det2_01_12;
+    final double det2_01_01 = m[0] * m[5] - m[1] * m[4];
+    final double det2_01_02 = m[0] * m[6] - m[2] * m[4];
+    final double det2_01_03 = m[0] * m[7] - m[3] * m[4];
+    final double det2_01_12 = m[1] * m[6] - m[2] * m[5];
+    final double det2_01_13 = m[1] * m[7] - m[3] * m[5];
+    final double det2_01_23 = m[2] * m[7] - m[3] * m[6];
+    final double det3_201_012 =
+        m[8] * det2_01_12 - m[9] * det2_01_02 + m[10] * det2_01_01;
+    final double det3_201_013 =
+        m[8] * det2_01_13 - m[9] * det2_01_03 + m[11] * det2_01_01;
+    final double det3_201_023 =
+        m[8] * det2_01_23 - m[10] * det2_01_03 + m[11] * det2_01_02;
+    final double det3_201_123 =
+        m[9] * det2_01_23 - m[10] * det2_01_13 + m[11] * det2_01_12;
     return -det3_201_123 * m[12] +
         det3_201_023 * m[13] -
         det3_201_013 * m[14] +
@@ -433,17 +422,17 @@ class Matrix4 {
   bool isIdentityOrTranslation() =>
       _m4storage[15] == 1.0 &&
       _m4storage[0] == 1.0 && // col 1
-          _m4storage[1] == 0.0 &&
-          _m4storage[2] == 0.0 &&
-          _m4storage[3] == 0.0 &&
-          _m4storage[4] == 0.0 && // col 2
-          _m4storage[5] == 1.0 &&
-          _m4storage[6] == 0.0 &&
-          _m4storage[7] == 0.0 &&
-          _m4storage[8] == 0.0 && // col 3
-          _m4storage[9] == 0.0 &&
-          _m4storage[10] == 1.0 &&
-          _m4storage[11] == 0.0;
+      _m4storage[1] == 0.0 &&
+      _m4storage[2] == 0.0 &&
+      _m4storage[3] == 0.0 &&
+      _m4storage[4] == 0.0 && // col 2
+      _m4storage[5] == 1.0 &&
+      _m4storage[6] == 0.0 &&
+      _m4storage[7] == 0.0 &&
+      _m4storage[8] == 0.0 && // col 3
+      _m4storage[9] == 0.0 &&
+      _m4storage[10] == 1.0 &&
+      _m4storage[11] == 0.0;
 
   /// Returns the translation vector from this homogeneous transformation matrix.
   Vector3 getTranslation() {
@@ -979,12 +968,8 @@ class Matrix4 {
   void transform2(Float32List vector) {
     final double x = vector[0];
     final double y = vector[1];
-    vector[0] = (_m4storage[0] * x) +
-        (_m4storage[4] * y) +
-        _m4storage[12];
-    vector[1] = (_m4storage[1] * x) +
-        (_m4storage[5] * y) +
-        _m4storage[13];
+    vector[0] = (_m4storage[0] * x) + (_m4storage[4] * y) + _m4storage[12];
+    vector[1] = (_m4storage[1] * x) + (_m4storage[5] * y) + _m4storage[13];
   }
 
   /// Transforms the input rect and calculates the bounding box of the rect
@@ -1054,9 +1039,9 @@ class Matrix4 {
       }
 
       result = '[${fmt(0)}, ${fmt(4)}, ${fmt(8)}, ${fmt(12)}]\n'
-               '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
-               '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
-               '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
+          '[${fmt(1)}, ${fmt(5)}, ${fmt(9)}, ${fmt(13)}]\n'
+          '[${fmt(2)}, ${fmt(6)}, ${fmt(10)}, ${fmt(14)}]\n'
+          '[${fmt(3)}, ${fmt(7)}, ${fmt(11)}, ${fmt(15)}]';
       return true;
     }());
     return result;
