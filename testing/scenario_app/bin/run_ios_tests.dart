@@ -32,122 +32,164 @@ void main(List<String> args) async {
     return;
   }
 
+  // Collect cleanup tasks to run when the script terminates.
   final cleanup = <FutureOr<void> Function()>{};
+
+  // Parse the command-line arguments.
   final results = _args.parse(args);
-  try {
-    // Terminate early on SIGINT.
-    late final StreamSubscription<void> sigint;
-    sigint = io.ProcessSignal.sigint.watch().listen((_) {
-      for (final cleanupTask in cleanup) {
-        cleanupTask();
-      }
-      throw Exception('Received SIGINT');
-    });
-    cleanup.add(sigint.cancel);
+  final String iosEngineVariant;
+  if (args.length == 1) {
+    iosEngineVariant = args[0];
+  } else if (ffi.Abi.current() == ffi.Abi.macosArm64) {
+    iosEngineVariant = 'ios_debug_sim_unopt_arm64';
+  } else {
+    iosEngineVariant = 'ios_debug_sim_unopt';
+  }
+  final String dumpXcresultOnFailurePath;
+  if (results.option('dump-xcresult-on-failure') case final String path) {
+    dumpXcresultOnFailurePath = path;
+  } else {
+    dumpXcresultOnFailurePath = io.Directory.systemTemp.createTempSync().path;
+  }
 
-    _ensureSimulatorsRotateAutomaticallyForPlatformViewRotationTest();
-
-    final deviceName = results.option('device-name')!;
-    _deleteAnyExistingDevices(deviceName: deviceName);
-    io.stderr.writeln();
-
-    final deviceIdentifier = results.option('device-identifier')!;
-    final osRuntime = results.option('os-runtime')!;
-    _createDevice(
-      deviceName: deviceName,
-      deviceIdentifier: deviceIdentifier,
-      osRuntime: osRuntime,
+  // Run the actual script.
+  final completer = Completer<void>();
+  runZonedGuarded(() async {
+    await _run(
+      cleanup,
+      engine,
+      iosEngineVariant: iosEngineVariant,
+      deviceName: results.option('device-name')!,
+      deviceIdentifier: results.option('device-identifier')!,
+      osRuntime: results.option('os-runtime')!,
+      osVersion: results.option('os-version')!,
+      withImpeller: results.flag('with-impeller'),
+      withSkia: results.flag('with-skia'),
+      dumpXcresultOnFailure: dumpXcresultOnFailurePath,
     );
-    io.stderr.writeln();
-
-    final String iosEngineVariant;
-    if (args.length == 1) {
-      iosEngineVariant = args[0];
-    } else if (ffi.Abi.current() == ffi.Abi.macosArm64) {
-      iosEngineVariant = 'ios_debug_sim_unopt_arm64';
+    completer.complete();
+  }, (e, s) {
+    if (e is _ToolFailure) {
+      io.stderr.writeln(e);
+      io.exitCode = 1;
     } else {
-      iosEngineVariant = 'ios_debug_sim_unopt';
+      io.stderr.writeln('Uncaught exception: $e\n$s');
+      io.exitCode = 255;
     }
-    io.stderr.writeln('Using engine variant: $iosEngineVariant');
-    io.stderr.writeln();
+    completer.complete();
+  });
 
-    final (scenarioPath, resultBundle) = _buildResultBundlePath(
-      engine: engine,
+  // We can't await the result of runZonedGuarded (read the docs on it).
+  await completer.future;
+
+  // Run cleanup tasks.
+  for (final task in cleanup) {
+    await task();
+  }
+}
+
+/// Runs the script.
+///
+/// The [cleanup] set contains cleanup tasks to run when the script is either
+/// completed normally or terminated early. For example, deleting a temporary
+/// directory or killing a process.
+///
+/// Each named argument cooresponds to a flag or option in the `ArgParser`.
+Future<void> _run(
+  Set<FutureOr<void> Function()> cleanup, 
+  Engine engine, {
+  required String iosEngineVariant,
+  required String deviceName,
+  required String deviceIdentifier,
+  required String osRuntime,
+  required String osVersion,
+  required bool withImpeller,
+  required bool withSkia,
+  required String dumpXcresultOnFailure,
+}) async {
+  // Terminate early on SIGINT.
+  late final StreamSubscription<void> sigint;
+  sigint = io.ProcessSignal.sigint.watch().listen((_) {
+    throw _ToolFailure('Received SIGINT');
+  });
+  cleanup.add(sigint.cancel);
+
+  _ensureSimulatorsRotateAutomaticallyForPlatformViewRotationTest();
+  _deleteAnyExistingDevices(deviceName: deviceName);
+  _createDevice(
+    deviceName: deviceName,
+    deviceIdentifier: deviceIdentifier,
+    osRuntime: osRuntime,
+  );
+
+  final (scenarioPath, resultBundle) = _buildResultBundlePath(
+    engine: engine,
+    iosEngineVariant: iosEngineVariant,
+  );
+
+  cleanup.add(() => resultBundle.deleteSync(recursive: true));
+
+  if (withSkia) {
+    io.stderr.writeln('Running simulator tests with Skia');
+    io.stderr.writeln();
+    final process = await _runTests(
+      outScenariosPath: scenarioPath,
+      resultBundlePath: resultBundle.path,
+      osVersion: osVersion,
+      deviceName: deviceName,
       iosEngineVariant: iosEngineVariant,
     );
-    cleanup.add(() => resultBundle.deleteSync(recursive: true));
+    cleanup.add(process.kill);
 
-    final String dumpXcresultOnFailurePath;
-    if (results.option('dump-xcresult-on-failure') case final String path) {
-      dumpXcresultOnFailurePath = path;
+    if (await process.exitCode != 0) {
+      final String outputPath = _zipAndStoreFailedTestResults(
+        iosEngineVariant: iosEngineVariant,
+        resultBundlePath: resultBundle.path,
+        storePath: dumpXcresultOnFailure,
+      );
+      io.stderr.writeln('Failed test results are stored at $outputPath');
+      throw _ToolFailure('test failed.');
     } else {
-      dumpXcresultOnFailurePath = io.Directory.systemTemp.createTempSync().path;
-    }
-
-    final osVersion = results.option('os-version')!;
-    if (results.flag('with-skia')) {
-      io.stderr.writeln('Running simulator tests with Skia');
-      io.stderr.writeln();
-      final process = await _runTests(
-        outScenariosPath: scenarioPath,
-        resultBundlePath: resultBundle.path,
-        osVersion: osVersion,
-        deviceName: deviceName,
-        iosEngineVariant: iosEngineVariant,
-      );
-      cleanup.add(process.kill);
-
-      if (await process.exitCode != 0) {
-        io.stderr.writeln('test failed.');
-        io.exitCode = 1;
-        final String outputPath = _zipAndStoreFailedTestResults(
-          iosEngineVariant: iosEngineVariant,
-          resultBundlePath: resultBundle.path,
-          storePath: dumpXcresultOnFailurePath,
-        );
-        io.stderr.writeln('Failed test results are stored at $outputPath');
-        return;
-      } else {
-        io.stderr.writeln('test succcess.');
-      }
-    }
-
-    if (results.flag('with-impeller')) {
-      final process = await _runTests(
-        outScenariosPath: scenarioPath,
-        resultBundlePath: resultBundle.path,
-        osVersion: osVersion,
-        deviceName: deviceName,
-        iosEngineVariant: iosEngineVariant,
-        xcodeBuildExtraArgs: [
-          ..._skipTestsForImpeller,
-          _infplistFPathForImpeller,
-        ],
-      );
-      cleanup.add(process.kill);
-
-      if (await process.exitCode != 0) {
-        io.stderr.writeln('test failed.');
-        final String outputPath = _zipAndStoreFailedTestResults(
-          iosEngineVariant: iosEngineVariant,
-          resultBundlePath: resultBundle.path,
-          storePath: dumpXcresultOnFailurePath,
-        );
-        io.stderr.writeln('Failed test results are stored at $outputPath');
-        io.exitCode = 1;
-        return;
-      } else {
-        io.stderr.writeln('test succcess.');
-      }
-    }
-  } on Object catch (anyError) {
-    io.stderr.writeln('Unexpected error: $anyError');
-    io.exitCode = 1;
-  } finally {
-    for (final cleanupTask in cleanup) {
-      await cleanupTask();
+      io.stderr.writeln('test succcess.');
     }
   }
+
+  if (withImpeller) {
+    final process = await _runTests(
+      outScenariosPath: scenarioPath,
+      resultBundlePath: resultBundle.path,
+      osVersion: osVersion,
+      deviceName: deviceName,
+      iosEngineVariant: iosEngineVariant,
+      xcodeBuildExtraArgs: [
+        ..._skipTestsForImpeller,
+        _infplistFPathForImpeller,
+      ],
+    );
+    cleanup.add(process.kill);
+
+    if (await process.exitCode != 0) {
+      final String outputPath = _zipAndStoreFailedTestResults(
+        iosEngineVariant: iosEngineVariant,
+        resultBundlePath: resultBundle.path,
+        storePath: dumpXcresultOnFailure,
+      );
+      io.stderr.writeln('Failed test results are stored at $outputPath');
+      throw _ToolFailure('test failed.');
+    } else {
+      io.stderr.writeln('test succcess.');
+    }
+  }
+}
+
+/// Exception thrown when the tool should halt execution intentionally.
+final class _ToolFailure implements Exception {
+  _ToolFailure(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 final _args = ArgParser()
@@ -194,8 +236,8 @@ final _args = ArgParser()
   ..addOption(
     'dump-xcresult-on-failure',
     help: 'The path to dump the xcresult bundle to if the test fails.\n\n'
-          'Defaults to the environment variable FLUTTER_TEST_OUTPUTS_DIR, '
-          'otherwise to a randomly generated temporary directory.',
+        'Defaults to the environment variable FLUTTER_TEST_OUTPUTS_DIR, '
+        'otherwise to a randomly generated temporary directory.',
     defaultsTo: io.Platform.environment['FLUTTER_TEST_OUTPUTS_DIR'],
   );
 
@@ -271,7 +313,8 @@ void _createDevice({
   ));
 
   // Create a temporary directory to store the test results.
-  final result = io.Directory(scenarioPath).createTempSync('ios_scenario_xcresult');
+  final result =
+      io.Directory(scenarioPath).createTempSync('ios_scenario_xcresult');
   return (scenarioPath, result);
 }
 
