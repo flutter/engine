@@ -83,7 +83,11 @@ class SafariPointerEventWorkaround {
     // We only need to attach the listener once.
     if (_listener == null) {
       _listener = createDomEventListener((_) {});
-      domDocument.addEventListener('touchstart', _listener);
+      domDocument.addEventListenerWithOptions(
+        'touchstart', _listener!,
+        <String, Object>{
+          'passive': true,
+        });
     }
   }
 
@@ -470,7 +474,7 @@ class _Listener {
       target: target,
       handler: jsHandler,
     );
-    target.addEventListener(event, jsHandler);
+
     return listener;
   }
 
@@ -501,7 +505,7 @@ abstract class _BaseAdapter {
   bool _lastWheelEventWasTrackpad = false;
   bool _lastWheelEventAllowedDefault = false;
 
-  DomEventTarget get _viewTarget => _view.dom.rootElement;
+  DomElement get _viewTarget => _view.dom.rootElement;
   DomEventTarget get _globalTarget => _view.embeddingStrategy.globalEventTarget;
 
   /// Each subclass is expected to override this method to attach its own event
@@ -518,10 +522,12 @@ abstract class _BaseAdapter {
 
   /// Adds a listener for the given [eventName] to [target].
   ///
-  /// Generally speaking, down and leave events should use [_rootElement]
-  /// as the [target], while move and up events should use [domWindow]
-  /// instead, because the browser doesn't fire the latter two for DOM elements
-  /// when the pointer is outside the window.
+  /// In general, all events should use `_viewTarget` as their `target`.
+  /// In order for the browser to fire 'move' and 'up' events outside of the app,
+  /// we must `setPointerCapture` on the `target` on 'down'/'start' events.
+  ///
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Element/setPointerCapture
+  /// See also: https://jsfiddle.net/ditman/7towxaqp
   void addEventListener(
     DomEventTarget target,
     String eventName,
@@ -966,8 +972,20 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
+    // Prevents the browser auto-canceling pointer events.
+    _addPointerEventListener(_viewTarget, 'touchstart', (DomEvent event) {
+      // This is one of the ways I've seen this done. PixiJS does a similar thing.
+      // ThreeJS seems to subscribe move/leave in the pointerdown handler instead?
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+    }, checkModifiers: false);
+
     _addPointerEventListener(_viewTarget, 'pointerdown', (DomPointerEvent event) {
       final int device = _getPointerId(event);
+      // Ensure pointer events for `event.pointerId` are relative to `_viewTarget`.
+      // See this fiddle: https://jsfiddle.net/ditman/7towxaqp
+      // _viewTarget.setPointerCapture(event.pointerId);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final _SanitizedDetails? up =
@@ -984,8 +1002,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(event, pointerData);
     });
 
-    // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
-    _addPointerEventListener(_globalTarget, 'pointermove', (DomPointerEvent event) {
+    _addPointerEventListener(_viewTarget, 'pointermove', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -1012,8 +1029,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     }, checkModifiers: false);
 
-    // TODO(dit): This must happen in the flutterViewElement, https://github.com/flutter/flutter/issues/116561
-    _addPointerEventListener(_globalTarget, 'pointerup', (DomPointerEvent event) {
+    _addPointerEventListener(_viewTarget, 'pointerup', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
