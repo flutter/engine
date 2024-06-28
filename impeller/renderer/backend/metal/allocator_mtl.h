@@ -6,6 +6,7 @@
 #define FLUTTER_IMPELLER_RENDERER_BACKEND_METAL_ALLOCATOR_MTL_H_
 
 #include <Metal/Metal.h>
+#include <atomic>
 
 #include "impeller/base/thread.h"
 #include "impeller/core/allocator.h"
@@ -25,8 +26,7 @@ class DebugAllocatorStats {
   size_t GetAllocationSizeMB();
 
  private:
-  mutable Mutex mutex_ = {};
-  size_t size_ IPLR_GUARDED_BY(mutex_) = 0;
+  std::atomic<size_t> size_ = 0;
 };
 
 class AllocatorMTL final : public Allocator {

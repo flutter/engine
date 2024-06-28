@@ -91,12 +91,10 @@ static bool SupportsLossyTextureCompression(id<MTLDevice> device) {
 }
 
 void DebugAllocatorStats::Increment(size_t size) {
-  Lock lock(mutex_);
   size_ += size;
 }
 
 void DebugAllocatorStats::Decrement(size_t size) {
-  Lock lock(mutex_);
   if (size > size_) {
     size_ = 0;
   } else {
@@ -105,10 +103,7 @@ void DebugAllocatorStats::Decrement(size_t size) {
 }
 
 size_t DebugAllocatorStats::GetAllocationSizeMB() {
-  size_t current_size = 0;
-  Lock lock(mutex_);
-  current_size = size_ * 1e-6;
-  return current_size;
+  return size_ * 1e-6;
 }
 
 AllocatorMTL::AllocatorMTL(id<MTLDevice> device, std::string label)
@@ -264,13 +259,17 @@ ISize AllocatorMTL::GetMaxTextureSizeSupported() const {
 }
 
 size_t AllocatorMTL::DebugGetHeapUsage() const {
+#ifdef IMPELLER_DEBUG
   return debug_allocater_->GetAllocationSizeMB();
+#else
+  return 0u;
+#endif  // IMPELLER_DEBUG
 }
 
 void AllocatorMTL::DebugTraceMemoryStatistics() const {
 #ifdef IMPELLER_DEBUG
   size_t allocated_size = DebugGetHeapUsage();
-  FML_TRACE_COUNTER("flutter", "AllocatorVK",
+  FML_TRACE_COUNTER("flutter", "AllocatorMTL",
                     reinterpret_cast<int64_t>(this),  // Trace Counter ID
                     "MemoryBudgetUsageMB", allocated_size);
 #endif  // IMPELLER_DEBUG
