@@ -243,7 +243,7 @@ void ExperimentalCanvas::SaveLayer(
     }
     auto clip_coverage = maybe_clip_coverage.value();
     if (clip_coverage.IsEmpty() ||
-        coverage_limit.Intersection(clip_coverage)->IsEmpty()) {
+        !coverage_limit.IntersectsWithRect(clip_coverage)) {
       Save(total_content_depth);
       return;
     }
