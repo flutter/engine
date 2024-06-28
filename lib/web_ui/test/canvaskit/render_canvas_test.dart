@@ -23,49 +23,50 @@ void testMain() {
 
     Future<DomImageBitmap> newBitmap(int width, int height) async {
       return createImageBitmap(
-          createBlankDomImageData(width, height) as JSAny, (
-        x: 0,
-        y: 0,
-        width: width,
-        height: height,
-      ));
+        createBlankDomImageData(width, height) as JSAny,
+        (x: 0, y: 0, width: width, height: height),
+      );
     }
 
     // Regression test for https://github.com/flutter/flutter/issues/75286
-    test('updates canvas logical size when device-pixel ratio changes',
-        () async {
-      final RenderCanvas canvas = RenderCanvas();
-      canvas.render(await newBitmap(10, 16));
+    test(
+      'updates canvas logical size when device-pixel ratio changes',
+      () async {
+        final RenderCanvas canvas = RenderCanvas();
+        canvas.render(await newBitmap(10, 16));
 
-      expect(canvas.canvasElement.width, 10);
-      expect(canvas.canvasElement.height, 16);
-      expect(canvas.canvasElement.style.width, '10px');
-      expect(canvas.canvasElement.style.height, '16px');
+        expect(canvas.canvasElement.width, 10);
+        expect(canvas.canvasElement.height, 16);
+        expect(canvas.canvasElement.style.width, '10px');
+        expect(canvas.canvasElement.style.height, '16px');
 
-      // Increase device-pixel ratio: this makes CSS pixels bigger, so we need
-      // fewer of them to cover the browser window.
-      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
-      canvas.render(await newBitmap(10, 16));
-      expect(canvas.canvasElement.width, 10);
-      expect(canvas.canvasElement.height, 16);
-      expect(canvas.canvasElement.style.width, '5px');
-      expect(canvas.canvasElement.style.height, '8px');
+        // Increase device-pixel ratio: this makes CSS pixels bigger, so we need
+        // fewer of them to cover the browser window.
+        EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
+        canvas.render(await newBitmap(10, 16));
+        expect(canvas.canvasElement.width, 10);
+        expect(canvas.canvasElement.height, 16);
+        expect(canvas.canvasElement.style.width, '5px');
+        expect(canvas.canvasElement.style.height, '8px');
 
-      // Decrease device-pixel ratio: this makes CSS pixels smaller, so we need
-      // more of them to cover the browser window.
-      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(0.5);
-      canvas.render(await newBitmap(10, 16));
-      expect(canvas.canvasElement.width, 10);
-      expect(canvas.canvasElement.height, 16);
-      expect(canvas.canvasElement.style.width, '20px');
-      expect(canvas.canvasElement.style.height, '32px');
-    });
+        // Decrease device-pixel ratio: this makes CSS pixels smaller, so we need
+        // more of them to cover the browser window.
+        EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(0.5);
+        canvas.render(await newBitmap(10, 16));
+        expect(canvas.canvasElement.width, 10);
+        expect(canvas.canvasElement.height, 16);
+        expect(canvas.canvasElement.style.width, '20px');
+        expect(canvas.canvasElement.style.height, '32px');
+      },
+    );
 
     test('rounds physical size to nearest integer size', () async {
       final EngineFlutterWindow implicitView =
           EnginePlatformDispatcher.instance.implicitView!;
-      implicitView.debugPhysicalSizeOverride =
-          const ui.Size(199.999999, 200.000001);
+      implicitView.debugPhysicalSizeOverride = const ui.Size(
+        199.999999,
+        200.000001,
+      );
 
       final ui.SceneBuilder sceneBuilder = LayerSceneBuilder();
       final CkPictureRecorder recorder = CkPictureRecorder();

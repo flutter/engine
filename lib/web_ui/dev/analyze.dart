@@ -39,11 +39,10 @@ class PubGetStep extends ProcessStep {
   @override
   Future<ProcessManager> createProcess() {
     print('Running `dart pub get`...');
-    return startProcess(
-      environment.dartExecutable,
-      <String>['pub', 'get'],
-      workingDirectory: environment.webUiRootDir.path,
-    );
+    return startProcess(environment.dartExecutable, <String>[
+      'pub',
+      'get',
+    ], workingDirectory: environment.webUiRootDir.path);
   }
 }
 
@@ -58,10 +57,9 @@ class AnalyzeStep extends ProcessStep {
   @override
   Future<ProcessManager> createProcess() {
     print('Running `dart analyze`...');
-    return startProcess(
-      environment.dartExecutable,
-      <String>['analyze', '--fatal-infos'],
-      workingDirectory: environment.webUiRootDir.path,
-    );
+    return startProcess(environment.dartExecutable, <String>[
+      'analyze',
+      '--fatal-infos',
+    ], workingDirectory: environment.webUiRootDir.path);
   }
 }

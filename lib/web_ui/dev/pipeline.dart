@@ -169,7 +169,9 @@ class Pipeline {
       _status = PipelineStatus.interrupted;
       return;
     }
-    print('${step.description} cannot be interrupted. Waiting for it to complete.');
+    print(
+      '${step.description} cannot be interrupted. Waiting for it to complete.',
+    );
     await _currentStepFuture;
     _status = PipelineStatus.interrupted;
   }
@@ -184,11 +186,8 @@ typedef WatchEventPredicate = bool Function(WatchEvent event);
 /// The [ignore] callback can be used to customize the watching behavior to
 /// ignore certain files.
 class PipelineWatcher {
-  PipelineWatcher({
-    required this.dir,
-    required this.pipeline,
-    this.ignore,
-  }) : watcher = DirectoryWatcher(dir);
+  PipelineWatcher({required this.dir, required this.pipeline, this.ignore})
+    : watcher = DirectoryWatcher(dir);
 
   /// The path of the directory to watch for changes.
   final String dir;
@@ -265,7 +264,7 @@ class PipelineWatcher {
     try {
       await pipeline.run();
       _pipelineSucceeded(runCount);
-    } catch(error, stackTrace) {
+    } catch (error, stackTrace) {
       // The error is printed but not rethrown. This is because in watch mode
       // failures are expected. The idea is that the developer corrects the
       // error, saves the file, and the pipeline reruns.

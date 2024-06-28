@@ -158,10 +158,16 @@ class JSONMethodCodec implements MethodCodec {
   }
 
   @override
-  ByteData? encodeErrorEnvelope(
-      {required String code, String? message, dynamic details}) {
-    return const JSONMessageCodec()
-        .encodeMessage(<dynamic>[code, message, details]);
+  ByteData? encodeErrorEnvelope({
+    required String code,
+    String? message,
+    dynamic details,
+  }) {
+    return const JSONMessageCodec().encodeMessage(<dynamic>[
+      code,
+      message,
+      details,
+    ]);
   }
 }
 
@@ -310,7 +316,8 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
     } else if (value is double) {
       buffer.putUint8(_valueFloat64);
       buffer.putFloat64(value);
-    } else if (value is int) { // ignore: avoid_double_and_int_checks
+    } else if (value is int) {
+      // ignore: avoid_double_and_int_checks
       if (-0x7fffffff - 1 <= value && value <= 0x7fffffff) {
         buffer.putUint8(_valueInt32);
         buffer.putInt32(value);
@@ -521,8 +528,11 @@ class StandardMethodCodec implements MethodCodec {
   }
 
   @override
-  ByteData encodeErrorEnvelope(
-      {required String code, String? message, dynamic details}) {
+  ByteData encodeErrorEnvelope({
+    required String code,
+    String? message,
+    dynamic details,
+  }) {
     final WriteBuffer buffer = WriteBuffer();
     buffer.putUint8(1);
     messageCodec.writeValue(buffer, code);

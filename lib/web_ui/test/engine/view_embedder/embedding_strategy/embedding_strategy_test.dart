@@ -24,14 +24,16 @@ void doTests() {
       expect(strategy, isA<FullPageEmbeddingStrategy>());
     });
 
-    test('Creates a CustomElement instance when hostElement is not null',
-        () async {
-      final DomElement element = createDomElement('some-random-element');
-      final EmbeddingStrategy strategy = EmbeddingStrategy.create(
-        hostElement: element,
-      );
+    test(
+      'Creates a CustomElement instance when hostElement is not null',
+      () async {
+        final DomElement element = createDomElement('some-random-element');
+        final EmbeddingStrategy strategy = EmbeddingStrategy.create(
+          hostElement: element,
+        );
 
-      expect(strategy, isA<CustomElementEmbeddingStrategy>());
-    });
+        expect(strategy, isA<CustomElementEmbeddingStrategy>());
+      },
+    );
   });
 }

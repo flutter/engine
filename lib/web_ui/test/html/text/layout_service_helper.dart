@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
@@ -40,7 +39,8 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
     expect(
       line.lineNumber,
       i,
-      reason: 'line #$i had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
+      reason:
+          'line #$i had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
     );
     if (expectedLine.displayText != null) {
       final String displayText = line.getText(paragraph);
@@ -111,7 +111,8 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
       expect(
         line.baseline,
         expectedLine.baseline,
-        reason: 'line #$i had a different `baseline` value: "${line.baseline}" vs. "${expectedLine.baseline}"',
+        reason:
+            'line #$i had a different `baseline` value: "${line.baseline}" vs. "${expectedLine.baseline}"',
       );
     }
   }

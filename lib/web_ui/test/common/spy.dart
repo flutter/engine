@@ -45,12 +45,17 @@ class PlatformMessagesSpy {
   /// This is typically called inside a test's `setUp` callback.
   void setUp() {
     assert(!_isActive);
-    _callback = (String channel, ByteData? data,
-        PlatformMessageResponseCallback? callback) {
-      messages.add(PlatformMessage(
-        channel,
-        const JSONMethodCodec().decodeMethodCall(data),
-      ));
+    _callback = (
+      String channel,
+      ByteData? data,
+      PlatformMessageResponseCallback? callback,
+    ) {
+      messages.add(
+        PlatformMessage(
+          channel,
+          const JSONMethodCodec().decodeMethodCall(data),
+        ),
+      );
     };
 
     _backup = PlatformDispatcher.instance.onPlatformMessage;
@@ -76,11 +81,14 @@ class ZoneSpy {
   final List<String> printLog = <String>[];
 
   dynamic run(dynamic Function() function) {
-    final ZoneSpecification printInterceptor = ZoneSpecification(
-      print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
-        printLog.add(line);
-      },
-    );
+    final ZoneSpecification printInterceptor = ZoneSpecification(print: (
+      Zone self,
+      ZoneDelegate parent,
+      Zone zone,
+      String line,
+    ) {
+      printLog.add(line);
+    });
     return Zone.current.fork(specification: printInterceptor).run<dynamic>(() {
       return fakeAsync.run((FakeAsync self) {
         return function();

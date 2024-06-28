@@ -43,7 +43,9 @@ String placeholderMessage = 'Enable accessibility';
 /// See [DesktopSemanticsEnabler], [MobileSemanticsEnabler].
 class SemanticsHelper {
   SemanticsEnabler _semanticsEnabler =
-      ui_web.browser.isDesktop ? DesktopSemanticsEnabler() : MobileSemanticsEnabler();
+      ui_web.browser.isDesktop
+          ? DesktopSemanticsEnabler()
+          : MobileSemanticsEnabler();
 
   @visibleForTesting
   set semanticsEnabler(SemanticsEnabler semanticsEnabler) {
@@ -179,9 +181,13 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.
-    placeholder.addEventListener('click', createDomEventListener((DomEvent event) {
-      tryEnableSemantics(event);
-    }), true);
+    placeholder.addEventListener(
+      'click',
+      createDomEventListener((DomEvent event) {
+        tryEnableSemantics(event);
+      }),
+      true,
+    );
 
     // Adding roles to semantics placeholder. 'aria-live' will make sure that
     // the content is announced to the assistive technology user as soon as the
@@ -257,7 +263,8 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     if (_schedulePlaceholderRemoval) {
       // The event type can also be click for VoiceOver.
-      final bool removeNow = ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit ||
+      final bool removeNow =
+          ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit ||
           event.type == 'touchend' ||
           event.type == 'pointerup' ||
           event.type == 'click';
@@ -341,10 +348,12 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     final DomRect activatingElementRect =
         _semanticsPlaceholder!.getBoundingClientRect();
-    final double midX = activatingElementRect.left +
-            (activatingElementRect.right - activatingElementRect.left) / 2;
-    final double midY = activatingElementRect.top +
-            (activatingElementRect.bottom - activatingElementRect.top) / 2;
+    final double midX =
+        activatingElementRect.left +
+        (activatingElementRect.right - activatingElementRect.left) / 2;
+    final double midY =
+        activatingElementRect.top +
+        (activatingElementRect.bottom - activatingElementRect.top) / 2;
     final double deltaX = activationPoint.x.toDouble() - midX;
     final double deltaY = activationPoint.y.toDouble() - midY;
     final double deltaSquared = deltaX * deltaX + deltaY * deltaY;
@@ -373,9 +382,13 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     // Only listen to "click" because other kinds of events are reported via
     // PointerBinding.
-    placeholder.addEventListener('click', createDomEventListener((DomEvent event) {
-      tryEnableSemantics(event);
-    }), true);
+    placeholder.addEventListener(
+      'click',
+      createDomEventListener((DomEvent event) {
+        tryEnableSemantics(event);
+      }),
+      true,
+    );
 
     placeholder
       ..setAttribute('role', 'button')

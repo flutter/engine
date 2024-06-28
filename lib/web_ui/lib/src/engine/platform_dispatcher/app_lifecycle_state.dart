@@ -66,7 +66,8 @@ class _BrowserAppLifecycleState extends AppLifecycleState {
   _BrowserAppLifecycleState(this._viewManager);
 
   final FlutterViewManager _viewManager;
-  final List<StreamSubscription<void>> _subscriptions = <StreamSubscription<void>>[];
+  final List<StreamSubscription<void>> _subscriptions =
+      <StreamSubscription<void>>[];
 
   @override
   void activate() {
@@ -92,24 +93,26 @@ class _BrowserAppLifecycleState extends AppLifecycleState {
     _subscriptions.clear();
   }
 
-  late final DomEventListener _focusListener =
-      createDomEventListener((DomEvent event) {
+  late final DomEventListener _focusListener = createDomEventListener((
+    DomEvent event,
+  ) {
     onAppLifecycleStateChange(ui.AppLifecycleState.resumed);
   });
 
-  late final DomEventListener _blurListener =
-      createDomEventListener((DomEvent event) {
+  late final DomEventListener _blurListener = createDomEventListener((
+    DomEvent event,
+  ) {
     onAppLifecycleStateChange(ui.AppLifecycleState.inactive);
   });
 
   late final DomEventListener _visibilityChangeListener =
       createDomEventListener((DomEvent event) {
-    if (domDocument.visibilityState == 'visible') {
-      onAppLifecycleStateChange(ui.AppLifecycleState.resumed);
-    } else if (domDocument.visibilityState == 'hidden') {
-      onAppLifecycleStateChange(ui.AppLifecycleState.hidden);
-    }
-  });
+        if (domDocument.visibilityState == 'visible') {
+          onAppLifecycleStateChange(ui.AppLifecycleState.resumed);
+        } else if (domDocument.visibilityState == 'hidden') {
+          onAppLifecycleStateChange(ui.AppLifecycleState.hidden);
+        }
+      });
 
   void _onViewCountChanged(_) {
     if (_viewManager.views.isEmpty) {

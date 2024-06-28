@@ -31,8 +31,7 @@ abstract class BackdropFilterEngineLayer implements EngineLayer {}
 abstract class ShaderMaskEngineLayer implements EngineLayer {}
 
 abstract class SceneBuilder {
-  factory SceneBuilder() =>
-    engine.renderer.createSceneBuilder();
+  factory SceneBuilder() => engine.renderer.createSceneBuilder();
 
   OffsetEngineLayer pushOffset(
     double dx,

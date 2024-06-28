@@ -36,8 +36,12 @@ class PersistedOpacity extends PersistedContainerSurface
   Matrix4? _localTransformInverse;
 
   @override
-  Matrix4 get localTransformInverse => _localTransformInverse ??=
-      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
+  Matrix4 get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.translationValues(
+        -offset.dx,
+        -offset.dy,
+        0,
+      );
 
   @override
   DomElement createElement() {

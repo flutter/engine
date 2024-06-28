@@ -6,14 +6,18 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePicture {
+class SkwasmPicture extends SkwasmObjectWrapper<RawPicture>
+    implements ScenePicture {
   SkwasmPicture.fromHandle(PictureHandle handle) : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawPicture> _registry =
-    SkwasmFinalizationRegistry<RawPicture>(pictureDispose);
+      SkwasmFinalizationRegistry<RawPicture>(pictureDispose);
 
   @override
-  Future<ui.Image> toImage(int width, int height) async => toImageSync(width, height);
+  Future<ui.Image> toImage(int width, int height) async => toImageSync(
+    width,
+    height,
+  );
 
   @override
   int get approximateBytesUsed => pictureApproximateBytesUsed(handle);
@@ -25,8 +29,9 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePict
   }
 
   @override
-  ui.Image toImageSync(int width, int height) =>
-    SkwasmImage(imageCreateFromPicture(handle, width, height));
+  ui.Image toImageSync(int width, int height) => SkwasmImage(
+    imageCreateFromPicture(handle, width, height),
+  );
 
   @override
   ui.Rect get cullRect {
@@ -38,18 +43,19 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePict
   }
 }
 
-class SkwasmPictureRecorder extends SkwasmObjectWrapper<RawPictureRecorder> implements ui.PictureRecorder {
+class SkwasmPictureRecorder extends SkwasmObjectWrapper<RawPictureRecorder>
+    implements ui.PictureRecorder {
   SkwasmPictureRecorder() : super(pictureRecorderCreate(), _registry);
 
   static final SkwasmFinalizationRegistry<RawPictureRecorder> _registry =
-    SkwasmFinalizationRegistry<RawPictureRecorder>(pictureRecorderDispose);
+      SkwasmFinalizationRegistry<RawPictureRecorder>(pictureRecorderDispose);
 
   @override
   SkwasmPicture endRecording() {
     isRecording = false;
 
     final SkwasmPicture picture = SkwasmPicture.fromHandle(
-      pictureRecorderEndRecording(handle)
+      pictureRecorderEndRecording(handle),
     );
     ui.Picture.onCreate?.call(picture);
     return picture;

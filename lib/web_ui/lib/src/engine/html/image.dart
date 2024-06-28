@@ -66,7 +66,8 @@ class HtmlImage implements ui.Image {
     }
 
     throw StateError(
-        'Image.debugDisposed is only available when asserts are enabled.');
+      'Image.debugDisposed is only available when asserts are enabled.',
+    );
   }
 
   @override
@@ -85,16 +86,18 @@ class HtmlImage implements ui.Image {
   final int height;
 
   @override
-  Future<ByteData?> toByteData(
-      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+  Future<ByteData?> toByteData({
+    ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
+  }) {
     switch (format) {
       // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
       // The format rawRgba always returns straight rather than premul currently.
       case ui.ImageByteFormat.rawRgba:
       case ui.ImageByteFormat.rawStraightRgba:
-        final DomCanvasElement canvas = createDomCanvasElement()
-          ..width = width.toDouble()
-          ..height = height.toDouble();
+        final DomCanvasElement canvas =
+            createDomCanvasElement()
+              ..width = width.toDouble()
+              ..height = height.toDouble();
         final DomCanvasRenderingContext2D ctx = canvas.context2D;
         ctx.drawImage(imgElement, 0, 0);
         final DomImageData imageData = ctx.getImageData(0, 0, width, height);
@@ -103,7 +106,8 @@ class HtmlImage implements ui.Image {
         if (imgElement.src?.startsWith('data:') ?? false) {
           final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
           return Future<ByteData?>.value(
-              data.contentAsBytes().buffer.asByteData());
+            data.contentAsBytes().buffer.asByteData(),
+          );
         } else {
           return Future<ByteData?>.value();
         }

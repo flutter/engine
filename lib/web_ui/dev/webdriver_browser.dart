@@ -30,7 +30,6 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
     return port;
   }
 
-
   @override
   Future<void> prepare() async {
     portNumber = await pickUnusedPort();
@@ -41,15 +40,15 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((String error) {
-      print('[Webdriver][Error] $error');
-    });
+          print('[Webdriver][Error] $error');
+        });
 
     _driverProcess.stdout
         .transform(utf8.decoder)
         .transform(const LineSplitter())
         .listen((String log) {
-      print('[Webdriver] $log');
-    });
+          print('[Webdriver] $log');
+        });
   }
 
   @override
@@ -61,8 +60,10 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
   Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
     while (true) {
       try {
-        final WebDriver driver = await createDriver(
-          uri: driverUri, desired: <String, dynamic>{'browserName': packageTestRuntime.identifier});
+        final WebDriver driver =
+            await createDriver(uri: driverUri, desired: <String, dynamic>{
+              'browserName': packageTestRuntime.identifier,
+            });
         return WebDriverBrowser(driver, url);
       } on SocketException {
         // Sometimes we may try to connect before the web driver port is ready.
@@ -120,7 +121,12 @@ class WebDriverBrowser extends Browser {
   @override
   Future<Image> captureScreenshot(Rectangle<num> region) async {
     final Image image = decodePng(await _driver.captureScreenshotAsList())!;
-    return copyCrop(image, region.left.round(), region.top.round(),
-        region.width.round(), region.height.round());
+    return copyCrop(
+      image,
+      region.left.round(),
+      region.top.round(),
+      region.width.round(),
+      region.height.round(),
+    );
   }
 }

@@ -60,8 +60,10 @@ abstract class BrowserImageDecoder implements ui.Codec {
   }
 
   void _debugCheckNotDisposed() {
-    assert(!_isDisposed,
-        'Cannot use this image decoder. It has been disposed of.');
+    assert(
+      !_isDisposed,
+      'Cannot use this image decoder. It has been disposed of.',
+    );
   }
 
   /// The index of the frame that will be decoded on the next call of [getNextFrame];
@@ -93,8 +95,9 @@ abstract class BrowserImageDecoder implements ui.Codec {
     if (_cachedWebDecoder != null) {
       // Give the cached value some time for reuse, e.g. if the image is
       // currently animating.
-      _cacheExpirationClock.datetime =
-          DateTime.now().add(_kWebDecoderExpireDuration);
+      _cacheExpirationClock.datetime = DateTime.now().add(
+        _kWebDecoderExpireDuration,
+      );
       return _cachedWebDecoder!;
     }
 
@@ -103,20 +106,22 @@ abstract class BrowserImageDecoder implements ui.Codec {
     // initialization will take place. We just let it proceed at its own pace.
     _cacheExpirationClock.callback = null;
     try {
-      final ImageDecoder webDecoder = ImageDecoder(ImageDecoderOptions(
-        type: contentType.toJS,
-        data: dataSource,
+      final ImageDecoder webDecoder = ImageDecoder(
+        ImageDecoderOptions(
+          type: contentType.toJS,
+          data: dataSource,
 
-        // Flutter always uses premultiplied alpha when decoding.
-        premultiplyAlpha: 'premultiply'.toJS,
-        // "default" gives the browser the liberty to convert to display-appropriate
-        // color space, typically SRGB, which is what we want.
-        colorSpaceConversion: 'default'.toJS,
+          // Flutter always uses premultiplied alpha when decoding.
+          premultiplyAlpha: 'premultiply'.toJS,
+          // "default" gives the browser the liberty to convert to display-appropriate
+          // color space, typically SRGB, which is what we want.
+          colorSpaceConversion: 'default'.toJS,
 
-        // Flutter doesn't give the developer a way to customize this, so if this
-        // is an animated image we should prefer the animated track.
-        preferAnimation: true.toJS,
-      ));
+          // Flutter doesn't give the developer a way to customize this, so if this
+          // is an animated image we should prefer the animated track.
+          preferAnimation: true.toJS,
+        ),
+      );
 
       await promiseToFuture<void>(webDecoder.tracks.ready);
 
@@ -132,9 +137,10 @@ abstract class BrowserImageDecoder implements ui.Codec {
       // `NaN`.
       final double rawRepetitionCount =
           webDecoder.tracks.selectedTrack!.repetitionCount;
-      repetitionCount = rawRepetitionCount == double.infinity
-          ? -1
-          : rawRepetitionCount.toInt();
+      repetitionCount =
+          rawRepetitionCount == double.infinity
+              ? -1
+              : rawRepetitionCount.toInt();
       _cachedWebDecoder = webDecoder;
 
       // Expire the decoder if it's not used for several seconds. If the image is
@@ -151,8 +157,9 @@ abstract class BrowserImageDecoder implements ui.Codec {
         _cachedWebDecoder = null;
         _cacheExpirationClock.callback = null;
       };
-      _cacheExpirationClock.datetime =
-          DateTime.now().add(_kWebDecoderExpireDuration);
+      _cacheExpirationClock.datetime = DateTime.now().add(
+        _kWebDecoderExpireDuration,
+      );
 
       return webDecoder;
     } catch (error) {
@@ -165,9 +172,10 @@ abstract class BrowserImageDecoder implements ui.Codec {
         }
       }
       throw ImageCodecException(
-          "Failed to decode image using the browser's ImageDecoder API.\n"
-          'Image source: $debugSource\n'
-          'Original browser error: $error');
+        "Failed to decode image using the browser's ImageDecoder API.\n"
+        'Image source: $debugSource\n'
+        'Original browser error: $error',
+      );
     }
   }
 
@@ -175,17 +183,19 @@ abstract class BrowserImageDecoder implements ui.Codec {
   Future<ui.FrameInfo> getNextFrame() async {
     _debugCheckNotDisposed();
     final ImageDecoder webDecoder = await _getOrCreateWebDecoder();
-    final DecodeResult result = await promiseToFuture<DecodeResult>(
-      webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex.toJS)),
-    );
+    final DecodeResult result =
+        await promiseToFuture<DecodeResult>(
+          webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex.toJS)),
+        );
     final VideoFrame frame = result.image;
     _nextFrameIndex = (_nextFrameIndex + 1) % frameCount;
 
     // Duration can be null if the image is not animated. However, Flutter
     // requires a non-null value. 0 indicates that the frame is meant to be
     // displayed indefinitely, which is fine for a static image.
-    final Duration duration =
-        Duration(microseconds: frame.duration?.toInt() ?? 0);
+    final Duration duration = Duration(
+      microseconds: frame.duration?.toInt() ?? 0,
+    );
     final ui.Image image = generateImageFromVideoFrame(frame);
     return AnimatedImageFrameInfo(duration, image);
   }
@@ -280,8 +290,16 @@ class ImageFileFormat {
     //   https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/modules/webcodecs/image_decoder_external.cc;l=38;drc=fd8802b593110ea18a97ef044f8a40dd24a622ec
 
     // PNG
-    ImageFileFormat(
-        <int?>[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A], 'image/png'),
+    ImageFileFormat(<int?>[
+      0x89,
+      0x50,
+      0x4E,
+      0x47,
+      0x0D,
+      0x0A,
+      0x1A,
+      0x0A,
+    ], 'image/png'),
 
     // GIF87a
     ImageFileFormat(<int?>[0x47, 0x49, 0x46, 0x38, 0x37, 0x61], 'image/gif'),
@@ -305,7 +323,7 @@ class ImageFileFormat {
       0x57,
       0x45,
       0x42,
-      0x50
+      0x50,
     ], 'image/webp'),
 
     // BMP
@@ -381,10 +399,12 @@ class ResizingCodec implements ui.Codec {
     final ui.FrameInfo frameInfo = await delegate.getNextFrame();
     return AnimatedImageFrameInfo(
       frameInfo.duration,
-      scaleImageIfNeeded(frameInfo.image,
-          targetWidth: targetWidth,
-          targetHeight: targetHeight,
-          allowUpscaling: allowUpscaling),
+      scaleImageIfNeeded(
+        frameInfo.image,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling,
+      ),
     );
   }
 
@@ -426,8 +446,12 @@ ui.Image scaleImageIfNeeded(
 }) {
   final int width = image.width;
   final int height = image.height;
-  final ui.Size? scaledSize =
-      _scaledSize(width, height, targetWidth, targetHeight);
+  final ui.Size? scaledSize = _scaledSize(
+    width,
+    height,
+    targetWidth,
+    targetHeight,
+  );
   if (scaledSize == null) {
     return image;
   }
@@ -436,8 +460,12 @@ ui.Image scaleImageIfNeeded(
     return image;
   }
 
-  final ui.Rect outputRect =
-      ui.Rect.fromLTWH(0, 0, scaledSize.width, scaledSize.height);
+  final ui.Rect outputRect = ui.Rect.fromLTWH(
+    0,
+    0,
+    scaledSize.width,
+    scaledSize.height,
+  );
   final ui.PictureRecorder recorder = ui.PictureRecorder();
   final ui.Canvas canvas = ui.Canvas(recorder, outputRect);
 
@@ -448,8 +476,10 @@ ui.Image scaleImageIfNeeded(
     ui.Paint(),
   );
   final ui.Picture picture = recorder.endRecording();
-  final ui.Image finalImage =
-      picture.toImageSync(scaledSize.width.round(), scaledSize.height.round());
+  final ui.Image finalImage = picture.toImageSync(
+    scaledSize.width.round(),
+    scaledSize.height.round(),
+  );
   picture.dispose();
   image.dispose();
   return finalImage;

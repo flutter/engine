@@ -98,8 +98,10 @@ class CanvasParagraph implements ui.Paragraph {
     _layoutService.performLayout(constraints);
     if (Profiler.isBenchmarkMode) {
       stopwatch.stop();
-      Profiler.instance
-          .benchmark('text_layout', stopwatch.elapsedMicroseconds.toDouble());
+      Profiler.instance.benchmark(
+        'text_layout',
+        stopwatch.elapsedMicroseconds.toDouble(),
+      );
     }
 
     isLaidOut = true;
@@ -141,9 +143,10 @@ class CanvasParagraph implements ui.Paragraph {
     final DomCSSStyleDeclaration cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
-      // Prevent the browser from doing any line breaks in the paragraph. We want
-      // to have full control of the paragraph layout.
-      ..whiteSpace = 'pre';
+          // Prevent the browser from doing any line breaks in the paragraph. We want
+          // to have full control of the paragraph layout.
+          ..whiteSpace =
+          'pre';
 
     // 2. Append all spans to the paragraph.
 
@@ -186,7 +189,12 @@ class CanvasParagraph implements ui.Paragraph {
     ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
     ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight,
   }) {
-    return _layoutService.getBoxesForRange(start, end, boxHeightStyle, boxWidthStyle);
+    return _layoutService.getBoxesForRange(
+      start,
+      end,
+      boxHeightStyle,
+      boxWidthStyle,
+    );
   }
 
   @override
@@ -195,7 +203,8 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   @override
-  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) => _layoutService.getClosestGlyphInfo(offset);
+  ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) => _layoutService
+      .getClosestGlyphInfo(offset);
 
   @override
   ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
@@ -215,7 +224,10 @@ class CanvasParagraph implements ui.Paragraph {
         // shouldn't happen but currently if they are in different TextSpans they
         // don't combine), use the layout box of the first base character as its
         // layout box has a better chance to be not that far-off.
-        final ui.TextBox textBox = fragment.toTextBox(start: range.start, end: range.end);
+        final ui.TextBox textBox = fragment.toTextBox(
+          start: range.start,
+          end: range.end,
+        );
         return ui.GlyphInfo(textBox.toRect(), range, textBox.direction);
       }
     }
@@ -232,7 +244,10 @@ class CanvasParagraph implements ui.Paragraph {
       case ui.TextAffinity.downstream:
         characterPosition = position.offset;
     }
-    final int start = WordBreaker.prevBreakIndex(plainText, characterPosition + 1);
+    final int start = WordBreaker.prevBreakIndex(
+      plainText,
+      characterPosition + 1,
+    );
     final int end = WordBreaker.nextBreakIndex(plainText, characterPosition);
     return ui.TextRange(start: start, end: end);
   }
@@ -244,8 +259,12 @@ class CanvasParagraph implements ui.Paragraph {
     }
     final int? lineNumber = getLineNumberAt(position.offset);
     // Fallback to the last line for backward compatibility.
-    final ParagraphLine line = lineNumber != null ? lines[lineNumber] : lines.last;
-    return ui.TextRange(start: line.startIndex, end: line.endIndex - line.trailingNewlines);
+    final ParagraphLine line =
+        lineNumber != null ? lines[lineNumber] : lines.last;
+    return ui.TextRange(
+      start: line.startIndex,
+      end: line.endIndex - line.trailingNewlines,
+    );
   }
 
   @override
@@ -256,34 +275,45 @@ class CanvasParagraph implements ui.Paragraph {
   @override
   EngineLineMetrics? getLineMetricsAt(int lineNumber) {
     return 0 <= lineNumber && lineNumber < lines.length
-      ? lines[lineNumber].lineMetrics
-      : null;
+        ? lines[lineNumber].lineMetrics
+        : null;
   }
 
   @override
   int get numberOfLines => lines.length;
 
   @override
-  int? getLineNumberAt(int codeUnitOffset) => _findLine(codeUnitOffset, 0, lines.length);
+  int? getLineNumberAt(int codeUnitOffset) => _findLine(
+    codeUnitOffset,
+    0,
+    lines.length,
+  );
 
   int? _findLine(int codeUnitOffset, int startLine, int endLine) {
     assert(endLine <= lines.length);
-    final bool isOutOfBounds = endLine <= startLine
-                            || codeUnitOffset < lines[startLine].startIndex
-                            || (endLine < numberOfLines && lines[endLine].startIndex <= codeUnitOffset);
+    final bool isOutOfBounds =
+        endLine <= startLine ||
+        codeUnitOffset < lines[startLine].startIndex ||
+        (endLine < numberOfLines &&
+            lines[endLine].startIndex <= codeUnitOffset);
     if (isOutOfBounds) {
       return null;
     }
 
     if (endLine == startLine + 1) {
       assert(lines[startLine].startIndex <= codeUnitOffset);
-      assert(endLine == numberOfLines || codeUnitOffset < lines[endLine].startIndex);
-      return codeUnitOffset >= lines[startLine].visibleEndIndex ? null : startLine;
+      assert(
+        endLine == numberOfLines || codeUnitOffset < lines[endLine].startIndex,
+      );
+      return codeUnitOffset >= lines[startLine].visibleEndIndex
+          ? null
+          : startLine;
     }
     // endLine >= startLine + 2 thus we have
     // startLine + 1 <= midIndex <= endLine - 1
     final int midIndex = (startLine + endLine) ~/ 2;
-    return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
+    return _findLine(codeUnitOffset, midIndex, endLine) ??
+        _findLine(codeUnitOffset, startLine, midIndex);
   }
 
   bool _disposed = false;
@@ -308,20 +338,28 @@ class CanvasParagraph implements ui.Paragraph {
       return result!;
     }
 
-    throw StateError('Paragraph.debugDisposed is only avialalbe when asserts are enabled.');
+    throw StateError(
+      'Paragraph.debugDisposed is only avialalbe when asserts are enabled.',
+    );
   }
 }
 
-void _positionSpanElement(DomElement element, ParagraphLine line, LayoutFragment fragment) {
+void _positionSpanElement(
+  DomElement element,
+  ParagraphLine line,
+  LayoutFragment fragment,
+) {
   final ui.Rect boxRect = fragment.toPaintingTextBox().toRect();
   element.style
     ..position = 'absolute'
     ..top = '${boxRect.top}px'
     ..left = '${boxRect.left}px'
-    // This is needed for space-only spans that are used to justify the paragraph.
-    ..width = '${boxRect.width}px'
-    // Makes sure the baseline of each span is positioned as expected.
-    ..lineHeight = '${boxRect.height}px';
+        // This is needed for space-only spans that are used to justify the paragraph.
+        ..width =
+        '${boxRect.width}px'
+        // Makes sure the baseline of each span is positioned as expected.
+        ..lineHeight =
+        '${boxRect.height}px';
 }
 
 /// Represents a span in the paragraph.
@@ -334,11 +372,7 @@ void _positionSpanElement(DomElement element, ParagraphLine line, LayoutFragment
 class ParagraphSpan {
   /// Creates a [ParagraphSpan] with the given [style], representing the span of
   /// text in the range between [start] and [end].
-  ParagraphSpan({
-    required this.style,
-    required this.start,
-    required this.end,
-  });
+  ParagraphSpan({required this.style, required this.start, required this.end});
 
   /// The resolved style of the span.
   final EngineTextStyle style;
@@ -361,12 +395,12 @@ class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
     required double baselineOffset,
     required ui.TextBaseline baseline,
   }) : super(
-          width,
-          height,
-          alignment,
-          baselineOffset: baselineOffset,
-          baseline: baseline,
-        );
+         width,
+         height,
+         alignment,
+         baselineOffset: baselineOffset,
+         baseline: baseline,
+       );
 
   @override
   final EngineTextStyle style;
@@ -464,19 +498,23 @@ class ChildStyleNode extends StyleNode {
   // property isn't defined, go to the parent node.
 
   @override
-  ui.Color? get _color => style.color ?? (_foreground == null ? parent._color : null);
+  ui.Color? get _color =>
+      style.color ?? (_foreground == null ? parent._color : null);
 
   @override
   ui.TextDecoration? get _decoration => style.decoration ?? parent._decoration;
 
   @override
-  ui.Color? get _decorationColor => style.decorationColor ?? parent._decorationColor;
+  ui.Color? get _decorationColor =>
+      style.decorationColor ?? parent._decorationColor;
 
   @override
-  ui.TextDecorationStyle? get _decorationStyle => style.decorationStyle ?? parent._decorationStyle;
+  ui.TextDecorationStyle? get _decorationStyle =>
+      style.decorationStyle ?? parent._decorationStyle;
 
   @override
-  double? get _decorationThickness => style.decorationThickness ?? parent._decorationThickness;
+  double? get _decorationThickness =>
+      style.decorationThickness ?? parent._decorationThickness;
 
   @override
   ui.FontWeight? get _fontWeight => style.fontWeight ?? parent._fontWeight;
@@ -485,16 +523,20 @@ class ChildStyleNode extends StyleNode {
   ui.FontStyle? get _fontStyle => style.fontStyle ?? parent._fontStyle;
 
   @override
-  ui.TextBaseline? get _textBaseline => style.textBaseline ?? parent._textBaseline;
+  ui.TextBaseline? get _textBaseline =>
+      style.textBaseline ?? parent._textBaseline;
 
   @override
-  List<String>? get _fontFamilyFallback => style.fontFamilyFallback ?? parent._fontFamilyFallback;
+  List<String>? get _fontFamilyFallback =>
+      style.fontFamilyFallback ?? parent._fontFamilyFallback;
 
   @override
-  List<ui.FontFeature>? get _fontFeatures => style.fontFeatures ?? parent._fontFeatures;
+  List<ui.FontFeature>? get _fontFeatures =>
+      style.fontFeatures ?? parent._fontFeatures;
 
   @override
-  List<ui.FontVariation>? get _fontVariations => style.fontVariations ?? parent._fontVariations;
+  List<ui.FontVariation>? get _fontVariations =>
+      style.fontVariations ?? parent._fontVariations;
 
   @override
   double get _fontSize => style.fontSize ?? parent._fontSize;
@@ -507,11 +549,14 @@ class ChildStyleNode extends StyleNode {
 
   @override
   double? get _height {
-    return style.height == ui.kTextHeightNone ? null : (style.height ?? parent._height);
+    return style.height == ui.kTextHeightNone
+        ? null
+        : (style.height ?? parent._height);
   }
 
   @override
-  ui.TextLeadingDistribution? get _leadingDistribution => style.leadingDistribution ?? parent._leadingDistribution;
+  ui.TextLeadingDistribution? get _leadingDistribution =>
+      style.leadingDistribution ?? parent._leadingDistribution;
 
   @override
   ui.Locale? get _locale => style.locale ?? parent._locale;
@@ -529,7 +574,8 @@ class ChildStyleNode extends StyleNode {
   // never null on the TextStyle object, so we use `isFontFamilyProvided` to
   // check if font family is defined or not.
   @override
-  String get _fontFamily => style.isFontFamilyProvided ? style.fontFamily : parent._fontFamily;
+  String get _fontFamily =>
+      style.isFontFamilyProvided ? style.fontFamily : parent._fontFamily;
 }
 
 /// The root style node for the paragraph.
@@ -567,7 +613,8 @@ class RootStyleNode extends StyleNode {
   ui.TextBaseline? get _textBaseline => null;
 
   @override
-  String get _fontFamily => paragraphStyle.fontFamily ?? StyleManager.defaultFontFamily;
+  String get _fontFamily =>
+      paragraphStyle.fontFamily ?? StyleManager.defaultFontFamily;
 
   @override
   List<String>? get _fontFamilyFallback => null;
@@ -579,7 +626,8 @@ class RootStyleNode extends StyleNode {
   List<ui.FontVariation>? get _fontVariations => null;
 
   @override
-  double get _fontSize => paragraphStyle.fontSize ?? StyleManager.defaultFontSize;
+  double get _fontSize =>
+      paragraphStyle.fontSize ?? StyleManager.defaultFontSize;
 
   @override
   double? get _letterSpacing => null;
@@ -612,8 +660,8 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   /// Creates a [CanvasParagraphBuilder] object, which is used to create a
   /// [CanvasParagraph].
   CanvasParagraphBuilder(EngineParagraphStyle style)
-      : _paragraphStyle = style,
-        _rootStyleNode = RootStyleNode(style);
+    : _paragraphStyle = style,
+      _rootStyleNode = RootStyleNode(style);
 
   final StringBuffer _plainTextBuffer = StringBuffer();
   final EngineParagraphStyle _paragraphStyle;
@@ -622,9 +670,10 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
   final List<StyleNode> _styleStack = <StyleNode>[];
 
   final RootStyleNode _rootStyleNode;
-  StyleNode get _currentStyleNode => _styleStack.isEmpty
-      ? _rootStyleNode
-      : _styleStack[_styleStack.length - 1];
+  StyleNode get _currentStyleNode =>
+      _styleStack.isEmpty
+          ? _rootStyleNode
+          : _styleStack[_styleStack.length - 1];
 
   @override
   int get placeholderCount => _placeholderCount;
@@ -644,9 +693,12 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     ui.TextBaseline? baseline,
   }) {
     // Require a baseline to be specified if using a baseline-based alignment.
-    assert(!(alignment == ui.PlaceholderAlignment.aboveBaseline ||
-            alignment == ui.PlaceholderAlignment.belowBaseline ||
-            alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
+    assert(
+      !(alignment == ui.PlaceholderAlignment.aboveBaseline ||
+              alignment == ui.PlaceholderAlignment.belowBaseline ||
+              alignment == ui.PlaceholderAlignment.baseline) ||
+          baseline != null,
+    );
 
     final int start = _plainTextBuffer.length;
     _plainTextBuffer.write(placeholderChar);
@@ -657,16 +709,18 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
     _placeholderCount++;
     _placeholderScales.add(scale);
-    _spans.add(PlaceholderSpan(
-      style,
-      start,
-      end,
-      width * scale,
-      height * scale,
-      alignment,
-      baselineOffset: (baselineOffset ?? height) * scale,
-      baseline: baseline ?? ui.TextBaseline.alphabetic,
-    ));
+    _spans.add(
+      PlaceholderSpan(
+        style,
+        start,
+        end,
+        width * scale,
+        height * scale,
+        alignment,
+        baselineOffset: (baselineOffset ?? height) * scale,
+        baseline: baseline ?? ui.TextBaseline.alphabetic,
+      ),
+    );
   }
 
   @override

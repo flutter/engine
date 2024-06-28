@@ -31,7 +31,8 @@ enum _CheckableKind {
 }
 
 _CheckableKind _checkableKindFromSemanticsFlag(
-    SemanticsObject semanticsObject) {
+  SemanticsObject semanticsObject,
+) {
   if (semanticsObject.hasFlag(ui.SemanticsFlag.isInMutuallyExclusiveGroup)) {
     return _CheckableKind.radio;
   } else if (semanticsObject.hasFlag(ui.SemanticsFlag.hasToggledState)) {
@@ -51,12 +52,12 @@ _CheckableKind _checkableKindFromSemanticsFlag(
 /// [ui.SemanticsFlag.hasToggledState]
 class Checkable extends PrimaryRoleManager {
   Checkable(SemanticsObject semanticsObject)
-      : _kind = _checkableKindFromSemanticsFlag(semanticsObject),
-        super.withBasics(
-          PrimaryRole.checkable,
-          semanticsObject,
-          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
-        ) {
+    : _kind = _checkableKindFromSemanticsFlag(semanticsObject),
+      super.withBasics(
+        PrimaryRole.checkable,
+        semanticsObject,
+        preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+      ) {
     addTappable();
   }
 

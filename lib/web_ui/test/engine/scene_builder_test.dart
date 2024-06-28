@@ -51,11 +51,14 @@ void testMain() {
       final EngineScene scene = sceneBuilder.build() as EngineScene;
       final List<LayerSlice> slices = scene.rootLayer.slices;
       expect(slices.length, 1);
-      expect(slices[0], pictureSliceWithRect(const ui.Rect.fromLTRB(100, 100, 400, 400)));
+      expect(
+        slices[0],
+        pictureSliceWithRect(const ui.Rect.fromLTRB(100, 100, 400, 400)),
+      );
     });
 
     test('picture + platform view (overlapping)', () {
-            final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
 
       const ui.Rect pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
       const ui.Rect platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
@@ -64,18 +67,25 @@ void testMain() {
         1,
         offset: platformViewRect.topLeft,
         width: platformViewRect.width,
-        height: platformViewRect.height
+        height: platformViewRect.height,
       );
 
       final EngineScene scene = sceneBuilder.build() as EngineScene;
       final List<LayerSlice> slices = scene.rootLayer.slices;
       expect(slices.length, 2);
       expect(slices[0], pictureSliceWithRect(pictureRect));
-      expect(slices[1], platformViewSliceWithViews(<PlatformView>[
-        PlatformView(1, platformViewRect.size, PlatformViewStyling(
-          position: PlatformViewPosition.offset(platformViewRect.topLeft)
-        ))
-      ]));
+      expect(
+        slices[1],
+        platformViewSliceWithViews(<PlatformView>[
+          PlatformView(
+            1,
+            platformViewRect.size,
+            PlatformViewStyling(
+              position: PlatformViewPosition.offset(platformViewRect.topLeft),
+            ),
+          ),
+        ]),
+      );
     });
 
     test('platform view + picture (overlapping)', () {
@@ -87,18 +97,25 @@ void testMain() {
         1,
         offset: platformViewRect.topLeft,
         width: platformViewRect.width,
-        height: platformViewRect.height
+        height: platformViewRect.height,
       );
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect));
 
       final EngineScene scene = sceneBuilder.build() as EngineScene;
       final List<LayerSlice> slices = scene.rootLayer.slices;
       expect(slices.length, 2);
-      expect(slices[0], platformViewSliceWithViews(<PlatformView>[
-        PlatformView(1, platformViewRect.size, PlatformViewStyling(
-          position: PlatformViewPosition.offset(platformViewRect.topLeft)
-        ))
-      ]));
+      expect(
+        slices[0],
+        platformViewSliceWithViews(<PlatformView>[
+          PlatformView(
+            1,
+            platformViewRect.size,
+            PlatformViewStyling(
+              position: PlatformViewPosition.offset(platformViewRect.topLeft),
+            ),
+          ),
+        ]),
+      );
       expect(slices[1], pictureSliceWithRect(pictureRect));
     });
 
@@ -113,7 +130,7 @@ void testMain() {
         1,
         offset: platformViewRect.topLeft,
         width: platformViewRect.width,
-        height: platformViewRect.height
+        height: platformViewRect.height,
       );
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect2));
 
@@ -121,11 +138,18 @@ void testMain() {
       final List<LayerSlice> slices = scene.rootLayer.slices;
       expect(slices.length, 3);
       expect(slices[0], pictureSliceWithRect(pictureRect1));
-      expect(slices[1], platformViewSliceWithViews(<PlatformView>[
-        PlatformView(1, platformViewRect.size, PlatformViewStyling(
-          position: PlatformViewPosition.offset(platformViewRect.topLeft)
-        ))
-      ]));
+      expect(
+        slices[1],
+        platformViewSliceWithViews(<PlatformView>[
+          PlatformView(
+            1,
+            platformViewRect.size,
+            PlatformViewStyling(
+              position: PlatformViewPosition.offset(platformViewRect.topLeft),
+            ),
+          ),
+        ]),
+      );
       expect(slices[2], pictureSliceWithRect(pictureRect2));
     });
 
@@ -140,7 +164,7 @@ void testMain() {
         1,
         offset: platformViewRect.topLeft,
         width: platformViewRect.width,
-        height: platformViewRect.height
+        height: platformViewRect.height,
       );
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect2));
 
@@ -151,19 +175,31 @@ void testMain() {
       // be grouped into the slice below it to reduce the number of canvases we
       // need.
       expect(slices.length, 2);
-      expect(slices[0], pictureSliceWithRect(const ui.Rect.fromLTRB(50, 50, 200, 200)));
-      expect(slices[1], platformViewSliceWithViews(<PlatformView>[
-        PlatformView(1, platformViewRect.size, PlatformViewStyling(
-          position: PlatformViewPosition.offset(platformViewRect.topLeft)
-        ))
-      ]));
+      expect(
+        slices[0],
+        pictureSliceWithRect(const ui.Rect.fromLTRB(50, 50, 200, 200)),
+      );
+      expect(
+        slices[1],
+        platformViewSliceWithViews(<PlatformView>[
+          PlatformView(
+            1,
+            platformViewRect.size,
+            PlatformViewStyling(
+              position: PlatformViewPosition.offset(platformViewRect.topLeft),
+            ),
+          ),
+        ]),
+      );
     });
   });
 }
 
-PictureSliceMatcher pictureSliceWithRect(ui.Rect rect) => PictureSliceMatcher(rect);
-PlatformViewSliceMatcher platformViewSliceWithViews(List<PlatformView> views)
-  => PlatformViewSliceMatcher(views);
+PictureSliceMatcher pictureSliceWithRect(ui.Rect rect) => PictureSliceMatcher(
+  rect,
+);
+PlatformViewSliceMatcher platformViewSliceWithViews(List<PlatformView> views) =>
+    PlatformViewSliceMatcher(views);
 
 class PictureSliceMatcher extends Matcher {
   PictureSliceMatcher(this.expectedRect);
@@ -200,7 +236,9 @@ class PlatformViewSliceMatcher extends Matcher {
 
   @override
   Description describe(Description description) {
-    return description.add('<platform view slice with platform views: $expectedPlatformViews>');
+    return description.add(
+      '<platform view slice with platform views: $expectedPlatformViews>',
+    );
   }
 
   @override

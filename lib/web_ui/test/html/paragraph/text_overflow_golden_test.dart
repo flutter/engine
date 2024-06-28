@@ -20,9 +20,8 @@ void main() {
 }
 
 Future<void> testMain() async {
-  final EngineGoldenTester goldenTester = await EngineGoldenTester.initialize(
-    viewportSize: const Size(800, 800),
-  );
+  final EngineGoldenTester goldenTester =
+      await EngineGoldenTester.initialize(viewportSize: const Size(800, 800));
 
   setUpUnitTests(
     withImplicitView: true,
@@ -50,8 +49,11 @@ Future<void> testMain() async {
     offset = offset.translate(0, p.height + 10);
 
     // Only the first two lines are rendered.
-    p = paragraph(veryLong,
-        paragraphStyle: ParagraphStyle(maxLines: 2), maxWidth: 200);
+    p = paragraph(
+      veryLong,
+      paragraphStyle: ParagraphStyle(maxLines: 2),
+      maxWidth: 200,
+    );
     canvas.drawParagraph(p, offset);
     offset = offset.translate(0, p.height + 10);
 

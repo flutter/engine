@@ -24,8 +24,10 @@ void doTests() {
     test('returns visualViewport physical size (width * dpr)', () {
       const double dpr = 2.5;
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(dpr);
-      final ui.Size expected = ui.Size(domWindow.visualViewport!.width! * dpr,
-          domWindow.visualViewport!.height! * dpr);
+      final ui.Size expected = ui.Size(
+        domWindow.visualViewport!.width! * dpr,
+        domWindow.visualViewport!.height! * dpr,
+      );
 
       final ui.Size computed = provider.computePhysicalSize();
 
@@ -49,8 +51,10 @@ void doTests() {
           (domWindow.visualViewport!.height! + keyboardGap) * dpr;
       const double expectedBottom = keyboardGap * dpr;
 
-      final ViewPadding computed =
-          provider.computeKeyboardInsets(physicalHeight, false);
+      final ViewPadding computed = provider.computeKeyboardInsets(
+        physicalHeight,
+        false,
+      );
 
       expect(computed.top, 0);
       expect(computed.right, 0);

@@ -102,7 +102,8 @@ void testMain() {
       path.addRect(const ui.Rect.fromLTRB(40, 40, 50, 50));
 
       final ui.PathMetrics metrics = path.computeMetrics();
-      final CkContourMeasureIter iterator = metrics.iterator as CkContourMeasureIter;
+      final CkContourMeasureIter iterator =
+          metrics.iterator as CkContourMeasureIter;
 
       expect(iterator.moveNext(), isTrue);
       expect(iterator.current.contourIndex, 0);
@@ -118,17 +119,24 @@ void testMain() {
       path.addRect(const ui.Rect.fromLTRB(40, 40, 50, 50));
 
       final ui.PathMetrics metrics = path.computeMetrics();
-      final CkContourMeasureIter iterator = metrics.iterator as CkContourMeasureIter;
+      final CkContourMeasureIter iterator =
+          metrics.iterator as CkContourMeasureIter;
 
       expect(iterator.moveNext(), isTrue);
       final CkContourMeasure measure0 = iterator.current as CkContourMeasure;
       expect(measure0.contourIndex, 0);
-      expect(measure0.extractPath(0, 15).getBounds(), const ui.Rect.fromLTRB(0, 0, 10, 5));
+      expect(
+        measure0.extractPath(0, 15).getBounds(),
+        const ui.Rect.fromLTRB(0, 0, 10, 5),
+      );
 
       expect(iterator.moveNext(), isTrue);
       final CkContourMeasure measure1 = iterator.current as CkContourMeasure;
       expect(measure1.contourIndex, 1);
-      expect(measure1.extractPath(0, 15).getBounds(), const ui.Rect.fromLTRB(20, 20, 30, 25));
+      expect(
+        measure1.extractPath(0, 15).getBounds(),
+        const ui.Rect.fromLTRB(20, 20, 30, 25),
+      );
     });
 
     test('Path.from', () {

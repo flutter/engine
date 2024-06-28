@@ -12,8 +12,8 @@ import 'path_utils.dart';
 // Iterates through path including generating closing segments.
 class PathIterator {
   PathIterator(this.pathRef, bool forceClose)
-      : _forceClose = forceClose,
-        _verbCount = pathRef.countVerbs() {
+    : _forceClose = forceClose,
+      _verbCount = pathRef.countVerbs() {
     _pointIndex = 0;
     if (!pathRef.isFinite) {
       // Don't allow iteration through non-finite points, prepare to return
@@ -100,7 +100,9 @@ class PathIterator {
       return ui.Offset(_moveToX, _moveToY);
     }
     return ui.Offset(
-        pathRef.points[_pointIndex - 2], pathRef.points[_pointIndex - 1]);
+      pathRef.points[_pointIndex - 2],
+      pathRef.points[_pointIndex - 1],
+    );
   }
 
   int peek() {

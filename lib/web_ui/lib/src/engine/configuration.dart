@@ -108,25 +108,30 @@ class FlutterConfiguration {
     assert(() {
       if (config != null) {
         domWindow.console.warn(
-            'window.flutterConfiguration is now deprecated.\n'
-            'Use engineInitializer.initializeEngine(config) instead.\n'
-            'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+          'window.flutterConfiguration is now deprecated.\n'
+          'Use engineInitializer.initializeEngine(config) instead.\n'
+          'See: https://docs.flutter.dev/development/platform-integration/web/initialization',
+        );
       }
       if (_requestedRendererType != null) {
-        domWindow.console.warn('window.flutterWebRenderer is now deprecated.\n'
-            'Use engineInitializer.initializeEngine(config) instead.\n'
-            'See: https://docs.flutter.dev/development/platform-integration/web/initialization');
+        domWindow.console.warn(
+          'window.flutterWebRenderer is now deprecated.\n'
+          'Use engineInitializer.initializeEngine(config) instead.\n'
+          'See: https://docs.flutter.dev/development/platform-integration/web/initialization',
+        );
       }
       return true;
     }());
   }
 
   FlutterConfiguration withOverrides(JsFlutterConfiguration? overrides) {
-    final JsFlutterConfiguration newJsConfig = objectConstructor.assign(
-      <String, Object>{}.jsify(),
-      _configuration.jsify(),
-      overrides.jsify(),
-    ) as JsFlutterConfiguration;
+    final JsFlutterConfiguration newJsConfig =
+        objectConstructor.assign(
+              <String, Object>{}.jsify(),
+              _configuration.jsify(),
+              overrides.jsify(),
+            )
+            as JsFlutterConfiguration;
     final FlutterConfiguration newConfig = FlutterConfiguration();
     newConfig._configuration = newJsConfig;
     return newConfig;
@@ -146,15 +151,17 @@ class FlutterConfiguration {
   void setUserConfiguration(JsFlutterConfiguration? configuration) {
     if (configuration != null) {
       assert(
-          !_usedLegacyConfigStyle,
-          'Use engineInitializer.initializeEngine(config) only. '
-          'Using the (deprecated) window.flutterConfiguration and initializeEngine '
-          'configuration simultaneously is not supported.');
+        !_usedLegacyConfigStyle,
+        'Use engineInitializer.initializeEngine(config) only. '
+        'Using the (deprecated) window.flutterConfiguration and initializeEngine '
+        'configuration simultaneously is not supported.',
+      );
       assert(
-          _requestedRendererType == null || configuration.renderer == null,
-          'Use engineInitializer.initializeEngine(config) only. '
-          'Using the (deprecated) window.flutterWebRenderer and initializeEngine '
-          'configuration simultaneously is not supported.');
+        _requestedRendererType == null || configuration.renderer == null,
+        'Use engineInitializer.initializeEngine(config) only. '
+        'Using the (deprecated) window.flutterWebRenderer and initializeEngine '
+        'configuration simultaneously is not supported.',
+      );
       _configuration = configuration;
     }
   }
@@ -169,11 +176,14 @@ class FlutterConfiguration {
   ///
   /// Using flutter tools option "--web-render=auto" or not specifying one
   /// would set the value to true. Otherwise, it would be false.
-  static const bool flutterWebAutoDetect =
-      bool.fromEnvironment('FLUTTER_WEB_AUTO_DETECT', defaultValue: true);
+  static const bool flutterWebAutoDetect = bool.fromEnvironment(
+    'FLUTTER_WEB_AUTO_DETECT',
+    defaultValue: true,
+  );
 
-  static const bool flutterWebUseSkwasm =
-      bool.fromEnvironment('FLUTTER_WEB_USE_SKWASM');
+  static const bool flutterWebUseSkwasm = bool.fromEnvironment(
+    'FLUTTER_WEB_USE_SKWASM',
+  );
 
   /// Enable the Skia-based rendering backend.
   ///

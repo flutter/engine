@@ -45,12 +45,11 @@ Future<void> testMain() async {
     expect(paragraph1.spans.single.start, 0);
     expect(paragraph1.spans.single.end, 0);
 
-    final CanvasParagraph paragraph2 = rich(
-      EngineParagraphStyle(),
-      (CanvasParagraphBuilder builder) {
-        builder.addText('');
-      },
-    );
+    final CanvasParagraph paragraph2 = rich(EngineParagraphStyle(), (
+      CanvasParagraphBuilder builder,
+    ) {
+      builder.addText('');
+    });
     expect(paragraph2.plainText, '');
     expect(paragraph2.spans, hasLength(1));
     expect(paragraph2.spans.single.start, 0);
@@ -72,7 +71,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 5, fontSize: 13)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
@@ -84,10 +83,10 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*3, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 3, fontSize: 13)}">'
       'Hel'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*2, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13 * 2, fontSize: 13)}">'
       'lo'
       '</flt-span>'
       '</flt-paragraph>',
@@ -114,7 +113,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14 * 5)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
@@ -139,7 +138,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14 * 5)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
@@ -161,10 +160,10 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*4)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14 * 4)}">'
       'Hell'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 0, left: 14*4, width: 14*3)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 14 * 4, width: 14 * 3)}">'
       '...'
       '</flt-span>'
       '</flt-paragraph>',
@@ -173,16 +172,19 @@ Future<void> testMain() async {
   });
 
   test('Builds a single-span paragraph with complex styles', () {
-    final EngineParagraphStyle style =
-        EngineParagraphStyle(fontSize: 13.0, height: 1.5);
+    final EngineParagraphStyle style = EngineParagraphStyle(
+      fontSize: 13.0,
+      height: 1.5,
+    );
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
 
     builder.pushStyle(TextStyle(fontSize: 9.0));
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
     builder.pushStyle(TextStyle(fontSize: 40.0));
     builder.pop();
-    builder
-        .pushStyle(TextStyle(fontStyle: FontStyle.italic, letterSpacing: 2.0));
+    builder.pushStyle(
+      TextStyle(fontStyle: FontStyle.italic, letterSpacing: 2.0),
+    );
     builder.addText('Hello');
 
     final CanvasParagraph paragraph = builder.build();
@@ -193,7 +195,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: (9+2)*5, lineHeight: 1.5*9, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: (9 + 2) * 5, lineHeight: 1.5 * 9, fontSize: 9, fontWeight: 'bold', fontStyle: 'italic', letterSpacing: 2)}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
@@ -232,13 +234,13 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13, fontWeight: 'bold')}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 5, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 0, left: 65, width: 13*1, fontSize: 13, fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 0, left: 65, width: 13 * 1, fontSize: 13, fontStyle: 'italic')}">'
       ' '
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 0, left: 78, width: 13*5, fontSize: 13, fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 0, left: 78, width: 13 * 5, fontSize: 13, fontStyle: 'italic')}">'
       'world'
       '</flt-span>'
       '</flt-paragraph>',
@@ -250,13 +252,13 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13, fontWeight: 'bold')}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 5, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</flt-span>'
       '<flt-span style="${spanStyle(top: 0, left: 65, width: 0, fontSize: 13, fontStyle: 'italic')}">'
       ' '
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*5, fontSize: 13, fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13 * 5, fontSize: 13, fontStyle: 'italic')}">'
       'world'
       '</flt-span>'
       '</flt-paragraph>',
@@ -267,20 +269,14 @@ Future<void> testMain() async {
     expect(getSpanText(paragraph, hello), 'Hello');
     expect(
       hello.style,
-      styleWithDefaults(
-        fontSize: 13.0,
-        fontWeight: FontWeight.bold,
-      ),
+      styleWithDefaults(fontSize: 13.0, fontWeight: FontWeight.bold),
     );
 
     final ParagraphSpan world = paragraph.spans.last;
     expect(getSpanText(paragraph, world), ' world');
     expect(
       world.style,
-      styleWithDefaults(
-        fontSize: 13.0,
-        fontStyle: FontStyle.italic,
-      ),
+      styleWithDefaults(fontSize: 13.0, fontStyle: FontStyle.italic),
     );
   });
 
@@ -305,16 +301,16 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, lineHeight: 2*13, fontSize: 13, fontWeight: 'bold')}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 5, lineHeight: 2 * 13, fontSize: 13, fontWeight: 'bold')}">'
       'Hello'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 6, left: 65, width: 13*1, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 6, left: 65, width: 13 * 1, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
       ' '
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 6, left: 78, width: 13*5, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 6, left: 78, width: 13 * 5, fontSize: 13, fontWeight: 'bold', fontStyle: 'italic')}">'
       'world'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 6, left: 143, width: 13*1, fontSize: 13, fontWeight: 'normal', fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 6, left: 143, width: 13 * 1, fontSize: 13, fontWeight: 'normal', fontStyle: 'italic')}">'
       '!'
       '</flt-span>'
       '</flt-paragraph>',
@@ -373,16 +369,16 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 5, fontSize: 13)}">'
       'First'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*6, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13 * 6, fontSize: 13)}">'
       'Second'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 13*6, width: 13*1, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 13, left: 13 * 6, width: 13 * 1, fontSize: 13)}">'
       ' '
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 13*7, width: 13*13, fontSize: 13, fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 13, left: 13 * 7, width: 13 * 13, fontSize: 13, fontStyle: 'italic')}">'
       'ThirdLongLine'
       '</flt-span>'
       '</flt-paragraph>',
@@ -394,16 +390,16 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13*5, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 13 * 5, fontSize: 13)}">'
       'First'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13*6, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 13, left: 0, width: 13 * 6, fontSize: 13)}">'
       'Second'
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 13, left: 13*6, width: 0, fontSize: 13)}">'
+      '<flt-span style="${spanStyle(top: 13, left: 13 * 6, width: 0, fontSize: 13)}">'
       ' '
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: 26, left: 0, width: 13*13, fontSize: 13, fontStyle: 'italic')}">'
+      '<flt-span style="${spanStyle(top: 26, left: 0, width: 13 * 13, fontSize: 13, fontStyle: 'italic')}">'
       'ThirdLongLine'
       '</flt-span>'
       '</flt-paragraph>',
@@ -416,7 +412,10 @@ Future<void> testMain() async {
     // trick them into thinking they are not in test mode, so they use the
     // provided font family.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
-    final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 12.0, fontFamily: 'first');
+    final EngineParagraphStyle style = EngineParagraphStyle(
+      fontSize: 12.0,
+      fontFamily: 'first',
+    );
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
 
     builder.addText('First ');
@@ -497,10 +496,7 @@ const String defaultFontFamily = 'FlutterTest';
 const num defaultFontSize = 14;
 
 String paragraphStyle() {
-  return <String>[
-    'position: absolute;',
-    'white-space: pre;',
-  ].join(' ');
+  return <String>['position: absolute;', 'white-space: pre;'].join(' ');
 }
 
 String spanStyle({
@@ -546,7 +542,11 @@ TextStyle styleWithDefaults({
   );
 }
 
-void expectOuterHtml(CanvasParagraph paragraph, String expected, {required bool ignorePositions}) {
+void expectOuterHtml(
+  CanvasParagraph paragraph,
+  String expected, {
+  required bool ignorePositions,
+}) {
   String outerHtml = paragraph.toDomElement().outerHTML!;
   if (ignorePositions) {
     outerHtml = removeMeasurementInfo(outerHtml);

@@ -78,25 +78,27 @@ void doTests() {
       expect(_jsHotRestartStore!.toDart, <DomElement>[element]);
     });
 
-    test('Clears registered elements from the DOM and the cache upon restart',
-        () async {
-      final DomElement element = createDomElement('for-test');
-      final DomElement element2 = createDomElement('for-test-two');
-      domDocument.body!.append(element);
-      domDocument.body!.append(element2);
+    test(
+      'Clears registered elements from the DOM and the cache upon restart',
+      () async {
+        final DomElement element = createDomElement('for-test');
+        final DomElement element2 = createDomElement('for-test-two');
+        domDocument.body!.append(element);
+        domDocument.body!.append(element2);
 
-      cache.registerElement(element);
+        cache.registerElement(element);
 
-      expect(element.isConnected, isTrue);
-      expect(element2.isConnected, isTrue);
+        expect(element.isConnected, isTrue);
+        expect(element2.isConnected, isTrue);
 
-      // Simulate a hot restart...
-      cache = HotRestartCacheHandler();
+        // Simulate a hot restart...
+        cache = HotRestartCacheHandler();
 
-      // For dart2wasm, we have to check the length this way.
-      expect(_jsHotRestartStore!.length, 0.toJS);
-      expect(element.isConnected, isFalse); // Removed
-      expect(element2.isConnected, isTrue);
-    });
+        // For dart2wasm, we have to check the length this way.
+        expect(_jsHotRestartStore!.length, 0.toJS);
+        expect(element.isConnected, isFalse); // Removed
+        expect(element2.isConnected, isTrue);
+      },
+    );
   });
 }

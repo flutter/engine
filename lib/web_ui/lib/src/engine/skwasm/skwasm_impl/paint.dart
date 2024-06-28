@@ -21,7 +21,7 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
   static final int _kBlendModeDefault = ui.BlendMode.srcOver.index;
 
   static final SkwasmFinalizationRegistry<RawPaint> _registry =
-    SkwasmFinalizationRegistry<RawPaint>(paintDispose);
+      SkwasmFinalizationRegistry<RawPaint>(paintDispose);
 
   ui.BlendMode _cachedBlendMode = ui.BlendMode.srcOver;
 
@@ -34,14 +34,15 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
 
   bool _invertColors = false;
 
-  static final SkwasmColorFilter _invertColorFilter = SkwasmColorFilter.fromEngineColorFilter(
-    const EngineColorFilter.matrix(<double>[
-      -1.0, 0, 0, 1.0, 0, // row
-      0, -1.0, 0, 1.0, 0, // row
-      0, 0, -1.0, 1.0, 0, // row
-      1.0, 1.0, 1.0, 1.0, 0
-    ])
-  );
+  static final SkwasmColorFilter _invertColorFilter =
+      SkwasmColorFilter.fromEngineColorFilter(
+        const EngineColorFilter.matrix(<double>[
+          -1.0, 0, 0, 1.0, 0, // row
+          0, -1.0, 0, 1.0, 0, // row
+          0, 0, -1.0, 1.0, 0, // row
+          1.0, 1.0, 1.0, 1.0, 0,
+        ]),
+      );
 
   @override
   ui.BlendMode get blendMode {
@@ -75,7 +76,8 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
   set strokeCap(ui.StrokeCap cap) => paintSetStrokeCap(handle, cap.index);
 
   @override
-  ui.StrokeJoin get strokeJoin => ui.StrokeJoin.values[paintGetStrokeJoin(handle)];
+  ui.StrokeJoin get strokeJoin =>
+      ui.StrokeJoin.values[paintGetStrokeJoin(handle)];
 
   @override
   set strokeJoin(ui.StrokeJoin join) => paintSetStrokeJoin(handle, join.index);
@@ -106,7 +108,7 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
     final SkwasmShader? skwasmShader = uiShader as SkwasmShader?;
     _shader = skwasmShader;
     final ShaderHandle shaderHandle =
-      skwasmShader != null ? skwasmShader.handle : nullptr;
+        skwasmShader != null ? skwasmShader.handle : nullptr;
     paintSetShader(handle, shaderHandle);
   }
 
@@ -120,21 +122,28 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
   set imageFilter(ui.ImageFilter? filter) {
     _imageFilter = filter;
 
-    final SkwasmImageFilter? nativeImageFilter = filter != null
-      ? SkwasmImageFilter.fromUiFilter(filter)
-      : null;
-    paintSetImageFilter(handle, nativeImageFilter != null ? nativeImageFilter.handle : nullptr);
+    final SkwasmImageFilter? nativeImageFilter =
+        filter != null ? SkwasmImageFilter.fromUiFilter(filter) : null;
+    paintSetImageFilter(
+      handle,
+      nativeImageFilter != null ? nativeImageFilter.handle : nullptr,
+    );
   }
 
   @override
   ui.ColorFilter? get colorFilter => _colorFilter;
 
   void _setEffectiveColorFilter() {
-    final SkwasmColorFilter? nativeFilter = _colorFilter != null
-      ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!) : null;
+    final SkwasmColorFilter? nativeFilter =
+        _colorFilter != null
+            ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!)
+            : null;
     if (_invertColors) {
       if (nativeFilter != null) {
-        final SkwasmColorFilter composedFilter = SkwasmColorFilter.composed(_invertColorFilter, nativeFilter);
+        final SkwasmColorFilter composedFilter = SkwasmColorFilter.composed(
+          _invertColorFilter,
+          nativeFilter,
+        );
         nativeFilter.dispose();
         paintSetColorFilter(handle, composedFilter.handle);
         composedFilter.dispose();
@@ -164,7 +173,9 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
     if (filter == null) {
       paintSetMaskFilter(handle, nullptr);
     } else {
-      final SkwasmMaskFilter nativeFilter = SkwasmMaskFilter.fromUiMaskFilter(filter);
+      final SkwasmMaskFilter nativeFilter = SkwasmMaskFilter.fromUiMaskFilter(
+        filter,
+      );
       paintSetMaskFilter(handle, nativeFilter.handle);
       nativeFilter.dispose();
     }
@@ -202,7 +213,9 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
         }
         if (strokeJoin == ui.StrokeJoin.miter) {
           if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
-            result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+            result.write(
+              ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}',
+            );
           }
         } else {
           result.write(' $strokeJoin');

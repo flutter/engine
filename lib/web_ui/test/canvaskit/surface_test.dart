@@ -22,90 +22,94 @@ void testMain() {
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
     });
 
-    test('Surface allocates canvases efficiently', () {
-      final Surface surface = Surface();
-      final CkSurface originalSurface =
-          surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
-      final DomOffscreenCanvas original = surface.debugOffscreenCanvas!;
+    test(
+      'Surface allocates canvases efficiently',
+      () {
+        final Surface surface = Surface();
+        final CkSurface originalSurface =
+            surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
+        final DomOffscreenCanvas original = surface.debugOffscreenCanvas!;
 
-      // Expect exact requested dimensions.
-      expect(original.width, 9);
-      expect(original.height, 19);
-      expect(originalSurface.width(), 9);
-      expect(originalSurface.height(), 19);
+        // Expect exact requested dimensions.
+        expect(original.width, 9);
+        expect(original.height, 19);
+        expect(originalSurface.width(), 9);
+        expect(originalSurface.height(), 19);
 
-      // Shrinking reuses the existing canvas but translates it so
-      // Skia renders into the visible area.
-      final CkSurface shrunkSurface =
-          surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomOffscreenCanvas shrunk = surface.debugOffscreenCanvas!;
-      expect(shrunk, same(original));
-      expect(shrunkSurface, isNot(same(originalSurface)));
-      expect(shrunkSurface.width(), 5);
-      expect(shrunkSurface.height(), 15);
+        // Shrinking reuses the existing canvas but translates it so
+        // Skia renders into the visible area.
+        final CkSurface shrunkSurface =
+            surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
+        final DomOffscreenCanvas shrunk = surface.debugOffscreenCanvas!;
+        expect(shrunk, same(original));
+        expect(shrunkSurface, isNot(same(originalSurface)));
+        expect(shrunkSurface.width(), 5);
+        expect(shrunkSurface.height(), 15);
 
-      // The first increase will allocate a new surface, but will overallocate
-      // by 40% to accommodate future increases.
-      final CkSurface firstIncreaseSurface =
-          surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
-      final DomOffscreenCanvas firstIncrease = surface.debugOffscreenCanvas!;
-      expect(firstIncrease, same(original));
-      expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
+        // The first increase will allocate a new surface, but will overallocate
+        // by 40% to accommodate future increases.
+        final CkSurface firstIncreaseSurface =
+            surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
+        final DomOffscreenCanvas firstIncrease = surface.debugOffscreenCanvas!;
+        expect(firstIncrease, same(original));
+        expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
-      // Expect overallocated dimensions
-      expect(firstIncrease.width, 14);
-      expect(firstIncrease.height, 28);
-      expect(firstIncreaseSurface.width(), 10);
-      expect(firstIncreaseSurface.height(), 20);
+        // Expect overallocated dimensions
+        expect(firstIncrease.width, 14);
+        expect(firstIncrease.height, 28);
+        expect(firstIncreaseSurface.width(), 10);
+        expect(firstIncreaseSurface.height(), 20);
 
-      // Subsequent increases within 40% reuse the old canvas.
-      final CkSurface secondIncreaseSurface =
-          surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
-      final DomOffscreenCanvas secondIncrease = surface.debugOffscreenCanvas!;
-      expect(secondIncrease, same(firstIncrease));
-      expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
-      expect(secondIncreaseSurface.width(), 11);
-      expect(secondIncreaseSurface.height(), 22);
+        // Subsequent increases within 40% reuse the old canvas.
+        final CkSurface secondIncreaseSurface =
+            surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
+        final DomOffscreenCanvas secondIncrease = surface.debugOffscreenCanvas!;
+        expect(secondIncrease, same(firstIncrease));
+        expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
+        expect(secondIncreaseSurface.width(), 11);
+        expect(secondIncreaseSurface.height(), 22);
 
-      // Increases beyond the 40% limit will cause a new allocation.
-      final CkSurface hugeSurface =
-          surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
-      final DomOffscreenCanvas huge = surface.debugOffscreenCanvas!;
-      expect(huge, same(secondIncrease));
-      expect(hugeSurface, isNot(same(secondIncreaseSurface)));
+        // Increases beyond the 40% limit will cause a new allocation.
+        final CkSurface hugeSurface =
+            surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
+        final DomOffscreenCanvas huge = surface.debugOffscreenCanvas!;
+        expect(huge, same(secondIncrease));
+        expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
-      // Also over-allocated
-      expect(huge.width, 28);
-      expect(huge.height, 56);
-      expect(hugeSurface.width(), 20);
-      expect(hugeSurface.height(), 40);
+        // Also over-allocated
+        expect(huge.width, 28);
+        expect(huge.height, 56);
+        expect(hugeSurface.width(), 20);
+        expect(hugeSurface.height(), 40);
 
-      // Shrink again. Reuse the last allocated surface.
-      final CkSurface shrunkSurface2 =
-          surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomOffscreenCanvas shrunk2 = surface.debugOffscreenCanvas!;
-      expect(shrunk2, same(huge));
-      expect(shrunkSurface2, isNot(same(hugeSurface)));
-      expect(shrunkSurface2.width(), 5);
-      expect(shrunkSurface2.height(), 15);
+        // Shrink again. Reuse the last allocated surface.
+        final CkSurface shrunkSurface2 =
+            surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
+        final DomOffscreenCanvas shrunk2 = surface.debugOffscreenCanvas!;
+        expect(shrunk2, same(huge));
+        expect(shrunkSurface2, isNot(same(hugeSurface)));
+        expect(shrunkSurface2.width(), 5);
+        expect(shrunkSurface2.height(), 15);
 
-      // Doubling the DPR should halve the CSS width, height, and translation of the canvas.
-      // This tests https://github.com/flutter/flutter/issues/77084
-      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
-      final CkSurface dpr2Surface2 =
-          surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomOffscreenCanvas dpr2Canvas = surface.debugOffscreenCanvas!;
-      expect(dpr2Canvas, same(huge));
-      expect(dpr2Surface2, isNot(same(hugeSurface)));
-      expect(dpr2Surface2.width(), 5);
-      expect(dpr2Surface2.height(), 15);
+        // Doubling the DPR should halve the CSS width, height, and translation of the canvas.
+        // This tests https://github.com/flutter/flutter/issues/77084
+        EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
+        final CkSurface dpr2Surface2 =
+            surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
+        final DomOffscreenCanvas dpr2Canvas = surface.debugOffscreenCanvas!;
+        expect(dpr2Canvas, same(huge));
+        expect(dpr2Surface2, isNot(same(hugeSurface)));
+        expect(dpr2Surface2.width(), 5);
+        expect(dpr2Surface2.height(), 15);
 
-      // Skipping on Firefox for now since Firefox headless doesn't support WebGL
-      // This causes issues in the test since we create a Canvas-backed surface,
-      // which cannot be a different size from the canvas.
-      // TODO(hterkelsen): See if we can give a custom size for software
-      //     surfaces.
-    }, skip: isFirefox || !Surface.offscreenCanvasSupported);
+        // Skipping on Firefox for now since Firefox headless doesn't support WebGL
+        // This causes issues in the test since we create a Canvas-backed surface,
+        // which cannot be a different size from the canvas.
+        // TODO(hterkelsen): See if we can give a custom size for software
+        //     surfaces.
+      },
+      skip: isFirefox || !Surface.offscreenCanvasSupported,
+    );
 
     test('Surface used as DisplayCanvas resizes correctly', () {
       final Surface surface = Surface(isDisplayCanvas: true);
@@ -221,19 +225,28 @@ void testMain() {
           <String>['WEBGL_lose_context'],
         );
         js_util.callMethod<void>(
-            loseContextExtension, 'loseContext', const <void>[]);
+          loseContextExtension,
+          'loseContext',
+          const <void>[],
+        );
 
         // Pump a timer to allow the "lose context" event to propagate.
         await Future<void>.delayed(Duration.zero);
         // We don't create a new GL context until the context is restored.
         expect(surface.debugContextLost, isTrue);
-        final bool isContextLost =
-            js_util.callMethod<bool>(ctx, 'isContextLost', const <void>[]);
+        final bool isContextLost = js_util.callMethod<bool>(
+          ctx,
+          'isContextLost',
+          const <void>[],
+        );
         expect(isContextLost, isTrue);
 
         // Emulate WebGL context restoration.
         js_util.callMethod<void>(
-            loseContextExtension, 'restoreContext', const <void>[]);
+          loseContextExtension,
+          'restoreContext',
+          const <void>[],
+        );
 
         // Pump a timer to allow the "restore context" event to propagate.
         await Future<void>.delayed(Duration.zero);
@@ -308,9 +321,11 @@ ui.Size getCssSize(Surface surface) {
   final String cssHeight = canvas.style.height;
   // CSS width and height should be in the form 'NNNpx'. So cut off the 'px' and
   // convert to a number.
-  final double width =
-      double.parse(cssWidth.substring(0, cssWidth.length - 2).trim());
-  final double height =
-      double.parse(cssHeight.substring(0, cssHeight.length - 2).trim());
+  final double width = double.parse(
+    cssWidth.substring(0, cssWidth.length - 2).trim(),
+  );
+  final double height = double.parse(
+    cssHeight.substring(0, cssHeight.length - 2).trim(),
+  );
   return ui.Size(width, height);
 }

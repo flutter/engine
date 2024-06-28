@@ -27,9 +27,12 @@ void setUpCanvasKitTest({bool withImplicitView = false}) {
     setUpTestViewDimensions: false,
   );
 
-  setUp(() => debugOverrideJsConfiguration(<String, Object?>{
-        'fontFallbackBaseUrl': 'assets/fallback_fonts/',
-      }.jsify() as JsFlutterConfiguration?));
+  setUp(
+    () => debugOverrideJsConfiguration(
+      <String, Object?>{'fontFallbackBaseUrl': 'assets/fallback_fonts/'}.jsify()
+          as JsFlutterConfiguration?,
+    ),
+  );
 }
 
 /// Convenience getter for the implicit view.
@@ -39,7 +42,9 @@ ui.FlutterView get implicitView =>
 /// Utility function for CanvasKit tests to draw pictures without
 /// the [CkPictureRecorder] boilerplate.
 CkPicture paintPicture(
-    ui.Rect cullRect, void Function(CkCanvas canvas) painter) {
+  ui.Rect cullRect,
+  void Function(CkCanvas canvas) painter,
+) {
   final CkPictureRecorder recorder = CkPictureRecorder();
   final CkCanvas canvas = recorder.beginRecording(cullRect);
   painter(canvas);
@@ -59,8 +64,11 @@ Future<void> matchSceneGolden(
 ///
 /// The picture is drawn onto the UI at [ui.Offset.zero] with no additional
 /// layers.
-Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
-    {required ui.Rect region}) async {
+Future<void> matchPictureGolden(
+  String goldenFile,
+  CkPicture picture, {
+  required ui.Rect region,
+}) async {
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
@@ -72,8 +80,9 @@ Future<bool> matchImage(ui.Image left, ui.Image right) async {
   if (left.width != right.width || left.height != right.height) {
     return false;
   }
-  int getPixel(ByteData data, int x, int y) =>
-      data.getUint32((x + y * left.width) * 4);
+  int getPixel(ByteData data, int x, int y) => data.getUint32(
+    (x + y * left.width) * 4,
+  );
   final ByteData leftData = (await left.toByteData())!;
   final ByteData rightData = (await right.toByteData())!;
   for (int y = 0; y < left.height; y++) {
@@ -91,13 +100,9 @@ Future<void> createPlatformView(int id, String viewType) {
   final Completer<void> completer = Completer<void>();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
-    codec.encodeMethodCall(MethodCall(
-      'create',
-      <String, dynamic>{
-        'id': id,
-        'viewType': viewType,
-      },
-    )),
+    codec.encodeMethodCall(
+      MethodCall('create', <String, dynamic>{'id': id, 'viewType': viewType}),
+    ),
     (dynamic _) => completer.complete(),
   );
   return completer.future;
@@ -125,15 +130,15 @@ CkParagraph makeSimpleText(
   ui.FontWeight? fontWeight,
   ui.Color? color,
 }) {
-  final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle(
-    fontFamily: fontFamily ?? 'Roboto',
-    fontSize: fontSize ?? 14,
-    fontStyle: fontStyle ?? ui.FontStyle.normal,
-    fontWeight: fontWeight ?? ui.FontWeight.normal,
-  ));
-  builder.pushStyle(CkTextStyle(
-    color: color ?? const ui.Color(0xFF000000),
-  ));
+  final CkParagraphBuilder builder = CkParagraphBuilder(
+    CkParagraphStyle(
+      fontFamily: fontFamily ?? 'Roboto',
+      fontSize: fontSize ?? 14,
+      fontStyle: fontStyle ?? ui.FontStyle.normal,
+      fontWeight: fontWeight ?? ui.FontWeight.normal,
+    ),
+  );
+  builder.pushStyle(CkTextStyle(color: color ?? const ui.Color(0xFF000000)));
   builder.addText(text);
   builder.pop();
   final CkParagraph paragraph = builder.build();

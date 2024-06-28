@@ -149,6 +149,7 @@ class Instrumentation {
 
     _enabled = value;
   }
+
   static bool _enabled = const bool.fromEnvironment(
     'FLUTTER_WEB_ENABLE_INSTRUMENTATION',
   );
@@ -184,24 +185,22 @@ class Instrumentation {
     _checkInstrumentationEnabled();
     final int currentCount = _counters[event] ?? 0;
     _counters[event] = currentCount + 1;
-    _printTimer ??= Timer(
-      const Duration(seconds: 2),
-      () {
-        if (_printTimer == null || !_enabled) {
-          return;
-        }
-        final StringBuffer message = StringBuffer('Engine counters:\n');
-        // Entries are sorted for readability and testability.
-        final List<MapEntry<String, int>> entries = _counters.entries.toList()
-          ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
-            return a.key.compareTo(b.key);
-          });
-        for (final MapEntry<String, int> entry in entries) {
-          message.writeln('  ${entry.key}: ${entry.value}');
-        }
-        print(message);
-        _printTimer = null;
-      },
-    );
+    _printTimer ??= Timer(const Duration(seconds: 2), () {
+      if (_printTimer == null || !_enabled) {
+        return;
+      }
+      final StringBuffer message = StringBuffer('Engine counters:\n');
+      // Entries are sorted for readability and testability.
+      final List<MapEntry<String, int>> entries =
+          _counters.entries.toList()
+            ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
+              return a.key.compareTo(b.key);
+            });
+      for (final MapEntry<String, int> entry in entries) {
+        message.writeln('  ${entry.key}: ${entry.value}');
+      }
+      print(message);
+      _printTimer = null;
+    });
   }
 }

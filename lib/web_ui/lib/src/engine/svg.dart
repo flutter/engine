@@ -96,7 +96,10 @@ extension SVGLengthExtension on SVGLength {
   set valueAsString(String? value) => _valueAsString = value?.toJS;
 
   @JS('newValueSpecifiedUnits')
-  external JSVoid _newValueSpecifiedUnits(JSNumber unitType, JSNumber valueInSpecifiedUnits);
+  external JSVoid _newValueSpecifiedUnits(
+    JSNumber unitType,
+    JSNumber valueInSpecifiedUnits,
+  );
   void newValueSpecifiedUnits(int unitType, num valueInSpecifiedUnits) =>
       _newValueSpecifiedUnits(unitType.toJS, valueInSpecifiedUnits.toJS);
 }

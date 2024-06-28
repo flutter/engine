@@ -68,7 +68,8 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     late double windowInnerWidth;
     late double windowInnerHeight;
     final DomVisualViewport? viewport = domWindow.visualViewport;
-    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final double devicePixelRatio =
+        EngineFlutterDisplay.instance.devicePixelRatio;
 
     if (viewport != null) {
       if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs) {
@@ -92,10 +93,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
       windowInnerWidth = domWindow.innerWidth! * devicePixelRatio;
       windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
     }
-    return ui.Size(
-      windowInnerWidth,
-      windowInnerHeight,
-    );
+    return ui.Size(windowInnerWidth, windowInnerHeight);
   }
 
   @override
@@ -103,12 +101,14 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     double physicalHeight,
     bool isEditingOnMobile,
   ) {
-    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final double devicePixelRatio =
+        EngineFlutterDisplay.instance.devicePixelRatio;
     final DomVisualViewport? viewport = domWindow.visualViewport;
     late double windowInnerHeight;
 
     if (viewport != null) {
-      if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs && !isEditingOnMobile) {
+      if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs &&
+          !isEditingOnMobile) {
         windowInnerHeight =
             domDocument.documentElement!.clientHeight * devicePixelRatio;
       } else {
