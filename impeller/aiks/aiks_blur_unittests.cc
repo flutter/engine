@@ -17,8 +17,6 @@
 // blurs.
 ////////////////////////////////////////////////////////////////////////////////
 
-impeller::Scalar foo = 1.0f;
-
 namespace impeller {
 namespace testing {
 
@@ -789,7 +787,6 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
       }
       ImGui::SliderFloat("Frequency", &freq, 0.01, 2.0);
       ImGui::SliderFloat("Amplitude", &amp, 1, 100);
-      ImGui::SliderFloat("foo", &foo, 0, 2);
       ImGui::End();
     }
 

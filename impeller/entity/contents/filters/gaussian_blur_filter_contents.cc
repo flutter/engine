@@ -14,8 +14,6 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
-extern impeller::Scalar foo;
-
 namespace impeller {
 
 using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
@@ -732,11 +730,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
 
   Scalar y_sigma =
       blur_info.scaled_sigma.y * downsample_pass_args.effective_scalar.y;
-  Matrix blur_output_entity_transform =
-      entity.GetTransform() *                                   //
-      Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
-      downsample_pass_args.transform *                          //
-      Matrix::MakeScale(1 / downsample_pass_args.effective_scalar);
+  Matrix bar = Matrix::MakeScale(1.f / blur_info.source_space_scalar) *  //
+               downsample_pass_args.transform *                          //
+               Matrix::MakeScale(1 / downsample_pass_args.effective_scalar);
+  Matrix blur_output_entity_transform = entity.GetTransform() *  //
+                                        bar;
   if (y_sigma < kEhCloseEnough) {
     Entity blur_output_entity = Entity::FromSnapshot(
         Snapshot{.texture = pass2_out.value().GetRenderTargetTexture(),
@@ -753,8 +751,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
         pass2_out.value().GetRenderTargetTexture();
     blur_output_entity.SetBlendMode(entity.GetBlendMode());
     blur_output_entity.SetTransform(blur_output_entity_transform);
-    Vector2 inline_pixel_size =
-        effect_transform.Basis().Invert() * pass1_pixel_size;
+    Vector2 inline_pixel_size = 0.5 * pass1_pixel_size;
     blur_output_entity.SetContents(Contents::MakeAnonymous(
         /*render_proc=*/
         [sampler_desc, texture, inline_pixel_size, blur_info,
@@ -768,7 +765,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           return Render1DBlur(
               renderer, pass, blur_vertices, blur_uvs, sampler_desc, texture,
               BlurParameters{
-                  .blur_uv_offset = Point(inline_pixel_size.x * foo, 0.0),
+                  .blur_uv_offset = Point(inline_pixel_size.x, 0.0),
                   .blur_sigma = blur_info.scaled_sigma.x *
                                 downsample_pass_args.effective_scalar.x,
                   .blur_radius =

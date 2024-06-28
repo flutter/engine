@@ -62,8 +62,6 @@
 // TODO(zanderso): https://github.com/flutter/flutter/issues/127701
 // NOLINTBEGIN(bugprone-unchecked-optional-access)
 
-extern impeller::Scalar foo;
-
 namespace impeller {
 namespace testing {
 
@@ -1132,7 +1130,6 @@ TEST_P(EntityTest, GaussianBlurFilter) {
       ImGui::SliderFloat2("Scale", scale, 0, 3);
       ImGui::SliderFloat2("Skew", skew, -3, 3);
       ImGui::SliderFloat4("Path XYWH", path_rect, -1000, 1000);
-      ImGui::SliderFloat("foo", &foo, 0, 2);
     }
     ImGui::End();
 
