@@ -96,7 +96,7 @@ void main(List<String> args) async {
 ///
 /// Each named argument cooresponds to a flag or option in the `ArgParser`.
 Future<void> _run(
-  Set<FutureOr<void> Function()> cleanup, 
+  Set<FutureOr<void> Function()> cleanup,
   Engine engine, {
   required String iosEngineVariant,
   required String deviceName,
