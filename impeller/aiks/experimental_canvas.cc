@@ -236,12 +236,14 @@ void ExperimentalCanvas::SaveLayer(
       Save(total_content_depth);
       return;
     }
-    auto clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
-    if (!clip_coverage.has_value() || clip_coverage->IsEmpty()) {
+    auto maybe_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+    if (!maybe_clip_coverage.has_value()) {
       Save(total_content_depth);
       return;
     }
-    if (coverage_limit.Intersection(clip_coverage.value())->IsEmpty()) {
+    auto clip_coverage = maybe_clip_coverage.value();
+    if (clip_coverage.IsEmpty() ||
+        coverage_limit.Intersection(clip_coverage)->IsEmpty()) {
       Save(total_content_depth);
       return;
     }
@@ -364,10 +366,12 @@ void ExperimentalCanvas::SaveLayer(
   if (backdrop_filter_contents) {
     FML_CHECK(clip_coverage_stack_.HasCoverage());
     // We should never hit this case as we check the intersection above.
+    // NOLINTBEGIN(bugprone-unchecked-optional-access)
     subpass_coverage =
         coverage_limit
             .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
             .value();
+    // NOLINTEMD(bugprone-unchecked-optional-access)
   }
 
   render_passes_.push_back(LazyRenderingConfig(
