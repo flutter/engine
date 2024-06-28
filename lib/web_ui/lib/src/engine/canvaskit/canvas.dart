@@ -45,27 +45,15 @@ class CkCanvas {
   }
 
   void clipPath(CkPath path, bool doAntiAlias) {
-    skCanvas.clipPath(
-      path.skiaObject,
-      _clipOpIntersect,
-      doAntiAlias,
-    );
+    skCanvas.clipPath(path.skiaObject, _clipOpIntersect, doAntiAlias);
   }
 
   void clipRRect(ui.RRect rrect, bool doAntiAlias) {
-    skCanvas.clipRRect(
-      toSkRRect(rrect),
-      _clipOpIntersect,
-      doAntiAlias,
-    );
+    skCanvas.clipRRect(toSkRRect(rrect), _clipOpIntersect, doAntiAlias);
   }
 
   void clipRect(ui.Rect rect, ui.ClipOp clipOp, bool doAntiAlias) {
-    skCanvas.clipRect(
-      toSkRect(rect),
-      toSkClipOp(clipOp),
-      doAntiAlias,
-    );
+    skCanvas.clipRect(toSkRect(rect), toSkClipOp(clipOp), doAntiAlias);
   }
 
   ui.Rect getDeviceClipBounds() {
@@ -109,27 +97,15 @@ class CkCanvas {
   }
 
   void drawCircle(ui.Offset c, double radius, CkPaint paint) {
-    skCanvas.drawCircle(
-      c.dx,
-      c.dy,
-      radius,
-      paint.skiaObject,
-    );
+    skCanvas.drawCircle(c.dx, c.dy, radius, paint.skiaObject);
   }
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
-    skCanvas.drawColorInt(
-      color.value.toDouble(),
-      toSkBlendMode(blendMode),
-    );
+    skCanvas.drawColorInt(color.value.toDouble(), toSkBlendMode(blendMode));
   }
 
   void drawDRRect(ui.RRect outer, ui.RRect inner, CkPaint paint) {
-    skCanvas.drawDRRect(
-      toSkRRect(outer),
-      toSkRRect(inner),
-      paint.skiaObject,
-    );
+    skCanvas.drawDRRect(toSkRRect(outer), toSkRRect(inner), paint.skiaObject);
   }
 
   void drawImage(CkImage image, ui.Offset offset, CkPaint paint) {
@@ -179,7 +155,11 @@ class CkCanvas {
   }
 
   void drawImageNine(
-      CkImage image, ui.Rect center, ui.Rect dst, CkPaint paint) {
+    CkImage image,
+    ui.Rect center,
+    ui.Rect dst,
+    CkPaint paint,
+  ) {
     skCanvas.drawImageNine(
       image.skImage,
       toSkRect(center),
@@ -190,20 +170,11 @@ class CkCanvas {
   }
 
   void drawLine(ui.Offset p1, ui.Offset p2, CkPaint paint) {
-    skCanvas.drawLine(
-      p1.dx,
-      p1.dy,
-      p2.dx,
-      p2.dy,
-      paint.skiaObject,
-    );
+    skCanvas.drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint.skiaObject);
   }
 
   void drawOval(ui.Rect rect, CkPaint paint) {
-    skCanvas.drawOval(
-      toSkRect(rect),
-      paint.skiaObject,
-    );
+    skCanvas.drawOval(toSkRect(rect), paint.skiaObject);
   }
 
   void drawPaint(CkPaint paint) {
@@ -211,11 +182,7 @@ class CkCanvas {
   }
 
   void drawParagraph(CkParagraph paragraph, ui.Offset offset) {
-    skCanvas.drawParagraph(
-      paragraph.skiaObject,
-      offset.dx,
-      offset.dy,
-    );
+    skCanvas.drawParagraph(paragraph.skiaObject, offset.dx, offset.dy);
   }
 
   void drawPath(CkPath path, CkPaint paint) {
@@ -228,18 +195,11 @@ class CkCanvas {
   }
 
   void drawPoints(CkPaint paint, ui.PointMode pointMode, Float32List points) {
-    skCanvas.drawPoints(
-      toSkPointMode(pointMode),
-      points,
-      paint.skiaObject,
-    );
+    skCanvas.drawPoints(toSkPointMode(pointMode), points, paint.skiaObject);
   }
 
   void drawRRect(ui.RRect rrect, CkPaint paint) {
-    skCanvas.drawRRect(
-      toSkRRect(rrect),
-      paint.skiaObject,
-    );
+    skCanvas.drawRRect(toSkRRect(rrect), paint.skiaObject);
   }
 
   void drawRect(ui.Rect rect, CkPaint paint) {
@@ -247,13 +207,26 @@ class CkCanvas {
   }
 
   void drawShadow(
-      CkPath path, ui.Color color, double elevation, bool transparentOccluder) {
-    drawSkShadow(skCanvas, path, color, elevation, transparentOccluder,
-        EngineFlutterDisplay.instance.devicePixelRatio);
+    CkPath path,
+    ui.Color color,
+    double elevation,
+    bool transparentOccluder,
+  ) {
+    drawSkShadow(
+      skCanvas,
+      path,
+      color,
+      elevation,
+      transparentOccluder,
+      EngineFlutterDisplay.instance.devicePixelRatio,
+    );
   }
 
   void drawVertices(
-      CkVertices vertices, ui.BlendMode blendMode, CkPaint paint) {
+    CkVertices vertices,
+    ui.BlendMode blendMode,
+    CkPaint paint,
+  ) {
     skCanvas.drawVertices(
       vertices.skiaObject,
       toSkBlendMode(blendMode),
@@ -278,20 +251,18 @@ class CkCanvas {
   }
 
   void saveLayer(ui.Rect bounds, CkPaint? paint) {
-    skCanvas.saveLayer(
-      paint?.skiaObject,
-      toSkRect(bounds),
-      null,
-      null,
-    );
+    skCanvas.saveLayer(paint?.skiaObject, toSkRect(bounds), null, null);
   }
 
   void saveLayerWithoutBounds(CkPaint? paint) {
     skCanvas.saveLayer(paint?.skiaObject, null, null, null);
   }
 
-  void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter,
-      [CkPaint? paint]) {
+  void saveLayerWithFilter(
+    ui.Rect bounds,
+    ui.ImageFilter filter, [
+    CkPaint? paint,
+  ]) {
     final CkManagedSkImageFilterConvertible convertible;
     if (filter is ui.ColorFilter) {
       convertible = createCkColorFilter(filter as EngineColorFilter)!;
@@ -299,12 +270,7 @@ class CkCanvas {
       convertible = filter as CkManagedSkImageFilterConvertible;
     }
     convertible.imageFilter((SkImageFilter filter) {
-      skCanvas.saveLayer(
-        paint?.skiaObject,
-        toSkRect(bounds),
-        filter,
-        0,
-      );
+      skCanvas.saveLayer(paint?.skiaObject, toSkRect(bounds), filter, 0);
     });
   }
 

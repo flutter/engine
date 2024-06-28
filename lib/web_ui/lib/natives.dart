@@ -13,6 +13,7 @@ class DartPluginRegistrant {
   /// but should not be called on the Root isolate.
   static void ensureInitialized() {
     throw UnimplementedError(
-        '`ensureInitialized` is not implemented on the web.');
+      '`ensureInitialized` is not implemented on the web.',
+    );
   }
 }

@@ -16,9 +16,7 @@ void main() {
 Future<void> testMain() async {
   group('$BidiFragmenter', () {
     test('empty string', () {
-      expect(split(''), <_Bidi>[
-        _Bidi('', null, ffPrevious),
-      ]);
+      expect(split(''), <_Bidi>[_Bidi('', null, ffPrevious)]);
     });
 
     test('basic cases', () {
@@ -36,18 +34,21 @@ Future<void> testMain() async {
     });
 
     test('text and digits', () {
-      expect(split('Lorem11 ${rtlWord1}22 33ipsum44dolor ${rtlWord2}55$rtlWord1'), <_Bidi>[
-        _Bidi('Lorem11', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi(rtlWord1, rtl, ffRtl),
-        _Bidi('22', ltr, ffPrevious),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('33ipsum44dolor', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi(rtlWord2, rtl, ffRtl),
-        _Bidi('55', ltr, ffPrevious),
-        _Bidi(rtlWord1, rtl, ffRtl),
-      ]);
+      expect(
+        split('Lorem11 ${rtlWord1}22 33ipsum44dolor ${rtlWord2}55$rtlWord1'),
+        <_Bidi>[
+          _Bidi('Lorem11', ltr, ffLtr),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi(rtlWord1, rtl, ffRtl),
+          _Bidi('22', ltr, ffPrevious),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi('33ipsum44dolor', ltr, ffLtr),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi(rtlWord2, rtl, ffRtl),
+          _Bidi('55', ltr, ffPrevious),
+          _Bidi(rtlWord1, rtl, ffRtl),
+        ],
+      );
     });
 
     test('Mashriqi digits', () {
@@ -73,9 +74,7 @@ Future<void> testMain() async {
     });
 
     test('spaces', () {
-      expect(split('    '), <_Bidi>[
-        _Bidi('    ', null, ffSandwich),
-      ]);
+      expect(split('    '), <_Bidi>[_Bidi('    ', null, ffSandwich)]);
     });
 
     test('symbols', () {
@@ -99,27 +98,30 @@ Future<void> testMain() async {
         _Bidi('result', ltr, ffLtr),
       ]);
 
-      expect(split('Calculate $rtlWord1 2.2 + 4.5 and write the result'), <_Bidi>[
-        _Bidi('Calculate', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi(rtlWord1, rtl, ffRtl),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('2', ltr, ffPrevious),
-        _Bidi('.', null, ffSandwich),
-        _Bidi('2', ltr, ffPrevious),
-        _Bidi(' + ', null, ffSandwich),
-        _Bidi('4', ltr, ffPrevious),
-        _Bidi('.', null, ffSandwich),
-        _Bidi('5', ltr, ffPrevious),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('and', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('write', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('the', ltr, ffLtr),
-        _Bidi(' ', null, ffSandwich),
-        _Bidi('result', ltr, ffLtr),
-      ]);
+      expect(
+        split('Calculate $rtlWord1 2.2 + 4.5 and write the result'),
+        <_Bidi>[
+          _Bidi('Calculate', ltr, ffLtr),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi(rtlWord1, rtl, ffRtl),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi('2', ltr, ffPrevious),
+          _Bidi('.', null, ffSandwich),
+          _Bidi('2', ltr, ffPrevious),
+          _Bidi(' + ', null, ffSandwich),
+          _Bidi('4', ltr, ffPrevious),
+          _Bidi('.', null, ffSandwich),
+          _Bidi('5', ltr, ffPrevious),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi('and', ltr, ffLtr),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi('write', ltr, ffLtr),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi('the', ltr, ffLtr),
+          _Bidi(' ', null, ffSandwich),
+          _Bidi('result', ltr, ffLtr),
+        ],
+      );
 
       expect(split('12 + 24 = 36'), <_Bidi>[
         _Bidi('12', ltr, ffPrevious),
@@ -193,6 +195,6 @@ class _Bidi {
 List<_Bidi> split(String text) {
   return <_Bidi>[
     for (final BidiFragment bidiFragment in BidiFragmenter(text).fragment())
-      _Bidi.fromBidiFragment(text, bidiFragment)
+      _Bidi.fromBidiFragment(text, bidiFragment),
   ];
 }

@@ -31,10 +31,7 @@ Future<void> testMain() async {
     paint.shader = ui.Gradient.linear(
       const ui.Offset(0.1, 0.2),
       const ui.Offset(1.5, 1.6),
-      const <ui.Color>[
-        ui.Color(0xaabbccdd),
-        ui.Color(0xbbccddee),
-      ],
+      const <ui.Color>[ui.Color(0xaabbccdd), ui.Color(0xbbccddee)],
       <double>[0.3, 0.4],
       ui.TileMode.decal,
     );
@@ -76,10 +73,7 @@ Future<void> testMain() async {
     paint.shader = ui.Gradient.linear(
       const ui.Offset(0.1, 0.2),
       const ui.Offset(1.5, 1.6),
-      const <ui.Color>[
-        ui.Color(0xaabbccdd),
-        ui.Color(0xbbccddee),
-      ],
+      const <ui.Color>[ui.Color(0xaabbccdd), ui.Color(0xbbccddee)],
       <double>[0.3, 0.4],
       ui.TileMode.decal,
     );

@@ -150,7 +150,9 @@ const double kMaxAmbientRadius =
 
 double ambientBlurRadius(double height) {
   return math.min(
-      height * kAmbientHeightFactor * kAmbientGeomFactor, kMaxAmbientRadius);
+    height * kAmbientHeightFactor * kAmbientGeomFactor,
+    kMaxAmbientRadius,
+  );
 }
 
 void drawSkShadow(
@@ -161,15 +163,18 @@ void drawSkShadow(
   bool transparentOccluder,
   double devicePixelRatio,
 ) {
-  int flags = transparentOccluder
-      ? SkiaShadowFlags.kTransparentOccluderShadowFlags
-      : SkiaShadowFlags.kDefaultShadowFlags;
+  int flags =
+      transparentOccluder
+          ? SkiaShadowFlags.kTransparentOccluderShadowFlags
+          : SkiaShadowFlags.kDefaultShadowFlags;
   flags |= SkiaShadowFlags.kDirectionalLight_ShadowFlag;
 
-  final ui.Color inAmbient =
-      color.withAlpha((color.alpha * ckShadowAmbientAlpha).round());
-  final ui.Color inSpot =
-      color.withAlpha((color.alpha * ckShadowSpotAlpha).round());
+  final ui.Color inAmbient = color.withAlpha(
+    (color.alpha * ckShadowAmbientAlpha).round(),
+  );
+  final ui.Color inSpot = color.withAlpha(
+    (color.alpha * ckShadowSpotAlpha).round(),
+  );
 
   final SkTonalColors inTonalColors = SkTonalColors(
     ambient: makeFreshSkColor(inAmbient),

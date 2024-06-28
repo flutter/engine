@@ -15,7 +15,9 @@ class OffscreenCanvasRasterizer extends Rasterizer {
   @override
   OffscreenCanvasViewRasterizer createViewRasterizer(EngineFlutterView view) {
     return _viewRasterizers.putIfAbsent(
-        view, () => OffscreenCanvasViewRasterizer(view, this));
+      view,
+      () => OffscreenCanvasViewRasterizer(view, this),
+    );
   }
 
   final Map<EngineFlutterView, OffscreenCanvasViewRasterizer> _viewRasterizers =
@@ -48,7 +50,9 @@ class OffscreenCanvasViewRasterizer extends ViewRasterizer {
   /// Render the given [pictures] so it is displayed by the given [canvas].
   @override
   Future<void> rasterizeToCanvas(
-      DisplayCanvas canvas, List<CkPicture> pictures) async {
+    DisplayCanvas canvas,
+    List<CkPicture> pictures,
+  ) async {
     await rasterizer.offscreenSurface.rasterizeToCanvas(
       currentFrameSize,
       canvas as RenderCanvas,

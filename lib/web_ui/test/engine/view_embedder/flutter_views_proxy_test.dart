@@ -19,10 +19,12 @@ Future<void> doTests() async {
   group('FlutterViewManagerProxy', () {
     final EnginePlatformDispatcher platformDispatcher =
         EnginePlatformDispatcher.instance;
-    final FlutterViewManager viewManager =
-        FlutterViewManager(platformDispatcher);
-    final FlutterViewManagerProxy views =
-        FlutterViewManagerProxy(viewManager: viewManager);
+    final FlutterViewManager viewManager = FlutterViewManager(
+      platformDispatcher,
+    );
+    final FlutterViewManagerProxy views = FlutterViewManagerProxy(
+      viewManager: viewManager,
+    );
 
     late EngineFlutterView view;
     late int viewId;

@@ -21,8 +21,8 @@ import 'semantics.dart';
 /// gestures must be interpreted by the Flutter framework.
 class Incrementable extends PrimaryRoleManager {
   Incrementable(SemanticsObject semanticsObject)
-      : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
-        super.blank(PrimaryRole.incrementable, semanticsObject) {
+    : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
+      super.blank(PrimaryRole.incrementable, semanticsObject) {
     // The following generic roles can coexist with incrementables. Generic focus
     // management is not used by this role because the root DOM element is not
     // the one being focused on, but the internal `<input>` element.
@@ -34,22 +34,31 @@ class Incrementable extends PrimaryRoleManager {
     _element.type = 'range';
     _element.setAttribute('role', 'slider');
 
-    _element.addEventListener('change', createDomEventListener((_) {
-      if (_element.disabled!) {
-        return;
-      }
-      _pendingResync = true;
-      final int newInputValue = int.parse(_element.value!);
-      if (newInputValue > _currentSurrogateValue) {
-        _currentSurrogateValue += 1;
-        EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-            semanticsObject.id, ui.SemanticsAction.increase, null);
-      } else if (newInputValue < _currentSurrogateValue) {
-        _currentSurrogateValue -= 1;
-        EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-            semanticsObject.id, ui.SemanticsAction.decrease, null);
-      }
-    }));
+    _element.addEventListener(
+      'change',
+      createDomEventListener((_) {
+        if (_element.disabled!) {
+          return;
+        }
+        _pendingResync = true;
+        final int newInputValue = int.parse(_element.value!);
+        if (newInputValue > _currentSurrogateValue) {
+          _currentSurrogateValue += 1;
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+            semanticsObject.id,
+            ui.SemanticsAction.increase,
+            null,
+          );
+        } else if (newInputValue < _currentSurrogateValue) {
+          _currentSurrogateValue -= 1;
+          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+            semanticsObject.id,
+            ui.SemanticsAction.decrease,
+            null,
+          );
+        }
+      }),
+    );
 
     // Store the callback as a closure because Dart does not guarantee that
     // tear-offs produce the same function object.
@@ -117,7 +126,8 @@ class Incrementable extends PrimaryRoleManager {
   void _updateInputValues() {
     assert(EngineSemantics.instance.gestureMode == GestureMode.browserGestures);
 
-    final bool updateNeeded = _pendingResync ||
+    final bool updateNeeded =
+        _pendingResync ||
         semanticsObject.isValueDirty ||
         semanticsObject.isIncreasedValueDirty ||
         semanticsObject.isDecreasedValueDirty;

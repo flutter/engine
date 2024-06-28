@@ -21,15 +21,16 @@ class DisplayDprStream {
   DisplayDprStream(
     this._display, {
     @visibleForTesting DebugDisplayDprStreamOverrides? overrides,
-  })  : _currentDpr = _display.devicePixelRatio,
-        _debugOverrides = overrides {
+  }) : _currentDpr = _display.devicePixelRatio,
+       _debugOverrides = overrides {
     // Start listening to DPR changes.
     _subscribeToMediaQuery();
   }
 
   /// A singleton instance of DisplayDprStream.
-  static DisplayDprStream instance =
-      DisplayDprStream(EngineFlutterDisplay.instance);
+  static DisplayDprStream instance = DisplayDprStream(
+    EngineFlutterDisplay.instance,
+  );
 
   // The display object that will provide the DPR information.
   final ui.Display _display;
@@ -86,8 +87,6 @@ class DisplayDprStream {
 
 @visibleForTesting
 class DebugDisplayDprStreamOverrides {
-  DebugDisplayDprStreamOverrides({
-    this.getMediaQuery,
-  });
+  DebugDisplayDprStreamOverrides({this.getMediaQuery});
   final DomEventTarget Function(double currentValue)? getMediaQuery;
 }

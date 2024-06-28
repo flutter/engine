@@ -23,7 +23,8 @@ void testMain() {
     expect(
       configuration.canvasKitVariant,
       anyOf(CanvasKitVariant.chromium, CanvasKitVariant.full),
-      reason: 'canvasKitVariant must be set to "chromium" or "full" in canvaskit tests!',
+      reason:
+          'canvasKitVariant must be set to "chromium" or "full" in canvaskit tests!',
     );
   });
 
@@ -33,9 +34,8 @@ void testMain() {
     expect(configuration.canvasKitVariant, isNot(CanvasKitVariant.auto));
 
     debugOverrideJsConfiguration(
-      <String, Object?>{
-        'canvasKitVariant': 'auto',
-      }.jsify() as JsFlutterConfiguration?
+      <String, Object?>{'canvasKitVariant': 'auto'}.jsify()
+          as JsFlutterConfiguration?,
     );
     expect(configuration.canvasKitVariant, CanvasKitVariant.auto);
 

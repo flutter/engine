@@ -25,17 +25,21 @@ DomFinalizationRegistry _finalizationRegistry = DomFinalizationRegistry(
     // ignore: cast_nullable_to_non_nullable
     final UniqueRef<Object> uniq = boxedUniq.toDartObject as UniqueRef<Object>;
     uniq.collect();
-  }.toJS
+  }.toJS,
 );
 
-NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemoryFinalizationRegistry();
+NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry =
+    NativeMemoryFinalizationRegistry();
 
 /// An indirection to [DomFinalizationRegistry] to enable tests provide a
 /// mock implementation of a finalization registry.
 class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
-      _finalizationRegistry.register(owner.toExternalReference, ref.toExternalReference);
+      _finalizationRegistry.register(
+        owner.toExternalReference,
+        ref.toExternalReference,
+      );
     }
   }
 }
@@ -81,7 +85,10 @@ class UniqueRef<T extends Object> {
   /// [SkPicture] exists that still references it. On the other hand, [SkPaint]
   /// is deleted eagerly.
   void dispose() {
-    assert(!isDisposed, 'A native object reference cannot be disposed more than once.');
+    assert(
+      !isDisposed,
+      'A native object reference cannot be disposed more than once.',
+    );
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('$_debugOwnerLabel Deleted');
     }
@@ -184,9 +191,10 @@ class CountedRef<R extends StackTraceDebugger, T extends Object> {
   List<StackTrace> debugGetStackTraces() {
     List<StackTrace>? result;
     assert(() {
-      result = debugReferrers
-          .map<StackTrace>((R referrer) => referrer.debugStackTrace)
-          .toList();
+      result =
+          debugReferrers
+              .map<StackTrace>((R referrer) => referrer.debugStackTrace)
+              .toList();
       return true;
     }());
 
@@ -200,10 +208,7 @@ class CountedRef<R extends StackTraceDebugger, T extends Object> {
   /// Increases the reference count of this box because a new object began
   /// sharing ownership of the underlying [nativeObject].
   void ref(R debugReferrer) {
-    assert(
-      !_ref.isDisposed,
-      'Cannot increment ref count on a deleted handle.',
-    );
+    assert(!_ref.isDisposed, 'Cannot increment ref count on a deleted handle.');
     assert(_refCount > 0);
     assert(
       debugReferrers.add(debugReferrer),

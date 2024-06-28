@@ -16,7 +16,11 @@ import 'surface_stats.dart';
 /// A surface that applies an [imageFilter] to its children.
 class PersistedImageFilter extends PersistedContainerSurface
     implements ui.ImageFilterEngineLayer {
-  PersistedImageFilter(PersistedImageFilter? super.oldLayer, this.filter, this.offset);
+  PersistedImageFilter(
+    PersistedImageFilter? super.oldLayer,
+    this.filter,
+    this.offset,
+  );
 
   final ui.ImageFilter filter;
   final ui.Offset offset;
@@ -40,8 +44,12 @@ class PersistedImageFilter extends PersistedContainerSurface
   Matrix4? _localTransformInverse;
 
   @override
-  Matrix4 get localTransformInverse => _localTransformInverse ??=
-      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
+  Matrix4 get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.translationValues(
+        -offset.dx,
+        -offset.dy,
+        0,
+      );
 
   DomElement? _svgFilter;
   @override
@@ -68,7 +76,9 @@ class PersistedImageFilter extends PersistedContainerSurface
   @override
   DomElement createElement() {
     final DomElement element = defaultCreateElement('flt-image-filter');
-    final DomElement container = defaultCreateElement('flt-image-filter-interior');
+    final DomElement container = defaultCreateElement(
+      'flt-image-filter-interior',
+    );
     if (debugExplainSurfaceStats) {
       // This creates an additional interior element. Count it too.
       surfaceStatsFor(this).allocatedDomNodeCount++;
@@ -96,9 +106,10 @@ class PersistedImageFilter extends PersistedContainerSurface
     _svgFilter = null;
     if (backendFilter is ModeHtmlColorFilter) {
       _svgFilter = backendFilter.makeSvgFilter(rootElement);
+
       /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
       if (_svgFilter == null) {
-          return;
+        return;
       }
     } else if (backendFilter is MatrixHtmlColorFilter) {
       _svgFilter = backendFilter.makeSvgFilter(rootElement);

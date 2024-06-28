@@ -45,10 +45,13 @@ void testMain() {
 
         // TODO(yjbanov): cannot test precise message due to https://github.com/flutter/flutter/issues/96298
         expect(
-            '$actualError',
-            startsWith('Bad state: Test.\n'
-                'The picture has been disposed. '
-                'When the picture was disposed the stack trace was:\n'));
+          '$actualError',
+          startsWith(
+            'Bad state: Test.\n'
+            'The picture has been disposed. '
+            'When the picture was disposed the stack trace was:\n',
+          ),
+        );
       });
     });
 

@@ -22,11 +22,11 @@ import 'semantics.dart';
 ///   * https://bugs.webkit.org/show_bug.cgi?id=223798
 class PlatformViewRoleManager extends PrimaryRoleManager {
   PlatformViewRoleManager(SemanticsObject semanticsObject)
-      : super.withBasics(
-          PrimaryRole.platformView,
-          semanticsObject,
-          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
-        );
+    : super.withBasics(
+        PrimaryRole.platformView,
+        semanticsObject,
+        preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+      );
 
   @override
   void update() {

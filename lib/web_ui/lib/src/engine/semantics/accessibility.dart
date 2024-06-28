@@ -14,10 +14,7 @@ import '../util.dart';
 /// It is used to set the priority with which assistive technology should treat announcements.
 ///
 /// The order of this enum must match the order of the values in semantics_event.dart in framework.
-enum Assertiveness {
-  polite,
-  assertive,
-}
+enum Assertiveness { polite, assertive }
 
 /// Duration for which a live message will be present in the DOM for the screen
 /// reader to announce it.
@@ -35,7 +32,9 @@ class AccessibilityAnnouncements {
   /// Creates a new instance with its own DOM elements used for announcements.
   factory AccessibilityAnnouncements({required DomElement hostElement}) {
     final DomHTMLElement politeElement = _createElement(Assertiveness.polite);
-    final DomHTMLElement assertiveElement = _createElement(Assertiveness.assertive);
+    final DomHTMLElement assertiveElement = _createElement(
+      Assertiveness.assertive,
+    );
     hostElement.append(politeElement);
     hostElement.append(assertiveElement);
     return AccessibilityAnnouncements._(politeElement, assertiveElement);
@@ -63,8 +62,10 @@ class AccessibilityAnnouncements {
   /// Looks up the element used to announce messages of the given [assertiveness].
   DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
     switch (assertiveness) {
-      case Assertiveness.polite: return _politeElement;
-      case Assertiveness.assertive: return _assertiveElement;
+      case Assertiveness.polite:
+        return _politeElement;
+      case Assertiveness.assertive:
+        return _assertiveElement;
     }
   }
 
@@ -73,13 +74,15 @@ class AccessibilityAnnouncements {
   ///
   /// The encoded message is passed as [data], and will be decoded using [codec].
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
-    final Map<dynamic, dynamic> inputMap = codec.decodeMessage(data) as Map<dynamic, dynamic>;
+    final Map<dynamic, dynamic> inputMap =
+        codec.decodeMessage(data) as Map<dynamic, dynamic>;
     final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
     final String? message = dataMap.tryString('message');
     if (message != null && message.isNotEmpty) {
       /// The default value for assertiveness is `polite`.
       final int assertivenessIndex = dataMap.tryInt('assertiveness') ?? 0;
-      final Assertiveness assertiveness = Assertiveness.values[assertivenessIndex];
+      final Assertiveness assertiveness =
+          Assertiveness.values[assertivenessIndex];
       announce(message, assertiveness);
     }
   }
@@ -101,8 +104,10 @@ class AccessibilityAnnouncements {
   }
 
   static DomHTMLElement _createElement(Assertiveness assertiveness) {
-    final String ariaLiveValue = (assertiveness == Assertiveness.assertive) ? 'assertive' : 'polite';
-    final DomHTMLElement liveRegion = createDomElement('flt-announcement-$ariaLiveValue') as DomHTMLElement;
+    final String ariaLiveValue =
+        (assertiveness == Assertiveness.assertive) ? 'assertive' : 'polite';
+    final DomHTMLElement liveRegion =
+        createDomElement('flt-announcement-$ariaLiveValue') as DomHTMLElement;
     liveRegion.style
       ..position = 'fixed'
       ..overflow = 'hidden'

@@ -18,7 +18,8 @@ import '../services/message_codecs.dart';
 BrowserHistory createHistoryForExistingState(ui_web.UrlStrategy? urlStrategy) {
   if (urlStrategy != null) {
     final Object? state = urlStrategy.getState();
-    if (SingleEntryBrowserHistory._isOriginEntry(state) || SingleEntryBrowserHistory._isFlutterEntry(state)) {
+    if (SingleEntryBrowserHistory._isOriginEntry(state) ||
+        SingleEntryBrowserHistory._isFlutterEntry(state)) {
       return SingleEntryBrowserHistory(urlStrategy: urlStrategy);
     }
   }
@@ -131,7 +132,10 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     _setupStrategy(strategy);
     if (!_hasSerialCount(currentState)) {
       strategy.replaceState(
-          _tagWithSerialCount(currentState, 0), 'flutter', currentPath);
+        _tagWithSerialCount(currentState, 0),
+        'flutter',
+        currentPath,
+      );
     }
     // If we restore from a page refresh, the _currentSerialCount may not be 0.
     _lastSeenSerialCount = _currentSerialCount;
@@ -191,18 +195,20 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
       // In this case we assume this will be the next history entry from the
       // last seen entry.
       urlStrategy!.replaceState(
-          _tagWithSerialCount(state, _lastSeenSerialCount + 1),
-          'flutter',
-          currentPath);
+        _tagWithSerialCount(state, _lastSeenSerialCount + 1),
+        'flutter',
+        currentPath,
+      );
     }
     _lastSeenSerialCount = _currentSerialCount;
     EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
       'flutter/navigation',
       const JSONMethodCodec().encodeMethodCall(
-          MethodCall('pushRouteInformation', <dynamic, dynamic>{
-        'location': currentPath,
-        'state': (state as Map<dynamic, dynamic>?)?['state'],
-      })),
+        MethodCall('pushRouteInformation', <dynamic, dynamic>{
+          'location': currentPath,
+          'state': (state as Map<dynamic, dynamic>?)?['state'],
+        }),
+      ),
       (_) {},
     );
   }
@@ -231,11 +237,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
     final Map<dynamic, dynamic> stateMap =
         currentState! as Map<dynamic, dynamic>;
-    urlStrategy!.replaceState(
-      stateMap['state'],
-      'flutter',
-      currentPath,
-    );
+    urlStrategy!.replaceState(stateMap['state'], 'flutter', currentPath);
   }
 }
 
@@ -394,7 +396,10 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     // We need to remove the flutter entry that we pushed in setup.
     await urlStrategy!.go(-1);
     // Restores original state.
-    urlStrategy!
-        .replaceState(_unwrapOriginState(currentState), 'flutter', currentPath);
+    urlStrategy!.replaceState(
+      _unwrapOriginState(currentState),
+      'flutter',
+      currentPath,
+    );
   }
 }

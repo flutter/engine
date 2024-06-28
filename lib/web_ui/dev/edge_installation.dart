@@ -30,8 +30,9 @@ Future<BrowserInstallation> getEdgeInstallation(
   // In the future we can investigate to run them on Android or on MacOS.
   if (!io.Platform.isWindows) {
     throw UnimplementedError(
-        'Tests for Edge on ${io.Platform.operatingSystem} is'
-        ' not supported.');
+      'Tests for Edge on ${io.Platform.operatingSystem} is'
+      ' not supported.',
+    );
   }
 
   infoLog ??= io.stdout;
@@ -47,15 +48,19 @@ Future<BrowserInstallation> getEdgeInstallation(
       infoLog.writeln('Installing MicrosoftEdgeLauncher');
       await edgeLauncher.install();
       infoLog.writeln(
-          'Installations complete. To launch it run ${edgeLauncher.executable}');
+        'Installations complete. To launch it run ${edgeLauncher.executable}',
+      );
     }
 
     return BrowserInstallation(
       version: 'system',
-      executable: io.Directory(path.join(
+      executable:
+          io.Directory(
+            path.join(
               edgeLauncher.launcherInstallationDir.path,
-              PlatformBinding.instance.getCommandToRunEdge()))
-          .path,
+              PlatformBinding.instance.getCommandToRunEdge(),
+            ),
+          ).path,
     );
   } else {
     infoLog.writeln('Unsupported version $requestedVersion.');
@@ -74,12 +79,16 @@ class EdgeLauncher {
 
   /// Path to the directory that contains `MicrosoftEdgeLauncher.exe`.
   io.Directory get launcherInstallationDir => io.Directory(
-        path.join(environment.webUiDartToolDir.path, 'microsoftedgelauncher',
-            version),
-      );
+    path.join(
+      environment.webUiDartToolDir.path,
+      'microsoftedgelauncher',
+      version,
+    ),
+  );
 
   io.File get executable => io.File(
-      path.join(launcherInstallationDir.path, 'MicrosoftEdgeLauncher.exe'));
+    path.join(launcherInstallationDir.path, 'MicrosoftEdgeLauncher.exe'),
+  );
 
   bool get isInstalled => executable.existsSync();
 
@@ -108,10 +117,10 @@ class EdgeLauncher {
 
     try {
       // Download executable from Github.
-      final StreamedResponse download = await client.send(Request(
-        'GET',
-        Uri.parse(windowsEdgeLauncherDownloadUrl),
-      ));
+      final StreamedResponse download =
+          await client.send(
+            Request('GET', Uri.parse(windowsEdgeLauncherDownloadUrl)),
+          );
 
       await download.stream.pipe(executable.openWrite());
     } finally {

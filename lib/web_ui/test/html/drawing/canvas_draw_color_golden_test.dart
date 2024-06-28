@@ -40,26 +40,31 @@ Future<void> testMain() async {
     await sceneScreenshot(builder, 'canvas_draw_color', region: region);
   }, skip: true); // TODO(ferhat): matchGolden fails when a div covers viewport.
 
-  test('drawPaint should cover entire viewport', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 400, 400);
+  test(
+    'drawPaint should cover entire viewport',
+    () async {
+      const Rect region = Rect.fromLTWH(0, 0, 400, 400);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture testPicture = _drawTestPicture(region);
-    builder.addPicture(Offset.zero, testPicture);
-    await sceneScreenshot(builder, 'canvas_draw_paint', region: region);
-  }, skip: true); // TODO(ferhat): matchGolden fails when a div covers viewport.);
+      final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+      final Picture testPicture = _drawTestPicture(region);
+      builder.addPicture(Offset.zero, testPicture);
+      await sceneScreenshot(builder, 'canvas_draw_paint', region: region);
+    },
+    skip: true,
+  ); // TODO(ferhat): matchGolden fails when a div covers viewport.);
 }
 
 Picture _drawTestPicture(Rect region, {bool useColor = false}) {
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
+  final EnginePictureRecorder recorder =
+      PictureRecorder() as EnginePictureRecorder;
   const Rect r = Rect.fromLTWH(0, 0, 200, 200);
   final RecordingCanvas canvas = recorder.beginRecording(r);
 
   canvas.drawRect(
-      region.deflate(8.0),
-      Paint() as SurfacePaint
-        ..style = PaintingStyle.fill
-        ..color = const Color(0xFFE0E0E0)
+    region.deflate(8.0),
+    Paint() as SurfacePaint
+      ..style = PaintingStyle.fill
+      ..color = const Color(0xFFE0E0E0),
   );
 
   canvas.transform(Matrix4.translationValues(50, 50, 0).storage);
@@ -67,16 +72,20 @@ Picture _drawTestPicture(Rect region, {bool useColor = false}) {
   if (useColor) {
     canvas.drawColor(const Color.fromRGBO(0, 255, 0, 1), BlendMode.srcOver);
   } else {
-    canvas.drawPaint(Paint() as SurfacePaint
-      ..style = PaintingStyle.fill
-      ..color = const Color.fromRGBO(0, 0, 255, 1));
+    canvas.drawPaint(
+      Paint() as SurfacePaint
+        ..style = PaintingStyle.fill
+        ..color = const Color.fromRGBO(0, 0, 255, 1),
+    );
   }
 
   canvas.drawCircle(
-      Offset(r.width/2, r.height/2), r.width/2,
-      Paint() as SurfacePaint
-        ..style = PaintingStyle.fill
-        ..color = const Color.fromRGBO(255, 0, 0, 1));
+    Offset(r.width / 2, r.height / 2),
+    r.width / 2,
+    Paint() as SurfacePaint
+      ..style = PaintingStyle.fill
+      ..color = const Color.fromRGBO(255, 0, 0, 1),
+  );
 
   return recorder.endRecording();
 }

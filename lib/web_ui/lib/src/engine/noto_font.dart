@@ -38,7 +38,8 @@ class FallbackFontComponent {
   FallbackFontComponent(this._allFonts);
   final List<NotoFont> _allFonts;
   late final List<NotoFont> _activeFonts = List<NotoFont>.unmodifiable(
-      _allFonts.where((NotoFont font) => font.enabled));
+    _allFonts.where((NotoFont font) => font.enabled),
+  );
 
   List<NotoFont> get fonts => _activeFonts;
 

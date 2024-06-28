@@ -38,6 +38,7 @@ class FrameTimingRecorder {
 
   /// The last time (in microseconds) we submitted frame timings.
   static int _frameTimingsLastSubmitTime = _nowMicros();
+
   /// The amount of time in microseconds we wait between submitting
   /// frame timings.
   static const int _kFrameTimingsSubmitInterval = 100000; // 100 milliseconds
@@ -60,26 +61,35 @@ class FrameTimingRecorder {
   }
 
   void recordBuildFinish([int? buildFinish]) {
-    assert(_buildFinishMicros == null, "can't record build finish more than once");
+    assert(
+      _buildFinishMicros == null,
+      "can't record build finish more than once",
+    );
     _buildFinishMicros = buildFinish ?? _nowMicros();
   }
 
   void recordRasterStart([int? rasterStart]) {
-    assert(_rasterStartMicros == null, "can't record raster start more than once");
+    assert(
+      _rasterStartMicros == null,
+      "can't record raster start more than once",
+    );
     _rasterStartMicros = rasterStart ?? _nowMicros();
   }
 
   void recordRasterFinish([int? rasterFinish]) {
-    assert(_rasterFinishMicros == null, "can't record raster finish more than once");
+    assert(
+      _rasterFinishMicros == null,
+      "can't record raster finish more than once",
+    );
     _rasterFinishMicros = rasterFinish ?? _nowMicros();
   }
 
   void submitTimings() {
     assert(
       _buildFinishMicros != null &&
-      _rasterStartMicros != null &&
-      _rasterFinishMicros != null,
-      'Attempted to submit an incomplete timings.'
+          _rasterStartMicros != null &&
+          _rasterFinishMicros != null,
+      'Attempted to submit an incomplete timings.',
     );
     final ui.FrameTiming timing = ui.FrameTiming(
       vsyncStart: _vsyncStartMicros,

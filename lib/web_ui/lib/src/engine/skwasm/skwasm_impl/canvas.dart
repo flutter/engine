@@ -11,9 +11,14 @@ import 'package:ui/ui.dart' as ui;
 
 class SkwasmCanvas implements SceneCanvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>
-      SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
-          pictureRecorderBeginRecording(
-              recorder.handle, s.convertRectToNative(cullRect))));
+      SkwasmCanvas.fromHandle(
+        withStackScope(
+          (StackScope s) => pictureRecorderBeginRecording(
+            recorder.handle,
+            s.convertRectToNative(cullRect),
+          ),
+        ),
+      );
 
   SkwasmCanvas.fromHandle(this._handle);
   CanvasHandle _handle;
@@ -32,7 +37,12 @@ class SkwasmCanvas implements SceneCanvas {
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nullptr);
+        canvasSaveLayer(
+          _handle,
+          s.convertRectToNative(bounds),
+          paint.handle,
+          nullptr,
+        );
       });
     } else {
       canvasSaveLayer(_handle, nullptr, paint.handle, nullptr);
@@ -40,12 +50,23 @@ class SkwasmCanvas implements SceneCanvas {
   }
 
   @override
-  void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
-    final SkwasmImageFilter nativeFilter = SkwasmImageFilter.fromUiFilter(imageFilter);
+  void saveLayerWithFilter(
+    ui.Rect? bounds,
+    ui.Paint paint,
+    ui.ImageFilter imageFilter,
+  ) {
+    final SkwasmImageFilter nativeFilter = SkwasmImageFilter.fromUiFilter(
+      imageFilter,
+    );
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle, nativeFilter.handle);
+        canvasSaveLayer(
+          _handle,
+          s.convertRectToNative(bounds),
+          paint.handle,
+          nativeFilter.handle,
+        );
       });
     } else {
       canvasSaveLayer(_handle, nullptr, paint.handle, nativeFilter.handle);
@@ -85,10 +106,18 @@ class SkwasmCanvas implements SceneCanvas {
   }
 
   @override
-  void clipRect(ui.Rect rect,
-      {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
+  void clipRect(
+    ui.Rect rect, {
+    ui.ClipOp clipOp = ui.ClipOp.intersect,
+    bool doAntiAlias = true,
+  }) {
     withStackScope((StackScope s) {
-      canvasClipRect(_handle, s.convertRectToNative(rect), clipOp.index, doAntiAlias);
+      canvasClipRect(
+        _handle,
+        s.convertRectToNative(rect),
+        clipOp.index,
+        doAntiAlias,
+      );
     });
   }
 
@@ -106,8 +135,11 @@ class SkwasmCanvas implements SceneCanvas {
   }
 
   @override
-  void drawColor(ui.Color color, ui.BlendMode blendMode) =>
-      canvasDrawColor(_handle, color.value, blendMode.index);
+  void drawColor(ui.Color color, ui.BlendMode blendMode) => canvasDrawColor(
+    _handle,
+    color.value,
+    blendMode.index,
+  );
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint paint) {
@@ -125,11 +157,7 @@ class SkwasmCanvas implements SceneCanvas {
   void drawRect(ui.Rect rect, ui.Paint paint) {
     paint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvasDrawRect(
-        _handle,
-        s.convertRectToNative(rect),
-        paint.handle
-      );
+      canvasDrawRect(_handle, s.convertRectToNative(rect), paint.handle);
     });
   }
 
@@ -137,11 +165,7 @@ class SkwasmCanvas implements SceneCanvas {
   void drawRRect(ui.RRect rrect, ui.Paint paint) {
     paint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvasDrawRRect(
-        _handle,
-        s.convertRRectToNative(rrect),
-        paint.handle
-      );
+      canvasDrawRRect(_handle, s.convertRRectToNative(rrect), paint.handle);
     });
   }
 
@@ -153,7 +177,7 @@ class SkwasmCanvas implements SceneCanvas {
         _handle,
         s.convertRRectToNative(outer),
         s.convertRRectToNative(inner),
-        paint.handle
+        paint.handle,
       );
     });
   }
@@ -173,8 +197,13 @@ class SkwasmCanvas implements SceneCanvas {
   }
 
   @override
-  void drawArc(ui.Rect rect, double startAngle, double sweepAngle,
-      bool useCenter, ui.Paint paint) {
+  void drawArc(
+    ui.Rect rect,
+    double startAngle,
+    double sweepAngle,
+    bool useCenter,
+    ui.Paint paint,
+  ) {
     paint as SkwasmPaint;
     withStackScope((StackScope s) {
       canvasDrawArc(
@@ -183,7 +212,7 @@ class SkwasmCanvas implements SceneCanvas {
         ui.toDegrees(startAngle),
         ui.toDegrees(sweepAngle),
         useCenter,
-        paint.handle
+        paint.handle,
       );
     });
   }
@@ -197,21 +226,22 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   void drawImage(ui.Image image, ui.Offset offset, ui.Paint paint) =>
-    canvasDrawImage(
-      _handle,
-      (image as SkwasmImage).handle,
-      offset.dx,
-      offset.dy,
-      (paint as SkwasmPaint).handle,
-      paint.filterQuality.index,
-    );
+      canvasDrawImage(
+        _handle,
+        (image as SkwasmImage).handle,
+        offset.dx,
+        offset.dy,
+        (paint as SkwasmPaint).handle,
+        paint.filterQuality.index,
+      );
 
   @override
   void drawImageRect(
     ui.Image image,
     ui.Rect src,
     ui.Rect dst,
-    ui.Paint paint) => withStackScope((StackScope scope) {
+    ui.Paint paint,
+  ) => withStackScope((StackScope scope) {
     final Pointer<Float> sourceRect = scope.convertRectToNative(src);
     final Pointer<Float> destRect = scope.convertRectToNative(dst);
     canvasDrawImageRect(
@@ -229,7 +259,8 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Image image,
     ui.Rect center,
     ui.Rect dst,
-    ui.Paint paint) => withStackScope((StackScope scope) {
+    ui.Paint paint,
+  ) => withStackScope((StackScope scope) {
     final Pointer<Int32> centerRect = scope.convertIRectToNative(center);
     final Pointer<Float> destRect = scope.convertRectToNative(dst);
     canvasDrawImageNine(
@@ -261,7 +292,7 @@ class SkwasmCanvas implements SceneCanvas {
   void drawPoints(
     ui.PointMode pointMode,
     List<ui.Offset> points,
-    ui.Paint paint
+    ui.Paint paint,
   ) => withStackScope((StackScope scope) {
     final RawPointArray rawPoints = scope.convertPointArrayToNative(points);
     canvasDrawPoints(
@@ -277,7 +308,7 @@ class SkwasmCanvas implements SceneCanvas {
   void drawRawPoints(
     ui.PointMode pointMode,
     Float32List points,
-    ui.Paint paint
+    ui.Paint paint,
   ) => withStackScope((StackScope scope) {
     final RawPointArray rawPoints = scope.convertDoublesToNative(points);
     canvasDrawPoints(
@@ -311,14 +342,14 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Rect? cullRect,
     ui.Paint paint,
   ) => withStackScope((StackScope scope) {
-    final RawRSTransformArray rawTransforms = scope.convertRSTransformsToNative(transforms);
+    final RawRSTransformArray rawTransforms = scope.convertRSTransformsToNative(
+      transforms,
+    );
     final RawRect rawRects = scope.convertRectsToNative(rects);
-    final RawColorArray rawColors = colors != null
-      ? scope.convertColorArrayToNative(colors)
-      : nullptr;
-    final RawRect rawCullRect = cullRect != null
-      ? scope.convertRectToNative(cullRect)
-      : nullptr;
+    final RawColorArray rawColors =
+        colors != null ? scope.convertColorArrayToNative(colors) : nullptr;
+    final RawRect rawCullRect =
+        cullRect != null ? scope.convertRectToNative(cullRect) : nullptr;
     canvasDrawAtlas(
       _handle,
       (atlas as SkwasmImage).handle,
@@ -342,14 +373,14 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Rect? cullRect,
     ui.Paint paint,
   ) => withStackScope((StackScope scope) {
-    final RawRSTransformArray rawTransforms = scope.convertDoublesToNative(rstTransforms);
+    final RawRSTransformArray rawTransforms = scope.convertDoublesToNative(
+      rstTransforms,
+    );
     final RawRect rawRects = scope.convertDoublesToNative(rects);
-    final RawColorArray rawColors = colors != null
-      ? scope.convertIntsToUint32Native(colors)
-      : nullptr;
-    final RawRect rawCullRect = cullRect != null
-      ? scope.convertRectToNative(cullRect)
-      : nullptr;
+    final RawColorArray rawColors =
+        colors != null ? scope.convertIntsToUint32Native(colors) : nullptr;
+    final RawRect rawCullRect =
+        cullRect != null ? scope.convertRectToNative(cullRect) : nullptr;
     canvasDrawAtlas(
       _handle,
       (atlas as SkwasmImage).handle,
@@ -377,7 +408,8 @@ class SkwasmCanvas implements SceneCanvas {
       elevation,
       EngineFlutterDisplay.instance.devicePixelRatio,
       color.value,
-      transparentOccluder);
+      transparentOccluder,
+    );
   }
 
   @override
@@ -392,7 +424,9 @@ class SkwasmCanvas implements SceneCanvas {
   @override
   ui.Rect getLocalClipBounds() {
     final Float64List transform = getTransform();
-    final Matrix4 matrix = Matrix4.fromFloat32List(Float32List.fromList(transform));
+    final Matrix4 matrix = Matrix4.fromFloat32List(
+      Float32List.fromList(transform),
+    );
     if (matrix.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
