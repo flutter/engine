@@ -19,10 +19,13 @@ class DebugAllocatorStats {
 
   ~DebugAllocatorStats() {}
 
+  /// Increment the tracked allocation size in bytes.
   void Increment(size_t size);
 
+  /// Decrement the tracked allocation size in bytes.
   void Decrement(size_t size);
 
+  /// Get the current tracked allocation size in MB.
   size_t GetAllocationSizeMB();
 
  private:

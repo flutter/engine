@@ -228,7 +228,7 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
 
 #ifdef IMPELLER_DEBUG
   if (desc.storage_mode != StorageMode::kDeviceTransient) {
-    debug_allocater_->Increment(desc.GetByteSizeOfBaseMipLevel());
+    debug_allocater_->Increment(desc.GetByteSizeOfAllMipLevels());
   }
 #endif  // IMPELLER_DEBUG
 
