@@ -75,7 +75,10 @@ class PersistedClipRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRectEngineLayer {
   PersistedClipRect(
-      PersistedClipRect? super.oldLayer, this.rect, this.clipBehavior);
+    PersistedClipRect? super.oldLayer,
+    this.rect,
+    this.clipBehavior,
+  );
   final ui.Clip? clipBehavior;
   final ui.Rect rect;
 
@@ -130,7 +133,7 @@ class PersistedClipRRect extends PersistedContainerSurface
     with _DomClip
     implements ui.ClipRRectEngineLayer {
   PersistedClipRRect(ui.EngineLayer? oldLayer, this.rrect, this.clipBehavior)
-      : super(oldLayer as PersistedSurface?);
+    : super(oldLayer as PersistedSurface?);
 
   final ui.RRect rrect;
   // TODO(yjbanov): can this be controlled in the browser?
@@ -191,7 +194,10 @@ class PersistedClipRRect extends PersistedContainerSurface
 class PersistedClipPath extends PersistedContainerSurface
     implements ui.ClipPathEngineLayer {
   PersistedClipPath(
-      PersistedClipPath? super.oldLayer, this.clipPath, this.clipBehavior);
+    PersistedClipPath? super.oldLayer,
+    this.clipPath,
+    this.clipBehavior,
+  );
 
   final ui.Path clipPath;
   final ui.Clip clipBehavior;
@@ -246,8 +252,11 @@ class PersistedClipPath extends PersistedContainerSurface
 /// Creates an svg clipPath and applies it to [element].
 SVGSVGElement createSvgClipDef(DomElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
-  final SVGSVGElement svgClipPath = pathToSvgClipPath(clipPath,
-      scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
+  final SVGSVGElement svgClipPath = pathToSvgClipPath(
+    clipPath,
+    scaleX: 1.0 / pathBounds.right,
+    scaleY: 1.0 / pathBounds.bottom,
+  );
   setClipPath(element, createSvgClipUrl());
   // We need to set width and height for the clipElement to cover the
   // bounds of the path since browsers such as Safari and Edge

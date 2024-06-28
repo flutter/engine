@@ -24,10 +24,10 @@ class PackageLock {
   }
 
   PackageLock._fromYaml(YamlMap yaml)
-      : chromeLock = ChromeLock._fromYaml(yaml['chrome'] as YamlMap),
-        firefoxLock = FirefoxLock._fromYaml(yaml['firefox'] as YamlMap),
-        edgeLock = EdgeLock._fromYaml(yaml['edge'] as YamlMap),
-        esbuildLock = EsbuildLock._fromYaml(yaml['esbuild'] as YamlMap);
+    : chromeLock = ChromeLock._fromYaml(yaml['chrome'] as YamlMap),
+      firefoxLock = FirefoxLock._fromYaml(yaml['firefox'] as YamlMap),
+      edgeLock = EdgeLock._fromYaml(yaml['edge'] as YamlMap),
+      esbuildLock = EsbuildLock._fromYaml(yaml['esbuild'] as YamlMap);
 
   final ChromeLock chromeLock;
   final FirefoxLock firefoxLock;
@@ -50,7 +50,7 @@ class FirefoxLock {
 
 class EdgeLock {
   EdgeLock._fromYaml(YamlMap yaml)
-      : launcherVersion = yaml['launcher_version'] as String;
+    : launcherVersion = yaml['launcher_version'] as String;
 
   final String launcherVersion;
 }

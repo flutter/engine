@@ -109,7 +109,11 @@ void fillPlaceholder(
 ///
 /// All rectangles are filled relative to [offset].
 void fillBoxes(
-    EngineCanvas canvas, Offset offset, List<TextBox> boxes, Color color) {
+  EngineCanvas canvas,
+  Offset offset,
+  List<TextBox> boxes,
+  Color color,
+) {
   for (final TextBox box in boxes) {
     final Rect rect = box.toRect().shift(offset);
     canvas.drawRect(rect, SurfacePaintData()..color = color.value);

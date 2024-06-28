@@ -18,11 +18,11 @@ typedef AppBootstrapRunAppFn = Future<void> Function();
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
   /// Construct an AppBootstrap.
-  AppBootstrap(
-      {required InitEngineFn initializeEngine,
-      required AppBootstrapRunAppFn runApp})
-      : _initializeEngine = initializeEngine,
-        _runApp = runApp;
+  AppBootstrap({
+    required InitEngineFn initializeEngine,
+    required AppBootstrapRunAppFn runApp,
+  }) : _initializeEngine = initializeEngine,
+       _runApp = runApp;
 
   // A function to initialize the engine.
   final InitEngineFn _initializeEngine;
@@ -41,20 +41,21 @@ class AppBootstrap {
   /// Creates an engine initializer that runs our encapsulated initEngine function.
   FlutterEngineInitializer prepareEngineInitializer() {
     return FlutterEngineInitializer(
-        // This is a convenience method that lets the programmer call "autoStart"
-        // from JavaScript immediately after the main.dart.js has loaded.
-        // Returns a promise that resolves to the Flutter app that was started.
-        autoStart: () async {
-      await autoStart();
-      // Return the App that was just started
-      return _prepareFlutterApp();
-    },
-        // Calls [_initEngine], and returns a JS Promise that resolves to an
-        // app runner object.
-        initializeEngine: ([JsFlutterConfiguration? configuration]) async {
-      await _initializeEngine(configuration);
-      return _prepareAppRunner();
-    });
+      // This is a convenience method that lets the programmer call "autoStart"
+      // from JavaScript immediately after the main.dart.js has loaded.
+      // Returns a promise that resolves to the Flutter app that was started.
+      autoStart: () async {
+        await autoStart();
+        // Return the App that was just started
+        return _prepareFlutterApp();
+      },
+      // Calls [_initEngine], and returns a JS Promise that resolves to an
+      // app runner object.
+      initializeEngine: ([JsFlutterConfiguration? configuration]) async {
+        await _initializeEngine(configuration);
+        return _prepareAppRunner();
+      },
+    );
   }
 
   /// Creates an appRunner that runs our encapsulated runApp function.
@@ -70,14 +71,21 @@ class AppBootstrap {
 
   /// Represents the App that was just started, and its JS API.
   FlutterApp _prepareFlutterApp() {
-    return FlutterApp(addView: (JsFlutterViewOptions options) {
-      assert(configuration.multiViewEnabled,
-          'Cannot addView when multiView is not enabled');
-      return viewManager.createAndRegisterView(options).viewId;
-    }, removeView: (int viewId) {
-      assert(configuration.multiViewEnabled,
-          'Cannot removeView when multiView is not enabled');
-      return viewManager.disposeAndUnregisterView(viewId);
-    });
+    return FlutterApp(
+      addView: (JsFlutterViewOptions options) {
+        assert(
+          configuration.multiViewEnabled,
+          'Cannot addView when multiView is not enabled',
+        );
+        return viewManager.createAndRegisterView(options).viewId;
+      },
+      removeView: (int viewId) {
+        assert(
+          configuration.multiViewEnabled,
+          'Cannot removeView when multiView is not enabled',
+        );
+        return viewManager.disposeAndUnregisterView(viewId);
+      },
+    );
   }
 }

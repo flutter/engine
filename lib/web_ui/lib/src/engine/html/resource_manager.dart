@@ -44,8 +44,9 @@ class ResourceManager {
       return _resourcesHost!;
     }
 
-    final DomElement resourcesHost =
-        domDocument.createElement(resourcesHostTagName);
+    final DomElement resourcesHost = domDocument.createElement(
+      resourcesHostTagName,
+    );
     resourcesHost.style.visibility = 'hidden';
     _resourcesHost = resourcesHost;
 

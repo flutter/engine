@@ -49,43 +49,55 @@ void testMain() {
     expect(runCalled, 2, reason: 'runApp should be called after init.');
   });
 
-  test('engineInitializer autoStart() does the same as Dart autoStart()',
-      () async {
-    final AppBootstrap bootstrap = AppBootstrap(
-      initializeEngine: mockInit,
-      runApp: mockRunApp,
-    );
+  test(
+    'engineInitializer autoStart() does the same as Dart autoStart()',
+    () async {
+      final AppBootstrap bootstrap = AppBootstrap(
+        initializeEngine: mockInit,
+        runApp: mockRunApp,
+      );
 
-    final FlutterEngineInitializer engineInitializer =
-        bootstrap.prepareEngineInitializer();
+      final FlutterEngineInitializer engineInitializer =
+          bootstrap.prepareEngineInitializer();
 
-    expect(engineInitializer, isNotNull);
+      expect(engineInitializer, isNotNull);
 
-    final Object maybeApp = await promiseToFuture<Object>(
-        callMethod<Object>(engineInitializer, 'autoStart', <Object?>[]));
+      final Object maybeApp =
+          await promiseToFuture<Object>(
+            callMethod<Object>(engineInitializer, 'autoStart', <Object?>[]),
+          );
 
-    expect(maybeApp, isA<FlutterApp>());
-    expect(initCalled, 1, reason: 'initEngine should be called first.');
-    expect(runCalled, 2, reason: 'runApp should be called after init.');
-  });
+      expect(maybeApp, isA<FlutterApp>());
+      expect(initCalled, 1, reason: 'initEngine should be called first.');
+      expect(runCalled, 2, reason: 'runApp should be called after init.');
+    },
+  );
 
-  test('engineInitializer initEngine() calls init and returns an appRunner',
-      () async {
-    final AppBootstrap bootstrap = AppBootstrap(
-      initializeEngine: mockInit,
-      runApp: mockRunApp,
-    );
+  test(
+    'engineInitializer initEngine() calls init and returns an appRunner',
+    () async {
+      final AppBootstrap bootstrap = AppBootstrap(
+        initializeEngine: mockInit,
+        runApp: mockRunApp,
+      );
 
-    final FlutterEngineInitializer engineInitializer =
-        bootstrap.prepareEngineInitializer();
+      final FlutterEngineInitializer engineInitializer =
+          bootstrap.prepareEngineInitializer();
 
-    final Object maybeAppInitializer = await promiseToFuture<Object>(
-        callMethod<Object>(engineInitializer, 'initializeEngine', <Object?>[]));
+      final Object maybeAppInitializer =
+          await promiseToFuture<Object>(
+            callMethod<Object>(
+              engineInitializer,
+              'initializeEngine',
+              <Object?>[],
+            ),
+          );
 
-    expect(maybeAppInitializer, isA<FlutterAppRunner>());
-    expect(initCalled, 1, reason: 'initEngine should have been called.');
-    expect(runCalled, 0, reason: 'runApp should not have been called.');
-  });
+      expect(maybeAppInitializer, isA<FlutterAppRunner>());
+      expect(initCalled, 1, reason: 'initEngine should have been called.');
+      expect(runCalled, 0, reason: 'runApp should not have been called.');
+    },
+  );
 
   test('appRunner runApp() calls run and returns a FlutterApp', () async {
     final AppBootstrap bootstrap = AppBootstrap(
@@ -96,11 +108,19 @@ void testMain() {
     final FlutterEngineInitializer engineInitializer =
         bootstrap.prepareEngineInitializer();
 
-    final Object appInitializer = await promiseToFuture<Object>(
-        callMethod<Object>(engineInitializer, 'initializeEngine', <Object?>[]));
+    final Object appInitializer =
+        await promiseToFuture<Object>(
+          callMethod<Object>(
+            engineInitializer,
+            'initializeEngine',
+            <Object?>[],
+          ),
+        );
     expect(appInitializer, isA<FlutterAppRunner>());
-    final Object maybeApp = await promiseToFuture<Object>(
-        callMethod<Object>(appInitializer, 'runApp', <Object?>[]));
+    final Object maybeApp =
+        await promiseToFuture<Object>(
+          callMethod<Object>(appInitializer, 'runApp', <Object?>[]),
+        );
     expect(maybeApp, isA<FlutterApp>());
     expect(initCalled, 1, reason: 'initEngine should have been called.');
     expect(runCalled, 2, reason: 'runApp should have been called.');
@@ -116,11 +136,18 @@ void testMain() {
       final FlutterEngineInitializer engineInitializer =
           bootstrap.prepareEngineInitializer();
 
-      final Object appInitializer = await promiseToFuture<Object>(
-          callMethod<Object>(
-              engineInitializer, 'initializeEngine', <Object?>[]));
-      final Object maybeApp = await promiseToFuture<Object>(
-          callMethod<Object>(appInitializer, 'runApp', <Object?>[]));
+      final Object appInitializer =
+          await promiseToFuture<Object>(
+            callMethod<Object>(
+              engineInitializer,
+              'initializeEngine',
+              <Object?>[],
+            ),
+          );
+      final Object maybeApp =
+          await promiseToFuture<Object>(
+            callMethod<Object>(appInitializer, 'runApp', <Object?>[]),
+          );
 
       expect(maybeApp, isA<FlutterApp>());
       expect(getJsProperty<dynamic>(maybeApp, 'addView'), isA<Function>());
@@ -135,19 +162,20 @@ void testMain() {
       final FlutterEngineInitializer engineInitializer =
           bootstrap.prepareEngineInitializer();
 
-      final Object appInitializer = await promiseToFuture<Object>(
-          callMethod<Object>(engineInitializer, 'initializeEngine', <dynamic>[
-        jsify(<String, Object?>{
-          'multiViewEnabled': true,
-        })
-      ]));
-      final Object maybeApp = await promiseToFuture<Object>(
-          callMethod<Object>(appInitializer, 'runApp', <Object?>[]));
-      final int viewId = callMethod<num>(maybeApp, 'addView', <dynamic>[
-        jsify(<String, Object?>{
-          'hostElement': createDomElement('div'),
-        })
-      ]).toInt();
+      final Object appInitializer =
+          await promiseToFuture<Object>(
+            callMethod<Object>(engineInitializer, 'initializeEngine', <dynamic>[
+              jsify(<String, Object?>{'multiViewEnabled': true}),
+            ]),
+          );
+      final Object maybeApp =
+          await promiseToFuture<Object>(
+            callMethod<Object>(appInitializer, 'runApp', <Object?>[]),
+          );
+      final int viewId =
+          callMethod<num>(maybeApp, 'addView', <dynamic>[
+            jsify(<String, Object?>{'hostElement': createDomElement('div')}),
+          ]).toInt();
       expect(bootstrap.viewManager[viewId], isNotNull);
 
       callMethod<Object>(maybeApp, 'removeView', <Object>[viewId]);

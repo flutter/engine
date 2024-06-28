@@ -25,14 +25,22 @@ void doTests() {
 
       // Check tag names.
 
-      expect(domManager.rootElement.tagName,
-          equalsIgnoringCase(DomManager.flutterViewTagName));
-      expect(domManager.platformViewsHost.tagName,
-          equalsIgnoringCase(DomManager.glassPaneTagName));
-      expect(domManager.textEditingHost.tagName,
-          equalsIgnoringCase(DomManager.textEditingHostTagName));
-      expect(domManager.semanticsHost.tagName,
-          equalsIgnoringCase(DomManager.semanticsHostTagName));
+      expect(
+        domManager.rootElement.tagName,
+        equalsIgnoringCase(DomManager.flutterViewTagName),
+      );
+      expect(
+        domManager.platformViewsHost.tagName,
+        equalsIgnoringCase(DomManager.glassPaneTagName),
+      );
+      expect(
+        domManager.textEditingHost.tagName,
+        equalsIgnoringCase(DomManager.textEditingHostTagName),
+      );
+      expect(
+        domManager.semanticsHost.tagName,
+        equalsIgnoringCase(DomManager.semanticsHostTagName),
+      );
 
       // Check parent-child relationships.
 
@@ -51,37 +59,45 @@ void doTests() {
       expect(shadowChildren[1].tagName, equalsIgnoringCase('style'));
     });
 
-    test('hide placeholder text for textfield', () {
-      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
-      domDocument.body!.append(domManager.rootElement);
+    test(
+      'hide placeholder text for textfield',
+      () {
+        final DomManager domManager = DomManager(devicePixelRatio: 3.0);
+        domDocument.body!.append(domManager.rootElement);
 
-      final DomHTMLInputElement regularTextField = createDomHTMLInputElement();
-      regularTextField.placeholder = 'Now you see me';
-      domManager.rootElement.appendChild(regularTextField);
+        final DomHTMLInputElement regularTextField =
+            createDomHTMLInputElement();
+        regularTextField.placeholder = 'Now you see me';
+        domManager.rootElement.appendChild(regularTextField);
 
-      regularTextField.focus();
-      DomCSSStyleDeclaration? style = domWindow.getComputedStyle(
-          domManager.rootElement.querySelector('input')!, '::placeholder');
-      expect(style, isNotNull);
-      expect(style.opacity, isNot('0'));
+        regularTextField.focus();
+        DomCSSStyleDeclaration? style = domWindow.getComputedStyle(
+          domManager.rootElement.querySelector('input')!,
+          '::placeholder',
+        );
+        expect(style, isNotNull);
+        expect(style.opacity, isNot('0'));
 
-      final DomHTMLInputElement textField = createDomHTMLInputElement();
-      textField.placeholder = 'Now you dont';
-      textField.classList.add('flt-text-editing');
-      domManager.rootElement.appendChild(textField);
+        final DomHTMLInputElement textField = createDomHTMLInputElement();
+        textField.placeholder = 'Now you dont';
+        textField.classList.add('flt-text-editing');
+        domManager.rootElement.appendChild(textField);
 
-      textField.focus();
-      style = domWindow.getComputedStyle(
+        textField.focus();
+        style = domWindow.getComputedStyle(
           domManager.rootElement.querySelector('input.flt-text-editing')!,
-          '::placeholder');
-      expect(style, isNotNull);
-      expect(style.opacity, '0');
+          '::placeholder',
+        );
+        expect(style, isNotNull);
+        expect(style.opacity, '0');
 
-      domManager.rootElement.remove();
+        domManager.rootElement.remove();
 
-      // For some reason, only Firefox is able to correctly compute styles for
-      // the `::placeholder` pseudo-element.
-    }, skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.firefox);
+        // For some reason, only Firefox is able to correctly compute styles for
+        // the `::placeholder` pseudo-element.
+      },
+      skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.firefox,
+    );
   });
 
   group('Shadow root', () {
@@ -99,7 +115,9 @@ void doTests() {
       final DomManager domManager = DomManager(devicePixelRatio: 3.0);
 
       expect(
-          domInstanceOfString(domManager.renderingHost, 'ShadowRoot'), isTrue);
+        domInstanceOfString(domManager.renderingHost, 'ShadowRoot'),
+        isTrue,
+      );
       expect(domManager.renderingHost.host, domManager.platformViewsHost);
       expect(domManager.renderingHost, domManager.platformViewsHost.shadowRoot);
 
@@ -115,8 +133,9 @@ void doTests() {
 
     test('Attaches a stylesheet to the shadow root', () {
       final DomManager domManager = DomManager(devicePixelRatio: 3.0);
-      final DomElement? style =
-          domManager.renderingHost.querySelector('#flt-internals-stylesheet');
+      final DomElement? style = domManager.renderingHost.querySelector(
+        '#flt-internals-stylesheet',
+      );
 
       expect(style, isNotNull);
       expect(style!.tagName, equalsIgnoringCase('style'));

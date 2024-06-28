@@ -19,16 +19,19 @@ extension CallExtension on JSFunction {
 external JSAny get _promiseConstructor;
 
 JSPromise<JSAny?> createPromise(JSFunction executor) => js_util.callConstructor(
-      _promiseConstructor,
-      <Object>[executor],
-    );
+  _promiseConstructor,
+  <Object>[executor],
+);
 
 JSPromise<JSAny?> futureToPromise<T extends JSAny?>(Future<T> future) {
-  return createPromise((JSFunction resolver, JSFunction rejecter) {
-    future.then((T value) => resolver.call(null, value),
-        onError: (Object? error) {
-      printWarning('Rejecting promise with error: $error');
-      rejecter.call(null, null);
-    });
-  }.toJS);
+  return createPromise(
+    (JSFunction resolver, JSFunction rejecter) {
+      future.then((T value) => resolver.call(null, value), onError: (
+        Object? error,
+      ) {
+        printWarning('Rejecting promise with error: $error');
+        rejecter.call(null, null);
+      });
+    }.toJS,
+  );
 }

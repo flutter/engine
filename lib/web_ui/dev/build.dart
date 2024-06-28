@@ -28,27 +28,34 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
     argParser.addFlag(
       'watch',
       abbr: 'w',
-      help: 'Run the build in watch mode so it rebuilds whenever a change is '
+      help:
+          'Run the build in watch mode so it rebuilds whenever a change is '
           'made. Disabled by default.',
     );
-    argParser.addFlag('host',
-        help: 'Build the host build instead of the wasm build, which is '
-            'currently needed for `flutter run --local-engine` to work.');
+    argParser.addFlag(
+      'host',
+      help:
+          'Build the host build instead of the wasm build, which is '
+          'currently needed for `flutter run --local-engine` to work.',
+    );
     argParser.addFlag(
       'profile',
-      help: 'Build in profile mode instead of release mode. In this mode, the '
+      help:
+          'Build in profile mode instead of release mode. In this mode, the '
           'output will be located at "out/wasm_profile".\nThis only applies to '
           'the wasm build. The host build is always built in release mode.',
     );
     argParser.addFlag(
       'debug',
-      help: 'Build in debug mode instead of release mode. In this mode, the '
+      help:
+          'Build in debug mode instead of release mode. In this mode, the '
           'output will be located at "out/wasm_debug".\nThis only applies to '
           'the wasm build. The host build is always built in release mode.',
     );
     argParser.addFlag(
       'dwarf',
-      help: 'Embed DWARF debugging info into the output wasm modules. This is '
+      help:
+          'Embed DWARF debugging info into the output wasm modules. This is '
           'only valid in debug mode.',
     );
   }
@@ -81,8 +88,9 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       NinjaPipelineStep(
         host: host,
         runtimeMode: runtimeMode,
-        targets:
-            targets.map((String target) => targetAliases[target] ?? target),
+        targets: targets.map(
+          (String target) => targetAliases[target] ?? target,
+        ),
       ),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -125,10 +133,7 @@ class GnPipelineStep extends ProcessStep {
 
   List<String> get _gnArgs {
     if (host) {
-      return <String>[
-        '--unoptimized',
-        '--full-dart-sdk',
-      ];
+      return <String>['--unoptimized', '--full-dart-sdk'];
     } else {
       return <String>[
         '--web',
@@ -179,13 +184,10 @@ class NinjaPipelineStep extends ProcessStep {
   @override
   Future<ProcessManager> createProcess() {
     print('Running autoninja...');
-    return startProcess(
-      'autoninja',
-      <String>[
-        '-C',
-        buildDirectory,
-        ...targets,
-      ],
-    );
+    return startProcess('autoninja', <String>[
+      '-C',
+      buildDirectory,
+      ...targets,
+    ]);
   }
 }

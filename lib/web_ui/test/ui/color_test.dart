@@ -154,9 +154,7 @@ Future<void> testMain() async {
 }
 
 class DynamicColorClass extends Color {
-  const DynamicColorClass(int newValue)
-      : _newValue = newValue,
-        super(0);
+  const DynamicColorClass(int newValue) : _newValue = newValue, super(0);
 
   final int _newValue;
 

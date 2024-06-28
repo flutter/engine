@@ -32,8 +32,9 @@ Future<void> testMain() async {
       builder.pushStyle(EngineTextStyle.only(color: green));
       builder.addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
       builder.pushStyle(EngineTextStyle.only(color: red));
-      builder
-          .addText('labore et dolore magna aliqua. Ut enim ad minim veniam, ');
+      builder.addText(
+        'labore et dolore magna aliqua. Ut enim ad minim veniam, ',
+      );
       builder.pushStyle(EngineTextStyle.only(color: lightPurple));
       builder.addText('quis nostrud exercitation ullamco ');
       builder.pushStyle(EngineTextStyle.only(color: blue));
@@ -61,8 +62,9 @@ Future<void> testMain() async {
 
   test('TextAlign.justify with multiple spans (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyWithMultipleSpans(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_dom');
   });
@@ -97,16 +99,23 @@ Future<void> testMain() async {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithEmptyLine(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_empty_line');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_empty_line',
+    );
   });
 
   test('TextAlign.justify with single space and empty line (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyWithEmptyLine(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_empty_line_dom');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_empty_line_dom',
+    );
   });
 
   void testJustifyWithEllipsis(EngineCanvas canvas) {
@@ -117,25 +126,24 @@ Future<void> testMain() async {
       maxLines: 4,
       ellipsis: '...',
     );
-    final CanvasParagraph paragraph = rich(
-      paragraphStyle,
-      (CanvasParagraphBuilder builder) {
-        builder.pushStyle(EngineTextStyle.only(color: black));
-        builder.addText('Lorem ipsum dolor sit ');
-        builder.pushStyle(EngineTextStyle.only(color: blue));
-        builder.addText('amet, consectetur ');
-        builder.pushStyle(EngineTextStyle.only(color: green));
-        builder
-            .addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
-        builder.pushStyle(EngineTextStyle.only(color: red));
-        builder.addText(
-            'labore et dolore magna aliqua. Ut enim ad minim veniam, ');
-        builder.pushStyle(EngineTextStyle.only(color: lightPurple));
-        builder.addText('quis nostrud exercitation ullamco ');
-        builder.pushStyle(EngineTextStyle.only(color: blue));
-        builder.addText('laboris nisi ut aliquip ex ea commodo consequat.');
-      },
-    );
+    final CanvasParagraph paragraph = rich(paragraphStyle, (
+      CanvasParagraphBuilder builder,
+    ) {
+      builder.pushStyle(EngineTextStyle.only(color: black));
+      builder.addText('Lorem ipsum dolor sit ');
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('amet, consectetur ');
+      builder.pushStyle(EngineTextStyle.only(color: green));
+      builder.addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
+      builder.pushStyle(EngineTextStyle.only(color: red));
+      builder.addText(
+        'labore et dolore magna aliqua. Ut enim ad minim veniam, ',
+      );
+      builder.pushStyle(EngineTextStyle.only(color: lightPurple));
+      builder.addText('quis nostrud exercitation ullamco ');
+      builder.pushStyle(EngineTextStyle.only(color: blue));
+      builder.addText('laboris nisi ut aliquip ex ea commodo consequat.');
+    });
     paragraph.layout(constrain(250));
     canvas.drawParagraph(paragraph, Offset.zero);
   }
@@ -149,11 +157,15 @@ Future<void> testMain() async {
 
   test('TextAlign.justify with ellipsis (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 300);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyWithEllipsis(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_ellipsis_dom');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_ellipsis_dom',
+    );
   });
 
   void testJustifyWithBackground(EngineCanvas canvas) {
@@ -162,28 +174,27 @@ Future<void> testMain() async {
       fontSize: 20.0,
       textAlign: TextAlign.justify,
     );
-    final CanvasParagraph paragraph = rich(
-      paragraphStyle,
-      (CanvasParagraphBuilder builder) {
-        builder.pushStyle(EngineTextStyle.only(color: black));
-        builder.pushStyle(bg(blue));
-        builder.addText('Lorem ipsum dolor sit ');
-        builder.pushStyle(bg(black));
-        builder.pushStyle(EngineTextStyle.only(color: white));
-        builder.addText('amet, consectetur ');
-        builder.pop();
-        builder.pushStyle(bg(green));
-        builder
-            .addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
-        builder.pushStyle(bg(yellow));
-        builder.addText(
-            'labore et dolore magna aliqua. Ut enim ad minim veniam, ');
-        builder.pushStyle(bg(red));
-        builder.addText('quis nostrud exercitation ullamco ');
-        builder.pushStyle(bg(green));
-        builder.addText('laboris nisi ut aliquip ex ea commodo consequat.');
-      },
-    );
+    final CanvasParagraph paragraph = rich(paragraphStyle, (
+      CanvasParagraphBuilder builder,
+    ) {
+      builder.pushStyle(EngineTextStyle.only(color: black));
+      builder.pushStyle(bg(blue));
+      builder.addText('Lorem ipsum dolor sit ');
+      builder.pushStyle(bg(black));
+      builder.pushStyle(EngineTextStyle.only(color: white));
+      builder.addText('amet, consectetur ');
+      builder.pop();
+      builder.pushStyle(bg(green));
+      builder.addText('adipiscing elit, sed do eiusmod tempor incididunt ut ');
+      builder.pushStyle(bg(yellow));
+      builder.addText(
+        'labore et dolore magna aliqua. Ut enim ad minim veniam, ',
+      );
+      builder.pushStyle(bg(red));
+      builder.addText('quis nostrud exercitation ullamco ');
+      builder.pushStyle(bg(green));
+      builder.addText('laboris nisi ut aliquip ex ea commodo consequat.');
+    });
     paragraph.layout(constrain(250));
     canvas.drawParagraph(paragraph, Offset.zero);
   }
@@ -193,16 +204,23 @@ Future<void> testMain() async {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithBackground(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_background');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_background',
+    );
   });
 
   test('TextAlign.justify with background (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyWithBackground(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_background_dom');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_background_dom',
+    );
   });
 
   void testJustifyWithPlaceholder(EngineCanvas canvas) {
@@ -237,16 +255,23 @@ Future<void> testMain() async {
     final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithPlaceholder(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_placeholder');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_placeholder',
+    );
   });
 
   test('TextAlign.justify with placeholder (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyWithPlaceholder(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_placeholder_dom');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_placeholder_dom',
+    );
   });
 
   void testJustifyWithSelection(EngineCanvas canvas) {
@@ -273,10 +298,18 @@ Future<void> testMain() async {
 
     // Draw selection for "em ipsum d".
     fillBoxes(
-        canvas, Offset.zero, paragraph.getBoxesForRange(3, 13), lightBlue);
+      canvas,
+      Offset.zero,
+      paragraph.getBoxesForRange(3, 13),
+      lightBlue,
+    );
     // Draw selection for " ut labore et dolore mag".
     fillBoxes(
-        canvas, Offset.zero, paragraph.getBoxesForRange(89, 113), lightPurple);
+      canvas,
+      Offset.zero,
+      paragraph.getBoxesForRange(89, 113),
+      lightPurple,
+    );
 
     canvas.drawParagraph(paragraph, Offset.zero);
   }
@@ -290,11 +323,15 @@ Future<void> testMain() async {
 
   test('TextAlign.justify with selection (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyWithSelection(canvas);
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_justify_selection_dom');
+      canvas,
+      bounds,
+      'canvas_paragraph_justify_selection_dom',
+    );
   });
 
   void testJustifyRtl(EngineCanvas canvas) {
@@ -305,8 +342,9 @@ Future<void> testMain() async {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('amet, consectetur '); // 40
       builder.pushStyle(EngineTextStyle.only(color: green));
-      builder
-          .addText('adipiscing elit, sed do eiusmod $rtlWord incididunt ut ');
+      builder.addText(
+        'adipiscing elit, sed do eiusmod $rtlWord incididunt ut ',
+      );
       builder.pushStyle(EngineTextStyle.only(color: red));
       builder.addText('labore et dolore magna aliqua.');
     }
@@ -323,10 +361,18 @@ Future<void> testMain() async {
 
     // Draw selection for "em $rtlWord d".
     fillBoxes(
-        canvas, Offset.zero, paragraph.getBoxesForRange(3, 13), lightBlue);
+      canvas,
+      Offset.zero,
+      paragraph.getBoxesForRange(3, 13),
+      lightBlue,
+    );
     // Draw selection for " ut labore et dolore mag".
     fillBoxes(
-        canvas, Offset.zero, paragraph.getBoxesForRange(89, 113), lightPurple);
+      canvas,
+      Offset.zero,
+      paragraph.getBoxesForRange(89, 113),
+      lightPurple,
+    );
 
     canvas.drawParagraph(paragraph, Offset.zero);
   }
@@ -340,8 +386,9 @@ Future<void> testMain() async {
 
   test('TextAlign.justify rtl (DOM)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testJustifyRtl(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_rtl_dom');
   });

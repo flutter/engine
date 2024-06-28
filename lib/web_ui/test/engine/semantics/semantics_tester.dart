@@ -308,9 +308,10 @@ class SemanticsTester {
       decreasedValueAttributes:
           decreasedValueAttributes ?? const <ui.StringAttribute>[],
       tooltip: tooltip ?? '',
-      transform: transform != null
-          ? toMatrix32(transform)
-          : Matrix4.identity().storage,
+      transform:
+          transform != null
+              ? toMatrix32(transform)
+              : Matrix4.identity().storage,
       elevation: elevation ?? 0,
       thickness: thickness ?? 0,
       childrenInTraversalOrder: childIds,
@@ -356,13 +357,13 @@ void expectSemanticsTree(EngineSemanticsOwner owner, String semanticsHtml) {
 
 /// Finds the first HTML element in the semantics tree used for scrolling.
 DomElement findScrollable(EngineSemanticsOwner owner) {
-  return owner.semanticsHost.querySelectorAll('flt-semantics').singleWhere(
-    (DomElement? element) {
-      return element!.style.overflow == 'hidden' ||
-          element.style.overflowY == 'scroll' ||
-          element.style.overflowX == 'scroll';
-    },
-  );
+  return owner.semanticsHost.querySelectorAll('flt-semantics').singleWhere((
+    DomElement? element,
+  ) {
+    return element!.style.overflow == 'hidden' ||
+        element.style.overflowY == 'scroll' ||
+        element.style.overflowX == 'scroll';
+  });
 }
 
 /// Logs semantics actions dispatched to [ui.PlatformDispatcher].
@@ -378,8 +379,9 @@ class SemanticsActionLogger {
     // fired.
     final Zone testZone = Zone.current;
 
-    ui.PlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    ui.PlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       _idLogController.add(event.nodeId);
       _actionLogController.add(event.type);
       testZone.run(() {

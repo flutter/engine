@@ -77,8 +77,11 @@ class CompilerFilter extends SuiteFilter {
 
   @override
   SuiteFilterResult filterSuite(TestSuite suite) =>
-      suite.testBundle.compileConfigs.any((CompileConfiguration config) =>
-              allowList.contains(config.compiler))
+      suite.testBundle.compileConfigs.any(
+            (CompileConfiguration config) => allowList.contains(
+              config.compiler,
+            ),
+          )
           ? SuiteFilterResult.accepted()
           : SuiteFilterResult.rejected('Selected compilers not used in suite.');
 }
@@ -90,8 +93,11 @@ class RendererFilter extends SuiteFilter {
 
   @override
   SuiteFilterResult filterSuite(TestSuite suite) =>
-      suite.testBundle.compileConfigs.any((CompileConfiguration config) =>
-              allowList.contains(config.renderer))
+      suite.testBundle.compileConfigs.any(
+            (CompileConfiguration config) => allowList.contains(
+              config.renderer,
+            ),
+          )
           ? SuiteFilterResult.accepted()
           : SuiteFilterResult.rejected('Selected renderers not used in suite.');
 }
@@ -101,7 +107,8 @@ class CanvasKitVariantFilter extends AllowListSuiteFilter<CanvasKitVariant> {
 
   @override
   // TODO(jackson): Is this the right default?
-  CanvasKitVariant getAttributeForSuite(TestSuite suite) =>
+  CanvasKitVariant
+  getAttributeForSuite(TestSuite suite) =>
       suite.runConfig.variant ?? CanvasKitVariant.full;
 }
 
@@ -115,10 +122,7 @@ Set<BrowserName> get _supportedPlatformBrowsers {
       BrowserName.safari,
     };
   } else if (io.Platform.isWindows) {
-    return <BrowserName>{
-      BrowserName.chrome,
-      BrowserName.edge,
-    };
+    return <BrowserName>{BrowserName.chrome, BrowserName.edge};
   } else {
     throw AssertionError('Unsupported OS: ${io.Platform.operatingSystem}');
   }

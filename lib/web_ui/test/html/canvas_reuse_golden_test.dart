@@ -19,25 +19,30 @@ Future<void> testMain() async {
   const double screenWidth = 600.0;
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-  final SurfacePaint testPaint = SurfacePaint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 2.0
-    ..color = const Color(0xFFFF00FF);
+  final SurfacePaint testPaint =
+      SurfacePaint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.0
+        ..color = const Color(0xFFFF00FF);
 
   setUpUnitTests();
 
   // Regression test for https://github.com/flutter/flutter/issues/51514
   test("Canvas is reused and z-index doesn't leak across paints", () async {
-    final EngineCanvas engineCanvas =
-        BitmapCanvas(screenRect, RenderStrategy());
+    final EngineCanvas engineCanvas = BitmapCanvas(
+      screenRect,
+      RenderStrategy(),
+    );
     const Rect region = Rect.fromLTWH(0, 0, 500, 500);
 
     // Draw first frame into engine canvas.
-    final RecordingCanvas rc =
-        RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
-    final Path path = Path()
-      ..moveTo(3, 0)
-      ..lineTo(100, 97);
+    final RecordingCanvas rc = RecordingCanvas(
+      const Rect.fromLTWH(1, 2, 300, 400),
+    );
+    final Path path =
+        Path()
+          ..moveTo(3, 0)
+          ..lineTo(100, 97);
     rc.drawPath(path, testPaint);
     rc.endRecording();
     rc.apply(engineCanvas, screenRect);
@@ -70,11 +75,13 @@ Future<void> testMain() async {
 
     // Now paint a second scene to same [BitmapCanvas] but paint an image
     // before the path to move canvas element into second position.
-    final RecordingCanvas rc2 =
-        RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
-    final Path path2 = Path()
-      ..moveTo(3, 0)
-      ..quadraticBezierTo(100, 0, 100, 100);
+    final RecordingCanvas rc2 = RecordingCanvas(
+      const Rect.fromLTWH(1, 2, 300, 400),
+    );
+    final Path path2 =
+        Path()
+          ..moveTo(3, 0)
+          ..quadraticBezierTo(100, 0, 100, 100);
     rc2.drawImage(_createRealTestImage(), Offset.zero, SurfacePaint());
     rc2.drawPath(path2, testPaint);
     rc2.endRecording();

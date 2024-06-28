@@ -15,11 +15,15 @@ typedef SkDataHandle = Pointer<RawSkData>;
 external SkDataHandle skDataCreate(int size);
 
 @Native<Pointer<Void> Function(SkDataHandle)>(
-    symbol: 'skData_getPointer', isLeaf: true)
+  symbol: 'skData_getPointer',
+  isLeaf: true,
+)
 external Pointer<Void> skDataGetPointer(SkDataHandle handle);
 
 @Native<Pointer<Void> Function(SkDataHandle)>(
-    symbol: 'skData_getConstPointer', isLeaf: true)
+  symbol: 'skData_getConstPointer',
+  isLeaf: true,
+)
 external Pointer<Void> skDataGetConstPointer(SkDataHandle handle);
 
 @Native<Size Function(SkDataHandle)>(symbol: 'skData_getSize', isLeaf: true)

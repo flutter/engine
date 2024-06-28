@@ -51,8 +51,12 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // the live tree.
     if (surface.oldLayer != null) {
       assert(surface.oldLayer!.runtimeType == surface.runtimeType);
-      assert(debugAssertSurfaceState(
-          surface.oldLayer!, PersistedSurfaceState.active));
+      assert(
+        debugAssertSurfaceState(
+          surface.oldLayer!,
+          PersistedSurfaceState.active,
+        ),
+      );
       surface.oldLayer!.state = PersistedSurfaceState.pendingUpdate;
     }
     _adoptSurface(surface);
@@ -90,7 +94,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.OffsetEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedOffset>(
-        PersistedOffset(oldLayer as PersistedOffset?, dx, dy));
+      PersistedOffset(oldLayer as PersistedOffset?, dx, dy),
+    );
   }
 
   /// Pushes a transform operation onto the operation stack.
@@ -113,15 +118,18 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       // scene to devicepixelratio. Use identity instead since CSS uses
       // logical device pixels.
       if (!ui_web.debugEmulateFlutterTesterEnvironment) {
-        assert(matrix4[0] == EngineFlutterDisplay.instance.devicePixelRatio &&
-            matrix4[5] == EngineFlutterDisplay.instance.devicePixelRatio);
+        assert(
+          matrix4[0] == EngineFlutterDisplay.instance.devicePixelRatio &&
+              matrix4[5] == EngineFlutterDisplay.instance.devicePixelRatio,
+        );
       }
       matrix = Matrix4.identity().storage;
     } else {
       matrix = toMatrix32(matrix4);
     }
     return _pushSurface<PersistedTransform>(
-        PersistedTransform(oldLayer as PersistedTransform?, matrix));
+      PersistedTransform(oldLayer as PersistedTransform?, matrix),
+    );
   }
 
   /// Pushes a rectangular clip operation onto the operation stack.
@@ -137,7 +145,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ClipRectEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedClipRect>(
-        PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior));
+      PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior),
+    );
   }
 
   /// Pushes a rounded-rectangular clip operation onto the operation stack.
@@ -152,7 +161,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ClipRRectEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedClipRRect>(
-        PersistedClipRRect(oldLayer, rrect, clipBehavior));
+      PersistedClipRRect(oldLayer, rrect, clipBehavior),
+    );
   }
 
   /// Pushes a path clip operation onto the operation stack.
@@ -167,7 +177,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ClipPathEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedClipPath>(
-        PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior));
+      PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior),
+    );
   }
 
   /// Pushes an opacity operation onto the operation stack.
@@ -185,7 +196,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.OpacityEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedOpacity>(
-        PersistedOpacity(oldLayer as PersistedOpacity?, alpha, offset));
+      PersistedOpacity(oldLayer as PersistedOpacity?, alpha, offset),
+    );
   }
 
   /// Pushes a color filter operation onto the operation stack.
@@ -204,7 +216,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedColorFilter>(
-        PersistedColorFilter(oldLayer as PersistedColorFilter?, filter));
+      PersistedColorFilter(oldLayer as PersistedColorFilter?, filter),
+    );
   }
 
   /// Pushes an image filter operation onto the operation stack.
@@ -223,8 +236,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    return _pushSurface<PersistedImageFilter>(PersistedImageFilter(
-        oldLayer as PersistedImageFilter?, filter, offset));
+    return _pushSurface<PersistedImageFilter>(
+      PersistedImageFilter(oldLayer as PersistedImageFilter?, filter, offset),
+    );
   }
 
   /// Pushes a backdrop filter operation onto the operation stack.
@@ -243,7 +257,8 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.BackdropFilterEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedBackdropFilter>(
-        PersistedBackdropFilter(oldLayer as PersistedBackdropFilter?, filter));
+      PersistedBackdropFilter(oldLayer as PersistedBackdropFilter?, filter),
+    );
   }
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -260,12 +275,15 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ShaderMaskEngineLayer? oldLayer,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    return _pushSurface<PersistedShaderMask>(PersistedShaderMask(
+    return _pushSurface<PersistedShaderMask>(
+      PersistedShaderMask(
         oldLayer as PersistedShaderMask?,
         shader,
         maskRect,
         blendMode,
-        filterQuality));
+        filterQuality,
+      ),
+    );
   }
 
   /// Add a retained engine layer subtree from previous frames.
@@ -280,11 +298,13 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   void addRetained(ui.EngineLayer retainedLayer) {
     final PersistedContainerSurface retainedSurface =
         retainedLayer as PersistedContainerSurface;
-    assert(debugAssertSurfaceState(
-      retainedSurface,
-      PersistedSurfaceState.active,
-      PersistedSurfaceState.released,
-    ));
+    assert(
+      debugAssertSurfaceState(
+        retainedSurface,
+        PersistedSurfaceState.active,
+        PersistedSurfaceState.released,
+      ),
+    );
     retainedSurface.tryRetain();
     _adoptSurface(retainedSurface);
   }
@@ -326,7 +346,12 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
     _addPerformanceOverlay(
-        enabledOptions, bounds.left, bounds.right, bounds.top, bounds.bottom);
+      enabledOptions,
+      bounds.left,
+      bounds.right,
+      bounds.top,
+      bounds.bottom,
+    );
   }
 
   /// Whether we've already warned the user about the lack of the performance
@@ -365,8 +390,9 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     if (willChangeHint) {
       hints |= 2;
     }
-    _addSurface(PersistedPicture(
-        offset.dx, offset.dy, picture as EnginePicture, hints));
+    _addSurface(
+      PersistedPicture(offset.dx, offset.dy, picture as EnginePicture, hints),
+    );
   }
 
   /// Adds a backend texture to the scene.
@@ -385,8 +411,14 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     _addTexture(offset.dx, offset.dy, width, height, textureId, filterQuality);
   }
 
-  void _addTexture(double dx, double dy, double width, double height,
-      int textureId, ui.FilterQuality filterQuality) {
+  void _addTexture(
+    double dx,
+    double dy,
+    double width,
+    double height,
+    int textureId,
+    ui.FilterQuality filterQuality,
+  ) {
     // In test mode, allow this to be a no-op.
     if (!ui_web.debugEmulateFlutterTesterEnvironment) {
       throw UnimplementedError('Textures are not supported in Flutter Web');
@@ -498,8 +530,10 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
       }
       commitScene(_persistedScene);
       _lastFrameScene = _persistedScene;
-      return SurfaceScene(_persistedScene.rootElement,
-          timingRecorder: recorder);
+      return SurfaceScene(
+        _persistedScene.rootElement,
+        timingRecorder: recorder,
+      );
     });
   }
 

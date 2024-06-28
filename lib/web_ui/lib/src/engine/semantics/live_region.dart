@@ -18,7 +18,7 @@ import 'semantics.dart';
 /// no content will be read.
 class LiveRegion extends RoleManager {
   LiveRegion(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : super(Role.liveRegion, semanticsObject, owner);
+    : super(Role.liveRegion, semanticsObject, owner);
 
   String? _lastAnnouncement;
 
@@ -26,7 +26,8 @@ class LiveRegion extends RoleManager {
 
   @visibleForTesting
   static void debugOverrideAccessibilityAnnouncements(
-      AccessibilityAnnouncements? value) {
+    AccessibilityAnnouncements? value,
+  ) {
     _accessibilityAnnouncementsOverride = value;
   }
 

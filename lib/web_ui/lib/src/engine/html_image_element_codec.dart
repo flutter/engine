@@ -11,12 +11,9 @@ import 'dom.dart';
 import 'safe_browser_api.dart';
 
 Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
-      getJsProperty<Object>(
-        getJsProperty<Object>(domWindow, 'Image'),
-        'prototype',
-      ),
-      'decode',
-    );
+  getJsProperty<Object>(getJsProperty<Object>(domWindow, 'Image'), 'prototype'),
+  'decode',
+);
 final bool _supportsDecode = _jsImageDecodeFunction != null;
 
 // TODO(mdebbar): Deprecate this and remove it.
@@ -50,30 +47,33 @@ abstract class HtmlImageElementCodec implements ui.Codec {
       // Ignoring the returned future on purpose because we're communicating
       // through the `completer`.
       // ignore: unawaited_futures
-      imgElement.decode().then((dynamic _) {
-        chunkCallback?.call(100, 100);
-        int naturalWidth = imgElement.naturalWidth.toInt();
-        int naturalHeight = imgElement.naturalHeight.toInt();
-        // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
-        if (naturalWidth == 0 &&
-            naturalHeight == 0 &&
-            ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
-          const int kDefaultImageSizeFallback = 300;
-          naturalWidth = kDefaultImageSizeFallback;
-          naturalHeight = kDefaultImageSizeFallback;
-        }
-        final ui.Image image = createImageFromHTMLImageElement(
-          imgElement,
-          naturalWidth,
-          naturalHeight,
-        );
-        completer.complete(SingleFrameInfo(image));
-      }).catchError((dynamic e) {
-        // This code path is hit on Chrome 80.0.3987.16 when too many
-        // images are on the page (~1000).
-        // Fallback here is to load using onLoad instead.
-        _decodeUsingOnLoad(completer);
-      });
+      imgElement
+          .decode()
+          .then((dynamic _) {
+            chunkCallback?.call(100, 100);
+            int naturalWidth = imgElement.naturalWidth.toInt();
+            int naturalHeight = imgElement.naturalHeight.toInt();
+            // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
+            if (naturalWidth == 0 &&
+                naturalHeight == 0 &&
+                ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
+              const int kDefaultImageSizeFallback = 300;
+              naturalWidth = kDefaultImageSizeFallback;
+              naturalHeight = kDefaultImageSizeFallback;
+            }
+            final ui.Image image = createImageFromHTMLImageElement(
+              imgElement,
+              naturalWidth,
+              naturalHeight,
+            );
+            completer.complete(SingleFrameInfo(image));
+          })
+          .catchError((dynamic e) {
+            // This code path is hit on Chrome 80.0.3987.16 when too many
+            // images are on the page (~1000).
+            // Fallback here is to load using onLoad instead.
+            _decodeUsingOnLoad(completer);
+          });
     } else {
       _decodeUsingOnLoad(completer);
     }

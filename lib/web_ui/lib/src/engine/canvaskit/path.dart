@@ -75,7 +75,8 @@ class CkPath implements ui.Path {
     List<double> skMatrix;
     if (matrix4 == null) {
       skMatrix = toSkMatrixFromFloat32(
-          Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
+        Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage,
+      );
     } else {
       skMatrix = toSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
@@ -106,10 +107,7 @@ class CkPath implements ui.Path {
 
   @override
   void addRRect(ui.RRect rrect) {
-    skiaObject.addRRect(
-      toSkRRect(rrect),
-      false,
-    );
+    skiaObject.addRRect(toSkRRect(rrect), false);
   }
 
   @override
@@ -119,7 +117,11 @@ class CkPath implements ui.Path {
 
   @override
   void arcTo(
-      ui.Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
+    ui.Rect rect,
+    double startAngle,
+    double sweepAngle,
+    bool forceMoveTo,
+  ) {
     const double toDegrees = 180.0 / math.pi;
     skiaObject.arcToOval(
       toSkRect(rect),
@@ -130,11 +132,13 @@ class CkPath implements ui.Path {
   }
 
   @override
-  void arcToPoint(ui.Offset arcEnd,
-      {ui.Radius radius = ui.Radius.zero,
-      double rotation = 0.0,
-      bool largeArc = false,
-      bool clockwise = true}) {
+  void arcToPoint(
+    ui.Offset arcEnd, {
+    ui.Radius radius = ui.Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
+  }) {
     skiaObject.arcToRotated(
       radius.x,
       radius.y,
@@ -168,7 +172,13 @@ class CkPath implements ui.Path {
 
   @override
   void cubicTo(
-      double x1, double y1, double x2, double y2, double x3, double y3) {
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  ) {
     skiaObject.cubicTo(x1, y1, x2, y2, x3, y3);
   }
 
@@ -177,7 +187,8 @@ class CkPath implements ui.Path {
     List<double> skMatrix;
     if (matrix4 == null) {
       skMatrix = toSkMatrixFromFloat32(
-          Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage);
+        Matrix4.translationValues(offset.dx, offset.dy, 0.0).storage,
+      );
     } else {
       skMatrix = toSkMatrixFromFloat64(matrix4);
       skMatrix[2] += offset.dx;
@@ -218,11 +229,13 @@ class CkPath implements ui.Path {
   }
 
   @override
-  void relativeArcToPoint(ui.Offset arcEndDelta,
-      {ui.Radius radius = ui.Radius.zero,
-      double rotation = 0.0,
-      bool largeArc = false,
-      bool clockwise = true}) {
+  void relativeArcToPoint(
+    ui.Offset arcEndDelta, {
+    ui.Radius radius = ui.Radius.zero,
+    double rotation = 0.0,
+    bool largeArc = false,
+    bool clockwise = true,
+  }) {
     skiaObject.rArcTo(
       radius.x,
       radius.y,
@@ -241,7 +254,13 @@ class CkPath implements ui.Path {
 
   @override
   void relativeCubicTo(
-      double x1, double y1, double x2, double y2, double x3, double y3) {
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  ) {
     skiaObject.rCubicTo(x1, y1, x2, y2, x3, y3);
   }
 
@@ -306,17 +325,7 @@ class CkPath implements ui.Path {
   ui.Path transform(Float64List matrix4) {
     final SkPath newPath = skiaObject.copy();
     final Float32List m = toSkMatrixFromFloat64(matrix4);
-    newPath.transform(
-      m[0],
-      m[1],
-      m[2],
-      m[3],
-      m[4],
-      m[5],
-      m[6],
-      m[7],
-      m[8],
-    );
+    newPath.transform(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
     return CkPath.fromSkPath(newPath, _fillType);
   }
 

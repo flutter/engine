@@ -44,7 +44,8 @@ class CkPicture implements ScenePicture {
     }
 
     throw StateError(
-        'Picture.debugDisposed is only available when asserts are enabled.');
+      'Picture.debugDisposed is only available when asserts are enabled.',
+    );
   }
 
   /// This is set to true when [dispose] is called and is never reset back to
@@ -101,8 +102,9 @@ class CkPicture implements ScenePicture {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
 
     final Surface surface = CanvasKitRenderer.instance.pictureToImageSurface;
-    final CkSurface ckSurface =
-        surface.createOrUpdateSurface(BitmapSize(width, height));
+    final CkSurface ckSurface = surface.createOrUpdateSurface(
+      BitmapSize(width, height),
+    );
     final CkCanvas ckCanvas = ckSurface.getCanvas();
     ckCanvas.clear(const ui.Color(0x00000000));
     ckCanvas.drawPicture(this);
@@ -115,8 +117,11 @@ class CkPicture implements ScenePicture {
       height: height.toDouble(),
     );
     final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
-    final SkImage? rasterImage =
-        canvasKit.MakeImage(imageInfo, pixels, (4 * width).toDouble());
+    final SkImage? rasterImage = canvasKit.MakeImage(
+      imageInfo,
+      pixels,
+      (4 * width).toDouble(),
+    );
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');
     }

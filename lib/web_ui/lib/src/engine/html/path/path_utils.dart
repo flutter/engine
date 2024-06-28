@@ -118,9 +118,10 @@ class QuadRoots {
   double? root1;
 
   /// Returns roots as list.
-  List<double> get roots => (root0 == null)
-      ? <double>[]
-      : (root1 == null ? <double>[root0!] : <double>[root0!, root1!]);
+  List<double> get roots =>
+      (root0 == null)
+          ? <double>[]
+          : (root1 == null ? <double>[root0!] : <double>[root0!, root1!]);
 
   int findRoots(double a, double b, double c) {
     int rootCount = 0;
@@ -305,17 +306,22 @@ class Convexicator {
     // Detect straight and backwards direction change.
     // Instead of comparing absolute crossproduct size, compare
     // largest component double+crossproduct.
-    final double smallest =
-        math.min(curVecX, math.min(curVecY, math.min(lastX, lastY)));
+    final double smallest = math.min(
+      curVecX,
+      math.min(curVecY, math.min(lastX, lastY)),
+    );
     final double largest = math.max(
-        math.max(curVecX, math.max(curVecY, math.max(lastX, lastY))),
-        -smallest);
+      math.max(curVecX, math.max(curVecY, math.max(lastX, lastY))),
+      -smallest,
+    );
     if (SPath.nearlyEqual(largest, largest + cross)) {
       const double nearlyZeroSquared =
           SPath.scalarNearlyZero * SPath.scalarNearlyZero;
       if (SPath.nearlyEqual(lengthSquared(lastX, lastY), nearlyZeroSquared) ||
           SPath.nearlyEqual(
-              lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
+            lengthSquared(curVecX, curVecY),
+            nearlyZeroSquared,
+          )) {
         // Length of either vector is smaller than tolerance to be able
         // to compute direction.
         return DirChange.kUnknown;
@@ -414,7 +420,7 @@ enum DirChange {
   kRight,
   kStraight,
   kBackwards, // if double back, allow simple lines to be convex
-  kInvalid
+  kInvalid,
 }
 
 double lengthSquaredOffset(ui.Offset offset) {
@@ -428,13 +434,18 @@ double lengthSquared(double dx, double dy) => dx * dx + dy * dy;
 /// Evaluates A * t^2 + B * t + C = 0 for quadratic curve.
 class SkQuadCoefficients {
   SkQuadCoefficients(
-      double x0, double y0, double x1, double y1, double x2, double y2)
-      : cx = x0,
-        cy = y0,
-        bx = 2 * (x1 - x0),
-        by = 2 * (y1 - y0),
-        ax = x2 - (2 * x1) + x0,
-        ay = y2 - (2 * y1) + y0;
+    double x0,
+    double y0,
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+  ) : cx = x0,
+      cy = y0,
+      bx = 2 * (x1 - x0),
+      by = 2 * (y1 - y0),
+      ax = x2 - (2 * x1) + x0,
+      ay = y2 - (2 * y1) + y0;
   final double ax, ay, bx, by, cx, cy;
 
   double evalX(double t) => (ax * t + bx) * t + cx;

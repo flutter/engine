@@ -17,8 +17,9 @@ void testMain() {
   group('Picture', () {
     test('toImage produces an image', () async {
       final EnginePictureRecorder recorder = EnginePictureRecorder();
-      final RecordingCanvas canvas =
-          recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 200, 100));
+      final RecordingCanvas canvas = recorder.beginRecording(
+        const ui.Rect.fromLTRB(0, 0, 200, 100),
+      );
       canvas.drawCircle(
         const ui.Offset(100, 50),
         40,

@@ -14,8 +14,9 @@ void main() {
 void testMain() {
   group(AppLifecycleState, () {
     test('listens to changes in view manager', () {
-      final FlutterViewManager viewManager =
-          FlutterViewManager(EnginePlatformDispatcher.instance);
+      final FlutterViewManager viewManager = FlutterViewManager(
+        EnginePlatformDispatcher.instance,
+      );
       final AppLifecycleState state = AppLifecycleState.create(viewManager);
 
       ui.AppLifecycleState? currentState;
@@ -26,13 +27,17 @@ void testMain() {
       state.addListener(listener);
 
       final view1 = EngineFlutterView(
-          EnginePlatformDispatcher.instance, createDomHTMLDivElement());
+        EnginePlatformDispatcher.instance,
+        createDomHTMLDivElement(),
+      );
       viewManager.registerView(view1);
       expect(currentState, ui.AppLifecycleState.resumed);
       currentState = null;
 
       final view2 = EngineFlutterView(
-          EnginePlatformDispatcher.instance, createDomHTMLDivElement());
+        EnginePlatformDispatcher.instance,
+        createDomHTMLDivElement(),
+      );
       viewManager.registerView(view2);
       // The listener should not be called again. The view manager is still not empty.
       expect(currentState, isNull);
@@ -46,7 +51,9 @@ void testMain() {
       currentState = null;
 
       final view3 = EngineFlutterView(
-          EnginePlatformDispatcher.instance, createDomHTMLDivElement());
+        EnginePlatformDispatcher.instance,
+        createDomHTMLDivElement(),
+      );
       viewManager.registerView(view3);
       // The state should go back to `resumed` after a new view is registered.
       expect(currentState, ui.AppLifecycleState.resumed);

@@ -67,9 +67,10 @@ class TextPaintService {
     }
 
     _prepareCanvasForFragment(canvas, fragment);
-    final double fragmentX = fragment.textDirection! == ui.TextDirection.ltr
-        ? fragment.left
-        : fragment.right;
+    final double fragmentX =
+        fragment.textDirection! == ui.TextDirection.ltr
+            ? fragment.left
+            : fragment.right;
 
     final double x = offset.dx + line.left + fragmentX;
     final double y = offset.dy + line.baseline;
@@ -77,8 +78,13 @@ class TextPaintService {
     final EngineTextStyle style = fragment.style;
 
     final String text = fragment.getText(paragraph);
-    canvas.drawText(text, x, y,
-        style: style.foreground?.style, shadows: style.shadows);
+    canvas.drawText(
+      text,
+      x,
+      y,
+      style: style.foreground?.style,
+      shadows: style.shadows,
+    );
 
     canvas.tearDownPaint();
   }

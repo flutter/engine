@@ -29,8 +29,8 @@ import 'semantics.dart';
 ///   * https://developer.mozilla.org/en-US/docs/Web/Accessibility/Keyboard-navigable_JavaScript_widgets
 class Focusable extends RoleManager {
   Focusable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
-        super(Role.focusable, semanticsObject, owner);
+    : _focusManager = AccessibilityFocusManager(semanticsObject.owner),
+      super(Role.focusable, semanticsObject, owner);
 
   final AccessibilityFocusManager _focusManager;
 
@@ -58,8 +58,10 @@ class Focusable extends RoleManager {
       if (!_focusManager.isManaging) {
         _focusManager.manage(semanticsObject.id, owner.element);
       }
-      _focusManager.changeFocus(semanticsObject.hasFocus &&
-          (!semanticsObject.hasEnabledState || semanticsObject.isEnabled));
+      _focusManager.changeFocus(
+        semanticsObject.hasFocus &&
+            (!semanticsObject.hasEnabledState || semanticsObject.isEnabled),
+      );
     } else {
       _focusManager.stopManaging();
     }
@@ -73,19 +75,20 @@ class Focusable extends RoleManager {
 }
 
 /// Objects associated with the element whose focus is being managed.
-typedef _FocusTarget = ({
-  /// [SemanticsObject.id] of the semantics node being managed.
-  int semanticsNodeId,
+typedef _FocusTarget =
+    ({
+      /// [SemanticsObject.id] of the semantics node being managed.
+      int semanticsNodeId,
 
-  /// The element whose focus is being managed.
-  DomElement element,
+      /// The element whose focus is being managed.
+      DomElement element,
 
-  /// The listener for the "focus" DOM event.
-  DomEventListener domFocusListener,
+      /// The listener for the "focus" DOM event.
+      DomEventListener domFocusListener,
 
-  /// The listener for the "blur" DOM event.
-  DomEventListener domBlurListener,
-});
+      /// The listener for the "blur" DOM event.
+      DomEventListener domBlurListener,
+    });
 
 /// Implements accessibility focus management for arbitrary elements.
 ///
@@ -204,8 +207,9 @@ class AccessibilityFocusManager {
       // Nothing is being managed right now.
       assert(() {
         printWarning(
-            'Cannot change focus to $value. No element is being managed by this '
-            'AccessibilityFocusManager.');
+          'Cannot change focus to $value. No element is being managed by this '
+          'AccessibilityFocusManager.',
+        );
         return true;
       }());
       return;

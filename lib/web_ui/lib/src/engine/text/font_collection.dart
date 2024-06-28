@@ -27,7 +27,10 @@ class HtmlFontCollection implements FlutterFontCollection {
           return (
             fontAsset.asset,
             await _loadFontAsset(
-                family.name, fontAsset.asset, fontAsset.descriptors)
+              family.name,
+              fontAsset.asset,
+              fontAsset.descriptors,
+            ),
           );
         }());
       }
@@ -67,8 +70,10 @@ class HtmlFontCollection implements FlutterFontCollection {
   // Regular expression to detect a string with no punctuations.
   // For example font family 'Ahem!' does not fall into this category
   // so the family name will be wrapped in quotes.
-  static final RegExp notPunctuation =
-      RegExp(r'[a-z0-9\s]+', caseSensitive: false);
+  static final RegExp notPunctuation = RegExp(
+    r'[a-z0-9\s]+',
+    caseSensitive: false,
+  );
   // Regular expression to detect tokens starting with a digit.
   // For example font family 'Goudy Bookletter 1911' falls into this
   // category.
@@ -153,8 +158,11 @@ class HtmlFontCollection implements FlutterFontCollection {
   ) async {
     // try/catch because `new FontFace` can crash with an improper font family.
     try {
-      final DomFontFace fontFace = createDomFontFace(family,
-          'url(${ui_web.assetManager.getAssetUrl(asset)})', descriptors);
+      final DomFontFace fontFace = createDomFontFace(
+        family,
+        'url(${ui_web.assetManager.getAssetUrl(asset)})',
+        descriptors,
+      );
       return await fontFace.load();
     } catch (e) {
       printWarning('Error while loading font family "$family":\n$e');

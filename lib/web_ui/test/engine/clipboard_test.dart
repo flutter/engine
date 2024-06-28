@@ -45,10 +45,11 @@ Future<void> testMain() async {
       }
 
       clipboardMessageHandler.setDataMethodCall(
-          const MethodCall('Clipboard.setData', <String, dynamic>{
-            'text': testText,
-          }),
-          callback);
+        const MethodCall('Clipboard.setData', <String, dynamic>{
+          'text': testText,
+        }),
+        callback,
+      );
 
       expect(await completer.future, isTrue);
     });
@@ -62,16 +63,23 @@ Future<void> testMain() async {
       }
 
       clipboardMessageHandler.setDataMethodCall(
-          const MethodCall('Clipboard.setData', <String, dynamic>{
-            'text': testText,
-          }),
-          callback);
+        const MethodCall('Clipboard.setData', <String, dynamic>{
+          'text': testText,
+        }),
+        callback,
+      );
 
       final ByteData result = await completer.future;
       expect(
-          () => codec.decodeEnvelope(result),
-          throwsA(const TypeMatcher<PlatformException>().having(
-              (PlatformException e) => e.code, 'code', equals('copy_fail'))));
+        () => codec.decodeEnvelope(result),
+        throwsA(
+          const TypeMatcher<PlatformException>().having(
+            (PlatformException e) => e.code,
+            'code',
+            equals('copy_fail'),
+          ),
+        ),
+      );
     });
 
     test('get data successful', () async {

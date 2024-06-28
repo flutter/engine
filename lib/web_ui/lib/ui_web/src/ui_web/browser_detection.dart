@@ -122,7 +122,8 @@ class BrowserDetection {
 
     // Assume Blink otherwise, but issue a warning.
     print(
-        'WARNING: failed to detect current browser engine. Assuming this is a Chromium-compatible browser.');
+      'WARNING: failed to detect current browser engine. Assuming this is a Chromium-compatible browser.',
+    );
     return BrowserEngine.blink;
   }
 
@@ -156,7 +157,8 @@ class BrowserDetection {
     if (platform.startsWith('Mac')) {
       // iDevices requesting a "desktop site" spoof their UA so it looks like a Mac.
       // This checks if we're in a touch device, or on a real mac.
-      final int maxTouchPoints = overrideMaxTouchPoints ??
+      final int maxTouchPoints =
+          overrideMaxTouchPoints ??
           domWindow.navigator.maxTouchPoints?.toInt() ??
           0;
       if (maxTouchPoints > 2) {

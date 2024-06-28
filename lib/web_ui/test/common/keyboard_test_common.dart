@@ -24,12 +24,12 @@ class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
     this.onPreventDefault,
     this.onStopPropagation,
   }) : modifierState = <String>{
-          if (altKey) 'Alt',
-          if (ctrlKey) 'Control',
-          if (shiftKey) 'Shift',
-          if (metaKey) 'Meta',
-          if (altGrKey) 'AltGraph',
-        } {
+         if (altKey) 'Alt',
+         if (ctrlKey) 'Control',
+         if (shiftKey) 'Shift',
+         if (metaKey) 'Meta',
+         if (altGrKey) 'AltGraph',
+       } {
     _lastEvent = this;
   }
 

@@ -18,14 +18,15 @@ final class RawRuntimeEffect extends Opaque {}
 typedef RuntimeEffectHandle = Pointer<RawRuntimeEffect>;
 
 @Native<
-    ShaderHandle Function(
-      RawPointArray,
-      RawColorArray,
-      Pointer<Float>,
-      Int,
-      Int,
-      RawMatrix33,
-    )>(symbol: 'shader_createLinearGradient', isLeaf: true)
+  ShaderHandle Function(
+    RawPointArray,
+    RawColorArray,
+    Pointer<Float>,
+    Int,
+    Int,
+    RawMatrix33,
+  )
+>(symbol: 'shader_createLinearGradient', isLeaf: true)
 external ShaderHandle shaderCreateLinearGradient(
   RawPointArray endPoints, // two points
   RawColorArray colors,
@@ -36,16 +37,17 @@ external ShaderHandle shaderCreateLinearGradient(
 );
 
 @Native<
-    ShaderHandle Function(
-      Float,
-      Float,
-      Float,
-      RawColorArray,
-      Pointer<Float>,
-      Int,
-      Int,
-      RawMatrix33,
-    )>(symbol: 'shader_createRadialGradient', isLeaf: true)
+  ShaderHandle Function(
+    Float,
+    Float,
+    Float,
+    RawColorArray,
+    Pointer<Float>,
+    Int,
+    Int,
+    RawMatrix33,
+  )
+>(symbol: 'shader_createRadialGradient', isLeaf: true)
 external ShaderHandle shaderCreateRadialGradient(
   double centerX,
   double centerY,
@@ -58,16 +60,17 @@ external ShaderHandle shaderCreateRadialGradient(
 );
 
 @Native<
-    ShaderHandle Function(
-      RawPointArray,
-      Float,
-      Float,
-      RawColorArray,
-      Pointer<Float>,
-      Int,
-      Int,
-      RawMatrix33,
-    )>(symbol: 'shader_createConicalGradient', isLeaf: true)
+  ShaderHandle Function(
+    RawPointArray,
+    Float,
+    Float,
+    RawColorArray,
+    Pointer<Float>,
+    Int,
+    Int,
+    RawMatrix33,
+  )
+>(symbol: 'shader_createConicalGradient', isLeaf: true)
 external ShaderHandle shaderCreateConicalGradient(
   RawPointArray endPoints, // Two points,
   double startRadius,
@@ -80,63 +83,70 @@ external ShaderHandle shaderCreateConicalGradient(
 );
 
 @Native<
-    ShaderHandle Function(
-      Float,
-      Float,
-      RawColorArray,
-      Pointer<Float>,
-      Int,
-      Int,
-      Float,
-      Float,
-      RawMatrix33,
-    )>(symbol: 'shader_createSweepGradient', isLeaf: true)
+  ShaderHandle Function(
+    Float,
+    Float,
+    RawColorArray,
+    Pointer<Float>,
+    Int,
+    Int,
+    Float,
+    Float,
+    RawMatrix33,
+  )
+>(symbol: 'shader_createSweepGradient', isLeaf: true)
 external ShaderHandle shaderCreateSweepGradient(
-    double centerX,
-    double centerY,
-    RawColorArray colors,
-    Pointer<Float> stops,
-    int count,
-    int tileMode,
-    double startAngle,
-    double endAngle,
-    RawMatrix33 localMatrix);
+  double centerX,
+  double centerY,
+  RawColorArray colors,
+  Pointer<Float> stops,
+  int count,
+  int tileMode,
+  double startAngle,
+  double endAngle,
+  RawMatrix33 localMatrix,
+);
 
 @Native<Void Function(ShaderHandle)>(symbol: 'shader_dispose', isLeaf: true)
 external void shaderDispose(ShaderHandle handle);
 
 @Native<RuntimeEffectHandle Function(SkStringHandle)>(
-    symbol: 'runtimeEffect_create', isLeaf: true)
+  symbol: 'runtimeEffect_create',
+  isLeaf: true,
+)
 external RuntimeEffectHandle runtimeEffectCreate(SkStringHandle source);
 
 @Native<Void Function(RuntimeEffectHandle)>(
-    symbol: 'runtimeEffect_dispose', isLeaf: true)
+  symbol: 'runtimeEffect_dispose',
+  isLeaf: true,
+)
 external void runtimeEffectDispose(RuntimeEffectHandle handle);
 
 @Native<Size Function(RuntimeEffectHandle)>(
-    symbol: 'runtimeEffect_getUniformSize', isLeaf: true)
+  symbol: 'runtimeEffect_getUniformSize',
+  isLeaf: true,
+)
 external int runtimeEffectGetUniformSize(RuntimeEffectHandle handle);
 
 @Native<
-    ShaderHandle Function(
-        RuntimeEffectHandle,
-        SkDataHandle,
-        Pointer<ShaderHandle>,
-        Size)>(symbol: 'shader_createRuntimeEffectShader', isLeaf: true)
+  ShaderHandle Function(
+    RuntimeEffectHandle,
+    SkDataHandle,
+    Pointer<ShaderHandle>,
+    Size,
+  )
+>(symbol: 'shader_createRuntimeEffectShader', isLeaf: true)
 external ShaderHandle shaderCreateRuntimeEffectShader(
-    RuntimeEffectHandle runtimeEffect,
-    SkDataHandle uniforms,
-    Pointer<ShaderHandle> childShaders,
-    int childCount);
+  RuntimeEffectHandle runtimeEffect,
+  SkDataHandle uniforms,
+  Pointer<ShaderHandle> childShaders,
+  int childCount,
+);
 
-@Native<
-    ShaderHandle Function(
-      ImageHandle,
-      Int,
-      Int,
-      Int,
-      RawMatrix33,
-    )>(symbol: 'shader_createFromImage', isLeaf: true)
+@Native<ShaderHandle Function(ImageHandle, Int, Int, Int, RawMatrix33)>(
+  symbol: 'shader_createFromImage',
+  isLeaf: true,
+)
 external ShaderHandle shaderCreateFromImage(
   ImageHandle handle,
   int tileModeX,

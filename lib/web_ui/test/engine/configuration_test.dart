@@ -26,10 +26,10 @@ void testMain() {
     });
 
     test('legacy constructor initializes with a Js Object', () async {
-      final FlutterConfiguration config =
-          FlutterConfiguration.legacy(js_util.jsify(<String, Object?>{
-        'canvasKitBaseUrl': 'some_other_url/',
-      }) as JsFlutterConfiguration);
+      final FlutterConfiguration config = FlutterConfiguration.legacy(
+        js_util.jsify(<String, Object?>{'canvasKitBaseUrl': 'some_other_url/'})
+            as JsFlutterConfiguration,
+      );
 
       expect(config.canvasKitBaseUrl, 'some_other_url/');
     });
@@ -37,24 +37,28 @@ void testMain() {
 
   group('setUserConfiguration', () {
     test('throws assertion error if already initialized from JS', () async {
-      final FlutterConfiguration config =
-          FlutterConfiguration.legacy(js_util.jsify(<String, Object?>{
-        'canvasKitBaseUrl': 'some_other_url/',
-      }) as JsFlutterConfiguration);
+      final FlutterConfiguration config = FlutterConfiguration.legacy(
+        js_util.jsify(<String, Object?>{'canvasKitBaseUrl': 'some_other_url/'})
+            as JsFlutterConfiguration,
+      );
 
       expect(() {
-        config.setUserConfiguration(js_util.jsify(<String, Object?>{
-          'canvasKitBaseUrl': 'yet_another_url/',
-        }) as JsFlutterConfiguration);
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{
+                'canvasKitBaseUrl': 'yet_another_url/',
+              })
+              as JsFlutterConfiguration,
+        );
       }, throwsAssertionError);
     });
 
     test('stores config if JS configuration was null', () async {
       final FlutterConfiguration config = FlutterConfiguration.legacy(null);
 
-      config.setUserConfiguration(js_util.jsify(<String, Object?>{
-        'canvasKitBaseUrl': 'one_more_url/',
-      }) as JsFlutterConfiguration);
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitBaseUrl': 'one_more_url/'})
+            as JsFlutterConfiguration,
+      );
 
       expect(config.canvasKitBaseUrl, 'one_more_url/');
     });
@@ -63,9 +67,10 @@ void testMain() {
       final FlutterConfiguration config = FlutterConfiguration.legacy(null);
 
       expect(() {
-        config.setUserConfiguration(js_util.jsify(<String, Object?>{
-          'nonexistentProperty': 32.0,
-        }) as JsFlutterConfiguration);
+        config.setUserConfiguration(
+          js_util.jsify(<String, Object?>{'nonexistentProperty': 32.0})
+              as JsFlutterConfiguration,
+        );
       }, returnsNormally);
     });
   });

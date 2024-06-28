@@ -94,26 +94,29 @@ class RunSuiteStep implements PipelineStep {
       ..._collectTestPaths(),
     ];
 
-    hack.registerPlatformPlugin(<hack.Runtime>[
-      browserEnvironment.packageTestRuntime,
-    ], () {
-      return BrowserPlatform.start(
-        suite,
-        browserEnvironment: browserEnvironment,
-        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
-        skiaClient: skiaClient,
-        overridePathToCanvasKit: overridePathToCanvasKit,
-        isVerbose: isVerbose,
-      );
-    });
+    hack.registerPlatformPlugin(
+      <hack.Runtime>[browserEnvironment.packageTestRuntime],
+      () {
+        return BrowserPlatform.start(
+          suite,
+          browserEnvironment: browserEnvironment,
+          doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+          skiaClient: skiaClient,
+          overridePathToCanvasKit: overridePathToCanvasKit,
+          isVerbose: isVerbose,
+        );
+      },
+    );
 
     print('[${suite.name.ansiCyan}] Running...');
 
     // We want to run tests with the test set's directory as a working directory.
-    final io.Directory testSetDirectory = io.Directory(pathlib.join(
-      environment.webUiTestDir.path,
-      suite.testBundle.testSet.directory,
-    ));
+    final io.Directory testSetDirectory = io.Directory(
+      pathlib.join(
+        environment.webUiTestDir.path,
+        suite.testBundle.testSet.directory,
+      ),
+    );
     final dynamic originalCwd = io.Directory.current;
     io.Directory.current = testSetDirectory;
     try {
@@ -139,10 +142,9 @@ class RunSuiteStep implements PipelineStep {
   }
 
   io.Directory _prepareTestResultsDirectory() {
-    final io.Directory resultsDirectory = io.Directory(pathlib.join(
-      environment.webUiTestResultsDirectory.path,
-      suite.name,
-    ));
+    final io.Directory resultsDirectory = io.Directory(
+      pathlib.join(environment.webUiTestResultsDirectory.path, suite.name),
+    );
     if (resultsDirectory.existsSync()) {
       resultsDirectory.deleteSync(recursive: true);
     }
@@ -152,13 +154,13 @@ class RunSuiteStep implements PipelineStep {
 
   List<String> _collectTestPaths() {
     final io.Directory bundleBuild = getBundleBuildDirectory(suite.testBundle);
-    final io.File resultsJsonFile = io.File(pathlib.join(
-      bundleBuild.path,
-      'results.json',
-    ));
+    final io.File resultsJsonFile = io.File(
+      pathlib.join(bundleBuild.path, 'results.json'),
+    );
     if (!resultsJsonFile.existsSync()) {
       throw ToolExit(
-          'Could not find built bundle ${suite.testBundle.name.ansiMagenta} for suite ${suite.name.ansiCyan}.');
+        'Could not find built bundle ${suite.testBundle.name.ansiMagenta} for suite ${suite.name.ansiCyan}.',
+      );
     }
     final String jsonString = resultsJsonFile.readAsStringSync();
     final jsonContents =
@@ -170,7 +172,8 @@ class RunSuiteStep implements PipelineStep {
       final String testPath = k! as String;
       if (testFiles != null) {
         if (!testFiles!.contains(
-            FilePath.fromTestSet(suite.testBundle.testSet, testPath))) {
+          FilePath.fromTestSet(suite.testBundle.testSet, testPath),
+        )) {
           return;
         }
       }
@@ -200,15 +203,13 @@ class RunSuiteStep implements PipelineStep {
     }
     final bool isWasm =
         suite.testBundle.compileConfigs.first.compiler == Compiler.dart2wasm;
-    final SkiaGoldClient skiaClient = SkiaGoldClient(
-      workDirectory,
-      dimensions: <String, String>{
-        'Browser': suite.runConfig.browser.name,
-        if (isWasm) 'Wasm': 'true',
-        'Renderer': renderer.name,
-        if (variant != null) 'CanvasKitVariant': variant.name,
-      },
-    );
+    final SkiaGoldClient skiaClient = SkiaGoldClient(workDirectory, dimensions:
+        <String, String>{
+          'Browser': suite.runConfig.browser.name,
+          if (isWasm) 'Wasm': 'true',
+          'Renderer': renderer.name,
+          if (variant != null) 'CanvasKitVariant': variant.name,
+        });
 
     if (await _checkSkiaClient(skiaClient)) {
       return skiaClient;

@@ -60,13 +60,14 @@ class DebugCanvasReuseOverlay {
             ..append(_inRecycle),
         )
         ..append(
-          createDomHTMLDivElement()
-            ..append(
-              createDomHTMLButtonElement()
-                ..text = 'Reset'
-                ..addEventListener(
-                    'click', createDomEventListener((_) => _reset())),
-            ),
+          createDomHTMLDivElement()..append(
+            createDomHTMLButtonElement()
+              ..text = 'Reset'
+              ..addEventListener(
+                'click',
+                createDomEventListener((_) => _reset()),
+              ),
+          ),
         ),
     );
   }

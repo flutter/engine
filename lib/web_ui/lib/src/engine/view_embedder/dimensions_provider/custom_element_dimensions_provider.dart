@@ -48,8 +48,10 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
 
     assert(() {
       if (_hostElementResizeObserver == null) {
-        domWindow.console.warn('ResizeObserver API not supported. '
-            'Flutter will not resize with its hostElement.');
+        domWindow.console.warn(
+          'ResizeObserver API not supported. '
+          'Flutter will not resize with its hostElement.',
+        );
       }
       return true;
     }());
@@ -99,11 +101,6 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
     double physicalHeight,
     bool isEditingOnMobile,
   ) {
-    return const ViewPadding(
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    );
+    return const ViewPadding(top: 0, right: 0, bottom: 0, left: 0);
   }
 }

@@ -16,8 +16,9 @@ void main() {
 void doTests() {
   group('StyleManager', () {
     test('attachGlobalStyles hides the outline when focused', () {
-      final DomElement flutterViewElement =
-          createDomElement(DomManager.flutterViewTagName);
+      final DomElement flutterViewElement = createDomElement(
+        DomManager.flutterViewTagName,
+      );
 
       domDocument.body!.append(flutterViewElement);
       StyleManager.attachGlobalStyles(
@@ -55,23 +56,27 @@ void doTests() {
 
     test('styleSemanticsHost', () {
       expect(
-          () => StyleManager.styleSemanticsHost(createDomHTMLDivElement(), 1.0),
-          throwsAssertionError,
-          reason: 'Only accepts a <flt-semantics-host> element.');
+        () => StyleManager.styleSemanticsHost(createDomHTMLDivElement(), 1.0),
+        throwsAssertionError,
+        reason: 'Only accepts a <flt-semantics-host> element.',
+      );
 
       final DomElement semanticsHost = createDomElement('flt-semantics-host');
       StyleManager.styleSemanticsHost(semanticsHost, 4.0);
       expect(semanticsHost.style.transform, 'scale(0.25)');
       expect(semanticsHost.style.position, 'absolute');
       expect(
-          semanticsHost.style.transformOrigin, anyOf('0px 0px 0px', '0px 0px'));
+        semanticsHost.style.transformOrigin,
+        anyOf('0px 0px 0px', '0px 0px'),
+      );
     });
 
     test('scaleSemanticsHost', () {
       expect(
-          () => StyleManager.scaleSemanticsHost(createDomHTMLDivElement(), 1.0),
-          throwsAssertionError,
-          reason: 'Only accepts a <flt-semantics-host> element.');
+        () => StyleManager.scaleSemanticsHost(createDomHTMLDivElement(), 1.0),
+        throwsAssertionError,
+        reason: 'Only accepts a <flt-semantics-host> element.',
+      );
 
       final DomElement semanticsHost = createDomElement('flt-semantics-host');
       StyleManager.scaleSemanticsHost(semanticsHost, 5.0);

@@ -28,8 +28,8 @@ const bool _debugLogPointerEvents = false;
 const bool _debugLogFlutterEvents = false;
 
 /// The signature of a callback that handles pointer events.
-typedef _PointerDataCallback = void Function(
-    DomEvent event, List<ui.PointerData>);
+typedef _PointerDataCallback =
+    void Function(DomEvent event, List<ui.PointerData>);
 
 // The mask for the bitfield of event buttons. Buttons not contained in this
 // mask are cut off.
@@ -101,8 +101,8 @@ class PointerBinding {
     this.view, {
     PointerSupportDetector detector = const PointerSupportDetector(),
     SafariPointerEventWorkaround? safariWorkaround,
-  })  : _pointerDataConverter = PointerDataConverter(),
-        _detector = detector {
+  }) : _pointerDataConverter = PointerDataConverter(),
+       _detector = detector {
     if (isIosSafari) {
       _safariWorkaround = safariWorkaround ?? _defaultSafariWorkaround;
       _safariWorkaround!.workAroundMissingPointerEvents();
@@ -160,18 +160,12 @@ class PointerBinding {
 }
 
 @visibleForTesting
-typedef QueuedEvent = ({
-  DomEvent event,
-  Duration timeStamp,
-  List<ui.PointerData> data
-});
+typedef QueuedEvent =
+    ({DomEvent event, Duration timeStamp, List<ui.PointerData> data});
 
 @visibleForTesting
-typedef DebounceState = ({
-  DomElement target,
-  Timer timer,
-  List<QueuedEvent> queue,
-});
+typedef DebounceState =
+    ({DomElement target, Timer timer, List<QueuedEvent> queue});
 
 /// Disambiguates taps and clicks that are produced both by the framework from
 /// `pointerdown`/`pointerup` events and those detected as DOM "click" events by
@@ -299,14 +293,19 @@ class ClickDebouncer {
     // https://github.com/flutter/flutter/issues/134842
     click.stopPropagation();
 
-    EnginePlatformDispatcher.instance
-        .invokeOnSemanticsAction(semanticsNodeId, ui.SemanticsAction.tap, null);
+    EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+      semanticsNodeId,
+      ui.SemanticsAction.tap,
+      null,
+    );
   }
 
   void _startDebouncing(DomEvent event, List<ui.PointerData> data) {
     assert(_state == null, 'Cannot start debouncing. Already debouncing.');
-    assert(event.type == 'pointerdown',
-        'Click debouncing must begin with a pointerdown');
+    assert(
+      event.type == 'pointerdown',
+      'Click debouncing must begin with a pointerdown',
+    );
 
     final DomEventTarget? target = event.target;
     if (target is DomElement && target.hasAttribute('flt-tappable')) {
@@ -328,7 +327,7 @@ class ClickDebouncer {
             event: event,
             timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
             data: data,
-          )
+          ),
         ],
       );
     } else {
@@ -339,8 +338,10 @@ class ClickDebouncer {
   }
 
   void _debounce(DomEvent event, List<ui.PointerData> data) {
-    assert(_state != null,
-        'Cannot debounce event. Debouncing state not established by _startDebouncing.');
+    assert(
+      _state != null,
+      'Cannot debounce event. Debouncing state not established by _startDebouncing.',
+    );
 
     final DebounceState state = _state!;
     state.queue.add((
@@ -381,8 +382,9 @@ class ClickDebouncer {
       return true;
     }
 
-    final Duration clickTimeStamp =
-        _BaseAdapter._eventTimeStampToDuration(click.timeStamp!);
+    final Duration clickTimeStamp = _BaseAdapter._eventTimeStampToDuration(
+      click.timeStamp!,
+    );
     final Duration delta = clickTimeStamp - lastFlushedPointerUpTimeStamp;
     return delta >= const Duration(milliseconds: 50);
   }
@@ -406,8 +408,9 @@ class ClickDebouncer {
   }
 
   void _sendToFramework(DomEvent? event, List<ui.PointerData> data) {
-    final ui.PointerDataPacket packet =
-        ui.PointerDataPacket(data: data.toList());
+    final ui.PointerDataPacket packet = ui.PointerDataPacket(
+      data: data.toList(),
+    );
     if (_debugLogFlutterEvents) {
       for (final ui.PointerData datum in data) {
         print('fw:${datum.change}    ${datum.physicalX},${datum.physicalY}');
@@ -538,9 +541,11 @@ abstract class _BaseAdapter {
         if (domInstanceOfString(event, 'PointerEvent')) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
           final ui.Offset offset = computeEventOffsetToTarget(event, _view);
-          print('${pointerEvent.type}    '
-              '${offset.dx.toStringAsFixed(1)},'
-              '${offset.dy.toStringAsFixed(1)}');
+          print(
+            '${pointerEvent.type}    '
+            '${offset.dx.toStringAsFixed(1)},'
+            '${offset.dy.toStringAsFixed(1)}',
+          );
         } else {
           print(event.type);
         }
@@ -553,11 +558,13 @@ abstract class _BaseAdapter {
       }
     }
 
-    _listeners.add(_Listener.register(
-      event: eventName,
-      target: target,
-      handler: loggedHandler,
-    ));
+    _listeners.add(
+      _Listener.register(
+        event: eventName,
+        target: target,
+        handler: loggedHandler,
+      ),
+    );
   }
 
   /// Converts a floating number timestamp (in milliseconds) to a [Duration] by
@@ -680,8 +687,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     final ui.Offset offset = computeEventOffsetToTarget(event, _view);
     bool ignoreCtrlKey = false;
     if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs) {
-      ignoreCtrlKey = (_keyboardConverter?.keyIsPressed(kPhysicalControlLeft) ??
-              false) ||
+      ignoreCtrlKey =
+          (_keyboardConverter?.keyIsPressed(kPhysicalControlLeft) ?? false) ||
           (_keyboardConverter?.keyIsPressed(kPhysicalControlRight) ?? false);
     }
     if (event.ctrlKey && !ignoreCtrlKey) {
@@ -728,12 +735,14 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
   }
 
   void _addWheelEventListener(DartDomEventListener handler) {
-    _listeners.add(_Listener.register(
-      event: 'wheel',
-      target: _viewTarget,
-      handler: handler,
-      passive: false,
-    ));
+    _listeners.add(
+      _Listener.register(
+        event: 'wheel',
+        target: _viewTarget,
+        handler: handler,
+        passive: false,
+      ),
+    );
   }
 
   void _handleWheelEvent(DomEvent event) {
@@ -777,10 +786,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
 
 @immutable
 class _SanitizedDetails {
-  const _SanitizedDetails({
-    required this.buttons,
-    required this.change,
-  });
+  const _SanitizedDetails({required this.buttons, required this.change});
 
   final ui.PointerChange change;
   final int buttons;
@@ -974,23 +980,31 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
-    _addPointerEventListener(_viewTarget, 'pointerdown',
-        (DomPointerEvent event) {
+    _addPointerEventListener(_viewTarget, 'pointerdown', (
+      DomPointerEvent event,
+    ) {
       final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final _SanitizedDetails? up = sanitizer.sanitizeMissingRightClickUp(
-          buttons: event.buttons!.toInt());
+        buttons: event.buttons!.toInt(),
+      );
       if (up != null) {
         _convertEventsToPointerData(
-            data: pointerData, event: event, details: up);
+          data: pointerData,
+          event: event,
+          details: up,
+        );
       }
       final _SanitizedDetails down = sanitizer.sanitizeDownEvent(
         button: event.button.toInt(),
         buttons: event.buttons!.toInt(),
       );
       _convertEventsToPointerData(
-          data: pointerData, event: event, details: down);
+        data: pointerData,
+        event: event,
+        details: down,
+      );
       _callback(event, pointerData);
 
       if (event.target == _viewTarget) {
@@ -1011,53 +1025,72 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     });
 
     // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
-    _addPointerEventListener(_globalTarget, 'pointermove',
-        (DomPointerEvent event) {
+    _addPointerEventListener(_globalTarget, 'pointermove', (
+      DomPointerEvent event,
+    ) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final List<DomPointerEvent> expandedEvents = _expandEvents(event);
       for (final DomPointerEvent event in expandedEvents) {
         final _SanitizedDetails? up = sanitizer.sanitizeMissingRightClickUp(
-            buttons: event.buttons!.toInt());
+          buttons: event.buttons!.toInt(),
+        );
         if (up != null) {
           _convertEventsToPointerData(
-              data: pointerData, event: event, details: up);
+            data: pointerData,
+            event: event,
+            details: up,
+          );
         }
-        final _SanitizedDetails move =
-            sanitizer.sanitizeMoveEvent(buttons: event.buttons!.toInt());
+        final _SanitizedDetails move = sanitizer.sanitizeMoveEvent(
+          buttons: event.buttons!.toInt(),
+        );
         _convertEventsToPointerData(
-            data: pointerData, event: event, details: move);
+          data: pointerData,
+          event: event,
+          details: move,
+        );
       }
       _callback(event, pointerData);
     });
 
-    _addPointerEventListener(_viewTarget, 'pointerleave',
-        (DomPointerEvent event) {
+    _addPointerEventListener(_viewTarget, 'pointerleave', (
+      DomPointerEvent event,
+    ) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? details =
-          sanitizer.sanitizeLeaveEvent(buttons: event.buttons!.toInt());
+      final _SanitizedDetails? details = sanitizer.sanitizeLeaveEvent(
+        buttons: event.buttons!.toInt(),
+      );
       if (details != null) {
         _convertEventsToPointerData(
-            data: pointerData, event: event, details: details);
+          data: pointerData,
+          event: event,
+          details: details,
+        );
         _callback(event, pointerData);
       }
     }, checkModifiers: false);
 
     // TODO(dit): This must happen in the flutterViewElement, https://github.com/flutter/flutter/issues/116561
-    _addPointerEventListener(_globalTarget, 'pointerup',
-        (DomPointerEvent event) {
+    _addPointerEventListener(_globalTarget, 'pointerup', (
+      DomPointerEvent event,
+    ) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
-        final _SanitizedDetails? details = _getSanitizer(device)
-            .sanitizeUpEvent(buttons: event.buttons?.toInt());
+        final _SanitizedDetails? details = _getSanitizer(
+          device,
+        ).sanitizeUpEvent(buttons: event.buttons?.toInt());
         _removePointerIfUnhoverable(event);
         if (details != null) {
           _convertEventsToPointerData(
-              data: pointerData, event: event, details: details);
+            data: pointerData,
+            event: event,
+            details: details,
+          );
           _callback(event, pointerData);
         }
       }
@@ -1067,8 +1100,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
-    _addPointerEventListener(_viewTarget, 'pointercancel',
-        (DomPointerEvent event) {
+    _addPointerEventListener(_viewTarget, 'pointercancel', (
+      DomPointerEvent event,
+    ) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -1076,7 +1110,10 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
             _getSanitizer(device).sanitizeCancelEvent();
         _removePointerIfUnhoverable(event);
         _convertEventsToPointerData(
-            data: pointerData, event: event, details: details);
+          data: pointerData,
+          event: event,
+          details: details,
+        );
         _callback(event, pointerData);
       }
     }, checkModifiers: false);
@@ -1093,11 +1130,13 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomPointerEvent event,
     required _SanitizedDetails details,
   }) {
-    final ui.PointerDeviceKind kind =
-        _pointerTypeToDeviceKind(event.pointerType!);
+    final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(
+      event.pointerType!,
+    );
     final double tilt = _computeHighestTilt(event);
-    final Duration timeStamp =
-        _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
+    final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(
+      event.timeStamp!,
+    );
     final num? pressure = event.pressure;
     final ui.Offset offset = computeEventOffsetToTarget(event, _view);
     _pointerDataConverter.convert(
@@ -1153,8 +1192,9 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // We force `device: _mouseDeviceId` on mouse pointers because Wheel events
     // might come before any PointerEvents, and since wheel events don't contain
     // pointerId we always assign `device: _mouseDeviceId` to them.
-    final ui.PointerDeviceKind kind =
-        _pointerTypeToDeviceKind(event.pointerType!);
+    final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(
+      event.pointerType!,
+    );
     return kind == ui.PointerDeviceKind.mouse
         ? _mouseDeviceId
         : event.pointerId!.toInt();

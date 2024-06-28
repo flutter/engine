@@ -101,14 +101,15 @@ class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
   @override
   int get hashCode => _index.hashCode;
 
-  EngineAccessibilityFeatures copyWith(
-      {bool? accessibleNavigation,
-      bool? invertColors,
-      bool? disableAnimations,
-      bool? boldText,
-      bool? reduceMotion,
-      bool? highContrast,
-      bool? onOffSwitchLabels}) {
+  EngineAccessibilityFeatures copyWith({
+    bool? accessibleNavigation,
+    bool? invertColors,
+    bool? disableAnimations,
+    bool? boldText,
+    bool? reduceMotion,
+    bool? highContrast,
+    bool? onOffSwitchLabels,
+  }) {
     final EngineAccessibilityFeaturesBuilder builder =
         EngineAccessibilityFeaturesBuilder(0);
 
@@ -196,7 +197,7 @@ class EngineAccessibilityFeaturesBuilder {
 /// `dart:ui` [ui.SemanticsUpdate].
 class SemanticsUpdate implements ui.SemanticsUpdate {
   SemanticsUpdate({List<SemanticsNodeUpdate>? nodeUpdates})
-      : _nodeUpdates = nodeUpdates;
+    : _nodeUpdates = nodeUpdates;
 
   /// Updates for individual nodes.
   final List<SemanticsNodeUpdate>? _nodeUpdates;
@@ -455,8 +456,11 @@ abstract class PrimaryRoleManager {
   ///
   /// If `labelRepresentation` is true, configures the [LabelAndValue] role with
   /// [LabelAndValue.labelRepresentation] set to true.
-  PrimaryRoleManager.withBasics(this.role, this.semanticsObject,
-      {required LabelRepresentation preferredLabelRepresentation}) {
+  PrimaryRoleManager.withBasics(
+    this.role,
+    this.semanticsObject, {
+    required LabelRepresentation preferredLabelRepresentation,
+  }) {
     element = _initElement(createElement(), semanticsObject);
     addFocusManagement();
     addLiveRegion();
@@ -499,7 +503,9 @@ abstract class PrimaryRoleManager {
   DomElement createElement() => domDocument.createElement('flt-semantics');
 
   static DomElement _initElement(
-      DomElement element, SemanticsObject semanticsObject) {
+    DomElement element,
+    SemanticsObject semanticsObject,
+  ) {
     // DOM nodes created for semantics objects are positioned absolutely using
     // transforms.
     element.style
@@ -561,13 +567,17 @@ abstract class PrimaryRoleManager {
 
   void removeAttribute(String name) => element.removeAttribute(name);
 
-  void addEventListener(String type, DomEventListener? listener,
-          [bool? useCapture]) =>
-      element.addEventListener(type, listener, useCapture);
+  void addEventListener(
+    String type,
+    DomEventListener? listener, [
+    bool? useCapture,
+  ]) => element.addEventListener(type, listener, useCapture);
 
-  void removeEventListener(String type, DomEventListener? listener,
-          [bool? useCapture]) =>
-      element.removeEventListener(type, listener, useCapture);
+  void removeEventListener(
+    String type,
+    DomEventListener? listener, [
+    bool? useCapture,
+  ]) => element.removeEventListener(type, listener, useCapture);
 
   /// Convenience getter for the [Focusable] role manager, if any.
   Focusable? get focusable => _focusable;
@@ -593,10 +603,16 @@ abstract class PrimaryRoleManager {
   LabelAndValue? _labelAndValue;
 
   /// Adds generic label features.
-  void addLabelAndValue(
-      {required LabelRepresentation preferredRepresentation}) {
-    addSecondaryRole(_labelAndValue = LabelAndValue(semanticsObject, this,
-        preferredRepresentation: preferredRepresentation));
+  void addLabelAndValue({
+    required LabelRepresentation preferredRepresentation,
+  }) {
+    addSecondaryRole(
+      _labelAndValue = LabelAndValue(
+        semanticsObject,
+        this,
+        preferredRepresentation: preferredRepresentation,
+      ),
+    );
   }
 
   /// Adds generic functionality for handling taps and clicks.
@@ -611,8 +627,9 @@ abstract class PrimaryRoleManager {
   @protected
   void addSecondaryRole(RoleManager secondaryRoleManager) {
     assert(
-      _secondaryRoleManagers?.any((RoleManager manager) =>
-              manager.role == secondaryRoleManager.role) !=
+      _secondaryRoleManagers?.any(
+            (RoleManager manager) => manager.role == secondaryRoleManager.role,
+          ) !=
           true,
       'Cannot add secondary role ${secondaryRoleManager.role}. This object already has this secondary role.',
     );
@@ -689,14 +706,14 @@ abstract class PrimaryRoleManager {
 /// A role used when a more specific role couldn't be assigned to the node.
 final class GenericRole extends PrimaryRoleManager {
   GenericRole(SemanticsObject semanticsObject)
-      : super.withBasics(
-          PrimaryRole.generic,
-          semanticsObject,
-          // Prefer sized span because if this is a leaf it is frequently a Text widget.
-          // But if it turns out to be a container, then LabelAndValue will automatically
-          // switch to `aria-label`.
-          preferredLabelRepresentation: LabelRepresentation.sizedSpan,
-        ) {
+    : super.withBasics(
+        PrimaryRole.generic,
+        semanticsObject,
+        // Prefer sized span because if this is a leaf it is frequently a Text widget.
+        // But if it turns out to be a container, then LabelAndValue will automatically
+        // switch to `aria-label`.
+        preferredLabelRepresentation: LabelRepresentation.sizedSpan,
+      ) {
     // Typically a tappable widget would have a more specific role, such as
     // "link", "button", "checkbox", etc. However, there are situations when a
     // tappable is not a leaf node, but contains other nodes, which can also be
@@ -1082,8 +1099,9 @@ class SemanticsObject {
 
   /// Whether the [childrenInTraversalOrder] field has been updated but has not
   /// been applied to the DOM yet.
-  bool get isChildrenInTraversalOrderDirty =>
-      _isDirty(_childrenInTraversalOrderIndex);
+  bool get isChildrenInTraversalOrderDirty => _isDirty(
+    _childrenInTraversalOrderIndex,
+  );
   void _markChildrenInTraversalOrderDirty() {
     _dirtyFields |= _childrenInTraversalOrderIndex;
   }
@@ -1096,8 +1114,9 @@ class SemanticsObject {
 
   /// Whether the [childrenInHitTestOrder] field has been updated but has not
   /// been applied to the DOM yet.
-  bool get isChildrenInHitTestOrderDirty =>
-      _isDirty(_childrenInHitTestOrderIndex);
+  bool get isChildrenInHitTestOrderDirty => _isDirty(
+    _childrenInHitTestOrderIndex,
+  );
   void _markChildrenInHitTestOrderDirty() {
     _dirtyFields |= _childrenInHitTestOrderIndex;
   }
@@ -1208,9 +1227,10 @@ class SemanticsObject {
       _childContainerElement = createDomElement('flt-semantics-container');
       _childContainerElement!.style
         ..position = 'absolute'
-        // Ignore pointer events on child container so that platform views
-        // behind it can be reached.
-        ..pointerEvents = 'none';
+            // Ignore pointer events on child container so that platform views
+            // behind it can be reached.
+            ..pointerEvents =
+            'none';
       element.append(_childContainerElement!);
     }
     return _childContainerElement;
@@ -1547,8 +1567,9 @@ class SemanticsObject {
     // is determined by the DOM order of elements.
     final List<SemanticsObject> childrenInRenderOrder = <SemanticsObject>[];
     for (int i = 0; i < childCount; i++) {
-      childrenInRenderOrder
-          .add(owner._semanticsTree[childrenInTraversalOrder[i]]!);
+      childrenInRenderOrder.add(
+        owner._semanticsTree[childrenInTraversalOrder[i]]!,
+      );
     }
 
     // The z-index determines hit testing. Technically, it also affects paint
@@ -1640,13 +1661,15 @@ class SemanticsObject {
 
     // The longest sub-sequence in the old list maximizes the number of children
     // that do not need to be moved.
-    final List<int?> longestSequence =
-        longestIncreasingSubsequence(intersectionIndicesOld);
+    final List<int?> longestSequence = longestIncreasingSubsequence(
+      intersectionIndicesOld,
+    );
     final List<int> stationaryIds = <int>[];
     for (int i = 0; i < longestSequence.length; i += 1) {
-      stationaryIds.add(previousChildrenInRenderOrder[
-              intersectionIndicesOld[longestSequence[i]!]]
-          .id);
+      stationaryIds.add(
+        previousChildrenInRenderOrder[intersectionIndicesOld[longestSequence[i]!]]
+            .id,
+      );
     }
 
     // Remove children that are no longer in the list.
@@ -1846,8 +1869,9 @@ class SemanticsObject {
         effectiveTransformIsIdentity = left == 0.0 && top == 0.0;
       } else {
         // Clone to avoid mutating _transform.
-        effectiveTransform = Matrix4.fromFloat32List(transform).clone()
-          ..translate(_rect!.left, _rect!.top);
+        effectiveTransform =
+            Matrix4.fromFloat32List(transform).clone()
+              ..translate(_rect!.left, _rect!.top);
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
@@ -1910,7 +1934,8 @@ class SemanticsObject {
   /// Unlike [visitDepthFirstInTraversalOrder] this method can traverse
   /// partially updated, incomplete, or inconsistent tree.
   void _debugVisitRenderedSemanticNodesDepthFirst(
-      void Function(SemanticsObject) callback) {
+    void Function(SemanticsObject) callback,
+  ) {
     callback(this);
     _currentChildrenInRenderOrder?.forEach((SemanticsObject child) {
       child._debugVisitRenderedSemanticNodesDepthFirst(callback);
@@ -1925,12 +1950,14 @@ class SemanticsObject {
   /// stops immediately after visiting the node that caused the callback to
   /// return false.
   void visitDepthFirstInTraversalOrder(
-      bool Function(SemanticsObject) callback) {
+    bool Function(SemanticsObject) callback,
+  ) {
     _visitDepthFirstInTraversalOrder(callback);
   }
 
   bool _visitDepthFirstInTraversalOrder(
-      bool Function(SemanticsObject) callback) {
+    bool Function(SemanticsObject) callback,
+  ) {
     final bool shouldContinueVisiting = callback(this);
 
     if (!shouldContinueVisiting) {
@@ -1965,10 +1992,11 @@ class SemanticsObject {
   String toString() {
     String result = super.toString();
     assert(() {
-      final String children = _childrenInTraversalOrder != null &&
-              _childrenInTraversalOrder!.isNotEmpty
-          ? '[${_childrenInTraversalOrder!.join(', ')}]'
-          : '<empty>';
+      final String children =
+          _childrenInTraversalOrder != null &&
+                  _childrenInTraversalOrder!.isNotEmpty
+              ? '[${_childrenInTraversalOrder!.join(', ')}]'
+              : '<empty>';
       result = '$runtimeType(#$id, children: $children)';
       return true;
     }());
@@ -2060,7 +2088,8 @@ class EngineSemantics {
   /// Implements verbal accessibility announcements.
   final AccessibilityAnnouncements accessibilityAnnouncements =
       AccessibilityAnnouncements(
-          hostElement: _initializeAccessibilityAnnouncementHost());
+        hostElement: _initializeAccessibilityAnnouncementHost(),
+      );
 
   static DomElement _initializeAccessibilityAnnouncementHost() {
     final DomElement host = createDomElement(announcementsHostTagName);
@@ -2095,14 +2124,15 @@ class EngineSemantics {
     if (value == _semanticsEnabled) {
       return;
     }
-    final EngineAccessibilityFeatures original = EnginePlatformDispatcher
+    final EngineAccessibilityFeatures original =
+        EnginePlatformDispatcher.instance.configuration.accessibilityFeatures
+            as EngineAccessibilityFeatures;
+    final PlatformConfiguration newConfiguration = EnginePlatformDispatcher
         .instance
         .configuration
-        .accessibilityFeatures as EngineAccessibilityFeatures;
-    final PlatformConfiguration newConfiguration =
-        EnginePlatformDispatcher.instance.configuration.copyWith(
-            accessibilityFeatures:
-                original.copyWith(accessibleNavigation: value));
+        .copyWith(
+          accessibilityFeatures: original.copyWith(accessibleNavigation: value),
+        );
     EnginePlatformDispatcher.instance.configuration = newConfiguration;
 
     _semanticsEnabled = value;
@@ -2318,10 +2348,7 @@ class EngineSemantics {
       return semanticsEnabled;
     }
 
-    const List<String> pointerDebouncedGestures = <String>[
-      'click',
-      'scroll',
-    ];
+    const List<String> pointerDebouncedGestures = <String>['click', 'scroll'];
 
     if (pointerDebouncedGestures.contains(eventType)) {
       return _gestureMode == GestureMode.browserGestures;
@@ -2372,8 +2399,10 @@ class EngineSemanticsOwner {
   /// Attachments take precedence over detachments (see [_detachObject]). This
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
-  void _attachObject(
-      {required SemanticsObject parent, required SemanticsObject child}) {
+  void _attachObject({
+    required SemanticsObject parent,
+    required SemanticsObject child,
+  }) {
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -2586,13 +2615,15 @@ AFTER: $description
             }
             if (child._parent == null) {
               throw AssertionError(
-                  'Child #$childId of parent #${object.id} has null parent '
-                  'reference.');
+                'Child #$childId of parent #${object.id} has null parent '
+                'reference.',
+              );
             }
             if (!identical(child._parent, object)) {
               throw AssertionError(
-                  'Parent #${object.id} has child #$childId. However, the '
-                  'child is attached to #${child._parent!.id}.');
+                'Parent #${object.id} has child #$childId. However, the '
+                'child is attached to #${child._parent!.id}.',
+              );
             }
           }
         }

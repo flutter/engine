@@ -22,9 +22,10 @@ const bool kProfileMode = bool.fromEnvironment('dart.vm.profile');
 const bool kDebugMode = !kReleaseMode && !kProfileMode;
 
 /// Returns mode of the app is running in as a string.
-String get buildMode => kReleaseMode
-    ? 'release'
-    : kProfileMode
+String get buildMode =>
+    kReleaseMode
+        ? 'release'
+        : kProfileMode
         ? 'profile'
         : 'debug';
 
@@ -115,15 +116,17 @@ void debugResetEngineInitializationState() {
 ///
 ///  * [initializeEngineUi], which is typically called after this function, and
 ///    puts UI elements on the page.
-Future<void> initializeEngineServices(
-    {ui_web.AssetManager? assetManager,
-    JsFlutterConfiguration? jsConfiguration}) async {
+Future<void> initializeEngineServices({
+  ui_web.AssetManager? assetManager,
+  JsFlutterConfiguration? jsConfiguration,
+}) async {
   if (_initializationState != DebugEngineInitializationState.uninitialized) {
     assert(() {
       throw StateError(
-          'Invalid engine initialization state. `initializeEngineServices` was '
-          'called, but the engine has already started initialization and is '
-          'currently in state "$_initializationState".');
+        'Invalid engine initialization state. `initializeEngineServices` was '
+        'called, but the engine has already started initialization and is '
+        'currently in state "$_initializationState".',
+      );
     }());
     return;
   }
@@ -144,7 +147,8 @@ Future<void> initializeEngineServices(
       listener();
     }
     return Future<developer.ServiceExtensionResponse>.value(
-        developer.ServiceExtensionResponse.result('OK'));
+      developer.ServiceExtensionResponse.result('OK'),
+    );
   });
 
   if (Profiler.isBenchmarkMode) {
@@ -181,7 +185,8 @@ Future<void> initializeEngineServices(
 
         if (EnginePlatformDispatcher.instance.onBeginFrame != null) {
           EnginePlatformDispatcher.instance.invokeOnBeginFrame(
-              Duration(microseconds: highResTimeMicroseconds));
+            Duration(microseconds: highResTimeMicroseconds),
+          );
         }
 
         if (EnginePlatformDispatcher.instance.onDrawFrame != null) {
@@ -200,8 +205,10 @@ Future<void> initializeEngineServices(
   _setAssetManager(assetManager);
 
   Future<void> initializeRendererCallback() async => renderer.initialize();
-  await Future.wait<void>(
-      <Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
+  await Future.wait<void>(<Future<void>>[
+    initializeRendererCallback(),
+    _downloadAssetFonts(),
+  ]);
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
 
@@ -217,23 +224,26 @@ Future<void> initializeEngineUi() async {
       DebugEngineInitializationState.initializedServices) {
     assert(() {
       throw StateError(
-          'Invalid engine initialization state. `initializeEngineUi` was '
-          'called while the engine initialization state was '
-          '"$_initializationState". `initializeEngineUi` can only be called '
-          'when the engine is in state '
-          '"${DebugEngineInitializationState.initializedServices}".');
+        'Invalid engine initialization state. `initializeEngineUi` was '
+        'called while the engine initialization state was '
+        '"$_initializationState". `initializeEngineUi` can only be called '
+        'when the engine is in state '
+        '"${DebugEngineInitializationState.initializedServices}".',
+      );
     }());
     return;
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
   RawKeyboard.initialize(
-      onMacOs: ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs);
+    onMacOs: ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs,
+  );
   KeyboardBinding.initInstance();
 
   if (!configuration.multiViewEnabled) {
-    final EngineFlutterWindow implicitView =
-        ensureImplicitViewInitialized(hostElement: configuration.hostElement);
+    final EngineFlutterWindow implicitView = ensureImplicitViewInitialized(
+      hostElement: configuration.hostElement,
+    );
     if (renderer is HtmlRenderer) {
       ensureResourceManagerInitialized(implicitView);
     }
@@ -264,13 +274,15 @@ Future<void> _downloadAssetFonts() async {
     // Load the embedded test font before loading fonts from the assets so that
     // the embedded test font is the default (first) font.
     await renderer.fontCollection.loadFontFromList(
-        EmbeddedTestFont.flutterTest.data,
-        fontFamily: EmbeddedTestFont.flutterTest.fontFamily);
+      EmbeddedTestFont.flutterTest.data,
+      fontFamily: EmbeddedTestFont.flutterTest.fontFamily,
+    );
   }
 
   if (_debugAssetManager != null || _assetManager != null) {
-    await renderer.fontCollection
-        .loadAssetFonts(await fetchFontManifest(ui_web.assetManager));
+    await renderer.fontCollection.loadAssetFonts(
+      await fetchFontManifest(ui_web.assetManager),
+    );
   }
 }
 

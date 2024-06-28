@@ -14,8 +14,10 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture>
       SkwasmFinalizationRegistry<RawPicture>(pictureDispose);
 
   @override
-  Future<ui.Image> toImage(int width, int height) async =>
-      toImageSync(width, height);
+  Future<ui.Image> toImage(int width, int height) async => toImageSync(
+    width,
+    height,
+  );
 
   @override
   int get approximateBytesUsed => pictureApproximateBytesUsed(handle);
@@ -27,8 +29,9 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture>
   }
 
   @override
-  ui.Image toImageSync(int width, int height) =>
-      SkwasmImage(imageCreateFromPicture(handle, width, height));
+  ui.Image toImageSync(int width, int height) => SkwasmImage(
+    imageCreateFromPicture(handle, width, height),
+  );
 
   @override
   ui.Rect get cullRect {
@@ -51,8 +54,9 @@ class SkwasmPictureRecorder extends SkwasmObjectWrapper<RawPictureRecorder>
   SkwasmPicture endRecording() {
     isRecording = false;
 
-    final SkwasmPicture picture =
-        SkwasmPicture.fromHandle(pictureRecorderEndRecording(handle));
+    final SkwasmPicture picture = SkwasmPicture.fromHandle(
+      pictureRecorderEndRecording(handle),
+    );
     ui.Picture.onCreate?.call(picture);
     return picture;
   }

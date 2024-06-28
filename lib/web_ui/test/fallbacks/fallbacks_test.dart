@@ -15,9 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests(
-    setUpTestViewDimensions: false,
-  );
+  setUpUnitTests(setUpTestViewDimensions: false);
 
   test('bootstrapper selects correct builds', () {
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.blink) {

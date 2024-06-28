@@ -23,22 +23,25 @@ void main() {
 
 void testMain() {
   group('without implicit view', () {
-    test('Handles navigation gracefully when no implicit view exists',
-        () async {
-      expect(EnginePlatformDispatcher.instance.implicitView, isNull);
+    test(
+      'Handles navigation gracefully when no implicit view exists',
+      () async {
+        expect(EnginePlatformDispatcher.instance.implicitView, isNull);
 
-      final Completer<ByteData?> completer = Completer<ByteData?>();
-      ui.PlatformDispatcher.instance.sendPlatformMessage(
-        'flutter/navigation',
-        codec.encodeMethodCall(const MethodCall(
-          'routeUpdated',
-          <String, dynamic>{'routeName': '/foo'},
-        )),
-        (ByteData? response) => completer.complete(response),
-      );
-      final ByteData? response = await completer.future;
-      expect(response, isNull);
-    });
+        final Completer<ByteData?> completer = Completer<ByteData?>();
+        ui.PlatformDispatcher.instance.sendPlatformMessage(
+          'flutter/navigation',
+          codec.encodeMethodCall(
+            const MethodCall('routeUpdated', <String, dynamic>{
+              'routeName': '/foo',
+            }),
+          ),
+          (ByteData? response) => completer.complete(response),
+        );
+        final ByteData? response = await completer.future;
+        expect(response, isNull);
+      },
+    );
   });
 
   group('with implicit view', () {
@@ -61,10 +64,11 @@ void testMain() {
       final Completer<void> completer = Completer<void>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/navigation',
-        codec.encodeMethodCall(const MethodCall(
-          'routeUpdated',
-          <String, dynamic>{'routeName': '/foo'},
-        )),
+        codec.encodeMethodCall(
+          const MethodCall('routeUpdated', <String, dynamic>{
+            'routeName': '/foo',
+          }),
+        ),
         (_) => completer.complete(),
       );
       await completer.future;

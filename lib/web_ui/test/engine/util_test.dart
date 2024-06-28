@@ -15,10 +15,11 @@ final Float32List xTranslation = (Matrix4.identity()..translate(10)).storage;
 final Float32List yTranslation = (Matrix4.identity()..translate(0, 10)).storage;
 final Float32List zTranslation =
     (Matrix4.identity()..translate(0, 0, 10)).storage;
-final Float32List scaleAndTranslate2d = (Matrix4.identity()
-      ..scale(2, 3, 1)
-      ..translate(4, 5))
-    .storage;
+final Float32List scaleAndTranslate2d =
+    (Matrix4.identity()
+          ..scale(2, 3, 1)
+          ..translate(4, 5))
+        .storage;
 final Float32List rotation2d = (Matrix4.identity()..rotateZ(0.2)).storage;
 
 void main() {
@@ -27,35 +28,33 @@ void main() {
 
 void testMain() {
   test(
-      'transformKindOf and isIdentityFloat32ListTransform identify matrix kind',
-      () {
-    expect(transformKindOf(identityTransform), TransformKind.identity);
-    expect(isIdentityFloat32ListTransform(identityTransform), isTrue);
+    'transformKindOf and isIdentityFloat32ListTransform identify matrix kind',
+    () {
+      expect(transformKindOf(identityTransform), TransformKind.identity);
+      expect(isIdentityFloat32ListTransform(identityTransform), isTrue);
 
-    expect(transformKindOf(zTranslation), TransformKind.complex);
-    expect(isIdentityFloat32ListTransform(zTranslation), isFalse);
+      expect(transformKindOf(zTranslation), TransformKind.complex);
+      expect(isIdentityFloat32ListTransform(zTranslation), isFalse);
 
-    expect(transformKindOf(xTranslation), TransformKind.transform2d);
-    expect(isIdentityFloat32ListTransform(xTranslation), isFalse);
+      expect(transformKindOf(xTranslation), TransformKind.transform2d);
+      expect(isIdentityFloat32ListTransform(xTranslation), isFalse);
 
-    expect(transformKindOf(yTranslation), TransformKind.transform2d);
-    expect(isIdentityFloat32ListTransform(yTranslation), isFalse);
+      expect(transformKindOf(yTranslation), TransformKind.transform2d);
+      expect(isIdentityFloat32ListTransform(yTranslation), isFalse);
 
-    expect(transformKindOf(scaleAndTranslate2d), TransformKind.transform2d);
-    expect(isIdentityFloat32ListTransform(scaleAndTranslate2d), isFalse);
+      expect(transformKindOf(scaleAndTranslate2d), TransformKind.transform2d);
+      expect(isIdentityFloat32ListTransform(scaleAndTranslate2d), isFalse);
 
-    expect(transformKindOf(rotation2d), TransformKind.transform2d);
-    expect(isIdentityFloat32ListTransform(rotation2d), isFalse);
-  });
+      expect(transformKindOf(rotation2d), TransformKind.transform2d);
+      expect(isIdentityFloat32ListTransform(rotation2d), isFalse);
+    },
+  );
 
   test('canonicalizes font families correctly on iOS (not 15)', () {
     ui_web.browser.debugOperatingSystemOverride = ui_web.OperatingSystem.iOs;
     debugIsIOS15 = false;
 
-    expect(
-      canonicalizeFontFamily('sans-serif'),
-      'sans-serif',
-    );
+    expect(canonicalizeFontFamily('sans-serif'), 'sans-serif');
     expect(
       canonicalizeFontFamily('foo'),
       '"foo", -apple-system, BlinkMacSystemFont, sans-serif',
@@ -73,18 +72,12 @@ void testMain() {
     ui_web.browser.debugOperatingSystemOverride = ui_web.OperatingSystem.iOs;
     debugIsIOS15 = true;
 
-    expect(
-      canonicalizeFontFamily('sans-serif'),
-      'sans-serif',
-    );
+    expect(canonicalizeFontFamily('sans-serif'), 'sans-serif');
     expect(
       canonicalizeFontFamily('foo'),
       '"foo", BlinkMacSystemFont, sans-serif',
     );
-    expect(
-      canonicalizeFontFamily('.SF Pro Text'),
-      'BlinkMacSystemFont',
-    );
+    expect(canonicalizeFontFamily('.SF Pro Text'), 'BlinkMacSystemFont');
 
     ui_web.browser.debugOperatingSystemOverride = null;
     debugIsIOS15 = null;
@@ -147,22 +140,26 @@ void testMain() {
     }
   });
 
-  test('futurize converts async null into an async operation failure',
-      () async {
-    final Future<String?> stringFuture = futurize((Callback<String?> callback) {
-      scheduleMicrotask(() {
-        callback(null);
+  test(
+    'futurize converts async null into an async operation failure',
+    () async {
+      final Future<String?> stringFuture = futurize((
+        Callback<String?> callback,
+      ) {
+        scheduleMicrotask(() {
+          callback(null);
+        });
+        return null;
       });
-      return null;
-    });
 
-    try {
-      await stringFuture;
-      fail('Expected it to throw');
-    } on Exception catch (exception) {
-      expect('$exception', contains('operation failed'));
-    }
-  });
+      try {
+        await stringFuture;
+        fail('Expected it to throw');
+      } on Exception catch (exception) {
+        expect('$exception', contains('operation failed'));
+      }
+    },
+  );
 
   test('futurize converts sync null into a sync operation failure', () async {
     try {

@@ -31,35 +31,43 @@ Future<void> testMain() async {
   });
 
   test(
-      'Loading valid font from data succeeds without family name (except in HTML renderer)',
-      () async {
-    final FlutterFontCollection collection = renderer.fontCollection;
-    final ByteBuffer ahemData =
-        await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
-    expect(
-      await collection.loadFontFromList(ahemData.asUint8List()),
-      !isHtml, // HtmlFontCollection requires family name
-    );
-  });
+    'Loading valid font from data succeeds without family name (except in HTML renderer)',
+    () async {
+      final FlutterFontCollection collection = renderer.fontCollection;
+      final ByteBuffer ahemData =
+          await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
+      expect(
+        await collection.loadFontFromList(ahemData.asUint8List()),
+        !isHtml, // HtmlFontCollection requires family name
+      );
+    },
+  );
 
   test('Loading valid font from data succeeds with family name', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
     final ByteBuffer ahemData =
         await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
     expect(
-        await collection.loadFontFromList(ahemData.asUint8List(),
-            fontFamily: 'FamilyName'),
-        true);
+      await collection.loadFontFromList(
+        ahemData.asUint8List(),
+        fontFamily: 'FamilyName',
+      ),
+      true,
+    );
   });
 
   test('Loading invalid font from data returns false', () async {
     final FlutterFontCollection collection = renderer.fontCollection;
-    final List<int> invalidFontData =
-        utf8.encode('This is not valid font data');
+    final List<int> invalidFontData = utf8.encode(
+      'This is not valid font data',
+    );
     expect(
-        await collection.loadFontFromList(Uint8List.fromList(invalidFontData),
-            fontFamily: 'FamilyName'),
-        false);
+      await collection.loadFontFromList(
+        Uint8List.fromList(invalidFontData),
+        fontFamily: 'FamilyName',
+      ),
+      false,
+    );
   });
 
   test('Loading valid asset fonts succeds', () async {
@@ -69,14 +77,17 @@ Future<void> testMain() async {
 
     final FlutterFontCollection collection = renderer.fontCollection;
     final AssetFontsResult result =
-        await collection.loadAssetFonts(FontManifest(<FontFamily>[
-      FontFamily(robotoFontFamily, <FontAsset>[
-        FontAsset(robotoVariableFontUrl, <String, String>{}),
-        FontAsset(robotoTestFontUrl, <String, String>{'weight': 'bold'}),
-      ]),
-      FontFamily(ahemFontFamily,
-          <FontAsset>[FontAsset(ahemFontUrl, <String, String>{})]),
-    ]));
+        await collection.loadAssetFonts(
+          FontManifest(<FontFamily>[
+            FontFamily(robotoFontFamily, <FontAsset>[
+              FontAsset(robotoVariableFontUrl, <String, String>{}),
+              FontAsset(robotoTestFontUrl, <String, String>{'weight': 'bold'}),
+            ]),
+            FontFamily(ahemFontFamily, <FontAsset>[
+              FontAsset(ahemFontUrl, <String, String>{}),
+            ]),
+          ]),
+        );
     expect(result.loadedFonts, <String>[
       robotoVariableFontUrl,
       robotoTestFontUrl,
@@ -93,14 +104,17 @@ Future<void> testMain() async {
 
     final FlutterFontCollection collection = renderer.fontCollection;
     final AssetFontsResult result =
-        await collection.loadAssetFonts(FontManifest(<FontFamily>[
-      FontFamily(robotoFontFamily, <FontAsset>[
-        FontAsset(robotoVariableFontUrl, <String, String>{}),
-        FontAsset(robotoTestFontUrl, <String, String>{'weight': 'bold'}),
-      ]),
-      FontFamily(ahemFontFamily,
-          <FontAsset>[FontAsset(invalidFontUrl, <String, String>{})]),
-    ]));
+        await collection.loadAssetFonts(
+          FontManifest(<FontFamily>[
+            FontFamily(robotoFontFamily, <FontAsset>[
+              FontAsset(robotoVariableFontUrl, <String, String>{}),
+              FontAsset(robotoTestFontUrl, <String, String>{'weight': 'bold'}),
+            ]),
+            FontFamily(ahemFontFamily, <FontAsset>[
+              FontAsset(invalidFontUrl, <String, String>{}),
+            ]),
+          ]),
+        );
     expect(result.loadedFonts, <String>[
       robotoVariableFontUrl,
       robotoTestFontUrl,
@@ -128,7 +142,8 @@ Future<void> testMain() async {
           url: url,
           status: 200,
           payload: MockHttpFetchPayload(
-              byteBuffer: stringAsUtf8Data('this is invalid data').buffer),
+            byteBuffer: stringAsUtf8Data('this is invalid data').buffer,
+          ),
         );
       }
       return null;
@@ -136,14 +151,17 @@ Future<void> testMain() async {
 
     final FlutterFontCollection collection = renderer.fontCollection;
     final AssetFontsResult result =
-        await collection.loadAssetFonts(FontManifest(<FontFamily>[
-      FontFamily(robotoFontFamily, <FontAsset>[
-        FontAsset(robotoVariableFontUrl, <String, String>{}),
-        FontAsset(robotoTestFontUrl, <String, String>{'weight': 'bold'}),
-      ]),
-      FontFamily(ahemFontFamily,
-          <FontAsset>[FontAsset(invalidFontUrl, <String, String>{})]),
-    ]));
+        await collection.loadAssetFonts(
+          FontManifest(<FontFamily>[
+            FontFamily(robotoFontFamily, <FontAsset>[
+              FontAsset(robotoVariableFontUrl, <String, String>{}),
+              FontAsset(robotoTestFontUrl, <String, String>{'weight': 'bold'}),
+            ]),
+            FontFamily(ahemFontFamily, <FontAsset>[
+              FontAsset(invalidFontUrl, <String, String>{}),
+            ]),
+          ]),
+        );
     expect(result.loadedFonts, <String>[
       robotoVariableFontUrl,
       robotoTestFontUrl,
@@ -159,9 +177,11 @@ Future<void> testMain() async {
   });
 
   test(
-      'Font manifest with numeric and string descriptor values parses correctly',
-      () async {
-    testScope.setAsset('FontManifest.json', stringAsUtf8Data(r'''
+    'Font manifest with numeric and string descriptor values parses correctly',
+    () async {
+      testScope.setAsset(
+        'FontManifest.json',
+        stringAsUtf8Data(r'''
 [
   {
     "family": "FakeFont",
@@ -174,18 +194,20 @@ Future<void> testMain() async {
     ]
   }
 ]
-'''));
-    final FontManifest manifest = await fetchFontManifest(fakeAssetManager);
-    expect(manifest.families.length, 1);
+'''),
+      );
+      final FontManifest manifest = await fetchFontManifest(fakeAssetManager);
+      expect(manifest.families.length, 1);
 
-    final FontFamily family = manifest.families.single;
-    expect(family.name, 'FakeFont');
-    expect(family.fontAssets.length, 1);
+      final FontFamily family = manifest.families.single;
+      expect(family.name, 'FakeFont');
+      expect(family.fontAssets.length, 1);
 
-    final FontAsset fontAsset = family.fontAssets.single;
-    expect(fontAsset.asset, 'fonts/FakeFont.ttf');
-    expect(fontAsset.descriptors.length, 2);
-    expect(fontAsset.descriptors['style'], 'italic');
-    expect(fontAsset.descriptors['weight'], '400');
-  });
+      final FontAsset fontAsset = family.fontAssets.single;
+      expect(fontAsset.asset, 'fonts/FakeFont.ttf');
+      expect(fontAsset.descriptors.length, 2);
+      expect(fontAsset.descriptors['style'], 'italic');
+      expect(fontAsset.descriptors['weight'], '400');
+    },
+  );
 }

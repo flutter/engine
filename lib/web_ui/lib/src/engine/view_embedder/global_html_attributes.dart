@@ -44,7 +44,9 @@ class GlobalHtmlAttributes {
         autoDetectRenderer ? 'auto-selected' : 'requested explicitly';
 
     hostElement.setAttribute(
-        'flt-renderer', '$rendererTag ($rendererSelection)');
+      'flt-renderer',
+      '$rendererTag ($rendererSelection)',
+    );
     hostElement.setAttribute('flt-build-mode', buildMode);
     // TODO(mdebbar): Disable spellcheck until changes in the framework and
     // engine are complete.

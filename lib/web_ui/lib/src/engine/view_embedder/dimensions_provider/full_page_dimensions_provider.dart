@@ -93,10 +93,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
       windowInnerWidth = domWindow.innerWidth! * devicePixelRatio;
       windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
     }
-    return ui.Size(
-      windowInnerWidth,
-      windowInnerHeight,
-    );
+    return ui.Size(windowInnerWidth, windowInnerHeight);
   }
 
   @override

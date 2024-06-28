@@ -80,7 +80,10 @@ class V8LineBreakFragmenter extends TextFragmenter
 }
 
 List<LineBreakFragment> breakLinesUsingV8BreakIterator(
-    String text, JSString jsText, DomV8BreakIterator iterator) {
+  String text,
+  JSString jsText,
+  DomV8BreakIterator iterator,
+) {
   final List<LineBreakFragment> breaks = <LineBreakFragment>[];
   int fragmentStart = 0;
 
@@ -102,13 +105,15 @@ List<LineBreakFragment> breakLinesUsingV8BreakIterator(
       } else {
         // Always break after a sequence of spaces.
         if (trailingSpaces > 0) {
-          breaks.add(LineBreakFragment(
-            fragmentStart,
-            i,
-            LineBreakType.opportunity,
-            trailingNewlines: trailingNewlines,
-            trailingSpaces: trailingSpaces,
-          ));
+          breaks.add(
+            LineBreakFragment(
+              fragmentStart,
+              i,
+              LineBreakType.opportunity,
+              trailingNewlines: trailingNewlines,
+              trailingSpaces: trailingSpaces,
+            ),
+          );
           fragmentStart = i;
           trailingNewlines = 0;
           trailingSpaces = 0;
@@ -125,20 +130,28 @@ List<LineBreakFragment> breakLinesUsingV8BreakIterator(
       type = LineBreakType.opportunity;
     }
 
-    breaks.add(LineBreakFragment(
-      fragmentStart,
-      fragmentEnd,
-      type,
-      trailingNewlines: trailingNewlines,
-      trailingSpaces: trailingSpaces,
-    ));
+    breaks.add(
+      LineBreakFragment(
+        fragmentStart,
+        fragmentEnd,
+        type,
+        trailingNewlines: trailingNewlines,
+        trailingSpaces: trailingSpaces,
+      ),
+    );
     fragmentStart = fragmentEnd;
   }
 
   if (breaks.isEmpty || breaks.last.type == LineBreakType.mandatory) {
-    breaks.add(LineBreakFragment(
-        text.length, text.length, LineBreakType.endOfText,
-        trailingNewlines: 0, trailingSpaces: 0));
+    breaks.add(
+      LineBreakFragment(
+        text.length,
+        text.length,
+        LineBreakType.endOfText,
+        trailingNewlines: 0,
+        trailingSpaces: 0,
+      ),
+    );
   }
 
   return breaks;
@@ -158,8 +171,13 @@ class LineBreakFragment extends TextFragment {
   final int trailingSpaces;
 
   @override
-  int get hashCode =>
-      Object.hash(start, end, type, trailingNewlines, trailingSpaces);
+  int get hashCode => Object.hash(
+    start,
+    end,
+    type,
+    trailingNewlines,
+    trailingSpaces,
+  );
 
   @override
   bool operator ==(Object other) {
@@ -271,13 +289,15 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
       return;
     }
 
-    fragments.add(LineBreakFragment(
-      fragmentStart,
-      fragmentEnd,
-      type,
-      trailingNewlines: trailingNewlines,
-      trailingSpaces: trailingSpaces,
-    ));
+    fragments.add(
+      LineBreakFragment(
+        fragmentStart,
+        fragmentEnd,
+        type,
+        trailingNewlines: trailingNewlines,
+        trailingSpaces: trailingSpaces,
+      ),
+    );
 
     fragmentStart = index;
 

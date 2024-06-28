@@ -20,7 +20,8 @@ class CkVertices implements ui.Vertices {
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length) {
       throw ArgumentError(
-          '"positions" and "textureCoordinates" lengths must match.');
+        '"positions" and "textureCoordinates" lengths must match.',
+      );
     }
     if (colors != null && colors.length != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
@@ -28,7 +29,8 @@ class CkVertices implements ui.Vertices {
     if (indices != null &&
         indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
-          '"indices" values must be valid indices in the positions list.');
+        '"indices" values must be valid indices in the positions list.',
+      );
     }
 
     return CkVertices._(
@@ -50,7 +52,8 @@ class CkVertices implements ui.Vertices {
     if (textureCoordinates != null &&
         textureCoordinates.length != positions.length) {
       throw ArgumentError(
-          '"positions" and "textureCoordinates" lengths must match.');
+        '"positions" and "textureCoordinates" lengths must match.',
+      );
     }
     if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
@@ -58,13 +61,16 @@ class CkVertices implements ui.Vertices {
     if (indices != null &&
         indices.any((int i) => i < 0 || i >= positions.length)) {
       throw ArgumentError(
-          '"indices" values must be valid indices in the positions list.');
+        '"indices" values must be valid indices in the positions list.',
+      );
     }
 
     Uint32List? unsignedColors;
     if (colors != null) {
-      unsignedColors =
-          colors.buffer.asUint32List(colors.offsetInBytes, colors.length);
+      unsignedColors = colors.buffer.asUint32List(
+        colors.offsetInBytes,
+        colors.length,
+      );
     }
 
     return CkVertices._(

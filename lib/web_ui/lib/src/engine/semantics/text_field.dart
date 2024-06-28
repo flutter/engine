@@ -31,7 +31,8 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   ///
   /// This method must be called prior to accessing [instance].
   static SemanticsTextEditingStrategy ensureInitialized(
-      HybridTextEditing owner) {
+    HybridTextEditing owner,
+  ) {
     if (_instance != null && _instance?.owner == owner) {
       return _instance!;
     }
@@ -132,22 +133,28 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   @override
   void addEventHandlers() {
     if (inputConfiguration.autofillGroup != null) {
-      subscriptions
-          .addAll(inputConfiguration.autofillGroup!.addInputEventListeners());
+      subscriptions.addAll(
+        inputConfiguration.autofillGroup!.addInputEventListeners(),
+      );
     }
 
     // Subscribe to text and selection changes.
     subscriptions.add(DomSubscription(activeDomElement, 'input', handleChange));
-    subscriptions
-        .add(DomSubscription(activeDomElement, 'keydown', maybeSendAction));
-    subscriptions
-        .add(DomSubscription(domDocument, 'selectionchange', handleChange));
+    subscriptions.add(
+      DomSubscription(activeDomElement, 'keydown', maybeSendAction),
+    );
+    subscriptions.add(
+      DomSubscription(domDocument, 'selectionchange', handleChange),
+    );
     preventDefaultForMouseEvents();
   }
 
   @override
-  void initializeTextEditing(InputConfiguration inputConfig,
-      {OnChangeCallback? onChange, OnActionCallback? onAction}) {
+  void initializeTextEditing(
+    InputConfiguration inputConfig, {
+    OnChangeCallback? onChange,
+    OnActionCallback? onAction,
+  }) {
     isEnabled = true;
     inputConfiguration = inputConfig;
     applyConfiguration(inputConfig);
@@ -206,7 +213,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
 /// events even when Voiceover is enabled.
 class TextField extends PrimaryRoleManager {
   TextField(SemanticsObject semanticsObject)
-      : super.blank(PrimaryRole.textField, semanticsObject) {
+    : super.blank(PrimaryRole.textField, semanticsObject) {
     _setupDomElement();
   }
 
@@ -248,12 +255,15 @@ class TextField extends PrimaryRoleManager {
   static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
 
   void _initializeEditableElement() {
-    assert(editableElement == null,
-        'Editable element has already been initialized');
+    assert(
+      editableElement == null,
+      'Editable element has already been initialized',
+    );
 
-    editableElement = semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
-        ? createDomHTMLTextAreaElement()
-        : createDomHTMLInputElement();
+    editableElement =
+        semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
+            ? createDomHTMLTextAreaElement()
+            : createDomHTMLInputElement();
 
     // On iOS, even though the semantic text field is transparent, the cursor
     // and text highlighting are still visible. The cursor and text selection
@@ -268,16 +278,17 @@ class TextField extends PrimaryRoleManager {
 
     activeEditableElement.style
       ..position = 'absolute'
-      // `top` and `left` are intentionally set to zero here.
-      //
-      // The text field would live inside a `<flt-semantics>` which should
-      // already be positioned using semantics.rect.
-      //
-      // See also:
-      //
-      // * [SemanticsObject.recomputePositionAndSize], which sets the position
-      //   and size of the parent `<flt-semantics>` element.
-      ..top = '0'
+          // `top` and `left` are intentionally set to zero here.
+          //
+          // The text field would live inside a `<flt-semantics>` which should
+          // already be positioned using semantics.rect.
+          //
+          // See also:
+          //
+          // * [SemanticsObject.recomputePositionAndSize], which sets the position
+          //   and size of the parent `<flt-semantics>` element.
+          ..top =
+          '0'
       ..left = '0'
       ..width = '${semanticsObject.rect!.width}px'
       ..height = '${semanticsObject.rect!.height}px';
@@ -300,28 +311,36 @@ class TextField extends PrimaryRoleManager {
   /// a tap to initialize editing.
   void _initializeForBlink() {
     _initializeEditableElement();
-    activeEditableElement.addEventListener('focus',
-        createDomEventListener((DomEvent event) {
-      if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
-        return;
-      }
+    activeEditableElement.addEventListener(
+      'focus',
+      createDomEventListener((DomEvent event) {
+        if (EngineSemantics.instance.gestureMode !=
+            GestureMode.browserGestures) {
+          return;
+        }
 
-      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
           semanticsObject.id,
           ui.SemanticsAction.didGainAccessibilityFocus,
-          null);
-    }));
-    activeEditableElement.addEventListener('blur',
-        createDomEventListener((DomEvent event) {
-      if (EngineSemantics.instance.gestureMode != GestureMode.browserGestures) {
-        return;
-      }
+          null,
+        );
+      }),
+    );
+    activeEditableElement.addEventListener(
+      'blur',
+      createDomEventListener((DomEvent event) {
+        if (EngineSemantics.instance.gestureMode !=
+            GestureMode.browserGestures) {
+          return;
+        }
 
-      EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+        EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
           semanticsObject.id,
           ui.SemanticsAction.didLoseAccessibilityFocus,
-          null);
-    }));
+          null,
+        );
+      }),
+    );
   }
 
   /// Safari on iOS reports text field activation via pointer events.
@@ -353,40 +372,51 @@ class TextField extends PrimaryRoleManager {
     num? lastPointerDownOffsetX;
     num? lastPointerDownOffsetY;
 
-    addEventListener('pointerdown', createDomEventListener((DomEvent event) {
-      final DomPointerEvent pointerEvent = event as DomPointerEvent;
-      lastPointerDownOffsetX = pointerEvent.clientX;
-      lastPointerDownOffsetY = pointerEvent.clientY;
-    }), true);
+    addEventListener(
+      'pointerdown',
+      createDomEventListener((DomEvent event) {
+        final DomPointerEvent pointerEvent = event as DomPointerEvent;
+        lastPointerDownOffsetX = pointerEvent.clientX;
+        lastPointerDownOffsetY = pointerEvent.clientY;
+      }),
+      true,
+    );
 
-    addEventListener('pointerup', createDomEventListener((DomEvent event) {
-      final DomPointerEvent pointerEvent = event as DomPointerEvent;
+    addEventListener(
+      'pointerup',
+      createDomEventListener((DomEvent event) {
+        final DomPointerEvent pointerEvent = event as DomPointerEvent;
 
-      if (lastPointerDownOffsetX != null) {
-        assert(lastPointerDownOffsetY != null);
-        final num deltaX = pointerEvent.clientX - lastPointerDownOffsetX!;
-        final num deltaY = pointerEvent.clientY - lastPointerDownOffsetY!;
+        if (lastPointerDownOffsetX != null) {
+          assert(lastPointerDownOffsetY != null);
+          final num deltaX = pointerEvent.clientX - lastPointerDownOffsetX!;
+          final num deltaY = pointerEvent.clientY - lastPointerDownOffsetY!;
 
-        // This should match the similar constant defined in:
-        //
-        // lib/src/gestures/constants.dart
-        //
-        // The value is pre-squared so we have to do less math at runtime.
-        const double kTouchSlop = 18.0 * 18.0; // Logical pixels squared
+          // This should match the similar constant defined in:
+          //
+          // lib/src/gestures/constants.dart
+          //
+          // The value is pre-squared so we have to do less math at runtime.
+          const double kTouchSlop = 18.0 * 18.0; // Logical pixels squared
 
-        if (deltaX * deltaX + deltaY * deltaY < kTouchSlop) {
-          // Recognize it as a tap that requires a keyboard.
-          EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsObject.id, ui.SemanticsAction.tap, null);
-          _invokeIosWorkaround();
+          if (deltaX * deltaX + deltaY * deltaY < kTouchSlop) {
+            // Recognize it as a tap that requires a keyboard.
+            EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
+              semanticsObject.id,
+              ui.SemanticsAction.tap,
+              null,
+            );
+            _invokeIosWorkaround();
+          }
+        } else {
+          assert(lastPointerDownOffsetY == null);
         }
-      } else {
-        assert(lastPointerDownOffsetY == null);
-      }
 
-      lastPointerDownOffsetX = null;
-      lastPointerDownOffsetY = null;
-    }), true);
+        lastPointerDownOffsetX = null;
+        lastPointerDownOffsetY = null;
+      }),
+      true,
+    );
   }
 
   void _invokeIosWorkaround() {
@@ -409,17 +439,19 @@ class TextField extends PrimaryRoleManager {
     activeEditableElement.focus();
     removeAttribute('role');
 
-    activeEditableElement.addEventListener('blur',
-        createDomEventListener((DomEvent event) {
-      setAttribute('role', 'textbox');
-      activeEditableElement.remove();
-      SemanticsTextEditingStrategy._instance?.deactivate(this);
+    activeEditableElement.addEventListener(
+      'blur',
+      createDomEventListener((DomEvent event) {
+        setAttribute('role', 'textbox');
+        activeEditableElement.remove();
+        SemanticsTextEditingStrategy._instance?.deactivate(this);
 
-      // Focus on semantics element before removing the editable element, so that
-      // the user can continue navigating the page with the assistive technology.
-      element.focus();
-      editableElement = null;
-    }));
+        // Focus on semantics element before removing the editable element, so that
+        // the user can continue navigating the page with the assistive technology.
+        element.focus();
+        editableElement = null;
+      }),
+    );
   }
 
   @override
@@ -455,10 +487,7 @@ class TextField extends PrimaryRoleManager {
 
     final DomElement element = editableElement ?? this.element;
     if (semanticsObject.hasLabel) {
-      element.setAttribute(
-        'aria-label',
-        semanticsObject.label!,
-      );
+      element.setAttribute('aria-label', semanticsObject.label!);
     } else {
       element.removeAttribute('aria-label');
     }

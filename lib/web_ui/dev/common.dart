@@ -68,8 +68,10 @@ class WindowsPlatformBinding extends PlatformBinding {
   String get chromePlatformString => 'win64';
 
   @override
-  String getChromeExecutablePath(io.Directory versionDir) =>
-      path.join(versionDir.path, 'chrome.exe');
+  String getChromeExecutablePath(io.Directory versionDir) => path.join(
+    versionDir.path,
+    'chrome.exe',
+  );
 
   @override
   String getFirefoxDownloadUrl(String version) =>
@@ -80,8 +82,11 @@ class WindowsPlatformBinding extends PlatformBinding {
   String getFirefoxDownloadFilename(String version) => 'firefox-$version.exe';
 
   @override
-  String getFirefoxExecutablePath(io.Directory versionDir) =>
-      path.join(versionDir.path, 'firefox', 'firefox');
+  String getFirefoxExecutablePath(io.Directory versionDir) => path.join(
+    versionDir.path,
+    'firefox',
+    'firefox',
+  );
 
   @override
   String getFirefoxLatestVersionUrl() =>
@@ -103,8 +108,10 @@ class LinuxPlatformBinding extends PlatformBinding {
   String get chromePlatformString => 'linux64';
 
   @override
-  String getChromeExecutablePath(io.Directory versionDir) =>
-      path.join(versionDir.path, 'chrome');
+  String getChromeExecutablePath(io.Directory versionDir) => path.join(
+    versionDir.path,
+    'chrome',
+  );
 
   @override
   String getFirefoxDownloadUrl(String version) =>
@@ -116,8 +123,11 @@ class LinuxPlatformBinding extends PlatformBinding {
       'firefox-$version.tar.bz2';
 
   @override
-  String getFirefoxExecutablePath(io.Directory versionDir) =>
-      path.join(versionDir.path, 'firefox', 'firefox');
+  String getFirefoxExecutablePath(io.Directory versionDir) => path.join(
+    versionDir.path,
+    'firefox',
+    'firefox',
+  );
 
   @override
   String getFirefoxLatestVersionUrl() =>
@@ -138,12 +148,12 @@ class LinuxPlatformBinding extends PlatformBinding {
 abstract class MacPlatformBinding extends PlatformBinding {
   @override
   String getChromeExecutablePath(io.Directory versionDir) => path.join(
-        versionDir.path,
-        'Google Chrome for Testing.app',
-        'Contents',
-        'MacOS',
-        'Google Chrome for Testing',
-      );
+    versionDir.path,
+    'Google Chrome for Testing.app',
+    'Contents',
+    'MacOS',
+    'Google Chrome for Testing',
+  );
 
   @override
   String getFirefoxDownloadUrl(String version) =>
@@ -154,8 +164,13 @@ abstract class MacPlatformBinding extends PlatformBinding {
   String getFirefoxDownloadFilename(String version) => 'Firefox $version.dmg';
 
   @override
-  String getFirefoxExecutablePath(io.Directory versionDir) =>
-      path.join(versionDir.path, 'Firefox.app', 'Contents', 'MacOS', 'firefox');
+  String getFirefoxExecutablePath(io.Directory versionDir) => path.join(
+    versionDir.path,
+    'Firefox.app',
+    'Contents',
+    'MacOS',
+    'firefox',
+  );
 
   @override
   String getFirefoxLatestVersionUrl() =>
@@ -186,10 +201,7 @@ class Macx64PlatformBinding extends MacPlatformBinding {
 }
 
 class BrowserInstallation {
-  const BrowserInstallation({
-    required this.version,
-    required this.executable,
-  });
+  const BrowserInstallation({required this.version, required this.executable});
 
   /// Browser version.
   final String version;

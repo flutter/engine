@@ -50,19 +50,23 @@ void testMain() {
           strutStyle = null;
         }
 
-        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle(
-          fontFamily: paragraphFontFamily,
-          strutStyle: strutStyle,
-        ));
+        final CkParagraphBuilder builder = CkParagraphBuilder(
+          CkParagraphStyle(
+            fontFamily: paragraphFontFamily,
+            strutStyle: strutStyle,
+          ),
+        );
 
         final bool needsTextStyle =
             textFontFamily != null || textFontFallbacks != null;
 
         if (needsTextStyle) {
-          builder.pushStyle(CkTextStyle(
-            fontFamily: textFontFamily,
-            fontFamilyFallback: textFontFallbacks,
-          ));
+          builder.pushStyle(
+            CkTextStyle(
+              fontFamily: textFontFamily,
+              fontFamilyFallback: textFontFallbacks,
+            ),
+          );
         }
 
         builder.addText(text);
@@ -76,30 +80,24 @@ void testMain() {
         canvas.drawParagraph(paragraph, ui.Offset.zero);
         canvas.drawRect(
           ui.Rect.fromLTWH(
-              -4, -4, paragraph.maxIntrinsicWidth + 8, paragraph.height + 8),
+            -4,
+            -4,
+            paragraph.maxIntrinsicWidth + 8,
+            paragraph.height + 8,
+          ),
           CkPaint()
             ..style = ui.PaintingStyle.stroke
             ..strokeWidth = 1,
         );
-        canvas.translate(
-          0,
-          paragraph.height + 16,
-        );
+        canvas.translate(0, paragraph.height + 16);
       }
 
       drawTextWithOutline('default');
-      drawTextWithOutline(
-        'roboto paragraph',
-        paragraphFontFamily: 'Roboto',
-      );
-      drawTextWithOutline(
-        'roboto text',
-        textFontFamily: 'Roboto',
-      );
-      drawTextWithOutline(
-        'roboto text fallback',
-        textFontFallbacks: <String>['Roboto'],
-      );
+      drawTextWithOutline('roboto paragraph', paragraphFontFamily: 'Roboto');
+      drawTextWithOutline('roboto text', textFontFamily: 'Roboto');
+      drawTextWithOutline('roboto text fallback', textFontFallbacks: <String>[
+        'Roboto',
+      ]);
       drawTextWithOutline(
         'roboto strut style',
         strutStyleFontFamily: 'Roboto',

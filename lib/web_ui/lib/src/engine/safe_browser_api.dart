@@ -39,10 +39,7 @@ T getJsProperty<T>(Object object, String name) {
   return js_util.getProperty<T>(object, name);
 }
 
-const Set<String> _safeJsProperties = <String>{
-  'decoding',
-  '__flutter_state',
-};
+const Set<String> _safeJsProperties = <String>{'decoding', '__flutter_state'};
 
 /// Sets the value of property [name] on a JavaScript [object].
 ///
@@ -73,8 +70,9 @@ Future<T> promiseToFuture<T>(Object jsPromise) {
 num? parseFloat(String source) {
   // Using JavaScript's `parseFloat` here because it can parse values
   // like "20px", while Dart's `double.tryParse` fails.
-  final num? result =
-      js_util.callMethod(domWindow, 'parseFloat', <Object>[source]);
+  final num? result = js_util.callMethod(domWindow, 'parseFloat', <Object>[
+    source,
+  ]);
 
   if (result == null || result.isNaN) {
     return null;
@@ -90,8 +88,11 @@ num? parseFloat(String source) {
 /// This getter calls the `hasFocus` method of the `Document` interface.
 /// See for more details:
 /// https://developer.mozilla.org/en-US/docs/Web/API/Document/hasFocus
-bool get windowHasFocus =>
-    js_util.callMethod<bool>(domDocument, 'hasFocus', <dynamic>[]);
+bool get windowHasFocus => js_util.callMethod<bool>(
+  domDocument,
+  'hasFocus',
+  <dynamic>[],
+);
 
 /// Parses the font size of [element] and returns the value without a unit.
 num? parseFontSize(DomElement element) {
@@ -99,11 +100,17 @@ num? parseFontSize(DomElement element) {
 
   if (hasJsProperty(element, 'computedStyleMap')) {
     // Use the newer `computedStyleMap` API available on some browsers.
-    final Object? computedStyleMap = js_util
-        .callMethod<Object?>(element, 'computedStyleMap', const <Object?>[]);
+    final Object? computedStyleMap = js_util.callMethod<Object?>(
+      element,
+      'computedStyleMap',
+      const <Object?>[],
+    );
     if (computedStyleMap is Object) {
-      final Object? fontSizeObject = js_util
-          .callMethod<Object?>(computedStyleMap, 'get', <Object?>['font-size']);
+      final Object? fontSizeObject = js_util.callMethod<Object?>(
+        computedStyleMap,
+        'get',
+        <Object?>['font-size'],
+      );
       if (fontSizeObject is Object) {
         fontSize = js_util.getProperty<num>(fontSizeObject, 'value');
       }
@@ -112,8 +119,9 @@ num? parseFontSize(DomElement element) {
 
   if (fontSize == null) {
     // Fallback to `getComputedStyle`.
-    final String fontSizeString =
-        domWindow.getComputedStyle(element).getPropertyValue('font-size');
+    final String fontSizeString = domWindow
+        .getComputedStyle(element)
+        .getPropertyValue('font-size');
     fontSize = parseFloat(fontSizeString);
   }
 
@@ -265,9 +273,7 @@ extension DecodeResultExtension on DecodeResult {
 @anonymous
 @staticInterop
 class DecodeOptions {
-  external factory DecodeOptions({
-    required JSNumber frameIndex,
-  });
+  external factory DecodeOptions({required JSNumber frameIndex});
 }
 
 /// The only frame in a static image, or one of the frames in an animated one.
@@ -289,8 +295,9 @@ extension VideoFrameExtension on VideoFrame {
 
   @JS('copyTo')
   external JSPromise<JSAny?> _copyTo(JSAny destination);
-  JSPromise<JSAny?> copyTo(Object destination) =>
-      _copyTo(destination.toJSAnyShallow);
+  JSPromise<JSAny?> copyTo(Object destination) => _copyTo(
+    destination.toJSAnyShallow,
+  );
 
   @JS('format')
   external JSString? get _format;
@@ -360,7 +367,11 @@ void scaleCanvas2D(Object context2d, num x, num y) {
 }
 
 void drawImageCanvas2D(
-    Object context2d, Object imageSource, num width, num height) {
+  Object context2d,
+  Object imageSource,
+  num width,
+  num height,
+) {
   js_util.callMethod<void>(context2d, 'drawImage', <dynamic>[
     imageSource,
     width,
@@ -398,22 +409,28 @@ class GlContext {
   factory GlContext(OffScreenCanvas offScreenCanvas) {
     return OffScreenCanvas.supported
         ? GlContext._fromOffscreenCanvas(offScreenCanvas.offScreenCanvas!)
-        : GlContext._fromCanvasElement(offScreenCanvas.canvasElement!,
-            webGLVersion == WebGLVersion.webgl1);
+        : GlContext._fromCanvasElement(
+          offScreenCanvas.canvasElement!,
+          webGLVersion == WebGLVersion.webgl1,
+        );
   }
 
   GlContext._fromOffscreenCanvas(DomOffscreenCanvas canvas)
-      : glContext = canvas.getContext(
-            'webgl2', <String, dynamic>{'premultipliedAlpha': false})!,
-        isOffscreen = true {
+    : glContext =
+          canvas.getContext('webgl2', <String, dynamic>{
+            'premultipliedAlpha': false,
+          })!,
+      isOffscreen = true {
     _programCache = <String, GlProgram?>{};
     _canvas = canvas;
   }
 
   GlContext._fromCanvasElement(DomCanvasElement canvas, bool useWebGl1)
-      : glContext = canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2',
-            <String, dynamic>{'premultipliedAlpha': false})!,
-        isOffscreen = false {
+    : glContext =
+          canvas.getContext(useWebGl1 ? 'webgl' : 'webgl2', <String, dynamic>{
+            'premultipliedAlpha': false,
+          })!,
+      isOffscreen = false {
     _programCache = <String, GlProgram?>{};
     _canvas = canvas;
   }
@@ -464,20 +481,26 @@ class GlContext {
       left,
       top,
       _widthInPixels,
-      _heightInPixels
+      _heightInPixels,
     ]);
   }
 
   GlProgram cacheProgram(
-      String vertexShaderSource, String fragmentShaderSource) {
+    String vertexShaderSource,
+    String fragmentShaderSource,
+  ) {
     final String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
     GlProgram? cachedProgram = _programCache[cacheKey];
     if (cachedProgram == null) {
       // Create and compile shaders.
-      final Object vertexShader =
-          compileShader('VERTEX_SHADER', vertexShaderSource);
-      final Object fragmentShader =
-          compileShader('FRAGMENT_SHADER', fragmentShaderSource);
+      final Object vertexShader = compileShader(
+        'VERTEX_SHADER',
+        vertexShaderSource,
+      );
+      final Object fragmentShader = compileShader(
+        'FRAGMENT_SHADER',
+        fragmentShaderSource,
+      );
       // Create a gl program and link shaders.
       final Object program = createProgram();
       attachShader(program, vertexShader);
@@ -494,8 +517,10 @@ class GlContext {
     if (shader == null) {
       throw Exception(error);
     }
-    js_util
-        .callMethod<void>(glContext, 'shaderSource', <dynamic>[shader, source]);
+    js_util.callMethod<void>(glContext, 'shaderSource', <dynamic>[
+      shader,
+      source,
+    ]);
     js_util.callMethod<void>(glContext, 'compileShader', <dynamic>[shader]);
     final bool shaderStatus = js_util.callMethod<bool>(
       glContext,
@@ -508,12 +533,17 @@ class GlContext {
     return shader;
   }
 
-  Object createProgram() =>
-      js_util.callMethod<Object>(glContext, 'createProgram', const <dynamic>[]);
+  Object createProgram() => js_util.callMethod<Object>(
+    glContext,
+    'createProgram',
+    const <dynamic>[],
+  );
 
   void attachShader(Object? program, Object shader) {
-    js_util.callMethod<void>(
-        glContext, 'attachShader', <dynamic>[program, shader]);
+    js_util.callMethod<void>(glContext, 'attachShader', <dynamic>[
+      program,
+      shader,
+    ]);
   }
 
   void linkProgram(Object program) {
@@ -529,24 +559,34 @@ class GlContext {
   }
 
   void useProgram(GlProgram program) {
-    js_util
-        .callMethod<void>(glContext, 'useProgram', <dynamic>[program.program]);
+    js_util.callMethod<void>(glContext, 'useProgram', <dynamic>[
+      program.program,
+    ]);
   }
 
-  Object? createBuffer() =>
-      js_util.callMethod(glContext, 'createBuffer', const <dynamic>[]);
+  Object? createBuffer() => js_util.callMethod(
+    glContext,
+    'createBuffer',
+    const <dynamic>[],
+  );
 
   void bindArrayBuffer(Object? buffer) {
-    js_util.callMethod<void>(
-        glContext, 'bindBuffer', <dynamic>[kArrayBuffer, buffer]);
+    js_util.callMethod<void>(glContext, 'bindBuffer', <dynamic>[
+      kArrayBuffer,
+      buffer,
+    ]);
   }
 
-  Object? createVertexArray() =>
-      js_util.callMethod(glContext, 'createVertexArray', const <dynamic>[]);
+  Object? createVertexArray() => js_util.callMethod(
+    glContext,
+    'createVertexArray',
+    const <dynamic>[],
+  );
 
   void bindVertexArray(Object vertexObjectArray) {
-    js_util.callMethod<void>(
-        glContext, 'bindVertexArray', <dynamic>[vertexObjectArray]);
+    js_util.callMethod<void>(glContext, 'bindVertexArray', <dynamic>[
+      vertexObjectArray,
+    ]);
   }
 
   void unbindVertexArray() {
@@ -554,32 +594,57 @@ class GlContext {
   }
 
   void bindElementArrayBuffer(Object? buffer) {
-    js_util.callMethod<void>(
-        glContext, 'bindBuffer', <dynamic>[kElementArrayBuffer, buffer]);
+    js_util.callMethod<void>(glContext, 'bindBuffer', <dynamic>[
+      kElementArrayBuffer,
+      buffer,
+    ]);
   }
 
-  Object? createTexture() =>
-      js_util.callMethod(glContext, 'createTexture', const <dynamic>[]);
+  Object? createTexture() => js_util.callMethod(
+    glContext,
+    'createTexture',
+    const <dynamic>[],
+  );
 
-  void generateMipmap(dynamic target) =>
-      js_util.callMethod(glContext, 'generateMipmap', <dynamic>[target]);
+  void generateMipmap(dynamic target) => js_util.callMethod(
+    glContext,
+    'generateMipmap',
+    <dynamic>[target],
+  );
 
   void bindTexture(dynamic target, Object? buffer) {
-    js_util
-        .callMethod<void>(glContext, 'bindTexture', <dynamic>[target, buffer]);
+    js_util.callMethod<void>(glContext, 'bindTexture', <dynamic>[
+      target,
+      buffer,
+    ]);
   }
 
   void activeTexture(double textureUnit) {
-    js_util
-        .callMethod<void>(glContext, 'activeTexture', <dynamic>[textureUnit]);
+    js_util.callMethod<void>(glContext, 'activeTexture', <dynamic>[
+      textureUnit,
+    ]);
   }
 
-  void texImage2D(dynamic target, int level, dynamic internalFormat,
-      dynamic format, dynamic dataType, dynamic pixels,
-      {int? width, int? height, int border = 0}) {
+  void texImage2D(
+    dynamic target,
+    int level,
+    dynamic internalFormat,
+    dynamic format,
+    dynamic dataType,
+    dynamic pixels, {
+    int? width,
+    int? height,
+    int border = 0,
+  }) {
     if (width == null) {
-      js_util.callMethod<void>(glContext, 'texImage2D',
-          <dynamic>[target, level, internalFormat, format, dataType, pixels]);
+      js_util.callMethod<void>(glContext, 'texImage2D', <dynamic>[
+        target,
+        level,
+        internalFormat,
+        format,
+        dataType,
+        pixels,
+      ]);
     } else {
       js_util.callMethod<void>(glContext, 'texImage2D', <dynamic>[
         target,
@@ -590,14 +655,17 @@ class GlContext {
         border,
         format,
         dataType,
-        pixels
+        pixels,
       ]);
     }
   }
 
   void texParameteri(dynamic target, dynamic parameterName, dynamic value) {
-    js_util.callMethod<void>(
-        glContext, 'texParameteri', <dynamic>[target, parameterName, value]);
+    js_util.callMethod<void>(glContext, 'texParameteri', <dynamic>[
+      target,
+      parameterName,
+      value,
+    ]);
   }
 
   void deleteBuffer(Object buffer) {
@@ -605,18 +673,25 @@ class GlContext {
   }
 
   void bufferData(TypedData? data, dynamic type) {
-    js_util.callMethod<void>(
-        glContext, 'bufferData', <dynamic>[kArrayBuffer, data, type]);
+    js_util.callMethod<void>(glContext, 'bufferData', <dynamic>[
+      kArrayBuffer,
+      data,
+      type,
+    ]);
   }
 
   void bufferElementData(TypedData? data, dynamic type) {
-    js_util.callMethod<void>(
-        glContext, 'bufferData', <dynamic>[kElementArrayBuffer, data, type]);
+    js_util.callMethod<void>(glContext, 'bufferData', <dynamic>[
+      kElementArrayBuffer,
+      data,
+      type,
+    ]);
   }
 
   void enableVertexAttribArray(dynamic index) {
-    js_util.callMethod<void>(
-        glContext, 'enableVertexAttribArray', <dynamic>[index]);
+    js_util.callMethod<void>(glContext, 'enableVertexAttribArray', <dynamic>[
+      index,
+    ]);
   }
 
   /// Clear background.
@@ -644,25 +719,39 @@ class GlContext {
     js_util.callMethod<void>(glContext, 'deleteShader', <dynamic>[shader]);
   }
 
-  Object? _getExtension(String extensionName) => js_util
-      .callMethod<Object?>(glContext, 'getExtension', <dynamic>[extensionName]);
+  Object? _getExtension(String extensionName) => js_util.callMethod<Object?>(
+    glContext,
+    'getExtension',
+    <dynamic>[extensionName],
+  );
 
   void drawTriangles(int triangleCount, ui.VertexMode vertexMode) {
     final dynamic mode = _triangleTypeFromMode(vertexMode);
-    js_util.callMethod<void>(
-        glContext, 'drawArrays', <dynamic>[mode, 0, triangleCount]);
+    js_util.callMethod<void>(glContext, 'drawArrays', <dynamic>[
+      mode,
+      0,
+      triangleCount,
+    ]);
   }
 
   void drawElements(dynamic type, int indexCount, dynamic indexType) {
-    js_util.callMethod<void>(
-        glContext, 'drawElements', <dynamic>[type, indexCount, indexType, 0]);
+    js_util.callMethod<void>(glContext, 'drawElements', <dynamic>[
+      type,
+      indexCount,
+      indexType,
+      0,
+    ]);
   }
 
   /// Sets affine transformation from normalized device coordinates
   /// to window coordinates
   void viewport(double x, double y, double width, double height) {
-    js_util.callMethod<void>(
-        glContext, 'viewport', <dynamic>[x, y, width, height]);
+    js_util.callMethod<void>(glContext, 'viewport', <dynamic>[
+      x,
+      y,
+      width,
+      height,
+    ]);
   }
 
   Object _triangleTypeFromMode(ui.VertexMode mode) {
@@ -677,13 +766,17 @@ class GlContext {
   }
 
   Object? _createShader(String shaderType) => js_util.callMethod(
-      glContext,
-      'createShader',
-      <Object?>[js_util.getProperty<Object?>(glContext, shaderType)]);
+    glContext,
+    'createShader',
+    <Object?>[js_util.getProperty<Object?>(glContext, shaderType)],
+  );
 
   /// Error state of gl context.
-  Object? get error =>
-      js_util.callMethod(glContext, 'getError', const <dynamic>[]);
+  Object? get error => js_util.callMethod(
+    glContext,
+    'getError',
+    const <dynamic>[],
+  );
 
   /// Shader compiler error, if this returns [kFalse], to get details use
   /// [getShaderInfoLog].
@@ -693,8 +786,11 @@ class GlContext {
   Object? get kArrayBuffer =>
       _kArrayBuffer ??= js_util.getProperty(glContext, 'ARRAY_BUFFER');
 
-  Object? get kElementArrayBuffer => _kElementArrayBuffer ??=
-      js_util.getProperty(glContext, 'ELEMENT_ARRAY_BUFFER');
+  Object? get kElementArrayBuffer =>
+      _kElementArrayBuffer ??= js_util.getProperty(
+        glContext,
+        'ELEMENT_ARRAY_BUFFER',
+      );
 
   Object get kLinkStatus =>
       _kLinkStatus ??= js_util.getProperty<Object>(glContext, 'LINK_STATUS');
@@ -704,8 +800,11 @@ class GlContext {
 
   Object? get kRGBA => _kRGBA ??= js_util.getProperty(glContext, 'RGBA');
 
-  Object get kUnsignedByte => _kUnsignedByte ??=
-      js_util.getProperty<Object>(glContext, 'UNSIGNED_BYTE');
+  Object get kUnsignedByte =>
+      _kUnsignedByte ??= js_util.getProperty<Object>(
+        glContext,
+        'UNSIGNED_BYTE',
+      );
 
   Object? get kUnsignedShort =>
       _kUnsignedShort ??= js_util.getProperty(glContext, 'UNSIGNED_SHORT');
@@ -747,13 +846,19 @@ class GlContext {
 
   Object? get kLinear => _kLinear ??= js_util.getProperty(glContext, 'LINEAR');
 
-  Object? get kTextureMinFilter => _kTextureMinFilter ??=
-      js_util.getProperty(glContext, 'TEXTURE_MIN_FILTER');
+  Object? get kTextureMinFilter =>
+      _kTextureMinFilter ??= js_util.getProperty(
+        glContext,
+        'TEXTURE_MIN_FILTER',
+      );
 
   /// Returns reference to uniform in program.
   Object getUniformLocation(Object program, String uniformName) {
     final Object? res = js_util.callMethod(
-        glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
+      glContext,
+      'getUniformLocation',
+      <dynamic>[program, uniformName],
+    );
     if (res == null) {
       throw Exception('$uniformName not found');
     } else {
@@ -764,14 +869,20 @@ class GlContext {
   /// Returns true if uniform exists.
   bool containsUniform(Object program, String uniformName) {
     final Object? res = js_util.callMethod(
-        glContext, 'getUniformLocation', <dynamic>[program, uniformName]);
+      glContext,
+      'getUniformLocation',
+      <dynamic>[program, uniformName],
+    );
     return res != null;
   }
 
   /// Returns reference to uniform in program.
   Object getAttributeLocation(Object program, String attribName) {
     final Object? res = js_util.callMethod(
-        glContext, 'getAttribLocation', <dynamic>[program, attribName]);
+      glContext,
+      'getAttribLocation',
+      <dynamic>[program, attribName],
+    );
     if (res == null) {
       throw Exception('$attribName not found');
     } else {
@@ -786,40 +897,64 @@ class GlContext {
 
   /// Sets vec2 uniform values.
   void setUniform2f(Object uniform, double value1, double value2) {
-    js_util.callMethod<void>(
-        glContext, 'uniform2f', <dynamic>[uniform, value1, value2]);
+    js_util.callMethod<void>(glContext, 'uniform2f', <dynamic>[
+      uniform,
+      value1,
+      value2,
+    ]);
   }
 
   /// Sets vec4 uniform values.
-  void setUniform4f(Object uniform, double value1, double value2, double value3,
-      double value4) {
-    js_util.callMethod<void>(glContext, 'uniform4f',
-        <dynamic>[uniform, value1, value2, value3, value4]);
+  void setUniform4f(
+    Object uniform,
+    double value1,
+    double value2,
+    double value3,
+    double value4,
+  ) {
+    js_util.callMethod<void>(glContext, 'uniform4f', <dynamic>[
+      uniform,
+      value1,
+      value2,
+      value3,
+      value4,
+    ]);
   }
 
   /// Sets mat4 uniform values.
   void setUniformMatrix4fv(Object uniform, bool transpose, Float32List value) {
-    js_util.callMethod<void>(
-        glContext, 'uniformMatrix4fv', <dynamic>[uniform, transpose, value]);
+    js_util.callMethod<void>(glContext, 'uniformMatrix4fv', <dynamic>[
+      uniform,
+      transpose,
+      value,
+    ]);
   }
 
   /// Shader compile error log.
   Object? getShaderInfoLog(Object glShader) {
-    return js_util
-        .callMethod(glContext, 'getShaderInfoLog', <dynamic>[glShader]);
+    return js_util.callMethod(glContext, 'getShaderInfoLog', <dynamic>[
+      glShader,
+    ]);
   }
 
   ///  Errors that occurred during failed linking or validation of program
   ///  objects. Typically called after [linkProgram].
   String? getProgramInfoLog(Object glProgram) {
     return js_util.callMethod<String?>(
-        glContext, 'getProgramInfoLog', <dynamic>[glProgram]);
+      glContext,
+      'getProgramInfoLog',
+      <dynamic>[glProgram],
+    );
   }
 
-  int? get drawingBufferWidth =>
-      js_util.getProperty<int?>(glContext, 'drawingBufferWidth');
-  int? get drawingBufferHeight =>
-      js_util.getProperty<int?>(glContext, 'drawingBufferWidth');
+  int? get drawingBufferWidth => js_util.getProperty<int?>(
+    glContext,
+    'drawingBufferWidth',
+  );
+  int? get drawingBufferHeight => js_util.getProperty<int?>(
+    glContext,
+    'drawingBufferWidth',
+  );
 
   /// Reads gl contents as image data.
   ///
@@ -830,8 +965,9 @@ class GlContext {
     final int bufferHeight = _heightInPixels!;
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit ||
         ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
-      final Uint8List pixels =
-          Uint8List(bufferWidth * bufferHeight * kBytesPerPixel);
+      final Uint8List pixels = Uint8List(
+        bufferWidth * bufferHeight * kBytesPerPixel,
+      );
       js_util.callMethod<void>(glContext, 'readPixels', <dynamic>[
         0,
         0,
@@ -839,13 +975,17 @@ class GlContext {
         bufferHeight,
         kRGBA,
         kUnsignedByte,
-        pixels
+        pixels,
       ]);
       return createDomImageData(
-          Uint8ClampedList.fromList(pixels), bufferWidth, bufferHeight);
+        Uint8ClampedList.fromList(pixels),
+        bufferWidth,
+        bufferHeight,
+      );
     } else {
-      final Uint8ClampedList pixels =
-          Uint8ClampedList(bufferWidth * bufferHeight * kBytesPerPixel);
+      final Uint8ClampedList pixels = Uint8ClampedList(
+        bufferWidth * bufferHeight * kBytesPerPixel,
+      );
       js_util.callMethod<void>(glContext, 'readPixels', <dynamic>[
         0,
         0,
@@ -853,7 +993,7 @@ class GlContext {
         bufferHeight,
         kRGBA,
         kUnsignedByte,
-        pixels
+        pixels,
       ]);
       return createDomImageData(pixels, bufferWidth, bufferHeight);
     }
@@ -871,12 +1011,17 @@ class GlContext {
         isOpaque) {
       // TODO(yjbanov): find out why we need to call getContext and ignore the return value.
       js_util.callMethod<void>(_canvas!, 'getContext', <dynamic>['webgl2']);
-      final Object? imageBitmap =
-          js_util.callMethod(_canvas!, 'transferToImageBitmap', <dynamic>[]);
+      final Object? imageBitmap = js_util.callMethod(
+        _canvas!,
+        'transferToImageBitmap',
+        <dynamic>[],
+      );
       return imageBitmap;
     } else {
       final DomCanvasElement canvas = createDomCanvasElement(
-          width: _widthInPixels, height: _heightInPixels);
+        width: _widthInPixels,
+        height: _heightInPixels,
+      );
       final DomCanvasRenderingContext2D ctx = canvas.context2D;
       drawImage(ctx, 0, 0);
       return canvas;
@@ -885,8 +1030,10 @@ class GlContext {
 
   /// Returns image data in data url format.
   String toImageUrl() {
-    final DomCanvasElement canvas =
-        createDomCanvasElement(width: _widthInPixels, height: _heightInPixels);
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: _widthInPixels,
+      height: _heightInPixels,
+    );
     final DomCanvasRenderingContext2D ctx = canvas.context2D;
     drawImage(ctx, 0, 0);
     final String dataUrl = canvas.toDataURL();
@@ -927,17 +1074,20 @@ class GlContextCache {
 }
 
 void setupVertexTransforms(
-    GlContext gl,
-    GlProgram glProgram,
-    double offsetX,
-    double offsetY,
-    double widthInPixels,
-    double heightInPixels,
-    Matrix4 transform) {
-  final Object transformUniform =
-      gl.getUniformLocation(glProgram.program, 'u_ctransform');
-  final Matrix4 transformAtOffset = transform.clone()
-    ..translate(-offsetX, -offsetY);
+  GlContext gl,
+  GlProgram glProgram,
+  double offsetX,
+  double offsetY,
+  double widthInPixels,
+  double heightInPixels,
+  Matrix4 transform,
+) {
+  final Object transformUniform = gl.getUniformLocation(
+    glProgram.program,
+    'u_ctransform',
+  );
+  final Matrix4 transformAtOffset =
+      transform.clone()..translate(-offsetX, -offsetY);
   gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
 
   // Set uniform to scale 0..width/height pixels coordinates to -1..1
@@ -948,15 +1098,26 @@ void setupVertexTransforms(
   gl.setUniform4f(shift, -1, 1, 0, 0);
 }
 
-void setupTextureTransform(GlContext gl, GlProgram glProgram, double offsetx,
-    double offsety, double sx, double sy) {
-  final Object scalar =
-      gl.getUniformLocation(glProgram.program, 'u_textransform');
+void setupTextureTransform(
+  GlContext gl,
+  GlProgram glProgram,
+  double offsetx,
+  double offsety,
+  double sx,
+  double sy,
+) {
+  final Object scalar = gl.getUniformLocation(
+    glProgram.program,
+    'u_textransform',
+  );
   gl.setUniform4f(scalar, sx, sy, offsetx, offsety);
 }
 
 void bufferVertexData(
-    GlContext gl, Float32List positions, double devicePixelRatio) {
+  GlContext gl,
+  Float32List positions,
+  double devicePixelRatio,
+) {
   if (devicePixelRatio == 1.0) {
     gl.bufferData(positions, gl.kStaticDraw);
   } else {
@@ -988,10 +1149,7 @@ class OffScreenCanvas {
     if (OffScreenCanvas.supported) {
       offScreenCanvas = createDomOffscreenCanvas(width, height);
     } else {
-      canvasElement = createDomCanvasElement(
-        width: width,
-        height: height,
-      );
+      canvasElement = createDomCanvasElement(width: width, height: height);
       canvasElement!.className = 'gl-canvas';
       _updateCanvasCssSize(canvasElement!);
     }
@@ -1050,16 +1208,21 @@ class OffScreenCanvas {
   }
 
   /// Feature detection for transferToImageBitmap on OffscreenCanvas.
-  bool get transferToImageBitmapSupported =>
-      js_util.hasProperty(offScreenCanvas!, 'transferToImageBitmap');
+  bool get transferToImageBitmapSupported => js_util.hasProperty(
+    offScreenCanvas!,
+    'transferToImageBitmap',
+  );
 
   /// Creates an ImageBitmap object from the most recently rendered image
   /// of the OffscreenCanvas.
   ///
   /// !Warning API still in experimental status, feature detect before using.
   Object? transferToImageBitmap() {
-    return js_util
-        .callMethod(offScreenCanvas!, 'transferToImageBitmap', <dynamic>[]);
+    return js_util.callMethod(
+      offScreenCanvas!,
+      'transferToImageBitmap',
+      <dynamic>[],
+    );
   }
 
   /// Draws canvas contents to a rendering context.
@@ -1075,7 +1238,7 @@ class OffScreenCanvas {
       0,
       0,
       width,
-      height
+      height,
     ]);
   }
 
@@ -1085,13 +1248,17 @@ class OffScreenCanvas {
     if (offScreenCanvas != null) {
       offScreenCanvas!.convertToBlob().then((DomBlob value) {
         final DomFileReader fileReader = createDomFileReader();
-        fileReader.addEventListener('load',
-            createDomEventListener((DomEvent event) {
-          completer.complete(
-            js_util.getProperty<String>(
-                js_util.getProperty<Object>(event, 'target'), 'result'),
-          );
-        }));
+        fileReader.addEventListener(
+          'load',
+          createDomEventListener((DomEvent event) {
+            completer.complete(
+              js_util.getProperty<String>(
+                js_util.getProperty<Object>(event, 'target'),
+                'result',
+              ),
+            );
+          }),
+        );
         fileReader.readAsDataURL(value);
       });
       return completer.future;
@@ -1102,14 +1269,20 @@ class OffScreenCanvas {
 
   /// Draws an image to canvas for both offscreen canvas context2d.
   void drawImage(Object image, int x, int y, int width, int height) {
-    js_util.callMethod<void>(
-        getContext2d()!, 'drawImage', <dynamic>[image, x, y, width, height]);
+    js_util.callMethod<void>(getContext2d()!, 'drawImage', <dynamic>[
+      image,
+      x,
+      y,
+      width,
+      height,
+    ]);
   }
 
   /// Feature detects OffscreenCanvas.
-  static bool get supported => _supported ??=
-      // Safari 16.4 implements OffscreenCanvas, but without WebGL support. So
-      // it's not really supported in a way that is useful to us.
-      !ui_web.browser.isSafari &&
+  static bool get supported =>
+      _supported ??=
+          // Safari 16.4 implements OffscreenCanvas, but without WebGL support. So
+          // it's not really supported in a way that is useful to us.
+          !ui_web.browser.isSafari &&
           js_util.hasProperty(domWindow, 'OffscreenCanvas');
 }

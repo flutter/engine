@@ -28,9 +28,12 @@ Future<void> testMain() async {
   test('EngineSemanticsOwner auto-enables semantics on update', () async {
     expect(semantics().semanticsEnabled, isFalse);
     expect(
-        EnginePlatformDispatcher
-            .instance.accessibilityFeatures.accessibleNavigation,
-        isFalse);
+      EnginePlatformDispatcher
+          .instance
+          .accessibilityFeatures
+          .accessibleNavigation,
+      isFalse,
+    );
 
     final DomElement placeholder =
         domDocument.querySelector('flt-semantics-placeholder')!;
@@ -45,7 +48,9 @@ Future<void> testMain() async {
     expect(semantics().semanticsEnabled, isTrue);
     expect(
       EnginePlatformDispatcher
-          .instance.accessibilityFeatures.accessibleNavigation,
+          .instance
+          .accessibilityFeatures
+          .accessibleNavigation,
       isTrue,
     );
 

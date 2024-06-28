@@ -170,7 +170,8 @@ class Pipeline {
       return;
     }
     print(
-        '${step.description} cannot be interrupted. Waiting for it to complete.');
+      '${step.description} cannot be interrupted. Waiting for it to complete.',
+    );
     await _currentStepFuture;
     _status = PipelineStatus.interrupted;
   }
@@ -185,11 +186,8 @@ typedef WatchEventPredicate = bool Function(WatchEvent event);
 /// The [ignore] callback can be used to customize the watching behavior to
 /// ignore certain files.
 class PipelineWatcher {
-  PipelineWatcher({
-    required this.dir,
-    required this.pipeline,
-    this.ignore,
-  }) : watcher = DirectoryWatcher(dir);
+  PipelineWatcher({required this.dir, required this.pipeline, this.ignore})
+    : watcher = DirectoryWatcher(dir);
 
   /// The path of the directory to watch for changes.
   final String dir;

@@ -34,17 +34,18 @@ enum TextCapitalization {
 /// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
 class TextCapitalizationConfig {
   const TextCapitalizationConfig.defaultCapitalization()
-      : textCapitalization = TextCapitalization.none;
+    : textCapitalization = TextCapitalization.none;
 
   const TextCapitalizationConfig.fromInputConfiguration(
-      String inputConfiguration)
-      : textCapitalization = inputConfiguration == 'TextCapitalization.words'
-            ? TextCapitalization.words
-            : inputConfiguration == 'TextCapitalization.characters'
-                ? TextCapitalization.characters
-                : inputConfiguration == 'TextCapitalization.sentences'
-                    ? TextCapitalization.sentences
-                    : TextCapitalization.none;
+    String inputConfiguration,
+  ) : textCapitalization =
+          inputConfiguration == 'TextCapitalization.words'
+              ? TextCapitalization.words
+              : inputConfiguration == 'TextCapitalization.characters'
+              ? TextCapitalization.characters
+              : inputConfiguration == 'TextCapitalization.sentences'
+              ? TextCapitalization.sentences
+              : TextCapitalization.none;
 
   final TextCapitalization textCapitalization;
 

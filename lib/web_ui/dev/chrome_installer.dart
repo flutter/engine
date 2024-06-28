@@ -39,8 +39,10 @@ Future<BrowserInstallation> getOrInstallChrome(
   // then the bot will download Chrome from CIPD and place it in a cache and
   // set the environment variable CHROME_EXECUTABLE.
   if (io.Platform.environment.containsKey(_chromeExecutableVar)) {
-    infoLog.writeln('Using Chrome from $_chromeExecutableVar variable: '
-        '${io.Platform.environment[_chromeExecutableVar]}');
+    infoLog.writeln(
+      'Using Chrome from $_chromeExecutableVar variable: '
+      '${io.Platform.environment[_chromeExecutableVar]}',
+    );
     return BrowserInstallation(
       version: 'cipd',
       executable: io.Platform.environment[_chromeExecutableVar]!,
@@ -56,19 +58,22 @@ Future<BrowserInstallation> getOrInstallChrome(
 
   ChromeInstaller? installer;
   try {
-    installer = requestedVersion == 'latest'
-        ? await ChromeInstaller.latest()
-        : ChromeInstaller(version: requestedVersion);
+    installer =
+        requestedVersion == 'latest'
+            ? await ChromeInstaller.latest()
+            : ChromeInstaller(version: requestedVersion);
 
     if (installer.isInstalled) {
       infoLog.writeln(
-          'Installation was skipped because Chrome version ${installer.version} is already installed.');
+        'Installation was skipped because Chrome version ${installer.version} is already installed.',
+      );
     } else {
       infoLog.writeln('Installing Chrome version: ${installer.version}');
       await installer.install();
       final BrowserInstallation installation = installer.getInstallation()!;
       infoLog.writeln(
-          'Installations complete. To launch it run ${installation.executable}');
+        'Installations complete. To launch it run ${installation.executable}',
+      );
     }
     return installer.getInstallation()!;
   } finally {
@@ -82,7 +87,8 @@ Future<String> _findSystemChromeExecutable() async {
 
   if (which.exitCode != 0) {
     throw BrowserInstallerException(
-        'Failed to locate system Chrome installation.');
+      'Failed to locate system Chrome installation.',
+    );
   }
 
   return which.stdout as String;
@@ -90,16 +96,16 @@ Future<String> _findSystemChromeExecutable() async {
 
 /// Manages the installation of a particular [version] of Chrome.
 class ChromeInstaller {
-  factory ChromeInstaller({
-    required String version,
-  }) {
+  factory ChromeInstaller({required String version}) {
     if (version == 'system') {
       throw BrowserInstallerException(
-          'Cannot install system version of Chrome. System Chrome must be installed manually.');
+        'Cannot install system version of Chrome. System Chrome must be installed manually.',
+      );
     }
     if (version == 'latest') {
       throw BrowserInstallerException(
-          'Expected a concrete Chromer version, but got $version. Maybe use ChromeInstaller.latest()?');
+        'Expected a concrete Chromer version, but got $version. Maybe use ChromeInstaller.latest()?',
+      );
     }
     final io.Directory chromeInstallationDir = io.Directory(
       path.join(environment.webUiDartToolDir.path, 'chrome'),
@@ -168,13 +174,12 @@ class ChromeInstaller {
     final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
     print('Downloading Chrome from $url');
 
-    final StreamedResponse download = await client.send(Request(
-      'GET',
-      Uri.parse(url),
-    ));
+    final StreamedResponse download =
+        await client.send(Request('GET', Uri.parse(url)));
 
-    final io.File downloadedFile =
-        io.File(path.join(versionDir.path, 'chrome.zip'));
+    final io.File downloadedFile = io.File(
+      path.join(versionDir.path, 'chrome.zip'),
+    );
     await download.stream.pipe(downloadedFile.openWrite());
 
     /// Windows LUCI bots does not have a `unzip`. Instead we are
@@ -197,12 +202,14 @@ class ChromeInstaller {
         final String filename = file.name;
         if (file.isFile) {
           final List<int> data = file.content as List<int>;
-          io.File(path.joinAll(<String>[
-            versionDir.path,
-            // Remove the "chrome-win/" path prefix, which is the Windows
-            // convention for Chromium directory structure.
-            ...path.split(filename).skip(1),
-          ]))
+          io.File(
+              path.joinAll(<String>[
+                versionDir.path,
+                // Remove the "chrome-win/" path prefix, which is the Windows
+                // convention for Chromium directory structure.
+                ...path.split(filename).skip(1),
+              ]),
+            )
             ..createSync(recursive: true)
             ..writeAsBytesSync(data);
         }
@@ -220,22 +227,24 @@ class ChromeInstaller {
       final io.Directory unzipDir = tmpDir;
       final io.ProcessResult unzipResult =
           await io.Process.run('unzip', <String>[
-        downloadedFile.path,
-        '-d',
-        unzipDir.path,
-      ]);
+            downloadedFile.path,
+            '-d',
+            unzipDir.path,
+          ]);
       if (unzipResult.exitCode != 0) {
         throw BrowserInstallerException(
-            'Failed to unzip the downloaded Chrome archive ${downloadedFile.path}.\n'
-            'With the version path ${versionDir.path}\n'
-            'The unzip process exited with code ${unzipResult.exitCode}.');
+          'Failed to unzip the downloaded Chrome archive ${downloadedFile.path}.\n'
+          'With the version path ${versionDir.path}\n'
+          'The unzip process exited with code ${unzipResult.exitCode}.',
+        );
       }
 
       final io.Directory topLevelDir =
           await tmpDir.list().single as io.Directory;
       await for (final io.FileSystemEntity entity in topLevelDir.list()) {
-        await entity
-            .rename(path.join(versionDir.path, path.basename(entity.path)));
+        await entity.rename(
+          path.join(versionDir.path, path.basename(entity.path)),
+        );
       }
       await tmpDir.delete(recursive: true);
     }
@@ -252,11 +261,16 @@ class ChromeInstaller {
 Future<String> fetchLatestChromeVersion() async {
   final Client client = Client();
   try {
-    final Response response = await client.get(Uri.parse(
-        'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media'));
+    final Response response =
+        await client.get(
+          Uri.parse(
+            'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media',
+          ),
+        );
     if (response.statusCode != 200) {
       throw BrowserInstallerException(
-          'Failed to fetch latest Chrome version. Server returned status code ${response.statusCode}');
+        'Failed to fetch latest Chrome version. Server returned status code ${response.statusCode}',
+      );
     }
     return response.body;
   } finally {

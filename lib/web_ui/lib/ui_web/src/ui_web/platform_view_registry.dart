@@ -6,10 +6,8 @@ import 'package:ui/src/engine.dart';
 
 /// A function which takes a unique `id` and some `params` and creates an HTML
 /// element.
-typedef ParameterizedPlatformViewFactory = Object Function(
-  int viewId, {
-  Object? params,
-});
+typedef ParameterizedPlatformViewFactory =
+    Object Function(int viewId, {Object? params});
 
 /// A function which takes a unique `id` and creates an HTML element.
 typedef PlatformViewFactory = Object Function(int viewId);

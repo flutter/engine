@@ -97,11 +97,14 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Therefore we need to use parent clip element bounds for
     // backdrop boundary.
     final double dpr = ui.window.devicePixelRatio;
-    final ui.Rect rect = _invertedTransform.transformRect(ui.Rect.fromLTRB(
+    final ui.Rect rect = _invertedTransform.transformRect(
+      ui.Rect.fromLTRB(
         0,
         0,
         ui.window.physicalSize.width * dpr,
-        ui.window.physicalSize.height * dpr));
+        ui.window.physicalSize.height * dpr,
+      ),
+    );
     double left = rect.left;
     double top = rect.top;
     double width = rect.width;
@@ -149,11 +152,17 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
       if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
-        setElementStyle(_filterElement!, '-webkit-backdrop-filter',
-            backendFilter.filterAttribute);
+        setElementStyle(
+          _filterElement!,
+          '-webkit-backdrop-filter',
+          backendFilter.filterAttribute,
+        );
       }
       setElementStyle(
-          _filterElement!, 'backdrop-filter', backendFilter.filterAttribute);
+        _filterElement!,
+        'backdrop-filter',
+        backendFilter.filterAttribute,
+      );
     }
   }
 

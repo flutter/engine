@@ -11,7 +11,7 @@ import '../util.dart';
 /// See also [Role.dialog].
 class Dialog extends PrimaryRoleManager {
   Dialog(SemanticsObject semanticsObject)
-      : super.blank(PrimaryRole.dialog, semanticsObject) {
+    : super.blank(PrimaryRole.dialog, semanticsObject) {
     // The following secondary roles can coexist with dialog. Generic `RouteName`
     // and `LabelAndValue` are not used by this role because when the dialog
     // names its own route an `aria-label` is used instead of `aria-describedby`.
@@ -63,11 +63,12 @@ class Dialog extends PrimaryRoleManager {
       assert(() {
         if (label == null || label.trim().isEmpty) {
           printWarning(
-              'Semantic node ${semanticsObject.id} had both scopesRoute and '
-              'namesRoute set, indicating a self-labelled dialog, but it is '
-              'missing the label. A dialog should be labelled either by setting '
-              'namesRoute on itself and providing a label, or by containing a '
-              'child node with namesRoute that can describe it with its content.');
+            'Semantic node ${semanticsObject.id} had both scopesRoute and '
+            'namesRoute set, indicating a self-labelled dialog, but it is '
+            'missing the label. A dialog should be labelled either by setting '
+            'namesRoute on itself and providing a label, or by containing a '
+            'child node with namesRoute that can describe it with its content.',
+          );
         }
         return true;
       }());
@@ -85,10 +86,7 @@ class Dialog extends PrimaryRoleManager {
     }
 
     setAriaRole('dialog');
-    setAttribute(
-      'aria-describedby',
-      routeName.semanticsObject.element.id,
-    );
+    setAttribute('aria-describedby', routeName.semanticsObject.element.id);
   }
 
   @override
@@ -101,10 +99,8 @@ class Dialog extends PrimaryRoleManager {
 
 /// Supplies a description for the nearest ancestor [Dialog].
 class RouteName extends RoleManager {
-  RouteName(
-    SemanticsObject semanticsObject,
-    PrimaryRoleManager owner,
-  ) : super(Role.routeName, semanticsObject, owner);
+  RouteName(SemanticsObject semanticsObject, PrimaryRoleManager owner)
+    : super(Role.routeName, semanticsObject, owner);
 
   Dialog? _dialog;
 

@@ -87,8 +87,9 @@ class RawKeyboard {
       return;
     }
 
-    final FlutterHtmlKeyboardEvent event =
-        FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
+    final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(
+      domEvent as DomKeyboardEvent,
+    );
     final String timerKey = event.code!;
 
     if (_shouldIgnore(event)) {
@@ -171,9 +172,10 @@ class RawKeyboard {
     };
 
     EnginePlatformDispatcher.instance.invokeOnPlatformMessage(
-        'flutter/keyevent',
-        _messageCodec.encodeMessage(eventData),
-        _noopCallback);
+      'flutter/keyevent',
+      _messageCodec.encodeMessage(eventData),
+      _noopCallback,
+    );
   }
 
   /// After a keydown is received, this is the duration we wait for a repeat event
@@ -181,8 +183,9 @@ class RawKeyboard {
   ///
   /// This value is only for macOS, where the keyboard repeat delay goes up to
   /// 2000ms.
-  static const Duration _kKeydownCancelDurationMac =
-      Duration(milliseconds: 2000);
+  static const Duration _kKeydownCancelDurationMac = Duration(
+    milliseconds: 2000,
+  );
 }
 
 const int _modifierNone = 0x00;

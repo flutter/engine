@@ -14,10 +14,7 @@ import '../util.dart';
 /// It is used to set the priority with which assistive technology should treat announcements.
 ///
 /// The order of this enum must match the order of the values in semantics_event.dart in framework.
-enum Assertiveness {
-  polite,
-  assertive,
-}
+enum Assertiveness { polite, assertive }
 
 /// Duration for which a live message will be present in the DOM for the screen
 /// reader to announce it.
@@ -35,8 +32,9 @@ class AccessibilityAnnouncements {
   /// Creates a new instance with its own DOM elements used for announcements.
   factory AccessibilityAnnouncements({required DomElement hostElement}) {
     final DomHTMLElement politeElement = _createElement(Assertiveness.polite);
-    final DomHTMLElement assertiveElement =
-        _createElement(Assertiveness.assertive);
+    final DomHTMLElement assertiveElement = _createElement(
+      Assertiveness.assertive,
+    );
     hostElement.append(politeElement);
     hostElement.append(assertiveElement);
     return AccessibilityAnnouncements._(politeElement, assertiveElement);

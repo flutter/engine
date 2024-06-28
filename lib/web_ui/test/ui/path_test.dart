@@ -26,29 +26,45 @@ Future<void> testMain() async {
   });
 
   test('path combine rect', () {
-    final Rect c1 =
-        Rect.fromCircle(center: const Offset(10.0, 10.0), radius: 10.0);
-    final Rect c2 =
-        Rect.fromCircle(center: const Offset(5.0, 5.0), radius: 10.0);
+    final Rect c1 = Rect.fromCircle(
+      center: const Offset(10.0, 10.0),
+      radius: 10.0,
+    );
+    final Rect c2 = Rect.fromCircle(
+      center: const Offset(5.0, 5.0),
+      radius: 10.0,
+    );
     final Rect c1UnionC2 = c1.expandToInclude(c2);
     final Rect c1IntersectC2 = c1.intersect(c2);
     final Path pathCircle1 = Path()..addRect(c1);
     final Path pathCircle2 = Path()..addRect(c2);
 
-    final Path difference =
-        Path.combine(PathOperation.difference, pathCircle1, pathCircle2);
+    final Path difference = Path.combine(
+      PathOperation.difference,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(difference.getBounds(), equals(c1));
 
-    final Path reverseDifference =
-        Path.combine(PathOperation.reverseDifference, pathCircle1, pathCircle2);
+    final Path reverseDifference = Path.combine(
+      PathOperation.reverseDifference,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(reverseDifference.getBounds(), equals(c2));
 
-    final Path union =
-        Path.combine(PathOperation.union, pathCircle1, pathCircle2);
+    final Path union = Path.combine(
+      PathOperation.union,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(union.getBounds(), equals(c1UnionC2));
 
-    final Path intersect =
-        Path.combine(PathOperation.intersect, pathCircle1, pathCircle2);
+    final Path intersect = Path.combine(
+      PathOperation.intersect,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(intersect.getBounds(), equals(c1IntersectC2));
 
     // the bounds on this will be the same as union - but would draw a missing inside piece.
@@ -58,30 +74,46 @@ Future<void> testMain() async {
   }, skip: isHtml);
 
   test('path combine oval', () {
-    final Rect c1 =
-        Rect.fromCircle(center: const Offset(10.0, 10.0), radius: 10.0);
-    final Rect c2 =
-        Rect.fromCircle(center: const Offset(5.0, 5.0), radius: 10.0);
+    final Rect c1 = Rect.fromCircle(
+      center: const Offset(10.0, 10.0),
+      radius: 10.0,
+    );
+    final Rect c2 = Rect.fromCircle(
+      center: const Offset(5.0, 5.0),
+      radius: 10.0,
+    );
     final Rect c1UnionC2 = c1.expandToInclude(c2);
     final Rect c1IntersectC2 = c1.intersect(c2);
     final Path pathCircle1 = Path()..addOval(c1);
     final Path pathCircle2 = Path()..addOval(c2);
 
-    final Path difference =
-        Path.combine(PathOperation.difference, pathCircle1, pathCircle2);
+    final Path difference = Path.combine(
+      PathOperation.difference,
+      pathCircle1,
+      pathCircle2,
+    );
 
     expect(difference.getBounds().top, closeTo(0.88, 0.01));
 
-    final Path reverseDifference =
-        Path.combine(PathOperation.reverseDifference, pathCircle1, pathCircle2);
+    final Path reverseDifference = Path.combine(
+      PathOperation.reverseDifference,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(reverseDifference.getBounds().right, closeTo(14.11, 0.01));
 
-    final Path union =
-        Path.combine(PathOperation.union, pathCircle1, pathCircle2);
+    final Path union = Path.combine(
+      PathOperation.union,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(union.getBounds(), equals(c1UnionC2));
 
-    final Path intersect =
-        Path.combine(PathOperation.intersect, pathCircle1, pathCircle2);
+    final Path intersect = Path.combine(
+      PathOperation.intersect,
+      pathCircle1,
+      pathCircle2,
+    );
     expect(intersect.getBounds(), equals(c1IntersectC2));
 
     // the bounds on this will be the same as union - but would draw a missing inside piece.
@@ -121,8 +153,10 @@ Future<void> testMain() async {
     expect(p.getBounds(), equals(bounds));
     final Path pTransformed = p.transform(scaleMatrix);
 
-    expect(pTransformed.getBounds(),
-        equals(const Rect.fromLTRB(0.0, 0.0, 10 * 2.5, 10 * 0.5)));
+    expect(
+      pTransformed.getBounds(),
+      equals(const Rect.fromLTRB(0.0, 0.0, 10 * 2.5, 10 * 0.5)),
+    );
 
     final Path p2 = Path()..lineTo(10.0, 10.0);
 
@@ -130,8 +164,10 @@ Future<void> testMain() async {
     expect(p.getBounds(), equals(const Rect.fromLTRB(0.0, 0.0, 20.0, 20.0)));
 
     p.addPath(p2, const Offset(20.0, 20.0), matrix4: scaleMatrix);
-    expect(p.getBounds(),
-        equals(const Rect.fromLTRB(0.0, 0.0, 20 + (10 * 2.5), 20 + (10 * .5))));
+    expect(
+      p.getBounds(),
+      equals(const Rect.fromLTRB(0.0, 0.0, 20 + (10 * 2.5), 20 + (10 * .5))),
+    );
 
     p.extendWithPath(p2, Offset.zero);
     expect(p.getBounds(), equals(const Rect.fromLTRB(0.0, 0.0, 45.0, 25.0)));
@@ -151,10 +187,12 @@ Future<void> testMain() async {
     expect(simpleHorizontalMetrics.iterator.current, isNotNull);
     expect(simpleHorizontalMetrics.iterator.current.length, equals(10.0));
     expect(simpleHorizontalMetrics.iterator.current.isClosed, isFalse);
-    final Path simpleExtract =
-        simpleHorizontalMetrics.iterator.current.extractPath(1.0, 9.0);
-    expect(simpleExtract.getBounds(),
-        equals(const Rect.fromLTRB(1.0, 0.0, 9.0, 0.0)));
+    final Path simpleExtract = simpleHorizontalMetrics.iterator.current
+        .extractPath(1.0, 9.0);
+    expect(
+      simpleExtract.getBounds(),
+      equals(const Rect.fromLTRB(1.0, 0.0, 9.0, 0.0)),
+    );
     final Tangent posTan =
         simpleHorizontalMetrics.iterator.current.getTangentForOffset(1.0)!;
     expect(posTan.position, equals(const Offset(1.0, 0.0)));
@@ -164,18 +202,23 @@ Future<void> testMain() async {
     expect(() => simpleHorizontalMetrics.iterator.current, throwsRangeError);
 
     // test with forceClosed
-    final PathMetrics simpleMetricsClosed =
-        simpleHorizontalLine.computeMetrics(forceClosed: true);
+    final PathMetrics simpleMetricsClosed = simpleHorizontalLine.computeMetrics(
+      forceClosed: true,
+    );
     expect(() => simpleHorizontalMetrics.iterator.current, throwsRangeError);
     expect(simpleMetricsClosed.iterator.moveNext(), isTrue);
     expect(simpleMetricsClosed.iterator.current, isNotNull);
-    expect(simpleMetricsClosed.iterator.current.length,
-        equals(20.0)); // because we forced close
+    expect(
+      simpleMetricsClosed.iterator.current.length,
+      equals(20.0),
+    ); // because we forced close
     expect(simpleMetricsClosed.iterator.current.isClosed, isTrue);
-    final Path simpleExtract2 =
-        simpleMetricsClosed.iterator.current.extractPath(1.0, 9.0);
-    expect(simpleExtract2.getBounds(),
-        equals(const Rect.fromLTRB(1.0, 0.0, 9.0, 0.0)));
+    final Path simpleExtract2 = simpleMetricsClosed.iterator.current
+        .extractPath(1.0, 9.0);
+    expect(
+      simpleExtract2.getBounds(),
+      equals(const Rect.fromLTRB(1.0, 0.0, 9.0, 0.0)),
+    );
     expect(simpleMetricsClosed.iterator.moveNext(), isFalse);
 
     // test getTangentForOffset with vertical line
@@ -195,14 +238,17 @@ Future<void> testMain() async {
     final Tangent posTanDiagonal =
         simpleMetricsDiagonal.iterator.current.getTangentForOffset(midPoint)!;
     expect(posTanDiagonal.position, equals(const Offset(5.0, 5.0)));
-    expect(posTanDiagonal.angle,
-        closeTo(-0.7853981633974483, .00001)); // ~45 degrees
+    expect(
+      posTanDiagonal.angle,
+      closeTo(-0.7853981633974483, .00001),
+    ); // ~45 degrees
 
     // test a multi-contour path
-    final Path multiContour = Path()
-      ..lineTo(0.0, 10.0)
-      ..moveTo(10.0, 10.0)
-      ..lineTo(10.0, 15.0);
+    final Path multiContour =
+        Path()
+          ..lineTo(0.0, 10.0)
+          ..moveTo(10.0, 10.0)
+          ..lineTo(10.0, 15.0);
 
     final PathMetrics multiContourMetric = multiContour.computeMetrics();
     expect(() => multiContourMetric.iterator.current, throwsRangeError);
@@ -218,18 +264,21 @@ Future<void> testMain() async {
   }, skip: isHtml);
 
   test('PathMetrics can remember lengths and isClosed', () {
-    final Path path = Path()
-      ..lineTo(0, 10)
-      ..close()
-      ..moveTo(0, 15)
-      ..lineTo(10, 15);
+    final Path path =
+        Path()
+          ..lineTo(0, 10)
+          ..close()
+          ..moveTo(0, 15)
+          ..lineTo(10, 15);
     final List<PathMetric> metrics = path.computeMetrics().toList();
     expect(metrics.length, 2);
     expect(metrics[0].length, 20);
     expect(metrics[0].isClosed, true);
     expect(metrics[0].getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
     expect(
-        metrics[0].extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
+      metrics[0].extractPath(4.0, 10.0).computeMetrics().first.length,
+      6.0,
+    );
     expect(metrics[1].length, 10);
     expect(metrics[1].isClosed, false);
     expect(metrics[1].getTangentForOffset(4.0)!.vector, const Offset(1.0, 0.0));
@@ -246,9 +295,13 @@ Future<void> testMain() async {
     expect(firstMetric.length, 10);
     expect(firstMetric.isClosed, false);
     expect(
-        firstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
+      firstMetric.getTangentForOffset(4.0)!.vector,
+      const Offset(0.0, 1.0),
+    );
     expect(
-        firstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
+      firstMetric.extractPath(4.0, 10.0).computeMetrics().first.length,
+      6.0,
+    );
 
     path
       ..lineTo(10, 10)
@@ -259,9 +312,13 @@ Future<void> testMain() async {
     expect(firstMetric.length, 10);
     expect(firstMetric.isClosed, false);
     expect(
-        firstMetric.getTangentForOffset(4.0)!.vector, const Offset(0.0, 1.0));
+      firstMetric.getTangentForOffset(4.0)!.vector,
+      const Offset(0.0, 1.0),
+    );
     expect(
-        firstMetric.extractPath(4.0, 10.0).computeMetrics().first.length, 6.0);
+      firstMetric.extractPath(4.0, 10.0).computeMetrics().first.length,
+      6.0,
+    );
 
     // getting a new iterator should update us.
     final PathMetrics newMetrics = path.computeMetrics();
@@ -269,10 +326,14 @@ Future<void> testMain() async {
     expect(newMetrics, isEmpty);
     expect(newFirstMetric.length, 40);
     expect(newFirstMetric.isClosed, true);
-    expect(newFirstMetric.getTangentForOffset(4.0)!.vector,
-        const Offset(0.0, 1.0));
-    expect(newFirstMetric.extractPath(4.0, 10.0).computeMetrics().first.length,
-        6.0);
+    expect(
+      newFirstMetric.getTangentForOffset(4.0)!.vector,
+      const Offset(0.0, 1.0),
+    );
+    expect(
+      newFirstMetric.extractPath(4.0, 10.0).computeMetrics().first.length,
+      6.0,
+    );
     // TODO(hterkelsen): isClosed always returns false in the HTML renderer, https://github.com/flutter/flutter/issues/114446
   }, skip: isHtml);
 }

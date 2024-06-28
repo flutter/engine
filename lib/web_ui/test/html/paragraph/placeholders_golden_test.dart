@@ -73,7 +73,10 @@ Future<void> testMain() async {
     for (final TextAlign align in aligns) {
       final CanvasParagraph paragraph = rich(
         EngineParagraphStyle(
-            fontFamily: 'Roboto', fontSize: 14.0, textAlign: align),
+          fontFamily: 'Roboto',
+          fontSize: 14.0,
+          textAlign: align,
+        ),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(TextStyle(color: black));
           builder.addText('Lorem');
@@ -93,12 +96,16 @@ Future<void> testMain() async {
     }
 
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_placeholders_align');
+      canvas,
+      bounds,
+      'canvas_paragraph_placeholders_align',
+    );
   });
 
   test('draws paragraphs with placeholders and text align in DOM mode', () {
-    final DomCanvas canvas =
-        DomCanvas(domDocument.createElement('flt-picture'));
+    final DomCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
 
     const List<TextAlign> aligns = <TextAlign>[
       TextAlign.left,
@@ -110,7 +117,10 @@ Future<void> testMain() async {
     for (final TextAlign align in aligns) {
       final CanvasParagraph paragraph = rich(
         EngineParagraphStyle(
-            fontFamily: 'Roboto', fontSize: 14.0, textAlign: align),
+          fontFamily: 'Roboto',
+          fontSize: 14.0,
+          textAlign: align,
+        ),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(TextStyle(color: black));
           builder.addText('Lorem');
@@ -130,7 +140,10 @@ Future<void> testMain() async {
     }
 
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_placeholders_align_dom');
+      canvas,
+      bounds,
+      'canvas_paragraph_placeholders_align_dom',
+    );
   });
 
   test('draws paragraphs starting or ending with a placeholder', () {
@@ -142,10 +155,17 @@ Future<void> testMain() async {
     // First paragraph with a placeholder at the beginning.
     final CanvasParagraph paragraph1 = rich(
       EngineParagraphStyle(
-          fontFamily: 'Roboto', fontSize: 24.0, textAlign: TextAlign.center),
+        fontFamily: 'Roboto',
+        fontSize: 24.0,
+        textAlign: TextAlign.center,
+      ),
       (CanvasParagraphBuilder builder) {
-        builder.addPlaceholder(80.0, 50.0, PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic);
+        builder.addPlaceholder(
+          80.0,
+          50.0,
+          PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+        );
         builder.pushStyle(TextStyle(color: black));
         builder.addText(' Lorem ipsum.');
       },
@@ -161,12 +181,19 @@ Future<void> testMain() async {
     // Second paragraph with a placeholder at the end.
     final CanvasParagraph paragraph2 = rich(
       EngineParagraphStyle(
-          fontFamily: 'Roboto', fontSize: 24.0, textAlign: TextAlign.center),
+        fontFamily: 'Roboto',
+        fontSize: 24.0,
+        textAlign: TextAlign.center,
+      ),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(TextStyle(color: black));
         builder.addText('Lorem ipsum ');
-        builder.addPlaceholder(80.0, 50.0, PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic);
+        builder.addPlaceholder(
+          80.0,
+          50.0,
+          PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+        );
       },
     )..layout(constrain(400.0));
 
@@ -180,12 +207,19 @@ Future<void> testMain() async {
     // Third paragraph with a placeholder alone in the second line.
     final CanvasParagraph paragraph3 = rich(
       EngineParagraphStyle(
-          fontFamily: 'Roboto', fontSize: 24.0, textAlign: TextAlign.center),
+        fontFamily: 'Roboto',
+        fontSize: 24.0,
+        textAlign: TextAlign.center,
+      ),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(TextStyle(color: black));
         builder.addText('Lorem ipsum ');
-        builder.addPlaceholder(80.0, 50.0, PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic);
+        builder.addPlaceholder(
+          80.0,
+          50.0,
+          PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+        );
       },
     )..layout(constrain(200.0));
 
@@ -195,7 +229,10 @@ Future<void> testMain() async {
     surroundParagraph(canvas, offset, paragraph3);
 
     return takeScreenshot(
-        canvas, bounds, 'canvas_paragraph_placeholders_start_and_end');
+      canvas,
+      bounds,
+      'canvas_paragraph_placeholders_start_and_end',
+    );
   });
 }
 
@@ -205,8 +242,9 @@ void surroundParagraph(
   CanvasParagraph paragraph,
 ) {
   final Rect rect = offset & Size(paragraph.width, paragraph.height);
-  final SurfacePaint paint = SurfacePaint()
-    ..color = blue
-    ..style = PaintingStyle.stroke;
+  final SurfacePaint paint =
+      SurfacePaint()
+        ..color = blue
+        ..style = PaintingStyle.stroke;
   canvas.drawRect(rect, paint.paintData);
 }

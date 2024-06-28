@@ -113,9 +113,13 @@ void testMain() {
     ]);
 
     expect(hashValueFromArgs, equals(hashValueFromList));
-    expect(slightlyDifferentHashValueFromArgs,
-        equals(slightlyDifferentHashValueFromList));
     expect(
-        hashValueFromArgs, isNot(equals(slightlyDifferentHashValueFromArgs)));
+      slightlyDifferentHashValueFromArgs,
+      equals(slightlyDifferentHashValueFromList),
+    );
+    expect(
+      hashValueFromArgs,
+      isNot(equals(slightlyDifferentHashValueFromArgs)),
+    );
   });
 }

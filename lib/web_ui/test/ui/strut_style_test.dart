@@ -57,9 +57,10 @@ Future<void> testMain() async {
 
       expect(reason: '$property property is not equal', a, isNot(b));
       expect(
-          reason: '$property hashCode is not equal',
-          a.hashCode,
-          isNot(b.hashCode));
+        reason: '$property hashCode is not equal',
+        a.hashCode,
+        isNot(b.hashCode),
+      );
     }
   });
 
@@ -100,11 +101,11 @@ Future<void> testMain() async {
   });
 }
 
-typedef _StrutStylePropertyPopulator = void Function(
-    _TestStrutStyleBuilder builder);
+typedef _StrutStylePropertyPopulator =
+    void Function(_TestStrutStyleBuilder builder);
 
-final Map<String, _StrutStylePropertyPopulator> _populatorsA =
-    <String, _StrutStylePropertyPopulator>{
+final Map<String, _StrutStylePropertyPopulator>
+_populatorsA = <String, _StrutStylePropertyPopulator>{
   'fontFamily': (_TestStrutStyleBuilder builder) {
     builder.fontFamily = 'Arial';
   },
@@ -135,8 +136,8 @@ final Map<String, _StrutStylePropertyPopulator> _populatorsA =
   },
 };
 
-final Map<String, _StrutStylePropertyPopulator> _populatorsB =
-    <String, _StrutStylePropertyPopulator>{
+final Map<String, _StrutStylePropertyPopulator>
+_populatorsB = <String, _StrutStylePropertyPopulator>{
   'fontFamily': (_TestStrutStyleBuilder builder) {
     builder.fontFamily = 'Noto';
   },

@@ -10,7 +10,10 @@ import 'package:ui/ui.dart' as ui;
 abstract class SceneCanvas implements ui.Canvas {
   // This is the same as a normal `saveLayer` call, but we can pass a backdrop image filter.
   void saveLayerWithFilter(
-      ui.Rect? bounds, ui.Paint paint, ui.ImageFilter backdropFilter);
+    ui.Rect? bounds,
+    ui.Paint paint,
+    ui.ImageFilter backdropFilter,
+  );
 }
 
 abstract class ScenePicture implements ui.Picture {

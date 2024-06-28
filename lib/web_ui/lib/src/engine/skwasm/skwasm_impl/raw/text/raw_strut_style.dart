@@ -17,37 +17,48 @@ typedef StrutStyleHandle = Pointer<RawStrutStyle>;
 external StrutStyleHandle strutStyleCreate();
 
 @Native<Void Function(StrutStyleHandle)>(
-    symbol: 'strutStyle_dispose', isLeaf: true)
+  symbol: 'strutStyle_dispose',
+  isLeaf: true,
+)
 external void strutStyleDispose(StrutStyleHandle handle);
 
 @Native<
-    Void Function(StrutStyleHandle, Pointer<SkStringHandle> families,
-        Int count)>(symbol: 'strutStyle_setFontFamilies', isLeaf: true)
+  Void Function(StrutStyleHandle, Pointer<SkStringHandle> families, Int count)
+>(symbol: 'strutStyle_setFontFamilies', isLeaf: true)
 external void strutStyleSetFontFamilies(
-    StrutStyleHandle handle, Pointer<SkStringHandle> families, int count);
+  StrutStyleHandle handle,
+  Pointer<SkStringHandle> families,
+  int count,
+);
 
 @Native<Void Function(StrutStyleHandle, Float)>(
-    symbol: 'strutStyle_setFontSize', isLeaf: true)
+  symbol: 'strutStyle_setFontSize',
+  isLeaf: true,
+)
 external void strutStyleSetFontSize(StrutStyleHandle handle, double fontSize);
 
 @Native<Void Function(StrutStyleHandle, Float)>(
-    symbol: 'strutStyle_setHeight', isLeaf: true)
+  symbol: 'strutStyle_setHeight',
+  isLeaf: true,
+)
 external void strutStyleSetHeight(StrutStyleHandle handle, double height);
 
 @Native<Void Function(StrutStyleHandle, Bool)>(
-    symbol: 'strutStyle_setHalfLeading', isLeaf: true)
+  symbol: 'strutStyle_setHalfLeading',
+  isLeaf: true,
+)
 external void strutStyleSetHalfLeading(StrutStyleHandle handle, bool height);
 
 @Native<Void Function(StrutStyleHandle, Float)>(
-    symbol: 'strutStyle_setLeading', isLeaf: true)
+  symbol: 'strutStyle_setLeading',
+  isLeaf: true,
+)
 external void strutStyleSetLeading(StrutStyleHandle handle, double leading);
 
-@Native<
-    Void Function(
-      StrutStyleHandle,
-      Int,
-      Int,
-    )>(symbol: 'strutStyle_setFontStyle', isLeaf: true)
+@Native<Void Function(StrutStyleHandle, Int, Int)>(
+  symbol: 'strutStyle_setFontStyle',
+  isLeaf: true,
+)
 external void strutStyleSetFontStyle(
   StrutStyleHandle handle,
   int weight,
@@ -55,6 +66,10 @@ external void strutStyleSetFontStyle(
 );
 
 @Native<Void Function(StrutStyleHandle, Bool)>(
-    symbol: 'strutStyle_setForceStrutHeight', isLeaf: true)
+  symbol: 'strutStyle_setForceStrutHeight',
+  isLeaf: true,
+)
 external void strutStyleSetForceStrutHeight(
-    StrutStyleHandle handle, bool forceStrutHeight);
+  StrutStyleHandle handle,
+  bool forceStrutHeight,
+);

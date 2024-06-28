@@ -34,8 +34,9 @@ mixin CompositionAwareMixin {
       createDomEventListener(_handleCompositionStart);
   late final DomEventListener _compositionUpdateListener =
       createDomEventListener(_handleCompositionUpdate);
-  late final DomEventListener _compositionEndListener =
-      createDomEventListener(_handleCompositionEnd);
+  late final DomEventListener _compositionEndListener = createDomEventListener(
+    _handleCompositionEnd,
+  );
 
   /// The currently composing text in the `domElement`.
   ///
@@ -47,15 +48,21 @@ mixin CompositionAwareMixin {
   void addCompositionEventHandlers(DomHTMLElement domElement) {
     domElement.addEventListener(_kCompositionStart, _compositionStartListener);
     domElement.addEventListener(
-        _kCompositionUpdate, _compositionUpdateListener);
+      _kCompositionUpdate,
+      _compositionUpdateListener,
+    );
     domElement.addEventListener(_kCompositionEnd, _compositionEndListener);
   }
 
   void removeCompositionEventHandlers(DomHTMLElement domElement) {
     domElement.removeEventListener(
-        _kCompositionStart, _compositionStartListener);
+      _kCompositionStart,
+      _compositionStartListener,
+    );
     domElement.removeEventListener(
-        _kCompositionUpdate, _compositionUpdateListener);
+      _kCompositionUpdate,
+      _compositionUpdateListener,
+    );
     domElement.removeEventListener(_kCompositionEnd, _compositionEndListener);
   }
 

@@ -23,79 +23,55 @@ void testMain() {
 
 void _expectDomTests() {
   test('trivial equal elements', () {
-    expectDom(
-      '<div></div>',
-      hasHtml('<div></div>'),
-    );
+    expectDom('<div></div>', hasHtml('<div></div>'));
   });
 
   test('trivial unequal elements', () {
     expectDom(
       '<div></div>',
-      expectMismatch(
-        hasHtml('<span></span>'),
-        '''
+      expectMismatch(hasHtml('<span></span>'), '''
 The following DOM structure did not match the expected pattern:
 <div></div>
 
 Specifically:
- - @span: unexpected tag name <div> (expected <span>).''',
-      ),
+ - @span: unexpected tag name <div> (expected <span>).'''),
     );
   });
 
   test('trivial equal text content', () {
-    expectDom(
-      '<div>hello</div>',
-      hasHtml('<div>hello</div>'),
-    );
+    expectDom('<div>hello</div>', hasHtml('<div>hello</div>'));
   });
 
   test('trivial unequal text content', () {
     expectDom(
       '<div>hello</div>',
-      expectMismatch(
-        hasHtml('<div>world</div>'),
-        '''
+      expectMismatch(hasHtml('<div>world</div>'), '''
 The following DOM structure did not match the expected pattern:
 <div>hello</div>
 
 Specifically:
- - @div: expected text content "world", but found "hello".''',
-      ),
+ - @div: expected text content "world", but found "hello".'''),
     );
   });
 
   test('white space between elements', () {
-    expectDom(
-      '<a> <b> </b> </a>',
-      hasHtml('<a><b> </b></a>'),
-    );
+    expectDom('<a> <b> </b> </a>', hasHtml('<a><b> </b></a>'));
+
+    expectDom('<a><b> </b></a>', hasHtml('<a> <b> </b> </a>'));
 
     expectDom(
       '<a><b> </b></a>',
-      hasHtml('<a> <b> </b> </a>'),
-    );
-
-    expectDom(
-      '<a><b> </b></a>',
-      expectMismatch(
-        hasHtml('<a><b>   </b></a>'),
-        '''
+      expectMismatch(hasHtml('<a><b>   </b></a>'), '''
 The following DOM structure did not match the expected pattern:
 <a><b> </b></a>
 
 Specifically:
- - @a > b: expected text content "   ", but found " ".''',
-      ),
+ - @a > b: expected text content "   ", but found " ".'''),
     );
   });
 
   test('trivial equal attributes', () {
-    expectDom(
-      '<div id="hello"></div>',
-      hasHtml('<div id="hello"></div>'),
-    );
+    expectDom('<div id="hello"></div>', hasHtml('<div id="hello"></div>'));
   });
 
   test('trivial out-of-order equal attributes', () {
@@ -108,38 +84,29 @@ Specifically:
   test('trivial unequal attributes', () {
     expectDom(
       '<div id="hello"></div>',
-      expectMismatch(
-        hasHtml('<div id="world"></div>'),
-        '''
+      expectMismatch(hasHtml('<div id="world"></div>'), '''
 The following DOM structure did not match the expected pattern:
 <div id="hello"></div>
 
 Specifically:
- - @div#id: expected attribute value id="world", but found id="hello".''',
-      ),
+ - @div#id: expected attribute value id="world", but found id="hello".'''),
     );
   });
 
   test('trivial missing attributes', () {
     expectDom(
       '<div></div>',
-      expectMismatch(
-        hasHtml('<div id="hello"></div>'),
-        '''
+      expectMismatch(hasHtml('<div id="hello"></div>'), '''
 The following DOM structure did not match the expected pattern:
 <div></div>
 
 Specifically:
- - @div#id: attribute id="hello" missing.''',
-      ),
+ - @div#id: attribute id="hello" missing.'''),
     );
   });
 
   test('trivial additional attributes', () {
-    expectDom(
-      '<div id="hello"></div>',
-      hasHtml('<div></div>'),
-    );
+    expectDom('<div id="hello"></div>', hasHtml('<div></div>'));
 
     expectDom(
       '<div id="hello" foo="bar"></div>',
@@ -203,7 +170,8 @@ Specifically:
       '<div id="other" style="width: 12px; transform: scale(2)"></div>',
       expectMismatch(
         hasHtml(
-            '<div id="this" foo="bar" style="width: 12px; transform: scale(2); height: 20px"></div>'),
+          '<div id="this" foo="bar" style="width: 12px; transform: scale(2); height: 20px"></div>',
+        ),
         '''
 The following DOM structure did not match the expected pattern:
 <div id="other" style="width: 12px; transform: scale(2)"></div>
@@ -248,15 +216,12 @@ Specifically:
   test('additional child elements', () {
     expectDom(
       '<div><span></span><waldo></waldo><p></p></div>',
-      expectMismatch(
-        hasHtml('<div><span></span><p></p></div>'),
-        '''
+      expectMismatch(hasHtml('<div><span></span><p></p></div>'), '''
 The following DOM structure did not match the expected pattern:
 <div><span></span><waldo></waldo><p></p></div>
 
 Specifically:
- - @div: expected 2 child nodes, but found 3.''',
-      ),
+ - @div: expected 2 child nodes, but found 3.'''),
     );
   });
 
@@ -300,12 +265,7 @@ class _ExpectMismatch extends Matcher {
     }
 
     final _TestDescription description = _TestDescription();
-    _matcher.describeMismatch(
-      item,
-      description,
-      matchState,
-      false,
-    );
+    _matcher.describeMismatch(item, description, matchState, false);
     final String mismatchDescription = description.items.join();
 
     if (mismatchDescription.trim() != expectedMismatchDescription.trim()) {
@@ -318,8 +278,9 @@ class _ExpectMismatch extends Matcher {
   }
 
   @override
-  Description describe(Description description) =>
-      description.add('not ').addDescriptionOf(_matcher);
+  Description describe(Description description) => description
+      .add('not ')
+      .addDescriptionOf(_matcher);
 
   @override
   Description describeMismatch(
@@ -329,15 +290,18 @@ class _ExpectMismatch extends Matcher {
     bool verbose,
   ) {
     if (matchState.containsKey('matched')) {
-      mismatchDescription
-          .add('Expected a mismatch, but the HTML pattern matched.');
+      mismatchDescription.add(
+        'Expected a mismatch, but the HTML pattern matched.',
+      );
     }
     if (matchState.containsKey('mismatchDescription')) {
       mismatchDescription.add('Mismatch description was wrong.\n');
-      mismatchDescription
-          .add('  Expected: ${matchState['expectedMismatchDescription']}\n');
-      mismatchDescription
-          .add('  Actual  : ${matchState['mismatchDescription']}\n');
+      mismatchDescription.add(
+        '  Expected: ${matchState['expectedMismatchDescription']}\n',
+      );
+      mismatchDescription.add(
+        '  Actual  : ${matchState['mismatchDescription']}\n',
+      );
     }
 
     return mismatchDescription;
@@ -358,7 +322,11 @@ class _TestDescription implements Description {
 
   @override
   Description addAll(
-      String start, String separator, String end, Iterable<Object?> list) {
+    String start,
+    String separator,
+    String end,
+    Iterable<Object?> list,
+  ) {
     throw UnimplementedError();
   }
 

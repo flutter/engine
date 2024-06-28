@@ -10,10 +10,7 @@ class SurfaceScene implements ui.Scene {
   /// or extended directly.
   ///
   /// To create a Scene object, use a [SceneBuilder].
-  SurfaceScene(
-    this.webOnlyRootElement, {
-    required this.timingRecorder,
-  });
+  SurfaceScene(this.webOnlyRootElement, {required this.timingRecorder});
 
   final DomElement? webOnlyRootElement;
   final FrameTimingRecorder? timingRecorder;

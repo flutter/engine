@@ -45,12 +45,11 @@ Future<void> testMain() async {
     expect(paragraph1.spans.single.start, 0);
     expect(paragraph1.spans.single.end, 0);
 
-    final CanvasParagraph paragraph2 = rich(
-      EngineParagraphStyle(),
-      (CanvasParagraphBuilder builder) {
-        builder.addText('');
-      },
-    );
+    final CanvasParagraph paragraph2 = rich(EngineParagraphStyle(), (
+      CanvasParagraphBuilder builder,
+    ) {
+      builder.addText('');
+    });
     expect(paragraph2.plainText, '');
     expect(paragraph2.spans, hasLength(1));
     expect(paragraph2.spans.single.start, 0);
@@ -173,16 +172,19 @@ Future<void> testMain() async {
   });
 
   test('Builds a single-span paragraph with complex styles', () {
-    final EngineParagraphStyle style =
-        EngineParagraphStyle(fontSize: 13.0, height: 1.5);
+    final EngineParagraphStyle style = EngineParagraphStyle(
+      fontSize: 13.0,
+      height: 1.5,
+    );
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
 
     builder.pushStyle(TextStyle(fontSize: 9.0));
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
     builder.pushStyle(TextStyle(fontSize: 40.0));
     builder.pop();
-    builder
-        .pushStyle(TextStyle(fontStyle: FontStyle.italic, letterSpacing: 2.0));
+    builder.pushStyle(
+      TextStyle(fontStyle: FontStyle.italic, letterSpacing: 2.0),
+    );
     builder.addText('Hello');
 
     final CanvasParagraph paragraph = builder.build();
@@ -267,20 +269,14 @@ Future<void> testMain() async {
     expect(getSpanText(paragraph, hello), 'Hello');
     expect(
       hello.style,
-      styleWithDefaults(
-        fontSize: 13.0,
-        fontWeight: FontWeight.bold,
-      ),
+      styleWithDefaults(fontSize: 13.0, fontWeight: FontWeight.bold),
     );
 
     final ParagraphSpan world = paragraph.spans.last;
     expect(getSpanText(paragraph, world), ' world');
     expect(
       world.style,
-      styleWithDefaults(
-        fontSize: 13.0,
-        fontStyle: FontStyle.italic,
-      ),
+      styleWithDefaults(fontSize: 13.0, fontStyle: FontStyle.italic),
     );
   });
 
@@ -416,8 +412,10 @@ Future<void> testMain() async {
     // trick them into thinking they are not in test mode, so they use the
     // provided font family.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
-    final EngineParagraphStyle style =
-        EngineParagraphStyle(fontSize: 12.0, fontFamily: 'first');
+    final EngineParagraphStyle style = EngineParagraphStyle(
+      fontSize: 12.0,
+      fontFamily: 'first',
+    );
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
 
     builder.addText('First ');
@@ -498,10 +496,7 @@ const String defaultFontFamily = 'FlutterTest';
 const num defaultFontSize = 14;
 
 String paragraphStyle() {
-  return <String>[
-    'position: absolute;',
-    'white-space: pre;',
-  ].join(' ');
+  return <String>['position: absolute;', 'white-space: pre;'].join(' ');
 }
 
 String spanStyle({
@@ -547,8 +542,11 @@ TextStyle styleWithDefaults({
   );
 }
 
-void expectOuterHtml(CanvasParagraph paragraph, String expected,
-    {required bool ignorePositions}) {
+void expectOuterHtml(
+  CanvasParagraph paragraph,
+  String expected, {
+  required bool ignorePositions,
+}) {
   String outerHtml = paragraph.toDomElement().outerHTML!;
   if (ignorePositions) {
     outerHtml = removeMeasurementInfo(outerHtml);

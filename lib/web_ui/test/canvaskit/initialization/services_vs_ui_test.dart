@@ -54,9 +54,12 @@ Future<JsFlutterConfiguration?> bootstrapAndExtractConfig() {
   final Completer<JsFlutterConfiguration?> configCompleter =
       Completer<JsFlutterConfiguration?>();
   final AppBootstrap bootstrap = AppBootstrap(
-      initializeEngine: ([JsFlutterConfiguration? config]) async =>
-          configCompleter.complete(config),
-      runApp: () async {});
+    initializeEngine:
+        ([JsFlutterConfiguration? config]) async => configCompleter.complete(
+          config,
+        ),
+    runApp: () async {},
+  );
   final FlutterLoader? loader = flutter?.loader;
   if (loader == null || loader.isAutoStart) {
     // TODO(jacksongardner): Unit tests under dart2wasm still use the old way which

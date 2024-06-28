@@ -58,8 +58,12 @@ class EngineScene implements ui.Scene {
   @override
   ui.Image toImageSync(int width, int height) {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Rect canvasRect =
-        ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
+    final ui.Rect canvasRect = ui.Rect.fromLTWH(
+      0,
+      0,
+      width.toDouble(),
+      height.toDouble(),
+    );
     final ui.Canvas canvas = ui.Canvas(recorder, canvasRect);
 
     // Only rasterizes the picture slices.
@@ -81,19 +85,33 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  void addPicture(ui.Offset offset, ui.Picture picture,
-      {bool isComplexHint = false, bool willChangeHint = false}) {
-    currentBuilder.addPicture(offset, picture,
-        isComplexHint: isComplexHint, willChangeHint: willChangeHint);
+  void addPicture(
+    ui.Offset offset,
+    ui.Picture picture, {
+    bool isComplexHint = false,
+    bool willChangeHint = false,
+  }) {
+    currentBuilder.addPicture(
+      offset,
+      picture,
+      isComplexHint: isComplexHint,
+      willChangeHint: willChangeHint,
+    );
   }
 
   @override
-  void addPlatformView(int viewId,
-      {ui.Offset offset = ui.Offset.zero,
-      double width = 0.0,
-      double height = 0.0}) {
-    currentBuilder.addPlatformView(viewId,
-        offset: offset, width: width, height: height);
+  void addPlatformView(
+    int viewId, {
+    ui.Offset offset = ui.Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+  }) {
+    currentBuilder.addPlatformView(
+      viewId,
+      offset: offset,
+      width: width,
+      height: height,
+    );
   }
 
   @override
@@ -102,96 +120,125 @@ class EngineSceneBuilder implements ui.SceneBuilder {
   }
 
   @override
-  void addTexture(int textureId,
-      {ui.Offset offset = ui.Offset.zero,
-      double width = 0.0,
-      double height = 0.0,
-      bool freeze = false,
-      ui.FilterQuality filterQuality = ui.FilterQuality.low}) {
+  void addTexture(
+    int textureId, {
+    ui.Offset offset = ui.Offset.zero,
+    double width = 0.0,
+    double height = 0.0,
+    bool freeze = false,
+    ui.FilterQuality filterQuality = ui.FilterQuality.low,
+  }) {
     // addTexture is not implemented on web.
   }
 
   @override
-  ui.BackdropFilterEngineLayer pushBackdropFilter(ui.ImageFilter filter,
-          {ui.BlendMode blendMode = ui.BlendMode.srcOver,
-          ui.BackdropFilterEngineLayer? oldLayer}) =>
-      pushLayer<BackdropFilterLayer>(
-        BackdropFilterLayer(),
-        BackdropFilterOperation(filter, blendMode),
-      );
+  ui.BackdropFilterEngineLayer pushBackdropFilter(
+    ui.ImageFilter filter, {
+    ui.BlendMode blendMode = ui.BlendMode.srcOver,
+    ui.BackdropFilterEngineLayer? oldLayer,
+  }) => pushLayer<BackdropFilterLayer>(
+    BackdropFilterLayer(),
+    BackdropFilterOperation(filter, blendMode),
+  );
 
   @override
-  ui.ClipPathEngineLayer pushClipPath(ui.Path path,
-          {ui.Clip clipBehavior = ui.Clip.antiAlias,
-          ui.ClipPathEngineLayer? oldLayer}) =>
-      pushLayer<ClipPathLayer>(
-        ClipPathLayer(),
-        ClipPathOperation(path, clipBehavior),
-      );
+  ui.ClipPathEngineLayer pushClipPath(
+    ui.Path path, {
+    ui.Clip clipBehavior = ui.Clip.antiAlias,
+    ui.ClipPathEngineLayer? oldLayer,
+  }) => pushLayer<ClipPathLayer>(
+    ClipPathLayer(),
+    ClipPathOperation(path, clipBehavior),
+  );
 
   @override
-  ui.ClipRRectEngineLayer pushClipRRect(ui.RRect rrect,
-          {required ui.Clip clipBehavior, ui.ClipRRectEngineLayer? oldLayer}) =>
-      pushLayer<ClipRRectLayer>(
-          ClipRRectLayer(), ClipRRectOperation(rrect, clipBehavior));
+  ui.ClipRRectEngineLayer pushClipRRect(
+    ui.RRect rrect, {
+    required ui.Clip clipBehavior,
+    ui.ClipRRectEngineLayer? oldLayer,
+  }) => pushLayer<ClipRRectLayer>(
+    ClipRRectLayer(),
+    ClipRRectOperation(rrect, clipBehavior),
+  );
 
   @override
-  ui.ClipRectEngineLayer pushClipRect(ui.Rect rect,
-      {ui.Clip clipBehavior = ui.Clip.antiAlias,
-      ui.ClipRectEngineLayer? oldLayer}) {
+  ui.ClipRectEngineLayer pushClipRect(
+    ui.Rect rect, {
+    ui.Clip clipBehavior = ui.Clip.antiAlias,
+    ui.ClipRectEngineLayer? oldLayer,
+  }) {
     return pushLayer<ClipRectLayer>(
-        ClipRectLayer(), ClipRectOperation(rect, clipBehavior));
+      ClipRectLayer(),
+      ClipRectOperation(rect, clipBehavior),
+    );
   }
 
   @override
-  ui.ColorFilterEngineLayer pushColorFilter(ui.ColorFilter filter,
-          {ui.ColorFilterEngineLayer? oldLayer}) =>
-      pushLayer<ColorFilterLayer>(
-        ColorFilterLayer(),
-        ColorFilterOperation(filter),
-      );
+  ui.ColorFilterEngineLayer pushColorFilter(
+    ui.ColorFilter filter, {
+    ui.ColorFilterEngineLayer? oldLayer,
+  }) => pushLayer<ColorFilterLayer>(
+    ColorFilterLayer(),
+    ColorFilterOperation(filter),
+  );
 
   @override
-  ui.ImageFilterEngineLayer pushImageFilter(ui.ImageFilter filter,
-          {ui.Offset offset = ui.Offset.zero,
-          ui.ImageFilterEngineLayer? oldLayer}) =>
-      pushLayer<ImageFilterLayer>(
-        ImageFilterLayer(),
-        ImageFilterOperation(filter, offset),
-      );
+  ui.ImageFilterEngineLayer pushImageFilter(
+    ui.ImageFilter filter, {
+    ui.Offset offset = ui.Offset.zero,
+    ui.ImageFilterEngineLayer? oldLayer,
+  }) => pushLayer<ImageFilterLayer>(
+    ImageFilterLayer(),
+    ImageFilterOperation(filter, offset),
+  );
 
   @override
-  ui.OffsetEngineLayer pushOffset(double dx, double dy,
-          {ui.OffsetEngineLayer? oldLayer}) =>
-      pushLayer<OffsetLayer>(OffsetLayer(), OffsetOperation(dx, dy));
+  ui.OffsetEngineLayer pushOffset(
+    double dx,
+    double dy, {
+    ui.OffsetEngineLayer? oldLayer,
+  }) => pushLayer<OffsetLayer>(OffsetLayer(), OffsetOperation(dx, dy));
 
   @override
-  ui.OpacityEngineLayer pushOpacity(int alpha,
-          {ui.Offset offset = ui.Offset.zero,
-          ui.OpacityEngineLayer? oldLayer}) =>
-      pushLayer<OpacityLayer>(
-        OpacityLayer(),
-        OpacityOperation(alpha, offset),
-      );
+  ui.OpacityEngineLayer pushOpacity(
+    int alpha, {
+    ui.Offset offset = ui.Offset.zero,
+    ui.OpacityEngineLayer? oldLayer,
+  }) => pushLayer<OpacityLayer>(
+    OpacityLayer(),
+    OpacityOperation(alpha, offset),
+  );
   @override
   ui.ShaderMaskEngineLayer pushShaderMask(
-          ui.Shader shader, ui.Rect maskRect, ui.BlendMode blendMode,
-          {ui.ShaderMaskEngineLayer? oldLayer,
-          ui.FilterQuality filterQuality = ui.FilterQuality.low}) =>
-      pushLayer<ShaderMaskLayer>(
-          ShaderMaskLayer(), ShaderMaskOperation(shader, maskRect, blendMode));
+    ui.Shader shader,
+    ui.Rect maskRect,
+    ui.BlendMode blendMode, {
+    ui.ShaderMaskEngineLayer? oldLayer,
+    ui.FilterQuality filterQuality = ui.FilterQuality.low,
+  }) => pushLayer<ShaderMaskLayer>(
+    ShaderMaskLayer(),
+    ShaderMaskOperation(shader, maskRect, blendMode),
+  );
 
   @override
-  ui.TransformEngineLayer pushTransform(Float64List matrix4,
-          {ui.TransformEngineLayer? oldLayer}) =>
-      pushLayer<TransformLayer>(
-        TransformLayer(),
-        TransformOperation(matrix4),
-      );
+  ui.TransformEngineLayer pushTransform(
+    Float64List matrix4, {
+    ui.TransformEngineLayer? oldLayer,
+  }) => pushLayer<TransformLayer>(
+    TransformLayer(),
+    TransformOperation(matrix4),
+  );
 
   @override
-  void setProperties(double width, double height, double insetTop,
-      double insetRight, double insetBottom, double insetLeft, bool focusable) {
+  void setProperties(
+    double width,
+    double height,
+    double insetTop,
+    double insetRight,
+    double insetBottom,
+    double insetLeft,
+    bool focusable,
+  ) {
     // Not implemented on web
   }
 
@@ -217,7 +264,10 @@ class EngineSceneBuilder implements ui.SceneBuilder {
 
   T pushLayer<T extends PictureEngineLayer>(T layer, LayerOperation operation) {
     currentBuilder = LayerBuilder.childLayer(
-        parent: currentBuilder, layer: layer, operation: operation);
+      parent: currentBuilder,
+      layer: layer,
+      operation: operation,
+    );
     return layer;
   }
 }

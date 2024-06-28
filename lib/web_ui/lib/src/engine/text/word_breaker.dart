@@ -17,13 +17,19 @@ enum _FindBreakDirection {
 /// [WordBreaker] exposes static methods to identify word boundaries.
 abstract final class WordBreaker {
   /// It starts from [index] and tries to find the next word boundary in [text].
-  static int nextBreakIndex(String text, int index) =>
-      _findBreakIndex(_FindBreakDirection.forward, text, index);
+  static int nextBreakIndex(String text, int index) => _findBreakIndex(
+    _FindBreakDirection.forward,
+    text,
+    index,
+  );
 
   /// It starts from [index] and tries to find the previous word boundary in
   /// [text].
-  static int prevBreakIndex(String text, int index) =>
-      _findBreakIndex(_FindBreakDirection.backward, text, index);
+  static int prevBreakIndex(String text, int index) => _findBreakIndex(
+    _FindBreakDirection.backward,
+    text,
+    index,
+  );
 
   static int _findBreakIndex(
     _FindBreakDirection direction,
@@ -329,6 +335,9 @@ abstract final class WordBreaker {
 
   static bool _isAHLetter(WordCharProperty? property) {
     return _oneOf(
-        property, WordCharProperty.ALetter, WordCharProperty.HebrewLetter);
+      property,
+      WordCharProperty.ALetter,
+      WordCharProperty.HebrewLetter,
+    );
   }
 }

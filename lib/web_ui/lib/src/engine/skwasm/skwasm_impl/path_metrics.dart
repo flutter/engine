@@ -16,20 +16,22 @@ class SkwasmPathMetrics extends IterableBase<ui.PathMetric>
   bool forceClosed;
 
   @override
-  late Iterator<ui.PathMetric> iterator =
-      SkwasmPathMetricIterator(path, forceClosed);
+  late Iterator<ui.PathMetric> iterator = SkwasmPathMetricIterator(
+    path,
+    forceClosed,
+  );
 }
 
 class SkwasmPathMetricIterator
     extends SkwasmObjectWrapper<RawContourMeasureIter>
     implements Iterator<ui.PathMetric> {
   SkwasmPathMetricIterator(SkwasmPath path, bool forceClosed)
-      : super(
-            contourMeasureIterCreate(path.handle, forceClosed, 1.0), _registry);
+    : super(contourMeasureIterCreate(path.handle, forceClosed, 1.0), _registry);
 
   static final SkwasmFinalizationRegistry<RawContourMeasureIter> _registry =
       SkwasmFinalizationRegistry<RawContourMeasureIter>(
-          contourMeasureIterDispose);
+        contourMeasureIterDispose,
+      );
 
   SkwasmPathMetric? _current;
   int _nextIndex = 0;
@@ -38,9 +40,10 @@ class SkwasmPathMetricIterator
   ui.PathMetric get current {
     if (_current == null) {
       throw RangeError(
-          'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
-          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
-          '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
+        'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+        '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
+        '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".',
+      );
     }
     return _current!;
   }
@@ -62,7 +65,7 @@ class SkwasmPathMetricIterator
 class SkwasmPathMetric extends SkwasmObjectWrapper<RawContourMeasure>
     implements ui.PathMetric {
   SkwasmPathMetric(ContourMeasureHandle handle, this.contourIndex)
-      : super(handle, _registry);
+    : super(handle, _registry);
 
   static final SkwasmFinalizationRegistry<RawContourMeasure> _registry =
       SkwasmFinalizationRegistry<RawContourMeasure>(contourMeasureDispose);
@@ -73,20 +76,28 @@ class SkwasmPathMetric extends SkwasmObjectWrapper<RawContourMeasure>
   @override
   ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
     return SkwasmPath.fromHandle(
-        contourMeasureGetSegment(handle, start, end, startWithMoveTo));
+      contourMeasureGetSegment(handle, start, end, startWithMoveTo),
+    );
   }
 
   @override
   ui.Tangent? getTangentForOffset(double distance) {
     return withStackScope((StackScope scope) {
       final Pointer<Float> outPosition = scope.allocFloatArray(4);
-      final Pointer<Float> outTangent =
-          Pointer<Float>.fromAddress(outPosition.address + sizeOf<Float>() * 2);
-      final bool result =
-          contourMeasureGetPosTan(handle, distance, outPosition, outTangent);
+      final Pointer<Float> outTangent = Pointer<Float>.fromAddress(
+        outPosition.address + sizeOf<Float>() * 2,
+      );
+      final bool result = contourMeasureGetPosTan(
+        handle,
+        distance,
+        outPosition,
+        outTangent,
+      );
       assert(result);
-      return ui.Tangent(ui.Offset(outPosition[0], outPosition[1]),
-          ui.Offset(outTangent[0], outTangent[1]));
+      return ui.Tangent(
+        ui.Offset(outPosition[0], outPosition[1]),
+        ui.Offset(outTangent[0], outTangent[1]),
+      );
     });
   }
 

@@ -11,8 +11,11 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
-FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
-    [int? targetWidth, int? targetHeight]) {
+FutureOr<ui.Codec> skiaInstantiateImageCodec(
+  Uint8List list, [
+  int? targetWidth,
+  int? targetHeight,
+]) {
   // If we have either a target width or target height, use canvaskit to decode.
   if (browserSupportsImageDecoder &&
       (targetWidth == null && targetHeight == null)) {
@@ -21,8 +24,12 @@ FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
       debugSource: 'encoded image bytes',
     );
   } else {
-    return CkAnimatedImage.decodeFromBytes(list, 'encoded image bytes',
-        targetWidth: targetWidth, targetHeight: targetHeight);
+    return CkAnimatedImage.decodeFromBytes(
+      list,
+      'encoded image bytes',
+      targetWidth: targetWidth,
+      targetHeight: targetHeight,
+    );
   }
 }
 
@@ -51,9 +58,10 @@ void skiaDecodeImageFromPixels(
       SkImageInfo(
         width: width.toDouble(),
         height: height.toDouble(),
-        colorType: format == ui.PixelFormat.rgba8888
-            ? canvasKit.ColorType.RGBA_8888
-            : canvasKit.ColorType.BGRA_8888,
+        colorType:
+            format == ui.PixelFormat.rgba8888
+                ? canvasKit.ColorType.RGBA_8888
+                : canvasKit.ColorType.BGRA_8888,
         alphaType: canvasKit.AlphaType.Premul,
         colorSpace: SkColorSpaceSRGB,
       ),
@@ -68,7 +76,12 @@ void skiaDecodeImageFromPixels(
 
     if (targetWidth != null || targetHeight != null) {
       if (validUpscale(
-          allowUpscaling, targetWidth, targetHeight, width, height)) {
+        allowUpscaling,
+        targetWidth,
+        targetHeight,
+        width,
+        height,
+      )) {
         return callback(scaleImage(skImage, targetWidth, targetHeight));
       }
     }
@@ -78,8 +91,13 @@ void skiaDecodeImageFromPixels(
 
 // An invalid upscale happens when allowUpscaling is false AND either the given
 // targetWidth is larger than the originalWidth OR the targetHeight is larger than originalHeight.
-bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight,
-    int originalWidth, int originalHeight) {
+bool validUpscale(
+  bool allowUpscaling,
+  int? targetWidth,
+  int? targetHeight,
+  int originalWidth,
+  int originalHeight,
+) {
   if (allowUpscaling) {
     return true;
   }
@@ -161,7 +179,9 @@ const String _kNetworkImageMessage = 'Failed to load network image.';
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
-    String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
+  String url,
+  ui_web.ImageCodecChunkCallback? chunkCallback,
+) async {
   final Uint8List list = await fetchImage(url, chunkCallback);
   if (browserSupportsImageDecoder) {
     return CkBrowserImageDecoder.create(data: list, debugSource: url);
@@ -172,7 +192,9 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
 
 /// Sends a request to fetch image data.
 Future<Uint8List> fetchImage(
-    String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
+  String url,
+  ui_web.ImageCodecChunkCallback? chunkCallback,
+) async {
   try {
     final HttpFetchResponse response = await httpFetch(url);
     final int? contentLength = response.contentLength;
@@ -203,8 +225,11 @@ Future<Uint8List> fetchImage(
 /// Reads the [payload] in chunks using the browser's Streams API
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
-Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength,
-    ui_web.ImageCodecChunkCallback chunkCallback) async {
+Future<Uint8List> readChunked(
+  HttpFetchPayload payload,
+  int contentLength,
+  ui_web.ImageCodecChunkCallback chunkCallback,
+) async {
   final JSUint8Array result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
@@ -290,7 +315,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
     }
 
     throw StateError(
-        'Image.debugDisposed is only available when asserts are enabled.');
+      'Image.debugDisposed is only available when asserts are enabled.',
+    );
   }
 
   @override
@@ -342,9 +368,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
   Future<ByteData> _readPixelsFromSkImage(ui.ImageByteFormat format) {
-    final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba
-        ? canvasKit.AlphaType.Unpremul
-        : canvasKit.AlphaType.Premul;
+    final SkAlphaType alphaType =
+        format == ui.ImageByteFormat.rawStraightRgba
+            ? canvasKit.AlphaType.Unpremul
+            : canvasKit.AlphaType.Premul;
     final ByteData? data = _encodeImage(
       skImage: skImage,
       format: format,

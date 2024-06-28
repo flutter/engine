@@ -25,8 +25,8 @@ abstract class FlutterView {
   List<DisplayFeature> get displayFeatures;
   Display get display;
   void render(Scene scene, {Size? size});
-  void updateSemantics(SemanticsUpdate update) =>
-      platformDispatcher.updateSemantics(update);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher
+      .updateSemantics(update);
 }
 
 abstract class SingletonFlutterWindow extends FlutterView {
@@ -122,10 +122,7 @@ abstract class AccessibilityFeatures {
   bool get onOffSwitchLabels;
 }
 
-enum Brightness {
-  dark,
-  light,
-}
+enum Brightness { dark, light }
 
 // Unimplemented classes.
 // TODO(dit): see https://github.com/flutter/flutter/issues/33614.
@@ -141,7 +138,8 @@ class CallbackHandle {
 
   @override
   // ignore: unnecessary_overrides
-  int get hashCode => super.hashCode;
+  int
+  get hashCode => super.hashCode;
 }
 
 // TODO(dit): see https://github.com/flutter/flutter/issues/33615.
@@ -178,10 +176,7 @@ class FrameData {
 }
 
 class GestureSettings {
-  const GestureSettings({
-    this.physicalTouchSlop,
-    this.physicalDoubleTapSlop,
-  });
+  const GestureSettings({this.physicalTouchSlop, this.physicalDoubleTapSlop});
 
   final double? physicalTouchSlop;
 

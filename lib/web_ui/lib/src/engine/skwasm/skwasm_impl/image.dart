@@ -55,20 +55,23 @@ class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
   int get height => imageGetHeight(handle);
 
   @override
-  Future<ByteData?> toByteData(
-      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) async {
+  Future<ByteData?> toByteData({
+    ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba,
+  }) async {
     if (format == ui.ImageByteFormat.png) {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
       canvas.drawImage(this, ui.Offset.zero, ui.Paint());
       final DomImageBitmap bitmap =
           (await (renderer as SkwasmRenderer).surface.renderPictures(
-        <SkwasmPicture>[recorder.endRecording() as SkwasmPicture],
-      ))
+                <SkwasmPicture>[recorder.endRecording() as SkwasmPicture],
+              ))
               .imageBitmaps
               .single;
       final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(
-          bitmap.width.toDartInt, bitmap.height.toDartInt);
+        bitmap.width.toDartInt,
+        bitmap.height.toDartInt,
+      );
       final DomCanvasRenderingContextBitmapRenderer context =
           offscreenCanvas.getContext('bitmaprenderer')!
               as DomCanvasRenderingContextBitmapRenderer;

@@ -56,37 +56,40 @@ void main() {
 void testMain() {
   test('KeyData.toString', () {
     expect(
-        const ui.KeyData(
-          type: ui.KeyEventType.down,
-          physical: 0x700e5,
-          logical: 0x61,
-          character: 'A',
-          timeStamp: Duration.zero,
-          synthesized: false,
-        ).toString(),
-        'KeyData(Key Down, physical: 0x700e5, logical: 0x61 (Unicode), character: "A" (0x41))');
+      const ui.KeyData(
+        type: ui.KeyEventType.down,
+        physical: 0x700e5,
+        logical: 0x61,
+        character: 'A',
+        timeStamp: Duration.zero,
+        synthesized: false,
+      ).toString(),
+      'KeyData(Key Down, physical: 0x700e5, logical: 0x61 (Unicode), character: "A" (0x41))',
+    );
 
     expect(
-        const ui.KeyData(
-          type: ui.KeyEventType.up,
-          physical: 0x700e6,
-          logical: 0x100000061,
-          character: '\n',
-          timeStamp: Duration.zero,
-          synthesized: true,
-        ).toString(),
-        r'KeyData(Key Up, physical: 0x700e6, logical: 0x100000061 (Unprintable), character: "\n" (0x0a), synthesized)');
+      const ui.KeyData(
+        type: ui.KeyEventType.up,
+        physical: 0x700e6,
+        logical: 0x100000061,
+        character: '\n',
+        timeStamp: Duration.zero,
+        synthesized: true,
+      ).toString(),
+      r'KeyData(Key Up, physical: 0x700e6, logical: 0x100000061 (Unprintable), character: "\n" (0x0a), synthesized)',
+    );
 
     expect(
-        const ui.KeyData(
-          type: ui.KeyEventType.repeat,
-          physical: 0x700e7,
-          logical: 0x9900000071,
-          character: null,
-          timeStamp: Duration.zero,
-          synthesized: false,
-        ).toString(),
-        'KeyData(Key Repeat, physical: 0x700e7, logical: 0x9900000071, character: <none>)');
+      const ui.KeyData(
+        type: ui.KeyEventType.repeat,
+        physical: 0x700e7,
+        logical: 0x9900000071,
+        character: null,
+        timeStamp: Duration.zero,
+        synthesized: false,
+      ).toString(),
+      'KeyData(Key Repeat, physical: 0x700e7, logical: 0x9900000071, character: <none>)',
+    );
   });
 
   test('Single key press, repeat, and release', () {
@@ -155,8 +158,9 @@ void testMain() {
     }, ui_web.OperatingSystem.windows);
 
     // en-in.win, with AltGr
-    converter
-        .handleEvent(keyDownEvent('KeyL', 'l̥', kCtrl | kAlt)..timeStamp = 1);
+    converter.handleEvent(
+      keyDownEvent('KeyL', 'l̥', kCtrl | kAlt)..timeStamp = 1,
+    );
     expectKeyData(
       keyDataList.last,
       timeStamp: const Duration(milliseconds: 1),
@@ -176,8 +180,9 @@ void testMain() {
       return key.type == ui.KeyEventType.down;
     }, ui_web.OperatingSystem.linux);
 
-    converter
-        .handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.down,
@@ -262,8 +267,9 @@ void testMain() {
       return true;
     }, ui_web.OperatingSystem.linux);
 
-    converter
-        .handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.down,
@@ -274,7 +280,8 @@ void testMain() {
     );
 
     converter.handleEvent(
-        keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
+      keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.down,
@@ -284,8 +291,9 @@ void testMain() {
       character: null,
     );
 
-    converter
-        .handleEvent(keyUpEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyUpEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.up,
@@ -500,7 +508,8 @@ void testMain() {
     );
 
     converter.handleEvent(
-        keyDownEvent('ShiftLeft', 'Shift', kAlt | kShift, kLocationLeft));
+      keyDownEvent('ShiftLeft', 'Shift', kAlt | kShift, kLocationLeft),
+    );
 
     // This does not actually produce a Dead key on macOS (US layout); just for
     // testing.
@@ -536,14 +545,16 @@ void testMain() {
       return true;
     }, ui_web.OperatingSystem.linux);
 
-    converter
-        .handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     // A KeyUp of ShiftLeft is missed.
 
     keyDataList.clear();
-    converter
-        .handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expect(keyDataList, hasLength(2));
     expectKeyData(
       keyDataList.first,
@@ -579,52 +590,53 @@ void testMain() {
   });
 
   test(
-      'Duplicate down is preceded with synthesized up using registered logical key',
-      () {
-    // Regression test for https://github.com/flutter/flutter/issues/126247.
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
-      keyDataList.add(key);
-      return true;
-    }, ui_web.OperatingSystem.linux);
+    'Duplicate down is preceded with synthesized up using registered logical key',
+    () {
+      // Regression test for https://github.com/flutter/flutter/issues/126247.
+      final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+      final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+        keyDataList.add(key);
+        return true;
+      }, ui_web.OperatingSystem.linux);
 
-    // This test simulates the use of 'BracketLeft' on a french keyboard, see:
-    // https://github.com/flutter/flutter/issues/126247#issuecomment-1856112566.
-    converter.handleEvent(keyDownEvent('BracketLeft', 'Dead'));
-    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
-    expectKeyData(
-      keyDataList.first,
-      type: ui.KeyEventType.down,
-      deviceType: ui.KeyEventDeviceType.keyboard,
-      physical: kPhysicalBracketLeft,
-      logical: kLogicalBracketLeft,
-      character: null,
-    );
+      // This test simulates the use of 'BracketLeft' on a french keyboard, see:
+      // https://github.com/flutter/flutter/issues/126247#issuecomment-1856112566.
+      converter.handleEvent(keyDownEvent('BracketLeft', 'Dead'));
+      expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+      expectKeyData(
+        keyDataList.first,
+        type: ui.KeyEventType.down,
+        deviceType: ui.KeyEventDeviceType.keyboard,
+        physical: kPhysicalBracketLeft,
+        logical: kLogicalBracketLeft,
+        character: null,
+      );
 
-    // A KeyUp of BracketLeft is missed.
-    keyDataList.clear();
+      // A KeyUp of BracketLeft is missed.
+      keyDataList.clear();
 
-    converter.handleEvent(keyDownEvent('BracketLeft', 'Process'));
-    expect(keyDataList, hasLength(2));
-    expectKeyData(
-      keyDataList.first,
-      type: ui.KeyEventType.up,
-      deviceType: ui.KeyEventDeviceType.keyboard,
-      physical: kPhysicalBracketLeft,
-      logical: kLogicalBracketLeft,
-      character: null,
-      synthesized: true,
-    );
-    expectKeyData(
-      keyDataList.last,
-      type: ui.KeyEventType.down,
-      deviceType: ui.KeyEventDeviceType.keyboard,
-      physical: kPhysicalBracketLeft,
-      logical: kLogicalProcess,
-      character: null,
-    );
-    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
-  });
+      converter.handleEvent(keyDownEvent('BracketLeft', 'Process'));
+      expect(keyDataList, hasLength(2));
+      expectKeyData(
+        keyDataList.first,
+        type: ui.KeyEventType.up,
+        deviceType: ui.KeyEventDeviceType.keyboard,
+        physical: kPhysicalBracketLeft,
+        logical: kLogicalBracketLeft,
+        character: null,
+        synthesized: true,
+      );
+      expectKeyData(
+        keyDataList.last,
+        type: ui.KeyEventType.down,
+        deviceType: ui.KeyEventDeviceType.keyboard,
+        physical: kPhysicalBracketLeft,
+        logical: kLogicalProcess,
+        character: null,
+      );
+      expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+    },
+  );
 
   test('Duplicate ups are skipped', () {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
@@ -685,10 +697,11 @@ void testMain() {
 
   for (final ui_web.OperatingSystem system in <ui_web.OperatingSystem>[
     ui_web.OperatingSystem.macOs,
-    ui_web.OperatingSystem.iOs
+    ui_web.OperatingSystem.iOs,
   ]) {
-    testFakeAsync('CapsLock down synthesizes an immediate cancel on $system',
-        (FakeAsync async) {
+    testFakeAsync('CapsLock down synthesizes an immediate cancel on $system', (
+      FakeAsync async,
+    ) {
       final List<ui.KeyData> keyDataList = <ui.KeyData>[];
       final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
         keyDataList.add(key);
@@ -830,10 +843,11 @@ void testMain() {
 
   for (final ui_web.OperatingSystem system in <ui_web.OperatingSystem>[
     ui_web.OperatingSystem.macOs,
-    ui_web.OperatingSystem.iOs
+    ui_web.OperatingSystem.iOs,
   ]) {
-    testFakeAsync('Key guards: key down events are guarded on $system',
-        (FakeAsync async) {
+    testFakeAsync('Key guards: key down events are guarded on $system', (
+      FakeAsync async,
+    ) {
       final List<ui.KeyData> keyDataList = <ui.KeyData>[];
       final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
         keyDataList.add(key);
@@ -841,8 +855,8 @@ void testMain() {
       }, system);
 
       converter.handleEvent(
-          keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)
-            ..timeStamp = 100);
+        keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100,
+      );
       async.elapse(const Duration(milliseconds: 100));
 
       converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
@@ -873,7 +887,8 @@ void testMain() {
       keyDataList.clear();
 
       converter.handleEvent(
-          keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700);
+        keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700,
+      );
       expectKeyData(
         keyDataList.last,
         timeStamp: const Duration(milliseconds: 2700),
@@ -911,29 +926,34 @@ void testMain() {
     });
   }
 
-  testFakeAsync('Key guards: key repeated down events refreshes guards',
-      (FakeAsync async) {
+  testFakeAsync('Key guards: key repeated down events refreshes guards', (
+    FakeAsync async,
+  ) {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.macOs);
 
-    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)
-      ..timeStamp = 100);
+    converter.handleEvent(
+      keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100,
+    );
     async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
     async.elapse(const Duration(milliseconds: 400));
 
-    converter
-        .handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 600);
+    converter.handleEvent(
+      keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 600,
+    );
     async.elapse(const Duration(milliseconds: 50));
-    converter
-        .handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 650);
+    converter.handleEvent(
+      keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 650,
+    );
     async.elapse(const Duration(milliseconds: 50));
-    converter
-        .handleEvent(keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700);
+    converter.handleEvent(
+      keyRepeatedDownEvent('KeyA', 'a', kMeta)..timeStamp = 700,
+    );
 
     // Key Up of KeyA is omitted due to being a shortcut.
 
@@ -951,7 +971,8 @@ void testMain() {
     keyDataList.clear();
 
     converter.handleEvent(
-        keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 3200);
+      keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 3200,
+    );
     expectKeyData(
       keyDataList.last,
       timeStamp: const Duration(milliseconds: 3200),
@@ -995,8 +1016,9 @@ void testMain() {
       return true;
     }, ui_web.OperatingSystem.macOs);
 
-    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)
-      ..timeStamp = 100);
+    converter.handleEvent(
+      keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100,
+    );
     async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kCtrl)..timeStamp = 200);
@@ -1013,7 +1035,8 @@ void testMain() {
     async.elapse(const Duration(milliseconds: 500));
 
     converter.handleEvent(
-        keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 700);
+      keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 700,
+    );
     async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 800);
@@ -1055,16 +1078,18 @@ void testMain() {
     );
   });
 
-  testFakeAsync('Key guards: key down events are not guarded on non-macOS',
-      (FakeAsync async) {
+  testFakeAsync('Key guards: key down events are not guarded on non-macOS', (
+    FakeAsync async,
+  ) {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
 
-    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)
-      ..timeStamp = 100);
+    converter.handleEvent(
+      keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100,
+    );
     async.elapse(const Duration(milliseconds: 100));
 
     converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
@@ -1146,7 +1171,8 @@ void testMain() {
     }, ui_web.OperatingSystem.linux);
 
     converter.handleEvent(
-        keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
+      keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.down,
@@ -1156,8 +1182,9 @@ void testMain() {
       character: null,
     );
 
-    converter
-        .handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.down,
@@ -1213,8 +1240,9 @@ void testMain() {
       return true;
     }, ui_web.OperatingSystem.linux);
 
-    converter
-        .handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft),
+    );
     expectKeyData(
       keyDataList.last,
       type: ui.KeyEventType.down,
@@ -1225,8 +1253,14 @@ void testMain() {
     );
     keyDataList.clear();
 
-    converter.handleEvent(keyDownEvent(
-        'MetaLeft', 'Meta', kShift /* No kMeta here! */, kLocationLeft));
+    converter.handleEvent(
+      keyDownEvent(
+        'MetaLeft',
+        'Meta',
+        kShift /* No kMeta here! */,
+        kLocationLeft,
+      ),
+    );
     // Only a MetaLeft down event, no synthesized MetaLeft up events.
     expect(keyDataList, hasLength(1));
     expectKeyData(
@@ -1239,8 +1273,14 @@ void testMain() {
     );
     keyDataList.clear();
 
-    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta',
-        kShift | kMeta /* Yes, kMeta here! */, kLocationLeft));
+    converter.handleEvent(
+      keyUpEvent(
+        'MetaLeft',
+        'Meta',
+        kShift | kMeta /* Yes, kMeta here! */,
+        kLocationLeft,
+      ),
+    );
     // Only a MetaLeft down event, no synthesized MetaLeft up events.
     expect(keyDataList, hasLength(1));
     expectKeyData(
@@ -1290,8 +1330,12 @@ const int kMeta = 0x8;
 // Utility functions to make code more concise.
 //
 // To add timeStamp , use syntax `..timeStamp = `.
-MockKeyboardEvent keyDownEvent(String? code, String? key,
-    [int modifiers = 0, int location = 0]) {
+MockKeyboardEvent keyDownEvent(
+  String? code,
+  String? key, [
+  int modifiers = 0,
+  int location = 0,
+]) {
   return MockKeyboardEvent(
     type: 'keydown',
     code: code,
@@ -1304,8 +1348,12 @@ MockKeyboardEvent keyDownEvent(String? code, String? key,
   );
 }
 
-MockKeyboardEvent keyUpEvent(String? code, String? key,
-    [int modifiers = 0, int location = 0]) {
+MockKeyboardEvent keyUpEvent(
+  String? code,
+  String? key, [
+  int modifiers = 0,
+  int location = 0,
+]) {
   return MockKeyboardEvent(
     type: 'keyup',
     code: code,
@@ -1318,8 +1366,12 @@ MockKeyboardEvent keyUpEvent(String? code, String? key,
   );
 }
 
-MockKeyboardEvent keyRepeatedDownEvent(String code, String key,
-    [int modifiers = 0, int location = 0]) {
+MockKeyboardEvent keyRepeatedDownEvent(
+  String code,
+  String key, [
+  int modifiers = 0,
+  int location = 0,
+]) {
   return MockKeyboardEvent(
     type: 'keydown',
     code: code,

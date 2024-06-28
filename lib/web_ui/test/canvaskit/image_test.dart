@@ -54,14 +54,16 @@ void testMain() {
       disposedImage = image;
     };
 
-    final ui.Image image1 = await _createImage()
-      ..dispose();
+    final ui.Image image1 =
+        await _createImage()
+          ..dispose();
 
     expect(onDisposeInvokedCount, 1);
     expect(disposedImage, image1);
 
-    final ui.Image image2 = await _createImage()
-      ..dispose();
+    final ui.Image image2 =
+        await _createImage()
+          ..dispose();
 
     expect(onDisposeInvokedCount, 2);
     expect(disposedImage, image2);
@@ -73,11 +75,13 @@ void testMain() {
     final List<int> cumulativeBytesLoadedInvocations = <int>[];
     final List<int> expectedTotalBytesInvocations = <int>[];
     final Uint8List result =
-        await fetchImage('/long_test_payload?length=100000&chunk=1000',
-            (int cumulativeBytesLoaded, int expectedTotalBytes) {
-      cumulativeBytesLoadedInvocations.add(cumulativeBytesLoaded);
-      expectedTotalBytesInvocations.add(expectedTotalBytes);
-    });
+        await fetchImage('/long_test_payload?length=100000&chunk=1000', (
+          int cumulativeBytesLoaded,
+          int expectedTotalBytes,
+        ) {
+          cumulativeBytesLoadedInvocations.add(cumulativeBytesLoaded);
+          expectedTotalBytesInvocations.add(expectedTotalBytes);
+        });
 
     // Check that image payload was chunked.
     expect(cumulativeBytesLoadedInvocations, hasLength(greaterThan(1)));
@@ -97,10 +101,7 @@ void testMain() {
     expect(cumulativeBytesLoadedInvocations.last, 100000);
 
     // Check the contents of the returned data.
-    expect(
-      result,
-      List<int>.generate(100000, (int i) => i & 0xFF),
-    );
+    expect(result, List<int>.generate(100000, (int i) => i & 0xFF));
   });
 }
 

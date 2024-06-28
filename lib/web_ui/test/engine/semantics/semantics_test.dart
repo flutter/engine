@@ -118,13 +118,10 @@ void _testPrimaryRoleManager() {
       ..semanticsEnabled = true;
 
     final SemanticsTester tester = SemanticsTester(owner());
-    tester.updateNode(
-      id: 0,
-      children: <SemanticsNodeUpdate>[
-        tester.updateNode(id: 372),
-        tester.updateNode(id: 599),
-      ],
-    );
+    tester.updateNode(id: 0, children: <SemanticsNodeUpdate>[
+      tester.updateNode(id: 372),
+      tester.updateNode(id: 599),
+    ]);
     tester.apply();
 
     tester.expectSemantics('''
@@ -135,13 +132,10 @@ void _testPrimaryRoleManager() {
   </sem-c>
 </sem>''');
 
-    tester.updateNode(
-      id: 0,
-      children: <SemanticsNodeUpdate>[
-        tester.updateNode(id: 372, identifier: 'test-id-123'),
-        tester.updateNode(id: 599),
-      ],
-    );
+    tester.updateNode(id: 0, children: <SemanticsNodeUpdate>[
+      tester.updateNode(id: 372, identifier: 'test-id-123'),
+      tester.updateNode(id: 599),
+    ]);
     tester.apply();
 
     tester.expectSemantics('''
@@ -152,14 +146,11 @@ void _testPrimaryRoleManager() {
   </sem-c>
 </sem>''');
 
-    tester.updateNode(
-      id: 0,
-      children: <SemanticsNodeUpdate>[
-        tester.updateNode(id: 372),
-        tester.updateNode(id: 599, identifier: 'test-id-211'),
-        tester.updateNode(id: 612, identifier: 'test-id-333'),
-      ],
-    );
+    tester.updateNode(id: 0, children: <SemanticsNodeUpdate>[
+      tester.updateNode(id: 372),
+      tester.updateNode(id: 599, identifier: 'test-id-211'),
+      tester.updateNode(id: 612, identifier: 'test-id-333'),
+    ]);
     tester.apply();
 
     tester.expectSemantics('''
@@ -306,17 +297,14 @@ void _testEngineSemanticsOwner() {
   test('places accessibility announcements in the <body> tag', () {
     final AccessibilityAnnouncements accessibilityAnnouncements =
         semantics().accessibilityAnnouncements;
-    final DomElement politeElement =
-        accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite);
-    final DomElement assertiveElement =
-        accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive);
+    final DomElement politeElement = accessibilityAnnouncements
+        .ariaLiveElementFor(Assertiveness.polite);
+    final DomElement assertiveElement = accessibilityAnnouncements
+        .ariaLiveElementFor(Assertiveness.assertive);
     final DomElement announcementHost = politeElement.parent!;
 
     // Polite and assertive elements share the same host.
-    expect(
-      assertiveElement.parent,
-      announcementHost,
-    );
+    expect(assertiveElement.parent, announcementHost);
 
     // The host is a direct child of <body>
     expect(announcementHost.parent, domDocument.body);
@@ -324,8 +312,9 @@ void _testEngineSemanticsOwner() {
 
   test('accessibilityFeatures copyWith function works', () {
     const EngineAccessibilityFeatures original = EngineAccessibilityFeatures(0);
-    EngineAccessibilityFeatures copy =
-        original.copyWith(accessibleNavigation: true);
+    EngineAccessibilityFeatures copy = original.copyWith(
+      accessibleNavigation: true,
+    );
     expect(copy.accessibleNavigation, true);
     expect(copy.boldText, false);
     expect(copy.disableAnimations, false);
@@ -402,21 +391,19 @@ void _testEngineSemanticsOwner() {
     );
     tester.apply();
 
-    expectSemanticsTree(
-      owner(),
-      '''
+    expectSemanticsTree(owner(), '''
 <sem style="filter: opacity(0%); color: rgba(0, 0, 0, 0)">
   <span>I am root</span>
-</sem>''',
-    );
+</sem>''');
 
     semantics().semanticsEnabled = false;
   });
 
-  void renderSemantics(
-      {String? label,
-      String? tooltip,
-      Set<ui.SemanticsFlag> flags = const <ui.SemanticsFlag>{}}) {
+  void renderSemantics({
+    String? label,
+    String? tooltip,
+    Set<ui.SemanticsFlag> flags = const <ui.SemanticsFlag>{},
+  }) {
     int flagValues = 0;
     for (final ui.SemanticsFlag flag in flags) {
       flagValues = flagValues | flag.index;
@@ -509,8 +496,9 @@ void _testEngineSemanticsOwner() {
 </sem>''');
 
     // Update
-    renderSemantics(
-        label: 'Hello', flags: <ui.SemanticsFlag>{ui.SemanticsFlag.isLink});
+    renderSemantics(label: 'Hello', flags: <ui.SemanticsFlag>{
+      ui.SemanticsFlag.isLink,
+    });
 
     tree = owner().debugSemanticsTree!;
     expect(tree.length, 2);
@@ -609,20 +597,21 @@ void _testEngineSemanticsOwner() {
     semantics().receiveGlobalEvent(pointerEvent);
 
     // Verify the interactions.
-    expect(
-      mockSemanticsEnabler.shouldEnableSemanticsEvents,
-      <DomEvent>[pointerEvent],
-    );
+    expect(mockSemanticsEnabler.shouldEnableSemanticsEvents, <DomEvent>[
+      pointerEvent,
+    ]);
   });
 
-  test('forwards events to framework if shouldEnableSemantics returns true',
-      () {
-    final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
-    semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
-    final DomEvent pointerEvent = createDomEvent('Event', 'pointermove');
-    mockSemanticsEnabler.shouldEnableSemanticsReturnValue = true;
-    expect(semantics().receiveGlobalEvent(pointerEvent), isTrue);
-  });
+  test(
+    'forwards events to framework if shouldEnableSemantics returns true',
+    () {
+      final MockSemanticsEnabler mockSemanticsEnabler = MockSemanticsEnabler();
+      semantics().semanticsHelper.semanticsEnabler = mockSemanticsEnabler;
+      final DomEvent pointerEvent = createDomEvent('Event', 'pointermove');
+      mockSemanticsEnabler.shouldEnableSemanticsReturnValue = true;
+      expect(semantics().receiveGlobalEvent(pointerEvent), isTrue);
+    },
+  );
 
   test('semantics owner update phases', () async {
     semantics()
@@ -637,12 +626,9 @@ void _testEngineSemanticsOwner() {
 
     void pumpSemantics({required String label}) {
       final SemanticsTester tester = SemanticsTester(owner());
-      tester.updateNode(
-        id: 0,
-        children: <SemanticsNodeUpdate>[
-          tester.updateNode(id: 1, label: label),
-        ],
-      );
+      tester.updateNode(id: 0, children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 1, label: label),
+      ]);
       tester.apply();
     }
 
@@ -668,8 +654,10 @@ void _testEngineSemanticsOwner() {
     );
 
     // Rudely replace the role manager with a mock, and trigger an update.
-    final MockRoleManager mockRoleManager =
-        MockRoleManager(PrimaryRole.generic, semanticsObject);
+    final MockRoleManager mockRoleManager = MockRoleManager(
+      PrimaryRole.generic,
+      semanticsObject,
+    );
     semanticsObject.primaryRole = mockRoleManager;
 
     pumpSemantics(label: 'World');
@@ -686,10 +674,7 @@ void _testEngineSemanticsOwner() {
   });
 }
 
-typedef MockRoleManagerLogEntry = ({
-  String method,
-  SemanticsUpdatePhase phase,
-});
+typedef MockRoleManagerLogEntry = ({String method, SemanticsUpdatePhase phase});
 
 class MockRoleManager extends PrimaryRoleManager {
   MockRoleManager(super.role, super.semanticsObject) : super.blank();
@@ -697,10 +682,7 @@ class MockRoleManager extends PrimaryRoleManager {
   final List<MockRoleManagerLogEntry> log = <MockRoleManagerLogEntry>[];
 
   void _log(String method) {
-    log.add((
-      method: method,
-      phase: semanticsObject.owner.phase,
-    ));
+    log.add((method: method, phase: semanticsObject.owner.phase));
   }
 
   @override
@@ -846,7 +828,9 @@ void _testLongestIncreasingSubsequence() {
 
   test('longest in a jagged pattern', () {
     expectLis(
-        <int>[0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5], <int>[0, 1, 3, 5, 7, 9]);
+      <int>[0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5],
+      <int>[0, 1, 3, 5, 7, 9],
+    );
   });
 
   test('fully sorted up', () {
@@ -860,10 +844,9 @@ void _testLongestIncreasingSubsequence() {
 
   test('fully sorted down', () {
     for (int count = 1; count < 100; count += 1) {
-      expectLis(
-        List<int>.generate(count, (int i) => 10 * (count - i)),
-        <int>[count - 1],
-      );
+      expectLis(List<int>.generate(count, (int i) => 10 * (count - i)), <int>[
+        count - 1,
+      ]);
     }
   });
 }
@@ -882,10 +865,7 @@ void _testText() {
     );
     owner().updateSemantics(builder.build());
 
-    expectSemanticsTree(
-      owner(),
-      '''<sem><span>plain text</span></sem>''',
-    );
+    expectSemanticsTree(owner(), '''<sem><span>plain text</span></sem>''');
 
     final SemanticsObject node = owner().debugSemanticsTree![0]!;
     expect(node.primaryRole?.role, PrimaryRole.generic);
@@ -893,12 +873,7 @@ void _testText() {
       node.primaryRole!.secondaryRoleManagers!
           .map((RoleManager m) => m.runtimeType)
           .toList(),
-      <Type>[
-        Focusable,
-        LiveRegion,
-        RouteName,
-        LabelAndValue,
-      ],
+      <Type>[Focusable, LiveRegion, RouteName, LabelAndValue],
     );
     semantics().semanticsEnabled = false;
   });
@@ -928,13 +903,7 @@ void _testText() {
       node.primaryRole!.secondaryRoleManagers!
           .map((RoleManager m) => m.runtimeType)
           .toList(),
-      <Type>[
-        Focusable,
-        LiveRegion,
-        RouteName,
-        LabelAndValue,
-        Tappable,
-      ],
+      <Type>[Focusable, LiveRegion, RouteName, LabelAndValue, Tappable],
     );
     semantics().semanticsEnabled = false;
   });
@@ -942,141 +911,124 @@ void _testText() {
 
 void _testLabels() {
   test('computeDomSemanticsLabel combines tooltip, label, value, and hint', () {
+    expect(computeDomSemanticsLabel(tooltip: 'tooltip'), 'tooltip');
+    expect(computeDomSemanticsLabel(label: 'label'), 'label');
+    expect(computeDomSemanticsLabel(value: 'value'), 'value');
+    expect(computeDomSemanticsLabel(hint: 'hint'), 'hint');
     expect(
-      computeDomSemanticsLabel(tooltip: 'tooltip'),
-      'tooltip',
+      computeDomSemanticsLabel(
+        tooltip: 'tooltip',
+        label: 'label',
+        hint: 'hint',
+        value: 'value',
+      ),
+      '''
+tooltip
+label hint value''',
     );
     expect(
-      computeDomSemanticsLabel(label: 'label'),
-      'label',
+      computeDomSemanticsLabel(
+        tooltip: 'tooltip',
+        hint: 'hint',
+        value: 'value',
+      ),
+      '''
+tooltip
+hint value''',
     );
     expect(
-      computeDomSemanticsLabel(value: 'value'),
-      'value',
+      computeDomSemanticsLabel(
+        tooltip: 'tooltip',
+        label: 'label',
+        value: 'value',
+      ),
+      '''
+tooltip
+label value''',
     );
     expect(
-      computeDomSemanticsLabel(hint: 'hint'),
-      'hint',
+      computeDomSemanticsLabel(
+        tooltip: 'tooltip',
+        label: 'label',
+        hint: 'hint',
+      ),
+      '''
+tooltip
+label hint''',
     );
-    expect(
-        computeDomSemanticsLabel(
-            tooltip: 'tooltip', label: 'label', hint: 'hint', value: 'value'),
-        '''
-tooltip
-label hint value''');
-    expect(
-        computeDomSemanticsLabel(
-            tooltip: 'tooltip', hint: 'hint', value: 'value'),
-        '''
-tooltip
-hint value''');
-    expect(
-        computeDomSemanticsLabel(
-            tooltip: 'tooltip', label: 'label', value: 'value'),
-        '''
-tooltip
-label value''');
-    expect(
-        computeDomSemanticsLabel(
-            tooltip: 'tooltip', label: 'label', hint: 'hint'),
-        '''
-tooltip
-label hint''');
   });
 
   test('computeDomSemanticsLabel collapses empty labels to null', () {
-    expect(
-      computeDomSemanticsLabel(),
-      isNull,
-    );
-    expect(
-      computeDomSemanticsLabel(tooltip: ''),
-      isNull,
-    );
-    expect(
-      computeDomSemanticsLabel(label: ''),
-      isNull,
-    );
-    expect(
-      computeDomSemanticsLabel(value: ''),
-      isNull,
-    );
-    expect(
-      computeDomSemanticsLabel(hint: ''),
-      isNull,
-    );
+    expect(computeDomSemanticsLabel(), isNull);
+    expect(computeDomSemanticsLabel(tooltip: ''), isNull);
+    expect(computeDomSemanticsLabel(label: ''), isNull);
+    expect(computeDomSemanticsLabel(value: ''), isNull);
+    expect(computeDomSemanticsLabel(hint: ''), isNull);
     expect(
       computeDomSemanticsLabel(tooltip: '', label: '', hint: '', value: ''),
       isNull,
     );
-    expect(
-      computeDomSemanticsLabel(tooltip: '', hint: '', value: ''),
-      isNull,
-    );
-    expect(
-      computeDomSemanticsLabel(tooltip: '', label: '', value: ''),
-      isNull,
-    );
-    expect(
-      computeDomSemanticsLabel(tooltip: '', label: '', hint: ''),
-      isNull,
-    );
+    expect(computeDomSemanticsLabel(tooltip: '', hint: '', value: ''), isNull);
+    expect(computeDomSemanticsLabel(tooltip: '', label: '', value: ''), isNull);
+    expect(computeDomSemanticsLabel(tooltip: '', label: '', hint: ''), isNull);
   });
 }
 
 void _testContainer() {
-  test('container node has no transform when there is no rect offset',
-      () async {
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
+  test(
+    'container node has no transform when there is no rect offset',
+    () async {
+      semantics()
+        ..debugOverrideTimestampFunction(() => _testTime)
+        ..semanticsEnabled = true;
 
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    const ui.Rect zeroOffsetRect = ui.Rect.fromLTRB(0, 0, 20, 20);
-    updateNode(
-      builder,
-      transform: Matrix4.identity().toFloat64(),
-      rect: zeroOffsetRect,
-      childrenInHitTestOrder: Int32List.fromList(<int>[1]),
-      childrenInTraversalOrder: Int32List.fromList(<int>[1]),
-    );
-    updateNode(
-      builder,
-      id: 1,
-      transform: Matrix4.identity().toFloat64(),
-      rect: zeroOffsetRect,
-    );
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      const ui.Rect zeroOffsetRect = ui.Rect.fromLTRB(0, 0, 20, 20);
+      updateNode(
+        builder,
+        transform: Matrix4.identity().toFloat64(),
+        rect: zeroOffsetRect,
+        childrenInHitTestOrder: Int32List.fromList(<int>[1]),
+        childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+      );
+      updateNode(
+        builder,
+        id: 1,
+        transform: Matrix4.identity().toFloat64(),
+        rect: zeroOffsetRect,
+      );
 
-    owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
+      owner().updateSemantics(builder.build());
+      expectSemanticsTree(owner(), '''
 <sem>
   <sem-c>
     <sem></sem>
   </sem-c>
 </sem>''');
 
-    final DomElement parentElement =
-        owner().semanticsHost.querySelector('flt-semantics')!;
-    final DomElement container =
-        owner().semanticsHost.querySelector('flt-semantics-container')!;
+      final DomElement parentElement =
+          owner().semanticsHost.querySelector('flt-semantics')!;
+      final DomElement container =
+          owner().semanticsHost.querySelector('flt-semantics-container')!;
 
-    if (isMacOrIOS) {
-      expect(parentElement.style.top, '0px');
-      expect(parentElement.style.left, '0px');
-      expect(container.style.top, '0px');
-      expect(container.style.left, '0px');
-    } else {
-      expect(parentElement.style.top, '');
-      expect(parentElement.style.left, '');
-      expect(container.style.top, '');
-      expect(container.style.left, '');
-    }
-    expect(parentElement.style.transform, '');
-    expect(parentElement.style.transformOrigin, '');
-    expect(container.style.transform, '');
-    expect(container.style.transformOrigin, '');
-    semantics().semanticsEnabled = false;
-  });
+      if (isMacOrIOS) {
+        expect(parentElement.style.top, '0px');
+        expect(parentElement.style.left, '0px');
+        expect(container.style.top, '0px');
+        expect(container.style.left, '0px');
+      } else {
+        expect(parentElement.style.top, '');
+        expect(parentElement.style.left, '');
+        expect(container.style.top, '');
+        expect(container.style.left, '');
+      }
+      expect(parentElement.style.transform, '');
+      expect(parentElement.style.transformOrigin, '');
+      expect(container.style.transform, '');
+      expect(container.style.transformOrigin, '');
+      semantics().semanticsEnabled = false;
+    },
+  );
 
   test('container node compensates for rect offset', () async {
     semantics()
@@ -1114,8 +1066,10 @@ void _testContainer() {
     expect(parentElement.style.transform, 'matrix(1, 0, 0, 1, 10, 10)');
     if (isSafari) {
       // macOS 13 returns different values than macOS 12.
-      expect(parentElement.style.transformOrigin,
-          anyOf(contains('0px 0px 0px'), contains('0px 0px')));
+      expect(
+        parentElement.style.transformOrigin,
+        anyOf(contains('0px 0px 0px'), contains('0px 0px')),
+      );
     } else {
       expect(parentElement.style.transformOrigin, '0px 0px 0px');
     }
@@ -1176,47 +1130,48 @@ void _testContainer() {
     semantics().semanticsEnabled = false;
   });
 
-  test('renders in traversal order, hit-tests in reverse z-index order',
-      () async {
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
+  test(
+    'renders in traversal order, hit-tests in reverse z-index order',
+    () async {
+      semantics()
+        ..debugOverrideTimestampFunction(() => _testTime)
+        ..semanticsEnabled = true;
 
-    // State 1: render initial tree with middle elements swapped hit-test wise
-    {
-      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-      updateNode(
-        builder,
-        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
-      );
+      // State 1: render initial tree with middle elements swapped hit-test wise
+      {
+        final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+        updateNode(
+          builder,
+          childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
+        );
 
-      for (int id = 1; id <= 4; id++) {
-        updateNode(builder, id: id);
+        for (int id = 1; id <= 4; id++) {
+          updateNode(builder, id: id);
+        }
+
+        owner().updateSemantics(builder.build());
+        expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem style="z-index: 4"></sem>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 3"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
       }
 
-      owner().updateSemantics(builder.build());
-      expectSemanticsTree(owner(), '''
-<sem>
-  <sem-c>
-    <sem style="z-index: 4"></sem>
-    <sem style="z-index: 2"></sem>
-    <sem style="z-index: 3"></sem>
-    <sem style="z-index: 1"></sem>
-  </sem-c>
-</sem>''');
-    }
-
-    // State 2: update z-index
-    {
-      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-      updateNode(
-        builder,
-        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
-      );
-      owner().updateSemantics(builder.build());
-      expectSemanticsTree(owner(), '''
+      // State 2: update z-index
+      {
+        final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+        updateNode(
+          builder,
+          childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+        );
+        owner().updateSemantics(builder.build());
+        expectSemanticsTree(owner(), '''
 <sem>
   <sem-c>
     <sem style="z-index: 4"></sem>
@@ -1225,18 +1180,18 @@ void _testContainer() {
     <sem style="z-index: 1"></sem>
   </sem-c>
 </sem>''');
-    }
+      }
 
-    // State 3: update traversal order
-    {
-      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-      updateNode(
-        builder,
-        childrenInTraversalOrder: Int32List.fromList(<int>[4, 2, 3, 1]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
-      );
-      owner().updateSemantics(builder.build());
-      expectSemanticsTree(owner(), '''
+      // State 3: update traversal order
+      {
+        final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+        updateNode(
+          builder,
+          childrenInTraversalOrder: Int32List.fromList(<int>[4, 2, 3, 1]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3, 4]),
+        );
+        owner().updateSemantics(builder.build());
+        expectSemanticsTree(owner(), '''
 <sem>
   <sem-c>
     <sem style="z-index: 1"></sem>
@@ -1245,18 +1200,18 @@ void _testContainer() {
     <sem style="z-index: 4"></sem>
   </sem-c>
 </sem>''');
-    }
+      }
 
-    // State 3: update both orders
-    {
-      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-      updateNode(
-        builder,
-        childrenInTraversalOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 1, 2]),
-      );
-      owner().updateSemantics(builder.build());
-      expectSemanticsTree(owner(), '''
+      // State 3: update both orders
+      {
+        final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+        updateNode(
+          builder,
+          childrenInTraversalOrder: Int32List.fromList(<int>[1, 3, 2, 4]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 1, 2]),
+        );
+        owner().updateSemantics(builder.build());
+        expectSemanticsTree(owner(), '''
 <sem>
   <sem-c>
     <sem style="z-index: 2"></sem>
@@ -1265,83 +1220,86 @@ void _testContainer() {
     <sem style="z-index: 3"></sem>
   </sem-c>
 </sem>''');
-    }
+      }
 
-    semantics().semanticsEnabled = false;
-  });
+      semantics().semanticsEnabled = false;
+    },
+  );
 
   test(
-      'container nodes are transparent and leaf children are opaque hit-test wise',
-      () async {
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
+    'container nodes are transparent and leaf children are opaque hit-test wise',
+    () async {
+      semantics()
+        ..debugOverrideTimestampFunction(() => _testTime)
+        ..semanticsEnabled = true;
 
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
-      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
-      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
-    );
-    updateNode(builder, id: 1);
-    updateNode(builder, id: 2);
-
-    owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<sem>
-  <sem-c>
-    <sem style="z-index: 2"></sem>
-    <sem style="z-index: 1"></sem>
-  </sem-c>
-</sem>''');
-
-    final DomElement root =
-        owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
-    expect(root.style.pointerEvents, 'none');
-
-    final DomElement child1 =
-        owner().semanticsHost.querySelector('#flt-semantic-node-1')!;
-    expect(child1.style.pointerEvents, 'all');
-
-    final DomElement child2 =
-        owner().semanticsHost.querySelector('#flt-semantic-node-2')!;
-    expect(child2.style.pointerEvents, 'all');
-
-    semantics().semanticsEnabled = false;
-  });
-
-  test('descendant nodes are removed from the node map, unless reparented',
-      () async {
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
-
-    {
       final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
       updateNode(
         builder,
         childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
         childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
       );
-      updateNode(
-        builder,
-        id: 1,
-        childrenInTraversalOrder: Int32List.fromList(<int>[3, 4]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4]),
-      );
-      updateNode(
-        builder,
-        id: 2,
-        childrenInTraversalOrder: Int32List.fromList(<int>[5, 6]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[5, 6]),
-      );
-      updateNode(builder, id: 3);
-      updateNode(builder, id: 4);
-      updateNode(builder, id: 5);
-      updateNode(builder, id: 6);
+      updateNode(builder, id: 1);
+      updateNode(builder, id: 2);
 
       owner().updateSemantics(builder.build());
       expectSemanticsTree(owner(), '''
+<sem>
+  <sem-c>
+    <sem style="z-index: 2"></sem>
+    <sem style="z-index: 1"></sem>
+  </sem-c>
+</sem>''');
+
+      final DomElement root =
+          owner().semanticsHost.querySelector('#flt-semantic-node-0')!;
+      expect(root.style.pointerEvents, 'none');
+
+      final DomElement child1 =
+          owner().semanticsHost.querySelector('#flt-semantic-node-1')!;
+      expect(child1.style.pointerEvents, 'all');
+
+      final DomElement child2 =
+          owner().semanticsHost.querySelector('#flt-semantic-node-2')!;
+      expect(child2.style.pointerEvents, 'all');
+
+      semantics().semanticsEnabled = false;
+    },
+  );
+
+  test(
+    'descendant nodes are removed from the node map, unless reparented',
+    () async {
+      semantics()
+        ..debugOverrideTimestampFunction(() => _testTime)
+        ..semanticsEnabled = true;
+
+      {
+        final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+        updateNode(
+          builder,
+          childrenInTraversalOrder: Int32List.fromList(<int>[1, 2]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[1, 2]),
+        );
+        updateNode(
+          builder,
+          id: 1,
+          childrenInTraversalOrder: Int32List.fromList(<int>[3, 4]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[3, 4]),
+        );
+        updateNode(
+          builder,
+          id: 2,
+          childrenInTraversalOrder: Int32List.fromList(<int>[5, 6]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[5, 6]),
+        );
+        updateNode(builder, id: 3);
+        updateNode(builder, id: 4);
+        updateNode(builder, id: 5);
+        updateNode(builder, id: 6);
+
+        owner().updateSemantics(builder.build());
+        expectSemanticsTree(owner(), '''
   <sem>
     <sem-c>
       <sem style="z-index: 2">
@@ -1359,27 +1317,29 @@ void _testContainer() {
     </sem-c>
   </sem>''');
 
-      expect(owner().debugSemanticsTree!.keys.toList(),
-          unorderedEquals(<int>[0, 1, 2, 3, 4, 5, 6]));
-    }
+        expect(
+          owner().debugSemanticsTree!.keys.toList(),
+          unorderedEquals(<int>[0, 1, 2, 3, 4, 5, 6]),
+        );
+      }
 
-    // Remove node #2 => expect nodes #2 and #5 to be removed and #6 reparented.
-    {
-      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-      updateNode(
-        builder,
-        childrenInTraversalOrder: Int32List.fromList(<int>[1]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[1]),
-      );
-      updateNode(
-        builder,
-        id: 1,
-        childrenInTraversalOrder: Int32List.fromList(<int>[3, 4, 6]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 6]),
-      );
+      // Remove node #2 => expect nodes #2 and #5 to be removed and #6 reparented.
+      {
+        final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+        updateNode(
+          builder,
+          childrenInTraversalOrder: Int32List.fromList(<int>[1]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[1]),
+        );
+        updateNode(
+          builder,
+          id: 1,
+          childrenInTraversalOrder: Int32List.fromList(<int>[3, 4, 6]),
+          childrenInHitTestOrder: Int32List.fromList(<int>[3, 4, 6]),
+        );
 
-      owner().updateSemantics(builder.build());
-      expectSemanticsTree(owner(), '''
+        owner().updateSemantics(builder.build());
+        expectSemanticsTree(owner(), '''
   <sem>
     <sem-c>
       <sem style="z-index: 2">
@@ -1392,12 +1352,15 @@ void _testContainer() {
     </sem-c>
   </sem>''');
 
-      expect(owner().debugSemanticsTree!.keys.toList(),
-          unorderedEquals(<int>[0, 1, 3, 4, 6]));
-    }
+        expect(
+          owner().debugSemanticsTree!.keys.toList(),
+          unorderedEquals(<int>[0, 1, 3, 4, 6]),
+        );
+      }
 
-    semantics().semanticsEnabled = false;
-  });
+      semantics().semanticsEnabled = false;
+    },
+  );
 }
 
 void _testVerticalScrolling() {
@@ -1469,8 +1432,9 @@ void _testVerticalScrolling() {
     Future<ui.SemanticsActionEvent> captureSemanticsEvent() {
       final Completer<ui.SemanticsActionEvent> completer =
           Completer<ui.SemanticsActionEvent>();
-      ui.PlatformDispatcher.instance.onSemanticsActionEvent =
-          (ui.SemanticsActionEvent event) {
+      ui.PlatformDispatcher.instance.onSemanticsActionEvent = (
+        ui.SemanticsActionEvent event,
+      ) {
         completer.complete(event);
       };
       return completer.future;
@@ -1487,7 +1451,8 @@ void _testVerticalScrolling() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      actions: 0 |
+      actions:
+          0 |
           ui.SemanticsAction.scrollUp.index |
           ui.SemanticsAction.scrollDown.index,
       transform: Matrix4.identity().toFloat64(),
@@ -1623,8 +1588,9 @@ void _testHorizontalScrolling() {
     Future<ui.SemanticsActionEvent> captureSemanticsEvent() {
       final Completer<ui.SemanticsActionEvent> completer =
           Completer<ui.SemanticsActionEvent>();
-      ui.PlatformDispatcher.instance.onSemanticsActionEvent =
-          (ui.SemanticsActionEvent event) {
+      ui.PlatformDispatcher.instance.onSemanticsActionEvent = (
+        ui.SemanticsActionEvent event,
+      ) {
         completer.complete(event);
       };
       return completer.future;
@@ -1641,7 +1607,8 @@ void _testHorizontalScrolling() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      actions: 0 |
+      actions:
+          0 |
           ui.SemanticsAction.scrollLeft.index |
           ui.SemanticsAction.scrollRight.index,
       transform: Matrix4.identity().toFloat64(),
@@ -1815,7 +1782,8 @@ void _testIncrementables() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      actions: 0 |
+      actions:
+          0 |
           ui.SemanticsAction.decrease.index |
           ui.SemanticsAction.increase.index,
       value: 'd',
@@ -1856,8 +1824,9 @@ void _testIncrementables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -1917,10 +1886,7 @@ void _testTextField() {
     //                test was a false positive. We should revise this test and
     //                make sure it tests the right things:
     //                https://github.com/flutter/flutter/issues/147200
-    expect(
-      (node.element as DomHTMLInputElement).value,
-      isNull,
-    );
+    expect((node.element as DomHTMLInputElement).value, isNull);
 
     expect(node.primaryRole?.role, PrimaryRole.textField);
     expect(
@@ -1934,42 +1900,50 @@ void _testTextField() {
 
   // TODO(yjbanov): this test will need to be adjusted for Safari when we add
   //                Safari testing.
-  test('sends a focus action when text field is activated', () async {
-    final SemanticsActionLogger logger = SemanticsActionLogger();
-    semantics()
-      ..debugOverrideTimestampFunction(() => _testTime)
-      ..semanticsEnabled = true;
+  test(
+    'sends a focus action when text field is activated',
+    () async {
+      final SemanticsActionLogger logger = SemanticsActionLogger();
+      semantics()
+        ..debugOverrideTimestampFunction(() => _testTime)
+        ..semanticsEnabled = true;
 
-    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
-    updateNode(
-      builder,
-      actions: 0 | ui.SemanticsAction.didGainAccessibilityFocus.index,
-      flags: 0 | ui.SemanticsFlag.isTextField.index,
-      value: 'hello',
-      transform: Matrix4.identity().toFloat64(),
-      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-    );
+      final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+      updateNode(
+        builder,
+        actions: 0 | ui.SemanticsAction.didGainAccessibilityFocus.index,
+        flags: 0 | ui.SemanticsFlag.isTextField.index,
+        value: 'hello',
+        transform: Matrix4.identity().toFloat64(),
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
 
-    owner().updateSemantics(builder.build());
+      owner().updateSemantics(builder.build());
 
-    final DomElement textField = owner()
-        .semanticsHost
-        .querySelector('input[data-semantics-role="text-field"]')!;
+      final DomElement textField =
+          owner().semanticsHost.querySelector(
+            'input[data-semantics-role="text-field"]',
+          )!;
 
-    expect(
-        owner().semanticsHost.ownerDocument?.activeElement, isNot(textField));
+      expect(
+        owner().semanticsHost.ownerDocument?.activeElement,
+        isNot(textField),
+      );
 
-    textField.focus();
+      textField.focus();
 
-    expect(owner().semanticsHost.ownerDocument?.activeElement, textField);
-    expect(await logger.idLog.first, 0);
-    expect(await logger.actionLog.first,
-        ui.SemanticsAction.didGainAccessibilityFocus);
+      expect(owner().semanticsHost.ownerDocument?.activeElement, textField);
+      expect(await logger.idLog.first, 0);
+      expect(
+        await logger.actionLog.first,
+        ui.SemanticsAction.didGainAccessibilityFocus,
+      );
 
-    semantics().semanticsEnabled = false;
-  }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
-      // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
-      skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.blink);
+      semantics().semanticsEnabled = false;
+    }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638
+    // TODO(yjbanov): https://github.com/flutter/flutter/issues/50590
+    skip: ui_web.browser.browserEngine != ui_web.BrowserEngine.blink,
+  );
 }
 
 void _testCheckables() {
@@ -1983,7 +1957,8 @@ void _testCheckables() {
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
       label: 'test label',
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasToggledState.index |
@@ -2018,7 +1993,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.hasToggledState.index |
           ui.SemanticsFlag.isToggled.index |
           ui.SemanticsFlag.hasEnabledState.index,
@@ -2043,7 +2019,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.hasToggledState.index |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index,
@@ -2068,7 +2045,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasCheckedState.index |
@@ -2094,7 +2072,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.hasCheckedState.index |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.isChecked.index,
@@ -2119,7 +2098,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.hasCheckedState.index |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index,
@@ -2144,7 +2124,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasCheckedState.index |
@@ -2171,7 +2152,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasCheckedState.index |
           ui.SemanticsFlag.isInMutuallyExclusiveGroup.index |
@@ -2197,7 +2179,8 @@ void _testCheckables() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.isEnabled.index |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.hasCheckedState.index |
@@ -2240,8 +2223,9 @@ void _testCheckables() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -2317,7 +2301,8 @@ void _testTappable() {
     updateNode(
       builder,
       actions: 0 | ui.SemanticsAction.tap.index,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.hasEnabledState.index |
           ui.SemanticsFlag.isButton.index,
       transform: Matrix4.identity().toFloat64(),
@@ -2352,13 +2337,12 @@ void _testTappable() {
 
     updateTappable(enabled: false);
     expectSemanticsTree(
-        owner(), '<sem role="button" aria-disabled="true"></sem>');
+      owner(),
+      '<sem role="button" aria-disabled="true"></sem>',
+    );
 
     updateTappable(enabled: true);
-    expectSemanticsTree(
-      owner(),
-      '<sem role="button" flt-tappable></sem>',
-    );
+    expectSemanticsTree(owner(), '<sem role="button" flt-tappable></sem>');
 
     updateTappable(enabled: false);
     expectSemanticsTree(
@@ -2367,10 +2351,7 @@ void _testTappable() {
     );
 
     updateTappable(enabled: true);
-    expectSemanticsTree(
-      owner(),
-      '<sem role="button" flt-tappable></sem>',
-    );
+    expectSemanticsTree(owner(), '<sem role="button" flt-tappable></sem>');
 
     semantics().semanticsEnabled = false;
   });
@@ -2423,8 +2404,9 @@ void _testTappable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -2460,8 +2442,9 @@ void _testTappable() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -2501,10 +2484,12 @@ void _testTappable() {
       final DomElement element = tester.getSemanticsObject(0).element;
       final DomRect rect = element.getBoundingClientRect();
 
-      element.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
-        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
-        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
-      }));
+      element.dispatchEvent(
+        createDomMouseEvent('click', <Object?, Object?>{
+          'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+          'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+        }),
+      );
 
       expect(capturedActions, <CapturedAction>[
         (0, ui.SemanticsAction.tap, null),
@@ -2517,11 +2502,13 @@ void _testTappable() {
       final DomElement element = tester.getSemanticsObject(1).element;
       final DomRect rect = element.getBoundingClientRect();
 
-      element.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
-        'bubbles': true,
-        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
-        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
-      }));
+      element.dispatchEvent(
+        createDomMouseEvent('click', <Object?, Object?>{
+          'bubbles': true,
+          'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+          'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+        }),
+      );
 
       // The click on the inner element should not propagate to the parent to
       // avoid sending a second SemanticsAction.tap action to the framework.
@@ -2605,10 +2592,7 @@ void _testImage() {
     );
 
     owner().updateSemantics(builder.build());
-    expectSemanticsTree(
-      owner(),
-      '<sem role="img"></sem>',
-    );
+    expectSemanticsTree(owner(), '<sem role="img"></sem>');
 
     semantics().semanticsEnabled = false;
   });
@@ -2658,13 +2642,15 @@ class MockAccessibilityAnnouncements implements AccessibilityAnnouncements {
   @override
   DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
     throw UnsupportedError(
-        'ariaLiveElementFor is not supported in MockAccessibilityAnnouncements');
+      'ariaLiveElementFor is not supported in MockAccessibilityAnnouncements',
+    );
   }
 
   @override
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
     throw UnsupportedError(
-        'handleMessage is not supported in MockAccessibilityAnnouncements!');
+      'handleMessage is not supported in MockAccessibilityAnnouncements!',
+    );
   }
 }
 
@@ -2681,7 +2667,8 @@ void _testLiveRegion() {
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
     LiveRegion.debugOverrideAccessibilityAnnouncements(
-        mockAccessibilityAnnouncements);
+      mockAccessibilityAnnouncements,
+    );
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2705,7 +2692,8 @@ void _testLiveRegion() {
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
     LiveRegion.debugOverrideAccessibilityAnnouncements(
-        mockAccessibilityAnnouncements);
+      mockAccessibilityAnnouncements,
+    );
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2728,7 +2716,8 @@ void _testLiveRegion() {
     final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
         MockAccessibilityAnnouncements();
     LiveRegion.debugOverrideAccessibilityAnnouncements(
-        mockAccessibilityAnnouncements);
+      mockAccessibilityAnnouncements,
+    );
 
     ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -2771,10 +2760,7 @@ void _testPlatformView() {
         rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
       );
       owner().updateSemantics(builder.build());
-      expectSemanticsTree(
-        owner(),
-        '<sem aria-owns="flt-pv-5"></sem>',
-      );
+      expectSemanticsTree(owner(), '<sem aria-owns="flt-pv-5"></sem>');
     }
 
     // Update.
@@ -2786,10 +2772,7 @@ void _testPlatformView() {
         rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
       );
       owner().updateSemantics(builder.build());
-      expectSemanticsTree(
-        owner(),
-        '<sem aria-owns="flt-pv-42"></sem>',
-      );
+      expectSemanticsTree(owner(), '<sem aria-owns="flt-pv-42"></sem>');
     }
 
     semantics().semanticsEnabled = false;
@@ -2808,10 +2791,7 @@ void _testPlatformView() {
     );
     owner().updateSemantics(builder.build());
 
-    expectSemanticsTree(
-      owner(),
-      '<sem aria-owns="flt-pv-5"></sem>',
-    );
+    expectSemanticsTree(owner(), '<sem aria-owns="flt-pv-5"></sem>');
     final DomElement element =
         owner().semanticsHost.querySelector('flt-semantics')!;
     expect(element.style.pointerEvents, 'none');
@@ -2850,10 +2830,11 @@ void _testPlatformView() {
 
     ui_web.platformViewRegistry.registerViewFactory(
       'test-platform-view',
-      (int viewId) => createDomHTMLDivElement()
-        ..id = 'view-0'
-        ..style.width = '100%'
-        ..style.height = '100%',
+      (int viewId) =>
+          createDomHTMLDivElement()
+            ..id = 'view-0'
+            ..style.width = '100%'
+            ..style.height = '100%',
     );
     await createPlatformView(0, 'test-platform-view');
 
@@ -2868,17 +2849,16 @@ void _testPlatformView() {
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     final double dpr = EngineFlutterDisplay.instance.devicePixelRatio;
-    updateNode(builder,
-        rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
-        childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
-        childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
-        transform:
-            Float64List.fromList(Matrix4.diagonal3Values(dpr, dpr, 1).storage));
     updateNode(
       builder,
-      id: 1,
-      rect: const ui.Rect.fromLTRB(0, 0, 20, 25),
+      rect: const ui.Rect.fromLTRB(0, 0, 20, 60),
+      childrenInTraversalOrder: Int32List.fromList(<int>[1, 2, 3]),
+      childrenInHitTestOrder: Int32List.fromList(<int>[1, 2, 3]),
+      transform: Float64List.fromList(
+        Matrix4.diagonal3Values(dpr, dpr, 1).storage,
+      ),
     );
+    updateNode(builder, id: 1, rect: const ui.Rect.fromLTRB(0, 0, 20, 25));
     updateNode(
       builder,
       id: 2,
@@ -2886,11 +2866,7 @@ void _testPlatformView() {
       rect: const ui.Rect.fromLTRB(0, 15, 20, 45),
       platformViewId: 0,
     );
-    updateNode(
-      builder,
-      id: 3,
-      rect: const ui.Rect.fromLTRB(0, 35, 20, 60),
-    );
+    updateNode(builder, id: 3, rect: const ui.Rect.fromLTRB(0, 35, 20, 60));
 
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
@@ -3016,7 +2992,8 @@ void _testDialog() {
     updateNode(
       builder,
       label: 'this is a dialog label',
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.scopesRoute.index |
           ui.SemanticsFlag.namesRoute.index,
       transform: Matrix4.identity().toFloat64(),
@@ -3055,7 +3032,8 @@ void _testDialog() {
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
       builder,
-      flags: 0 |
+      flags:
+          0 |
           ui.SemanticsFlag.scopesRoute.index |
           ui.SemanticsFlag.namesRoute.index,
       transform: Matrix4.identity().toFloat64(),
@@ -3071,12 +3049,9 @@ void _testDialog() {
     );
 
     owner().updateSemantics(builder.build());
-    expect(
-      warnings,
-      <String>[
-        'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
-      ],
-    );
+    expect(warnings, <String>[
+      'Semantic node 0 had both scopesRoute and namesRoute set, indicating a self-labelled dialog, but it is missing the label. A dialog should be labelled either by setting namesRoute on itself and providing a label, or by containing a child node with namesRoute that can describe it with its content.',
+    ]);
 
     // But still sets the dialog role.
     expectSemanticsTree(owner(), '''
@@ -3103,16 +3078,9 @@ void _testDialog() {
         scopesRoute: true,
         transform: Matrix4.identity().toFloat64(),
         children: <SemanticsNodeUpdate>[
-          tester.updateNode(
-            id: 1,
-            children: <SemanticsNodeUpdate>[
-              tester.updateNode(
-                id: 2,
-                namesRoute: true,
-                label: label,
-              ),
-            ],
-          ),
+          tester.updateNode(id: 1, children: <SemanticsNodeUpdate>[
+            tester.updateNode(id: 2, namesRoute: true, label: label),
+          ]),
         ],
       );
       tester.apply();
@@ -3192,16 +3160,9 @@ void _testDialog() {
       id: 0,
       transform: Matrix4.identity().toFloat64(),
       children: <SemanticsNodeUpdate>[
-        tester.updateNode(
-          id: 1,
-          children: <SemanticsNodeUpdate>[
-            tester.updateNode(
-              id: 2,
-              namesRoute: true,
-              label: 'Hello',
-            ),
-          ],
-        ),
+        tester.updateNode(id: 1, children: <SemanticsNodeUpdate>[
+          tester.updateNode(id: 2, namesRoute: true, label: 'Hello'),
+        ]),
       ],
     );
     tester.apply();
@@ -3239,8 +3200,9 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3283,12 +3245,9 @@ void _testDialog() {
     );
     tester.apply();
 
-    expect(
-      capturedActions,
-      <CapturedAction>[
-        (2, ui.SemanticsAction.didGainAccessibilityFocus, null),
-      ],
-    );
+    expect(capturedActions, <CapturedAction>[
+      (2, ui.SemanticsAction.didGainAccessibilityFocus, null),
+    ]);
 
     semantics().semanticsEnabled = false;
   });
@@ -3303,8 +3262,9 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3314,44 +3274,38 @@ void _testDialog() {
       scopesRoute: true,
       transform: Matrix4.identity().toFloat64(),
       children: <SemanticsNodeUpdate>[
-        tester.updateNode(
-          id: 1,
-          children: <SemanticsNodeUpdate>[
-            tester.updateNode(
-              id: 2,
-              label: 'Button 1',
-              hasTap: true,
-              hasEnabledState: true,
-              isEnabled: true,
-              isButton: true,
-              isFocusable: true,
-              isFocused: false,
-              rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-            ),
-            tester.updateNode(
-              id: 3,
-              label: 'Button 2',
-              hasTap: true,
-              hasEnabledState: true,
-              isEnabled: true,
-              isButton: true,
-              isFocusable: true,
-              // Asked for focus explicitly.
-              isFocused: true,
-              rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-            ),
-          ],
-        ),
+        tester.updateNode(id: 1, children: <SemanticsNodeUpdate>[
+          tester.updateNode(
+            id: 2,
+            label: 'Button 1',
+            hasTap: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            isButton: true,
+            isFocusable: true,
+            isFocused: false,
+            rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+          ),
+          tester.updateNode(
+            id: 3,
+            label: 'Button 2',
+            hasTap: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            isButton: true,
+            isFocusable: true,
+            // Asked for focus explicitly.
+            isFocused: true,
+            rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+          ),
+        ]),
       ],
     );
     tester.apply();
 
-    expect(
-      capturedActions,
-      <CapturedAction>[
-        (3, ui.SemanticsAction.didGainAccessibilityFocus, null),
-      ],
-    );
+    expect(capturedActions, <CapturedAction>[
+      (3, ui.SemanticsAction.didGainAccessibilityFocus, null),
+    ]);
 
     semantics().semanticsEnabled = false;
   });
@@ -3365,8 +3319,9 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3376,27 +3331,24 @@ void _testDialog() {
       scopesRoute: true,
       transform: Matrix4.identity().toFloat64(),
       children: <SemanticsNodeUpdate>[
-        tester.updateNode(
-          id: 1,
-          children: <SemanticsNodeUpdate>[
-            tester.updateNode(
-              id: 2,
-              label: 'Heading',
-              rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-            ),
-            tester.updateNode(
-              id: 3,
-              label: 'Click me!',
-              hasTap: true,
-              hasEnabledState: true,
-              isEnabled: true,
-              isButton: true,
-              isFocusable: true,
-              isFocused: false,
-              rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
-            ),
-          ],
-        ),
+        tester.updateNode(id: 1, children: <SemanticsNodeUpdate>[
+          tester.updateNode(
+            id: 2,
+            label: 'Heading',
+            rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+          ),
+          tester.updateNode(
+            id: 3,
+            label: 'Click me!',
+            hasTap: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            isButton: true,
+            isFocusable: true,
+            isFocused: false,
+            rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+          ),
+        ]),
       ],
     );
     tester.apply();
@@ -3437,8 +3389,9 @@ void _testDialog() {
       ..semanticsEnabled = true;
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
 
@@ -3479,14 +3432,16 @@ void _testFocusable() {
     }
 
     final List<CapturedAction> capturedActions = <CapturedAction>[];
-    EnginePlatformDispatcher.instance.onSemanticsActionEvent =
-        (ui.SemanticsActionEvent event) {
+    EnginePlatformDispatcher.instance.onSemanticsActionEvent = (
+      ui.SemanticsActionEvent event,
+    ) {
       capturedActions.add((event.nodeId, event.type, event.arguments));
     };
     expect(capturedActions, isEmpty);
 
-    final AccessibilityFocusManager manager =
-        AccessibilityFocusManager(owner());
+    final AccessibilityFocusManager manager = AccessibilityFocusManager(
+      owner(),
+    );
     expect(capturedActions, isEmpty);
 
     final DomElement element = createDomElement('test-element');
@@ -3536,16 +3491,18 @@ void _testFocusable() {
     pumpSemantics(); // triggers post-update callbacks
     expect(domDocument.activeElement, element);
     expect(
-        reason: 'Nothing should be sent to the framework on focus re-request.',
-        capturedActions,
-        isEmpty);
+      reason: 'Nothing should be sent to the framework on focus re-request.',
+      capturedActions,
+      isEmpty,
+    );
     capturedActions.clear();
 
     // Stop managing
     manager.stopManaging();
     pumpSemantics(); // triggers post-update callbacks
     expect(
-      reason: 'There should be no notification to the framework because the '
+      reason:
+          'There should be no notification to the framework because the '
           'framework should already know. Otherwise, it would not have '
           'asked to stop managing the node.',
       capturedActions,
@@ -3601,14 +3558,8 @@ void _testFocusable() {
 
     final SemanticsObject node = owner().debugSemanticsTree![1]!;
     expect(node.isFocusable, isTrue);
-    expect(
-      node.primaryRole?.role,
-      PrimaryRole.generic,
-    );
-    expect(
-      node.primaryRole?.debugSecondaryRoles,
-      contains(Role.focusable),
-    );
+    expect(node.primaryRole?.role, PrimaryRole.generic);
+    expect(node.primaryRole?.debugSecondaryRoles, contains(Role.focusable));
 
     final DomElement element = node.element;
     expect(domDocument.activeElement, isNot(element));
@@ -3744,13 +3695,9 @@ Future<void> createPlatformView(int id, String viewType) {
   final Completer<void> completer = Completer<void>();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
-    codec.encodeMethodCall(MethodCall(
-      'create',
-      <String, dynamic>{
-        'id': id,
-        'viewType': viewType,
-      },
-    )),
+    codec.encodeMethodCall(
+      MethodCall('create', <String, dynamic>{'id': id, 'viewType': viewType}),
+    ),
     (dynamic _) => completer.complete(),
   );
   return completer.future;

@@ -53,11 +53,17 @@ abstract class EngineGradient implements ui.Gradient {
 
   /// Creates a fill style to be used in painting.
   Object createPaintStyle(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density);
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  );
 
   /// Creates a CanvasImageSource to paint gradient.
   Object createImageBitmap(
-      ui.Rect? shaderBounds, double density, bool createDataUrl);
+    ui.Rect? shaderBounds,
+    double density,
+    bool createDataUrl,
+  );
 
   @override
   bool debugDisposed = false;
@@ -70,16 +76,25 @@ abstract class EngineGradient implements ui.Gradient {
 }
 
 class GradientSweep extends EngineGradient {
-  GradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
-      this.startAngle, this.endAngle, this.matrix4)
-      : assert(offsetIsValid(center)),
-        super._() {
+  GradientSweep(
+    this.center,
+    this.colors,
+    this.colorStops,
+    this.tileMode,
+    this.startAngle,
+    this.endAngle,
+    this.matrix4,
+  ) : assert(offsetIsValid(center)),
+      super._() {
     validateColorStops(colors, colorStops);
   }
 
   @override
   Object createImageBitmap(
-      ui.Rect? shaderBounds, double density, bool createDataUrl) {
+    ui.Rect? shaderBounds,
+    double density,
+    bool createDataUrl,
+  ) {
     assert(shaderBounds != null);
     final int widthInPixels = shaderBounds!.width.ceil();
     final int heightInPixels = shaderBounds.height.ceil();
@@ -87,37 +102,51 @@ class GradientSweep extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final GlContext gl =
-        _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
+    final GlContext gl = _sharedCanvas.checkOutContext(
+      widthInPixels,
+      heightInPixels,
+    );
     gl.setViewportSize(widthInPixels, heightInPixels);
 
-    final NormalizedGradient normalizedGradient =
-        NormalizedGradient(colors, stops: colorStops);
+    final NormalizedGradient normalizedGradient = NormalizedGradient(
+      colors,
+      stops: colorStops,
+    );
 
     final GlProgram glProgram = gl.cacheProgram(
-        VertexShaders.writeBaseVertexShader(),
-        _createSweepFragmentShader(normalizedGradient, tileMode));
+      VertexShaders.writeBaseVertexShader(),
+      _createSweepFragmentShader(normalizedGradient, tileMode),
+    );
     gl.useProgram(glProgram);
 
-    final Object tileOffset =
-        gl.getUniformLocation(glProgram.program, 'u_tile_offset');
+    final Object tileOffset = gl.getUniformLocation(
+      glProgram.program,
+      'u_tile_offset',
+    );
     final double centerX =
         (center.dx - shaderBounds.left) / (shaderBounds.width);
     final double centerY =
         (center.dy - shaderBounds.top) / (shaderBounds.height);
-    gl.setUniform2f(tileOffset, 2 * (shaderBounds.width * (centerX - 0.5)),
-        2 * (shaderBounds.height * (0.5 - centerY)));
-    final Object angleRange =
-        gl.getUniformLocation(glProgram.program, 'angle_range');
+    gl.setUniform2f(
+      tileOffset,
+      2 * (shaderBounds.width * (centerX - 0.5)),
+      2 * (shaderBounds.height * (0.5 - centerY)),
+    );
+    final Object angleRange = gl.getUniformLocation(
+      glProgram.program,
+      'angle_range',
+    );
     gl.setUniform2f(angleRange, startAngle, endAngle);
     normalizedGradient.setupUniforms(gl, glProgram);
 
-    final Object gradientMatrix =
-        gl.getUniformLocation(glProgram.program, 'm_gradient');
+    final Object gradientMatrix = gl.getUniformLocation(
+      glProgram.program,
+      'm_gradient',
+    );
     final Matrix4 gradientTransform = Matrix4.identity();
     if (matrix4 != null) {
-      final Matrix4 m4 = Matrix4.zero()
-        ..copyInverse(Matrix4.fromFloat32List(matrix4!));
+      final Matrix4 m4 =
+          Matrix4.zero()..copyInverse(Matrix4.fromFloat32List(matrix4!));
       gradientTransform.translate(-center.dx, -center.dy);
       gradientTransform.multiply(m4);
       gradientTransform.translate(center.dx, center.dy);
@@ -127,20 +156,22 @@ class GradientSweep extends EngineGradient {
     final Object result = () {
       if (createDataUrl) {
         return glRenderer!.drawRectToImageUrl(
-            ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-            gl,
-            glProgram,
-            normalizedGradient,
-            widthInPixels,
-            heightInPixels);
+          ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+          gl,
+          glProgram,
+          normalizedGradient,
+          widthInPixels,
+          heightInPixels,
+        );
       } else {
         return glRenderer!.drawRect(
-            ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-            gl,
-            glProgram,
-            normalizedGradient,
-            widthInPixels,
-            heightInPixels)!;
+          ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+          gl,
+          glProgram,
+          normalizedGradient,
+          widthInPixels,
+          heightInPixels,
+        )!;
       }
     }();
     _sharedCanvas.checkInContext();
@@ -149,13 +180,18 @@ class GradientSweep extends EngineGradient {
 
   @override
   Object createPaintStyle(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
 
   String _createSweepFragmentShader(
-      NormalizedGradient gradient, ui.TileMode tileMode) {
+    NormalizedGradient gradient,
+    ui.TileMode tileMode,
+  ) {
     final ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec4, name: 'v_color');
@@ -168,15 +204,21 @@ class GradientSweep extends EngineGradient {
     // Sweep gradient
     method.addStatement('vec2 center = 0.5 * (u_resolution + u_tile_offset);');
     method.addStatement(
-        'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);');
+      'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);',
+    );
     method.addStatement(
-        'float angle = atan(-localCoord.y, -localCoord.x) + ${math.pi};');
+      'float angle = atan(-localCoord.y, -localCoord.x) + ${math.pi};',
+    );
     method.addStatement('float sweep = angle_range.y - angle_range.x;');
     method.addStatement('angle = (angle - angle_range.x) / sweep;');
     method.addStatement('float st = angle;');
 
-    final String probeName =
-        _writeSharedGradientShader(builder, method, gradient, tileMode);
+    final String probeName = _writeSharedGradientShader(
+      builder,
+      method,
+      gradient,
+      tileMode,
+    );
     method.addStatement('${fragColor.name} = $probeName * scale + bias;');
 
     final String shader = builder.build();
@@ -200,10 +242,10 @@ class GradientLinear extends EngineGradient {
     this.colorStops,
     this.tileMode,
     Float32List? matrix,
-  )   : assert(offsetIsValid(from)),
-        assert(offsetIsValid(to)),
-        matrix4 = matrix == null ? null : FastMatrix32(matrix),
-        super._() {
+  ) : assert(offsetIsValid(from)),
+      assert(offsetIsValid(to)),
+      matrix4 = matrix == null ? null : FastMatrix32(matrix),
+      super._() {
     // ignore: prefer_asserts_in_initializer_lists
     assert(() {
       validateColorStops(colors, colorStops);
@@ -220,7 +262,10 @@ class GradientLinear extends EngineGradient {
 
   @override
   Object createPaintStyle(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     if (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) {
       return _createCanvasGradient(ctx, shaderBounds, density);
     } else {
@@ -229,7 +274,10 @@ class GradientLinear extends EngineGradient {
   }
 
   DomCanvasGradient _createCanvasGradient(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     final FastMatrix32? matrix4 = this.matrix4;
     DomCanvasGradient gradient;
     final double offsetX = shaderBounds!.left;
@@ -245,38 +293,55 @@ class GradientLinear extends EngineGradient {
       final double fromY = matrix4.transformedY + centerY;
       matrix4.transform(to.dx - centerX, to.dy - centerY);
       gradient = ctx!.createLinearGradient(
-          fromX - offsetX,
-          fromY - offsetY,
-          matrix4.transformedX + centerX - offsetX,
-          matrix4.transformedY + centerY - offsetY);
+        fromX - offsetX,
+        fromY - offsetY,
+        matrix4.transformedX + centerX - offsetX,
+        matrix4.transformedY + centerY - offsetY,
+      );
     } else {
-      gradient = ctx!.createLinearGradient(from.dx - offsetX, from.dy - offsetY,
-          to.dx - offsetX, to.dy - offsetY);
+      gradient = ctx!.createLinearGradient(
+        from.dx - offsetX,
+        from.dy - offsetY,
+        to.dx - offsetX,
+        to.dy - offsetY,
+      );
     }
     _addColorStopsToCanvasGradient(
-        gradient, colors, colorStops, tileMode == ui.TileMode.decal);
+      gradient,
+      colors,
+      colorStops,
+      tileMode == ui.TileMode.decal,
+    );
     return gradient;
   }
 
   @override
   Object createImageBitmap(
-      ui.Rect? shaderBounds, double density, bool createDataUrl) {
+    ui.Rect? shaderBounds,
+    double density,
+    bool createDataUrl,
+  ) {
     assert(shaderBounds != null);
     final int widthInPixels = shaderBounds!.width.ceil();
     final int heightInPixels = shaderBounds.height.ceil();
     assert(widthInPixels > 0 && heightInPixels > 0);
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final GlContext gl =
-        _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
+    final GlContext gl = _sharedCanvas.checkOutContext(
+      widthInPixels,
+      heightInPixels,
+    );
     gl.setViewportSize(widthInPixels, heightInPixels);
 
-    final NormalizedGradient normalizedGradient =
-        NormalizedGradient(colors, stops: colorStops);
+    final NormalizedGradient normalizedGradient = NormalizedGradient(
+      colors,
+      stops: colorStops,
+    );
 
     final GlProgram glProgram = gl.cacheProgram(
-        VertexShaders.writeBaseVertexShader(),
-        _createLinearFragmentShader(normalizedGradient, tileMode));
+      VertexShaders.writeBaseVertexShader(),
+      _createLinearFragmentShader(normalizedGradient, tileMode),
+    );
     gl.useProgram(glProgram);
 
     // Setup from/to uniforms.
@@ -307,15 +372,20 @@ class GradientLinear extends EngineGradient {
     // If tile mode is repeated we need to shift the center of from->to
     // vector to the center of shader bounds.
     final bool isRepeated = tileMode != ui.TileMode.clamp;
-    final double originX = isRepeated
-        ? (shaderBounds.width / 2)
-        : (fromX + toX) / 2.0 - shaderBounds.left;
-    final double originY = isRepeated
-        ? (shaderBounds.height / 2)
-        : (fromY + toY) / 2.0 - shaderBounds.top;
+    final double originX =
+        isRepeated
+            ? (shaderBounds.width / 2)
+            : (fromX + toX) / 2.0 - shaderBounds.left;
+    final double originY =
+        isRepeated
+            ? (shaderBounds.height / 2)
+            : (fromY + toY) / 2.0 - shaderBounds.top;
 
-    final Matrix4 originTranslation =
-        Matrix4.translationValues(-originX, -originY, 0);
+    final Matrix4 originTranslation = Matrix4.translationValues(
+      -originX,
+      -originY,
+      0,
+    );
     // Rotate around Z axis.
     final Matrix4 rotationZ = Matrix4.identity();
     final Float32List storage = rotationZ.storage;
@@ -337,8 +407,8 @@ class GradientLinear extends EngineGradient {
       // with flipped y axis.
       // We flip y axis, translate to center, multiply matrix and translate
       // and flip back so it is applied correctly.
-      final Matrix4 m4 = Matrix4.zero()
-        ..copyInverse(Matrix4.fromFloat32List(matrix4!.matrix));
+      final Matrix4 m4 =
+          Matrix4.zero()..copyInverse(Matrix4.fromFloat32List(matrix4!.matrix));
       final ui.Offset center = shaderBounds.center;
       gradientTransform.translate(-center.dx, -center.dy);
       gradientTransform.multiply(m4);
@@ -350,19 +420,27 @@ class GradientLinear extends EngineGradient {
     // Setup gradient uniforms for t search.
     normalizedGradient.setupUniforms(gl, glProgram);
     // Setup matrix transform uniform.
-    final Object gradientMatrix =
-        gl.getUniformLocation(glProgram.program, 'm_gradient');
+    final Object gradientMatrix = gl.getUniformLocation(
+      glProgram.program,
+      'm_gradient',
+    );
     gl.setUniformMatrix4fv(gradientMatrix, false, gradientTransform.storage);
 
-    final Object uRes =
-        gl.getUniformLocation(glProgram.program, 'u_resolution');
+    final Object uRes = gl.getUniformLocation(
+      glProgram.program,
+      'u_resolution',
+    );
     gl.setUniform2f(uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
 
     final Object result = () {
       if (createDataUrl) {
         return glRenderer!.drawRectToImageUrl(
-          ui.Rect.fromLTWH(0, 0, shaderBounds.width,
-              shaderBounds.height) /* !! shaderBounds */,
+          ui.Rect.fromLTWH(
+            0,
+            0,
+            shaderBounds.width,
+            shaderBounds.height,
+          ) /* !! shaderBounds */,
           gl,
           glProgram,
           normalizedGradient,
@@ -371,8 +449,12 @@ class GradientLinear extends EngineGradient {
         );
       } else {
         return glRenderer!.drawRect(
-          ui.Rect.fromLTWH(0, 0, shaderBounds.width,
-              shaderBounds.height) /* !! shaderBounds */,
+          ui.Rect.fromLTWH(
+            0,
+            0,
+            shaderBounds.width,
+            shaderBounds.height,
+          ) /* !! shaderBounds */,
           gl,
           glProgram,
           normalizedGradient,
@@ -387,13 +469,18 @@ class GradientLinear extends EngineGradient {
 
   /// Creates a linear gradient with tiling repeat or mirror.
   DomCanvasPattern _createGlGradient(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
 
   String _createLinearFragmentShader(
-      NormalizedGradient gradient, ui.TileMode tileMode) {
+    NormalizedGradient gradient,
+    ui.TileMode tileMode,
+  ) {
     final ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec4, name: 'v_color');
@@ -404,19 +491,29 @@ class GradientLinear extends EngineGradient {
     // Linear gradient.
     // Multiply with m_gradient transform to convert from fragment coordinate to
     // distance on the from-to line.
-    method.addStatement('vec4 localCoord = m_gradient * vec4(gl_FragCoord.x, '
-        'u_resolution.y - gl_FragCoord.y, 0, 1);');
+    method.addStatement(
+      'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x, '
+      'u_resolution.y - gl_FragCoord.y, 0, 1);',
+    );
     method.addStatement('float st = localCoord.x;');
-    final String probeName =
-        _writeSharedGradientShader(builder, method, gradient, tileMode);
+    final String probeName = _writeSharedGradientShader(
+      builder,
+      method,
+      gradient,
+      tileMode,
+    );
     method.addStatement('${fragColor.name} = $probeName * scale + bias;');
     final String shader = builder.build();
     return shader;
   }
 }
 
-void _addColorStopsToCanvasGradient(DomCanvasGradient gradient,
-    List<ui.Color> colors, List<double>? colorStops, bool isDecal) {
+void _addColorStopsToCanvasGradient(
+  DomCanvasGradient gradient,
+  List<ui.Color> colors,
+  List<double>? colorStops,
+  bool isDecal,
+) {
   double scale, offset;
   if (isDecal) {
     scale = 0.999;
@@ -434,7 +531,9 @@ void _addColorStopsToCanvasGradient(DomCanvasGradient gradient,
     for (int i = 0; i < colors.length; i++) {
       final double colorStop = colorStops[i].clamp(0.0, 1.0);
       gradient.addColorStop(
-          colorStop * scale + offset, colors[i].toCssString());
+        colorStop * scale + offset,
+        colors[i].toCssString(),
+      );
     }
   }
   if (isDecal) {
@@ -445,8 +544,12 @@ void _addColorStopsToCanvasGradient(DomCanvasGradient gradient,
 /// Writes shader code to map fragment value to gradient color.
 ///
 /// Returns name of gradient treshold variable to use to compute color.
-String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
-    NormalizedGradient gradient, ui.TileMode tileMode) {
+String _writeSharedGradientShader(
+  ShaderBuilder builder,
+  ShaderMethod method,
+  NormalizedGradient gradient,
+  ui.TileMode tileMode,
+) {
   method.addStatement('vec4 bias;');
   method.addStatement('vec4 scale;');
   // Write uniforms for each threshold, bias and scale.
@@ -476,14 +579,19 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
     case ui.TileMode.mirror:
       method.addStatement('float t_1 = (st - 1.0);');
       method.addStatement(
-          'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);');
+        'float tiled_st = abs((t_1 - 2.0 * floor(t_1 * 0.5)) - 1.0);',
+      );
       probeName = 'tiled_st';
   }
-  writeUnrolledBinarySearch(method, 0, gradient.thresholdCount - 1,
-      probe: probeName,
-      sourcePrefix: 'threshold',
-      biasName: 'bias',
-      scaleName: 'scale');
+  writeUnrolledBinarySearch(
+    method,
+    0,
+    gradient.thresholdCount - 1,
+    probe: probeName,
+    sourcePrefix: 'threshold',
+    biasName: 'bias',
+    scaleName: 'scale',
+  );
   if (tileMode == ui.TileMode.decal) {
     method.addStatement('if (st < 0.0 || st > 1.0) {');
     method.addStatement('  ${builder.fragmentColor.name} = vec4(0, 0, 0, 0);');
@@ -494,9 +602,14 @@ String _writeSharedGradientShader(ShaderBuilder builder, ShaderMethod method,
 }
 
 class GradientRadial extends EngineGradient {
-  GradientRadial(this.center, this.radius, this.colors, this.colorStops,
-      this.tileMode, this.matrix4)
-      : super._();
+  GradientRadial(
+    this.center,
+    this.radius,
+    this.colors,
+    this.colorStops,
+    this.tileMode,
+    this.matrix4,
+  ) : super._();
 
   final ui.Offset center;
   final double radius;
@@ -507,7 +620,10 @@ class GradientRadial extends EngineGradient {
 
   @override
   Object createPaintStyle(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     if (matrix4 == null &&
         (tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal)) {
       return _createCanvasGradient(ctx, shaderBounds, density);
@@ -517,24 +633,35 @@ class GradientRadial extends EngineGradient {
   }
 
   Object _createCanvasGradient(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     final double offsetX = shaderBounds!.left;
     final double offsetY = shaderBounds.top;
     final DomCanvasGradient gradient = ctx!.createRadialGradient(
-        center.dx - offsetX,
-        center.dy - offsetY,
-        0,
-        center.dx - offsetX,
-        center.dy - offsetY,
-        radius);
+      center.dx - offsetX,
+      center.dy - offsetY,
+      0,
+      center.dx - offsetX,
+      center.dy - offsetY,
+      radius,
+    );
     _addColorStopsToCanvasGradient(
-        gradient, colors, colorStops, tileMode == ui.TileMode.decal);
+      gradient,
+      colors,
+      colorStops,
+      tileMode == ui.TileMode.decal,
+    );
     return gradient;
   }
 
   @override
   Object createImageBitmap(
-      ui.Rect? shaderBounds, double density, bool createDataUrl) {
+    ui.Rect? shaderBounds,
+    double density,
+    bool createDataUrl,
+  ) {
     assert(shaderBounds != null);
     final int widthInPixels = shaderBounds!.width.ceil();
     final int heightInPixels = shaderBounds.height.ceil();
@@ -542,40 +669,53 @@ class GradientRadial extends EngineGradient {
 
     initWebGl();
     // Render gradient into a bitmap and create a canvas pattern.
-    final GlContext gl =
-        _sharedCanvas.checkOutContext(widthInPixels, heightInPixels);
+    final GlContext gl = _sharedCanvas.checkOutContext(
+      widthInPixels,
+      heightInPixels,
+    );
     gl.setViewportSize(widthInPixels, heightInPixels);
 
-    final NormalizedGradient normalizedGradient =
-        NormalizedGradient(colors, stops: colorStops);
+    final NormalizedGradient normalizedGradient = NormalizedGradient(
+      colors,
+      stops: colorStops,
+    );
 
     final GlProgram glProgram = gl.cacheProgram(
-        VertexShaders.writeBaseVertexShader(),
-        _createRadialFragmentShader(
-            normalizedGradient, shaderBounds, tileMode));
+      VertexShaders.writeBaseVertexShader(),
+      _createRadialFragmentShader(normalizedGradient, shaderBounds, tileMode),
+    );
     gl.useProgram(glProgram);
 
-    final Object tileOffset =
-        gl.getUniformLocation(glProgram.program, 'u_tile_offset');
+    final Object tileOffset = gl.getUniformLocation(
+      glProgram.program,
+      'u_tile_offset',
+    );
     final double centerX =
         (center.dx - shaderBounds.left) / (shaderBounds.width);
     final double centerY =
         (center.dy - shaderBounds.top) / (shaderBounds.height);
-    gl.setUniform2f(tileOffset, 2 * (shaderBounds.width * (centerX - 0.5)),
-        2 * (shaderBounds.height * (0.5 - centerY)));
-    final Object radiusUniform =
-        gl.getUniformLocation(glProgram.program, 'u_radius');
+    gl.setUniform2f(
+      tileOffset,
+      2 * (shaderBounds.width * (centerX - 0.5)),
+      2 * (shaderBounds.height * (0.5 - centerY)),
+    );
+    final Object radiusUniform = gl.getUniformLocation(
+      glProgram.program,
+      'u_radius',
+    );
     gl.setUniform1f(radiusUniform, radius);
     normalizedGradient.setupUniforms(gl, glProgram);
 
-    final Object gradientMatrix =
-        gl.getUniformLocation(glProgram.program, 'm_gradient');
+    final Object gradientMatrix = gl.getUniformLocation(
+      glProgram.program,
+      'm_gradient',
+    );
 
     final Matrix4 gradientTransform = Matrix4.identity();
 
     if (matrix4 != null) {
-      final Matrix4 m4 = Matrix4.zero()
-        ..copyInverse(Matrix4.fromFloat32List(matrix4!));
+      final Matrix4 m4 =
+          Matrix4.zero()..copyInverse(Matrix4.fromFloat32List(matrix4!));
       gradientTransform.translate(-center.dx, -center.dy);
       gradientTransform.multiply(m4);
       gradientTransform.translate(center.dx, center.dy);
@@ -585,20 +725,22 @@ class GradientRadial extends EngineGradient {
     final Object result = () {
       if (createDataUrl) {
         return glRenderer!.drawRectToImageUrl(
-            ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-            gl,
-            glProgram,
-            normalizedGradient,
-            widthInPixels,
-            heightInPixels);
+          ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+          gl,
+          glProgram,
+          normalizedGradient,
+          widthInPixels,
+          heightInPixels,
+        );
       } else {
         return glRenderer!.drawRect(
-            ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
-            gl,
-            glProgram,
-            normalizedGradient,
-            widthInPixels,
-            heightInPixels)!;
+          ui.Rect.fromLTWH(0, 0, shaderBounds.width, shaderBounds.height),
+          gl,
+          glProgram,
+          normalizedGradient,
+          widthInPixels,
+          heightInPixels,
+        )!;
       }
     }();
     _sharedCanvas.checkInContext();
@@ -607,13 +749,19 @@ class GradientRadial extends EngineGradient {
 
   /// Creates a radial gradient with tiling repeat or mirror.
   DomCanvasPattern _createGlGradient(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     final Object imageBitmap = createImageBitmap(shaderBounds, density, false);
     return ctx!.createPattern(imageBitmap, 'no-repeat')!;
   }
 
   String _createRadialFragmentShader(
-      NormalizedGradient gradient, ui.Rect shaderBounds, ui.TileMode tileMode) {
+    NormalizedGradient gradient,
+    ui.Rect shaderBounds,
+    ui.TileMode tileMode,
+  ) {
     final ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec4, name: 'v_color');
@@ -626,11 +774,16 @@ class GradientRadial extends EngineGradient {
     // Sweep gradient
     method.addStatement('vec2 center = 0.5 * (u_resolution + u_tile_offset);');
     method.addStatement(
-        'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);');
+      'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);',
+    );
     method.addStatement('float dist = length(localCoord);');
     method.addStatement('float st = abs(dist / u_radius);');
-    final String probeName =
-        _writeSharedGradientShader(builder, method, gradient, tileMode);
+    final String probeName = _writeSharedGradientShader(
+      builder,
+      method,
+      gradient,
+      tileMode,
+    );
     method.addStatement('${fragColor.name} = $probeName * scale + bias;');
     final String shader = builder.build();
     return shader;
@@ -640,22 +793,25 @@ class GradientRadial extends EngineGradient {
 // TODO(ferhat): Implement focal https://github.com/flutter/flutter/issues/76643.
 class GradientConical extends GradientRadial {
   GradientConical(
-      this.focal,
-      this.focalRadius,
-      ui.Offset center,
-      double radius,
-      List<ui.Color> colors,
-      List<double>? colorStops,
-      ui.TileMode tileMode,
-      Float32List? matrix4)
-      : super(center, radius, colors, colorStops, tileMode, matrix4);
+    this.focal,
+    this.focalRadius,
+    ui.Offset center,
+    double radius,
+    List<ui.Color> colors,
+    List<double>? colorStops,
+    ui.TileMode tileMode,
+    Float32List? matrix4,
+  ) : super(center, radius, colors, colorStops, tileMode, matrix4);
 
   final ui.Offset focal;
   final double focalRadius;
 
   @override
   Object createPaintStyle(
-      DomCanvasRenderingContext2D? ctx, ui.Rect? shaderBounds, double density) {
+    DomCanvasRenderingContext2D? ctx,
+    ui.Rect? shaderBounds,
+    double density,
+  ) {
     if ((tileMode == ui.TileMode.clamp || tileMode == ui.TileMode.decal) &&
         focalRadius == 0.0 &&
         focal == ui.Offset.zero) {
@@ -668,7 +824,10 @@ class GradientConical extends GradientRadial {
 
   @override
   String _createRadialFragmentShader(
-      NormalizedGradient gradient, ui.Rect shaderBounds, ui.TileMode tileMode) {
+    NormalizedGradient gradient,
+    ui.Rect shaderBounds,
+    ui.TileMode tileMode,
+  ) {
     /// If distance between centers is nearly zero we can pretend we're radial
     /// to prevent divide by zero in computing gradient.
     final double centerDistanceX = center.dx - focal.dx;
@@ -676,8 +835,11 @@ class GradientConical extends GradientRadial {
     final double centerDistanceSq =
         centerDistanceX * centerDistanceX + centerDistanceY * centerDistanceY;
     if (centerDistanceSq < kFltEpsilonSquared) {
-      return super
-          ._createRadialFragmentShader(gradient, shaderBounds, tileMode);
+      return super._createRadialFragmentShader(
+        gradient,
+        shaderBounds,
+        tileMode,
+      );
     }
     final double centerDistance = math.sqrt(centerDistanceSq);
     double r0 = focalRadius / centerDistance;
@@ -704,19 +866,26 @@ class GradientConical extends GradientRadial {
     // Sweep gradient
     method.addStatement('vec2 center = 0.5 * (u_resolution + u_tile_offset);');
     method.addStatement(
-        'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);');
+      'vec4 localCoord = m_gradient * vec4(gl_FragCoord.x - center.x, center.y - gl_FragCoord.y, 0, 1);',
+    );
     method.addStatement('float dist = length(localCoord);');
     final String f = (focalRadius /
             (math.min(shaderBounds.width, shaderBounds.height) / 2.0))
         .toStringAsPrecision(8);
-    method.addStatement(focalRadius == 0.0
-        ? 'float st = dist / u_radius;'
-        : 'float st = ((dist / u_radius) - $f) / (1.0 - $f);');
+    method.addStatement(
+      focalRadius == 0.0
+          ? 'float st = dist / u_radius;'
+          : 'float st = ((dist / u_radius) - $f) / (1.0 - $f);',
+    );
     if (tileMode == ui.TileMode.clamp) {
       method.addStatement('if (st < 0.0) { st = -1.0; }');
     }
-    final String probeName =
-        _writeSharedGradientShader(builder, method, gradient, tileMode);
+    final String probeName = _writeSharedGradientShader(
+      builder,
+      method,
+      gradient,
+      tileMode,
+    );
     method.addStatement('${fragColor.name} = $probeName * scale + bias;');
     return builder.build();
   }
@@ -744,9 +913,11 @@ abstract class EngineImageFilter implements ui.ImageFilter {
 }
 
 class _BlurEngineImageFilter extends EngineImageFilter {
-  _BlurEngineImageFilter(
-      {this.sigmaX = 0.0, this.sigmaY = 0.0, this.tileMode = ui.TileMode.clamp})
-      : super._();
+  _BlurEngineImageFilter({
+    this.sigmaX = 0.0,
+    this.sigmaY = 0.0,
+    this.tileMode = ui.TileMode.clamp,
+  }) : super._();
 
   final double sigmaX;
   final double sigmaY;
@@ -777,10 +948,11 @@ class _BlurEngineImageFilter extends EngineImageFilter {
 }
 
 class _MatrixEngineImageFilter extends EngineImageFilter {
-  _MatrixEngineImageFilter(
-      {required Float64List matrix, required this.filterQuality})
-      : webMatrix = Float64List.fromList(matrix),
-        super._();
+  _MatrixEngineImageFilter({
+    required Float64List matrix,
+    required this.filterQuality,
+  }) : webMatrix = Float64List.fromList(matrix),
+       super._();
 
   final Float64List webMatrix;
   final ui.FilterQuality filterQuality;
@@ -923,15 +1095,19 @@ EngineHtmlColorFilter? createHtmlColorFilter(EngineColorFilter? colorFilter) {
       if (colorFilter.matrix == null) {
         return null;
       }
-      assert(colorFilter.matrix!.length == 20,
-          'Color Matrix must have 20 entries.');
+      assert(
+        colorFilter.matrix!.length == 20,
+        'Color Matrix must have 20 entries.',
+      );
       return MatrixHtmlColorFilter(colorFilter.matrix!);
     case ColorFilterType.linearToSrgbGamma:
       throw UnimplementedError(
-          'ColorFilter.linearToSrgbGamma not implemented for HTML renderer');
+        'ColorFilter.linearToSrgbGamma not implemented for HTML renderer',
+      );
     case ColorFilterType.srgbToLinearGamma:
       throw UnimplementedError(
-          'ColorFilter.srgbToLinearGamma not implemented for HTML renderer.');
+        'ColorFilter.srgbToLinearGamma not implemented for HTML renderer.',
+      );
     default:
       throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
   }

@@ -20,21 +20,23 @@ class CkPathMetrics extends IterableBase<ui.PathMetric>
 
   /// The [CkPath.isEmpty] case is special-cased to avoid booting the WASM machinery just to find out there are no contours.
   @override
-  late final Iterator<ui.PathMetric> iterator = _path.isEmpty
-      ? const CkPathMetricIteratorEmpty._()
-      : CkContourMeasureIter(this);
+  late final Iterator<ui.PathMetric> iterator =
+      _path.isEmpty
+          ? const CkPathMetricIteratorEmpty._()
+          : CkContourMeasureIter(this);
 }
 
 class CkContourMeasureIter implements Iterator<ui.PathMetric> {
   CkContourMeasureIter(this._metrics) {
     _ref = UniqueRef<SkContourMeasureIter>(
-        this,
-        SkContourMeasureIter(
-          _metrics._path.skiaObject,
-          _metrics._forceClosed,
-          1.0,
-        ),
-        'Iterator<PathMetric>');
+      this,
+      SkContourMeasureIter(
+        _metrics._path.skiaObject,
+        _metrics._forceClosed,
+        1.0,
+      ),
+      'Iterator<PathMetric>',
+    );
   }
 
   final CkPathMetrics _metrics;
@@ -52,9 +54,10 @@ class CkContourMeasureIter implements Iterator<ui.PathMetric> {
     final ui.PathMetric? currentMetric = _current;
     if (currentMetric == null) {
       throw RangeError(
-          'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
-          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
-          '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
+        'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
+        '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
+        '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".',
+      );
     }
     return currentMetric;
   }
@@ -69,8 +72,11 @@ class CkContourMeasureIter implements Iterator<ui.PathMetric> {
       return false;
     }
 
-    _current =
-        CkContourMeasure(_metrics, skContourMeasure, _contourIndexCounter);
+    _current = CkContourMeasure(
+      _metrics,
+      skContourMeasure,
+      _contourIndexCounter,
+    );
     _contourIndexCounter += 1;
     return true;
   }
@@ -78,7 +84,10 @@ class CkContourMeasureIter implements Iterator<ui.PathMetric> {
 
 class CkContourMeasure implements ui.PathMetric {
   CkContourMeasure(
-      this._metrics, SkContourMeasure skiaObject, this.contourIndex) {
+    this._metrics,
+    SkContourMeasure skiaObject,
+    this.contourIndex,
+  ) {
     _ref = UniqueRef<SkContourMeasure>(this, skiaObject, 'PathMetric');
   }
 

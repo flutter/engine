@@ -66,15 +66,20 @@ class EnginePicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) async {
-    final ui.Rect imageRect =
-        ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble());
+    final ui.Rect imageRect = ui.Rect.fromLTRB(
+      0,
+      0,
+      width.toDouble(),
+      height.toDouble(),
+    );
     final BitmapCanvas canvas = BitmapCanvas.imageData(imageRect);
     recordingCanvas!.apply(canvas, imageRect);
     final String imageDataUrl = canvas.toDataUrl();
-    final DomHTMLImageElement imageElement = createDomHTMLImageElement()
-      ..src = imageDataUrl
-      ..width = width.toDouble()
-      ..height = height.toDouble();
+    final DomHTMLImageElement imageElement =
+        createDomHTMLImageElement()
+          ..src = imageDataUrl
+          ..width = width.toDouble()
+          ..height = height.toDouble();
 
     // The image loads asynchronously. We need to wait before returning,
     // otherwise the returned HtmlImage will be temporarily unusable.
@@ -90,11 +95,7 @@ class EnginePicture implements ui.Picture {
     imageElement.addEventListener('error', errorListener);
     late final DomEventListener loadListener;
     loadListener = createDomEventListener((DomEvent event) {
-      onImageLoaded.complete(HtmlImage(
-        imageElement,
-        width,
-        height,
-      ));
+      onImageLoaded.complete(HtmlImage(imageElement, width, height));
       imageElement.removeEventListener('load', loadListener);
     });
     imageElement.addEventListener('load', loadListener);
@@ -104,7 +105,8 @@ class EnginePicture implements ui.Picture {
   @override
   ui.Image toImageSync(int width, int height) {
     throw UnsupportedError(
-        'toImageSync is not supported on the HTML backend. Use drawPicture instead, or toImage.');
+      'toImageSync is not supported on the HTML backend. Use drawPicture instead, or toImage.',
+    );
   }
 
   bool _disposed = false;
@@ -128,7 +130,8 @@ class EnginePicture implements ui.Picture {
     }
 
     throw StateError(
-        'Picture.debugDisposed is only available when asserts are enabled.');
+      'Picture.debugDisposed is only available when asserts are enabled.',
+    );
   }
 
   @override
@@ -169,10 +172,7 @@ void reduceCanvasMemoryUsage() {
 /// larger recycled canvases. Otherwise, small pictures would claim the large
 /// canvases forcing us to allocate new large canvases.
 class PaintRequest {
-  PaintRequest({
-    required this.canvasSize,
-    required this.paintCallback,
-  });
+  PaintRequest({required this.canvasSize, required this.paintCallback});
 
   final ui.Size canvasSize;
   final ui.VoidCallback paintCallback;
@@ -214,7 +214,7 @@ void _recycleCanvas(EngineCanvas? canvas) {
 /// to draw shapes and text.
 class PersistedPicture extends PersistedLeafSurface {
   PersistedPicture(this.dx, this.dy, this.picture, this.hints)
-      : localPaintBounds = picture.recordingCanvas!.pictureBounds;
+    : localPaintBounds = picture.recordingCanvas!.pictureBounds;
 
   EngineCanvas? _canvas;
 
@@ -325,8 +325,9 @@ class PersistedPicture extends PersistedLeafSurface {
           if (bounds == null) {
             bounds = clipTransform.transformRect(localClipBounds);
           } else {
-            bounds =
-                bounds.intersect(clipTransform.transformRect(localClipBounds));
+            bounds = bounds.intersect(
+              clipTransform.transformRect(localClipBounds),
+            );
           }
         }
         final Matrix4? localInverse = parentSurface.localTransformInverse;
@@ -372,9 +373,10 @@ class PersistedPicture extends PersistedLeafSurface {
     assert(oldSurface._optimalLocalCullRect != null);
 
     final bool surfaceBeingRetained = identical(oldSurface, this);
-    final ui.Rect? oldOptimalLocalCullRect = surfaceBeingRetained
-        ? _optimalLocalCullRect
-        : oldSurface._optimalLocalCullRect;
+    final ui.Rect? oldOptimalLocalCullRect =
+        surfaceBeingRetained
+            ? _optimalLocalCullRect
+            : oldSurface._optimalLocalCullRect;
 
     if (_exactLocalCullRect == ui.Rect.zero) {
       // The clip collapsed into a zero-sized rectangle. If it was already zero,
@@ -445,10 +447,7 @@ class PersistedPicture extends PersistedLeafSurface {
       // 50% of the extent (protect from extremely slow growth trend such as
       // slow scrolling). Give no more than the full extent (protects from
       // fast scrolling that could lead to overallocation).
-      return math.min(
-        math.max(extent * 0.5, delta * 10.0),
-        extent,
-      );
+      return math.min(math.max(extent * 0.5, delta * 10.0), extent);
     }
   }
 
@@ -508,8 +507,12 @@ class PersistedPicture extends PersistedLeafSurface {
       return 1.0;
     }
 
-    final bool didRequireBitmap = existingSurface
-        .picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
+    final bool didRequireBitmap =
+        existingSurface
+            .picture
+            .recordingCanvas!
+            .renderStrategy
+            .hasArbitraryPaint;
     final bool requiresBitmap =
         picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
     if (didRequireBitmap != requiresBitmap) {
@@ -532,7 +535,7 @@ class PersistedPicture extends PersistedLeafSurface {
       } else {
         final int newPixelCount =
             BitmapCanvas.widthToPhysical(_exactLocalCullRect!.width) *
-                BitmapCanvas.heightToPhysical(_exactLocalCullRect!.height);
+            BitmapCanvas.heightToPhysical(_exactLocalCullRect!.height);
         final int oldPixelCount =
             oldCanvas.widthInBitmapPixels * oldCanvas.heightInBitmapPixels;
 
@@ -541,8 +544,10 @@ class PersistedPicture extends PersistedLeafSurface {
         }
 
         final double pixelCountRatio = newPixelCount / oldPixelCount;
-        assert(0 <= pixelCountRatio && pixelCountRatio <= 1.0,
-            'Invalid pixel count ratio $pixelCountRatio');
+        assert(
+          0 <= pixelCountRatio && pixelCountRatio <= 1.0,
+          'Invalid pixel count ratio $pixelCountRatio',
+        );
         return 1.0 - pixelCountRatio;
       }
     }
@@ -590,23 +595,27 @@ class PersistedPicture extends PersistedLeafSurface {
       // able to reuse have been released yet. So instead we enqueue this
       // picture to be painted after the update cycle is done syncing the layer
       // tree then reuse canvases that were freed up.
-      paintQueue.add(PaintRequest(
-        canvasSize: _optimalLocalCullRect!.size,
-        paintCallback: () {
-          final BitmapCanvas bitmapCanvas =
-              _findOrCreateCanvas(_optimalLocalCullRect!);
-          _canvas = bitmapCanvas;
-          bitmapCanvas.setElementCache(_elementCache);
-          if (debugExplainSurfaceStats) {
-            surfaceStatsFor(this).paintPixelCount +=
-                bitmapCanvas.bitmapPixelCount;
-          }
-          removeAllChildren(rootElement!);
-          rootElement!.append(bitmapCanvas.rootElement);
-          bitmapCanvas.clear();
-          picture.recordingCanvas!.apply(bitmapCanvas, _optimalLocalCullRect!);
-        },
-      ));
+      paintQueue.add(
+        PaintRequest(canvasSize: _optimalLocalCullRect!.size, paintCallback:
+            () {
+              final BitmapCanvas bitmapCanvas = _findOrCreateCanvas(
+                _optimalLocalCullRect!,
+              );
+              _canvas = bitmapCanvas;
+              bitmapCanvas.setElementCache(_elementCache);
+              if (debugExplainSurfaceStats) {
+                surfaceStatsFor(this).paintPixelCount +=
+                    bitmapCanvas.bitmapPixelCount;
+              }
+              removeAllChildren(rootElement!);
+              rootElement!.append(bitmapCanvas.rootElement);
+              bitmapCanvas.clear();
+              picture.recordingCanvas!.apply(
+                bitmapCanvas,
+                _optimalLocalCullRect!,
+              );
+            }),
+      );
     }
   }
 
@@ -641,13 +650,15 @@ class PersistedPicture extends PersistedLeafSurface {
         // [isTooSmall] is used to make sure that a small picture doesn't
         // reuse and hold onto memory of a large canvas.
         final double requestedPixelCount = bounds.width * bounds.height;
-        final bool isTooSmall = isSmaller &&
+        final bool isTooSmall =
+            isSmaller &&
             requestedPixelCount > 1 &&
             (candidatePixelCount / requestedPixelCount) > 4;
         if (!isTooSmall) {
           bestRecycledCanvas = candidate;
           lastPixelCount = candidatePixelCount;
-          final bool fitsExactly = candidateSize.width == canvasSize.width &&
+          final bool fitsExactly =
+              candidateSize.width == canvasSize.width &&
               candidateSize.height == canvasSize.height;
           if (fitsExactly) {
             // No need to keep looking any more.
@@ -678,8 +689,10 @@ class PersistedPicture extends PersistedLeafSurface {
       DebugCanvasReuseOverlay.instance.createdCount++;
     }
     final BitmapCanvas canvas = BitmapCanvas(
-        bounds, picture.recordingCanvas!.renderStrategy,
-        density: _density);
+      bounds,
+      picture.recordingCanvas!.renderStrategy,
+      density: _density,
+    );
     canvas.setElementCache(_elementCache);
     if (debugExplainSurfaceStats) {
       surfaceStatsFor(this)
@@ -722,7 +735,8 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _computeOptimalCullRect(oldSurface);
     if (identical(picture, oldSurface.picture)) {
-      final bool densityChanged = _canvas is BitmapCanvas &&
+      final bool densityChanged =
+          _canvas is BitmapCanvas &&
           _density != (_canvas! as BitmapCanvas).density;
 
       // The picture is the same. Attempt to avoid repaint.
@@ -766,7 +780,8 @@ class PersistedPicture extends PersistedLeafSurface {
       buffer.writeln('${'  ' * (indent + 1)}<$canvasTag @$canvasHash />');
     } else if (rootElement != null) {
       buffer.writeln(
-          '${'  ' * (indent + 1)}<${rootElement!.tagName.toLowerCase()} @$hashCode />');
+        '${'  ' * (indent + 1)}<${rootElement!.tagName.toLowerCase()} @$hashCode />',
+      );
     } else {
       buffer.writeln('${'  ' * (indent + 1)}<recycled-canvas />');
     }
@@ -778,8 +793,9 @@ class PersistedPicture extends PersistedLeafSurface {
 
     if (picture.recordingCanvas!.didDraw) {
       if (!_optimalLocalCullRect!.isEmpty && canvas == null) {
-        validationErrors
-            .add('$runtimeType has non-trivial picture but it has null canvas');
+        validationErrors.add(
+          '$runtimeType has non-trivial picture but it has null canvas',
+        );
       }
       if (_optimalLocalCullRect == null) {
         validationErrors.add('$runtimeType has null _optimalLocalCullRect');

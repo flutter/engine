@@ -24,10 +24,7 @@ void testMain() {
         'Hello world 你好世界',
         IntlSegmenterGranularity.word,
       );
-      expect(
-        breaks,
-        orderedEquals(<int>[0, 5, 6, 11, 12, 14, 16]),
-      );
+      expect(breaks, orderedEquals(<int>[0, 5, 6, 11, 12, 14, 16]));
     });
 
     test('fragments multi-line text into words', () {
@@ -123,10 +120,7 @@ void testMain() {
         segmentation.graphemes,
         fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
       );
-      expect(
-        segmentation.breaks,
-        fragmentUsingV8LineBreaker(text),
-      );
+      expect(segmentation.breaks, fragmentUsingV8LineBreaker(text));
     });
 
     test('caches segmentation results in LRU fashion', () {
@@ -222,7 +216,8 @@ void testCacheCapacity(
 
 int _seed = 0;
 String _randomString(int length) {
-  const String allChars = ' 1234567890'
+  const String allChars =
+      ' 1234567890'
       'abcdefghijklmnopqrstuvwxyz'
       'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 

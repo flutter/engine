@@ -36,10 +36,11 @@ Future<void> testMain() async {
 
 void paintStrokeJoins(BitmapCanvas canvas) {
   canvas.drawRect(
-      const Rect.fromLTRB(0, 0, 300, 300),
-      SurfacePaintData()
-        ..color = 0xFFFFFFFF
-        ..style = PaintingStyle.fill); // white
+    const Rect.fromLTRB(0, 0, 300, 300),
+    SurfacePaintData()
+      ..color = 0xFFFFFFFF
+      ..style = PaintingStyle.fill,
+  ); // white
 
   Offset start = const Offset(20, 10);
   Offset mid = const Offset(120, 10);
@@ -48,18 +49,18 @@ void paintStrokeJoins(BitmapCanvas canvas) {
   final List<StrokeCap> strokeCaps = <StrokeCap>[
     StrokeCap.butt,
     StrokeCap.round,
-    StrokeCap.square
+    StrokeCap.square,
   ];
   for (final StrokeCap cap in strokeCaps) {
     final List<StrokeJoin> joints = <StrokeJoin>[
       StrokeJoin.miter,
       StrokeJoin.bevel,
-      StrokeJoin.round
+      StrokeJoin.round,
     ];
     const List<Color> colors = <Color>[
       Color(0xFFF44336),
       Color(0xFF4CAF50),
-      Color(0xFF2196F3)
+      Color(0xFF2196F3),
     ]; // red, green, blue
     for (int i = 0; i < joints.length; i++) {
       final StrokeJoin join = joints[i];
@@ -70,13 +71,14 @@ void paintStrokeJoins(BitmapCanvas canvas) {
       path.lineTo(mid.dx, mid.dy);
       path.lineTo(end.dx, end.dy);
       canvas.drawPath(
-          path,
-          SurfacePaintData()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 4
-            ..color = color.value
-            ..strokeJoin = join
-            ..strokeCap = cap);
+        path,
+        SurfacePaintData()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4
+          ..color = color.value
+          ..strokeJoin = join
+          ..strokeCap = cap,
+      );
 
       start = start.translate(0, 20);
       mid = mid.translate(0, 20);

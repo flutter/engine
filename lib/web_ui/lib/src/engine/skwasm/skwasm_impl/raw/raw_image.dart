@@ -15,12 +15,10 @@ final class RawImage extends Opaque {}
 
 typedef ImageHandle = Pointer<RawImage>;
 
-@Native<
-    ImageHandle Function(
-      PictureHandle,
-      Int32,
-      Int32,
-    )>(symbol: 'image_createFromPicture', isLeaf: true)
+@Native<ImageHandle Function(PictureHandle, Int32, Int32)>(
+  symbol: 'image_createFromPicture',
+  isLeaf: true,
+)
 external ImageHandle imageCreateFromPicture(
   PictureHandle handle,
   int width,
@@ -28,7 +26,9 @@ external ImageHandle imageCreateFromPicture(
 );
 
 @Native<ImageHandle Function(SkDataHandle, Int, Int, Int, Size)>(
-    symbol: 'image_createFromPixels', isLeaf: true)
+  symbol: 'image_createFromPixels',
+  isLeaf: true,
+)
 external ImageHandle imageCreateFromPixels(
   SkDataHandle pixelData,
   int width,
@@ -40,13 +40,18 @@ external ImageHandle imageCreateFromPixels(
 // We use a wasm import directly here instead of @Native since this uses an externref
 // in the function signature.
 ImageHandle imageCreateFromTextureSource(
-        JSAny frame, int width, int height, SurfaceHandle handle) =>
-    ImageHandle.fromAddress(imageCreateFromTextureSourceImpl(
-      externRefForJSAny(frame),
-      width.toWasmI32(),
-      height.toWasmI32(),
-      handle.address.toWasmI32(),
-    ).toIntUnsigned());
+  JSAny frame,
+  int width,
+  int height,
+  SurfaceHandle handle,
+) => ImageHandle.fromAddress(
+  imageCreateFromTextureSourceImpl(
+    externRefForJSAny(frame),
+    width.toWasmI32(),
+    height.toWasmI32(),
+    handle.address.toWasmI32(),
+  ).toIntUnsigned(),
+);
 @pragma('wasm:import', 'skwasm.image_createFromTextureSource')
 external WasmI32 imageCreateFromTextureSourceImpl(
   WasmExternRef? frame,

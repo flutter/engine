@@ -29,7 +29,8 @@ List<Map<PersistedSurface, DebugSurfaceStats>> _surfaceStatsTimeline =
 DebugSurfaceStats surfaceStatsFor(PersistedSurface surface) {
   if (!debugExplainSurfaceStats) {
     throw Exception(
-        'surfaceStatsFor is only available when debugExplainSurfaceStats is set to true.');
+      'surfaceStatsFor is only available when debugExplainSurfaceStats is set to true.',
+    );
   }
   return surfaceStats.putIfAbsent(surface, () => DebugSurfaceStats(surface));
 }
@@ -130,9 +131,11 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..rect(0, 0, overlayWidth, overlayHeight)
     ..fill();
 
-  final double physicalScreenWidth = domWindow.innerWidth! *
+  final double physicalScreenWidth =
+      domWindow.innerWidth! *
       EngineFlutterDisplay.instance.browserDevicePixelRatio;
-  final double physicalScreenHeight = domWindow.innerHeight! *
+  final double physicalScreenHeight =
+      domWindow.innerHeight! *
       EngineFlutterDisplay.instance.browserDevicePixelRatio;
   final double physicsScreenPixelCount =
       physicalScreenWidth * physicalScreenHeight;
@@ -270,7 +273,8 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
   final StringBuffer buf = StringBuffer();
   buf
     ..writeln(
-        '---------------------- FRAME #$frameNumber -------------------------')
+      '---------------------- FRAME #$frameNumber -------------------------',
+    )
     ..writeln('Surfaces retained: $surfaceRetainCount')
     ..writeln('Elements reused: $elementReuseCount')
     ..writeln('Elements allocated: $totalAllocatedDomNodeCount')
@@ -291,18 +295,25 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
   // A microtask will fire after the DOM is flushed, letting us probe into
   // actual <canvas> tags.
   scheduleMicrotask(() {
-    final Iterable<DomElement> canvasElements =
-        domDocument.querySelectorAll('canvas');
+    final Iterable<DomElement> canvasElements = domDocument.querySelectorAll(
+      'canvas',
+    );
     final StringBuffer canvasInfo = StringBuffer();
-    final int pixelCount =
-        canvasElements.cast<DomCanvasElement>().map<int>((DomCanvasElement e) {
-      final int pixels = (e.width! * e.height!).toInt();
-      canvasInfo.writeln('    - ${e.width!} x ${e.height!} = $pixels pixels');
-      return pixels;
-    }).fold(0, (int total, int pixels) => total + pixels);
-    final double physicalScreenWidth = domWindow.innerWidth! *
+    final int pixelCount = canvasElements
+        .cast<DomCanvasElement>()
+        .map<int>((DomCanvasElement e) {
+          final int pixels = (e.width! * e.height!).toInt();
+          canvasInfo.writeln(
+            '    - ${e.width!} x ${e.height!} = $pixels pixels',
+          );
+          return pixels;
+        })
+        .fold(0, (int total, int pixels) => total + pixels);
+    final double physicalScreenWidth =
+        domWindow.innerWidth! *
         EngineFlutterDisplay.instance.browserDevicePixelRatio;
-    final double physicalScreenHeight = domWindow.innerHeight! *
+    final double physicalScreenHeight =
+        domWindow.innerHeight! *
         EngineFlutterDisplay.instance.browserDevicePixelRatio;
     final double physicsScreenPixelCount =
         physicalScreenWidth * physicalScreenHeight;
@@ -320,7 +331,8 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
         screenPixelRatio > kScreenPixelRatioWarningThreshold;
     if (screenPixelRatioTooHigh) {
       print(
-          'WARNING: pixel/screen ratio too high (${screenPixelRatio.toStringAsFixed(2)}x)');
+        'WARNING: pixel/screen ratio too high (${screenPixelRatio.toStringAsFixed(2)}x)',
+      );
     }
     print(buf);
   });

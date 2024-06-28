@@ -18,9 +18,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests(
-    setUpTestViewDimensions: false,
-  );
+  setUpUnitTests(setUpTestViewDimensions: false);
 
   tearDown(() {
     ContextStateHandle.debugEmulateWebKitMaskFilter = false;
@@ -33,15 +31,20 @@ Future<void> testMain() async {
     test('renders MaskFilter.blur in $browser', () async {
       const double screenWidth = 800.0;
       const double screenHeight = 150.0;
-      const ui.Rect screenRect =
-          ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+      const ui.Rect screenRect = ui.Rect.fromLTWH(
+        0,
+        0,
+        screenWidth,
+        screenHeight,
+      );
 
       ContextStateHandle.debugEmulateWebKitMaskFilter = isWebkit;
       final RecordingCanvas rc = RecordingCanvas(screenRect);
       rc.translate(0, 75);
 
-      final SurfacePaint paint = SurfacePaint()
-        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+      final SurfacePaint paint =
+          SurfacePaint()
+            ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       rc.translate(50, 0);
       rc.drawRect(
@@ -85,11 +88,7 @@ Future<void> testMain() async {
       rc.translate(100, 0);
       paint.color = const ui.Color(0xFF888800);
       paint.strokeWidth = 5;
-      rc.drawLine(
-        const ui.Offset(-20, -50),
-        const ui.Offset(20, 50),
-        paint,
-      );
+      rc.drawLine(const ui.Offset(-20, -50), const ui.Offset(20, 50), paint);
 
       rc.translate(100, 0);
       paint.color = const ui.Color(0xFF888888);
@@ -119,15 +118,20 @@ Future<void> testMain() async {
     test('renders transformed MaskFilter.blur in $browser', () async {
       const double screenWidth = 300.0;
       const double screenHeight = 300.0;
-      const ui.Rect screenRect =
-          ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+      const ui.Rect screenRect = ui.Rect.fromLTWH(
+        0,
+        0,
+        screenWidth,
+        screenHeight,
+      );
 
       ContextStateHandle.debugEmulateWebKitMaskFilter = isWebkit;
       final RecordingCanvas rc = RecordingCanvas(screenRect);
       rc.translate(150, 150);
 
-      final SurfacePaint paint = SurfacePaint()
-        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+      final SurfacePaint paint =
+          SurfacePaint()
+            ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       const List<ui.Color> colors = <ui.Color>[
         ui.Color(0xFF000000),
@@ -149,8 +153,11 @@ Future<void> testMain() async {
         );
       }
 
-      await canvasScreenshot(rc, 'mask_filter_transformed_$browser',
-          region: screenRect);
+      await canvasScreenshot(
+        rc,
+        'mask_filter_transformed_$browser',
+        region: screenRect,
+      );
     });
   }
 
@@ -158,27 +165,34 @@ Future<void> testMain() async {
   testMaskFilterBlur(isWebkit: true);
 
   for (final int testDpr in <int>[1, 2, 4]) {
-    test('MaskFilter.blur blurs correctly for device-pixel ratio $testDpr',
-        () async {
-      EngineFlutterDisplay.instance
-          .debugOverrideDevicePixelRatio(testDpr.toDouble());
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 150, 150);
+    test(
+      'MaskFilter.blur blurs correctly for device-pixel ratio $testDpr',
+      () async {
+        EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(
+          testDpr.toDouble(),
+        );
+        const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 150, 150);
 
-      final RecordingCanvas rc = RecordingCanvas(screenRect);
-      rc.translate(0, 75);
+        final RecordingCanvas rc = RecordingCanvas(screenRect);
+        rc.translate(0, 75);
 
-      final SurfacePaint paint = SurfacePaint()
-        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
+        final SurfacePaint paint =
+            SurfacePaint()
+              ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
-      rc.translate(75, 0);
-      rc.drawRect(
-        ui.Rect.fromCircle(center: ui.Offset.zero, radius: 30),
-        paint,
-      );
+        rc.translate(75, 0);
+        rc.drawRect(
+          ui.Rect.fromCircle(center: ui.Offset.zero, radius: 30),
+          paint,
+        );
 
-      await canvasScreenshot(rc, 'mask_filter_blur_dpr_$testDpr',
-          region: screenRect);
-      EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
-    });
+        await canvasScreenshot(
+          rc,
+          'mask_filter_blur_dpr_$testDpr',
+          region: screenRect,
+        );
+        EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(1.0);
+      },
+    );
   }
 }

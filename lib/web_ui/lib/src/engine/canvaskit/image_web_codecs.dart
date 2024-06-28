@@ -42,9 +42,10 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
         fileHeader = 'empty';
       }
       throw ImageCodecException(
-          'Failed to detect image file format using the file header.\n'
-          'File header was $fileHeader.\n'
-          'Image source: $debugSource');
+        'Failed to detect image file format using the file header.\n'
+        'File header was $fileHeader.\n'
+        'Image source: $debugSource',
+      );
     }
 
     final CkBrowserImageDecoder decoder = CkBrowserImageDecoder._(
@@ -81,7 +82,9 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
 }
 
 Future<ByteData> readPixelsFromVideoFrame(
-    VideoFrame videoFrame, ui.ImageByteFormat format) async {
+  VideoFrame videoFrame,
+  ui.ImageByteFormat format,
+) async {
   if (format == ui.ImageByteFormat.png) {
     final Uint8List png = await encodeVideoFrameAsPng(videoFrame);
     return png.buffer.asByteData();
@@ -161,7 +164,9 @@ void _bgrToRawRgba(ByteBuffer pixels) {
 }
 
 bool _shouldReadPixelsUnmodified(
-    VideoFrame videoFrame, ui.ImageByteFormat format) {
+  VideoFrame videoFrame,
+  ui.ImageByteFormat format,
+) {
   if (format == ui.ImageByteFormat.rawUnmodified) {
     return true;
   }
@@ -190,11 +195,14 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
   final int width = videoFrame.displayWidth.toInt();
   final int height = videoFrame.displayHeight.toInt();
-  final DomCanvasElement canvas =
-      createDomCanvasElement(width: width, height: height);
+  final DomCanvasElement canvas = createDomCanvasElement(
+    width: width,
+    height: height,
+  );
   final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 =
-      canvas.toDataURL().substring('data:image/png;base64,'.length);
+  final String pngBase64 = canvas.toDataURL().substring(
+    'data:image/png;base64,'.length,
+  );
   return base64.decode(pngBase64);
 }

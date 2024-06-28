@@ -152,8 +152,9 @@ class TextHeightRuler {
   // Elements used to measure the line-height metric.
   late final DomHTMLElement _probe = _createProbe();
   late final DomHTMLElement _host = _createHost();
-  final TextDimensions _dimensions =
-      TextDimensions(domDocument.createElement('flt-paragraph'));
+  final TextDimensions _dimensions = TextDimensions(
+    domDocument.createElement('flt-paragraph'),
+  );
 
   /// The alphabetic baseline for this ruler's [textHeightStyle].
   late final double alphabeticBaseline = _probe.getBoundingClientRect().bottom;

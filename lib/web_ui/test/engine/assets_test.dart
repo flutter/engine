@@ -34,8 +34,9 @@ void testMain() {
     });
 
     test('assetsDir changes the directory where assets are stored', () {
-      final ui_web.AssetManager assets =
-          ui_web.AssetManager(assetsDir: 'static');
+      final ui_web.AssetManager assets = ui_web.AssetManager(
+        assetsDir: 'static',
+      );
 
       expect(assets.getAssetUrl('asset.txt'), 'static/asset.txt');
     });
@@ -47,8 +48,9 @@ void testMain() {
     });
 
     test('assetBase can be relative', () {
-      final ui_web.AssetManager assets =
-          ui_web.AssetManager(assetBase: 'base/');
+      final ui_web.AssetManager assets = ui_web.AssetManager(
+        assetBase: 'base/',
+      );
 
       expect(assets.getAssetUrl('asset.txt'), 'base/assets/asset.txt');
     });
@@ -128,18 +130,19 @@ void testMain() {
 
 /// Removes all meta-tags with name=assetBase.
 void removeAssetBaseMeta() {
-  domWindow.document
-      .querySelectorAll('meta[name=assetBase]')
-      .forEach((DomElement element) {
+  domWindow.document.querySelectorAll('meta[name=assetBase]').forEach((
+    DomElement element,
+  ) {
     element.remove();
   });
 }
 
 /// Adds a meta-tag with name=assetBase and the passed-in [value].
 void addAssetBaseMeta(String value) {
-  final DomHTMLMetaElement meta = createDomHTMLMetaElement()
-    ..name = 'assetBase'
-    ..content = value;
+  final DomHTMLMetaElement meta =
+      createDomHTMLMetaElement()
+        ..name = 'assetBase'
+        ..content = value;
 
   domDocument.head!.append(meta);
 }

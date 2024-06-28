@@ -25,13 +25,11 @@ void testMain() {
       expect(vertices.debugDisposed, isFalse);
 
       final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas =
-          ui.Canvas(recorder, const ui.Rect.fromLTRB(0, 0, 100, 100));
-      canvas.drawVertices(
-        vertices,
-        ui.BlendMode.srcOver,
-        ui.Paint(),
+      final ui.Canvas canvas = ui.Canvas(
+        recorder,
+        const ui.Rect.fromLTRB(0, 0, 100, 100),
       );
+      canvas.drawVertices(vertices, ui.BlendMode.srcOver, ui.Paint());
       vertices.dispose();
       expect(vertices.debugDisposed, isTrue);
     });
@@ -61,11 +59,7 @@ void testMain() {
 ui.Vertices _testVertices() {
   return ui.Vertices(
     ui.VertexMode.triangles,
-    const <ui.Offset>[
-      ui.Offset.zero,
-      ui.Offset(10, 10),
-      ui.Offset(0, 20),
-    ],
+    const <ui.Offset>[ui.Offset.zero, ui.Offset(10, 10), ui.Offset(0, 20)],
     textureCoordinates: const <ui.Offset>[
       ui.Offset.zero,
       ui.Offset(10, 10),
@@ -262,5 +256,5 @@ const List<int> _circularVertexIndices = <int>[
   33,
   35,
   34,
-  36
+  36,
 ];

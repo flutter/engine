@@ -50,14 +50,16 @@ Future<void> testMain() async {
       disposedImage = image;
     };
 
-    final ui.Image image1 = await _createImage()
-      ..dispose();
+    final ui.Image image1 =
+        await _createImage()
+          ..dispose();
 
     expect(onDisposeInvokedCount, 1);
     expect(disposedImage, image1);
 
-    final ui.Image image2 = await _createImage()
-      ..dispose();
+    final ui.Image image2 =
+        await _createImage()
+          ..dispose();
 
     expect(onDisposeInvokedCount, 2);
     expect(disposedImage, image2);

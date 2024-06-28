@@ -18,18 +18,17 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests(
-    withImplicitView: true,
-    setUpTestViewDimensions: false,
-  );
+  setUpUnitTests(withImplicitView: true, setUpTestViewDimensions: false);
 
   const Rect region = Rect.fromLTWH(0, 0, 300, 300);
 
-  group('Gradients', () {
-    test('Using a linear gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
-      canvas.drawRect(
+  group(
+    'Gradients',
+    () {
+      test('Using a linear gradient on a paint', () async {
+        final PictureRecorder recorder = PictureRecorder();
+        final Canvas canvas = Canvas(recorder, region);
+        canvas.drawRect(
           const Rect.fromLTRB(50, 50, 250, 250),
           Paint()
             ..shader = Gradient.linear(
@@ -41,17 +40,18 @@ Future<void> testMain() async {
                 const Color(0xFF0000FF),
               ],
               <double>[0.0, 0.5, 1.0],
-            ));
+            ),
+        );
 
-      await drawPictureUsingCurrentRenderer(recorder.endRecording());
+        await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-      await matchGoldenFile('linear_gradient_paint.png', region: region);
-    });
+        await matchGoldenFile('linear_gradient_paint.png', region: region);
+      });
 
-    test('Using a radial gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
-      canvas.drawRect(
+      test('Using a radial gradient on a paint', () async {
+        final PictureRecorder recorder = PictureRecorder();
+        final Canvas canvas = Canvas(recorder, region);
+        canvas.drawRect(
           const Rect.fromLTRB(50, 50, 250, 250),
           Paint()
             ..shader = Gradient.radial(
@@ -63,17 +63,18 @@ Future<void> testMain() async {
                 const Color(0xFF0000FF),
               ],
               <double>[0.0, 0.5, 1.0],
-            ));
+            ),
+        );
 
-      await drawPictureUsingCurrentRenderer(recorder.endRecording());
+        await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-      await matchGoldenFile('radial_gradient_paint.png', region: region);
-    });
+        await matchGoldenFile('radial_gradient_paint.png', region: region);
+      });
 
-    test('Using a conical gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
-      canvas.drawRect(
+      test('Using a conical gradient on a paint', () async {
+        final PictureRecorder recorder = PictureRecorder();
+        final Canvas canvas = Canvas(recorder, region);
+        canvas.drawRect(
           const Rect.fromLTRB(50, 50, 250, 250),
           Paint()
             ..shader = Gradient.radial(
@@ -89,17 +90,18 @@ Future<void> testMain() async {
               null,
               const Offset(50, 50),
               5,
-            ));
+            ),
+        );
 
-      await drawPictureUsingCurrentRenderer(recorder.endRecording());
+        await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-      await matchGoldenFile('conical_gradient_paint.png', region: region);
-    });
+        await matchGoldenFile('conical_gradient_paint.png', region: region);
+      });
 
-    test('Using a sweep gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
-      canvas.drawRect(
+      test('Using a sweep gradient on a paint', () async {
+        final PictureRecorder recorder = PictureRecorder();
+        final Canvas canvas = Canvas(recorder, region);
+        canvas.drawRect(
           const Rect.fromLTRB(50, 50, 250, 250),
           Paint()
             ..shader = Gradient.sweep(
@@ -113,13 +115,14 @@ Future<void> testMain() async {
               TileMode.clamp,
               math.pi / 3.0,
               4.0 * math.pi / 3.0,
-            ));
+            ),
+        );
 
-      await drawPictureUsingCurrentRenderer(recorder.endRecording());
+        await drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-      await matchGoldenFile('sweep_gradient_paint.png', region: region);
-    });
-  },
-      skip: isFirefox &&
-          isHtml); // https://github.com/flutter/flutter/issues/86623
+        await matchGoldenFile('sweep_gradient_paint.png', region: region);
+      });
+    },
+    skip: isFirefox && isHtml,
+  ); // https://github.com/flutter/flutter/issues/86623
 }

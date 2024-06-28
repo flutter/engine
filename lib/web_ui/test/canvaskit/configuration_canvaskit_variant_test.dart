@@ -33,9 +33,10 @@ void testMain() {
     final CanvasKitVariant originalValue = configuration.canvasKitVariant;
     expect(configuration.canvasKitVariant, isNot(CanvasKitVariant.auto));
 
-    debugOverrideJsConfiguration(<String, Object?>{
-      'canvasKitVariant': 'auto',
-    }.jsify() as JsFlutterConfiguration?);
+    debugOverrideJsConfiguration(
+      <String, Object?>{'canvasKitVariant': 'auto'}.jsify()
+          as JsFlutterConfiguration?,
+    );
     expect(configuration.canvasKitVariant, CanvasKitVariant.auto);
 
     debugOverrideJsConfiguration(null);

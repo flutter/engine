@@ -110,7 +110,7 @@ abstract final class LabelRepresentationBehavior {
 ///     <flt-semantics aria-label="Hello, World!"></flt-semantics>
 final class AriaLabelRepresentation extends LabelRepresentationBehavior {
   AriaLabelRepresentation._(PrimaryRoleManager owner)
-      : super(LabelRepresentation.ariaLabel, owner);
+    : super(LabelRepresentation.ariaLabel, owner);
 
   String? _previousLabel;
 
@@ -145,7 +145,7 @@ final class AriaLabelRepresentation extends LabelRepresentationBehavior {
 /// [SizedSpanRepresentation] representation can be used.
 final class DomTextRepresentation extends LabelRepresentationBehavior {
   DomTextRepresentation._(PrimaryRoleManager owner)
-      : super(LabelRepresentation.domText, owner);
+    : super(LabelRepresentation.domText, owner);
 
   DomText? _domText;
   String? _previousLabel;
@@ -174,26 +174,28 @@ final class DomTextRepresentation extends LabelRepresentationBehavior {
 }
 
 /// A span queue for a size update.
-typedef _QueuedSizeUpdate = ({
-  // The span to be sized.
-  SizedSpanRepresentation representation,
+typedef _QueuedSizeUpdate =
+    ({
+      // The span to be sized.
+      SizedSpanRepresentation representation,
 
-  // The desired size.
-  ui.Size targetSize,
-});
+      // The desired size.
+      ui.Size targetSize,
+    });
 
 /// The size of a span as measured in the DOM.
-typedef _Measurement = ({
-  // The span that was measured.
-  SizedSpanRepresentation representation,
+typedef _Measurement =
+    ({
+      // The span that was measured.
+      SizedSpanRepresentation representation,
 
-  // The measured size of the DOM element before the size adjustment.
-  ui.Size domSize,
+      // The measured size of the DOM element before the size adjustment.
+      ui.Size domSize,
 
-  // The size of the element that the screen reader should observe after the
-  // size adjustment.
-  ui.Size targetSize,
-});
+      // The size of the element that the screen reader should observe after the
+      // size adjustment.
+      ui.Size targetSize,
+    });
 
 /// Sets the label as the text of a `<span>` child element.
 ///
@@ -236,22 +238,23 @@ typedef _Measurement = ({
 ///   the message (reads "heading").
 final class SizedSpanRepresentation extends LabelRepresentationBehavior {
   SizedSpanRepresentation._(PrimaryRoleManager owner)
-      : super(LabelRepresentation.sizedSpan, owner) {
+    : super(LabelRepresentation.sizedSpan, owner) {
     _domText.style
-      // `inline-block` is needed for two reasons:
-      // - It supports measuring the true size of the text. Pure `block` would
-      //   disassociate the size of the text from the size of the element.
-      // - It supports the `transform` and `transform-origin` properties. Pure
-      //   `inline` does not support them.
-      ..display = 'inline-block'
-
-      // Do not wrap text based on parent constraints. Instead, to fit in the
-      // parent's box the text will be scaled.
-      ..whiteSpace = 'nowrap'
-
-      // The origin of the coordinate system is the top-left corner of the
-      // parent element.
-      ..transformOrigin = '0 0 0';
+          // `inline-block` is needed for two reasons:
+          // - It supports measuring the true size of the text. Pure `block` would
+          //   disassociate the size of the text from the size of the element.
+          // - It supports the `transform` and `transform-origin` properties. Pure
+          //   `inline` does not support them.
+          ..display =
+          'inline-block'
+          // Do not wrap text based on parent constraints. Instead, to fit in the
+          // parent's box the text will be scaled.
+          ..whiteSpace =
+          'nowrap'
+          // The origin of the coordinate system is the top-left corner of the
+          // parent element.
+          ..transformOrigin =
+          '0 0 0';
     semanticsObject.element.appendChild(_domText);
   }
 
@@ -315,10 +318,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       // corresponding to the semantic node may still be detached.
       semanticsObject.owner.addOneTimePostUpdateCallback(_updateSizes);
     }
-    _resizeQueue!.add((
-      representation: this,
-      targetSize: size,
-    ));
+    _resizeQueue!.add((representation: this, targetSize: size));
   }
 
   @override
@@ -408,8 +408,10 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       }
     }
 
-    assert(_resizeQueue == null,
-        '_resizeQueue must be empty after it is processed.');
+    assert(
+      _resizeQueue == null,
+      '_resizeQueue must be empty after it is processed.',
+    );
   }
 
   // The structure of the sized span label looks like this:
@@ -435,9 +437,11 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 /// interactive controls. In such case the value is reported via that element's
 /// `value` attribute rather than rendering it separately.
 class LabelAndValue extends RoleManager {
-  LabelAndValue(SemanticsObject semanticsObject, PrimaryRoleManager owner,
-      {required this.preferredRepresentation})
-      : super(Role.labelAndValue, semanticsObject, owner);
+  LabelAndValue(
+    SemanticsObject semanticsObject,
+    PrimaryRoleManager owner, {
+    required this.preferredRepresentation,
+  }) : super(Role.labelAndValue, semanticsObject, owner);
 
   /// The preferred representation of the label in the DOM.
   ///
@@ -532,8 +536,11 @@ String? computeDomSemanticsLabel({
   String? hint,
   String? value,
 }) {
-  final String? labelHintValue =
-      _computeLabelHintValue(label: label, hint: hint, value: value);
+  final String? labelHintValue = _computeLabelHintValue(
+    label: label,
+    hint: hint,
+    value: value,
+  );
 
   if (tooltip == null && labelHintValue == null) {
     return null;
@@ -556,11 +563,7 @@ String? computeDomSemanticsLabel({
   return combinedValue.isNotEmpty ? combinedValue.toString() : null;
 }
 
-String? _computeLabelHintValue({
-  String? label,
-  String? hint,
-  String? value,
-}) {
+String? _computeLabelHintValue({String? label, String? hint, String? value}) {
   final String combinedValue = <String?>[label, hint, value]
       .whereType<String>() // poor man's null filter
       .where((String element) => element.trim().isNotEmpty)

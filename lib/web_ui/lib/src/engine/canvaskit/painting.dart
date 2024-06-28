@@ -148,7 +148,8 @@ class CkPaint implements ui.Paint {
         _effectiveColorFilter = _invertColorFilter;
       } else {
         _effectiveColorFilter = ManagedSkColorFilter(
-            CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
+          CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!),
+        );
       }
     }
     skiaObject.setColorFilter(_effectiveColorFilter?.skiaObject);
@@ -239,7 +240,8 @@ class CkPaint implements ui.Paint {
         _effectiveColorFilter = _invertColorFilter;
       } else {
         _effectiveColorFilter = ManagedSkColorFilter(
-            CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!));
+          CkComposeColorFilter(_invertColorFilter, _effectiveColorFilter!),
+        );
       }
     }
 
@@ -324,7 +326,8 @@ class CkPaint implements ui.Paint {
         if (strokeJoin == ui.StrokeJoin.miter) {
           if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
             result.write(
-                ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+              ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}',
+            );
           }
         } else {
           result.write(' $strokeJoin');
@@ -379,15 +382,21 @@ final Float32List _invertColorMatrix = Float32List.fromList(const <double>[
   -1.0, 0, 0, 1.0, 0, // row
   0, -1.0, 0, 1.0, 0, // row
   0, 0, -1.0, 1.0, 0, // row
-  1.0, 1.0, 1.0, 1.0, 0
+  1.0, 1.0, 1.0, 1.0, 0,
 ]);
 
-final ManagedSkColorFilter _invertColorFilter =
-    ManagedSkColorFilter(CkMatrixColorFilter(_invertColorMatrix));
+final ManagedSkColorFilter _invertColorFilter = ManagedSkColorFilter(
+  CkMatrixColorFilter(_invertColorMatrix),
+);
 
 class CkFragmentProgram implements ui.FragmentProgram {
-  CkFragmentProgram(this.name, this.effect, this.uniforms, this.floatCount,
-      this.textureCount);
+  CkFragmentProgram(
+    this.name,
+    this.effect,
+    this.uniforms,
+    this.floatCount,
+    this.textureCount,
+  );
 
   factory CkFragmentProgram.fromBytes(String name, Uint8List data) {
     final ShaderData shaderData = ShaderData.fromBytes(data);
@@ -419,9 +428,9 @@ class CkFragmentProgram implements ui.FragmentProgram {
 
 class CkFragmentShader implements ui.FragmentShader, CkShader {
   CkFragmentShader(this.name, this.effect, int floatCount, int textureCount)
-      : floats = mallocFloat32List(floatCount + textureCount * 2),
-        samplers = List<SkShader?>.filled(textureCount, null),
-        lastFloatIndex = floatCount;
+    : floats = mallocFloat32List(floatCount + textureCount * 2),
+      samplers = List<SkShader?>.filled(textureCount, null),
+      lastFloatIndex = floatCount;
 
   final String name;
   final SkRuntimeEffect effect;
@@ -437,13 +446,16 @@ class CkFragmentShader implements ui.FragmentShader, CkShader {
     assert(!_debugDisposed, 'FragmentShader has been disposed of.');
     ref?.dispose();
 
-    final SkShader? result = samplers.isEmpty
-        ? effect.makeShader(floats)
-        : effect.makeShaderWithChildren(floats, samplers);
+    final SkShader? result =
+        samplers.isEmpty
+            ? effect.makeShader(floats)
+            : effect.makeShaderWithChildren(floats, samplers);
     if (result == null) {
-      throw Exception('Invalid uniform data for shader $name:'
-          '  floatUniforms: $floats \n'
-          '  samplerUniforms: $samplers \n');
+      throw Exception(
+        'Invalid uniform data for shader $name:'
+        '  floatUniforms: $floats \n'
+        '  samplerUniforms: $samplers \n',
+      );
     }
 
     ref = UniqueRef<SkShader>(this, result, 'FragmentShader');
@@ -459,11 +471,17 @@ class CkFragmentShader implements ui.FragmentShader, CkShader {
   @override
   void setImageSampler(int index, ui.Image image) {
     assert(!_debugDisposed, 'FragmentShader has been disposed of.');
-    final ui.ImageShader sampler = ui.ImageShader(image, ui.TileMode.clamp,
-        ui.TileMode.clamp, toMatrix64(Matrix4.identity().storage));
+    final ui.ImageShader sampler = ui.ImageShader(
+      image,
+      ui.TileMode.clamp,
+      ui.TileMode.clamp,
+      toMatrix64(Matrix4.identity().storage),
+    );
     samplers[index] = (sampler as CkShader).getSkShader(ui.FilterQuality.none);
-    setFloat(lastFloatIndex + 2 * index,
-        (sampler as CkImageShader).imageWidth.toDouble());
+    setFloat(
+      lastFloatIndex + 2 * index,
+      (sampler as CkImageShader).imageWidth.toDouble(),
+    );
     setFloat(lastFloatIndex + 2 * index + 1, sampler.imageHeight.toDouble());
   }
 

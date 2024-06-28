@@ -452,5 +452,5 @@ final Uint8List kTranslucentPng = Uint8List.fromList(<int>[
   0xae,
   0x42,
   0x60,
-  0x82
+  0x82,
 ]);

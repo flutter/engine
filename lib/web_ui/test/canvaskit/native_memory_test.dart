@@ -35,14 +35,19 @@ void testMain() {
       expect(mockFinalizationRegistry.registeredPairs, hasLength(0));
       final Object owner = Object();
       final TestSkDeletable nativeObject = TestSkDeletable();
-      final UniqueRef<TestSkDeletable> ref =
-          UniqueRef<TestSkDeletable>(owner, nativeObject, 'TestSkDeletable');
+      final UniqueRef<TestSkDeletable> ref = UniqueRef<TestSkDeletable>(
+        owner,
+        nativeObject,
+        'TestSkDeletable',
+      );
       expect(ref.isDisposed, isFalse);
       expect(ref.nativeObject, same(nativeObject));
       expect(TestSkDeletableMock.deleteCount, 0);
       expect(mockFinalizationRegistry.registeredPairs, hasLength(1));
       expect(
-          mockFinalizationRegistry.registeredPairs.single.owner, same(owner));
+        mockFinalizationRegistry.registeredPairs.single.owner,
+        same(owner),
+      );
       expect(mockFinalizationRegistry.registeredPairs.single.ref, same(ref));
 
       ref.dispose();
@@ -73,8 +78,11 @@ void testMain() {
       expect(mockFinalizationRegistry.registeredPairs, hasLength(0));
       final Object owner = Object();
       final TestSkDeletable nativeObject = TestSkDeletable();
-      final UniqueRef<TestSkDeletable> ref =
-          UniqueRef<TestSkDeletable>(owner, nativeObject, 'TestSkDeletable');
+      final UniqueRef<TestSkDeletable> ref = UniqueRef<TestSkDeletable>(
+        owner,
+        nativeObject,
+        'TestSkDeletable',
+      );
       expect(ref.isDisposed, isFalse);
       expect(ref.nativeObject, same(nativeObject));
       expect(TestSkDeletableMock.deleteCount, 0);
@@ -96,8 +104,11 @@ void testMain() {
       final TestSkDeletable nativeObject = TestSkDeletable();
 
       expect(Instrumentation.instance.debugCounters, <String, int>{});
-      final UniqueRef<TestSkDeletable> ref =
-          UniqueRef<TestSkDeletable>(owner, nativeObject, 'TestSkDeletable');
+      final UniqueRef<TestSkDeletable> ref = UniqueRef<TestSkDeletable>(
+        owner,
+        nativeObject,
+        'TestSkDeletable',
+      );
       expect(Instrumentation.instance.debugCounters, <String, int>{
         'TestSkDeletable Created': 1,
       });
@@ -116,8 +127,11 @@ void testMain() {
       final TestSkDeletable nativeObject = TestSkDeletable();
 
       expect(Instrumentation.instance.debugCounters, <String, int>{});
-      final UniqueRef<TestSkDeletable> ref =
-          UniqueRef<TestSkDeletable>(owner, nativeObject, 'TestSkDeletable');
+      final UniqueRef<TestSkDeletable> ref = UniqueRef<TestSkDeletable>(
+        owner,
+        nativeObject,
+        'TestSkDeletable',
+      );
       expect(Instrumentation.instance.debugCounters, <String, int>{
         'TestSkDeletable Created': 1,
       });
@@ -179,7 +193,8 @@ void testMain() {
       expect(owner2.ref.nativeObject, nativeObject);
       expect(TestSkDeletableMock.deleteCount, 0);
       expect(
-        reason: 'Second owner does not add more native object owners. '
+        reason:
+            'Second owner does not add more native object owners. '
             'The underlying shared UniqueRef is the only one.',
         mockFinalizationRegistry.registeredPairs,
         hasLength(1),
@@ -232,9 +247,12 @@ class TestSkDeletableMock {
   bool _isDeleted = false;
 
   void delete() {
-    expect(_isDeleted, isFalse,
-        reason:
-            'CanvasKit does not allow deleting the same object more than once.');
+    expect(
+      _isDeleted,
+      isFalse,
+      reason:
+          'CanvasKit does not allow deleting the same object more than once.',
+    );
     _isDeleted = true;
     deleteCount++;
   }
@@ -249,17 +267,23 @@ class TestSkDeletable implements SkDeletable {
   factory TestSkDeletable() {
     final TestSkDeletableMock mock = TestSkDeletableMock();
     return TestSkDeletable._(
-        isDeleted: () {
-          return mock.isDeleted();
-        }.toJS,
-        delete: () {
-          return mock.delete();
-        }.toJS,
-        constructor: mock.constructor);
+      isDeleted:
+          () {
+            return mock.isDeleted();
+          }.toJS,
+      delete:
+          () {
+            return mock.delete();
+          }.toJS,
+      constructor: mock.constructor,
+    );
   }
 
-  external factory TestSkDeletable._(
-      {JSFunction isDeleted, JSFunction delete, JsConstructor constructor});
+  external factory TestSkDeletable._({
+    JSFunction isDeleted,
+    JSFunction delete,
+    JsConstructor constructor,
+  });
 }
 
 @JS()
@@ -276,7 +300,10 @@ class TestCountedRefOwner implements StackTraceDebugger {
       return true;
     }());
     ref = CountedRef<TestCountedRefOwner, TestSkDeletable>(
-        nativeObject, this, 'TestCountedRefOwner');
+      nativeObject,
+      this,
+      'TestCountedRefOwner',
+    );
   }
 
   TestCountedRefOwner.cloneOf(this.ref) {

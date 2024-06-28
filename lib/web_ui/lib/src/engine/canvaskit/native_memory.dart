@@ -20,12 +20,13 @@ import 'package:ui/src/engine.dart';
 /// 4. GC decides to perform a GC cycle and collects CkPaint.
 /// 5. The finalizer function is called with the SkPaint as the sole argument.
 /// 6. We call `delete` on SkPaint.
-DomFinalizationRegistry _finalizationRegistry =
-    DomFinalizationRegistry((ExternalDartReference boxedUniq) {
-  // ignore: cast_nullable_to_non_nullable
-  final UniqueRef<Object> uniq = boxedUniq.toDartObject as UniqueRef<Object>;
-  uniq.collect();
-}.toJS);
+DomFinalizationRegistry _finalizationRegistry = DomFinalizationRegistry(
+  (ExternalDartReference boxedUniq) {
+    // ignore: cast_nullable_to_non_nullable
+    final UniqueRef<Object> uniq = boxedUniq.toDartObject as UniqueRef<Object>;
+    uniq.collect();
+  }.toJS,
+);
 
 NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry =
     NativeMemoryFinalizationRegistry();
@@ -36,7 +37,9 @@ class NativeMemoryFinalizationRegistry {
   void register(Object owner, UniqueRef<Object> ref) {
     if (browserSupportsFinalizationRegistry) {
       _finalizationRegistry.register(
-          owner.toExternalReference, ref.toExternalReference);
+        owner.toExternalReference,
+        ref.toExternalReference,
+      );
     }
   }
 }
@@ -82,8 +85,10 @@ class UniqueRef<T extends Object> {
   /// [SkPicture] exists that still references it. On the other hand, [SkPaint]
   /// is deleted eagerly.
   void dispose() {
-    assert(!isDisposed,
-        'A native object reference cannot be disposed more than once.');
+    assert(
+      !isDisposed,
+      'A native object reference cannot be disposed more than once.',
+    );
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('$_debugOwnerLabel Deleted');
     }
@@ -186,9 +191,10 @@ class CountedRef<R extends StackTraceDebugger, T extends Object> {
   List<StackTrace> debugGetStackTraces() {
     List<StackTrace>? result;
     assert(() {
-      result = debugReferrers
-          .map<StackTrace>((R referrer) => referrer.debugStackTrace)
-          .toList();
+      result =
+          debugReferrers
+              .map<StackTrace>((R referrer) => referrer.debugStackTrace)
+              .toList();
       return true;
     }());
 
@@ -202,10 +208,7 @@ class CountedRef<R extends StackTraceDebugger, T extends Object> {
   /// Increases the reference count of this box because a new object began
   /// sharing ownership of the underlying [nativeObject].
   void ref(R debugReferrer) {
-    assert(
-      !_ref.isDisposed,
-      'Cannot increment ref count on a deleted handle.',
-    );
+    assert(!_ref.isDisposed, 'Cannot increment ref count on a deleted handle.');
     assert(_refCount > 0);
     assert(
       debugReferrers.add(debugReferrer),

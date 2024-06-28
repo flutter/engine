@@ -26,14 +26,15 @@ void testMain() {
   });
 
   test(
-      'lerpDouble should treat a null input as 0 if the other input is non-null',
-      () {
-    expect(lerpDouble(null, 10.0, 0.25), within(from: 2.5));
-    expect(lerpDouble(10.0, null, 0.25), within(from: 7.5));
+    'lerpDouble should treat a null input as 0 if the other input is non-null',
+    () {
+      expect(lerpDouble(null, 10.0, 0.25), within(from: 2.5));
+      expect(lerpDouble(10.0, null, 0.25), within(from: 7.5));
 
-    expect(lerpDouble(null, 10, 0.25), within(from: 2.5));
-    expect(lerpDouble(10, null, 0.25), within(from: 7.5));
-  });
+      expect(lerpDouble(null, 10, 0.25), within(from: 2.5));
+      expect(lerpDouble(10, null, 0.25), within(from: 7.5));
+    },
+  );
 
   test('lerpDouble should handle interpolation values < 0.0', () {
     expect(lerpDouble(0.0, 10.0, -5.0), within(from: -50.0));
@@ -85,68 +86,91 @@ void testMain() {
   });
 
   test(
-      'lerpDouble should return input value in all cases if begin/end are equal',
-      () {
-    expect(lerpDouble(10.0, 10.0, 5.0), 10.0);
-    expect(lerpDouble(10.0, 10.0, double.nan), 10.0);
-    expect(lerpDouble(10.0, 10.0, double.infinity), 10.0);
-    expect(lerpDouble(10.0, 10.0, -double.infinity), 10.0);
+    'lerpDouble should return input value in all cases if begin/end are equal',
+    () {
+      expect(lerpDouble(10.0, 10.0, 5.0), 10.0);
+      expect(lerpDouble(10.0, 10.0, double.nan), 10.0);
+      expect(lerpDouble(10.0, 10.0, double.infinity), 10.0);
+      expect(lerpDouble(10.0, 10.0, -double.infinity), 10.0);
 
-    expect(lerpDouble(10, 10, 5.0), 10.0);
-    expect(lerpDouble(10, 10, double.nan), 10.0);
-    expect(lerpDouble(10, 10, double.infinity), 10.0);
-    expect(lerpDouble(10, 10, -double.infinity), 10.0);
+      expect(lerpDouble(10, 10, 5.0), 10.0);
+      expect(lerpDouble(10, 10, double.nan), 10.0);
+      expect(lerpDouble(10, 10, double.infinity), 10.0);
+      expect(lerpDouble(10, 10, -double.infinity), 10.0);
 
-    expect(lerpDouble(double.nan, double.nan, 5.0), isNaN);
-    expect(lerpDouble(double.nan, double.nan, double.nan), isNaN);
-    expect(lerpDouble(double.nan, double.nan, double.infinity), isNaN);
-    expect(lerpDouble(double.nan, double.nan, -double.infinity), isNaN);
+      expect(lerpDouble(double.nan, double.nan, 5.0), isNaN);
+      expect(lerpDouble(double.nan, double.nan, double.nan), isNaN);
+      expect(lerpDouble(double.nan, double.nan, double.infinity), isNaN);
+      expect(lerpDouble(double.nan, double.nan, -double.infinity), isNaN);
 
-    expect(lerpDouble(double.infinity, double.infinity, 5.0), double.infinity);
-    expect(lerpDouble(double.infinity, double.infinity, double.nan),
-        double.infinity);
-    expect(lerpDouble(double.infinity, double.infinity, double.infinity),
-        double.infinity);
-    expect(lerpDouble(double.infinity, double.infinity, -double.infinity),
-        double.infinity);
+      expect(
+        lerpDouble(double.infinity, double.infinity, 5.0),
+        double.infinity,
+      );
+      expect(
+        lerpDouble(double.infinity, double.infinity, double.nan),
+        double.infinity,
+      );
+      expect(
+        lerpDouble(double.infinity, double.infinity, double.infinity),
+        double.infinity,
+      );
+      expect(
+        lerpDouble(double.infinity, double.infinity, -double.infinity),
+        double.infinity,
+      );
 
-    expect(
-        lerpDouble(-double.infinity, -double.infinity, 5.0), -double.infinity);
-    expect(lerpDouble(-double.infinity, -double.infinity, double.nan),
-        -double.infinity);
-    expect(lerpDouble(-double.infinity, -double.infinity, double.infinity),
-        -double.infinity);
-    expect(lerpDouble(-double.infinity, -double.infinity, -double.infinity),
-        -double.infinity);
-  });
+      expect(
+        lerpDouble(-double.infinity, -double.infinity, 5.0),
+        -double.infinity,
+      );
+      expect(
+        lerpDouble(-double.infinity, -double.infinity, double.nan),
+        -double.infinity,
+      );
+      expect(
+        lerpDouble(-double.infinity, -double.infinity, double.infinity),
+        -double.infinity,
+      );
+      expect(
+        lerpDouble(-double.infinity, -double.infinity, -double.infinity),
+        -double.infinity,
+      );
+    },
+  );
 
   test(
-      'lerpDouble should throw AssertionError if interpolation value is NaN and a != b',
-      () {
-    expectAssertion(() => lerpDouble(0.0, 10.0, double.nan));
-  });
+    'lerpDouble should throw AssertionError if interpolation value is NaN and a != b',
+    () {
+      expectAssertion(() => lerpDouble(0.0, 10.0, double.nan));
+    },
+  );
 
   test(
-      'lerpDouble should throw AssertionError if interpolation value is +/- infinity and a != b',
-      () {
-    expectAssertion(() => lerpDouble(0.0, 10.0, double.infinity));
-    expectAssertion(() => lerpDouble(0.0, 10.0, -double.infinity));
-  });
-
-  test('lerpDouble should throw AssertionError if either start or end are NaN',
-      () {
-    expectAssertion(() => lerpDouble(double.nan, 10.0, 5.0));
-    expectAssertion(() => lerpDouble(0.0, double.nan, 5.0));
-  });
+    'lerpDouble should throw AssertionError if interpolation value is +/- infinity and a != b',
+    () {
+      expectAssertion(() => lerpDouble(0.0, 10.0, double.infinity));
+      expectAssertion(() => lerpDouble(0.0, 10.0, -double.infinity));
+    },
+  );
 
   test(
-      'lerpDouble should throw AssertionError if either start or end are +/- infinity',
-      () {
-    expectAssertion(() => lerpDouble(double.infinity, 10.0, 5.0));
-    expectAssertion(() => lerpDouble(-double.infinity, 10.0, 5.0));
-    expectAssertion(() => lerpDouble(0.0, double.infinity, 5.0));
-    expectAssertion(() => lerpDouble(0.0, -double.infinity, 5.0));
-  });
+    'lerpDouble should throw AssertionError if either start or end are NaN',
+    () {
+      expectAssertion(() => lerpDouble(double.nan, 10.0, 5.0));
+      expectAssertion(() => lerpDouble(0.0, double.nan, 5.0));
+    },
+  );
+
+  test(
+    'lerpDouble should throw AssertionError if either start or end are +/- infinity',
+    () {
+      expectAssertion(() => lerpDouble(double.infinity, 10.0, 5.0));
+      expectAssertion(() => lerpDouble(-double.infinity, 10.0, 5.0));
+      expectAssertion(() => lerpDouble(0.0, double.infinity, 5.0));
+      expectAssertion(() => lerpDouble(0.0, -double.infinity, 5.0));
+    },
+  );
 }
 
 typedef DoubleFunction = double? Function();

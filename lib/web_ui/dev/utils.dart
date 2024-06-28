@@ -15,27 +15,27 @@ import 'environment.dart';
 import 'exceptions.dart';
 import 'felt_config.dart';
 
-enum RuntimeMode {
-  debug,
-  profile,
-  release,
-}
+enum RuntimeMode { debug, profile, release }
 
 class FilePath {
   FilePath.fromCwd(String relativePath)
-      : _absolutePath = path.absolute(relativePath);
+    : _absolutePath = path.absolute(relativePath);
   FilePath.fromWebUi(String relativePath)
-      : _absolutePath = path.join(environment.webUiRootDir.path, relativePath);
+    : _absolutePath = path.join(environment.webUiRootDir.path, relativePath);
   FilePath.fromTestSet(TestSet testSet, String relativePath)
-      : _absolutePath =
-            path.join(getTestSetDirectory(testSet).path, relativePath);
+    : _absolutePath = path.join(
+        getTestSetDirectory(testSet).path,
+        relativePath,
+      );
 
   final String _absolutePath;
 
   String get absolute => _absolutePath;
   String get relativeToCwd => path.relative(_absolutePath);
-  String get relativeToWebUi =>
-      path.relative(_absolutePath, from: environment.webUiRootDir.path);
+  String get relativeToWebUi => path.relative(
+    _absolutePath,
+    from: environment.webUiRootDir.path,
+  );
 
   @override
   bool operator ==(Object other) {
@@ -57,13 +57,14 @@ Future<int> runProcess(
   bool failureIsSuccess = false,
   Map<String, String> environment = const <String, String>{},
 }) async {
-  final ProcessManager manager = await startProcess(
-    executable,
-    arguments,
-    workingDirectory: workingDirectory,
-    failureIsSuccess: failureIsSuccess,
-    environment: environment,
-  );
+  final ProcessManager manager =
+      await startProcess(
+        executable,
+        arguments,
+        workingDirectory: workingDirectory,
+        failureIsSuccess: failureIsSuccess,
+        environment: environment,
+      );
   return manager.wait();
 }
 
@@ -78,13 +79,14 @@ Future<String> evalProcess(
   String? workingDirectory,
   Map<String, String> environment = const <String, String>{},
 }) async {
-  final ProcessManager manager = await startProcess(
-    executable,
-    arguments,
-    workingDirectory: workingDirectory,
-    environment: environment,
-    evalOutput: true,
-  );
+  final ProcessManager manager =
+      await startProcess(
+        executable,
+        arguments,
+        workingDirectory: workingDirectory,
+        environment: environment,
+        evalOutput: true,
+      );
   return manager.evalStdout();
 }
 
@@ -110,23 +112,25 @@ Future<ProcessManager> startProcess(
   bool evalOutput = false,
   Map<String, String> environment = const <String, String>{},
 }) async {
-  final io.Process process = await io.Process.start(
-    executable,
-    arguments,
-    workingDirectory: workingDirectory,
-    // Running the process in a system shell for Windows. Otherwise
-    // the process is not able to get Dart from path.
-    runInShell: io.Platform.isWindows,
-    // When [evalOutput] is false, we don't need to intercept the stdout of the
-    // sub-process. In this case, it's better to run the sub-process in the
-    // `inheritStdio` mode which lets it print directly to the terminal.
-    // This allows sub-processes such as `ninja` to use all kinds of terminal
-    // features like printing colors, printing progress on the same line, etc.
-    mode: evalOutput
-        ? io.ProcessStartMode.normal
-        : io.ProcessStartMode.inheritStdio,
-    environment: environment,
-  );
+  final io.Process process =
+      await io.Process.start(
+        executable,
+        arguments,
+        workingDirectory: workingDirectory,
+        // Running the process in a system shell for Windows. Otherwise
+        // the process is not able to get Dart from path.
+        runInShell: io.Platform.isWindows,
+        // When [evalOutput] is false, we don't need to intercept the stdout of the
+        // sub-process. In this case, it's better to run the sub-process in the
+        // `inheritStdio` mode which lets it print directly to the terminal.
+        // This allows sub-processes such as `ninja` to use all kinds of terminal
+        // features like printing colors, printing progress on the same line, etc.
+        mode:
+            evalOutput
+                ? io.ProcessStartMode.normal
+                : io.ProcessStartMode.inheritStdio,
+        environment: environment,
+      );
   processesToCleanUp.add(process);
 
   return ProcessManager._(
@@ -149,8 +153,8 @@ class ProcessManager {
     required this.process,
     required bool evalOutput,
     required bool failureIsSuccess,
-  })  : _evalOutput = evalOutput,
-        _failureIsSuccess = failureIsSuccess {
+  }) : _evalOutput = evalOutput,
+       _failureIsSuccess = failureIsSuccess {
     if (_evalOutput) {
       _forwardStream(process.stdout, _stdout);
       _forwardStream(process.stderr, _stderr);
@@ -216,7 +220,8 @@ class ProcessManager {
     if (!_evalOutput) {
       kill();
       _throwProcessException(
-        description: 'Cannot eval process output. The process was launched '
+        description:
+            'Cannot eval process output. The process was launched '
             'with `evalOutput` set to false.',
       );
     }
@@ -302,7 +307,8 @@ class ProcessException implements Exception {
       ..writeln(description)
       ..writeln('Command: $executable ${arguments.join(' ')}')
       ..writeln(
-          'Working directory: ${workingDirectory ?? io.Directory.current.path}');
+        'Working directory: ${workingDirectory ?? io.Directory.current.path}',
+      );
     if (exitCode != null) {
       message.writeln('Exit code: $exitCode');
     }
@@ -323,7 +329,8 @@ mixin ArgUtils<T> on Command<T> {
     final bool isDebug = boolArg('debug');
     if (isProfile && isDebug) {
       throw ToolExit(
-          'Cannot specify both --profile and --debug at the same time.');
+        'Cannot specify both --profile and --debug at the same time.',
+      );
     }
     if (isProfile) {
       return RuntimeMode.profile;
@@ -384,25 +391,21 @@ Future<void> cleanup() async {
 }
 
 io.Directory getTestSetDirectory(TestSet testSet) {
-  return io.Directory(path.join(
-    environment.webUiTestDir.path,
-    testSet.directory,
-  ));
+  return io.Directory(
+    path.join(environment.webUiTestDir.path, testSet.directory),
+  );
 }
 
 io.Directory getBundleBuildDirectory(TestBundle bundle) {
-  return io.Directory(path.join(
-    environment.webUiBuildDir.path,
-    'test_bundles',
-    bundle.name,
-  ));
+  return io.Directory(
+    path.join(environment.webUiBuildDir.path, 'test_bundles', bundle.name),
+  );
 }
 
 io.Directory getSkiaGoldDirectoryForSuite(TestSuite suite) {
-  return io.Directory(path.join(
-    environment.webUiSkiaGoldDirectory.path,
-    suite.name,
-  ));
+  return io.Directory(
+    path.join(environment.webUiSkiaGoldDirectory.path, suite.name),
+  );
 }
 
 extension AnsiColors on String {

@@ -57,32 +57,22 @@ Future<void> testMain() async {
   /// be seen depending on pixel alignment and whether antialiasing happens
   /// before or after rasterization.
   void drawMisalignedLines(BitmapCanvas canvas) {
-    final SurfacePaintData linePaint = (SurfacePaint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1)
-        .paintData;
+    final SurfacePaintData linePaint =
+        (SurfacePaint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1)
+            .paintData;
 
     final SurfacePaintData fillPaint =
         (SurfacePaint()..style = PaintingStyle.fill).paintData;
 
     canvas.translate(10, 10);
 
-    canvas.drawRect(
-      const Rect.fromLTWH(0, 0, 40, 40),
-      linePaint,
-    );
+    canvas.drawRect(const Rect.fromLTWH(0, 0, 40, 40), linePaint);
 
-    canvas.drawLine(
-      const Offset(10, 0),
-      const Offset(10, 40),
-      linePaint,
-    );
+    canvas.drawLine(const Offset(10, 0), const Offset(10, 40), linePaint);
 
-    canvas.drawLine(
-      const Offset(20.5, 0),
-      const Offset(20, 40),
-      linePaint,
-    );
+    canvas.drawLine(const Offset(20.5, 0), const Offset(20, 40), linePaint);
 
     canvas.drawCircle(const Offset(30, 10), 3, fillPaint);
     canvas.drawCircle(const Offset(30.5, 30), 3, fillPaint);
@@ -95,8 +85,10 @@ Future<void> testMain() async {
 
     appendToScene();
 
-    await matchGoldenFile('misaligned_pixels_in_canvas_test.png',
-        region: region);
+    await matchGoldenFile(
+      'misaligned_pixels_in_canvas_test.png',
+      region: region,
+    );
   });
 
   test('compensates for misalignment of the canvas', () async {
@@ -105,8 +97,10 @@ Future<void> testMain() async {
     // shift its position back to 0.0 and at the same time it will it will
     // compensate by shifting the contents of the canvas in the opposite
     // direction.
-    canvas =
-        BitmapCanvas(const Rect.fromLTWH(0.5, 0.5, 60, 60), RenderStrategy());
+    canvas = BitmapCanvas(
+      const Rect.fromLTWH(0.5, 0.5, 60, 60),
+      RenderStrategy(),
+    );
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     drawMisalignedLines(canvas);
 
@@ -123,22 +117,28 @@ Future<void> testMain() async {
 
     appendToScene();
 
-    await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png',
-        region: region);
+    await matchGoldenFile(
+      'bitmap_canvas_fills_color_when_transformed.png',
+      region: region,
+    );
   });
 
   test('fill the whole canvas with paint even when transformed', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
-    canvas.drawPaint(SurfacePaintData()
-      ..color = const Color.fromRGBO(0, 255, 0, 1.0).value
-      ..style = PaintingStyle.fill);
+    canvas.drawPaint(
+      SurfacePaintData()
+        ..color = const Color.fromRGBO(0, 255, 0, 1.0).value
+        ..style = PaintingStyle.fill,
+    );
 
     appendToScene();
 
-    await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png',
-        region: region);
+    await matchGoldenFile(
+      'bitmap_canvas_fills_paint_when_transformed.png',
+      region: region,
+    );
   });
 
   // This test reproduces text blurriness when two pieces of text appear inside
@@ -158,8 +158,8 @@ Future<void> testMain() async {
   test('renders clipped DOM text with high quality', () async {
     final CanvasParagraph paragraph =
         (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))
-              ..addText('Am I blurry?'))
-            .build() as CanvasParagraph;
+              ..addText('Am I blurry?')).build()
+            as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
     final Rect canvasSize = Rect.fromLTRB(
@@ -168,10 +168,18 @@ Future<void> testMain() async {
       paragraph.maxIntrinsicWidth + 16,
       2 * paragraph.height + 32,
     );
-    final Rect outerClip =
-        Rect.fromLTRB(0.5, 0.5, canvasSize.right, canvasSize.bottom);
+    final Rect outerClip = Rect.fromLTRB(
+      0.5,
+      0.5,
+      canvasSize.right,
+      canvasSize.bottom,
+    );
     final Rect innerClip = Rect.fromLTRB(
-        0.5, canvasSize.bottom / 2 + 0.5, canvasSize.right, canvasSize.bottom);
+      0.5,
+      canvasSize.bottom / 2 + 0.5,
+      canvasSize.right,
+      canvasSize.bottom,
+    );
 
     canvas = BitmapCanvas(canvasSize, RenderStrategy());
     canvas.debugChildOverdraw = true;
@@ -201,10 +209,9 @@ Future<void> testMain() async {
   //       attempts to reproduce. However, it's still good to have this test
   //       for potential future regressions related to paint order.
   test('draws text on top of canvas when transformed and clipped', () async {
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
-      fontFamily: 'Ahem',
-      fontSize: 18,
-    ));
+    final ParagraphBuilder builder = ParagraphBuilder(
+      ParagraphStyle(fontFamily: 'Ahem', fontSize: 18),
+    );
 
     const String text =
         'This text is intentionally very long to make sure that it '
@@ -219,9 +226,10 @@ Future<void> testMain() async {
     canvas = BitmapCanvas(canvasSize, RenderStrategy());
     canvas.debugChildOverdraw = true;
 
-    final SurfacePaintData pathPaint = SurfacePaintData()
-      ..color = 0xFF7F7F7F
-      ..style = PaintingStyle.fill;
+    final SurfacePaintData pathPaint =
+        SurfacePaintData()
+          ..color = 0xFF7F7F7F
+          ..style = PaintingStyle.fill;
 
     const double r = 200.0;
     const double l = 50.0;
@@ -238,14 +246,17 @@ Future<void> testMain() async {
           ..close())
         .shift(const Offset(250, 250));
 
-    final SurfacePaintData borderPaint = SurfacePaintData()
-      ..color = black.value
-      ..style = PaintingStyle.stroke;
+    final SurfacePaintData borderPaint =
+        SurfacePaintData()
+          ..color = black.value
+          ..style = PaintingStyle.stroke;
 
     canvas.drawPath(path, pathPaint);
     canvas.drawParagraph(paragraph, const Offset(180, 50));
     canvas.drawRect(
-        Rect.fromLTWH(180, 50, paragraph.width, paragraph.height), borderPaint);
+      Rect.fromLTWH(180, 50, paragraph.width, paragraph.height),
+      borderPaint,
+    );
 
     expect(
       canvas.rootElement
@@ -257,11 +268,13 @@ Future<void> testMain() async {
     );
 
     final SceneBuilder sb = SceneBuilder();
-    sb.pushTransform(Matrix4.diagonal3Values(
-            EngineFlutterDisplay.instance.browserDevicePixelRatio,
-            EngineFlutterDisplay.instance.browserDevicePixelRatio,
-            1.0)
-        .toFloat64());
+    sb.pushTransform(
+      Matrix4.diagonal3Values(
+        EngineFlutterDisplay.instance.browserDevicePixelRatio,
+        EngineFlutterDisplay.instance.browserDevicePixelRatio,
+        1.0,
+      ).toFloat64(),
+    );
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).toFloat64());
     sb.pushOffset(0, -500);
     sb.pushClipRect(canvasSize);
@@ -293,17 +306,15 @@ Future<void> testMain() async {
   test('does not allocate bitmap canvas just for text', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
 
-    final ParagraphBuilder builder =
-        ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'));
+    final ParagraphBuilder builder = ParagraphBuilder(
+      ParagraphStyle(fontFamily: 'Roboto'),
+    );
     builder.addText('Hello');
     final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
     canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));
-    expect(
-      canvas.rootElement.querySelectorAll('canvas'),
-      isEmpty,
-    );
+    expect(canvas.rootElement.querySelectorAll('canvas'), isEmpty);
     expect(
       canvas.rootElement.querySelectorAll('flt-paragraph').single.innerText,
       'Hello',

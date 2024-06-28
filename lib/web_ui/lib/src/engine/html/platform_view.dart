@@ -11,7 +11,12 @@ import 'surface.dart';
 /// A surface containing a platform view, which is an HTML element.
 class PersistedPlatformView extends PersistedLeafSurface {
   PersistedPlatformView(
-      this.platformViewId, this.dx, this.dy, this.width, this.height) {
+    this.platformViewId,
+    this.dx,
+    this.dy,
+    this.width,
+    this.height,
+  ) {
     // Ensure platform view with `viewId` is injected into the `implicitView`
     // before rendering its shadow DOM `slot`.
     final EngineFlutterView implicitView =

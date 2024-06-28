@@ -23,7 +23,7 @@ enum PointerDeviceKind {
   stylus,
   invertedStylus,
   trackpad,
-  unknown
+  unknown,
 }
 
 enum PointerSignalKind { none, scroll, scrollInertiaCancel, scale, unknown }

@@ -21,10 +21,11 @@ Future<void> testMain() async {
       );
       expect(
         adjustRectForDom(
-            rect,
-            SurfacePaintData()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 0),
+          rect,
+          SurfacePaintData()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 0,
+        ),
         rect,
       );
     });
@@ -33,26 +34,29 @@ Future<void> testMain() async {
       const Rect rect = Rect.fromLTWH(10, 20, 140, 160);
       expect(
         adjustRectForDom(
-            rect,
-            SurfacePaintData()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1),
+          rect,
+          SurfacePaintData()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1,
+        ),
         const Rect.fromLTWH(9.5, 19.5, 139, 159),
       );
       expect(
         adjustRectForDom(
-            rect,
-            SurfacePaintData()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 10),
+          rect,
+          SurfacePaintData()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 10,
+        ),
         const Rect.fromLTWH(5, 15, 130, 150),
       );
       expect(
         adjustRectForDom(
-            rect,
-            SurfacePaintData()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 15),
+          rect,
+          SurfacePaintData()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 15,
+        ),
         const Rect.fromLTWH(2.5, 12.5, 125, 145),
       );
     });
@@ -81,18 +85,20 @@ Future<void> testMain() async {
       const Rect rect = Rect.fromLTWH(100, 200, 20, 70);
       expect(
         adjustRectForDom(
-            rect,
-            SurfacePaintData()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 50),
+          rect,
+          SurfacePaintData()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 50,
+        ),
         const Rect.fromLTWH(75, 175, 0, 20),
       );
       expect(
         adjustRectForDom(
-            rect,
-            SurfacePaintData()
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 80),
+          rect,
+          SurfacePaintData()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 80,
+        ),
         const Rect.fromLTWH(60, 160, 0, 0),
       );
     });

@@ -139,18 +139,36 @@ class Conic {
     final double scale = 1.0 / (1.0 + fW);
     final double newW = _subdivideWeightValue(fW);
     final ui.Offset wp1 = ui.Offset(fW * p1x, fW * p1y);
-    ui.Offset m = ui.Offset((p0x + (2 * wp1.dx) + p2x) * scale * 0.5,
-        (p0y + 2 * wp1.dy + p2y) * scale * 0.5);
+    ui.Offset m = ui.Offset(
+      (p0x + (2 * wp1.dx) + p2x) * scale * 0.5,
+      (p0y + 2 * wp1.dy + p2y) * scale * 0.5,
+    );
     if (m.dx.isNaN || m.dy.isNaN) {
       final double w2 = fW * 2;
       final double scaleHalf = 1.0 / (1 + fW) * 0.5;
-      m = ui.Offset((p0x + (w2 * p1x) + p2x) * scaleHalf,
-          (p0y + (w2 * p1y) + p2y) * scaleHalf);
+      m = ui.Offset(
+        (p0x + (w2 * p1x) + p2x) * scaleHalf,
+        (p0y + (w2 * p1y) + p2y) * scaleHalf,
+      );
     }
-    pair.first = Conic(p0x, p0y, (p0x + wp1.dx) * scale, (p0y + wp1.dy) * scale,
-        m.dx, m.dy, newW);
-    pair.second = Conic(m.dx, m.dy, (p2x + wp1.dx) * scale,
-        (p2y + wp1.dy) * scale, p2x, p2y, newW);
+    pair.first = Conic(
+      p0x,
+      p0y,
+      (p0x + wp1.dx) * scale,
+      (p0y + wp1.dy) * scale,
+      m.dx,
+      m.dy,
+      newW,
+    );
+    pair.second = Conic(
+      m.dx,
+      m.dy,
+      (p2x + wp1.dx) * scale,
+      (p2y + wp1.dy) * scale,
+      p2x,
+      p2y,
+      newW,
+    );
   }
 
   void chopAtYExtrema(List<Conic> dst) {
@@ -258,10 +276,24 @@ class Conic {
       cp1y = chopPointY;
     }
 
-    final Conic conic0 =
-        Conic(p0x, p0y, dx0 / dz0, cp0y, chopPointX, chopPointY, w0);
-    final Conic conic1 =
-        Conic(chopPointX, chopPointY, dx2 / dz2, cp1y, p2x, p2y, w2);
+    final Conic conic0 = Conic(
+      p0x,
+      p0y,
+      dx0 / dz0,
+      cp0y,
+      chopPointX,
+      chopPointY,
+      w0,
+    );
+    final Conic conic1 = Conic(
+      chopPointX,
+      chopPointY,
+      dx2 / dz2,
+      cp1y,
+      p2x,
+      p2y,
+      w2,
+    );
     dst.add(conic0);
     dst.add(conic1);
     return true;
@@ -274,12 +306,14 @@ class Conic {
   int _computeSubdivisionCount(double tolerance) {
     assert(tolerance.isFinite);
     // Expecting finite coordinates.
-    assert(p0x.isFinite &&
-        p1x.isFinite &&
-        p2x.isFinite &&
-        p0y.isFinite &&
-        p1y.isFinite &&
-        p2y.isFinite);
+    assert(
+      p0x.isFinite &&
+          p1x.isFinite &&
+          p2x.isFinite &&
+          p0y.isFinite &&
+          p1y.isFinite &&
+          p2y.isFinite,
+    );
     if (tolerance < 0) {
       return 0;
     }
@@ -326,7 +360,12 @@ class Conic {
   }
 
   static double evalNumerator(
-      double p0, double p1, double p2, double w, double t) {
+    double p0,
+    double p1,
+    double p2,
+    double w,
+    double t,
+  ) {
     assert(t >= 0 && t <= 1);
     final double src2w = p1 * w;
     final double C = p0;
@@ -390,10 +429,12 @@ class QuadBounds {
       final double t2 = (y1 - cpY) / denom;
       if ((t2 >= 0) && (t2 <= 1.0)) {
         final double tprime2 = 1.0 - t2;
-        final double extrema2X = (tprime2 * tprime2 * x1) +
+        final double extrema2X =
+            (tprime2 * tprime2 * x1) +
             (2 * t2 * tprime2 * cpX) +
             (t2 * t2 * x2);
-        final double extrema2Y = (tprime2 * tprime2 * y1) +
+        final double extrema2Y =
+            (tprime2 * tprime2 * y1) +
             (2 * t2 * tprime2 * cpY) +
             (t2 * t2 * y2);
         // Expand bounds.

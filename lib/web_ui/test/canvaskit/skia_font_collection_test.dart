@@ -48,8 +48,9 @@ void testMain() {
 
     test('logs no warnings with the default mock asset manager', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      await fontCollection
-          .loadAssetFonts(await fetchFontManifest(fakeAssetManager));
+      await fontCollection.loadAssetFonts(
+        await fetchFontManifest(fakeAssetManager),
+      );
 
       expect(warnings, isEmpty);
     });
@@ -66,7 +67,9 @@ void testMain() {
         );
       };
       final SkiaFontCollection fontCollection = SkiaFontCollection();
-      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('''
+      testAssetScope.setAsset(
+        'FontManifest.json',
+        stringAsUtf8Data('''
 [
    {
       "family":"Roboto",
@@ -77,26 +80,28 @@ void testMain() {
       "fonts":[{"asset":"packages/bogus/BrokenFont.ttf"}]
    }
   ]
-      '''));
+      '''),
+      );
       // It should complete without error, but emit a warning about BrokenFont.
-      await fontCollection
-          .loadAssetFonts(await fetchFontManifest(fakeAssetManager));
+      await fontCollection.loadAssetFonts(
+        await fetchFontManifest(fakeAssetManager),
+      );
       expect(
         warnings,
-        containsAllInOrder(
-          <String>[
-            'Failed to load font BrokenFont at packages/bogus/BrokenFont.ttf',
-            'Verify that packages/bogus/BrokenFont.ttf contains a valid font.',
-          ],
-        ),
+        containsAllInOrder(<String>[
+          'Failed to load font BrokenFont at packages/bogus/BrokenFont.ttf',
+          'Verify that packages/bogus/BrokenFont.ttf contains a valid font.',
+        ]),
       );
     });
 
     test(
-        'logs an HTTP warning if one of the registered fonts is missing (404 file not found)',
-        () async {
-      final SkiaFontCollection fontCollection = SkiaFontCollection();
-      testAssetScope.setAsset('FontManifest.json', stringAsUtf8Data('''
+      'logs an HTTP warning if one of the registered fonts is missing (404 file not found)',
+      () async {
+        final SkiaFontCollection fontCollection = SkiaFontCollection();
+        testAssetScope.setAsset(
+          'FontManifest.json',
+          stringAsUtf8Data('''
 [
    {
       "family":"Roboto",
@@ -107,24 +112,28 @@ void testMain() {
       "fonts":[{"asset":"packages/bogus/ThisFontDoesNotExist.ttf"}]
    }
   ]
-      '''));
+      '''),
+        );
 
-      // It should complete without error, but emit a warning about ThisFontDoesNotExist.
-      await fontCollection
-          .loadAssetFonts(await fetchFontManifest(fakeAssetManager));
-      expect(
-        warnings,
-        containsAllInOrder(<String>[
-          'Font family ThisFontDoesNotExist not found (404) at packages/bogus/ThisFontDoesNotExist.ttf'
-        ]),
-      );
-    });
+        // It should complete without error, but emit a warning about ThisFontDoesNotExist.
+        await fontCollection.loadAssetFonts(
+          await fetchFontManifest(fakeAssetManager),
+        );
+        expect(
+          warnings,
+          containsAllInOrder(<String>[
+            'Font family ThisFontDoesNotExist not found (404) at packages/bogus/ThisFontDoesNotExist.ttf',
+          ]),
+        );
+      },
+    );
 
     test('prioritizes Ahem loaded via FontManifest.json', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
       testAssetScope.setAsset(
-          'FontManifest.json',
-          stringAsUtf8Data('''
+        'FontManifest.json',
+        stringAsUtf8Data(
+          '''
         [
           {
             "family":"Roboto",
@@ -135,14 +144,16 @@ void testMain() {
             "fonts":[{"asset":"/assets/fonts/Roboto-Regular.ttf"}]
           }
         ]
-      '''
-              .trim()));
+      '''.trim(),
+        ),
+      );
 
       final ByteBuffer robotoData =
           await httpFetchByteBuffer('/assets/fonts/Roboto-Regular.ttf');
 
-      await fontCollection
-          .loadAssetFonts(await fetchFontManifest(fakeAssetManager));
+      await fontCollection.loadAssetFonts(
+        await fetchFontManifest(fakeAssetManager),
+      );
       expect(warnings, isEmpty);
 
       // Use `singleWhere` to make sure only one version of 'Ahem' is loaded.

@@ -28,9 +28,12 @@ typedef DisposeFunction<T extends NativeType> = void Function(Pointer<T>);
 
 class SkwasmFinalizationRegistry<T extends NativeType> {
   SkwasmFinalizationRegistry(this.dispose)
-      : registry = DomFinalizationRegistry(((ExternalDartReference address) =>
+    : registry = DomFinalizationRegistry(
+        ((ExternalDartReference address) =>
             // ignore: cast_nullable_to_non_nullable
-            dispose(Pointer<T>.fromAddress(address.toDartObject as int))).toJS);
+            dispose(Pointer<T>.fromAddress(address.toDartObject as int)))
+            .toJS,
+      );
 
   final DomFinalizationRegistry registry;
   final DisposeFunction<T> dispose;
@@ -38,7 +41,10 @@ class SkwasmFinalizationRegistry<T extends NativeType> {
   void register(SkwasmObjectWrapper<T> wrapper) {
     final ExternalDartReference jsWrapper = wrapper.toExternalReference;
     registry.registerWithToken(
-        jsWrapper, wrapper.handle.address.toExternalReference, jsWrapper);
+      jsWrapper,
+      wrapper.handle.address.toExternalReference,
+      jsWrapper,
+    );
   }
 
   void evict(SkwasmObjectWrapper<T> wrapper) {

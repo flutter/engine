@@ -10,11 +10,8 @@ import '../text/line_breaker.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 
-typedef SegmentationResult = ({
-  Uint32List words,
-  Uint32List graphemes,
-  Uint32List breaks,
-});
+typedef SegmentationResult =
+    ({Uint32List words, Uint32List graphemes, Uint32List breaks});
 
 // The cache numbers below were picked based on the following logic.
 //
@@ -34,18 +31,25 @@ typedef SegmentationResult = ({
 
 typedef SegmentationCacheSpec = ({int cacheSize, int maxTextLength});
 
-const SegmentationCacheSpec kSmallParagraphCacheSpec =
-    (cacheSize: 100000, maxTextLength: 10);
-const SegmentationCacheSpec kMediumParagraphCacheSpec =
-    (cacheSize: 10000, maxTextLength: 100);
-const SegmentationCacheSpec kLargeParagraphCacheSpec =
-    (cacheSize: 20, maxTextLength: 50000);
+const SegmentationCacheSpec kSmallParagraphCacheSpec = (
+  cacheSize: 100000,
+  maxTextLength: 10,
+);
+const SegmentationCacheSpec kMediumParagraphCacheSpec = (
+  cacheSize: 10000,
+  maxTextLength: 100,
+);
+const SegmentationCacheSpec kLargeParagraphCacheSpec = (
+  cacheSize: 20,
+  maxTextLength: 50000,
+);
 
-typedef SegmentationCache = ({
-  LruCache<String, SegmentationResult> small,
-  LruCache<String, SegmentationResult> medium,
-  LruCache<String, SegmentationResult> large,
-});
+typedef SegmentationCache =
+    ({
+      LruCache<String, SegmentationResult> small,
+      LruCache<String, SegmentationResult> medium,
+      LruCache<String, SegmentationResult> large,
+    });
 
 /// Caches segmentation results for small, medium and large paragraphts.
 ///
@@ -53,12 +57,15 @@ typedef SegmentationCache = ({
 /// their text contents remain the same. This cache is effective at
 /// short-circuiting the segmentation of such paragraphs.
 final SegmentationCache segmentationCache = (
-  small:
-      LruCache<String, SegmentationResult>(kSmallParagraphCacheSpec.cacheSize),
-  medium:
-      LruCache<String, SegmentationResult>(kMediumParagraphCacheSpec.cacheSize),
-  large:
-      LruCache<String, SegmentationResult>(kLargeParagraphCacheSpec.cacheSize),
+  small: LruCache<String, SegmentationResult>(
+    kSmallParagraphCacheSpec.cacheSize,
+  ),
+  medium: LruCache<String, SegmentationResult>(
+    kMediumParagraphCacheSpec.cacheSize,
+  ),
+  large: LruCache<String, SegmentationResult>(
+    kLargeParagraphCacheSpec.cacheSize,
+  ),
 );
 
 extension SegmentationCacheExtensions on SegmentationCache {
@@ -104,8 +111,8 @@ void injectClientICU(SkParagraphBuilder builder) {
 ///
 /// Caches results in [segmentationCache].
 SegmentationResult segmentText(String text) {
-  final LruCache<String, SegmentationResult>? cache =
-      segmentationCache.getCacheForText(text);
+  final LruCache<String, SegmentationResult>? cache = segmentationCache
+      .getCacheForText(text);
   final SegmentationResult? cachedResult = cache?[text];
 
   final SegmentationResult result;
@@ -114,8 +121,10 @@ SegmentationResult segmentText(String text) {
   } else {
     result = (
       words: fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.word),
-      graphemes:
-          fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
+      graphemes: fragmentUsingIntlSegmenter(
+        text,
+        IntlSegmenterGranularity.grapheme,
+      ),
       breaks: fragmentUsingV8LineBreaker(text),
     );
   }
@@ -129,17 +138,15 @@ SegmentationResult segmentText(String text) {
 ///
 /// To find all supported granularities, see:
 /// - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter/Segmenter
-enum IntlSegmenterGranularity {
-  grapheme,
-  word,
-}
+enum IntlSegmenterGranularity { grapheme, word }
 
 final Map<IntlSegmenterGranularity, DomSegmenter> _intlSegmenters =
     <IntlSegmenterGranularity, DomSegmenter>{
-  IntlSegmenterGranularity.grapheme:
-      createIntlSegmenter(granularity: 'grapheme'),
-  IntlSegmenterGranularity.word: createIntlSegmenter(granularity: 'word'),
-};
+      IntlSegmenterGranularity.grapheme: createIntlSegmenter(
+        granularity: 'grapheme',
+      ),
+      IntlSegmenterGranularity.word: createIntlSegmenter(granularity: 'word'),
+    };
 
 Uint32List fragmentUsingIntlSegmenter(
   String text,
@@ -164,8 +171,11 @@ const int _kHardLineBreak = 1;
 final DomV8BreakIterator _v8LineBreaker = createV8BreakIterator();
 
 Uint32List fragmentUsingV8LineBreaker(String text) {
-  final List<LineBreakFragment> fragments =
-      breakLinesUsingV8BreakIterator(text, text.toJS, _v8LineBreaker);
+  final List<LineBreakFragment> fragments = breakLinesUsingV8BreakIterator(
+    text,
+    text.toJS,
+    _v8LineBreaker,
+  );
 
   final int size = (fragments.length + 1) * 2;
   final Uint32List typedArray = Uint32List(size);
@@ -177,9 +187,10 @@ Uint32List fragmentUsingV8LineBreaker(String text) {
     final LineBreakFragment fragment = fragments[i];
     final int uint32Index = 2 + i * 2;
     typedArray[uint32Index] = fragment.end;
-    typedArray[uint32Index + 1] = fragment.type == LineBreakType.mandatory
-        ? _kHardLineBreak
-        : _kSoftLineBreak;
+    typedArray[uint32Index + 1] =
+        fragment.type == LineBreakType.mandatory
+            ? _kHardLineBreak
+            : _kSoftLineBreak;
   }
 
   return typedArray;

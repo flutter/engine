@@ -9,7 +9,7 @@ import 'semantics.dart';
 /// level (h1 ... h6).
 class Heading extends PrimaryRoleManager {
   Heading(SemanticsObject semanticsObject)
-      : super.blank(PrimaryRole.heading, semanticsObject) {
+    : super.blank(PrimaryRole.heading, semanticsObject) {
     addHeadingRole();
   }
 

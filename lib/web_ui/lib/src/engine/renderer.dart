@@ -105,18 +105,27 @@ abstract class Renderer {
     Float32List? matrix4,
   ]);
 
-  ui.ImageFilter createBlurImageFilter(
-      {double sigmaX = 0.0,
-      double sigmaY = 0.0,
-      ui.TileMode tileMode = ui.TileMode.clamp});
-  ui.ImageFilter createDilateImageFilter(
-      {double radiusX = 0.0, double radiusY = 0.0});
-  ui.ImageFilter createErodeImageFilter(
-      {double radiusX = 0.0, double radiusY = 0.0});
-  ui.ImageFilter createMatrixImageFilter(Float64List matrix4,
-      {ui.FilterQuality filterQuality = ui.FilterQuality.low});
-  ui.ImageFilter composeImageFilters(
-      {required ui.ImageFilter outer, required ui.ImageFilter inner});
+  ui.ImageFilter createBlurImageFilter({
+    double sigmaX = 0.0,
+    double sigmaY = 0.0,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+  });
+  ui.ImageFilter createDilateImageFilter({
+    double radiusX = 0.0,
+    double radiusY = 0.0,
+  });
+  ui.ImageFilter createErodeImageFilter({
+    double radiusX = 0.0,
+    double radiusY = 0.0,
+  });
+  ui.ImageFilter createMatrixImageFilter(
+    Float64List matrix4, {
+    ui.FilterQuality filterQuality = ui.FilterQuality.low,
+  });
+  ui.ImageFilter composeImageFilters({
+    required ui.ImageFilter outer,
+    required ui.ImageFilter inner,
+  });
 
   Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
@@ -132,17 +141,24 @@ abstract class Renderer {
 
   FutureOr<ui.Image> createImageFromImageBitmap(DomImageBitmap imageSource);
 
-  FutureOr<ui.Image> createImageFromTextureSource(JSAny object,
-      {required int width,
-      required int height,
-      required bool transferOwnership});
+  FutureOr<ui.Image> createImageFromTextureSource(
+    JSAny object, {
+    required int width,
+    required int height,
+    required bool transferOwnership,
+  });
 
-  void decodeImageFromPixels(Uint8List pixels, int width, int height,
-      ui.PixelFormat format, ui.ImageDecoderCallback callback,
-      {int? rowBytes,
-      int? targetWidth,
-      int? targetHeight,
-      bool allowUpscaling = true});
+  void decodeImageFromPixels(
+    Uint8List pixels,
+    int width,
+    int height,
+    ui.PixelFormat format,
+    ui.ImageDecoderCallback callback, {
+    int? rowBytes,
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true,
+  });
 
   ui.ImageShader createImageShader(
     ui.Image image,

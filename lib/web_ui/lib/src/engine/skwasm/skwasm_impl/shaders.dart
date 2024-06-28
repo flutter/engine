@@ -33,26 +33,31 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-  }) =>
-      withStackScope((StackScope scope) {
-        assert(() {
-          validateColorStops(colors, colorStops);
-          return true;
-        }());
+  }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
 
-        final RawPointArray endPoints =
-            scope.convertPointArrayToNative(<ui.Offset>[from, to]);
-        final RawColorArray nativeColors =
-            scope.convertColorArrayToNative(colors);
-        final Pointer<Float> stops = colorStops != null
-            ? scope.convertDoublesToNative(colorStops)
-            : nullptr;
-        final Pointer<Float> matrix =
-            matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
-        final ShaderHandle handle = shaderCreateLinearGradient(endPoints,
-            nativeColors, stops, colors.length, tileMode.index, matrix);
-        return SkwasmGradient._(handle);
-      });
+    final RawPointArray endPoints = scope.convertPointArrayToNative(<ui.Offset>[
+      from,
+      to,
+    ]);
+    final RawColorArray nativeColors = scope.convertColorArrayToNative(colors);
+    final Pointer<Float> stops =
+        colorStops != null ? scope.convertDoublesToNative(colorStops) : nullptr;
+    final Pointer<Float> matrix =
+        matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
+    final ShaderHandle handle = shaderCreateLinearGradient(
+      endPoints,
+      nativeColors,
+      stops,
+      colors.length,
+      tileMode.index,
+      matrix,
+    );
+    return SkwasmGradient._(handle);
+  });
 
   factory SkwasmGradient.radial({
     required ui.Offset center,
@@ -61,31 +66,29 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-  }) =>
-      withStackScope((StackScope scope) {
-        assert(() {
-          validateColorStops(colors, colorStops);
-          return true;
-        }());
+  }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
 
-        final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
-        final Pointer<Float> rawStops = colorStops != null
-            ? scope.convertDoublesToNative(colorStops)
-            : nullptr;
-        final Pointer<Float> matrix =
-            matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
-        final ShaderHandle handle = shaderCreateRadialGradient(
-          center.dx,
-          center.dy,
-          radius,
-          rawColors,
-          rawStops,
-          colors.length,
-          tileMode.index,
-          matrix,
-        );
-        return SkwasmGradient._(handle);
-      });
+    final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
+    final Pointer<Float> rawStops =
+        colorStops != null ? scope.convertDoublesToNative(colorStops) : nullptr;
+    final Pointer<Float> matrix =
+        matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
+    final ShaderHandle handle = shaderCreateRadialGradient(
+      center.dx,
+      center.dy,
+      radius,
+      rawColors,
+      rawStops,
+      colors.length,
+      tileMode.index,
+      matrix,
+    );
+    return SkwasmGradient._(handle);
+  });
 
   factory SkwasmGradient.conical({
     required ui.Offset focal,
@@ -96,32 +99,33 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     List<double>? colorStops,
     ui.TileMode tileMode = ui.TileMode.clamp,
     Float32List? matrix4,
-  }) =>
-      withStackScope((StackScope scope) {
-        assert(() {
-          validateColorStops(colors, colorStops);
-          return true;
-        }());
+  }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
 
-        final RawPointArray endPoints =
-            scope.convertPointArrayToNative(<ui.Offset>[focal, center]);
-        final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
-        final Pointer<Float> rawStops = colorStops != null
-            ? scope.convertDoublesToNative(colorStops)
-            : nullptr;
-        final Pointer<Float> matrix =
-            matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
-        final ShaderHandle handle = shaderCreateConicalGradient(
-            endPoints,
-            focalRadius,
-            centerRadius,
-            rawColors,
-            rawStops,
-            colors.length,
-            tileMode.index,
-            matrix);
-        return SkwasmGradient._(handle);
-      });
+    final RawPointArray endPoints = scope.convertPointArrayToNative(<ui.Offset>[
+      focal,
+      center,
+    ]);
+    final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
+    final Pointer<Float> rawStops =
+        colorStops != null ? scope.convertDoublesToNative(colorStops) : nullptr;
+    final Pointer<Float> matrix =
+        matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
+    final ShaderHandle handle = shaderCreateConicalGradient(
+      endPoints,
+      focalRadius,
+      centerRadius,
+      rawColors,
+      rawStops,
+      colors.length,
+      tileMode.index,
+      matrix,
+    );
+    return SkwasmGradient._(handle);
+  });
 
   factory SkwasmGradient.sweep({
     required ui.Offset center,
@@ -131,31 +135,30 @@ class SkwasmGradient extends SkwasmNativeShader implements ui.Gradient {
     required double startAngle,
     required double endAngle,
     Float32List? matrix4,
-  }) =>
-      withStackScope((StackScope scope) {
-        assert(() {
-          validateColorStops(colors, colorStops);
-          return true;
-        }());
+  }) => withStackScope((StackScope scope) {
+    assert(() {
+      validateColorStops(colors, colorStops);
+      return true;
+    }());
 
-        final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
-        final Pointer<Float> rawStops = colorStops != null
-            ? scope.convertDoublesToNative(colorStops)
-            : nullptr;
-        final Pointer<Float> matrix =
-            matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
-        final ShaderHandle handle = shaderCreateSweepGradient(
-            center.dx,
-            center.dy,
-            rawColors,
-            rawStops,
-            colors.length,
-            tileMode.index,
-            ui.toDegrees(startAngle),
-            ui.toDegrees(endAngle),
-            matrix);
-        return SkwasmGradient._(handle);
-      });
+    final RawColorArray rawColors = scope.convertColorArrayToNative(colors);
+    final Pointer<Float> rawStops =
+        colorStops != null ? scope.convertDoublesToNative(colorStops) : nullptr;
+    final Pointer<Float> matrix =
+        matrix4 != null ? scope.convertMatrix4toSkMatrix(matrix4) : nullptr;
+    final ShaderHandle handle = shaderCreateSweepGradient(
+      center.dx,
+      center.dy,
+      rawColors,
+      rawStops,
+      colors.length,
+      tileMode.index,
+      ui.toDegrees(startAngle),
+      ui.toDegrees(endAngle),
+      matrix,
+    );
+    return SkwasmGradient._(handle);
+  });
 
   SkwasmGradient._(super.handle);
 
@@ -176,22 +179,26 @@ class SkwasmImageShader extends SkwasmNativeShader implements ui.ImageShader {
     if (matrix4 != null) {
       return withStackScope((StackScope scope) {
         final RawMatrix33 localMatrix = scope.convertMatrix4toSkMatrix(matrix4);
-        return SkwasmImageShader._(shaderCreateFromImage(
+        return SkwasmImageShader._(
+          shaderCreateFromImage(
+            image.handle,
+            tmx.index,
+            tmy.index,
+            (filterQuality ?? ui.FilterQuality.none).index,
+            localMatrix,
+          ),
+        );
+      });
+    } else {
+      return SkwasmImageShader._(
+        shaderCreateFromImage(
           image.handle,
           tmx.index,
           tmy.index,
           (filterQuality ?? ui.FilterQuality.none).index,
-          localMatrix,
-        ));
-      });
-    } else {
-      return SkwasmImageShader._(shaderCreateFromImage(
-        image.handle,
-        tmx.index,
-        tmy.index,
-        (filterQuality ?? ui.FilterQuality.none).index,
-        nullptr,
-      ));
+          nullptr,
+        ),
+      );
     }
   }
 }
@@ -220,7 +227,11 @@ class SkwasmFragmentProgram extends SkwasmObjectWrapper<RawRuntimeEffect>
     final RuntimeEffectHandle handle = runtimeEffectCreate(sourceString);
     skStringFree(sourceString);
     return SkwasmFragmentProgram._(
-        name, handle, shaderData.floatCount, shaderData.textureCount);
+      name,
+      handle,
+      shaderData.floatCount,
+      shaderData.textureCount,
+    );
   }
 
   static final SkwasmFinalizationRegistry<RawRuntimeEffect> _registry =
@@ -250,11 +261,13 @@ class SkwasmShaderData extends SkwasmObjectWrapper<RawSkData> {
 // underlying shader object.
 class SkwasmFragmentShader implements SkwasmShader, ui.FragmentShader {
   SkwasmFragmentShader(SkwasmFragmentProgram program)
-      : _program = program,
-        _uniformData = SkwasmShaderData(program.uniformSize),
-        _floatUniformCount = program.floatUniformCount,
-        _childShaders =
-            List<SkwasmShader?>.filled(program.childShaderCount, null);
+    : _program = program,
+      _uniformData = SkwasmShaderData(program.uniformSize),
+      _floatUniformCount = program.floatUniformCount,
+      _childShaders = List<SkwasmShader?>.filled(
+        program.childShaderCount,
+        null,
+      );
 
   @override
   ShaderHandle get handle {

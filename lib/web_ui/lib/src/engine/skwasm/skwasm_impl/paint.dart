@@ -36,12 +36,13 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
 
   static final SkwasmColorFilter _invertColorFilter =
       SkwasmColorFilter.fromEngineColorFilter(
-          const EngineColorFilter.matrix(<double>[
-    -1.0, 0, 0, 1.0, 0, // row
-    0, -1.0, 0, 1.0, 0, // row
-    0, 0, -1.0, 1.0, 0, // row
-    1.0, 1.0, 1.0, 1.0, 0
-  ]));
+        const EngineColorFilter.matrix(<double>[
+          -1.0, 0, 0, 1.0, 0, // row
+          0, -1.0, 0, 1.0, 0, // row
+          0, 0, -1.0, 1.0, 0, // row
+          1.0, 1.0, 1.0, 1.0, 0,
+        ]),
+      );
 
   @override
   ui.BlendMode get blendMode {
@@ -124,20 +125,25 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
     final SkwasmImageFilter? nativeImageFilter =
         filter != null ? SkwasmImageFilter.fromUiFilter(filter) : null;
     paintSetImageFilter(
-        handle, nativeImageFilter != null ? nativeImageFilter.handle : nullptr);
+      handle,
+      nativeImageFilter != null ? nativeImageFilter.handle : nullptr,
+    );
   }
 
   @override
   ui.ColorFilter? get colorFilter => _colorFilter;
 
   void _setEffectiveColorFilter() {
-    final SkwasmColorFilter? nativeFilter = _colorFilter != null
-        ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!)
-        : null;
+    final SkwasmColorFilter? nativeFilter =
+        _colorFilter != null
+            ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!)
+            : null;
     if (_invertColors) {
       if (nativeFilter != null) {
-        final SkwasmColorFilter composedFilter =
-            SkwasmColorFilter.composed(_invertColorFilter, nativeFilter);
+        final SkwasmColorFilter composedFilter = SkwasmColorFilter.composed(
+          _invertColorFilter,
+          nativeFilter,
+        );
         nativeFilter.dispose();
         paintSetColorFilter(handle, composedFilter.handle);
         composedFilter.dispose();
@@ -167,8 +173,9 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
     if (filter == null) {
       paintSetMaskFilter(handle, nullptr);
     } else {
-      final SkwasmMaskFilter nativeFilter =
-          SkwasmMaskFilter.fromUiMaskFilter(filter);
+      final SkwasmMaskFilter nativeFilter = SkwasmMaskFilter.fromUiMaskFilter(
+        filter,
+      );
       paintSetMaskFilter(handle, nativeFilter.handle);
       nativeFilter.dispose();
     }
@@ -207,7 +214,8 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
         if (strokeJoin == ui.StrokeJoin.miter) {
           if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
             result.write(
-                ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+              ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}',
+            );
           }
         } else {
           result.write(' $strokeJoin');

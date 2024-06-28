@@ -31,23 +31,29 @@ abstract class CkManagedSkImageFilterConvertible implements ui.ImageFilter {
 ///
 /// Currently only supports `blur`, `matrix`, and ColorFilters.
 abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
-  factory CkImageFilter.blur(
-      {required double sigmaX,
-      required double sigmaY,
-      required ui.TileMode tileMode}) = _CkBlurImageFilter;
+  factory CkImageFilter.blur({
+    required double sigmaX,
+    required double sigmaY,
+    required ui.TileMode tileMode,
+  }) = _CkBlurImageFilter;
   factory CkImageFilter.color({required CkColorFilter colorFilter}) =
       CkColorFilterImageFilter;
-  factory CkImageFilter.matrix(
-      {required Float64List matrix,
-      required ui.FilterQuality filterQuality}) = _CkMatrixImageFilter;
-  factory CkImageFilter.dilate(
-      {required double radiusX,
-      required double radiusY}) = _CkDilateImageFilter;
-  factory CkImageFilter.erode(
-      {required double radiusX, required double radiusY}) = _CkErodeImageFilter;
-  factory CkImageFilter.compose(
-      {required CkImageFilter outer,
-      required CkImageFilter inner}) = _CkComposeImageFilter;
+  factory CkImageFilter.matrix({
+    required Float64List matrix,
+    required ui.FilterQuality filterQuality,
+  }) = _CkMatrixImageFilter;
+  factory CkImageFilter.dilate({
+    required double radiusX,
+    required double radiusY,
+  }) = _CkDilateImageFilter;
+  factory CkImageFilter.erode({
+    required double radiusX,
+    required double radiusY,
+  }) = _CkErodeImageFilter;
+  factory CkImageFilter.compose({
+    required CkImageFilter outer,
+    required CkImageFilter inner,
+  }) = _CkComposeImageFilter;
 
   CkImageFilter._();
 
@@ -91,17 +97,20 @@ class CkColorFilterImageFilter extends CkImageFilter {
 }
 
 class _CkBlurImageFilter extends CkImageFilter {
-  _CkBlurImageFilter(
-      {required this.sigmaX, required this.sigmaY, required this.tileMode})
-      : super._() {
+  _CkBlurImageFilter({
+    required this.sigmaX,
+    required this.sigmaY,
+    required this.tileMode,
+  }) : super._() {
     /// Return the identity matrix when both sigmaX and sigmaY are 0. Replicates
     /// effect of applying no filter
     final SkImageFilter skImageFilter;
     if (sigmaX == 0 && sigmaY == 0) {
       skImageFilter = canvasKit.ImageFilter.MakeMatrixTransform(
-          toSkMatrixFromFloat32(Matrix4.identity().storage),
-          toSkFilterOptions(ui.FilterQuality.none),
-          null);
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
+        toSkFilterOptions(ui.FilterQuality.none),
+        null,
+      );
     } else {
       skImageFilter = canvasKit.ImageFilter.MakeBlur(
         sigmaX,
@@ -145,13 +154,14 @@ class _CkBlurImageFilter extends CkImageFilter {
 }
 
 class _CkMatrixImageFilter extends CkImageFilter {
-  _CkMatrixImageFilter(
-      {required Float64List matrix, required this.filterQuality})
-      : matrix = Float64List.fromList(matrix),
-        _transform = Matrix4.fromFloat32List(toMatrix32(matrix)),
-        super._() {
-    final SkImageFilter skImageFilter =
-        canvasKit.ImageFilter.MakeMatrixTransform(
+  _CkMatrixImageFilter({
+    required Float64List matrix,
+    required this.filterQuality,
+  }) : matrix = Float64List.fromList(matrix),
+       _transform = Matrix4.fromFloat32List(toMatrix32(matrix)),
+       super._() {
+    final SkImageFilter skImageFilter = canvasKit
+        .ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
       toSkFilterOptions(filterQuality),
       null,
@@ -192,7 +202,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
 
 class _CkDilateImageFilter extends CkImageFilter {
   _CkDilateImageFilter({required this.radiusX, required this.radiusY})
-      : super._() {
+    : super._() {
     final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeDilate(
       radiusX,
       radiusY,
@@ -232,7 +242,7 @@ class _CkDilateImageFilter extends CkImageFilter {
 
 class _CkErodeImageFilter extends CkImageFilter {
   _CkErodeImageFilter({required this.radiusX, required this.radiusY})
-      : super._() {
+    : super._() {
     final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeErode(
       radiusX,
       radiusY,
@@ -272,7 +282,7 @@ class _CkErodeImageFilter extends CkImageFilter {
 
 class _CkComposeImageFilter extends CkImageFilter {
   _CkComposeImageFilter({required this.outer, required this.inner})
-      : super._() {
+    : super._() {
     outer.imageFilter((SkImageFilter outerFilter) {
       inner.imageFilter((SkImageFilter innerFilter) {
         final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeCompose(
@@ -280,7 +290,10 @@ class _CkComposeImageFilter extends CkImageFilter {
           innerFilter,
         );
         _ref = UniqueRef<SkImageFilter>(
-            this, skImageFilter, 'ImageFilter.compose');
+          this,
+          skImageFilter,
+          'ImageFilter.compose',
+        );
       });
     });
   }

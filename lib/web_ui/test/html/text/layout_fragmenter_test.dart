@@ -32,31 +32,31 @@ Future<void> testMain() async {
         _Fragment('', endOfText, null, ffPrevious, defaultStyle),
       ]);
 
-      final CanvasParagraph paragraph2 = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.addText('');
-        },
-      );
+      final CanvasParagraph paragraph2 = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.addText('');
+      });
       expect(split(paragraph2), <_Fragment>[
         _Fragment('', endOfText, null, ffPrevious, defaultStyle),
       ]);
 
-      final CanvasParagraph paragraph3 = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.pushStyle(style1);
-          builder.addText('');
-        },
-      );
+      final CanvasParagraph paragraph3 = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.pushStyle(style1);
+        builder.addText('');
+      });
       expect(split(paragraph3), <_Fragment>[
         _Fragment('', endOfText, null, ffPrevious, style1),
       ]);
     });
 
     test('single span', () {
-      final CanvasParagraph paragraph =
-          plain(EngineParagraphStyle(), 'Lorem 12 $rtlWord1   ipsum34');
+      final CanvasParagraph paragraph = plain(
+        EngineParagraphStyle(),
+        'Lorem 12 $rtlWord1   ipsum34',
+      );
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lorem', prohibited, ltr, ffLtr, defaultStyle),
         _Fragment(' ', opportunity, null, ffSandwich, defaultStyle, sp: 1),
@@ -69,20 +69,19 @@ Future<void> testMain() async {
     });
 
     test('multi span', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.pushStyle(style1);
-          builder.addText('Lorem');
-          builder.pop();
-          builder.pushStyle(style2);
-          builder.addText(' ipsum 12 ');
-          builder.pop();
-          builder.pushStyle(style3);
-          builder.addText(' $rtlWord1 foo.');
-          builder.pop();
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.pushStyle(style1);
+        builder.addText('Lorem');
+        builder.pop();
+        builder.pushStyle(style2);
+        builder.addText(' ipsum 12 ');
+        builder.pop();
+        builder.pushStyle(style3);
+        builder.addText(' $rtlWord1 foo.');
+        builder.pop();
+      });
 
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lorem', prohibited, ltr, ffLtr, style1),
@@ -100,23 +99,22 @@ Future<void> testMain() async {
     });
 
     test('new lines', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.pushStyle(style1);
-          builder.addText('Lor\nem \n');
-          builder.pop();
-          builder.pushStyle(style2);
-          builder.addText(' \n  ipsum 12 ');
-          builder.pop();
-          builder.pushStyle(style3);
-          builder.addText(' $rtlWord1 fo');
-          builder.pop();
-          builder.pushStyle(style1);
-          builder.addText('o.');
-          builder.pop();
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.pushStyle(style1);
+        builder.addText('Lor\nem \n');
+        builder.pop();
+        builder.pushStyle(style2);
+        builder.addText(' \n  ipsum 12 ');
+        builder.pop();
+        builder.pushStyle(style3);
+        builder.addText(' $rtlWord1 fo');
+        builder.pop();
+        builder.pushStyle(style1);
+        builder.addText('o.');
+        builder.pop();
+      });
 
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lor', prohibited, ltr, ffLtr, style1),
@@ -139,17 +137,16 @@ Future<void> testMain() async {
     });
 
     test('last line is empty', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.pushStyle(style1);
-          builder.addText('Lorem \n');
-          builder.pop();
-          builder.pushStyle(style2);
-          builder.addText(' \n  ipsum \n');
-          builder.pop();
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.pushStyle(style1);
+        builder.addText('Lorem \n');
+        builder.pop();
+        builder.pushStyle(style2);
+        builder.addText(' \n  ipsum \n');
+        builder.pop();
+      });
 
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lorem', prohibited, ltr, ffLtr, style1),
@@ -163,19 +160,18 @@ Future<void> testMain() async {
     });
 
     test('space-only spans', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.addText('Lorem ');
-          builder.pushStyle(style1);
-          builder.addText('   ');
-          builder.pop();
-          builder.pushStyle(style2);
-          builder.addText('  ');
-          builder.pop();
-          builder.addText('ipsum');
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.addText('Lorem ');
+        builder.pushStyle(style1);
+        builder.addText('   ');
+        builder.pop();
+        builder.pushStyle(style2);
+        builder.addText('  ');
+        builder.pop();
+        builder.addText('ipsum');
+      });
 
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lorem', prohibited, ltr, ffLtr, defaultStyle),
@@ -187,24 +183,23 @@ Future<void> testMain() async {
     });
 
     test('placeholders', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.pushStyle(style1);
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('Lorem');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('ipsum\n');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.pop();
-          builder.pushStyle(style2);
-          builder.addText('$rtlWord1 ');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('\nsit');
-          builder.pop();
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.pushStyle(style1);
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('Lorem');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('ipsum\n');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.pop();
+        builder.pushStyle(style2);
+        builder.addText('$rtlWord1 ');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('\nsit');
+        builder.pop();
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+      });
 
       expect(split(paragraph), <_Fragment>[
         _Fragment(placeholderChar, opportunity, ltr, ffLtr, style1),
@@ -237,7 +232,9 @@ class _Fragment {
   });
 
   factory _Fragment._fromLayoutFragment(
-      String text, LayoutFragment layoutFragment) {
+    String text,
+    LayoutFragment layoutFragment,
+  ) {
     return _Fragment(
       text.substring(layoutFragment.start, layoutFragment.end),
       layoutFragment.type,
@@ -262,8 +259,15 @@ class _Fragment {
   final int sp;
 
   @override
-  int get hashCode =>
-      Object.hash(text, type, textDirection, fragmentFlow, style, nl, sp);
+  int get hashCode => Object.hash(
+    text,
+    type,
+    textDirection,
+    fragmentFlow,
+    style,
+    nl,
+    sp,
+  );
 
   @override
   bool operator ==(Object other) {
@@ -285,9 +289,10 @@ class _Fragment {
 
 List<_Fragment> split(CanvasParagraph paragraph) {
   return <_Fragment>[
-    for (final LayoutFragment layoutFragment
-        in computeLayoutFragments(paragraph))
-      _Fragment._fromLayoutFragment(paragraph.plainText, layoutFragment)
+    for (final LayoutFragment layoutFragment in computeLayoutFragments(
+      paragraph,
+    ))
+      _Fragment._fromLayoutFragment(paragraph.plainText, layoutFragment),
   ];
 }
 

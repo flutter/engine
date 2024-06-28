@@ -17,7 +17,10 @@ import 'surface_stats.dart';
 class PersistedImageFilter extends PersistedContainerSurface
     implements ui.ImageFilterEngineLayer {
   PersistedImageFilter(
-      PersistedImageFilter? super.oldLayer, this.filter, this.offset);
+    PersistedImageFilter? super.oldLayer,
+    this.filter,
+    this.offset,
+  );
 
   final ui.ImageFilter filter;
   final ui.Offset offset;
@@ -41,8 +44,12 @@ class PersistedImageFilter extends PersistedContainerSurface
   Matrix4? _localTransformInverse;
 
   @override
-  Matrix4 get localTransformInverse => _localTransformInverse ??=
-      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
+  Matrix4 get localTransformInverse =>
+      _localTransformInverse ??= Matrix4.translationValues(
+        -offset.dx,
+        -offset.dy,
+        0,
+      );
 
   DomElement? _svgFilter;
   @override
@@ -69,8 +76,9 @@ class PersistedImageFilter extends PersistedContainerSurface
   @override
   DomElement createElement() {
     final DomElement element = defaultCreateElement('flt-image-filter');
-    final DomElement container =
-        defaultCreateElement('flt-image-filter-interior');
+    final DomElement container = defaultCreateElement(
+      'flt-image-filter-interior',
+    );
     if (debugExplainSurfaceStats) {
       // This creates an additional interior element. Count it too.
       surfaceStatsFor(this).allocatedDomNodeCount++;

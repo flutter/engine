@@ -64,10 +64,11 @@ base class EngineFlutterView implements ui.FlutterView {
     // by the public `EngineFlutterView` constructor).
     DomElement? hostElement, {
     JsViewConstraints? viewConstraints,
-  })  : _jsViewConstraints = viewConstraints,
-        embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
-        dimensionsProvider =
-            DimensionsProvider.create(hostElement: hostElement) {
+  }) : _jsViewConstraints = viewConstraints,
+       embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement),
+       dimensionsProvider = DimensionsProvider.create(
+         hostElement: hostElement,
+       ) {
     // The embeddingStrategy will take care of cleaning up the rootElement on
     // hot restart.
     embeddingStrategy.attachViewRoot(dom.rootElement);
@@ -85,8 +86,7 @@ base class EngineFlutterView implements ui.FlutterView {
   static EngineFlutterWindow implicit(
     EnginePlatformDispatcher platformDispatcher,
     DomElement? hostElement,
-  ) =>
-      EngineFlutterWindow._(platformDispatcher, hostElement);
+  ) => EngineFlutterWindow._(platformDispatcher, hostElement);
 
   @override
   final int viewId;
@@ -132,8 +132,10 @@ base class EngineFlutterView implements ui.FlutterView {
 
   @override
   void updateSemantics(ui.SemanticsUpdate update) {
-    assert(!isDisposed,
-        'Trying to update semantics on a disposed EngineFlutterView.');
+    assert(
+      !isDisposed,
+      'Trying to update semantics on a disposed EngineFlutterView.',
+    );
     semantics.updateSemantics(update);
   }
 
@@ -159,8 +161,9 @@ base class EngineFlutterView implements ui.FlutterView {
 
   final JsViewConstraints? _jsViewConstraints;
 
-  late final EngineSemanticsOwner semantics =
-      EngineSemanticsOwner(dom.semanticsHost);
+  late final EngineSemanticsOwner semantics = EngineSemanticsOwner(
+    dom.semanticsHost,
+  );
 
   @override
   ui.Size get physicalSize {
@@ -343,8 +346,12 @@ final class _EngineFlutterViewImpl extends EngineFlutterView {
     EnginePlatformDispatcher platformDispatcher,
     DomElement hostElement, {
     JsViewConstraints? viewConstraints,
-  }) : super._(_nextViewId++, platformDispatcher, hostElement,
-            viewConstraints: viewConstraints);
+  }) : super._(
+         _nextViewId++,
+         platformDispatcher,
+         hostElement,
+         viewConstraints: viewConstraints,
+       );
 }
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
@@ -530,14 +537,15 @@ final class EngineFlutterWindow extends EngineFlutterView
   }
 
   @override
-  void setIsolateDebugName(String name) =>
-      ui.PlatformDispatcher.instance.setIsolateDebugName(name);
+  void setIsolateDebugName(String name) => ui.PlatformDispatcher.instance
+      .setIsolateDebugName(name);
 
   /// Handles the browser history integration to allow users to use the back
   /// button, etc.
   BrowserHistory get browserHistory {
-    return _browserHistory ??=
-        createHistoryForExistingState(_urlStrategyForInitialization);
+    return _browserHistory ??= createHistoryForExistingState(
+      _urlStrategyForInitialization,
+    );
   }
 
   ui_web.UrlStrategy? get _urlStrategyForInitialization {
@@ -547,7 +555,7 @@ final class EngineFlutterWindow extends EngineFlutterView
   }
 
   BrowserHistory?
-      _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
+  _browserHistory; // Must be either SingleEntryBrowserHistory or MultiEntriesBrowserHistory.
 
   Future<void> _useSingleEntryBrowserHistory() async {
     // Recreate the browser history mode that's appropriate for the existing
@@ -559,8 +567,9 @@ final class EngineFlutterWindow extends EngineFlutterView
     // with a single-entry history.
     //
     // See: https://github.com/flutter/flutter/issues/79241
-    _browserHistory ??=
-        createHistoryForExistingState(_urlStrategyForInitialization);
+    _browserHistory ??= createHistoryForExistingState(
+      _urlStrategyForInitialization,
+    );
 
     if (_browserHistory is SingleEntryBrowserHistory) {
       return;
@@ -583,8 +592,9 @@ final class EngineFlutterWindow extends EngineFlutterView
     // with a multi-entry history.
     //
     // See: https://github.com/flutter/flutter/issues/79241
-    _browserHistory ??=
-        createHistoryForExistingState(_urlStrategyForInitialization);
+    _browserHistory ??= createHistoryForExistingState(
+      _urlStrategyForInitialization,
+    );
 
     if (_browserHistory is MultiEntriesBrowserHistory) {
       return;
@@ -662,9 +672,10 @@ final class EngineFlutterWindow extends EngineFlutterView
             path = Uri.decodeComponent(
               Uri(
                 path: uri.path.isEmpty ? '/' : uri.path,
-                queryParameters: uri.queryParametersAll.isEmpty
-                    ? null
-                    : uri.queryParametersAll,
+                queryParameters:
+                    uri.queryParametersAll.isEmpty
+                        ? null
+                        : uri.queryParametersAll,
                 fragment: uri.fragment.isEmpty ? null : uri.fragment,
               ).toString(),
             );
@@ -745,9 +756,7 @@ EngineFlutterWindow? _window;
 
 /// Initializes the [window] (aka the implicit view), if it's not already
 /// initialized.
-EngineFlutterWindow ensureImplicitViewInitialized({
-  DomElement? hostElement,
-}) {
+EngineFlutterWindow ensureImplicitViewInitialized({DomElement? hostElement}) {
   if (_window == null) {
     _window = EngineFlutterView.implicit(
       EnginePlatformDispatcher.instance,
@@ -786,10 +795,10 @@ class ViewConstraints implements ui.ViewConstraints {
   });
 
   ViewConstraints.tight(ui.Size size)
-      : minWidth = size.width,
-        maxWidth = size.width,
-        minHeight = size.height,
-        maxHeight = size.height;
+    : minWidth = size.width,
+      maxWidth = size.width,
+      minHeight = size.height,
+      maxHeight = size.height;
 
   /// Converts JsViewConstraints into ViewConstraints.
   ///
@@ -800,19 +809,29 @@ class ViewConstraints implements ui.ViewConstraints {
   /// later to compute the physicalViewConstraints, which is what the framework
   /// uses.
   factory ViewConstraints.fromJs(
-      JsViewConstraints? constraints, ui.Size currentLogicalSize) {
+    JsViewConstraints? constraints,
+    ui.Size currentLogicalSize,
+  ) {
     if (constraints == null) {
       return ViewConstraints.tight(currentLogicalSize);
     }
     return ViewConstraints(
       minWidth: _computeMinConstraintValue(
-          constraints.minWidth, currentLogicalSize.width),
+        constraints.minWidth,
+        currentLogicalSize.width,
+      ),
       minHeight: _computeMinConstraintValue(
-          constraints.minHeight, currentLogicalSize.height),
+        constraints.minHeight,
+        currentLogicalSize.height,
+      ),
       maxWidth: _computeMaxConstraintValue(
-          constraints.maxWidth, currentLogicalSize.width),
+        constraints.maxWidth,
+        currentLogicalSize.width,
+      ),
       maxHeight: _computeMaxConstraintValue(
-          constraints.maxHeight, currentLogicalSize.height),
+        constraints.maxHeight,
+        currentLogicalSize.height,
+      ),
     );
   }
 
@@ -903,10 +922,14 @@ class ViewConstraints implements ui.ViewConstraints {
 // Returns the `desired` value unless it is `null`, in which case it returns the
 // `available` value.
 double _computeMinConstraintValue(double? desired, double available) {
-  assert(desired == null || desired >= 0,
-      'Minimum constraint must be >= 0 if set.');
-  assert(desired == null || desired.isFinite,
-      'Minimum constraint must be finite.');
+  assert(
+    desired == null || desired >= 0,
+    'Minimum constraint must be >= 0 if set.',
+  );
+  assert(
+    desired == null || desired.isFinite,
+    'Minimum constraint must be finite.',
+  );
   return desired ?? available;
 }
 
@@ -923,7 +946,9 @@ double _computeMinConstraintValue(double? desired, double available) {
 // app is able to stretch its container up to a certain value, without being
 // fully unconstrained.
 double _computeMaxConstraintValue(double? desired, double available) {
-  assert(desired == null || desired >= 0,
-      'Maximum constraint must be >= 0 if set.');
+  assert(
+    desired == null || desired >= 0,
+    'Maximum constraint must be >= 0 if set.',
+  );
   return desired ?? available;
 }

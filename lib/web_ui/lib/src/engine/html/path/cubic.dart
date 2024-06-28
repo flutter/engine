@@ -43,18 +43,25 @@ QuadRoots _findCubicExtrema(double a, double b, double c, double d) {
 
 /// Subdivides cubic curve for a list of t values.
 void _chopCubicAt(
-    List<double> tValues, Float32List points, Float32List outPts) {
+  List<double> tValues,
+  Float32List points,
+  Float32List outPts,
+) {
   assert(() {
     for (int i = 0; i < tValues.length - 1; i++) {
       final double tValue = tValues[i];
-      assert(tValue > 0 && tValue < 1,
-          'Not expecting to chop curve at start, end points');
+      assert(
+        tValue > 0 && tValue < 1,
+        'Not expecting to chop curve at start, end points',
+      );
     }
     for (int i = 0; i < tValues.length - 1; i++) {
       final double tValue = tValues[i];
       final double nextTValue = tValues[i + 1];
       assert(
-          nextTValue > tValue, 'Expecting t value to monotonically increase');
+        nextTValue > tValue,
+        'Expecting t value to monotonically increase',
+      );
     }
     return true;
   }());
@@ -76,12 +83,15 @@ void _chopCubicAt(
       bufferPos += 6;
 
       // watch out in case the renormalized t isn't in range
-      if ((t =
-              validUnitDivide(tValues[i + 1] - tValues[i], 1.0 - tValues[i])) ==
+      if ((t = validUnitDivide(
+            tValues[i + 1] - tValues[i],
+            1.0 - tValues[i],
+          )) ==
           null) {
         // Can't renormalize last point, just create a degenerate cubic.
-        outPts[bufferPos + 4] = outPts[bufferPos + 5] =
-            outPts[bufferPos + 6] = points[bufferPos + 3];
+        outPts[bufferPos + 4] =
+            outPts[bufferPos + 5] =
+                outPts[bufferPos + 6] = points[bufferPos + 3];
         break;
       }
     }
@@ -91,8 +101,13 @@ void _chopCubicAt(
 /// Subdivides cubic curve at [t] and writes to [outPts] at position [outIndex].
 ///
 /// The cubic points are read from [points] at [bufferPos] offset.
-void _chopCubicAtT(Float32List points, int bufferPos, Float32List outPts,
-    int outIndex, double t) {
+void _chopCubicAtT(
+  Float32List points,
+  int bufferPos,
+  Float32List outPts,
+  int outIndex,
+  double t,
+) {
   assert(t > 0 && t < 1);
   final double p3y = points[bufferPos + 7];
   final double p0x = points[bufferPos + 0];
@@ -245,7 +260,8 @@ class CubicBounds {
           final double t = -b / (2 * a);
           final double tprime = 1.0 - t;
           if ((t >= 0.0) && (t <= 1.0)) {
-            extremaX = ((tprime * tprime * tprime) * startX) +
+            extremaX =
+                ((tprime * tprime * tprime) * startX) +
                 ((3 * tprime * tprime * t) * cpX1) +
                 ((3 * tprime * t * t) * cpX2) +
                 (t * t * t * endX);
@@ -258,7 +274,8 @@ class CubicBounds {
           double t = (-b - s) / (2 * a);
           double tprime = 1.0 - t;
           if ((t >= 0.0) && (t <= 1.0)) {
-            extremaX = ((tprime * tprime * tprime) * startX) +
+            extremaX =
+                ((tprime * tprime * tprime) * startX) +
                 ((3 * tprime * tprime * t) * cpX1) +
                 ((3 * tprime * t * t) * cpX2) +
                 (t * t * t * endX);
@@ -269,7 +286,8 @@ class CubicBounds {
           t = (-b + s) / (2 * a);
           tprime = 1.0 - t;
           if ((t >= 0.0) && (t <= 1.0)) {
-            extremaX = ((tprime * tprime * tprime) * startX) +
+            extremaX =
+                ((tprime * tprime * tprime) * startX) +
                 ((3 * tprime * tprime * t) * cpX1) +
                 ((3 * tprime * t * t) * cpX2) +
                 (t * t * t * endX);
@@ -303,7 +321,8 @@ class CubicBounds {
           final double t = -b / (2 * a);
           final double tprime = 1.0 - t;
           if ((t >= 0.0) && (t <= 1.0)) {
-            extremaY = ((tprime * tprime * tprime) * startY) +
+            extremaY =
+                ((tprime * tprime * tprime) * startY) +
                 ((3 * tprime * tprime * t) * cpY1) +
                 ((3 * tprime * t * t) * cpY2) +
                 (t * t * t * endY);
@@ -316,7 +335,8 @@ class CubicBounds {
           final double t = (-b - s) / (2 * a);
           final double tprime = 1.0 - t;
           if ((t >= 0.0) && (t <= 1.0)) {
-            extremaY = ((tprime * tprime * tprime) * startY) +
+            extremaY =
+                ((tprime * tprime * tprime) * startY) +
                 ((3 * tprime * tprime * t) * cpY1) +
                 ((3 * tprime * t * t) * cpY2) +
                 (t * t * t * endY);
@@ -327,7 +347,8 @@ class CubicBounds {
           final double t2 = (-b + s) / (2 * a);
           final double tprime2 = 1.0 - t2;
           if ((t2 >= 0.0) && (t2 <= 1.0)) {
-            extremaY = ((tprime2 * tprime2 * tprime2) * startY) +
+            extremaY =
+                ((tprime2 * tprime2 * tprime2) * startY) +
                 ((3 * tprime2 * tprime2 * t2) * cpY1) +
                 ((3 * tprime2 * t2 * t2) * cpY2) +
                 (t2 * t2 * t2 * endY);
@@ -342,7 +363,11 @@ class CubicBounds {
 
 /// Chops cubic spline at startT and stopT, writes result to buffer.
 void chopCubicBetweenT(
-    List<double> points, double startT, double stopT, Float32List buffer) {
+  List<double> points,
+  double startT,
+  double stopT,
+  Float32List buffer,
+) {
   assert(startT != 0 || stopT != 0);
   final double p3y = points[7];
   final double p0x = points[0];

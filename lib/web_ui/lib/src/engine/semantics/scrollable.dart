@@ -24,11 +24,11 @@ import 'package:ui/ui.dart' as ui;
 /// viewport "scrollTop" may take positive values.
 class Scrollable extends PrimaryRoleManager {
   Scrollable(SemanticsObject semanticsObject)
-      : super.withBasics(
-          PrimaryRole.scrollable,
-          semanticsObject,
-          preferredLabelRepresentation: LabelRepresentation.ariaLabel,
-        );
+    : super.withBasics(
+        PrimaryRole.scrollable,
+        semanticsObject,
+        preferredLabelRepresentation: LabelRepresentation.ariaLabel,
+      );
 
   /// Disables browser-driven scrolling in the presence of pointer events.
   GestureModeCallback? _gestureModeListener;
@@ -44,8 +44,9 @@ class Scrollable extends PrimaryRoleManager {
   /// [canonicalNeutralScrollPosition] so the browser believes
   /// that the scrollable area still has some more content, and doesn't override
   /// scrollTop/scrollLetf with zero.
-  final DomElement _scrollOverflowElement =
-      createDomElement('flt-semantics-scroll-overflow');
+  final DomElement _scrollOverflowElement = createDomElement(
+    'flt-semantics-scroll-overflow',
+  );
 
   /// Listens to HTML "scroll" gestures detected by the browser.
   ///
@@ -72,20 +73,32 @@ class Scrollable extends PrimaryRoleManager {
       if (doScrollForward) {
         if (semanticsObject.isVerticalScrollContainer) {
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsId, ui.SemanticsAction.scrollUp, null);
+            semanticsId,
+            ui.SemanticsAction.scrollUp,
+            null,
+          );
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsId, ui.SemanticsAction.scrollLeft, null);
+            semanticsId,
+            ui.SemanticsAction.scrollLeft,
+            null,
+          );
         }
       } else {
         if (semanticsObject.isVerticalScrollContainer) {
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsId, ui.SemanticsAction.scrollDown, null);
+            semanticsId,
+            ui.SemanticsAction.scrollDown,
+            null,
+          );
         } else {
           assert(semanticsObject.isHorizontalScrollContainer);
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
-              semanticsId, ui.SemanticsAction.scrollRight, null);
+            semanticsId,
+            ui.SemanticsAction.scrollRight,
+            null,
+          );
         }
       }
     }
@@ -100,8 +113,9 @@ class Scrollable extends PrimaryRoleManager {
     _scrollOverflowElement.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0'
-      // Ignore pointer events since this is a dummy element.
-      ..pointerEvents = 'none';
+          // Ignore pointer events since this is a dummy element.
+          ..pointerEvents =
+          'none';
     append(_scrollOverflowElement);
   }
 

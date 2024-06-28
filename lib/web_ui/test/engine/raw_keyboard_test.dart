@@ -41,22 +41,34 @@ void testMain() {
 
       String? channelReceived;
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
         channelReceived = channel;
-        dataReceived = const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>?;
+        dataReceived =
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>?;
       };
 
       DomKeyboardEvent event;
 
       // Dispatch a keydown event first so that KeyboardBinding will recognize the keyup event.
       // and will not set preventDefault on it.
-      event = dispatchKeyboardEvent('keydown',
-          key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+      event = dispatchKeyboardEvent(
+        'keydown',
+        key: 'SomeKey',
+        code: 'SomeCode',
+        keyCode: 1,
+      );
 
-      event = dispatchKeyboardEvent('keyup',
-          key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+      event = dispatchKeyboardEvent(
+        'keyup',
+        key: 'SomeKey',
+        code: 'SomeCode',
+        keyCode: 1,
+      );
 
       expect(event.defaultPrevented, isFalse);
       expect(channelReceived, 'flutter/keyevent');
@@ -78,17 +90,25 @@ void testMain() {
 
       String? channelReceived;
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
         channelReceived = channel;
-        dataReceived = const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>?;
+        dataReceived =
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>?;
       };
 
       DomKeyboardEvent event;
 
-      event = dispatchKeyboardEvent('keydown',
-          key: 'SomeKey', code: 'SomeCode', keyCode: 1);
+      event = dispatchKeyboardEvent(
+        'keydown',
+        key: 'SomeKey',
+        code: 'SomeCode',
+        keyCode: 1,
+      );
 
       expect(channelReceived, 'flutter/keyevent');
       expect(dataReceived, <String, dynamic>{
@@ -109,10 +129,14 @@ void testMain() {
       RawKeyboard.initialize();
 
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        dataReceived = const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>?;
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
+        dataReceived =
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>?;
       };
 
       DomKeyboardEvent event;
@@ -160,45 +184,55 @@ void testMain() {
 
     // Regression test for https://github.com/flutter/flutter/issues/125672.
     test(
-        'updates meta state for Meta key and wrong DOM event metaKey value (Linux)',
-        () {
-      RawKeyboard.initialize();
+      'updates meta state for Meta key and wrong DOM event metaKey value (Linux)',
+      () {
+        RawKeyboard.initialize();
 
-      Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        dataReceived = const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>?;
-      };
+        Map<String, dynamic>? dataReceived;
+        ui.PlatformDispatcher.instance.onPlatformMessage = (
+          String channel,
+          ByteData? data,
+          ui.PlatformMessageResponseCallback? callback,
+        ) {
+          dataReceived =
+              const JSONMessageCodec().decodeMessage(data)
+                  as Map<String, dynamic>?;
+        };
 
-      // Purposely send an incoherent DOM event where Meta key is pressed but event.metaKey is not set to true.
-      final DomKeyboardEvent event = dispatchKeyboardEvent(
-        'keydown',
-        key: 'Meta',
-        code: 'MetaLeft',
-      );
-      expect(event.defaultPrevented, isFalse);
-      expect(dataReceived, <String, dynamic>{
-        'type': 'keydown',
-        'keymap': 'web',
-        'code': 'MetaLeft',
-        'key': 'Meta',
-        'location': 0,
-        'metaState': 0x8,
-        'keyCode': 0,
-      });
-      RawKeyboard.instance!.dispose();
-    }, skip: ui_web.browser.operatingSystem != ui_web.OperatingSystem.linux);
+        // Purposely send an incoherent DOM event where Meta key is pressed but event.metaKey is not set to true.
+        final DomKeyboardEvent event = dispatchKeyboardEvent(
+          'keydown',
+          key: 'Meta',
+          code: 'MetaLeft',
+        );
+        expect(event.defaultPrevented, isFalse);
+        expect(dataReceived, <String, dynamic>{
+          'type': 'keydown',
+          'keymap': 'web',
+          'code': 'MetaLeft',
+          'key': 'Meta',
+          'location': 0,
+          'metaState': 0x8,
+          'keyCode': 0,
+        });
+        RawKeyboard.instance!.dispose();
+      },
+      skip: ui_web.browser.operatingSystem != ui_web.OperatingSystem.linux,
+    );
 
     // Regression test for https://github.com/flutter/flutter/issues/141186.
     test('updates meta state for Meta key seen as "Process" key', () {
       RawKeyboard.initialize();
 
       Map<String, dynamic>? dataReceived;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        dataReceived = const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>?;
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
+        dataReceived =
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>?;
       };
 
       // Purposely send a DOM event where Meta key is pressed but event.metaKey is not set to true.
@@ -227,10 +261,14 @@ void testMain() {
       RawKeyboard.initialize();
 
       final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        messages.add(const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>);
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
+        messages.add(
+          const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>,
+        );
       };
 
       DomKeyboardEvent event;
@@ -281,8 +319,11 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
         count += 1;
       };
 
@@ -305,11 +346,16 @@ void testMain() {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
         count += 1;
-        final ByteData response = const JSONMessageCodec()
-            .encodeMessage(<String, dynamic>{'handled': true})!;
+        final ByteData response =
+            const JSONMessageCodec().encodeMessage(<String, dynamic>{
+              'handled': true,
+            })!;
         callback!(response);
       };
 
@@ -325,37 +371,47 @@ void testMain() {
       RawKeyboard.instance!.dispose();
     });
 
-    test("Doesn't prevent default when key is not handled by the framework",
-        () {
-      RawKeyboard.initialize();
+    test(
+      "Doesn't prevent default when key is not handled by the framework",
+      () {
+        RawKeyboard.initialize();
 
-      int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        count += 1;
-        final ByteData response = const JSONMessageCodec()
-            .encodeMessage(<String, dynamic>{'handled': false})!;
-        callback!(response);
-      };
+        int count = 0;
+        ui.PlatformDispatcher.instance.onPlatformMessage = (
+          String channel,
+          ByteData? data,
+          ui.PlatformMessageResponseCallback? callback,
+        ) {
+          count += 1;
+          final ByteData response =
+              const JSONMessageCodec().encodeMessage(<String, dynamic>{
+                'handled': false,
+              })!;
+          callback!(response);
+        };
 
-      final DomKeyboardEvent event = dispatchKeyboardEvent(
-        'keydown',
-        key: 'Tab',
-        code: 'Tab',
-      );
+        final DomKeyboardEvent event = dispatchKeyboardEvent(
+          'keydown',
+          key: 'Tab',
+          code: 'Tab',
+        );
 
-      expect(event.defaultPrevented, isFalse);
-      expect(count, 1);
+        expect(event.defaultPrevented, isFalse);
+        expect(count, 1);
 
-      RawKeyboard.instance!.dispose();
-    });
+        RawKeyboard.instance!.dispose();
+      },
+    );
 
     test('keyboard events should be triggered on text fields', () {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
         count += 1;
       };
 
@@ -375,49 +431,65 @@ void testMain() {
     });
 
     test(
-        'the "Tab" key should never be ignored when it is not a part of IME composition',
-        () {
-      RawKeyboard.initialize();
+      'the "Tab" key should never be ignored when it is not a part of IME composition',
+      () {
+        RawKeyboard.initialize();
 
-      int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        count += 1;
-        final ByteData response = const JSONMessageCodec()
-            .encodeMessage(<String, dynamic>{'handled': true})!;
-        callback!(response);
-      };
+        int count = 0;
+        ui.PlatformDispatcher.instance.onPlatformMessage = (
+          String channel,
+          ByteData? data,
+          ui.PlatformMessageResponseCallback? callback,
+        ) {
+          count += 1;
+          final ByteData response =
+              const JSONMessageCodec().encodeMessage(<String, dynamic>{
+                'handled': true,
+              })!;
+          callback!(response);
+        };
 
-      useTextEditingElement((DomElement element) {
-        final DomKeyboardEvent event = dispatchKeyboardEvent(
-          'keydown',
-          key: 'Tab',
-          code: 'Tab',
-          target: element,
-        );
+        useTextEditingElement((DomElement element) {
+          final DomKeyboardEvent event = dispatchKeyboardEvent(
+            'keydown',
+            key: 'Tab',
+            code: 'Tab',
+            target: element,
+          );
 
-        expect(event.defaultPrevented, isTrue);
-        expect(count, 1);
-      });
+          expect(event.defaultPrevented, isTrue);
+          expect(count, 1);
+        });
 
-      RawKeyboard.instance!.dispose();
-    });
+        RawKeyboard.instance!.dispose();
+      },
+    );
 
     test('Ignores event when Tab key is hit during IME composition', () {
       RawKeyboard.initialize();
 
       int count = 0;
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
         count += 1;
-        final ByteData response = const JSONMessageCodec()
-            .encodeMessage(<String, dynamic>{'handled': true})!;
+        final ByteData response =
+            const JSONMessageCodec().encodeMessage(<String, dynamic>{
+              'handled': true,
+            })!;
         callback!(response);
       };
 
       useTextEditingElement((DomElement element) {
-        dispatchKeyboardEvent('keydown',
-            key: 'Tab', code: 'Tab', target: element, isComposing: true);
+        dispatchKeyboardEvent(
+          'keydown',
+          key: 'Tab',
+          code: 'Tab',
+          target: element,
+          isComposing: true,
+        );
 
         expect(count, 0); // no message sent to framework
       });
@@ -438,10 +510,15 @@ void testMain() {
         RawKeyboard.initialize(onMacOs: true);
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data)
-              as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (
+          String channel,
+          ByteData? data,
+          ui.PlatformMessageResponseCallback? callback,
+        ) {
+          messages.add(
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>,
+          );
         };
 
         dispatchKeyboardEvent(
@@ -549,7 +626,7 @@ void testMain() {
             'location': 0,
             'metaState': 0x0,
             'keyCode': 0,
-          }
+          },
         ]);
 
         RawKeyboard.instance!.dispose();
@@ -562,10 +639,15 @@ void testMain() {
         RawKeyboard.initialize(onMacOs: true);
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data)
-              as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (
+          String channel,
+          ByteData? data,
+          ui.PlatformMessageResponseCallback? callback,
+        ) {
+          messages.add(
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>,
+          );
         };
 
         dispatchKeyboardEvent(
@@ -645,22 +727,19 @@ void testMain() {
         RawKeyboard.initialize();
 
         final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data)
-              as Map<String, dynamic>);
+        ui.PlatformDispatcher.instance.onPlatformMessage = (
+          String channel,
+          ByteData? data,
+          ui.PlatformMessageResponseCallback? callback,
+        ) {
+          messages.add(
+            const JSONMessageCodec().decodeMessage(data)
+                as Map<String, dynamic>,
+          );
         };
 
-        dispatchKeyboardEvent(
-          'keydown',
-          key: 'i',
-          code: 'KeyI',
-        );
-        dispatchKeyboardEvent(
-          'keydown',
-          key: 'o',
-          code: 'KeyO',
-        );
+        dispatchKeyboardEvent('keydown', key: 'i', code: 'KeyI');
+        dispatchKeyboardEvent('keydown', key: 'o', code: 'KeyO');
         messages.clear();
 
         // Wait for a long-enough period of time and no events
@@ -672,15 +751,20 @@ void testMain() {
       },
     );
 
-    testFakeAsync('On macOS, do not synthesize keyup for meta keys',
-        (FakeAsync async) {
+    testFakeAsync('On macOS, do not synthesize keyup for meta keys', (
+      FakeAsync async,
+    ) {
       RawKeyboard.initialize(onMacOs: true);
 
       final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-      ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-          ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-        messages.add(const JSONMessageCodec().decodeMessage(data)
-            as Map<String, dynamic>);
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
+        messages.add(
+          const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>,
+        );
       };
 
       dispatchKeyboardEvent(
@@ -730,72 +814,70 @@ void testMain() {
           //           alt
           'metaState': 0x2,
           'keyCode': 0,
-        }
+        },
       ]);
 
       RawKeyboard.instance!.dispose();
     });
 
-    testFakeAsync(
-      'On non-macOS, do not synthesize keyup for shortcuts',
-      (FakeAsync async) {
-        RawKeyboard.initialize(); // onMacOs: false
+    testFakeAsync('On non-macOS, do not synthesize keyup for shortcuts', (
+      FakeAsync async,
+    ) {
+      RawKeyboard.initialize(); // onMacOs: false
 
-        final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
-        ui.PlatformDispatcher.instance.onPlatformMessage = (String channel,
-            ByteData? data, ui.PlatformMessageResponseCallback? callback) {
-          messages.add(const JSONMessageCodec().decodeMessage(data)
-              as Map<String, dynamic>);
-        };
+      final List<Map<String, dynamic>> messages = <Map<String, dynamic>>[];
+      ui.PlatformDispatcher.instance.onPlatformMessage = (
+        String channel,
+        ByteData? data,
+        ui.PlatformMessageResponseCallback? callback,
+      ) {
+        messages.add(
+          const JSONMessageCodec().decodeMessage(data) as Map<String, dynamic>,
+        );
+      };
 
-        dispatchKeyboardEvent(
-          'keydown',
-          key: 'Meta',
-          code: 'MetaLeft',
-          location: 1,
-          isMetaPressed: true,
-        );
-        dispatchKeyboardEvent(
-          'keydown',
-          key: 'Alt',
-          code: 'AltLeft',
-          location: 1,
-          isMetaPressed: true,
-          isAltPressed: true,
-        );
-        dispatchKeyboardEvent(
-          'keydown',
-          key: 'i',
-          code: 'KeyI',
-          isMetaPressed: true,
-          isAltPressed: true,
-        );
-        async.elapse(const Duration(milliseconds: 10));
-        dispatchKeyboardEvent(
-          'keyup',
-          key: 'Meta',
-          code: 'MetaLeft',
-          location: 1,
-          isAltPressed: true,
-        );
-        dispatchKeyboardEvent(
-          'keyup',
-          key: 'Alt',
-          code: 'AltLeft',
-          location: 1,
-        );
-        // Notice no `keyup` for "i".
+      dispatchKeyboardEvent(
+        'keydown',
+        key: 'Meta',
+        code: 'MetaLeft',
+        location: 1,
+        isMetaPressed: true,
+      );
+      dispatchKeyboardEvent(
+        'keydown',
+        key: 'Alt',
+        code: 'AltLeft',
+        location: 1,
+        isMetaPressed: true,
+        isAltPressed: true,
+      );
+      dispatchKeyboardEvent(
+        'keydown',
+        key: 'i',
+        code: 'KeyI',
+        isMetaPressed: true,
+        isAltPressed: true,
+      );
+      async.elapse(const Duration(milliseconds: 10));
+      dispatchKeyboardEvent(
+        'keyup',
+        key: 'Meta',
+        code: 'MetaLeft',
+        location: 1,
+        isAltPressed: true,
+      );
+      dispatchKeyboardEvent('keyup', key: 'Alt', code: 'AltLeft', location: 1);
+      // Notice no `keyup` for "i".
 
-        expect(messages, hasLength(5));
-        messages.clear();
+      expect(messages, hasLength(5));
+      messages.clear();
 
-        // Never synthesize keyup events.
-        async.elapse(const Duration(seconds: 3));
-        expect(messages, isEmpty);
+      // Never synthesize keyup events.
+      async.elapse(const Duration(seconds: 3));
+      expect(messages, isEmpty);
 
-        RawKeyboard.instance!.dispose();
-      },
-    );
+      RawKeyboard.instance!.dispose();
+    });
   });
 }
 

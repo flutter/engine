@@ -8,11 +8,11 @@ import 'package:ui/ui.dart' as ui;
 /// Sets the "button" ARIA role.
 class Button extends PrimaryRoleManager {
   Button(SemanticsObject semanticsObject)
-      : super.withBasics(
-          PrimaryRole.button,
-          semanticsObject,
-          preferredLabelRepresentation: LabelRepresentation.domText,
-        ) {
+    : super.withBasics(
+        PrimaryRole.button,
+        semanticsObject,
+        preferredLabelRepresentation: LabelRepresentation.domText,
+      ) {
     addTappable();
     setAriaRole('button');
   }
@@ -40,7 +40,7 @@ class Button extends PrimaryRoleManager {
 /// click as [ui.SemanticsAction.tap].
 class Tappable extends RoleManager {
   Tappable(SemanticsObject semanticsObject, PrimaryRoleManager owner)
-      : super(Role.tappable, semanticsObject, owner) {
+    : super(Role.tappable, semanticsObject, owner) {
     _clickListener = createDomEventListener((DomEvent click) {
       PointerBinding.clickDebouncer.onClick(
         click,
@@ -57,7 +57,8 @@ class Tappable extends RoleManager {
   @override
   void update() {
     final bool wasListening = _isListening;
-    _isListening = semanticsObject.enabledState() != EnabledState.disabled &&
+    _isListening =
+        semanticsObject.enabledState() != EnabledState.disabled &&
         semanticsObject.isTappable;
     if (wasListening != _isListening) {
       _updateAttribute();

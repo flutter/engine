@@ -10,8 +10,8 @@ export 'package:web_unicode/web_unicode.dart' show WordCharProperty;
 
 UnicodePropertyLookup<WordCharProperty> wordLookup =
     UnicodePropertyLookup<WordCharProperty>.fromPackedData(
-  packedWordBreakProperties,
-  singleWordBreakRangesCount,
-  WordCharProperty.values,
-  defaultWordCharProperty,
-);
+      packedWordBreakProperties,
+      singleWordBreakRangesCount,
+      WordCharProperty.values,
+      defaultWordCharProperty,
+    );

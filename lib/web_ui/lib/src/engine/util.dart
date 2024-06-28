@@ -133,7 +133,8 @@ TransformKind transformKindOf(List<double> matrix) {
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
-  final bool isSimple2dTransform = m[15] ==
+  final bool isSimple2dTransform =
+      m[15] ==
           1.0 && // start reading from the last element to eliminate range checks in subsequent reads.
       m[14] == 0.0 && // z translation is NOT simple
       // m[13] - y translation is simple
@@ -158,7 +159,8 @@ TransformKind transformKindOf(List<double> matrix) {
   // From this point on we're sure the transform is 2D, but we don't know if
   // it's identity or not. To check, we need to look at the remaining elements
   // that were not checked above.
-  final bool isIdentityTransform = m[0] == 1.0 &&
+  final bool isIdentityTransform =
+      m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[4] == 0.0 &&
       m[5] == 1.0 &&
@@ -300,25 +302,41 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
     w = 1.0;
   }
 
-  ltrb[0] = math.min(
-          math.min(math.min(_tempPointData[0], _tempPointData[1]),
-              _tempPointData[2]),
-          _tempPointData[3]) /
+  ltrb[0] =
+      math.min(
+        math.min(
+          math.min(_tempPointData[0], _tempPointData[1]),
+          _tempPointData[2],
+        ),
+        _tempPointData[3],
+      ) /
       w;
-  ltrb[1] = math.min(
-          math.min(math.min(_tempPointData[4], _tempPointData[5]),
-              _tempPointData[6]),
-          _tempPointData[7]) /
+  ltrb[1] =
+      math.min(
+        math.min(
+          math.min(_tempPointData[4], _tempPointData[5]),
+          _tempPointData[6],
+        ),
+        _tempPointData[7],
+      ) /
       w;
-  ltrb[2] = math.max(
-          math.max(math.max(_tempPointData[0], _tempPointData[1]),
-              _tempPointData[2]),
-          _tempPointData[3]) /
+  ltrb[2] =
+      math.max(
+        math.max(
+          math.max(_tempPointData[0], _tempPointData[1]),
+          _tempPointData[2],
+        ),
+        _tempPointData[3],
+      ) /
       w;
-  ltrb[3] = math.max(
-          math.max(math.max(_tempPointData[4], _tempPointData[5]),
-              _tempPointData[6]),
-          _tempPointData[7]) /
+  ltrb[3] =
+      math.max(
+        math.max(
+          math.max(_tempPointData[4], _tempPointData[5]),
+          _tempPointData[6],
+        ),
+        _tempPointData[7],
+      ) /
       w;
 }
 
@@ -711,9 +729,10 @@ void setThemeColor(ui.Color? color) {
 
   if (color != null) {
     if (theme == null) {
-      theme = createDomHTMLMetaElement()
-        ..id = 'flutterweb-theme'
-        ..name = 'theme-color';
+      theme =
+          createDomHTMLMetaElement()
+            ..id = 'flutterweb-theme'
+            ..name = 'theme-color';
       domDocument.head!.append(theme);
     }
     theme.content = color.toCssString();
@@ -726,20 +745,29 @@ bool? _ellipseFeatureDetected;
 
 /// Draws CanvasElement ellipse with fallback.
 void drawEllipse(
-    DomCanvasRenderingContext2D context,
-    double centerX,
-    double centerY,
-    double radiusX,
-    double radiusY,
-    double rotation,
-    double startAngle,
-    double endAngle,
-    bool antiClockwise) {
+  DomCanvasRenderingContext2D context,
+  double centerX,
+  double centerY,
+  double radiusX,
+  double radiusY,
+  double rotation,
+  double startAngle,
+  double endAngle,
+  bool antiClockwise,
+) {
   _ellipseFeatureDetected ??=
       getJsProperty<Object?>(context, 'ellipse') != null;
   if (_ellipseFeatureDetected!) {
-    context.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle,
-        endAngle, antiClockwise);
+    context.ellipse(
+      centerX,
+      centerY,
+      radiusX,
+      radiusY,
+      rotation,
+      startAngle,
+      endAngle,
+      antiClockwise,
+    );
   } else {
     context.save();
     context.translate(centerX, centerY);
@@ -894,8 +922,8 @@ class BitmapSize {
   /// Returns a [BitmapSize] by rounding the width and height of a [ui.Size] to
   /// the nearest integer.
   BitmapSize.fromSize(ui.Size size)
-      : width = size.width.round(),
-        height = size.height.round();
+    : width = size.width.round(),
+      height = size.height.round();
 
   final int width;
   final int height;

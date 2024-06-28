@@ -37,7 +37,8 @@ Future<void> testMain() async {
     final Picture backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
     builder.pushColorFilter(
-        const EngineColorFilter.mode(Color(0xF0000080), BlendMode.color));
+      const EngineColorFilter.mode(Color(0xF0000080), BlendMode.color),
+    );
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
@@ -71,10 +72,9 @@ Future<void> testMain() async {
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
     final Picture backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
-    builder.pushColorFilter(const ColorFilter.mode(
-      Color(0xFFFF0000),
-      BlendMode.srcIn,
-    ));
+    builder.pushColorFilter(
+      const ColorFilter.mode(Color(0xFFFF0000), BlendMode.srcIn),
+    );
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
@@ -86,40 +86,53 @@ Future<void> testMain() async {
 Picture _drawTestPictureWithCircles(double offsetX, double offsetY) {
   final EnginePictureRecorder recorder =
       PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
-      recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
-  canvas.drawCircle(Offset(offsetX + 10, offsetY + 10), 10,
-      (Paint()..style = PaintingStyle.fill) as SurfacePaint);
+  final RecordingCanvas canvas = recorder.beginRecording(
+    const Rect.fromLTRB(0, 0, 400, 400),
+  );
   canvas.drawCircle(
-      Offset(offsetX + 60, offsetY + 10),
-      10,
-      (Paint()
-        ..style = PaintingStyle.fill
-        ..color = const Color.fromRGBO(255, 0, 0, 1)) as SurfacePaint);
+    Offset(offsetX + 10, offsetY + 10),
+    10,
+    (Paint()..style = PaintingStyle.fill) as SurfacePaint,
+  );
   canvas.drawCircle(
-      Offset(offsetX + 10, offsetY + 60),
-      10,
-      (Paint()
-        ..style = PaintingStyle.fill
-        ..color = const Color.fromRGBO(0, 255, 0, 1)) as SurfacePaint);
+    Offset(offsetX + 60, offsetY + 10),
+    10,
+    (Paint()
+          ..style = PaintingStyle.fill
+          ..color = const Color.fromRGBO(255, 0, 0, 1))
+        as SurfacePaint,
+  );
   canvas.drawCircle(
-      Offset(offsetX + 60, offsetY + 60),
-      10,
-      (Paint()
-        ..style = PaintingStyle.fill
-        ..color = const Color.fromRGBO(0, 0, 255, 1)) as SurfacePaint);
+    Offset(offsetX + 10, offsetY + 60),
+    10,
+    (Paint()
+          ..style = PaintingStyle.fill
+          ..color = const Color.fromRGBO(0, 255, 0, 1))
+        as SurfacePaint,
+  );
+  canvas.drawCircle(
+    Offset(offsetX + 60, offsetY + 60),
+    10,
+    (Paint()
+          ..style = PaintingStyle.fill
+          ..color = const Color.fromRGBO(0, 0, 255, 1))
+        as SurfacePaint,
+  );
   return recorder.endRecording();
 }
 
 Picture _drawBackground() {
   final EnginePictureRecorder recorder =
       PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
-      recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
+  final RecordingCanvas canvas = recorder.beginRecording(
+    const Rect.fromLTRB(0, 0, 400, 400),
+  );
   canvas.drawRect(
-      const Rect.fromLTWH(8, 8, 400.0 - 16, 400.0 - 16),
-      (Paint()
-        ..style = PaintingStyle.fill
-        ..color = const Color(0xFFE0FFE0)) as SurfacePaint);
+    const Rect.fromLTWH(8, 8, 400.0 - 16, 400.0 - 16),
+    (Paint()
+          ..style = PaintingStyle.fill
+          ..color = const Color(0xFFE0FFE0))
+        as SurfacePaint,
+  );
   return recorder.endRecording();
 }

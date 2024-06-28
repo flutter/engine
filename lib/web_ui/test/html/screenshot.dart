@@ -38,8 +38,8 @@ Future<void> canvasScreenshot(
     if (setupPerspective) {
       // iFrame disables perspective, set it explicitly for test.
       engineCanvas.rootElement.style.perspective = '400px';
-      for (final DomElement element
-          in engineCanvas.rootElement.querySelectorAll('div')) {
+      for (final DomElement element in engineCanvas.rootElement
+          .querySelectorAll('div')) {
         element.style.perspective = '400px';
       }
     }
@@ -53,8 +53,11 @@ Future<void> canvasScreenshot(
   }
 }
 
-Future<void> sceneScreenshot(SurfaceSceneBuilder sceneBuilder, String fileName,
-    {ui.Rect region = const ui.Rect.fromLTWH(0, 0, 600, 800)}) async {
+Future<void> sceneScreenshot(
+  SurfaceSceneBuilder sceneBuilder,
+  String fileName, {
+  ui.Rect region = const ui.Rect.fromLTWH(0, 0, 600, 800),
+}) async {
   DomElement? sceneElement;
   try {
     sceneElement = sceneBuilder.build().webOnlyRootElement;
