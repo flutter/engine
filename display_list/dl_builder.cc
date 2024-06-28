@@ -1223,7 +1223,7 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   drawDRRect(outer, inner);
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
-  {
+  if (!path.isInverseFillType()) {
     SkRect rect;
     if (path.isRect(&rect)) {
       drawRect(rect);
@@ -1233,8 +1233,6 @@ void DisplayListBuilder::drawPath(const SkPath& path) {
       drawOval(rect);
       return;
     }
-  }
-  {
     SkRRect rrect;
     if (path.isRRect(&rrect)) {
       drawRRect(rrect);

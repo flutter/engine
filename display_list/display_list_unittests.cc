@@ -4996,9 +4996,12 @@ TEST_F(DisplayListTest, ClipOvalRRectPromoteToClipOval) {
 TEST_F(DisplayListTest, ClipRectPathPromoteToClipRect) {
   SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
   SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::Rect(clip_rect);
+  ASSERT_TRUE(clip_path.isRect(nullptr));
+  ASSERT_FALSE(clip_path.isInverseFillType());
 
   DisplayListBuilder builder;
-  builder.ClipPath(SkPath::Rect(clip_rect), ClipOp::kIntersect, false);
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
   // Include a rendering op in case DlBuilder ever removes unneeded clips
   builder.DrawRect(draw_rect, DlPaint());
   auto dl = builder.Build();
@@ -5014,9 +5017,12 @@ TEST_F(DisplayListTest, ClipRectPathPromoteToClipRect) {
 TEST_F(DisplayListTest, ClipOvalPathPromoteToClipOval) {
   SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
   SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::Oval(clip_rect);
+  ASSERT_TRUE(clip_path.isOval(nullptr));
+  ASSERT_FALSE(clip_path.isInverseFillType());
 
   DisplayListBuilder builder;
-  builder.ClipPath(SkPath::Oval(clip_rect), ClipOp::kIntersect, false);
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
   // Include a rendering op in case DlBuilder ever removes unneeded clips
   builder.DrawRect(draw_rect, DlPaint());
   auto dl = builder.Build();
@@ -5033,9 +5039,12 @@ TEST_F(DisplayListTest, ClipRRectPathPromoteToClipRRect) {
   SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
   SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2.0f, 2.0f);
   SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::RRect(clip_rrect);
+  ASSERT_TRUE(clip_path.isRRect(nullptr));
+  ASSERT_FALSE(clip_path.isInverseFillType());
 
   DisplayListBuilder builder;
-  builder.ClipPath(SkPath::RRect(clip_rrect), ClipOp::kIntersect, false);
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
   // Include a rendering op in case DlBuilder ever removes unneeded clips
   builder.DrawRect(draw_rect, DlPaint());
   auto dl = builder.Build();
@@ -5048,13 +5057,89 @@ TEST_F(DisplayListTest, ClipRRectPathPromoteToClipRRect) {
   DisplayListsEQ_Verbose(dl, expect_dl);
 }
 
+TEST_F(DisplayListTest, ClipRectInversePathNoPromoteToClipRect) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::Rect(clip_rect);
+  clip_path.toggleInverseFillType();
+  ASSERT_TRUE(clip_path.isRect(nullptr));
+  ASSERT_TRUE(clip_path.isInverseFillType());
+
+  DisplayListBuilder builder;
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  // Non-promoting tests can't use DL comparisons to verify that the
+  // promotion isn't happening because the test and expectation builders
+  // would both apply or not apply the same optimization. For this case
+  // we use the CLIP_EXPECTOR instead to see exactly which type of
+  // clip operation was recorded.
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip_path, ClipOp::kIntersect, false);
+  dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipOvalInversePathNoPromoteToClipOval) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::Oval(clip_rect);
+  clip_path.toggleInverseFillType();
+  ASSERT_TRUE(clip_path.isOval(nullptr));
+  ASSERT_TRUE(clip_path.isInverseFillType());
+
+  DisplayListBuilder builder;
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  // Non-promoting tests can't use DL comparisons to verify that the
+  // promotion isn't happening because the test and expectation builders
+  // would both apply or not apply the same optimization. For this case
+  // we use the CLIP_EXPECTOR instead to see exactly which type of
+  // clip operation was recorded.
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip_path, ClipOp::kIntersect, false);
+  dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRRectInversePathNoPromoteToClipRRect) {
+  SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2.0f, 2.0f);
+  SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::RRect(clip_rrect);
+  clip_path.toggleInverseFillType();
+  ASSERT_TRUE(clip_path.isRRect(nullptr));
+  ASSERT_TRUE(clip_path.isInverseFillType());
+
+  DisplayListBuilder builder;
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
+  // Include a rendering op in case DlBuilder ever removes unneeded clips
+  builder.DrawRect(draw_rect, DlPaint());
+  auto dl = builder.Build();
+
+  // Non-promoting tests can't use DL comparisons to verify that the
+  // promotion isn't happening because the test and expectation builders
+  // would both apply or not apply the same optimization. For this case
+  // we use the CLIP_EXPECTOR instead to see exactly which type of
+  // clip operation was recorded.
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip_path, ClipOp::kIntersect, false);
+  dl->Dispatch(expector);
+}
+
 TEST_F(DisplayListTest, ClipRectRRectPathPromoteToClipRect) {
   SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
   SkRRect clip_rrect = SkRRect::MakeRect(clip_rect);
   SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::RRect(clip_rrect);
+  ASSERT_TRUE(clip_path.isRRect(nullptr));
+  ASSERT_FALSE(clip_path.isInverseFillType());
 
   DisplayListBuilder builder;
-  builder.ClipPath(SkPath::RRect(clip_rrect), ClipOp::kIntersect, false);
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
   // Include a rendering op in case DlBuilder ever removes unneeded clips
   builder.DrawRect(draw_rect, DlPaint());
   auto dl = builder.Build();
@@ -5071,9 +5156,12 @@ TEST_F(DisplayListTest, ClipOvalRRectPathPromoteToClipOval) {
   SkRect clip_rect = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
   SkRRect clip_rrect = SkRRect::MakeOval(clip_rect);
   SkRect draw_rect = clip_rect.makeOutset(2.0f, 2.0f);
+  SkPath clip_path = SkPath::RRect(clip_rrect);
+  ASSERT_TRUE(clip_path.isRRect(nullptr));
+  ASSERT_FALSE(clip_path.isInverseFillType());
 
   DisplayListBuilder builder;
-  builder.ClipPath(SkPath::RRect(clip_rrect), ClipOp::kIntersect, false);
+  builder.ClipPath(clip_path, ClipOp::kIntersect, false);
   // Include a rendering op in case DlBuilder ever removes unneeded clips
   builder.DrawRect(draw_rect, DlPaint());
   auto dl = builder.Build();
