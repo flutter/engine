@@ -751,7 +751,8 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
         pass2_out.value().GetRenderTargetTexture();
     blur_output_entity.SetBlendMode(entity.GetBlendMode());
     blur_output_entity.SetTransform(blur_output_entity_transform);
-    Vector2 inline_pixel_size = 0.5 * pass1_pixel_size;
+    constexpr Vector2 orthographic_size(2.0f, 2.0f);
+    Vector2 inline_pixel_size = pass1_pixel_size / orthographic_size;
     blur_output_entity.SetContents(Contents::MakeAnonymous(
         /*render_proc=*/
         [sampler_desc, texture, inline_pixel_size, blur_info,
