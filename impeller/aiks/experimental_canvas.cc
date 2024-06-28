@@ -232,11 +232,16 @@ void ExperimentalCanvas::SaveLayer(
 
   // BDF No-op. need to do some precomputation to ensure this is fully skipped.
   if (backdrop_filter) {
-    if (!clip_coverage_stack_.HasCoverage() ||
-        clip_coverage_stack_.CurrentClipCoverage()->IsEmpty() ||
-        coverage_limit
-            .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
-            ->IsEmpty()) {
+    if (!clip_coverage_stack_.HasCoverage()) {
+      Save(total_content_depth);
+      return;
+    }
+    auto clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
+    if (!clip_coverage.has_value() || clip_coverage->IsEmpty()) {
+      Save(total_content_depth);
+      return;
+    }
+    if (coverage_limit.Intersection(clip_coverage.value())->IsEmpty()) {
       Save(total_content_depth);
       return;
     }
