@@ -15,7 +15,7 @@
 #include "third_party/skia/include/core/SkTypeface.h"
 #include "txt/platform.h"
 
-#define ENABLE_EXPERIMENTAL_CANVAS true
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 namespace impeller {
 

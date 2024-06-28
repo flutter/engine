@@ -17,7 +17,7 @@
 
 static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
-#define ENABLE_EXPERIMENTAL_CANVAS true
+#define ENABLE_EXPERIMENTAL_CANVAS false
 
 namespace flutter {
 
