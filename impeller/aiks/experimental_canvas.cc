@@ -56,7 +56,8 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
     ContentContext& renderer,
     ISize size,
     int mip_count,
-    const Color& clear_color) {
+    const Color& clear_color,
+    const std::shared_ptr<Texture>& texture) {
   const std::shared_ptr<Context>& context = renderer.GetContext();
 
   /// All of the load/store actions are managed by `InlinePassContext` when
@@ -84,8 +85,9 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
             .clear_color = clear_color},
-        /*stencil_attachment_config=*/
-        kDefaultStencilConfig);
+        /*stencil_attachment_config=*/kDefaultStencilConfig,  //
+        /*existing_color_msaa_texture=*/nullptr,              //
+        /*existing_color_resolve_texture=*/texture);
   } else {
     target = renderer.GetRenderTargetCache()->CreateOffscreen(
         *context,  // context
@@ -97,9 +99,9 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
-        },                     // color_attachment_config
-        kDefaultStencilConfig  // stencil_attachment_config
-    );
+        },                      // color_attachment_config
+        kDefaultStencilConfig,  // stencil_attachment_config
+        /*existing_color_texture=*/texture);
   }
 
   return std::make_unique<EntityPassTarget>(
@@ -173,11 +175,11 @@ void ExperimentalCanvas::SetupRenderPass() {
   // rendering is completed, we must blit this saveLayer to the onscreen.
   if (requires_readback_) {
     auto entity_pass_target =
-        CreateRenderTarget(renderer_,                                 //
-                           color0.texture->GetSize(),                 //
-                           /*mip_count=*/1,                           //
-                           /*clear_color=*/Color::BlackTransparent()  //
-        );
+        CreateRenderTarget(renderer_,                                  //
+                           color0.texture->GetSize(),                  //
+                           /*mip_count=*/1,                            //
+                           /*clear_color=*/Color::BlackTransparent(),  //
+                           /*texture=*/nullptr);
     render_passes_.push_back(
         LazyRenderingConfig(renderer_, std::move(entity_pass_target)));
   } else {
@@ -218,13 +220,29 @@ void ExperimentalCanvas::SaveLayer(
     bounds = Rect::MakeSize(render_target_.GetRenderTargetSize());
   }
 
-  // SaveLayer is a no-op, depending on the bounds promise. Should DL elide
+  // SaveLayer is a no-op, depending on the bounds promise. Should/Can DL elide
   // this?
-  if (bounds->IsEmpty() ||
-      (backdrop_filter &&
-       clip_coverage_stack_.CurrentClipCoverage().has_value() &&
-       clip_coverage_stack_.CurrentClipCoverage()->IsEmpty())) {
+  if (bounds->IsEmpty()) {
+    Save(total_content_depth);
     return;
+  }
+
+  // The maximum coverage of the subpass. Subpasses textures should never
+  // extend outside the parent pass texture or the current clip coverage.
+  Rect coverage_limit = Rect::MakeOriginSize(
+      GetGlobalPassPosition(),
+      Size(render_passes_.back().inline_pass_context->GetTexture()->GetSize()));
+
+  // BDF No-op. need to do some precomputation to ensure this is fully skipped.
+  if (backdrop_filter) {
+    if (!clip_coverage_stack_.HasCoverage() ||
+        clip_coverage_stack_.CurrentClipCoverage()->IsEmpty() ||
+        coverage_limit
+            .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
+            ->IsEmpty()) {
+      Save(total_content_depth);
+      return;
+    }
   }
 
   if (can_distribute_opacity && !backdrop_filter &&
@@ -234,6 +252,7 @@ void ExperimentalCanvas::SaveLayer(
     return;
   }
 
+  // Backdrop filter state, ignored if there is no BDF.
   int required_mip_count = 1;
   std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
@@ -267,8 +286,11 @@ void ExperimentalCanvas::SaveLayer(
 
     ISize restore_size =
         rendering_config.inline_pass_context->GetTexture()->GetSize();
+
+    auto input_texture = rendering_config.inline_pass_context->GetTexture();
+
     backdrop_filter_contents = backdrop_filter_proc(
-        FilterInput::Make(rendering_config.inline_pass_context->GetTexture()),
+        FilterInput::Make(input_texture),
         transform_stack_.back().transform.Basis(),
         // When the subpass has a translation that means the math with
         // the snapshot has to be different.
@@ -288,9 +310,8 @@ void ExperimentalCanvas::SaveLayer(
                             CreateRenderTarget(renderer_,     //
                                                restore_size,  //
                                                1,
-                                               Color::BlackTransparent()  //
-                                               )));
-
+                                               Color::BlackTransparent(),  //
+                                               input_texture)));
     // Eagerly restore the BDF contents.
 
     // If the pass context returns a backdrop texture, we need to draw it to the
@@ -344,15 +365,20 @@ void ExperimentalCanvas::SaveLayer(
   // the coverage of the parent render pass.
   Rect subpass_coverage = bounds->TransformBounds(GetCurrentTransform());
   if (backdrop_filter_contents) {
-    subpass_coverage = clip_coverage_stack_.CurrentClipCoverage().value_or(
-        save_layer_state_.back().coverage);
+    FML_CHECK(clip_coverage_stack_.HasCoverage());
+    // We should never hit this case as we check the intersection above.
+    subpass_coverage =
+        coverage_limit
+            .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
+            .value();
   }
 
   render_passes_.push_back(LazyRenderingConfig(
-      renderer_,                                                        //
-      CreateRenderTarget(renderer_,                                     //
-                         ISize(subpass_coverage.GetSize()),             //
-                         required_mip_count, Color::BlackTransparent()  //
+      renderer_,                                                         //
+      CreateRenderTarget(renderer_,                                      //
+                         ISize(subpass_coverage.GetSize()),              //
+                         required_mip_count, Color::BlackTransparent(),  //
+                         nullptr                                         //
                          )));
   save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 

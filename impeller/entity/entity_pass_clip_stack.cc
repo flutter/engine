@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/entity_pass_clip_stack.h"
+#include "fml/logging.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/entity.h"
 
@@ -21,6 +22,12 @@ EntityPassClipStack::EntityPassClipStack(const Rect& initial_coverage_rect) {
 }
 
 std::optional<Rect> EntityPassClipStack::CurrentClipCoverage() const {
+  if (subpass_state_.empty()) {
+    return std::nullopt;
+  }
+  if (subpass_state_.back().clip_coverage.empty()) {
+    return std::nullopt;
+  }
   return subpass_state_.back().clip_coverage.back().coverage;
 }
 
@@ -41,6 +48,7 @@ void EntityPassClipStack::PushSubpass(std::optional<Rect> subpass_coverage,
 
 void EntityPassClipStack::PopSubpass() {
   subpass_state_.pop_back();
+  FML_CHECK(!subpass_state_.empty());
 }
 
 const std::vector<ClipCoverageLayer>
