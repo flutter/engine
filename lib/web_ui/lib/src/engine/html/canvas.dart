@@ -19,7 +19,8 @@ class SurfaceCanvas implements ui.Canvas {
   factory SurfaceCanvas(EnginePictureRecorder recorder, [ui.Rect? cullRect]) {
     if (recorder.isRecording) {
       throw ArgumentError(
-          '"recorder" must not already be associated with another Canvas.');
+        '"recorder" must not already be associated with another Canvas.',
+      );
     }
     cullRect ??= ui.Rect.largest;
     return SurfaceCanvas._(recorder.beginRecording(cullRect));
@@ -105,8 +106,11 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   @override
-  void clipRect(ui.Rect rect,
-      {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
+  void clipRect(
+    ui.Rect rect, {
+    ui.ClipOp clipOp = ui.ClipOp.intersect,
+    bool doAntiAlias = true,
+  }) {
     assert(rectIsValid(rect));
     _clipRect(rect, clipOp, doAntiAlias);
   }
@@ -154,7 +158,9 @@ class SurfaceCanvas implements ui.Canvas {
     if (destBounds == null) {
       return ui.Rect.largest;
     }
-    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
+    final Matrix4 transform = Matrix4.fromFloat32List(
+      _canvas.getCurrentMatrixUnsafe(),
+    );
     if (transform.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
@@ -243,8 +249,13 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   @override
-  void drawArc(ui.Rect rect, double startAngle, double sweepAngle,
-      bool useCenter, ui.Paint paint) {
+  void drawArc(
+    ui.Rect rect,
+    double startAngle,
+    double sweepAngle,
+    bool useCenter,
+    ui.Paint paint,
+  ) {
     assert(rectIsValid(rect));
     const double pi = math.pi;
     const double pi2 = 2.0 * pi;
@@ -252,7 +263,9 @@ class SurfaceCanvas implements ui.Canvas {
     final ui.Path path = ui.Path();
     if (useCenter) {
       path.moveTo(
-          (rect.left + rect.right) / 2.0, (rect.top + rect.bottom) / 2.0);
+        (rect.left + rect.right) / 2.0,
+        (rect.top + rect.bottom) / 2.0,
+      );
     }
     bool forceMoveTo = !useCenter;
     if (sweepAngle <= -pi2) {
@@ -305,7 +318,11 @@ class SurfaceCanvas implements ui.Canvas {
   }
 
   void _drawImageRect(
-      ui.Image image, ui.Rect src, ui.Rect dst, ui.Paint paint) {
+    ui.Image image,
+    ui.Rect src,
+    ui.Rect dst,
+    ui.Paint paint,
+  ) {
     _canvas.drawImageRect(image, src, dst, paint as SurfacePaint);
   }
 
@@ -314,14 +331,21 @@ class SurfaceCanvas implements ui.Canvas {
   // source (image) and dest (screen) in the order (src0, dst0, src1, dst1).
   // The area from src0 => src1 of the image is painted on the screen from dst0 => dst1
   // The slices for each dimension are generated independently.
-  List<double> _initSlices(double img0, double imgC0, double imgC1, double img1, double dst0, double dst1) {
+  List<double> _initSlices(
+    double img0,
+    double imgC0,
+    double imgC1,
+    double img1,
+    double dst0,
+    double dst1,
+  ) {
     final double imageDim = img1 - img0;
     final double destDim = dst1 - dst0;
 
     if (imageDim == destDim) {
       // If the src and dest are the same size then we do not need scaling
       // We return 4 values for a single slice
-      return <double>[ img0, dst0, img1, dst1 ];
+      return <double>[img0, dst0, img1, dst1];
     }
 
     final double edge0Dim = imgC0 - img0;
@@ -333,10 +357,7 @@ class SurfaceCanvas implements ui.Canvas {
       // center position in the destination
       // this produces only 2 slices which is 8 values
       final double dstC = dst0 + destDim * edge0Dim / edgesDim;
-      return <double>[
-        img0,  dst0, imgC0, dstC,
-        imgC1, dstC, img1,  dst1,
-      ];
+      return <double>[img0, dst0, imgC0, dstC, imgC1, dstC, img1, dst1];
     }
 
     // center portion is nonEmpty and only that part is scaled
@@ -344,15 +365,28 @@ class SurfaceCanvas implements ui.Canvas {
     final double dstC0 = dst0 + edge0Dim;
     final double dstC1 = dst1 - edge1Dim;
     return <double>[
-      img0,  dst0,  imgC0, dstC0,
-      imgC0, dstC0, imgC1, dstC1,
-      imgC1, dstC1, img1,  dst1
+      img0,
+      dst0,
+      imgC0,
+      dstC0,
+      imgC0,
+      dstC0,
+      imgC1,
+      dstC1,
+      imgC1,
+      dstC1,
+      img1,
+      dst1,
     ];
   }
 
   @override
   void drawImageNine(
-      ui.Image image, ui.Rect center, ui.Rect dst, ui.Paint paint) {
+    ui.Image image,
+    ui.Rect center,
+    ui.Rect dst,
+    ui.Paint paint,
+  ) {
     assert(rectIsValid(center));
     assert(rectIsValid(dst));
 
@@ -414,14 +448,20 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawPoints(
-      ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
+    ui.PointMode pointMode,
+    List<ui.Offset> points,
+    ui.Paint paint,
+  ) {
     final Float32List pointList = offsetListToFloat32List(points);
     drawRawPoints(pointMode, pointList, paint);
   }
 
   @override
   void drawRawPoints(
-      ui.PointMode pointMode, Float32List points, ui.Paint paint) {
+    ui.PointMode pointMode,
+    Float32List points,
+    ui.Paint paint,
+  ) {
     if (points.length % 2 != 0) {
       throw ArgumentError('"points" must have an even number of values.');
     }
@@ -430,9 +470,15 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
+    ui.Vertices vertices,
+    ui.BlendMode blendMode,
+    ui.Paint paint,
+  ) {
     _canvas.drawVertices(
-        vertices as SurfaceVertices, blendMode, paint as SurfacePaint);
+      vertices as SurfaceVertices,
+      blendMode,
+      paint as SurfacePaint,
+    );
   }
 
   @override
@@ -453,7 +499,8 @@ class SurfaceCanvas implements ui.Canvas {
     }
     if (colors != null && colors.isNotEmpty && colors.length != rectCount) {
       throw ArgumentError(
-          'If non-null, "colors" length must match that of "transforms" and "rects".');
+        'If non-null, "colors" length must match that of "transforms" and "rects".',
+      );
     }
 
     // TODO(het): Do we need to support this?
@@ -478,11 +525,13 @@ class SurfaceCanvas implements ui.Canvas {
     }
     if (rectCount % 4 != 0) {
       throw ArgumentError(
-          '"rstTransforms" and "rects" lengths must be a multiple of four.');
+        '"rstTransforms" and "rects" lengths must be a multiple of four.',
+      );
     }
     if (colors != null && colors.length * 4 != rectCount) {
       throw ArgumentError(
-          'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+        'If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".',
+      );
     }
 
     // TODO(het): Do we need to support this?

@@ -15,7 +15,8 @@ class StyleManager {
   static const String defaultFontWeight = 'normal';
   static const double defaultFontSize = 14.0;
   static const String defaultFontFamily = 'sans-serif';
-  static const String defaultCssFont = '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
+  static const String defaultCssFont =
+      '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   static void attachGlobalStyles({
     required DomNode node,
@@ -23,7 +24,9 @@ class StyleManager {
     required String? styleNonce,
     required String cssSelectorPrefix,
   }) {
-    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(styleNonce);
+    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(
+      styleNonce,
+    );
     styleElement.id = styleId;
     // The style element must be appended to the DOM, or its `sheet` will be null later.
     node.appendChild(styleElement);
@@ -38,7 +41,10 @@ class StyleManager {
     DomElement sceneHost, {
     bool debugShowSemanticsNodes = false,
   }) {
-    assert(sceneHost.tagName.toLowerCase() == DomManager.sceneHostTagName.toLowerCase());
+    assert(
+      sceneHost.tagName.toLowerCase() ==
+          DomManager.sceneHostTagName.toLowerCase(),
+    );
     // Don't allow the scene to receive pointer events.
     sceneHost.style.pointerEvents = 'none';
     // When debugging semantics, make the scene semi-transparent so that the
@@ -52,7 +58,10 @@ class StyleManager {
     DomElement semanticsHost,
     double devicePixelRatio,
   ) {
-    assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
+    assert(
+      semanticsHost.tagName.toLowerCase() ==
+          DomManager.semanticsHostTagName.toLowerCase(),
+    );
     semanticsHost.style
       ..position = 'absolute'
       ..transformOrigin = '0 0 0';
@@ -66,7 +75,10 @@ class StyleManager {
     DomElement semanticsHost,
     double devicePixelRatio,
   ) {
-    assert(semanticsHost.tagName.toLowerCase() == DomManager.semanticsHostTagName.toLowerCase());
+    assert(
+      semanticsHost.tagName.toLowerCase() ==
+          DomManager.semanticsHostTagName.toLowerCase(),
+    );
     semanticsHost.style.transform = 'scale(${1 / devicePixelRatio})';
   }
 }
@@ -83,7 +95,6 @@ void applyGlobalCssRulesToSheet(
     '$cssSelectorPrefix ${DomManager.sceneHostTagName} {'
     '  font: $defaultCssFont;'
     '}'
-
     // This undoes browser's default painting and layout attributes of range
     // input, which is used in semantics.
     '$cssSelectorPrefix flt-semantics input[type=range] {'
@@ -97,7 +108,6 @@ void applyGlobalCssRulesToSheet(
     '  bottom: 0;'
     '  left: 0;'
     '}'
-
     // The invisible semantic text field may have a visible cursor and selection
     // highlight. The following 2 CSS rules force everything to be transparent.
     '$cssSelectorPrefix input::selection {'
@@ -106,18 +116,15 @@ void applyGlobalCssRulesToSheet(
     '$cssSelectorPrefix textarea::selection {'
     '  background-color: transparent;'
     '}'
-
     '$cssSelectorPrefix flt-semantics input,'
     '$cssSelectorPrefix flt-semantics textarea,'
     '$cssSelectorPrefix flt-semantics [contentEditable="true"] {'
     '  caret-color: transparent;'
     '}'
-
     // Hide placeholder text
     '$cssSelectorPrefix .flt-text-editing::placeholder {'
     '  opacity: 0;'
     '}'
-
     // Hide outline when the flutter-view root element is focused.
     '$cssSelectorPrefix:focus {'
     ' outline: none;'
@@ -131,10 +138,9 @@ void applyGlobalCssRulesToSheet(
       '$cssSelectorPrefix * {'
       '  -webkit-tap-highlight-color: transparent;'
       '}'
-
       '$cssSelectorPrefix flt-semantics input[type=range]::-webkit-slider-thumb {'
       '  -webkit-appearance: none;'
-      '}'
+      '}',
     );
   }
 
@@ -147,7 +153,7 @@ void applyGlobalCssRulesToSheet(
       '$cssSelectorPrefix flt-paragraph,'
       '$cssSelectorPrefix flt-span {'
       '  line-height: 100%;'
-      '}'
+      '}',
     );
   }
 
@@ -161,7 +167,7 @@ void applyGlobalCssRulesToSheet(
       '$cssSelectorPrefix .transparentTextEditing:-webkit-autofill:focus,'
       '$cssSelectorPrefix .transparentTextEditing:-webkit-autofill:active {'
       '  opacity: 0 !important;'
-      '}'
+      '}',
     );
   }
 
@@ -177,7 +183,7 @@ void applyGlobalCssRulesToSheet(
       styleElement.appendText(
         '$cssSelectorPrefix input::-ms-reveal {'
         '  display: none;'
-        '}'
+        '}',
       );
     } on DomException catch (e) {
       // Browsers that don't understand ::-ms-reveal throw a DOMException
@@ -188,7 +194,7 @@ void applyGlobalCssRulesToSheet(
         styleElement.appendText(
           '$cssSelectorPrefix input.fallback-for-fakey-browser-in-ci {'
           '  display: none;'
-          '}'
+          '}',
         );
         return true;
       }());

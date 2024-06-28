@@ -51,10 +51,14 @@ Future<JsFlutterConfiguration?> bootstrapAndExtractConfig() {
   // configuration object that is passed into flutter.js to actually initialize the
   // engine with, so here we do a little no-op bootstrap that just retrieves the
   // configuration that is passed into the `initializeEngine` callback.
-  final Completer<JsFlutterConfiguration?> configCompleter = Completer<JsFlutterConfiguration?>();
+  final Completer<JsFlutterConfiguration?> configCompleter =
+      Completer<JsFlutterConfiguration?>();
   final AppBootstrap bootstrap = AppBootstrap(
-    initializeEngine: ([JsFlutterConfiguration? config]) async => configCompleter.complete(config),
-    runApp: () async {}
+    initializeEngine:
+        ([JsFlutterConfiguration? config]) async => configCompleter.complete(
+          config,
+        ),
+    runApp: () async {},
   );
   final FlutterLoader? loader = flutter?.loader;
   if (loader == null || loader.isAutoStart) {

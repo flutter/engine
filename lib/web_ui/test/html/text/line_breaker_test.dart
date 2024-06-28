@@ -23,14 +23,12 @@ void testMain() {
           isV8 ? V8LineBreakFragmenter(text) : FWLineBreakFragmenter(text);
       return <Line>[
         for (final LineBreakFragment fragment in fragmenter.fragment())
-          Line.fromLineBreakFragment(text, fragment)
+          Line.fromLineBreakFragment(text, fragment),
       ];
     }
 
     test('empty string', () {
-      expect(split(''), <Line>[
-        Line('', endOfText),
-      ]);
+      expect(split(''), <Line>[Line('', endOfText)]);
     });
 
     test('whitespace', () {
@@ -175,72 +173,64 @@ void testMain() {
 
     test('trailing spaces and new lines', () {
       expect(split('foo bar  '), <Line>[
-          Line('foo ', opportunity, sp: 1),
-          Line('bar  ', endOfText, sp: 2),
-        ],
-      );
+        Line('foo ', opportunity, sp: 1),
+        Line('bar  ', endOfText, sp: 2),
+      ]);
 
       expect(split('foo  \nbar\nbaz   \n'), <Line>[
-          Line('foo  \n', mandatory, nl: 1, sp: 3),
-          Line('bar\n', mandatory, nl: 1, sp: 1),
-          Line('baz   \n', mandatory, nl: 1, sp: 4),
-          Line('', endOfText),
-        ],
-      );
+        Line('foo  \n', mandatory, nl: 1, sp: 3),
+        Line('bar\n', mandatory, nl: 1, sp: 1),
+        Line('baz   \n', mandatory, nl: 1, sp: 4),
+        Line('', endOfText),
+      ]);
     });
 
     test('leading spaces', () {
       expect(split(' foo'), <Line>[
-          Line(' ', opportunity, sp: 1),
-          Line('foo', endOfText),
-        ],
-      );
+        Line(' ', opportunity, sp: 1),
+        Line('foo', endOfText),
+      ]);
 
       expect(split('   foo'), <Line>[
-          Line('   ', opportunity, sp: 3),
-          Line('foo', endOfText),
-        ],
-      );
+        Line('   ', opportunity, sp: 3),
+        Line('foo', endOfText),
+      ]);
 
       expect(split('  foo   bar'), <Line>[
-          Line('  ', opportunity, sp: 2),
-          Line('foo   ', opportunity, sp: 3),
-          Line('bar', endOfText),
-        ],
-      );
+        Line('  ', opportunity, sp: 2),
+        Line('foo   ', opportunity, sp: 3),
+        Line('bar', endOfText),
+      ]);
 
       expect(split('  \n   foo'), <Line>[
-          Line('  \n', mandatory, nl: 1, sp: 3),
-          Line('   ', opportunity, sp: 3),
-          Line('foo', endOfText),
-        ],
-      );
+        Line('  \n', mandatory, nl: 1, sp: 3),
+        Line('   ', opportunity, sp: 3),
+        Line('foo', endOfText),
+      ]);
     });
 
     test('whitespace before the last character', () {
       expect(split('Lorem sit .'), <Line>[
-          Line('Lorem ', opportunity, sp: 1),
-          Line('sit ', opportunity, sp: 1),
-          Line('.', endOfText),
-        ],
-      );
+        Line('Lorem ', opportunity, sp: 1),
+        Line('sit ', opportunity, sp: 1),
+        Line('.', endOfText),
+      ]);
     });
 
     test('placeholders', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('Lorem');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('ipsum\n');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('dolor');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('\nsit');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('Lorem');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('ipsum\n');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('dolor');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('\nsit');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+      });
 
       final String placeholderChar = String.fromCharCode(0xFFFC);
 
@@ -258,12 +248,11 @@ void testMain() {
     });
 
     test('single placeholder', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+      });
 
       final String placeholderChar = String.fromCharCode(0xFFFC);
 
@@ -273,66 +262,62 @@ void testMain() {
     });
 
     test('placeholders surrounded by spaces and new lines', () {
-      final CanvasParagraph paragraph = rich(
-        EngineParagraphStyle(),
-        (CanvasParagraphBuilder builder) {
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('  Lorem  ');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('  \nipsum \n');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-          builder.addText('\n');
-          builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
-        },
-      );
+      final CanvasParagraph paragraph = rich(EngineParagraphStyle(), (
+        CanvasParagraphBuilder builder,
+      ) {
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('  Lorem  ');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('  \nipsum \n');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+        builder.addText('\n');
+        builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
+      });
 
       expect(split(paragraph.plainText), <Line>[
-          Line('$placeholderChar  ', opportunity, sp: 2),
-          Line('Lorem  ', opportunity, sp: 2),
-          Line('$placeholderChar  \n', mandatory, nl: 1, sp: 3),
-          Line('ipsum \n', mandatory, nl: 1, sp: 2),
-          Line('$placeholderChar\n', mandatory, nl: 1, sp: 1),
-          Line(placeholderChar, endOfText),
-        ],
-      );
+        Line('$placeholderChar  ', opportunity, sp: 2),
+        Line('Lorem  ', opportunity, sp: 2),
+        Line('$placeholderChar  \n', mandatory, nl: 1, sp: 3),
+        Line('ipsum \n', mandatory, nl: 1, sp: 2),
+        Line('$placeholderChar\n', mandatory, nl: 1, sp: 1),
+        Line(placeholderChar, endOfText),
+      ]);
     });
 
     test('surrogates', () {
       expect(split('A\u{1F600}'), <Line>[
-          Line('A', opportunity),
-          Line('\u{1F600}', endOfText),
-        ],
-      );
+        Line('A', opportunity),
+        Line('\u{1F600}', endOfText),
+      ]);
 
       expect(split('\u{1F600}A'), <Line>[
-          Line('\u{1F600}', opportunity),
-          Line('A', endOfText),
-        ],
-      );
+        Line('\u{1F600}', opportunity),
+        Line('A', endOfText),
+      ]);
 
       expect(split('\u{1F600}\u{1F600}'), <Line>[
-          Line('\u{1F600}', opportunity),
-          Line('\u{1F600}', endOfText),
-        ],
-      );
+        Line('\u{1F600}', opportunity),
+        Line('\u{1F600}', endOfText),
+      ]);
 
       expect(split('A \u{1F600} \u{1F600}'), <Line>[
-          Line('A ', opportunity, sp: 1),
-          Line('\u{1F600} ', opportunity, sp: 1),
-          Line('\u{1F600}', endOfText),
-        ],
-      );
+        Line('A ', opportunity, sp: 1),
+        Line('\u{1F600} ', opportunity, sp: 1),
+        Line('\u{1F600}', endOfText),
+      ]);
     });
 
     test('comprehensive test', () {
-      final List<TestCase> testCollection = parseRawTestData(rawLineBreakTestData, isV8: isV8);
+      final List<TestCase> testCollection = parseRawTestData(
+        rawLineBreakTestData,
+        isV8: isV8,
+      );
       for (int t = 0; t < testCollection.length; t++) {
         final TestCase testCase = testCollection[t];
 
         final String text = testCase.toText();
-        final LineBreakFragmenter fragmenter = isV8
-            ? V8LineBreakFragmenter(text)
-            : FWLineBreakFragmenter(text);
+        final LineBreakFragmenter fragmenter =
+            isV8 ? V8LineBreakFragmenter(text) : FWLineBreakFragmenter(text);
         final List<LineBreakFragment> fragments = fragmenter.fragment();
 
         // `f` is the index in the `fragments` list.
@@ -350,7 +335,8 @@ void testMain() {
             expect(
               currentFragment.end,
               i,
-              reason: 'Failed at test case number $t:\n'
+              reason:
+                  'Failed at test case number $t:\n'
                   '$testCase\n'
                   '"$text"\n'
                   '\nExpected fragment to end at {$i} but ended at {${currentFragment.end}}.',
@@ -360,7 +346,8 @@ void testMain() {
             expect(
               currentFragment.end,
               greaterThan(i),
-              reason: 'Failed at test case number $t:\n'
+              reason:
+                  'Failed at test case number $t:\n'
                   '$testCase\n'
                   '"$text"\n'
                   '\nFragment ended in early at {${currentFragment.end}}.',
@@ -382,7 +369,8 @@ void testMain() {
           expect(
             fragments,
             hasLength(f + 2),
-            reason: 'Failed at test case number $t:\n'
+            reason:
+                'Failed at test case number $t:\n'
                 '$testCase\n'
                 '"$text"\n'
                 "\nExpected an extra fragment for endOfText but there wasn't one.",
@@ -394,7 +382,8 @@ void testMain() {
         expect(
           currentFragment.type,
           endOfText,
-          reason: 'Failed at test case number $t:\n'
+          reason:
+              'Failed at test case number $t:\n'
               '$testCase\n'
               '"$text"\n\n'
               'Expected an endOfText fragment but found: $currentFragment',
@@ -402,7 +391,8 @@ void testMain() {
         expect(
           currentFragment.end,
           text.length,
-          reason: 'Failed at test case number $t:\n'
+          reason:
+              'Failed at test case number $t:\n'
               '$testCase\n'
               '"$text"\n\n'
               'Expected an endOfText fragment ending at {${text.length}} but found: $currentFragment',
@@ -415,7 +405,12 @@ void testMain() {
     List<Line> split(String text) {
       return V8LineBreakFragmenter(text)
           .fragment()
-          .map((LineBreakFragment fragment) => Line.fromLineBreakFragment(text, fragment))
+          .map(
+            (LineBreakFragment fragment) => Line.fromLineBreakFragment(
+              text,
+              fragment,
+            ),
+          )
           .toList();
     }
 
@@ -455,16 +450,10 @@ void testMain() {
 typedef GroupBody = void Function({required bool isV8});
 
 void groupForEachFragmenter(GroupBody callback) {
-  group(
-    '$FWLineBreakFragmenter',
-    () => callback(isV8: false),
-  );
+  group('$FWLineBreakFragmenter', () => callback(isV8: false));
 
   if (domIntl.v8BreakIterator != null) {
-    group(
-      '$V8LineBreakFragmenter',
-      () => callback(isV8: true),
-    );
+    group('$V8LineBreakFragmenter', () => callback(isV8: true));
   }
 }
 

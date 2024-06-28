@@ -4,22 +4,11 @@
 
 part of ui;
 
-enum PointMode {
-  points,
-  lines,
-  polygon,
-}
+enum PointMode { points, lines, polygon }
 
-enum ClipOp {
-  difference,
-  intersect,
-}
+enum ClipOp { difference, intersect }
 
-enum VertexMode {
-  triangles,
-  triangleStrip,
-  triangleFan,
-}
+enum VertexMode { triangles, triangleStrip, triangleFan }
 
 abstract class Vertices {
   factory Vertices(
@@ -29,11 +18,13 @@ abstract class Vertices {
     List<Offset>? textureCoordinates,
     List<int>? indices,
   }) {
-    return engine.renderer.createVertices(mode,
+    return engine.renderer.createVertices(
+      mode,
       positions,
       textureCoordinates: textureCoordinates,
       colors: colors,
-      indices: indices);
+      indices: indices,
+    );
   }
   factory Vertices.raw(
     VertexMode mode,
@@ -42,11 +33,13 @@ abstract class Vertices {
     Float32List? textureCoordinates,
     Uint16List? indices,
   }) {
-    return engine.renderer.createVerticesRaw(mode,
+    return engine.renderer.createVerticesRaw(
+      mode,
       positions,
       textureCoordinates: textureCoordinates,
       colors: colors,
-      indices: indices);
+      indices: indices,
+    );
   }
 
   void dispose();
@@ -60,8 +53,8 @@ abstract class PictureRecorder {
 }
 
 abstract class Canvas {
-  factory Canvas(PictureRecorder recorder, [Rect? cullRect]) =>
-    engine.renderer.createCanvas(recorder, cullRect);
+  factory Canvas(PictureRecorder recorder, [Rect? cullRect]) => engine.renderer
+      .createCanvas(recorder, cullRect);
   void save();
   void saveLayer(Rect? bounds, Paint paint);
   void restore();
@@ -73,8 +66,11 @@ abstract class Canvas {
   void skew(double sx, double sy);
   void transform(Float64List matrix4);
   Float64List getTransform();
-  void clipRect(Rect rect,
-      {ClipOp clipOp = ClipOp.intersect, bool doAntiAlias = true});
+  void clipRect(
+    Rect rect, {
+    ClipOp clipOp = ClipOp.intersect,
+    bool doAntiAlias = true,
+  });
   void clipRRect(RRect rrect, {bool doAntiAlias = true});
   void clipPath(Path path, {bool doAntiAlias = true});
   Rect getLocalClipBounds();
@@ -87,8 +83,13 @@ abstract class Canvas {
   void drawDRRect(RRect outer, RRect inner, Paint paint);
   void drawOval(Rect rect, Paint paint);
   void drawCircle(Offset c, double radius, Paint paint);
-  void drawArc(Rect rect, double startAngle, double sweepAngle, bool useCenter,
-      Paint paint);
+  void drawArc(
+    Rect rect,
+    double startAngle,
+    double sweepAngle,
+    bool useCenter,
+    Paint paint,
+  );
   void drawPath(Path path, Paint paint);
   void drawImage(Image image, Offset offset, Paint paint);
   void drawImageRect(Image image, Rect src, Rect dst, Paint paint);
@@ -137,19 +138,10 @@ abstract class Picture {
   int get approximateBytesUsed;
 }
 
-enum PathFillType {
-  nonZero,
-  evenOdd,
-}
+enum PathFillType { nonZero, evenOdd }
 // Must be kept in sync with SkPathOp
 
-enum PathOperation {
-  difference,
-  intersect,
-  union,
-  xor,
-  reverseDifference,
-}
+enum PathOperation { difference, intersect, union, xor, reverseDifference }
 
 abstract class PictureRasterizationException implements Exception {
   String get message;

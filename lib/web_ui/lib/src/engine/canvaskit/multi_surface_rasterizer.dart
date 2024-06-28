@@ -15,7 +15,9 @@ class MultiSurfaceRasterizer extends Rasterizer {
   @override
   MultiSurfaceViewRasterizer createViewRasterizer(EngineFlutterView view) {
     return _viewRasterizers.putIfAbsent(
-        view, () => MultiSurfaceViewRasterizer(view, this));
+      view,
+      () => MultiSurfaceViewRasterizer(view, this),
+    );
   }
 
   final Map<EngineFlutterView, MultiSurfaceViewRasterizer> _viewRasterizers =
@@ -49,7 +51,8 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
   @override
   final DisplayCanvasFactory<Surface> displayFactory =
       DisplayCanvasFactory<Surface>(
-          createCanvas: () => Surface(isDisplayCanvas: true));
+        createCanvas: () => Surface(isDisplayCanvas: true),
+      );
 
   @override
   void prepareToDraw() {
@@ -58,7 +61,9 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
 
   @override
   Future<void> rasterizeToCanvas(
-      DisplayCanvas canvas, List<CkPicture> pictures) {
+    DisplayCanvas canvas,
+    List<CkPicture> pictures,
+  ) {
     final Surface surface = canvas as Surface;
     surface.createOrUpdateSurface(currentFrameSize);
     surface.positionToShowFrame(currentFrameSize);

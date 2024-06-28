@@ -29,14 +29,13 @@ Future<void> testMain() async {
   const String platformViewType = 'test-platform-view';
 
   setUp(() {
-    ui_web.platformViewRegistry.registerViewFactory(
-      platformViewType,
-      (int viewId) {
-        final DomElement element = createDomHTMLDivElement();
-        element.style.backgroundColor = 'blue';
-        return element;
-      }
-    );
+    ui_web.platformViewRegistry.registerViewFactory(platformViewType, (
+      int viewId,
+    ) {
+      final DomElement element = createDomHTMLDivElement();
+      element.style.backgroundColor = 'blue';
+      return element;
+    });
   });
 
   tearDown(() {
@@ -53,7 +52,7 @@ Future<void> testMain() async {
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFFFF0000)
+        ..color = const ui.Color(0xFFFF0000),
     );
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
@@ -81,7 +80,7 @@ Future<void> testMain() async {
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFF00FF00)
+        ..color = const ui.Color(0xFF00FF00),
     );
 
     final ui.Picture picture = recorder.endRecording();
@@ -113,7 +112,7 @@ Future<void> testMain() async {
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFFFF0000)
+        ..color = const ui.Color(0xFFFF0000),
     );
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
@@ -142,7 +141,7 @@ Future<void> testMain() async {
       50,
       ui.Paint()
         ..style = ui.PaintingStyle.fill
-        ..color = const ui.Color(0xFFFF0000)
+        ..color = const ui.Color(0xFFFF0000),
     );
 
     final ui.SceneBuilder sb = ui.SceneBuilder();
@@ -168,13 +167,9 @@ Future<void> _createPlatformView(int id, String viewType) {
   const MethodCodec codec = StandardMethodCodec();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
-    codec.encodeMethodCall(MethodCall(
-      'create',
-      <String, dynamic>{
-        'id': id,
-        'viewType': viewType,
-      },
-    )),
+    codec.encodeMethodCall(
+      MethodCall('create', <String, dynamic>{'id': id, 'viewType': viewType}),
+    ),
     (dynamic _) => completer.complete(),
   );
   return completer.future;

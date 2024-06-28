@@ -30,12 +30,17 @@ Future<void> testMain() async {
     const double fontSize = 22.0;
     const double width = 126.0;
     const double padding = 20.0;
-    final SurfacePaintData borderPaint = SurfacePaintData()
-      ..color = black.value
-      ..style = PaintingStyle.stroke;
+    final SurfacePaintData borderPaint =
+        SurfacePaintData()
+          ..color = black.value
+          ..style = PaintingStyle.stroke;
 
     paragraph = rich(
-      EngineParagraphStyle(fontFamily: 'Roboto', fontSize: fontSize, ellipsis: '...'),
+      EngineParagraphStyle(
+        fontFamily: 'Roboto',
+        fontSize: fontSize,
+        ellipsis: '...',
+      ),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem ');
@@ -44,11 +49,18 @@ Future<void> testMain() async {
       },
     )..layout(constrain(width));
     canvas.drawParagraph(paragraph, offset);
-    canvas.drawRect(Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height), borderPaint);
+    canvas.drawRect(
+      Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height),
+      borderPaint,
+    );
     offset = offset.translate(0, paragraph.height + padding);
 
     paragraph = rich(
-      EngineParagraphStyle(fontFamily: 'Roboto', fontSize: fontSize, ellipsis: '...'),
+      EngineParagraphStyle(
+        fontFamily: 'Roboto',
+        fontSize: fontSize,
+        ellipsis: '...',
+      ),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem\n');
@@ -59,11 +71,18 @@ Future<void> testMain() async {
       },
     )..layout(constrain(width));
     canvas.drawParagraph(paragraph, offset);
-    canvas.drawRect(Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height), borderPaint);
+    canvas.drawRect(
+      Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height),
+      borderPaint,
+    );
     offset = offset.translate(0, paragraph.height + padding);
 
     paragraph = rich(
-      EngineParagraphStyle(fontFamily: 'Roboto', fontSize: fontSize, ellipsis: '...'),
+      EngineParagraphStyle(
+        fontFamily: 'Roboto',
+        fontSize: fontSize,
+        ellipsis: '...',
+      ),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem\n');
@@ -90,11 +109,19 @@ Future<void> testMain() async {
       },
     )..layout(constrain(width));
     canvas.drawParagraph(paragraph, offset);
-    canvas.drawRect(Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height), borderPaint);
+    canvas.drawRect(
+      Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height),
+      borderPaint,
+    );
     offset = offset.translate(0, paragraph.height + padding);
 
     paragraph = rich(
-      EngineParagraphStyle(fontFamily: 'Roboto', fontSize: fontSize, maxLines: 2, ellipsis: '...'),
+      EngineParagraphStyle(
+        fontFamily: 'Roboto',
+        fontSize: fontSize,
+        maxLines: 2,
+        ellipsis: '...',
+      ),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: blue));
         builder.addText('Lorem');
@@ -111,7 +138,10 @@ Future<void> testMain() async {
       },
     )..layout(constrain(width));
     canvas.drawParagraph(paragraph, offset);
-    canvas.drawRect(Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height), borderPaint);
+    canvas.drawRect(
+      Rect.fromLTWH(offset.dx, offset.dy, width, paragraph.height),
+      borderPaint,
+    );
     offset = offset.translate(0, paragraph.height + padding);
   }
 
@@ -124,7 +154,9 @@ Future<void> testMain() async {
 
   test('ellipsis (dom)', () {
     const Rect bounds = Rect.fromLTWH(0, 0, 300, 300);
-    final EngineCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final EngineCanvas canvas = DomCanvas(
+      domDocument.createElement('flt-picture'),
+    );
     testEllipsis(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_ellipsis_dom');
   });

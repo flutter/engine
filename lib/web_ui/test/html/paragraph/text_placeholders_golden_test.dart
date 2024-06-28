@@ -15,9 +15,8 @@ void main() {
 }
 
 Future<void> testMain() async {
-  final EngineGoldenTester goldenTester = await EngineGoldenTester.initialize(
-    viewportSize: const Size(600, 600),
-  );
+  final EngineGoldenTester goldenTester =
+      await EngineGoldenTester.initialize(viewportSize: const Size(600, 600));
 
   setUpUnitTests(
     withImplicitView: true,
@@ -76,7 +75,10 @@ Future<void> testMain() async {
     );
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
-    return goldenTester.diffCanvasScreenshot(canvas, 'text_align_with_placeholders');
+    return goldenTester.diffCanvasScreenshot(
+      canvas,
+      'text_align_with_placeholders',
+    );
   });
 }
 
@@ -113,10 +115,12 @@ Paragraph _createParagraphWithPlaceholder(
   PlaceholderAlignment placeholderAlignment,
   TextAlign textAlignment,
 ) {
-  final ParagraphBuilder builder =
-      ParagraphBuilder(ParagraphStyle(textAlign: textAlignment));
-  builder
-      .pushStyle(TextStyle(color: black, fontFamily: 'Roboto', fontSize: 14));
+  final ParagraphBuilder builder = ParagraphBuilder(
+    ParagraphStyle(textAlign: textAlignment),
+  );
+  builder.pushStyle(
+    TextStyle(color: black, fontFamily: 'Roboto', fontSize: 14),
+  );
   builder.addText(before);
   builder.addPlaceholder(
     placeholderSize.width,

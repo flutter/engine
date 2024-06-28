@@ -19,13 +19,15 @@ class EngineGoldenTester {
   /// The size of the browser window used in this golden test.
   final ui.Size viewportSize;
 
-  static Future<EngineGoldenTester> initialize(
-      {ui.Size viewportSize = const ui.Size(2400, 1800)}) async {
+  static Future<EngineGoldenTester> initialize({
+    ui.Size viewportSize = const ui.Size(2400, 1800),
+  }) async {
     assert(() {
       if (viewportSize.width.ceil() != viewportSize.width ||
           viewportSize.height.ceil() != viewportSize.height) {
         throw Exception(
-            'Gold only supports integer screen sizes, but found: $viewportSize');
+          'Gold only supports integer screen sizes, but found: $viewportSize',
+        );
       }
       return true;
     }());
@@ -33,17 +35,15 @@ class EngineGoldenTester {
     return EngineGoldenTester(viewportSize);
   }
 
-  ui.Rect get viewportRegion =>
-      ui.Rect.fromLTWH(0, 0, viewportSize.width, viewportSize.height);
+  ui.Rect get viewportRegion => ui.Rect.fromLTWH(
+    0,
+    0,
+    viewportSize.width,
+    viewportSize.height,
+  );
 
-  Future<void> diffScreenshot(
-    String fileName, {
-    ui.Rect? region,
-  }) async {
-    await matchGoldenFile(
-      '$fileName.png',
-      region: region ?? viewportRegion,
-    );
+  Future<void> diffScreenshot(String fileName, {ui.Rect? region}) async {
+    await matchGoldenFile('$fileName.png', region: region ?? viewportRegion);
   }
 
   /// Prepares the DOM and inserts all the necessary nodes, then invokes Gold's
@@ -70,10 +70,7 @@ class EngineGoldenTester {
       if (canvas is BitmapCanvas) {
         screenshotName += '+canvas_measurement';
       }
-      await diffScreenshot(
-        screenshotName,
-        region: region,
-      );
+      await diffScreenshot(screenshotName, region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // screenshot.
@@ -105,8 +102,9 @@ CanvasParagraph paragraph(
   ui.TextStyle? textStyle,
   double maxWidth = double.infinity,
 }) {
-  final ui.ParagraphBuilder builder =
-      ui.ParagraphBuilder(paragraphStyle ?? ui.ParagraphStyle());
+  final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+    paragraphStyle ?? ui.ParagraphStyle(),
+  );
   builder.pushStyle(textStyle ?? _defaultTextStyle);
   builder.addText(text);
   builder.pop();

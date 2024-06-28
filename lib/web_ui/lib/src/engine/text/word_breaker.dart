@@ -17,13 +17,19 @@ enum _FindBreakDirection {
 /// [WordBreaker] exposes static methods to identify word boundaries.
 abstract final class WordBreaker {
   /// It starts from [index] and tries to find the next word boundary in [text].
-  static int nextBreakIndex(String text, int index) =>
-      _findBreakIndex(_FindBreakDirection.forward, text, index);
+  static int nextBreakIndex(String text, int index) => _findBreakIndex(
+    _FindBreakDirection.forward,
+    text,
+    index,
+  );
 
   /// It starts from [index] and tries to find the previous word boundary in
   /// [text].
-  static int prevBreakIndex(String text, int index) =>
-      _findBreakIndex(_FindBreakDirection.backward, text, index);
+  static int prevBreakIndex(String text, int index) => _findBreakIndex(
+    _FindBreakDirection.backward,
+    text,
+    index,
+  );
 
   static int _findBreakIndex(
     _FindBreakDirection direction,
@@ -60,7 +66,8 @@ abstract final class WordBreaker {
 
     // Do not break within CRLF.
     // WB3: CR × LF
-    if (immediateLeft == WordCharProperty.CR && immediateRight == WordCharProperty.LF) {
+    if (immediateLeft == WordCharProperty.CR &&
+        immediateRight == WordCharProperty.LF) {
       return false;
     }
 
@@ -213,12 +220,14 @@ abstract final class WordBreaker {
     }
 
     // WB9: AHLetter × Numeric
-    if (_isAHLetter(immediateLeft) && immediateRight == WordCharProperty.Numeric) {
+    if (_isAHLetter(immediateLeft) &&
+        immediateRight == WordCharProperty.Numeric) {
       return false;
     }
 
     // WB10: Numeric × AHLetter
-    if (immediateLeft == WordCharProperty.Numeric && _isAHLetter(immediateRight)) {
+    if (immediateLeft == WordCharProperty.Numeric &&
+        _isAHLetter(immediateRight)) {
       return false;
     }
 
@@ -325,6 +334,10 @@ abstract final class WordBreaker {
   }
 
   static bool _isAHLetter(WordCharProperty? property) {
-    return _oneOf(property, WordCharProperty.ALetter, WordCharProperty.HebrewLetter);
+    return _oneOf(
+      property,
+      WordCharProperty.ALetter,
+      WordCharProperty.HebrewLetter,
+    );
   }
 }

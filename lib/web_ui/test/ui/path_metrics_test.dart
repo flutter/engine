@@ -106,7 +106,9 @@ Future<void> testMain() async {
 
     test('addRRect with elliptical radius', () {
       final Path path = Path();
-      path.addRRect(RRect.fromLTRBR(20, 30, 220, 130, const Radius.elliptical(8, 4)));
+      path.addRRect(
+        RRect.fromLTRBR(20, 30, 220, 130, const Radius.elliptical(8, 4)),
+      );
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 590.408));
@@ -128,11 +130,14 @@ Future<void> testMain() async {
       final double endY = cy + (ry * math.sin(endRad));
 
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
-      final Path path = Path()
-        ..moveTo(startX, startY)
-        ..arcToPoint(Offset(endX, endY),
-            radius: const Radius.elliptical(rx, ry),
-            largeArc: largeArc);
+      final Path path =
+          Path()
+            ..moveTo(startX, startY)
+            ..arcToPoint(
+              Offset(endX, endY),
+              radius: const Radius.elliptical(rx, ry),
+              largeArc: largeArc,
+            );
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 156.827));
@@ -154,11 +159,14 @@ Future<void> testMain() async {
       final double endY = cy + (ry * math.sin(endRad));
 
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
-      final Path path = Path()
-        ..moveTo(startX, startY)
-        ..arcToPoint(Offset(endX, endY),
-            radius: const Radius.elliptical(rx, ry),
-            largeArc: largeArc);
+      final Path path =
+          Path()
+            ..moveTo(startX, startY)
+            ..arcToPoint(
+              Offset(endX, endY),
+              radius: const Radius.elliptical(rx, ry),
+              largeArc: largeArc,
+            );
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 313.654));
@@ -180,11 +188,14 @@ Future<void> testMain() async {
       final double endY = cy + (ry * math.sin(endRad));
 
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
-      final Path path = Path()
-        ..moveTo(startX, startY)
-        ..arcToPoint(Offset(endX, endY),
-            radius: const Radius.elliptical(rx, ry),
-            largeArc: largeArc);
+      final Path path =
+          Path()
+            ..moveTo(startX, startY)
+            ..arcToPoint(
+              Offset(endX, endY),
+              radius: const Radius.elliptical(rx, ry),
+              largeArc: largeArc,
+            );
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 470.482));
@@ -206,11 +217,14 @@ Future<void> testMain() async {
       final double endY = cy + (ry * math.sin(endRad));
 
       final bool largeArc = (endAngle - startAngle).abs() > 180.0;
-      final Path path = Path()
-        ..moveTo(startX, startY)
-        ..arcToPoint(Offset(endX, endY),
-            radius: const Radius.elliptical(rx, ry),
-            largeArc: largeArc);
+      final Path path =
+          Path()
+            ..moveTo(startX, startY)
+            ..arcToPoint(
+              Offset(endX, endY),
+              radius: const Radius.elliptical(rx, ry),
+              largeArc: largeArc,
+            );
       final List<double> contourLengths = computeLengths(path.computeMetrics());
       expect(contourLengths.length, 1);
       expect(contourLengths[0], within(distance: kTolerance, from: 362.733));

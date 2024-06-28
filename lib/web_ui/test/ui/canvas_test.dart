@@ -18,9 +18,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests(
-    setUpTestViewDimensions: false,
-  );
+  setUpUnitTests(setUpTestViewDimensions: false);
 
   final bool deviceClipRoundsOut = renderer is! HtmlRenderer;
   runCanvasTests(deviceClipRoundsOut: deviceClipRoundsOut);
@@ -37,7 +35,7 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(value.length, equals(16));
       for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
-          expect(value[r*4 + c], within(from: expected[r*4 + c]));
+          expect(value[r * 4 + c], within(from: expected[r * 4 + c]));
         }
       }
     }
@@ -53,14 +51,17 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       } on TestFailure {
         return;
       }
-      throw TestFailure('transforms were too close to equal'); // ignore: only_throw_errors
+      throw TestFailure(
+        'transforms were too close to equal',
+      ); // ignore: only_throw_errors
     }
 
     test('ui.Canvas.translate affects canvas.getTransform', () {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
       canvas.translate(12, 14.5);
-      final Float64List matrix = Matrix4.translationValues(12, 14.5, 0).toFloat64();
+      final Float64List matrix =
+          Matrix4.translationValues(12, 14.5, 0).toFloat64();
       final Float64List curMatrix = canvas.getTransform();
       transformsClose(curMatrix, matrix);
       canvas.translate(10, 10);
@@ -73,7 +74,8 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
       canvas.scale(12, 14.5);
-      final Float64List matrix = Matrix4.diagonal3Values(12, 14.5, 1).toFloat64();
+      final Float64List matrix =
+          Matrix4.diagonal3Values(12, 14.5, 1).toFloat64();
       final Float64List curMatrix = canvas.getTransform();
       transformsClose(curMatrix, matrix);
       canvas.scale(10, 10);
@@ -99,7 +101,11 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
       canvas.skew(12, 14.5);
-      final Float64List matrix = (Matrix4.identity()..setEntry(0, 1, 12)..setEntry(1, 0, 14.5)).toFloat64();
+      final Float64List matrix =
+          (Matrix4.identity()
+                ..setEntry(0, 1, 12)
+                ..setEntry(1, 0, 14.5))
+              .toFloat64();
       final Float64List curMatrix = canvas.getTransform();
       transformsClose(curMatrix, matrix);
       canvas.skew(10, 10);
@@ -111,7 +117,11 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
     test('Canvas.transform affects canvas.getTransform', () async {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
       final ui.Canvas canvas = ui.Canvas(recorder);
-      final Float64List matrix = (Matrix4.identity()..translate(12.0, 14.5)..scale(12.0, 14.5)).toFloat64();
+      final Float64List matrix =
+          (Matrix4.identity()
+                ..translate(12.0, 14.5)
+                ..scale(12.0, 14.5))
+              .toFloat64();
       canvas.transform(matrix);
       final Float64List curMatrix = canvas.getTransform();
       transformsClose(curMatrix, matrix);
@@ -123,9 +133,9 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
   });
 
   void rectsClose(ui.Rect value, ui.Rect expected) {
-    expect(value.left,   closeTo(expected.left,   1e-6));
-    expect(value.top,    closeTo(expected.top,    1e-6));
-    expect(value.right,  closeTo(expected.right,  1e-6));
+    expect(value.left, closeTo(expected.left, 1e-6));
+    expect(value.top, closeTo(expected.top, 1e-6));
+    expect(value.right, closeTo(expected.right, 1e-6));
     expect(value.bottom, closeTo(expected.bottom, 1e-6));
   }
 
@@ -135,21 +145,28 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
     } on TestFailure {
       return;
     }
-    throw TestFailure('transforms were too close to equal'); // ignore: only_throw_errors
+    throw TestFailure(
+      'transforms were too close to equal',
+    ); // ignore: only_throw_errors
   }
 
   group('ui.Canvas clip tests', () {
     test('Canvas.clipRect affects canvas.getClipBounds', () async {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder, const ui.Rect.fromLTRB(0, 0, 100, 100));
+      final ui.Canvas canvas = ui.Canvas(
+        recorder,
+        const ui.Rect.fromLTRB(0, 0, 100, 100),
+      );
       const ui.Rect clipRawBounds = ui.Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
       const ui.Rect clipExpandedBounds = ui.Rect.fromLTRB(10, 11, 21, 26);
-      final ui.Rect clipDestBounds = deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
+      final ui.Rect clipDestBounds =
+          deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
       canvas.clipRect(clipRawBounds);
 
       // Save initial return values for testing restored values
       final ui.Rect initialLocalBounds = canvas.getLocalClipBounds();
-      final ui.Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+      final ui.Rect initialDestinationBounds =
+          canvas.getDestinationClipBounds();
       rectsClose(initialLocalBounds, clipExpandedBounds);
       rectsClose(initialDestinationBounds, clipDestBounds);
 
@@ -182,16 +199,24 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
 
     test('Canvas.clipRRect affects canvas.getClipBounds', () async {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder, const ui.Rect.fromLTRB(0, 0, 100, 100));
+      final ui.Canvas canvas = ui.Canvas(
+        recorder,
+        const ui.Rect.fromLTRB(0, 0, 100, 100),
+      );
       const ui.Rect clipRawBounds = ui.Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
       const ui.Rect clipExpandedBounds = ui.Rect.fromLTRB(10, 11, 21, 26);
-      final ui.Rect clipDestBounds = deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
-      final ui.RRect clip = ui.RRect.fromRectAndRadius(clipRawBounds, const ui.Radius.circular(3));
+      final ui.Rect clipDestBounds =
+          deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
+      final ui.RRect clip = ui.RRect.fromRectAndRadius(
+        clipRawBounds,
+        const ui.Radius.circular(3),
+      );
       canvas.clipRRect(clip);
 
       // Save initial return values for testing restored values
       final ui.Rect initialLocalBounds = canvas.getLocalClipBounds();
-      final ui.Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+      final ui.Rect initialDestinationBounds =
+          canvas.getDestinationClipBounds();
       rectsClose(initialLocalBounds, clipExpandedBounds);
       rectsClose(initialDestinationBounds, clipDestBounds);
 
@@ -224,16 +249,24 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
 
     test('Canvas.clipPath affects canvas.getClipBounds', () async {
       final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder, const ui.Rect.fromLTRB(0, 0, 100, 100));
+      final ui.Canvas canvas = ui.Canvas(
+        recorder,
+        const ui.Rect.fromLTRB(0, 0, 100, 100),
+      );
       const ui.Rect clipRawBounds = ui.Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
       const ui.Rect clipExpandedBounds = ui.Rect.fromLTRB(10, 11, 21, 26);
-      final ui.Rect clipDestBounds = deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
-      final ui.Path clip = ui.Path()..addRect(clipRawBounds)..addOval(clipRawBounds);
+      final ui.Rect clipDestBounds =
+          deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
+      final ui.Path clip =
+          ui.Path()
+            ..addRect(clipRawBounds)
+            ..addOval(clipRawBounds);
       canvas.clipPath(clip);
 
       // Save initial return values for testing restored values
       final ui.Rect initialLocalBounds = canvas.getLocalClipBounds();
-      final ui.Rect initialDestinationBounds = canvas.getDestinationClipBounds();
+      final ui.Rect initialDestinationBounds =
+          canvas.getDestinationClipBounds();
       rectsClose(initialLocalBounds, clipExpandedBounds);
       rectsClose(initialDestinationBounds, clipDestBounds);
 
@@ -264,24 +297,35 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
     });
 
-    test('Canvas.clipRect(diff) does not affect canvas.getClipBounds', () async {
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder, const ui.Rect.fromLTRB(0, 0, 100, 100));
-      const ui.Rect clipRawBounds = ui.Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-      const ui.Rect clipExpandedBounds = ui.Rect.fromLTRB(10, 11, 21, 26);
-      final ui.Rect clipDestBounds = deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
-      canvas.clipRect(clipRawBounds);
+    test(
+      'Canvas.clipRect(diff) does not affect canvas.getClipBounds',
+      () async {
+        final ui.PictureRecorder recorder = ui.PictureRecorder();
+        final ui.Canvas canvas = ui.Canvas(
+          recorder,
+          const ui.Rect.fromLTRB(0, 0, 100, 100),
+        );
+        const ui.Rect clipRawBounds = ui.Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
+        const ui.Rect clipExpandedBounds = ui.Rect.fromLTRB(10, 11, 21, 26);
+        final ui.Rect clipDestBounds =
+            deviceClipRoundsOut ? clipExpandedBounds : clipRawBounds;
+        canvas.clipRect(clipRawBounds);
 
-      // Save initial return values for testing restored values
-      final ui.Rect initialLocalBounds = canvas.getLocalClipBounds();
-      final ui.Rect initialDestinationBounds = canvas.getDestinationClipBounds();
-      rectsClose(initialLocalBounds, clipExpandedBounds);
-      rectsClose(initialDestinationBounds, clipDestBounds);
+        // Save initial return values for testing restored values
+        final ui.Rect initialLocalBounds = canvas.getLocalClipBounds();
+        final ui.Rect initialDestinationBounds =
+            canvas.getDestinationClipBounds();
+        rectsClose(initialLocalBounds, clipExpandedBounds);
+        rectsClose(initialDestinationBounds, clipDestBounds);
 
-      canvas.clipRect(const ui.Rect.fromLTRB(0, 0, 15, 15), clipOp: ui.ClipOp.difference);
-      expect(canvas.getLocalClipBounds(), initialLocalBounds);
-      expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
-    });
+        canvas.clipRect(
+          const ui.Rect.fromLTRB(0, 0, 15, 15),
+          clipOp: ui.ClipOp.difference,
+        );
+        expect(canvas.getLocalClipBounds(), initialLocalBounds);
+        expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
+      },
+    );
   });
 
   group('RestoreToCount function tests', () {
@@ -300,18 +344,21 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(canvas.getSaveCount(), 1);
     });
 
-    test('RestoreToCount count less than 1, the stack should be reset', () async {
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
-      canvas.save();
-      canvas.save();
-      canvas.save();
-      canvas.save();
-      canvas.save();
-      expect(canvas.getSaveCount(), equals(6));
-      canvas.restoreToCount(0);
-      expect(canvas.getSaveCount(), equals(1));
-    });
+    test(
+      'RestoreToCount count less than 1, the stack should be reset',
+      () async {
+        final ui.PictureRecorder recorder = ui.PictureRecorder();
+        final ui.Canvas canvas = ui.Canvas(recorder);
+        canvas.save();
+        canvas.save();
+        canvas.save();
+        canvas.save();
+        canvas.save();
+        expect(canvas.getSaveCount(), equals(6));
+        canvas.restoreToCount(0);
+        expect(canvas.getSaveCount(), equals(1));
+      },
+    );
 
     test('RestoreToCount count greater than current [getSaveCount]', () async {
       final ui.PictureRecorder recorder = ui.PictureRecorder();

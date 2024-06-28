@@ -26,15 +26,18 @@ Future<void> testMain() async {
     expect(semantics().semanticsEnabled, isFalse);
 
     // Synthesize a click on the placeholder.
-    final DomElement placeholder = domDocument.querySelector('flt-semantics-placeholder')!;
+    final DomElement placeholder =
+        domDocument.querySelector('flt-semantics-placeholder')!;
 
     expect(placeholder.isConnected, isTrue);
 
     final DomRect rect = placeholder.getBoundingClientRect();
-    placeholder.dispatchEvent(createDomMouseEvent('click', <Object?, Object?>{
-      'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
-      'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
-    }));
+    placeholder.dispatchEvent(
+      createDomMouseEvent('click', <Object?, Object?>{
+        'clientX': (rect.left + (rect.right - rect.left) / 2).floor(),
+        'clientY': (rect.top + (rect.bottom - rect.top) / 2).floor(),
+      }),
+    );
 
     // On mobile semantics is enabled asynchronously.
     if (isMobile) {

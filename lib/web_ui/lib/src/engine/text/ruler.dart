@@ -17,8 +17,10 @@ String buildCssFontString({
   required double? fontSize,
   required String fontFamily,
 }) {
-  final String cssFontStyle = fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
-  final String cssFontWeight = fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
+  final String cssFontStyle =
+      fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
+  final String cssFontWeight =
+      fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
   final int cssFontSize = (fontSize ?? StyleManager.defaultFontSize).floor();
   final String cssFontFamily = canonicalizeFontFamily(fontFamily)!;
 
@@ -100,7 +102,8 @@ class TextDimensions {
     final double? height = textHeightStyle.height;
     // Workaround the rounding introduced by https://github.com/flutter/flutter/issues/122066
     // in tests.
-    final double? effectiveLineHeight = height ?? (fontFamily == 'FlutterTest' ? 1.0 : null);
+    final double? effectiveLineHeight =
+        height ?? (fontFamily == 'FlutterTest' ? 1.0 : null);
     if (effectiveLineHeight != null) {
       style.lineHeight = effectiveLineHeight.toString();
     }
@@ -121,9 +124,9 @@ class TextDimensions {
   double get height {
     double cachedHeight = _readAndCacheMetrics().height;
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox &&
-      // In the flutter tester environment, we use a predictable-size for font
-      // measurement tests.
-      !ui_web.debugEmulateFlutterTesterEnvironment) {
+        // In the flutter tester environment, we use a predictable-size for font
+        // measurement tests.
+        !ui_web.debugEmulateFlutterTesterEnvironment) {
       // See subpixel rounding bug :
       // https://bugzilla.mozilla.org/show_bug.cgi?id=442139
       // This causes bottom of letters such as 'y' to be cutoff and
@@ -149,7 +152,9 @@ class TextHeightRuler {
   // Elements used to measure the line-height metric.
   late final DomHTMLElement _probe = _createProbe();
   late final DomHTMLElement _host = _createHost();
-  final TextDimensions _dimensions = TextDimensions(domDocument.createElement('flt-paragraph'));
+  final TextDimensions _dimensions = TextDimensions(
+    domDocument.createElement('flt-paragraph'),
+  );
 
   /// The alphabetic baseline for this ruler's [textHeightStyle].
   late final double alphabeticBaseline = _probe.getBoundingClientRect().bottom;

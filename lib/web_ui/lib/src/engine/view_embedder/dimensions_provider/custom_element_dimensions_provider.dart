@@ -27,7 +27,8 @@ import 'dimensions_provider.dart';
 /// to be effective.
 class CustomElementDimensionsProvider extends DimensionsProvider {
   /// Creates a [CustomElementDimensionsProvider] from a [_hostElement].
-  CustomElementDimensionsProvider(this._hostElement, {
+  CustomElementDimensionsProvider(
+    this._hostElement, {
     Stream<double>? onDprChange,
   }) {
     // Send a resize event when the page DPR changes.
@@ -47,8 +48,10 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
 
     assert(() {
       if (_hostElementResizeObserver == null) {
-        domWindow.console.warn('ResizeObserver API not supported. '
-            'Flutter will not resize with its hostElement.');
+        domWindow.console.warn(
+          'ResizeObserver API not supported. '
+          'Flutter will not resize with its hostElement.',
+        );
       }
       return true;
     }());
@@ -85,7 +88,8 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
 
   @override
   ui.Size computePhysicalSize() {
-    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final double devicePixelRatio =
+        EngineFlutterDisplay.instance.devicePixelRatio;
     return ui.Size(
       _hostElement.clientWidth * devicePixelRatio,
       _hostElement.clientHeight * devicePixelRatio,
@@ -97,11 +101,6 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
     double physicalHeight,
     bool isEditingOnMobile,
   ) {
-    return const ViewPadding(
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-    );
+    return const ViewPadding(top: 0, right: 0, bottom: 0, left: 0);
   }
 }

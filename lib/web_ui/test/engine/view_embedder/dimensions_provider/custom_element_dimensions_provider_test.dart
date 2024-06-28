@@ -75,8 +75,10 @@ void doTests() {
       final double physicalHeight =
           (domWindow.visualViewport!.height! + keyboardGap) * dpr;
 
-      final ViewPadding computed =
-          provider.computeKeyboardInsets(physicalHeight, false);
+      final ViewPadding computed = provider.computeKeyboardInsets(
+        physicalHeight,
+        false,
+      );
 
       expect(computed.top, 0);
       expect(computed.right, 0);
@@ -138,9 +140,9 @@ void doTests() {
       // Inject the dprController stream into the CustomElementDimensionsProvider.
       final CustomElementDimensionsProvider provider =
           CustomElementDimensionsProvider(
-        sizeSource,
-        onDprChange: dprController.stream,
-      );
+            sizeSource,
+            onDprChange: dprController.stream,
+          );
 
       // Set and broadcast the mock DPR value
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(3.2);

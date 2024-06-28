@@ -123,7 +123,8 @@ class SurfacePaint implements ui.Paint {
   }
 
   @override
-  ui.FilterQuality get filterQuality => _paintData.filterQuality ?? ui.FilterQuality.none;
+  ui.FilterQuality get filterQuality =>
+      _paintData.filterQuality ?? ui.FilterQuality.none;
 
   @override
   set filterQuality(ui.FilterQuality value) {
@@ -194,7 +195,9 @@ class SurfacePaint implements ui.Paint {
         }
         if (strokeJoin == ui.StrokeJoin.miter) {
           if (strokeMiterLimit != _kStrokeMiterLimitDefault) {
-            result.write(' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}');
+            result.write(
+              ' $strokeJoin up to ${strokeMiterLimit.toStringAsFixed(1)}',
+            );
           }
         } else {
           result.write(' $strokeJoin');
@@ -322,28 +325,38 @@ class SurfacePaintData {
 class HtmlFragmentProgram implements ui.FragmentProgram {
   @override
   ui.FragmentShader fragmentShader() {
-    throw UnsupportedError('FragmentProgram is not supported for the HTML renderer.');
+    throw UnsupportedError(
+      'FragmentProgram is not supported for the HTML renderer.',
+    );
   }
 }
 
 class HtmlFragmentShader implements ui.FragmentShader {
   @override
   void setFloat(int index, double value) {
-    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+    throw UnsupportedError(
+      'FragmentShader is not supported for the HTML renderer.',
+    );
   }
 
   @override
   void setImageSampler(int index, ui.Image image) {
-    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+    throw UnsupportedError(
+      'FragmentShader is not supported for the HTML renderer.',
+    );
   }
 
   @override
   void dispose() {
-    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+    throw UnsupportedError(
+      'FragmentShader is not supported for the HTML renderer.',
+    );
   }
 
   @override
   bool get debugDisposed {
-    throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
+    throw UnsupportedError(
+      'FragmentShader is not supported for the HTML renderer.',
+    );
   }
 }

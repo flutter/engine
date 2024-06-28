@@ -10,10 +10,17 @@ import 'surface.dart';
 
 /// A surface containing a platform view, which is an HTML element.
 class PersistedPlatformView extends PersistedLeafSurface {
-  PersistedPlatformView(this.platformViewId, this.dx, this.dy, this.width, this.height) {
+  PersistedPlatformView(
+    this.platformViewId,
+    this.dx,
+    this.dy,
+    this.width,
+    this.height,
+  ) {
     // Ensure platform view with `viewId` is injected into the `implicitView`
     // before rendering its shadow DOM `slot`.
-    final EngineFlutterView implicitView = EnginePlatformDispatcher.instance.implicitView!;
+    final EngineFlutterView implicitView =
+        EnginePlatformDispatcher.instance.implicitView!;
     implicitView.dom.injectPlatformView(platformViewId);
   }
 
@@ -43,7 +50,8 @@ class PersistedPlatformView extends PersistedLeafSurface {
   bool canUpdateAsMatch(PersistedSurface oldSurface) {
     if (super.canUpdateAsMatch(oldSurface)) {
       // super checks the runtimeType of the surface, so we can just cast...
-      return platformViewId == ((oldSurface as PersistedPlatformView).platformViewId);
+      return platformViewId ==
+          ((oldSurface as PersistedPlatformView).platformViewId);
     }
     return false;
   }

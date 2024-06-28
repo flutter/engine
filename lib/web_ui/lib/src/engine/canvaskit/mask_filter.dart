@@ -10,13 +10,10 @@ import 'native_memory.dart';
 /// The CanvasKit implementation of [ui.MaskFilter].
 class CkMaskFilter {
   CkMaskFilter.blur(ui.BlurStyle blurStyle, double sigma)
-      : _blurStyle = blurStyle,
-        _sigma = sigma {
-    final SkMaskFilter skMaskFilter = canvasKit.MaskFilter.MakeBlur(
-      toSkBlurStyle(_blurStyle),
-      _sigma,
-      true,
-    )!;
+    : _blurStyle = blurStyle,
+      _sigma = sigma {
+    final SkMaskFilter skMaskFilter =
+        canvasKit.MaskFilter.MakeBlur(toSkBlurStyle(_blurStyle), _sigma, true)!;
     _ref = UniqueRef<SkMaskFilter>(this, skMaskFilter, 'MaskFilter');
   }
 

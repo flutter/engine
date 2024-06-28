@@ -18,8 +18,11 @@ typedef AppBootstrapRunAppFn = Future<void> Function();
 /// A class that controls the coarse lifecycle of a Flutter app.
 class AppBootstrap {
   /// Construct an AppBootstrap.
-  AppBootstrap({required InitEngineFn initializeEngine, required AppBootstrapRunAppFn runApp}) :
-    _initializeEngine = initializeEngine, _runApp = runApp;
+  AppBootstrap({
+    required InitEngineFn initializeEngine,
+    required AppBootstrapRunAppFn runApp,
+  }) : _initializeEngine = initializeEngine,
+       _runApp = runApp;
 
   // A function to initialize the engine.
   final InitEngineFn _initializeEngine;
@@ -51,7 +54,7 @@ class AppBootstrap {
       initializeEngine: ([JsFlutterConfiguration? configuration]) async {
         await _initializeEngine(configuration);
         return _prepareAppRunner();
-      }
+      },
     );
   }
 
@@ -63,19 +66,26 @@ class AppBootstrap {
     });
   }
 
-  FlutterViewManager get viewManager => EnginePlatformDispatcher.instance.viewManager;
+  FlutterViewManager get viewManager =>
+      EnginePlatformDispatcher.instance.viewManager;
 
   /// Represents the App that was just started, and its JS API.
   FlutterApp _prepareFlutterApp() {
     return FlutterApp(
       addView: (JsFlutterViewOptions options) {
-        assert(configuration.multiViewEnabled, 'Cannot addView when multiView is not enabled');
+        assert(
+          configuration.multiViewEnabled,
+          'Cannot addView when multiView is not enabled',
+        );
         return viewManager.createAndRegisterView(options).viewId;
       },
       removeView: (int viewId) {
-        assert(configuration.multiViewEnabled, 'Cannot removeView when multiView is not enabled');
+        assert(
+          configuration.multiViewEnabled,
+          'Cannot removeView when multiView is not enabled',
+        );
         return viewManager.disposeAndUnregisterView(viewId);
-      }
+      },
     );
   }
 }

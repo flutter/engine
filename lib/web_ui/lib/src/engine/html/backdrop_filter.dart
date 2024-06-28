@@ -56,7 +56,9 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     }
     _filterElement = defaultCreateElement('flt-backdrop-filter');
     _filterElement!.style.transformOrigin = '0 0 0';
-    element..append(_filterElement!)..append(_childContainer!);
+    element
+      ..append(_filterElement!)
+      ..append(_childContainer!);
     return element;
   }
 
@@ -95,9 +97,14 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // Therefore we need to use parent clip element bounds for
     // backdrop boundary.
     final double dpr = ui.window.devicePixelRatio;
-    final ui.Rect rect = _invertedTransform.transformRect(ui.Rect.fromLTRB(0, 0,
+    final ui.Rect rect = _invertedTransform.transformRect(
+      ui.Rect.fromLTRB(
+        0,
+        0,
         ui.window.physicalSize.width * dpr,
-        ui.window.physicalSize.height * dpr));
+        ui.window.physicalSize.height * dpr,
+      ),
+    );
     double left = rect.left;
     double top = rect.top;
     double width = rect.width;
@@ -105,7 +112,8 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     PersistedContainerSurface? parentSurface = parent;
     while (parentSurface != null) {
       if (parentSurface.isClipping) {
-        final ui.Rect activeClipBounds = (_activeClipBounds = parentSurface.localClipBounds)!;
+        final ui.Rect activeClipBounds =
+            (_activeClipBounds = parentSurface.localClipBounds)!;
         left = activeClipBounds.left;
         top = activeClipBounds.top;
         width = activeClipBounds.width;
@@ -131,9 +139,10 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     } else {
       if (backendFilter is ModeHtmlColorFilter) {
         _svgFilter = backendFilter.makeSvgFilter(_filterElement);
+
         /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
         if (_svgFilter == null) {
-            return;
+          return;
         }
       } else if (backendFilter is MatrixHtmlColorFilter) {
         _svgFilter = backendFilter.makeSvgFilter(_filterElement);
@@ -143,10 +152,17 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       // Gaussian blur with standard deviation (normal distribution),
       // the blur will fall within 2 * sigma pixels.
       if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
-        setElementStyle(_filterElement!, '-webkit-backdrop-filter',
-            backendFilter.filterAttribute);
+        setElementStyle(
+          _filterElement!,
+          '-webkit-backdrop-filter',
+          backendFilter.filterAttribute,
+        );
       }
-      setElementStyle(_filterElement!, 'backdrop-filter', backendFilter.filterAttribute);
+      setElementStyle(
+        _filterElement!,
+        'backdrop-filter',
+        backendFilter.filterAttribute,
+      );
     }
   }
 

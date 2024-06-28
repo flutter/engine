@@ -33,15 +33,10 @@ class FakeAssetManager implements ui_web.AssetManager {
       return MockHttpFetchResponse(
         url: asset,
         status: 200,
-        payload: MockHttpFetchPayload(
-          byteBuffer: assetData.buffer,
-        ),
+        payload: MockHttpFetchPayload(byteBuffer: assetData.buffer),
       );
     } else {
-      return MockHttpFetchResponse(
-        url: asset,
-        status: 404,
-      );
+      return MockHttpFetchResponse(url: asset, status: 404);
     }
   }
 
@@ -63,7 +58,8 @@ class FakeAssetScope {
   FakeAssetScope._(this._parent);
 
   final FakeAssetScope? _parent;
-  final Map<String, Future<ByteData> Function()> _assetFetcherMap = <String, Future<ByteData> Function()>{};
+  final Map<String, Future<ByteData> Function()> _assetFetcherMap =
+      <String, Future<ByteData> Function()>{};
 
   void setAsset(String assetKey, ByteData assetData) {
     _assetFetcherMap[assetKey] = () async => assetData;
@@ -98,7 +94,8 @@ const String ahemFontUrl = '/assets/fonts/ahem.ttf';
 const String robotoFontFamily = 'Roboto';
 const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 const String robotoVariableFontFamily = 'RobotoVariable';
-const String robotoVariableFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
+const String robotoVariableFontUrl =
+    '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
 
 /// The list of test fonts, in the form of font family name - font file url pairs.
 /// This list does not include embedded test fonts, which need to be loaded and
@@ -112,7 +109,9 @@ const Map<String, String> testFontUrls = <String, String>{
 FakeAssetScope configureDebugFontsAssetScope(FakeAssetManager manager) {
   final FakeAssetScope scope = manager.pushAssetScope();
   scope.setAsset('AssetManifest.json', stringAsUtf8Data('{}'));
-  scope.setAsset('FontManifest.json', stringAsUtf8Data('''
+  scope.setAsset(
+    'FontManifest.json',
+    stringAsUtf8Data('''
   [
    {
       "family":"$robotoFontFamily",
@@ -126,7 +125,8 @@ FakeAssetScope configureDebugFontsAssetScope(FakeAssetManager manager) {
       "family":"$robotoVariableFontFamily",
       "fonts":[{"asset":"$robotoVariableFontUrl"}]
     }
-  ]'''));
+  ]'''),
+  );
   scope.setAssetPassthrough(robotoTestFontUrl);
   scope.setAssetPassthrough(ahemFontUrl);
   scope.setAssetPassthrough(robotoVariableFontUrl);

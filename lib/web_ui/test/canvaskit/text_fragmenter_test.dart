@@ -24,10 +24,7 @@ void testMain() {
         'Hello world 你好世界',
         IntlSegmenterGranularity.word,
       );
-      expect(
-        breaks,
-        orderedEquals(<int>[0, 5, 6, 11, 12, 14, 16]),
-      );
+      expect(breaks, orderedEquals(<int>[0, 5, 6, 11, 12, 14, 16]));
     });
 
     test('fragments multi-line text into words', () {
@@ -123,10 +120,7 @@ void testMain() {
         segmentation.graphemes,
         fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
       );
-      expect(
-        segmentation.breaks,
-        fragmentUsingV8LineBreaker(text),
-      );
+      expect(segmentation.breaks, fragmentUsingV8LineBreaker(text));
     });
 
     test('caches segmentation results in LRU fashion', () {
@@ -146,7 +140,8 @@ void testMain() {
     });
 
     test('puts segmentation results in the appropriate cache', () {
-      final String smallText = 'a' * (kSmallParagraphCacheSpec.maxTextLength - 1);
+      final String smallText =
+          'a' * (kSmallParagraphCacheSpec.maxTextLength - 1);
       segmentText(smallText);
       expect(segmentationCache.small.debugItemQueue, hasLength(1));
       expect(segmentationCache.medium.debugItemQueue, hasLength(0));
@@ -154,7 +149,8 @@ void testMain() {
       expect(segmentationCache.small[smallText], isNotNull);
       segmentationCache.clear();
 
-      final String mediumText = 'a' * (kMediumParagraphCacheSpec.maxTextLength - 1);
+      final String mediumText =
+          'a' * (kMediumParagraphCacheSpec.maxTextLength - 1);
       segmentText(mediumText);
       expect(segmentationCache.small.debugItemQueue, hasLength(0));
       expect(segmentationCache.medium.debugItemQueue, hasLength(1));
@@ -162,7 +158,8 @@ void testMain() {
       expect(segmentationCache.medium[mediumText], isNotNull);
       segmentationCache.clear();
 
-      final String largeText = 'a' * (kLargeParagraphCacheSpec.maxTextLength - 1);
+      final String largeText =
+          'a' * (kLargeParagraphCacheSpec.maxTextLength - 1);
       segmentText(largeText);
       expect(segmentationCache.small.debugItemQueue, hasLength(0));
       expect(segmentationCache.medium.debugItemQueue, hasLength(0));
@@ -171,7 +168,8 @@ void testMain() {
       segmentationCache.clear();
 
       // Should not cache extremely large texts.
-      final String tooLargeText = 'a' * (kLargeParagraphCacheSpec.maxTextLength + 1);
+      final String tooLargeText =
+          'a' * (kLargeParagraphCacheSpec.maxTextLength + 1);
       segmentText(tooLargeText);
       expect(segmentationCache.small.debugItemQueue, hasLength(0));
       expect(segmentationCache.medium.debugItemQueue, hasLength(0));
@@ -218,7 +216,8 @@ void testCacheCapacity(
 
 int _seed = 0;
 String _randomString(int length) {
-  const String allChars = ' 1234567890'
+  const String allChars =
+      ' 1234567890'
       'abcdefghijklmnopqrstuvwxyz'
       'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 

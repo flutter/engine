@@ -22,10 +22,7 @@ Map<String, dynamic> _wrapOriginState(dynamic state) {
 }
 
 Map<String, dynamic> _tagStateWithSerialCount(dynamic state, int serialCount) {
-  return <String, dynamic> {
-    'serialCount': serialCount,
-    'state': state,
-  };
+  return <String, dynamic>{'serialCount': serialCount, 'state': state};
 }
 
 const Map<String, bool> flutterState = <String, bool>{'flutter': true};
@@ -123,7 +120,9 @@ void testMain() {
 
     test('disposes of its listener without touching history', () async {
       const String unwrappedOriginState = 'initial state';
-      final Map<String, dynamic> wrappedOriginState = _wrapOriginState(unwrappedOriginState);
+      final Map<String, dynamic> wrappedOriginState = _wrapOriginState(
+        unwrappedOriginState,
+      );
 
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry(unwrappedOriginState, null, '/initial'),
@@ -131,7 +130,6 @@ void testMain() {
       expect(strategy.listeners, isEmpty);
 
       await implicitView.debugInitializeHistory(strategy, useSingle: true);
-
 
       // There should be one `popstate` listener and two history entries.
       expect(strategy.listeners, hasLength(1));
@@ -373,13 +371,19 @@ void testMain() {
 
       // The origin entry is tagged and its path should remain unchanged.
       final TestHistoryEntry taggedOriginEntry = strategy.history[0];
-      expect(taggedOriginEntry.state, _tagStateWithSerialCount('initial state', 0));
+      expect(
+        taggedOriginEntry.state,
+        _tagStateWithSerialCount('initial state', 0),
+      );
       expect(taggedOriginEntry.url, '/initial');
     });
 
     test('disposes of its listener without touching history', () async {
       const String untaggedState = 'initial state';
-      final Map<String, dynamic> taggedState = _tagStateWithSerialCount(untaggedState, 0);
+      final Map<String, dynamic> taggedState = _tagStateWithSerialCount(
+        untaggedState,
+        0,
+      );
 
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
         const TestHistoryEntry(untaggedState, null, '/initial'),
@@ -387,7 +391,6 @@ void testMain() {
       expect(strategy.listeners, isEmpty);
 
       await implicitView.debugInitializeHistory(strategy, useSingle: false);
-
 
       // There should be one `popstate` listener and one history entry.
       expect(strategy.listeners, hasLength(1));
@@ -441,14 +444,20 @@ void testMain() {
 
       // Initially, we should be on the flutter entry.
       expect(strategy.history, hasLength(1));
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('initial state', 0),
+      );
       expect(strategy.currentEntry.url, '/home');
       await routeInformationUpdated('/page1', 'page1 state');
       // Should have two history entries now.
       expect(strategy.history, hasLength(2));
       expect(strategy.currentEntryIndex, 1);
       // But the url of the current entry (flutter entry) should be updated.
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('page1 state', 1));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('page1 state', 1),
+      );
       expect(strategy.currentEntry.url, '/page1');
 
       // No platform messages have been sent so far.
@@ -468,7 +477,10 @@ void testMain() {
       // original state.
       expect(strategy.history, hasLength(2));
       expect(strategy.currentEntryIndex, 0);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('initial state', 0),
+      );
       expect(strategy.currentEntry.url, '/home');
     });
 
@@ -484,7 +496,10 @@ void testMain() {
       // Make sure we are on page2.
       expect(strategy.history, hasLength(3));
       expect(strategy.currentEntryIndex, 2);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('page2 state', 2));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('page2 state', 2),
+      );
       expect(strategy.currentEntry.url, '/page2');
 
       // Back to page1.
@@ -501,7 +516,10 @@ void testMain() {
       // 2. The history state should reflect that /page1 is currently active.
       expect(strategy.history, hasLength(3));
       expect(strategy.currentEntryIndex, 1);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('page1 state', 1));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('page1 state', 1),
+      );
       expect(strategy.currentEntry.url, '/page1');
       // Back to home.
       await strategy.go(-1);
@@ -517,7 +535,10 @@ void testMain() {
       // 2. The history state should reflect that /page1 is currently active.
       expect(strategy.history, hasLength(3));
       expect(strategy.currentEntryIndex, 0);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('initial state', 0),
+      );
       expect(strategy.currentEntry.url, '/home');
     });
 
@@ -560,7 +581,10 @@ void testMain() {
       // 2. The history state should reflect that /page1 is currently active.
       expect(strategy.history, hasLength(2));
       expect(strategy.currentEntryIndex, 0);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('initial state', 0),
+      );
       expect(strategy.currentEntry.url, '/home');
     });
 
@@ -576,7 +600,10 @@ void testMain() {
       // Make sure we are on page2.
       expect(strategy.history, hasLength(3));
       expect(strategy.currentEntryIndex, 2);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('page2 state', 2));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('page2 state', 2),
+      );
       expect(strategy.currentEntry.url, '/page2');
 
       // Back to page1.
@@ -593,7 +620,10 @@ void testMain() {
       // 2. The history state should reflect that /page1 is currently active.
       expect(strategy.history, hasLength(3));
       expect(strategy.currentEntryIndex, 1);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('page1 state', 1));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('page1 state', 1),
+      );
       expect(strategy.currentEntry.url, '/page1');
 
       // Forward to page2
@@ -610,7 +640,10 @@ void testMain() {
       // 2. The history state should reflect that /page2 is currently active.
       expect(strategy.history, hasLength(3));
       expect(strategy.currentEntryIndex, 2);
-      expect(strategy.currentEntry.state, _tagStateWithSerialCount('page2 state', 2));
+      expect(
+        strategy.currentEntry.state,
+        _tagStateWithSerialCount('page2 state', 2),
+      );
       expect(strategy.currentEntry.url, '/page2');
     });
   });
@@ -677,10 +710,7 @@ void testMain() {
       expect(strategy.prepareExternalUrl(internalUrl), '/main');
 
       location.search = '?foo=bar';
-      expect(
-        strategy.prepareExternalUrl(internalUrl),
-        '/main?foo=bar',
-      );
+      expect(strategy.prepareExternalUrl(internalUrl), '/main?foo=bar');
     });
 
     test('addPopStateListener fn unwraps DomPopStateEvent state', () {
@@ -729,12 +759,21 @@ void testMain() {
       void myNonAddedListener(Object event) {}
 
       location.addPopStateListener(myAddedListener);
-      expect(() => location.removePopStateListener(myAddedListener), returnsNormally);
+      expect(
+        () => location.removePopStateListener(myAddedListener),
+        returnsNormally,
+      );
       // Removing the same listener twice should throw.
-      expect(() => location.removePopStateListener(myAddedListener), throwsAssertionError);
+      expect(
+        () => location.removePopStateListener(myAddedListener),
+        throwsAssertionError,
+      );
 
       // A listener that was never added.
-      expect(() => location.removePopStateListener(myNonAddedListener), throwsAssertionError);
+      expect(
+        () => location.removePopStateListener(myNonAddedListener),
+        throwsAssertionError,
+      );
     });
 
     test('returns a non-empty baseUri', () {
@@ -748,10 +787,9 @@ Future<void> routeUpdated(String routeName) {
   final Completer<void> completer = Completer<void>();
   EnginePlatformDispatcher.instance.sendPlatformMessage(
     'flutter/navigation',
-    codec.encodeMethodCall(MethodCall(
-      'routeUpdated',
-      <String, dynamic>{'routeName': routeName},
-    )),
+    codec.encodeMethodCall(
+      MethodCall('routeUpdated', <String, dynamic>{'routeName': routeName}),
+    ),
     (_) => completer.complete(),
   );
   return completer.future;
@@ -761,10 +799,12 @@ Future<void> routeInformationUpdated(String location, dynamic state) {
   final Completer<void> completer = Completer<void>();
   EnginePlatformDispatcher.instance.sendPlatformMessage(
     'flutter/navigation',
-    codec.encodeMethodCall(MethodCall(
-      'routeInformationUpdated',
-      <String, dynamic>{'location': location, 'state': state},
-    )),
+    codec.encodeMethodCall(
+      MethodCall('routeInformationUpdated', <String, dynamic>{
+        'location': location,
+        'state': state,
+      }),
+    ),
     (_) => completer.complete(),
   );
   return completer.future;
@@ -799,12 +839,9 @@ class TestPlatformLocation implements PlatformLocation {
   /// Calls all the registered `popStateListeners` with a 'popstate'
   /// event with value `state`
   void debugTriggerPopState(Object? state) {
-    final DomEvent event = createDomPopStateEvent(
-      'popstate',
-      <Object, Object>{
-        if (state != null) 'state': state,
-      },
-    );
+    final DomEvent event = createDomPopStateEvent('popstate', <Object, Object>{
+      if (state != null) 'state': state,
+    });
     for (final EventListener listener in popStateListeners) {
       listener(event);
     }

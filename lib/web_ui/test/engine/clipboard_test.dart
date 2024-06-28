@@ -45,10 +45,11 @@ Future<void> testMain() async {
       }
 
       clipboardMessageHandler.setDataMethodCall(
-          const MethodCall('Clipboard.setData', <String, dynamic>{
-            'text': testText,
-          }),
-          callback);
+        const MethodCall('Clipboard.setData', <String, dynamic>{
+          'text': testText,
+        }),
+        callback,
+      );
 
       expect(await completer.future, isTrue);
     });
@@ -62,22 +63,30 @@ Future<void> testMain() async {
       }
 
       clipboardMessageHandler.setDataMethodCall(
-          const MethodCall('Clipboard.setData', <String, dynamic>{
-            'text': testText,
-          }),
-          callback);
+        const MethodCall('Clipboard.setData', <String, dynamic>{
+          'text': testText,
+        }),
+        callback,
+      );
 
       final ByteData result = await completer.future;
       expect(
-        () =>codec.decodeEnvelope(result),
-        throwsA(const TypeMatcher<PlatformException>()
-          .having((PlatformException e) => e.code, 'code', equals('copy_fail'))));
+        () => codec.decodeEnvelope(result),
+        throwsA(
+          const TypeMatcher<PlatformException>().having(
+            (PlatformException e) => e.code,
+            'code',
+            equals('copy_fail'),
+          ),
+        ),
+      );
     });
 
     test('get data successful', () async {
       clipboardAPIPasteStrategy.testResult = testText;
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      final Completer<Map<String, dynamic>> completer =
+          Completer<Map<String, dynamic>>();
       void callback(ByteData? data) {
         completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
       }
@@ -91,7 +100,8 @@ Future<void> testMain() async {
     test('has strings true', () async {
       clipboardAPIPasteStrategy.testResult = testText;
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      final Completer<Map<String, dynamic>> completer =
+          Completer<Map<String, dynamic>>();
       void callback(ByteData? data) {
         completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
       }
@@ -105,7 +115,8 @@ Future<void> testMain() async {
     test('has strings false', () async {
       clipboardAPIPasteStrategy.testResult = '';
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      final Completer<Map<String, dynamic>> completer =
+          Completer<Map<String, dynamic>>();
       void callback(ByteData? data) {
         completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
       }
@@ -119,7 +130,8 @@ Future<void> testMain() async {
     test('has strings error', () async {
       clipboardAPIPasteStrategy.errors = true;
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<Map<String, dynamic>> completer = Completer<Map<String, dynamic>>();
+      final Completer<Map<String, dynamic>> completer =
+          Completer<Map<String, dynamic>>();
       void callback(ByteData? data) {
         completer.complete(codec.decodeEnvelope(data!) as Map<String, dynamic>);
       }

@@ -12,7 +12,7 @@ import 'semantics.dart';
 /// Screen-readers takes advantage of "aria-label" to describe the visual.
 class ImageRoleManager extends PrimaryRoleManager {
   ImageRoleManager(SemanticsObject semanticsObject)
-      : super.blank(PrimaryRole.image, semanticsObject) {
+    : super.blank(PrimaryRole.image, semanticsObject) {
     // The following secondary roles can coexist with images. `LabelAndValue` is
     // not used because this role manager uses special auxiliary elements to
     // supply ARIA labels.

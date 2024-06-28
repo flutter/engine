@@ -63,12 +63,15 @@ void testMain() {
       expect(browserSupportsCanvaskitChromium, isFalse);
     });
 
-    test('Detect browsers that support v8BreakIterator but no Intl.Segmenter', () {
-      v8BreakIterator = Object().toJSBox; // Any non-null value.
-      intlSegmenter = null;
+    test(
+      'Detect browsers that support v8BreakIterator but no Intl.Segmenter',
+      () {
+        v8BreakIterator = Object().toJSBox; // Any non-null value.
+        intlSegmenter = null;
 
-      expect(browserSupportsCanvaskitChromium, isFalse);
-    });
+        expect(browserSupportsCanvaskitChromium, isFalse);
+      },
+    );
   });
 
   group('OffscreenCanvas', () {

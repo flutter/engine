@@ -17,8 +17,22 @@ abstract class Path {
   void relativeLineTo(double dx, double dy);
   void quadraticBezierTo(double x1, double y1, double x2, double y2);
   void relativeQuadraticBezierTo(double x1, double y1, double x2, double y2);
-  void cubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
-  void relativeCubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
+  void cubicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  );
+  void relativeCubicTo(
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
+  );
   void conicTo(double x1, double y1, double x2, double y2, double w);
   void relativeConicTo(double x1, double y1, double x2, double y2, double w);
   void arcTo(Rect rect, double startAngle, double sweepAngle, bool forceMoveTo);
@@ -50,8 +64,9 @@ abstract class Path {
   Path transform(Float64List matrix4);
   // see https://skia.org/user/api/SkPath_Reference#SkPath_getBounds
   Rect getBounds();
-  static Path combine(PathOperation operation, Path path1, Path path2) =>
-    engine.renderer.combinePaths(operation, path1, path2);
+  static Path combine(PathOperation operation, Path path1, Path path2) => engine
+      .renderer
+      .combinePaths(operation, path1, path2);
 
   PathMetrics computeMetrics({bool forceClosed = false});
 }

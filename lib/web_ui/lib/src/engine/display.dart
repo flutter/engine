@@ -97,8 +97,9 @@ class ScreenOrientation {
           screenOrientation.unlock();
           return true;
         } else {
-          final String? lockType =
-              _deviceOrientationToLockType(orientations.first as String?);
+          final String? lockType = _deviceOrientationToLockType(
+            orientations.first as String?,
+          );
           if (lockType != null) {
             try {
               await screenOrientation.lock(lockType);

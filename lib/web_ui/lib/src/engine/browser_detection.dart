@@ -40,10 +40,12 @@ bool get _isIOS => ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs;
 ///
 /// - See [operatingSystem].
 /// - See [OperatingSystem].
-bool get isMacOrIOS => _isIOS || ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs;
+bool get isMacOrIOS =>
+    _isIOS || ui_web.browser.operatingSystem == ui_web.OperatingSystem.macOs;
 
 /// Detect iOS 15.
-bool get isIOS15 => debugIsIOS15 ?? _isIOS && ui_web.browser.userAgent.contains('OS 15_');
+bool get isIOS15 =>
+    debugIsIOS15 ?? _isIOS && ui_web.browser.userAgent.contains('OS 15_');
 
 /// Use in tests to simulate the detection of iOS 15.
 bool? debugIsIOS15;
@@ -63,8 +65,7 @@ bool get isChrome110OrOlder {
     return _cachedIsChrome110OrOlder!;
   }
   final RegExp chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
-  final RegExpMatch? match =
-      chromeRegexp.firstMatch(ui_web.browser.userAgent);
+  final RegExpMatch? match = chromeRegexp.firstMatch(ui_web.browser.userAgent);
   if (match != null) {
     final int chromeVersion = int.parse(match.group(2)!);
     return _cachedIsChrome110OrOlder = chromeVersion <= 110;
@@ -118,10 +119,7 @@ int? _cachedWebGLVersion;
 ///
 /// Our CanvasKit backend is affected due to: https://github.com/emscripten-core/emscripten/issues/11819
 int _detectWebGLVersion() {
-  final DomCanvasElement canvas = createDomCanvasElement(
-    width: 1,
-    height: 1,
-  );
+  final DomCanvasElement canvas = createDomCanvasElement(width: 1, height: 1);
   if (canvas.getContext('webgl2') != null) {
     if (_workAroundBug91333) {
       return WebGLVersion.webgl1;

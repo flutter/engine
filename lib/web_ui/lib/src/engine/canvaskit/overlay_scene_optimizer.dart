@@ -120,16 +120,22 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
   for (final Mutator mutator in params.mutators.reversed) {
     switch (mutator.type) {
       case MutatorType.clipRect:
-        final ui.Rect transformedClipBounds =
-            transformRectWithMatrix(currentTransform, mutator.rect!);
+        final ui.Rect transformedClipBounds = transformRectWithMatrix(
+          currentTransform,
+          mutator.rect!,
+        );
         currentClipBounds = currentClipBounds.intersect(transformedClipBounds);
       case MutatorType.clipRRect:
-        final ui.Rect transformedClipBounds =
-            transformRectWithMatrix(currentTransform, mutator.rrect!.outerRect);
+        final ui.Rect transformedClipBounds = transformRectWithMatrix(
+          currentTransform,
+          mutator.rrect!.outerRect,
+        );
         currentClipBounds = currentClipBounds.intersect(transformedClipBounds);
       case MutatorType.clipPath:
         final ui.Rect transformedClipBounds = transformRectWithMatrix(
-            currentTransform, mutator.path!.getBounds());
+          currentTransform,
+          mutator.path!.getBounds(),
+        );
         currentClipBounds.intersect(transformedClipBounds);
       case MutatorType.transform:
         currentTransform = currentTransform.multiplied(mutator.matrix!);
@@ -147,8 +153,10 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
     params.size.width,
     params.size.height,
   );
-  final ui.Rect transformedBounds =
-      transformRectWithMatrix(currentTransform, rawBounds);
+  final ui.Rect transformedBounds = transformRectWithMatrix(
+    currentTransform,
+    rawBounds,
+  );
   return transformedBounds.intersect(currentClipBounds);
 }
 
@@ -178,11 +186,13 @@ Rendering createOptimizedRendering(
     currentRenderCanvas.add(pictures[0]);
   }
   for (int i = 0; i < platformViews.length; i++) {
-    final RenderingPlatformView platformView =
-        RenderingPlatformView(platformViews[i]);
+    final RenderingPlatformView platformView = RenderingPlatformView(
+      platformViews[i],
+    );
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
-      final ui.Rect platformViewBounds =
-          computePlatformViewBounds(paramsForViews[platformViews[i]]!);
+      final ui.Rect platformViewBounds = computePlatformViewBounds(
+        paramsForViews[platformViews[i]]!,
+      );
       if (debugOverlayOptimizationBounds) {
         platformView.debugComputedBounds = platformViewBounds;
       }

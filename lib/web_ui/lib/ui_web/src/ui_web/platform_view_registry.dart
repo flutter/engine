@@ -6,10 +6,8 @@ import 'package:ui/src/engine.dart';
 
 /// A function which takes a unique `id` and some `params` and creates an HTML
 /// element.
-typedef ParameterizedPlatformViewFactory = Object Function(
-  int viewId, {
-  Object? params,
-});
+typedef ParameterizedPlatformViewFactory =
+    Object Function(int viewId, {Object? params});
 
 /// A function which takes a unique `id` and creates an HTML element.
 typedef PlatformViewFactory = Object Function(int viewId);
@@ -24,14 +22,16 @@ class PlatformViewRegistry {
   ///
   /// There's no need to register this view type with [PlatformViewRegistry]
   /// because it is registered by default.
-  static const String defaultVisibleViewType = '_default_document_create_element_visible';
+  static const String defaultVisibleViewType =
+      '_default_document_create_element_visible';
 
   /// The view type of the built-in factory that creates invisible platform view
   /// DOM elements.
   ///
   /// There's no need to register this view type with [PlatformViewRegistry]
   /// because it is registered by default.
-  static const String defaultInvisibleViewType = '_default_document_create_element_invisible';
+  static const String defaultInvisibleViewType =
+      '_default_document_create_element_invisible';
 
   /// Register [viewType] as being created by the given [viewFactory].
   ///

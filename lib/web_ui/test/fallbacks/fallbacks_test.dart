@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -16,9 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  setUpUnitTests(
-    setUpTestViewDimensions: false,
-  );
+  setUpUnitTests(setUpTestViewDimensions: false);
 
   test('bootstrapper selects correct builds', () {
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.blink) {

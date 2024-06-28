@@ -10,10 +10,7 @@ import 'package:ui/ui.dart';
 /// Contains method name that was called on [MockEngineCanvas] and arguments
 /// that were passed.
 class MockCanvasCall {
-  MockCanvasCall._({
-    required this.methodName,
-    this.arguments,
-  });
+  MockCanvasCall._({required this.methodName, this.arguments});
 
   final String methodName;
   final dynamic arguments;
@@ -37,10 +34,9 @@ class MockEngineCanvas implements EngineCanvas {
   final DomElement _rootElement = createDomHTMLDivElement();
 
   void _called(String methodName, {dynamic arguments}) {
-    methodCallLog.add(MockCanvasCall._(
-      methodName: methodName,
-      arguments: arguments,
-    ));
+    methodCallLog.add(
+      MockCanvasCall._(methodName: methodName, arguments: arguments),
+    );
   }
 
   @override
@@ -65,18 +61,12 @@ class MockEngineCanvas implements EngineCanvas {
 
   @override
   void translate(double dx, double dy) {
-    _called('translate', arguments: <String, double>{
-      'dx': dx,
-      'dy': dy,
-    });
+    _called('translate', arguments: <String, double>{'dx': dx, 'dy': dy});
   }
 
   @override
   void scale(double sx, double sy) {
-    _called('scale', arguments: <String, double>{
-      'sx': sx,
-      'sy': sy,
-    });
+    _called('scale', arguments: <String, double>{'sx': sx, 'sy': sy});
   }
 
   @override
@@ -86,10 +76,7 @@ class MockEngineCanvas implements EngineCanvas {
 
   @override
   void skew(double sx, double sy) {
-    _called('skew', arguments: <String, double>{
-      'sx': sx,
-      'sy': sy,
-    });
+    _called('skew', arguments: <String, double>{'sx': sx, 'sy': sy});
   }
 
   @override
@@ -186,7 +173,11 @@ class MockEngineCanvas implements EngineCanvas {
 
   @override
   void drawShadow(
-      Path path, Color color, double elevation, bool transparentOccluder) {
+    Path path,
+    Color color,
+    double elevation,
+    bool transparentOccluder,
+  ) {
     _called('drawShadow', arguments: <String, dynamic>{
       'path': path,
       'color': color,
@@ -224,7 +215,10 @@ class MockEngineCanvas implements EngineCanvas {
 
   @override
   void drawVertices(
-      Vertices vertices, BlendMode blendMode, SurfacePaintData paint) {
+    Vertices vertices,
+    BlendMode blendMode,
+    SurfacePaintData paint,
+  ) {
     _called('drawVertices', arguments: <String, dynamic>{
       'vertices': vertices,
       'blendMode': blendMode,
@@ -233,7 +227,11 @@ class MockEngineCanvas implements EngineCanvas {
   }
 
   @override
-  void drawPoints(PointMode pointMode, Float32List points, SurfacePaintData paint) {
+  void drawPoints(
+    PointMode pointMode,
+    Float32List points,
+    SurfacePaintData paint,
+  ) {
     _called('drawPoints', arguments: <String, dynamic>{
       'pointMode': pointMode,
       'points': points,

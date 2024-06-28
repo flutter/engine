@@ -89,8 +89,9 @@ void debugPrintStack({String? label, int? maxFrames}) {
   if (label != null) {
     print(label);
   }
-  Iterable<String> lines =
-      StackTrace.current.toString().trimRight().split('\n');
+  Iterable<String> lines = StackTrace.current.toString().trimRight().split(
+    '\n',
+  );
   if (maxFrames != null) {
     lines = lines.take(maxFrames);
   }
@@ -110,8 +111,9 @@ Iterable<String> defaultStackFilter(Iterable<String> frames) {
     'dart:async',
     'dart:_runtime',
   ];
-  final RegExp stackParser =
-      RegExp(r'^#[0-9]+ +([^.]+).* \(([^/\\]*)[/\\].+:[0-9]+(?::[0-9]+)?\)$');
+  final RegExp stackParser = RegExp(
+    r'^#[0-9]+ +([^.]+).* \(([^/\\]*)[/\\].+:[0-9]+(?::[0-9]+)?\)$',
+  );
   final RegExp packageParser = RegExp(r'^([^:]+):(.+)$');
   final List<String> result = <String>[];
   final List<String> skipped = <String>[];
@@ -123,7 +125,8 @@ Iterable<String> defaultStackFilter(Iterable<String> frames) {
         final Match? packageMatch = packageParser.firstMatch(match.group(2)!);
         if (packageMatch != null && packageMatch.group(1) == 'package') {
           skipped.add(
-              'package ${packageMatch.group(2)}'); // avoid "package package:foo"
+            'package ${packageMatch.group(2)}',
+          ); // avoid "package package:foo"
         } else {
           skipped.add('package ${match.group(2)}');
         }

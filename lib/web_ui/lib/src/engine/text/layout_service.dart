@@ -62,8 +62,10 @@ class TextLayoutService {
 
   late final Spanometer spanometer = Spanometer(paragraph);
 
-  late final LayoutFragmenter layoutFragmenter =
-      LayoutFragmenter(paragraph.plainText, paragraph.spans);
+  late final LayoutFragmenter layoutFragmenter = LayoutFragmenter(
+    paragraph.plainText,
+    paragraph.spans,
+  );
 
   /// Performs the layout on a paragraph given the [constraints].
   ///
@@ -89,8 +91,11 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
-    LineBuilder currentLine =
-        LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
+    LineBuilder currentLine = LineBuilder.first(
+      paragraph,
+      spanometer,
+      maxWidth: constraints.width,
+    );
 
     final List<LayoutFragment> fragments =
         layoutFragmenter.fragment()..forEach(spanometer.measureFragment);
@@ -160,12 +165,7 @@ class TextLayoutService {
         boundsRight = right;
       }
     }
-    _paintBounds = ui.Rect.fromLTRB(
-      boundsLeft,
-      0,
-      boundsRight,
-      height,
-    );
+    _paintBounds = ui.Rect.fromLTRB(boundsLeft, 0, boundsRight, height);
 
     // **************************** //
     // *** FRAGMENT POSITIONING *** //
@@ -174,7 +174,8 @@ class TextLayoutService {
     // We have to perform justification alignment first so that we can position
     // fragments correctly later.
     if (lines.isNotEmpty) {
-      final bool shouldJustifyParagraph = width.isFinite &&
+      final bool shouldJustifyParagraph =
+          width.isFinite &&
           paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
 
       if (shouldJustifyParagraph) {
@@ -208,13 +209,22 @@ class TextLayoutService {
           break;
 
         case LineBreakType.opportunity:
-          minIntrinsicWidth = math.max(minIntrinsicWidth, runningMinIntrinsicWidth);
+          minIntrinsicWidth = math.max(
+            minIntrinsicWidth,
+            runningMinIntrinsicWidth,
+          );
           runningMinIntrinsicWidth = 0;
 
         case LineBreakType.mandatory:
         case LineBreakType.endOfText:
-          minIntrinsicWidth = math.max(minIntrinsicWidth, runningMinIntrinsicWidth);
-          maxIntrinsicWidth = math.max(maxIntrinsicWidth, runningMaxIntrinsicWidth);
+          minIntrinsicWidth = math.max(
+            minIntrinsicWidth,
+            runningMinIntrinsicWidth,
+          );
+          maxIntrinsicWidth = math.max(
+            maxIntrinsicWidth,
+            runningMaxIntrinsicWidth,
+          );
           runningMinIntrinsicWidth = 0;
           runningMaxIntrinsicWidth = 0;
       }
@@ -246,9 +256,10 @@ class TextLayoutService {
           continue;
         }
 
-
-        assert(fragment.fragmentFlow == FragmentFlow.ltr ||
-            fragment.fragmentFlow == FragmentFlow.rtl);
+        assert(
+          fragment.fragmentFlow == FragmentFlow.ltr ||
+              fragment.fragmentFlow == FragmentFlow.rtl,
+        );
 
         final ui.TextDirection currentDirection =
             fragment.fragmentFlow == FragmentFlow.ltr
@@ -295,7 +306,7 @@ class TextLayoutService {
       sequenceStart = i;
       sandwichStart = null;
 
-      if (i < line.fragments.length){
+      if (i < line.fragments.length) {
         previousDirection = line.fragments[i].textDirection!;
       }
     }
@@ -318,13 +329,21 @@ class TextLayoutService {
 
     if (direction == _paragraphDirection) {
       for (int i = start; i < end; i++) {
-        cumulativeWidth +=
-            _positionOneFragment(line, i, startOffset + cumulativeWidth, direction);
+        cumulativeWidth += _positionOneFragment(
+          line,
+          i,
+          startOffset + cumulativeWidth,
+          direction,
+        );
       }
     } else {
       for (int i = end - 1; i >= start; i--) {
-        cumulativeWidth +=
-            _positionOneFragment(line, i, startOffset + cumulativeWidth, direction);
+        cumulativeWidth += _positionOneFragment(
+          line,
+          i,
+          startOffset + cumulativeWidth,
+          direction,
+        );
       }
     }
 
@@ -396,9 +415,7 @@ class TextLayoutService {
     }
     // [offset] is to the left of the line.
     if (offset.dx <= line.left) {
-      return ui.TextPosition(
-        offset: line.startIndex,
-      );
+      return ui.TextPosition(offset: line.startIndex);
     }
 
     // [offset] is to the right of the line.
@@ -424,19 +441,24 @@ class TextLayoutService {
     if (line == null) {
       return null;
     }
-    final LayoutFragment? fragment = line.closestFragmentAtOffset(offset.dx - line.left);
+    final LayoutFragment? fragment = line.closestFragmentAtOffset(
+      offset.dx - line.left,
+    );
     if (fragment == null) {
       return null;
     }
     final double dx = offset.dx;
-    final bool closestGraphemeStartInFragment = !fragment.hasLeadingBrokenGrapheme
-                                             || dx <= fragment.line.left
-                                             || fragment.line.left + fragment.line.width <= dx
-                                             || switch (fragment.textDirection!) {
-                                               // If dx is closer to the trailing edge, no need to check other fragments.
-                                               ui.TextDirection.ltr => dx >= line.left + (fragment.left + fragment.right) / 2,
-                                               ui.TextDirection.rtl => dx <= line.left + (fragment.left + fragment.right) / 2,
-                                             };
+    final bool closestGraphemeStartInFragment =
+        !fragment.hasLeadingBrokenGrapheme ||
+        dx <= fragment.line.left ||
+        fragment.line.left + fragment.line.width <= dx ||
+        switch (fragment.textDirection!) {
+          // If dx is closer to the trailing edge, no need to check other fragments.
+          ui.TextDirection.ltr =>
+            dx >= line.left + (fragment.left + fragment.right) / 2,
+          ui.TextDirection.rtl =>
+            dx <= line.left + (fragment.left + fragment.right) / 2,
+        };
     final ui.GlyphInfo candidate1 = fragment.getClosestCharacterBox(dx);
     if (closestGraphemeStartInFragment) {
       return candidate1;
@@ -445,7 +467,9 @@ class TextLayoutService {
       ui.TextDirection.ltr => true,
       ui.TextDirection.rtl => false,
     };
-    final ui.GlyphInfo? candidate2 = fragment.line.closestFragmentTo(fragment, searchLeft)?.getClosestCharacterBox(dx);
+    final ui.GlyphInfo? candidate2 = fragment.line
+        .closestFragmentTo(fragment, searchLeft)
+        ?.getClosestCharacterBox(dx);
     if (candidate2 == null) {
       return candidate1;
     }
@@ -528,16 +552,16 @@ class LineBuilder {
     assert(_fragments.isNotEmpty || _fragmentsForNextLine!.isNotEmpty);
 
     return isNotEmpty
-      ? _fragments.first.start
-      : _fragmentsForNextLine!.first.start;
+        ? _fragments.first.start
+        : _fragmentsForNextLine!.first.start;
   }
 
   int get endIndex {
     assert(_fragments.isNotEmpty || _fragmentsForNextLine!.isNotEmpty);
 
     return isNotEmpty
-      ? _fragments.last.end
-      : _fragmentsForNextLine!.first.start;
+        ? _fragments.last.end
+        : _fragmentsForNextLine!.first.start;
   }
 
   final double maxWidth;
@@ -554,9 +578,10 @@ class LineBuilder {
   /// The width of the line so far, including trailing white space.
   double widthIncludingSpace = 0.0;
 
-  double get _widthExcludingLastFragment => _fragments.length > 1
-    ? widthIncludingSpace - _fragments.last.widthIncludingTrailingSpaces
-    : 0;
+  double get _widthExcludingLastFragment =>
+      _fragments.length > 1
+          ? widthIncludingSpace - _fragments.last.widthIncludingTrailingSpaces
+          : 0;
 
   /// The distance from the top of the line to the alphabetic baseline.
   double ascent = 0.0;
@@ -715,7 +740,8 @@ class LineBuilder {
 
     // Update the metrics of the fragment to reflect the calculated ascent and
     // descent.
-    fragment.setMetrics(spanometer,
+    fragment.setMetrics(
+      spanometer,
       ascent: ascent,
       descent: descent,
       widthExcludingTrailingSpaces: fragment.widthExcludingTrailingSpaces,
@@ -741,7 +767,10 @@ class LineBuilder {
     }
   }
 
-  void forceBreakLastFragment({ double? availableWidth, bool allowEmptyLine = false }) {
+  void forceBreakLastFragment({
+    double? availableWidth,
+    bool allowEmptyLine = false,
+  }) {
     assert(isNotEmpty);
 
     availableWidth ??= maxWidth;
@@ -767,8 +796,10 @@ class LineBuilder {
     }
 
     spanometer.currentSpan = lastFragment.span;
-    final double lineWidthWithoutLastFragment = widthIncludingSpace - lastFragment.widthIncludingTrailingSpaces;
-    final double availableWidthForFragment = availableWidth - lineWidthWithoutLastFragment;
+    final double lineWidthWithoutLastFragment =
+        widthIncludingSpace - lastFragment.widthIncludingTrailingSpaces;
+    final double availableWidthForFragment =
+        availableWidth - lineWidthWithoutLastFragment;
     final int forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
 
     final int breakingPoint = spanometer.forceBreak(
@@ -823,13 +854,17 @@ class LineBuilder {
     }
 
     final LayoutFragment lastFragment = _fragments.last;
-    forceBreakLastFragment(availableWidth: availableWidth, allowEmptyLine: true);
+    forceBreakLastFragment(
+      availableWidth: availableWidth,
+      allowEmptyLine: true,
+    );
 
     final EllipsisFragment ellipsisFragment = EllipsisFragment(
       endIndex,
       lastFragment.span,
     );
-    ellipsisFragment.setMetrics(spanometer,
+    ellipsisFragment.setMetrics(
+      spanometer,
       ascent: lastFragment.ascent,
       descent: lastFragment.descent,
       widthExcludingTrailingSpaces: ellipsisWidth,
@@ -854,7 +889,8 @@ class LineBuilder {
       i--;
     }
 
-    _fragmentsForNextLine = _fragments.getRange(i + 1, _fragments.length).toList();
+    _fragmentsForNextLine =
+        _fragments.getRange(i + 1, _fragments.length).toList();
     _fragments.removeRange(i + 1, _fragments.length);
     _recalculateMetrics();
   }
@@ -862,7 +898,10 @@ class LineBuilder {
   /// Appends as many zero-width fragments as this line allows.
   ///
   /// Returns the number of fragments that were appended.
-  int appendZeroWidthFragments(List<LayoutFragment> fragments, {required int startFrom}) {
+  int appendZeroWidthFragments(
+    List<LayoutFragment> fragments, {
+    required int startFrom,
+  }) {
     int i = startFrom;
     while (_canAppendEmptyFragments &&
         i < fragments.length &&
@@ -876,7 +915,10 @@ class LineBuilder {
   /// Builds the [ParagraphLine] instance that represents this line.
   ParagraphLine build() {
     if (_fragmentsForNextLine == null) {
-      _fragmentsForNextLine = _fragments.getRange(_lastBreakableFragment + 1, _fragments.length).toList();
+      _fragmentsForNextLine =
+          _fragments
+              .getRange(_lastBreakableFragment + 1, _fragments.length)
+              .toList();
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
     }
 
@@ -1023,7 +1065,8 @@ class Spanometer {
       final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
       // The ascent/descent values of the placeholder fragment will be finalized
       // later when the line is built.
-      fragment.setMetrics(this,
+      fragment.setMetrics(
+        this,
         ascent: placeholder.height,
         descent: 0,
         widthExcludingTrailingSpaces: placeholder.width,
@@ -1031,9 +1074,16 @@ class Spanometer {
       );
     } else {
       currentSpan = fragment.span;
-      final double widthExcludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingSpaces);
-      final double widthIncludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingNewlines);
-      fragment.setMetrics(this,
+      final double widthExcludingTrailingSpaces = _measure(
+        fragment.start,
+        fragment.end - fragment.trailingSpaces,
+      );
+      final double widthIncludingTrailingSpaces = _measure(
+        fragment.start,
+        fragment.end - fragment.trailingNewlines,
+      );
+      fragment.setMetrics(
+        this,
         ascent: ascent,
         descent: descent,
         widthExcludingTrailingSpaces: widthExcludingTrailingSpaces,

@@ -23,10 +23,13 @@ class LicensesCommand extends Command<bool> {
   }
 
   void _checkLicenseHeaders() {
-    final List<io.File> allSourceFiles =
-        _flatListSourceFiles(environment.webUiRootDir);
-    _expect(allSourceFiles.isNotEmpty,
-        'Dart source listing of ${environment.webUiRootDir.path} must not be empty.');
+    final List<io.File> allSourceFiles = _flatListSourceFiles(
+      environment.webUiRootDir,
+    );
+    _expect(
+      allSourceFiles.isNotEmpty,
+      'Dart source listing of ${environment.webUiRootDir.path} must not be empty.',
+    );
 
     final List<String> allDartPaths =
         allSourceFiles.map((io.File f) => f.path).toList();
@@ -36,8 +39,10 @@ class LicensesCommand extends Command<bool> {
       'test',
       'dev',
     ]) {
-      final String expectedAbsoluteDirectory =
-          path.join(environment.webUiRootDir.path, expectedDirectory);
+      final String expectedAbsoluteDirectory = path.join(
+        environment.webUiRootDir.path,
+        expectedDirectory,
+      );
       _expect(
         allDartPaths
             .where((String p) => p.startsWith(expectedAbsoluteDirectory))
@@ -50,11 +55,13 @@ class LicensesCommand extends Command<bool> {
     print('License headers OK!');
   }
 
-  final RegExp _copyRegex =
-      RegExp(r'// Copyright 2013 The Flutter Authors\. All rights reserved\.');
+  final RegExp _copyRegex = RegExp(
+    r'// Copyright 2013 The Flutter Authors\. All rights reserved\.',
+  );
 
   void _expectLicenseHeader(io.File file) {
-    final List<String> head = file.readAsStringSync().split('\n').take(3).toList();
+    final List<String> head =
+        file.readAsStringSync().split('\n').take(3).toList();
 
     _expect(head.length >= 3, 'File too short: ${file.path}');
     _expect(
@@ -81,8 +88,13 @@ class LicensesCommand extends Command<bool> {
   List<io.File> _flatListSourceFiles(io.Directory directory) {
     // This is the old path that tests used to be built into. Ignore anything
     // within this path.
-    final String legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
-    return directory.listSync(recursive: true).whereType<io.File>().where((io.File f) {
+    final String legacyBuildPath = path.join(
+      environment.webUiRootDir.path,
+      'build',
+    );
+    return directory.listSync(recursive: true).whereType<io.File>().where((
+      io.File f,
+    ) {
       if (!f.path.endsWith('.dart') && !f.path.endsWith('.js')) {
         // Not a source file we're checking.
         return false;

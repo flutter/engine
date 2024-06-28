@@ -24,7 +24,10 @@ void testMain() {
     for (int index = 0; index < numSemanticsFlags; ++index) {
       final int flag = 1 << index;
       expect(SemanticsFlag.fromIndex(flag), isNotNull);
-      expect(SemanticsFlag.fromIndex(flag).toString(), startsWith('SemanticsFlag.'));
+      expect(
+        SemanticsFlag.fromIndex(flag).toString(),
+        startsWith('SemanticsFlag.'),
+      );
     }
   });
 
@@ -35,15 +38,29 @@ void testMain() {
     for (int index = 0; index < numSemanticsActions; ++index) {
       final int action = 1 << index;
       expect(SemanticsAction.fromIndex(action), isNotNull);
-      expect(SemanticsAction.fromIndex(action).toString(), startsWith('SemanticsAction.'));
+      expect(
+        SemanticsAction.fromIndex(action).toString(),
+        startsWith('SemanticsAction.'),
+      );
     }
   });
 
   test('SpellOutStringAttribute.toString', () async {
-    expect(SpellOutStringAttribute(range: const TextRange(start: 2, end: 5)).toString(), 'SpellOutStringAttribute(TextRange(start: 2, end: 5))');
+    expect(
+      SpellOutStringAttribute(
+        range: const TextRange(start: 2, end: 5),
+      ).toString(),
+      'SpellOutStringAttribute(TextRange(start: 2, end: 5))',
+    );
   });
 
   test('LocaleStringAttribute.toString', () async {
-    expect(LocaleStringAttribute(range: const TextRange(start: 2, end: 5), locale: const Locale('test')).toString(), 'LocaleStringAttribute(TextRange(start: 2, end: 5), test)');
+    expect(
+      LocaleStringAttribute(
+        range: const TextRange(start: 2, end: 5),
+        locale: const Locale('test'),
+      ).toString(),
+      'LocaleStringAttribute(TextRange(start: 2, end: 5), test)',
+    );
   });
 }

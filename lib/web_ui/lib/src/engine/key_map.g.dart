@@ -558,36 +558,196 @@ const Map<String, int> kWebToPhysicalKey = <String, int>{
 ///  * 2: Right
 ///  * 3: Numpad
 const Map<String, List<int?>> kWebLogicalLocationMap = <String, List<int?>>{
-  '*': <int?>[0x0000000002a, null, null, 0x0020000022a], // asterisk, null, null, numpadMultiply
-  '+': <int?>[0x0000000002b, null, null, 0x0020000022b], // add, null, null, numpadAdd
-  '-': <int?>[0x0000000002d, null, null, 0x0020000022d], // minus, null, null, numpadSubtract
-  '.': <int?>[0x0000000002e, null, null, 0x0020000022e], // period, null, null, numpadDecimal
-  '/': <int?>[0x0000000002f, null, null, 0x0020000022f], // slash, null, null, numpadDivide
-  '0': <int?>[0x00000000030, null, null, 0x00200000230], // digit0, null, null, numpad0
-  '1': <int?>[0x00000000031, null, null, 0x00200000231], // digit1, null, null, numpad1
-  '2': <int?>[0x00000000032, null, null, 0x00200000232], // digit2, null, null, numpad2
-  '3': <int?>[0x00000000033, null, null, 0x00200000233], // digit3, null, null, numpad3
-  '4': <int?>[0x00000000034, null, null, 0x00200000234], // digit4, null, null, numpad4
-  '5': <int?>[0x00000000035, null, null, 0x00200000235], // digit5, null, null, numpad5
-  '6': <int?>[0x00000000036, null, null, 0x00200000236], // digit6, null, null, numpad6
-  '7': <int?>[0x00000000037, null, null, 0x00200000237], // digit7, null, null, numpad7
-  '8': <int?>[0x00000000038, null, null, 0x00200000238], // digit8, null, null, numpad8
-  '9': <int?>[0x00000000039, null, null, 0x00200000239], // digit9, null, null, numpad9
-  'Alt': <int?>[0x00200000104, 0x00200000104, 0x00200000105, null], // altLeft, altLeft, altRight, null
-  'AltGraph': <int?>[0x00100000103, null, 0x00100000103, null], // altGraph, null, altGraph, null
-  'ArrowDown': <int?>[0x00100000301, null, null, 0x00200000232], // arrowDown, null, null, numpad2
-  'ArrowLeft': <int?>[0x00100000302, null, null, 0x00200000234], // arrowLeft, null, null, numpad4
-  'ArrowRight': <int?>[0x00100000303, null, null, 0x00200000236], // arrowRight, null, null, numpad6
-  'ArrowUp': <int?>[0x00100000304, null, null, 0x00200000238], // arrowUp, null, null, numpad8
-  'Clear': <int?>[0x00100000401, null, null, 0x00200000235], // clear, null, null, numpad5
-  'Control': <int?>[0x00200000100, 0x00200000100, 0x00200000101, null], // controlLeft, controlLeft, controlRight, null
-  'Delete': <int?>[0x0010000007f, null, null, 0x0020000022e], // delete, null, null, numpadDecimal
-  'End': <int?>[0x00100000305, null, null, 0x00200000231], // end, null, null, numpad1
-  'Enter': <int?>[0x0010000000d, null, null, 0x0020000020d], // enter, null, null, numpadEnter
-  'Home': <int?>[0x00100000306, null, null, 0x00200000237], // home, null, null, numpad7
-  'Insert': <int?>[0x00100000407, null, null, 0x00200000230], // insert, null, null, numpad0
-  'Meta': <int?>[0x00200000106, 0x00200000106, 0x00200000107, null], // metaLeft, metaLeft, metaRight, null
-  'PageDown': <int?>[0x00100000307, null, null, 0x00200000233], // pageDown, null, null, numpad3
-  'PageUp': <int?>[0x00100000308, null, null, 0x00200000239], // pageUp, null, null, numpad9
-  'Shift': <int?>[0x00200000102, 0x00200000102, 0x00200000103, null], // shiftLeft, shiftLeft, shiftRight, null
+  '*': <int?>[
+    0x0000000002a,
+    null,
+    null,
+    0x0020000022a,
+  ], // asterisk, null, null, numpadMultiply
+  '+': <int?>[
+    0x0000000002b,
+    null,
+    null,
+    0x0020000022b,
+  ], // add, null, null, numpadAdd
+  '-': <int?>[
+    0x0000000002d,
+    null,
+    null,
+    0x0020000022d,
+  ], // minus, null, null, numpadSubtract
+  '.': <int?>[
+    0x0000000002e,
+    null,
+    null,
+    0x0020000022e,
+  ], // period, null, null, numpadDecimal
+  '/': <int?>[
+    0x0000000002f,
+    null,
+    null,
+    0x0020000022f,
+  ], // slash, null, null, numpadDivide
+  '0': <int?>[
+    0x00000000030,
+    null,
+    null,
+    0x00200000230,
+  ], // digit0, null, null, numpad0
+  '1': <int?>[
+    0x00000000031,
+    null,
+    null,
+    0x00200000231,
+  ], // digit1, null, null, numpad1
+  '2': <int?>[
+    0x00000000032,
+    null,
+    null,
+    0x00200000232,
+  ], // digit2, null, null, numpad2
+  '3': <int?>[
+    0x00000000033,
+    null,
+    null,
+    0x00200000233,
+  ], // digit3, null, null, numpad3
+  '4': <int?>[
+    0x00000000034,
+    null,
+    null,
+    0x00200000234,
+  ], // digit4, null, null, numpad4
+  '5': <int?>[
+    0x00000000035,
+    null,
+    null,
+    0x00200000235,
+  ], // digit5, null, null, numpad5
+  '6': <int?>[
+    0x00000000036,
+    null,
+    null,
+    0x00200000236,
+  ], // digit6, null, null, numpad6
+  '7': <int?>[
+    0x00000000037,
+    null,
+    null,
+    0x00200000237,
+  ], // digit7, null, null, numpad7
+  '8': <int?>[
+    0x00000000038,
+    null,
+    null,
+    0x00200000238,
+  ], // digit8, null, null, numpad8
+  '9': <int?>[
+    0x00000000039,
+    null,
+    null,
+    0x00200000239,
+  ], // digit9, null, null, numpad9
+  'Alt': <int?>[
+    0x00200000104,
+    0x00200000104,
+    0x00200000105,
+    null,
+  ], // altLeft, altLeft, altRight, null
+  'AltGraph': <int?>[
+    0x00100000103,
+    null,
+    0x00100000103,
+    null,
+  ], // altGraph, null, altGraph, null
+  'ArrowDown': <int?>[
+    0x00100000301,
+    null,
+    null,
+    0x00200000232,
+  ], // arrowDown, null, null, numpad2
+  'ArrowLeft': <int?>[
+    0x00100000302,
+    null,
+    null,
+    0x00200000234,
+  ], // arrowLeft, null, null, numpad4
+  'ArrowRight': <int?>[
+    0x00100000303,
+    null,
+    null,
+    0x00200000236,
+  ], // arrowRight, null, null, numpad6
+  'ArrowUp': <int?>[
+    0x00100000304,
+    null,
+    null,
+    0x00200000238,
+  ], // arrowUp, null, null, numpad8
+  'Clear': <int?>[
+    0x00100000401,
+    null,
+    null,
+    0x00200000235,
+  ], // clear, null, null, numpad5
+  'Control': <int?>[
+    0x00200000100,
+    0x00200000100,
+    0x00200000101,
+    null,
+  ], // controlLeft, controlLeft, controlRight, null
+  'Delete': <int?>[
+    0x0010000007f,
+    null,
+    null,
+    0x0020000022e,
+  ], // delete, null, null, numpadDecimal
+  'End': <int?>[
+    0x00100000305,
+    null,
+    null,
+    0x00200000231,
+  ], // end, null, null, numpad1
+  'Enter': <int?>[
+    0x0010000000d,
+    null,
+    null,
+    0x0020000020d,
+  ], // enter, null, null, numpadEnter
+  'Home': <int?>[
+    0x00100000306,
+    null,
+    null,
+    0x00200000237,
+  ], // home, null, null, numpad7
+  'Insert': <int?>[
+    0x00100000407,
+    null,
+    null,
+    0x00200000230,
+  ], // insert, null, null, numpad0
+  'Meta': <int?>[
+    0x00200000106,
+    0x00200000106,
+    0x00200000107,
+    null,
+  ], // metaLeft, metaLeft, metaRight, null
+  'PageDown': <int?>[
+    0x00100000307,
+    null,
+    null,
+    0x00200000233,
+  ], // pageDown, null, null, numpad3
+  'PageUp': <int?>[
+    0x00100000308,
+    null,
+    null,
+    0x00200000239,
+  ], // pageUp, null, null, numpad9
+  'Shift': <int?>[
+    0x00200000102,
+    0x00200000102,
+    0x00200000103,
+    null,
+  ], // shiftLeft, shiftLeft, shiftRight, null
 };

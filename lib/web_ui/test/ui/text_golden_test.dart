@@ -29,13 +29,17 @@ Future<void> testMain() async {
   });
 
   test('text styles - center aligned', () async {
-    await testTextStyle('center aligned',
-        paragraphTextAlign: ui.TextAlign.center);
+    await testTextStyle(
+      'center aligned',
+      paragraphTextAlign: ui.TextAlign.center,
+    );
   });
 
   test('text styles - right aligned', () async {
-    await testTextStyle('right aligned',
-        paragraphTextAlign: ui.TextAlign.right);
+    await testTextStyle(
+      'right aligned',
+      paragraphTextAlign: ui.TextAlign.right,
+    );
   });
 
   test('text styles - rtl', () async {
@@ -51,8 +55,12 @@ Future<void> testMain() async {
   });
 
   test('text styles - ellipsis', () async {
-    await testTextStyle('ellipsis',
-        paragraphMaxLines: 1, paragraphEllipsis: '...', layoutWidth: 60);
+    await testTextStyle(
+      'ellipsis',
+      paragraphMaxLines: 1,
+      paragraphEllipsis: '...',
+      layoutWidth: 60,
+    );
   });
 
   test('text styles - paragraph font family', () async {
@@ -64,28 +72,39 @@ Future<void> testMain() async {
   });
 
   test('text styles - paragraph height', () async {
-    await testTextStyle('paragraph height',
-        layoutWidth: 50, paragraphHeight: 1.5);
+    await testTextStyle(
+      'paragraph height',
+      layoutWidth: 50,
+      paragraphHeight: 1.5,
+    );
   });
 
   test('text styles - text style height overriding paragraph height', () async {
-    await testTextStyle('text style height and paragraph style height',
-      layoutWidth: 50, paragraphHeight: 1.5, height: 2.0);
+    await testTextStyle(
+      'text style height and paragraph style height',
+      layoutWidth: 50,
+      paragraphHeight: 1.5,
+      height: 2.0,
+    );
   });
 
   test('text styles - paragraph text height behavior', () async {
-    await testTextStyle('paragraph text height behavior',
-        layoutWidth: 50,
-        paragraphHeight: 1.5,
-        paragraphTextHeightBehavior: const ui.TextHeightBehavior(
-          applyHeightToFirstAscent: false,
-          applyHeightToLastDescent: false,
-        ));
+    await testTextStyle(
+      'paragraph text height behavior',
+      layoutWidth: 50,
+      paragraphHeight: 1.5,
+      paragraphTextHeightBehavior: const ui.TextHeightBehavior(
+        applyHeightToFirstAscent: false,
+        applyHeightToLastDescent: false,
+      ),
+    );
   });
 
   test('text styles - paragraph weight', () async {
-    await testTextStyle('paragraph weight',
-        paragraphFontWeight: ui.FontWeight.w900);
+    await testTextStyle(
+      'paragraph weight',
+      paragraphFontWeight: ui.FontWeight.w900,
+    );
   });
 
   test('text style - paragraph font style', () async {
@@ -100,31 +119,39 @@ Future<void> testMain() async {
   // TODO(yjbanov): spaces are not rendered correctly:
   //                https://github.com/flutter/flutter/issues/74742
   test('text styles - paragraph locale zh_CN', () async {
-    await testTextStyle('paragraph locale zh_CN',
-        outerText: '次 化 刃 直 入 令',
-        innerText: '',
-        paragraphLocale: const ui.Locale('zh', 'CN'));
+    await testTextStyle(
+      'paragraph locale zh_CN',
+      outerText: '次 化 刃 直 入 令',
+      innerText: '',
+      paragraphLocale: const ui.Locale('zh', 'CN'),
+    );
   });
 
   test('text styles - paragraph locale zh_TW', () async {
-    await testTextStyle('paragraph locale zh_TW',
-        outerText: '次 化 刃 直 入 令',
-        innerText: '',
-        paragraphLocale: const ui.Locale('zh', 'TW'));
+    await testTextStyle(
+      'paragraph locale zh_TW',
+      outerText: '次 化 刃 直 入 令',
+      innerText: '',
+      paragraphLocale: const ui.Locale('zh', 'TW'),
+    );
   });
 
   test('text styles - paragraph locale ja', () async {
-    await testTextStyle('paragraph locale ja',
-        outerText: '次 化 刃 直 入 令',
-        innerText: '',
-        paragraphLocale: const ui.Locale('ja'));
+    await testTextStyle(
+      'paragraph locale ja',
+      outerText: '次 化 刃 直 入 令',
+      innerText: '',
+      paragraphLocale: const ui.Locale('ja'),
+    );
   });
 
   test('text styles - paragraph locale ko', () async {
-    await testTextStyle('paragraph locale ko',
-        outerText: '次 化 刃 直 入 令',
-        innerText: '',
-        paragraphLocale: const ui.Locale('ko'));
+    await testTextStyle(
+      'paragraph locale ko',
+      outerText: '次 化 刃 直 入 令',
+      innerText: '',
+      paragraphLocale: const ui.Locale('ko'),
+    );
   });
 
   test('text styles - color', () async {
@@ -132,19 +159,23 @@ Future<void> testMain() async {
   });
 
   test('text styles - decoration', () async {
-    await testTextStyle('decoration',
-        decoration: ui.TextDecoration.underline);
+    await testTextStyle('decoration', decoration: ui.TextDecoration.underline);
   });
 
   test('text styles - decoration style', () async {
-    await testTextStyle('decoration style',
-        decoration: ui.TextDecoration.underline,
-        decorationStyle: ui.TextDecorationStyle.dashed);
+    await testTextStyle(
+      'decoration style',
+      decoration: ui.TextDecoration.underline,
+      decorationStyle: ui.TextDecorationStyle.dashed,
+    );
   });
 
   test('text styles - decoration thickness', () async {
-    await testTextStyle('decoration thickness',
-        decoration: ui.TextDecoration.underline, decorationThickness: 5.0);
+    await testTextStyle(
+      'decoration thickness',
+      decoration: ui.TextDecoration.underline,
+      decorationThickness: 5.0,
+    );
   });
 
   test('text styles - font weight', () async {
@@ -157,8 +188,7 @@ Future<void> testMain() async {
 
   // TODO(yjbanov): not sure how to test this.
   test('text styles - baseline', () async {
-    await testTextStyle('baseline',
-        textBaseline: ui.TextBaseline.ideographic);
+    await testTextStyle('baseline', textBaseline: ui.TextBaseline.ideographic);
   });
 
   test('text styles - font family', () async {
@@ -166,13 +196,15 @@ Future<void> testMain() async {
   });
 
   test('text styles - non-existent font family', () async {
-    await testTextStyle('non-existent font family',
-        fontFamily: 'DoesNotExist');
+    await testTextStyle('non-existent font family', fontFamily: 'DoesNotExist');
   });
 
   test('text styles - family fallback', () async {
-    await testTextStyle('family fallback',
-        fontFamily: 'DoesNotExist', fontFamilyFallback: <String>['Ahem']);
+    await testTextStyle(
+      'family fallback',
+      fontFamily: 'DoesNotExist',
+      fontFamilyFallback: <String>['Ahem'],
+    );
   });
 
   test('text styles - font size', () async {
@@ -192,7 +224,11 @@ Future<void> testMain() async {
     // an explicit non-zero size that should override paragraph properties,
     // so this time "Hello" should disappear, but "World!" should still be
     // visible.
-    await testTextStyle('zero paragraph font size', paragraphFontSize: 0, fontSize: 14);
+    await testTextStyle(
+      'zero paragraph font size',
+      paragraphFontSize: 0,
+      fontSize: 14,
+    );
   });
 
   test('text styles - letter spacing', () async {
@@ -200,8 +236,11 @@ Future<void> testMain() async {
   });
 
   test('text styles - word spacing', () async {
-    await testTextStyle('word spacing',
-        innerText: 'Beautiful World!', wordSpacing: 25);
+    await testTextStyle(
+      'word spacing',
+      innerText: 'Beautiful World!',
+      wordSpacing: 25,
+    );
   });
 
   test('text styles - height', () async {
@@ -209,10 +248,12 @@ Future<void> testMain() async {
   });
 
   test('text styles - leading distribution', () async {
-    await testTextStyle('half leading',
-        height: 20,
-        fontSize: 10,
-        leadingDistribution: ui.TextLeadingDistribution.even);
+    await testTextStyle(
+      'half leading',
+      height: 20,
+      fontSize: 10,
+      leadingDistribution: ui.TextLeadingDistribution.even,
+    );
     await testTextStyle(
       'half leading inherited from paragraph',
       height: 20,
@@ -237,41 +278,53 @@ Future<void> testMain() async {
   // TODO(yjbanov): spaces are not rendered correctly:
   //                https://github.com/flutter/flutter/issues/74742
   test('text styles - locale zh_CN', () async {
-    await testTextStyle('locale zh_CN',
-        innerText: '次 化 刃 直 入 令',
-        outerText: '',
-        locale: const ui.Locale('zh', 'CN'));
+    await testTextStyle(
+      'locale zh_CN',
+      innerText: '次 化 刃 直 入 令',
+      outerText: '',
+      locale: const ui.Locale('zh', 'CN'),
+    );
   });
 
   test('text styles - locale zh_TW', () async {
-    await testTextStyle('locale zh_TW',
-        innerText: '次 化 刃 直 入 令',
-        outerText: '',
-        locale: const ui.Locale('zh', 'TW'));
+    await testTextStyle(
+      'locale zh_TW',
+      innerText: '次 化 刃 直 入 令',
+      outerText: '',
+      locale: const ui.Locale('zh', 'TW'),
+    );
   });
 
   test('text styles - locale ja', () async {
-    await testTextStyle('locale ja',
-        innerText: '次 化 刃 直 入 令',
-        outerText: '',
-        locale: const ui.Locale('ja'));
+    await testTextStyle(
+      'locale ja',
+      innerText: '次 化 刃 直 入 令',
+      outerText: '',
+      locale: const ui.Locale('ja'),
+    );
   });
 
   test('text styles - locale ko', () async {
-    await testTextStyle('locale ko',
-        innerText: '次 化 刃 直 入 令',
-        outerText: '',
-        locale: const ui.Locale('ko'));
+    await testTextStyle(
+      'locale ko',
+      innerText: '次 化 刃 直 入 令',
+      outerText: '',
+      locale: const ui.Locale('ko'),
+    );
   });
 
   test('text styles - background', () async {
-    await testTextStyle('background',
-        background: ui.Paint()..color = const ui.Color(0xFF00FF00));
+    await testTextStyle(
+      'background',
+      background: ui.Paint()..color = const ui.Color(0xFF00FF00),
+    );
   });
 
   test('text styles - foreground', () async {
-    await testTextStyle('foreground',
-        foreground: ui.Paint()..color = const ui.Color(0xFF0000FF));
+    await testTextStyle(
+      'foreground',
+      foreground: ui.Paint()..color = const ui.Color(0xFF0000FF),
+    );
   });
 
   test('text styles - foreground and background', () async {
@@ -385,20 +438,13 @@ Future<void> testMain() async {
     // some of these symbols. To make sure the test produces predictable
     // results we reset the fallback data forcing the engine to reload
     // fallbacks, which for this test will only load Noto Symbols.
-    await testTextStyle(
-      'symbols',
-      outerText: '← ↑ → ↓ ',
-      innerText: '',
-    );
+    await testTextStyle('symbols', outerText: '← ↑ → ↓ ', innerText: '');
   });
 
   test('strut style - override height', () async {
     await testTextStyle(
       'strut style',
-      paragraphStrutStyle: ui.StrutStyle(
-        forceStrutHeight: true,
-        height: 2,
-      ),
+      paragraphStrutStyle: ui.StrutStyle(forceStrutHeight: true, height: 2),
     );
   });
 
@@ -531,30 +577,26 @@ Future<void> testMain() async {
     const double testWidth = 300;
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
-    final ui.ParagraphBuilder builder =
-      ui.ParagraphBuilder(ui.ParagraphStyle(
-        fontSize: 40.0,
-        textDirection: ui.TextDirection.ltr,
-      ));
+    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(fontSize: 40.0, textDirection: ui.TextDirection.ltr),
+    );
 
-    builder.pushStyle(ui.TextStyle(
-        fontFamily: 'RobotoVariable',
-    ));
+    builder.pushStyle(ui.TextStyle(fontFamily: 'RobotoVariable'));
     builder.addText('Normal\n');
     builder.pop();
 
     ui.FontVariation weight(double w) => ui.FontVariation('wght', w);
-    builder.pushStyle(ui.TextStyle(
-        fontFamily: 'RobotoVariable',
-        fontVariations: <ui.FontVariation>[weight(900)],
-    ));
+    builder.pushStyle(
+      ui.TextStyle(fontFamily: 'RobotoVariable', fontVariations:
+          <ui.FontVariation>[weight(900)]),
+    );
     builder.addText('Heavy\n');
     builder.pop();
 
-    builder.pushStyle(ui.TextStyle(
-        fontFamily: 'RobotoVariable',
-        fontVariations: <ui.FontVariation>[weight(100)],
-    ));
+    builder.pushStyle(
+      ui.TextStyle(fontFamily: 'RobotoVariable', fontVariations:
+          <ui.FontVariation>[weight(100)]),
+    );
     builder.addText('Light\n');
     builder.pop();
 
@@ -634,54 +676,60 @@ Future<void> testTextStyle(
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
     canvas.translate(30, 10);
-    final ui.ParagraphBuilder descriptionBuilder =
-        ui.ParagraphBuilder(ui.ParagraphStyle());
+    final ui.ParagraphBuilder descriptionBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(),
+    );
     descriptionBuilder.addText(name);
     final ui.Paragraph descriptionParagraph = descriptionBuilder.build();
-    descriptionParagraph
-        .layout(const ui.ParagraphConstraints(width: testWidth / 2 - 70));
+    descriptionParagraph.layout(
+      const ui.ParagraphConstraints(width: testWidth / 2 - 70),
+    );
     const ui.Offset descriptionOffset = ui.Offset(testWidth / 2 + 30, 0);
     canvas.drawParagraph(descriptionParagraph, descriptionOffset);
 
-    final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle(
-      textAlign: paragraphTextAlign,
-      textDirection: paragraphTextDirection,
-      maxLines: paragraphMaxLines,
-      fontFamily: paragraphFontFamily,
-      fontSize: paragraphFontSize,
-      height: paragraphHeight,
-      textHeightBehavior: paragraphTextHeightBehavior,
-      fontWeight: paragraphFontWeight,
-      fontStyle: paragraphFontStyle,
-      strutStyle: paragraphStrutStyle,
-      ellipsis: paragraphEllipsis,
-      locale: paragraphLocale,
-    ));
+    final ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        textAlign: paragraphTextAlign,
+        textDirection: paragraphTextDirection,
+        maxLines: paragraphMaxLines,
+        fontFamily: paragraphFontFamily,
+        fontSize: paragraphFontSize,
+        height: paragraphHeight,
+        textHeightBehavior: paragraphTextHeightBehavior,
+        fontWeight: paragraphFontWeight,
+        fontStyle: paragraphFontStyle,
+        strutStyle: paragraphStrutStyle,
+        ellipsis: paragraphEllipsis,
+        locale: paragraphLocale,
+      ),
+    );
 
     pb.addText(outerText);
 
-    pb.pushStyle(ui.TextStyle(
-      color: color,
-      decoration: decoration,
-      decorationColor: decorationColor,
-      decorationStyle: decorationStyle,
-      decorationThickness: decorationThickness,
-      fontWeight: fontWeight,
-      fontStyle: fontStyle,
-      textBaseline: textBaseline,
-      fontFamily: fontFamily,
-      fontFamilyFallback: fontFamilyFallback,
-      fontSize: fontSize,
-      letterSpacing: letterSpacing,
-      wordSpacing: wordSpacing,
-      height: height,
-      leadingDistribution: leadingDistribution,
-      locale: locale,
-      background: background,
-      foreground: foreground,
-      shadows: shadows,
-      fontFeatures: fontFeatures,
-    ));
+    pb.pushStyle(
+      ui.TextStyle(
+        color: color,
+        decoration: decoration,
+        decorationColor: decorationColor,
+        decorationStyle: decorationStyle,
+        decorationThickness: decorationThickness,
+        fontWeight: fontWeight,
+        fontStyle: fontStyle,
+        textBaseline: textBaseline,
+        fontFamily: fontFamily,
+        fontFamilyFallback: fontFamilyFallback,
+        fontSize: fontSize,
+        letterSpacing: letterSpacing,
+        wordSpacing: wordSpacing,
+        height: height,
+        leadingDistribution: leadingDistribution,
+        locale: locale,
+        background: background,
+        foreground: foreground,
+        shadows: shadows,
+        fontFeatures: fontFeatures,
+      ),
+    );
     pb.addText(innerText);
     pb.pop();
     final ui.Paragraph p = pb.build();
@@ -733,17 +781,19 @@ Future<void> testTextStyle(
   );
 }
 
-Future<void> testSampleText(String language, String text,
-    {ui.TextDirection textDirection = ui.TextDirection.ltr}) async {
+Future<void> testSampleText(
+  String language,
+  String text, {
+  ui.TextDirection textDirection = ui.TextDirection.ltr,
+}) async {
   const double testWidth = 300;
   double paragraphHeight = 0;
   ui.Picture renderPicture() {
     final ui.PictureRecorder recorder = ui.PictureRecorder();
     final ui.Canvas canvas = ui.Canvas(recorder);
-    final ui.ParagraphBuilder paragraphBuilder =
-        ui.ParagraphBuilder(ui.ParagraphStyle(
-      textDirection: textDirection,
-    ));
+    final ui.ParagraphBuilder paragraphBuilder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(textDirection: textDirection),
+    );
     paragraphBuilder.addText(text);
     final ui.Paragraph paragraph = paragraphBuilder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: testWidth - 20));
@@ -751,6 +801,7 @@ Future<void> testSampleText(String language, String text,
     paragraphHeight = paragraph.height;
     return recorder.endRecording();
   }
+
   // Render once to trigger font downloads.
   renderPicture();
   await renderer.fontCollection.fontFallbackManager?.debugWhenIdle();

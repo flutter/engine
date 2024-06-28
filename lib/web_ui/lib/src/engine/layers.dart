@@ -12,8 +12,9 @@ import 'package:ui/ui.dart' as ui;
 class EngineRootLayer with PictureEngineLayer {}
 
 class BackdropFilterLayer
-  with PictureEngineLayer
-  implements ui.BackdropFilterEngineLayer {}
+    with PictureEngineLayer
+    implements ui.BackdropFilterEngineLayer {}
+
 class BackdropFilterOperation implements LayerOperation {
   BackdropFilterOperation(this.filter, this.mode);
 
@@ -28,7 +29,11 @@ class BackdropFilterOperation implements LayerOperation {
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
-    canvas.saveLayerWithFilter(contentRect, ui.Paint()..blendMode = mode, filter);
+    canvas.saveLayerWithFilter(
+      contentRect,
+      ui.Paint()..blendMode = mode,
+      filter,
+    );
   }
 
   @override
@@ -37,12 +42,12 @@ class BackdropFilterOperation implements LayerOperation {
   }
 
   @override
-  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+  PlatformViewStyling createPlatformViewStyling() =>
+      const PlatformViewStyling();
 }
 
-class ClipPathLayer
-  with PictureEngineLayer
-  implements ui.ClipPathEngineLayer {}
+class ClipPathLayer with PictureEngineLayer implements ui.ClipPathEngineLayer {}
+
 class ClipPathOperation implements LayerOperation {
   ClipPathOperation(this.path, this.clip);
 
@@ -50,7 +55,9 @@ class ClipPathOperation implements LayerOperation {
   final ui.Clip clip;
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(path.getBounds());
+  ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(
+    path.getBounds(),
+  );
 
   @override
   ui.Rect inverseMapRect(ui.Rect rect) => rect;
@@ -79,9 +86,8 @@ class ClipPathOperation implements LayerOperation {
   }
 }
 
-class ClipRectLayer
-  with PictureEngineLayer
-  implements ui.ClipRectEngineLayer {}
+class ClipRectLayer with PictureEngineLayer implements ui.ClipRectEngineLayer {}
+
 class ClipRectOperation implements LayerOperation {
   const ClipRectOperation(this.rect, this.clip);
 
@@ -119,8 +125,9 @@ class ClipRectOperation implements LayerOperation {
 }
 
 class ClipRRectLayer
-  with PictureEngineLayer
-  implements ui.ClipRRectEngineLayer {}
+    with PictureEngineLayer
+    implements ui.ClipRRectEngineLayer {}
+
 class ClipRRectOperation implements LayerOperation {
   const ClipRRectOperation(this.rrect, this.clip);
 
@@ -128,7 +135,9 @@ class ClipRRectOperation implements LayerOperation {
   final ui.Clip clip;
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(rrect.outerRect);
+  ui.Rect cullRect(ui.Rect contentRect) => contentRect.intersect(
+    rrect.outerRect,
+  );
 
   @override
   ui.Rect inverseMapRect(ui.Rect rect) => rect;
@@ -158,8 +167,9 @@ class ClipRRectOperation implements LayerOperation {
 }
 
 class ColorFilterLayer
-  with PictureEngineLayer
-  implements ui.ColorFilterEngineLayer {}
+    with PictureEngineLayer
+    implements ui.ColorFilterEngineLayer {}
+
 class ColorFilterOperation implements LayerOperation {
   ColorFilterOperation(this.filter);
 
@@ -182,12 +192,14 @@ class ColorFilterOperation implements LayerOperation {
   }
 
   @override
-  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+  PlatformViewStyling createPlatformViewStyling() =>
+      const PlatformViewStyling();
 }
 
 class ImageFilterLayer
-  with PictureEngineLayer
-  implements ui.ImageFilterEngineLayer {}
+    with PictureEngineLayer
+    implements ui.ImageFilterEngineLayer {}
+
 class ImageFilterOperation implements LayerOperation {
   ImageFilterOperation(this.filter, this.offset);
 
@@ -195,7 +207,8 @@ class ImageFilterOperation implements LayerOperation {
   final ui.Offset offset;
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => (filter as SceneImageFilter).filterBounds(contentRect);
+  ui.Rect cullRect(ui.Rect contentRect) => (filter as SceneImageFilter)
+      .filterBounds(contentRect);
 
   @override
   ui.Rect inverseMapRect(ui.Rect rect) => rect;
@@ -206,8 +219,8 @@ class ImageFilterOperation implements LayerOperation {
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
     }
-    final ui.Rect adjustedContentRect =
-      (filter as SceneImageFilter).filterBounds(contentRect);
+    final ui.Rect adjustedContentRect = (filter as SceneImageFilter)
+        .filterBounds(contentRect);
     canvas.saveLayer(adjustedContentRect, ui.Paint()..imageFilter = filter);
   }
 
@@ -222,18 +235,15 @@ class ImageFilterOperation implements LayerOperation {
   @override
   PlatformViewStyling createPlatformViewStyling() {
     if (offset != ui.Offset.zero) {
-      return PlatformViewStyling(
-        position: PlatformViewPosition.offset(offset)
-      );
+      return PlatformViewStyling(position: PlatformViewPosition.offset(offset));
     } else {
       return const PlatformViewStyling();
     }
   }
 }
 
-class OffsetLayer
-  with PictureEngineLayer
-  implements ui.OffsetEngineLayer {}
+class OffsetLayer with PictureEngineLayer implements ui.OffsetEngineLayer {}
+
 class OffsetOperation implements LayerOperation {
   OffsetOperation(this.dx, this.dy);
 
@@ -259,13 +269,12 @@ class OffsetOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
-    position: PlatformViewPosition.offset(ui.Offset(dx, dy))
+    position: PlatformViewPosition.offset(ui.Offset(dx, dy)),
   );
 }
 
-class OpacityLayer
-  with PictureEngineLayer
-  implements ui.OpacityEngineLayer {}
+class OpacityLayer with PictureEngineLayer implements ui.OpacityEngineLayer {}
+
 class OpacityOperation implements LayerOperation {
   OpacityOperation(this.alpha, this.offset);
 
@@ -287,7 +296,7 @@ class OpacityOperation implements LayerOperation {
     }
     canvas.saveLayer(
       cullRect,
-      ui.Paint()..color = ui.Color.fromARGB(alpha, 0, 0, 0)
+      ui.Paint()..color = ui.Color.fromARGB(alpha, 0, 0, 0),
     );
   }
 
@@ -301,14 +310,18 @@ class OpacityOperation implements LayerOperation {
 
   @override
   PlatformViewStyling createPlatformViewStyling() => PlatformViewStyling(
-    position: offset != ui.Offset.zero ? PlatformViewPosition.offset(offset) : const PlatformViewPosition.zero(),
+    position:
+        offset != ui.Offset.zero
+            ? PlatformViewPosition.offset(offset)
+            : const PlatformViewPosition.zero(),
     opacity: alpha.toDouble() / 255.0,
   );
 }
 
 class TransformLayer
-  with PictureEngineLayer
-  implements ui.TransformEngineLayer {}
+    with PictureEngineLayer
+    implements ui.TransformEngineLayer {}
+
 class TransformOperation implements LayerOperation {
   TransformOperation(this.transform);
 
@@ -317,7 +330,9 @@ class TransformOperation implements LayerOperation {
   Matrix4 getMatrix() => Matrix4.fromFloat32List(toMatrix32(transform));
 
   @override
-  ui.Rect cullRect(ui.Rect contentRect) => getMatrix().transformRect(contentRect);
+  ui.Rect cullRect(ui.Rect contentRect) => getMatrix().transformRect(
+    contentRect,
+  );
 
   @override
   ui.Rect inverseMapRect(ui.Rect rect) {
@@ -343,8 +358,9 @@ class TransformOperation implements LayerOperation {
 }
 
 class ShaderMaskLayer
-  with PictureEngineLayer
-  implements ui.ShaderMaskEngineLayer {}
+    with PictureEngineLayer
+    implements ui.ShaderMaskEngineLayer {}
+
 class ShaderMaskOperation implements LayerOperation {
   ShaderMaskOperation(this.shader, this.maskRect, this.blendMode);
 
@@ -360,10 +376,7 @@ class ShaderMaskOperation implements LayerOperation {
 
   @override
   void pre(SceneCanvas canvas, ui.Rect contentRect) {
-    canvas.saveLayer(
-      contentRect,
-      ui.Paint(),
-    );
+    canvas.saveLayer(contentRect, ui.Paint());
   }
 
   @override
@@ -374,14 +387,15 @@ class ShaderMaskOperation implements LayerOperation {
       ui.Rect.fromLTWH(0, 0, maskRect.width, maskRect.height),
       ui.Paint()
         ..blendMode = blendMode
-        ..shader = shader
+        ..shader = shader,
     );
     canvas.restore();
     canvas.restore();
   }
 
   @override
-  PlatformViewStyling createPlatformViewStyling() => const PlatformViewStyling();
+  PlatformViewStyling createPlatformViewStyling() =>
+      const PlatformViewStyling();
 }
 
 class PlatformView {
@@ -482,7 +496,10 @@ class PlatformViewPosition {
   final ui.Offset? offset;
   final Matrix4? transform;
 
-  static PlatformViewPosition combine(PlatformViewPosition outer, PlatformViewPosition inner) {
+  static PlatformViewPosition combine(
+    PlatformViewPosition outer,
+    PlatformViewPosition inner,
+  ) {
     // We try to reuse existing objects if possible, if they are immutable.
     if (outer.isZero) {
       return inner;
@@ -501,7 +518,11 @@ class PlatformViewPosition {
     // Otherwise, at least one of the positions involves a matrix transform.
     final Matrix4 newTransform;
     if (outerOffset != null) {
-      newTransform = Matrix4.translationValues(outerOffset.dx, outerOffset.dy, 0);
+      newTransform = Matrix4.translationValues(
+        outerOffset.dx,
+        outerOffset.dy,
+        0,
+      );
     } else {
       newTransform = outer.transform!.clone();
     }
@@ -536,7 +557,7 @@ class PlatformViewPosition {
 class PlatformViewStyling {
   const PlatformViewStyling({
     this.position = const PlatformViewPosition.zero(),
-    this.opacity = 1.0
+    this.opacity = 1.0,
   });
 
   bool get isDefault => position.isZero && (opacity == 1.0);
@@ -544,7 +565,10 @@ class PlatformViewStyling {
   final PlatformViewPosition position;
   final double opacity;
 
-  static PlatformViewStyling combine(PlatformViewStyling outer, PlatformViewStyling inner) {
+  static PlatformViewStyling combine(
+    PlatformViewStyling outer,
+    PlatformViewStyling inner,
+  ) {
     // Attempt to reuse one of the existing immutable objects.
     if (outer.isDefault) {
       return inner;
@@ -583,18 +607,16 @@ class LayerBuilder {
   factory LayerBuilder.childLayer({
     required LayerBuilder parent,
     required PictureEngineLayer layer,
-    required LayerOperation operation
+    required LayerOperation operation,
   }) {
     return LayerBuilder._(parent, layer, operation);
   }
 
-  LayerBuilder._(
-    this.parent,
-    this.layer,
-    this.operation);
+  LayerBuilder._(this.parent, this.layer, this.operation);
 
   @visibleForTesting
-  static (ui.PictureRecorder, SceneCanvas) Function(ui.Rect)? debugRecorderFactory;
+  static (ui.PictureRecorder, SceneCanvas) Function(ui.Rect)?
+  debugRecorderFactory;
 
   final LayerBuilder? parent;
   final PictureEngineLayer layer;
@@ -607,7 +629,8 @@ class LayerBuilder {
   PlatformViewStyling? _memoizedPlatformViewStyling;
 
   PlatformViewStyling _createPlatformViewStyling() {
-    final PlatformViewStyling? innerStyling = operation?.createPlatformViewStyling();
+    final PlatformViewStyling? innerStyling =
+        operation?.createPlatformViewStyling();
     final PlatformViewStyling? outerStyling = parent?.platformViewStyling;
     if (innerStyling == null) {
       return outerStyling ?? const PlatformViewStyling();
@@ -637,7 +660,9 @@ class LayerBuilder {
       // with that picture to the slice list.
       final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
       final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
-      final (ui.PictureRecorder recorder, SceneCanvas canvas) = _createRecorder(rect);
+      final (ui.PictureRecorder recorder, SceneCanvas canvas) = _createRecorder(
+        rect,
+      );
 
       operation?.pre(canvas, rect);
       for (final PictureDrawCommand command in pendingPictures) {
@@ -678,7 +703,7 @@ class LayerBuilder {
     ui.Offset offset,
     ui.Picture picture, {
     bool isComplexHint = false,
-    bool willChangeHint = false
+    bool willChangeHint = false,
   }) {
     final ui.Rect cullRect = (picture as ScenePicture).cullRect;
     final ui.Rect shiftedRect = cullRect.shift(offset);
@@ -689,7 +714,8 @@ class LayerBuilder {
       // will overlap with any platform views that are currently on top of our
       // drawing surface. If they don't overlap with the platform views, they
       // can be grouped with the existing pending pictures.
-      if (pendingPictures.isEmpty || currentPlatformViewRect.overlaps(shiftedRect)) {
+      if (pendingPictures.isEmpty ||
+          currentPlatformViewRect.overlaps(shiftedRect)) {
         // If they do overlap with the platform views, however, we should flush
         // all the current content into slices and start anew with a fresh
         // group of pictures and platform views that will be rendered on top of
@@ -709,20 +735,28 @@ class LayerBuilder {
     int viewId, {
     ui.Offset offset = ui.Offset.zero,
     double width = 0.0,
-    double height = 0.0
+    double height = 0.0,
   }) {
-    final ui.Rect bounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
+    final ui.Rect bounds = ui.Rect.fromLTWH(
+      offset.dx,
+      offset.dy,
+      width,
+      height,
+    );
     platformViewRect = platformViewRect?.expandToInclude(bounds) ?? bounds;
     final PlatformViewStyling layerStyling = platformViewStyling;
-    final PlatformViewStyling viewStyling = offset == ui.Offset.zero
-      ? layerStyling
-      : PlatformViewStyling.combine(
-        layerStyling,
-        PlatformViewStyling(
-          position: PlatformViewPosition.offset(offset),
-        ),
-      );
-    pendingPlatformViews.add(PlatformView(viewId, ui.Size(width, height), viewStyling));
+    final PlatformViewStyling viewStyling =
+        offset == ui.Offset.zero
+            ? layerStyling
+            : PlatformViewStyling.combine(
+              layerStyling,
+              PlatformViewStyling(
+                position: PlatformViewPosition.offset(offset),
+              ),
+            );
+    pendingPlatformViews.add(
+      PlatformView(viewId, ui.Size(width, height), viewStyling),
+    );
   }
 
   void mergeLayer(PictureEngineLayer layer) {
@@ -736,7 +770,9 @@ class LayerBuilder {
         case PlatformViewSlice():
           final ui.Rect? occlusionRect = slice.occlusionRect;
           if (occlusionRect != null) {
-            platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
+            platformViewRect =
+                platformViewRect?.expandToInclude(occlusionRect) ??
+                occlusionRect;
           }
           pendingPlatformViews.addAll(slice.views);
       }

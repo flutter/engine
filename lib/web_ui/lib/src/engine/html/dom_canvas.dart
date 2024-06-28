@@ -78,14 +78,19 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
     rect = adjustRectForDom(rect, paint);
     currentElement.append(
-        buildDrawRectElement(rect, paint, 'draw-rect', currentTransform));
+      buildDrawRectElement(rect, paint, 'draw-rect', currentTransform),
+    );
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
     final ui.Rect outerRect = adjustRectForDom(rrect.outerRect, paint);
     final DomElement element = buildDrawRectElement(
-        outerRect, paint, 'draw-rrect', currentTransform);
+      outerRect,
+      paint,
+      'draw-rrect',
+      currentTransform,
+    );
     applyRRectBorderRadius(element.style, rrect);
     currentElement.append(element);
   }
@@ -111,8 +116,12 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   }
 
   @override
-  void drawShadow(ui.Path path, ui.Color color, double elevation,
-      bool transparentOccluder) {
+  void drawShadow(
+    ui.Path path,
+    ui.Color color,
+    double elevation,
+    bool transparentOccluder,
+  ) {
     throw UnimplementedError();
   }
 
@@ -123,27 +132,39 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawImageRect(
-      ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
+    ui.Image image,
+    ui.Rect src,
+    ui.Rect dst,
+    SurfacePaintData paint,
+  ) {
     throw UnimplementedError();
   }
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
     final DomElement paragraphElement = drawParagraphElement(
-        paragraph as CanvasParagraph, offset,
-        transform: currentTransform);
+      paragraph as CanvasParagraph,
+      offset,
+      transform: currentTransform,
+    );
     currentElement.append(paragraphElement);
   }
 
   @override
   void drawVertices(
-      ui.Vertices vertices, ui.BlendMode blendMode, SurfacePaintData paint) {
+    ui.Vertices vertices,
+    ui.BlendMode blendMode,
+    SurfacePaintData paint,
+  ) {
     throw UnimplementedError();
   }
 
   @override
   void drawPoints(
-      ui.PointMode pointMode, Float32List points, SurfacePaintData paint) {
+    ui.PointMode pointMode,
+    Float32List points,
+    SurfacePaintData paint,
+  ) {
     throw UnimplementedError();
   }
 
@@ -231,11 +252,15 @@ ui.Rect adjustRectForDom(ui.Rect rect, SurfacePaintData paint) {
 }
 
 DomHTMLElement buildDrawRectElement(
-    ui.Rect rect, SurfacePaintData paint, String tagName, Matrix4 transform) {
+  ui.Rect rect,
+  SurfacePaintData paint,
+  String tagName,
+  Matrix4 transform,
+) {
   assert(rect.left <= rect.right);
   assert(rect.top <= rect.bottom);
-  final DomHTMLElement rectangle = domDocument.createElement(tagName) as
-      DomHTMLElement;
+  final DomHTMLElement rectangle =
+      domDocument.createElement(tagName) as DomHTMLElement;
   assert(() {
     rectangle.setAttribute('flt-rect', '$rect');
     rectangle.setAttribute('flt-paint', '$paint');
@@ -248,7 +273,8 @@ DomHTMLElement buildDrawRectElement(
     effectiveTransform = 'translate(${rect.left}px, ${rect.top}px)';
   } else {
     // Clone to avoid mutating `transform`.
-    final Matrix4 translated = transform.clone()..translate(rect.left, rect.top);
+    final Matrix4 translated =
+        transform.clone()..translate(rect.left, rect.top);
     effectiveTransform = matrix4ToCssTransform(translated);
   }
   final DomCSSStyleDeclaration style = rectangle.style;
@@ -261,7 +287,8 @@ DomHTMLElement buildDrawRectElement(
 
   if (paint.maskFilter != null) {
     final double sigma = paint.maskFilter!.webOnlySigma;
-    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit && !isStroke) {
+    if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit &&
+        !isStroke) {
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
@@ -287,16 +314,16 @@ DomHTMLElement buildDrawRectElement(
 
 String _getBackgroundImageCssValue(ui.Shader? shader, ui.Rect bounds) {
   final String url = _getBackgroundImageUrl(shader, bounds);
-  return (url != '') ? "url('$url'": '';
+  return (url != '') ? "url('$url'" : '';
 }
 
 String _getBackgroundImageUrl(ui.Shader? shader, ui.Rect bounds) {
-  if(shader != null) {
-    if(shader is EngineImageShader) {
+  if (shader != null) {
+    if (shader is EngineImageShader) {
       return shader.image.imgElement.src ?? '';
     }
 
-    if(shader is EngineGradient) {
+    if (shader is EngineGradient) {
       return shader.createImageBitmap(bounds, 1, true) as String;
     }
   }
@@ -315,13 +342,17 @@ void applyRRectBorderRadius(DomCSSStyleDeclaration style, ui.RRect rrect) {
     return;
   }
   // Non-uniform. Apply each corner radius.
-  style.borderTopLeftRadius = '${_borderStrokeToCssUnit(rrect.tlRadiusX)} '
+  style.borderTopLeftRadius =
+      '${_borderStrokeToCssUnit(rrect.tlRadiusX)} '
       '${_borderStrokeToCssUnit(rrect.tlRadiusY)}';
-  style.borderTopRightRadius = '${_borderStrokeToCssUnit(rrect.trRadiusX)} '
+  style.borderTopRightRadius =
+      '${_borderStrokeToCssUnit(rrect.trRadiusX)} '
       '${_borderStrokeToCssUnit(rrect.trRadiusY)}';
-  style.borderBottomLeftRadius = '${_borderStrokeToCssUnit(rrect.blRadiusX)} '
+  style.borderBottomLeftRadius =
+      '${_borderStrokeToCssUnit(rrect.blRadiusX)} '
       '${_borderStrokeToCssUnit(rrect.blRadiusY)}';
-  style.borderBottomRightRadius = '${_borderStrokeToCssUnit(rrect.brRadiusX)} '
+  style.borderBottomRightRadius =
+      '${_borderStrokeToCssUnit(rrect.brRadiusX)} '
       '${_borderStrokeToCssUnit(rrect.brRadiusY)}';
 }
 
@@ -336,8 +367,8 @@ String _borderStrokeToCssUnit(double value) {
 SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
-  final SVGSVGElement root = createSVGSVGElement()
-    ..setAttribute('overflow', 'visible');
+  final SVGSVGElement root =
+      createSVGSVGElement()..setAttribute('overflow', 'visible');
 
   final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
@@ -348,7 +379,10 @@ SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
     svgPath.setAttribute('stroke', colorValueToCssString(paint.color));
     svgPath.setAttribute('stroke-width', '${paint.strokeWidth ?? 1.0}');
     if (paint.strokeCap != null) {
-      svgPath.setAttribute('stroke-linecap', '${stringForStrokeCap(paint.strokeCap)}');
+      svgPath.setAttribute(
+        'stroke-linecap',
+        '${stringForStrokeCap(paint.strokeCap)}',
+      );
     }
     svgPath.setAttribute('fill', 'none');
   } else {

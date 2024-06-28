@@ -15,10 +15,7 @@ void main() {
 }
 
 void testMain() {
-  setUpUnitTests(
-    withImplicitView: true,
-    setUpTestViewDimensions: false,
-  );
+  setUpUnitTests(withImplicitView: true, setUpTestViewDimensions: false);
 
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;
@@ -31,11 +28,9 @@ void testMain() {
 
   group('paragraph bounds', () {
     Paragraph paragraphForBoundsTest(TextAlign alignment) {
-      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
-        fontFamily: 'Ahem',
-        fontSize: 20,
-        textAlign: alignment,
-      ));
+      final ParagraphBuilder builder = ParagraphBuilder(
+        ParagraphStyle(fontFamily: 'Ahem', fontSize: 20, textAlign: alignment),
+      );
       builder.addText('A AAAAA AAA');
       return builder.build();
     }
@@ -79,9 +74,15 @@ void testMain() {
   });
 
   group('drawDRRect', () {
-    final RRect rrect = RRect.fromLTRBR(10, 10, 50, 50, const Radius.circular(3));
-    final SurfacePaint somePaint = SurfacePaint()
-      ..color = const Color(0xFFFF0000);
+    final RRect rrect = RRect.fromLTRBR(
+      10,
+      10,
+      50,
+      50,
+      const Radius.circular(3),
+    );
+    final SurfacePaint somePaint =
+        SurfacePaint()..color = const Color(0xFFFF0000);
 
     test('Happy case', () {
       underTest.drawDRRect(rrect, rrect.deflate(1), somePaint);
@@ -90,7 +91,7 @@ void testMain() {
 
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
         'path':
-          'Path('
+            'Path('
             'MoveTo(${10.0}, ${47.0}) '
             'LineTo(${10.0}, ${13.0}) '
             'Conic(${10.0}, ${10.0}, ${10.0}, ${13.0}, w = ${0.7071067690849304}) '
@@ -111,7 +112,7 @@ void testMain() {
             'LineTo(${13.0}, ${49.0}) '
             'Conic(${11.0}, ${49.0}, ${49.0}, ${11.0}, w = ${0.7071067690849304}) '
             'Close()'
-          ')',
+            ')',
         'paint': somePaint.paintData,
       });
     });
@@ -127,7 +128,10 @@ void testMain() {
 
     test('Inner RRect not completely inside Outer RRect', () {
       underTest.drawDRRect(
-          rrect, rrect.deflate(1).shift(const Offset(0.0, 10)), somePaint);
+        rrect,
+        rrect.deflate(1).shift(const Offset(0.0, 10)),
+        somePaint,
+      );
       underTest.endRecording();
       underTest.apply(mockCanvas, screenRect);
       // Expect nothing to be called
@@ -147,9 +151,10 @@ void testMain() {
     test('deflated corners in inner RRect get passed through to draw', () {
       // This comes from github issue #40728
       final RRect outer = RRect.fromRectAndCorners(
-          const Rect.fromLTWH(0, 0, 88, 48),
-          topLeft: const Radius.circular(6),
-          bottomLeft: const Radius.circular(6));
+        const Rect.fromLTWH(0, 0, 88, 48),
+        topLeft: const Radius.circular(6),
+        bottomLeft: const Radius.circular(6),
+      );
       final RRect inner = outer.deflate(1);
 
       expect(inner.brRadius, equals(Radius.zero));
@@ -162,7 +167,7 @@ void testMain() {
       // Expect to draw, even when inner has negative radii (which get ignored by canvas)
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
         'path':
-          'Path('
+            'Path('
             'MoveTo(${0.0}, ${42.0}) '
             'LineTo(${0.0}, ${6.0}) '
             'Conic(${0.0}, ${0.0}, ${0.0}, ${6.0}, w = ${0.7071067690849304}) '
@@ -183,16 +188,18 @@ void testMain() {
             'LineTo(${6.0}, ${47.0}) '
             'Conic(${1.0}, ${47.0}, ${47.0}, ${1.0}, w = ${0.7071067690849304}) '
             'Close()'
-          ')',
+            ')',
         'paint': somePaint.paintData,
       });
     });
 
     test('preserve old golden test behavior', () {
-      final RRect outer =
-          RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40));
-      final RRect inner =
-          RRect.fromRectAndCorners(const Rect.fromLTRB(12, 22, 28, 38));
+      final RRect outer = RRect.fromRectAndCorners(
+        const Rect.fromLTRB(10, 20, 30, 40),
+      );
+      final RRect inner = RRect.fromRectAndCorners(
+        const Rect.fromLTRB(12, 22, 28, 38),
+      );
 
       underTest.drawDRRect(outer, inner, somePaint);
       underTest.endRecording();
@@ -200,7 +207,7 @@ void testMain() {
 
       _expectDrawDRRectCall(mockCanvas, <String, dynamic>{
         'path':
-          'Path('
+            'Path('
             'MoveTo(${10.0}, ${20.0}) '
             'LineTo(${30.0}, ${20.0}) '
             'LineTo(${30.0}, ${40.0}) '
@@ -211,7 +218,7 @@ void testMain() {
             'LineTo(${28.0}, ${38.0}) '
             'LineTo(${12.0}, ${38.0}) '
             'Close()'
-          ')',
+            ')',
         'paint': somePaint.paintData,
       });
     });
@@ -219,46 +226,71 @@ void testMain() {
 
   test('Filters out paint commands outside the clip rect', () {
     // Outside to the left
-    underTest.drawRect(const Rect.fromLTWH(0.0, 20.0, 10.0, 10.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTWH(0.0, 20.0, 10.0, 10.0),
+      SurfacePaint(),
+    );
 
     // Outside above
-    underTest.drawRect(const Rect.fromLTWH(20.0, 0.0, 10.0, 10.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTWH(20.0, 0.0, 10.0, 10.0),
+      SurfacePaint(),
+    );
 
     // Visible
-    underTest.drawRect(const Rect.fromLTWH(20.0, 20.0, 10.0, 10.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTWH(20.0, 20.0, 10.0, 10.0),
+      SurfacePaint(),
+    );
 
     // Inside the layer clip rect but zero-size
-    underTest.drawRect(const Rect.fromLTRB(20.0, 20.0, 30.0, 20.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTRB(20.0, 20.0, 30.0, 20.0),
+      SurfacePaint(),
+    );
 
     // Inside the layer clip but clipped out by a canvas clip
     underTest.save();
     underTest.clipRect(const Rect.fromLTWH(0, 0, 10, 10), ClipOp.intersect);
-    underTest.drawRect(const Rect.fromLTWH(20.0, 20.0, 10.0, 10.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTWH(20.0, 20.0, 10.0, 10.0),
+      SurfacePaint(),
+    );
     underTest.restore();
 
     // Outside to the right
-    underTest.drawRect(const Rect.fromLTWH(40.0, 20.0, 10.0, 10.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTWH(40.0, 20.0, 10.0, 10.0),
+      SurfacePaint(),
+    );
 
     // Outside below
-    underTest.drawRect(const Rect.fromLTWH(20.0, 40.0, 10.0, 10.0), SurfacePaint());
+    underTest.drawRect(
+      const Rect.fromLTWH(20.0, 40.0, 10.0, 10.0),
+      SurfacePaint(),
+    );
 
     underTest.endRecording();
 
     expect(underTest.debugPaintCommands, hasLength(10));
-    final PaintDrawRect outsideLeft = underTest.debugPaintCommands[0] as PaintDrawRect;
+    final PaintDrawRect outsideLeft =
+        underTest.debugPaintCommands[0] as PaintDrawRect;
     expect(outsideLeft.isClippedOut, isFalse);
     expect(outsideLeft.leftBound, 0);
     expect(outsideLeft.topBound, 20);
     expect(outsideLeft.rightBound, 10);
     expect(outsideLeft.bottomBound, 30);
 
-    final PaintDrawRect outsideAbove = underTest.debugPaintCommands[1] as PaintDrawRect;
+    final PaintDrawRect outsideAbove =
+        underTest.debugPaintCommands[1] as PaintDrawRect;
     expect(outsideAbove.isClippedOut, isFalse);
 
-    final PaintDrawRect visible = underTest.debugPaintCommands[2] as PaintDrawRect;
+    final PaintDrawRect visible =
+        underTest.debugPaintCommands[2] as PaintDrawRect;
     expect(visible.isClippedOut, isFalse);
 
-    final PaintDrawRect zeroSize = underTest.debugPaintCommands[3] as PaintDrawRect;
+    final PaintDrawRect zeroSize =
+        underTest.debugPaintCommands[3] as PaintDrawRect;
     expect(zeroSize.isClippedOut, isTrue);
 
     expect(underTest.debugPaintCommands[4], isA<PaintSave>());
@@ -266,15 +298,18 @@ void testMain() {
     final PaintClipRect clip = underTest.debugPaintCommands[5] as PaintClipRect;
     expect(clip.isClippedOut, isFalse);
 
-    final PaintDrawRect clippedOut = underTest.debugPaintCommands[6] as PaintDrawRect;
+    final PaintDrawRect clippedOut =
+        underTest.debugPaintCommands[6] as PaintDrawRect;
     expect(clippedOut.isClippedOut, isTrue);
 
     expect(underTest.debugPaintCommands[7], isA<PaintRestore>());
 
-    final PaintDrawRect outsideRight = underTest.debugPaintCommands[8] as PaintDrawRect;
+    final PaintDrawRect outsideRight =
+        underTest.debugPaintCommands[8] as PaintDrawRect;
     expect(outsideRight.isClippedOut, isFalse);
 
-    final PaintDrawRect outsideBelow = underTest.debugPaintCommands[9] as PaintDrawRect;
+    final PaintDrawRect outsideBelow =
+        underTest.debugPaintCommands[9] as PaintDrawRect;
     expect(outsideBelow.isClippedOut, isFalse);
 
     // Give it the entire screen so everything paints.
@@ -304,7 +339,9 @@ void testMain() {
 
   // Regression test for https://github.com/flutter/flutter/issues/61697.
   test('Allows restore calls after recording has ended', () {
-    final RecordingCanvas rc = RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
+    final RecordingCanvas rc = RecordingCanvas(
+      const Rect.fromLTRB(0, 0, 200, 400),
+    );
     rc.endRecording();
     // Should not throw exception on restore.
     expect(() => rc.restore(), returnsNormally);
@@ -312,7 +349,9 @@ void testMain() {
 
   // Regression test for https://github.com/flutter/flutter/issues/61697.
   test('Allows restore calls even if recording is not ended', () {
-    final RecordingCanvas rc = RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
+    final RecordingCanvas rc = RecordingCanvas(
+      const Rect.fromLTRB(0, 0, 200, 400),
+    );
     // Should not throw exception on restore.
     expect(() => rc.restore(), returnsNormally);
   });
@@ -320,11 +359,14 @@ void testMain() {
 
 // Expect a drawDRRect call to be registered in the mock call log, with the expectedArguments
 void _expectDrawDRRectCall(
-    MockEngineCanvas mock, Map<String, dynamic> expectedArguments) {
+  MockEngineCanvas mock,
+  Map<String, dynamic> expectedArguments,
+) {
   expect(mock.methodCallLog.length, equals(2));
   final MockCanvasCall mockCall = mock.methodCallLog[0];
   expect(mockCall.methodName, equals('drawPath'));
-  final Map<String, dynamic> argMap = mockCall.arguments as Map<String, dynamic>;
+  final Map<String, dynamic> argMap =
+      mockCall.arguments as Map<String, dynamic>;
   final Map<String, dynamic> argContents = <String, dynamic>{};
   argMap.forEach((String key, dynamic value) {
     argContents[key] = value is SurfacePath ? value.toString() : value;

@@ -29,7 +29,8 @@ class RulerHost {
 
     // TODO(mdebbar): There could be multiple views with multiple rendering hosts.
     //                https://github.com/flutter/flutter/issues/137344
-    final DomNode renderingHost = EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost;
+    final DomNode renderingHost =
+        EnginePlatformDispatcher.instance.implicitView!.dom.renderingHost;
     renderingHost.appendChild(_rulerHost);
     registerHotRestartListener(dispose);
   }
@@ -99,7 +100,7 @@ double measureSubstring(
     width = _lastWidth;
   } else {
     final String sub =
-      start == 0 && end == text.length ? text : text.substring(start, end);
+        start == 0 && end == text.length ? text : text.substring(start, end);
     width = canvasContext.measureText(sub).width!;
   }
 

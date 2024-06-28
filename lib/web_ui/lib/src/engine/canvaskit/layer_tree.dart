@@ -70,8 +70,12 @@ class LayerTree {
 
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(canvas);
-    final PaintContext paintContext =
-        PaintContext(internalNodesCanvas, canvas, null, null);
+    final PaintContext paintContext = PaintContext(
+      internalNodesCanvas,
+      canvas,
+      null,
+      null,
+    );
     if (rootLayer.needsPainting) {
       rootLayer.paint(paintContext);
     }

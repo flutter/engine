@@ -11,11 +11,15 @@ import 'package:ui/ui.dart' as ui;
 import '../testing.dart';
 import 'platform_location.dart';
 
-UrlStrategy _realDefaultUrlStrategy = debugEmulateFlutterTesterEnvironment
-      ? TestUrlStrategy.fromEntry(const TestHistoryEntry('default', null, '/'))
-      : const HashUrlStrategy();
+UrlStrategy _realDefaultUrlStrategy =
+    debugEmulateFlutterTesterEnvironment
+        ? TestUrlStrategy.fromEntry(
+          const TestHistoryEntry('default', null, '/'),
+        )
+        : const HashUrlStrategy();
 
-UrlStrategy get _defaultUrlStrategy => debugDefaultUrlStrategyOverride ?? _realDefaultUrlStrategy;
+UrlStrategy get _defaultUrlStrategy =>
+    debugDefaultUrlStrategyOverride ?? _realDefaultUrlStrategy;
 
 /// Overrides the default URL strategy.
 ///
@@ -141,8 +145,9 @@ class HashUrlStrategy implements UrlStrategy {
   ///
   /// The [PlatformLocation] parameter is useful for testing to mock out browser
   /// interactions.
-  const HashUrlStrategy(
-      [this._platformLocation = const BrowserPlatformLocation()]);
+  const HashUrlStrategy([
+    this._platformLocation = const BrowserPlatformLocation(),
+  ]);
 
   final PlatformLocation _platformLocation;
 
@@ -152,6 +157,7 @@ class HashUrlStrategy implements UrlStrategy {
       // `fn` expects `event.state`, not a `DomEvent`.
       fn((event as DomPopStateEvent).state);
     }
+
     _platformLocation.addPopStateListener(wrappedFn);
     return () => _platformLocation.removePopStateListener(wrappedFn);
   }

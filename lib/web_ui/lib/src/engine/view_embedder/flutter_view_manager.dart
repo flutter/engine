@@ -39,9 +39,7 @@ class FlutterViewManager {
     return _viewData[viewId];
   }
 
-  EngineFlutterView createAndRegisterView(
-    JsFlutterViewOptions jsViewOptions,
-  ) {
+  EngineFlutterView createAndRegisterView(JsFlutterViewOptions jsViewOptions) {
     final EngineFlutterView view = EngineFlutterView(
       _dispatcher,
       jsViewOptions.hostElement,
@@ -103,8 +101,11 @@ class FlutterViewManager {
     const String viewRootSelector =
         '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
     final DomElement? viewRoot = element?.closest(viewRootSelector);
-    final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
-    final int? viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
+    final String? viewIdAttribute = viewRoot?.getAttribute(
+      GlobalHtmlAttributes.flutterViewIdAttributeName,
+    );
+    final int? viewId =
+        viewIdAttribute == null ? null : int.parse(viewIdAttribute);
     return viewId == null ? null : _viewData[viewId];
   }
 

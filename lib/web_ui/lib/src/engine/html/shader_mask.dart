@@ -39,7 +39,8 @@ class PersistedShaderMask extends PersistedContainerSurface
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
   DomElement? _shaderElement;
-  final bool isWebKit = ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit;
+  final bool isWebKit =
+      ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit;
 
   @override
   void adoptElements(PersistedShaderMask oldSurface) {
@@ -111,8 +112,10 @@ class PersistedShaderMask extends PersistedContainerSurface
 
       // The gradient shader's bounds are in the context of the element itself,
       // rather than the global position, so translate it back to the origin.
-      final ui.Rect translatedRect =
-          maskRect.translate(-maskRect.left, -maskRect.top);
+      final ui.Rect translatedRect = maskRect.translate(
+        -maskRect.left,
+        -maskRect.top,
+      );
       final String imageUrl =
           gradientShader.createImageBitmap(translatedRect, 1, true) as String;
       ui.BlendMode blendModeTemp = blendMode;
@@ -159,7 +162,11 @@ class PersistedShaderMask extends PersistedContainerSurface
       }
 
       final SvgFilter svgFilter = svgMaskFilterFromImageAndBlendMode(
-          imageUrl, blendModeTemp, maskRect.width, maskRect.height);
+        imageUrl,
+        blendModeTemp,
+        maskRect.width,
+        maskRect.height,
+      );
       _shaderElement = svgFilter.element;
       if (isWebKit) {
         _childContainer!.style.filter = 'url(#${svgFilter.id})';
@@ -182,7 +189,11 @@ class PersistedShaderMask extends PersistedContainerSurface
 }
 
 SvgFilter svgMaskFilterFromImageAndBlendMode(
-    String imageUrl, ui.BlendMode blendMode, double width, double height) {
+  String imageUrl,
+  ui.BlendMode blendMode,
+  double width,
+  double height,
+) {
   final SvgFilter svgFilter;
   switch (blendMode) {
     case ui.BlendMode.src:
@@ -236,7 +247,11 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.difference:
     case ui.BlendMode.exclusion:
       svgFilter = _blendImageToSvg(
-          imageUrl, blendModeToSvgEnum(blendMode)!, width, height);
+        imageUrl,
+        blendModeToSvgEnum(blendMode)!,
+        width,
+        height,
+      );
     case ui.BlendMode.dst:
     case ui.BlendMode.dstATop:
     case ui.BlendMode.dstIn:
@@ -245,7 +260,8 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
     case ui.BlendMode.clear:
     case ui.BlendMode.srcOver:
       throw UnsupportedError(
-          'Invalid svg filter request for blend-mode $blendMode');
+        'Invalid svg filter request for blend-mode $blendMode',
+      );
   }
   return svgFilter;
 }
@@ -265,15 +281,28 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
 // A' = a1*R + a2*G + a3*B + a4*A + a5
 SvgFilter _srcInImageToSvg(String imageUrl, double width, double height) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
-  builder.setFeColorMatrix(
-    const <double>[
-      0, 0, 0, 0, 1,
-      0, 0, 0, 0, 1,
-      0, 0, 0, 0, 1,
-      0, 0, 0, 1, 0,
-    ],
-    result: 'destalpha',
-  );
+  builder.setFeColorMatrix(const <double>[
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+  ], result: 'destalpha');
   builder.setFeImage(
     href: imageUrl,
     result: 'image',
@@ -340,8 +369,15 @@ SvgFilter _xorImageToSvg(String imageUrl, double width, double height) {
 
 // The source image and color are composited using :
 // result = k1 *in*in2 + k2*in + k3*in2 + k4.
-SvgFilter _compositeImageToSvg(String imageUrl, double k1, double k2, double k3,
-    double k4, double width, double height) {
+SvgFilter _compositeImageToSvg(
+  String imageUrl,
+  double k1,
+  double k2,
+  double k3,
+  double k4,
+  double width,
+  double height,
+) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
@@ -388,8 +424,12 @@ SvgFilter _modulateImageToSvg(String imageUrl, double width, double height) {
 
 // Uses feBlend element to blend source image with a color.
 SvgFilter _blendImageToSvg(
-    String imageUrl, SvgBlendMode svgBlendMode, double width, double height,
-    {bool swapLayers = false}) {
+  String imageUrl,
+  SvgBlendMode svgBlendMode,
+  double width,
+  double height, {
+  bool swapLayers = false,
+}) {
   final SvgFilterBuilder builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
