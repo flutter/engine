@@ -56,8 +56,7 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
     ContentContext& renderer,
     ISize size,
     int mip_count,
-    const Color& clear_color,
-    const std::shared_ptr<Texture>& texture) {
+    const Color& clear_color) {
   const std::shared_ptr<Context>& context = renderer.GetContext();
 
   /// All of the load/store actions are managed by `InlinePassContext` when
@@ -85,9 +84,7 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kMultisampleResolve,
             .clear_color = clear_color},
-        /*stencil_attachment_config=*/kDefaultStencilConfig,  //
-        /*existing_color_msaa_texture=*/nullptr,              //
-        /*existing_color_resolve_texture=*/texture);
+        /*stencil_attachment_config=*/kDefaultStencilConfig);
   } else {
     target = renderer.GetRenderTargetCache()->CreateOffscreen(
         *context,  // context
@@ -99,9 +96,9 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
             .load_action = LoadAction::kDontCare,
             .store_action = StoreAction::kDontCare,
             .clear_color = clear_color,
-        },                      // color_attachment_config
-        kDefaultStencilConfig,  // stencil_attachment_config
-        /*existing_color_texture=*/texture);
+        },                     // color_attachment_config
+        kDefaultStencilConfig  //
+    );
   }
 
   return std::make_unique<EntityPassTarget>(
@@ -174,12 +171,12 @@ void ExperimentalCanvas::SetupRenderPass() {
   // a second save layer with the same dimensions as the onscreen. When
   // rendering is completed, we must blit this saveLayer to the onscreen.
   if (requires_readback_) {
-    auto entity_pass_target =
-        CreateRenderTarget(renderer_,                                  //
-                           color0.texture->GetSize(),                  //
-                           /*mip_count=*/1,                            //
-                           /*clear_color=*/Color::BlackTransparent(),  //
-                           /*texture=*/nullptr);
+    auto entity_pass_target = CreateRenderTarget(
+        renderer_,                  //
+        color0.texture->GetSize(),  //
+        // Note: this is incorrect, we also need to know what kind of filter.
+        /*mip_count=*/4,  //
+        /*clear_color=*/Color::BlackTransparent());
     render_passes_.push_back(
         LazyRenderingConfig(renderer_, std::move(entity_pass_target)));
   } else {
@@ -253,7 +250,6 @@ void ExperimentalCanvas::SaveLayer(
   }
 
   // Backdrop filter state, ignored if there is no BDF.
-  int required_mip_count = 1;
   std::shared_ptr<FilterContents> backdrop_filter_contents;
   Point local_position = {0, 0};
   if (backdrop_filter) {
@@ -271,7 +267,6 @@ void ExperimentalCanvas::SaveLayer(
           filter->SetRenderingMode(rendering_mode);
           return filter;
         };
-    required_mip_count = backdrop_filter->GetRequiredMipCount();
 
     auto rendering_config = std::move(render_passes_.back());
     render_passes_.pop_back();
@@ -287,10 +282,12 @@ void ExperimentalCanvas::SaveLayer(
     ISize restore_size =
         rendering_config.inline_pass_context->GetTexture()->GetSize();
 
-    auto input_texture = rendering_config.inline_pass_context->GetTexture();
+    std::shared_ptr<Texture> input_texture =
+        rendering_config.entity_pass_target->Flip(
+            *renderer_.GetContext()->GetResourceAllocator());
 
     backdrop_filter_contents = backdrop_filter_proc(
-        FilterInput::Make(input_texture),
+        FilterInput::Make(std::move(input_texture)),
         transform_stack_.back().transform.Basis(),
         // When the subpass has a translation that means the math with
         // the snapshot has to be different.
@@ -305,13 +302,8 @@ void ExperimentalCanvas::SaveLayer(
 
     // Create a new render pass that the backdrop filter contents will be
     // restored to in order to continue rendering.
-    render_passes_.push_back(
-        LazyRenderingConfig(renderer_,                        //
-                            CreateRenderTarget(renderer_,     //
-                                               restore_size,  //
-                                               1,
-                                               Color::BlackTransparent(),  //
-                                               input_texture)));
+    render_passes_.push_back(LazyRenderingConfig(
+        renderer_, std::move(rendering_config.entity_pass_target)));
     // Eagerly restore the BDF contents.
 
     // If the pass context returns a backdrop texture, we need to draw it to the
@@ -374,12 +366,10 @@ void ExperimentalCanvas::SaveLayer(
   }
 
   render_passes_.push_back(LazyRenderingConfig(
-      renderer_,                                                         //
-      CreateRenderTarget(renderer_,                                      //
-                         ISize(subpass_coverage.GetSize()),              //
-                         required_mip_count, Color::BlackTransparent(),  //
-                         nullptr                                         //
-                         )));
+      renderer_,                                             //
+      CreateRenderTarget(renderer_,                          //
+                         ISize(subpass_coverage.GetSize()),  //
+                         1u, Color::BlackTransparent())));
   save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 
   CanvasStackEntry entry;
