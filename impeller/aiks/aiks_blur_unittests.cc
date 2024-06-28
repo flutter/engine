@@ -17,6 +17,8 @@
 // blurs.
 ////////////////////////////////////////////////////////////////////////////////
 
+impeller::Scalar foo = 1.0f;
+
 namespace impeller {
 namespace testing {
 
@@ -769,15 +771,25 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
       CreateTextureForFixture("boston.jpg", /*enable_mipmapping=*/true));
   ASSERT_TRUE(boston);
   int64_t count = 0;
-  Scalar sigma = 20.0;
+  Scalar sigma_x = 20.0;
+  Scalar sigma_y = 20.0;
   Scalar freq = 0.1;
   Scalar amp = 50.0;
+  bool is_combined = false;
   auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
     if (AiksTest::ImGuiBegin("Controls", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize)) {
-      ImGui::SliderFloat("Sigma", &sigma, 0, 200);
+      ImGui::Checkbox("Combined sigma", &is_combined);
+      if (is_combined) {
+        ImGui::SliderFloat("Sigma", &sigma_x, 0, 200);
+        sigma_y = sigma_x;
+      } else {
+        ImGui::SliderFloat("Sigma X", &sigma_x, 0, 200);
+        ImGui::SliderFloat("Sigma Y", &sigma_y, 0, 200);
+      }
       ImGui::SliderFloat("Frequency", &freq, 0.01, 2.0);
       ImGui::SliderFloat("Amplitude", &amp, 1, 100);
+      ImGui::SliderFloat("foo", &foo, 0, 2);
       ImGui::End();
     }
 
@@ -795,7 +807,7 @@ TEST_P(AiksTest, GaussianBlurAnimatedBackdrop) {
         Rect::MakeLTRB(handle_a.x, handle_a.y, handle_b.x, handle_b.y));
     canvas.ClipRect(Rect::MakeLTRB(100, 100, 900, 700));
     canvas.SaveLayer({.blend_mode = BlendMode::kSource}, std::nullopt,
-                     ImageFilter::MakeBlur(Sigma(sigma), Sigma(sigma),
+                     ImageFilter::MakeBlur(Sigma(sigma_x), Sigma(sigma_y),
                                            FilterContents::BlurStyle::kNormal,
                                            Entity::TileMode::kClamp));
     count += 1;

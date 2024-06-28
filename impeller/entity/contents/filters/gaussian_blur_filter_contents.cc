@@ -14,6 +14,8 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
+extern impeller::Scalar foo;
+
 namespace impeller {
 
 using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
@@ -751,9 +753,11 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
         pass2_out.value().GetRenderTargetTexture();
     blur_output_entity.SetBlendMode(entity.GetBlendMode());
     blur_output_entity.SetTransform(blur_output_entity_transform);
+    Vector2 inline_pixel_size =
+        effect_transform.Basis().Invert() * pass1_pixel_size;
     blur_output_entity.SetContents(Contents::MakeAnonymous(
         /*render_proc=*/
-        [sampler_desc, texture, pass1_pixel_size, blur_info,
+        [sampler_desc, texture, inline_pixel_size, blur_info,
          downsample_pass_args](const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) {
           Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
@@ -764,7 +768,7 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
           return Render1DBlur(
               renderer, pass, blur_vertices, blur_uvs, sampler_desc, texture,
               BlurParameters{
-                  .blur_uv_offset = Point(pass1_pixel_size.x, 0.0),
+                  .blur_uv_offset = Point(inline_pixel_size.x * foo, 0.0),
                   .blur_sigma = blur_info.scaled_sigma.x *
                                 downsample_pass_args.effective_scalar.x,
                   .blur_radius =
