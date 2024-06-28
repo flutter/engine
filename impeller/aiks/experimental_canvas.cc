@@ -371,7 +371,7 @@ void ExperimentalCanvas::SaveLayer(
         coverage_limit
             .Intersection(clip_coverage_stack_.CurrentClipCoverage().value())
             .value();
-    // NOLINTEMD(bugprone-unchecked-optional-access)
+    // NOLINTEND(bugprone-unchecked-optional-access)
   }
 
   render_passes_.push_back(LazyRenderingConfig(
