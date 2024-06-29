@@ -99,7 +99,7 @@ void DebugAllocatorStats::Decrement(size_t size) {
 }
 
 size_t DebugAllocatorStats::GetAllocationSizeMB() {
-  return size_ / 1_000_000u;
+  return size_ / 1_000_000ll;
 }
 
 AllocatorMTL::AllocatorMTL(id<MTLDevice> device, std::string label)
