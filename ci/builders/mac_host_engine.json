@@ -1,6 +1,60 @@
 {
     "builds": [
         {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Mac-13|Mac-14",
+                "cpu=x86",
+                "mac_model=Macmini8,1"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "use_rbe": true
+            },
+            "gn": [
+                "--target-dir",
+                "ci/host_debug_framework",
+                "--runtime-mode",
+                "debug",
+                "--no-lto",
+                "--prebuilt-dart-sdk",
+                "--build-embedder-examples",
+                "--use-glfw-swiftshader",
+                "--no-rbe",
+                "--no-goma",
+                "--xcode-symlinks"
+            ],
+            "name": "ci/host_debug_framework",
+            "description": "Produces debug mode x64 macOS host-side tooling and builds host-side unit tests for x64 macOS.",
+            "ninja": {
+                "config": "ci/host_debug_framework",
+                "targets": [
+                    "flutter/build/archives:flutter_embedder_framework",
+                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
+                ]
+            },
+            "postsubmit_overrides": {
+                "gn": [
+                    "--target-dir",
+                    "ci/host_debug_framework",
+                    "--runtime-mode",
+                    "debug",
+                    "--no-lto",
+                    "--prebuilt-dart-sdk",
+                    "--build-embedder-examples",
+                    "--use-glfw-swiftshader",
+                    "--no-rbe",
+                    "--no-goma"
+                ]
+            },
+            "properties": {
+                "$flutter/osx_sdk": {
+                    "sdk_version": "15a240d"
+                }
+            },
+            "timeout": 90
+        },
+        {
             "archives": [
                 {
                     "base_path": "out/ci/host_debug/zip_archives/",
@@ -32,7 +86,7 @@
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples",
                 "--use-glfw-swiftshader",
-                "--rbe",
+                "--no-rbe",
                 "--no-goma",
                 "--xcode-symlinks"
 
@@ -45,9 +99,7 @@
                     "flutter/build/archives:archive_gen_snapshot",
                     "flutter/build/archives:artifacts",
                     "flutter/build/archives:dart_sdk_archive",
-                    "flutter/build/archives:flutter_embedder_framework",
                     "flutter/build/dart:copy_dart_sdk",
-                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
                     "flutter/tools/font_subset",
                     "flutter:unittests"
                 ]
@@ -497,7 +549,7 @@
                     "--arm64-out-dir",
                     "out/ci/mac_debug_arm64",
                     "--x64-out-dir",
-                    "out/ci/host_debug",
+                    "out/ci/host_debug_framework",
                     "--zip"
                 ],
                 "script": "flutter/sky/tools/create_embedder_framework.py"
@@ -525,7 +577,7 @@
                     "--arm64-out-dir",
                     "out/ci/mac_debug_arm64",
                     "--x64-out-dir",
-                    "out/ci/host_debug",
+                    "out/ci/host_debug_framework",
                     "--zip"
                 ],
                 "script": "flutter/sky/tools/create_macos_framework.py"
