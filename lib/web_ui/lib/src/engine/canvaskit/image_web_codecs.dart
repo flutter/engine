@@ -31,7 +31,7 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
   }) async {
     // ImageDecoder does not detect image type automatically. It requires us to
     // tell it what the image type is.
-    final String? contentType = detectContentType(data);
+    final contentType = detectContentType(data);
 
     if (contentType == null) {
       final String fileHeader;
@@ -47,7 +47,7 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
       );
     }
 
-    final CkBrowserImageDecoder decoder = CkBrowserImageDecoder._(
+    final decoder = CkBrowserImageDecoder._(
       contentType: contentType,
       dataSource: data.toJS,
       debugSource: debugSource,
@@ -60,7 +60,7 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
 
   @override
   ui.Image generateImageFromVideoFrame(VideoFrame frame) {
-    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
+    final skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
       frame,
       SkPartialImageInfo(
         alphaType: canvasKit.AlphaType.Premul,
@@ -82,11 +82,11 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
 
 Future<ByteData> readPixelsFromVideoFrame(VideoFrame videoFrame, ui.ImageByteFormat format) async {
   if (format == ui.ImageByteFormat.png) {
-    final Uint8List png = await encodeVideoFrameAsPng(videoFrame);
+    final png = await encodeVideoFrameAsPng(videoFrame);
     return png.buffer.asByteData();
   }
 
-  final ByteBuffer pixels = await readVideoFramePixelsUnmodified(videoFrame);
+  final pixels = await readVideoFramePixelsUnmodified(videoFrame);
 
   // Check if the pixels are already in the right format and if so, return the
   // original pixels without modification.
@@ -96,8 +96,8 @@ Future<ByteData> readPixelsFromVideoFrame(VideoFrame videoFrame, ui.ImageByteFor
 
   // At this point we know we want to read unencoded pixels, and that the video
   // frame is _not_ using the same format as the requested one.
-  final bool isBgrx = videoFrame.format == 'BGRX';
-  final bool isBgrFrame = videoFrame.format == 'BGRA' || isBgrx;
+  final isBgrx = videoFrame.format == 'BGRX';
+  final isBgrFrame = videoFrame.format == 'BGRA' || isBgrx;
   if (isBgrFrame) {
     if (format == ui.ImageByteFormat.rawStraightRgba || isBgrx) {
       _bgrToStraightRgba(pixels, isBgrx);
@@ -114,13 +114,13 @@ Future<ByteData> readPixelsFromVideoFrame(VideoFrame videoFrame, ui.ImageByteFor
 
 /// Mutates the [pixels], converting them from BGRX/BGRA to RGBA.
 void _bgrToStraightRgba(ByteBuffer pixels, bool isBgrx) {
-  final Uint8List pixelBytes = pixels.asUint8List();
-  for (int i = 0; i < pixelBytes.length; i += 4) {
+  final pixelBytes = pixels.asUint8List();
+  for (var i = 0; i < pixelBytes.length; i += 4) {
     // It seems even in little-endian machines the BGR_ pixels are encoded as
     // big-endian, i.e. the blue byte is written into the lowest byte in the
     // memory address space.
-    final int b = pixelBytes[i];
-    final int r = pixelBytes[i + 2];
+    final b = pixelBytes[i];
+    final r = pixelBytes[i + 2];
 
     // So far the codec has reported 255 for the X component, so there's no
     // special treatment for alpha. This may need to change if we ever face
@@ -139,19 +139,19 @@ int _premultiply(int value, int alpha) {
   if (alpha == 255) {
     return value;
   }
-  const int kRoundFractionControl = 257 * 128;
+  const kRoundFractionControl = 257 * 128;
   return (value * alpha * 257 + kRoundFractionControl) >> 16;
 }
 
 /// Mutates the [pixels], converting them from BGRX/BGRA to RGBA with
 /// premultiplied alpha.
 void _bgrToRawRgba(ByteBuffer pixels) {
-  final Uint8List pixelBytes = pixels.asUint8List();
-  for (int i = 0; i < pixelBytes.length; i += 4) {
-    final int a = pixelBytes[i + 3];
-    final int r = _premultiply(pixelBytes[i + 2], a);
-    final int g = _premultiply(pixelBytes[i + 1], a);
-    final int b = _premultiply(pixelBytes[i], a);
+  final pixelBytes = pixels.asUint8List();
+  for (var i = 0; i < pixelBytes.length; i += 4) {
+    final a = pixelBytes[i + 3];
+    final r = _premultiply(pixelBytes[i + 2], a);
+    final g = _premultiply(pixelBytes[i + 1], a);
+    final b = _premultiply(pixelBytes[i], a);
 
     pixelBytes[i] = r;
     pixelBytes[i + 1] = g;
@@ -166,17 +166,17 @@ bool _shouldReadPixelsUnmodified(VideoFrame videoFrame, ui.ImageByteFormat forma
 
   // Do not convert if the requested format is RGBA and the video frame is
   // encoded as either RGBA or RGBX.
-  final bool isRgbFrame = videoFrame.format == 'RGBA' || videoFrame.format == 'RGBX';
+  final isRgbFrame = videoFrame.format == 'RGBA' || videoFrame.format == 'RGBX';
   return format == ui.ImageByteFormat.rawStraightRgba && isRgbFrame;
 }
 
 Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
-  final int size = videoFrame.allocationSize().toInt();
+  final size = videoFrame.allocationSize().toInt();
 
   // In dart2wasm, Uint8List is not the same as a JS Uint8Array. So we
   // explicitly construct the JS object here.
-  final JSUint8Array destination = createUint8ArrayFromLength(size);
-  final JSPromise<JSAny?> copyPromise = videoFrame.copyTo(destination);
+  final destination = createUint8ArrayFromLength(size);
+  final copyPromise = videoFrame.copyTo(destination);
   await promiseToFuture<void>(copyPromise);
 
   // In dart2wasm, `toDart` incurs a copy here. On JS backends, this is a
@@ -185,12 +185,12 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
 }
 
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
-  final int width = videoFrame.displayWidth.toInt();
-  final int height = videoFrame.displayHeight.toInt();
-  final DomCanvasElement canvas = createDomCanvasElement(width: width, height:
+  final width = videoFrame.displayWidth.toInt();
+  final height = videoFrame.displayHeight.toInt();
+  final canvas = createDomCanvasElement(width: width, height:
       height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final ctx = canvas.context2D;
   ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 = canvas.toDataURL().substring('data:image/png;base64,'.length);
+  final pngBase64 = canvas.toDataURL().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);
 }

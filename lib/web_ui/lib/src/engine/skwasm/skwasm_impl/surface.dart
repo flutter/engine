@@ -39,7 +39,7 @@ class SkwasmCallbackHandler {
 
   factory SkwasmCallbackHandler._() {
     final WasmFuncRef wasmFunction = WasmFunction<WasmVoid Function(WasmI32, WasmI32, WasmExternRef?)>.fromFunction(callbackHandler);
-    final int functionIndex = addFunction(wasmFunction).toIntUnsigned();
+    final functionIndex = addFunction(wasmFunction).toIntUnsigned();
     return SkwasmCallbackHandler._withCallbackPointer(
       OnRenderCallbackHandle.fromAddress(functionIndex)
     );
@@ -51,7 +51,7 @@ class SkwasmCallbackHandler {
 
   // Returns a future that will resolve when Skwasm calls back with the given callbackID
   Future<JSAny> registerCallback(int callbackId) {
-    final Completer<JSAny> completer = Completer<JSAny>();
+    final completer = Completer<JSAny>();
     _pendingCallbacks[callbackId] = completer;
     return completer.future;
   }
@@ -61,7 +61,7 @@ class SkwasmCallbackHandler {
     // with a simple integer, which usually refers to a pointer on its heap. In order
     // to coerce these into a single type, we just make the completers take a JSAny
     // that either contains the JS object or a JSNumber that contains the integer value.
-    final Completer<JSAny> completer = _pendingCallbacks.remove(callbackId.toIntUnsigned())!;
+    final completer = _pendingCallbacks.remove(callbackId.toIntUnsigned())!;
     if (!jsContext.isNull) {
       completer.complete(jsContext!.toJS);
     } else {
@@ -75,7 +75,7 @@ class SkwasmSurface {
     final SurfaceHandle surfaceHandle = withStackScope((StackScope scope) {
       return surfaceCreate();
     });
-    final SkwasmSurface surface = SkwasmSurface._fromHandle(surfaceHandle);
+    final surface = SkwasmSurface._fromHandle(surfaceHandle);
     surface._initialize();
     return surface;
   }
@@ -91,14 +91,14 @@ class SkwasmSurface {
 
   Future<RenderResult> renderPictures(List<SkwasmPicture> pictures) =>
     withStackScope((StackScope scope) async {
-      final Pointer<PictureHandle> pictureHandles =
+      final pictureHandles =
         scope.allocPointerArray(pictures.length).cast<PictureHandle>();
-      for (int i = 0; i < pictures.length; i++) {
+      for (var i = 0; i < pictures.length; i++) {
         pictureHandles[i] = pictures[i].handle;
       }
-      final int callbackId = surfaceRenderPictures(handle, pictureHandles, pictures.length);
-      final RasterResult rasterResult = (await SkwasmCallbackHandler.instance.registerCallback(callbackId)) as RasterResult;
-      final RenderResult result = (
+      final callbackId = surfaceRenderPictures(handle, pictureHandles, pictures.length);
+      final rasterResult = (await SkwasmCallbackHandler.instance.registerCallback(callbackId)) as RasterResult;
+      final result = (
         imageBitmaps: rasterResult.imageBitmaps.toDart.cast<DomImageBitmap>(),
         rasterStartMicros: (rasterResult.rasterStartMilliseconds.toDartDouble * 1000).toInt(),
         rasterEndMicros: (rasterResult.rasterEndMilliseconds.toDartDouble * 1000).toInt(),
@@ -107,17 +107,17 @@ class SkwasmSurface {
     });
 
   Future<ByteData> rasterizeImage(SkwasmImage image, ui.ImageByteFormat format) async {
-    final int callbackId = surfaceRasterizeImage(
+    final callbackId = surfaceRasterizeImage(
       handle,
       image.handle,
       format.index,
     );
-    final int context = (await SkwasmCallbackHandler.instance.registerCallback(callbackId) as JSNumber).toDartInt;
-    final SkDataHandle dataHandle = SkDataHandle.fromAddress(context);
-    final int byteCount = skDataGetSize(dataHandle);
-    final Pointer<Uint8> dataPointer = skDataGetConstPointer(dataHandle).cast<Uint8>();
-    final Uint8List output = Uint8List(byteCount);
-    for (int i = 0; i < byteCount; i++) {
+    final context = (await SkwasmCallbackHandler.instance.registerCallback(callbackId) as JSNumber).toDartInt;
+    final dataHandle = SkDataHandle.fromAddress(context);
+    final byteCount = skDataGetSize(dataHandle);
+    final dataPointer = skDataGetConstPointer(dataHandle).cast<Uint8>();
+    final output = Uint8List(byteCount);
+    for (var i = 0; i < byteCount; i++) {
       output[i] = dataPointer[i];
     }
     skDataDispose(dataHandle);

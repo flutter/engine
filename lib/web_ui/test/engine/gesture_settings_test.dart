@@ -12,7 +12,7 @@ void main() {
 
 void testMain() {
   test('GestureSettings has a reasonable toString', () {
-    const GestureSettings gestureSettings =
+    const gestureSettings =
         GestureSettings(physicalDoubleTapSlop: 2.5, physicalTouchSlop: 1.5);
 
     expect(gestureSettings.toString(),
@@ -22,11 +22,11 @@ void testMain() {
   test('GestureSettings has a correct equality', () {
     // don't refactor these to be const, that defeats the point!
     final double value = nonconst(2.0);
-    final GestureSettings settingsA =
+    final settingsA =
         GestureSettings(physicalDoubleTapSlop: value, physicalTouchSlop: 1.0);
-    final GestureSettings settingsB =
+    final settingsB =
         GestureSettings(physicalDoubleTapSlop: value, physicalTouchSlop: 3.0);
-    final GestureSettings settingsC =
+    final settingsC =
         GestureSettings(physicalDoubleTapSlop: value, physicalTouchSlop: 1.0);
 
     expect(settingsA, equals(settingsC));
@@ -40,15 +40,15 @@ void testMain() {
   });
 
   test('GestureSettings copyWith preserves already set values', () {
-    const GestureSettings initial =
+    const initial =
         GestureSettings(physicalDoubleTapSlop: 1.0, physicalTouchSlop: 1.0);
 
-    final GestureSettings copyA = initial.copyWith();
+    final copyA = initial.copyWith();
 
     expect(copyA.physicalDoubleTapSlop, 1.0);
     expect(copyA.physicalTouchSlop, 1.0);
 
-    final GestureSettings copyB =
+    final copyB =
         copyA.copyWith(physicalDoubleTapSlop: 2.0, physicalTouchSlop: 2.0);
 
     expect(copyB.physicalDoubleTapSlop, 2.0);
@@ -56,7 +56,7 @@ void testMain() {
   });
 
   test('GestureSettings constructor defaults to null', () {
-    const GestureSettings settings = GestureSettings();
+    const settings = GestureSettings();
 
     expect(settings.physicalDoubleTapSlop, null);
     expect(settings.physicalTouchSlop, null);

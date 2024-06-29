@@ -20,10 +20,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const double screenWidth = 400.0;
-  const double screenHeight = 400.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-  final HtmlImage testImage = createTestImage();
+  const screenWidth = 400.0;
+  const screenHeight = 400.0;
+  const screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+  final testImage = createTestImage();
 
   setUpUnitTests(
     setUpTestViewDimensions: false,
@@ -43,7 +43,7 @@ Future<void> testMain() async {
     shaderRect = shaderRect.translate(-210, 120);
 
     /// Path.
-    final Path path = Path()
+    final path = Path()
       ..moveTo(shaderRect.center.dx, shaderRect.top)
       ..lineTo(shaderRect.right, shaderRect.bottom)
       ..lineTo(shaderRect.left, shaderRect.bottom)
@@ -64,11 +64,11 @@ Future<void> testMain() async {
 
   Future<void> testImageShader(
       TileMode tmx, TileMode tmy, String fileName) async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, screenWidth, screenHeight));
     //Rect shaderRect = const Rect.fromLTRB(20, 20, 100, 100);
-    const Rect shaderRect = Rect.fromLTRB(0, 0, 100, 100);
-    final SurfacePaint paint = Paint() as SurfacePaint;
+    const shaderRect = Rect.fromLTRB(0, 0, 100, 100);
+    final paint = Paint() as SurfacePaint;
     paint.shader =
         ImageShader(testImage, tmx, tmy, Matrix4.identity().toFloat64()
             , filterQuality: FilterQuality.high);
@@ -117,12 +117,12 @@ Future<void> testMain() async {
 }
 
 HtmlImage createTestImage() {
-  const int width = 16;
-  const int width2 = width ~/ 2;
-  const int height = 16;
-  final DomCanvasElement canvas =
+  const width = 16;
+  const width2 = width ~/ 2;
+  const height = 16;
+  final canvas =
       createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width2, width2);
   ctx.fill();
@@ -132,7 +132,7 @@ HtmlImage createTestImage() {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(width2, width2, width2, width2);
   ctx.fill();
-  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
+  final imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

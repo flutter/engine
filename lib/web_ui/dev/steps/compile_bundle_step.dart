@@ -48,7 +48,7 @@ class CompileBundleStep implements PipelineStep {
   io.Directory get outputBundleDirectory => getBundleBuildDirectory(bundle);
 
   List<FilePath> _findTestFiles() {
-    final io.Directory testDirectory = testSetDirectory;
+    final testDirectory = testSetDirectory;
     if (!testDirectory.existsSync()) {
       throw ToolExit('Test directory "${testDirectory.path}" for bundle ${bundle.name.ansiMagenta} does not exist.');
     }
@@ -83,34 +83,34 @@ class CompileBundleStep implements PipelineStep {
   @override
   Future<void> run() async {
     print('Compiling test bundle ${bundle.name.ansiMagenta}...');
-    final List<FilePath> allTests = _findTestFiles();
-    final List<TestCompiler> compilers = bundle.compileConfigs.map(
+    final allTests = _findTestFiles();
+    final compilers = bundle.compileConfigs.map(
       (CompileConfiguration config) => _createCompiler(config)
     ).toList();
-    final Stopwatch stopwatch = Stopwatch()..start();
-    final String testSetDirectoryPath = testSetDirectory.path;
+    final stopwatch = Stopwatch()..start();
+    final testSetDirectoryPath = testSetDirectory.path;
 
     // Clear out old bundle compilations, if they exist
     if (outputBundleDirectory.existsSync()) {
       outputBundleDirectory.deleteSync(recursive: true );
     }
 
-    final List<Future<MapEntry<String, CompileResult>>> pendingResults = <Future<MapEntry<String, CompileResult>>>[];
-    for (final TestCompiler compiler in compilers) {
-      for (final FilePath testFile in allTests) {
-        final String relativePath = pathlib.relative(
+    final pendingResults = <Future<MapEntry<String, CompileResult>>>[];
+    for (final compiler in compilers) {
+      for (final testFile in allTests) {
+        final relativePath = pathlib.relative(
           testFile.absolute,
           from: testSetDirectoryPath);
-        final Future<MapEntry<String, CompileResult>> result = compilePool.withResource(() async {
+        final result = compilePool.withResource(() async {
           if (testFiles != null && !testFiles!.contains(testFile)) {
             return MapEntry<String, CompileResult>(relativePath, CompileResult.filtered);
           }
-          final bool success = await compiler.compileTest(testFile);
-          const int maxTestNameLength = 80;
-          final String truncatedPath = relativePath.length > maxTestNameLength
+          final success = await compiler.compileTest(testFile);
+          const maxTestNameLength = 80;
+          final truncatedPath = relativePath.length > maxTestNameLength
             ? relativePath.replaceRange(maxTestNameLength - 3, relativePath.length, '...')
             : relativePath;
-          final String expandedPath = truncatedPath.padRight(maxTestNameLength);
+          final expandedPath = truncatedPath.padRight(maxTestNameLength);
           io.stdout.write('\r  ${success ? expandedPath.ansiGreen : expandedPath.ansiRed}');
           return success
             ? MapEntry<String, CompileResult>(relativePath, CompileResult.success)
@@ -119,10 +119,10 @@ class CompileBundleStep implements PipelineStep {
         pendingResults.add(result);
       }
     }
-    final Map<String, CompileResult> results = Map<String, CompileResult>.fromEntries(await Future.wait(pendingResults));
+    final results = Map<String, CompileResult>.fromEntries(await Future.wait(pendingResults));
     stopwatch.stop();
 
-    final String resultsJson = const JsonEncoder.withIndent('  ').convert(<String, dynamic>{
+    final resultsJson = const JsonEncoder.withIndent('  ').convert(<String, dynamic>{
       'name': bundle.name,
       'directory': bundle.testSet.directory,
       'builds': bundle.compileConfigs.map(
@@ -133,12 +133,12 @@ class CompileBundleStep implements PipelineStep {
       'compileTimeInMs': stopwatch.elapsedMilliseconds,
       'results': results.map((String k, CompileResult v) => MapEntry<String, String>(k, v.name)),
     });
-    final io.File outputResultsFile = io.File(pathlib.join(
+    final outputResultsFile = io.File(pathlib.join(
       outputBundleDirectory.path,
       'results.json',
     ));
     outputResultsFile.writeAsStringSync(resultsJson);
-    final List<String> failedFiles = <String>[];
+    final failedFiles = <String>[];
     results.forEach((String fileName, CompileResult result) {
       if (result == CompileResult.compilationFailure) {
         failedFiles.add(fileName);
@@ -149,7 +149,7 @@ class CompileBundleStep implements PipelineStep {
     } else {
       print('\rThe bundle ${bundle.name.ansiMagenta} compiled with some failures in ${stopwatch.elapsedMilliseconds}ms.');
       print('Compilation failures:');
-      for (final String fileName in failedFiles) {
+      for (final fileName in failedFiles) {
         print('  $fileName');
       }
       throw ToolExit('Failed to compile ${bundle.name.ansiMagenta}.');
@@ -193,22 +193,22 @@ class Dart2JSCompiler extends TestCompiler {
 
   @override
   Future<bool> compileTest(FilePath input) async {
-    final String relativePath = pathlib.relative(
+    final relativePath = pathlib.relative(
       input.absolute,
       from: inputTestSetDirectory.path
     );
 
-    final String targetFileName = pathlib.join(
+    final targetFileName = pathlib.join(
       outputTestBundleDirectory.path,
       '$relativePath.browser_test.dart.js',
     );
 
-    final io.Directory outputDirectory = io.File(targetFileName).parent;
+    final outputDirectory = io.File(targetFileName).parent;
     if (!outputDirectory.existsSync()) {
       outputDirectory.createSync(recursive: true);
     }
 
-    final List<String> arguments = <String>[
+    final arguments = <String>[
       'compile',
       'js',
       '--no-minify',
@@ -228,14 +228,14 @@ class Dart2JSCompiler extends TestCompiler {
       relativePath, // current path.
     ];
 
-    final ProcessManager process = await startProcess(
+    final process = await startProcess(
       environment.dartExecutable,
       arguments,
       workingDirectory: inputTestSetDirectory.path,
       failureIsSuccess: true,
       evalOutput: !isVerbose,
     );
-    final int exitCode = await process.wait();
+    final exitCode = await process.wait();
     if (exitCode != 0) {
       io.stderr.writeln('ERROR: Failed to compile test $input. '
           'Dart2js exited with exit code $exitCode');
@@ -258,22 +258,22 @@ class Dart2WasmCompiler extends TestCompiler {
 
   @override
   Future<bool> compileTest(FilePath input) async {
-    final String relativePath = pathlib.relative(
+    final relativePath = pathlib.relative(
       input.absolute,
       from: inputTestSetDirectory.path
     );
 
-    final String targetFileName = pathlib.join(
+    final targetFileName = pathlib.join(
       outputTestBundleDirectory.path,
       '$relativePath.browser_test.dart.wasm',
     );
 
-    final io.Directory outputDirectory = io.File(targetFileName).parent;
+    final outputDirectory = io.File(targetFileName).parent;
     if (!outputDirectory.existsSync()) {
       outputDirectory.createSync(recursive: true);
     }
 
-    final List<String> arguments = <String>[
+    final arguments = <String>[
       environment.dart2wasmSnapshotPath,
 
       '--libraries-spec=${environment.dartSdkDir.path}/lib/libraries.json',
@@ -296,14 +296,14 @@ class Dart2WasmCompiler extends TestCompiler {
       targetFileName, // target path.
     ];
 
-    final ProcessManager process = await startProcess(
+    final process = await startProcess(
       environment.dartAotRuntimePath,
       arguments,
       workingDirectory: inputTestSetDirectory.path,
       failureIsSuccess: true,
       evalOutput: !isVerbose,
     );
-    final int exitCode = await process.wait();
+    final exitCode = await process.wait();
 
     if (exitCode != 0) {
       io.stderr.writeln('ERROR: Failed to compile test $input. '

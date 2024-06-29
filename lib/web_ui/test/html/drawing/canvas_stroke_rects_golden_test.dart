@@ -16,7 +16,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 300, 300);
+  const region = Rect.fromLTWH(0, 0, 300, 300);
 
   late BitmapCanvas canvas;
 

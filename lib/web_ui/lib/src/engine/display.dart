@@ -45,7 +45,7 @@ class EngineFlutterDisplay extends ui.Display {
   ///
   /// This value cannot be overriden by tests, for example.
   double get browserDevicePixelRatio {
-    final double ratio = domWindow.devicePixelRatio;
+    final ratio = domWindow.devicePixelRatio;
     // Guard against WebOS returning 0.
     return (ratio == 0.0) ? 1.0 : ratio;
   }
@@ -89,15 +89,15 @@ class ScreenOrientation {
   ///
   /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
   Future<bool> setPreferredOrientation(List<dynamic> orientations) async {
-    final DomScreen? screen = domWindow.screen;
+    final screen = domWindow.screen;
     if (screen != null) {
-      final DomScreenOrientation? screenOrientation = screen.orientation;
+      final screenOrientation = screen.orientation;
       if (screenOrientation != null) {
         if (orientations.isEmpty) {
           screenOrientation.unlock();
           return true;
         } else {
-          final String? lockType =
+          final lockType =
               _deviceOrientationToLockType(orientations.first as String?);
           if (lockType != null) {
             try {

@@ -40,7 +40,7 @@ class GlobalHtmlAttributes {
     rootElement.setAttribute(flutterViewIdAttributeName, viewId);
 
     // How was the current renderer selected?
-    final String rendererSelection = autoDetectRenderer
+    final rendererSelection = autoDetectRenderer
         ? 'auto-selected'
         : 'requested explicitly';
 

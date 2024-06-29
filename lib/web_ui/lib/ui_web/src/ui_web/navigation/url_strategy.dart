@@ -160,7 +160,7 @@ class HashUrlStrategy implements UrlStrategy {
   String getPath() {
     // the hash value is always prefixed with a `#`
     // and if it is empty then it will stay empty
-    final String path = _platformLocation.hash ?? '';
+    final path = _platformLocation.hash ?? '';
     assert(path.isEmpty || path.startsWith('#'));
 
     // We don't want to return an empty string as a path. Instead we default to "/".
@@ -214,7 +214,7 @@ class HashUrlStrategy implements UrlStrategy {
   /// This is useful, for example, to wait until the browser has handled the
   /// `history.back` transition.
   Future<void> _waitForPopState() {
-    final Completer<void> completer = Completer<void>();
+    final completer = Completer<void>();
     late ui.VoidCallback unsubscribe;
     unsubscribe = addPopStateListener((_) {
       unsubscribe();

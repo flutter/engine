@@ -230,7 +230,7 @@ class CkPaint implements ui.Paint {
     if (value == null) {
       _effectiveColorFilter = null;
     } else {
-      final CkColorFilter ckColorFilter = createCkColorFilter(value)!;
+      final ckColorFilter = createCkColorFilter(value)!;
       _effectiveColorFilter = ManagedSkColorFilter(ckColorFilter);
     }
 
@@ -308,11 +308,11 @@ class CkPaint implements ui.Paint {
 
   @override
   String toString() {
-    String resultString = 'Paint()';
+    var resultString = 'Paint()';
 
     assert(() {
-      final StringBuffer result = StringBuffer();
-      String semicolon = '';
+      final result = StringBuffer();
+      var semicolon = '';
       result.write('Paint(');
       if (style == ui.PaintingStyle.stroke) {
         result.write('$style');
@@ -391,8 +391,8 @@ class CkFragmentProgram implements ui.FragmentProgram {
       this.textureCount);
 
   factory CkFragmentProgram.fromBytes(String name, Uint8List data) {
-    final ShaderData shaderData = ShaderData.fromBytes(data);
-    final SkRuntimeEffect? effect = MakeRuntimeEffect(shaderData.source);
+    final shaderData = ShaderData.fromBytes(data);
+    final effect = MakeRuntimeEffect(shaderData.source);
     if (effect == null) {
       throw const FormatException('Invalid Shader Source');
     }
@@ -438,7 +438,7 @@ class CkFragmentShader implements ui.FragmentShader, CkShader {
     assert(!_debugDisposed, 'FragmentShader has been disposed of.');
     ref?.dispose();
 
-    final SkShader? result = samplers.isEmpty
+    final result = samplers.isEmpty
         ? effect.makeShader(floats)
         : effect.makeShaderWithChildren(floats, samplers);
     if (result == null) {
@@ -460,7 +460,7 @@ class CkFragmentShader implements ui.FragmentShader, CkShader {
   @override
   void setImageSampler(int index, ui.Image image) {
     assert(!_debugDisposed, 'FragmentShader has been disposed of.');
-    final ui.ImageShader sampler = ui.ImageShader(image, ui.TileMode.clamp,
+    final sampler = ui.ImageShader(image, ui.TileMode.clamp,
         ui.TileMode.clamp, toMatrix64(Matrix4.identity().storage));
     samplers[index] = (sampler as CkShader).getSkShader(ui.FilterQuality.none);
     setFloat(lastFloatIndex + 2 * index, (sampler as CkImageShader).imageWidth.toDouble());

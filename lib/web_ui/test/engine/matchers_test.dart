@@ -276,7 +276,7 @@ Specifically:
 }
 
 void expectDom(String domHtml, Matcher matcher) {
-  final DomElement root = createDomElement('div');
+  final root = createDomElement('div');
   root.innerHTML = domHtml;
   expect(root.children.single, matcher);
 }
@@ -298,14 +298,14 @@ class _ExpectMismatch extends Matcher {
       return false;
     }
 
-    final _TestDescription description = _TestDescription();
+    final description = _TestDescription();
     _matcher.describeMismatch(
       item,
       description,
       matchState,
       false,
     );
-    final String mismatchDescription = description.items.join();
+    final mismatchDescription = description.items.join();
 
     if (mismatchDescription.trim() != expectedMismatchDescription.trim()) {
       matchState['mismatchDescription'] = mismatchDescription;

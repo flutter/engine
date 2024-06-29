@@ -36,7 +36,7 @@ Future<void> testMain() async {
   setUpUnitTests(withImplicitView: true);
 
   test('empty paragraph', () {
-    final CanvasParagraph paragraph1 = rich(
+    final paragraph1 = rich(
       EngineParagraphStyle(),
       (CanvasParagraphBuilder builder) {},
     );
@@ -45,7 +45,7 @@ Future<void> testMain() async {
     expect(paragraph1.spans.single.start, 0);
     expect(paragraph1.spans.single.end, 0);
 
-    final CanvasParagraph paragraph2 = rich(
+    final paragraph2 = rich(
       EngineParagraphStyle(),
       (CanvasParagraphBuilder builder) {
         builder.addText('');
@@ -58,12 +58,12 @@ Future<void> testMain() async {
   });
 
   test('Builds a text-only canvas paragraph', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(fontSize: 13.0);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('Hello');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.plainText, 'Hello');
     expect(paragraph.spans, hasLength(1));
@@ -94,18 +94,18 @@ Future<void> testMain() async {
       ignorePositions: !isBlink,
     );
 
-    final ParagraphSpan span = paragraph.spans.single;
+    final span = paragraph.spans.single;
     expect(getSpanText(paragraph, span), 'Hello');
     expect(span.style, styleWithDefaults(fontSize: 13.0));
   });
 
   test('Correct defaults', () {
-    final EngineParagraphStyle style = EngineParagraphStyle();
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle();
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('Hello');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.plainText, 'Hello');
     expect(paragraph.spans, hasLength(1));
@@ -121,17 +121,17 @@ Future<void> testMain() async {
       ignorePositions: !isBlink,
     );
 
-    final ParagraphSpan span = paragraph.spans.single;
+    final span = paragraph.spans.single;
     expect(span.style, styleWithDefaults());
   });
 
   test('Sets correct styles for max-lines', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(maxLines: 2);
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(maxLines: 2);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('Hello');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.plainText, 'Hello');
 
@@ -148,12 +148,12 @@ Future<void> testMain() async {
   });
 
   test('Sets correct styles for ellipsis', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(ellipsis: '...');
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(ellipsis: '...');
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('HelloWorld');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.plainText, 'HelloWorld');
 
@@ -173,9 +173,9 @@ Future<void> testMain() async {
   });
 
   test('Builds a single-span paragraph with complex styles', () {
-    final EngineParagraphStyle style =
+    final style =
         EngineParagraphStyle(fontSize: 13.0, height: 1.5);
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.pushStyle(TextStyle(fontSize: 9.0));
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
@@ -185,7 +185,7 @@ Future<void> testMain() async {
         .pushStyle(TextStyle(fontStyle: FontStyle.italic, letterSpacing: 2.0));
     builder.addText('Hello');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.plainText, 'Hello');
     expect(paragraph.spans, hasLength(1));
 
@@ -200,7 +200,7 @@ Future<void> testMain() async {
       ignorePositions: !isBlink,
     );
 
-    final ParagraphSpan span = paragraph.spans.single;
+    final span = paragraph.spans.single;
     expect(getSpanText(paragraph, span), 'Hello');
     expect(
       span.style,
@@ -215,8 +215,8 @@ Future<void> testMain() async {
   });
 
   test('Builds a multi-span paragraph', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(fontSize: 13.0);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
     builder.addText('Hello');
@@ -224,7 +224,7 @@ Future<void> testMain() async {
     builder.pushStyle(TextStyle(fontStyle: FontStyle.italic));
     builder.addText(' world');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.plainText, 'Hello world');
     expect(paragraph.spans, hasLength(2));
 
@@ -263,7 +263,7 @@ Future<void> testMain() async {
       ignorePositions: !isBlink,
     );
 
-    final ParagraphSpan hello = paragraph.spans.first;
+    final hello = paragraph.spans.first;
     expect(getSpanText(paragraph, hello), 'Hello');
     expect(
       hello.style,
@@ -273,7 +273,7 @@ Future<void> testMain() async {
       ),
     );
 
-    final ParagraphSpan world = paragraph.spans.last;
+    final world = paragraph.spans.last;
     expect(getSpanText(paragraph, world), ' world');
     expect(
       world.style,
@@ -285,8 +285,8 @@ Future<void> testMain() async {
   });
 
   test('Builds a multi-span paragraph with complex styles', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(fontSize: 13.0);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
     builder.pushStyle(TextStyle(height: 2.0));
@@ -297,7 +297,7 @@ Future<void> testMain() async {
     builder.pushStyle(TextStyle(fontWeight: FontWeight.normal));
     builder.addText('!');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.plainText, 'Hello world!');
     expect(paragraph.spans, hasLength(3));
 
@@ -321,7 +321,7 @@ Future<void> testMain() async {
       ignorePositions: !isBlink,
     );
 
-    final ParagraphSpan hello = paragraph.spans[0];
+    final hello = paragraph.spans[0];
     expect(getSpanText(paragraph, hello), 'Hello');
     expect(
       hello.style,
@@ -332,7 +332,7 @@ Future<void> testMain() async {
       ),
     );
 
-    final ParagraphSpan world = paragraph.spans[1];
+    final world = paragraph.spans[1];
     expect(getSpanText(paragraph, world), ' world');
     expect(
       world.style,
@@ -343,7 +343,7 @@ Future<void> testMain() async {
       ),
     );
 
-    final ParagraphSpan bang = paragraph.spans[2];
+    final bang = paragraph.spans[2];
     expect(getSpanText(paragraph, bang), '!');
     expect(
       bang.style,
@@ -356,14 +356,14 @@ Future<void> testMain() async {
   });
 
   test('Paragraph with new lines generates correct DOM', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 13.0);
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(fontSize: 13.0);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('First\nSecond ');
     builder.pushStyle(TextStyle(fontStyle: FontStyle.italic));
     builder.addText('ThirdLongLine');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.plainText, 'First\nSecond ThirdLongLine');
     expect(paragraph.spans, hasLength(2));
 
@@ -416,8 +416,8 @@ Future<void> testMain() async {
     // trick them into thinking they are not in test mode, so they use the
     // provided font family.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
-    final EngineParagraphStyle style = EngineParagraphStyle(fontSize: 12.0, fontFamily: 'first');
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final style = EngineParagraphStyle(fontSize: 12.0, fontFamily: 'first');
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('First ');
     builder.pushStyle(TextStyle(fontSize: 18.0, fontFamily: 'second'));
@@ -425,7 +425,7 @@ Future<void> testMain() async {
     builder.pushStyle(TextStyle(fontSize: 10.0, fontFamily: 'third'));
     builder.addText('Third');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.plainText, 'First Second Third');
     expect(paragraph.spans, hasLength(3));
 
@@ -462,15 +462,15 @@ Future<void> testMain() async {
   // Set dir attribute for RTL fragments in order to let the browser
   // handle mirrored characters.
   test('Sets "dir" attribute for RTL fragment', () {
-    final EngineParagraphStyle style = EngineParagraphStyle(
+    final style = EngineParagraphStyle(
       fontSize: 20.0,
       textDirection: TextDirection.rtl,
     );
-    final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+    final builder = CanvasParagraphBuilder(style);
 
     builder.addText('(1)');
 
-    final CanvasParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     expect(paragraph.paragraphStyle, style);
     expect(paragraph.plainText, '(1)');
 
@@ -547,7 +547,7 @@ TextStyle styleWithDefaults({
 }
 
 void expectOuterHtml(CanvasParagraph paragraph, String expected, {required bool ignorePositions}) {
-  String outerHtml = paragraph.toDomElement().outerHTML!;
+  var outerHtml = paragraph.toDomElement().outerHTML!;
   if (ignorePositions) {
     outerHtml = removeMeasurementInfo(outerHtml);
     expected = removeMeasurementInfo(expected);

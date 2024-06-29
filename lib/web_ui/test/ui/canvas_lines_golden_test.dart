@@ -20,11 +20,11 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const Rect region = Rect.fromLTWH(0, 0, 300, 300);
+  const region = Rect.fromLTWH(0, 0, 300, 300);
 
   test('draws lines with varying strokeWidth', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, region);
     paintLines(canvas);
 
     await drawPictureUsingCurrentRenderer(recorder.endRecording());
@@ -33,11 +33,11 @@ Future<void> testMain() async {
   });
 
   test('draws lines with negative Offset values', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, region);
 
     // test rendering lines correctly with negative offset when using DOM
-    final Paint paintWithStyle = Paint()
+    final paintWithStyle = Paint()
     ..color = const Color(0xFFE91E63) // Colors.pink
     ..style = PaintingStyle.stroke
     ..strokeWidth = 16
@@ -45,18 +45,18 @@ Future<void> testMain() async {
 
     // canvas.drawLine ignores paint.style (defaults to fill) according to api docs.
     // expect lines are rendered the same regardless of the set paint.style
-    final Paint paintWithoutStyle = Paint()
+    final paintWithoutStyle = Paint()
     ..color = const Color(0xFF4CAF50) // Colors.green
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.round;
 
     // test vertical, horizontal, and diagonal lines
-    final List<Offset> points = <Offset>[
+    final points = <Offset>[
       const Offset(-25, 50), const Offset(45, 50),
       const Offset(100, -25), const Offset(100, 200),
       const Offset(-150, -145), const Offset(100, 200),
     ];
-    final List<Offset> shiftedPoints = points.map((Offset point) => point.translate(20, 20)).toList();
+    final shiftedPoints = points.map((Offset point) => point.translate(20, 20)).toList();
 
     paintLinesFromPoints(canvas, paintWithStyle, points);
     paintLinesFromPoints(canvas, paintWithoutStyle, shiftedPoints);
@@ -66,32 +66,32 @@ Future<void> testMain() async {
   });
 
   test('drawLines method respects strokeCap', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, region);
 
-    final Paint paintStrokeCapRound = Paint()
+    final paintStrokeCapRound = Paint()
     ..color = const Color(0xFFE91E63) // Colors.pink
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.round;
 
-    final Paint paintStrokeCapSquare = Paint()
+    final paintStrokeCapSquare = Paint()
     ..color = const Color(0xFF4CAF50) // Colors.green
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.square;
 
-    final Paint paintStrokeCapButt = Paint()
+    final paintStrokeCapButt = Paint()
     ..color = const Color(0xFFFF9800) // Colors.orange
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.butt;
 
     // test vertical, horizontal, and diagonal lines
-    final List<Offset> points = <Offset>[
+    final points = <Offset>[
       const Offset(5, 50), const Offset(45, 50),
       const Offset(100, 5), const Offset(100, 200),
       const Offset(5, 10), const Offset(100, 200),
     ];
-    final List<Offset> shiftedPoints = points.map((Offset point) => point.translate(50, 50)).toList();
-    final List<Offset> twiceShiftedPoints = shiftedPoints.map((Offset point) => point.translate(50, 50)).toList();
+    final shiftedPoints = points.map((Offset point) => point.translate(50, 50)).toList();
+    final twiceShiftedPoints = shiftedPoints.map((Offset point) => point.translate(50, 50)).toList();
 
     paintLinesFromPoints(canvas, paintStrokeCapRound, points);
     paintLinesFromPoints(canvas, paintStrokeCapSquare, shiftedPoints);
@@ -103,18 +103,18 @@ Future<void> testMain() async {
 }
 
 void paintLines(Canvas canvas) {
-  final Paint nullPaint = Paint()
+  final nullPaint = Paint()
     ..strokeWidth = 1.0
     ..style = PaintingStyle.stroke;
-  final Paint paint1 = Paint()
+  final paint1 = Paint()
       ..color = const Color(0xFF9E9E9E) // Colors.grey
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-  final Paint paint2 = Paint()
+  final paint2 = Paint()
       ..color = const Color(0x7fff0000)
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-  final Paint paint3 = Paint()
+  final paint3 = Paint()
       ..color = const Color(0xFF4CAF50) //Colors.green
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
@@ -140,7 +140,7 @@ void paintLines(Canvas canvas) {
 
 void paintLinesFromPoints(Canvas canvas, Paint paint, List<Offset> points) {
   // points list contains pairs of Offset points, so for loop step is 2
-  for (int i = 0; i < points.length - 1; i += 2) {
+  for (var i = 0; i < points.length - 1; i += 2) {
     canvas.drawLine(points[i], points[i + 1], paint);
   }
 }

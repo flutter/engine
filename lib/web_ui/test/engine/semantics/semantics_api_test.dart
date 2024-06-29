@@ -18,22 +18,22 @@ void main() {
 
 void testMain() {
   // This must match the number of flags in lib/ui/semantics.dart
-  const int numSemanticsFlags = 28;
+  const numSemanticsFlags = 28;
   test('SemanticsFlag.values refers to all flags.', () async {
     expect(SemanticsFlag.values.length, equals(numSemanticsFlags));
-    for (int index = 0; index < numSemanticsFlags; ++index) {
-      final int flag = 1 << index;
+    for (var index = 0; index < numSemanticsFlags; ++index) {
+      final flag = 1 << index;
       expect(SemanticsFlag.fromIndex(flag), isNotNull);
       expect(SemanticsFlag.fromIndex(flag).toString(), startsWith('SemanticsFlag.'));
     }
   });
 
   // This must match the number of actions in lib/ui/semantics.dart
-  const int numSemanticsActions = 23;
+  const numSemanticsActions = 23;
   test('SemanticsAction.values refers to all actions.', () async {
     expect(SemanticsAction.values.length, equals(numSemanticsActions));
-    for (int index = 0; index < numSemanticsActions; ++index) {
-      final int action = 1 << index;
+    for (var index = 0; index < numSemanticsActions; ++index) {
+      final action = 1 << index;
       expect(SemanticsAction.fromIndex(action), isNotNull);
       expect(SemanticsAction.fromIndex(action).toString(), startsWith('SemanticsAction.'));
     }

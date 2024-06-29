@@ -42,7 +42,7 @@ class SkwasmPathMetricIterator extends SkwasmObjectWrapper<RawContourMeasureIter
 
   @override
   bool moveNext() {
-    final ContourMeasureHandle measureHandle = contourMeasureIterNext(handle);
+    final measureHandle = contourMeasureIterNext(handle);
     if (measureHandle == nullptr) {
       _current = null;
       return false;
@@ -72,10 +72,10 @@ class SkwasmPathMetric extends SkwasmObjectWrapper<RawContourMeasure> implements
   @override
   ui.Tangent? getTangentForOffset(double distance) {
     return withStackScope((StackScope scope) {
-      final Pointer<Float> outPosition = scope.allocFloatArray(4);
-      final Pointer<Float> outTangent =
+      final outPosition = scope.allocFloatArray(4);
+      final outTangent =
           Pointer<Float>.fromAddress(outPosition.address + sizeOf<Float>() * 2);
-      final bool result =
+      final result =
           contourMeasureGetPosTan(handle, distance, outPosition, outTangent);
       assert(result);
       return ui.Tangent(

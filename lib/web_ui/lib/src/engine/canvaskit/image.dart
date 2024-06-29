@@ -45,7 +45,7 @@ void skiaDecodeImageFromPixels(
   // Run in a timer to avoid janking the current frame by moving the decoding
   // work outside the frame event.
   Timer.run(() {
-    final SkImage? skImage = canvasKit.MakeImage(
+    final skImage = canvasKit.MakeImage(
       SkImageInfo(
         width: width.toDouble(),
         height: height.toDouble(),
@@ -120,10 +120,10 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
     assert(targetWidth != null);
     assert(targetHeight != null);
 
-    final CkPictureRecorder recorder = CkPictureRecorder();
-    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+    final recorder = CkPictureRecorder();
+    final canvas = recorder.beginRecording(ui.Rect.largest);
 
-    final CkPaint paint = CkPaint();
+    final paint = CkPaint();
     canvas.drawImageRect(
       CkImage(image),
       ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
@@ -132,13 +132,13 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
     );
     paint.dispose();
 
-    final CkPicture picture = recorder.endRecording();
+    final picture = recorder.endRecording();
     final ui.Image finalImage = picture.toImageSync(
       targetWidth,
       targetHeight
     );
 
-    final CkImage ckImage = finalImage as CkImage;
+    final ckImage = finalImage as CkImage;
     return ckImage;
 }
 
@@ -159,7 +159,7 @@ const String _kNetworkImageMessage = 'Failed to load network image.';
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
-  final Uint8List list = await fetchImage(url, chunkCallback);
+  final list = await fetchImage(url, chunkCallback);
   if (browserSupportsImageDecoder) {
     return CkBrowserImageDecoder.create(data: list, debugSource: url);
   } else {
@@ -170,8 +170,8 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
 /// Sends a request to fetch image data.
 Future<Uint8List> fetchImage(String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
   try {
-    final HttpFetchResponse response = await httpFetch(url);
-    final int? contentLength = response.contentLength;
+    final response = await httpFetch(url);
+    final contentLength = response.contentLength;
 
     if (!response.hasPayload) {
       throw ImageCodecException(
@@ -200,9 +200,9 @@ Future<Uint8List> fetchImage(String url, ui_web.ImageCodecChunkCallback? chunkCa
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
 Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, ui_web.ImageCodecChunkCallback chunkCallback) async {
-  final JSUint8Array result = createUint8ArrayFromLength(contentLength);
-  int position = 0;
-  int cumulativeBytesLoaded = 0;
+  final result = createUint8ArrayFromLength(contentLength);
+  var position = 0;
+  var cumulativeBytesLoaded = 0;
   await payload.read<JSUint8Array>((JSUint8Array chunk) {
     cumulativeBytesLoaded += chunk.length.toDartInt;
     chunkCallback(cumulativeBytesLoaded, contentLength);
@@ -334,8 +334,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
   Future<ByteData> _readPixelsFromSkImage(ui.ImageByteFormat format) {
-    final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba ? canvasKit.AlphaType.Unpremul : canvasKit.AlphaType.Premul;
-    final ByteData? data = _encodeImage(
+    final alphaType = format == ui.ImageByteFormat.rawStraightRgba ? canvasKit.AlphaType.Unpremul : canvasKit.AlphaType.Premul;
+    final data = _encodeImage(
       skImage: skImage,
       format: format,
       alphaType: alphaType,
@@ -359,7 +359,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
     Uint8List? bytes;
 
     if (format == ui.ImageByteFormat.rawRgba || format == ui.ImageByteFormat.rawStraightRgba) {
-      final SkImageInfo imageInfo = SkImageInfo(
+      final imageInfo = SkImageInfo(
         alphaType: alphaType,
         colorType: colorType,
         colorSpace: colorSpace,

@@ -16,10 +16,10 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const double screenWidth = 600.0;
-  const double screenHeight = 800.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-  final SurfacePaint testPaint = SurfacePaint()
+  const screenWidth = 600.0;
+  const screenHeight = 800.0;
+  const screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+  final testPaint = SurfacePaint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.0
     ..color = const Color(0xFFFF00FF);
@@ -30,12 +30,12 @@ Future<void> testMain() async {
   test("Canvas is reused and z-index doesn't leak across paints", () async {
     final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
         RenderStrategy());
-    const Rect region = Rect.fromLTWH(0, 0, 500, 500);
+    const region = Rect.fromLTWH(0, 0, 500, 500);
 
     // Draw first frame into engine canvas.
-    final RecordingCanvas rc =
+    final rc =
       RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
-    final Path path = Path()
+    final path = Path()
       ..moveTo(3, 0)
       ..lineTo(100, 97);
     rc.drawPath(path, testPaint);
@@ -43,7 +43,7 @@ Future<void> testMain() async {
     rc.apply(engineCanvas, screenRect);
     engineCanvas.endOfPaint();
 
-    DomElement sceneElement = createDomElement('flt-scene');
+    var sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -53,13 +53,13 @@ Future<void> testMain() async {
     sceneElement.append(engineCanvas.rootElement);
     domDocument.body!.append(sceneElement);
 
-    final DomCanvasElement canvas = domDocument.querySelector('canvas')! as DomCanvasElement;
+    final canvas = domDocument.querySelector('canvas')! as DomCanvasElement;
     // ! Since canvas is first element, it should have zIndex = -1 for correct
     // paint order.
     expect(canvas.style.zIndex , '-1');
 
     // Add id to canvas element to test for reuse.
-    const String kTestId = 'test-id-5698';
+    const kTestId = 'test-id-5698';
     canvas.id = kTestId;
 
     sceneElement.remove();
@@ -69,9 +69,9 @@ Future<void> testMain() async {
 
     // Now paint a second scene to same [BitmapCanvas] but paint an image
     // before the path to move canvas element into second position.
-    final RecordingCanvas rc2 =
+    final rc2 =
       RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
-    final Path path2 = Path()
+    final path2 = Path()
       ..moveTo(3, 0)
       ..quadraticBezierTo(100, 0, 100, 100);
     rc2.drawImage(_createRealTestImage(), Offset.zero, SurfacePaint());
@@ -89,7 +89,7 @@ Future<void> testMain() async {
     sceneElement.append(engineCanvas.rootElement);
     domDocument.body!.append(sceneElement);
 
-    final DomCanvasElement canvas2 = domDocument.querySelector('canvas')! as DomCanvasElement;
+    final canvas2 = domDocument.querySelector('canvas')! as DomCanvasElement;
     // ZIndex should have been cleared since we have image element preceding
     // canvas.
     expect(canvas.style.zIndex != '-1', isTrue);

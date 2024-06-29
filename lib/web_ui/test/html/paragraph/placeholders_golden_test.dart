@@ -26,11 +26,11 @@ Future<void> testMain() async {
   );
 
   test('draws paragraphs with placeholders', () {
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    Offset offset = Offset.zero;
-    for (final PlaceholderAlignment placeholderAlignment in PlaceholderAlignment.values) {
-      final CanvasParagraph paragraph = rich(
+    var offset = Offset.zero;
+    for (final placeholderAlignment in PlaceholderAlignment.values) {
+      final paragraph = rich(
         EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 14.0),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(TextStyle(color: black));
@@ -60,17 +60,17 @@ Future<void> testMain() async {
   });
 
   test('draws paragraphs with placeholders and text align', () {
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const List<TextAlign> aligns = <TextAlign>[
+    const aligns = <TextAlign>[
       TextAlign.left,
       TextAlign.center,
       TextAlign.right,
     ];
 
-    Offset offset = Offset.zero;
-    for (final TextAlign align in aligns) {
-      final CanvasParagraph paragraph = rich(
+    var offset = Offset.zero;
+    for (final align in aligns) {
+      final paragraph = rich(
         EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 14.0, textAlign: align),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(TextStyle(color: black));
@@ -94,17 +94,17 @@ Future<void> testMain() async {
   });
 
   test('draws paragraphs with placeholders and text align in DOM mode', () {
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const List<TextAlign> aligns = <TextAlign>[
+    const aligns = <TextAlign>[
       TextAlign.left,
       TextAlign.center,
       TextAlign.right,
     ];
 
-    Offset offset = Offset.zero;
-    for (final TextAlign align in aligns) {
-      final CanvasParagraph paragraph = rich(
+    var offset = Offset.zero;
+    for (final align in aligns) {
+      final paragraph = rich(
         EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 14.0, textAlign: align),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(TextStyle(color: black));
@@ -128,13 +128,13 @@ Future<void> testMain() async {
   });
 
   test('draws paragraphs starting or ending with a placeholder', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 420, 300);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 420, 300);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    Offset offset = const Offset(10, 10);
+    var offset = const Offset(10, 10);
 
     // First paragraph with a placeholder at the beginning.
-    final CanvasParagraph paragraph1 = rich(
+    final paragraph1 = rich(
       EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 24.0, textAlign: TextAlign.center),
       (CanvasParagraphBuilder builder) {
         builder.addPlaceholder(80.0, 50.0, PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic);
@@ -151,7 +151,7 @@ Future<void> testMain() async {
     offset = offset.translate(0.0, paragraph1.height + 30.0);
 
     // Second paragraph with a placeholder at the end.
-    final CanvasParagraph paragraph2 = rich(
+    final paragraph2 = rich(
       EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 24.0, textAlign: TextAlign.center),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(TextStyle(color: black));
@@ -168,7 +168,7 @@ Future<void> testMain() async {
     offset = offset.translate(0.0, paragraph2.height + 30.0);
 
     // Third paragraph with a placeholder alone in the second line.
-    final CanvasParagraph paragraph3 = rich(
+    final paragraph3 = rich(
       EngineParagraphStyle(fontFamily: 'Roboto', fontSize: 24.0, textAlign: TextAlign.center),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(TextStyle(color: black));
@@ -191,7 +191,7 @@ void surroundParagraph(
   Offset offset,
   CanvasParagraph paragraph,
 ) {
-  final Rect rect = offset & Size(paragraph.width, paragraph.height);
-  final SurfacePaint paint = SurfacePaint()..color = blue..style = PaintingStyle.stroke;
+  final rect = offset & Size(paragraph.width, paragraph.height);
+  final paint = SurfacePaint()..color = blue..style = PaintingStyle.stroke;
   canvas.drawRect(rect, paint.paintData);
 }

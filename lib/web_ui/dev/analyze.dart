@@ -19,7 +19,7 @@ class AnalyzeCommand extends Command<bool> with ArgUtils<bool> {
 
   @override
   FutureOr<bool> run() async {
-    final Pipeline buildPipeline = Pipeline(steps: <PipelineStep>[
+    final buildPipeline = Pipeline(steps: <PipelineStep>[
       PubGetStep(),
       AnalyzeStep(),
     ]);

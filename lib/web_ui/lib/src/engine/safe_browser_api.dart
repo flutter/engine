@@ -98,10 +98,10 @@ num? parseFontSize(DomElement element) {
 
   if (hasJsProperty(element, 'computedStyleMap')) {
     // Use the newer `computedStyleMap` API available on some browsers.
-    final Object? computedStyleMap =
+    final computedStyleMap =
         js_util.callMethod<Object?>(element, 'computedStyleMap', const <Object?>[]);
     if (computedStyleMap is Object) {
-      final Object? fontSizeObject =
+      final fontSizeObject =
           js_util.callMethod<Object?>(computedStyleMap, 'get', <Object?>['font-size']);
       if (fontSizeObject is Object) {
         fontSize = js_util.getProperty<num>(fontSizeObject, 'value');
@@ -111,7 +111,7 @@ num? parseFontSize(DomElement element) {
 
   if (fontSize == null) {
     // Fallback to `getComputedStyle`.
-    final String fontSizeString =
+    final fontSizeString =
         domWindow.getComputedStyle(element).getPropertyValue('font-size');
     fontSize = parseFloat(fontSizeString);
   }
@@ -121,7 +121,7 @@ num? parseFontSize(DomElement element) {
 
 /// Provides haptic feedback.
 void vibrate(int durationMs) {
-  final DomNavigator navigator = domWindow.navigator;
+  final navigator = domWindow.navigator;
   if (hasJsProperty(navigator, 'vibrate')) {
     js_util.callMethod<void>(navigator, 'vibrate', <num>[durationMs]);
   }
@@ -133,7 +133,7 @@ void vibrate(int durationMs) {
 /// succeed and will return a non-null element. This is not always true. For
 /// example, when Safari on iOS runs out of memory it returns null.
 DomCanvasElement? tryCreateCanvasElement(int width, int height) {
-  final DomCanvasElement? canvas = js_util.callMethod<DomCanvasElement?>(
+  final canvas = js_util.callMethod<DomCanvasElement?>(
     domDocument,
     'createElement',
     <dynamic>['CANVAS'],
@@ -459,15 +459,15 @@ class GlContext {
 
   GlProgram cacheProgram(
       String vertexShaderSource, String fragmentShaderSource) {
-    final String cacheKey = '$vertexShaderSource||$fragmentShaderSource';
-    GlProgram? cachedProgram = _programCache[cacheKey];
+    final cacheKey = '$vertexShaderSource||$fragmentShaderSource';
+    var cachedProgram = _programCache[cacheKey];
     if (cachedProgram == null) {
       // Create and compile shaders.
-      final Object vertexShader = compileShader('VERTEX_SHADER', vertexShaderSource);
-      final Object fragmentShader =
+      final vertexShader = compileShader('VERTEX_SHADER', vertexShaderSource);
+      final fragmentShader =
       compileShader('FRAGMENT_SHADER', fragmentShaderSource);
       // Create a gl program and link shaders.
-      final Object program = createProgram();
+      final program = createProgram();
       attachShader(program, vertexShader);
       attachShader(program, fragmentShader);
       linkProgram(program);
@@ -478,13 +478,13 @@ class GlContext {
   }
 
   Object compileShader(String shaderType, String source) {
-    final Object? shader = _createShader(shaderType);
+    final shader = _createShader(shaderType);
     if (shader == null) {
       throw Exception(error);
     }
     js_util.callMethod<void>(glContext, 'shaderSource', <dynamic>[shader, source]);
     js_util.callMethod<void>(glContext, 'compileShader', <dynamic>[shader]);
-    final bool shaderStatus = js_util.callMethod<bool>(
+    final shaderStatus = js_util.callMethod<bool>(
       glContext,
       'getShaderParameter',
       <dynamic>[shader, compileStatus],
@@ -503,7 +503,7 @@ class GlContext {
 
   void linkProgram(Object program) {
     js_util.callMethod<void>(glContext, 'linkProgram', <dynamic>[program]);
-    final bool programStatus = js_util.callMethod<bool>(
+    final programStatus = js_util.callMethod<bool>(
       glContext,
       'getProgramParameter',
       <dynamic>[program, kLinkStatus],
@@ -596,7 +596,7 @@ class GlContext {
 
   /// Destroys gl context.
   void dispose() {
-    final Object? loseContextExtension = _getExtension('WEBGL_lose_context');
+    final loseContextExtension = _getExtension('WEBGL_lose_context');
     if (loseContextExtension != null) {
       js_util.callMethod<void>(
         loseContextExtension,
@@ -789,19 +789,19 @@ class GlContext {
   ///
   /// Warning: data is read bottom up (flipped).
   DomImageData readImageData() {
-    const int kBytesPerPixel = 4;
-    final int bufferWidth = _widthInPixels!;
-    final int bufferHeight = _heightInPixels!;
+    const kBytesPerPixel = 4;
+    final bufferWidth = _widthInPixels!;
+    final bufferHeight = _heightInPixels!;
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit ||
         ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
-      final Uint8List pixels =
+      final pixels =
       Uint8List(bufferWidth * bufferHeight * kBytesPerPixel);
       js_util.callMethod<void>(glContext, 'readPixels',
           <dynamic>[0, 0, bufferWidth, bufferHeight, kRGBA, kUnsignedByte, pixels]);
       return createDomImageData(
           Uint8ClampedList.fromList(pixels), bufferWidth, bufferHeight);
     } else {
-      final Uint8ClampedList pixels =
+      final pixels =
       Uint8ClampedList(bufferWidth * bufferHeight * kBytesPerPixel);
       js_util.callMethod<void>(glContext, 'readPixels',
           <dynamic>[0, 0, bufferWidth, bufferHeight, kRGBA, kUnsignedByte, pixels]);
@@ -825,8 +825,8 @@ class GlContext {
           <dynamic>[]);
       return imageBitmap;
     } else {
-      final DomCanvasElement canvas = createDomCanvasElement(width: _widthInPixels, height: _heightInPixels);
-      final DomCanvasRenderingContext2D ctx = canvas.context2D;
+      final canvas = createDomCanvasElement(width: _widthInPixels, height: _heightInPixels);
+      final ctx = canvas.context2D;
       drawImage(ctx, 0, 0);
       return canvas;
     }
@@ -834,10 +834,10 @@ class GlContext {
 
   /// Returns image data in data url format.
   String toImageUrl() {
-    final DomCanvasElement canvas = createDomCanvasElement(width: _widthInPixels, height: _heightInPixels);
-    final DomCanvasRenderingContext2D ctx = canvas.context2D;
+    final canvas = createDomCanvasElement(width: _widthInPixels, height: _heightInPixels);
+    final ctx = canvas.context2D;
     drawImage(ctx, 0, 0);
-    final String dataUrl = canvas.toDataURL();
+    final dataUrl = canvas.toDataURL();
     canvas.width = 0;
     canvas.height = 0;
     return dataUrl;
@@ -882,24 +882,24 @@ void setupVertexTransforms(
     double widthInPixels,
     double heightInPixels,
     Matrix4 transform) {
-  final Object transformUniform =
+  final transformUniform =
       gl.getUniformLocation(glProgram.program, 'u_ctransform');
-  final Matrix4 transformAtOffset = transform.clone()
+  final transformAtOffset = transform.clone()
     ..translate(-offsetX, -offsetY);
   gl.setUniformMatrix4fv(transformUniform, false, transformAtOffset.storage);
 
   // Set uniform to scale 0..width/height pixels coordinates to -1..1
   // clipspace range and flip the Y axis.
-  final Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
+  final resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
   gl.setUniform4f(resolution, 2.0 / widthInPixels,
       -2.0 / heightInPixels, 1, 1);
-  final Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
+  final shift = gl.getUniformLocation(glProgram.program, 'u_shift');
   gl.setUniform4f(shift, -1, 1, 0, 0);
 }
 
 void setupTextureTransform(
     GlContext gl, GlProgram glProgram, double offsetx, double offsety, double sx, double sy) {
-  final Object scalar = gl.getUniformLocation(glProgram.program, 'u_textransform');
+  final scalar = gl.getUniformLocation(glProgram.program, 'u_textransform');
   gl.setUniform4f(scalar, sx, sy, offsetx, offsety);
 }
 
@@ -908,9 +908,9 @@ void bufferVertexData(GlContext gl, Float32List positions,
   if (devicePixelRatio == 1.0) {
     gl.bufferData(positions, gl.kStaticDraw);
   } else {
-    final int length = positions.length;
-    final Float32List scaledList = Float32List(length);
-    for (int i = 0; i < length; i++) {
+    final length = positions.length;
+    final scaledList = Float32List(length);
+    for (var i = 0; i < length; i++) {
       scaledList[i] = positions[i] * devicePixelRatio;
     }
     gl.bufferData(scaledList, gl.kStaticDraw);
@@ -952,8 +952,8 @@ class OffScreenCanvas {
   static bool? _supported;
 
   void _updateCanvasCssSize(DomCanvasElement element) {
-    final double cssWidth = width / EngineFlutterDisplay.instance.browserDevicePixelRatio;
-    final double cssHeight = height / EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final cssWidth = width / EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final cssHeight = height / EngineFlutterDisplay.instance.browserDevicePixelRatio;
     element.style
       ..position = 'absolute'
       ..width = '${cssWidth}px'
@@ -1018,10 +1018,10 @@ class OffScreenCanvas {
 
   /// Converts canvas contents to an image and returns as data URL.
   Future<String> toDataUrl() {
-    final Completer<String> completer = Completer<String>();
+    final completer = Completer<String>();
     if (offScreenCanvas != null) {
       offScreenCanvas!.convertToBlob().then((DomBlob value) {
-        final DomFileReader fileReader = createDomFileReader();
+        final fileReader = createDomFileReader();
         fileReader.addEventListener('load', createDomEventListener((DomEvent event) {
           completer.complete(
             js_util.getProperty<String>(js_util.getProperty<Object>(event, 'target'), 'result'),

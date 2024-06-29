@@ -23,20 +23,20 @@ class LicensesCommand extends Command<bool> {
   }
 
   void _checkLicenseHeaders() {
-    final List<io.File> allSourceFiles =
+    final allSourceFiles =
         _flatListSourceFiles(environment.webUiRootDir);
     _expect(allSourceFiles.isNotEmpty,
         'Dart source listing of ${environment.webUiRootDir.path} must not be empty.');
 
-    final List<String> allDartPaths =
+    final allDartPaths =
         allSourceFiles.map((io.File f) => f.path).toList();
 
-    for (final String expectedDirectory in const <String>[
+    for (final expectedDirectory in const <String>[
       'lib',
       'test',
       'dev',
     ]) {
-      final String expectedAbsoluteDirectory =
+      final expectedAbsoluteDirectory =
           path.join(environment.webUiRootDir.path, expectedDirectory);
       _expect(
         allDartPaths
@@ -54,7 +54,7 @@ class LicensesCommand extends Command<bool> {
       RegExp(r'// Copyright 2013 The Flutter Authors\. All rights reserved\.');
 
   void _expectLicenseHeader(io.File file) {
-    final List<String> head = file.readAsStringSync().split('\n').take(3).toList();
+    final head = file.readAsStringSync().split('\n').take(3).toList();
 
     _expect(head.length >= 3, 'File too short: ${file.path}');
     _expect(
@@ -81,7 +81,7 @@ class LicensesCommand extends Command<bool> {
   List<io.File> _flatListSourceFiles(io.Directory directory) {
     // This is the old path that tests used to be built into. Ignore anything
     // within this path.
-    final String legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
+    final legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
     return directory.listSync(recursive: true).whereType<io.File>().where((io.File f) {
       if (!f.path.endsWith('.dart') && !f.path.endsWith('.js')) {
         // Not a source file we're checking.

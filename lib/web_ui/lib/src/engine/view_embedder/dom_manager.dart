@@ -42,12 +42,12 @@ import 'style_manager.dart';
 ///
 class DomManager {
   factory DomManager({required double devicePixelRatio}) {
-    final DomElement rootElement = domDocument.createElement(DomManager.flutterViewTagName);
-    final DomElement platformViewsHost = domDocument.createElement(DomManager.glassPaneTagName);
-    final DomShadowRoot renderingHost = _attachShadowRoot(platformViewsHost);
-    final DomElement sceneHost = domDocument.createElement(DomManager.sceneHostTagName);
-    final DomElement textEditingHost = domDocument.createElement(DomManager.textEditingHostTagName);
-    final DomElement semanticsHost = domDocument.createElement(DomManager.semanticsHostTagName);
+    final rootElement = domDocument.createElement(DomManager.flutterViewTagName);
+    final platformViewsHost = domDocument.createElement(DomManager.glassPaneTagName);
+    final renderingHost = _attachShadowRoot(platformViewsHost);
+    final sceneHost = domDocument.createElement(DomManager.sceneHostTagName);
+    final textEditingHost = domDocument.createElement(DomManager.textEditingHostTagName);
+    final semanticsHost = domDocument.createElement(DomManager.semanticsHostTagName);
 
     // Root element children.
     rootElement.appendChild(platformViewsHost);
@@ -192,7 +192,7 @@ class DomManager {
   void injectPlatformView(int platformViewId) {
     // For now, we don't need anything fancier. If needed, this can be converted
     // to a PlatformViewStrategy class for each web-renderer backend?
-    final DomElement? pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
+    final pv = PlatformViewManager.instance.getSlottedContent(platformViewId);
     if (pv == null) {
       domWindow.console.debug('Failed to inject Platform View Id: $platformViewId. '
         'Render seems to be happening before a `flutter/platform_views:create` platform message!');

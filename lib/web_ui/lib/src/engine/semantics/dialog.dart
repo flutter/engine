@@ -39,14 +39,14 @@ class Dialog extends PrimaryRoleManager {
 
   void _setDefaultFocus() {
     semanticsObject.visitDepthFirstInTraversalOrder((SemanticsObject node) {
-      final PrimaryRoleManager? roleManager = node.primaryRole;
+      final roleManager = node.primaryRole;
       if (roleManager == null) {
         return true;
       }
 
       // If the node does not take focus (e.g. focusing on it does not make
       // sense at all). Despair not. Keep looking.
-      final bool didTakeFocus = roleManager.focusAsRouteDefault();
+      final didTakeFocus = roleManager.focusAsRouteDefault();
       return !didTakeFocus;
     });
   }
@@ -58,7 +58,7 @@ class Dialog extends PrimaryRoleManager {
     // If semantic object corresponding to the dialog also provides the label
     // for itself it is applied as `aria-label`. See also [describeBy].
     if (semanticsObject.namesRoute) {
-      final String? label = semanticsObject.label;
+      final label = semanticsObject.label;
       assert(() {
         if (label == null || label.trim().isEmpty) {
           printWarning(
@@ -124,7 +124,7 @@ class RouteName extends RoleManager {
     }
 
     if (semanticsObject.isLabelDirty) {
-      final Dialog? dialog = _dialog;
+      final dialog = _dialog;
       if (dialog != null) {
         // Already attached to a dialog, just update the description.
         dialog.describeBy(this);
@@ -142,7 +142,7 @@ class RouteName extends RoleManager {
   }
 
   void _lookUpNearestAncestorDialog() {
-    SemanticsObject? parent = semanticsObject.parent;
+    var parent = semanticsObject.parent;
     while (parent != null && parent.primaryRole?.role != PrimaryRole.dialog) {
       parent = parent.parent;
     }

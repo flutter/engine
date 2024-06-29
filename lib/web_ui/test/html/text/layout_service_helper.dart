@@ -31,11 +31,11 @@ TestLine l(
 }
 
 void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
-  final List<ParagraphLine> lines = paragraph.lines;
+  final lines = paragraph.lines;
   expect(lines, hasLength(expectedLines.length));
-  for (int i = 0; i < lines.length; i++) {
-    final ParagraphLine line = lines[i];
-    final TestLine expectedLine = expectedLines[i];
+  for (var i = 0; i < lines.length; i++) {
+    final line = lines[i];
+    final expectedLine = expectedLines[i];
 
     expect(
       line.lineNumber,
@@ -43,7 +43,7 @@ void expectLines(CanvasParagraph paragraph, List<TestLine> expectedLines) {
       reason: 'line #$i had the wrong `lineNumber`. Expected: $i. Actual: ${line.lineNumber}',
     );
     if (expectedLine.displayText != null) {
-      final String displayText = line.getText(paragraph);
+      final displayText = line.getText(paragraph);
       expect(
         displayText,
         expectedLine.displayText,

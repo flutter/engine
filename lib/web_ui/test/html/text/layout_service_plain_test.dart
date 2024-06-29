@@ -22,7 +22,7 @@ Future<void> testMain() async {
   setUpUnitTests(withImplicitView: true);
 
   test('no text', () {
-    final CanvasParagraph paragraph = CanvasParagraphBuilder(ahemStyle).build();
+    final paragraph = CanvasParagraphBuilder(ahemStyle).build();
     paragraph.layout(constrain(double.infinity));
 
     expect(paragraph.maxIntrinsicWidth, 0);
@@ -84,7 +84,7 @@ Future<void> testMain() async {
   });
 
   test('uses single-line when text can fit without wrapping', () {
-    final CanvasParagraph paragraph = plain(ahemStyle, '12345')
+    final paragraph = plain(ahemStyle, '12345')
       ..layout(constrain(50.0));
 
     // Should fit on a single line.
@@ -99,7 +99,7 @@ Future<void> testMain() async {
   });
 
   test('simple multi-line text', () {
-    final CanvasParagraph paragraph = plain(ahemStyle, 'foo bar baz')
+    final paragraph = plain(ahemStyle, 'foo bar baz')
       ..layout(constrain(70.0));
     expect(paragraph.alphabeticBaseline, 8);
     expect(paragraph.maxIntrinsicWidth, 110);
@@ -194,7 +194,7 @@ Future<void> testMain() async {
   });
 
   test('uses multi-line for text that contains new-line', () {
-    final CanvasParagraph paragraph = plain(ahemStyle, '12\n34')
+    final paragraph = plain(ahemStyle, '12\n34')
       ..layout(constrain(50.0));
 
     // Text containing newlines should always be drawn in multi-line mode.
@@ -248,7 +248,7 @@ Future<void> testMain() async {
   test(
     'wraps multi-line text correctly when constraint width is infinite',
     () {
-      final CanvasParagraph paragraph = plain(ahemStyle, '123\n456 789')
+      final paragraph = plain(ahemStyle, '123\n456 789')
         ..layout(constrain(double.infinity));
 
       expect(paragraph.maxIntrinsicWidth, 70);
@@ -263,9 +263,9 @@ Future<void> testMain() async {
   );
 
   test('takes letter spacing into account', () {
-    final EngineTextStyle spacedTextStyle =
+    final spacedTextStyle =
         EngineTextStyle.only(letterSpacing: 3);
-    final CanvasParagraph spacedText =
+    final spacedText =
         plain(ahemStyle, 'abc', textStyle: spacedTextStyle)
           ..layout(constrain(100.0));
 
@@ -274,9 +274,9 @@ Future<void> testMain() async {
   });
 
   test('takes word spacing into account', () {
-    final CanvasParagraph normalText = plain(ahemStyle, 'a b c')
+    final normalText = plain(ahemStyle, 'a b c')
       ..layout(constrain(100.0));
-    final CanvasParagraph spacedText = plain(ahemStyle, 'a b c',
+    final spacedText = plain(ahemStyle, 'a b c',
         textStyle: EngineTextStyle.only(wordSpacing: 1.5))
       ..layout(constrain(100.0));
 
@@ -389,7 +389,7 @@ Future<void> testMain() async {
   });
 
   test('respects text overflow', () {
-    final EngineParagraphStyle overflowStyle = EngineParagraphStyle(
+    final overflowStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       ellipsis: '...',
@@ -397,7 +397,7 @@ Future<void> testMain() async {
 
     // The text shouldn't be broken into multiple lines, so the height should
     // be equal to a height of a single line.
-    final CanvasParagraph longText = plain(
+    final longText = plain(
       overflowStyle,
       'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
     )..layout(constrain(50.0));
@@ -410,7 +410,7 @@ Future<void> testMain() async {
 
     // The short prefix should make the text break into two lines, but the
     // second line should remain unbroken.
-    final CanvasParagraph longTextShortPrefix = plain(
+    final longTextShortPrefix = plain(
       overflowStyle,
       'AAA\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
     )..layout(constrain(50.0));
@@ -424,7 +424,7 @@ Future<void> testMain() async {
 
     // Constraints only enough to fit "AA" with the ellipsis, but not the
     // trailing white space.
-    final CanvasParagraph trailingSpace = plain(overflowStyle, 'AA AAA')
+    final trailingSpace = plain(overflowStyle, 'AA AAA')
       ..layout(constrain(50.0));
     expect(trailingSpace.minIntrinsicWidth, 30);
     expect(trailingSpace.maxIntrinsicWidth, 60);
@@ -434,7 +434,7 @@ Future<void> testMain() async {
     ]);
 
     // Tiny constraints.
-    final CanvasParagraph paragraph = plain(overflowStyle, 'AAAA')
+    final paragraph = plain(overflowStyle, 'AAAA')
       ..layout(constrain(30.0));
     expect(paragraph.minIntrinsicWidth, 40);
     expect(paragraph.maxIntrinsicWidth, 40);
@@ -459,14 +459,14 @@ Future<void> testMain() async {
   });
 
   test('respects max lines', () {
-    final EngineParagraphStyle maxlinesStyle = EngineParagraphStyle(
+    final maxlinesStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       maxLines: 2,
     );
 
     // The height should be that of a single line.
-    final CanvasParagraph oneline = plain(maxlinesStyle, 'One line')
+    final oneline = plain(maxlinesStyle, 'One line')
       ..layout(constrain(double.infinity));
     expect(oneline.height, 10);
     expectLines(oneline, <TestLine>[
@@ -474,7 +474,7 @@ Future<void> testMain() async {
     ]);
 
     // The height should respect max lines and be limited to two lines here.
-    final CanvasParagraph threelines =
+    final threelines =
         plain(maxlinesStyle, 'First\nSecond\nThird')
           ..layout(constrain(double.infinity));
     expect(threelines.height, 20);
@@ -484,7 +484,7 @@ Future<void> testMain() async {
     ]);
 
     // The height should respect max lines and be limited to two lines here.
-    final CanvasParagraph veryLong = plain(
+    final veryLong = plain(
       maxlinesStyle,
       'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
     )..layout(constrain(50.0));
@@ -495,7 +495,7 @@ Future<void> testMain() async {
     ]);
 
     // Case when last line is a long unbreakable word.
-    final CanvasParagraph veryLongLastLine = plain(
+    final veryLongLastLine = plain(
       maxlinesStyle,
       'AAA AAAAAAAAAAAAAAAAAAA',
     )..layout(constrain(50.0));
@@ -507,13 +507,13 @@ Future<void> testMain() async {
   });
 
   test('respects text overflow and max lines combined', () {
-    final EngineParagraphStyle onelineStyle = EngineParagraphStyle(
+    final onelineStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       maxLines: 1,
       ellipsis: '...',
     );
-    final EngineParagraphStyle multilineStyle = EngineParagraphStyle(
+    final multilineStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       maxLines: 2,
@@ -717,7 +717,7 @@ Future<void> testMain() async {
     // This prevents the Ahem font from being forced in all paragraphs.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
 
-    final CanvasParagraph p1 = plain(
+    final p1 = plain(
       EngineParagraphStyle(
         fontSize: 20.0,
         fontFamily: 'FontFamily1',
@@ -728,7 +728,7 @@ Future<void> testMain() async {
     expect(textContext.font, contains('20px'));
     expect(textContext.font, contains('FontFamily1'));
 
-    final CanvasParagraph p2 = plain(
+    final p2 = plain(
       EngineParagraphStyle(
         fontSize: 40.0,
         fontFamily: 'FontFamily2',

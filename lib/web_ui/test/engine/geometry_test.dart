@@ -76,7 +76,7 @@ void testMain() {
     expect(const Size(3.0, 4.0).aspectRatio, 3.0 / 4.0);
   });
   test('Radius.clamp() operates as expected', () {
-    final RRect rrectMin = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMin = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.circular(-100).clamp(minimum: Radius.zero));
 
     expect(rrectMin.left, 1);
@@ -86,7 +86,7 @@ void testMain() {
     expect(rrectMin.trRadius, equals(const Radius.circular(0)));
     expect(rrectMin.blRadius, equals(const Radius.circular(0)));
 
-    final RRect rrectMax = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMax = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.circular(100).clamp(maximum: const Radius.circular(10)));
 
     expect(rrectMax.left, 1);
@@ -96,7 +96,7 @@ void testMain() {
     expect(rrectMax.trRadius, equals(const Radius.circular(10)));
     expect(rrectMax.blRadius, equals(const Radius.circular(10)));
 
-    final RRect rrectMix = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMix = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.elliptical(-100, 100).clamp(minimum: Radius.zero, maximum: const Radius.circular(10)));
 
     expect(rrectMix.left, 1);
@@ -106,7 +106,7 @@ void testMain() {
     expect(rrectMix.trRadius, equals(const Radius.elliptical(0, 10)));
     expect(rrectMix.blRadius, equals(const Radius.elliptical(0, 10)));
 
-    final RRect rrectMix1 = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMix1 = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.elliptical(100, -100).clamp(minimum: Radius.zero, maximum: const Radius.circular(10)));
 
     expect(rrectMix1.left, 1);
@@ -117,7 +117,7 @@ void testMain() {
     expect(rrectMix1.blRadius, equals(const Radius.elliptical(10, 0)));
   });
   test('Radius.clampValues() operates as expected', () {
-    final RRect rrectMin = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMin = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.circular(-100).clampValues(minimumX: 0, minimumY: 0));
 
     expect(rrectMin.left, 1);
@@ -127,7 +127,7 @@ void testMain() {
     expect(rrectMin.trRadius, equals(const Radius.circular(0)));
     expect(rrectMin.blRadius, equals(const Radius.circular(0)));
 
-    final RRect rrectMax = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMax = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.circular(100).clampValues(maximumX: 10, maximumY: 20));
 
     expect(rrectMax.left, 1);
@@ -137,7 +137,7 @@ void testMain() {
     expect(rrectMax.trRadius, equals(const Radius.elliptical(10, 20)));
     expect(rrectMax.blRadius, equals(const Radius.elliptical(10, 20)));
 
-    final RRect rrectMix = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMix = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.elliptical(-100, 100).clampValues(minimumX: 5, minimumY: 6, maximumX: 10, maximumY: 20));
 
     expect(rrectMix.left, 1);
@@ -147,7 +147,7 @@ void testMain() {
     expect(rrectMix.trRadius, equals(const Radius.elliptical(5, 20)));
     expect(rrectMix.blRadius, equals(const Radius.elliptical(5, 20)));
 
-    final RRect rrectMix2 = RRect.fromLTRBR(1, 3, 5, 7,
+    final rrectMix2 = RRect.fromLTRBR(1, 3, 5, 7,
       const Radius.elliptical(100, -100).clampValues(minimumX: 5, minimumY: 6, maximumX: 10, maximumY: 20));
 
     expect(rrectMix2.left, 1);
@@ -158,7 +158,7 @@ void testMain() {
     expect(rrectMix2.blRadius, equals(const Radius.elliptical(10, 6)));
   });
   test('RRect asserts when corner radii are negative', () {
-    bool assertsEnabled = false;
+    var assertsEnabled = false;
     assert(() {
       assertsEnabled = true;
       return true;
@@ -196,7 +196,7 @@ void testMain() {
     }, throwsA(isA<AssertionError>()));
   });
   test('RRect.inflate clamps when deflating past zero', () {
-    RRect rrect = RRect.fromRectAndCorners(
+    var rrect = RRect.fromRectAndCorners(
       const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
       topLeft: const Radius.circular(1),
       topRight: const Radius.circular(2),
@@ -244,7 +244,7 @@ void testMain() {
     expect(rrect.brRadiusY, 0);
   });
   test('RRect.deflate clamps when deflating past zero', () {
-    RRect rrect = RRect.fromRectAndCorners(
+    var rrect = RRect.fromRectAndCorners(
       const Rect.fromLTRB(10.0, 20.0, 30.0, 40.0),
       topLeft: const Radius.circular(1),
       topRight: const Radius.circular(2),

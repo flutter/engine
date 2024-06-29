@@ -14,49 +14,49 @@ class ShaderData {
   });
 
   factory ShaderData.fromBytes(Uint8List data) {
-    final String contents = utf8.decode(data);
+    final contents = utf8.decode(data);
     final Object? rawShaderData = json.decode(contents);
     if (rawShaderData is! Map<String, Object?>) {
       throw const FormatException('Invalid Shader Data');
     }
-    final Object? root = rawShaderData['sksl'];
+    final root = rawShaderData['sksl'];
     if (root is! Map<String, Object?>) {
       throw const FormatException('Invalid Shader Data');
     }
 
-    final Object? source = root['shader'];
-    final Object? rawUniforms = root['uniforms'];
+    final source = root['shader'];
+    final rawUniforms = root['uniforms'];
     if (source is! String || rawUniforms is! List<Object?>) {
       throw const FormatException('Invalid Shader Data');
     }
 
-    final List<UniformData> uniforms = List<UniformData>.filled(rawUniforms.length, UniformData.empty);
+    final uniforms = List<UniformData>.filled(rawUniforms.length, UniformData.empty);
 
-    int textureCount = 0;
-    int floatCount = 0;
-    for (int i = 0; i < rawUniforms.length; i += 1) {
-      final Object? rawUniformData = rawUniforms[i];
+    var textureCount = 0;
+    var floatCount = 0;
+    for (var i = 0; i < rawUniforms.length; i += 1) {
+      final rawUniformData = rawUniforms[i];
       if (rawUniformData is! Map<String, Object?>) {
         throw const FormatException('Invalid Shader Data');
       }
-      final Object? name = rawUniformData['name'];
-      final Object? location = rawUniformData['location'];
-      final Object? rawType = rawUniformData['type'];
+      final name = rawUniformData['name'];
+      final location = rawUniformData['location'];
+      final rawType = rawUniformData['type'];
       if (name is! String || location is! int || rawType is! int) {
         throw const FormatException('Invalid Shader Data');
       }
-      final UniformType? type = uniformTypeFromJson(rawType);
+      final type = uniformTypeFromJson(rawType);
       if (type == null) {
         throw const FormatException('Invalid Shader Data');
       }
       if (type == UniformType.SampledImage) {
         textureCount += 1;
       } else {
-        final Object? bitWidth = rawUniformData['bit_width'];
+        final bitWidth = rawUniformData['bit_width'];
 
-        final Object? arrayElements = rawUniformData['array_elements'];
-        final Object? rows = rawUniformData['rows'];
-        final Object? columns = rawUniformData['columns'];
+        final arrayElements = rawUniformData['array_elements'];
+        final rows = rawUniformData['rows'];
+        final columns = rawUniformData['columns'];
 
         if (bitWidth is! int ||
             rows is! int ||
@@ -65,9 +65,9 @@ class ShaderData {
           throw const FormatException('Invalid Shader Data');
         }
 
-        final int units = rows * columns;
+        final units = rows * columns;
 
-        int value = (bitWidth ~/ 32) * units;
+        var value = (bitWidth ~/ 32) * units;
 
         if (arrayElements > 1) {
           value *= arrayElements;

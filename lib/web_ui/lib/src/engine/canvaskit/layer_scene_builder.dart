@@ -22,7 +22,7 @@ class LayerScene implements ui.Scene {
 
   @override
   Future<ui.Image> toImage(int width, int height) {
-    final ui.Picture picture = layerTree.flatten(ui.Size(
+    final picture = layerTree.flatten(ui.Size(
       width.toDouble(),
       height.toDouble(),
     ));
@@ -31,7 +31,7 @@ class LayerScene implements ui.Scene {
 
   @override
   ui.Image toImageSync(int width, int height) {
-    final ui.Picture picture = layerTree.flatten(ui.Size(
+    final picture = layerTree.flatten(ui.Size(
       width.toDouble(),
       height.toDouble(),
     ));
@@ -199,7 +199,7 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     Float64List matrix4, {
     ui.EngineLayer? oldLayer,
   }) {
-    final Matrix4 matrix = Matrix4.fromFloat32List(toMatrix32(matrix4));
+    final matrix = Matrix4.fromFloat32List(toMatrix32(matrix4));
     return pushLayer<TransformEngineLayer>(TransformEngineLayer(matrix));
   }
 

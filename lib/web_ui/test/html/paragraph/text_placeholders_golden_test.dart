@@ -15,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  final EngineGoldenTester goldenTester = await EngineGoldenTester.initialize(
+  final goldenTester = await EngineGoldenTester.initialize(
     viewportSize: const Size(600, 600),
   );
 
@@ -26,11 +26,11 @@ Future<void> testMain() async {
   );
 
   testEachCanvas('draws paragraphs with placeholders', (EngineCanvas canvas) {
-    const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
-    final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
+    const screenRect = Rect.fromLTWH(0, 0, 600, 600);
+    final recordingCanvas = RecordingCanvas(screenRect);
 
-    Offset offset = Offset.zero;
-    for (final PlaceholderAlignment placeholderAlignment
+    var offset = Offset.zero;
+    for (final placeholderAlignment
         in PlaceholderAlignment.values) {
       _paintTextWithPlaceholder(
         recordingCanvas,
@@ -47,10 +47,10 @@ Future<void> testMain() async {
   });
 
   testEachCanvas('text alignment and placeholders', (EngineCanvas canvas) {
-    const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
-    final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
+    const screenRect = Rect.fromLTWH(0, 0, 600, 600);
+    final recordingCanvas = RecordingCanvas(screenRect);
 
-    Offset offset = Offset.zero;
+    var offset = Offset.zero;
     _paintTextWithPlaceholder(
       recordingCanvas,
       offset,
@@ -91,7 +91,7 @@ void _paintTextWithPlaceholder(
   TextAlign textAlignment = TextAlign.left,
 }) {
   // First let's draw the paragraph.
-  final Paragraph paragraph = _createParagraphWithPlaceholder(
+  final paragraph = _createParagraphWithPlaceholder(
     before,
     after,
     placeholderAlignment,
@@ -100,7 +100,7 @@ void _paintTextWithPlaceholder(
   canvas.drawParagraph(paragraph, offset);
 
   // Then fill the placeholders.
-  final TextBox placeholderBox = paragraph.getBoxesForPlaceholders().single;
+  final placeholderBox = paragraph.getBoxesForPlaceholders().single;
   canvas.drawRect(
     placeholderBox.toRect().shift(offset),
     SurfacePaint()..color = red,
@@ -113,7 +113,7 @@ Paragraph _createParagraphWithPlaceholder(
   PlaceholderAlignment placeholderAlignment,
   TextAlign textAlignment,
 ) {
-  final ParagraphBuilder builder =
+  final builder =
       ParagraphBuilder(ParagraphStyle(textAlign: textAlignment));
   builder
       .pushStyle(TextStyle(color: black, fontFamily: 'Roboto', fontSize: 14));

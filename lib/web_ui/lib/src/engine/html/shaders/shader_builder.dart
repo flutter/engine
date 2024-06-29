@@ -82,7 +82,7 @@ class ShaderBuilder {
   /// series of graphics primitives are rendered. The value is only accessible
   /// in the vertex shader.
   ShaderDeclaration addIn(int dataType, {String? name}) {
-    final ShaderDeclaration attrib = ShaderDeclaration(
+    final attrib = ShaderDeclaration(
         name ?? 'attr_${_attribCounter++}',
         dataType,
         ShaderStorageQualifier.kAttribute);
@@ -92,7 +92,7 @@ class ShaderBuilder {
 
   /// Adds a constant.
   ShaderDeclaration addConst(int dataType, String value, {String? name}) {
-    final ShaderDeclaration declaration = ShaderDeclaration.constant(
+    final declaration = ShaderDeclaration.constant(
         name ?? 'c_${_constCounter++}', dataType, value);
     declarations.add(declaration);
     return declaration;
@@ -104,7 +104,7 @@ class ShaderBuilder {
   /// It is accessible in both the vertex and fragment shaders.
   ///
   ShaderDeclaration addUniform(int dataType, {String? name}) {
-    final ShaderDeclaration uniform = ShaderDeclaration(
+    final uniform = ShaderDeclaration(
         name ?? 'uni_${_uniformCounter++}',
         dataType,
         ShaderStorageQualifier.kUniform);
@@ -119,7 +119,7 @@ class ShaderBuilder {
   /// input to a fragment shader.
   /// It can be used in a fragment shader, but not changed.
   ShaderDeclaration addOut(int dataType, {String? name}) {
-    final ShaderDeclaration varying = ShaderDeclaration(
+    final varying = ShaderDeclaration(
         name ?? 'output_${_varyingCounter++}',
         dataType,
         ShaderStorageQualifier.kVarying);
@@ -193,7 +193,7 @@ class ShaderBuilder {
   }
 
   ShaderMethod addMethod(String name) {
-    final ShaderMethod method = ShaderMethod(name);
+    final method = ShaderMethod(name);
     _methods.add(method);
     return method;
   }
@@ -215,10 +215,10 @@ class ShaderBuilder {
     if (isWebGl2 && _fragmentColorDeclaration != null) {
       _writeVariableDeclaration(_buffer, _fragmentColorDeclaration!);
     }
-    for (final ShaderDeclaration decl in declarations) {
+    for (final decl in declarations) {
       _writeVariableDeclaration(_buffer, decl);
     }
-    for (final ShaderMethod method in _methods) {
+    for (final method in _methods) {
       method.write(_buffer);
     }
     return _buffer.toString();
@@ -249,7 +249,7 @@ class ShaderMethod {
   }
 
   void addStatement(String statement) {
-    String itemToAdd = statement;
+    var itemToAdd = statement;
     assert(() {
       itemToAdd = '  ' * _indentLevel + statement;
       return true;

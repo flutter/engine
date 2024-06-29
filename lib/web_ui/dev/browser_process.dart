@@ -21,10 +21,10 @@ class BrowserProcess {
     // for the process to actually start. They should just wait for the HTTP
     // request instead.
     runZonedGuarded(() async {
-      final Process process = await startBrowser();
+      final process = await startBrowser();
       _processCompleter.complete(process);
 
-      final Uint8Buffer output = Uint8Buffer();
+      final output = Uint8Buffer();
       void drainOutput(Stream<List<int>> stream) {
         try {
           _ioSubscriptions
@@ -36,7 +36,7 @@ class BrowserProcess {
       drainOutput(process.stdout);
       drainOutput(process.stderr);
 
-      final int exitCode = await process.exitCode;
+      final exitCode = await process.exitCode;
 
       // This hack dodges an otherwise intractable race condition. When the user
       // presses Control-C, the signal is sent to the browser and the test
@@ -53,8 +53,8 @@ class BrowserProcess {
       }
 
       if (!_closed && exitCode != 0) {
-        final String outputString = utf8.decode(output);
-        String message = 'Browser process failed with exit code $exitCode.';
+        final outputString = utf8.decode(output);
+        var message = 'Browser process failed with exit code $exitCode.';
         if (outputString.isNotEmpty) {
           message += '\nStandard output:\n$outputString';
         }
@@ -113,7 +113,7 @@ class BrowserProcess {
     // If we don't manually close the stream the test runner can hang.
     // For example this happens with Chrome Headless.
     // See SDK issue: https://github.com/dart-lang/sdk/issues/31264
-    for (final StreamSubscription<void> stream in _ioSubscriptions) {
+    for (final stream in _ioSubscriptions) {
       unawaited(stream.cancel());
     }
 

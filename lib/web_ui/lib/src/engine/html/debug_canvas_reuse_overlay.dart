@@ -24,7 +24,7 @@ DomHTMLElement _createContainer() {
 /// release builds.
 class DebugCanvasReuseOverlay {
   DebugCanvasReuseOverlay._() {
-    final DomHTMLElement container = _createContainer();
+    final container = _createContainer();
     final DomHTMLElement title = createDomHTMLDivElement();
     title.style
       ..fontWeight = 'bold'

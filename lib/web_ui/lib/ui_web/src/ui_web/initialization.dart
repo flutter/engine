@@ -30,7 +30,7 @@ Future<void> bootstrapEngine({
   ui.VoidCallback? runApp,
 }) async {
   // Create the object that knows how to bootstrap an app from JS and Dart.
-  final AppBootstrap bootstrap = AppBootstrap(
+  final bootstrap = AppBootstrap(
     initializeEngine: ([JsFlutterConfiguration? configuration]) async {
       await initializeEngineServices(jsConfiguration: configuration);
     }, runApp: () async {
@@ -44,7 +44,7 @@ Future<void> bootstrapEngine({
     },
   );
 
-  final FlutterLoader? loader = flutter?.loader;
+  final loader = flutter?.loader;
   if (loader == null || loader.isAutoStart) {
     // The user does not want control of the app, bootstrap immediately.
     await bootstrap.autoStart();

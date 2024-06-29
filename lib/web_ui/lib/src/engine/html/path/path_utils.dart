@@ -122,13 +122,13 @@ class QuadRoots {
       : (root1 == null ? <double>[root0!] : <double>[root0!, root1!]);
 
   int findRoots(double a, double b, double c) {
-    int rootCount = 0;
+    var rootCount = 0;
     if (a == 0) {
       root0 = validUnitDivide(-c, b);
       return root0 == null ? 0 : 1;
     }
 
-    double dr = b * b - 4 * a * c;
+    var dr = b * b - 4 * a * c;
     if (dr < 0) {
       return 0;
     }
@@ -137,8 +137,8 @@ class QuadRoots {
       return 0;
     }
 
-    final double q = (b < 0) ? -(b - dr) / 2 : -(b + dr) / 2;
-    double? res = validUnitDivide(q, a);
+    final q = (b < 0) ? -(b - dr) / 2 : -(b + dr) / 2;
+    var res = validUnitDivide(q, a);
     if (res != null) {
       root0 = res;
       ++rootCount;
@@ -155,7 +155,7 @@ class QuadRoots {
     }
     if (rootCount == 2) {
       if (root0! > root1!) {
-        final double swap = root0!;
+        final swap = root0!;
         root0 = root1;
         root1 = swap;
       } else if (root0 == root1) {
@@ -174,7 +174,7 @@ double? validUnitDivide(double numer, double denom) {
   if (denom == 0 || numer == 0 || numer >= denom) {
     return null;
   }
-  final double r = numer / denom;
+  final r = numer / denom;
   if (r.isNaN) {
     return null;
   }
@@ -264,8 +264,8 @@ class Convexicator {
     }
     currX = x;
     currY = y;
-    final double vecX = currX! - lastX!;
-    final double vecY = currY! - lastY!;
+    final vecX = currX! - lastX!;
+    final vecY = currY! - lastY!;
     if (priorX == lastX && priorY == lastY) {
       // First non-zero vector.
       lastVecX = vecX;
@@ -295,9 +295,9 @@ class Convexicator {
     // Cross product = ||lastVec|| * ||curVec|| * sin(theta) * N
     // sin(theta) angle between two vectors is positive for angles 0..180 and
     // negative for greater, providing left or right direction.
-    final double lastX = lastVecX!;
-    final double lastY = lastVecY!;
-    final double cross = lastX * curVecY - lastY * curVecX;
+    final lastX = lastVecX!;
+    final lastY = lastVecY!;
+    final cross = lastX * curVecY - lastY * curVecX;
     if (!cross.isFinite) {
       return DirChange.kUnknown;
     }
@@ -310,7 +310,7 @@ class Convexicator {
         math.max(curVecX, math.max(curVecY, math.max(lastX, lastY))),
         -smallest);
     if (SPath.nearlyEqual(largest, largest + cross)) {
-      const double nearlyZeroSquared =
+      const nearlyZeroSquared =
           SPath.scalarNearlyZero * SPath.scalarNearlyZero;
       if (SPath.nearlyEqual(lengthSquared(lastX, lastY), nearlyZeroSquared) ||
           SPath.nearlyEqual(lengthSquared(curVecX, curVecY), nearlyZeroSquared)) {
@@ -328,8 +328,8 @@ class Convexicator {
   }
 
   bool _addVector(double curVecX, double curVecY) {
-    final DirChange dir = _directionChange(curVecX, curVecY);
-    final bool isDirectionRight = dir == DirChange.kRight;
+    final dir = _directionChange(curVecX, curVecY);
+    final isDirectionRight = dir == DirChange.kRight;
     if (dir == DirChange.kLeft || isDirectionRight) {
       if (_expectedDirection == DirChange.kInvalid) {
         // First valid direction. From this point on expect always left.
@@ -366,18 +366,18 @@ class Convexicator {
   // Quick test to detect concave by looking at number of changes in direction
   // of vectors formed by path points (excluding control points).
   static int bySign(PathRef pathRef, int pointIndex, int numPoints) {
-    final int lastPointIndex = pointIndex + numPoints;
-    int currentPoint = pointIndex++;
-    final int firstPointIndex = currentPoint;
-    int signChangeCountX = 0;
-    int signChangeCountY = 0;
-    int lastSx = kValueNeverReturnedBySign;
-    int lastSy = kValueNeverReturnedBySign;
-    for (int outerLoop = 0; outerLoop < 2; ++outerLoop) {
+    final lastPointIndex = pointIndex + numPoints;
+    var currentPoint = pointIndex++;
+    final firstPointIndex = currentPoint;
+    var signChangeCountX = 0;
+    var signChangeCountY = 0;
+    var lastSx = kValueNeverReturnedBySign;
+    var lastSy = kValueNeverReturnedBySign;
+    for (var outerLoop = 0; outerLoop < 2; ++outerLoop) {
       while (pointIndex != lastPointIndex) {
-        final double vecX = pathRef.pointXAt(pointIndex) -
+        final vecX = pathRef.pointXAt(pointIndex) -
             pathRef.pointXAt(currentPoint);
-        final double vecY = pathRef.pointYAt(pointIndex) -
+        final vecY = pathRef.pointYAt(pointIndex) -
             pathRef.pointYAt(currentPoint);
         if (!(vecX == 0 && vecY == 0)) {
           // Give up if vector construction failed.
@@ -385,8 +385,8 @@ class Convexicator {
           if (!(vecX.isFinite && vecY.isFinite)) {
             return SPathConvexityType.kUnknown;
           }
-          final int sx = vecX < 0 ? 1 : 0;
-          final int sy = vecY < 0 ? 1 : 0;
+          final sx = vecX < 0 ? 1 : 0;
+          final sy = vecY < 0 ? 1 : 0;
           signChangeCountX += (sx != lastSx) ? 1 : 0;
           signChangeCountY += (sy != lastSy) ? 1 : 0;
           if (signChangeCountX > 3 || signChangeCountY > 3) {
@@ -416,8 +416,8 @@ enum DirChange {
 }
 
 double lengthSquaredOffset(ui.Offset offset) {
-  final double dx = offset.dx;
-  final double dy = offset.dy;
+  final dx = offset.dx;
+  final dy = offset.dy;
   return dx * dx + dy * dy;
 }
 

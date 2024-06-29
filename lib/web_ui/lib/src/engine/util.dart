@@ -49,12 +49,12 @@ typedef Callbacker<T> = String? Function(Callback<T> callback);
 /// ```
 // Keep this in sync with _futurize in lib/ui/fixtures/ui_test.dart.
 Future<T> futurize<T>(Callbacker<T> callbacker) {
-  final Completer<T> completer = Completer<T>.sync();
+  final completer = Completer<T>.sync();
   // If the callback synchronously throws an error, then synchronously
   // rethrow that error instead of adding it to the completer. This
   // prevents the Zone from receiving an uncaught exception.
-  bool isSync = true;
-  final String? error = callbacker((T? t) {
+  var isSync = true;
+  final error = callbacker((T? t) {
     if (t == null) {
       if (isSync) {
         throw Exception('operation failed');
@@ -97,7 +97,7 @@ void setElementTransform(DomElement element, Float32List matrix4) {
 ///  * https://bugs.chromium.org/p/chromium/issues/detail?id=1040222
 String float64ListToCssTransform(List<double> matrix) {
   assert(matrix.length == 16);
-  final TransformKind transformKind = transformKindOf(matrix);
+  final transformKind = transformKindOf(matrix);
   if (transformKind == TransformKind.transform2d) {
     return float64ListToCssTransform2d(matrix);
   } else if (transformKind == TransformKind.complex) {
@@ -129,11 +129,11 @@ enum TransformKind {
 /// Detects the kind of transform the [matrix] performs.
 TransformKind transformKindOf(List<double> matrix) {
   assert(matrix.length == 16);
-  final List<double> m = matrix;
+  final m = matrix;
 
   // If matrix contains scaling, rotation, z translation or
   // perspective transform, it is not considered simple.
-  final bool isSimple2dTransform = m[15] ==
+  final isSimple2dTransform = m[15] ==
           1.0 && // start reading from the last element to eliminate range checks in subsequent reads.
       m[14] == 0.0 && // z translation is NOT simple
       // m[13] - y translation is simple
@@ -158,7 +158,7 @@ TransformKind transformKindOf(List<double> matrix) {
   // From this point on we're sure the transform is 2D, but we don't know if
   // it's identity or not. To check, we need to look at the remaining elements
   // that were not checked above.
-  final bool isIdentityTransform = m[0] == 1.0 &&
+  final isIdentityTransform = m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[4] == 0.0 &&
       m[5] == 1.0 &&
@@ -193,7 +193,7 @@ String float64ListToCssTransform2d(List<double> matrix) {
 /// Converts [matrix] to a 3D CSS transform value.
 String float64ListToCssTransform3d(List<double> matrix) {
   assert(matrix.length == 16);
-  final List<double> m = matrix;
+  final m = matrix;
   if (m[0] == 1.0 &&
       m[1] == 0.0 &&
       m[2] == 0.0 &&
@@ -210,8 +210,8 @@ String float64ListToCssTransform3d(List<double> matrix) {
       // 13 can be anything
       m[14] == 0.0 &&
       m[15] == 1.0) {
-    final double tx = m[12];
-    final double ty = m[13];
+    final tx = m[12];
+    final ty = m[13];
     return 'translate3d(${tx}px, ${ty}px, 0px)';
   } else {
     return 'matrix3d(${m[0]},${m[1]},${m[2]},${m[3]},${m[4]},${m[5]},${m[6]},${m[7]},${m[8]},${m[9]},${m[10]},${m[11]},${m[12]},${m[13]},${m[14]},${m[15]})';
@@ -295,7 +295,7 @@ void transformLTRB(Matrix4 transform, Float32List ltrb) {
   _tempPointMatrix.multiplyTranspose(transform);
 
   // Handle non-homogenous matrices.
-  double w = transform[15];
+  var w = transform[15];
   if (w == 0.0) {
     w = 1.0;
   }
@@ -347,8 +347,8 @@ String colorValueToCssString(int value) {
     return '#000000';
   }
   if ((0xff000000 & value) == 0xff000000) {
-    final String hexValue = (value & 0xFFFFFF).toRadixString(16);
-    final int hexValueLength = hexValue.length;
+    final hexValue = (value & 0xFFFFFF).toRadixString(16);
+    final hexValueLength = hexValue.length;
     switch (hexValueLength) {
       case 1:
         return '#00000$hexValue';
@@ -364,8 +364,8 @@ String colorValueToCssString(int value) {
         return '#$hexValue';
     }
   } else {
-    final double alpha = ((value >> 24) & 0xFF) / 255.0;
-    final StringBuffer sb = StringBuffer();
+    final alpha = ((value >> 24) & 0xFF) / 255.0;
+    final sb = StringBuffer();
     sb.write('rgba(');
     sb.write(((value >> 16) & 0xFF).toString());
     sb.write(',');
@@ -384,7 +384,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
   if (a == 255) {
     return 'rgb($r,$g,$b)';
   } else {
-    final double alphaRatio = a / 255;
+    final alphaRatio = a / 255;
     return 'rgba($r,$g,$b,${alphaRatio.toStringAsFixed(2)})';
   }
 }
@@ -476,8 +476,8 @@ String? canonicalizeFontFamily(String? fontFamily) {
 
 /// Converts a list of [Offset] to a typed array of floats.
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
-  final int length = offsetList.length;
-  final Float32List floatList = Float32List(length * 2);
+  final length = offsetList.length;
+  final floatList = Float32List(length * 2);
   for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
     floatList[destIndex] = offsetList[i].dx;
     floatList[destIndex + 1] = offsetList[i].dy;
@@ -529,8 +529,8 @@ void Function(String) printWarning = domWindow.console.warn;
 
 /// Converts a 4x4 matrix into a human-readable String.
 String matrixString(List<num> matrix) {
-  final StringBuffer sb = StringBuffer();
-  for (int i = 0; i < 16; i++) {
+  final sb = StringBuffer();
+  for (var i = 0; i < 16; i++) {
     sb.write(matrix[i]);
     if ((i + 1) % 4 == 0) {
       sb.write('\n');
@@ -553,7 +553,7 @@ bool listEquals<T>(List<T>? a, List<T>? b) {
   if (b == null || a.length != b.length) {
     return false;
   }
-  for (int index = 0; index < a.length; index += 1) {
+  for (var index = 0; index < a.length; index += 1) {
     if (a[index] != b[index]) {
       return false;
     }
@@ -602,7 +602,7 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 
   List<T>? tryCastList<T>(String propertyName) {
-    final List<dynamic>? rawList = tryList(propertyName);
+    final rawList = tryList(propertyName);
     if (rawList == null) {
       return null;
     }
@@ -646,7 +646,7 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///
 /// Throws if the view ID is not present or if [arguments] is not a map.
 int readViewId(Object? arguments) {
-  final int? viewId = tryViewId(arguments);
+  final viewId = tryViewId(arguments);
   if (viewId == null) {
     throw Exception('Could not find a `viewId` in the arguments: $arguments');
   }
@@ -706,7 +706,7 @@ void setClipPath(DomElement element, String? value) {
 }
 
 void setThemeColor(ui.Color? color) {
-  DomHTMLMetaElement? theme =
+  var theme =
       domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
 
   if (color != null) {
@@ -763,7 +763,7 @@ void removeAllChildren(DomNode node) {
 /// This is mostly useful for iterables containing non-null elements.
 extension FirstWhereOrNull<T> on Iterable<T> {
   T? firstWhereOrNull(bool Function(T element) test) {
-    for (final T element in this) {
+    for (final element in this) {
       if (test(element)) {
         return element;
       }
@@ -836,7 +836,7 @@ class LruCache<K extends Object, V extends Object> {
   /// position. If the [value] corresponding to the [key] is different from
   /// what's in the cache, updates the value.
   void cache(K key, V value) {
-    final DoubleLinkedQueueEntry<_LruCacheEntry<K, V>>? item = _itemMap[key];
+    final item = _itemMap[key];
     if (item == null) {
       // New key-value pair, just add.
       _add(key, value);
@@ -867,7 +867,7 @@ class LruCache<K extends Object, V extends Object> {
   }
 
   void _removeLeastRecentlyUsedValue() {
-    final bool didRemove = _itemMap.remove(_itemQueue.last.key) != null;
+    final didRemove = _itemMap.remove(_itemQueue.last.key) != null;
     assert(didRemove);
     _itemQueue.removeLast();
   }

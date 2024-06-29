@@ -62,7 +62,7 @@ class FullPageEmbeddingStrategy implements EmbeddingStrategy {
 
   // Sets a meta viewport tag appropriate for Flutter Web in full screen.
   void _applyViewportMeta() {
-    for (final DomElement viewportMeta
+    for (final viewportMeta
         in domDocument.head!.querySelectorAll('meta[name="viewport"]')) {
       assert(() {
         // Filter out the meta tag that the engine placed on the page. This is
@@ -82,7 +82,7 @@ class FullPageEmbeddingStrategy implements EmbeddingStrategy {
 
     // The meta viewport is always removed by the for method above, so we don't
     // need to do anything else here, other than create it again.
-    final DomHTMLMetaElement viewportMeta = createDomHTMLMetaElement()
+    final viewportMeta = createDomHTMLMetaElement()
       ..setAttribute('flt-viewport', '')
       ..name = 'viewport'
       ..content = 'width=device-width, initial-scale=1.0, '

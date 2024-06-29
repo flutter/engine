@@ -18,7 +18,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 550, 300);
+  const region = Rect.fromLTWH(0, 0, 550, 300);
 
   late SurfaceSceneBuilder builder;
 
@@ -32,8 +32,8 @@ Future<void> testMain() async {
   });
 
   void paintShapeOutline() {
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
+    final recorder = EnginePictureRecorder();
+    final canvas = recorder.beginRecording(Rect.largest);
     canvas.drawRect(
       const Rect.fromLTRB(0.0, 0.0, 20.0, 20.0),
       SurfacePaint()
@@ -45,10 +45,10 @@ Future<void> testMain() async {
   }
 
   void paintShadowBounds(SurfacePath path, double elevation) {
-    final Rect shadowBounds =
+    final shadowBounds =
         computePenumbraBounds(path.getBounds(), elevation);
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
+    final recorder = EnginePictureRecorder();
+    final canvas = recorder.beginRecording(Rect.largest);
     canvas.drawRect(
       shadowBounds,
       SurfacePaint()
@@ -61,12 +61,12 @@ Future<void> testMain() async {
 
   void paintBitmapCanvasShadow(
       double elevation, Offset offset, bool transparentOccluder) {
-    final SurfacePath path = SurfacePath()
+    final path = SurfacePath()
       ..addRect(const Rect.fromLTRB(0, 0, 20, 20));
     builder.pushOffset(offset.dx, offset.dy);
 
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
+    final recorder = EnginePictureRecorder();
+    final canvas = recorder.beginRecording(Rect.largest);
     canvas
         .debugEnforceArbitraryPaint(); // make sure DOM canvas doesn't take over
     canvas.drawShadow(
@@ -83,7 +83,7 @@ Future<void> testMain() async {
   }
 
   void paintBitmapCanvasComplexPathShadow(double elevation, Offset offset) {
-    final SurfacePath path = SurfacePath()
+    final path = SurfacePath()
       ..moveTo(10, 0)
       ..lineTo(20, 10)
       ..lineTo(10, 20)
@@ -91,8 +91,8 @@ Future<void> testMain() async {
       ..close();
     builder.pushOffset(offset.dx, offset.dy);
 
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
+    final recorder = EnginePictureRecorder();
+    final canvas = recorder.beginRecording(Rect.largest);
     canvas
         .debugEnforceArbitraryPaint(); // make sure DOM canvas doesn't take over
     canvas.drawShadow(
@@ -122,22 +122,22 @@ Future<void> testMain() async {
 
       builder.pushOffset(10, 20);
 
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         paintBitmapCanvasShadow(i.toDouble(), Offset(50.0 * i, 60), false);
       }
 
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         paintBitmapCanvasShadow(i.toDouble(), Offset(50.0 * i, 120), true);
       }
 
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         paintBitmapCanvasComplexPathShadow(
             i.toDouble(), Offset(50.0 * i, 180));
       }
 
       builder.pop();
 
-      final DomElement sceneElement = builder.build().webOnlyRootElement!;
+      final sceneElement = builder.build().webOnlyRootElement!;
       domDocument.body!.append(sceneElement);
 
       await matchGoldenFile(

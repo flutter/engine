@@ -36,10 +36,10 @@ void testMain() {
 
     test('Multiple consecutive spaces', () {
       // Different types of whitespace:
-      final String oghamSpace = String.fromCharCode(0x1680);
-      final String punctuationSpace = String.fromCharCode(0x2008);
-      final String mathSpace = String.fromCharCode(0x205F);
-      final String ideographicSpace = String.fromCharCode(0x3000);
+      final oghamSpace = String.fromCharCode(0x1680);
+      final punctuationSpace = String.fromCharCode(0x2008);
+      final mathSpace = String.fromCharCode(0x205F);
+      final ideographicSpace = String.fromCharCode(0x3000);
       expectWords(
         'foo$oghamSpace ${punctuationSpace}bar',
         <String>['foo', '$oghamSpace $punctuationSpace', 'bar'],
@@ -83,9 +83,9 @@ void testMain() {
     // when they are around quotes. So we need to test those rules separately.
     test('Hebrew with quotes', () {
       // A few hebrew letters:
-      const String h1 = 'א';
-      const String h2 = 'ל';
-      const String h3 = 'ט';
+      const h1 = 'א';
+      const h2 = 'ל';
+      const h3 = 'ט';
 
       // Test the single quote behavior that should be the same as other letters.
       expectWords("$h1$h2'$h3", <String>["$h1$h2'$h3"]);
@@ -102,7 +102,7 @@ void testMain() {
     });
 
     test('Newline, CR and LF', () {
-      final String newline = String.fromCharCode(0x000B);
+      final newline = String.fromCharCode(0x000B);
       // The only sequence of new lines that isn't a word boundary is CR×LF.
       expectWords('foo\r\nbar', <String>['foo', '\r\n', 'bar']);
 
@@ -137,11 +137,11 @@ void testMain() {
 }
 
 void expectWords(String text, List<String> expectedWords) {
-  int strIndex = 0;
+  var strIndex = 0;
 
   // Forward word break lookup.
-  for (final String word in expectedWords) {
-    final int nextBreak = WordBreaker.nextBreakIndex(text, strIndex);
+  for (final word in expectedWords) {
+    final nextBreak = WordBreaker.nextBreakIndex(text, strIndex);
     expect(
       nextBreak, strIndex + word.length,
       reason: 'Forward word break lookup: expecting to move to the end of "$word" in "$text".'
@@ -151,8 +151,8 @@ void expectWords(String text, List<String> expectedWords) {
 
   // Backward word break lookup.
   strIndex = text.length;
-  for (final String word in expectedWords.reversed) {
-    final int prevBreak = WordBreaker.prevBreakIndex(text, strIndex);
+  for (final word in expectedWords.reversed) {
+    final prevBreak = WordBreaker.prevBreakIndex(text, strIndex);
     expect(
       prevBreak, strIndex - word.length,
       reason: 'Backward word break lookup: expecting to move to the start of "$word" in "$text".'

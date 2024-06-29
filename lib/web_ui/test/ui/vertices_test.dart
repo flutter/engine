@@ -21,11 +21,11 @@ void testMain() {
     setUpUnitTests(withImplicitView: true, setUpTestViewDimensions: false);
 
     test('can be constructed, drawn, and disposed of', () {
-      final ui.Vertices vertices = _testVertices();
+      final vertices = _testVertices();
       expect(vertices.debugDisposed, isFalse);
 
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(
         recorder,
         const ui.Rect.fromLTRB(0, 0, 100, 100)
       );
@@ -40,10 +40,10 @@ void testMain() {
   });
 
   test('Vertices are not anti-aliased by default', () async {
-    const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 500);
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, region);
-    final ui.Vertices vertices = ui.Vertices.raw(
+    const region = ui.Rect.fromLTRB(0, 0, 500, 500);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder, region);
+    final vertices = ui.Vertices.raw(
       ui.VertexMode.triangles,
       Float32List.fromList(_circularVertices),
       indices: Uint16List.fromList(_circularVertexIndices),

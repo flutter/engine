@@ -89,15 +89,15 @@ class TextLayoutService {
     didExceedMaxLines = false;
     lines.clear();
 
-    LineBuilder currentLine =
+    var currentLine =
         LineBuilder.first(paragraph, spanometer, maxWidth: constraints.width);
 
-    final List<LayoutFragment> fragments =
+    final fragments =
         layoutFragmenter.fragment()..forEach(spanometer.measureFragment);
 
     outerLoop:
-    for (int i = 0; i < fragments.length; i++) {
-      final LayoutFragment fragment = fragments[i];
+    for (var i = 0; i < fragments.length; i++) {
+      final fragment = fragments[i];
 
       currentLine.addFragment(fragment);
 
@@ -128,7 +128,7 @@ class TextLayoutService {
       }
     }
 
-    final int? maxLines = paragraph.paragraphStyle.maxLines;
+    final maxLines = paragraph.paragraphStyle.maxLines;
     if (maxLines != null && lines.length > maxLines) {
       didExceedMaxLines = true;
       lines.removeRange(maxLines, lines.length);
@@ -138,24 +138,24 @@ class TextLayoutService {
     // *** PARAGRAPH BASELINE & HEIGHT & LONGEST LINE & PAINT BOUNDS *** //
     // ***************************************************************** //
 
-    double boundsLeft = double.infinity;
-    double boundsRight = double.negativeInfinity;
-    for (final ParagraphLine line in lines) {
+    var boundsLeft = double.infinity;
+    var boundsRight = double.negativeInfinity;
+    for (final line in lines) {
       height += line.height;
       if (alphabeticBaseline == -1.0) {
         alphabeticBaseline = line.baseline;
         ideographicBaseline = alphabeticBaseline * baselineRatioHack;
       }
-      final double longestLineWidth = longestLine?.width ?? 0.0;
+      final longestLineWidth = longestLine?.width ?? 0.0;
       if (longestLineWidth < line.width) {
         longestLine = line;
       }
 
-      final double left = line.left;
+      final left = line.left;
       if (left < boundsLeft) {
         boundsLeft = left;
       }
-      final double right = left + line.width;
+      final right = left + line.width;
       if (right > boundsRight) {
         boundsRight = right;
       }
@@ -174,13 +174,13 @@ class TextLayoutService {
     // We have to perform justification alignment first so that we can position
     // fragments correctly later.
     if (lines.isNotEmpty) {
-      final bool shouldJustifyParagraph = width.isFinite &&
+      final shouldJustifyParagraph = width.isFinite &&
           paragraph.paragraphStyle.textAlign == ui.TextAlign.justify;
 
       if (shouldJustifyParagraph) {
         // Don't apply justification to the last line.
-        for (int i = 0; i < lines.length - 1; i++) {
-          for (final LayoutFragment fragment in lines[i].fragments) {
+        for (var i = 0; i < lines.length - 1; i++) {
+          for (final fragment in lines[i].fragments) {
             fragment.justifyTo(paragraphWidth: width);
           }
         }
@@ -195,10 +195,10 @@ class TextLayoutService {
 
     // TODO(mdebbar): Handle maxLines https://github.com/flutter/flutter/issues/91254
 
-    double runningMinIntrinsicWidth = 0;
-    double runningMaxIntrinsicWidth = 0;
+    var runningMinIntrinsicWidth = 0;
+    var runningMaxIntrinsicWidth = 0;
 
-    for (final LayoutFragment fragment in fragments) {
+    for (final fragment in fragments) {
       runningMinIntrinsicWidth += fragment.widthExcludingTrailingSpaces;
       // Max intrinsic width includes the width of trailing spaces.
       runningMaxIntrinsicWidth += fragment.widthIncludingTrailingSpaces;
@@ -227,15 +227,15 @@ class TextLayoutService {
   /// Positions the fragments taking into account their directions and the
   /// paragraph's direction.
   void _positionLineFragments(ParagraphLine line) {
-    ui.TextDirection previousDirection = _paragraphDirection;
+    var previousDirection = _paragraphDirection;
 
-    double startOffset = 0.0;
+    var startOffset = 0.0;
     int? sandwichStart;
-    int sequenceStart = 0;
+    var sequenceStart = 0;
 
-    for (int i = 0; i <= line.fragments.length; i++) {
+    for (var i = 0; i <= line.fragments.length; i++) {
       if (i < line.fragments.length) {
-        final LayoutFragment fragment = line.fragments[i];
+        final fragment = line.fragments[i];
 
         if (fragment.fragmentFlow == FragmentFlow.previous) {
           sandwichStart = null;
@@ -250,7 +250,7 @@ class TextLayoutService {
         assert(fragment.fragmentFlow == FragmentFlow.ltr ||
             fragment.fragmentFlow == FragmentFlow.rtl);
 
-        final ui.TextDirection currentDirection =
+        final currentDirection =
             fragment.fragmentFlow == FragmentFlow.ltr
                 ? ui.TextDirection.ltr
                 : ui.TextDirection.rtl;
@@ -310,19 +310,19 @@ class TextLayoutService {
   }) {
     assert(start <= end);
 
-    double cumulativeWidth = 0.0;
+    var cumulativeWidth = 0.0;
 
     // The bodies of the two for loops below must remain identical. The only
     // difference is the looping direction. One goes from start to end, while
     // the other goes from end to start.
 
     if (direction == _paragraphDirection) {
-      for (int i = start; i < end; i++) {
+      for (var i = start; i < end; i++) {
         cumulativeWidth +=
             _positionOneFragment(line, i, startOffset + cumulativeWidth, direction);
       }
     } else {
-      for (int i = end - 1; i >= start; i--) {
+      for (var i = end - 1; i >= start; i--) {
         cumulativeWidth +=
             _positionOneFragment(line, i, startOffset + cumulativeWidth, direction);
       }
@@ -337,15 +337,15 @@ class TextLayoutService {
     double startOffset,
     ui.TextDirection direction,
   ) {
-    final LayoutFragment fragment = line.fragments[i];
+    final fragment = line.fragments[i];
     fragment.setPosition(startOffset: startOffset, textDirection: direction);
     return fragment.widthIncludingTrailingSpaces;
   }
 
   List<ui.TextBox> getBoxesForPlaceholders() {
-    final List<ui.TextBox> boxes = <ui.TextBox>[];
-    for (final ParagraphLine line in lines) {
-      for (final LayoutFragment fragment in line.fragments) {
+    final boxes = <ui.TextBox>[];
+    for (final line in lines) {
+      for (final fragment in line.fragments) {
         if (fragment.isPlaceholder) {
           boxes.add(fragment.toTextBox());
         }
@@ -365,17 +365,17 @@ class TextLayoutService {
       return <ui.TextBox>[];
     }
 
-    final int length = paragraph.plainText.length;
+    final length = paragraph.plainText.length;
     // Ranges that are out of bounds should return an empty list.
     if (start > length || end > length) {
       return <ui.TextBox>[];
     }
 
-    final List<ui.TextBox> boxes = <ui.TextBox>[];
+    final boxes = <ui.TextBox>[];
 
-    for (final ParagraphLine line in lines) {
+    for (final line in lines) {
       if (line.overlapsWith(start, end)) {
-        for (final LayoutFragment fragment in line.fragments) {
+        for (final fragment in line.fragments) {
           if (!fragment.isPlaceholder && fragment.overlapsWith(start, end)) {
             boxes.add(fragment.toTextBox(start: start, end: end));
           }
@@ -390,7 +390,7 @@ class TextLayoutService {
     // it possible to do hit testing. Once we find the box, we look inside that
     // box to find where exactly the `offset` is located.
 
-    final ParagraphLine? line = _findLineForY(offset.dy);
+    final line = _findLineForY(offset.dy);
     if (line == null) {
       return const ui.TextPosition(offset: 0);
     }
@@ -409,8 +409,8 @@ class TextLayoutService {
       );
     }
 
-    final double dx = offset.dx - line.left;
-    for (final LayoutFragment fragment in line.fragments) {
+    final dx = offset.dx - line.left;
+    for (final fragment in line.fragments) {
       if (fragment.left <= dx && dx <= fragment.right) {
         return fragment.getPositionForX(dx - fragment.left);
       }
@@ -420,16 +420,16 @@ class TextLayoutService {
   }
 
   ui.GlyphInfo? getClosestGlyphInfo(ui.Offset offset) {
-    final ParagraphLine? line = _findLineForY(offset.dy);
+    final line = _findLineForY(offset.dy);
     if (line == null) {
       return null;
     }
-    final LayoutFragment? fragment = line.closestFragmentAtOffset(offset.dx - line.left);
+    final fragment = line.closestFragmentAtOffset(offset.dx - line.left);
     if (fragment == null) {
       return null;
     }
-    final double dx = offset.dx;
-    final bool closestGraphemeStartInFragment = !fragment.hasLeadingBrokenGrapheme
+    final dx = offset.dx;
+    final closestGraphemeStartInFragment = !fragment.hasLeadingBrokenGrapheme
                                              || dx <= fragment.line.left
                                              || fragment.line.left + fragment.line.width <= dx
                                              || switch (fragment.textDirection!) {
@@ -437,15 +437,15 @@ class TextLayoutService {
                                                ui.TextDirection.ltr => dx >= line.left + (fragment.left + fragment.right) / 2,
                                                ui.TextDirection.rtl => dx <= line.left + (fragment.left + fragment.right) / 2,
                                              };
-    final ui.GlyphInfo candidate1 = fragment.getClosestCharacterBox(dx);
+    final candidate1 = fragment.getClosestCharacterBox(dx);
     if (closestGraphemeStartInFragment) {
       return candidate1;
     }
-    final bool searchLeft = switch (fragment.textDirection!) {
+    final searchLeft = switch (fragment.textDirection!) {
       ui.TextDirection.ltr => true,
       ui.TextDirection.rtl => false,
     };
-    final ui.GlyphInfo? candidate2 = fragment.line.closestFragmentTo(fragment, searchLeft)?.getClosestCharacterBox(dx);
+    final candidate2 = fragment.line.closestFragmentTo(fragment, searchLeft)?.getClosestCharacterBox(dx);
     if (candidate2 == null) {
       return candidate1;
     }
@@ -468,7 +468,7 @@ class TextLayoutService {
     // We could do a binary search here but it's not worth it because the number
     // of line is typically low, and each iteration is a cheap comparison of
     // doubles.
-    for (final ParagraphLine line in lines) {
+    for (final line in lines) {
       if (y <= line.height) {
         return line;
       }
@@ -595,8 +595,8 @@ class LineBuilder {
 
   /// The horizontal offset necessary for the line to be correctly aligned.
   double get alignOffset {
-    final double emptySpace = maxWidth - width;
-    final ui.TextAlign textAlign = paragraph.paragraphStyle.effectiveTextAlign;
+    final emptySpace = maxWidth - width;
+    final textAlign = paragraph.paragraphStyle.effectiveTextAlign;
 
     switch (textAlign) {
       case ui.TextAlign.center:
@@ -619,7 +619,7 @@ class LineBuilder {
       return false;
     }
 
-    final int? maxLines = paragraph.paragraphStyle.maxLines;
+    final maxLines = paragraph.paragraphStyle.maxLines;
     return (maxLines == null) || (maxLines == lineNumber + 1);
   }
 
@@ -676,7 +676,7 @@ class LineBuilder {
   }
 
   void _adjustPlaceholderAscentDescent(LayoutFragment fragment) {
-    final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
+    final placeholder = fragment.span as PlaceholderSpan;
 
     final double ascent, descent;
     switch (placeholder.alignment) {
@@ -694,9 +694,9 @@ class LineBuilder {
         descent = this.descent;
 
       case ui.PlaceholderAlignment.middle:
-        final double textMidPoint = height / 2;
-        final double placeholderMidPoint = placeholder.height / 2;
-        final double diff = placeholderMidPoint - textMidPoint;
+        final textMidPoint = height / 2;
+        final placeholderMidPoint = placeholder.height / 2;
+        final diff = placeholderMidPoint - textMidPoint;
         ascent = this.ascent + diff;
         descent = this.descent + diff;
 
@@ -733,7 +733,7 @@ class LineBuilder {
     _breakCount = 0;
     _lastBreakableFragment = -1;
 
-    for (int i = 0; i < _fragments.length; i++) {
+    for (var i = 0; i < _fragments.length; i++) {
       _updateMetrics(_fragments[i]);
       if (_fragments[i].isBreak) {
         _lastBreakableFragment = i;
@@ -751,10 +751,10 @@ class LineBuilder {
 
     // When the line has fragments other than the last one, we can always allow
     // the last fragment to be empty (i.e. completely removed from the line).
-    final bool hasOtherFragments = _fragments.length > 1;
-    final bool allowLastFragmentToBeEmpty = hasOtherFragments || allowEmptyLine;
+    final hasOtherFragments = _fragments.length > 1;
+    final allowLastFragmentToBeEmpty = hasOtherFragments || allowEmptyLine;
 
-    final LayoutFragment lastFragment = _fragments.last;
+    final lastFragment = _fragments.last;
 
     if (lastFragment.isPlaceholder) {
       // Placeholder can't be force-broken. Either keep all of it in the line or
@@ -767,11 +767,11 @@ class LineBuilder {
     }
 
     spanometer.currentSpan = lastFragment.span;
-    final double lineWidthWithoutLastFragment = widthIncludingSpace - lastFragment.widthIncludingTrailingSpaces;
-    final double availableWidthForFragment = availableWidth - lineWidthWithoutLastFragment;
-    final int forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
+    final lineWidthWithoutLastFragment = widthIncludingSpace - lastFragment.widthIncludingTrailingSpaces;
+    final availableWidthForFragment = availableWidth - lineWidthWithoutLastFragment;
+    final forceBreakEnd = lastFragment.end - lastFragment.trailingNewlines;
 
-    final int breakingPoint = spanometer.forceBreak(
+    final breakingPoint = spanometer.forceBreak(
       lastFragment.start,
       forceBreakEnd,
       availableWidth: availableWidthForFragment,
@@ -786,15 +786,15 @@ class LineBuilder {
     _fragments.removeLast();
     _recalculateMetrics();
 
-    final List<LayoutFragment?> split = lastFragment.split(breakingPoint);
+    final split = lastFragment.split(breakingPoint);
 
-    final LayoutFragment? first = split.first;
+    final first = split.first;
     if (first != null) {
       spanometer.measureFragment(first);
       addFragment(first);
     }
 
-    final LayoutFragment? second = split.last;
+    final second = split.last;
     if (second != null) {
       spanometer.measureFragment(second);
       _fragmentsForNextLine!.insert(0, second);
@@ -805,12 +805,12 @@ class LineBuilder {
     assert(canHaveEllipsis);
     assert(isOverflowing);
 
-    final String ellipsisText = paragraph.paragraphStyle.ellipsis!;
+    final ellipsisText = paragraph.paragraphStyle.ellipsis!;
 
     _fragmentsForNextLine = <LayoutFragment>[];
 
     spanometer.currentSpan = _fragments.last.span;
-    double ellipsisWidth = spanometer.measureText(ellipsisText);
+    var ellipsisWidth = spanometer.measureText(ellipsisText);
     double availableWidth = math.max(0, maxWidth - ellipsisWidth);
 
     while (_widthExcludingLastFragment > availableWidth) {
@@ -822,10 +822,10 @@ class LineBuilder {
       availableWidth = maxWidth - ellipsisWidth;
     }
 
-    final LayoutFragment lastFragment = _fragments.last;
+    final lastFragment = _fragments.last;
     forceBreakLastFragment(availableWidth: availableWidth, allowEmptyLine: true);
 
-    final EllipsisFragment ellipsisFragment = EllipsisFragment(
+    final ellipsisFragment = EllipsisFragment(
       endIndex,
       lastFragment.span,
     );
@@ -849,7 +849,7 @@ class LineBuilder {
     // the line `isBreakable`.
 
     // Start from the end and skip the last fragment.
-    int i = _fragments.length - 2;
+    var i = _fragments.length - 2;
     while (!_fragments[i].isBreak) {
       i--;
     }
@@ -863,7 +863,7 @@ class LineBuilder {
   ///
   /// Returns the number of fragments that were appended.
   int appendZeroWidthFragments(List<LayoutFragment> fragments, {required int startFrom}) {
-    int i = startFrom;
+    var i = startFrom;
     while (_canAppendEmptyFragments &&
         i < fragments.length &&
         fragments[i].widthExcludingTrailingSpaces == 0) {
@@ -880,8 +880,8 @@ class LineBuilder {
       _fragments.removeRange(_lastBreakableFragment + 1, _fragments.length);
     }
 
-    final int trailingNewlines = isEmpty ? 0 : _fragments.last.trailingNewlines;
-    final ParagraphLine line = ParagraphLine(
+    final trailingNewlines = isEmpty ? 0 : _fragments.last.trailingNewlines;
+    final line = ParagraphLine(
       lineNumber: lineNumber,
       startIndex: startIndex,
       endIndex: endIndex,
@@ -901,7 +901,7 @@ class LineBuilder {
       paragraph: paragraph,
     );
 
-    for (final LayoutFragment fragment in _fragments) {
+    for (final fragment in _fragments) {
       fragment.line = line;
     }
 
@@ -964,7 +964,7 @@ class Spanometer {
     // Also, we need to update the font string even if the span isn't changing.
     // That's because `textContext` is shared across all spanometers.
     if (span != null) {
-      final String newCssFontString = span.style.cssFontString;
+      final newCssFontString = span.style.cssFontString;
       if (_lastContextFont != newCssFontString) {
         _lastContextFont = newCssFontString;
         textContext.font = newCssFontString;
@@ -983,8 +983,8 @@ class Spanometer {
 
     // Update the height ruler.
     // If the ruler doesn't exist in the cache, create a new one and cache it.
-    final TextHeightStyle heightStyle = span.style.heightStyle;
-    TextHeightRuler? ruler = _rulers[heightStyle];
+    final heightStyle = span.style.heightStyle;
+    var ruler = _rulers[heightStyle];
     if (ruler == null) {
       ruler = TextHeightRuler(heightStyle, _rulerHost);
       _rulers[heightStyle] = ruler;
@@ -1020,7 +1020,7 @@ class Spanometer {
 
   void measureFragment(LayoutFragment fragment) {
     if (fragment.isPlaceholder) {
-      final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
+      final placeholder = fragment.span as PlaceholderSpan;
       // The ascent/descent values of the placeholder fragment will be finalized
       // later when the line is built.
       fragment.setMetrics(this,
@@ -1031,8 +1031,8 @@ class Spanometer {
       );
     } else {
       currentSpan = fragment.span;
-      final double widthExcludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingSpaces);
-      final double widthIncludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingNewlines);
+      final widthExcludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingSpaces);
+      final widthIncludingTrailingSpaces = _measure(fragment.start, fragment.end - fragment.trailingNewlines);
       fragment.setMetrics(this,
         ascent: ascent,
         descent: descent,
@@ -1070,11 +1070,11 @@ class Spanometer {
       return allowEmpty ? start : start + 1;
     }
 
-    int low = start;
-    int high = end;
+    var low = start;
+    var high = end;
     while (high - low > 1) {
-      final int mid = (low + high) ~/ 2;
-      final double width = _measure(start, mid);
+      final mid = (low + high) ~/ 2;
+      final width = _measure(start, mid);
       if (width < availableWidth) {
         low = mid;
       } else if (width > availableWidth) {

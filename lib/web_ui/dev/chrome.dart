@@ -48,7 +48,7 @@ class ChromeEnvironment implements BrowserEnvironment {
 
   @override
   Future<void> prepare() async {
-    final String version = packageLock.chromeLock.version;
+    final version = packageLock.chromeLock.version;
     _installation = await getOrInstallChrome(
       version,
       infoLog: isCi ? stdout : DevNull(),
@@ -81,7 +81,7 @@ class Chrome extends Browser {
     required bool debug,
     required bool useDwarf,
   }) {
-    final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
+    final remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(BrowserProcess(() async {
       // A good source of various Chrome CLI options:
       // https://peter.sh/experiments/chromium-command-line-switches/
@@ -93,10 +93,10 @@ class Chrome extends Browser {
       // --disable-gpu
       // --disallow-non-exact-resource-reuse
       // --disable-font-subpixel-positioning
-      final bool isChromeNoSandbox =
+      final isChromeNoSandbox =
           Platform.environment['CHROME_NO_SANDBOX'] == 'true';
-      final String dir = await generateUserDirectory(installation, useDwarf);
-      final List<String> args = <String>[
+      final dir = await generateUserDirectory(installation, useDwarf);
+      final args = <String>[
         '--user-data-dir=$dir',
         url.toString(),
         if (!debug)
@@ -136,7 +136,7 @@ class Chrome extends Browser {
           '--use-angle=metal',
       ];
 
-      final Process process =
+      final process =
           await _spawnChromiumProcess(installation.executable, args);
 
       remoteDebuggerCompleter.complete(
@@ -155,7 +155,7 @@ class Chrome extends Browser {
     BrowserInstallation installation,
     bool useDwarf
   ) async {
-    final String userDirectoryPath = environment
+    final userDirectoryPath = environment
         .webUiDartToolDir
         .createTempSync('test_chrome_user_data_')
         .resolveSymbolicLinksSync();
@@ -166,11 +166,11 @@ class Chrome extends Browser {
     // Using DWARF debugging info requires installation of a Chrome extension.
     // We can prompt for this, but in order to avoid prompting on every single
     // browser launch, we cache the user directory after it has been installed.
-    final Directory baselineUserDirectory = Directory(path.join(
+    final baselineUserDirectory = Directory(path.join(
       environment.webUiDartToolDir.path,
       'chrome_user_data_base',
     ));
-    final Directory dwarfExtensionInstallDirectory = Directory(path.join(
+    final dwarfExtensionInstallDirectory = Directory(path.join(
       baselineUserDirectory.path,
       'Default',
       'Extensions',
@@ -183,7 +183,7 @@ class Chrome extends Browser {
     if (!dwarfExtensionInstallDirectory.existsSync()) {
       print('DWARF debugging requested. Launching Chrome. Please install the '
             'extension and then exit Chrome when the installation is complete...');
-      final Process addExtension = await Process.start(
+      final addExtension = await Process.start(
         installation.executable,
         <String>[
           '--user-data-dir=${baselineUserDirectory.path}',
@@ -197,9 +197,9 @@ class Chrome extends Browser {
       );
       await addExtension.exitCode;
     }
-    for (final FileSystemEntity input in baselineUserDirectory.listSync(recursive: true)) {
-      final String relative = path.relative(input.path, from: baselineUserDirectory.path);
-      final String outputPath = path.join(userDirectoryPath, relative);
+    for (final input in baselineUserDirectory.listSync(recursive: true)) {
+      final relative = path.relative(input.path, from: baselineUserDirectory.path);
+      final outputPath = path.join(userDirectoryPath, relative);
       if (input is Directory) {
         await Directory(outputPath).create(recursive: true);
       } else if (input is File) {
@@ -237,16 +237,16 @@ class Chrome extends Browser {
   // TODO(yjbanov): extends tests to Window, https://github.com/flutter/flutter/issues/65673
   @override
   Future<Image> captureScreenshot(math.Rectangle<num>? region) async {
-    final wip.ChromeConnection chromeConnection =
+    final chromeConnection =
         wip.ChromeConnection('localhost', kDevtoolsPort);
-    final wip.ChromeTab? chromeTab = await chromeConnection.getTab(
+    final chromeTab = await chromeConnection.getTab(
         (wip.ChromeTab chromeTab) => chromeTab.url.contains('localhost'));
     if (chromeTab == null) {
       throw StateError(
         'Failed locate Chrome tab with the test page',
       );
     }
-    final wip.WipConnection wipConnection = await chromeTab.connect();
+    final wipConnection = await chromeTab.connect();
 
     Map<String, dynamic>? captureScreenshotParameters;
     if (region != null) {
@@ -273,10 +273,10 @@ class Chrome extends Browser {
       'deviceScaleFactor': 1,
       'mobile': false,
     });
-    final wip.WipResponse response = await wipConnection.sendCommand(
+    final response = await wipConnection.sendCommand(
         'Page.captureScreenshot', captureScreenshotParameters);
 
-    final Image screenshot =
+    final screenshot =
         decodePng(base64.decode(response.result!['data'] as String))!;
 
     return screenshot;
@@ -301,7 +301,7 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
   // - Chrome launched successfully, in which case we just return from the loop.
   // - The tool detected an unretriable Chrome error, in which case we throw ToolExit.
   while (true) {
-    final Process process = await Process.start(executable, args, workingDirectory: workingDirectory);
+    final process = await Process.start(executable, args, workingDirectory: workingDirectory);
 
     process.stdout
       .transform(utf8.decoder)
@@ -312,7 +312,7 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
 
     // Wait until the DevTools are listening before trying to connect. This is
     // only required for flutter_test --platform=chrome and not flutter run.
-    bool hitGlibcBug = false;
+    var hitGlibcBug = false;
     await process.stderr
       .transform(utf8.decoder)
       .transform(const LineSplitter())
@@ -325,7 +325,7 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
       })
       .firstWhere((String line) => line.startsWith('DevTools listening'), orElse: () {
         if (hitGlibcBug) {
-          const String message = 'Encountered glibc bug '
+          const message = 'Encountered glibc bug '
               'https://sourceware.org/bugzilla/show_bug.cgi?id=19329. '
               'Will try launching browser again.';
           print(message);
@@ -366,10 +366,10 @@ Future<Process> _spawnChromiumProcess(String executable, List<String> args, { St
 /// page.
 Future<Uri> getRemoteDebuggerUrl(Uri base) async {
   try {
-    final HttpClient client = HttpClient();
-    final HttpClientRequest request = await client.getUrl(base.resolve('/json/list'));
-    final HttpClientResponse response = await request.close();
-    final List<dynamic>? jsonObject =
+    final client = HttpClient();
+    final request = await client.getUrl(base.resolve('/json/list'));
+    final response = await request.close();
+    final jsonObject =
         await json.fuse(utf8).decoder.bind(response).single as List<dynamic>?;
     return base.resolve((jsonObject!.first as Map<dynamic, dynamic>)['devtoolsFrontendUrl'] as String);
   } catch (_) {

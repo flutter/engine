@@ -22,13 +22,13 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 500, 100);
+  const region = Rect.fromLTWH(0, 0, 500, 100);
 
   late BitmapCanvas canvas;
 
   void appendToScene() {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
-    final DomElement testScene = createDomElement('flt-scene');
+    final testScene = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       testScene.style.position = 'absolute';
@@ -57,12 +57,12 @@ Future<void> testMain() async {
   /// be seen depending on pixel alignment and whether antialiasing happens
   /// before or after rasterization.
   void drawMisalignedLines(BitmapCanvas canvas) {
-    final SurfacePaintData linePaint = (SurfacePaint()
+    final linePaint = (SurfacePaint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1)
         .paintData;
 
-    final SurfacePaintData fillPaint =
+    final fillPaint =
         (SurfacePaint()..style = PaintingStyle.fill).paintData;
 
     canvas.translate(10, 10);
@@ -158,20 +158,20 @@ Future<void> testMain() async {
   //
   // More details: https://github.com/flutter/flutter/issues/32274
   test('renders clipped DOM text with high quality', () async {
-    final CanvasParagraph paragraph =
+    final paragraph =
         (ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'))
           ..addText('Am I blurry?')).build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
-    final Rect canvasSize = Rect.fromLTRB(
+    final canvasSize = Rect.fromLTRB(
       0,
       0,
       paragraph.maxIntrinsicWidth + 16,
       2 * paragraph.height + 32,
     );
-    final Rect outerClip =
+    final outerClip =
         Rect.fromLTRB(0.5, 0.5, canvasSize.right, canvasSize.bottom);
-    final Rect innerClip = Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
+    final innerClip = Rect.fromLTRB(0.5, canvasSize.bottom / 2 + 0.5,
         canvasSize.right, canvasSize.bottom);
 
     canvas = BitmapCanvas(canvasSize, RenderStrategy());
@@ -199,31 +199,31 @@ Future<void> testMain() async {
   //       attempts to reproduce. However, it's still good to have this test
   //       for potential future regressions related to paint order.
   test('draws text on top of canvas when transformed and clipped', () async {
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 18,
     ));
 
-    const String text = 'This text is intentionally very long to make sure that it '
+    const text = 'This text is intentionally very long to make sure that it '
       'breaks into multiple lines.';
     builder.addText(text);
 
-    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    final paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 100));
 
-    final Rect canvasSize = Offset.zero & const Size(500, 500);
+    final canvasSize = Offset.zero & const Size(500, 500);
 
     canvas = BitmapCanvas(canvasSize, RenderStrategy());
     canvas.debugChildOverdraw = true;
 
-    final SurfacePaintData pathPaint = SurfacePaintData()
+    final pathPaint = SurfacePaintData()
       ..color = 0xFF7F7F7F
       ..style = PaintingStyle.fill;
 
-    const double r = 200.0;
-    const double l = 50.0;
+    const r = 200.0;
+    const l = 50.0;
 
-    final Path path = (Path()
+    final path = (Path()
       ..moveTo(-l, -l)
       ..lineTo(0, -r)
       ..lineTo(l, -l)
@@ -234,7 +234,7 @@ Future<void> testMain() async {
       ..lineTo(-r, 0)
       ..close()).shift(const Offset(250, 250));
 
-    final SurfacePaintData borderPaint = SurfacePaintData()
+    final borderPaint = SurfacePaintData()
       ..color = black.value
       ..style = PaintingStyle.stroke;
 
@@ -248,7 +248,7 @@ Future<void> testMain() async {
       reason: 'Expected to render text using HTML',
     );
 
-    final SceneBuilder sb = SceneBuilder();
+    final sb = SceneBuilder();
     sb.pushTransform(Matrix4.diagonal3Values(EngineFlutterDisplay.instance.browserDevicePixelRatio,
         EngineFlutterDisplay.instance.browserDevicePixelRatio, 1.0).toFloat64());
     sb.pushTransform(Matrix4.rotationZ(math.pi / 2).toFloat64());
@@ -258,8 +258,8 @@ Future<void> testMain() async {
     sb.pop();
     sb.pop();
     sb.pop();
-    final SurfaceScene scene = sb.build() as SurfaceScene;
-    final DomElement sceneElement = scene.webOnlyRootElement!;
+    final scene = sb.build() as SurfaceScene;
+    final sceneElement = scene.webOnlyRootElement!;
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -282,9 +282,9 @@ Future<void> testMain() async {
   test('does not allocate bitmap canvas just for text', () async {
     canvas = BitmapCanvas(const Rect.fromLTWH(0, 0, 50, 50), RenderStrategy());
 
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'));
+    final builder = ParagraphBuilder(ParagraphStyle(fontFamily: 'Roboto'));
     builder.addText('Hello');
-    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    final paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 1000));
 
     canvas.drawParagraph(paragraph, const Offset(8.5, 8.5));

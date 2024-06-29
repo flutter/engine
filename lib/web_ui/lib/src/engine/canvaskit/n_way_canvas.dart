@@ -20,8 +20,8 @@ class CkNWayCanvas {
 
   /// Calls [save] on all canvases.
   int save() {
-    int saveCount = 0;
-    for (int i = 0; i < _canvases.length; i++) {
+    var saveCount = 0;
+    for (var i = 0; i < _canvases.length; i++) {
       saveCount = _canvases[i].save();
     }
     return saveCount;
@@ -29,7 +29,7 @@ class CkNWayCanvas {
 
   /// Calls [saveLayer] on all canvases.
   void saveLayer(ui.Rect bounds, CkPaint? paint) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].saveLayer(bounds, paint);
     }
   }
@@ -37,63 +37,63 @@ class CkNWayCanvas {
   /// Calls [saveLayerWithFilter] on all canvases.
   void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter,
       [CkPaint? paint]) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].saveLayerWithFilter(bounds, filter, paint);
     }
   }
 
   /// Calls [restore] on all canvases.
   void restore() {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].restore();
     }
   }
 
   /// Calls [restoreToCount] on all canvases.
   void restoreToCount(int count) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].restoreToCount(count);
     }
   }
 
   /// Calls [translate] on all canvases.
   void translate(double dx, double dy) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].translate(dx, dy);
     }
   }
 
   /// Calls [transform] on all canvases.
   void transform(Float32List matrix) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].transform(matrix);
     }
   }
 
   /// Calls [clear] on all canvases.
   void clear(ui.Color color) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].clear(color);
     }
   }
 
   /// Calls [clipPath] on all canvases.
   void clipPath(CkPath path, bool doAntiAlias) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].clipPath(path, doAntiAlias);
     }
   }
 
   /// Calls [clipRect] on all canvases.
   void clipRect(ui.Rect rect, ui.ClipOp clipOp, bool doAntiAlias) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].clipRect(rect, clipOp, doAntiAlias);
     }
   }
 
   /// Calls [clipRRect] on all canvases.
   void clipRRect(ui.RRect rrect, bool doAntiAlias) {
-    for (int i = 0; i < _canvases.length; i++) {
+    for (var i = 0; i < _canvases.length; i++) {
       _canvases[i].clipRRect(rrect, doAntiAlias);
     }
   }

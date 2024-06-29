@@ -24,10 +24,10 @@ Future<void> testMain() async {
   );
 
   test('Should draw linear gradient using rectangle.', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
-    final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
+    const shaderRect = Rect.fromLTRB(50, 50, 300, 300);
+    final paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
         const <Color>[Color(0xFFcfdfd2), Color(0xFF042a85)]);
@@ -37,16 +37,16 @@ Future<void> testMain() async {
   });
 
   test('Should blend linear gradient with alpha channel correctly.', () async {
-    const Rect canvasRect = Rect.fromLTRB(0, 0, 500, 500);
-    final RecordingCanvas rc =
+    const canvasRect = Rect.fromLTRB(0, 0, 500, 500);
+    final rc =
         RecordingCanvas(canvasRect);
-    final SurfacePaint backgroundPaint = SurfacePaint()
+    final backgroundPaint = SurfacePaint()
       ..style = PaintingStyle.fill
       ..color = const Color(0xFFFF0000);
     rc.drawRect(canvasRect, backgroundPaint);
 
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
-    final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
+    const shaderRect = Rect.fromLTRB(50, 50, 300, 300);
+    final paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
         const <Color>[Color(0x00000000), Color(0xFF0000FF)]);
@@ -56,20 +56,20 @@ Future<void> testMain() async {
   });
 
   test('Should draw linear gradient with transform.', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
-    final List<double> angles = <double>[0.0, 90.0, 180.0];
-    double yOffset = 0;
-    for (final double angle in angles) {
-      final Rect shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
-      final Matrix4 matrix = Matrix4.identity();
+    final angles = <double>[0.0, 90.0, 180.0];
+    var yOffset = 0;
+    for (final angle in angles) {
+      final shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
+      final matrix = Matrix4.identity();
       matrix.translate(shaderRect.left, shaderRect.top);
       matrix.multiply(Matrix4
           .rotationZ((angle / 180) * math.pi));
-      final Matrix4 post = Matrix4.identity();
+      final post = Matrix4.identity();
       post.translate(-shaderRect.left, -shaderRect.top);
       matrix.multiply(post);
-      final SurfacePaint paint = SurfacePaint()
+      final paint = SurfacePaint()
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.right, shaderRect.bottom),
@@ -88,10 +88,10 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/50010
   test('Should draw linear gradient using rounded rect.', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
-    final SurfacePaint paint = SurfacePaint()..shader = Gradient.linear(
+    const shaderRect = Rect.fromLTRB(50, 50, 300, 300);
+    final paint = SurfacePaint()..shader = Gradient.linear(
         Offset(shaderRect.left, shaderRect.top),
         Offset(shaderRect.right, shaderRect.bottom),
         const <Color>[Color(0xFFcfdfd2), Color(0xFF042a85)]);
@@ -101,13 +101,13 @@ Future<void> testMain() async {
   });
 
   test('Should draw tiled repeated linear gradient with transform.', () async {
-    final RecordingCanvas rc =
+    final rc =
     RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
-    final List<double> angles = <double>[0.0, 30.0, 210.0];
-    double yOffset = 0;
-    for (final double angle in angles) {
-      final Rect shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
-      final SurfacePaint paint = SurfacePaint()
+    final angles = <double>[0.0, 30.0, 210.0];
+    var yOffset = 0;
+    for (final angle in angles) {
+      final shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
+      final paint = SurfacePaint()
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.left + shaderRect.width / 2, shaderRect.top),
@@ -127,13 +127,13 @@ Future<void> testMain() async {
   }, skip: isFirefox);
 
   test('Should draw tiled mirrored linear gradient with transform.', () async {
-    final RecordingCanvas rc =
+    final rc =
     RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
-    final List<double> angles = <double>[0.0, 30.0, 210.0];
-    double yOffset = 0;
-    for (final double angle in angles) {
-      final Rect shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
-      final SurfacePaint paint = SurfacePaint()
+    final angles = <double>[0.0, 30.0, 210.0];
+    var yOffset = 0;
+    for (final angle in angles) {
+      final shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
+      final paint = SurfacePaint()
         ..shader = Gradient.linear(
             Offset(shaderRect.left, shaderRect.top),
             Offset(shaderRect.left + shaderRect.width / 2, shaderRect.top),

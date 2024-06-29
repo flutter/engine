@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'package:quiver/testing/async.dart';
-import 'package:quiver/time.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -20,7 +19,7 @@ void testMain() {
 }
 
 void _alarmClockTests() {
-  int callCount = 0;
+  var callCount = 0;
 
   void testCallback() {
     callCount += 1;
@@ -32,8 +31,8 @@ void _alarmClockTests() {
 
   testAsync('AlarmClock calls the callback in the future',
       (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
 
     // There should be no timers scheduled until we set a non-null datetime.
@@ -68,8 +67,8 @@ void _alarmClockTests() {
 
   testAsync('AlarmClock does nothing when new datetime is the same',
       (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
 
     alarm.datetime = clock.fromNow(minutes: 1);
@@ -93,8 +92,8 @@ void _alarmClockTests() {
 
   testAsync('AlarmClock does not call the callback in the past',
       (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
     alarm.datetime = clock.ago(minutes: 1);
 
@@ -104,8 +103,8 @@ void _alarmClockTests() {
   });
 
   testAsync('AlarmClock reschedules to a future time', (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
 
     alarm.datetime = clock.fromNow(minutes: 1);
@@ -129,8 +128,8 @@ void _alarmClockTests() {
   });
 
   testAsync('AlarmClock reschedules to an earlier time', (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
 
     alarm.datetime = clock.fromNow(minutes: 1);
@@ -150,8 +149,8 @@ void _alarmClockTests() {
 
   testAsync('AlarmClock cancels the timer when datetime is null',
       (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
 
     alarm.datetime = clock.fromNow(minutes: 1);
@@ -170,8 +169,8 @@ void _alarmClockTests() {
 
   testAsync('AlarmClock cancels the timer when datetime is in the past',
       (FakeAsync fakeAsync) {
-    final Clock clock = fakeAsync.getClock(DateTime(2019, 1, 24));
-    final AlarmClock alarm = AlarmClock(clock.now);
+    final clock = fakeAsync.getClock(DateTime(2019, 1, 24));
+    final alarm = AlarmClock(clock.now);
     alarm.callback = testCallback;
 
     alarm.datetime = clock.fromNow(minutes: 1);

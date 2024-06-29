@@ -49,7 +49,7 @@ abstract class AppLifecycleState {
   void onAppLifecycleStateChange(ui.AppLifecycleState newState) {
     if (newState != _appLifecycleState) {
       _appLifecycleState = newState;
-      for (final AppLifecycleStateListener listener in _listeners) {
+      for (final listener in _listeners) {
         listener(newState);
       }
     }
@@ -86,7 +86,7 @@ class _BrowserAppLifecycleState extends AppLifecycleState {
       'visibilitychange',
       _visibilityChangeListener,
     );
-    for (final StreamSubscription<void> subscription in _subscriptions) {
+    for (final subscription in _subscriptions) {
       subscription.cancel();
     }
     _subscriptions.clear();

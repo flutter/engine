@@ -45,7 +45,7 @@ class RawKeyboard {
   /// After calling this method this object becomes unusable and [instance]
   /// becomes `null`. Call [initialize] again to initialize a new singleton.
   void dispose() {
-    for (final String key in _keydownTimers.keys) {
+    for (final key in _keydownTimers.keys) {
       _keydownTimers[key]!.cancel();
     }
     _keydownTimers.clear();
@@ -87,8 +87,8 @@ class RawKeyboard {
       return;
     }
 
-    final FlutterHtmlKeyboardEvent event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
-    final String timerKey = event.code!;
+    final event = FlutterHtmlKeyboardEvent(domEvent as DomKeyboardEvent);
+    final timerKey = event.code!;
 
     if (_shouldIgnore(event)) {
       return;
@@ -129,7 +129,7 @@ class RawKeyboard {
         _lastMetaState |= _modifierMeta;
       }
     }
-    final Map<String, dynamic> eventData = <String, dynamic>{
+    final eventData = <String, dynamic>{
       'type': event.type,
       'keymap': 'web',
       'code': event.code,
@@ -144,7 +144,7 @@ class RawKeyboard {
         if (data == null) {
           return;
         }
-        final Map<String, dynamic> jsonResponse = _messageCodec.decodeMessage(data) as Map<String, dynamic>;
+        final jsonResponse = _messageCodec.decodeMessage(data) as Map<String, dynamic>;
         if (jsonResponse['handled'] as bool) {
           // If the framework handled it, then don't propagate it any further.
           event.preventDefault();
@@ -155,7 +155,7 @@ class RawKeyboard {
   }
 
   void _synthesizeKeyup(FlutterHtmlKeyboardEvent event) {
-    final Map<String, dynamic> eventData = <String, dynamic>{
+    final eventData = <String, dynamic>{
       'type': 'keyup',
       'keymap': 'web',
       'code': event.code,
@@ -188,7 +188,7 @@ const int modifierScrollLock = 0x40;
 
 /// Creates a bitmask representing the meta state of the [event].
 int _getMetaState(FlutterHtmlKeyboardEvent event) {
-  int metaState = _modifierNone;
+  var metaState = _modifierNone;
   if (event.getModifierState('Shift')) {
     metaState |= _modifierShift;
   }
@@ -220,7 +220,7 @@ int _getMetaState(FlutterHtmlKeyboardEvent event) {
 /// Modifier keys are shift, alt, ctrl and meta/cmd/win. These are the keys used
 /// to perform keyboard shortcuts (e.g. `cmd+c`, `cmd+l`).
 bool _isModifierKey(FlutterHtmlKeyboardEvent event) {
-  final String key = event.key!;
+  final key = event.key!;
   return key == 'Meta' || key == 'Shift' || key == 'Alt' || key == 'Control';
 }
 

@@ -268,22 +268,22 @@ class SemanticsTester {
     }
 
     // If a rect is not provided, generate one than covers all children.
-    ui.Rect effectiveRect = rect ?? ui.Rect.zero;
+    var effectiveRect = rect ?? ui.Rect.zero;
     if (children != null && children.isNotEmpty) {
       effectiveRect = childRect(children.first);
-      for (final SemanticsNodeUpdate child in children.skip(1)) {
+      for (final child in children.skip(1)) {
         effectiveRect = effectiveRect.expandToInclude(childRect(child));
       }
     }
 
-    final Int32List childIds = Int32List(children?.length ?? 0);
+    final childIds = Int32List(children?.length ?? 0);
     if (children != null) {
-      for (int i = 0; i < children.length; i++) {
+      for (var i = 0; i < children.length; i++) {
         childIds[i] = children[i].id;
       }
     }
 
-    final SemanticsNodeUpdate update = SemanticsNodeUpdate(
+    final update = SemanticsNodeUpdate(
       id: id,
       flags: flags,
       actions: actions,
@@ -376,7 +376,7 @@ class SemanticsActionLogger {
     // The browser kicks us out of the test zone when the browser event happens.
     // We memorize the test zone so we can call expect when the callback is
     // fired.
-    final Zone testZone = Zone.current;
+    final testZone = Zone.current;
 
     ui.PlatformDispatcher.instance.onSemanticsActionEvent =
         (ui.SemanticsActionEvent event) {

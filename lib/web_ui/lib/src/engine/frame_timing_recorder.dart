@@ -81,7 +81,7 @@ class FrameTimingRecorder {
       _rasterFinishMicros != null,
       'Attempted to submit an incomplete timings.'
     );
-    final ui.FrameTiming timing = ui.FrameTiming(
+    final timing = ui.FrameTiming(
       vsyncStart: _vsyncStartMicros,
       buildStart: _buildStartMicros,
       buildFinish: _buildFinishMicros!,
@@ -90,7 +90,7 @@ class FrameTimingRecorder {
       rasterFinishWallTime: _rasterFinishMicros!,
     );
     _frameTimings.add(timing);
-    final int now = _nowMicros();
+    final now = _nowMicros();
     if (now - _frameTimingsLastSubmitTime > _kFrameTimingsSubmitInterval) {
       _frameTimingsLastSubmitTime = now;
       EnginePlatformDispatcher.instance.invokeOnReportTimings(_frameTimings);

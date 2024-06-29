@@ -24,17 +24,17 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/64734.
   test('Clips using difference', () async {
-    const Offset shift = Offset(8, 8);
-    const Rect region = Rect.fromLTRB(0, 0, 400, 300);
-    final RecordingCanvas canvas = RecordingCanvas(region);
-    final Rect titleRect = const Rect.fromLTWH(20, 0, 50, 20).shift(shift);
-    final SurfacePaint paint = SurfacePaint()
+    const shift = Offset(8, 8);
+    const region = Rect.fromLTRB(0, 0, 400, 300);
+    final canvas = RecordingCanvas(region);
+    final titleRect = const Rect.fromLTWH(20, 0, 50, 20).shift(shift);
+    final paint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..color = const Color(0xff000000)
       ..strokeWidth = 1;
     canvas.save();
     try {
-      final Rect borderRect = Rect.fromLTRB(0, 10, region.width, region.height).shift(shift);
+      final borderRect = Rect.fromLTRB(0, 10, region.width, region.height).shift(shift);
       canvas.clipRect(titleRect, ClipOp.difference);
       canvas.drawRect(borderRect, paint);
     } finally {
@@ -47,21 +47,21 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/86345
   test('Clips with zero width or height', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 400, 300);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 400, 300);
+    final canvas = RecordingCanvas(region);
 
-    final SurfacePaint paint = SurfacePaint()
+    final paint = SurfacePaint()
       ..style = PaintingStyle.fill
       ..color = const Color(0xff00ff00);
-    final SurfacePaint borderPaint = SurfacePaint()
+    final borderPaint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..color = const Color(0xffff0000)
       ..strokeWidth = 1;
 
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        final double x = 10 + i * 70;
-        final double y = 10 + j * 70;
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        final x = 10 + i * 70;
+        final y = 10 + j * 70;
         canvas.save();
         // Clip.
         canvas.clipRect(

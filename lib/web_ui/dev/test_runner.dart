@@ -183,49 +183,49 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   );
 
   BrowserSuiteFilter? makeBrowserFilter() {
-    final List<String>? browserArgs = argResults!['browser'] as List<String>?;
+    final browserArgs = argResults!['browser'] as List<String>?;
     if (browserArgs == null || browserArgs.isEmpty) {
       return null;
     }
-    final Set<BrowserName> browserNames = Set<BrowserName>.from(browserArgs.map((String arg) => BrowserName.values.byName(arg)));
+    final browserNames = Set<BrowserName>.from(browserArgs.map((String arg) => BrowserName.values.byName(arg)));
     return BrowserSuiteFilter(allowList: browserNames);
   }
 
   CompilerFilter? makeCompilerFilter() {
-    final List<String>? compilerArgs = argResults!['compiler'] as List<String>?;
+    final compilerArgs = argResults!['compiler'] as List<String>?;
     if (compilerArgs == null || compilerArgs.isEmpty) {
       return null;
     }
-    final Set<Compiler> compilers = Set<Compiler>.from(compilerArgs.map((String arg) => Compiler.values.byName(arg)));
+    final compilers = Set<Compiler>.from(compilerArgs.map((String arg) => Compiler.values.byName(arg)));
     return CompilerFilter(allowList: compilers);
   }
 
   RendererFilter? makeRendererFilter() {
-    final List<String>? rendererArgs = argResults!['renderer'] as List<String>?;
+    final rendererArgs = argResults!['renderer'] as List<String>?;
     if (rendererArgs == null || rendererArgs.isEmpty) {
       return null;
     }
-    final Set<Renderer> renderers = Set<Renderer>.from(rendererArgs.map((String arg) => Renderer.values.byName(arg)));
+    final renderers = Set<Renderer>.from(rendererArgs.map((String arg) => Renderer.values.byName(arg)));
     return RendererFilter(allowList: renderers);
   }
 
   CanvasKitVariantFilter? makeCanvasKitVariantFilter() {
-    final List<String>? variantArgs = argResults!['canvaskit-variant'] as List<String>?;
+    final variantArgs = argResults!['canvaskit-variant'] as List<String>?;
     if (variantArgs == null || variantArgs.isEmpty) {
       return null;
     }
-    final Set<CanvasKitVariant> variants = Set<CanvasKitVariant>.from(variantArgs.map((String arg) => CanvasKitVariant.values.byName(arg)));
+    final variants = Set<CanvasKitVariant>.from(variantArgs.map((String arg) => CanvasKitVariant.values.byName(arg)));
     return CanvasKitVariantFilter(allowList: variants);
   }
 
   SuiteNameFilter? makeSuiteNameFilter() {
-    final List<String>? suiteNameArgs = argResults!['suite'] as List<String>?;
+    final suiteNameArgs = argResults!['suite'] as List<String>?;
     if (suiteNameArgs == null || suiteNameArgs.isEmpty) {
       return null;
     }
 
-    final Iterable<String> allSuiteNames = config.testSuites.map((TestSuite suite) => suite.name);
-    for (final String suiteName in suiteNameArgs) {
+    final allSuiteNames = config.testSuites.map((TestSuite suite) => suite.name);
+    for (final suiteName in suiteNameArgs) {
       if (!allSuiteNames.contains(suiteName)) {
         throw ToolExit('No suite found named $suiteName');
       }
@@ -234,15 +234,15 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   }
 
   BundleNameFilter? makeBundleNameFilter() {
-    final List<String>? bundleNameArgs = argResults!['bundle'] as List<String>?;
+    final bundleNameArgs = argResults!['bundle'] as List<String>?;
     if (bundleNameArgs == null || bundleNameArgs.isEmpty) {
       return null;
     }
 
-    final Iterable<String> allBundleNames = config.testSuites.map(
+    final allBundleNames = config.testSuites.map(
       (TestSuite suite) => suite.testBundle.name
     );
-    for (final String bundleName in bundleNameArgs) {
+    for (final bundleName in bundleNameArgs) {
       if (!allBundleNames.contains(bundleName)) {
         throw ToolExit('No bundle found named $bundleName');
       }
@@ -251,18 +251,18 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   }
 
   FileFilter? makeFileFilter() {
-    final List<FilePath> tests = targetFiles;
+    final tests = targetFiles;
     if (tests.isEmpty) {
       return null;
     }
-    final Set<String> bundleNames = <String>{};
-    for (final FilePath testPath in tests) {
+    final bundleNames = <String>{};
+    for (final testPath in tests) {
       if (!io.File(testPath.absolute).existsSync()) {
         throw ToolExit('Test path not found: $testPath');
       }
-      bool bundleFound = false;
-      for (final TestBundle bundle in config.testBundles) {
-        final String testSetPath = getTestSetDirectory(bundle.testSet).path;
+      var bundleFound = false;
+      for (final bundle in config.testBundles) {
+        final testSetPath = getTestSetDirectory(bundle.testSet).path;
         if (path.isWithin(testSetPath, testPath.absolute)) {
           bundleFound = true;
           bundleNames.add(bundle.name);
@@ -276,13 +276,13 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   }
 
   List<SuiteFilter> get suiteFilters {
-    final BrowserSuiteFilter? browserFilter = makeBrowserFilter();
-    final CompilerFilter? compilerFilter = makeCompilerFilter();
-    final RendererFilter? rendererFilter = makeRendererFilter();
-    final CanvasKitVariantFilter? canvaskitVariantFilter = makeCanvasKitVariantFilter();
-    final SuiteNameFilter? suiteNameFilter = makeSuiteNameFilter();
-    final BundleNameFilter? bundleNameFilter = makeBundleNameFilter();
-    final FileFilter? fileFilter = makeFileFilter();
+    final browserFilter = makeBrowserFilter();
+    final compilerFilter = makeCompilerFilter();
+    final rendererFilter = makeRendererFilter();
+    final canvaskitVariantFilter = makeCanvasKitVariantFilter();
+    final suiteNameFilter = makeSuiteNameFilter();
+    final bundleNameFilter = makeBundleNameFilter();
+    final fileFilter = makeFileFilter();
     return <SuiteFilter>[
       PlatformBrowserFilter(),
       if (browserFilter != null) browserFilter,
@@ -299,10 +299,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     if (isVerbose) {
       print('Filtering suites...');
     }
-    final List<SuiteFilter> filters = suiteFilters;
-    final List<TestSuite> filteredSuites = config.testSuites.where((TestSuite suite) {
-      for (final SuiteFilter filter in filters) {
-        final SuiteFilterResult result = filter.filterSuite(suite);
+    final filters = suiteFilters;
+    final filteredSuites = config.testSuites.where((TestSuite suite) {
+      for (final filter in filters) {
+        final result = filter.filterSuite(suite);
         if (!result.isAccepted) {
           if (isVerbose) {
             print('  ${suite.name.ansiCyan} rejected for reason: ${result.rejectReason}');
@@ -316,7 +316,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   }
 
   List<TestBundle> _filterBundlesForSuites(List<TestSuite> suites) {
-    final Set<TestBundle> seenBundles =
+    final seenBundles =
       Set<TestBundle>.from(suites.map((TestSuite suite) => suite.testBundle));
     return config.testBundles.where((TestBundle bundle) => seenBundles.contains(bundle)).toList();
   }
@@ -328,12 +328,12 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   @override
   Future<bool> run() async {
-    final List<TestSuite> filteredSuites = _filterTestSuites();
-    final List<TestBundle> bundles = _filterBundlesForSuites(filteredSuites);
-    final ArtifactDependencies artifacts = _artifactsForSuites(filteredSuites);
+    final filteredSuites = _filterTestSuites();
+    final bundles = _filterBundlesForSuites(filteredSuites);
+    final artifacts = _artifactsForSuites(filteredSuites);
     if (boolArg('generate-builder-json')) {
-      final String configString = generateBuilderJson(config);
-      final io.File configFile = io.File(path.join(
+      final configString = generateBuilderJson(config);
+      final configFile = io.File(path.join(
         environment.flutterDirectory.path,
         'ci',
         'builders',
@@ -344,11 +344,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     }
     if (isList || isVerbose) {
       print('Suites:');
-      for (final TestSuite suite in filteredSuites) {
+      for (final suite in filteredSuites) {
         print('  ${suite.name.ansiCyan}');
       }
       print('Bundles:');
-      for (final TestBundle bundle in bundles) {
+      for (final bundle in bundles) {
         print('  ${bundle.name.ansiMagenta}');
       }
       print('Artifacts:');
@@ -366,9 +366,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       return true;
     }
 
-    bool shouldRun = boolArg('run');
-    bool shouldCompile = boolArg('compile');
-    bool shouldCopyArtifacts = boolArg('copy-artifacts');
+    var shouldRun = boolArg('run');
+    var shouldCompile = boolArg('compile');
+    var shouldCopyArtifacts = boolArg('copy-artifacts');
     if (!shouldRun && !shouldCompile && !shouldCopyArtifacts) {
       // If none of these is specified, we should assume we need to do all of them.
       shouldRun = true;
@@ -376,8 +376,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       shouldCopyArtifacts = true;
     }
 
-    final Set<FilePath>? testFiles = targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
-    final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
+    final testFiles = targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
+    final testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
       if (shouldCopyArtifacts) CopyArtifactsStep(artifacts, runtimeMode: runtimeMode),
       if (shouldCompile)
@@ -422,7 +422,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     }
 
     if (isWatchMode) {
-      final FilePath dir = FilePath.fromWebUi('');
+      final dir = FilePath.fromWebUi('');
       print('');
       print(
           'Watching ${dir.relativeToCwd}/lib and ${dir.relativeToCwd}/test to re-run tests');
@@ -437,7 +437,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             }
 
             // React to changes in lib/ and test/ folders.
-            final String relativePath =
+            final relativePath =
                 path.relative(event.path, from: dir.absolute);
             if (path.isWithin('lib', relativePath) ||
                 path.isWithin('test', relativePath)) {

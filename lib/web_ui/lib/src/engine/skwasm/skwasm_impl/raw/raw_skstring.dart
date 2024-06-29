@@ -34,18 +34,18 @@ external void skString16Free(SkString16Handle handle);
 
 SkStringHandle skStringFromDartString(String string) {
   final List<int> rawUtf8Bytes = utf8.encode(string);
-  final SkStringHandle stringHandle = skStringAllocate(rawUtf8Bytes.length);
-  final Pointer<Int8> stringDataPointer = skStringGetData(stringHandle);
-  for (int i = 0; i < rawUtf8Bytes.length; i++) {
+  final stringHandle = skStringAllocate(rawUtf8Bytes.length);
+  final stringDataPointer = skStringGetData(stringHandle);
+  for (var i = 0; i < rawUtf8Bytes.length; i++) {
     stringDataPointer[i] = rawUtf8Bytes[i];
   }
   return stringHandle;
 }
 
 SkString16Handle skString16FromDartString(String string) {
-  final SkString16Handle stringHandle = skString16Allocate(string.length);
-  final Pointer<Int16> stringDataPointer = skString16GetData(stringHandle);
-  for (int i = 0; i < string.length; i++) {
+  final stringHandle = skString16Allocate(string.length);
+  final stringDataPointer = skString16GetData(stringHandle);
+  for (var i = 0; i < string.length; i++) {
     stringDataPointer[i] = string.codeUnitAt(i);
   }
   return stringHandle;

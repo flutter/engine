@@ -101,7 +101,7 @@ void _blendModeTests() {
   });
 
   test('ui.BlendMode converts to SkBlendMode', () {
-    for (final ui.BlendMode blendMode in ui.BlendMode.values) {
+    for (final blendMode in ui.BlendMode.values) {
       expect(toSkBlendMode(blendMode).value, blendMode.index);
     }
   });
@@ -114,7 +114,7 @@ void _paintStyleTests() {
   });
 
   test('ui.PaintingStyle converts to SkPaintStyle', () {
-    for (final ui.PaintingStyle style in ui.PaintingStyle.values) {
+    for (final style in ui.PaintingStyle.values) {
       expect(toSkPaintStyle(style).value, style.index);
     }
   });
@@ -128,7 +128,7 @@ void _strokeCapTests() {
   });
 
   test('ui.StrokeCap converts to SkStrokeCap', () {
-    for (final ui.StrokeCap cap in ui.StrokeCap.values) {
+    for (final cap in ui.StrokeCap.values) {
       expect(toSkStrokeCap(cap).value, cap.index);
     }
   });
@@ -142,7 +142,7 @@ void _strokeJoinTests() {
   });
 
   test('ui.StrokeJoin converts to SkStrokeJoin', () {
-    for (final ui.StrokeJoin join in ui.StrokeJoin.values) {
+    for (final join in ui.StrokeJoin.values) {
       expect(toSkStrokeJoin(join).value, join.index);
     }
   });
@@ -157,7 +157,7 @@ void _blurStyleTests() {
   });
 
   test('ui.BlurStyle converts to SkBlurStyle', () {
-    for (final ui.BlurStyle style in ui.BlurStyle.values) {
+    for (final style in ui.BlurStyle.values) {
       expect(toSkBlurStyle(style).value, style.index);
     }
   });
@@ -171,7 +171,7 @@ void _tileModeTests() {
   });
 
   test('ui.TileMode converts to SkTileMode', () {
-    for (final ui.TileMode mode in ui.TileMode.values) {
+    for (final mode in ui.TileMode.values) {
       expect(toSkTileMode(mode).value, mode.index);
     }
   });
@@ -184,7 +184,7 @@ void _fillTypeTests() {
   });
 
   test('ui.PathFillType converts to SkFillType', () {
-    for (final ui.PathFillType type in ui.PathFillType.values) {
+    for (final type in ui.PathFillType.values) {
       expect(toSkFillType(type).value, type.index);
     }
   });
@@ -202,29 +202,29 @@ void _pathOpTests() {
   });
 
   test('ui.PathOperation converts to SkPathOp', () {
-    for (final ui.PathOperation op in ui.PathOperation.values) {
+    for (final op in ui.PathOperation.values) {
       expect(toSkPathOp(op).value, op.index);
     }
   });
 
   test('Path.combine test', () {
-    final ui.Path path1 = ui.Path();
+    final path1 = ui.Path();
     expect(path1, isA<CkPath>());
     path1.addRect(const ui.Rect.fromLTRB(0, 0, 10, 10));
     path1.addOval(const ui.Rect.fromLTRB(10, 10, 100, 100));
 
-    final ui.Path path2 = ui.Path();
+    final path2 = ui.Path();
     expect(path2, isA<CkPath>());
     path2.addRect(const ui.Rect.fromLTRB(5, 5, 15, 15));
     path2.addOval(const ui.Rect.fromLTRB(15, 15, 105, 105));
 
-    final ui.Path union = ui.Path.combine(ui.PathOperation.union, path1, path2);
+    final union = ui.Path.combine(ui.PathOperation.union, path1, path2);
     expect(union, isA<CkPath>());
     expect(union.getBounds(), const ui.Rect.fromLTRB(0, 0, 105, 105));
 
     // Smoke-test other operations.
-    for (final ui.PathOperation operation in ui.PathOperation.values) {
-      final ui.Path combined = ui.Path.combine(operation, path1, path2);
+    for (final operation in ui.PathOperation.values) {
+      final combined = ui.Path.combine(operation, path1, path2);
       expect(combined, isA<CkPath>());
     }
   });
@@ -237,7 +237,7 @@ void _clipOpTests() {
   });
 
   test('ui.ClipOp converts to SkClipOp', () {
-    for (final ui.ClipOp op in ui.ClipOp.values) {
+    for (final op in ui.ClipOp.values) {
       expect(toSkClipOp(op).value, op.index);
     }
   });
@@ -251,7 +251,7 @@ void _pointModeTests() {
   });
 
   test('ui.PointMode converts to SkPointMode', () {
-    for (final ui.PointMode op in ui.PointMode.values) {
+    for (final op in ui.PointMode.values) {
       expect(toSkPointMode(op).value, op.index);
     }
   });
@@ -267,7 +267,7 @@ void _vertexModeTests() {
   });
 
   test('ui.VertexMode converts to SkVertexMode', () {
-    for (final ui.VertexMode op in ui.VertexMode.values) {
+    for (final op in ui.VertexMode.values) {
       expect(toSkVertexMode(op).value, op.index);
     }
   });
@@ -275,14 +275,14 @@ void _vertexModeTests() {
 
 void _imageTests() {
   test('MakeAnimatedImageFromEncoded makes a non-animated image', () {
-    final SkAnimatedImage nonAnimated =
+    final nonAnimated =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     expect(nonAnimated.getFrameCount(), 1);
     expect(nonAnimated.getRepetitionCount(), 0);
     expect(nonAnimated.width(), 1);
     expect(nonAnimated.height(), 1);
 
-    final SkImage frame = nonAnimated.makeImageAtCurrentFrame();
+    final frame = nonAnimated.makeImageAtCurrentFrame();
     expect(frame.width(), 1);
     expect(frame.height(), 1);
 
@@ -300,14 +300,14 @@ void _imageTests() {
   });
 
   test('MakeAnimatedImageFromEncoded makes an animated image', () {
-    final SkAnimatedImage animated =
+    final animated =
         canvasKit.MakeAnimatedImageFromEncoded(kAnimatedGif)!;
     expect(animated.getFrameCount(), 3);
     expect(animated.getRepetitionCount(), -1); // animates forever
     expect(animated.width(), 1);
     expect(animated.height(), 1);
-    for (int i = 0; i < 100; i++) {
-      final SkImage frame = animated.makeImageAtCurrentFrame();
+    for (var i = 0; i < 100; i++) {
+      final frame = animated.makeImageAtCurrentFrame();
       expect(frame.width(), 1);
       expect(frame.height(), 1);
       expect(animated.decodeNextFrame(), 100);
@@ -351,32 +351,32 @@ void _shaderTests() {
   });
 
   test('RuntimeEffect', () {
-    const String kSkSlProgram = r'''
+    const kSkSlProgram = r'''
 half4 main(vec2 fragCoord) {
   return vec4(1.0, 0.0, 0.0, 1.0);
 }
   ''';
 
-    final SkRuntimeEffect? effect = MakeRuntimeEffect(kSkSlProgram);
+    final effect = MakeRuntimeEffect(kSkSlProgram);
     expect(effect, isNotNull);
 
-    const String kInvalidSkSlProgram = '';
+    const kInvalidSkSlProgram = '';
 
     // Invalid SkSL returns null.
-    final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
+    final invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
     expect(invalidEffect, isNull);
 
-    final SkFloat32List emptyUniforms = mallocFloat32List(0);
-    final SkShader? shader = effect!.makeShader(emptyUniforms);
+    final emptyUniforms = mallocFloat32List(0);
+    final shader = effect!.makeShader(emptyUniforms);
     expect(shader, isNotNull);
 
     // mismatched uniforms returns null.
-    final SkFloat32List mismatchedUniforms = mallocFloat32List(1);
-    final SkShader? invalidShader = effect.makeShader(mismatchedUniforms);
+    final mismatchedUniforms = mallocFloat32List(1);
+    final invalidShader = effect.makeShader(mismatchedUniforms);
 
     expect(invalidShader, isNull);
 
-    const String kSkSlProgramWithUniforms = r'''
+    const kSkSlProgramWithUniforms = r'''
 uniform vec4 u_color;
 
 half4 main(vec2 fragCoord) {
@@ -384,7 +384,7 @@ return u_color;
 }
 ''';
 
-    final SkFloat32List uniforms = mallocFloat32List(4);
+    final uniforms = mallocFloat32List(4);
     final uniformData = uniforms.toTypedArray();
 
     uniformData[0] = 1.0;
@@ -392,7 +392,7 @@ return u_color;
     uniformData[2] = 0.0;
     uniformData[3] = 1.0;
 
-    final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
+    final shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
       !.makeShader(uniforms);
 
     expect(shaderWithUniform, isNotNull);
@@ -412,7 +412,7 @@ SkShader _makeTestShader() {
 
 void _paintTests() {
   test('can make SkPaint', () async {
-    final SkPaint paint = SkPaint();
+    final paint = SkPaint();
     paint.setBlendMode(canvasKit.BlendMode.SrcOut);
     paint.setStyle(canvasKit.PaintStyle.Stroke);
     paint.setStrokeWidth(3.0);
@@ -504,7 +504,7 @@ void _imageFilterTests() {
   });
 
   test('toSkFilterOptions', () {
-    for (final ui.FilterQuality filterQuality in ui.FilterQuality.values) {
+    for (final filterQuality in ui.FilterQuality.values) {
       expect(toSkFilterOptions(filterQuality), isNotNull);
     }
   });
@@ -557,16 +557,16 @@ void _imageFilterTests() {
 
 void _mallocTests() {
   test('$SkFloat32List', () {
-    final List<SkFloat32List> lists = <SkFloat32List>[];
+    final lists = <SkFloat32List>[];
 
-    for (int size = 0; size < 1000; size++) {
-      final SkFloat32List skList = mallocFloat32List(4);
+    for (var size = 0; size < 1000; size++) {
+      final skList = mallocFloat32List(4);
       expect(skList, isNotNull);
       expect(skList.toTypedArray(), hasLength(4));
       lists.add(skList);
     }
 
-    for (final SkFloat32List skList in lists) {
+    for (final skList in lists) {
       // toTypedArray() still works.
       expect(() => skList.toTypedArray(), returnsNormally);
       free(skList);
@@ -575,16 +575,16 @@ void _mallocTests() {
     }
   });
   test('$SkUint32List', () {
-    final List<SkUint32List> lists = <SkUint32List>[];
+    final lists = <SkUint32List>[];
 
-    for (int size = 0; size < 1000; size++) {
-      final SkUint32List skList = mallocUint32List(4);
+    for (var size = 0; size < 1000; size++) {
+      final skList = mallocUint32List(4);
       expect(skList, isNotNull);
       expect(skList.toTypedArray(), hasLength(4));
       lists.add(skList);
     }
 
-    for (final SkUint32List skList in lists) {
+    for (final skList in lists) {
       // toTypedArray() still works.
       expect(() => skList.toTypedArray(), returnsNormally);
       free(skList);
@@ -662,7 +662,7 @@ void _toSkColorStopsTests() {
 
 void _toSkMatrixFromFloat32Tests() {
   test('toSkMatrixFromFloat32', () {
-    final Matrix4 matrix = Matrix4.identity()
+    final matrix = Matrix4.identity()
       ..translate(1, 2, 3)
       ..rotateZ(4);
     expect(
@@ -683,7 +683,7 @@ void _toSkMatrixFromFloat32Tests() {
 
 void _toSkM44FromFloat32Tests() {
   test('toSkM44FromFloat32', () {
-    final Matrix4 matrix = Matrix4.identity()
+    final matrix = Matrix4.identity()
       ..translate(1, 2, 3)
       ..rotateZ(4);
     expect(
@@ -712,11 +712,11 @@ void _toSkM44FromFloat32Tests() {
 typedef CanvasCallback = void Function(ui.Canvas canvas);
 
 Future<ui.Image> toImage(CanvasCallback callback, int width, int height) {
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final ui.Canvas canvas = ui.Canvas(
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(
       recorder, ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble()));
   callback(canvas);
-  final ui.Picture picture = recorder.endRecording();
+  final picture = recorder.endRecording();
   return picture.toImage(width, height);
 }
 
@@ -728,10 +728,10 @@ Future<bool> fuzzyCompareImages(ui.Image golden, ui.Image img) async {
   }
   int getPixel(ByteData data, int x, int y) =>
       data.getUint32((x + y * golden.width) * 4);
-  final ByteData goldenData = (await golden.toByteData())!;
-  final ByteData imgData = (await img.toByteData())!;
-  for (int y = 0; y < golden.height; y++) {
-    for (int x = 0; x < golden.width; x++) {
+  final goldenData = (await golden.toByteData())!;
+  final imgData = (await img.toByteData())!;
+  for (var y = 0; y < golden.height; y++) {
+    for (var x = 0; x < golden.width; x++) {
       if (getPixel(goldenData, x, y) != getPixel(imgData, x, y)) {
         return false;
       }
@@ -742,18 +742,18 @@ Future<bool> fuzzyCompareImages(ui.Image golden, ui.Image img) async {
 
 void _matrix4x4CompositionTests() {
   test('compose4x4MatrixInCanvas', () async {
-    const double rotateAroundX = pi / 6; // 30 degrees
-    const double rotateAroundY = pi / 9; // 20 degrees
-    const int width = 150;
-    const int height = 150;
-    const ui.Color black = ui.Color.fromARGB(255, 0, 0, 0);
-    const ui.Color green = ui.Color.fromARGB(255, 0, 255, 0);
+    const rotateAroundX = pi / 6; // 30 degrees
+    const rotateAroundY = pi / 9; // 20 degrees
+    const width = 150;
+    const height = 150;
+    const black = ui.Color.fromARGB(255, 0, 0, 0);
+    const green = ui.Color.fromARGB(255, 0, 255, 0);
     void paint(ui.Canvas canvas, CanvasCallback rotate) {
       canvas.translate(width * 0.5, height * 0.5);
       rotate(canvas);
-      const double width3 = width / 3.0;
-      const double width5 = width / 5.0;
-      const double width10 = width / 10.0;
+      const width3 = width / 3.0;
+      const width5 = width / 5.0;
+      const width10 = width / 10.0;
       canvas.drawRect(const ui.Rect.fromLTRB(-width3, -width3, width3, width3),
           ui.Paint()..color = green);
       canvas.drawRect(
@@ -764,9 +764,9 @@ void _matrix4x4CompositionTests() {
           ui.Paint()..color = black);
     }
 
-    final ui.Image incrementalMatrixImage = await toImage((ui.Canvas canvas) {
+    final incrementalMatrixImage = await toImage((ui.Canvas canvas) {
       paint(canvas, (ui.Canvas canvas) {
-        final Matrix4 matrix = Matrix4.identity();
+        final matrix = Matrix4.identity();
         matrix.setEntry(3, 2, 0.001);
         canvas.transform(matrix.toFloat64());
         matrix.setRotationX(rotateAroundX);
@@ -775,9 +775,9 @@ void _matrix4x4CompositionTests() {
         canvas.transform(matrix.toFloat64());
       });
     }, width, height);
-    final ui.Image combinedMatrixImage = await toImage((ui.Canvas canvas) {
+    final combinedMatrixImage = await toImage((ui.Canvas canvas) {
       paint(canvas, (ui.Canvas canvas) {
-        final Matrix4 matrix = Matrix4.identity();
+        final matrix = Matrix4.identity();
         matrix.setEntry(3, 2, 0.001);
         matrix.rotate(kUnitX, rotateAroundX);
         matrix.rotate(kUnitY, rotateAroundY);
@@ -785,7 +785,7 @@ void _matrix4x4CompositionTests() {
       });
     }, width, height);
 
-    final bool areEqual =
+    final areEqual =
         await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
     expect(areEqual, true);
   });
@@ -859,7 +859,7 @@ void _pathTests() {
   });
 
   test('addPoly', () {
-    final SkFloat32List encodedPoints = toMallocedSkPoints(const <ui.Offset>[
+    final encodedPoints = toMallocedSkPoints(const <ui.Offset>[
       ui.Offset.zero,
       ui.Offset(10, 10),
     ]);
@@ -868,7 +868,7 @@ void _pathTests() {
   });
 
   test('addRRect', () {
-    final ui.RRect rrect = ui.RRect.fromRectAndRadius(
+    final rrect = ui.RRect.fromRectAndRadius(
       const ui.Rect.fromLTRB(10, 10, 20, 20),
       const ui.Radius.circular(3),
     );
@@ -912,7 +912,7 @@ void _pathTests() {
   });
 
   test('contains', () {
-    final SkPath testPath = _testClosedSkPath();
+    final testPath = _testClosedSkPath();
     expect(testPath.contains(15, 15), isTrue);
     expect(testPath.contains(100, 100), isFalse);
   });
@@ -922,8 +922,8 @@ void _pathTests() {
   });
 
   test('getBounds', () {
-    final SkPath testPath = _testClosedSkPath();
-    final ui.Rect bounds = fromSkRect(testPath.getBounds());
+    final testPath = _testClosedSkPath();
+    final bounds = fromSkRect(testPath.getBounds());
     expect(bounds, const ui.Rect.fromLTRB(10, 10, 20, 20));
   });
 
@@ -972,7 +972,7 @@ void _pathTests() {
   });
 
   test('reset', () {
-    final SkPath testPath = _testClosedSkPath();
+    final testPath = _testClosedSkPath();
     expect(fromSkRect(testPath.getBounds()),
         const ui.Rect.fromLTRB(10, 10, 20, 20));
     testPath.reset();
@@ -990,22 +990,22 @@ void _pathTests() {
   });
 
   test('copy', () {
-    final SkPath original = _testClosedSkPath();
-    final SkPath copy = original.copy();
+    final original = _testClosedSkPath();
+    final copy = original.copy();
     expect(fromSkRect(original.getBounds()), fromSkRect(copy.getBounds()));
   });
 
   test('transform', () {
     path = _testClosedSkPath();
     path.transform(2, 0, 10, 0, 2, 10, 0, 0, 0);
-    final ui.Rect transformedBounds = fromSkRect(path.getBounds());
+    final transformedBounds = fromSkRect(path.getBounds());
     expect(transformedBounds, const ui.Rect.fromLTRB(30, 30, 50, 50));
   });
 
   test('SkContourMeasureIter/SkContourMeasure', () {
-    final SkContourMeasureIter iter =
+    final iter =
         SkContourMeasureIter(_testClosedSkPath(), false, 1.0);
-    final SkContourMeasure measure1 = iter.next()!;
+    final measure1 = iter.next()!;
     expect(measure1.length(), 40);
     expect(measure1.getPosTan(5), Float32List.fromList(<double>[15, 10, 1, 0]));
     expect(
@@ -1033,17 +1033,17 @@ void _pathTests() {
     //    |           |
     //    |           |
     // 20 +-----------+
-    final SkPath segment = measure1.getSegment(5, 15, true);
+    final segment = measure1.getSegment(5, 15, true);
     expect(fromSkRect(segment.getBounds()),
         const ui.Rect.fromLTRB(15, 10, 20, 15));
 
-    final SkContourMeasure? measure2 = iter.next();
+    final measure2 = iter.next();
     expect(measure2, isNull);
   });
 
   test('SkPath.toCmds and CanvasKit.Path.MakeFromCmds', () {
-    const ui.Rect rect = ui.Rect.fromLTRB(0, 0, 10, 10);
-    final SkPath path = SkPath();
+    const rect = ui.Rect.fromLTRB(0, 0, 10, 10);
+    final path = SkPath();
     path.addRect(toSkRect(rect));
     expect(path.toCmds(), <num>[
       0, 0, 0, // moveTo
@@ -1053,7 +1053,7 @@ void _pathTests() {
       5, // close
     ]);
 
-    final SkPath copy = canvasKit.Path.MakeFromCmds(path.toCmds());
+    final copy = canvasKit.Path.MakeFromCmds(path.toCmds());
     expect(fromSkRect(copy.getBounds()), rect);
   });
 }
@@ -1078,8 +1078,8 @@ void _pictureTests() {
   late SkPicture picture;
 
   setUp(() {
-    final SkPictureRecorder recorder = SkPictureRecorder();
-    final SkCanvas canvas = recorder.beginRecording(toSkRect(ui.Rect.largest));
+    final recorder = SkPictureRecorder();
+    final canvas = recorder.beginRecording(toSkRect(ui.Rect.largest));
     canvas.drawRect(toSkRect(const ui.Rect.fromLTRB(20, 30, 40, 50)),
         SkPaint()..setColorInt(0xffff00ff));
     picture = recorder.finishRecordingAsPicture();
@@ -1188,7 +1188,7 @@ void _canvasTests() {
   });
 
   test('drawAtlas', () {
-    final SkAnimatedImage image =
+    final image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawAtlas(
       image.makeImageAtCurrentFrame(),
@@ -1217,7 +1217,7 @@ void _canvasTests() {
   });
 
   test('drawImageOptions', () {
-    final SkAnimatedImage image =
+    final image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageOptions(
       image.makeImageAtCurrentFrame(),
@@ -1230,7 +1230,7 @@ void _canvasTests() {
   });
 
   test('drawImageCubic', () {
-    final SkAnimatedImage image =
+    final image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageCubic(
       image.makeImageAtCurrentFrame(),
@@ -1243,7 +1243,7 @@ void _canvasTests() {
   });
 
   test('drawImageRectOptions', () {
-    final SkAnimatedImage image =
+    final image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageRectOptions(
       image.makeImageAtCurrentFrame(),
@@ -1256,7 +1256,7 @@ void _canvasTests() {
   });
 
   test('drawImageRectCubic', () {
-    final SkAnimatedImage image =
+    final image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageRectCubic(
       image.makeImageAtCurrentFrame(),
@@ -1269,7 +1269,7 @@ void _canvasTests() {
   });
 
   test('drawImageNine', () {
-    final SkAnimatedImage image =
+    final image =
         canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!;
     canvas.drawImageNine(
       image.makeImageAtCurrentFrame(),
@@ -1322,29 +1322,29 @@ void _canvasTests() {
   });
 
   test('drawShadow', () {
-    for (final int flags in const <int>[0x01, 0x00]) {
-      const double devicePixelRatio = 2.0;
-      const double elevation = 4.0;
-      const double ambientAlpha = 0.039;
-      const double spotAlpha = 0.25;
+    for (final flags in const <int>[0x01, 0x00]) {
+      const devicePixelRatio = 2.0;
+      const elevation = 4.0;
+      const ambientAlpha = 0.039;
+      const spotAlpha = 0.25;
 
-      final SkPath path = _testClosedSkPath();
-      final ui.Rect bounds = fromSkRect(path.getBounds());
-      final double shadowX = (bounds.left + bounds.right) / 2.0;
-      final double shadowY = bounds.top - 600.0;
+      final path = _testClosedSkPath();
+      final bounds = fromSkRect(path.getBounds());
+      final shadowX = (bounds.left + bounds.right) / 2.0;
+      final shadowY = bounds.top - 600.0;
 
-      const ui.Color color = ui.Color(0xAABBCCDD);
-      final ui.Color inAmbient =
+      const color = ui.Color(0xAABBCCDD);
+      final inAmbient =
           color.withAlpha((color.alpha * ambientAlpha).round());
-      final ui.Color inSpot =
+      final inSpot =
           color.withAlpha((color.alpha * spotAlpha).round());
 
-      final SkTonalColors inTonalColors = SkTonalColors(
+      final inTonalColors = SkTonalColors(
         ambient: makeFreshSkColor(inAmbient),
         spot: makeFreshSkColor(inSpot),
       );
 
-      final SkTonalColors tonalColors =
+      final tonalColors =
           canvasKit.computeTonalColors(inTonalColors);
 
       canvas.drawShadow(
@@ -1433,19 +1433,19 @@ void _canvasTests() {
   });
 
   test('drawPicture', () {
-    final SkPictureRecorder otherRecorder = SkPictureRecorder();
-    final SkCanvas otherCanvas = otherRecorder
+    final otherRecorder = SkPictureRecorder();
+    final otherCanvas = otherRecorder
         .beginRecording(Float32List.fromList(<double>[0, 0, 100, 100]));
     otherCanvas.drawLine(0, 0, 10, 10, SkPaint());
     canvas.drawPicture(otherRecorder.finishRecordingAsPicture());
   });
 
   test('drawParagraph', () {
-    final CkParagraphBuilder builder = CkParagraphBuilder(
+    final builder = CkParagraphBuilder(
       CkParagraphStyle(),
     );
     builder.addText('Hello');
-    final CkParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100));
     canvas.drawParagraph(
       paragraph.skiaObject,
@@ -1455,13 +1455,13 @@ void _canvasTests() {
   });
 
   test('Paragraph converts caret position to charactor position', () {
-    final CkParagraphBuilder builder = CkParagraphBuilder(
+    final builder = CkParagraphBuilder(
       CkParagraphStyle(),
     );
     builder.addText('Hello there');
-    final CkParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100));
-    ui.TextRange range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream));
+    var range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream));
     expect(range.start, 0);
     expect(range.end, 5);
 
@@ -1471,42 +1471,42 @@ void _canvasTests() {
   });
 
   test('Paragraph dispose', () {
-    final CkParagraphBuilder builder = CkParagraphBuilder(
+    final builder = CkParagraphBuilder(
       CkParagraphStyle(),
     );
     builder.addText('Hello');
-    final CkParagraph paragraph = builder.build();
+    final paragraph = builder.build();
 
     paragraph.dispose();
     expect(paragraph.debugDisposed, true);
   });
 
   test('toImage.toByteData', () async {
-    final SkPictureRecorder otherRecorder = SkPictureRecorder();
-    final SkCanvas otherCanvas = otherRecorder
+    final otherRecorder = SkPictureRecorder();
+    final otherCanvas = otherRecorder
         .beginRecording(Float32List.fromList(<double>[0, 0, 1, 1]));
     otherCanvas.drawRect(
       Float32List.fromList(<double>[0, 0, 1, 1]),
       SkPaint()..setColorInt(0xAAFFFFFF),
     );
-    final CkPicture picture =
+    final picture =
         CkPicture(otherRecorder.finishRecordingAsPicture());
-    final CkImage image = await picture.toImage(1, 1) as CkImage;
-    final ByteData rawData =
+    final image = await picture.toImage(1, 1) as CkImage;
+    final rawData =
         await image.toByteData();
     expect(rawData.lengthInBytes, greaterThan(0));
     expect(
       rawData.buffer.asUint32List(),
       <int>[0xAAAAAAAA],
     );
-    final ByteData rawStraightData =
+    final rawStraightData =
         await image.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
     expect(rawStraightData.lengthInBytes, greaterThan(0));
     expect(
       rawStraightData.buffer.asUint32List(),
       <int>[0xAAFFFFFF],
     );
-    final ByteData pngData =
+    final pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
   });
@@ -1527,7 +1527,7 @@ void _textStyleTests() {
   });
 
   test('ui.TextDecorationStyle converts to SkTextDecorationStyle', () {
-    for (final ui.TextDecorationStyle decorationStyle
+    for (final decorationStyle
         in ui.TextDecorationStyle.values) {
       expect(toSkTextDecorationStyle(decorationStyle).value,
           decorationStyle.index);
@@ -1542,7 +1542,7 @@ void _textStyleTests() {
   });
 
   test('ui.TextBaseline converts to SkTextBaseline', () {
-    for (final ui.TextBaseline textBaseline in ui.TextBaseline.values) {
+    for (final textBaseline in ui.TextBaseline.values) {
       expect(toSkTextBaseline(textBaseline).value, textBaseline.index);
     }
   });
@@ -1563,7 +1563,7 @@ void _textStyleTests() {
   });
 
   test('ui.PlaceholderAlignment converts to SkPlaceholderAlignment', () {
-    for (final ui.PlaceholderAlignment placeholderAlignment
+    for (final placeholderAlignment
         in ui.PlaceholderAlignment.values) {
       expect(toSkPlaceholderAlignment(placeholderAlignment).value,
           placeholderAlignment.index);
@@ -1577,7 +1577,7 @@ void _paragraphTests() {
   // In particular, this tests that our JS bindings are correct, such as that
   // arguments are of acceptable types and passed in the correct order.
   test('kitchensink', () async {
-    final SkParagraphStyleProperties props = SkParagraphStyleProperties();
+    final props = SkParagraphStyleProperties();
     props.textAlign = canvasKit.TextAlign.Left;
     props.textDirection = canvasKit.TextDirection.RTL;
     props.heightMultiplier = 3;
@@ -1625,8 +1625,8 @@ void _paragraphTests() {
       ..strutEnabled = true
       ..forceStrutHeight = false;
 
-    final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontCollection(
+    final paragraphStyle = canvasKit.ParagraphStyle(props);
+    final builder = canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
       CanvasKitRenderer.instance.fontCollection.skFontCollection,
     );
@@ -1663,10 +1663,10 @@ void _paragraphTests() {
     if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
       injectClientICU(builder);
     }
-    final SkParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(500);
 
-    final DomCanvasElement canvas = createDomCanvasElement(
+    final canvas = createDomCanvasElement(
       width: 400,
       height: 160,
     );
@@ -1674,8 +1674,8 @@ void _paragraphTests() {
 
     // TODO(yjbanov): WebGL screenshot tests do not work on Firefox - https://github.com/flutter/flutter/issues/109265
     if (!isFirefox) {
-      final SkSurface surface = canvasKit.MakeWebGLCanvasSurface(canvas);
-      final SkCanvas skCanvas = surface.getCanvas();
+      final surface = canvasKit.MakeWebGLCanvasSurface(canvas);
+      final skCanvas = surface.getCanvas();
       skCanvas.drawColorInt(0xFFCCCCCC, toSkBlendMode(ui.BlendMode.srcOver));
       skCanvas.drawParagraph(paragraph, 20, 20);
       skCanvas.drawRect(
@@ -1705,7 +1705,7 @@ void _paragraphTests() {
     expectAlmost(paragraph.getMaxIntrinsicWidth(), 263);
     expectAlmost(paragraph.getMinIntrinsicWidth(), 135);
     expectAlmost(paragraph.getMaxWidth(), 500);
-    final SkRectWithDirection rectWithDirection =
+    final rectWithDirection =
       paragraph.getRectsForRange(
         1,
         3,
@@ -1718,7 +1718,7 @@ void _paragraphTests() {
     expect(paragraph.getRectsForPlaceholders(), hasLength(1));
     expect(paragraph.getLineMetrics(), hasLength(1));
 
-    final SkLineMetrics lineMetrics =
+    final lineMetrics =
         paragraph.getLineMetrics().single;
     expectAlmost(lineMetrics.ascent, 55.6);
     expectAlmost(lineMetrics.descent, 14.8);
@@ -1735,7 +1735,7 @@ void _paragraphTests() {
     );
 
     // "Hello"
-    for (int i = 0; i < 5; i++) {
+    for (var i = 0; i < 5; i++) {
       expect(paragraph.getWordBoundary(i.toDouble()).start, 0);
       expect(paragraph.getWordBoundary(i.toDouble()).end, 5);
     }
@@ -1743,7 +1743,7 @@ void _paragraphTests() {
     expect(paragraph.getWordBoundary(5).start, 5);
     expect(paragraph.getWordBoundary(5).end, 6);
     // "World"
-    for (int i = 6; i < 11; i++) {
+    for (var i = 6; i < 11; i++) {
       expect(paragraph.getWordBoundary(i.toDouble()).start, 6);
       expect(paragraph.getWordBoundary(i.toDouble()).end, 11);
     }
@@ -1755,7 +1755,7 @@ void _paragraphTests() {
   });
 
   test('RectHeightStyle', () {
-    final SkParagraphStyleProperties props = SkParagraphStyleProperties();
+    final props = SkParagraphStyleProperties();
     props.heightMultiplier = 3;
     props.textAlign = canvasKit.TextAlign.Start;
     props.textDirection = canvasKit.TextDirection.LTR;
@@ -1770,8 +1770,8 @@ void _paragraphTests() {
       ..fontFamilies = <String>['Roboto']
       ..heightMultiplier = 3
       ..fontStyle = (SkFontStyle()..weight = canvasKit.FontWeight.Normal);
-    final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder =
+    final paragraphStyle = canvasKit.ParagraphStyle(props);
+    final builder =
         canvasKit.ParagraphBuilder.MakeFromFontCollection(
       paragraphStyle,
       CanvasKitRenderer.instance.fontCollection.skFontCollection,
@@ -1782,17 +1782,17 @@ void _paragraphTests() {
       injectClientICU(builder);
     }
 
-    final SkParagraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(500);
 
-    final List<SkRectWithDirection> rects = paragraph.getRectsForRange(
+    final rects = paragraph.getRectsForRange(
       0,
       1,
       canvasKit.RectHeightStyle.Strut,
       canvasKit.RectWidthStyle.Tight,
     );
     expect(rects.length, 1);
-    final SkRectWithDirection rect = rects.first;
+    final rect = rects.first;
     expect(rect.rect, <double>[0, 0, 13.770000457763672, 75]);
   });
 
@@ -1823,23 +1823,23 @@ void _paragraphTests() {
   });
 
   test('MakeOnScreenGLSurface test', () {
-    final DomCanvasElement canvas = createDomCanvasElement(
+    final canvas = createDomCanvasElement(
       width: 100,
       height: 100,
     );
-    final WebGLContext gl = canvas.getGlContext(webGLVersion);
-    final int sampleCount = gl.getParameter(gl.samples);
-    final int stencilBits = gl.getParameter(gl.stencilBits);
+    final gl = canvas.getGlContext(webGLVersion);
+    final sampleCount = gl.getParameter(gl.samples);
+    final stencilBits = gl.getParameter(gl.stencilBits);
 
-    final double glContext = canvasKit.GetWebGLContext(
+    final glContext = canvasKit.GetWebGLContext(
       canvas,
       SkWebGLContextOptions(
         antialias: 0,
         majorVersion: webGLVersion.toDouble(),
       ),
     );
-    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext);
-    final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+    final grContext =  canvasKit.MakeGrContext(glContext);
+    final skSurface = canvasKit.MakeOnScreenGLSurface(
       grContext,
       100,
       100,
@@ -1852,27 +1852,27 @@ void _paragraphTests() {
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   test('MakeRenderTarget test', () {
-    final DomCanvasElement canvas = createDomCanvasElement(
+    final canvas = createDomCanvasElement(
       width: 100,
       height: 100,
     );
 
-    final int glContext = canvasKit.GetWebGLContext(
+    final glContext = canvasKit.GetWebGLContext(
       canvas,
       SkWebGLContextOptions(
         antialias: 0,
         majorVersion: webGLVersion.toDouble(),
       ),
     ).toInt();
-    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext.toDouble());
-    final SkSurface? surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
+    final grContext =  canvasKit.MakeGrContext(glContext.toDouble());
+    final surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
 
     expect(surface, isNotNull);
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
   group('getCanvasKitJsFileNames', () {
-    JSAny? oldV8BreakIterator = v8BreakIterator;
-    JSAny? oldIntlSegmenter = intlSegmenter;
+    var oldV8BreakIterator = v8BreakIterator;
+    var oldIntlSegmenter = intlSegmenter;
 
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
@@ -1952,7 +1952,7 @@ void _paragraphTests() {
     // FinalizationRegistry because it depends on GC, which cannot be controlled,
     // So the test simply tests that a FinalizationRegistry can be constructed
     // and its `register` method can be called.
-    final DomFinalizationRegistry registry = DomFinalizationRegistry((String arg) {}.toJS);
+    final registry = DomFinalizationRegistry((String arg) {}.toJS);
     registry.register(Object().toExternalReference, Object().toExternalReference);
   });
 }

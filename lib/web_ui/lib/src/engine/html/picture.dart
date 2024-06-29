@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
@@ -48,7 +47,7 @@ class EnginePictureRecorder implements ui.PictureRecorder {
     }
     _isRecording = false;
     _canvas!.endRecording();
-    final EnginePicture result = EnginePicture(_canvas, cullRect);
+    final result = EnginePicture(_canvas, cullRect);
     // We invoke the handler here, not in the Picture constructor, because we want
     // [result.approximateBytesUsed] to be available for the handler.
     ui.Picture.onCreate?.call(result);
@@ -66,19 +65,19 @@ class EnginePicture implements ui.Picture {
 
   @override
   Future<ui.Image> toImage(int width, int height) async {
-    final ui.Rect imageRect =
+    final imageRect =
         ui.Rect.fromLTRB(0, 0, width.toDouble(), height.toDouble());
-    final BitmapCanvas canvas = BitmapCanvas.imageData(imageRect);
+    final canvas = BitmapCanvas.imageData(imageRect);
     recordingCanvas!.apply(canvas, imageRect);
-    final String imageDataUrl = canvas.toDataUrl();
-    final DomHTMLImageElement imageElement = createDomHTMLImageElement()
+    final imageDataUrl = canvas.toDataUrl();
+    final imageElement = createDomHTMLImageElement()
       ..src = imageDataUrl
       ..width = width.toDouble()
       ..height = height.toDouble();
 
     // The image loads asynchronously. We need to wait before returning,
     // otherwise the returned HtmlImage will be temporarily unusable.
-    final Completer<ui.Image> onImageLoaded = Completer<ui.Image>.sync();
+    final onImageLoaded = Completer<ui.Image>.sync();
 
     // Ignoring the returned futures from onError and onLoad because we're
     // communicating through the `onImageLoaded` completer.
@@ -155,8 +154,8 @@ final List<BitmapCanvas> _recycledCanvases = <BitmapCanvas>[];
 
 /// Reduces recycled canvas list by 50% to reduce bitmap canvas memory use.
 void reduceCanvasMemoryUsage() {
-  final int canvasCount = _recycledCanvases.length;
-  for (int i = 0; i < canvasCount; i++) {
+  final canvasCount = _recycledCanvases.length;
+  for (var i = 0; i < canvasCount; i++) {
     _recycledCanvases[i].dispose();
   }
   _recycledCanvases.clear();
@@ -194,7 +193,7 @@ void _recycleCanvas(EngineCanvas? canvas) {
     if (canvas.isReusable()) {
       _recycledCanvases.add(canvas);
       if (_recycledCanvases.length > _kCanvasCacheSize) {
-        final BitmapCanvas removedCanvas = _recycledCanvases.removeAt(0);
+        final removedCanvas = _recycledCanvases.removeAt(0);
         removedCanvas.dispose();
         if (debugShowCanvasReuseStats) {
           DebugCanvasReuseOverlay.instance.disposedCount++;
@@ -239,7 +238,7 @@ class PersistedPicture extends PersistedLeafSurface {
 
   @override
   DomElement createElement() {
-    final DomElement element = defaultCreateElement('flt-picture');
+    final element = defaultCreateElement('flt-picture');
 
     // The DOM elements used to render pictures are used purely to put pixels on
     // the screen. They have no semantic information. If an assistive technology
@@ -271,9 +270,9 @@ class PersistedPicture extends PersistedLeafSurface {
       transform = transform!.clone();
       transform!.translate(dx, dy);
     }
-    final double paintWidth = localPaintBounds!.width;
-    final double paintHeight = localPaintBounds!.height;
-    final double newDensity =
+    final paintWidth = localPaintBounds!.width;
+    final paintHeight = localPaintBounds!.height;
+    final newDensity =
         localPaintBounds == null || paintWidth == 0 || paintHeight == 0
             ? 1.0
             : _computePixelDensity(transform, paintWidth, paintHeight);
@@ -318,9 +317,9 @@ class PersistedPicture extends PersistedLeafSurface {
       // child pictures.
       ui.Rect? bounds;
       PersistedSurface? parentSurface = parent;
-      final Matrix4 clipTransform = Matrix4.identity();
+      final clipTransform = Matrix4.identity();
       while (parentSurface != null) {
-        final ui.Rect? localClipBounds = parentSurface.localClipBounds;
+        final localClipBounds = parentSurface.localClipBounds;
         if (localClipBounds != null) {
           if (bounds == null) {
             bounds = clipTransform.transformRect(localClipBounds);
@@ -329,7 +328,7 @@ class PersistedPicture extends PersistedLeafSurface {
                 bounds.intersect(clipTransform.transformRect(localClipBounds));
           }
         }
-        final Matrix4? localInverse = parentSurface.localTransformInverse;
+        final localInverse = parentSurface.localTransformInverse;
         if (localInverse != null && !localInverse.isIdentity()) {
           clipTransform.multiply(localInverse);
         }
@@ -371,8 +370,8 @@ class PersistedPicture extends PersistedLeafSurface {
 
     assert(oldSurface._optimalLocalCullRect != null);
 
-    final bool surfaceBeingRetained = identical(oldSurface, this);
-    final ui.Rect? oldOptimalLocalCullRect = surfaceBeingRetained
+    final surfaceBeingRetained = identical(oldSurface, this);
+    final oldOptimalLocalCullRect = surfaceBeingRetained
         ? _optimalLocalCullRect
         : oldSurface._optimalLocalCullRect;
 
@@ -408,17 +407,17 @@ class PersistedPicture extends PersistedLeafSurface {
 
     // Compute the delta, by which each of the side of the clip rect has "moved"
     // since the last time we updated the cull rect.
-    final double leftwardDelta =
+    final leftwardDelta =
         oldOptimalLocalCullRect.left - _exactLocalCullRect!.left;
-    final double upwardDelta =
+    final upwardDelta =
         oldOptimalLocalCullRect.top - _exactLocalCullRect!.top;
-    final double rightwardDelta =
+    final rightwardDelta =
         _exactLocalCullRect!.right - oldOptimalLocalCullRect.right;
-    final double bottomwardDelta =
+    final bottomwardDelta =
         _exactLocalCullRect!.bottom - oldOptimalLocalCullRect.bottom;
 
     // Compute the new optimal rect to paint into.
-    final ui.Rect newLocalCullRect = ui.Rect.fromLTRB(
+    final newLocalCullRect = ui.Rect.fromLTRB(
       _exactLocalCullRect!.left -
           _predictTrend(leftwardDelta, _exactLocalCullRect!.width),
       _exactLocalCullRect!.top -
@@ -461,12 +460,12 @@ class PersistedPicture extends PersistedLeafSurface {
       return 0;
     }
 
-    final BitmapCanvas bitmapCanvas = _canvas! as BitmapCanvas;
+    final bitmapCanvas = _canvas! as BitmapCanvas;
     return bitmapCanvas.bitmapPixelCount;
   }
 
   void _applyPaint(PersistedPicture? oldSurface) {
-    final EngineCanvas? oldCanvas = oldSurface?._canvas;
+    final oldCanvas = oldSurface?._canvas;
     _requiresRepaint = false;
     if (!picture.recordingCanvas!.didDraw || _optimalLocalCullRect!.isEmpty) {
       // The picture is empty, or it has been completely clipped out. Skip
@@ -508,9 +507,9 @@ class PersistedPicture extends PersistedLeafSurface {
       return 1.0;
     }
 
-    final bool didRequireBitmap = existingSurface
+    final didRequireBitmap = existingSurface
         .picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
-    final bool requiresBitmap =
+    final requiresBitmap =
         picture.recordingCanvas!.renderStrategy.hasArbitraryPaint;
     if (didRequireBitmap != requiresBitmap) {
       // Switching canvas types is always expensive.
@@ -521,7 +520,7 @@ class PersistedPicture extends PersistedLeafSurface {
       // which point we may return other values here.
       return 1.0;
     } else {
-      final BitmapCanvas? oldCanvas = existingSurface._canvas as BitmapCanvas?;
+      final oldCanvas = existingSurface._canvas as BitmapCanvas?;
       if (oldCanvas == null) {
         // We did not allocate a canvas last time. This can happen when the
         // picture is completely clipped out of the view.
@@ -530,17 +529,17 @@ class PersistedPicture extends PersistedLeafSurface {
         // The canvas needs to be resized before painting.
         return 1.0;
       } else {
-        final int newPixelCount =
+        final newPixelCount =
             BitmapCanvas.widthToPhysical(_exactLocalCullRect!.width) *
                 BitmapCanvas.heightToPhysical(_exactLocalCullRect!.height);
-        final int oldPixelCount =
+        final oldPixelCount =
             oldCanvas.widthInBitmapPixels * oldCanvas.heightInBitmapPixels;
 
         if (oldPixelCount == 0) {
           return 1.0;
         }
 
-        final double pixelCountRatio = newPixelCount / oldPixelCount;
+        final pixelCountRatio = newPixelCount / oldPixelCount;
         assert(0 <= pixelCountRatio && pixelCountRatio <= 1.0,
             'Invalid pixel count ratio $pixelCountRatio');
         return 1.0 - pixelCountRatio;
@@ -558,7 +557,7 @@ class PersistedPicture extends PersistedLeafSurface {
 
   void _applyDomPaint(EngineCanvas? oldCanvas) {
     _recycleCanvas(_canvas);
-    final DomCanvas domCanvas = DomCanvas(rootElement!);
+    final domCanvas = DomCanvas(rootElement!);
     _canvas = domCanvas;
     removeAllChildren(rootElement!);
     picture.recordingCanvas!.apply(domCanvas, _optimalLocalCullRect!);
@@ -568,7 +567,7 @@ class PersistedPicture extends PersistedLeafSurface {
     if (oldCanvas is BitmapCanvas &&
         oldCanvas.doesFitBounds(_optimalLocalCullRect!, _density) &&
         oldCanvas.isReusable()) {
-      final BitmapCanvas reusedCanvas = oldCanvas;
+      final reusedCanvas = oldCanvas;
       if (debugShowCanvasReuseStats) {
         DebugCanvasReuseOverlay.instance.keptCount++;
       }
@@ -593,7 +592,7 @@ class PersistedPicture extends PersistedLeafSurface {
       paintQueue.add(PaintRequest(
         canvasSize: _optimalLocalCullRect!.size,
         paintCallback: () {
-          final BitmapCanvas bitmapCanvas =
+          final bitmapCanvas =
               _findOrCreateCanvas(_optimalLocalCullRect!);
           _canvas = bitmapCanvas;
           bitmapCanvas.setElementCache(_elementCache);
@@ -622,32 +621,32 @@ class PersistedPicture extends PersistedLeafSurface {
   /// - Contains no more than twice the number of requested pixels. This makes
   ///   sure we do not use too much memory for small canvases.
   BitmapCanvas _findOrCreateCanvas(ui.Rect bounds) {
-    final ui.Size canvasSize = bounds.size;
+    final canvasSize = bounds.size;
     BitmapCanvas? bestRecycledCanvas;
-    double lastPixelCount = double.infinity;
-    for (int i = 0; i < _recycledCanvases.length; i++) {
-      final BitmapCanvas candidate = _recycledCanvases[i];
+    var lastPixelCount = double.infinity;
+    for (var i = 0; i < _recycledCanvases.length; i++) {
+      final candidate = _recycledCanvases[i];
       if (!candidate.isReusable()) {
         continue;
       }
 
-      final ui.Size candidateSize = candidate.size;
-      final double candidatePixelCount =
+      final candidateSize = candidate.size;
+      final candidatePixelCount =
           candidateSize.width * candidateSize.height;
 
-      final bool fits = candidate.doesFitBounds(bounds, _density);
-      final bool isSmaller = candidatePixelCount < lastPixelCount;
+      final fits = candidate.doesFitBounds(bounds, _density);
+      final isSmaller = candidatePixelCount < lastPixelCount;
       if (fits && isSmaller) {
         // [isTooSmall] is used to make sure that a small picture doesn't
         // reuse and hold onto memory of a large canvas.
-        final double requestedPixelCount = bounds.width * bounds.height;
-        final bool isTooSmall = isSmaller &&
+        final requestedPixelCount = bounds.width * bounds.height;
+        final isTooSmall = isSmaller &&
             requestedPixelCount > 1 &&
             (candidatePixelCount / requestedPixelCount) > 4;
         if (!isTooSmall) {
           bestRecycledCanvas = candidate;
           lastPixelCount = candidatePixelCount;
-          final bool fitsExactly = candidateSize.width == canvasSize.width &&
+          final fitsExactly = candidateSize.width == canvasSize.width &&
               candidateSize.height == canvasSize.height;
           if (fitsExactly) {
             // No need to keep looking any more.
@@ -677,7 +676,7 @@ class PersistedPicture extends PersistedLeafSurface {
     if (debugShowCanvasReuseStats) {
       DebugCanvasReuseOverlay.instance.createdCount++;
     }
-    final BitmapCanvas canvas = BitmapCanvas(
+    final canvas = BitmapCanvas(
         bounds, picture.recordingCanvas!.renderStrategy,
         density: _density);
     canvas.setElementCache(_elementCache);
@@ -722,7 +721,7 @@ class PersistedPicture extends PersistedLeafSurface {
 
     _computeOptimalCullRect(oldSurface);
     if (identical(picture, oldSurface.picture)) {
-      final bool densityChanged = _canvas is BitmapCanvas &&
+      final densityChanged = _canvas is BitmapCanvas &&
           _density != (_canvas! as BitmapCanvas).density;
 
       // The picture is the same. Attempt to avoid repaint.
@@ -760,9 +759,9 @@ class PersistedPicture extends PersistedLeafSurface {
   void debugPrintChildren(StringBuffer buffer, int indent) {
     super.debugPrintChildren(buffer, indent);
     if (rootElement != null && rootElement!.firstChild != null) {
-      final DomElement firstChild = rootElement!.firstChild! as DomElement;
-      final String canvasTag = firstChild.tagName.toLowerCase();
-      final int canvasHash = firstChild.hashCode;
+      final firstChild = rootElement!.firstChild! as DomElement;
+      final canvasTag = firstChild.tagName.toLowerCase();
+      final canvasHash = firstChild.hashCode;
       buffer.writeln('${'  ' * (indent + 1)}<$canvasTag @$canvasHash />');
     } else if (rootElement != null) {
       buffer.writeln(
@@ -800,18 +799,18 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   if (transform == null || transform.isIdentityOrTranslation()) {
     return 1.0;
   }
-  final Float32List m = transform.storage;
+  final m = transform.storage;
   // Apply perspective transform to all 4 corners. Can't use left,top, bottom,
   // right since for example rotating 45 degrees would yield inaccurate size.
-  double minX = m[12] * m[15];
-  double minY = m[13] * m[15];
-  double maxX = minX;
-  double maxY = minY;
-  double x = width;
-  double y = height;
-  double wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
-  double xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
-  double yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
+  var minX = m[12] * m[15];
+  var minY = m[13] * m[15];
+  var maxX = minX;
+  var maxY = minY;
+  var x = width;
+  var y = height;
+  var wp = 1.0 / ((m[3] * x) + (m[7] * y) + m[15]);
+  var xp = ((m[0] * x) + (m[4] * y) + m[12]) * wp;
+  var yp = ((m[1] * x) + (m[5] * y) + m[13]) * wp;
   minX = math.min(minX, xp);
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
@@ -833,8 +832,8 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
   maxX = math.max(maxX, xp);
   minY = math.min(minY, yp);
   maxY = math.max(maxY, yp);
-  final double scaleX = (maxX - minX) / width;
-  final double scaleY = (maxY - minY) / height;
+  final scaleX = (maxX - minX) / width;
+  final scaleY = (maxY - minY) / height;
   double scale = math.min(scaleX, scaleY);
   // kEpsilon guards against divide by zero below.
   if (scale < kEpsilon || scale == 1) {
@@ -850,7 +849,7 @@ double _computePixelDensity(Matrix4? transform, double width, double height) {
     // too much memory, so clamp at 4.
     scale = math.min(4.0, (scale / 2.0).ceil() * 2.0);
     // Guard against webkit absolute limit.
-    const double kPixelLimit = 1024 * 1024 * 4;
+    const kPixelLimit = 1024 * 1024 * 4;
     if ((width * height * scale * scale) > kPixelLimit && scale > 2) {
       scale = (kPixelLimit * 0.8) / (width * height);
     }

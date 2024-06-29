@@ -26,7 +26,7 @@ class CanvasKitCanvas implements ui.Canvas {
           '"recorder" must not already be associated with another Canvas.');
     }
     cullRect ??= ui.Rect.largest;
-    final CkPictureRecorder ckRecorder = recorder as CkPictureRecorder;
+    final ckRecorder = recorder as CkPictureRecorder;
     return CanvasKitCanvas._(ckRecorder.beginRecording(cullRect));
   }
 
@@ -139,7 +139,7 @@ class CanvasKitCanvas implements ui.Canvas {
 
   @override
   ui.Rect getLocalClipBounds() {
-    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getLocalToDevice());
+    final transform = Matrix4.fromFloat32List(_canvas.getLocalToDevice());
     if (transform.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
@@ -288,7 +288,7 @@ class CanvasKitCanvas implements ui.Canvas {
   @override
   void drawPoints(
       ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
-    final SkFloat32List skPoints = toMallocedSkPoints(points);
+    final skPoints = toMallocedSkPoints(points);
     _canvas.drawPoints(
       paint as CkPaint,
       pointMode,
@@ -327,7 +327,7 @@ class CanvasKitCanvas implements ui.Canvas {
       ui.Paint paint) {
     assert(colors == null || colors.isEmpty || blendMode != null);
 
-    final int rectCount = rects.length;
+    final rectCount = rects.length;
     if (transforms.length != rectCount) {
       throw ArgumentError('"transforms" and "rects" lengths must match.');
     }
@@ -336,16 +336,16 @@ class CanvasKitCanvas implements ui.Canvas {
           'If non-null, "colors" length must match that of "transforms" and "rects".');
     }
 
-    final Float32List rstTransformBuffer = Float32List(rectCount * 4);
-    final Float32List rectBuffer = Float32List(rectCount * 4);
+    final rstTransformBuffer = Float32List(rectCount * 4);
+    final rectBuffer = Float32List(rectCount * 4);
 
-    for (int i = 0; i < rectCount; ++i) {
-      final int index0 = i * 4;
-      final int index1 = index0 + 1;
-      final int index2 = index0 + 2;
-      final int index3 = index0 + 3;
-      final ui.RSTransform rstTransform = transforms[i];
-      final ui.Rect rect = rects[i];
+    for (var i = 0; i < rectCount; ++i) {
+      final index0 = i * 4;
+      final index1 = index0 + 1;
+      final index2 = index0 + 2;
+      final index3 = index0 + 3;
+      final rstTransform = transforms[i];
+      final rect = rects[i];
       assert(rectIsValid(rect));
       rstTransformBuffer[index0] = rstTransform.scos;
       rstTransformBuffer[index1] = rstTransform.ssin;
@@ -357,7 +357,7 @@ class CanvasKitCanvas implements ui.Canvas {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final Uint32List? colorBuffer =
+    final colorBuffer =
         (colors == null || colors.isEmpty) ? null : toFlatColors(colors);
 
     _drawAtlas(paint, atlas, rstTransformBuffer, rectBuffer, colorBuffer,
@@ -375,7 +375,7 @@ class CanvasKitCanvas implements ui.Canvas {
       ui.Paint paint) {
     assert(colors == null || blendMode != null);
 
-    final int rectCount = rects.length;
+    final rectCount = rects.length;
     if (rstTransforms.length != rectCount) {
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
     }

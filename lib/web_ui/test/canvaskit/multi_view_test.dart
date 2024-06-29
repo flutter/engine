@@ -23,12 +23,12 @@ void testMain() {
 
     setUp(() {
       // Create a scene to use in tests.
-      final CkPicture picture =
+      final picture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 60, 60), (CkCanvas canvas) {
         canvas.drawRect(const ui.Rect.fromLTRB(0, 0, 60, 60),
             CkPaint()..style = ui.PaintingStyle.fill);
       });
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.addPicture(ui.Offset.zero, picture);
       scene = sb.build();
     });
@@ -36,7 +36,7 @@ void testMain() {
     test('can render into arbitrary views', () async {
       await CanvasKitRenderer.instance.renderScene(scene, implicitView);
 
-      final EngineFlutterView anotherView = EngineFlutterView(
+      final anotherView = EngineFlutterView(
           EnginePlatformDispatcher.instance, createDomElement('another-view'));
       EnginePlatformDispatcher.instance.viewManager.registerView(anotherView);
 
@@ -44,7 +44,7 @@ void testMain() {
     });
 
     test('will error if trying to render into an unregistered view', () async {
-      final EngineFlutterView unregisteredView = EngineFlutterView(
+      final unregisteredView = EngineFlutterView(
           EnginePlatformDispatcher.instance,
           createDomElement('unregistered-view'));
       expect(
@@ -54,7 +54,7 @@ void testMain() {
     });
 
     test('will dispose the Rasterizer for a disposed view', () async {
-      final EngineFlutterView view = EngineFlutterView(
+      final view = EngineFlutterView(
           EnginePlatformDispatcher.instance, createDomElement('multi-view'));
       EnginePlatformDispatcher.instance.viewManager.registerView(view);
       expect(
@@ -75,7 +75,7 @@ void testMain() {
         () async {
       expect(PlatformViewManager.instance.knowsViewType('self-test'), isFalse);
 
-      final EngineFlutterView view = EngineFlutterView(
+      final view = EngineFlutterView(
           EnginePlatformDispatcher.instance, createDomElement('multi-view'));
       EnginePlatformDispatcher.instance.viewManager.registerView(view);
       expect(

@@ -37,11 +37,11 @@ void testMain() {
     });
 
     test('high contrast in accessibilityFeatures has the correct value', () {
-      final MockHighContrastSupport mockHighContrast =
+      final mockHighContrast =
           MockHighContrastSupport();
       HighContrastSupport.instance = mockHighContrast;
 
-      final EnginePlatformDispatcher dispatcher =
+      final dispatcher =
           EnginePlatformDispatcher();
 
       expect(dispatcher.accessibilityFeatures.highContrast, isTrue);
@@ -53,12 +53,12 @@ void testMain() {
     });
 
     test('AppLifecycleState transitions through all states', () {
-      final List<ui.AppLifecycleState> states = <ui.AppLifecycleState>[];
+      final states = <ui.AppLifecycleState>[];
       void listener(ui.AppLifecycleState state) {
         states.add(state);
       }
 
-      final MockAppLifecycleState mockAppLifecycleState =
+      final mockAppLifecycleState =
           MockAppLifecycleState();
 
       expect(mockAppLifecycleState.appLifecycleState,
@@ -143,7 +143,7 @@ void testMain() {
 
     test('responds to flutter/skia Skia.setResourceCacheMaxBytes', () async {
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<ByteData?> completer = Completer<ByteData?>();
+      final completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/skia',
         codec.encodeMethodCall(const MethodCall(
@@ -153,7 +153,7 @@ void testMain() {
         completer.complete,
       );
 
-      final ByteData? response = await completer.future;
+      final response = await completer.future;
       expect(response, isNotNull);
       expect(
         codec.decodeEnvelope(response!),
@@ -163,7 +163,7 @@ void testMain() {
 
     test('responds to flutter/platform HapticFeedback.vibrate', () async {
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<ByteData?> completer = Completer<ByteData?>();
+      final completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
@@ -172,7 +172,7 @@ void testMain() {
         completer.complete,
       );
 
-      final ByteData? response = await completer.future;
+      final response = await completer.future;
       expect(response, isNotNull);
       expect(
         codec.decodeEnvelope(response!),
@@ -183,7 +183,7 @@ void testMain() {
     test('responds to flutter/platform SystemChrome.setSystemUIOverlayStyle',
         () async {
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<ByteData?> completer = Completer<ByteData?>();
+      final completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
@@ -193,7 +193,7 @@ void testMain() {
         completer.complete,
       );
 
-      final ByteData? response = await completer.future;
+      final response = await completer.future;
       expect(response, isNotNull);
       expect(
         codec.decodeEnvelope(response!),
@@ -203,7 +203,7 @@ void testMain() {
 
     test('responds to flutter/contextmenu enable', () async {
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<ByteData?> completer = Completer<ByteData?>();
+      final completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/contextmenu',
         codec.encodeMethodCall(const MethodCall(
@@ -212,7 +212,7 @@ void testMain() {
         completer.complete,
       );
 
-      final ByteData? response = await completer.future;
+      final response = await completer.future;
       expect(response, isNotNull);
       expect(
         codec.decodeEnvelope(response!),
@@ -222,7 +222,7 @@ void testMain() {
 
     test('responds to flutter/contextmenu disable', () async {
       const MethodCodec codec = JSONMethodCodec();
-      final Completer<ByteData?> completer = Completer<ByteData?>();
+      final completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/contextmenu',
         codec.encodeMethodCall(const MethodCall(
@@ -231,7 +231,7 @@ void testMain() {
         completer.complete,
       );
 
-      final ByteData? response = await completer.future;
+      final response = await completer.future;
       expect(response, isNotNull);
       expect(
         codec.decodeEnvelope(response!),
@@ -240,10 +240,10 @@ void testMain() {
     });
 
     test('can find text scale factor', () async {
-      const double deltaTolerance = 1e-5;
+      const deltaTolerance = 1e-5;
 
-      final DomElement root = domDocument.documentElement!;
-      final String oldFontSize = root.style.fontSize;
+      final root = domDocument.documentElement!;
+      final oldFontSize = root.style.fontSize;
 
       addTearDown(() {
         root.style.fontSize = oldFontSize;
@@ -271,9 +271,9 @@ void testMain() {
     test(
         "calls onTextScaleFactorChanged when the <html> element's font-size changes",
         () async {
-      final DomElement root = domDocument.documentElement!;
-      final String oldFontSize = root.style.fontSize;
-      final ui.VoidCallback? oldCallback =
+      final root = domDocument.documentElement!;
+      final oldFontSize = root.style.fontSize;
+      final oldCallback =
           ui.PlatformDispatcher.instance.onTextScaleFactorChanged;
 
       addTearDown(() {
@@ -283,7 +283,7 @@ void testMain() {
 
       root.style.fontSize = '16px';
 
-      bool isCalled = false;
+      var isCalled = false;
       ui.PlatformDispatcher.instance.onTextScaleFactorChanged = () {
         isCalled = true;
       };
@@ -306,11 +306,11 @@ void testMain() {
     });
 
     test('disposes all its views', () {
-      final EngineFlutterView view1 =
+      final view1 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
-      final EngineFlutterView view2 =
+      final view2 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
-      final EngineFlutterView view3 =
+      final view3 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
 
       dispatcher.viewManager
@@ -329,9 +329,9 @@ void testMain() {
     });
 
     test('connects view disposal to metrics changed event', () {
-      final EngineFlutterView view1 =
+      final view1 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
-      final EngineFlutterView view2 =
+      final view2 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
 
       dispatcher.viewManager
@@ -341,7 +341,7 @@ void testMain() {
       expect(view1.isDisposed, isFalse);
       expect(view2.isDisposed, isFalse);
 
-      bool onMetricsChangedCalled = false;
+      var onMetricsChangedCalled = false;
       dispatcher.onMetricsChanged = () {
         onMetricsChangedCalled = true;
       };
@@ -356,14 +356,14 @@ void testMain() {
     });
 
     test('disconnects view disposal event on dispose', () {
-      final EngineFlutterView view1 =
+      final view1 =
           EngineFlutterView(dispatcher, createDomHTMLDivElement());
 
       dispatcher.viewManager.registerView(view1);
 
       expect(view1.isDisposed, isFalse);
 
-      bool onMetricsChangedCalled = false;
+      var onMetricsChangedCalled = false;
       dispatcher.onMetricsChanged = () {
         onMetricsChangedCalled = true;
       };
@@ -375,8 +375,8 @@ void testMain() {
     });
 
     test('invokeOnViewFocusChange calls onViewFocusChange', () {
-      final List<ui.ViewFocusEvent> dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
-      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+      final dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
+      const viewFocusEvent = ui.ViewFocusEvent(
         viewId: 0,
         state: ui.ViewFocusState.focused,
         direction: ui.ViewFocusDirection.undefined,
@@ -390,9 +390,9 @@ void testMain() {
     });
 
     test('invokeOnViewFocusChange preserves the zone', () {
-      final Zone zone1 = Zone.current.fork();
-      final Zone zone2 = Zone.current.fork();
-      const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
+      final zone1 = Zone.current.fork();
+      final zone2 = Zone.current.fork();
+      const viewFocusEvent = ui.ViewFocusEvent(
         viewId: 0,
         state: ui.ViewFocusState.focused,
         direction: ui.ViewFocusDirection.undefined,
@@ -420,8 +420,8 @@ void testMain() {
     });
 
     test('scheduleWarmupFrame should call both callbacks', () async {
-      bool beginFrameCalled = false;
-      final Completer<void> drawFrameCalled = Completer<void>();
+      var beginFrameCalled = false;
+      final drawFrameCalled = Completer<void>();
       dispatcher.scheduleWarmUpFrame(beginFrame: () {
         expect(drawFrameCalled.isCompleted, false);
         expect(beginFrameCalled, false);
@@ -447,7 +447,7 @@ class MockHighContrastSupport implements HighContrastSupport {
   bool get isHighContrastEnabled => isEnabled;
 
   void invokeListeners(bool val) {
-    for (final HighContrastListener listener in _listeners) {
+    for (final listener in _listeners) {
       listener(val);
     }
   }

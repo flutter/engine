@@ -62,11 +62,11 @@ bool get isChrome110OrOlder {
   if (_cachedIsChrome110OrOlder != null) {
     return _cachedIsChrome110OrOlder!;
   }
-  final RegExp chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
-  final RegExpMatch? match =
+  final chromeRegexp = RegExp(r'Chrom(e|ium)\/([0-9]+)\.');
+  final match =
       chromeRegexp.firstMatch(ui_web.browser.userAgent);
   if (match != null) {
-    final int chromeVersion = int.parse(match.group(2)!);
+    final chromeVersion = int.parse(match.group(2)!);
     return _cachedIsChrome110OrOlder = chromeVersion <= 110;
   }
   return _cachedIsChrome110OrOlder = false;
@@ -118,7 +118,7 @@ int? _cachedWebGLVersion;
 ///
 /// Our CanvasKit backend is affected due to: https://github.com/emscripten-core/emscripten/issues/11819
 int _detectWebGLVersion() {
-  final DomCanvasElement canvas = createDomCanvasElement(
+  final canvas = createDomCanvasElement(
     width: 1,
     height: 1,
   );

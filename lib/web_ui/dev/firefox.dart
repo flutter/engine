@@ -58,16 +58,16 @@ class Firefox extends Browser {
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
   factory Firefox(Uri url, BrowserInstallation installation, {bool debug = false}) {
-    final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
+    final remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(BrowserProcess(() async {
       // Using a profile on opening will prevent popups related to profiles.
-      const String profile = '''
+      const profile = '''
 user_pref("browser.shell.checkDefaultBrowser", false);
 user_pref("dom.disable_open_during_load", false);
 user_pref("dom.max_script_run_time", 0);
 ''';
 
-      final Directory temporaryProfileDirectory = Directory(
+      final temporaryProfileDirectory = Directory(
           path.join(environment.webUiDartToolDir.path, 'firefox_profile'));
 
       // A good source of various Firefox Command Line options:
@@ -80,8 +80,8 @@ user_pref("dom.max_script_run_time", 0);
       File(path.join(temporaryProfileDirectory.path, 'prefs.js'))
           .writeAsStringSync(profile);
 
-      final bool isMac = Platform.isMacOS;
-      final List<String> args = <String>[
+      final isMac = Platform.isMacOS;
+      final args = <String>[
         url.toString(),
         '--profile',
         temporaryProfileDirectory.path,
@@ -95,7 +95,7 @@ user_pref("dom.max_script_run_time", 0);
         '--start-debugger-server $kDevtoolsPort',
       ];
 
-      final Process process =
+      final process =
           await Process.start(installation.executable, args);
 
       remoteDebuggerCompleter.complete(

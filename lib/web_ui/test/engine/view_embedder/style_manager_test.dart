@@ -16,7 +16,7 @@ void main() {
 void doTests() {
   group('StyleManager', () {
     test('attachGlobalStyles hides the outline when focused', () {
-      final DomElement flutterViewElement = createDomElement(DomManager.flutterViewTagName);
+      final flutterViewElement = createDomElement(DomManager.flutterViewTagName);
 
       domDocument.body!.append(flutterViewElement);
       StyleManager.attachGlobalStyles(
@@ -25,10 +25,10 @@ void doTests() {
         styleNonce: 'testing',
         cssSelectorPrefix: DomManager.flutterViewTagName,
       );
-      final String expected = ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox
+      final expected = ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox
         ? 'rgb(0, 0, 0) 0px'
         : 'rgb(0, 0, 0) none 0px';
-      final String got  = domWindow.getComputedStyle(flutterViewElement, 'focus').outline;
+      final got  = domWindow.getComputedStyle(flutterViewElement, 'focus').outline;
 
       expect(got, expected);
     });
@@ -39,12 +39,12 @@ void doTests() {
         throwsAssertionError,
       );
 
-      final DomElement sceneHost = createDomElement('flt-scene-host');
+      final sceneHost = createDomElement('flt-scene-host');
       StyleManager.styleSceneHost(sceneHost);
       expect(sceneHost.style.pointerEvents, 'none');
       expect(sceneHost.style.opacity, isEmpty);
 
-      final DomElement sceneHost2 = createDomElement('flt-scene-host');
+      final sceneHost2 = createDomElement('flt-scene-host');
       StyleManager.styleSceneHost(sceneHost2, debugShowSemanticsNodes: true);
       expect(sceneHost2.style.pointerEvents, 'none');
       expect(sceneHost2.style.opacity, isNotEmpty);
@@ -57,7 +57,7 @@ void doTests() {
         reason: 'Only accepts a <flt-semantics-host> element.'
       );
 
-      final DomElement semanticsHost = createDomElement('flt-semantics-host');
+      final semanticsHost = createDomElement('flt-semantics-host');
       StyleManager.styleSemanticsHost(semanticsHost, 4.0);
       expect(semanticsHost.style.transform, 'scale(0.25)');
       expect(semanticsHost.style.position, 'absolute');
@@ -71,7 +71,7 @@ void doTests() {
         reason: 'Only accepts a <flt-semantics-host> element.'
       );
 
-      final DomElement semanticsHost = createDomElement('flt-semantics-host');
+      final semanticsHost = createDomElement('flt-semantics-host');
       StyleManager.scaleSemanticsHost(semanticsHost, 5.0);
       expect(semanticsHost.style.transform, 'scale(0.2)');
       // Didn't set other styles.

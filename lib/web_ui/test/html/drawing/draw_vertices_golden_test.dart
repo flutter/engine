@@ -19,9 +19,9 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const double screenWidth = 600.0;
-  const double screenHeight = 800.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+  const screenWidth = 600.0;
+  const screenHeight = 800.0;
+  const screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
   setUpUnitTests(
     setUpTestViewDimensions: false,
@@ -34,7 +34,7 @@ Future<void> testMain() async {
 
   Future<void> testVertices(
       String fileName, Vertices vertices, BlendMode blendMode, Paint paint) async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.drawVertices(
         vertices as SurfaceVertices, blendMode, paint as SurfacePaint);
@@ -43,7 +43,7 @@ Future<void> testMain() async {
 
   test('Should draw green hairline triangles when colors array is null.',
       () async {
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(<double>[
           20.0,
@@ -67,7 +67,7 @@ Future<void> testMain() async {
       'Should draw black hairline triangles when colors array is null'
       ' and Paint() has no color.', () async {
     // ignore: unused_local_variable
-    final Int32List colors = Int32List.fromList(<int>[
+    final colors = Int32List.fromList(<int>[
       0xFFFF0000,
       0xFF00FF00,
       0xFF0000FF,
@@ -81,7 +81,7 @@ Future<void> testMain() async {
       0xFF00FF00,
       0xFF0000FF
     ]);
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(<double>[
           20.0,
@@ -106,7 +106,7 @@ Future<void> testMain() async {
       'Should draw filled triangles when colors array is null'
       ' and Paint() has color.', () async {
     // ignore: unused_local_variable
-    final Int32List colors = Int32List.fromList(<int>[
+    final colors = Int32List.fromList(<int>[
       0xFFFF0000,
       0xFF00FF00,
       0xFF0000FF,
@@ -120,7 +120,7 @@ Future<void> testMain() async {
       0xFF00FF00,
       0xFF0000FF
     ]);
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(<double>[
           20.0,
@@ -148,7 +148,7 @@ Future<void> testMain() async {
   skip: isFirefox);
 
   test('Should draw hairline triangleFan.', () async {
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangleFan,
         Float32List.fromList(<double>[
           150.0,
@@ -170,7 +170,7 @@ Future<void> testMain() async {
   });
 
   test('Should draw hairline triangleStrip.', () async {
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangleStrip,
         Float32List.fromList(<double>[
           20.0,
@@ -191,7 +191,7 @@ Future<void> testMain() async {
   });
 
   test('Should draw triangles with colors.', () async {
-    final Int32List colors = Int32List.fromList(<int>[
+    final colors = Int32List.fromList(<int>[
       0xFFFF0000,
       0xFF00FF00,
       0xFF0000FF,
@@ -199,7 +199,7 @@ Future<void> testMain() async {
       0xFF00FF00,
       0xFF0000FF
     ]);
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(<double>[
           150.0,
@@ -224,14 +224,14 @@ Future<void> testMain() async {
   skip: isFirefox);
 
   test('Should draw triangles with colors and indices.', () async {
-    final Int32List colors = Int32List.fromList(
+    final colors = Int32List.fromList(
         <int>[0xFFFF0000, 0xFF00FF00, 0xFF0000FF, 0xFFFF0000, 0xFF0000FF]);
-    final Uint16List indices = Uint16List.fromList(<int>[0, 1, 2, 3, 4, 0]);
+    final indices = Uint16List.fromList(<int>[0, 1, 2, 3, 4, 0]);
 
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
 
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(<double>[
           210.0,
@@ -257,7 +257,7 @@ Future<void> testMain() async {
   skip: isFirefox);
 
   test('Should draw triangleFan with colors.', () async {
-    final Int32List colors = Int32List.fromList(<int>[
+    final colors = Int32List.fromList(<int>[
       0xFFFF0000,
       0xFF00FF00,
       0xFF0000FF,
@@ -265,7 +265,7 @@ Future<void> testMain() async {
       0xFF00FF00,
       0xFF0000FF
     ]);
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangleFan,
         Float32List.fromList(<double>[
           150.0,
@@ -290,7 +290,7 @@ Future<void> testMain() async {
   skip: isFirefox);
 
   test('Should draw triangleStrip with colors.', () async {
-    final Int32List colors = Int32List.fromList(<int>[
+    final colors = Int32List.fromList(<int>[
       0xFFFF0000,
       0xFF00FF00,
       0xFF0000FF,
@@ -298,7 +298,7 @@ Future<void> testMain() async {
       0xFF00FF00,
       0xFF0000FF
     ]);
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangleStrip,
         Float32List.fromList(<double>[
           20.0,
@@ -322,12 +322,12 @@ Future<void> testMain() async {
   skip: isFirefox);
 
   Future<void> testTexture(TileMode tileMode, String filename) async {
-    final Uint16List indices = Uint16List.fromList(<int>[0, 1, 2, 3, 4, 0]);
+    final indices = Uint16List.fromList(<int>[0, 1, 2, 3, 4, 0]);
 
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
 
-    final Vertices vertices = Vertices.raw(
+    final vertices = Vertices.raw(
         VertexMode.triangles,
         Float32List.fromList(<double>[
           210.0,
@@ -343,12 +343,12 @@ Future<void> testMain() async {
         ]),
         indices: indices);
 
-    final Float32List matrix4 = Matrix4.identity().storage;
+    final matrix4 = Matrix4.identity().storage;
 
-    final HtmlImage img = await createTestImage();
-    final SurfacePaint paint = SurfacePaint();
+    final img = await createTestImage();
+    final paint = SurfacePaint();
 
-    final EngineImageShader imgShader = EngineImageShader(img, tileMode, tileMode,
+    final imgShader = EngineImageShader(img, tileMode, tileMode,
         Float64List.fromList(matrix4), FilterQuality.high);
 
     paint.shader = imgShader;
@@ -381,9 +381,9 @@ Future<void> testMain() async {
 }
 
 Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
-  final DomCanvasElement canvas =
+  final canvas =
       createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
   ctx.fill();
@@ -393,8 +393,8 @@ Future<HtmlImage> createTestImage({int width = 50, int height = 40}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
-  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
-  final Completer<HtmlImage> completer = Completer<HtmlImage>();
+  final imageElement = createDomHTMLImageElement();
+  final completer = Completer<HtmlImage>();
   imageElement.addEventListener('load', createDomEventListener((DomEvent event) {
     completer.complete(HtmlImage(imageElement, width, height));
   }));

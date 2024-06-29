@@ -25,8 +25,8 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
-  const String platformViewType = 'test-platform-view';
+  const region = ui.Rect.fromLTWH(0, 0, 300, 300);
+  const platformViewType = 'test-platform-view';
 
   setUp(() {
     ui_web.platformViewRegistry.registerViewFactory(
@@ -46,8 +46,8 @@ Future<void> testMain() async {
   test('picture + overlapping platformView', () async {
     await _createPlatformView(1, platformViewType);
 
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
     canvas.drawCircle(
       const ui.Offset(50, 50),
       50,
@@ -56,7 +56,7 @@ Future<void> testMain() async {
         ..color = const ui.Color(0xFFFF0000)
     );
 
-    final ui.SceneBuilder sb = ui.SceneBuilder();
+    final sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
     sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
@@ -74,8 +74,8 @@ Future<void> testMain() async {
   test('platformView sandwich', () async {
     await _createPlatformView(1, platformViewType);
 
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
     canvas.drawCircle(
       const ui.Offset(50, 50),
       50,
@@ -84,9 +84,9 @@ Future<void> testMain() async {
         ..color = const ui.Color(0xFF00FF00)
     );
 
-    final ui.Picture picture = recorder.endRecording();
+    final picture = recorder.endRecording();
 
-    final ui.SceneBuilder sb = ui.SceneBuilder();
+    final sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
     sb.addPicture(const ui.Offset(75, 75), picture);
 
@@ -106,8 +106,8 @@ Future<void> testMain() async {
   test('transformed platformview', () async {
     await _createPlatformView(1, platformViewType);
 
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
     canvas.drawCircle(
       const ui.Offset(50, 50),
       50,
@@ -116,7 +116,7 @@ Future<void> testMain() async {
         ..color = const ui.Color(0xFFFF0000)
     );
 
-    final ui.SceneBuilder sb = ui.SceneBuilder();
+    final sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
     sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
@@ -135,8 +135,8 @@ Future<void> testMain() async {
   test('platformview with opacity', () async {
     await _createPlatformView(1, platformViewType);
 
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
     canvas.drawCircle(
       const ui.Offset(50, 50),
       50,
@@ -145,7 +145,7 @@ Future<void> testMain() async {
         ..color = const ui.Color(0xFFFF0000)
     );
 
-    final ui.SceneBuilder sb = ui.SceneBuilder();
+    final sb = ui.SceneBuilder();
     sb.pushOffset(0, 0);
     sb.addPicture(const ui.Offset(100, 100), recorder.endRecording());
 
@@ -164,7 +164,7 @@ Future<void> testMain() async {
 
 // Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> _createPlatformView(int id, String viewType) {
-  final Completer<void> completer = Completer<void>();
+  final completer = Completer<void>();
   const MethodCodec codec = StandardMethodCodec();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',

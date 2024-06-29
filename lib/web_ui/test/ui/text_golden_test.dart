@@ -528,10 +528,10 @@ Future<void> testMain() async {
   }, timeout: const Timeout.factor(2));
 
   test('font variations are correctly rendered', () async {
-    const double testWidth = 300;
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
-    final ui.ParagraphBuilder builder =
+    const testWidth = 300;
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final builder =
       ui.ParagraphBuilder(ui.ParagraphStyle(
         fontSize: 40.0,
         textDirection: ui.TextDirection.ltr,
@@ -558,10 +558,10 @@ Future<void> testMain() async {
     builder.addText('Light\n');
     builder.pop();
 
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: testWidth - 20));
     canvas.drawParagraph(paragraph, const ui.Offset(10, 10));
-    final ui.Picture picture = recorder.endRecording();
+    final picture = recorder.endRecording();
     await drawPictureUsingCurrentRenderer(picture);
     await matchGoldenFile(
       'ui_text_font_variation.png',
@@ -630,20 +630,20 @@ Future<void> testTextStyle(
 }) async {
   late ui.Rect region;
   ui.Picture renderPicture() {
-    const double testWidth = 512;
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
+    const testWidth = 512;
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
     canvas.translate(30, 10);
-    final ui.ParagraphBuilder descriptionBuilder =
+    final descriptionBuilder =
         ui.ParagraphBuilder(ui.ParagraphStyle());
     descriptionBuilder.addText(name);
-    final ui.Paragraph descriptionParagraph = descriptionBuilder.build();
+    final descriptionParagraph = descriptionBuilder.build();
     descriptionParagraph
         .layout(const ui.ParagraphConstraints(width: testWidth / 2 - 70));
-    const ui.Offset descriptionOffset = ui.Offset(testWidth / 2 + 30, 0);
+    const descriptionOffset = ui.Offset(testWidth / 2 + 30, 0);
     canvas.drawParagraph(descriptionParagraph, descriptionOffset);
 
-    final ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle(
+    final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
       textAlign: paragraphTextAlign,
       textDirection: paragraphTextDirection,
       maxLines: paragraphMaxLines,
@@ -684,7 +684,7 @@ Future<void> testTextStyle(
     ));
     pb.addText(innerText);
     pb.pop();
-    final ui.Paragraph p = pb.build();
+    final p = pb.build();
     p.layout(ui.ParagraphConstraints(width: layoutWidth ?? testWidth / 2));
     canvas.drawParagraph(p, ui.Offset.zero);
 
@@ -708,7 +708,7 @@ Future<void> testTextStyle(
         ..style = ui.PaintingStyle.stroke
         ..strokeWidth = 1.0,
     );
-    const double padding = 20;
+    const padding = 20;
     region = ui.Rect.fromLTRB(
       0,
       0,
@@ -724,7 +724,7 @@ Future<void> testTextStyle(
   // Render once to trigger font downloads.
   renderPicture();
   await renderer.fontCollection.fontFallbackManager?.debugWhenIdle();
-  final ui.Picture picture = renderPicture();
+  final picture = renderPicture();
   await drawPictureUsingCurrentRenderer(picture);
 
   await matchGoldenFile(
@@ -735,17 +735,17 @@ Future<void> testTextStyle(
 
 Future<void> testSampleText(String language, String text,
     {ui.TextDirection textDirection = ui.TextDirection.ltr}) async {
-  const double testWidth = 300;
-  double paragraphHeight = 0;
+  const testWidth = 300;
+  var paragraphHeight = 0;
   ui.Picture renderPicture() {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder);
-    final ui.ParagraphBuilder paragraphBuilder =
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final paragraphBuilder =
         ui.ParagraphBuilder(ui.ParagraphStyle(
       textDirection: textDirection,
     ));
     paragraphBuilder.addText(text);
-    final ui.Paragraph paragraph = paragraphBuilder.build();
+    final paragraph = paragraphBuilder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: testWidth - 20));
     canvas.drawParagraph(paragraph, const ui.Offset(10, 10));
     paragraphHeight = paragraph.height;
@@ -754,7 +754,7 @@ Future<void> testSampleText(String language, String text,
   // Render once to trigger font downloads.
   renderPicture();
   await renderer.fontCollection.fontFallbackManager?.debugWhenIdle();
-  final ui.Picture picture = renderPicture();
+  final picture = renderPicture();
   await drawPictureUsingCurrentRenderer(picture);
   await matchGoldenFile(
     'ui_sample_text_$language.png',

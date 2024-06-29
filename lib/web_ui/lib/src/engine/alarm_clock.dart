@@ -58,11 +58,11 @@ class AlarmClock {
       return;
     }
 
-    final DateTime now = _timestampFunction();
+    final now = _timestampFunction();
 
     // We use the "not before" logic instead of "is after" because zero-duration
     // timers are valid.
-    final bool isInTheFuture = !value.isBefore(now);
+    final isInTheFuture = !value.isBefore(now);
 
     if (!isInTheFuture) {
       _cancelTimer();
@@ -102,7 +102,7 @@ class AlarmClock {
   void _timerDidFire() {
     assert(_datetime != null,
         'If _datetime is null, the timer would have been cancelled');
-    final DateTime now = _timestampFunction();
+    final now = _timestampFunction();
     // We use the "not before" logic instead of "is after" because we may have
     // zero difference between now and _datetime.
     if (!now.isBefore(_datetime!)) {

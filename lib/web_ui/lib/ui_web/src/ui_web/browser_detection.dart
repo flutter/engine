@@ -90,8 +90,8 @@ class BrowserDetection {
   late final BrowserEngine _browserEngine = _detectBrowserEngine();
 
   BrowserEngine _detectBrowserEngine() {
-    final String vendor = domWindow.navigator.vendor;
-    final String agent = userAgent.toLowerCase();
+    final vendor = domWindow.navigator.vendor;
+    final agent = userAgent.toLowerCase();
     return detectBrowserEngineByVendorAgent(vendor, agent);
   }
 
@@ -143,12 +143,12 @@ class BrowserDetection {
     String? overridePlatform,
     int? overrideMaxTouchPoints,
   }) {
-    final String platform = overridePlatform ?? domWindow.navigator.platform!;
+    final platform = overridePlatform ?? domWindow.navigator.platform!;
 
     if (platform.startsWith('Mac')) {
       // iDevices requesting a "desktop site" spoof their UA so it looks like a Mac.
       // This checks if we're in a touch device, or on a real mac.
-      final int maxTouchPoints = overrideMaxTouchPoints ??
+      final maxTouchPoints = overrideMaxTouchPoints ??
           domWindow.navigator.maxTouchPoints?.toInt() ??
           0;
       if (maxTouchPoints > 2) {

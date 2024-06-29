@@ -43,8 +43,8 @@ R timeAction<R>(String name, Action<R> action) {
   if (!Profiler.isBenchmarkMode) {
     return action();
   } else {
-    final Stopwatch stopwatch = Stopwatch()..start();
-    final R result = action();
+    final stopwatch = Stopwatch()..start();
+    final result = action();
     stopwatch.stop();
     Profiler.instance.benchmark(name, stopwatch.elapsedMicroseconds.toDouble());
     return result;
@@ -80,7 +80,7 @@ class Profiler {
 
   static Profiler get instance {
     _checkBenchmarkMode();
-    final Profiler? profiler = _instance;
+    final profiler = _instance;
     if (profiler == null) {
       throw Exception(
         'Profiler has not been properly initialized. '
@@ -107,7 +107,7 @@ class Profiler {
   void benchmark(String name, double value) {
     _checkBenchmarkMode();
 
-    final ui_web.BenchmarkValueCallback? callback =
+    final callback =
         jsBenchmarkValueCallback?.toDart as ui_web.BenchmarkValueCallback?;
     if (callback != null) {
       printWarning(
@@ -182,7 +182,7 @@ class Instrumentation {
   /// Increments the count of a particular event by one.
   void incrementCounter(String event) {
     _checkInstrumentationEnabled();
-    final int currentCount = _counters[event] ?? 0;
+    final currentCount = _counters[event] ?? 0;
     _counters[event] = currentCount + 1;
     _printTimer ??= Timer(
       const Duration(seconds: 2),
@@ -190,13 +190,13 @@ class Instrumentation {
         if (_printTimer == null || !_enabled) {
           return;
         }
-        final StringBuffer message = StringBuffer('Engine counters:\n');
+        final message = StringBuffer('Engine counters:\n');
         // Entries are sorted for readability and testability.
-        final List<MapEntry<String, int>> entries = _counters.entries.toList()
+        final entries = _counters.entries.toList()
           ..sort((MapEntry<String, int> a, MapEntry<String, int> b) {
             return a.key.compareTo(b.key);
           });
-        for (final MapEntry<String, int> entry in entries) {
+        for (final entry in entries) {
           message.writeln('  ${entry.key}: ${entry.value}');
         }
         print(message);

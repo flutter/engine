@@ -25,8 +25,8 @@ void testMain() {
     });
 
     test('debugAssertSurfaceState produces a human-readable message', () {
-      final SceneBuilder builder = SceneBuilder();
-      final PersistedOpacity opacityLayer = builder.pushOpacity(100) as PersistedOpacity;
+      final builder = SceneBuilder();
+      final opacityLayer = builder.pushOpacity(100) as PersistedOpacity;
       try {
         debugAssertSurfaceState(opacityLayer, PersistedSurfaceState.active, PersistedSurfaceState.pendingRetention);
         fail('Expected $PersistedSurfaceException');
@@ -41,8 +41,8 @@ void testMain() {
     });
 
     test('is created', () {
-      final SceneBuilder builder = SceneBuilder();
-      final PersistedOpacity opacityLayer = builder.pushOpacity(100) as PersistedOpacity;
+      final builder = SceneBuilder();
+      final opacityLayer = builder.pushOpacity(100) as PersistedOpacity;
       builder.pop();
 
       expect(opacityLayer, isNotNull);
@@ -56,8 +56,8 @@ void testMain() {
     });
 
     test('is released', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
+      final builder1 = SceneBuilder();
+      final opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
       builder1.pop();
       builder1.build();
       expect(opacityLayer.isActive, isTrue);
@@ -68,9 +68,9 @@ void testMain() {
     });
 
     test('discarding is recursive', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
-      final PersistedTransform transformLayer =
+      final builder1 = SceneBuilder();
+      final opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
+      final transformLayer =
           builder1.pushTransform(Matrix4.identity().toFloat64()) as PersistedTransform;
       builder1.pop();
       builder1.pop();
@@ -86,15 +86,15 @@ void testMain() {
     });
 
     test('is updated', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer1 = builder1.pushOpacity(100) as PersistedOpacity;
+      final builder1 = SceneBuilder();
+      final opacityLayer1 = builder1.pushOpacity(100) as PersistedOpacity;
       builder1.pop();
       builder1.build();
       expect(opacityLayer1.isActive, isTrue);
-      final DomElement element = opacityLayer1.rootElement!;
+      final element = opacityLayer1.rootElement!;
 
-      final SceneBuilder builder2 = SceneBuilder();
-      final PersistedOpacity opacityLayer2 =
+      final builder2 = SceneBuilder();
+      final opacityLayer2 =
           builder2.pushOpacity(200, oldLayer: opacityLayer1) as PersistedOpacity;
       expect(opacityLayer1.isPendingUpdate, isTrue);
       expect(opacityLayer2.isCreated, isTrue);
@@ -112,12 +112,12 @@ void testMain() {
 
     test('ignores released surface when updated', () {
       // Build a surface
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer1 = builder1.pushOpacity(100) as PersistedOpacity;
+      final builder1 = SceneBuilder();
+      final opacityLayer1 = builder1.pushOpacity(100) as PersistedOpacity;
       builder1.pop();
       builder1.build();
       expect(opacityLayer1.isActive, isTrue);
-      final DomElement element = opacityLayer1.rootElement!;
+      final element = opacityLayer1.rootElement!;
 
       // Release it
       SceneBuilder().build();
@@ -125,8 +125,8 @@ void testMain() {
       expect(opacityLayer1.rootElement, isNull);
 
       // Attempt to update it
-      final SceneBuilder builder2 = SceneBuilder();
-      final PersistedOpacity opacityLayer2 =
+      final builder2 = SceneBuilder();
+      final opacityLayer2 =
           builder2.pushOpacity(200, oldLayer: opacityLayer1) as PersistedOpacity;
       builder2.pop();
       expect(opacityLayer1.isReleased, isTrue);
@@ -159,13 +159,13 @@ void testMain() {
     // child of "C" as it's being dragged around the tree. For example, we
     // check that the child doesn't get discarded by mistake.
     test('reparents DOM element when updated', () {
-      final _LoggingTestSurface logger = _LoggingTestSurface();
-      final SurfaceSceneBuilder builder1 = SurfaceSceneBuilder();
-      final PersistedTransform a1 =
+      final logger = _LoggingTestSurface();
+      final builder1 = SurfaceSceneBuilder();
+      final a1 =
           builder1.pushTransform(
               (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64()) as PersistedTransform;
-      final PersistedOpacity b1 = builder1.pushOpacity(100) as PersistedOpacity;
-      final PersistedTransform c1 =
+      final b1 = builder1.pushOpacity(100) as PersistedOpacity;
+      final c1 =
           builder1.pushTransform(Matrix4.identity().toFloat64()) as PersistedTransform;
       builder1.debugAddSurface(logger);
       builder1.pop();
@@ -174,19 +174,19 @@ void testMain() {
       builder1.build();
       expect(logger.log, <String>['build', 'createElement', 'apply']);
 
-      final DomElement elementA = a1.rootElement!;
-      final DomElement elementB = b1.rootElement!;
-      final DomElement elementC = c1.rootElement!;
+      final elementA = a1.rootElement!;
+      final elementB = b1.rootElement!;
+      final elementC = c1.rootElement!;
 
       expect(elementC.parent, elementB);
       expect(elementB.parent, elementA);
 
-      final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
-      final PersistedTransform a2 =
+      final builder2 = SurfaceSceneBuilder();
+      final a2 =
           builder2.pushTransform(
               (Matrix4.identity()..scale(EngineFlutterDisplay.instance.browserDevicePixelRatio)).toFloat64(),
               oldLayer: a1) as PersistedTransform;
-      final PersistedTransform c2 =
+      final c2 =
           builder2.pushTransform(Matrix4.identity().toFloat64(), oldLayer: c1) as PersistedTransform;
       builder2.addRetained(logger);
       builder2.pop();
@@ -212,14 +212,14 @@ void testMain() {
             ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs);
 
     test('is retained', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
+      final builder1 = SceneBuilder();
+      final opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
       builder1.pop();
       builder1.build();
       expect(opacityLayer.isActive, isTrue);
-      final DomElement element = opacityLayer.rootElement!;
+      final element = opacityLayer.rootElement!;
 
-      final SceneBuilder builder2 = SceneBuilder();
+      final builder2 = SceneBuilder();
 
       expect(opacityLayer.isActive, isTrue);
       builder2.addRetained(opacityLayer);
@@ -231,22 +231,22 @@ void testMain() {
     });
 
     test('revives released surface when retained', () {
-      final SurfaceSceneBuilder builder1 = SurfaceSceneBuilder();
-      final PersistedOpacity opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
-      final _LoggingTestSurface logger = _LoggingTestSurface();
+      final builder1 = SurfaceSceneBuilder();
+      final opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
+      final logger = _LoggingTestSurface();
       builder1.debugAddSurface(logger);
       builder1.pop();
       builder1.build();
       expect(opacityLayer.isActive, isTrue);
       expect(logger.log, <String>['build', 'createElement', 'apply']);
-      final DomElement element = opacityLayer.rootElement!;
+      final element = opacityLayer.rootElement!;
 
       SceneBuilder().build();
       expect(opacityLayer.isReleased, isTrue);
       expect(opacityLayer.rootElement, isNull);
       expect(logger.log, <String>['build', 'createElement', 'apply', 'discard']);
 
-      final SceneBuilder builder2 = SceneBuilder();
+      final builder2 = SceneBuilder();
       builder2.addRetained(opacityLayer);
       expect(opacityLayer.isCreated, isTrue); // revived
       expect(logger.log, <String>['build', 'createElement', 'apply', 'discard', 'revive']);
@@ -257,21 +257,21 @@ void testMain() {
     });
 
     test('reviving is recursive', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
-      final PersistedTransform transformLayer =
+      final builder1 = SceneBuilder();
+      final opacityLayer = builder1.pushOpacity(100) as PersistedOpacity;
+      final transformLayer =
           builder1.pushTransform(Matrix4.identity().toFloat64()) as PersistedTransform;
       builder1.pop();
       builder1.pop();
       builder1.build();
       expect(opacityLayer.isActive, isTrue);
       expect(transformLayer.isActive, isTrue);
-      final DomElement opacityElement = opacityLayer.rootElement!;
-      final DomElement transformElement = transformLayer.rootElement!;
+      final opacityElement = opacityLayer.rootElement!;
+      final transformElement = transformLayer.rootElement!;
 
       SceneBuilder().build();
 
-      final SceneBuilder builder2 = SceneBuilder();
+      final builder2 = SceneBuilder();
       builder2.addRetained(opacityLayer);
       expect(opacityLayer.isCreated, isTrue); // revived
       expect(transformLayer.isCreated, isTrue); // revived
@@ -301,29 +301,29 @@ void testMain() {
     //              |
     //              D
     test('reparents DOM elements when retained', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity a1 = builder1.pushOpacity(10) as PersistedOpacity;
-      final PersistedOpacity b1 = builder1.pushOpacity(20) as PersistedOpacity;
+      final builder1 = SceneBuilder();
+      final a1 = builder1.pushOpacity(10) as PersistedOpacity;
+      final b1 = builder1.pushOpacity(20) as PersistedOpacity;
       builder1.pop();
-      final PersistedOpacity c1 = builder1.pushOpacity(30) as PersistedOpacity;
-      final PersistedOpacity d1 = builder1.pushOpacity(40) as PersistedOpacity;
+      final c1 = builder1.pushOpacity(30) as PersistedOpacity;
+      final d1 = builder1.pushOpacity(40) as PersistedOpacity;
       builder1.pop();
       builder1.pop();
       builder1.pop();
       builder1.build();
 
-      final DomElement elementA = a1.rootElement!;
-      final DomElement elementB = b1.rootElement!;
-      final DomElement elementC = c1.rootElement!;
-      final DomElement elementD = d1.rootElement!;
+      final elementA = a1.rootElement!;
+      final elementB = b1.rootElement!;
+      final elementC = c1.rootElement!;
+      final elementD = d1.rootElement!;
 
       expect(elementB.parent, elementA);
       expect(elementC.parent, elementA);
       expect(elementD.parent, elementC);
 
-      final SceneBuilder builder2 = SceneBuilder();
-      final PersistedOpacity a2 = builder2.pushOpacity(10, oldLayer: a1) as PersistedOpacity;
-      final PersistedOpacity b2 = builder2.pushOpacity(20, oldLayer: b1) as PersistedOpacity;
+      final builder2 = SceneBuilder();
+      final a2 = builder2.pushOpacity(10, oldLayer: a1) as PersistedOpacity;
+      final b2 = builder2.pushOpacity(20, oldLayer: b1) as PersistedOpacity;
       builder2.addRetained(c1);
       builder2.pop();
       builder2.pop();
@@ -345,15 +345,15 @@ void testMain() {
     });
 
     test('is updated by matching', () {
-      final SceneBuilder builder1 = SceneBuilder();
-      final PersistedOpacity opacityLayer1 = builder1.pushOpacity(100) as PersistedOpacity;
+      final builder1 = SceneBuilder();
+      final opacityLayer1 = builder1.pushOpacity(100) as PersistedOpacity;
       builder1.pop();
       builder1.build();
       expect(opacityLayer1.isActive, isTrue);
-      final DomElement element = opacityLayer1.rootElement!;
+      final element = opacityLayer1.rootElement!;
 
-      final SceneBuilder builder2 = SceneBuilder();
-      final PersistedOpacity opacityLayer2 = builder2.pushOpacity(200) as PersistedOpacity;
+      final builder2 = SceneBuilder();
+      final opacityLayer2 = builder2.pushOpacity(200) as PersistedOpacity;
       expect(opacityLayer1.isActive, isTrue);
       expect(opacityLayer2.isCreated, isTrue);
       builder2.pop();
@@ -367,7 +367,7 @@ void testMain() {
     });
   });
 
-  final Map<String, TestEngineLayerFactory> layerFactories = <String, TestEngineLayerFactory>{
+  final layerFactories = <String, TestEngineLayerFactory>{
     'ColorFilterEngineLayer': (SurfaceSceneBuilder builder) => builder.pushColorFilter(const ColorFilter.mode(
       Color(0xFFFF0000),
       BlendMode.srcIn,
@@ -383,9 +383,9 @@ void testMain() {
     // Firefox does not support WebGL in headless mode.
     if (!isFirefox)
       'ShaderMaskEngineLayer': (SurfaceSceneBuilder builder) {
-        const List<Color> colors = <Color>[Color(0xFF000000), Color(0xFFFF3C38)];
-        const List<double> stops = <double>[0.0, 1.0];
-        const Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
+        const colors = <Color>[Color(0xFF000000), Color(0xFFFF3C38)];
+        const stops = <double>[0.0, 1.0];
+        const shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
         final EngineGradient shader = GradientLinear(
           Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
           Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
@@ -396,23 +396,23 @@ void testMain() {
   };
 
   // Regression test for https://github.com/flutter/flutter/issues/104305
-  for (final MapEntry<String, TestEngineLayerFactory> layerFactory in layerFactories.entries) {
+  for (final layerFactory in layerFactories.entries) {
     test('${layerFactory.key} supports addRetained after being discarded', () async {
-      final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+      final builder = SurfaceSceneBuilder();
       builder.pushOffset(0, 0);
-      final PersistedSurface oldLayer = layerFactory.value(builder) as PersistedSurface;
+      final oldLayer = layerFactory.value(builder) as PersistedSurface;
       builder.pop();
       builder.pop();
       builder.build();
       expect(oldLayer.isActive, isTrue);
 
       // Pump an empty frame so the `oldLayer` is discarded before it's reused.
-      final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+      final builder2 = SurfaceSceneBuilder();
       builder2.build();
       expect(oldLayer.isReleased, isTrue);
 
       // At this point the `oldLayer` needs to be revived.
-      final SurfaceSceneBuilder builder3 = SurfaceSceneBuilder();
+      final builder3 = SurfaceSceneBuilder();
       builder3.addRetained(oldLayer);
       builder3.build();
       expect(oldLayer.isActive, isTrue);

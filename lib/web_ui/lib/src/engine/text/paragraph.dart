@@ -89,7 +89,7 @@ class EngineLineMetrics implements ui.LineMetrics {
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
       result = 'LineMetrics(hardBreak: $hardBreak, '
           'ascent: $ascent, '
@@ -219,8 +219,8 @@ class ParagraphLine {
   }
 
   String getText(CanvasParagraph paragraph) {
-    final StringBuffer buffer = StringBuffer();
-    for (final LayoutFragment fragment in fragments) {
+    final buffer = StringBuffer();
+    for (final fragment in fragments) {
       buffer.write(fragment.getText(paragraph));
     }
     return buffer.toString();
@@ -230,10 +230,10 @@ class ParagraphLine {
   // is not supported so _fromDomSegmenter can't be called. This implementation
   // breaks the text into UTF-16 codepoints instead of graphme clusters.
   List<int> _fallbackGraphemeStartIterable(String lineText) {
-    final List<int> graphemeStarts = <int>[];
-    bool precededByHighSurrogate = false;
-    for (int i = 0; i < lineText.length; i++) {
-      final int maskedCodeUnit = lineText.codeUnitAt(i) & 0xFC00;
+    final graphemeStarts = <int>[];
+    var precededByHighSurrogate = false;
+    for (var i = 0; i < lineText.length; i++) {
+      final maskedCodeUnit = lineText.codeUnitAt(i) & 0xFC00;
       // Only skip `i` if it points to a low surrogate in a valid surrogate pair.
       if (maskedCodeUnit != 0xDC00 || !precededByHighSurrogate) {
         graphemeStarts.add(startIndex + i);
@@ -245,8 +245,8 @@ class ParagraphLine {
 
   // This will be called at most once to lazily populate _graphemeStarts.
   List<int> _fromDomSegmenter(String fragmentText) {
-    final DomSegmenter domSegmenter = createIntlSegmenter(granularity: 'grapheme');
-    final List<int> graphemeStarts = <int>[];
+    final domSegmenter = createIntlSegmenter(granularity: 'grapheme');
+    final graphemeStarts = <int>[];
     final Iterator<DomSegment> segments = domSegmenter.segment(fragmentText).iterator();
     while (segments.moveNext()) {
       graphemeStarts.add(segments.current.index + startIndex);
@@ -256,7 +256,7 @@ class ParagraphLine {
   }
 
   List<int> _breakTextIntoGraphemes(String text) {
-    final List<int> graphemeStarts = domIntl.Segmenter == null ? _fallbackGraphemeStartIterable(text) : _fromDomSegmenter(text);
+    final graphemeStarts = domIntl.Segmenter == null ? _fallbackGraphemeStartIterable(text) : _fromDomSegmenter(text);
     // Add the end index of the fragment to the list if the text is not empty.
     if (graphemeStarts.isNotEmpty) {
       graphemeStarts.add(visibleEndIndex);
@@ -281,18 +281,18 @@ class ParagraphLine {
   /// current line. They are used to limit the search range (so the return value
   /// that corresponds to the code unit `offset` must be with in [start, end)).
   int graphemeStartIndexBefore(int offset, int start, int end) {
-    int low = start;
-    int high = end;
+    var low = start;
+    var high = end;
     assert(0 <= low);
     assert(low < high);
 
-    final List<int> lineGraphemeBreaks = graphemeStarts;
+    final lineGraphemeBreaks = graphemeStarts;
     assert(offset >= lineGraphemeBreaks[start]);
     assert(offset < lineGraphemeBreaks.last, '$offset, $lineGraphemeBreaks');
     assert(end == lineGraphemeBreaks.length || offset < lineGraphemeBreaks[end]);
     while (low + 2 <= high) {
       // high >= low + 2, so low + 1 <= mid <= high - 1
-      final int mid = (low + high) ~/ 2;
+      final mid = (low + high) ~/ 2;
       switch (lineGraphemeBreaks[mid] - offset) {
         case > 0: high = mid;
         case < 0: low = mid;
@@ -313,14 +313,14 @@ class ParagraphLine {
       return null;
     }
 
-    final int startIndex = graphemeStartIndexBefore(codeUnitOffset, 0, graphemeStarts.length);
+    final startIndex = graphemeStartIndexBefore(codeUnitOffset, 0, graphemeStarts.length);
     assert(startIndex < graphemeStarts.length - 1);
     return ui.TextRange(start: graphemeStarts[startIndex], end: graphemeStarts[startIndex + 1]);
   }
 
   LayoutFragment? closestFragmentTo(LayoutFragment targetFragment, bool searchLeft) {
     ({LayoutFragment fragment, double distance})? closestFragment;
-    for (final LayoutFragment fragment in fragments) {
+    for (final fragment in fragments) {
       assert(fragment is! EllipsisFragment);
       if (fragment.start >= visibleEndIndex) {
         break;
@@ -328,10 +328,10 @@ class ParagraphLine {
       if (fragment.graphemeStartIndexRange == null) {
         continue;
       }
-      final double distance = searchLeft
+      final distance = searchLeft
         ? targetFragment.left - fragment.right
         : fragment.left - targetFragment.right;
-      final double? minDistance = closestFragment?.distance;
+      final minDistance = closestFragment?.distance;
       switch (distance) {
         case > 0.0 when minDistance == null || minDistance > distance:
           closestFragment = (fragment: fragment, distance: distance);
@@ -350,9 +350,9 @@ class ParagraphLine {
       return null;
     }
     assert(graphemeStarts.length >= 2);
-    int graphemeIndex = 0;
+    var graphemeIndex = 0;
     ({LayoutFragment fragment, double distance})? closestFragment;
-    for (final LayoutFragment fragment in fragments) {
+    for (final fragment in fragments) {
       assert(fragment is! EllipsisFragment);
       if (fragment.start >= visibleEndIndex) {
         break;
@@ -363,7 +363,7 @@ class ParagraphLine {
       while (fragment.start > graphemeStarts[graphemeIndex]) {
         graphemeIndex += 1;
       }
-      final int firstGraphemeStartInFragment = graphemeStarts[graphemeIndex];
+      final firstGraphemeStartInFragment = graphemeStarts[graphemeIndex];
       if (firstGraphemeStartInFragment >= fragment.end) {
         continue;
       }
@@ -377,7 +377,7 @@ class ParagraphLine {
       }
       assert(distance > 0);
 
-      final double? minDistance = closestFragment?.distance;
+      final minDistance = closestFragment?.distance;
       if (minDistance == null || minDistance > distance) {
         closestFragment = (fragment: fragment, distance: distance);
       }
@@ -468,8 +468,8 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
   double? get lineHeight {
     // TODO(mdebbar): Implement proper support for strut styles.
     // https://github.com/flutter/flutter/issues/32243
-    final EngineStrutStyle? strutStyle = _strutStyle;
-    final double? strutHeight = strutStyle?._height;
+    final strutStyle = _strutStyle;
+    final strutHeight = strutStyle?._height;
     if (strutStyle == null || strutHeight == null || strutHeight == 0) {
       // When there's no strut height, always use paragraph style height.
       return height;
@@ -526,10 +526,10 @@ class EngineParagraphStyle implements ui.ParagraphStyle {
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
-      final double? fontSize = this.fontSize;
-      final double? height = this.height;
+      final fontSize = this.fontSize;
+      final height = this.height;
       result = 'ParagraphStyle('
           'textAlign: ${textAlign ?? "unspecified"}, '
           'textDirection: ${textDirection ?? "unspecified"}, '
@@ -654,10 +654,10 @@ class EngineTextStyle implements ui.TextStyle {
 
   static final List<String> _testFonts = <String>['FlutterTest', 'Ahem'];
   String get effectiveFontFamily {
-    final String fontFamily = this.fontFamily.isEmpty ? StyleManager.defaultFontFamily : this.fontFamily;
+    final fontFamily = this.fontFamily.isEmpty ? StyleManager.defaultFontFamily : this.fontFamily;
     // In the flutter tester environment, we use predictable-size test fonts.
     // This makes widget tests predictable and less flaky.
-    String result = fontFamily;
+    var result = fontFamily;
     assert(() {
       if (ui_web.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)) {
         result = _testFonts.first;
@@ -726,10 +726,10 @@ class EngineTextStyle implements ui.TextStyle {
 
   @override
   int get hashCode {
-    final List<ui.Shadow>? shadows = this.shadows;
-    final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
-    final List<ui.FontVariation>? fontVariations = this.fontVariations;
-    final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+    final shadows = this.shadows;
+    final fontFeatures = this.fontFeatures;
+    final fontVariations = this.fontVariations;
+    final fontFamilyFallback = this.fontFamilyFallback;
     return Object.hash(
       color,
       decoration,
@@ -760,11 +760,11 @@ class EngineTextStyle implements ui.TextStyle {
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
-      final List<String>? fontFamilyFallback = this.fontFamilyFallback;
-      final double? fontSize = this.fontSize;
-      final double? height = this.height;
+      final fontFamilyFallback = this.fontFamilyFallback;
+      final fontSize = this.fontSize;
+      final height = this.height;
       result = 'TextStyle('
           'color: ${color ?? "unspecified"}, '
           'decoration: ${decoration ?? "unspecified"}, '
@@ -848,7 +848,7 @@ class EngineStrutStyle implements ui.StrutStyle {
 
   @override
   int get hashCode {
-    final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    final fontFamilyFallback = _fontFamilyFallback;
     return Object.hash(
         _fontFamily,
         fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
@@ -945,10 +945,10 @@ void applyTextStyleToElement({
   required DomElement element,
   required EngineTextStyle style,
 }) {
-  bool updateDecoration = false;
-  final DomCSSStyleDeclaration cssStyle = element.style;
+  var updateDecoration = false;
+  final cssStyle = element.style;
 
-  final ui.Color? color = style.foreground?.color ?? style.color;
+  final color = style.foreground?.color ?? style.color;
   if (style.foreground?.style == ui.PaintingStyle.stroke) {
     // When comparing the outputs of the Bitmap Canvas and the DOM
     // implementation, we have found, that we need to set the background color
@@ -958,19 +958,19 @@ void applyTextStyleToElement({
     // of it's parent element.
     cssStyle.color = 'transparent';
     // Use hairline (device pixel when strokeWidth is not specified).
-    final double? strokeWidth = style.foreground?.strokeWidth;
-    final double adaptedWidth = strokeWidth != null && strokeWidth > 0
+    final strokeWidth = style.foreground?.strokeWidth;
+    final adaptedWidth = strokeWidth != null && strokeWidth > 0
         ? strokeWidth
         : 1.0 / ui.window.devicePixelRatio;
     cssStyle.textStroke = '${adaptedWidth}px ${color?.toCssString()}';
   } else if (color != null) {
     cssStyle.color = color.toCssString();
   }
-  final ui.Color? background = style.background?.color;
+  final background = style.background?.color;
   if (background != null) {
     cssStyle.backgroundColor = background.toCssString();
   }
-  final double? fontSize = style.fontSize;
+  final fontSize = style.fontSize;
   if (fontSize != null) {
     cssStyle.fontSize = '${fontSize.floor()}px';
   }
@@ -996,14 +996,14 @@ void applyTextStyleToElement({
   if (style.decoration != null) {
     updateDecoration = true;
   }
-  final List<ui.Shadow>? shadows = style.shadows;
+  final shadows = style.shadows;
   if (shadows != null) {
     cssStyle.textShadow = _shadowListToCss(shadows);
   }
 
   if (updateDecoration) {
     if (style.decoration != null) {
-      final String? textDecoration =
+      final textDecoration =
           _textDecorationToCssString(style.decoration, style.decorationStyle);
       if (textDecoration != null) {
         if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
@@ -1011,7 +1011,7 @@ void applyTextStyleToElement({
         } else {
           cssStyle.textDecoration = textDecoration;
         }
-        final ui.Color? decorationColor = style.decorationColor;
+        final decorationColor = style.decorationColor;
         if (decorationColor != null) {
           cssStyle.textDecorationColor = decorationColor.toCssString();
         }
@@ -1019,12 +1019,12 @@ void applyTextStyleToElement({
     }
   }
 
-  final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
+  final fontFeatures = style.fontFeatures;
   if (fontFeatures != null && fontFeatures.isNotEmpty) {
     cssStyle.fontFeatureSettings = _fontFeatureListToCss(fontFeatures);
   }
 
-  final List<ui.FontVariation>? fontVariations = style.fontVariations;
+  final fontVariations = style.fontVariations;
   if (fontVariations != null && fontVariations.isNotEmpty) {
     cssStyle.setProperty(
         'font-variation-settings', _fontVariationListToCss(fontVariations));
@@ -1040,13 +1040,13 @@ String _shadowListToCss(List<ui.Shadow> shadows) {
   // Shadows are applied front-to-back with first shadow on top.
   // Color is optional. offsetx,y are required. blur-radius is optional as well
   // and defaults to 0.
-  final StringBuffer sb = StringBuffer();
-  final int len = shadows.length;
-  for (int i = 0; i < len; i++) {
+  final sb = StringBuffer();
+  final len = shadows.length;
+  for (var i = 0; i < len; i++) {
     if (i != 0) {
       sb.write(',');
     }
-    final ui.Shadow shadow = shadows[i];
+    final shadow = shadows[i];
     sb.write('${shadow.offset.dx}px ${shadow.offset.dy}px '
         '${shadow.blurRadius}px ${shadow.color.toCssString()}');
   }
@@ -1058,13 +1058,13 @@ String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
 
   // For more details, see:
   // * https://developer.mozilla.org/en-US/docs/Web/CSS/font-feature-settings
-  final StringBuffer sb = StringBuffer();
-  final int len = fontFeatures.length;
-  for (int i = 0; i < len; i++) {
+  final sb = StringBuffer();
+  final len = fontFeatures.length;
+  for (var i = 0; i < len; i++) {
     if (i != 0) {
       sb.write(',');
     }
-    final ui.FontFeature fontFeature = fontFeatures[i];
+    final fontFeature = fontFeatures[i];
     sb.write('"${fontFeature.feature}" ${fontFeature.value}');
   }
   return sb.toString();
@@ -1073,13 +1073,13 @@ String _fontFeatureListToCss(List<ui.FontFeature> fontFeatures) {
 String _fontVariationListToCss(List<ui.FontVariation> fontVariations) {
   assert(fontVariations.isNotEmpty);
 
-  final StringBuffer sb = StringBuffer();
-  final int len = fontVariations.length;
-  for (int i = 0; i < len; i++) {
+  final sb = StringBuffer();
+  final len = fontVariations.length;
+  for (var i = 0; i < len; i++) {
     if (i != 0) {
       sb.write(',');
     }
-    final ui.FontVariation fontVariation = fontVariations[i];
+    final fontVariation = fontVariations[i];
     sb.write('"${fontVariation.axis}" ${fontVariation.value}');
   }
   return sb.toString();
@@ -1088,7 +1088,7 @@ String _fontVariationListToCss(List<ui.FontVariation> fontVariations) {
 /// Converts text decoration style to CSS text-decoration-style value.
 String? _textDecorationToCssString(
     ui.TextDecoration? decoration, ui.TextDecorationStyle? decorationStyle) {
-  final StringBuffer decorations = StringBuffer();
+  final decorations = StringBuffer();
   if (decoration != null) {
     if (decoration.contains(ui.TextDecoration.underline)) {
       decorations.write('underline ');

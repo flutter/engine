@@ -24,7 +24,7 @@ void main() {
 Future<void> testMain() async {
   group('$LayoutFragmenter', () {
     test('empty paragraph', () {
-      final CanvasParagraph paragraph1 = rich(
+      final paragraph1 = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {},
       );
@@ -32,7 +32,7 @@ Future<void> testMain() async {
         _Fragment('', endOfText, null, ffPrevious, defaultStyle),
       ]);
 
-      final CanvasParagraph paragraph2 = rich(
+      final paragraph2 = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.addText('');
@@ -42,7 +42,7 @@ Future<void> testMain() async {
         _Fragment('', endOfText, null, ffPrevious, defaultStyle),
       ]);
 
-      final CanvasParagraph paragraph3 = rich(
+      final paragraph3 = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(style1);
@@ -55,7 +55,7 @@ Future<void> testMain() async {
     });
 
     test('single span', () {
-      final CanvasParagraph paragraph =
+      final paragraph =
           plain(EngineParagraphStyle(), 'Lorem 12 $rtlWord1   ipsum34');
       expect(split(paragraph), <_Fragment>[
         _Fragment('Lorem', prohibited, ltr, ffLtr, defaultStyle),
@@ -69,7 +69,7 @@ Future<void> testMain() async {
     });
 
     test('multi span', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(style1);
@@ -100,7 +100,7 @@ Future<void> testMain() async {
     });
 
     test('new lines', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(style1);
@@ -139,7 +139,7 @@ Future<void> testMain() async {
     });
 
     test('last line is empty', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(style1);
@@ -163,7 +163,7 @@ Future<void> testMain() async {
     });
 
     test('space-only spans', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.addText('Lorem ');
@@ -187,7 +187,7 @@ Future<void> testMain() async {
     });
 
     test('placeholders', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.pushStyle(style1);

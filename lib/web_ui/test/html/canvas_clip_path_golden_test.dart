@@ -25,13 +25,13 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/48683
   // Should clip image with oval.
   test('Clips image with oval clip path', () async {
-    final engine.RecordingCanvas rc =
+    final rc =
         engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
-    final Path path = Path();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
+    final path = Path();
     path.addOval(Rect.fromLTWH(100, 30, testWidth, testHeight));
     rc.clipPath(path);
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
@@ -42,15 +42,15 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
   test('Clips triangle with oval clip path', () async {
-    final engine.RecordingCanvas rc =
+    final rc =
         engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const double testWidth = 200;
-    const double testHeight = 150;
-    final Path path = Path();
+    const testWidth = 200;
+    const testHeight = 150;
+    final path = Path();
     path.addOval(const Rect.fromLTWH(100, 30, testWidth, testHeight));
     rc.clipPath(path);
-    final Path paintPath = Path();
+    final paintPath = Path();
     paintPath.moveTo(testWidth / 2, 0);
     paintPath.lineTo(testWidth, testHeight);
     paintPath.lineTo(0, testHeight);
@@ -66,13 +66,13 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/78782
   test('Clips on Safari when clip bounds off screen', () async {
-    final engine.RecordingCanvas rc =
+    final rc =
     engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const double testWidth = 200;
-    const double testHeight = 150;
+    const testWidth = 200;
+    const testHeight = 150;
 
-    final Path paintPath = Path();
+    final paintPath = Path();
     paintPath.addRect(const Rect.fromLTWH(-50, 0, testWidth, testHeight));
     paintPath.close();
     rc.drawPath(paintPath,
@@ -80,7 +80,7 @@ Future<void> testMain() async {
           ..color = const Color(0xFF000000)
           ..style = PaintingStyle.stroke);
 
-    final Path path = Path();
+    final path = Path();
     path.moveTo(-200, 0);
     path.lineTo(100, 75);
     path.lineTo(-200, 150);
@@ -95,13 +95,13 @@ Future<void> testMain() async {
 
   // Tests oval clipping using border radius 50%.
   test('Clips against oval', () async {
-    final engine.RecordingCanvas rc =
+    final rc =
     engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const double testWidth = 200;
-    const double testHeight = 150;
+    const testWidth = 200;
+    const testHeight = 150;
 
-    final Path paintPath = Path();
+    final paintPath = Path();
     paintPath.addRect(const Rect.fromLTWH(-50, 0, testWidth, testHeight));
     paintPath.close();
     rc.drawPath(paintPath,
@@ -109,7 +109,7 @@ Future<void> testMain() async {
           ..color = const Color(0xFF000000)
           ..style = PaintingStyle.stroke);
 
-    final Path path = Path();
+    final path = Path();
     path.addOval(const Rect.fromLTRB(-200, 0, 100, 150));
     rc.clipPath(path);
     rc.drawImageRect(createTestImage(), const Rect.fromLTRB(0, 0, testWidth, testHeight),
@@ -120,10 +120,10 @@ Future<void> testMain() async {
   });
 
   test('Clips with fillType evenOdd', () async {
-    final engine.RecordingCanvas rc = engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
+    final rc = engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const double testWidth = 400;
-    const double testHeight = 350;
+    const testWidth = 400;
+    const testHeight = 350;
 
     // draw RGB test image
     rc.drawImageRect(createTestImage(), const Rect.fromLTRB(0, 0, testWidth, testHeight),
@@ -132,12 +132,12 @@ Future<void> testMain() async {
     // draw a clipping path with:
     // 1) an outside larger rectangle
     // 2) a smaller inner rectangle specified by a path
-    final Path path = Path();
+    final path = Path();
     path.addRect(const Rect.fromLTWH(0, 0, testWidth, testHeight));
-    const double left = 25;
-    const double top = 30;
-    const double right = 300;
-    const double bottom = 250;
+    const left = 25;
+    const top = 30;
+    const right = 300;
+    const bottom = 250;
     path
       ..moveTo(left, top)
       ..lineTo(right,top)
@@ -148,7 +148,7 @@ Future<void> testMain() async {
     rc.clipPath(path);
 
     // draw an orange paint path of size testWidth and testHeight
-    final Path paintPath = Path();
+    final paintPath = Path();
     paintPath.addRect(const Rect.fromLTWH(0, 0, testWidth, testHeight));
     paintPath.close();
     rc.drawPath(paintPath,
@@ -165,9 +165,9 @@ Future<void> testMain() async {
 }
 
 engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
-  final engine.DomCanvasElement canvas =
+  final canvas =
       engine.createDomCanvasElement(width: width, height: height);
-  final engine.DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
   ctx.fill();
@@ -177,7 +177,7 @@ engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
-  final engine.DomHTMLImageElement imageElement = engine.createDomHTMLImageElement();
+  final imageElement = engine.createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return engine.HtmlImage(imageElement, width, height);
 }

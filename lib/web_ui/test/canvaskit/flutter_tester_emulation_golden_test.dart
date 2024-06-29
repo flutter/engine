@@ -24,8 +24,8 @@ void testMain() {
 
     test('defaults to FlutterTest font family',
         () async {
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(kDefaultRegion);
       canvas.translate(10, 10);
 
       void drawTextWithOutline(String text, {
@@ -48,12 +48,12 @@ void testMain() {
           strutStyle = null;
         }
 
-        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle(
+        final builder = CkParagraphBuilder(CkParagraphStyle(
           fontFamily: paragraphFontFamily,
           strutStyle: strutStyle,
         ));
 
-        final bool needsTextStyle = textFontFamily != null || textFontFallbacks != null;
+        final needsTextStyle = textFontFamily != null || textFontFallbacks != null;
 
         if (needsTextStyle) {
           builder.pushStyle(CkTextStyle(
@@ -68,7 +68,7 @@ void testMain() {
           builder.pop();
         }
 
-        final CkParagraph paragraph = builder.build();
+        final paragraph = builder.build();
         paragraph.layout(const ui.ParagraphConstraints(width: 10000));
         canvas.drawParagraph(paragraph, ui.Offset.zero);
         canvas.drawRect(

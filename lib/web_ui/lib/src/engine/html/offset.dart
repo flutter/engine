@@ -40,7 +40,7 @@ class PersistedOffset extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = domDocument.createElement('flt-offset');
+    final element = domDocument.createElement('flt-offset');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
     return element;

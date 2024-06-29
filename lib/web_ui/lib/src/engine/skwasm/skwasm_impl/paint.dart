@@ -103,9 +103,9 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
 
   @override
   set shader(ui.Shader? uiShader) {
-    final SkwasmShader? skwasmShader = uiShader as SkwasmShader?;
+    final skwasmShader = uiShader as SkwasmShader?;
     _shader = skwasmShader;
-    final ShaderHandle shaderHandle =
+    final shaderHandle =
       skwasmShader != null ? skwasmShader.handle : nullptr;
     paintSetShader(handle, shaderHandle);
   }
@@ -120,7 +120,7 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
   set imageFilter(ui.ImageFilter? filter) {
     _imageFilter = filter;
 
-    final SkwasmImageFilter? nativeImageFilter = filter != null
+    final nativeImageFilter = filter != null
       ? SkwasmImageFilter.fromUiFilter(filter)
       : null;
     paintSetImageFilter(handle, nativeImageFilter != null ? nativeImageFilter.handle : nullptr);
@@ -130,11 +130,11 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
   ui.ColorFilter? get colorFilter => _colorFilter;
 
   void _setEffectiveColorFilter() {
-    final SkwasmColorFilter? nativeFilter = _colorFilter != null
+    final nativeFilter = _colorFilter != null
       ? SkwasmColorFilter.fromEngineColorFilter(_colorFilter!) : null;
     if (_invertColors) {
       if (nativeFilter != null) {
-        final SkwasmColorFilter composedFilter = SkwasmColorFilter.composed(_invertColorFilter, nativeFilter);
+        final composedFilter = SkwasmColorFilter.composed(_invertColorFilter, nativeFilter);
         nativeFilter.dispose();
         paintSetColorFilter(handle, composedFilter.handle);
         composedFilter.dispose();
@@ -164,7 +164,7 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
     if (filter == null) {
       paintSetMaskFilter(handle, nullptr);
     } else {
-      final SkwasmMaskFilter nativeFilter = SkwasmMaskFilter.fromUiMaskFilter(filter);
+      final nativeFilter = SkwasmMaskFilter.fromUiMaskFilter(filter);
       paintSetMaskFilter(handle, nativeFilter.handle);
       nativeFilter.dispose();
     }
@@ -184,11 +184,11 @@ class SkwasmPaint extends SkwasmObjectWrapper<RawPaint> implements ui.Paint {
 
   @override
   String toString() {
-    String resultString = 'Paint()';
+    var resultString = 'Paint()';
 
     assert(() {
-      final StringBuffer result = StringBuffer();
-      String semicolon = '';
+      final result = StringBuffer();
+      var semicolon = '';
       result.write('Paint(');
       if (style == ui.PaintingStyle.stroke) {
         result.write('$style');

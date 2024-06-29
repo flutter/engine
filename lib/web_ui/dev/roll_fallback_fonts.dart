@@ -61,51 +61,51 @@ class RollFallbackFontsCommand extends Command<bool>
     if (apiKey.isEmpty) {
       throw UsageException('No Google Fonts API key provided', argParser.usage);
     }
-    final http.Client client = http.Client();
-    final http.Response response = await client.get(Uri.parse(
+    final client = http.Client();
+    final response = await client.get(Uri.parse(
         'https://www.googleapis.com/webfonts/v1/webfonts?key=$apiKey'));
     if (response.statusCode != 200) {
       throw ToolExit('Failed to download Google Fonts list.');
     }
-    final Map<String, dynamic> googleFontsResult =
+    final googleFontsResult =
         jsonDecode(response.body) as Map<String, dynamic>;
-    final List<Map<String, dynamic>> fontDatas =
+    final fontDatas =
         (googleFontsResult['items'] as List<dynamic>)
             .cast<Map<String, dynamic>>();
-    final Map<String, Uri> urlForFamily = <String, Uri>{};
+    final urlForFamily = <String, Uri>{};
     for (final Map<String, Object?> fontData in fontDatas) {
       if (fallbackFonts.contains(fontData['family'])) {
         final files = fontData['files']! as Map<String, Object?>;
-        final Uri uri = Uri.parse(files['regular']! as String)
+        final uri = Uri.parse(files['regular']! as String)
             .replace(scheme: 'https');
         urlForFamily[fontData['family']! as String] = uri;
       }
     }
-    final Map<String, String> charsetForFamily = <String, String>{};
-    final io.Directory fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
+    final charsetForFamily = <String, String>{};
+    final fontDir = await io.Directory.systemTemp.createTemp('flutter_fallback_fonts');
     print('Downloading fonts into temp directory: ${fontDir.path}');
-    final AccumulatorSink<crypto.Digest> hashSink = AccumulatorSink<crypto.Digest>();
-    final ByteConversionSink hasher = crypto.sha256.startChunkedConversion(hashSink);
-    for (final String family in fallbackFonts) {
+    final hashSink = AccumulatorSink<crypto.Digest>();
+    final hasher = crypto.sha256.startChunkedConversion(hashSink);
+    for (final family in fallbackFonts) {
       print('Downloading $family...');
-      final Uri? uri = urlForFamily[family];
+      final uri = urlForFamily[family];
       if (uri == null) {
         throw ToolExit('Unable to determine URL to download $family. '
             'Check if it is still hosted on Google Fonts.');
       }
-      final http.Response fontResponse = await client.get(uri);
+      final fontResponse = await client.get(uri);
       if (fontResponse.statusCode != 200) {
         throw ToolExit('Failed to download font for $family');
       }
-      final String urlString = uri.toString();
+      final urlString = uri.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit('Unexpected url format received from Google Fonts API: $urlString.');
       }
-      final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
-      final io.File fontFile =
+      final urlSuffix = urlString.substring(expectedUrlPrefix.length);
+      final fontFile =
           io.File(path.join(fontDir.path, urlSuffix));
 
-      final Uint8List bodyBytes = fontResponse.bodyBytes;
+      final bodyBytes = fontResponse.bodyBytes;
       if (!_checkForLicenseAttribution(bodyBytes)) {
         throw ToolExit(
             'Expected license attribution not found in file: $urlString');
@@ -115,32 +115,32 @@ class RollFallbackFontsCommand extends Command<bool>
 
       await fontFile.create(recursive: true);
       await fontFile.writeAsBytes(bodyBytes, flush: true);
-      final io.ProcessResult fcQueryResult =
+      final fcQueryResult =
           await io.Process.run('fc-query', <String>[
         '--format=%{charset}',
         '--',
         fontFile.path,
       ]);
-      final String encodedCharset = fcQueryResult.stdout as String;
+      final encodedCharset = fcQueryResult.stdout as String;
       charsetForFamily[family] = encodedCharset;
     }
 
-    final StringBuffer sb = StringBuffer();
+    final sb = StringBuffer();
 
-    final List<_Font> fonts = <_Font>[];
+    final fonts = <_Font>[];
 
-    for (final String family in fallbackFonts) {
-      final List<int> starts = <int>[];
-      final List<int> ends = <int>[];
-      final String charset = charsetForFamily[family]!;
-      for (final String range in charset.split(' ')) {
+    for (final family in fallbackFonts) {
+      final starts = <int>[];
+      final ends = <int>[];
+      final charset = charsetForFamily[family]!;
+      for (final range in charset.split(' ')) {
         // Range is one hexadecimal number or two, separated by `-`.
-        final List<String> parts = range.split('-');
+        final parts = range.split('-');
         if (parts.length != 1 && parts.length != 2) {
           throw ToolExit('Malformed charset range "$range"');
         }
-        final int first = int.parse(parts.first, radix: 16);
-        final int last = int.parse(parts.last, radix: 16);
+        final first = int.parse(parts.first, radix: 16);
+        final last = int.parse(parts.last, radix: 16);
         starts.add(first);
         ends.add(last);
       }
@@ -148,7 +148,7 @@ class RollFallbackFontsCommand extends Command<bool>
       fonts.add(_Font(family, fonts.length, starts, ends));
     }
 
-    final String fontSetsCode = _computeEncodedFontSets(fonts);
+    final fontSetsCode = _computeEncodedFontSets(fonts);
 
     sb.writeln('// Copyright 2013 The Flutter Authors. All rights reserved.');
     sb.writeln('// Use of this source code is governed by a BSD-style license '
@@ -161,28 +161,28 @@ class RollFallbackFontsCommand extends Command<bool>
     sb.writeln();
     sb.writeln('List<NotoFont> getFallbackFontList(bool useColorEmoji) => <NotoFont>[');
 
-    for (final _Font font in fonts) {
-      final String family = font.family;
-      String enabledArgument = '';
+    for (final font in fonts) {
+      final family = font.family;
+      var enabledArgument = '';
       if (family == 'Noto Emoji') {
         enabledArgument = 'enabled: !useColorEmoji, ';
       }
       if (family == 'Noto Color Emoji') {
         enabledArgument = 'enabled: useColorEmoji, ';
       }
-      final String urlString = urlForFamily[family]!.toString();
+      final urlString = urlForFamily[family]!.toString();
       if (!urlString.startsWith(expectedUrlPrefix)) {
         throw ToolExit(
             'Unexpected url format received from Google Fonts API: $urlString.');
       }
-      final String urlSuffix = urlString.substring(expectedUrlPrefix.length);
+      final urlSuffix = urlString.substring(expectedUrlPrefix.length);
       sb.writeln(" NotoFont('$family', $enabledArgument'$urlSuffix'),");
     }
     sb.writeln('];');
     sb.writeln();
     sb.write(fontSetsCode);
 
-    final io.File fontDataFile = io.File(path.join(
+    final fontDataFile = io.File(path.join(
       environment.webUiRootDir.path,
       'lib',
       'src',
@@ -191,11 +191,11 @@ class RollFallbackFontsCommand extends Command<bool>
     ));
     await fontDataFile.writeAsString(sb.toString());
 
-    final io.File licenseFile = io.File(path.join(
+    final licenseFile = io.File(path.join(
       fontDir.path,
       'LICENSE.txt',
     ));
-    const String licenseString = r'''
+    const licenseString = r'''
 © Copyright 2015-2021 Google LLC. All Rights Reserved.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
@@ -296,9 +296,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     hasher.add(licenseData);
     hasher.close();
 
-    final crypto.Digest digest = hashSink.events.single;
-    final String versionString = digest.toString();
-    const String packageName = 'flutter/flutter_font_fallbacks';
+    final digest = hashSink.events.single;
+    final versionString = digest.toString();
+    const packageName = 'flutter/flutter_font_fallbacks';
     if (await cipdKnowsPackageVersion(
       package: packageName,
       versionTag: versionString)) {
@@ -317,7 +317,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
     }
 
     print('Setting new fallback fonts deps version to $versionString');
-    final String depFilePath = path.join(
+    final depFilePath = path.join(
       environment.engineSrcDir.path,
       'flutter',
       'DEPS',
@@ -479,13 +479,13 @@ const List<String> fallbackFonts = <String>[
 ];
 
 bool _checkForLicenseAttribution(Uint8List fontBytes) {
-  final ByteData fontData = fontBytes.buffer.asByteData();
-  final int codePointCount = fontData.lengthInBytes ~/ 2;
-  const String attributionString =
+  final fontData = fontBytes.buffer.asByteData();
+  final codePointCount = fontData.lengthInBytes ~/ 2;
+  const attributionString =
       'This Font Software is licensed under the SIL Open Font License, Version 1.1.';
-  for (int i = 0; i < codePointCount - attributionString.length; i++) {
-    bool match = true;
-    for (int j = 0; j < attributionString.length; j++) {
+  for (var i = 0; i < codePointCount - attributionString.length; i++) {
+    var match = true;
+    for (var j = 0; j < attributionString.length; j++) {
       if (fontData.getUint16((i + j) * 2) != attributionString.codeUnitAt(j)) {
         match = false;
         break;
@@ -561,7 +561,7 @@ class _FontSet {
   late final int index;
 
   static int orderByDecreasingRangeCount(_FontSet a, _FontSet b) {
-    final int r = b.rangeCount.compareTo(a.rangeCount);
+    final r = b.rangeCount.compareTo(a.rangeCount);
     if (r != 0) {
       return r;
     }
@@ -569,8 +569,8 @@ class _FontSet {
   }
 
   static int orderByLexicographicFontIndexes(_FontSet a, _FontSet b) {
-    for (int i = 0; i < a.length && i < b.length; i++) {
-      final int r = _Font.compare(a.fonts[i], b.fonts[i]);
+    for (var i = 0; i < a.length && i < b.length; i++) {
+      final r = _Font.compare(a.fonts[i], b.fonts[i]);
       if (r != 0) {
         return r;
       }
@@ -603,8 +603,8 @@ class _TrieNode {
   /// trie and return the same node, canonicalizing the sequence to its
   /// representative node.
   _TrieNode insertSequenceAtRoot(Iterable<_Font> fonts) {
-    _TrieNode node = this;
-    for (final _Font font in fonts) {
+    var node = this;
+    for (final font in fonts) {
       node = node._children[font] ??= _TrieNode();
     }
     return node;
@@ -692,8 +692,8 @@ class _TrieNode {
 /// [1]: https://en.wikipedia.org/wiki/Variable-length_quantity
 
 String _computeEncodedFontSets(List<_Font> fonts) {
-  final List<_Range> ranges = <_Range>[];
-  final List<_FontSet> allSets = <_FontSet>[];
+  final ranges = <_Range>[];
+  final allSets = <_FontSet>[];
 
   {
     // The fonts have their supported code points provided as list of inclusive
@@ -708,38 +708,38 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     // the current set of fonts is canonicalized and recorded.
     //
     // There has to be a wiki article for this algorithm but I didn't find one.
-    final List<_Boundary> boundaries = <_Boundary>[];
-    for (final _Font font in fonts) {
-      for (final int start in font.starts) {
+    final boundaries = <_Boundary>[];
+    for (final font in fonts) {
+      for (final start in font.starts) {
         boundaries.add(_Boundary(start, true, font));
       }
-      for (final int end in font.ends) {
+      for (final end in font.ends) {
         boundaries.add(_Boundary(end + 1, false, font));
       }
     }
     boundaries.sort(_Boundary.compare);
 
     // The trie root represents the empty set of fonts.
-    final _TrieNode trieRoot = _TrieNode();
-    final Set<_Font> currentElements = <_Font>{};
+    final trieRoot = _TrieNode();
+    final currentElements = <_Font>{};
 
     void newRange(int start, int end) {
       // Ensure we are using the canonical font order.
-      final List<_Font> fonts = List<_Font>.of(currentElements)
+      final fonts = List<_Font>.of(currentElements)
         ..sort(_Font.compare);
-      final _TrieNode node = trieRoot.insertSequenceAtRoot(fonts);
-      final _FontSet fontSet = node.fontSet ??= _FontSet(fonts);
+      final node = trieRoot.insertSequenceAtRoot(fonts);
+      final fontSet = node.fontSet ??= _FontSet(fonts);
       if (fontSet.rangeCount == 0) {
         allSets.add(fontSet);
       }
       fontSet.rangeCount++;
-      final _Range range = _Range(start, end, fontSet);
+      final range = _Range(start, end, fontSet);
       ranges.add(range);
     }
 
-    int start = 0;
-    for (final _Boundary boundary in boundaries) {
-      final int value = boundary.value;
+    var start = 0;
+    for (final boundary in boundaries) {
+      final value = boundary.value;
       if (value > start) {
         // Boundary has changed, record the pending range `[start, value - 1]`,
         // and start a new range at `value`. `value` must be > 0 to get here.
@@ -766,17 +766,17 @@ String _computeEncodedFontSets(List<_Font> fonts) {
   // makes the range table encoding smaller, by about half.
   allSets.sort(_FontSet.orderByDecreasingRangeCount);
 
-  for (int i = 0; i < allSets.length; i++) {
+  for (var i = 0; i < allSets.length; i++) {
     allSets[i].index = i;
   }
 
-  final StringBuffer code = StringBuffer();
+  final code = StringBuffer();
 
-  final StringBuffer sb = StringBuffer();
-  int totalEncodedLength = 0;
+  final sb = StringBuffer();
+  var totalEncodedLength = 0;
 
   void encode(int value, int radix, int firstDigitCode) {
-    final int prefix = value ~/ radix;
+    final prefix = value ~/ radix;
     assert(kPrefixDigit0 == '0'.codeUnitAt(0) && kPrefixRadix == 10);
     if (prefix != 0) {
       sb.write(prefix);
@@ -784,21 +784,21 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     sb.writeCharCode(firstDigitCode + value.remainder(radix));
   }
 
-  for (final _FontSet fontSet in allSets) {
-    int previousFontIndex = -1;
-    for (final _Font font in fontSet.fonts) {
-      final int fontIndexDelta = font.index - previousFontIndex;
+  for (final fontSet in allSets) {
+    var previousFontIndex = -1;
+    for (final font in fontSet.fonts) {
+      final fontIndexDelta = font.index - previousFontIndex;
       previousFontIndex = font.index;
       encode(fontIndexDelta - 1, kFontIndexRadix, kFontIndexDigit0);
     }
     if (fontSet != allSets.last) {
       sb.write(',');
     }
-    final String fragment = sb.toString();
+    final fragment = sb.toString();
     sb.clear();
     totalEncodedLength += fragment.length;
 
-    final int length = fontSet.fonts.length;
+    final length = fontSet.fonts.length;
     code.write('    // #${fontSet.index}: $length font');
     if (length != 1) {
       code.write('s');
@@ -811,9 +811,9 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     code.writeln("    '$fragment'");
   }
 
-  final StringBuffer declarations = StringBuffer();
+  final declarations = StringBuffer();
 
-  final int references =
+  final references =
       allSets.fold(0, (int sum, _FontSet set) => sum + set.length);
   declarations
     ..writeln('// ${allSets.length} unique sets of fonts'
@@ -827,11 +827,11 @@ String _computeEncodedFontSets(List<_Font> fonts) {
   code.clear();
   totalEncodedLength = 0;
 
-  for (final _Range range in ranges) {
-    final int start = range.start;
-    final int end = range.end;
-    final int index = range.fontSet.index;
-    final int size = end - start + 1;
+  for (final range in ranges) {
+    final start = range.start;
+    final end = range.end;
+    final index = range.fontSet.index;
+    final size = end - start + 1;
 
     // Encode <size><index> or <index> for unit ranges.
     if (size >= 2) {
@@ -839,18 +839,18 @@ String _computeEncodedFontSets(List<_Font> fonts) {
     }
     encode(index, kRangeValueRadix, kRangeValueDigit0);
 
-    final String encoding = sb.toString();
+    final encoding = sb.toString();
     sb.clear();
     totalEncodedLength += encoding.length;
 
-    String description = start.toRadixString(16);
+    var description = start.toRadixString(16);
     if (end != start) {
       description = '$description-${end.toRadixString(16)}';
     }
     if (range.fontSet.fonts.isNotEmpty) {
       description = '${description.padRight(12)} #$index';
     }
-    final String encodingText = "'$encoding'".padRight(10);
+    final encodingText = "'$encoding'".padRight(10);
     code.writeln('    $encodingText // $description');
   }
 

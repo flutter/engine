@@ -92,7 +92,7 @@ class HtmlViewEmbedder {
   }
 
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    final pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & _frameSize.toSize());
     _context.pictureRecordersCreatedDuringPreroll.add(pictureRecorder);
 
@@ -117,7 +117,7 @@ class HtmlViewEmbedder {
     // Ensure platform view with `viewId` is injected into the `rasterizer.view`.
     rasterizer.view.dom.injectPlatformView(viewId);
 
-    final int overlayIndex = _context.viewCount;
+    final overlayIndex = _context.viewCount;
     _compositionOrder.add(viewId);
     _context.viewCount++;
 
@@ -137,12 +137,12 @@ class HtmlViewEmbedder {
 
   void _compositeWithParams(int platformViewId, EmbeddedViewParams params) {
     // If we haven't seen this viewId yet, cache it for clips/transforms.
-    final ViewClipChain clipChain =
+    final clipChain =
         _viewClipChains.putIfAbsent(platformViewId, () {
       return ViewClipChain(view: createPlatformViewSlot(platformViewId));
     });
 
-    final DomElement slot = clipChain.slot;
+    final slot = clipChain.slot;
 
     // See `apply()` in the PersistedPlatformView class for the HTML version
     // of this code.
@@ -152,11 +152,11 @@ class HtmlViewEmbedder {
       ..position = 'absolute';
 
     // Recompute the position in the DOM of the `slot` element...
-    final int currentClippingCount = _countClips(params.mutators);
-    final int previousClippingCount = clipChain.clipCount;
+    final currentClippingCount = _countClips(params.mutators);
+    final previousClippingCount = clipChain.clipCount;
     if (currentClippingCount != previousClippingCount) {
-      final DomElement oldPlatformViewRoot = clipChain.root;
-      final DomElement newPlatformViewRoot = _reconstructClipViewsChain(
+      final oldPlatformViewRoot = clipChain.root;
+      final newPlatformViewRoot = _reconstructClipViewsChain(
         currentClippingCount,
         slot,
         oldPlatformViewRoot,
@@ -173,8 +173,8 @@ class HtmlViewEmbedder {
   }
 
   int _countClips(MutatorsStack mutators) {
-    int clipCount = 0;
-    for (final Mutator mutator in mutators) {
+    var clipCount = 0;
+    for (final mutator in mutators) {
       if (mutator.isClipType) {
         clipCount++;
       }
@@ -188,14 +188,14 @@ class HtmlViewEmbedder {
     DomElement headClipView,
   ) {
     DomNode? headClipViewNextSibling;
-    bool headClipViewWasAttached = false;
+    var headClipViewWasAttached = false;
     if (headClipView.parentNode != null) {
       headClipViewWasAttached = true;
       headClipViewNextSibling = headClipView.nextSibling;
       headClipView.remove();
     }
-    DomElement head = platformView;
-    int clipIndex = 0;
+    var head = platformView;
+    var clipIndex = 0;
     // Re-use as much existing clip views as needed.
     while (head != headClipView && clipIndex < numClips) {
       head = head.parent!;
@@ -203,7 +203,7 @@ class HtmlViewEmbedder {
     }
     // If there weren't enough existing clip views, add more.
     while (clipIndex < numClips) {
-      final DomElement clippingView = createDomElement('flt-clip');
+      final clippingView = createDomElement('flt-clip');
       clippingView.append(head);
       head = clippingView;
       clipIndex++;
@@ -221,15 +221,15 @@ class HtmlViewEmbedder {
   /// be recomposited.
   void _cleanUpClipDefs(int viewId) {
     if (_svgClipDefs.containsKey(viewId)) {
-      final DomElement clipDefs = _svgPathDefs!.querySelector('#sk_path_defs')!;
-      final List<DomElement> nodesToRemove = <DomElement>[];
-      final Set<String> oldDefs = _svgClipDefs[viewId]!;
-      for (final DomElement child in clipDefs.children) {
+      final clipDefs = _svgPathDefs!.querySelector('#sk_path_defs')!;
+      final nodesToRemove = <DomElement>[];
+      final oldDefs = _svgClipDefs[viewId]!;
+      for (final child in clipDefs.children) {
         if (oldDefs.contains(child.id)) {
           nodesToRemove.add(child);
         }
       }
-      for (final DomElement node in nodesToRemove) {
+      for (final node in nodesToRemove) {
         node.remove();
       }
       _svgClipDefs[viewId]!.clear();
@@ -238,16 +238,16 @@ class HtmlViewEmbedder {
 
   void _applyMutators(
       EmbeddedViewParams params, DomElement embeddedView, int viewId) {
-    final MutatorsStack mutators = params.mutators;
-    DomElement head = embeddedView;
-    Matrix4 headTransform = params.offset == ui.Offset.zero
+    final mutators = params.mutators;
+    var head = embeddedView;
+    var headTransform = params.offset == ui.Offset.zero
         ? Matrix4.identity()
         : Matrix4.translationValues(params.offset.dx, params.offset.dy, 0);
-    double embeddedOpacity = 1.0;
+    var embeddedOpacity = 1.0;
     _resetAnchor(head);
     _cleanUpClipDefs(viewId);
 
-    for (final Mutator mutator in mutators) {
+    for (final mutator in mutators) {
       switch (mutator.type) {
         case MutatorType.transform:
           headTransform = mutator.matrix!.multiplied(headTransform);
@@ -256,7 +256,7 @@ class HtmlViewEmbedder {
         case MutatorType.clipRect:
         case MutatorType.clipRRect:
         case MutatorType.clipPath:
-          final DomElement clipView = head.parent!;
+          final clipView = head.parent!;
           clipView.style.clip = '';
           clipView.style.clipPath = '';
           headTransform = Matrix4.identity();
@@ -267,18 +267,18 @@ class HtmlViewEmbedder {
           clipView.style.width = '100%';
           clipView.style.height = '100%';
           if (mutator.rect != null) {
-            final ui.Rect rect = mutator.rect!;
+            final rect = mutator.rect!;
             clipView.style.clip = 'rect(${rect.top}px, ${rect.right}px, '
                 '${rect.bottom}px, ${rect.left}px)';
           } else if (mutator.rrect != null) {
-            final CkPath path = CkPath();
+            final path = CkPath();
             path.addRRect(mutator.rrect!);
             _ensureSvgPathDefs();
-            final DomElement pathDefs =
+            final pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
-            final String clipId = 'svgClip$_clipPathCount';
-            final SVGClipPathElement newClipPath = createSVGClipPathElement();
+            final clipId = 'svgClip$_clipPathCount';
+            final newClipPath = createSVGClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
                 createSVGPathElement()..setAttribute('d', path.toSvgString()!));
@@ -290,13 +290,13 @@ class HtmlViewEmbedder {
             _svgClipDefs.putIfAbsent(viewId, () => <String>{}).add(clipId);
             clipView.style.clipPath = 'url(#$clipId)';
           } else if (mutator.path != null) {
-            final CkPath path = mutator.path! as CkPath;
+            final path = mutator.path! as CkPath;
             _ensureSvgPathDefs();
-            final DomElement pathDefs =
+            final pathDefs =
                 _svgPathDefs!.querySelector('#sk_path_defs')!;
             _clipPathCount += 1;
-            final String clipId = 'svgClip$_clipPathCount';
-            final SVGClipPathElement newClipPath = createSVGClipPathElement();
+            final clipId = 'svgClip$_clipPathCount';
+            final newClipPath = createSVGClipPathElement();
             newClipPath.id = clipId;
             newClipPath.append(
                 createSVGPathElement()..setAttribute('d', path.toSvgString()!));
@@ -320,9 +320,9 @@ class HtmlViewEmbedder {
     //
     // HTML elements use logical (CSS) pixels, but we have been using physical
     // pixels, so scale down the head element to match the logical resolution.
-    final double scale = EngineFlutterDisplay.instance.devicePixelRatio;
-    final double inverseScale = 1 / scale;
-    final Matrix4 scaleMatrix =
+    final scale = EngineFlutterDisplay.instance.devicePixelRatio;
+    final inverseScale = 1 / scale;
+    final scaleMatrix =
         Matrix4.diagonal3Values(inverseScale, inverseScale, 1);
     headTransform = scaleMatrix.multiplied(headTransform);
     head.style.transform = float64ListToCssTransform(headTransform.storage);
@@ -356,17 +356,17 @@ class HtmlViewEmbedder {
   }
 
   Future<void> submitFrame(CkPicture basePicture) async {
-    final List<CkPicture> pictures = <CkPicture>[basePicture];
-    for (final CkPictureRecorder recorder in _context.pictureRecorders) {
+    final pictures = <CkPicture>[basePicture];
+    for (final recorder in _context.pictureRecorders) {
       pictures.add(recorder.endRecording());
     }
-    Rendering rendering = createOptimizedRendering(
+    var rendering = createOptimizedRendering(
         pictures, _compositionOrder, _currentCompositionParams);
     rendering = _modifyRenderingForMaxCanvases(rendering);
     _updateDomForNewRendering(rendering);
     if (rendering.equalsForRendering(_activeRendering)) {
       // Copy the display canvases to the new rendering.
-      for (int i = 0; i < rendering.canvases.length; i++) {
+      for (var i = 0; i < rendering.canvases.length; i++) {
         rendering.canvases[i].displayCanvas =
             _activeRendering.canvases[i].displayCanvas;
         _activeRendering.canvases[i].displayCanvas = null;
@@ -374,13 +374,13 @@ class HtmlViewEmbedder {
     }
     _activeRendering = rendering;
 
-    final List<RenderingRenderCanvas> renderCanvases = rendering.canvases;
-    for (final RenderingRenderCanvas renderCanvas in renderCanvases) {
+    final renderCanvases = rendering.canvases;
+    for (final renderCanvas in renderCanvases) {
       await rasterizer.rasterizeToCanvas(
           renderCanvas.displayCanvas!, renderCanvas.pictures);
     }
 
-    for (final CkPictureRecorder recorder
+    for (final recorder
         in _context.pictureRecordersCreatedDuringPreroll) {
       if (recorder.isRecording) {
         recorder.endRecording();
@@ -391,8 +391,8 @@ class HtmlViewEmbedder {
     // optimization debugging is enabled.
     if (debugOverlayOptimizationBounds) {
       debugBoundsCanvas ??= rasterizer.displayFactory.getCanvas();
-      final CkPictureRecorder boundsRecorder = CkPictureRecorder();
-      final CkCanvas boundsCanvas = boundsRecorder.beginRecording(
+      final boundsRecorder = CkPictureRecorder();
+      final boundsCanvas = boundsRecorder.beginRecording(
           ui.Rect.fromLTWH(
         0,
         0,
@@ -400,18 +400,18 @@ class HtmlViewEmbedder {
         _frameSize.height.toDouble(),
         ),
       );
-      final CkPaint platformViewBoundsPaint = CkPaint()
+      final platformViewBoundsPaint = CkPaint()
         ..color = const ui.Color.fromARGB(100, 0, 255, 0);
-      final CkPaint pictureBoundsPaint = CkPaint()
+      final pictureBoundsPaint = CkPaint()
         ..color = const ui.Color.fromARGB(100, 0, 0, 255);
-      for (final RenderingEntity entity in _activeRendering.entities) {
+      for (final entity in _activeRendering.entities) {
         if (entity is RenderingPlatformView) {
           if (entity.debugComputedBounds != null) {
             boundsCanvas.drawRect(
                 entity.debugComputedBounds!, platformViewBoundsPaint);
           }
         } else if (entity is RenderingRenderCanvas) {
-          for (final CkPicture picture in entity.pictures) {
+          for (final picture in entity.pictures) {
             boundsCanvas.drawRect(picture.cullRect, pictureBoundsPaint);
           }
         }
@@ -428,15 +428,15 @@ class HtmlViewEmbedder {
       return;
     }
 
-    final Set<int> unusedViews = Set<int>.from(_activeCompositionOrder);
+    final unusedViews = Set<int>.from(_activeCompositionOrder);
     _activeCompositionOrder.clear();
 
     List<int>? debugInvalidViewIds;
 
-    for (int i = 0; i < _compositionOrder.length; i++) {
-      final int viewId = _compositionOrder[i];
+    for (var i = 0; i < _compositionOrder.length; i++) {
+      final viewId = _compositionOrder[i];
 
-      bool isViewInvalid = false;
+      var isViewInvalid = false;
       assert(() {
         isViewInvalid = !PlatformViewManager.instance.knowsViewId(viewId);
         if (isViewInvalid) {
@@ -465,7 +465,7 @@ class HtmlViewEmbedder {
   }
 
   void disposeView(int viewId) {
-    final ViewClipChain? clipChain = _viewClipChains.remove(viewId);
+    final clipChain = _viewClipChains.remove(viewId);
     clipChain?.root.remove();
     // More cleanup
     _currentCompositionParams.remove(viewId);
@@ -477,18 +477,18 @@ class HtmlViewEmbedder {
   /// Modify the given rendering by removing canvases until the number of
   /// canvases is less than or equal to the maximum number of canvases.
   Rendering _modifyRenderingForMaxCanvases(Rendering rendering) {
-    final Rendering result = Rendering();
-    final int numCanvases = rendering.canvases.length;
+    final result = Rendering();
+    final numCanvases = rendering.canvases.length;
     if (numCanvases <= maximumCanvases) {
       return rendering;
     }
-    int numCanvasesToDelete = numCanvases - maximumCanvases;
-    final List<CkPicture> picturesForLastCanvas = <CkPicture>[];
-    final List<RenderingEntity> modifiedEntities =
+    var numCanvasesToDelete = numCanvases - maximumCanvases;
+    final picturesForLastCanvas = <CkPicture>[];
+    final modifiedEntities =
         List<RenderingEntity>.from(rendering.entities);
-    bool sawLastCanvas = false;
-    for (int i = rendering.entities.length - 1; i >= 0; i--) {
-      final RenderingEntity entity = modifiedEntities[i];
+    var sawLastCanvas = false;
+    for (var i = rendering.entities.length - 1; i >= 0; i--) {
+      final entity = modifiedEntities[i];
       if (entity is RenderingRenderCanvas) {
         if (!sawLastCanvas) {
           sawLastCanvas = true;
@@ -506,8 +506,8 @@ class HtmlViewEmbedder {
     // Add all the pictures from the deleted canvases to the second-to-last
     // canvas (or the last canvas if there is only one).
     sawLastCanvas = (maximumCanvases == 1);
-    for (int i = modifiedEntities.length - 1; i > 0; i--) {
-      final RenderingEntity entity = modifiedEntities[i];
+    for (var i = modifiedEntities.length - 1; i > 0; i--) {
+      final entity = modifiedEntities[i];
       if (entity is RenderingRenderCanvas) {
         if (sawLastCanvas) {
           entity.pictures.addAll(picturesForLastCanvas);
@@ -526,26 +526,26 @@ class HtmlViewEmbedder {
       // The rendering has not changed, so no DOM manipulation is needed.
       return;
     }
-    final List<int> indexMap =
+    final indexMap =
         _getIndexMapFromPreviousRendering(_activeRendering, rendering);
-    final List<int> existingIndexMap =
+    final existingIndexMap =
         indexMap.where((int index) => index != -1).toList();
 
-    final List<int> staticElements =
+    final staticElements =
         longestIncreasingSubsequence(existingIndexMap);
     // Convert longest increasing subsequence from subsequence of indices of
     // `existingIndexMap` to a subsequence of indices in previous rendering.
-    for (int i = 0; i < staticElements.length; i++) {
+    for (var i = 0; i < staticElements.length; i++) {
       staticElements[i] = existingIndexMap[staticElements[i]];
     }
 
     // Remove elements which are in the active rendering, but not in the new
     // rendering.
-    for (int i = 0; i < _activeRendering.entities.length; i++) {
+    for (var i = 0; i < _activeRendering.entities.length; i++) {
       if (indexMap.contains(i)) {
         continue;
       }
-      final RenderingEntity entity = _activeRendering.entities[i];
+      final entity = _activeRendering.entities[i];
       if (entity is RenderingPlatformView) {
         disposeView(entity.viewId);
       } else if (entity is RenderingRenderCanvas) {
@@ -568,7 +568,7 @@ class HtmlViewEmbedder {
       // had an associated display canvas. Use this display canvas for
       // [nextEntity].
       if (indexMap[index] != -1) {
-        final RenderingEntity previousEntity =
+        final previousEntity =
             _activeRendering.entities[indexMap[index]];
         assert(previousEntity is RenderingRenderCanvas &&
             previousEntity.displayCanvas != null);
@@ -585,17 +585,17 @@ class HtmlViewEmbedder {
     // At this point, the DOM contains the static elements and the elements from
     // the previous rendering which need to move. We iterate over the static
     // elements and insert the elements which come before them into the DOM.
-    int staticElementIndex = 0;
-    int nextRenderingIndex = 0;
+    var staticElementIndex = 0;
+    var nextRenderingIndex = 0;
     while (staticElementIndex < staticElements.length) {
-      final int staticElementIndexInActiveRendering =
+      final staticElementIndexInActiveRendering =
           staticElements[staticElementIndex];
-      final DomElement staticDomElement = _getElement(
+      final staticDomElement = _getElement(
           _activeRendering.entities[staticElementIndexInActiveRendering]);
       // Go through next rendering elements until we reach the static element.
       while (
           indexMap[nextRenderingIndex] != staticElementIndexInActiveRendering) {
-        final RenderingEntity nextEntity =
+        final nextEntity =
             rendering.entities[nextRenderingIndex];
         if (nextEntity is RenderingRenderCanvas) {
           updateRenderCanvasWithDisplay(nextEntity, nextRenderingIndex);
@@ -616,7 +616,7 @@ class HtmlViewEmbedder {
 
     // Add the leftover entities.
     while (nextRenderingIndex < rendering.entities.length) {
-      final RenderingEntity nextEntity = rendering.entities[nextRenderingIndex];
+      final nextEntity = rendering.entities[nextRenderingIndex];
       if (nextEntity is RenderingRenderCanvas) {
         updateRenderCanvasWithDisplay(nextEntity, nextRenderingIndex);
       }
@@ -641,8 +641,8 @@ class HtmlViewEmbedder {
       Rendering previous, Rendering next) {
     assert(!previous.equalsForRendering(next),
         'Should not be in this method if the Renderings are equal');
-    final List<int> result = <int>[];
-    int index = 0;
+    final result = <int>[];
+    var index = 0;
 
     final int maxUnchangedLength =
         math.min(previous.entities.length, next.entities.length);
@@ -650,7 +650,7 @@ class HtmlViewEmbedder {
     // A canvas in the previous rendering can only be used once in the next
     // rendering. So if it is matched with one in the next rendering, mark it
     // here so it is only matched once.
-    final Set<int> alreadyClaimedCanvases = <int>{};
+    final alreadyClaimedCanvases = <int>{};
 
     // Add the unchanged elements from the beginning of the list.
     while (index < maxUnchangedLength &&
@@ -663,8 +663,8 @@ class HtmlViewEmbedder {
     }
 
     while (index < next.entities.length) {
-      bool foundForIndex = false;
-      for (int oldIndex = 0;
+      var foundForIndex = false;
+      for (var oldIndex = 0;
           oldIndex < previous.entities.length;
           oldIndex += 1) {
         if (previous.entities[oldIndex]
@@ -690,9 +690,9 @@ class HtmlViewEmbedder {
 
   /// Deletes SVG clip paths, useful for tests.
   void debugCleanupSvgClipPaths() {
-    final DomElement? parent = _svgPathDefs?.children.single;
+    final parent = _svgPathDefs?.children.single;
     if (parent != null) {
-      for (DomNode? child = parent.lastChild;
+      for (var child = parent.lastChild;
           child != null;
           child = parent.lastChild) {
         parent.removeChild(child);
@@ -828,7 +828,7 @@ class Mutator {
       return false;
     }
 
-    final Mutator typedOther = other;
+    final typedOther = other;
     if (type != typedOther.type) {
       return false;
     }

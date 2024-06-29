@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -20,7 +19,7 @@ void testMain() {
 
   group('$fragmentUsingIntlSegmenter', () {
     test('fragments text into words', () {
-      final Uint32List breaks = fragmentUsingIntlSegmenter(
+      final breaks = fragmentUsingIntlSegmenter(
         'Hello world 你好世界',
         IntlSegmenterGranularity.word,
       );
@@ -31,7 +30,7 @@ void testMain() {
     });
 
     test('fragments multi-line text into words', () {
-      final Uint32List breaks = fragmentUsingIntlSegmenter(
+      final breaks = fragmentUsingIntlSegmenter(
         'Lorem ipsum\ndolor 你好世界 sit\namet',
         IntlSegmenterGranularity.word,
       );
@@ -48,7 +47,7 @@ void testMain() {
     test('fragments text into grapheme clusters', () {
       // The smiley emoji has a length of 2.
       // The family emoji has a length of 11.
-      final Uint32List breaks = fragmentUsingIntlSegmenter(
+      final breaks = fragmentUsingIntlSegmenter(
         'Lorem🙂ipsum👨‍👩‍👧‍👦',
         IntlSegmenterGranularity.grapheme,
       );
@@ -64,7 +63,7 @@ void testMain() {
     test('fragments multi-line text into grapheme clusters', () {
       // The smiley emojis have a length of 2 each.
       // The family emoji has a length of 11.
-      final Uint32List breaks = fragmentUsingIntlSegmenter(
+      final breaks = fragmentUsingIntlSegmenter(
         'Lorem🙂\nipsum👨‍👩‍👧‍👦dolor\n😄',
         IntlSegmenterGranularity.grapheme,
       );
@@ -80,11 +79,11 @@ void testMain() {
   }, skip: !browserSupportsCanvaskitChromium);
 
   group('$fragmentUsingV8LineBreaker', () {
-    const int kSoft = 0;
-    const int kHard = 1;
+    const kSoft = 0;
+    const kHard = 1;
 
     test('fragments text into soft and hard line breaks', () {
-      final Uint32List breaks = fragmentUsingV8LineBreaker(
+      final breaks = fragmentUsingV8LineBreaker(
         'Lorem-ipsum 你好🙂\nDolor sit',
       );
       expect(
@@ -113,8 +112,8 @@ void testMain() {
     });
 
     test('segments correctly', () {
-      const String text = 'Lorem-ipsum 你好🙂\nDolor sit';
-      final SegmentationResult segmentation = segmentText(text);
+      const text = 'Lorem-ipsum 你好🙂\nDolor sit';
+      final segmentation = segmentText(text);
       expect(
         segmentation.words,
         fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.word),
@@ -130,12 +129,12 @@ void testMain() {
     });
 
     test('caches segmentation results in LRU fashion', () {
-      const String text1 = 'hello';
+      const text1 = 'hello';
       segmentText(text1);
       expect(segmentationCache.small.debugItemQueue, hasLength(1));
       expect(segmentationCache.small[text1], isNotNull);
 
-      const String text2 = 'world';
+      const text2 = 'world';
       segmentText(text2);
       expect(segmentationCache.small.debugItemQueue, hasLength(2));
       expect(segmentationCache.small[text2], isNotNull);
@@ -146,7 +145,7 @@ void testMain() {
     });
 
     test('puts segmentation results in the appropriate cache', () {
-      final String smallText = 'a' * (kSmallParagraphCacheSpec.maxTextLength - 1);
+      final smallText = 'a' * (kSmallParagraphCacheSpec.maxTextLength - 1);
       segmentText(smallText);
       expect(segmentationCache.small.debugItemQueue, hasLength(1));
       expect(segmentationCache.medium.debugItemQueue, hasLength(0));
@@ -154,7 +153,7 @@ void testMain() {
       expect(segmentationCache.small[smallText], isNotNull);
       segmentationCache.clear();
 
-      final String mediumText = 'a' * (kMediumParagraphCacheSpec.maxTextLength - 1);
+      final mediumText = 'a' * (kMediumParagraphCacheSpec.maxTextLength - 1);
       segmentText(mediumText);
       expect(segmentationCache.small.debugItemQueue, hasLength(0));
       expect(segmentationCache.medium.debugItemQueue, hasLength(1));
@@ -162,7 +161,7 @@ void testMain() {
       expect(segmentationCache.medium[mediumText], isNotNull);
       segmentationCache.clear();
 
-      final String largeText = 'a' * (kLargeParagraphCacheSpec.maxTextLength - 1);
+      final largeText = 'a' * (kLargeParagraphCacheSpec.maxTextLength - 1);
       segmentText(largeText);
       expect(segmentationCache.small.debugItemQueue, hasLength(0));
       expect(segmentationCache.medium.debugItemQueue, hasLength(0));
@@ -171,7 +170,7 @@ void testMain() {
       segmentationCache.clear();
 
       // Should not cache extremely large texts.
-      final String tooLargeText = 'a' * (kLargeParagraphCacheSpec.maxTextLength + 1);
+      final tooLargeText = 'a' * (kLargeParagraphCacheSpec.maxTextLength + 1);
       segmentText(tooLargeText);
       expect(segmentationCache.small.debugItemQueue, hasLength(0));
       expect(segmentationCache.medium.debugItemQueue, hasLength(0));
@@ -192,8 +191,8 @@ void testCacheCapacity(
   SegmentationCacheSpec spec,
 ) {
   // 1. Fill the cache.
-  for (int i = 0; i < spec.cacheSize; i++) {
-    final String text = _randomString(spec.maxTextLength);
+  for (var i = 0; i < spec.cacheSize; i++) {
+    final text = _randomString(spec.maxTextLength);
     segmentText(text);
     // The segmented text should have been added to the cache.
     // TODO(mdebbar): This may fail if the random string generator generates
@@ -205,8 +204,8 @@ void testCacheCapacity(
   expect(cache.length, spec.cacheSize);
 
   // 3. Add more items to the cache.
-  for (int i = 0; i < 10; i++) {
-    final String text = _randomString(spec.maxTextLength);
+  for (var i = 0; i < 10; i++) {
+    final text = _randomString(spec.maxTextLength);
     segmentText(text);
     // The cache size should remain the same.
     expect(cache.debugItemQueue, hasLength(spec.cacheSize));
@@ -218,11 +217,11 @@ void testCacheCapacity(
 
 int _seed = 0;
 String _randomString(int length) {
-  const String allChars = ' 1234567890'
+  const allChars = ' 1234567890'
       'abcdefghijklmnopqrstuvwxyz'
       'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-  final String text = '*' * length;
+  final text = '*' * length;
   return text.replaceAllMapped(
     '*',
     // Passing a seed so the results are reproducible.

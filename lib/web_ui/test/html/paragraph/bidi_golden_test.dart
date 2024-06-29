@@ -32,32 +32,32 @@ Future<void> testMain() async {
     TextAlign textAlign,
   ) {
     // The text starts with a left-to-right word.
-    const String text = 'One 12 $_rtlWord1 $_rtlWord2 34 two 56';
+    const text = 'One 12 $_rtlWord1 $_rtlWord2 34 two 56';
 
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textDirection: textDirection,
       textAlign: textAlign,
     );
-    final CanvasParagraph paragraph = plain(
+    final paragraph = plain(
       paragraphStyle,
       text,
       textStyle: EngineTextStyle.only(color: blue),
     );
-    final double maxWidth = bounds.width - 10;
+    final maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
     canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('basic bidi starting with ltr', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 340, 600);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const double height = 40;
+    const height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -72,7 +72,7 @@ Future<void> testMain() async {
     paintBasicBidiStartingWithLtr(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
+    final rtlBox = ltrBox.translate(0, ltrBox.height + 10);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -90,13 +90,13 @@ Future<void> testMain() async {
   });
 
   test('basic bidi starting with ltr (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 340, 600);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const double height = 40;
+    const height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -111,7 +111,7 @@ Future<void> testMain() async {
     paintBasicBidiStartingWithLtr(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
+    final rtlBox = ltrBox.translate(0, ltrBox.height + 10);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -136,32 +136,32 @@ Future<void> testMain() async {
     TextAlign textAlign,
   ) {
     // The text starts with a right-to-left word.
-    const String text = '$_rtlWord1 12 one 34 $_rtlWord2 56 two';
+    const text = '$_rtlWord1 12 one 34 $_rtlWord2 56 two';
 
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textDirection: textDirection,
       textAlign: textAlign,
     );
-    final CanvasParagraph paragraph = plain(
+    final paragraph = plain(
       paragraphStyle,
       text,
       textStyle: EngineTextStyle.only(color: blue),
     );
-    final double maxWidth = bounds.width - 10;
+    final maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
     canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('basic bidi starting with rtl', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 340, 600);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const double height = 40;
+    const height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -176,7 +176,7 @@ Future<void> testMain() async {
     paintBasicBidiStartingWithRtl(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
+    final rtlBox = ltrBox.translate(0, ltrBox.height + 10);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -194,13 +194,13 @@ Future<void> testMain() async {
   });
 
   test('basic bidi starting with rtl (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 340, 600);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 340, 600);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const double height = 40;
+    const height = 40;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -215,7 +215,7 @@ Future<void> testMain() async {
     paintBasicBidiStartingWithRtl(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(0, ltrBox.height + 10);
+    final rtlBox = ltrBox.translate(0, ltrBox.height + 10);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -244,32 +244,32 @@ Future<void> testMain() async {
     // $_rtlWord2 34 ipsum
     // dolor 56
     // '''
-    const String text = 'Lorem 12 $_rtlWord1 $_rtlWord2 34 ipsum dolor 56';
+    const text = 'Lorem 12 $_rtlWord1 $_rtlWord2 34 ipsum dolor 56';
 
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textDirection: textDirection,
       textAlign: textAlign,
     );
-    final CanvasParagraph paragraph = plain(
+    final paragraph = plain(
       paragraphStyle,
       text,
       textStyle: EngineTextStyle.only(color: blue),
     );
-    final double maxWidth = bounds.width - 10;
+    final maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
     canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('multiline bidi', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 500);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const double height = 95;
+    const height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -284,7 +284,7 @@ Future<void> testMain() async {
     paintMultilineBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
+    final rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -302,12 +302,12 @@ Future<void> testMain() async {
   });
 
   test('multiline bidi (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 500);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const double height = 95;
+    const height = 95;
 
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -322,7 +322,7 @@ Future<void> testMain() async {
     paintMultilineBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
+    final rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -346,7 +346,7 @@ Future<void> testMain() async {
     TextDirection textDirection,
     TextAlign textAlign,
   ) {
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textDirection: textDirection,
@@ -357,7 +357,7 @@ Future<void> testMain() async {
     // $_rtlWord2 34 ipsum
     // dolor 56
     // '''
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('Lorem ');
       builder.pushStyle(EngineTextStyle.only(color: green));
@@ -371,19 +371,19 @@ Future<void> testMain() async {
       builder.pushStyle(EngineTextStyle.only(color: green));
       builder.addText('dolor 56 ');
     });
-    final double maxWidth = bounds.width - 10;
+    final maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
     canvas.drawParagraph(paragraph, Offset(bounds.left + 5, bounds.top + y + 5));
   }
 
   test('multi span bidi', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 900);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 900);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const double height = 95;
+    const height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -398,7 +398,7 @@ Future<void> testMain() async {
     paintMultSpanBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
+    final rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -416,13 +416,13 @@ Future<void> testMain() async {
   });
 
   test('multi span bidi (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 900);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 900);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const double height = 95;
+    const height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -437,7 +437,7 @@ Future<void> testMain() async {
     paintMultSpanBidi(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
+    final rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -466,24 +466,24 @@ Future<void> testMain() async {
     // $_rtlWord2 34 ipsum
     // dolor 56
     // '''
-    const String text = 'Lorem 12 $_rtlWord1 $_rtlWord2 34 ipsum dolor 56';
+    const text = 'Lorem 12 $_rtlWord1 $_rtlWord2 34 ipsum dolor 56';
 
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textDirection: textDirection,
       textAlign: textAlign,
     );
-    final CanvasParagraph paragraph = plain(
+    final paragraph = plain(
       paragraphStyle,
       text,
       textStyle: EngineTextStyle.only(color: blue),
     );
 
-    final double maxWidth = bounds.width - 10;
+    final maxWidth = bounds.width - 10;
     paragraph.layout(constrain(maxWidth));
 
-    final Offset offset = Offset(bounds.left + 5, bounds.top + y + 5);
+    final offset = Offset(bounds.left + 5, bounds.top + y + 5);
 
     // Range for "em 12 " and the first character of `_rtlWord1`.
     fillBoxes(canvas, offset, paragraph.getBoxesForRange(3, 10), lightBlue);
@@ -496,13 +496,13 @@ Future<void> testMain() async {
   }
 
   test('bidi with selection', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 500);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const double height = 95;
+    const height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -517,7 +517,7 @@ Future<void> testMain() async {
     paintBidiWithSelection(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
+    final rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()
@@ -535,13 +535,13 @@ Future<void> testMain() async {
   });
 
   test('bidi with selection (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 500);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 500);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const double height = 95;
+    const height = 95;
 
     // Border for ltr paragraphs.
-    final Rect ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
+    final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
       ltrBox,
       SurfacePaintData()
@@ -556,7 +556,7 @@ Future<void> testMain() async {
     paintBidiWithSelection(canvas, ltrBox, 4 * height, TextDirection.ltr, TextAlign.end);
 
     // Border for rtl paragraphs.
-    final Rect rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
+    final rtlBox = ltrBox.translate(ltrBox.width + 10, 0);
     canvas.drawRect(
       rtlBox,
       SurfacePaintData()

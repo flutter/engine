@@ -17,7 +17,7 @@ import '../services/message_codecs.dart';
 /// If it can't infer, it creates a [MultiEntriesBrowserHistory] by default.
 BrowserHistory createHistoryForExistingState(ui_web.UrlStrategy? urlStrategy) {
   if (urlStrategy != null) {
-    final Object? state = urlStrategy.getState();
+    final state = urlStrategy.getState();
     if (SingleEntryBrowserHistory._isOriginEntry(state) || SingleEntryBrowserHistory._isFlutterEntry(state)) {
       return SingleEntryBrowserHistory(urlStrategy: urlStrategy);
     }
@@ -123,7 +123,7 @@ abstract class BrowserHistory {
 ///   a Router for routing.
 class MultiEntriesBrowserHistory extends BrowserHistory {
   MultiEntriesBrowserHistory({required this.urlStrategy}) {
-    final ui_web.UrlStrategy? strategy = urlStrategy;
+    final strategy = urlStrategy;
     if (strategy == null) {
       return;
     }
@@ -143,7 +143,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
   late int _lastSeenSerialCount;
   int get _currentSerialCount {
     if (_hasSerialCount(currentState)) {
-      final Map<dynamic, dynamic> stateMap =
+      final stateMap =
           currentState! as Map<dynamic, dynamic>;
       return (stateMap['serialCount'] as double).toInt();
     }
@@ -223,13 +223,13 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
           ? 'unexpected null history state'
           : "history state is missing field 'serialCount'",
     );
-    final int backCount = _currentSerialCount;
+    final backCount = _currentSerialCount;
     if (backCount > 0) {
       await urlStrategy!.go(-backCount);
     }
     // Unwrap state.
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
-    final Map<dynamic, dynamic> stateMap =
+    final stateMap =
         currentState! as Map<dynamic, dynamic>;
     urlStrategy!.replaceState(
       stateMap['state'],
@@ -257,14 +257,14 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 ///    Router for routing.
 class SingleEntryBrowserHistory extends BrowserHistory {
   SingleEntryBrowserHistory({required this.urlStrategy}) {
-    final ui_web.UrlStrategy? strategy = urlStrategy;
+    final strategy = urlStrategy;
     if (strategy == null) {
       return;
     }
 
     _setupStrategy(strategy);
 
-    final String path = currentPath;
+    final path = currentPath;
     if (!_isFlutterEntry(domWindow.history.state)) {
       // An entry may not have come from Flutter, for example, when the user
       // refreshes the page. They land directly on the "flutter" entry, so
@@ -288,7 +288,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   Object? _unwrapOriginState(Object? state) {
     assert(_isOriginEntry(state));
-    final Map<dynamic, dynamic> originState = state! as Map<dynamic, dynamic>;
+    final originState = state! as Map<dynamic, dynamic>;
     return originState['state'];
   }
 
@@ -334,7 +334,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
       // brings us here.
       assert(_userProvidedRouteName != null);
 
-      final String newRouteName = _userProvidedRouteName!;
+      final newRouteName = _userProvidedRouteName!;
       _userProvidedRouteName = null;
 
       // Send a 'pushRoute' platform message so the app handles it accordingly.

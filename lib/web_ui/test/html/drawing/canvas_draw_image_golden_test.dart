@@ -5,7 +5,6 @@
 import 'dart:convert';
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -29,7 +28,7 @@ Future<void> testMain() async {
   );
 
   test('Paints image', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.drawImage(createTestImage(), Offset.zero, SurfacePaint());
@@ -38,20 +37,20 @@ Future<void> testMain() async {
   });
 
   test('Images from raw data are composited when picture is roundtripped through toImage', () async {
-    final Uint8List imageData = base64Decode(base64PngData);
-    final Codec codec = await instantiateImageCodec(imageData);
-    final FrameInfo frameInfo = await codec.getNextFrame();
+    final imageData = base64Decode(base64PngData);
+    final codec = await instantiateImageCodec(imageData);
+    final frameInfo = await codec.getNextFrame();
 
-    const Rect bounds = Rect.fromLTRB(0, 0, 400, 300);
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final RecordingCanvas scratchCanvas = recorder.beginRecording(bounds);
+    const bounds = Rect.fromLTRB(0, 0, 400, 300);
+    final recorder = EnginePictureRecorder();
+    final scratchCanvas = recorder.beginRecording(bounds);
     scratchCanvas.save();
     scratchCanvas.drawImage(frameInfo.image, Offset.zero, SurfacePaint());
     scratchCanvas.restore();
     final Picture picture = recorder.endRecording();
-    final Image image = await picture.toImage(400, 300);
+    final image = await picture.toImage(400, 300);
 
-    final RecordingCanvas rc = RecordingCanvas(bounds);
+    final rc = RecordingCanvas(bounds);
     rc.save();
     rc.drawImage(image, Offset.zero, SurfacePaint());
     rc.restore();
@@ -59,7 +58,7 @@ Future<void> testMain() async {
   });
 
   test('Paints image with transform', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.translate(50.0, 100.0);
@@ -70,7 +69,7 @@ Future<void> testMain() async {
   });
 
   test('Paints image with transform and offset', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.translate(50.0, 100.0);
@@ -81,14 +80,14 @@ Future<void> testMain() async {
   });
 
   test('Paints image with transform using destination', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.translate(50.0, 100.0);
     rc.rotate(math.pi / 4.0);
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
     rc.restore();
@@ -96,12 +95,12 @@ Future<void> testMain() async {
   });
 
   test('Paints image with source and destination', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.drawImageRect(
         testImage,
         Rect.fromLTRB(testWidth / 2, 0, testWidth, testHeight),
@@ -112,11 +111,11 @@ Future<void> testMain() async {
   });
 
   test('Paints image with source and destination and round clip', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.save();
     rc.clipRRect(RRect.fromLTRBR(
         100, 30, 2 * testWidth, 2 * testHeight, const Radius.circular(16)));
@@ -130,14 +129,14 @@ Future<void> testMain() async {
   });
 
   test('Paints image with transform using source and destination', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.translate(50.0, 100.0);
     rc.rotate(math.pi / 6.0);
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.drawImageRect(
         testImage,
         Rect.fromLTRB(testWidth / 2, 0, testWidth, testHeight),
@@ -150,12 +149,12 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image not below.
   test('Paints on top of image', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
     rc.drawCircle(
@@ -171,12 +170,12 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should below image not on top.
   test('Paints below image', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.drawCircle(
         const Offset(100, 100),
         50.0,
@@ -192,12 +191,12 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image with clip rect.
   test('Paints on top of image with clip rect', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.clipRect(const Rect.fromLTRB(75, 75, 160, 160), ClipOp.intersect);
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
@@ -214,12 +213,12 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image with clip rect and transform.
   test('Paints on top of image with clip rect with transform', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     // Rotate around center of circle.
     rc.translate(100, 100);
     rc.rotate(math.pi / 4.0);
@@ -240,12 +239,12 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image with stack of clip rect and transforms.
   test('Paints on top of image with clip rect with stack', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     // Rotate around center of circle.
     rc.translate(100, 100);
     rc.rotate(-math.pi / 4.0);
@@ -268,12 +267,12 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image with clip rrect.
   test('Paints on top of image with clip rrect', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
     rc.clipRRect(RRect.fromLTRBR(75, 75, 160, 160, const Radius.circular(5)));
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
@@ -290,13 +289,13 @@ Future<void> testMain() async {
   // Regression test for https://github.com/flutter/flutter/issues/44845
   // Circle should draw on top of image with clip rrect.
   test('Paints on top of image with clip path', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
-    final Path path = Path();
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
+    final path = Path();
     // Triangle.
     path.moveTo(118, 57);
     path.lineTo(75, 160);
@@ -321,14 +320,14 @@ Future<void> testMain() async {
   test('Paints text above and below image', () async {
     // Use a non-Ahem font so that text is visible.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     final Image testImage = createTestImage();
-    final double testWidth = testImage.width.toDouble();
-    final double testHeight = testImage.height.toDouble();
-    const Color orange = Color(0xFFFF9800);
-    final Paragraph paragraph1 = createTestParagraph(
+    final testWidth = testImage.width.toDouble();
+    final testHeight = testImage.height.toDouble();
+    const orange = Color(0xFFFF9800);
+    final paragraph1 = createTestParagraph(
         'Should be below below below below below',
         color: orange);
     paragraph1.layout(const ParagraphConstraints(width: 400.0));
@@ -340,8 +339,8 @@ Future<void> testMain() async {
         SurfacePaint()
           ..strokeWidth = 3
           ..color = const Color(0xA0000000));
-    const Color cyan = Color(0xFF0097A7);
-    final Paragraph paragraph2 = createTestParagraph(
+    const cyan = Color(0xFF0097A7);
+    final paragraph2 = createTestParagraph(
         'Should be above above above above above',
         color: cyan);
     paragraph2.layout(const ParagraphConstraints(width: 400.0));
@@ -356,20 +355,20 @@ Future<void> testMain() async {
 
   // Creates a picture
   test('Paints nine slice image', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 500, 500);
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    const region = Rect.fromLTWH(0, 0, 500, 500);
+    final recorder = EnginePictureRecorder();
+    final canvas = Canvas(recorder, region);
     final Image testImage = createNineSliceImage();
     canvas.clipRect(const Rect.fromLTWH(0, 0, 420, 200));
     canvas.drawImageNine(testImage, const Rect.fromLTWH(20, 20, 20, 20),
         const Rect.fromLTWH(20, 20, 400, 400), SurfacePaint());
     final Picture picture = recorder.endRecording();
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final builder = SurfaceSceneBuilder();
     builder.addPicture(Offset.zero, picture);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final DomElement sceneElement = createDomElement('flt-scene');
+    final sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -392,9 +391,9 @@ Future<void> testMain() async {
   // Tests for correct behavior when using drawImageNine with a destination
   // size that is too small to render the center portion of the original image.
   test('Paints nine slice image', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 100, 100);
-    final EnginePictureRecorder recorder = EnginePictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    const region = Rect.fromLTWH(0, 0, 100, 100);
+    final recorder = EnginePictureRecorder();
+    final canvas = Canvas(recorder, region);
     final Image testImage = createNineSliceImage();
     canvas.clipRect(const Rect.fromLTWH(0, 0, 100, 100));
     // The testImage is 60x60 and the center slice is 20x20 so the edges
@@ -404,11 +403,11 @@ Future<void> testMain() async {
         const Rect.fromLTWH(20, 20, 36, 36), SurfacePaint());
     final Picture picture = recorder.endRecording();
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final builder = SurfaceSceneBuilder();
     builder.addPicture(Offset.zero, picture);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final DomElement sceneElement = createDomElement('flt-scene');
+    final sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -433,8 +432,8 @@ Future<void> testMain() async {
   // the image we did not apply `transform-origin: 0 0 0` to the clipping
   // element which resulted in an undesirable offset.
   test('Paints clipped and transformed image', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 60, 70);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 60, 70);
+    final canvas = RecordingCanvas(region);
     canvas.translate(10, 10);
     canvas.transform(Matrix4.rotationZ(0.4).storage);
     canvas.clipPath(Path()
@@ -450,11 +449,11 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/61245
   test('Should render image with perspective', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 200, 200);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 200, 200);
+    final canvas = RecordingCanvas(region);
     canvas.translate(10, 10);
     canvas.drawImage(createTestImage(), Offset.zero, SurfacePaint());
-    final Matrix4 transform = Matrix4.identity()
+    final transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.0005); // perspective
     canvas.transform(transform.storage);
@@ -466,12 +465,12 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/61245
   test('Should render image with perspective inside clip area', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 200, 200);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 200, 200);
+    final canvas = RecordingCanvas(region);
     canvas.drawRect(region, SurfacePaint()..color = const Color(0xFFE0E0E0));
     canvas.translate(10, 10);
     canvas.drawImage(createTestImage(), Offset.zero, SurfacePaint());
-    final Matrix4 transform = Matrix4.identity()
+    final transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.0005); // perspective
     canvas.transform(transform.storage);
@@ -485,13 +484,13 @@ Future<void> testMain() async {
   });
 
   test('Should render rect with perspective transform', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 400, 400);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 400, 400);
+    final canvas = RecordingCanvas(region);
     canvas.drawRect(region, SurfacePaint()..color = const Color(0xFFE0E0E0));
     canvas.translate(20, 20);
     canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 40),
         SurfacePaint()..color = const Color(0xFF000000));
-    final Matrix4 transform = Matrix4.identity()
+    final transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.001); // perspective
     canvas.transform(transform.storage);
@@ -508,14 +507,14 @@ Future<void> testMain() async {
   });
 
   test('Should render color and ovals with perspective transform', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 400, 400);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 400, 400);
+    final canvas = RecordingCanvas(region);
     canvas.drawRect(region, SurfacePaint()..color = const Color(0xFFFF0000));
     canvas.drawColor(const Color(0xFFE0E0E0), BlendMode.src);
     canvas.translate(20, 20);
     canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 40),
         SurfacePaint()..color = const Color(0xFF000000));
-    final Matrix4 transform = Matrix4.identity()
+    final transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.001); // perspective
     canvas.transform(transform.storage);
@@ -532,14 +531,14 @@ Future<void> testMain() async {
   });
 
   test('Should render path with perspective transform', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 400, 400);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 400, 400);
+    final canvas = RecordingCanvas(region);
     canvas.drawRect(region, SurfacePaint()..color = const Color(0xFFFF0000));
     canvas.drawColor(const Color(0xFFE0E0E0), BlendMode.src);
     canvas.translate(20, 20);
     canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 20),
         SurfacePaint()..color = const Color(0xFF000000));
-    final Matrix4 transform = Matrix4.identity()
+    final transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.001); // perspective
     canvas.transform(transform.storage);
@@ -547,7 +546,7 @@ Future<void> testMain() async {
         SurfacePaint()..color = const Color(0x801080E0));
     canvas.drawOval(const Rect.fromLTWH(300, 290, 90, 40),
         SurfacePaint()..color = const Color(0x80E010E0));
-    final Path path = Path();
+    final path = Path();
     path.moveTo(50, 50);
     path.lineTo(100, 50);
     path.lineTo(100, 100);
@@ -563,14 +562,14 @@ Future<void> testMain() async {
   });
 
   test('Should render path with perspective transform', () async {
-    const Rect region = Rect.fromLTRB(0, 0, 400, 400);
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    const region = Rect.fromLTRB(0, 0, 400, 400);
+    final canvas = RecordingCanvas(region);
     canvas.drawRect(region, SurfacePaint()..color = const Color(0xFFFF0000));
     canvas.drawColor(const Color(0xFFE0E0E0), BlendMode.src);
     canvas.translate(20, 20);
     canvas.drawRect(const Rect.fromLTWH(0, 0, 100, 20),
         SurfacePaint()..color = const Color(0xFF000000));
-    final Matrix4 transform = Matrix4.identity()
+    final transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.001); // perspective
     canvas.transform(transform.storage);
@@ -579,7 +578,7 @@ Future<void> testMain() async {
         SurfacePaint()..color = const Color(0x801080E0));
     canvas.drawOval(const Rect.fromLTWH(300, 290, 90, 40),
         SurfacePaint()..color = const Color(0x80E010E0));
-    final Path path = Path();
+    final path = Path();
     path.moveTo(50, 50);
     path.lineTo(100, 50);
     path.lineTo(100, 100);
@@ -734,9 +733,9 @@ HtmlImage createNineSliceImage() {
 }
 
 HtmlImage createTestImage({int width = 100, int height = 50}) {
-  final DomCanvasElement canvas =
+  final canvas =
       createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
   ctx.fill();
@@ -746,14 +745,14 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
-  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
+  final imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }
 
 Paragraph createTestParagraph(String text,
     {Color color = const Color(0xFF000000)}) {
-  final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+  final builder = ParagraphBuilder(ParagraphStyle(
     fontFamily: 'Roboto',
     fontStyle: FontStyle.normal,
     fontWeight: FontWeight.normal,

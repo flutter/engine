@@ -274,7 +274,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   /// no need to call [addToScene] for its children layers.
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    final PersistedContainerSurface retainedSurface =
+    final retainedSurface =
         retainedLayer as PersistedContainerSurface;
     assert(debugAssertSurfaceState(retainedSurface,
       PersistedSurfaceState.active,
@@ -353,7 +353,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false,
   }) {
-    int hints = 0;
+    var hints = 0;
     if (isComplexHint) {
       hints |= 1;
     }
@@ -474,7 +474,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     // In the HTML renderer we time the beginning of the rasterization phase
     // (counter-intuitively) in SceneBuilder.build because DOM updates happen
     // here. This is different from CanvasKit.
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    final recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     recorder?.recordBuildFinish();
     recorder?.recordRasterStart();
     timeAction<void>(kProfilePrerollFrame, () {

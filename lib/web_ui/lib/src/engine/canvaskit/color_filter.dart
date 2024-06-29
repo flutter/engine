@@ -55,8 +55,8 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
   /// Passes the ownership of the returned [SkImageFilter] to the caller. It is
   /// the caller's responsibility to manage the lifecycle of the returned value.
   SkImageFilter initRawImageFilter() {
-    final SkColorFilter skColorFilter = _initRawColorFilter();
-    final SkImageFilter result = canvasKit.ImageFilter.MakeColorFilter(skColorFilter, null);
+    final skColorFilter = _initRawColorFilter();
+    final result = canvasKit.ImageFilter.MakeColorFilter(skColorFilter, null);
 
     // The underlying SkColorFilter is now owned by the SkImageFilter, so we
     // need to drop the reference to allow it to be collected.
@@ -76,7 +76,7 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
     // created Skia objects. Therefore a new SkImageFilter is created every time
     // it's used. However, once used it's no longer needed, so it's deleted
     // immediately to free memory.
-    final SkImageFilter skImageFilter = initRawImageFilter();
+    final skImageFilter = initRawImageFilter();
     borrow(skImageFilter);
     skImageFilter.delete();
   }
@@ -91,9 +91,9 @@ abstract class CkColorFilter implements CkManagedSkImageFilterConvertible {
 Float32List _identityTransform = _computeIdentityTransform();
 
 Float32List _computeIdentityTransform() {
-  final Float32List result = Float32List(20);
-  const List<int> translationIndices = <int>[0, 6, 12, 18];
-  for (final int i in translationIndices) {
+  final result = Float32List(20);
+  const translationIndices = <int>[0, 6, 12, 18];
+  for (final i in translationIndices) {
     result[i] = 1;
   }
   _identityTransform = result;
@@ -102,7 +102,7 @@ Float32List _computeIdentityTransform() {
 
 SkColorFilter createSkColorFilterFromColorAndBlendMode(
     ui.Color color, ui.BlendMode blendMode) {
-  final SkColorFilter? filter = canvasKit.ColorFilter.MakeBlend(
+  final filter = canvasKit.ColorFilter.MakeBlend(
     toSharedSkColor1(color),
     toSkBlendMode(blendMode),
   );
@@ -156,9 +156,9 @@ class CkMatrixColorFilter extends CkColorFilter {
   /// See [https://api.flutter.dev/flutter/dart-ui/ColorFilter/ColorFilter.matrix.html].
   Float32List get _normalizedMatrix {
     assert(matrix.length == 20, 'Color Matrix must have 20 entries.');
-    final Float32List result = Float32List(20);
-    const List<int> translationIndices = <int>[4, 9, 14, 19];
-    for (int i = 0; i < 20; i++) {
+    final result = Float32List(20);
+    const translationIndices = <int>[4, 9, 14, 19];
+    for (var i = 0; i < 20; i++) {
       if (translationIndices.contains(i)) {
         result[i] = matrix[i] / 255.0;
       } else {
@@ -233,7 +233,7 @@ class CkComposeColorFilter extends CkColorFilter {
     if (other is! CkComposeColorFilter) {
       return false;
     }
-    final CkComposeColorFilter filter = other;
+    final filter = other;
     return filter.outer == outer && filter.inner == inner;
   }
 

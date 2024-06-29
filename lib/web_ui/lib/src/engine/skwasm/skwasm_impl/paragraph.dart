@@ -19,7 +19,7 @@ List<String> _computeEffectiveFontFamilies(List<String> fontFamilies) {
   if (!ui_web.debugEmulateFlutterTesterEnvironment) {
     return fontFamilies;
   }
-  final Iterable<String> filteredFonts = fontFamilies.where(_testFonts.contains);
+  final filteredFonts = fontFamilies.where(_testFonts.contains);
   return filteredFonts.isEmpty ? _testFonts : filteredFonts.toList();
 }
 
@@ -119,7 +119,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
 
   @override
   int? getLineNumberAt(int codeUnitOffset) {
-    final int lineNumber = paragraphGetLineNumberAt(handle, codeUnitOffset);
+    final lineNumber = paragraphGetLineNumberAt(handle, codeUnitOffset);
     return lineNumber >= 0 ? lineNumber : null;
   }
 
@@ -128,11 +128,11 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
     paragraphLayout(handle, constraints.width);
     if (!debugDisableFontFallbacks && !_hasCheckedForMissingCodePoints) {
       _hasCheckedForMissingCodePoints = true;
-      final int missingCodePointCount = paragraphGetUnresolvedCodePoints(handle, nullptr, 0);
+      final missingCodePointCount = paragraphGetUnresolvedCodePoints(handle, nullptr, 0);
       if (missingCodePointCount > 0) {
         withStackScope((StackScope scope) {
-          final Pointer<Uint32> codePointBuffer = scope.allocUint32Array(missingCodePointCount);
-          final int returnedCodePointCount = paragraphGetUnresolvedCodePoints(
+          final codePointBuffer = scope.allocUint32Array(missingCodePointCount);
+          final returnedCodePointCount = paragraphGetUnresolvedCodePoints(
             handle,
             codePointBuffer,
             missingCodePointCount
@@ -150,11 +150,11 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   }
 
   List<ui.TextBox> _convertTextBoxList(TextBoxListHandle listHandle) {
-    final int length = textBoxListGetLength(listHandle);
+    final length = textBoxListGetLength(listHandle);
     return withStackScope((StackScope scope) {
-      final RawRect tempRect = scope.allocFloatArray(4);
+      final tempRect = scope.allocFloatArray(4);
       return List<ui.TextBox>.generate(length, (int index) {
-        final int textDirectionIndex =
+        final textDirectionIndex =
           textBoxListGetBoxAtIndex(listHandle, index, tempRect);
         return ui.TextBox.fromLTRBD(
           tempRect[0],
@@ -174,22 +174,22 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
     ui.BoxHeightStyle boxHeightStyle = ui.BoxHeightStyle.tight,
     ui.BoxWidthStyle boxWidthStyle = ui.BoxWidthStyle.tight
   }) {
-    final TextBoxListHandle listHandle = paragraphGetBoxesForRange(
+    final listHandle = paragraphGetBoxesForRange(
       handle,
       start,
       end,
       boxHeightStyle.index,
       boxWidthStyle.index
     );
-    final List<ui.TextBox> boxes = _convertTextBoxList(listHandle);
+    final boxes = _convertTextBoxList(listHandle);
     textBoxListDispose(listHandle);
     return boxes;
   }
 
   @override
   ui.TextPosition getPositionForOffset(ui.Offset offset) => withStackScope((StackScope scope) {
-    final Pointer<Int32> outAffinity = scope.allocInt32Array(1);
-    final int position = paragraphGetPositionForOffset(
+    final outAffinity = scope.allocInt32Array(1);
+    final position = paragraphGetPositionForOffset(
       handle,
       offset.dx,
       offset.dy,
@@ -204,9 +204,9 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   @override
   ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
     return withStackScope((StackScope scope) {
-      final Pointer<Float> outRect = scope.allocFloatArray(4);
-      final Pointer<Uint32> outRange = scope.allocUint32Array(2);
-      final Pointer<Bool> outBooleanFlags = scope.allocBoolArray(1);
+      final outRect = scope.allocFloatArray(4);
+      final outRange = scope.allocUint32Array(2);
+      final outBooleanFlags = scope.allocBoolArray(1);
       return paragraphGetGlyphInfoAt(handle, codeUnitOffset, outRect, outRange, outBooleanFlags)
         ? ui.GlyphInfo(
           scope.convertRectFromNative(outRect),
@@ -220,9 +220,9 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
   @override
   ui.GlyphInfo? getClosestGlyphInfoForOffset(ui.Offset offset) {
     return withStackScope((StackScope scope) {
-      final Pointer<Float> outRect = scope.allocFloatArray(4);
-      final Pointer<Uint32> outRange = scope.allocUint32Array(2);
-      final Pointer<Bool> outBooleanFlags = scope.allocBoolArray(1);
+      final outRect = scope.allocFloatArray(4);
+      final outRange = scope.allocUint32Array(2);
+      final outBooleanFlags = scope.allocBoolArray(1);
       return paragraphGetClosestGlyphInfoAtCoordinate(handle, offset.dx, offset.dy, outRect, outRange, outBooleanFlags)
         ? ui.GlyphInfo(
           scope.convertRectFromNative(outRect),
@@ -235,8 +235,8 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
 
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) => withStackScope((StackScope scope) {
-    final Pointer<Int32> outRange = scope.allocInt32Array(2);
-    final int characterPosition = switch (position.affinity) {
+    final outRange = scope.allocInt32Array(2);
+    final characterPosition = switch (position.affinity) {
       ui.TextAffinity.upstream => position.offset - 1,
       ui.TextAffinity.downstream => position.offset,
     };
@@ -246,8 +246,8 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
 
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
-    final int offset = position.offset;
-    for (final SkwasmLineMetrics metrics in computeLineMetrics()) {
+    final offset = position.offset;
+    for (final metrics in computeLineMetrics()) {
       if (offset >= metrics.startIndex && offset <= metrics.endIndex) {
         return ui.TextRange(start: metrics.startIndex, end: metrics.endIndex);
       }
@@ -257,15 +257,15 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
 
   @override
   List<ui.TextBox> getBoxesForPlaceholders() {
-    final TextBoxListHandle listHandle = paragraphGetBoxesForPlaceholders(handle);
-    final List<ui.TextBox> boxes = _convertTextBoxList(listHandle);
+    final listHandle = paragraphGetBoxesForPlaceholders(handle);
+    final boxes = _convertTextBoxList(listHandle);
     textBoxListDispose(listHandle);
     return boxes;
   }
 
   @override
   List<SkwasmLineMetrics> computeLineMetrics() {
-    final int lineCount = paragraphGetLineCount(handle);
+    final lineCount = paragraphGetLineCount(handle);
     return List<SkwasmLineMetrics>.generate(lineCount,
       (int index) => SkwasmLineMetrics._(paragraphGetLineMetricsAtIndex(handle, index))
     );
@@ -273,7 +273,7 @@ class SkwasmParagraph extends SkwasmObjectWrapper<RawParagraph> implements ui.Pa
 
   @override
   ui.LineMetrics? getLineMetricsAt(int index) {
-    final LineMetricsHandle lineMetrics = paragraphGetLineMetricsAtIndex(handle, index);
+    final lineMetrics = paragraphGetLineMetricsAtIndex(handle, index);
     return lineMetrics != nullptr ? SkwasmLineMetrics._(lineMetrics) : null;
   }
 }
@@ -282,15 +282,15 @@ void withScopedFontList(
     List<String> fontFamilies,
   void Function(Pointer<SkStringHandle>, int) callback) {
   withStackScope((StackScope scope) {
-    final Pointer<SkStringHandle> familiesPtr =
+    final familiesPtr =
       scope.allocPointerArray(fontFamilies.length).cast<SkStringHandle>();
-    int nativeIndex = 0;
-    for (int i = 0; i < fontFamilies.length; i++) {
+    var nativeIndex = 0;
+    for (var i = 0; i < fontFamilies.length; i++) {
       familiesPtr[nativeIndex] = skStringFromDartString(fontFamilies[i]);
       nativeIndex++;
     }
     callback(familiesPtr, fontFamilies.length);
-    for (int i = 0; i < fontFamilies.length; i++) {
+    for (var i = 0; i < fontFamilies.length; i++) {
       skStringFree(familiesPtr[i]);
     }
   });
@@ -339,7 +339,7 @@ class SkwasmTextStyle implements ui.TextStyle {
        );
 
   void applyToNative(SkwasmNativeTextStyle style) {
-    final TextStyleHandle handle = style.handle;
+    final handle = style.handle;
     if (color != null) {
       textStyleSetColor(handle, color!.value);
     }
@@ -366,7 +366,7 @@ class SkwasmTextStyle implements ui.TextStyle {
       textStyleSetTextBaseline(handle, textBaseline!.index);
     }
 
-    final List<String> effectiveFontFamilies = _computeEffectiveFontFamilies(fontFamilies);
+    final effectiveFontFamilies = _computeEffectiveFontFamilies(fontFamilies);
     if (effectiveFontFamilies.isNotEmpty) {
       withScopedFontList(effectiveFontFamilies,
         (Pointer<SkStringHandle> families, int count) =>
@@ -392,7 +392,7 @@ class SkwasmTextStyle implements ui.TextStyle {
       );
     }
     if (locale != null) {
-      final SkStringHandle localeHandle =
+      final localeHandle =
         skStringFromDartString(locale!.toLanguageTag());
       textStyleSetLocale(handle, localeHandle);
       skStringFree(localeHandle);
@@ -404,7 +404,7 @@ class SkwasmTextStyle implements ui.TextStyle {
       textStyleSetForeground(handle, (foreground! as SkwasmPaint).handle);
     }
     if (shadows != null) {
-      for (final ui.Shadow shadow in shadows!) {
+      for (final shadow in shadows!) {
         textStyleAddShadow(
           handle,
           shadow.color.value,
@@ -415,23 +415,23 @@ class SkwasmTextStyle implements ui.TextStyle {
       }
     }
     if (fontFeatures != null) {
-      for (final ui.FontFeature feature in fontFeatures!) {
-        final SkStringHandle featureName = skStringFromDartString(feature.feature);
+      for (final feature in fontFeatures!) {
+        final featureName = skStringFromDartString(feature.feature);
         textStyleAddFontFeature(handle, featureName, feature.value);
         skStringFree(featureName);
       }
     }
 
     if (fontVariations != null && fontVariations!.isNotEmpty) {
-      final int variationCount = fontVariations!.length;
+      final variationCount = fontVariations!.length;
       withStackScope((StackScope scope) {
-        final Pointer<Uint32> axisBuffer = scope.allocUint32Array(variationCount);
-        final Pointer<Float> valueBuffer = scope.allocFloatArray(variationCount);
-        for (int i = 0; i < variationCount; i++) {
-          final ui.FontVariation variation = fontVariations![i];
-          final String axis = variation.axis;
+        final axisBuffer = scope.allocUint32Array(variationCount);
+        final valueBuffer = scope.allocFloatArray(variationCount);
+        for (var i = 0; i < variationCount; i++) {
+          final variation = fontVariations![i];
+          final axis = variation.axis;
           assert(axis.length == 4); // 4 byte code
-          final int axisNumber =
+          final axisNumber =
             axis.codeUnitAt(0) << 24 |
             axis.codeUnitAt(1) << 16 |
             axis.codeUnitAt(2) << 8 |
@@ -502,10 +502,10 @@ class SkwasmTextStyle implements ui.TextStyle {
 
   @override
   int get hashCode {
-    final List<ui.Shadow>? shadows = this.shadows;
-    final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
-    final List<ui.FontVariation>? fontVariations = this.fontVariations;
-    final List<String>? fontFamilyFallback = this.fontFamilyFallback;
+    final shadows = this.shadows;
+    final fontFeatures = this.fontFeatures;
+    final fontVariations = this.fontVariations;
+    final fontFamilyFallback = this.fontFamilyFallback;
     return Object.hash(
       color,
       decoration,
@@ -536,11 +536,11 @@ class SkwasmTextStyle implements ui.TextStyle {
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
-      final List<String>? fontFamilyFallback = this.fontFamilyFallback;
-      final double? fontSize = this.fontSize;
-      final double? height = this.height;
+      final fontFamilyFallback = this.fontFamilyFallback;
+      final fontSize = this.fontSize;
+      final height = this.height;
       result = 'TextStyle('
           'color: ${color ?? "unspecified"}, '
           'decoration: ${decoration ?? "unspecified"}, '
@@ -582,8 +582,8 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
     bool? forceStrutHeight,
     ui.TextLeadingDistribution? leadingDistribution,
   }) {
-    final StrutStyleHandle handle = strutStyleCreate();
-    final List<String> effectiveFontFamilies = _computeEffectiveFontFamilies(<String>[
+    final handle = strutStyleCreate();
+    final effectiveFontFamilies = _computeEffectiveFontFamilies(<String>[
       if (fontFamily != null) fontFamily,
       if (fontFamilyFallback != null) ...fontFamilyFallback,
     ]);
@@ -669,7 +669,7 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
 
   @override
   int get hashCode {
-    final List<String>? fontFamilyFallback = _fontFamilyFallback;
+    final fontFamilyFallback = _fontFamilyFallback;
     return Object.hash(
       _fontFamily,
       fontFamilyFallback != null ? Object.hashAll(fontFamilyFallback) : null,
@@ -685,12 +685,12 @@ final class SkwasmStrutStyle extends SkwasmObjectWrapper<RawStrutStyle> implemen
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
-      final List<String>? fontFamilyFallback = _fontFamilyFallback;
-      final double? fontSize = _fontSize;
-      final double? height = _height;
-      final double? leading = _leading;
+      final fontFamilyFallback = _fontFamilyFallback;
+      final fontSize = _fontSize;
+      final height = _height;
+      final leading = _leading;
       result = 'StrutStyle('
           'fontFamily: ${_fontFamily ?? "unspecified"}, '
           'fontFamilyFallback: ${_fontFamilyFallback ?? "unspecified"}, '
@@ -724,7 +724,7 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
     String? ellipsis,
     ui.Locale? locale,
   }) {
-    final ParagraphStyleHandle handle = paragraphStyleCreate();
+    final handle = paragraphStyleCreate();
     if (textAlign != null) {
       paragraphStyleSetTextAlign(handle, textAlign.index);
     }
@@ -745,7 +745,7 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       );
     }
     if (ellipsis != null) {
-      final SkStringHandle ellipsisHandle = skStringFromDartString(ellipsis);
+      final ellipsisHandle = skStringFromDartString(ellipsis);
       paragraphStyleSetEllipsis(handle, ellipsisHandle);
       skStringFree(ellipsisHandle);
     }
@@ -753,11 +753,11 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       strutStyle as SkwasmStrutStyle;
       paragraphStyleSetStrutStyle(handle, strutStyle.handle);
     }
-    final SkwasmNativeTextStyle textStyle =
+    final textStyle =
       (renderer.fontCollection as SkwasmFontCollection).defaultTextStyle.copy();
-    final TextStyleHandle textStyleHandle = textStyle.handle;
+    final textStyleHandle = textStyle.handle;
 
-    final List<String> effectiveFontFamilies = _computeEffectiveFontFamilies(<String>[
+    final effectiveFontFamilies = _computeEffectiveFontFamilies(<String>[
       if (fontFamily != null) fontFamily
     ]);
     if (effectiveFontFamilies.isNotEmpty) {
@@ -782,7 +782,7 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
       );
     }
     if (locale != null) {
-      final SkStringHandle localeHandle =
+      final localeHandle =
       skStringFromDartString(locale.toLanguageTag());
       textStyleSetLocale(textStyleHandle, localeHandle);
       skStringFree(localeHandle);
@@ -889,10 +889,10 @@ class SkwasmParagraphStyle extends SkwasmObjectWrapper<RawParagraphStyle> implem
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
-      final double? fontSize = _fontSize;
-      final double? height = _height;
+      final fontSize = _fontSize;
+      final height = _height;
       result = 'ParagraphStyle('
           'textAlign: ${_textAlign ?? "unspecified"}, '
           'textDirection: ${_textDirection ?? "unspecified"}, '
@@ -955,7 +955,7 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
 
   @override
   void addText(String text) {
-    final SkString16Handle stringHandle = skString16FromDartString(text);
+    final stringHandle = skString16FromDartString(text);
     paragraphBuilderAddText(handle, stringHandle);
     skString16Free(stringHandle);
   }
@@ -971,8 +971,8 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
     // and a JS string. Converting from linear memory to Dart strings or JS
     // strings is more efficient than directly converting to each other, so we
     // just create both up front here.
-    final Pointer<Uint32> outSize = scope.allocUint32Array(1);
-    final Pointer<Uint8> utf8Data = paragraphBuilderGetUtf8Text(handle, outSize);
+    final outSize = scope.allocUint32Array(1);
+    final utf8Data = paragraphBuilderGetUtf8Text(handle, outSize);
 
     final String text;
     final JSString jsText;
@@ -980,7 +980,7 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
       text = '';
       jsText = ''.toJS;
     } else {
-      final List<int> codeUnitList = List<int>.generate(
+      final codeUnitList = List<int>.generate(
         outSize.value,
         (int index) => utf8Data[index]
       );
@@ -1002,44 +1002,44 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
   });
 
   UnicodePositionBufferHandle _createBreakPositionBuffer(String text, JSString jsText, DomSegmenter segmenter) {
-    final DomIteratorWrapper<DomSegment> iterator = segmenter.segmentRaw(jsText).iterator();
-    final List<int> breaks = <int>[];
+    final iterator = segmenter.segmentRaw(jsText).iterator();
+    final breaks = <int>[];
     while (iterator.moveNext()) {
       breaks.add(iterator.current.index);
     }
     breaks.add(text.length);
 
-    final UnicodePositionBufferHandle positionBuffer = unicodePositionBufferCreate(breaks.length);
-    final Pointer<Uint32> buffer = unicodePositionBufferGetDataPointer(positionBuffer);
-    for (int i = 0; i < breaks.length; i++) {
+    final positionBuffer = unicodePositionBufferCreate(breaks.length);
+    final buffer = unicodePositionBufferGetDataPointer(positionBuffer);
+    for (var i = 0; i < breaks.length; i++) {
       buffer[i] = breaks[i];
     }
     return positionBuffer;
   }
 
   void _addGraphemeBreakData(String text, JSString jsText) {
-    final UnicodePositionBufferHandle positionBuffer =
+    final positionBuffer =
       _createBreakPositionBuffer(text, jsText, _graphemeSegmenter);
     paragraphBuilderSetGraphemeBreaksUtf16(handle, positionBuffer);
     unicodePositionBufferFree(positionBuffer);
   }
 
   void _addWordBreakData(String text, JSString jsText) {
-    final UnicodePositionBufferHandle positionBuffer =
+    final positionBuffer =
       _createBreakPositionBuffer(text, jsText, _wordSegmenter);
     paragraphBuilderSetWordBreaksUtf16(handle, positionBuffer);
     unicodePositionBufferFree(positionBuffer);
   }
 
   void _addLineBreakData(String text, JSString jsText) {
-    final List<LineBreakFragment> lineBreaks = breakLinesUsingV8BreakIterator(text, jsText, _v8BreakIterator);
-    final LineBreakBufferHandle lineBreakBuffer = lineBreakBufferCreate(lineBreaks.length + 1);
-    final Pointer<LineBreak> lineBreakPointer = lineBreakBufferGetDataPointer(lineBreakBuffer);
+    final lineBreaks = breakLinesUsingV8BreakIterator(text, jsText, _v8BreakIterator);
+    final lineBreakBuffer = lineBreakBufferCreate(lineBreaks.length + 1);
+    final lineBreakPointer = lineBreakBufferGetDataPointer(lineBreakBuffer);
 
     // First line break is always zero. The buffer is zero initialized, so we can just
     // skip the first one.
-    for (int i = 0; i < lineBreaks.length; i++) {
-      final LineBreakFragment fragment = lineBreaks[i];
+    for (var i = 0; i < lineBreaks.length; i++) {
+      final fragment = lineBreaks[i];
       lineBreakPointer[i + 1].position = fragment.end;
       lineBreakPointer[i + 1].lineBreakType = fragment.type == LineBreakType.mandatory
         ? _kHardLineBreak
@@ -1060,7 +1060,7 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
 
   @override
   void pop() {
-    final SkwasmNativeTextStyle style = textStyleStack.removeLast();
+    final style = textStyleStack.removeLast();
     style.dispose();
     paragraphBuilderPop(handle);
   }
@@ -1068,10 +1068,10 @@ class SkwasmParagraphBuilder extends SkwasmObjectWrapper<RawParagraphBuilder> im
   @override
   void pushStyle(ui.TextStyle textStyle) {
     textStyle as SkwasmTextStyle;
-    final SkwasmNativeTextStyle baseStyle = textStyleStack.isNotEmpty
+    final baseStyle = textStyleStack.isNotEmpty
       ? textStyleStack.last
       : style.textStyle;
-    final SkwasmNativeTextStyle nativeStyle = baseStyle.copy();
+    final nativeStyle = baseStyle.copy();
     textStyle.applyToNative(nativeStyle);
     textStyleStack.add(nativeStyle);
     paragraphBuilderPushStyle(handle, nativeStyle.handle);

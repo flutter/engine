@@ -17,11 +17,11 @@ void main() {
 
 Future<void> doTests() async {
   group('FlutterViewManagerProxy', () {
-    final EnginePlatformDispatcher platformDispatcher =
+    final platformDispatcher =
         EnginePlatformDispatcher.instance;
-    final FlutterViewManager viewManager =
+    final viewManager =
         FlutterViewManager(platformDispatcher);
-    final FlutterViewManagerProxy views =
+    final views =
         FlutterViewManagerProxy(viewManager: viewManager);
 
     late EngineFlutterView view;
@@ -29,7 +29,7 @@ Future<void> doTests() async {
     late DomElement hostElement;
 
     int registerViewWithOptions(Map<String, Object?> options) {
-      final JsFlutterViewOptions jsOptions =
+      final jsOptions =
           options.toJSAnyDeep as JsFlutterViewOptions;
       viewManager.registerView(view, jsViewOptions: jsOptions);
       return viewId;
@@ -47,16 +47,16 @@ Future<void> doTests() async {
 
     group('getHostElement', () {
       test('null when viewId is unknown', () {
-        final JSAny? element = views.getHostElement(33930);
+        final element = views.getHostElement(33930);
         expect(element, isNull);
       });
 
       test('can retrieve hostElement for a known view', () {
-        final int viewId = registerViewWithOptions(<String, Object?>{
+        final viewId = registerViewWithOptions(<String, Object?>{
           'hostElement': hostElement,
         });
 
-        final JSAny? element = views.getHostElement(viewId);
+        final element = views.getHostElement(viewId);
 
         expect(element, hostElement);
       });
@@ -64,12 +64,12 @@ Future<void> doTests() async {
 
     group('getInitialData', () {
       test('null when viewId is unknown', () {
-        final JSAny? element = views.getInitialData(33930);
+        final element = views.getInitialData(33930);
         expect(element, isNull);
       });
 
       test('can retrieve initialData for a known view', () {
-        final int viewId = registerViewWithOptions(<String, Object?>{
+        final viewId = registerViewWithOptions(<String, Object?>{
           'hostElement': hostElement,
           'initialData': <String, Object?>{
             'someInt': 42,
@@ -78,7 +78,7 @@ Future<void> doTests() async {
           },
         });
 
-        final InitialData? element =
+        final element =
             views.getInitialData(viewId) as InitialData?;
 
         expect(element, isNotNull);

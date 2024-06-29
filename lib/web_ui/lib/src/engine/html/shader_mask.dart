@@ -73,8 +73,8 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = defaultCreateElement('flt-shader-mask');
-    final DomElement container = createDomElement('flt-mask-interior');
+    final element = defaultCreateElement('flt-shader-mask');
+    final container = createDomElement('flt-mask-interior');
     container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
@@ -107,15 +107,15 @@ class PersistedShaderMask extends PersistedContainerSurface
 
   void _applyGradientShader() {
     if (shader is EngineGradient) {
-      final EngineGradient gradientShader = shader as EngineGradient;
+      final gradientShader = shader as EngineGradient;
 
       // The gradient shader's bounds are in the context of the element itself,
       // rather than the global position, so translate it back to the origin.
-      final ui.Rect translatedRect =
+      final translatedRect =
           maskRect.translate(-maskRect.left, -maskRect.top);
-      final String imageUrl =
+      final imageUrl =
           gradientShader.createImageBitmap(translatedRect, 1, true) as String;
-      ui.BlendMode blendModeTemp = blendMode;
+      var blendModeTemp = blendMode;
       switch (blendModeTemp) {
         case ui.BlendMode.clear:
         case ui.BlendMode.dstOut:
@@ -158,7 +158,7 @@ class PersistedShaderMask extends PersistedContainerSurface
           break;
       }
 
-      final SvgFilter svgFilter = svgMaskFilterFromImageAndBlendMode(
+      final svgFilter = svgMaskFilterFromImageAndBlendMode(
           imageUrl, blendModeTemp, maskRect.width, maskRect.height);
       _shaderElement = svgFilter.element;
       if (isWebKit) {
@@ -264,7 +264,7 @@ SvgFilter svgMaskFilterFromImageAndBlendMode(
 // B' = b1*R + b2*G + b3*B + b4*A + b5
 // A' = a1*R + a2*G + a3*B + a4*A + a5
 SvgFilter _srcInImageToSvg(String imageUrl, double width, double height) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeColorMatrix(
     const <double>[
       0, 0, 0, 0, 1,
@@ -294,7 +294,7 @@ SvgFilter _srcInImageToSvg(String imageUrl, double width, double height) {
 }
 
 SvgFilter _srcImageToSvg(String imageUrl, double width, double height) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
     result: 'comp',
@@ -305,7 +305,7 @@ SvgFilter _srcImageToSvg(String imageUrl, double width, double height) {
 }
 
 SvgFilter _srcOutImageToSvg(String imageUrl, double width, double height) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
     result: 'image',
@@ -322,7 +322,7 @@ SvgFilter _srcOutImageToSvg(String imageUrl, double width, double height) {
 }
 
 SvgFilter _xorImageToSvg(String imageUrl, double width, double height) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
     result: 'image',
@@ -342,7 +342,7 @@ SvgFilter _xorImageToSvg(String imageUrl, double width, double height) {
 // result = k1 *in*in2 + k2*in + k3*in2 + k4.
 SvgFilter _compositeImageToSvg(String imageUrl, double k1, double k2, double k3,
     double k4, double width, double height) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
     result: 'image',
@@ -366,7 +366,7 @@ SvgFilter _compositeImageToSvg(String imageUrl, double k1, double k2, double k3,
 // First apply color filter to source to change it to [color], then
 // composite using multiplication.
 SvgFilter _modulateImageToSvg(String imageUrl, double width, double height) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
     result: 'image',
@@ -390,7 +390,7 @@ SvgFilter _modulateImageToSvg(String imageUrl, double width, double height) {
 SvgFilter _blendImageToSvg(
     String imageUrl, SvgBlendMode svgBlendMode, double width, double height,
     {bool swapLayers = false}) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeImage(
     href: imageUrl,
     result: 'image',

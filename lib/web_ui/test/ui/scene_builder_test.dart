@@ -26,9 +26,9 @@ Future<void> testMain() async {
   );
 
   group('${ui.SceneBuilder}', () {
-    const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
+    const region = ui.Rect.fromLTWH(0, 0, 300, 300);
     test('Test offset layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushOffset(150, 150);
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
         canvas.drawCircle(
@@ -43,8 +43,8 @@ Future<void> testMain() async {
     });
 
     test('Test transform layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
-      final Matrix4 transform = Matrix4.identity();
+      final sceneBuilder = ui.SceneBuilder();
+      final transform = Matrix4.identity();
 
       // The html renderer expects the top-level transform to just be a scaling
       // matrix for the device pixel ratio, so just push the identity matrix.
@@ -67,7 +67,7 @@ Future<void> testMain() async {
     });
 
     test('Test clipRect layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushClipRect(const ui.Rect.fromLTRB(0, 0, 150, 150));
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
         canvas.drawCircle(
@@ -82,7 +82,7 @@ Future<void> testMain() async {
     });
 
     test('Test clipRRect layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushClipRRect(ui.RRect.fromRectAndRadius(
         const ui.Rect.fromLTRB(0, 0, 150, 150),
         const ui.Radius.circular(25),
@@ -100,8 +100,8 @@ Future<void> testMain() async {
     });
 
     test('Test clipPath layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
-      final ui.Path path = ui.Path();
+      final sceneBuilder = ui.SceneBuilder();
+      final path = ui.Path();
       path.addOval(ui.Rect.fromCircle(center: const ui.Offset(150, 150), radius: 60));
       sceneBuilder.pushClipPath(path);
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
@@ -116,7 +116,7 @@ Future<void> testMain() async {
     });
 
     test('Test opacity layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
         canvas.drawRect(
           ui.Rect.fromCircle(center: const ui.Offset(150, 150), radius: 50),
@@ -126,7 +126,7 @@ Future<void> testMain() async {
 
       sceneBuilder.pushOpacity(0x7F, offset: const ui.Offset(150, 150));
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
-        final ui.Paint paint = ui.Paint()..color = const ui.Color(0xFFFF0000);
+        final paint = ui.Paint()..color = const ui.Color(0xFFFF0000);
         canvas.drawCircle(
           const ui.Offset(-25, 0),
           50,
@@ -144,10 +144,10 @@ Future<void> testMain() async {
     });
 
     test('shader mask layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
 
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
-        final ui.Paint paint = ui.Paint()..color = const ui.Color(0xFFFF0000);
+        final paint = ui.Paint()..color = const ui.Color(0xFFFF0000);
         canvas.drawCircle(
           const ui.Offset(125, 150),
           50,
@@ -184,15 +184,15 @@ Future<void> testMain() async {
     }, skip: isFirefox && isHtml); // https://github.com/flutter/flutter/issues/86623
 
     test('backdrop filter layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
 
       sceneBuilder.addPicture(ui.Offset.zero, drawPicture((ui.Canvas canvas) {
         // Create a red and blue checkerboard pattern
-        final ui.Paint redPaint = ui.Paint()..color = const ui.Color(0xFFFF0000);
-        final ui.Paint bluePaint = ui.Paint()..color = const ui.Color(0xFF0000FF);
-        for (double y = 0; y < 300; y += 10) {
-          for (double x = 0; x < 300; x += 10) {
-            final ui.Paint paint = ((x + y) % 20 == 0) ? redPaint : bluePaint;
+        final redPaint = ui.Paint()..color = const ui.Color(0xFFFF0000);
+        final bluePaint = ui.Paint()..color = const ui.Color(0xFF0000FF);
+        for (var y = 0; y < 300; y += 10) {
+          for (var x = 0; x < 300; x += 10) {
+            final paint = ((x + y) % 20 == 0) ? redPaint : bluePaint;
             canvas.drawRect(ui.Rect.fromLTWH(x, y, 10, 10), paint);
           }
         }
@@ -216,7 +216,7 @@ Future<void> testMain() async {
     });
 
     test('image filter layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
       sceneBuilder.pushImageFilter(ui.ImageFilter.blur(
         sigmaX: 5.0,
         sigmaY: 5.0,
@@ -235,8 +235,8 @@ Future<void> testMain() async {
     });
 
     test('color filter layer', () async {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
-      const ui.ColorFilter sepia = ui.ColorFilter.matrix(<double>[
+      final sceneBuilder = ui.SceneBuilder();
+      const sepia = ui.ColorFilter.matrix(<double>[
         0.393, 0.769, 0.189, 0, 0,
         0.349, 0.686, 0.168, 0, 0,
         0.272, 0.534, 0.131, 0, 0,
@@ -259,8 +259,8 @@ Future<void> testMain() async {
 }
 
 ui.Picture drawPicture(void Function(ui.Canvas) drawCommands) {
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final ui.Canvas canvas = ui.Canvas(recorder);
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder);
   drawCommands(canvas);
   return recorder.endRecording();
 }

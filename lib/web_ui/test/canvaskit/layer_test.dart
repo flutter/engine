@@ -21,13 +21,13 @@ void testMain() {
 
     // Regression test for https://github.com/flutter/flutter/issues/63715
     test('TransformLayer prerolls correctly', () async {
-      final CkPicture picture =
+      final picture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 60, 60), (CkCanvas canvas) {
         canvas.drawRect(const ui.Rect.fromLTRB(0, 0, 60, 60),
             CkPaint()..style = ui.PaintingStyle.fill);
       });
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushClipRect(const ui.Rect.fromLTRB(15, 15, 30, 30));
 
       // Intentionally use a perspective transform, which triggered the
@@ -37,36 +37,36 @@ void testMain() {
       ));
 
       sb.addPicture(ui.Offset.zero, picture);
-      final LayerScene scene = sb.build();
-      final LayerTree layerTree = scene.layerTree;
+      final scene = sb.build();
+      final layerTree = scene.layerTree;
       await renderScene(scene);
-      final ClipRectEngineLayer clipRect =
+      final clipRect =
           layerTree.rootLayer.debugLayers.single as ClipRectEngineLayer;
       expect(clipRect.paintBounds, const ui.Rect.fromLTRB(15, 15, 30, 30));
 
-      final TransformEngineLayer transform =
+      final transform =
           clipRect.debugLayers.single as TransformEngineLayer;
       expect(transform.paintBounds, const ui.Rect.fromLTRB(0, 0, 30, 30));
     });
 
     test('can push a leaf layer without a container layer', () async {
-      final CkPictureRecorder recorder = CkPictureRecorder();
+      final recorder = CkPictureRecorder();
       recorder.beginRecording(ui.Rect.zero);
       LayerSceneBuilder().addPicture(ui.Offset.zero, recorder.endRecording());
     });
 
     test('null ViewEmbedder with PlatformView', () async {
-      final LayerSceneBuilder sb = LayerSceneBuilder();
-      const ui.Rect kDefaultRegion = ui.Rect.fromLTRB(0, 0, 200, 200);
+      final sb = LayerSceneBuilder();
+      const kDefaultRegion = ui.Rect.fromLTRB(0, 0, 200, 200);
       await createPlatformView(0, 'test-platform-view');
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       sb.pushOffset(0, 0);
-      final LayerScene layerScene = sb.build();
-      final ui.Image testImage = await layerScene.toImage(100, 100);
+      final layerScene = sb.build();
+      final testImage = await layerScene.toImage(100, 100);
 
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(kDefaultRegion);
       canvas.drawImage(testImage as CkImage, ui.Offset.zero, CkPaint());
       await matchPictureGolden(
         'canvaskit_picture.png',
@@ -76,13 +76,13 @@ void testMain() {
     });
 
     test('ImageFilter layer applies matrix in preroll', () async {
-      final CkPicture picture = paintPicture(
+      final picture = paintPicture(
           const ui.Rect.fromLTRB(0, 0, 100, 100), (CkCanvas canvas) {
         canvas.drawRect(const ui.Rect.fromLTRB(0, 0, 100, 100),
             CkPaint()..style = ui.PaintingStyle.fill);
       });
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushImageFilter(
         ui.ImageFilter.matrix(
           (Matrix4.identity()
@@ -93,11 +93,11 @@ void testMain() {
       );
       sb.addPicture(ui.Offset.zero, picture);
 
-      final LayerScene scene = sb.build();
-      final LayerTree layerTree = scene.layerTree;
+      final scene = sb.build();
+      final layerTree = scene.layerTree;
       await renderScene(scene);
 
-      final ImageFilterEngineLayer imageFilterLayer =
+      final imageFilterLayer =
           layerTree.rootLayer.debugLayers.single as ImageFilterEngineLayer;
       expect(
           imageFilterLayer.paintBounds, const ui.Rect.fromLTRB(10, 0, 60, 50));
@@ -105,22 +105,22 @@ void testMain() {
 
     test('Opacity layer works correctly with Scene.toImage', () async {
       // This is a regression test for https://github.com/flutter/flutter/issues/138009
-      final CkPicture picture = paintPicture(
+      final picture = paintPicture(
           const ui.Rect.fromLTRB(0, 0, 100, 100), (CkCanvas canvas) {
         canvas.drawRect(const ui.Rect.fromLTRB(0, 0, 100, 100),
             CkPaint()..style = ui.PaintingStyle.fill);
       });
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushTransform(Matrix4.identity().toFloat64());
       sb.pushOpacity(97, offset: const ui.Offset(20, 20));
       sb.addPicture(ui.Offset.zero, picture);
 
-      final LayerScene scene = sb.build();
-      final ui.Image testImage = await scene.toImage(200, 200);
+      final scene = sb.build();
+      final testImage = await scene.toImage(200, 200);
 
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas =
+      final recorder = CkPictureRecorder();
+      final canvas =
           recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 200, 200));
       canvas.drawImage(testImage as CkImage, ui.Offset.zero, CkPaint());
       await matchPictureGolden(

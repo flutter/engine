@@ -21,8 +21,8 @@ class PersistedOpacity extends PersistedContainerSurface
   void recomputeTransformAndClip() {
     transform = parent!.transform;
 
-    final double dx = offset.dx;
-    final double dy = offset.dy;
+    final dx = offset.dx;
+    final dy = offset.dy;
 
     if (dx != 0.0 || dy != 0.0) {
       transform = transform!.clone();
@@ -41,7 +41,7 @@ class PersistedOpacity extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = domDocument.createElement('flt-opacity');
+    final element = domDocument.createElement('flt-opacity');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
     return element;
@@ -49,7 +49,7 @@ class PersistedOpacity extends PersistedContainerSurface
 
   @override
   void apply() {
-    final DomElement element = rootElement!;
+    final element = rootElement!;
     setElementStyle(element, 'opacity', '${alpha / 255}');
     element.style.transform = 'translate(${offset.dx}px, ${offset.dy}px)';
   }

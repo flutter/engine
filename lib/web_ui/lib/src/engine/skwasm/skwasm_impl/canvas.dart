@@ -41,7 +41,7 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   void saveLayerWithFilter(ui.Rect? bounds, ui.Paint paint, ui.ImageFilter imageFilter) {
-    final SkwasmImageFilter nativeFilter = SkwasmImageFilter.fromUiFilter(imageFilter);
+    final nativeFilter = SkwasmImageFilter.fromUiFilter(imageFilter);
     paint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
@@ -212,8 +212,8 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Rect src,
     ui.Rect dst,
     ui.Paint paint) => withStackScope((StackScope scope) {
-    final Pointer<Float> sourceRect = scope.convertRectToNative(src);
-    final Pointer<Float> destRect = scope.convertRectToNative(dst);
+    final sourceRect = scope.convertRectToNative(src);
+    final destRect = scope.convertRectToNative(dst);
     canvasDrawImageRect(
       _handle,
       (image as SkwasmImage).handle,
@@ -230,8 +230,8 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Rect center,
     ui.Rect dst,
     ui.Paint paint) => withStackScope((StackScope scope) {
-    final Pointer<Int32> centerRect = scope.convertIRectToNative(center);
-    final Pointer<Float> destRect = scope.convertRectToNative(dst);
+    final centerRect = scope.convertIRectToNative(center);
+    final destRect = scope.convertRectToNative(dst);
     canvasDrawImageNine(
       _handle,
       (image as SkwasmImage).handle,
@@ -263,7 +263,7 @@ class SkwasmCanvas implements SceneCanvas {
     List<ui.Offset> points,
     ui.Paint paint
   ) => withStackScope((StackScope scope) {
-    final RawPointArray rawPoints = scope.convertPointArrayToNative(points);
+    final rawPoints = scope.convertPointArrayToNative(points);
     canvasDrawPoints(
       _handle,
       pointMode.index,
@@ -279,7 +279,7 @@ class SkwasmCanvas implements SceneCanvas {
     Float32List points,
     ui.Paint paint
   ) => withStackScope((StackScope scope) {
-    final RawPointArray rawPoints = scope.convertDoublesToNative(points);
+    final rawPoints = scope.convertDoublesToNative(points);
     canvasDrawPoints(
       _handle,
       pointMode.index,
@@ -311,12 +311,12 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Rect? cullRect,
     ui.Paint paint,
   ) => withStackScope((StackScope scope) {
-    final RawRSTransformArray rawTransforms = scope.convertRSTransformsToNative(transforms);
-    final RawRect rawRects = scope.convertRectsToNative(rects);
-    final RawColorArray rawColors = colors != null
+    final rawTransforms = scope.convertRSTransformsToNative(transforms);
+    final rawRects = scope.convertRectsToNative(rects);
+    final rawColors = colors != null
       ? scope.convertColorArrayToNative(colors)
       : nullptr;
-    final RawRect rawCullRect = cullRect != null
+    final rawCullRect = cullRect != null
       ? scope.convertRectToNative(cullRect)
       : nullptr;
     canvasDrawAtlas(
@@ -342,12 +342,12 @@ class SkwasmCanvas implements SceneCanvas {
     ui.Rect? cullRect,
     ui.Paint paint,
   ) => withStackScope((StackScope scope) {
-    final RawRSTransformArray rawTransforms = scope.convertDoublesToNative(rstTransforms);
-    final RawRect rawRects = scope.convertDoublesToNative(rects);
-    final RawColorArray rawColors = colors != null
+    final rawTransforms = scope.convertDoublesToNative(rstTransforms);
+    final rawRects = scope.convertDoublesToNative(rects);
+    final rawColors = colors != null
       ? scope.convertIntsToUint32Native(colors)
       : nullptr;
-    final RawRect rawCullRect = cullRect != null
+    final rawCullRect = cullRect != null
       ? scope.convertRectToNative(cullRect)
       : nullptr;
     canvasDrawAtlas(
@@ -383,7 +383,7 @@ class SkwasmCanvas implements SceneCanvas {
   @override
   ui.Rect getDestinationClipBounds() {
     return withStackScope((StackScope scope) {
-      final Pointer<Int32> outRect = scope.allocInt32Array(4);
+      final outRect = scope.allocInt32Array(4);
       canvasGetDeviceClipBounds(_handle, outRect);
       return scope.convertIRectFromNative(outRect);
     });
@@ -391,8 +391,8 @@ class SkwasmCanvas implements SceneCanvas {
 
   @override
   ui.Rect getLocalClipBounds() {
-    final Float64List transform = getTransform();
-    final Matrix4 matrix = Matrix4.fromFloat32List(Float32List.fromList(transform));
+    final transform = getTransform();
+    final matrix = Matrix4.fromFloat32List(Float32List.fromList(transform));
     if (matrix.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
@@ -403,7 +403,7 @@ class SkwasmCanvas implements SceneCanvas {
   @override
   Float64List getTransform() {
     return withStackScope((StackScope scope) {
-      final Pointer<Float> outMatrix = scope.allocFloatArray(16);
+      final outMatrix = scope.allocFloatArray(16);
       canvasGetTransform(_handle, outMatrix);
       return scope.convertMatrix44FromNative(outMatrix);
     });

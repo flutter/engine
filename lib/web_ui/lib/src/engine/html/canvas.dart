@@ -150,11 +150,11 @@ class SurfaceCanvas implements ui.Canvas {
 
   @override
   ui.Rect getLocalClipBounds() {
-    final ui.Rect? destBounds = _canvas.getDestinationClipBounds();
+    final destBounds = _canvas.getDestinationClipBounds();
     if (destBounds == null) {
       return ui.Rect.largest;
     }
-    final Matrix4 transform = Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
+    final transform = Matrix4.fromFloat32List(_canvas.getCurrentMatrixUnsafe());
     if (transform.invert() == 0) {
       // non-invertible transforms collapse space to a line or point
       return ui.Rect.zero;
@@ -246,15 +246,15 @@ class SurfaceCanvas implements ui.Canvas {
   void drawArc(ui.Rect rect, double startAngle, double sweepAngle,
       bool useCenter, ui.Paint paint) {
     assert(rectIsValid(rect));
-    const double pi = math.pi;
-    const double pi2 = 2.0 * pi;
+    const pi = math.pi;
+    const pi2 = 2.0 * pi;
 
-    final ui.Path path = ui.Path();
+    final path = ui.Path();
     if (useCenter) {
       path.moveTo(
           (rect.left + rect.right) / 2.0, (rect.top + rect.bottom) / 2.0);
     }
-    bool forceMoveTo = !useCenter;
+    var forceMoveTo = !useCenter;
     if (sweepAngle <= -pi2) {
       path.arcTo(rect, startAngle, -pi, forceMoveTo);
       startAngle -= pi;
@@ -315,8 +315,8 @@ class SurfaceCanvas implements ui.Canvas {
   // The area from src0 => src1 of the image is painted on the screen from dst0 => dst1
   // The slices for each dimension are generated independently.
   List<double> _initSlices(double img0, double imgC0, double imgC1, double img1, double dst0, double dst1) {
-    final double imageDim = img1 - img0;
-    final double destDim = dst1 - dst0;
+    final imageDim = img1 - img0;
+    final destDim = dst1 - dst0;
 
     if (imageDim == destDim) {
       // If the src and dest are the same size then we do not need scaling
@@ -324,15 +324,15 @@ class SurfaceCanvas implements ui.Canvas {
       return <double>[ img0, dst0, img1, dst1 ];
     }
 
-    final double edge0Dim = imgC0 - img0;
-    final double edge1Dim = img1 - imgC1;
-    final double edgesDim = edge0Dim + edge1Dim;
+    final edge0Dim = imgC0 - img0;
+    final edge1Dim = img1 - imgC1;
+    final edgesDim = edge0Dim + edge1Dim;
 
     if (edgesDim >= destDim) {
       // the center portion has disappeared, leaving only the edges to scale to a common
       // center position in the destination
       // this produces only 2 slices which is 8 values
-      final double dstC = dst0 + destDim * edge0Dim / edgesDim;
+      final dstC = dst0 + destDim * edge0Dim / edgesDim;
       return <double>[
         img0,  dst0, imgC0, dstC,
         imgC1, dstC, img1,  dst1,
@@ -341,8 +341,8 @@ class SurfaceCanvas implements ui.Canvas {
 
     // center portion is nonEmpty and only that part is scaled
     // we need 3 slices which is 12 values
-    final double dstC0 = dst0 + edge0Dim;
-    final double dstC1 = dst1 - edge1Dim;
+    final dstC0 = dst0 + edge0Dim;
+    final dstC1 = dst1 - edge1Dim;
     return <double>[
       img0,  dst0,  imgC0, dstC0,
       imgC0, dstC0, imgC1, dstC1,
@@ -360,7 +360,7 @@ class SurfaceCanvas implements ui.Canvas {
       return;
     }
 
-    final List<double> hSlices = _initSlices(
+    final hSlices = _initSlices(
       0,
       center.left,
       center.right,
@@ -368,7 +368,7 @@ class SurfaceCanvas implements ui.Canvas {
       dst.left,
       dst.right,
     );
-    final List<double> vSlices = _initSlices(
+    final vSlices = _initSlices(
       0,
       center.top,
       center.bottom,
@@ -377,16 +377,16 @@ class SurfaceCanvas implements ui.Canvas {
       dst.bottom,
     );
 
-    for (int yi = 0; yi < vSlices.length; yi += 4) {
-      final double srcY0 = vSlices[yi];
-      final double dstY0 = vSlices[yi + 1];
-      final double srcY1 = vSlices[yi + 2];
-      final double dstY1 = vSlices[yi + 3];
-      for (int xi = 0; xi < hSlices.length; xi += 4) {
-        final double srcX0 = hSlices[xi];
-        final double dstX0 = hSlices[xi + 1];
-        final double srcX1 = hSlices[xi + 2];
-        final double dstX1 = hSlices[xi + 3];
+    for (var yi = 0; yi < vSlices.length; yi += 4) {
+      final srcY0 = vSlices[yi];
+      final dstY0 = vSlices[yi + 1];
+      final srcY1 = vSlices[yi + 2];
+      final dstY1 = vSlices[yi + 3];
+      for (var xi = 0; xi < hSlices.length; xi += 4) {
+        final srcX0 = hSlices[xi];
+        final dstX0 = hSlices[xi + 1];
+        final srcX1 = hSlices[xi + 2];
+        final dstX1 = hSlices[xi + 3];
         drawImageRect(
           image,
           ui.Rect.fromLTRB(srcX0, srcY0, srcX1, srcY1),
@@ -415,7 +415,7 @@ class SurfaceCanvas implements ui.Canvas {
   @override
   void drawPoints(
       ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
-    final Float32List pointList = offsetListToFloat32List(points);
+    final pointList = offsetListToFloat32List(points);
     drawRawPoints(pointMode, pointList, paint);
   }
 
@@ -447,7 +447,7 @@ class SurfaceCanvas implements ui.Canvas {
   ) {
     assert(colors == null || colors.isEmpty || blendMode != null);
 
-    final int rectCount = rects.length;
+    final rectCount = rects.length;
     if (transforms.length != rectCount) {
       throw ArgumentError('"transforms" and "rects" lengths must match.');
     }
@@ -472,7 +472,7 @@ class SurfaceCanvas implements ui.Canvas {
   ) {
     assert(colors == null || blendMode != null);
 
-    final int rectCount = rects.length;
+    final rectCount = rects.length;
     if (rstTransforms.length != rectCount) {
       throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
     }

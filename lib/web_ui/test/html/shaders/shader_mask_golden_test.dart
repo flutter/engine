@@ -47,7 +47,7 @@ Future<void> testMain() async {
 
   setUp(() async {
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final DomNode scene in sceneHost.querySelectorAll('flt-scene').cast<DomNode>()) {
+    for (final scene in sceneHost.querySelectorAll('flt-scene').cast<DomNode>()) {
       scene.remove();
     }
     initWebGl();
@@ -114,8 +114,8 @@ Future<void> testMain() async {
 
 Picture _drawTestPictureWithCircles(
     Rect region, double offsetX, double offsetY) {
-  final EnginePictureRecorder recorder = EnginePictureRecorder();
-  final RecordingCanvas canvas = recorder.beginRecording(region);
+  final recorder = EnginePictureRecorder();
+  final canvas = recorder.beginRecording(region);
   canvas.drawCircle(Offset(offsetX + 30, offsetY + 30), 30,
       SurfacePaint()..style = PaintingStyle.fill);
   canvas.drawCircle(
@@ -140,13 +140,13 @@ Picture _drawTestPictureWithCircles(
 }
 
 void _renderCirclesScene(BlendMode blendMode) {
-  const Rect region = Rect.fromLTWH(0, 0, 400, 400);
+  const region = Rect.fromLTWH(0, 0, 400, 400);
 
-  final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-  final Picture circles1 = _drawTestPictureWithCircles(region, 10, 10);
+  final builder = SurfaceSceneBuilder();
+  final circles1 = _drawTestPictureWithCircles(region, 10, 10);
   builder.addPicture(Offset.zero, circles1);
 
-  const List<Color> colors = <Color>[
+  const colors = <Color>[
     Color(0xFF000000),
     Color(0xFFFF3C38),
     Color(0xFFFF8C42),
@@ -154,9 +154,9 @@ void _renderCirclesScene(BlendMode blendMode) {
     Color(0xFF6699CC),
     Color(0xFF656D78),
   ];
-  const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+  const stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-  const Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
+  const shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
 
   final EngineGradient shader = GradientLinear(
       Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
@@ -164,7 +164,7 @@ void _renderCirclesScene(BlendMode blendMode) {
       colors, stops, TileMode.clamp, Matrix4.identity().storage);
 
   builder.pushShaderMask(shader, shaderBounds, blendMode);
-  final Picture circles2 = _drawTestPictureWithCircles(region, 180, 10);
+  final circles2 = _drawTestPictureWithCircles(region, 180, 10);
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
 
@@ -173,34 +173,34 @@ void _renderCirclesScene(BlendMode blendMode) {
 
 Picture _drawTestPictureWithText(
     Rect region, double offsetX, double offsetY) {
-  final EnginePictureRecorder recorder = EnginePictureRecorder();
-  final RecordingCanvas canvas = recorder.beginRecording(region);
-  const String text = 'Shader test';
+  final recorder = EnginePictureRecorder();
+  final canvas = recorder.beginRecording(region);
+  const text = 'Shader test';
 
-  final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+  final paragraphStyle = EngineParagraphStyle(
     fontFamily: 'Roboto',
     fontSize: 40.0,
   );
 
-  final CanvasParagraphBuilder builder = CanvasParagraphBuilder(paragraphStyle);
+  final builder = CanvasParagraphBuilder(paragraphStyle);
   builder.pushStyle(EngineTextStyle.only(color: const Color(0xFFFF0000)));
   builder.addText(text);
-  final CanvasParagraph paragraph = builder.build();
+  final paragraph = builder.build();
 
-  const double maxWidth = 200 - 10;
+  const maxWidth = 200 - 10;
   paragraph.layout(const ParagraphConstraints(width: maxWidth));
   canvas.drawParagraph(paragraph, Offset(offsetX, offsetY));
   return recorder.endRecording();
 }
 
 void _renderTextScene(BlendMode blendMode) {
-  const Rect region = Rect.fromLTWH(0, 0, 600, 400);
+  const region = Rect.fromLTWH(0, 0, 600, 400);
 
-  final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-  final Picture textPicture = _drawTestPictureWithText(region, 10, 10);
+  final builder = SurfaceSceneBuilder();
+  final textPicture = _drawTestPictureWithText(region, 10, 10);
   builder.addPicture(Offset.zero, textPicture);
 
-  const List<Color> colors = <Color>[
+  const colors = <Color>[
     Color(0xFF000000),
     Color(0xFFFF3C38),
     Color(0xFFFF8C42),
@@ -208,9 +208,9 @@ void _renderTextScene(BlendMode blendMode) {
     Color(0xFF6699CC),
     Color(0xFF656D78),
   ];
-  const List<double> stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+  const stops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
-  const Rect shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
+  const shaderBounds = Rect.fromLTWH(180, 10, 140, 140);
 
   final EngineGradient shader = GradientLinear(
       Offset(200 - shaderBounds.left, 30 - shaderBounds.top),
@@ -219,7 +219,7 @@ void _renderTextScene(BlendMode blendMode) {
 
   builder.pushShaderMask(shader, shaderBounds, blendMode);
 
-  final Picture textPicture2 = _drawTestPictureWithText(region, 180, 10);
+  final textPicture2 = _drawTestPictureWithText(region, 180, 10);
   builder.addPicture(Offset.zero, textPicture2);
   builder.pop();
 

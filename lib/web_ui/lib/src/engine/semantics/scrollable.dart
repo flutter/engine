@@ -62,12 +62,12 @@ class Scrollable extends PrimaryRoleManager {
       if (!EngineSemantics.instance.shouldAcceptBrowserGesture('scroll')) {
         return;
       }
-      final bool doScrollForward =
+      final doScrollForward =
           _domScrollPosition > _effectiveNeutralScrollPosition;
       _neutralizeDomScrollPosition();
       semanticsObject.recomputePositionAndSize();
 
-      final int semanticsId = semanticsObject.id;
+      final semanticsId = semanticsObject.id;
       if (doScrollForward) {
         if (semanticsObject.isVerticalScrollContainer) {
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
@@ -163,8 +163,8 @@ class Scrollable extends PrimaryRoleManager {
   /// content available.
   void _neutralizeDomScrollPosition() {
     // This value is arbitrary.
-    const int canonicalNeutralScrollPosition = 10;
-    final ui.Rect? rect = semanticsObject.rect;
+    const canonicalNeutralScrollPosition = 10;
+    final rect = semanticsObject.rect;
     if (rect == null) {
       printWarning('Warning! the rect attribute of semanticsObject is null');
       return;
@@ -173,7 +173,7 @@ class Scrollable extends PrimaryRoleManager {
       // Place the _scrollOverflowElement at the end of the content and
       // make sure that when we neutralize the scrolling position,
       // it doesn't scroll into the visible area.
-      final int verticalOffset = rect.height.ceil() + canonicalNeutralScrollPosition;
+      final verticalOffset = rect.height.ceil() + canonicalNeutralScrollPosition;
       _scrollOverflowElement.style
         ..transform = 'translate(0px,${verticalOffset}px)'
         ..width = '${rect.width.round()}px'
@@ -190,7 +190,7 @@ class Scrollable extends PrimaryRoleManager {
       // Place the _scrollOverflowElement at the end of the content and
       // make sure that when we neutralize the scrolling position,
       // it doesn't scroll into the visible area.
-      final int horizontalOffset = rect.width.ceil() + canonicalNeutralScrollPosition;
+      final horizontalOffset = rect.width.ceil() + canonicalNeutralScrollPosition;
       _scrollOverflowElement.style
         ..transform = 'translate(${horizontalOffset}px,0px)'
         ..width = '${canonicalNeutralScrollPosition}px'
@@ -236,7 +236,7 @@ class Scrollable extends PrimaryRoleManager {
   @override
   void dispose() {
     super.dispose();
-    final DomCSSStyleDeclaration style = element.style;
+    final style = element.style;
     assert(_gestureModeListener != null);
     style.removeProperty('overflowY');
     style.removeProperty('overflowX');

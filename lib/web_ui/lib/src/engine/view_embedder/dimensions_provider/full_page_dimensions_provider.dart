@@ -26,7 +26,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     // Determine what 'resize' event we'll be listening to.
     // This is needed for older browsers (Firefox < 91, Safari < 13)
     // TODO(dit): Clean this up, https://github.com/flutter/flutter/issues/117105
-    final DomEventTarget resizeEventTarget =
+    final resizeEventTarget =
         domWindow.visualViewport ?? domWindow;
 
     // Subscribe to the 'resize' event, and convert it to a ui.Size stream.
@@ -67,8 +67,8 @@ class FullPageDimensionsProvider extends DimensionsProvider {
   ui.Size computePhysicalSize() {
     late double windowInnerWidth;
     late double windowInnerHeight;
-    final DomVisualViewport? viewport = domWindow.visualViewport;
-    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final viewport = domWindow.visualViewport;
+    final devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
 
     if (viewport != null) {
       if (ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs) {
@@ -80,8 +80,8 @@ class FullPageDimensionsProvider extends DimensionsProvider {
         /// accurate physical size. VisualViewport api is only used during
         /// text editing to make sure inset is correctly reported to
         /// framework.
-        final double docWidth = domDocument.documentElement!.clientWidth;
-        final double docHeight = domDocument.documentElement!.clientHeight;
+        final docWidth = domDocument.documentElement!.clientWidth;
+        final docHeight = domDocument.documentElement!.clientHeight;
         windowInnerWidth = docWidth * devicePixelRatio;
         windowInnerHeight = docHeight * devicePixelRatio;
       } else {
@@ -103,8 +103,8 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     double physicalHeight,
     bool isEditingOnMobile,
   ) {
-    final double devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
-    final DomVisualViewport? viewport = domWindow.visualViewport;
+    final devicePixelRatio = EngineFlutterDisplay.instance.devicePixelRatio;
+    final viewport = domWindow.visualViewport;
     late double windowInnerHeight;
 
     if (viewport != null) {
@@ -117,7 +117,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
     } else {
       windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
     }
-    final double bottomPadding = physicalHeight - windowInnerHeight;
+    final bottomPadding = physicalHeight - windowInnerHeight;
 
     return ViewPadding(bottom: bottomPadding, left: 0, right: 0, top: 0);
   }

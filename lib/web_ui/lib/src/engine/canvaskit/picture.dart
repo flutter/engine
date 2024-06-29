@@ -2,18 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import '../scene_painting.dart';
 import '../util.dart';
-import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
 import 'native_memory.dart';
 import 'renderer.dart';
-import 'surface.dart';
 
 /// Implements [ui.Picture] on top of [SkPicture].
 class CkPicture implements ScenePicture {
@@ -100,22 +97,22 @@ class CkPicture implements ScenePicture {
   CkImage toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
 
-    final Surface surface = CanvasKitRenderer.instance.pictureToImageSurface;
-    final CkSurface ckSurface = surface
+    final surface = CanvasKitRenderer.instance.pictureToImageSurface;
+    final ckSurface = surface
         .createOrUpdateSurface(BitmapSize(width, height));
-    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    final ckCanvas = ckSurface.getCanvas();
     ckCanvas.clear(const ui.Color(0x00000000));
     ckCanvas.drawPicture(this);
-    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
-    final SkImageInfo imageInfo = SkImageInfo(
+    final skImage = ckSurface.surface.makeImageSnapshot();
+    final imageInfo = SkImageInfo(
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
       width: width.toDouble(),
       height: height.toDouble(),
     );
-    final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
-    final SkImage? rasterImage =
+    final pixels = skImage.readPixels(0, 0, imageInfo);
+    final rasterImage =
         canvasKit.MakeImage(imageInfo, pixels, (4 * width).toDouble());
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');

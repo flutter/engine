@@ -148,7 +148,7 @@ class HtmlRenderer implements Renderer {
   @override
   Future<ui.Codec> instantiateImageCodec(Uint8List list,
       {int? targetWidth, int? targetHeight, bool allowUpscaling = true}) async {
-    final DomBlob blob = createDomBlob(<dynamic>[list.buffer]);
+    final blob = createDomBlob(<dynamic>[list.buffer]);
     return HtmlRendererBlobCodec(blob);
   }
 
@@ -307,7 +307,7 @@ class HtmlRenderer implements Renderer {
         EnginePlatformDispatcher.instance.implicitView!;
     scene as SurfaceScene;
     implicitView.dom.setScene(scene.webOnlyRootElement!);
-    final FrameTimingRecorder? recorder = scene.timingRecorder;
+    final recorder = scene.timingRecorder;
     recorder?.recordRasterFinish();
     recorder?.submitTimings();
   }
@@ -345,16 +345,16 @@ class HtmlRenderer implements Renderer {
   @override
   Future<ui.Image> createImageFromImageBitmap(
       DomImageBitmap imageSource) async {
-    final int width = imageSource.width.toDartInt;
-    final int height = imageSource.height.toDartInt;
-    final OffScreenCanvas canvas = OffScreenCanvas(width, height);
-    final DomCanvasRenderingContextBitmapRenderer context =
+    final width = imageSource.width.toDartInt;
+    final height = imageSource.height.toDartInt;
+    final canvas = OffScreenCanvas(width, height);
+    final context =
         canvas.getBitmapRendererContext()!;
     context.transferFromImageBitmap(imageSource);
-    final DomHTMLImageElement imageElement = createDomHTMLImageElement();
+    final imageElement = createDomHTMLImageElement();
     late final DomEventListener loadListener;
     late final DomEventListener errorListener;
-    final Completer<HtmlImage> completer = Completer<HtmlImage>();
+    final completer = Completer<HtmlImage>();
     loadListener = createDomEventListener((DomEvent event) {
       completer.complete(HtmlImage(imageElement, width, height));
       imageElement.removeEventListener('load', loadListener);

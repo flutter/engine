@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -277,8 +276,8 @@ void testMain() {
   });
 
   test('FragmentProgram can be created from JSON IPLR bundle', () {
-    final Uint8List data = utf8.encode(kJsonIPLR);
-    final CkFragmentProgram program = CkFragmentProgram.fromBytes('test', data);
+    final data = utf8.encode(kJsonIPLR);
+    final program = CkFragmentProgram.fromBytes('test', data);
 
     expect(program.effect, isNotNull);
     expect(program.floatCount, 32);
@@ -287,7 +286,7 @@ void testMain() {
     expect(program.name, 'test');
 
     {
-      final CkFragmentShader shader =
+      final shader =
           program.fragmentShader() as CkFragmentShader;
 
       shader.setFloat(0, 4);
@@ -297,8 +296,8 @@ void testMain() {
         isNull,
       );
 
-      final SkShader skShader = shader.getSkShader(ui.FilterQuality.none);
-      final UniqueRef<SkShader> ref = shader.ref!;
+      final skShader = shader.getSkShader(ui.FilterQuality.none);
+      final ref = shader.ref!;
       expect(skShader, same(ref.nativeObject));
       expect(ref.isDisposed, false);
 
@@ -309,15 +308,15 @@ void testMain() {
     }
 
     {
-      final CkFragmentShader shader =
+      final shader =
           program.fragmentShader() as CkFragmentShader;
       shader.setFloat(0, 5);
 
-      final SkShader skShader1 = shader.getSkShader(ui.FilterQuality.none);
-      final UniqueRef<SkShader> ref1 = shader.ref!;
+      final skShader1 = shader.getSkShader(ui.FilterQuality.none);
+      final ref1 = shader.ref!;
 
-      final SkShader skShader2 = shader.getSkShader(ui.FilterQuality.none);
-      final UniqueRef<SkShader> ref2 = shader.ref!;
+      final skShader2 = shader.getSkShader(ui.FilterQuality.none);
+      final ref2 = shader.ref!;
       expect(ref1, isNot(same(ref2)));
       expect(
         reason:
@@ -348,8 +347,8 @@ void testMain() {
   test(
       'FragmentProgram can be created from JSON IPLR bundle with arrays and matrices',
       () {
-    final Uint8List data = utf8.encode(kJsonArrayIPLR);
-    final CkFragmentProgram program = CkFragmentProgram.fromBytes('test', data);
+    final data = utf8.encode(kJsonArrayIPLR);
+    final program = CkFragmentProgram.fromBytes('test', data);
 
     expect(program.effect, isNotNull);
     expect(

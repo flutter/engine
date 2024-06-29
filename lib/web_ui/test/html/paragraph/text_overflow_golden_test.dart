@@ -20,7 +20,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  final EngineGoldenTester goldenTester = await EngineGoldenTester.initialize(
+  final goldenTester = await EngineGoldenTester.initialize(
     viewportSize: const Size(800, 800),
   );
 
@@ -31,7 +31,7 @@ Future<void> testMain() async {
   );
 
   testEachCanvas('maxLines clipping', (EngineCanvas canvas) {
-    Offset offset = Offset.zero;
+    var offset = Offset.zero;
     CanvasParagraph p;
 
     // All three lines are rendered.

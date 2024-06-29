@@ -24,7 +24,7 @@ class CanvasKitError extends Error {
 
 /// Creates a new color array.
 Float32List makeFreshSkColor(ui.Color color) {
-  final Float32List result = Float32List(4);
+  final result = Float32List(4);
   result[0] = color.red / 255.0;
   result[1] = color.green / 255.0;
   result[2] = color.blue / 255.0;
@@ -33,7 +33,7 @@ Float32List makeFreshSkColor(ui.Color color) {
 }
 
 ui.TextPosition fromPositionWithAffinity(SkTextPosition positionWithAffinity) {
-  final ui.TextAffinity affinity =
+  final affinity =
       ui.TextAffinity.values[positionWithAffinity.affinity.value.toInt()];
   return ui.TextPosition(
     offset: positionWithAffinity.pos.toInt(),
@@ -92,7 +92,7 @@ ui.Rect computeSkShadowBounds(
   double devicePixelRatio,
   Matrix4 matrix,
 ) {
-  ui.Rect pathBounds = path.getBounds();
+  var pathBounds = path.getBounds();
 
   if (elevation == 0) {
     return pathBounds;
@@ -106,20 +106,20 @@ ui.Rect computeSkShadowBounds(
   // step. With directional lighting translation does not affect the size or
   // shape of the shadow. Skipping this step saves us two transformRects and
   // one matrix inverse.
-  final bool isComplex = !matrix.isIdentityOrTranslation();
+  final isComplex = !matrix.isIdentityOrTranslation();
   if (isComplex) {
     pathBounds = matrix.transformRect(pathBounds);
   }
 
-  double left = pathBounds.left;
-  double top = pathBounds.top;
-  double right = pathBounds.right;
-  double bottom = pathBounds.bottom;
+  var left = pathBounds.left;
+  var top = pathBounds.top;
+  var right = pathBounds.right;
+  var bottom = pathBounds.bottom;
 
-  final double ambientBlur = ambientBlurRadius(elevation);
-  final double spotBlur = ckShadowLightRadius * elevation;
-  final double spotOffsetX = -elevation * ckShadowLightXTangent;
-  final double spotOffsetY = -elevation * ckShadowLightYTangent;
+  final ambientBlur = ambientBlurRadius(elevation);
+  final spotBlur = ckShadowLightRadius * elevation;
+  final spotOffsetX = -elevation * ckShadowLightXTangent;
+  final spotOffsetY = -elevation * ckShadowLightYTangent;
 
   // The extra +1/-1 are to cover possible floating point errors.
   left = left - 1 + (spotOffsetX - ambientBlur - spotBlur) * devicePixelRatio;
@@ -128,10 +128,10 @@ ui.Rect computeSkShadowBounds(
   bottom =
       bottom + 1 + (spotOffsetY + ambientBlur + spotBlur) * devicePixelRatio;
 
-  final ui.Rect shadowBounds = ui.Rect.fromLTRB(left, top, right, bottom);
+  final shadowBounds = ui.Rect.fromLTRB(left, top, right, bottom);
 
   if (isComplex) {
-    final Matrix4 inverse = Matrix4.zero();
+    final inverse = Matrix4.zero();
     // The inverse only makes sense if the determinat is non-zero.
     if (inverse.copyInverse(matrix) != 0.0) {
       return inverse.transformRect(shadowBounds);
@@ -161,22 +161,22 @@ void drawSkShadow(
   bool transparentOccluder,
   double devicePixelRatio,
 ) {
-  int flags = transparentOccluder
+  var flags = transparentOccluder
       ? SkiaShadowFlags.kTransparentOccluderShadowFlags
       : SkiaShadowFlags.kDefaultShadowFlags;
   flags |= SkiaShadowFlags.kDirectionalLight_ShadowFlag;
 
-  final ui.Color inAmbient =
+  final inAmbient =
       color.withAlpha((color.alpha * ckShadowAmbientAlpha).round());
-  final ui.Color inSpot =
+  final inSpot =
       color.withAlpha((color.alpha * ckShadowSpotAlpha).round());
 
-  final SkTonalColors inTonalColors = SkTonalColors(
+  final inTonalColors = SkTonalColors(
     ambient: makeFreshSkColor(inAmbient),
     spot: makeFreshSkColor(inSpot),
   );
 
-  final SkTonalColors tonalColors = canvasKit.computeTonalColors(inTonalColors);
+  final tonalColors = canvasKit.computeTonalColors(inTonalColors);
 
   skCanvas.drawShadow(
     path.skiaObject,

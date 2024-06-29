@@ -116,7 +116,7 @@ class _PackageRoller {
 
   // Roll Chromium and ChromeDriver for each of the Platforms.
   Future<void> roll() async {
-    for (final _Platform platform in _platforms) {
+    for (final platform in _platforms) {
       await _rollChromium(platform);
       await _rollChromeDriver(platform);
       // For now, we only test Firefox on Linux.
@@ -138,12 +138,12 @@ class _PackageRoller {
   // Download a file from the internet, and put it in a temporary location.
   Future<io.File> _downloadTemporaryFile(String url) async {
     // Use the hash of the Url to temporarily store a file under tmp
-    final io.File downloadedFile = io.File(path.join(
+    final downloadedFile = io.File(path.join(
         io.Directory.systemTemp.path,
         'download_${url.hashCode.toRadixString(16)}',
       ));
     vprint('  Downloading [$url] into [${downloadedFile.path}]');
-    final StreamedResponse download = await _client.send(
+    final download = await _client.send(
       Request('GET', Uri.parse(url)),
     );
     await download.stream.pipe(downloadedFile.openWrite());
@@ -168,7 +168,7 @@ class _PackageRoller {
   // Uncompresses a `file` into a `destination` Directory (must exist).
   Future<void> _uncompressAndDeleteFile(io.File tarFile, io.Directory destination) async {
     vprint('  Uncompressing [${tarFile.path}] into [$destination]');
-    final io.ProcessResult unzipResult = await io.Process.run('tar', <String>[
+    final unzipResult = await io.Process.run('tar', <String>[
       '-x',
       '-f',
       tarFile.path,
@@ -191,7 +191,7 @@ class _PackageRoller {
   // When uncompressing files, unzip might create some extra directories, but it
   // seems that our scripts want our CIPD packages to contain everything in the root.
   Future<io.Directory?> _locateContentRoot(io.Directory root) async {
-    final List<io.FileSystemEntity> children = root.listSync(followLinks: false);
+    final children = root.listSync(followLinks: false);
     assert(children.isNotEmpty);
     if (root.path.toLowerCase().endsWith('.app')) {
       // We've gone inside the .app bundle of the mac version!
@@ -210,10 +210,10 @@ class _PackageRoller {
   // Downloads Chromium from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromium(_Platform platform) async {
-    final String version = _lock.chromeLock.version;
-    final String url = platform.binding.getChromeDownloadUrl(version);
-    final String cipdPackageName = 'flutter_internal/browsers/chrome/${platform.name}';
-    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
+    final version = _lock.chromeLock.version;
+    final url = platform.binding.getChromeDownloadUrl(version);
+    final cipdPackageName = 'flutter_internal/browsers/chrome/${platform.name}';
+    final platformDir = io.Directory(path.join(_rollDir.path, platform.name));
     print('\nRolling Chromium for ${platform.name} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await cipdKnowsPackageVersion(
@@ -229,13 +229,13 @@ class _PackageRoller {
     await platformDir.create(recursive: true);
     vprint('  Created target directory [${platformDir.path}]');
 
-    final io.File chromeDownload = await _downloadTemporaryFile(url);
+    final chromeDownload = await _downloadTemporaryFile(url);
 
     await _unzipAndDeleteFile(chromeDownload, platformDir);
 
-    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    final actualContentRoot = await _locateContentRoot(platformDir);
     assert(actualContentRoot != null);
-    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
+    final relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
     vprint('  Uploading Chromium (${platform.name}) to CIPD...');
     await uploadDirectoryToCipd(
@@ -253,10 +253,10 @@ class _PackageRoller {
   // Downloads Chromedriver from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollChromeDriver(_Platform platform) async {
-    final String version = _lock.chromeLock.version;
-    final String url = platform.binding.getChromeDriverDownloadUrl(version);
-    final String cipdPackageName = 'flutter_internal/browser-drivers/chrome/${platform.name}';
-    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, '${platform.name}_driver'));
+    final version = _lock.chromeLock.version;
+    final url = platform.binding.getChromeDriverDownloadUrl(version);
+    final cipdPackageName = 'flutter_internal/browser-drivers/chrome/${platform.name}';
+    final platformDir = io.Directory(path.join(_rollDir.path, '${platform.name}_driver'));
     print('\nRolling Chromedriver for ${platform.os}-${platform.arch} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await cipdKnowsPackageVersion(
@@ -272,14 +272,14 @@ class _PackageRoller {
     await platformDir.create(recursive: true);
     vprint('  Created target directory [${platformDir.path}]');
 
-    final io.File chromedriverDownload = await _downloadTemporaryFile(url);
+    final chromedriverDownload = await _downloadTemporaryFile(url);
 
     await _unzipAndDeleteFile(chromedriverDownload, platformDir);
 
     // Ensure the chromedriver executable is placed in the root of the bundle.
-    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    final actualContentRoot = await _locateContentRoot(platformDir);
     assert(actualContentRoot != null);
-    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
+    final relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
     vprint('  Uploading Chromedriver (${platform.name}) to CIPD...');
     await uploadDirectoryToCipd(
@@ -298,10 +298,10 @@ class _PackageRoller {
   // Downloads Firefox from the internet, packs it in the directory structure
   // that the LUCI script wants. The result of this will be then uploaded to CIPD.
   Future<void> _rollFirefox(_Platform platform) async {
-    final String version = _lock.firefoxLock.version;
-    final String url = platform.binding.getFirefoxDownloadUrl(version);
-    final String cipdPackageName = 'flutter_internal/browsers/firefox/${platform.name}';
-    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
+    final version = _lock.firefoxLock.version;
+    final url = platform.binding.getFirefoxDownloadUrl(version);
+    final cipdPackageName = 'flutter_internal/browsers/firefox/${platform.name}';
+    final platformDir = io.Directory(path.join(_rollDir.path, platform.name));
     print('\nRolling Firefox for ${platform.name} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await cipdKnowsPackageVersion(
@@ -317,13 +317,13 @@ class _PackageRoller {
     await platformDir.create(recursive: true);
     vprint('  Created target directory [${platformDir.path}]');
 
-    final io.File firefoxDownload = await _downloadTemporaryFile(url);
+    final firefoxDownload = await _downloadTemporaryFile(url);
 
     await _uncompressAndDeleteFile(firefoxDownload, platformDir);
 
-    final io.Directory? actualContentRoot = await _locateContentRoot(platformDir);
+    final actualContentRoot = await _locateContentRoot(platformDir);
     assert(actualContentRoot != null);
-    final String relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
+    final relativePlatformDirPath = path.relative(actualContentRoot!.path, from: _rollDir.path);
 
     vprint('  Uploading Firefox (${platform.name}) to CIPD...');
     await uploadDirectoryToCipd(
@@ -339,10 +339,10 @@ class _PackageRoller {
   }
 
   Future<void> _rollEsbuild(_Platform platform) async {
-    final String version = _lock.esbuildLock.version;
-    final String url = platform.binding.getEsbuildDownloadUrl(version);
-    final String cipdPackageName = 'flutter/tools/esbuild/${platform.name}';
-    final io.Directory platformDir = io.Directory(path.join(_rollDir.path, platform.name));
+    final version = _lock.esbuildLock.version;
+    final url = platform.binding.getEsbuildDownloadUrl(version);
+    final cipdPackageName = 'flutter/tools/esbuild/${platform.name}';
+    final platformDir = io.Directory(path.join(_rollDir.path, platform.name));
     print('\nRolling esbuild for ${platform.name} (version:$version)');
     // Bail out if CIPD already has version:$majorVersion for this package!
     if (!dryRun && await cipdKnowsPackageVersion(
@@ -358,14 +358,14 @@ class _PackageRoller {
     await platformDir.create(recursive: true);
     vprint('  Created target directory [${platformDir.path}]');
 
-    final io.File esbuildDownload = await _downloadTemporaryFile(url);
+    final esbuildDownload = await _downloadTemporaryFile(url);
 
     await _uncompressAndDeleteFile(esbuildDownload, platformDir);
-    final String packageDir = path.join(platformDir.path, 'package');
+    final packageDir = path.join(platformDir.path, 'package');
 
     // Write out the license file from the github repo.
     // Copied from https://github.com/evanw/esbuild/blob/main/LICENSE.md
-    final io.File licenseFile = io.File(path.join(
+    final licenseFile = io.File(path.join(
       packageDir,
       'LICENSE.md',
     ));

@@ -26,9 +26,9 @@ class StubPictureRenderer implements PictureRenderer {
   @override
   Future<RenderResult> renderPictures(List<ScenePicture> pictures) async {
     renderedPictures.addAll(pictures);
-    final List<DomImageBitmap> bitmaps = await Future.wait(pictures.map((ScenePicture picture) {
-      final ui.Rect cullRect = picture.cullRect;
-      final Future<DomImageBitmap> bitmap = createImageBitmap(scratchCanvasElement as JSObject, (
+    final bitmaps = await Future.wait(pictures.map((ScenePicture picture) {
+      final cullRect = picture.cullRect;
+      final bitmap = createImageBitmap(scratchCanvasElement as JSObject, (
         x: 0,
         y: 0,
         width: cullRect.width.toInt(),
@@ -115,29 +115,29 @@ void testMain() {
   test('SceneView places canvas according to device-pixel ratio', () async {
     debugOverrideDevicePixelRatio(2.0);
 
-    final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
+    final picture = StubPicture(const ui.Rect.fromLTWH(
       50,
       80,
       100,
       120,
     ));
-    final EngineRootLayer rootLayer = EngineRootLayer();
+    final rootLayer = EngineRootLayer();
     rootLayer.slices.add(PictureSlice(picture));
-    final EngineScene scene = EngineScene(rootLayer);
+    final scene = EngineScene(rootLayer);
     await sceneView.renderScene(scene, null);
 
-    final DomElement sceneElement = sceneView.sceneElement;
-    final List<DomElement> children = sceneElement.children.toList();
+    final sceneElement = sceneView.sceneElement;
+    final children = sceneElement.children.toList();
     expect(children.length, 1);
-    final DomElement containerElement = children.first;
+    final containerElement = children.first;
     expect(
         containerElement.tagName, equalsIgnoringCase('flt-canvas-container'));
 
-    final List<DomElement> containerChildren =
+    final containerChildren =
         containerElement.children.toList();
     expect(containerChildren.length, 1);
-    final DomElement canvasElement = containerChildren.first;
-    final DomCSSStyleDeclaration style = canvasElement.style;
+    final canvasElement = containerChildren.first;
+    final style = canvasElement.style;
     expect(style.left, '25px');
     expect(style.top, '40px');
     expect(style.width, '50px');
@@ -150,25 +150,25 @@ void testMain() {
       () async {
     debugOverrideDevicePixelRatio(2.0);
 
-    final PlatformView platformView = PlatformView(
+    final platformView = PlatformView(
         1,
         const ui.Size(100, 120),
         const PlatformViewStyling(
           position: PlatformViewPosition.offset(ui.Offset(50, 80)),
         ));
-    final EngineRootLayer rootLayer = EngineRootLayer();
+    final rootLayer = EngineRootLayer();
     rootLayer.slices.add(PlatformViewSlice(<PlatformView>[platformView], null));
-    final EngineScene scene = EngineScene(rootLayer);
+    final scene = EngineScene(rootLayer);
     await sceneView.renderScene(scene, null);
 
-    final DomElement sceneElement = sceneView.sceneElement;
-    final List<DomElement> children = sceneElement.children.toList();
+    final sceneElement = sceneView.sceneElement;
+    final children = sceneElement.children.toList();
     expect(children.length, 1);
-    final DomElement containerElement = children.first;
+    final containerElement = children.first;
     expect(
         containerElement.tagName, equalsIgnoringCase('flt-platform-view-slot'));
 
-    final DomCSSStyleDeclaration style = containerElement.style;
+    final style = containerElement.style;
     expect(style.left, '25px');
     expect(style.top, '40px');
     expect(style.width, '50px');
@@ -180,19 +180,19 @@ void testMain() {
   test(
       'SceneView always renders most recent picture and skips intermediate pictures',
       () async {
-    final List<StubPicture> pictures = <StubPicture>[];
-    final List<Future<void>> renderFutures = <Future<void>>[];
-    for (int i = 1; i < 20; i++) {
-      final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
+    final pictures = <StubPicture>[];
+    final renderFutures = <Future<void>>[];
+    for (var i = 1; i < 20; i++) {
+      final picture = StubPicture(const ui.Rect.fromLTWH(
         50,
         80,
         100,
         120,
       ));
       pictures.add(picture);
-      final EngineRootLayer rootLayer = EngineRootLayer();
+      final rootLayer = EngineRootLayer();
       rootLayer.slices.add(PictureSlice(picture));
-      final EngineScene scene = EngineScene(rootLayer);
+      final scene = EngineScene(rootLayer);
       renderFutures.add(sceneView.renderScene(scene, null));
     }
     await Future.wait(renderFutures);
@@ -204,16 +204,16 @@ void testMain() {
   });
 
   test('SceneView clips pictures that are outside the window screen', () async {
-      final StubPicture picture = StubPicture(const ui.Rect.fromLTWH(
+      final picture = StubPicture(const ui.Rect.fromLTWH(
         -50,
         -50,
         100,
         120,
       ));
 
-      final EngineRootLayer rootLayer = EngineRootLayer();
+      final rootLayer = EngineRootLayer();
       rootLayer.slices.add(PictureSlice(picture));
-      final EngineScene scene = EngineScene(rootLayer);
+      final scene = EngineScene(rootLayer);
       await sceneView.renderScene(scene, null);
 
       expect(stubPictureRenderer.renderedPictures.length, 1);

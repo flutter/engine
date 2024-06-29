@@ -19,8 +19,8 @@ void testMain() {
   });
 
   group('PlatformViewManager', () {
-    const String viewType = 'forTest';
-    const int viewId = 6;
+    const viewType = 'forTest';
+    const viewId = 6;
 
     late PlatformViewManager contentManager;
 
@@ -53,7 +53,7 @@ void testMain() {
 
       test('forgets viewIds after clearing them', () {
         contentManager.registerFactory(viewType, (int id) => createDomHTMLDivElement());
-        final DomElement view = contentManager.renderContent(viewType, viewId, null);
+        final view = contentManager.renderContent(viewType, viewId, null);
 
         expect(contentManager.knowsViewId(viewId), isTrue);
 
@@ -72,7 +72,7 @@ void testMain() {
         contentManager.registerFactory(
             viewType, (int id) => createDomHTMLSpanElement()..id = 'fail');
 
-        final DomElement contents =
+        final contents =
             contentManager.renderContent(viewType, viewId, null);
 
         expect(contents.querySelector('#pass'), isNotNull);
@@ -82,8 +82,8 @@ void testMain() {
     });
 
     group('renderContent', () {
-      const String unregisteredViewType = 'unregisteredForTest';
-      const String anotherViewType = 'anotherViewType';
+      const unregisteredViewType = 'unregisteredForTest';
+      const anotherViewType = 'anotherViewType';
 
       setUp(() {
         contentManager.registerFactory(viewType, (int id) {
@@ -110,21 +110,21 @@ void testMain() {
       });
 
       test('rendered markup contains required attributes', () async {
-        final DomElement content =
+        final content =
             contentManager.renderContent(viewType, viewId, null);
         expect(content.getAttribute('slot'), getPlatformViewSlotName(viewId));
         expect(content.getAttribute('id'), getPlatformViewDomId(viewId));
 
-        final DomElement userContent = content.querySelector('div')!;
+        final userContent = content.querySelector('div')!;
         expect(userContent.style.height, '100%');
         expect(userContent.style.width, '100%');
       });
 
       test('slot property has the same value as createPlatformViewSlot', () async {
-        final DomElement content =
+        final content =
             contentManager.renderContent(viewType, viewId, null);
-        final DomElement slot = createPlatformViewSlot(viewId);
-        final DomElement innerSlot = slot.querySelector('slot')!;
+        final slot = createPlatformViewSlot(viewId);
+        final innerSlot = slot.querySelector('slot')!;
 
         expect(content.getAttribute('slot'), innerSlot.getAttribute('name'),
             reason:
@@ -133,17 +133,17 @@ void testMain() {
 
       test('do not modify style.height / style.width if passed by the user (anotherViewType)',
           () async {
-        final DomElement content =
+        final content =
             contentManager.renderContent(anotherViewType, viewId, null);
-        final DomElement userContent = content.querySelector('div')!;
+        final userContent = content.querySelector('div')!;
         expect(userContent.style.height, 'auto');
         expect(userContent.style.width, '55%');
       });
 
       test('returns cached instances of already-rendered content', () async {
-        final DomElement firstRender =
+        final firstRender =
             contentManager.renderContent(viewType, viewId, null);
-        final DomElement anotherRender =
+        final anotherRender =
             contentManager.renderContent(viewType, viewId, null);
 
         expect(firstRender, same(anotherRender));
@@ -152,12 +152,12 @@ void testMain() {
 
     group('getViewById', () {
       test('finds created views', () async {
-        final Map<int, DomElement> views1 = <int, DomElement>{
+        final views1 = <int, DomElement>{
           1: createDomHTMLDivElement(),
           2: createDomHTMLDivElement(),
           5: createDomHTMLDivElement(),
         };
-        final Map<int, DomElement> views2 = <int, DomElement>{
+        final views2 = <int, DomElement>{
           3: createDomHTMLDivElement(),
           4: createDomHTMLDivElement(),
         };
@@ -166,18 +166,18 @@ void testMain() {
         contentManager.registerFactory('forTest2', (int id) => views2[id]!);
 
         // Render all 5 views.
-        for (final int id in views1.keys) {
+        for (final id in views1.keys) {
           contentManager.renderContent('forTest1', id, null);
         }
-        for (final int id in views2.keys) {
+        for (final id in views2.keys) {
           contentManager.renderContent('forTest2', id, null);
         }
 
         // Check all 5 views.
-        for (final int id in views1.keys) {
+        for (final id in views1.keys) {
           expect(contentManager.getViewById(id), views1[id]);
         }
-        for (final int id in views2.keys) {
+        for (final id in views2.keys) {
           expect(contentManager.getViewById(id), views2[id]);
         }
 
@@ -188,7 +188,7 @@ void testMain() {
       });
 
       test('throws if view has been cleared', () {
-        final DomHTMLDivElement view = createDomHTMLDivElement();
+        final view = createDomHTMLDivElement();
         contentManager.registerFactory(viewType, (int id) => view);
 
         // Throws before viewId is rendered.
@@ -209,7 +209,7 @@ void testMain() {
     });
 
     test('default factories', () {
-      final DomElement content0 = contentManager.renderContent(
+      final content0 = contentManager.renderContent(
         ui_web.PlatformViewRegistry.defaultVisibleViewType,
         viewId,
         <dynamic, dynamic>{'tagName': 'table'},
@@ -221,7 +221,7 @@ void testMain() {
       expect(contentManager.isVisible(viewId), isTrue);
       expect(contentManager.isInvisible(viewId), isFalse);
 
-      final DomElement content1 = contentManager.renderContent(
+      final content1 = contentManager.renderContent(
         ui_web.PlatformViewRegistry.defaultInvisibleViewType,
         viewId + 1,
         <dynamic, dynamic>{'tagName': 'script'},
@@ -233,7 +233,7 @@ void testMain() {
       expect(contentManager.isVisible(viewId + 1), isFalse);
       expect(contentManager.isInvisible(viewId + 1), isTrue);
 
-      final DomElement content2 = contentManager.renderContent(
+      final content2 = contentManager.renderContent(
         ui_web.PlatformViewRegistry.defaultVisibleViewType,
         viewId + 2,
         <dynamic, dynamic>{'tagName': 'p'},

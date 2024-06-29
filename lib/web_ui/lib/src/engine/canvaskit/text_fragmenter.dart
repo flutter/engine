@@ -88,7 +88,7 @@ void injectClientICU(SkParagraphBuilder builder) {
     'This method should only be used with the CanvasKit Chromium variant.',
   );
 
-  final SegmentationResult result = segmentText(builder.getText());
+  final result = segmentText(builder.getText());
   builder.setWordsUtf16(result.words);
   builder.setGraphemeBreaksUtf16(result.graphemes);
   builder.setLineBreaksUtf16(result.breaks);
@@ -98,8 +98,8 @@ void injectClientICU(SkParagraphBuilder builder) {
 ///
 /// Caches results in [segmentationCache].
 SegmentationResult segmentText(String text) {
-  final LruCache<String, SegmentationResult>? cache = segmentationCache.getCacheForText(text);
-  final SegmentationResult? cachedResult = cache?[text];
+  final cache = segmentationCache.getCacheForText(text);
+  final cachedResult = cache?[text];
 
   final SegmentationResult result;
   if (cachedResult != null) {
@@ -135,10 +135,10 @@ Uint32List fragmentUsingIntlSegmenter(
   String text,
   IntlSegmenterGranularity granularity,
 ) {
-  final DomSegmenter segmenter = _intlSegmenters[granularity]!;
-  final DomIteratorWrapper<DomSegment> iterator = segmenter.segment(text).iterator();
+  final segmenter = _intlSegmenters[granularity]!;
+  final iterator = segmenter.segment(text).iterator();
 
-  final List<int> breaks = <int>[];
+  final breaks = <int>[];
   while (iterator.moveNext()) {
     breaks.add(iterator.current.index);
   }
@@ -153,18 +153,18 @@ const int _kHardLineBreak = 1;
 final DomV8BreakIterator _v8LineBreaker = createV8BreakIterator();
 
 Uint32List fragmentUsingV8LineBreaker(String text) {
-  final List<LineBreakFragment> fragments =
+  final fragments =
       breakLinesUsingV8BreakIterator(text, text.toJS, _v8LineBreaker);
 
-  final int size = (fragments.length + 1) * 2;
-  final Uint32List typedArray = Uint32List(size);
+  final size = (fragments.length + 1) * 2;
+  final typedArray = Uint32List(size);
 
   typedArray[0] = 0; // start index
   typedArray[1] = _kSoftLineBreak; // break type
 
-  for (int i = 0; i < fragments.length; i++) {
-    final LineBreakFragment fragment = fragments[i];
-    final int uint32Index = 2 + i * 2;
+  for (var i = 0; i < fragments.length; i++) {
+    final fragment = fragments[i];
+    final uint32Index = 2 + i * 2;
     typedArray[uint32Index] = fragment.end;
     typedArray[uint32Index + 1] = fragment.type == LineBreakType.mandatory
         ? _kHardLineBreak

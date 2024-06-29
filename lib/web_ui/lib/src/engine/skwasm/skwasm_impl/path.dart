@@ -109,9 +109,9 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
     bool largeArc = false,
     bool clockwise = true,
   }) {
-    final PathArcSize arcSize =
+    final arcSize =
         largeArc ? PathArcSize.large : PathArcSize.small;
-    final PathDirection pathDirection =
+    final pathDirection =
         clockwise ? PathDirection.clockwise : PathDirection.counterClockwise;
     pathArcToRotated(
         handle,
@@ -133,9 +133,9 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
     bool largeArc = false,
     bool clockwise = true,
   }) {
-    final PathArcSize arcSize =
+    final arcSize =
         largeArc ? PathArcSize.large : PathArcSize.small;
-    final PathDirection pathDirection =
+    final pathDirection =
         clockwise ? PathDirection.clockwise : PathDirection.counterClockwise;
     pathRelativeArcToRotated(
         handle,
@@ -202,7 +202,7 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   void _addPath(ui.Path path, ui.Offset offset, bool extend, {Float64List? matrix4}) {
     assert(path is SkwasmPath);
     withStackScope((StackScope s) {
-      final Pointer<Float> convertedMatrix =
+      final convertedMatrix =
           s.convertMatrix4toSkMatrix(matrix4 ?? Matrix4.identity().toFloat64());
       convertedMatrix[2] += offset.dx;
       convertedMatrix[5] += offset.dy;
@@ -226,7 +226,7 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   @override
   ui.Path transform(Float64List matrix4) {
     return withStackScope((StackScope s) {
-      final PathHandle newPathHandle = pathCopy(handle);
+      final newPathHandle = pathCopy(handle);
       pathTransform(newPathHandle, s.convertMatrix4toSkMatrix(matrix4));
       return SkwasmPath.fromHandle(newPathHandle);
     });
@@ -235,7 +235,7 @@ class SkwasmPath extends SkwasmObjectWrapper<RawPath> implements ui.Path {
   @override
   ui.Rect getBounds() {
     return withStackScope((StackScope s) {
-      final Pointer<Float> rectBuffer = s.allocFloatArray(4);
+      final rectBuffer = s.allocFloatArray(4);
       pathGetBounds(handle, rectBuffer);
       return s.convertRectFromNative(rectBuffer);
     });

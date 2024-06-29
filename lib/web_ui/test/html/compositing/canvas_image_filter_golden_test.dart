@@ -17,13 +17,13 @@ void main() {
 SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
-  const double screenWidth = 100.0;
-  const double screenHeight = 100.0;
-  const Rect region = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+  const screenWidth = 100.0;
+  const screenHeight = 100.0;
+  const region = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
   // Regression test for https://github.com/flutter/flutter/issues/76966
   test('Draws image with dstATop color filter', () async {
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    final canvas = RecordingCanvas(region);
     canvas.drawImage(
         createFlutterLogoTestImage(),
         const Offset(10, 10),
@@ -34,7 +34,7 @@ Future<void> testMain() async {
   });
 
   test('Draws image with matrix color filter', () async {
-    final RecordingCanvas canvas = RecordingCanvas(region);
+    final canvas = RecordingCanvas(region);
     canvas.drawImage(
         createFlutterLogoTestImage(),
         const Offset(10, 10),

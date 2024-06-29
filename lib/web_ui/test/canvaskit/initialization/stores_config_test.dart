@@ -14,7 +14,7 @@ void main() {
 void testMain() {
   group('initializeEngineServices', () {
     test('stores user configuration', () async {
-      final JsFlutterConfiguration config = JsFlutterConfiguration();
+      final config = JsFlutterConfiguration();
       // `canvasKitBaseUrl` is required for the test to actually run.
       js_util.setProperty(config, 'canvasKitBaseUrl', '/canvaskit/');
       // A property under test, that we'll try to read later.

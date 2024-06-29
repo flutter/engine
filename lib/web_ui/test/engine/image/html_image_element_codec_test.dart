@@ -22,11 +22,11 @@ Future<void> testMain() async {
   setUpUnitTests();
   group('$HtmlImageElementCodec', () {
     test('supports raw images - RGBA8888', () async {
-      final Completer<ui.Image> completer = Completer<ui.Image>();
-      const int width = 200;
-      const int height = 300;
-      final Uint32List list = Uint32List(width * height);
-      for (int index = 0; index < list.length; index += 1) {
+      final completer = Completer<ui.Image>();
+      const width = 200;
+      const height = 300;
+      final list = Uint32List(width * height);
+      for (var index = 0; index < list.length; index += 1) {
         list[index] = 0xFF0000FF;
       }
       ui.decodeImageFromPixels(
@@ -36,16 +36,16 @@ Future<void> testMain() async {
         ui.PixelFormat.rgba8888,
         (ui.Image image) => completer.complete(image),
       );
-      final ui.Image image = await completer.future;
+      final image = await completer.future;
       expect(image.width, width);
       expect(image.height, height);
     });
     test('supports raw images - BGRA8888', () async {
-      final Completer<ui.Image> completer = Completer<ui.Image>();
-      const int width = 200;
-      const int height = 300;
-      final Uint32List list = Uint32List(width * height);
-      for (int index = 0; index < list.length; index += 1) {
+      final completer = Completer<ui.Image>();
+      const width = 200;
+      const height = 300;
+      final list = Uint32List(width * height);
+      for (var index = 0; index < list.length; index += 1) {
         list[index] = 0xFF0000FF;
       }
       ui.decodeImageFromPixels(
@@ -55,14 +55,14 @@ Future<void> testMain() async {
         ui.PixelFormat.bgra8888,
         (ui.Image image) => completer.complete(image),
       );
-      final ui.Image image = await completer.future;
+      final image = await completer.future;
       expect(image.width, width);
       expect(image.height, height);
     });
     test('loads sample image', () async {
       final HtmlImageElementCodec codec =
           HtmlRendererImageCodec('sample_image1.png');
-      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.width, 100);
       expect(frameInfo.image.toString(), '[100×100]');
@@ -70,14 +70,14 @@ Future<void> testMain() async {
     test('dispose image image', () async {
       final HtmlImageElementCodec codec =
           HtmlRendererImageCodec('sample_image1.png');
-      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.debugDisposed, isFalse);
       frameInfo.image.dispose();
       expect(frameInfo.image.debugDisposed, isTrue);
     });
     test('provides image loading progress', () async {
-      final StringBuffer buffer = StringBuffer();
+      final buffer = StringBuffer();
       final HtmlImageElementCodec codec = HtmlRendererImageCodec(
           'sample_image1.png', chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
@@ -100,24 +100,24 @@ Future<void> testMain() async {
           'IDQuNTg4IDQuNTgxIDQuNTk1em04LjM0NC0uMTg5VjUuNjI1SDUuNjI1djIuMjQ3aD'
           'EwLjQ5OHYxMC41MDNoMi4yNTJ6bS04LjM0NC02Ljc0OGEyLjM0MyAyLjM0MyAwIDEx'
           'LS4wMDIgNC42ODYgMi4zNDMgMi4zNDMgMCAwMS4wMDItNC42ODZ6Ii8+PC9zdmc+');
-      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final frameInfo = await codec.getNextFrame();
       expect(frameInfo.image.width, isNot(0));
     });
   });
 
   group('ImageCodecUrl', () {
     test('loads sample image from web', () async {
-      final Uri uri = Uri.base.resolve('sample_image1.png');
-      final HtmlImageElementCodec codec =
+      final uri = Uri.base.resolve('sample_image1.png');
+      final codec =
           await ui_web.createImageCodecFromUrl(uri) as HtmlImageElementCodec;
-      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final frameInfo = await codec.getNextFrame();
       expect(frameInfo.image, isNotNull);
       expect(frameInfo.image.width, 100);
     });
     test('provides image loading progress from web', () async {
-      final Uri uri = Uri.base.resolve('sample_image1.png');
-      final StringBuffer buffer = StringBuffer();
-      final HtmlImageElementCodec codec = await ui_web
+      final uri = Uri.base.resolve('sample_image1.png');
+      final buffer = StringBuffer();
+      final codec = await ui_web
           .createImageCodecFromUrl(uri, chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
       }) as HtmlImageElementCodec;

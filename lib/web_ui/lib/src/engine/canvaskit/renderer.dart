@@ -87,10 +87,10 @@ class CanvasKitRenderer implements Renderer {
       // Views may have been registered before this renderer was initialized.
       // Create rasterizers for them and then start listening for new view
       // creation/disposal events.
-      final FlutterViewManager viewManager =
+      final viewManager =
           EnginePlatformDispatcher.instance.viewManager;
       if (_onViewCreatedListener == null) {
-        for (final EngineFlutterView view in viewManager.views) {
+        for (final view in viewManager.views) {
           _onViewCreated(view.viewId);
         }
       }
@@ -206,11 +206,11 @@ class CanvasKitRenderer implements Renderer {
   ui.ImageFilter composeImageFilters(
       {required ui.ImageFilter outer, required ui.ImageFilter inner}) {
     if (outer is EngineColorFilter) {
-      final CkColorFilter colorFilter = createCkColorFilter(outer)!;
+      final colorFilter = createCkColorFilter(outer)!;
       outer = CkColorFilterImageFilter(colorFilter: colorFilter);
     }
     if (inner is EngineColorFilter) {
-      final CkColorFilter colorFilter = createCkColorFilter(inner)!;
+      final colorFilter = createCkColorFilter(inner)!;
       inner = CkColorFilterImageFilter(colorFilter: colorFilter);
     }
     return CkImageFilter.compose(
@@ -231,7 +231,7 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   ui.Image createImageFromImageBitmap(DomImageBitmap imageBitmap) {
-    final SkImage? skImage =
+    final skImage =
         canvasKit.MakeLazyImageFromImageBitmap(imageBitmap, true);
     if (skImage == null) {
       throw Exception('Failed to convert image bitmap to an SkImage.');
@@ -243,10 +243,10 @@ class CanvasKitRenderer implements Renderer {
   FutureOr<ui.Image> createImageFromTextureSource(JSAny object,
       {required int width, required int height, required bool transferOwnership}) async {
         if (!transferOwnership) {
-          final DomImageBitmap bitmap = await createImageBitmap(object, (x:0, y: 0, width: width, height: height));
+          final bitmap = await createImageBitmap(object, (x:0, y: 0, width: width, height: height));
           return createImageFromImageBitmap(bitmap);
         }
-    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
+    final skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
         object,
         SkPartialImageInfo(
           width: width.toDouble(),
@@ -403,20 +403,20 @@ class CanvasKitRenderer implements Renderer {
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) async {
     assert(_rasterizers.containsKey(view.viewId),
         "Unable to render to a view which hasn't been registered");
-    final ViewRasterizer rasterizer = _rasterizers[view.viewId]!;
-    final RenderQueue renderQueue = rasterizer.queue;
-    final FrameTimingRecorder? recorder =
+    final rasterizer = _rasterizers[view.viewId]!;
+    final renderQueue = rasterizer.queue;
+    final recorder =
         FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     if (renderQueue.current != null) {
       // If a scene is already queued up, drop it and queue this one up instead
       // so that the scene view always displays the most recently requested scene.
       renderQueue.next?.completer.complete();
-      final Completer<void> completer = Completer<void>();
+      final completer = Completer<void>();
       renderQueue.next =
           (scene: scene, completer: completer, recorder: recorder);
       return completer.future;
     }
-    final Completer<void> completer = Completer<void>();
+    final completer = Completer<void>();
     renderQueue.current =
         (scene: scene, completer: completer, recorder: recorder);
     unawaited(_kickRenderLoop(rasterizer));
@@ -424,8 +424,8 @@ class CanvasKitRenderer implements Renderer {
   }
 
   Future<void> _kickRenderLoop(ViewRasterizer rasterizer) async {
-    final RenderQueue renderQueue = rasterizer.queue;
-    final RenderRequest current = renderQueue.current!;
+    final renderQueue = rasterizer.queue;
+    final current = renderQueue.current!;
     try {
       await _renderScene(current.scene, rasterizer, current.recorder);
       current.completer.complete();
@@ -462,7 +462,7 @@ class CanvasKitRenderer implements Renderer {
   final Map<int, ViewRasterizer> _rasterizers = <int, ViewRasterizer>{};
 
   void _onViewCreated(int viewId) {
-    final EngineFlutterView view =
+    final view =
         EnginePlatformDispatcher.instance.viewManager[viewId]!;
     _rasterizers[view.viewId] = _rasterizer.createViewRasterizer(view);
   }
@@ -472,7 +472,7 @@ class CanvasKitRenderer implements Renderer {
     if (!_rasterizers.containsKey(viewId)) {
       return;
     }
-    final ViewRasterizer rasterizer = _rasterizers.remove(viewId)!;
+    final rasterizer = _rasterizers.remove(viewId)!;
     rasterizer.dispose();
   }
 
@@ -484,7 +484,7 @@ class CanvasKitRenderer implements Renderer {
   void dispose() {
     _onViewCreatedListener?.cancel();
     _onViewDisposedListener?.cancel();
-    for (final ViewRasterizer rasterizer in _rasterizers.values) {
+    for (final rasterizer in _rasterizers.values) {
       rasterizer.dispose();
     }
     _rasterizers.clear();
@@ -492,7 +492,7 @@ class CanvasKitRenderer implements Renderer {
 
   /// Clears the state of this renderer. Used in tests.
   void debugClear() {
-    for (final ViewRasterizer rasterizer in _rasterizers.values) {
+    for (final rasterizer in _rasterizers.values) {
       rasterizer.debugClear();
     }
   }

@@ -21,24 +21,24 @@ void testMain() {
     setUpCanvasKitTest(withImplicitView: true);
 
     test('Renders sweep gradient with color blend', () async {
-      final LayerSceneBuilder builder = LayerSceneBuilder();
+      final builder = LayerSceneBuilder();
 
       builder.pushOffset(0, 0);
 
       // Draw a red circle and apply it to the scene.
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(region);
 
       canvas.drawCircle(
         const ui.Offset(425, 125),
         50,
         CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0),
       );
-      final CkPicture redCircle = recorder.endRecording();
+      final redCircle = recorder.endRecording();
 
       builder.addPicture(ui.Offset.zero, redCircle);
 
-      final CkGradientSweep shader = CkGradientSweep(
+      final shader = CkGradientSweep(
           const ui.Offset(250, 125),
           const <ui.Color>[
             ui.Color(0xFF4285F4),
@@ -59,7 +59,7 @@ void testMain() {
           math.pi * 2 - (math.pi / 2),
           null);
 
-      final ui.Path clipPath = ui.Path()
+      final clipPath = ui.Path()
         ..addOval(const ui.Rect.fromLTWH(25, 75, 100, 100));
       builder.pushClipPath(clipPath);
 
@@ -69,14 +69,14 @@ void testMain() {
 
       // Draw another red circle and apply it to the scene.
       // This one should be grey since we have the color filter.
-      final CkPictureRecorder recorder2 = CkPictureRecorder();
-      final CkCanvas canvas2 = recorder2.beginRecording(region);
+      final recorder2 = CkPictureRecorder();
+      final canvas2 = recorder2.beginRecording(region);
 
       canvas2.drawRect(const ui.Rect.fromLTWH(25, 75, 100, 100),
         CkPaint()..color = const ui.Color.fromARGB(255, 0, 255, 0),
       );
 
-      final CkPicture sweepCircle = recorder2.endRecording();
+      final sweepCircle = recorder2.endRecording();
 
       builder.addPicture(ui.Offset.zero, sweepCircle);
 
@@ -89,24 +89,24 @@ void testMain() {
 
     /// Regression test for https://github.com/flutter/flutter/issues/78959
     test('Renders sweep gradient with color blend translated', () async {
-      final LayerSceneBuilder builder = LayerSceneBuilder();
+      final builder = LayerSceneBuilder();
 
       builder.pushOffset(0, 0);
 
       // Draw a red circle and apply it to the scene.
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(region);
 
       canvas.drawCircle(
         const ui.Offset(425, 125),
         50,
         CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0),
       );
-      final CkPicture redCircle = recorder.endRecording();
+      final redCircle = recorder.endRecording();
 
       builder.addPicture(ui.Offset.zero, redCircle);
 
-      final CkGradientSweep shader = CkGradientSweep(
+      final shader = CkGradientSweep(
           const ui.Offset(250, 125),
           const <ui.Color>[
             ui.Color(0xFF4285F4),
@@ -127,7 +127,7 @@ void testMain() {
           math.pi * 2 - (math.pi / 2),
           null);
 
-      final ui.Path clipPath = ui.Path()
+      final clipPath = ui.Path()
         ..addOval(const ui.Rect.fromLTWH(25, 75, 100, 100));
       builder.pushClipPath(clipPath);
 
@@ -137,14 +137,14 @@ void testMain() {
 
       // Draw another red circle and apply it to the scene.
       // This one should be grey since we have the color filter.
-      final CkPictureRecorder recorder2 = CkPictureRecorder();
-      final CkCanvas canvas2 = recorder2.beginRecording(region);
+      final recorder2 = CkPictureRecorder();
+      final canvas2 = recorder2.beginRecording(region);
 
       canvas2.drawRect(const ui.Rect.fromLTWH(25, 75, 100, 100),
         CkPaint()..color = const ui.Color.fromARGB(255, 0, 255, 0),
       );
 
-      final CkPicture sweepCircle = recorder2.endRecording();
+      final sweepCircle = recorder2.endRecording();
 
       builder.addPicture(ui.Offset.zero, sweepCircle);
 

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:async';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -26,7 +25,7 @@ void doTests() {
     });
 
     test('funnels display DPR on every mediaQuery "change" event.', () async {
-      final Future<List<double>> dprs = dprStream.dprChanged
+      final dprs = dprStream.dprChanged
           .take(3)
           .timeout(const Duration(seconds: 1))
           .toList();

@@ -57,8 +57,8 @@ void testMain() {
 }
 
 void _testForImageCodecs({required bool useBrowserImageDecoder}) {
-  final String mode = useBrowserImageDecoder ? 'webcodecs' : 'wasm';
-  final List<String> warnings = <String>[];
+  final mode = useBrowserImageDecoder ? 'webcodecs' : 'wasm';
+  final warnings = <String>[];
   late void Function(String) oldPrintWarning;
 
   group('($mode)', () {
@@ -83,7 +83,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('CkAnimatedImage can be explicitly disposed of', () {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
+      final image = CkAnimatedImage.decodeFromBytes(kTransparentImage, 'test');
       expect(image.debugDisposed, isFalse);
       image.dispose();
       expect(image.debugDisposed, isTrue);
@@ -98,32 +98,32 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('CkAnimatedImage iterates frames correctly', () async {
-      final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+      final image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
       expect(image.frameCount, 3);
       expect(image.repetitionCount, -1);
 
-      final ui.FrameInfo frame1 = await image.getNextFrame();
+      final frame1 = await image.getNextFrame();
       await expectFrameData(frame1, <int>[255, 0, 0, 255]);
-      final ui.FrameInfo frame2 = await image.getNextFrame();
+      final frame2 = await image.getNextFrame();
       await expectFrameData(frame2, <int>[0, 255, 0, 255]);
-      final ui.FrameInfo frame3 = await image.getNextFrame();
+      final frame3 = await image.getNextFrame();
       await expectFrameData(frame3, <int>[0, 0, 255, 255]);
     });
 
     test('CkImage toString', () {
-      final SkImage skImage =
+      final skImage =
           canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
               .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
+      final image = CkImage(skImage);
       expect(image.toString(), '[1×1]');
       image.dispose();
     });
 
     test('CkImage can be explicitly disposed of', () {
-      final SkImage skImage =
+      final skImage =
           canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
               .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
+      final image = CkImage(skImage);
       expect(image.debugDisposed, isFalse);
       expect(image.box.isDisposed, isFalse);
       image.dispose();
@@ -135,15 +135,15 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('CkImage can be explicitly disposed of when cloned', () async {
-      final SkImage skImage =
+      final skImage =
           canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
               .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
-      final CountedRef<CkImage, SkImage> box = image.box;
+      final image = CkImage(skImage);
+      final box = image.box;
       expect(box.refCount, 1);
       expect(box.debugGetStackTraces().length, 1);
 
-      final CkImage clone = image.clone();
+      final clone = image.clone();
       expect(box.refCount, 2);
       expect(box.debugGetStackTraces().length, 2);
 
@@ -165,10 +165,10 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('CkImage toByteData', () async {
-      final SkImage skImage =
+      final skImage =
           canvasKit.MakeAnimatedImageFromEncoded(kTransparentImage)!
               .makeImageAtCurrentFrame();
-      final CkImage image = CkImage(skImage);
+      final image = CkImage(skImage);
       expect((await image.toByteData()).lengthInBytes, greaterThan(0));
       expect((await image.toByteData(format: ui.ImageByteFormat.png)).lengthInBytes, greaterThan(0));
     });
@@ -177,11 +177,11 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       // This test ensures that toByteData() returns pixels that can be used by decodeImageFromPixels
       // for the following videoFrame formats:
       // [BGRX, I422, I420, I444, BGRA]
-      final HttpFetchResponse listingResponse = await httpFetch('/test_images/');
-      final List<String> testFiles = (await listingResponse.json() as List<dynamic>).cast<String>();
+      final listingResponse = await httpFetch('/test_images/');
+      final testFiles = (await listingResponse.json() as List<dynamic>).cast<String>();
 
       Future<ui.Image> testDecodeFromPixels(Uint8List pixels, int width, int height) async {
-        final Completer<ui.Image> completer = Completer<ui.Image>();
+        final completer = Completer<ui.Image>();
         ui.decodeImageFromPixels(
           pixels,
           width,
@@ -204,20 +204,20 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       expect(testFiles, contains(matches(RegExp(r'.*\.webp'))));
       expect(testFiles, contains(matches(RegExp(r'.*\.bmp'))));
 
-      for (final String testFile in testFiles) {
-        final HttpFetchResponse imageResponse = await httpFetch('/test_images/$testFile');
-        final Uint8List imageData = await imageResponse.asUint8List();
-        final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      for (final testFile in testFiles) {
+        final imageResponse = await httpFetch('/test_images/$testFile');
+        final imageData = await imageResponse.asUint8List();
+        final codec = await skiaInstantiateImageCodec(imageData);
         expect(codec.frameCount, greaterThan(0));
         expect(codec.repetitionCount, isNotNull);
 
-        final ui.FrameInfo frame = await codec.getNextFrame();
-        final CkImage ckImage = frame.image as CkImage;
-        final ByteData imageBytes = await ckImage.toByteData();
+        final frame = await codec.getNextFrame();
+        final ckImage = frame.image as CkImage;
+        final imageBytes = await ckImage.toByteData();
         expect(imageBytes.lengthInBytes, greaterThan(0));
 
-        final Uint8List pixels = imageBytes.buffer.asUint8List();
-        final ui.Image testImage = await testDecodeFromPixels(pixels, ckImage.width, ckImage.height);
+        final pixels = imageBytes.buffer.asUint8List();
+        final testImage = await testDecodeFromPixels(pixels, ckImage.width, ckImage.height);
         expect(testImage, isNotNull);
         codec.dispose();
       }
@@ -227,18 +227,18 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     }, skip: isFirefox || isSafari || isWasm);
 
     test('CkImage.clone also clones the VideoFrame', () async {
-      final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+      final image = await CkBrowserImageDecoder.create(
         data: kAnimatedGif,
         debugSource: 'test',
       );
-      final ui.FrameInfo frame = await image.getNextFrame();
-      final CkImage ckImage = frame.image as CkImage;
+      final frame = await image.getNextFrame();
+      final ckImage = frame.image as CkImage;
       expect(ckImage.videoFrame, isNotNull);
 
-      final CkImage imageClone = ckImage.clone();
+      final imageClone = ckImage.clone();
       expect(imageClone.videoFrame, isNotNull);
 
-      final ByteData png = await imageClone.toByteData(format: ui.ImageByteFormat.png);
+      final png = await imageClone.toByteData(format: ui.ImageByteFormat.png);
       expect(png, isNotNull);
 
       // The precise PNG encoding is browser-specific, but we can check the file
@@ -257,17 +257,17 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         );
       };
 
-      final ui.Codec codec = await skiaInstantiateWebImageCodec(
+      final codec = await skiaInstantiateWebImageCodec(
           'http://image-server.com/picture.jpg', null);
       expect(codec.frameCount, 1);
-      final ui.Image image = (await codec.getNextFrame()).image;
+      final image = (await codec.getNextFrame()).image;
       expect(image.height, 1);
       expect(image.width, 1);
     });
 
     test('instantiateImageCodec respects target image size',
         () async {
-      const List<List<int>> targetSizes = <List<int>>[
+      const targetSizes = <List<int>>[
         <int>[1, 1],
         <int>[1, 2],
         <int>[2, 3],
@@ -276,17 +276,17 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         <int>[10, 20],
       ];
 
-      for (final List<int> targetSize in targetSizes) {
-        final int targetWidth = targetSize[0];
-        final int targetHeight = targetSize[1];
+      for (final targetSize in targetSizes) {
+        final targetWidth = targetSize[0];
+        final targetHeight = targetSize[1];
 
-        final ui.Codec codec = await ui.instantiateImageCodec(
+        final codec = await ui.instantiateImageCodec(
           k4x4PngImage,
           targetWidth: targetWidth,
           targetHeight: targetHeight,
         );
 
-        final ui.Image image = (await codec.getNextFrame()).image;
+        final image = (await codec.getNextFrame()).image;
         expect(image.width, targetWidth);
         expect(image.height, targetHeight);
         image.dispose();
@@ -296,12 +296,12 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('instantiateImageCodec with multi-frame image does not support targetWidth/targetHeight',
         () async {
-        final ui.Codec codec = await ui.instantiateImageCodec(
+        final codec = await ui.instantiateImageCodec(
           kAnimatedGif,
           targetWidth: 2,
           targetHeight: 3,
         );
-        final ui.Image image = (await codec.getNextFrame()).image;
+        final image = (await codec.getNextFrame()).image;
 
         expect(
         warnings,
@@ -490,7 +490,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('decodeImageFromPixels', () async {
       Future<ui.Image> testDecodeFromPixels(int width, int height) async {
-        final Completer<ui.Image> completer = Completer<ui.Image>();
+        final completer = Completer<ui.Image>();
         ui.decodeImageFromPixels(
           Uint8List.fromList(List<int>.filled(width * height * 4, 0)),
           width,
@@ -503,12 +503,12 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         return completer.future;
       }
 
-      final ui.Image image1 = await testDecodeFromPixels(10, 20);
+      final image1 = await testDecodeFromPixels(10, 20);
       expect(image1, isNotNull);
       expect(image1.width, 10);
       expect(image1.height, 20);
 
-      final ui.Image image2 = await testDecodeFromPixels(40, 100);
+      final image2 = await testDecodeFromPixels(40, 100);
       expect(image2, isNotNull);
       expect(image2.width, 40);
       expect(image2.height, 100);
@@ -516,7 +516,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('decodeImageFromPixels respects target image size', () async {
       Future<ui.Image> testDecodeFromPixels(int width, int height, int targetWidth, int targetHeight) async {
-        final Completer<ui.Image> completer = Completer<ui.Image>();
+        final completer = Completer<ui.Image>();
         ui.decodeImageFromPixels(
           Uint8List.fromList(List<int>.filled(width * height * 4, 0)),
           width,
@@ -531,7 +531,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         return completer.future;
       }
 
-      const List<List<int>> targetSizes = <List<int>>[
+      const targetSizes = <List<int>>[
         <int>[1, 1],
         <int>[1, 2],
         <int>[2, 3],
@@ -540,11 +540,11 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         <int>[10, 20],
       ];
 
-      for (final List<int> targetSize in targetSizes) {
-        final int targetWidth = targetSize[0];
-        final int targetHeight = targetSize[1];
+      for (final targetSize in targetSizes) {
+        final targetWidth = targetSize[0];
+        final targetHeight = targetSize[1];
 
-        final ui.Image image = await testDecodeFromPixels(10, 20, targetWidth, targetHeight);
+        final image = await testDecodeFromPixels(10, 20, targetWidth, targetHeight);
 
         expect(image.width, targetWidth);
         expect(image.height, targetHeight);
@@ -554,7 +554,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     test('decodeImageFromPixels upscale when allowUpscaling is false', () async {
       Future<ui.Image> testDecodeFromPixels(int width, int height) async {
-        final Completer<ui.Image> completer = Completer<ui.Image>();
+        final completer = Completer<ui.Image>();
         ui.decodeImageFromPixels(
           Uint8List.fromList(List<int>.filled(width * height * 4, 0)),
           width,
@@ -573,8 +573,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('Decode test images', () async {
-      final HttpFetchResponse listingResponse = await httpFetch('/test_images/');
-      final List<String> testFiles = (await listingResponse.json() as List<dynamic>).cast<String>();
+      final listingResponse = await httpFetch('/test_images/');
+      final testFiles = (await listingResponse.json() as List<dynamic>).cast<String>();
 
       // Sanity-check the test file list. If suddenly test files are moved or
       // deleted, and the test server returns an empty list, or is missing some
@@ -586,14 +586,14 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       expect(testFiles, contains(matches(RegExp(r'.*\.webp'))));
       expect(testFiles, contains(matches(RegExp(r'.*\.bmp'))));
 
-      for (final String testFile in testFiles) {
-        final HttpFetchResponse imageResponse = await httpFetch('/test_images/$testFile');
-        final Uint8List imageData = await imageResponse.asUint8List();
-        final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      for (final testFile in testFiles) {
+        final imageResponse = await httpFetch('/test_images/$testFile');
+        final imageData = await imageResponse.asUint8List();
+        final codec = await skiaInstantiateImageCodec(imageData);
         expect(codec.frameCount, greaterThan(0));
         expect(codec.repetitionCount, isNotNull);
-        for (int i = 0; i < codec.frameCount; i++) {
-          final ui.FrameInfo frame = await codec.getNextFrame();
+        for (var i = 0; i < codec.frameCount; i++) {
+          final frame = await codec.getNextFrame();
           expect(frame.duration, isNotNull);
           expect(frame.image, isNotNull);
         }
@@ -603,18 +603,18 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 
     // Reproduces https://skbug.com/12721
     test('decoded image can be read back from picture', () async {
-      final HttpFetchResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
-      final Uint8List imageData = await imageResponse.asUint8List();
-      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
-      final ui.FrameInfo frame = await codec.getNextFrame();
-      final CkImage image = frame.image as CkImage;
+      final imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final imageData = await imageResponse.asUint8List();
+      final codec = await skiaInstantiateImageCodec(imageData);
+      final frame = await codec.getNextFrame();
+      final image = frame.image as CkImage;
 
       final CkImage snapshot;
       {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(10, 10);
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.drawRect(
           const ui.Rect.fromLTRB(5, 5, 20, 20),
           CkPaint(),
@@ -630,9 +630,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       }
 
       {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final sb = LayerSceneBuilder();
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
 
@@ -657,14 +657,14 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final ui.Codec codec = await ui.instantiateImageCodec(k4x4PngImage);
-      final CkImage image = (await codec.getNextFrame()).image as CkImage;
+      final codec = await ui.instantiateImageCodec(k4x4PngImage);
+      final image = (await codec.getNextFrame()).image as CkImage;
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(4, 4);
       {
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.save();
         canvas.scale(16, 16);
         canvas.drawImage(image, ui.Offset.zero, CkPaint());
@@ -675,8 +675,8 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       sb.addPlatformView(0, width: 100, height: 100);
       sb.pushOffset(20, 20);
       {
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.save();
         canvas.scale(16, 16);
         canvas.drawImage(image, ui.Offset.zero, CkPaint());
@@ -693,35 +693,35 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('toImageSync with texture-backed image', () async {
-      final HttpFetchResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
-      final Uint8List imageData = await imageResponse.asUint8List();
-      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
-      final ui.FrameInfo frame = await codec.getNextFrame();
-      final CkImage mandrill = frame.image as CkImage;
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final imageData = await imageResponse.asUint8List();
+      final codec = await skiaInstantiateImageCodec(imageData);
+      final frame = await codec.getNextFrame();
+      final mandrill = frame.image as CkImage;
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
       canvas.drawImageRect(
         mandrill,
         const ui.Rect.fromLTWH(0, 0, 128, 128),
         const ui.Rect.fromLTWH(0, 0, 128, 128),
         ui.Paint(),
       );
-      final ui.Picture picture = recorder.endRecording();
-      final ui.Image image = picture.toImageSync(50, 50);
+      final picture = recorder.endRecording();
+      final image = picture.toImageSync(50, 50);
 
       expect(image.width, 50);
       expect(image.height, 50);
 
-      final ByteData? data = await image.toByteData();
+      final data = await image.toByteData();
       expect(data, isNotNull);
       expect(data!.lengthInBytes, 50 * 50 * 4);
       expect(data.buffer.asUint32List().any((int byte) => byte != 0), isTrue);
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       {
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.save();
         canvas.drawImage(image as CkImage, ui.Offset.zero, CkPaint());
         canvas.restore();
@@ -736,18 +736,18 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
     });
 
     test('decoded image can be read back from picture', () async {
-      final HttpFetchResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
-      final Uint8List imageData = await imageResponse.asUint8List();
-      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
-      final ui.FrameInfo frame = await codec.getNextFrame();
-      final CkImage image = frame.image as CkImage;
+      final imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final imageData = await imageResponse.asUint8List();
+      final codec = await skiaInstantiateImageCodec(imageData);
+      final frame = await codec.getNextFrame();
+      final image = frame.image as CkImage;
 
       final CkImage snapshot;
       {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(10, 10);
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.drawRect(
           const ui.Rect.fromLTRB(5, 5, 20, 20),
           CkPaint(),
@@ -763,9 +763,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       }
 
       {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final sb = LayerSceneBuilder();
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
         sb.addPicture(ui.Offset.zero, recorder.endRecording());
 
@@ -790,9 +790,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
 /// Tests specific to WASM codecs bundled with CanvasKit.
 void _testCkAnimatedImage() {
   test('ImageDecoder toByteData(PNG)', () async {
-    final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-    final ui.FrameInfo frame = await image.getNextFrame();
-    final ByteData? png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+    final image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+    final frame = await image.getNextFrame();
+    final png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
     expect(png, isNotNull);
 
     // The precise PNG encoding is browser-specific, but we can check the file
@@ -801,15 +801,15 @@ void _testCkAnimatedImage() {
   });
 
   test('CkAnimatedImage toByteData(RGBA)', () async {
-    final CkAnimatedImage image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
-    const List<List<int>> expectedColors = <List<int>>[
+    final image = CkAnimatedImage.decodeFromBytes(kAnimatedGif, 'test');
+    const expectedColors = <List<int>>[
       <int>[255, 0, 0, 255],
       <int>[0, 255, 0, 255],
       <int>[0, 0, 255, 255],
     ];
-    for (int i = 0; i < image.frameCount; i++) {
-      final ui.FrameInfo frame = await image.getNextFrame();
-      final ByteData? rgba = await frame.image.toByteData();
+    for (var i = 0; i < image.frameCount; i++) {
+      final frame = await image.getNextFrame();
+      final rgba = await frame.image.toByteData();
       expect(rgba, isNotNull);
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
@@ -821,12 +821,12 @@ void _testCkBrowserImageDecoder() {
   assert(browserSupportsImageDecoder);
 
   test('ImageDecoder toByteData(PNG)', () async {
-    final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+    final image = await CkBrowserImageDecoder.create(
       data: kAnimatedGif,
       debugSource: 'test',
     );
-    final ui.FrameInfo frame = await image.getNextFrame();
-    final ByteData? png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
+    final frame = await image.getNextFrame();
+    final png = await frame.image.toByteData(format: ui.ImageByteFormat.png);
     expect(png, isNotNull);
 
     // The precise PNG encoding is browser-specific, but we can check the file
@@ -835,41 +835,41 @@ void _testCkBrowserImageDecoder() {
   });
 
   test('ImageDecoder toByteData(RGBA)', () async {
-    final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+    final image = await CkBrowserImageDecoder.create(
       data: kAnimatedGif,
       debugSource: 'test',
     );
-    const List<List<int>> expectedColors = <List<int>>[
+    const expectedColors = <List<int>>[
       <int>[255, 0, 0, 255],
       <int>[0, 255, 0, 255],
       <int>[0, 0, 255, 255],
     ];
-    for (int i = 0; i < image.frameCount; i++) {
-      final ui.FrameInfo frame = await image.getNextFrame();
-      final ByteData? rgba = await frame.image.toByteData();
+    for (var i = 0; i < image.frameCount; i++) {
+      final frame = await image.getNextFrame();
+      final rgba = await frame.image.toByteData();
       expect(rgba, isNotNull);
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
   });
 
   test('ImageDecoder expires after inactivity', () async {
-    const Duration testExpireDuration = Duration(milliseconds: 100);
+    const testExpireDuration = Duration(milliseconds: 100);
     debugOverrideWebDecoderExpireDuration(testExpireDuration);
 
-    final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+    final image = await CkBrowserImageDecoder.create(
       data: kAnimatedGif,
       debugSource: 'test',
     );
 
     // ImageDecoder is initialized eagerly to populate `frameCount` and
     // `repetitionCount`.
-    final ImageDecoder? decoder1 = image.debugCachedWebDecoder;
+    final decoder1 = image.debugCachedWebDecoder;
     expect(decoder1, isNotNull);
     expect(image.frameCount, 3);
     expect(image.repetitionCount, -1);
 
     // A frame can be decoded right away.
-    final ui.FrameInfo frame1 = await image.getNextFrame();
+    final frame1 = await image.getNextFrame();
     await expectFrameData(frame1, <int>[255, 0, 0, 255]);
     expect(frame1, isNotNull);
 
@@ -882,28 +882,28 @@ void _testCkBrowserImageDecoder() {
     expect(image.debugCachedWebDecoder, isNull);
 
     // A new decoder should be created upon the next frame request.
-    final ui.FrameInfo frame2 = await image.getNextFrame();
+    final frame2 = await image.getNextFrame();
 
     // Check that the cached decoder is indeed new.
-    final ImageDecoder? decoder2 = image.debugCachedWebDecoder;
+    final decoder2 = image.debugCachedWebDecoder;
     expect(decoder2, isNot(same(decoder1)));
     await expectFrameData(frame2, <int>[0, 255, 0, 255]);
 
     // Check that the new decoder remembers the last frame index.
-    final ui.FrameInfo frame3 = await image.getNextFrame();
+    final frame3 = await image.getNextFrame();
     await expectFrameData(frame3, <int>[0, 0, 255, 255]);
 
     debugRestoreWebDecoderExpireDuration();
   });
 
   test('ImageDecoder toByteData(translucent PNG)', () async {
-    final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+    final image = await CkBrowserImageDecoder.create(
       data: kTranslucentPng,
       debugSource: 'test',
     );
-    final ui.FrameInfo frame = await image.getNextFrame();
+    final frame = await image.getNextFrame();
 
-    ByteData? data = await frame.image.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
+    var data = await frame.image.toByteData(format: ui.ImageByteFormat.rawStraightRgba);
     expect(data!.buffer.asUint8List(),
            <int>[0x22, 0x44, 0x66, 0x80, 0x22, 0x44, 0x66, 0x80,
                  0x22, 0x44, 0x66, 0x80, 0x22, 0x44, 0x66, 0x80]);
@@ -916,6 +916,6 @@ void _testCkBrowserImageDecoder() {
 }
 
 Future<void> expectFrameData(ui.FrameInfo frame, List<int> data) async {
-  final ByteData frameData = (await frame.image.toByteData())!;
+  final frameData = (await frame.image.toByteData())!;
   expect(frameData.buffer.asUint8List(), Uint8List.fromList(data));
 }

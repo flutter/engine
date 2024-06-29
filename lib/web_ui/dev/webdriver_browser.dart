@@ -23,8 +23,8 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
   Future<int> pickUnusedPort() async {
     // Use bind to allocate an unused port, then unbind from that port to
     // make it available for use.
-    final ServerSocket socket = await ServerSocket.bind('localhost', 0);
-    final int port = socket.port;
+    final socket = await ServerSocket.bind('localhost', 0);
+    final port = socket.port;
     await socket.close();
 
     return port;
@@ -61,7 +61,7 @@ abstract class WebDriverBrowserEnvironment extends BrowserEnvironment {
   Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
     while (true) {
       try {
-        final WebDriver driver = await createDriver(
+        final driver = await createDriver(
           uri: driverUri, desired: <String, dynamic>{'browserName': packageTestRuntime.identifier});
         return WebDriverBrowser(driver, url);
       } on SocketException {
@@ -119,7 +119,7 @@ class WebDriverBrowser extends Browser {
 
   @override
   Future<Image> captureScreenshot(Rectangle<num> region) async {
-    final Image image = decodePng(await _driver.captureScreenshotAsList())!;
+    final image = decodePng(await _driver.captureScreenshotAsList())!;
     return copyCrop(image, region.left.round(), region.top.round(),
         region.width.round(), region.height.round());
   }

@@ -13,29 +13,29 @@ void main() {
 }
 
 void testMain() {
-  final Float32List points = Float32List(PathIterator.kMaxBufferSize);
+  final points = Float32List(PathIterator.kMaxBufferSize);
 
   group('PathIterator', () {
     test('Should return done verb for empty path', () {
-      final SurfacePath path = SurfacePath();
-      final PathIterator iter = PathIterator(path.pathRef, false);
+      final path = SurfacePath();
+      final iter = PathIterator(path.pathRef, false);
       expect(iter.peek(), SPath.kDoneVerb);
       expect(iter.next(points), SPath.kDoneVerb);
     });
 
     test('Should return done when moveTo is last instruction', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(10, 10);
-      final PathIterator iter = PathIterator(path.pathRef, false);
+      final iter = PathIterator(path.pathRef, false);
       expect(iter.peek(), SPath.kMoveVerb);
       expect(iter.next(points), SPath.kDoneVerb);
     });
 
     test('Should return lineTo', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(10, 10);
       path.lineTo(20, 20);
-      final PathIterator iter = PathIterator(path.pathRef, false);
+      final iter = PathIterator(path.pathRef, false);
       expect(iter.peek(), SPath.kMoveVerb);
       expect(iter.next(points), SPath.kMoveVerb);
       expect(points[0], 10);
@@ -45,10 +45,10 @@ void testMain() {
     });
 
     test('Should return extra lineTo if iteration is closed', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(10, 10);
       path.lineTo(20, 20);
-      final PathIterator iter = PathIterator(path.pathRef, true);
+      final iter = PathIterator(path.pathRef, true);
       expect(iter.peek(), SPath.kMoveVerb);
       expect(iter.next(points), SPath.kMoveVerb);
       expect(points[0], 10);
@@ -61,11 +61,11 @@ void testMain() {
     });
 
     test('Should not return extra lineTo if last point is starting point', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(10, 10);
       path.lineTo(20, 20);
       path.lineTo(10, 10);
-      final PathIterator iter = PathIterator(path.pathRef, true);
+      final iter = PathIterator(path.pathRef, true);
       expect(iter.peek(), SPath.kMoveVerb);
       expect(iter.next(points), SPath.kMoveVerb);
       expect(points[0], 10);
@@ -78,10 +78,10 @@ void testMain() {
     });
 
     test('peek should return lineTo if iteration is closed', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(10, 10);
       path.lineTo(20, 20);
-      final PathIterator iter = PathIterator(path.pathRef, true);
+      final iter = PathIterator(path.pathRef, true);
       expect(iter.next(points), SPath.kMoveVerb);
       expect(iter.next(points), SPath.kLineVerb);
       expect(iter.peek(), SPath.kLineVerb);

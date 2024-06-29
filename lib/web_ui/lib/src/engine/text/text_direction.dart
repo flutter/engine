@@ -105,19 +105,19 @@ final UnicodePropertyLookup<ui.TextDirection?> _textDirectionLookup = UnicodePro
 );
 
 List<BidiFragment> _computeBidiFragments(String text) {
-  final List<BidiFragment> fragments = <BidiFragment>[];
+  final fragments = <BidiFragment>[];
 
   if (text.isEmpty) {
     fragments.add(const BidiFragment(0, 0, null, FragmentFlow.previous));
     return fragments;
   }
 
-  int fragmentStart = 0;
-  ui.TextDirection? textDirection = _getTextDirection(text, 0);
-  FragmentFlow fragmentFlow = _getFragmentFlow(text, 0);
+  var fragmentStart = 0;
+  var textDirection = _getTextDirection(text, 0);
+  var fragmentFlow = _getFragmentFlow(text, 0);
 
-  for (int i = 1; i < text.length; i++) {
-    final ui.TextDirection? charTextDirection = _getTextDirection(text, i);
+  for (var i = 1; i < text.length; i++) {
+    final charTextDirection = _getTextDirection(text, i);
 
     if (charTextDirection != textDirection) {
       // We've reached the end of a text direction fragment.
@@ -140,14 +140,14 @@ List<BidiFragment> _computeBidiFragments(String text) {
 }
 
 ui.TextDirection? _getTextDirection(String text, int i) {
-  final int codePoint = getCodePoint(text, i)!;
+  final codePoint = getCodePoint(text, i)!;
   if (_isDigit(codePoint) || _isMashriqiDigit(codePoint)) {
     // A sequence of regular digits or Mashriqi digits always goes from left to
     // regardless of their fragment flow direction.
     return ui.TextDirection.ltr;
   }
 
-  final ui.TextDirection? textDirection = _textDirectionLookup.findForChar(codePoint);
+  final textDirection = _textDirectionLookup.findForChar(codePoint);
   if (textDirection != null) {
     return textDirection;
   }
@@ -156,7 +156,7 @@ ui.TextDirection? _getTextDirection(String text, int i) {
 }
 
 FragmentFlow _getFragmentFlow(String text, int i) {
-  final int codePoint = getCodePoint(text, i)!;
+  final codePoint = getCodePoint(text, i)!;
   if (_isDigit(codePoint)) {
     return FragmentFlow.previous;
   }
@@ -164,7 +164,7 @@ FragmentFlow _getFragmentFlow(String text, int i) {
     return FragmentFlow.rtl;
   }
 
-  final ui.TextDirection? textDirection = _textDirectionLookup.findForChar(codePoint);
+  final textDirection = _textDirectionLookup.findForChar(codePoint);
   switch (textDirection) {
     case ui.TextDirection.ltr:
       return FragmentFlow.ltr;

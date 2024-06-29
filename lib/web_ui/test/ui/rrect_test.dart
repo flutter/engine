@@ -15,7 +15,7 @@ void main() {
 Future<void> testMain() async {
   setUpUnitTests();
   test('RRect.contains()', () {
-    final RRect rrect = RRect.fromRectAndCorners(
+    final rrect = RRect.fromRectAndCorners(
         const Rect.fromLTRB(1.0, 1.0, 2.0, 2.0),
         topLeft: const Radius.circular(0.5),
         topRight: const Radius.circular(0.25),
@@ -32,7 +32,7 @@ Future<void> testMain() async {
   });
 
   test('RRect.contains() large radii', () {
-    final RRect rrect = RRect.fromRectAndCorners(
+    final rrect = RRect.fromRectAndCorners(
         const Rect.fromLTRB(1.0, 1.0, 2.0, 2.0),
         topLeft: const Radius.circular(5000.0),
         topRight: const Radius.circular(2500.0),
@@ -50,7 +50,7 @@ Future<void> testMain() async {
 
   test('RRect.webOnlyUniformRadii returns true when all corner radii are equal',
       () {
-    final RRect rect1 = RRect.fromRectAndCorners(
+    final rect1 = RRect.fromRectAndCorners(
         const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
         topLeft: const Radius.elliptical(5, 5),
         topRight: const Radius.elliptical(5, 5),
@@ -59,7 +59,7 @@ Future<void> testMain() async {
     );
     expect(rect1.webOnlyUniformRadii, isTrue);
 
-    final RRect rect2 = RRect.fromRectAndCorners(
+    final rect2 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(1000, 5),
       topRight: const Radius.elliptical(5, 5),
@@ -68,7 +68,7 @@ Future<void> testMain() async {
     );
     expect(rect2.webOnlyUniformRadii, isFalse);
 
-    final RRect rect3 = RRect.fromRectAndCorners(
+    final rect3 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 1000),
       topRight: const Radius.elliptical(5, 5),
@@ -77,7 +77,7 @@ Future<void> testMain() async {
     );
     expect(rect3.webOnlyUniformRadii, isFalse);
 
-    final RRect rect4 = RRect.fromRectAndCorners(
+    final rect4 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 5),
       topRight: const Radius.elliptical(1000, 5),
@@ -86,7 +86,7 @@ Future<void> testMain() async {
     );
     expect(rect4.webOnlyUniformRadii, isFalse);
 
-    final RRect rect5 = RRect.fromRectAndCorners(
+    final rect5 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 5),
       topRight: const Radius.elliptical(5, 1000),
@@ -95,7 +95,7 @@ Future<void> testMain() async {
     );
     expect(rect5.webOnlyUniformRadii, isFalse);
 
-    final RRect rect6 = RRect.fromRectAndCorners(
+    final rect6 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 5),
       topRight: const Radius.elliptical(5, 5),
@@ -104,7 +104,7 @@ Future<void> testMain() async {
     );
     expect(rect6.webOnlyUniformRadii, isFalse);
 
-    final RRect rect7 = RRect.fromRectAndCorners(
+    final rect7 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 5),
       topRight: const Radius.elliptical(5, 5),
@@ -113,7 +113,7 @@ Future<void> testMain() async {
     );
     expect(rect7.webOnlyUniformRadii, isFalse);
 
-    final RRect rect8 = RRect.fromRectAndCorners(
+    final rect8 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 5),
       topRight: const Radius.elliptical(5, 5),
@@ -122,7 +122,7 @@ Future<void> testMain() async {
     );
     expect(rect8.webOnlyUniformRadii, isFalse);
 
-    final RRect rect9 = RRect.fromRectAndCorners(
+    final rect9 = RRect.fromRectAndCorners(
       const Rect.fromLTWH(1.0, 2.0, 3.0, 4.0),
       topLeft: const Radius.elliptical(5, 5),
       topRight: const Radius.elliptical(5, 5),

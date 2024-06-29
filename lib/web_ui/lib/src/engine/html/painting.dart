@@ -176,11 +176,11 @@ class SurfacePaint implements ui.Paint {
 
   @override
   String toString() {
-    String resultString = 'Paint()';
+    var resultString = 'Paint()';
 
     assert(() {
-      final StringBuffer result = StringBuffer();
-      String semicolon = '';
+      final result = StringBuffer();
+      var semicolon = '';
       result.write('Paint(');
       if (style == ui.PaintingStyle.stroke) {
         result.write('$style');
@@ -278,9 +278,9 @@ class SurfacePaintData {
 
   @override
   String toString() {
-    String result = super.toString();
+    var result = super.toString();
     assert(() {
-      final StringBuffer buffer = StringBuffer('SurfacePaintData(');
+      final buffer = StringBuffer('SurfacePaintData(');
       if (blendMode != null) {
         buffer.write('blendMode = $blendMode; ');
       }

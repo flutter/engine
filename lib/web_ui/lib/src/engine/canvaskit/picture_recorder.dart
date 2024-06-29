@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
@@ -15,9 +14,9 @@ class CkPictureRecorder implements ui.PictureRecorder {
   CkCanvas? _recordingCanvas;
 
   CkCanvas beginRecording(ui.Rect bounds) {
-    final SkPictureRecorder recorder = _skRecorder = SkPictureRecorder();
-    final Float32List skRect = toSkRect(bounds);
-    final SkCanvas skCanvas = recorder.beginRecording(skRect);
+    final recorder = _skRecorder = SkPictureRecorder();
+    final skRect = toSkRect(bounds);
+    final skCanvas = recorder.beginRecording(skRect);
     return _recordingCanvas = CkCanvas(skCanvas);
   }
 
@@ -25,16 +24,16 @@ class CkPictureRecorder implements ui.PictureRecorder {
 
   @override
   CkPicture endRecording() {
-    final SkPictureRecorder? recorder = _skRecorder;
+    final recorder = _skRecorder;
 
     if (recorder == null) {
       throw StateError('PictureRecorder is not recording');
     }
 
-    final SkPicture skPicture = recorder.finishRecordingAsPicture();
+    final skPicture = recorder.finishRecordingAsPicture();
     recorder.delete();
     _skRecorder = null;
-    final CkPicture result = CkPicture(skPicture);
+    final result = CkPicture(skPicture);
     // We invoke the handler here, not in the picture constructor, because we want
     // [result.approximateBytesUsed] to be available for the handler.
     ui.Picture.onCreate?.call(result);

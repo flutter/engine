@@ -25,9 +25,9 @@ Future<void> testMain() async {
   late PersistedPlatformView view;
 
   test('importing platformViewRegistry from dart:ui is deprecated', () {
-    final void Function(String) oldPrintWarning = printWarning;
+    final oldPrintWarning = printWarning;
 
-    final List<String> warnings = <String>[];
+    final warnings = <String>[];
     printWarning = (String message) {
       warnings.add(message);
     };
@@ -66,7 +66,7 @@ Future<void> testMain() async {
 
     group('update', () {
       test('throws assertion error if called with different viewIds', () {
-        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(() {
           view.update(differentView);
         }, throwsAssertionError);
@@ -75,24 +75,24 @@ Future<void> testMain() async {
 
     group('canUpdateAsMatch', () {
       test('returns true when viewId is the same', () {
-        final PersistedPlatformView sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
+        final sameView = PersistedPlatformView(0, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(sameView), isTrue);
       });
 
       test('returns false when viewId is different', () {
-        final PersistedPlatformView differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
+        final differentView = PersistedPlatformView(1, 1, 1, 100, 100)..build();
         expect(view.canUpdateAsMatch(differentView), isFalse);
       });
 
       test('returns false when other view is not a PlatformView', () {
-        final PersistedOpacity anyView = PersistedOpacity(null, 1, ui.Offset.zero)..build();
+        final anyView = PersistedOpacity(null, 1, ui.Offset.zero)..build();
         expect(view.canUpdateAsMatch(anyView), isFalse);
       });
     });
 
     group('createElement', () {
       test('creates slot element that can receive pointer events', () {
-        final DomElement element = view.createElement();
+        final element = view.createElement();
 
         expect(element.tagName, equalsIgnoringCase('flt-platform-view-slot'));
         expect(element.style.pointerEvents, 'auto');
@@ -103,7 +103,7 @@ Future<void> testMain() async {
 
 // Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> _createPlatformView(int id, String viewType) {
-  final Completer<void> completer = Completer<void>();
+  final completer = Completer<void>();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(

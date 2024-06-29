@@ -53,7 +53,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     // TODO(yjbanov): implement blendMode
-    final DomElement box = createDomElement('draw-color');
+    final box = createDomElement('draw-color');
     box.style
       ..position = 'absolute'
       ..top = '0'
@@ -83,7 +83,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    final ui.Rect outerRect = adjustRectForDom(rrect.outerRect, paint);
+    final outerRect = adjustRectForDom(rrect.outerRect, paint);
     final DomElement element = buildDrawRectElement(
         outerRect, paint, 'draw-rrect', currentTransform);
     applyRRectBorderRadius(element.style, rrect);
@@ -129,7 +129,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    final DomElement paragraphElement = drawParagraphElement(
+    final paragraphElement = drawParagraphElement(
         paragraph as CanvasParagraph, offset,
         transform: currentTransform);
     currentElement.append(paragraphElement);
@@ -159,7 +159,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 /// Returns a color for box-shadow based on blur filter at sigma.
 ui.Color blurColor(ui.Color color, double sigma) {
   final double strength = math.min(math.sqrt(sigma) / (math.pi * 2.0), 1.0);
-  final int reducedAlpha = ((1.0 - strength) * color.alpha).round();
+  final reducedAlpha = ((1.0 - strength) * color.alpha).round();
   return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
 }
 
@@ -207,11 +207,11 @@ ui.Color blurColor(ui.Color color, double sigma) {
 ui.Rect adjustRectForDom(ui.Rect rect, SurfacePaintData paint) {
   double left = math.min(rect.left, rect.right);
   double top = math.min(rect.top, rect.bottom);
-  double width = rect.width.abs();
-  double height = rect.height.abs();
+  var width = rect.width.abs();
+  var height = rect.height.abs();
 
-  final bool isStroke = paint.style == ui.PaintingStyle.stroke;
-  final double strokeWidth = paint.strokeWidth ?? 0.0;
+  final isStroke = paint.style == ui.PaintingStyle.stroke;
+  final strokeWidth = paint.strokeWidth ?? 0.0;
   if (isStroke && strokeWidth > 0.0) {
     left -= strokeWidth / 2.0;
     top -= strokeWidth / 2.0;
@@ -234,7 +234,7 @@ DomHTMLElement buildDrawRectElement(
     ui.Rect rect, SurfacePaintData paint, String tagName, Matrix4 transform) {
   assert(rect.left <= rect.right);
   assert(rect.top <= rect.bottom);
-  final DomHTMLElement rectangle = domDocument.createElement(tagName) as
+  final rectangle = domDocument.createElement(tagName) as
       DomHTMLElement;
   assert(() {
     rectangle.setAttribute('flt-rect', '$rect');
@@ -242,25 +242,25 @@ DomHTMLElement buildDrawRectElement(
     return true;
   }());
   String effectiveTransform;
-  final bool isStroke = paint.style == ui.PaintingStyle.stroke;
-  final double strokeWidth = paint.strokeWidth ?? 0.0;
+  final isStroke = paint.style == ui.PaintingStyle.stroke;
+  final strokeWidth = paint.strokeWidth ?? 0.0;
   if (transform.isIdentity()) {
     effectiveTransform = 'translate(${rect.left}px, ${rect.top}px)';
   } else {
     // Clone to avoid mutating `transform`.
-    final Matrix4 translated = transform.clone()..translate(rect.left, rect.top);
+    final translated = transform.clone()..translate(rect.left, rect.top);
     effectiveTransform = matrix4ToCssTransform(translated);
   }
-  final DomCSSStyleDeclaration style = rectangle.style;
+  final style = rectangle.style;
   style
     ..position = 'absolute'
     ..transformOrigin = '0 0 0'
     ..transform = effectiveTransform;
 
-  String cssColor = colorValueToCssString(paint.color);
+  var cssColor = colorValueToCssString(paint.color);
 
   if (paint.maskFilter != null) {
-    final double sigma = paint.maskFilter!.webOnlySigma;
+    final sigma = paint.maskFilter!.webOnlySigma;
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit && !isStroke) {
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
@@ -286,7 +286,7 @@ DomHTMLElement buildDrawRectElement(
 }
 
 String _getBackgroundImageCssValue(ui.Shader? shader, ui.Rect bounds) {
-  final String url = _getBackgroundImageUrl(shader, bounds);
+  final url = _getBackgroundImageUrl(shader, bounds);
   return (url != '') ? "url('$url'": '';
 }
 
@@ -336,10 +336,10 @@ String _borderStrokeToCssUnit(double value) {
 SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
-  final SVGSVGElement root = createSVGSVGElement()
+  final root = createSVGSVGElement()
     ..setAttribute('overflow', 'visible');
 
-  final SVGPathElement svgPath = createSVGPathElement();
+  final svgPath = createSVGPathElement();
   root.append(svgPath);
   if (paint.style == ui.PaintingStyle.stroke ||
       (paint.style != ui.PaintingStyle.fill &&

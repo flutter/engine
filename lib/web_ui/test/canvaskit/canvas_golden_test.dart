@@ -29,8 +29,8 @@ void testMain() {
 
     test('renders using non-recording canvas if weak refs are supported',
         () async {
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(kDefaultRegion);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(kDefaultRegion);
       expect(canvas.runtimeType, CkCanvas);
       drawTestPicture(canvas);
       await matchPictureGolden(
@@ -43,11 +43,11 @@ void testMain() {
     test(
         'text style - foreground/background/color do not leak across paragraphs',
         () async {
-      const double testWidth = 440;
-      const double middle = testWidth / 2;
+      const testWidth = 440;
+      const middle = testWidth / 2;
       CkParagraph createTestParagraph(
           {ui.Color? color, CkPaint? foreground, CkPaint? background}) {
-        final CkParagraphBuilder builder =
+        final builder =
             CkParagraphBuilder(CkParagraphStyle());
         builder.pushStyle(CkTextStyle(
           fontSize: 16,
@@ -55,7 +55,7 @@ void testMain() {
           foreground: foreground,
           background: background,
         ));
-        final StringBuffer text = StringBuffer();
+        final text = StringBuffer();
         if (color == null && foreground == null && background == null) {
           text.write('Default');
         } else {
@@ -76,12 +76,12 @@ void testMain() {
           }
         }
         builder.addText(text.toString());
-        final CkParagraph paragraph = builder.build();
+        final paragraph = builder.build();
         paragraph.layout(const ui.ParagraphConstraints(width: testWidth));
         return paragraph;
       }
 
-      final List<ParagraphFactory> variations = <ParagraphFactory>[
+      final variations = <ParagraphFactory>[
         () => createTestParagraph(),
         () => createTestParagraph(color: const ui.Color(0xFF009900)),
         () => createTestParagraph(
@@ -98,20 +98,20 @@ void testMain() {
             ),
       ];
 
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(ui.Rect.largest);
       canvas.translate(10, 10);
 
-      for (final ParagraphFactory from in variations) {
-        for (final ParagraphFactory to in variations) {
+      for (final from in variations) {
+        for (final to in variations) {
           canvas.save();
-          final CkParagraph fromParagraph = from();
+          final fromParagraph = from();
           canvas.drawParagraph(fromParagraph, ui.Offset.zero);
 
-          final ui.Offset leftEnd = ui.Offset(
+          final leftEnd = ui.Offset(
               fromParagraph.maxIntrinsicWidth + 10, fromParagraph.height / 2);
-          final ui.Offset rightEnd = ui.Offset(middle - 10, leftEnd.dy);
-          const ui.Offset tipOffset = ui.Offset(-5, -5);
+          final rightEnd = ui.Offset(middle - 10, leftEnd.dy);
+          const tipOffset = ui.Offset(-5, -5);
           canvas.drawLine(leftEnd, rightEnd, CkPaint());
           canvas.drawLine(rightEnd, rightEnd + tipOffset, CkPaint());
           canvas.drawLine(
@@ -124,7 +124,7 @@ void testMain() {
         }
       }
 
-      final CkPicture picture = recorder.endRecording();
+      final picture = recorder.endRecording();
       await matchPictureGolden(
         'canvaskit_text_styles_do_not_leak.png',
         picture,
@@ -135,22 +135,22 @@ void testMain() {
     // Make sure we clear the canvas in between frames.
     test('empty frame after contentful frame', () async {
       // First draw a frame with a red rectangle
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(ui.Rect.largest);
       canvas.drawRect(const ui.Rect.fromLTRB(20, 20, 100, 100),
           CkPaint()..color = const ui.Color(0xffff0000));
-      final CkPicture picture = recorder.endRecording();
-      final LayerSceneBuilder builder = LayerSceneBuilder();
+      final picture = recorder.endRecording();
+      final builder = LayerSceneBuilder();
       builder.pushOffset(0, 0);
       builder.addPicture(ui.Offset.zero, picture);
-      final LayerScene scene = builder.build();
+      final scene = builder.build();
       await renderScene(scene);
 
       // Now draw an empty layer tree and confirm that the red rectangle is
       // no longer drawn.
-      final LayerSceneBuilder emptySceneBuilder = LayerSceneBuilder();
+      final emptySceneBuilder = LayerSceneBuilder();
       emptySceneBuilder.pushOffset(0, 0);
-      final LayerScene emptyScene = emptySceneBuilder.build();
+      final emptyScene = emptySceneBuilder.build();
       await matchSceneGolden('canvaskit_empty_scene.png', emptyScene,
           region: const ui.Rect.fromLTRB(0, 0, 100, 100));
     });
@@ -166,11 +166,11 @@ void testMain() {
       await createPlatformView(0, 'test-platform-view');
 
       CkPicture makeTextPicture(String text, ui.Offset offset) {
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
-        final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle());
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
+        final builder = CkParagraphBuilder(CkParagraphStyle());
         builder.addText(text);
-        final CkParagraph paragraph = builder.build();
+        final paragraph = builder.build();
         paragraph.layout(const ui.ParagraphConstraints(width: 100));
         canvas.drawRect(
           ui.Rect.fromLTWH(offset.dx, offset.dy, paragraph.width, paragraph.height).inflate(10),
@@ -181,20 +181,20 @@ void testMain() {
       }
 
       CkPicture imageToPicture(CkImage image, ui.Offset offset) {
-        final CkPictureRecorder recorder = CkPictureRecorder();
-        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        final recorder = CkPictureRecorder();
+        final canvas = recorder.beginRecording(ui.Rect.largest);
         canvas.drawImage(image, offset, CkPaint());
         return recorder.endRecording();
       }
 
-      final CkPicture helloPicture = makeTextPicture('Hello', ui.Offset.zero);
+      final helloPicture = makeTextPicture('Hello', ui.Offset.zero);
 
-      final CkImage helloImage = helloPicture.toImageSync(100, 100);
+      final helloImage = helloPicture.toImageSync(100, 100);
 
       // Calling toByteData is essential to hit the bug.
       await helloImage.toByteData(format: ui.ImageByteFormat.png);
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPicture(ui.Offset.zero, helloPicture);
       sb.addPlatformView(0, width: 10, height: 10);
@@ -268,7 +268,7 @@ void drawTestPicture(CkCanvas canvas) {
   );
 
   canvas.translate(60, 0);
-  final ui.RSTransform transform = ui.RSTransform.fromComponents(
+  final transform = ui.RSTransform.fromComponents(
     rotation: 0,
     scale: 1,
     anchorX: 0,
@@ -338,8 +338,8 @@ void drawTestPicture(CkCanvas canvas) {
 
   canvas.translate(60, 0);
   {
-    final CkPictureRecorder otherRecorder = CkPictureRecorder();
-    final CkCanvas otherCanvas =
+    final otherRecorder = CkPictureRecorder();
+    final otherCanvas =
         otherRecorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 40, 20));
     otherCanvas.drawCircle(
       const ui.Offset(30, 15),
@@ -408,8 +408,8 @@ void drawTestPicture(CkCanvas canvas) {
   );
 
   canvas.translate(60, 0);
-  final int restorePoint = canvas.save();
-  for (int i = 0; i < 5; i++) {
+  final restorePoint = canvas.save();
+  for (var i = 0; i < 5; i++) {
     canvas.save();
     canvas.translate(10, 10);
     canvas.drawCircle(ui.Offset.zero, 5, CkPaint());
@@ -427,10 +427,10 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.restore();
 
   canvas.translate(60, 0);
-  final CkPaint thickStroke = CkPaint()
+  final thickStroke = CkPaint()
     ..style = ui.PaintingStyle.stroke
     ..strokeWidth = 20;
-  final CkPaint semitransparent = CkPaint()..color = const ui.Color(0x66000000);
+  final semitransparent = CkPaint()..color = const ui.Color(0x66000000);
 
   canvas.saveLayer(kDefaultRegion, semitransparent);
   canvas.drawLine(const ui.Offset(10, 10), const ui.Offset(50, 50), thickStroke);
@@ -478,7 +478,7 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.save();
 
   canvas.save();
-  final Matrix4 matrix = Matrix4.identity();
+  final matrix = Matrix4.identity();
   matrix.translate(30, 30);
   matrix.scale(2, 1.5);
   canvas.transform(matrix.storage);
@@ -486,7 +486,7 @@ void drawTestPicture(CkCanvas canvas) {
   canvas.restore();
 
   canvas.translate(60, 0);
-  final CkParagraph p = makeSimpleText('Hello', fontSize: 18, color: const ui.Color(0xFF0000AA));
+  final p = makeSimpleText('Hello', fontSize: 18, color: const ui.Color(0xFF0000AA));
   canvas.drawParagraph(
     p,
     const ui.Offset(10, 20),
@@ -506,8 +506,8 @@ void drawTestPicture(CkCanvas canvas) {
 }
 
 CkImage generateTestImage() {
-  final DomCanvasElement canvas = createDomCanvasElement(width: 20, height: 20);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final canvas = createDomCanvasElement(width: 20, height: 20);
+  final ctx = canvas.context2D;
   ctx.fillStyle = '#FF0000';
   ctx.fillRect(0, 0, 10, 10);
   ctx.fillStyle = '#00FF00';
@@ -516,9 +516,9 @@ CkImage generateTestImage() {
   ctx.fillRect(10, 0, 10, 10);
   ctx.fillStyle = '#FF00FF';
   ctx.fillRect(10, 10, 10, 10);
-  final Uint8List imageData =
+  final imageData =
       ctx.getImageData(0, 0, 20, 20).data.buffer.asUint8List();
-  final SkImage skImage = canvasKit.MakeImage(
+  final skImage = canvasKit.MakeImage(
       SkImageInfo(
         width: 20,
         height: 20,

@@ -19,7 +19,7 @@ void main() {
 void testMain() {
   groupForEachFragmenter(({required bool isV8}) {
     List<Line> split(String text) {
-      final LineBreakFragmenter fragmenter =
+      final fragmenter =
           isV8 ? V8LineBreakFragmenter(text) : FWLineBreakFragmenter(text);
       return <Line>[
         for (final LineBreakFragment fragment in fragmenter.fragment())
@@ -64,7 +64,7 @@ void testMain() {
     });
 
     test('new line characters', () {
-      final String bk = String.fromCharCode(0x000B);
+      final bk = String.fromCharCode(0x000B);
       // Can't have a line break between CR×LF.
       expect(split('foo\r\nbar'), <Line>[
         Line('foo\r\n', mandatory, nl: 2, sp: 2),
@@ -227,7 +227,7 @@ void testMain() {
     });
 
     test('placeholders', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
@@ -242,7 +242,7 @@ void testMain() {
         },
       );
 
-      final String placeholderChar = String.fromCharCode(0xFFFC);
+      final placeholderChar = String.fromCharCode(0xFFFC);
 
       expect(split(paragraph.plainText), <Line>[
         Line(placeholderChar, opportunity),
@@ -258,14 +258,14 @@ void testMain() {
     });
 
     test('single placeholder', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
         },
       );
 
-      final String placeholderChar = String.fromCharCode(0xFFFC);
+      final placeholderChar = String.fromCharCode(0xFFFC);
 
       expect(split(paragraph.plainText), <Line>[
         Line(placeholderChar, endOfText),
@@ -273,7 +273,7 @@ void testMain() {
     });
 
     test('placeholders surrounded by spaces and new lines', () {
-      final CanvasParagraph paragraph = rich(
+      final paragraph = rich(
         EngineParagraphStyle(),
         (CanvasParagraphBuilder builder) {
           builder.addPlaceholder(100, 100, PlaceholderAlignment.top);
@@ -325,26 +325,26 @@ void testMain() {
     });
 
     test('comprehensive test', () {
-      final List<TestCase> testCollection = parseRawTestData(rawLineBreakTestData, isV8: isV8);
-      for (int t = 0; t < testCollection.length; t++) {
-        final TestCase testCase = testCollection[t];
+      final testCollection = parseRawTestData(rawLineBreakTestData, isV8: isV8);
+      for (var t = 0; t < testCollection.length; t++) {
+        final testCase = testCollection[t];
 
-        final String text = testCase.toText();
-        final LineBreakFragmenter fragmenter = isV8
+        final text = testCase.toText();
+        final fragmenter = isV8
             ? V8LineBreakFragmenter(text)
             : FWLineBreakFragmenter(text);
-        final List<LineBreakFragment> fragments = fragmenter.fragment();
+        final fragments = fragmenter.fragment();
 
         // `f` is the index in the `fragments` list.
-        int f = 0;
-        LineBreakFragment currentFragment = fragments[f];
+        var f = 0;
+        var currentFragment = fragments[f];
 
-        int surrogateCount = 0;
+        var surrogateCount = 0;
         // `s` is the index in the `testCase.signs` list.
-        for (int s = 0; s < testCase.signs.length - 1; s++) {
+        for (var s = 0; s < testCase.signs.length - 1; s++) {
           // `i` is the index in the `text`.
-          final int i = s + surrogateCount;
-          final Sign sign = testCase.signs[s];
+          final i = s + surrogateCount;
+          final sign = testCase.signs[s];
 
           if (sign.isBreakOpportunity) {
             expect(
@@ -420,7 +420,7 @@ void testMain() {
     }
 
     test('thai text with hard line breaks', () {
-      const String thaiText = '\u0E1A\u0E38\u0E1C\u0E25\u0E01\u0E32\u0E23';
+      const thaiText = '\u0E1A\u0E38\u0E1C\u0E25\u0E01\u0E32\u0E23';
       expect(split(thaiText), <Line>[
         Line('\u0E1A\u0E38', opportunity),
         Line('\u0E1C\u0E25', opportunity),
@@ -435,7 +435,7 @@ void testMain() {
     });
 
     test('khmer text with hard line breaks', () {
-      const String khmerText =
+      const khmerText =
           '\u179B\u1792\u17D2\u179C\u17BE\u17B2\u17D2\u1799';
       expect(split(khmerText), <Line>[
         Line('\u179B', opportunity),
@@ -499,8 +499,8 @@ class Line {
   }
 
   String get escapedText {
-    final String bk = String.fromCharCode(0x000B);
-    final String nl = String.fromCharCode(0x0085);
+    final bk = String.fromCharCode(0x000B);
+    final nl = String.fromCharCode(0x0085);
     return text
         .replaceAll('"', r'\"')
         .replaceAll('\n', r'\n')

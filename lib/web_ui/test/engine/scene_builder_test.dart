@@ -17,8 +17,8 @@ void main() {
 void testMain() {
   setUpAll(() {
     LayerBuilder.debugRecorderFactory = (ui.Rect rect) {
-      final StubSceneCanvas canvas = StubSceneCanvas();
-      final StubPictureRecorder recorder = StubPictureRecorder(canvas);
+      final canvas = StubSceneCanvas();
+      final recorder = StubPictureRecorder(canvas);
       return (recorder, canvas);
     };
   });
@@ -29,36 +29,36 @@ void testMain() {
 
   group('EngineSceneBuilder', () {
     test('single picture', () {
-      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+      final sceneBuilder = EngineSceneBuilder();
 
-      const ui.Rect pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
+      const pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect));
 
-      final EngineScene scene = sceneBuilder.build() as EngineScene;
-      final List<LayerSlice> slices = scene.rootLayer.slices;
+      final scene = sceneBuilder.build() as EngineScene;
+      final slices = scene.rootLayer.slices;
       expect(slices.length, 1);
       expect(slices[0], pictureSliceWithRect(pictureRect));
     });
 
     test('two pictures', () {
-      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+      final sceneBuilder = EngineSceneBuilder();
 
-      const ui.Rect pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
-      const ui.Rect pictureRect2 = ui.Rect.fromLTRB(300, 400, 400, 400);
+      const pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
+      const pictureRect2 = ui.Rect.fromLTRB(300, 400, 400, 400);
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect1));
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect2));
 
-      final EngineScene scene = sceneBuilder.build() as EngineScene;
-      final List<LayerSlice> slices = scene.rootLayer.slices;
+      final scene = sceneBuilder.build() as EngineScene;
+      final slices = scene.rootLayer.slices;
       expect(slices.length, 1);
       expect(slices[0], pictureSliceWithRect(const ui.Rect.fromLTRB(100, 100, 400, 400)));
     });
 
     test('picture + platform view (overlapping)', () {
-            final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+            final sceneBuilder = EngineSceneBuilder();
 
-      const ui.Rect pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
-      const ui.Rect platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
+      const pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
+      const platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect));
       sceneBuilder.addPlatformView(
         1,
@@ -67,8 +67,8 @@ void testMain() {
         height: platformViewRect.height
       );
 
-      final EngineScene scene = sceneBuilder.build() as EngineScene;
-      final List<LayerSlice> slices = scene.rootLayer.slices;
+      final scene = sceneBuilder.build() as EngineScene;
+      final slices = scene.rootLayer.slices;
       expect(slices.length, 2);
       expect(slices[0], pictureSliceWithRect(pictureRect));
       expect(slices[1], platformViewSliceWithViews(<PlatformView>[
@@ -79,10 +79,10 @@ void testMain() {
     });
 
     test('platform view + picture (overlapping)', () {
-      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+      final sceneBuilder = EngineSceneBuilder();
 
-      const ui.Rect pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
-      const ui.Rect platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
+      const pictureRect = ui.Rect.fromLTRB(100, 100, 200, 200);
+      const platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
       sceneBuilder.addPlatformView(
         1,
         offset: platformViewRect.topLeft,
@@ -91,8 +91,8 @@ void testMain() {
       );
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect));
 
-      final EngineScene scene = sceneBuilder.build() as EngineScene;
-      final List<LayerSlice> slices = scene.rootLayer.slices;
+      final scene = sceneBuilder.build() as EngineScene;
+      final slices = scene.rootLayer.slices;
       expect(slices.length, 2);
       expect(slices[0], platformViewSliceWithViews(<PlatformView>[
         PlatformView(1, platformViewRect.size, PlatformViewStyling(
@@ -103,11 +103,11 @@ void testMain() {
     });
 
     test('platform view sandwich (overlapping)', () {
-      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+      final sceneBuilder = EngineSceneBuilder();
 
-      const ui.Rect pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
-      const ui.Rect platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
-      const ui.Rect pictureRect2 = ui.Rect.fromLTRB(200, 200, 300, 300);
+      const pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
+      const platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
+      const pictureRect2 = ui.Rect.fromLTRB(200, 200, 300, 300);
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect1));
       sceneBuilder.addPlatformView(
         1,
@@ -117,8 +117,8 @@ void testMain() {
       );
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect2));
 
-      final EngineScene scene = sceneBuilder.build() as EngineScene;
-      final List<LayerSlice> slices = scene.rootLayer.slices;
+      final scene = sceneBuilder.build() as EngineScene;
+      final slices = scene.rootLayer.slices;
       expect(slices.length, 3);
       expect(slices[0], pictureSliceWithRect(pictureRect1));
       expect(slices[1], platformViewSliceWithViews(<PlatformView>[
@@ -130,11 +130,11 @@ void testMain() {
     });
 
     test('platform view sandwich (non-overlapping)', () {
-      final EngineSceneBuilder sceneBuilder = EngineSceneBuilder();
+      final sceneBuilder = EngineSceneBuilder();
 
-      const ui.Rect pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
-      const ui.Rect platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
-      const ui.Rect pictureRect2 = ui.Rect.fromLTRB(50, 50, 100, 100);
+      const pictureRect1 = ui.Rect.fromLTRB(100, 100, 200, 200);
+      const platformViewRect = ui.Rect.fromLTRB(150, 150, 250, 250);
+      const pictureRect2 = ui.Rect.fromLTRB(50, 50, 100, 100);
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect1));
       sceneBuilder.addPlatformView(
         1,
@@ -144,8 +144,8 @@ void testMain() {
       );
       sceneBuilder.addPicture(ui.Offset.zero, StubPicture(pictureRect2));
 
-      final EngineScene scene = sceneBuilder.build() as EngineScene;
-      final List<LayerSlice> slices = scene.rootLayer.slices;
+      final scene = sceneBuilder.build() as EngineScene;
+      final slices = scene.rootLayer.slices;
 
       // The top picture does not overlap with the platform view, so it should
       // be grouped into the slice below it to reduce the number of canvases we
@@ -180,7 +180,7 @@ class PictureSliceMatcher extends Matcher {
     if (item is! PictureSlice) {
       return false;
     }
-    final ScenePicture picture = item.picture;
+    final picture = item.picture;
     if (picture is! StubPicture) {
       return false;
     }
@@ -213,9 +213,9 @@ class PlatformViewSliceMatcher extends Matcher {
       return false;
     }
 
-    for (int i = 0; i < item.views.length; i++) {
-      final PlatformView expectedView = expectedPlatformViews[i];
-      final PlatformView actualView = item.views[i];
+    for (var i = 0; i < item.views.length; i++) {
+      final expectedView = expectedPlatformViews[i];
+      final actualView = item.views[i];
       if (expectedView.viewId != actualView.viewId) {
         return false;
       }

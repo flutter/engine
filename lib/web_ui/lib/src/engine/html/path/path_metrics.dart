@@ -89,7 +89,7 @@ class _SurfacePathMeasure {
   // A path can have a next contour if [Path.moveTo] was called after drawing began.
   // Return true if one exists, or false.
   bool _nextContour() {
-    final bool next = _nativeNextContour();
+    final next = _nativeNextContour();
     if (next) {
       _currentContourIndex++;
     }
@@ -113,7 +113,7 @@ class _SurfacePathMeasure {
     if (_verbIterIndex == _path.countVerbs()) {
       return false;
     }
-    final _PathContourMeasure measure =
+    final measure =
         _PathContourMeasure(_path, _pathIterator, forceClosed);
     _verbIterIndex = measure.verbEndIndex;
     _contours.add(measure);
@@ -149,7 +149,7 @@ class _PathContourMeasure {
   bool _isClosed = false;
 
   ui.Tangent? getTangentForOffset(double distance) {
-    final int segmentIndex = _segmentIndexAtDistance(distance);
+    final segmentIndex = _segmentIndexAtDistance(distance);
     if (segmentIndex == -1) {
       return null;
     }
@@ -172,10 +172,10 @@ class _PathContourMeasure {
     if (_segments.isEmpty) {
       return -1;
     }
-    int lo = 0;
-    int hi = _segments.length - 1;
+    var lo = 0;
+    var hi = _segments.length - 1;
     while (lo < hi) {
-      final int mid = (lo + hi) >> 1;
+      final mid = (lo + hi) >> 1;
       if (_segments[mid].distance < distance) {
         lo = mid + 1;
       } else {
@@ -189,14 +189,14 @@ class _PathContourMeasure {
   }
 
   _SurfaceTangent _getPosTan(int segmentIndex, double distance) {
-    final _PathSegment segment = _segments[segmentIndex];
+    final segment = _segments[segmentIndex];
     // Compute distance to segment. Since distance is cumulative to find
     // t = 0..1 on the segment, we need to calculate start distance using prior
     // segment.
-    final double startDistance =
+    final startDistance =
         segmentIndex == 0 ? 0 : _segments[segmentIndex - 1].distance;
-    final double totalDistance = segment.distance - startDistance;
-    final double t = totalDistance < kEpsilon
+    final totalDistance = segment.distance - startDistance;
+    final t = totalDistance < kEpsilon
         ? 0
         : (distance - startDistance) / totalDistance;
     return segment.computeTangent(t);
@@ -210,27 +210,27 @@ class _PathContourMeasure {
     if (stopDistance > _contourLength) {
       stopDistance = _contourLength;
     }
-    final ui.Path path = ui.Path();
+    final path = ui.Path();
     if (startDistance > stopDistance || _segments.isEmpty) {
       return path;
     }
-    final int startSegmentIndex = _segmentIndexAtDistance(startDistance);
-    final int stopSegmentIndex = _segmentIndexAtDistance(stopDistance);
+    final startSegmentIndex = _segmentIndexAtDistance(startDistance);
+    final stopSegmentIndex = _segmentIndexAtDistance(stopDistance);
     if (startSegmentIndex == -1 || stopSegmentIndex == -1) {
       return path;
     }
-    int currentSegmentIndex = startSegmentIndex;
-    _PathSegment seg = _segments[currentSegmentIndex];
-    final _SurfaceTangent startTangent =
+    var currentSegmentIndex = startSegmentIndex;
+    var seg = _segments[currentSegmentIndex];
+    final startTangent =
         _getPosTan(startSegmentIndex, startDistance);
     if (startWithMoveTo) {
-      final ui.Offset startPosition = startTangent.position;
+      final startPosition = startTangent.position;
       path.moveTo(startPosition.dx, startPosition.dy);
     }
-    final _SurfaceTangent stopTangent =
+    final stopTangent =
         _getPosTan(stopSegmentIndex, stopDistance);
-    double startT = startTangent.t;
-    final double stopT = stopTangent.t;
+    var startT = startTangent.t;
+    final stopT = stopTangent.t;
     if (startSegmentIndex == stopSegmentIndex) {
       // We only have a single segment that covers the complete distance.
       _outputSegmentTo(seg, startT, stopT, path);
@@ -252,11 +252,11 @@ class _PathContourMeasure {
   // Chops the segment at startT and endT and writes it to output [path].
   void _outputSegmentTo(
       _PathSegment segment, double startT, double stopT, ui.Path path) {
-    final List<double> points = segment.points;
+    final points = segment.points;
     switch (segment.segmentType) {
       case SPath.kLineVerb:
-        final double toX = (points[2] * stopT) + (points[0] * (1.0 - stopT));
-        final double toY = (points[3] * stopT) + (points[1] * (1.0 - stopT));
+        final toX = (points[2] * stopT) + (points[0] * (1.0 - stopT));
+        final toY = (points[3] * stopT) + (points[1] * (1.0 - stopT));
         path.lineTo(toX, toY);
       case SPath.kCubicVerb:
         chopCubicBetweenT(points, startT, stopT, _buffer);
@@ -278,13 +278,13 @@ class _PathContourMeasure {
   int _buildSegments(PathIterator iter) {
     assert(_segments.isEmpty, '_buildSegments should be called once');
     _isClosed = false;
-    double distance = 0.0;
-    bool haveSeenMoveTo = false;
+    var distance = 0.0;
+    var haveSeenMoveTo = false;
 
     void lineToHandler(double fromX, double fromY, double x, double y) {
-      final double dx = fromX - x;
-      final double dy = fromY - y;
-      final double prevDistance = distance;
+      final dx = fromX - x;
+      final dy = fromY - y;
+      final prevDistance = distance;
       distance += math.sqrt(dx * dx + dy * dy);
       // As we accumulate distance, we have to check that the result of +=
       // actually made it larger, since a very small delta might be > 0, but
@@ -296,8 +296,8 @@ class _PathContourMeasure {
       }
     }
 
-    int verb = 0;
-    final Float32List points = Float32List(PathRefIterator.kMaxBufferSize);
+    var verb = 0;
+    final points = Float32List(PathRefIterator.kMaxBufferSize);
     do {
       if (iter.peek() == SPath.kMoveVerb && haveSeenMoveTo) {
         break;
@@ -327,18 +327,18 @@ class _PathContourMeasure {
               _segments);
         case SPath.kConicVerb:
           assert(haveSeenMoveTo);
-          final double w = iter.conicWeight;
-          final Conic conic = Conic(points[0], points[1], points[2], points[3],
+          final w = iter.conicWeight;
+          final conic = Conic(points[0], points[1], points[2], points[3],
               points[4], points[5], w);
-          final List<ui.Offset> conicPoints = conic.toQuads();
-          final int len = conicPoints.length;
-          double startX = conicPoints[0].dx;
-          double startY = conicPoints[0].dy;
-          for (int i = 1; i < len; i += 2) {
-            final double p1x = conicPoints[i].dx;
-            final double p1y = conicPoints[i].dy;
-            final double p2x = conicPoints[i + 1].dx;
-            final double p2y = conicPoints[i + 1].dy;
+          final conicPoints = conic.toQuads();
+          final len = conicPoints.length;
+          var startX = conicPoints[0].dx;
+          var startY = conicPoints[0].dy;
+          for (var i = 1; i < len; i += 2) {
+            final p1x = conicPoints[i].dx;
+            final p1y = conicPoints[i].dy;
+            final p2x = conicPoints[i + 1].dx;
+            final p2y = conicPoints[i + 1].dy;
             distance = _computeQuadSegments(
                 startX, startY, p1x, p1y, p2x, p2y, distance, 0, _kMaxTValue);
             startX = p2x;
@@ -369,8 +369,8 @@ class _PathContourMeasure {
     // subdividing curve. Uses approx distance for speed.
     //
     // p1 = point 1/3rd between start,end points.
-    final double p1x = (x0 * 2 / 3) + (x3 / 3);
-    final double p1y = (y0 * 2 / 3) + (y3 / 3);
+    final p1x = (x0 * 2 / 3) + (x3 / 3);
+    final p1y = (y0 * 2 / 3) + (y3 / 3);
     if ((p1x - x1).abs() > _fTolerance) {
       return true;
     }
@@ -378,8 +378,8 @@ class _PathContourMeasure {
       return true;
     }
     // p2 = point 2/3rd between start,end points.
-    final double p2x = (x0 / 3) + (x3 * 2 / 3);
-    final double p2y = (y0 / 3) + (y3 * 2 / 3);
+    final p2x = (x0 / 3) + (x3 * 2 / 3);
+    final p2y = (y0 / 3) + (y3 * 2 / 3);
     if ((p2x - x2).abs() > _fTolerance) {
       return true;
     }
@@ -407,28 +407,28 @@ class _PathContourMeasure {
         _cubicTooCurvy(x0, y0, x1, y1, x2, y2, x3, y3)) {
       // Chop cubic into two halves (De Cateljau's algorithm)
       // See https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm
-      final double abX = (x0 + x1) / 2;
-      final double abY = (y0 + y1) / 2;
-      final double bcX = (x1 + x2) / 2;
-      final double bcY = (y1 + y2) / 2;
-      final double cdX = (x2 + x3) / 2;
-      final double cdY = (y2 + y3) / 2;
-      final double abcX = (abX + bcX) / 2;
-      final double abcY = (abY + bcY) / 2;
-      final double bcdX = (bcX + cdX) / 2;
-      final double bcdY = (bcY + cdY) / 2;
-      final double abcdX = (abcX + bcdX) / 2;
-      final double abcdY = (abcY + bcdY) / 2;
-      final int tHalf = (tMin + tMax) >> 1;
+      final abX = (x0 + x1) / 2;
+      final abY = (y0 + y1) / 2;
+      final bcX = (x1 + x2) / 2;
+      final bcY = (y1 + y2) / 2;
+      final cdX = (x2 + x3) / 2;
+      final cdY = (y2 + y3) / 2;
+      final abcX = (abX + bcX) / 2;
+      final abcY = (abY + bcY) / 2;
+      final bcdX = (bcX + cdX) / 2;
+      final bcdY = (bcY + cdY) / 2;
+      final abcdX = (abcX + bcdX) / 2;
+      final abcdY = (abcY + bcdY) / 2;
+      final tHalf = (tMin + tMax) >> 1;
       distance = _computeCubicSegments(x0, y0, abX, abY, abcX, abcY, abcdX,
           abcdY, distance, tMin, tHalf, segments);
       distance = _computeCubicSegments(abcdX, abcdY, bcdX, bcdY, cdX, cdY, x3,
           y3, distance, tHalf, tMax, segments);
     } else {
-      final double dx = x0 - x3;
-      final double dy = y0 - y3;
-      final double startToEndDistance = math.sqrt(dx * dx + dy * dy);
-      final double prevDistance = distance;
+      final dx = x0 - x3;
+      final dy = y0 - y3;
+      final startToEndDistance = math.sqrt(dx * dx + dy * dy);
+      final prevDistance = distance;
       distance += startToEndDistance;
       if (distance > prevDistance) {
         segments.add(_PathSegment(SPath.kCubicVerb, distance,
@@ -441,11 +441,11 @@ class _PathContourMeasure {
   static bool _quadTooCurvy(
       double x0, double y0, double x1, double y1, double x2, double y2) {
     // (a/4 + b/2 + c/4) - (a/2 + c/2)  =  -a/4 + b/2 - c/4
-    final double dx = (x1 / 2) - (x0 + x2) / 4;
+    final dx = (x1 / 2) - (x0 + x2) / 4;
     if (dx.abs() > _fTolerance) {
       return true;
     }
-    final double dy = (y1 / 2) - (y0 + y2) / 4;
+    final dy = (y1 / 2) - (y0 + y2) / 4;
     if (dy.abs() > _fTolerance) {
       return true;
     }
@@ -455,22 +455,22 @@ class _PathContourMeasure {
   double _computeQuadSegments(double x0, double y0, double x1, double y1,
       double x2, double y2, double distance, int tMin, int tMax) {
     if (_tspanBigEnough(tMax - tMin) && _quadTooCurvy(x0, y0, x1, y1, x2, y2)) {
-      final double p01x = (x0 + x1) / 2;
-      final double p01y = (y0 + y1) / 2;
-      final double p12x = (x1 + x2) / 2;
-      final double p12y = (y1 + y2) / 2;
-      final double p012x = (p01x + p12x) / 2;
-      final double p012y = (p01y + p12y) / 2;
-      final int tHalf = (tMin + tMax) >> 1;
+      final p01x = (x0 + x1) / 2;
+      final p01y = (y0 + y1) / 2;
+      final p12x = (x1 + x2) / 2;
+      final p12y = (y1 + y2) / 2;
+      final p012x = (p01x + p12x) / 2;
+      final p012y = (p01y + p12y) / 2;
+      final tHalf = (tMin + tMax) >> 1;
       distance = _computeQuadSegments(
           x0, y0, p01x, p01y, p012x, p012y, distance, tMin, tHalf);
       distance = _computeQuadSegments(
           p012x, p012y, p12x, p12y, x2, y2, distance, tMin, tHalf);
     } else {
-      final double dx = x0 - x2;
-      final double dy = y0 - y2;
-      final double startToEndDistance = math.sqrt(dx * dx + dy * dy);
-      final double prevDistance = distance;
+      final dx = x0 - x2;
+      final dy = y0 - y2;
+      final startToEndDistance = math.sqrt(dx * dx + dy * dy);
+      final prevDistance = distance;
       distance += startToEndDistance;
       if (distance > prevDistance) {
         _segments.add(_PathSegment(
@@ -599,7 +599,7 @@ class SurfacePathMetric implements ui.PathMetric {
 
 // Given a vector dx, dy representing slope, normalize and return as [ui.Offset].
 ui.Offset _normalizeSlope(double dx, double dy) {
-  final double length = math.sqrt(dx * dx + dy * dy);
+  final length = math.sqrt(dx * dx + dy * dy);
   return length < kEpsilon
       ? ui.Offset.zero
       : ui.Offset(dx / length, dy / length);
@@ -623,8 +623,8 @@ class _PathSegment {
     switch (segmentType) {
       case SPath.kLineVerb:
         // Simple line. Position is simple interpolation from start to end point.
-        final double xAtDistance = (points[2] * t) + (points[0] * (1.0 - t));
-        final double yAtDistance = (points[3] * t) + (points[1] * (1.0 - t));
+        final xAtDistance = (points[2] * t) + (points[0] * (1.0 - t));
+        final yAtDistance = (points[3] * t) + (points[1] * (1.0 - t));
         return _SurfaceTangent(ui.Offset(xAtDistance, yAtDistance),
             _normalizeSlope(points[2] - points[0], points[3] - points[1]), t);
       case SPath.kCubicVerb:
@@ -641,14 +641,14 @@ class _PathSegment {
   _SurfaceTangent tangentForQuadAt(double t, double x0, double y0, double x1,
       double y1, double x2, double y2) {
     assert(t >= 0 && t <= 1);
-    final SkQuadCoefficients quadEval =
+    final quadEval =
         SkQuadCoefficients(x0, y0, x1, y1, x2, y2);
-    final ui.Offset pos = ui.Offset(quadEval.evalX(t), quadEval.evalY(t));
+    final pos = ui.Offset(quadEval.evalX(t), quadEval.evalY(t));
     // Derivative of quad curve is 2(b - a + (a - 2b + c)t).
     // If control point is at start or end point, this yields 0 for t = 0 and
     // t = 1. In that case use the quad end points to compute tangent instead
     // of derivative.
-    final ui.Offset tangentVector = ((t == 0 && x0 == x1 && y0 == y1) ||
+    final tangentVector = ((t == 0 && x0 == x1 && y0 == y1) ||
             (t == 1 && x1 == x2 && y1 == y2))
         ? _normalizeSlope(x2 - x0, y2 - y0)
         : _normalizeSlope(
@@ -659,32 +659,32 @@ class _PathSegment {
   _SurfaceTangent tangentForCubicAt(double t, double x0, double y0, double x1,
       double y1, double x2, double y2, double x3, double y3) {
     assert(t >= 0 && t <= 1);
-    final _SkCubicCoefficients cubicEval =
+    final cubicEval =
         _SkCubicCoefficients(x0, y0, x1, y1, x2, y2, x3, y3);
-    final ui.Offset pos = ui.Offset(cubicEval.evalX(t), cubicEval.evalY(t));
+    final pos = ui.Offset(cubicEval.evalX(t), cubicEval.evalY(t));
     // Derivative of cubic is zero when t = 0 or 1 and adjacent control point
     // is on the start or end point of curve. Use the other control point
     // to compute the tangent or if both control points are on end points
     // use end points for tangent.
-    final bool tAtZero = t == 0;
+    final tAtZero = t == 0;
     ui.Offset tangentVector;
     if ((tAtZero && x0 == x1 && y0 == y1) || (t == 1 && x2 == x3 && y2 == y3)) {
-      double dx = tAtZero ? x2 - x0 : x3 - x1;
-      double dy = tAtZero ? y2 - y0 : y3 - y1;
+      var dx = tAtZero ? x2 - x0 : x3 - x1;
+      var dy = tAtZero ? y2 - y0 : y3 - y1;
       if (dx == 0 && dy == 0) {
         dx = x3 - x0;
         dy = y3 - y0;
       }
       tangentVector = _normalizeSlope(dx, dy);
     } else {
-      final double ax = x3 + (3 * (x1 - x2)) - x0;
-      final double ay = y3 + (3 * (y1 - y2)) - y0;
-      final double bx = 2 * (x2 - (2 * x1) + x0);
-      final double by = 2 * (y2 - (2 * y1) + y0);
-      final double cx = x1 - x0;
-      final double cy = y1 - y0;
-      final double tx = (ax * t + bx) * t + cx;
-      final double ty = (ay * t + by) * t + cy;
+      final ax = x3 + (3 * (x1 - x2)) - x0;
+      final ay = y3 + (3 * (y1 - y2)) - y0;
+      final bx = 2 * (x2 - (2 * x1) + x0);
+      final by = 2 * (y2 - (2 * y1) + y0);
+      final cx = x1 - x0;
+      final cy = y1 - y0;
+      final tx = (ax * t + bx) * t + cx;
+      final ty = (ay * t + by) * t + cy;
       tangentVector = _normalizeSlope(tx, ty);
     }
     return _SurfaceTangent(pos, tangentVector, t);
@@ -715,23 +715,23 @@ class _SkCubicCoefficients {
 void _chopQuadBetweenT(
     List<double> points, double startT, double stopT, Float32List buffer) {
   assert(startT != 0 || stopT != 0);
-  final double p2y = points[5];
-  final double p0x = points[0];
-  final double p0y = points[1];
-  final double p1x = points[2];
-  final double p1y = points[3];
-  final double p2x = points[4];
+  final p2y = points[5];
+  final p0x = points[0];
+  final p0y = points[1];
+  final p1x = points[2];
+  final p1y = points[3];
+  final p2x = points[4];
 
   // If startT == 0 chop at end point and return curve.
-  final bool chopStart = startT != 0;
-  final double t = chopStart ? startT : stopT;
+  final chopStart = startT != 0;
+  final t = chopStart ? startT : stopT;
 
-  final double ab1x = interpolate(p0x, p1x, t);
-  final double ab1y = interpolate(p0y, p1y, t);
-  final double bc1x = interpolate(p1x, p2x, t);
-  final double bc1y = interpolate(p1y, p2y, t);
-  final double abc1x = interpolate(ab1x, bc1x, t);
-  final double abc1y = interpolate(ab1y, bc1y, t);
+  final ab1x = interpolate(p0x, p1x, t);
+  final ab1y = interpolate(p0y, p1y, t);
+  final bc1x = interpolate(p1x, p2x, t);
+  final bc1y = interpolate(p1y, p2y, t);
+  final abc1x = interpolate(ab1x, bc1x, t);
+  final abc1y = interpolate(ab1y, bc1y, t);
   if (!chopStart) {
     // Return left side of curve.
     buffer[0] = p0x;
@@ -754,13 +754,13 @@ void _chopQuadBetweenT(
   }
   // We chopped at startT, now the right hand side of curve is at
   // abc1x, abc1y, bc1x, bc1y, p2x, p2y
-  final double endT = (stopT - startT) / (1 - startT);
-  final double ab2x = interpolate(abc1x, bc1x, endT);
-  final double ab2y = interpolate(abc1y, bc1y, endT);
-  final double bc2x = interpolate(bc1x, p2x, endT);
-  final double bc2y = interpolate(bc1y, p2y, endT);
-  final double abc2x = interpolate(ab2x, bc2x, endT);
-  final double abc2y = interpolate(ab2y, bc2y, endT);
+  final endT = (stopT - startT) / (1 - startT);
+  final ab2x = interpolate(abc1x, bc1x, endT);
+  final ab2y = interpolate(abc1y, bc1y, endT);
+  final bc2x = interpolate(bc1x, p2x, endT);
+  final bc2y = interpolate(bc1y, p2y, endT);
+  final abc2x = interpolate(ab2x, bc2x, endT);
+  final abc2y = interpolate(ab2y, bc2y, endT);
 
   buffer[0] = abc1x;
   buffer[1] = abc1y;

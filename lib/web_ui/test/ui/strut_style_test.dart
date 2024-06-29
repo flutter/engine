@@ -19,23 +19,23 @@ Future<void> testMain() async {
   );
 
   test('blanks are equal to each other', () {
-    final ui.StrutStyle a = ui.StrutStyle();
-    final ui.StrutStyle b = ui.StrutStyle();
+    final a = ui.StrutStyle();
+    final b = ui.StrutStyle();
     expect(a, b);
     expect(a.hashCode, b.hashCode);
   });
 
   test('each property individually equal', () {
-    for (final String property in _populatorsA.keys) {
-      final _StrutStylePropertyPopulator populator = _populatorsA[property]!;
+    for (final property in _populatorsA.keys) {
+      final populator = _populatorsA[property]!;
 
-      final _TestStrutStyleBuilder aBuilder = _TestStrutStyleBuilder();
+      final aBuilder = _TestStrutStyleBuilder();
       populator(aBuilder);
-      final ui.StrutStyle a = aBuilder.build();
+      final a = aBuilder.build();
 
-      final _TestStrutStyleBuilder bBuilder = _TestStrutStyleBuilder();
+      final bBuilder = _TestStrutStyleBuilder();
       populator(bBuilder);
-      final ui.StrutStyle b = bBuilder.build();
+      final b = bBuilder.build();
 
       expect(reason: '$property property is equal', a, b);
       expect(reason: '$property hashCode is equal', a.hashCode, b.hashCode);
@@ -43,17 +43,17 @@ Future<void> testMain() async {
   });
 
   test('each property individually not equal', () {
-    for (final String property in _populatorsA.keys) {
-      final _StrutStylePropertyPopulator populatorA = _populatorsA[property]!;
+    for (final property in _populatorsA.keys) {
+      final populatorA = _populatorsA[property]!;
 
-      final _TestStrutStyleBuilder aBuilder = _TestStrutStyleBuilder();
+      final aBuilder = _TestStrutStyleBuilder();
       populatorA(aBuilder);
-      final ui.StrutStyle a = aBuilder.build();
+      final a = aBuilder.build();
 
-      final _StrutStylePropertyPopulator populatorB = _populatorsB[property]!;
-      final _TestStrutStyleBuilder bBuilder = _TestStrutStyleBuilder();
+      final populatorB = _populatorsB[property]!;
+      final bBuilder = _TestStrutStyleBuilder();
       populatorB(bBuilder);
-      final ui.StrutStyle b = bBuilder.build();
+      final b = bBuilder.build();
 
       expect(reason: '$property property is not equal', a, isNot(b));
       expect(reason: '$property hashCode is not equal', a.hashCode, isNot(b.hashCode));
@@ -61,36 +61,36 @@ Future<void> testMain() async {
   });
 
   test('all properties altogether equal', () {
-    final _TestStrutStyleBuilder aBuilder = _TestStrutStyleBuilder();
-    final _TestStrutStyleBuilder bBuilder = _TestStrutStyleBuilder();
+    final aBuilder = _TestStrutStyleBuilder();
+    final bBuilder = _TestStrutStyleBuilder();
 
-    for (final String property in _populatorsA.keys) {
-      final _StrutStylePropertyPopulator populator = _populatorsA[property]!;
+    for (final property in _populatorsA.keys) {
+      final populator = _populatorsA[property]!;
       populator(aBuilder);
       populator(bBuilder);
     }
 
-    final ui.StrutStyle a = aBuilder.build();
-    final ui.StrutStyle b = bBuilder.build();
+    final a = aBuilder.build();
+    final b = bBuilder.build();
 
     expect(a, b);
     expect(a.hashCode, b.hashCode);
   });
 
   test('all properties altogether not equal', () {
-    final _TestStrutStyleBuilder aBuilder = _TestStrutStyleBuilder();
-    final _TestStrutStyleBuilder bBuilder = _TestStrutStyleBuilder();
+    final aBuilder = _TestStrutStyleBuilder();
+    final bBuilder = _TestStrutStyleBuilder();
 
-    for (final String property in _populatorsA.keys) {
-      final _StrutStylePropertyPopulator populatorA = _populatorsA[property]!;
+    for (final property in _populatorsA.keys) {
+      final populatorA = _populatorsA[property]!;
       populatorA(aBuilder);
 
-      final _StrutStylePropertyPopulator populatorB = _populatorsB[property]!;
+      final populatorB = _populatorsB[property]!;
       populatorB(bBuilder);
     }
 
-    final ui.StrutStyle a = aBuilder.build();
-    final ui.StrutStyle b = bBuilder.build();
+    final a = aBuilder.build();
+    final b = bBuilder.build();
 
     expect(a, isNot(b));
     expect(a.hashCode, isNot(b.hashCode));

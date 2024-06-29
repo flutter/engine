@@ -15,12 +15,12 @@ void main() {
 
 Future<void> testMain() async {
   test('rect stroke with clip', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 250, 250);
+    const region = Rect.fromLTWH(0, 0, 250, 250);
     // Set `hasParagraphs` to true to force DOM rendering.
-    final BitmapCanvas canvas =
+    final canvas =
         BitmapCanvas(region, RenderStrategy()..hasParagraphs = true);
 
-    const Rect rect = Rect.fromLTWH(0, 0, 150, 150);
+    const rect = Rect.fromLTWH(0, 0, 150, 150);
 
     canvas.clipRect(rect.inflate(10.0), ClipOp.intersect);
 
@@ -55,12 +55,12 @@ Future<void> testMain() async {
   });
 
   test('rrect stroke with clip', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 250, 250);
+    const region = Rect.fromLTWH(0, 0, 250, 250);
     // Set `hasParagraphs` to true to force DOM rendering.
-    final BitmapCanvas canvas =
+    final canvas =
         BitmapCanvas(region, RenderStrategy()..hasParagraphs = true);
 
-    final RRect rrect = RRect.fromRectAndRadius(
+    final rrect = RRect.fromRectAndRadius(
       const Rect.fromLTWH(0, 0, 150, 150),
       const Radius.circular(20),
     );
@@ -98,12 +98,12 @@ Future<void> testMain() async {
   });
 
   test('circle stroke with clip', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 250, 250);
+    const region = Rect.fromLTWH(0, 0, 250, 250);
     // Set `hasParagraphs` to true to force DOM rendering.
-    final BitmapCanvas canvas =
+    final canvas =
         BitmapCanvas(region, RenderStrategy()..hasParagraphs = true);
 
-    const Rect rect = Rect.fromLTWH(0, 0, 150, 150);
+    const rect = Rect.fromLTWH(0, 0, 150, 150);
 
     canvas.clipRect(rect.inflate(10.0), ClipOp.intersect);
 

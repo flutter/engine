@@ -22,11 +22,11 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const Rect region = Rect.fromLTWH(0, 0, 300, 300);
+  const region = Rect.fromLTWH(0, 0, 300, 300);
 
   test('draw arc', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, region);
     canvas.drawArc(
       const Rect.fromLTRB(100, 100, 200, 200),
       math.pi / 3.0,
@@ -44,8 +44,8 @@ Future<void> testMain() async {
   });
 
   test('draw circle', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, region);
     canvas.drawCircle(
       const Offset(150, 150),
       50,
@@ -61,8 +61,8 @@ Future<void> testMain() async {
   });
 
   test('draw oval', () async {
-    final PictureRecorder recorder = PictureRecorder();
-    final Canvas canvas = Canvas(recorder, region);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder, region);
     canvas.drawOval(
       const Rect.fromLTRB(100, 125, 200, 175),
       Paint()

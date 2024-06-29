@@ -20,7 +20,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const double baselineRatio = 1.1662499904632568;
+  const baselineRatio = 1.1662499904632568;
 
   setUpUnitTests(withImplicitView: true);
 
@@ -39,15 +39,15 @@ Future<void> testMain() async {
   });
 
   test('predictably lays out a single-line paragraph', () {
-    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
-      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    for (final fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+      final builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
         fontWeight: FontWeight.normal,
         fontSize: fontSize,
       ));
       builder.addText('Test');
-      final Paragraph paragraph = builder.build();
+      final paragraph = builder.build();
       paragraph.layout(const ParagraphConstraints(width: 400.0));
 
       expect(paragraph.height, fontSize);
@@ -65,15 +65,15 @@ Future<void> testMain() async {
   });
 
   test('predictably lays out a multi-line paragraph', () {
-    for (final double fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
-      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    for (final fontSize in <double>[10.0, 20.0, 30.0, 40.0]) {
+      final builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontStyle: FontStyle.normal,
         fontWeight: FontWeight.normal,
         fontSize: fontSize,
       ));
       builder.addText('Test Ahem');
-      final Paragraph paragraph = builder.build();
+      final paragraph = builder.build();
       paragraph.layout(ParagraphConstraints(width: fontSize * 5.0));
 
       expect(paragraph.height, fontSize * 2.0); // because it wraps
@@ -91,15 +91,15 @@ Future<void> testMain() async {
   });
 
   test('Basic line related metrics', () {
-    const double fontSize = 10;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    const fontSize = 10;
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: fontSize,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
-    final Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: 100.0));
 
     expect(paragraph.numberOfLines, 1);
@@ -116,15 +116,15 @@ Future<void> testMain() async {
   });
 
   test('Basic glyph metrics', () {
-    const double fontSize = 10;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    const fontSize = 10;
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: fontSize,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
-    final Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: 100.0));
 
     expect(paragraph.getGlyphInfoAt(-1), isNull);
@@ -137,16 +137,16 @@ Future<void> testMain() async {
   });
 
   test('Basic glyph metrics - hit test', () {
-    const double fontSize = 10.0;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    const fontSize = 10.0;
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontSize: fontSize,
       fontFamily: 'FlutterTest',
     ))..addText('Test\nTest');
-    final Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
 
-    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
-    final GlyphInfo? last = paragraph.getGlyphInfoAt(8);
+    final bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    final last = paragraph.getGlyphInfoAt(8);
     expect(bottomRight, equals(last));
     expect(bottomRight, isNot(paragraph.getGlyphInfoAt(0)));
 
@@ -156,8 +156,8 @@ Future<void> testMain() async {
   });
 
   test('Basic glyph metrics - hit test - center aligned text in separate fragments', () {
-    const double fontSize = 10.0;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    const fontSize = 10.0;
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontSize: fontSize,
       textAlign: TextAlign.center,
       fontFamily: 'FlutterTest',
@@ -165,11 +165,11 @@ Future<void> testMain() async {
       ..addText('1')
       ..addText('2')
       ..addText('3');
-    final Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: 50));
 
-    final GlyphInfo? bottomCenter = paragraph.getClosestGlyphInfoForOffset(const Offset(25.0, 99.0));
-    final GlyphInfo? expected = paragraph.getGlyphInfoAt(7);
+    final bottomCenter = paragraph.getClosestGlyphInfoForOffset(const Offset(25.0, 99.0));
+    final expected = paragraph.getGlyphInfoAt(7);
     expect(bottomCenter, equals(expected));
     expect(bottomCenter, isNot(paragraph.getGlyphInfoAt(8)));
 
@@ -179,15 +179,15 @@ Future<void> testMain() async {
   });
 
   test('Glyph metrics with grapheme split into different runs', () {
-    const double fontSize = 10;
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    const fontSize = 10;
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: fontSize,
       maxLines: 1,
     ))..addText('A') // The base charater A.
       ..addText('̀'); // The diacritical grave accent, which should combine with the base character to form a single grapheme.
-    final Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ParagraphConstraints(width: double.infinity));
 
     expect(paragraph.getGlyphInfoAt(0)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
@@ -195,21 +195,21 @@ Future<void> testMain() async {
     expect(paragraph.getGlyphInfoAt(1)?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
     expect(paragraph.getGlyphInfoAt(1)?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
 
-    final GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
+    final bottomRight = paragraph.getClosestGlyphInfoForOffset(const Offset(99.0, 99.0));
     expect(bottomRight?.graphemeClusterCodeUnitRange, const TextRange(start: 0, end: 2));
     expect(bottomRight?.graphemeClusterLayoutBounds, const Rect.fromLTWH(0.0, 0.0, 10.0, 10.0));
   }, skip: domIntl.v8BreakIterator == null); // Intended: Intl.v8breakiterator is needed for correctly breaking grapheme clusters.
 
   test('disable rounding hack', () {
-    const double fontSize = 1;
-    const String text = '12345';
-    const double letterSpacing = 0.25;
-    const double expectedIntrinsicWidth = text.length * (fontSize + letterSpacing);
+    const fontSize = 1;
+    const text = '12345';
+    const letterSpacing = 0.25;
+    const expectedIntrinsicWidth = text.length * (fontSize + letterSpacing);
     assert(expectedIntrinsicWidth.truncate() != expectedIntrinsicWidth);
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'));
+    final builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'));
     builder.pushStyle(TextStyle(letterSpacing: letterSpacing));
     builder.addText(text);
-    final Paragraph paragraph = builder.build()
+    final paragraph = builder.build()
       ..layout(const ParagraphConstraints(width: expectedIntrinsicWidth));
 
     expect(paragraph.maxIntrinsicWidth, expectedIntrinsicWidth);
@@ -222,7 +222,7 @@ Future<void> testMain() async {
   });
 
   test('lay out unattached paragraph', () {
-    final CanvasParagraph paragraph = plain(EngineParagraphStyle(
+    final paragraph = plain(EngineParagraphStyle(
       fontFamily: 'sans-serif',
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
@@ -249,23 +249,23 @@ Future<void> testMain() async {
 
   Paragraph measure(
       {String text = 'Hello', double fontSize = 14.0, double width = 50.0}) {
-    final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+    final builder = ParagraphBuilder(ParagraphStyle(
       fontFamily: 'sans-serif',
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: fontSize,
     ));
     builder.addText(text);
-    final Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(ParagraphConstraints(width: width));
     return paragraph;
   }
 
   test('baseline increases with font size', () {
-    Paragraph previousParagraph = measure(fontSize: 10.0);
-    for (int i = 0; i < 6; i++) {
-      final double fontSize = 20.0 + 10.0 * i;
-      final Paragraph paragraph = measure(fontSize: fontSize);
+    var previousParagraph = measure(fontSize: 10.0);
+    for (var i = 0; i < 6; i++) {
+      final fontSize = 20.0 + 10.0 * i;
+      final paragraph = measure(fontSize: fontSize);
       expect(paragraph.alphabeticBaseline,
           greaterThan(previousParagraph.alphabeticBaseline));
       expect(paragraph.ideographicBaseline,
@@ -275,23 +275,23 @@ Future<void> testMain() async {
   });
 
   test('baseline does not depend on text', () {
-    final Paragraph golden = measure(fontSize: 30.0);
-    for (int i = 1; i < 30; i++) {
-      final Paragraph paragraph = measure(text: 'hello ' * i, fontSize: 30.0);
+    final golden = measure(fontSize: 30.0);
+    for (var i = 1; i < 30; i++) {
+      final paragraph = measure(text: 'hello ' * i, fontSize: 30.0);
       expect(paragraph.alphabeticBaseline, golden.alphabeticBaseline);
       expect(paragraph.ideographicBaseline, golden.ideographicBaseline);
     }
   });
 
   test('$ParagraphBuilder detects plain text', () {
-    ParagraphBuilder builder = ParagraphBuilder(EngineParagraphStyle(
+    var builder = ParagraphBuilder(EngineParagraphStyle(
       fontFamily: 'sans-serif',
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: 15.0,
     ));
     builder.addText('hi');
-    CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    var paragraph = builder.build() as CanvasParagraph;
     expect(paragraph.plainText, isNotNull);
     expect(paragraph.paragraphStyle.fontWeight, FontWeight.normal);
 
@@ -308,7 +308,7 @@ Future<void> testMain() async {
   });
 
   test('$ParagraphBuilder detects rich text', () {
-    final ParagraphBuilder builder = ParagraphBuilder(EngineParagraphStyle(
+    final builder = ParagraphBuilder(EngineParagraphStyle(
       fontFamily: 'sans-serif',
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
@@ -317,19 +317,19 @@ Future<void> testMain() async {
     builder.addText('h');
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
     builder.addText('i');
-    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    final paragraph = builder.build() as CanvasParagraph;
     expect(paragraph.plainText, 'hi');
   });
 
   test('$ParagraphBuilder treats empty text as plain', () {
-    final ParagraphBuilder builder = ParagraphBuilder(EngineParagraphStyle(
+    final builder = ParagraphBuilder(EngineParagraphStyle(
       fontFamily: 'sans-serif',
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
       fontSize: 15.0,
     ));
     builder.pushStyle(TextStyle(fontWeight: FontWeight.bold));
-    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    final paragraph = builder.build() as CanvasParagraph;
     expect(paragraph.plainText, '');
   });
 
@@ -337,7 +337,7 @@ Future<void> testMain() async {
   test(
       'should not set fontFamily to effectiveFontFamily for spans in rich text',
       () {
-    final ParagraphBuilder builder = ParagraphBuilder(EngineParagraphStyle(
+    final builder = ParagraphBuilder(EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
@@ -345,15 +345,15 @@ Future<void> testMain() async {
     ));
     builder
         .pushStyle(TextStyle(fontFamily: 'Menlo', fontWeight: FontWeight.bold));
-    const String firstSpanText = 'abc';
+    const firstSpanText = 'abc';
     builder.addText(firstSpanText);
     builder.pushStyle(TextStyle(fontSize: 30.0, fontWeight: FontWeight.normal));
-    const String secondSpanText = 'def';
+    const secondSpanText = 'def';
     builder.addText(secondSpanText);
-    final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+    final paragraph = builder.build() as CanvasParagraph;
     paragraph.layout(const ParagraphConstraints(width: 800.0));
     expect(paragraph.plainText, 'abcdef');
-    final List<DomElement> spans =
+    final spans =
         paragraph.toDomElement().querySelectorAll('flt-span').toList();
     expect(spans[0].style.fontFamily, 'FlutterTest, $fallback, sans-serif');
     // The nested span here should not set it's family to default sans-serif.
@@ -366,7 +366,7 @@ Future<void> testMain() async {
     // Set this to false so it doesn't default to the test font.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
 
-    final CanvasParagraph paragraph = plain(EngineParagraphStyle(
+    final paragraph = plain(EngineParagraphStyle(
       fontFamily: 'SomeFont',
       fontSize: 12.0,
     ), 'Hello');
@@ -384,7 +384,7 @@ Future<void> testMain() async {
     // Set this to false so it doesn't default to the default test font.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
 
-    final CanvasParagraph paragraph = plain(EngineParagraphStyle(
+    final paragraph = plain(EngineParagraphStyle(
       fontFamily: 'serif',
       fontSize: 12.0,
     ), 'Hello');
@@ -399,7 +399,7 @@ Future<void> testMain() async {
     // Set this to false so it doesn't default to the default test font.
     ui_web.debugEmulateFlutterTesterEnvironment = false;
 
-    final CanvasParagraph paragraph = plain(EngineParagraphStyle(
+    final paragraph = plain(EngineParagraphStyle(
       fontFamily: 'MyFont 2000',
       fontSize: 12.0,
     ), 'Hello');
@@ -413,7 +413,7 @@ Future<void> testMain() async {
 
   group('TextRange', () {
     test('empty ranges are correct', () {
-      const TextRange range = TextRange(start: -1, end: -1);
+      const range = TextRange(start: -1, end: -1);
       expect(range, equals(TextRange.collapsed(-1))); // ignore: prefer_const_constructors
       expect(range, equals(TextRange.empty));
     });
@@ -488,22 +488,22 @@ Future<void> testMain() async {
   });
 
   group('test fonts in flutterTester environment', () {
-    final bool resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
+    final resetValue = ui_web.debugEmulateFlutterTesterEnvironment;
     ui_web.debugEmulateFlutterTesterEnvironment = true;
     tearDownAll(() {
       ui_web.debugEmulateFlutterTesterEnvironment = resetValue;
     });
-    const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
+    const testFonts = <String>['FlutterTest', 'Ahem'];
 
     test('The default test font is used when a non-test fontFamily is specified, or fontFamily is not specified', () {
-      final String defaultTestFontFamily = testFonts.first;
+      final defaultTestFontFamily = testFonts.first;
 
       expect(EngineTextStyle.only().effectiveFontFamily, defaultTestFontFamily);
       expect(EngineTextStyle.only(fontFamily: 'BogusFontFamily').effectiveFontFamily, defaultTestFontFamily);
     });
 
     test('Can specify test fontFamily to use', () {
-      for (final String testFont in testFonts) {
+      for (final testFont in testFonts) {
         expect(EngineTextStyle.only(fontFamily: testFont).effectiveFontFamily, testFont);
       }
     });

@@ -23,14 +23,14 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const Color red = Color(0xFFFF0000);
-  const Color green = Color(0xFF00FF00);
-  const Color blue = Color(0xFF2196F3);
-  const Color white = Color(0xFFFFFFFF);
-  const Color grey = Color(0xFF808080);
-  const Color black = Color(0xFF000000);
+  const red = Color(0xFFFF0000);
+  const green = Color(0xFF00FF00);
+  const blue = Color(0xFF2196F3);
+  const white = Color(0xFFFFFFFF);
+  const grey = Color(0xFF808080);
+  const black = Color(0xFF000000);
 
-  final List<List<BlendMode>> modes = <List<BlendMode>>[
+  final modes = <List<BlendMode>>[
     <BlendMode>[BlendMode.clear, BlendMode.src, BlendMode.dst,
       BlendMode.srcOver, BlendMode.dstOver, BlendMode.srcIn, BlendMode.dstIn,
       BlendMode.srcOut],
@@ -44,20 +44,20 @@ Future<void> testMain() async {
       BlendMode.luminosity],
   ];
 
-  for (int blendGroup = 0; blendGroup < 4; ++blendGroup) {
+  for (var blendGroup = 0; blendGroup < 4; ++blendGroup) {
     test('Draw image with Group$blendGroup blend modes', () async {
-      final RecordingCanvas rc = RecordingCanvas(
+      final rc = RecordingCanvas(
           const Rect.fromLTRB(0, 0, 400, 400));
       rc.save();
-      final List<BlendMode> blendModes = modes[blendGroup];
-      for (int row = 0; row < blendModes.length; row++) {
+      final blendModes = modes[blendGroup];
+      for (var row = 0; row < blendModes.length; row++) {
         // draw white background for first 4, black for next 4 blends.
-        final double top = row * 50.0;
+        final top = row * 50.0;
         rc.drawRect(Rect.fromLTWH(0, top, 200, 50), makePaint()
           ..color = white);
         rc.drawRect(Rect.fromLTWH(200, top, 200, 50), makePaint()
           ..color = grey);
-        final BlendMode blendMode = blendModes[row];
+        final blendMode = blendModes[row];
         rc.drawImage(createFlutterLogoTestImage(), Offset(0, top),
             makePaint()
               ..colorFilter = EngineColorFilter.mode(red, blendMode));
@@ -91,7 +91,7 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/56971
   test('Draws image and paragraph at same vertical position', () async {
-    final RecordingCanvas rc = RecordingCanvas(
+    final rc = RecordingCanvas(
         const Rect.fromLTRB(0, 0, 400, 400));
     rc.save();
     rc.drawRect(const Rect.fromLTWH(0, 50, 200, 50), makePaint()
@@ -100,10 +100,10 @@ Future<void> testMain() async {
         makePaint()
           ..colorFilter = const EngineColorFilter.mode(red, BlendMode.srcIn));
 
-    final Paragraph paragraph = createTestParagraph();
-    const double textLeft = 80.0;
-    const double textTop = 50.0;
-    const double widthConstraint = 300.0;
+    final paragraph = createTestParagraph();
+    const textLeft = 80.0;
+    const textTop = 50.0;
+    const widthConstraint = 300.0;
     paragraph.layout(const ParagraphConstraints(width: widthConstraint));
     rc.drawParagraph(paragraph, const Offset(textLeft, textTop));
 
@@ -112,9 +112,9 @@ Future<void> testMain() async {
   });
 
   test('Does not re-use styles with same image src', () async {
-    final RecordingCanvas rc = RecordingCanvas(
+    final rc = RecordingCanvas(
         const Rect.fromLTRB(0, 0, 400, 400));
-    final HtmlImage flutterImage = createFlutterLogoTestImage();
+    final flutterImage = createFlutterLogoTestImage();
     rc.save();
     rc.drawRect(const Rect.fromLTWH(0, 50, 200, 50), makePaint()
       ..color = white);
@@ -132,7 +132,7 @@ Future<void> testMain() async {
 }
 
 Paragraph createTestParagraph() {
-  final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+  final builder = ParagraphBuilder(ParagraphStyle(
     fontFamily: 'Ahem',
     fontStyle: FontStyle.normal,
     fontWeight: FontWeight.normal,

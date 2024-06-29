@@ -28,7 +28,7 @@ CommandRunner<bool> runner = CommandRunner<bool>(
 
 Future<void> main(List<String> rawArgs) async {
   // Remove --clean from the list as that's processed by the wrapper script.
-  final List<String> args = rawArgs.where((String arg) => arg != '--clean').toList();
+  final args = rawArgs.where((String arg) => arg != '--clean').toList();
 
   if (args.isEmpty) {
     // The felt tool was invoked with no arguments. Print usage.
@@ -38,9 +38,9 @@ Future<void> main(List<String> rawArgs) async {
 
   _listenToShutdownSignals();
 
-  int exitCode = -1;
+  var exitCode = -1;
   try {
-    final bool? result = await runner.run(args);
+    final result = await runner.run(args);
     if (result != true) {
       print('Sub-command failed: `${args.join(' ')}`');
       exitCode = 1;

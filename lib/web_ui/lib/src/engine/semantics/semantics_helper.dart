@@ -144,7 +144,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
     }
 
     // In touch screen laptops, the touch is received as a mouse click
-    const Set<String> kInterestingEventTypes = <String>{
+    const kInterestingEventTypes = <String>{
       'click',
       'keyup',
       'keydown',
@@ -160,7 +160,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
     }
 
     // Check for the event target.
-    final bool enableConditionPassed = event.target == _semanticsPlaceholder;
+    final enableConditionPassed = event.target == _semanticsPlaceholder;
 
     if (!enableConditionPassed) {
       // This was not a semantics activating event; forward as normal.
@@ -174,7 +174,7 @@ class DesktopSemanticsEnabler extends SemanticsEnabler {
 
   @override
   DomElement prepareAccessibilityPlaceholder() {
-    final DomElement placeholder =
+    final placeholder =
         _semanticsPlaceholder = createDomElement('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via
@@ -257,7 +257,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
     if (_schedulePlaceholderRemoval) {
       // The event type can also be click for VoiceOver.
-      final bool removeNow = ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit ||
+      final removeNow = ui_web.browser.browserEngine != ui_web.BrowserEngine.webkit ||
           event.type == 'touchend' ||
           event.type == 'pointerup' ||
           event.type == 'click';
@@ -284,7 +284,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
     // ios-safari browsers which starts sending `pointer` events instead of
     // `touch` events. (Tested with 12.1 which uses touch events vs 13.5
     // which uses pointer events.)
-    const Set<String> kInterestingEventTypes = <String>{
+    const kInterestingEventTypes = <String>{
       'click',
       'touchstart',
       'touchend',
@@ -319,35 +319,35 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
     // than normal, but the app will continue functioning as normal. Our
     // semantics tree is designed to not interfere with Flutter's gesture
     // detection.
-    bool enableConditionPassed = false;
+    var enableConditionPassed = false;
     late final DomPoint activationPoint;
 
     switch (event.type) {
       case 'click':
-        final DomMouseEvent click = event as DomMouseEvent;
+        final click = event as DomMouseEvent;
         activationPoint = click.offset;
       case 'touchstart':
       case 'touchend':
-        final DomTouchEvent touchEvent = event as DomTouchEvent;
+        final touchEvent = event as DomTouchEvent;
         activationPoint = touchEvent.changedTouches.first.client;
       case 'pointerdown':
       case 'pointerup':
-        final DomPointerEvent touch = event as DomPointerEvent;
+        final touch = event as DomPointerEvent;
         activationPoint = touch.client;
       default:
         // The event is not relevant, forward to framework as normal.
         return true;
     }
 
-    final DomRect activatingElementRect =
+    final activatingElementRect =
         _semanticsPlaceholder!.getBoundingClientRect();
-    final double midX = activatingElementRect.left +
+    final midX = activatingElementRect.left +
             (activatingElementRect.right - activatingElementRect.left) / 2;
-    final double midY = activatingElementRect.top +
+    final midY = activatingElementRect.top +
             (activatingElementRect.bottom - activatingElementRect.top) / 2;
-    final double deltaX = activationPoint.x.toDouble() - midX;
-    final double deltaY = activationPoint.y.toDouble() - midY;
-    final double deltaSquared = deltaX * deltaX + deltaY * deltaY;
+    final deltaX = activationPoint.x.toDouble() - midX;
+    final deltaY = activationPoint.y.toDouble() - midY;
+    final deltaSquared = deltaX * deltaX + deltaY * deltaY;
     if (deltaSquared < 1.0) {
       enableConditionPassed = true;
     }
@@ -368,7 +368,7 @@ class MobileSemanticsEnabler extends SemanticsEnabler {
 
   @override
   DomElement prepareAccessibilityPlaceholder() {
-    final DomElement placeholder =
+    final placeholder =
         _semanticsPlaceholder = createDomElement('flt-semantics-placeholder');
 
     // Only listen to "click" because other kinds of events are reported via

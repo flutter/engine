@@ -31,7 +31,7 @@ class LayerTree {
   /// to raster. If [ignoreRasterCache] is `true`, then there will be no
   /// attempt to register pictures to cache.
   void preroll(Frame frame, {bool ignoreRasterCache = false}) {
-    final PrerollContext context = PrerollContext(
+    final context = PrerollContext(
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
     );
@@ -43,12 +43,12 @@ class LayerTree {
   /// If [ignoreRasterCache] is `true`, then the raster cache will
   /// not be used.
   void paint(Frame frame, {bool ignoreRasterCache = false}) {
-    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
+    final internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(frame.canvas);
-    final Iterable<CkCanvas> overlayCanvases =
+    final overlayCanvases =
         frame.viewEmbedder!.getOverlayCanvases();
     overlayCanvases.forEach(internalNodesCanvas.addCanvas);
-    final PaintContext context = PaintContext(
+    final context = PaintContext(
       internalNodesCanvas,
       frame.canvas,
       ignoreRasterCache ? null : frame.rasterCache,
@@ -63,14 +63,14 @@ class LayerTree {
   ///
   /// This picture does not contain any platform views.
   ui.Picture flatten(ui.Size size) {
-    final CkPictureRecorder recorder = CkPictureRecorder();
-    final CkCanvas canvas = recorder.beginRecording(ui.Offset.zero & size);
-    final PrerollContext prerollContext = PrerollContext(null, null);
+    final recorder = CkPictureRecorder();
+    final canvas = recorder.beginRecording(ui.Offset.zero & size);
+    final prerollContext = PrerollContext(null, null);
     rootLayer.preroll(prerollContext, Matrix4.identity());
 
-    final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
+    final internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(canvas);
-    final PaintContext paintContext =
+    final paintContext =
         PaintContext(internalNodesCanvas, canvas, null, null);
     if (rootLayer.needsPainting) {
       rootLayer.paint(paintContext);

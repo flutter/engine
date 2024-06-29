@@ -54,9 +54,9 @@ void debugEmulateHotRestart() {
   // avoid concurrent modification, the listeners are copies and emptied. If new
   // listeners are added in the process, the loop will pick them up.
   while (_hotRestartListeners.isNotEmpty) {
-    final List<ui.VoidCallback> copyOfListeners = _hotRestartListeners.toList();
+    final copyOfListeners = _hotRestartListeners.toList();
     _hotRestartListeners.clear();
-    for (final ui.VoidCallback listener in copyOfListeners) {
+    for (final listener in copyOfListeners) {
       listener();
     }
   }
@@ -140,7 +140,7 @@ Future<void> initializeEngineServices({
   // This extension does not need to clean-up Dart statics. Those are cleaned
   // up by the compiler.
   developer.registerExtension('ext.flutter.disassemble', (_, __) {
-    for (final ui.VoidCallback listener in _hotRestartListeners) {
+    for (final listener in _hotRestartListeners) {
       listener();
     }
     return Future<developer.ServiceExtensionResponse>.value(
@@ -151,7 +151,7 @@ Future<void> initializeEngineServices({
     Profiler.ensureInitialized();
   }
 
-  bool waitingForAnimation = false;
+  var waitingForAnimation = false;
   scheduleFrameCallback = () {
     // We're asked to schedule a frame and call `frameHandler` when the frame
     // fires.
@@ -176,7 +176,7 @@ Future<void> initializeEngineServices({
         // milliseconds as a double value, with sub-millisecond information
         // hidden in the fraction. So we first multiply it by 1000 to uncover
         // microsecond precision, and only then convert to `int`.
-        final int highResTimeMicroseconds =
+        final highResTimeMicroseconds =
             (1000 * highResTime.toDartDouble).toInt();
 
         if (EnginePlatformDispatcher.instance.onBeginFrame != null) {
@@ -230,7 +230,7 @@ Future<void> initializeEngineUi() async {
   KeyboardBinding.initInstance();
 
   if (!configuration.multiViewEnabled) {
-    final EngineFlutterWindow implicitView =
+    final implicitView =
         ensureImplicitViewInitialized(hostElement: configuration.hostElement);
     if (renderer is HtmlRenderer) {
       ensureResourceManagerInitialized(implicitView);

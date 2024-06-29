@@ -48,8 +48,8 @@ void doTests() {
     });
 
     test('Should attach glasspane into embedder target (body)', () async {
-      final DomElement glassPane = createDomElement('some-tag-for-tests');
-      final DomCSSStyleDeclaration style = glassPane.style;
+      final glassPane = createDomElement('some-tag-for-tests');
+      final style = glassPane.style;
 
       expect(glassPane.isConnected, isFalse);
       expect(style.position, '',
@@ -64,7 +64,7 @@ void doTests() {
       expect(glassPane.parent, target,
           reason: 'Should inject glassPane into the target element');
 
-      final DomCSSStyleDeclaration styleAfter = glassPane.style;
+      final styleAfter = glassPane.style;
 
       // Assert required styling to cover the viewport
       expect(styleAfter.position, 'relative',

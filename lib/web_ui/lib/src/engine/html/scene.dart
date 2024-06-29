@@ -46,7 +46,7 @@ class PersistedScene extends PersistedContainerSurface {
   void recomputeTransformAndClip() {
     // Must be the true DPR from the browser, nothing overridable.
     // See: https://github.com/flutter/flutter/issues/143124
-    final double browserDpr = EngineFlutterDisplay.instance.browserDevicePixelRatio;
+    final browserDpr = EngineFlutterDisplay.instance.browserDevicePixelRatio;
     // The scene clip is the size of the entire window **in Logical pixels**.
     //
     // Even though the majority of the engine uses `physicalSize`, there are some
@@ -54,7 +54,7 @@ class PersistedScene extends PersistedContainerSurface {
     // using CSS, and CSS operates in logical pixels.
     //
     // See also: [EngineFlutterView.resize].
-    final ui.Size bounds = window.physicalSize / browserDpr;
+    final bounds = window.physicalSize / browserDpr;
     localClipBounds = ui.Rect.fromLTRB(0, 0, bounds.width, bounds.height);
     projectedClip = null;
   }

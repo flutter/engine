@@ -37,9 +37,9 @@ abstract class SkwasmImageFilter extends SkwasmObjectWrapper<RawImageFilter> imp
 
   factory SkwasmImageFilter.fromUiFilter(ui.ImageFilter filter) {
     if (filter is ui.ColorFilter) {
-      final SkwasmColorFilter colorFilter =
+      final colorFilter =
         SkwasmColorFilter.fromEngineColorFilter(filter as EngineColorFilter);
-      final SkwasmImageFilter outputFilter = SkwasmImageFilter.fromColorFilter(colorFilter);
+      final outputFilter = SkwasmImageFilter.fromColorFilter(colorFilter);
       colorFilter.dispose();
       return outputFilter;
     } else {
@@ -60,7 +60,7 @@ abstract class SkwasmImageFilter extends SkwasmObjectWrapper<RawImageFilter> imp
 
   @override
   ui.Rect filterBounds(ui.Rect inputBounds) => withStackScope((StackScope scope) {
-    final RawIRect rawRect = scope.convertIRectToNative(inputBounds);
+    final rawRect = scope.convertIRectToNative(inputBounds);
     imageFilterGetFilterBounds(handle, rawRect);
     return scope.convertIRectFromNative(rawRect);
   });

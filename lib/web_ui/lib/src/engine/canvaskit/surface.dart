@@ -134,7 +134,7 @@ class Surface extends DisplayCanvas {
 
   Future<void> rasterizeToCanvas(BitmapSize bitmapSize, RenderCanvas canvas,
       List<CkPicture> pictures) async {
-    final CkCanvas skCanvas = getCanvas();
+    final skCanvas = getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);
     flush();
@@ -146,7 +146,7 @@ class Surface extends DisplayCanvas {
       } else {
         bitmapSource = _canvasElement! as JSObject;
       }
-      final DomImageBitmap bitmap = await createImageBitmap(bitmapSource, (
+      final bitmap = await createImageBitmap(bitmapSource, (
         x: 0,
         y: _pixelHeight - bitmapSize.height,
         width: bitmapSize.width,
@@ -170,10 +170,10 @@ class Surface extends DisplayCanvas {
   ///
   /// The given [size] is in physical pixels.
   SurfaceFrame acquireFrame(ui.Size size) {
-    final CkSurface surface = createOrUpdateSurface(BitmapSize.fromSize(size));
+    final surface = createOrUpdateSurface(BitmapSize.fromSize(size));
 
     // ignore: prefer_function_declarations_over_variables
-    final SubmitCallback submitCallback =
+    final submitCallback =
         (SurfaceFrame surfaceFrame, CkCanvas canvas) {
       return _presentSurface();
     };
@@ -187,11 +187,11 @@ class Surface extends DisplayCanvas {
   /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
   /// pixels.
   void _updateLogicalHtmlCanvasSize() {
-    final double devicePixelRatio =
+    final devicePixelRatio =
         EngineFlutterDisplay.instance.devicePixelRatio;
-    final double logicalWidth = _pixelWidth / devicePixelRatio;
-    final double logicalHeight = _pixelHeight / devicePixelRatio;
-    final DomCSSStyleDeclaration style = _canvasElement!.style;
+    final logicalWidth = _pixelWidth / devicePixelRatio;
+    final logicalHeight = _pixelHeight / devicePixelRatio;
+    final style = _canvasElement!.style;
     style.width = '${logicalWidth}px';
     style.height = '${logicalHeight}px';
     _currentDevicePixelRatio = devicePixelRatio;
@@ -205,10 +205,10 @@ class Surface extends DisplayCanvas {
   void positionToShowFrame(BitmapSize frameSize) {
     assert(isDisplayCanvas,
         'Should not position Surface if not used as a render canvas');
-    final double devicePixelRatio =
+    final devicePixelRatio =
         EngineFlutterDisplay.instance.devicePixelRatio;
-    final double logicalHeight = _pixelHeight / devicePixelRatio;
-    final double logicalFrameHeight = frameSize.height / devicePixelRatio;
+    final logicalHeight = _pixelHeight / devicePixelRatio;
+    final logicalFrameHeight = frameSize.height / devicePixelRatio;
 
     // Shift the canvas up so the bottom left is in the window.
     _canvasElement!.style.transform =
@@ -250,11 +250,11 @@ class Surface extends DisplayCanvas {
     if (!_forceNewContext) {
       // Check if the window is the same size as before, and if so, don't allocate
       // a new canvas as the previous canvas is big enough to fit everything.
-      final BitmapSize? previousSurfaceSize = _currentSurfaceSize;
+      final previousSurfaceSize = _currentSurfaceSize;
       if (previousSurfaceSize != null &&
           size.width == previousSurfaceSize.width &&
           size.height == previousSurfaceSize.height) {
-        final double devicePixelRatio =
+        final devicePixelRatio =
             EngineFlutterDisplay.instance.devicePixelRatio;
         if (isDisplayCanvas && devicePixelRatio != _currentDevicePixelRatio) {
           _updateLogicalHtmlCanvasSize();
@@ -262,13 +262,13 @@ class Surface extends DisplayCanvas {
         return _surface!;
       }
 
-      final BitmapSize? previousCanvasSize = _currentCanvasPhysicalSize;
+      final previousCanvasSize = _currentCanvasPhysicalSize;
       // Initialize a new, larger, canvas. If the size is growing, then make the
       // new canvas larger than required to avoid many canvas creations.
       if (previousCanvasSize != null &&
           (size.width > previousCanvasSize.width ||
               size.height > previousCanvasSize.height)) {
-        final BitmapSize newSize = BitmapSize.fromSize(size.toSize() * 1.4);
+        final newSize = BitmapSize.fromSize(size.toSize() * 1.4);
         _surface?.dispose();
         _surface = null;
         _pixelWidth = newSize.width;
@@ -367,7 +367,7 @@ class Surface extends DisplayCanvas {
     _pixelHeight = physicalSize.height;
     DomEventTarget htmlCanvas;
     if (useOffscreenCanvas) {
-      final DomOffscreenCanvas offscreenCanvas = createDomOffscreenCanvas(
+      final offscreenCanvas = createDomOffscreenCanvas(
         _pixelWidth,
         _pixelHeight,
       );
@@ -375,7 +375,7 @@ class Surface extends DisplayCanvas {
       _offscreenCanvas = offscreenCanvas;
       _canvasElement = null;
     } else {
-      final DomCanvasElement canvas =
+      final canvas =
           createDomCanvasElement(width: _pixelWidth, height: _pixelHeight);
       htmlCanvas = canvas;
       _canvasElement = canvas;
@@ -411,8 +411,8 @@ class Surface extends DisplayCanvas {
     _contextLost = false;
 
     if (webGLVersion != -1 && !configuration.canvasKitForceCpuOnly) {
-      int glContext = 0;
-      final SkWebGLContextOptions options = SkWebGLContextOptions(
+      var glContext = 0;
+      final options = SkWebGLContextOptions(
         // Default to no anti-aliasing. Paint commands can be explicitly
         // anti-aliased by setting their `Paint` object's `antialias` property.
         antialias: _kUsingMSAA ? 1 : 0,
@@ -468,7 +468,7 @@ class Surface extends DisplayCanvas {
     } else if (_glContext == 0) {
       return _makeSoftwareCanvasSurface('Failed to initialize WebGL context');
     } else {
-      final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+      final skSurface = canvasKit.MakeOnScreenGLSurface(
           _grContext!,
           size.width.toDouble(),
           size.height.toDouble(),

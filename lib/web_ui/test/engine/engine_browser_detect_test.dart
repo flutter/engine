@@ -16,8 +16,8 @@ void main() {
 
 void testMain() {
   group('browserSupportsCanvasKitChromium', () {
-    JSAny? oldV8BreakIterator = v8BreakIterator;
-    JSAny? oldIntlSegmenter = intlSegmenter;
+    var oldV8BreakIterator = v8BreakIterator;
+    var oldIntlSegmenter = intlSegmenter;
 
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;

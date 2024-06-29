@@ -20,7 +20,7 @@ Future<void> testMain() async {
   setUpUnitTests(withImplicitView: true);
 
   test('does not crash on empty spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('');
 
@@ -35,7 +35,7 @@ Future<void> testMain() async {
   });
 
   test('measures spans in the same line correctly', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(fontSize: 12.0));
       // 12.0 * 6 = 72.0 (with spaces)
       // 12.0 * 5 = 60.0 (without spaces)
@@ -60,7 +60,7 @@ Future<void> testMain() async {
   });
 
   test('breaks lines correctly at the end of spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.addText('Lorem ');
       builder.pushStyle(EngineTextStyle.only(fontSize: 15.0));
       builder.addText('sit ');
@@ -79,7 +79,7 @@ Future<void> testMain() async {
   });
 
   test('breaks lines correctly in the middle of spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.addText('Lorem ipsum ');
       builder.pushStyle(EngineTextStyle.only(fontSize: 11.0));
       builder.addText('sit dolor');
@@ -96,7 +96,7 @@ Future<void> testMain() async {
   });
 
   test('handles space-only spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: red));
       builder.addText('Lorem ');
       builder.pop();
@@ -119,7 +119,7 @@ Future<void> testMain() async {
   });
 
   test('should not break at span end if it is not a line break', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: red));
       builder.addText('Lorem');
       builder.pop();
@@ -143,12 +143,12 @@ Future<void> testMain() async {
   });
 
   test('should handle placeholder-only paragraphs', () {
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       textAlign: ui.TextAlign.center,
     );
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.baseline, baseline: ui.TextBaseline.alphabetic);
     })..layout(constrain(500.0));
 
@@ -161,12 +161,12 @@ Future<void> testMain() async {
   });
 
   test('correct maxIntrinsicWidth when paragraph ends with placeholder', () {
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       textAlign: ui.TextAlign.center,
     );
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.addText('abcd');
       builder.addPlaceholder(300.0, 50.0, ui.PlaceholderAlignment.bottom);
     })..layout(constrain(400.0));
@@ -180,12 +180,12 @@ Future<void> testMain() async {
   });
 
   test('handles new line followed by a placeholder', () {
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Ahem',
       fontSize: 10,
       textAlign: ui.TextAlign.center,
     );
-    final CanvasParagraph paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
+    final paragraph = rich(paragraphStyle, (CanvasParagraphBuilder builder) {
       builder.addText('Lorem\n');
       builder.addPlaceholder(300.0, 40.0, ui.PlaceholderAlignment.bottom);
       builder.addText('ipsum');
@@ -203,7 +203,7 @@ Future<void> testMain() async {
   });
 
   test('correctly force-breaks consecutive non-breakable spans', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(fontSize: 1));
       builder.addText('A');
       builder.pop(); // Back to fontSize: 10
@@ -224,7 +224,7 @@ Future<void> testMain() async {
   });
 
   test('does not make prohibited line breaks', () {
-    final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
+    final paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: blue));
       builder.addText('AAA B');
       builder.pushStyle(EngineTextStyle.only(color: green));

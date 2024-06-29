@@ -30,7 +30,7 @@ mixin _DomClip on PersistedContainerSurface {
 
   @override
   DomElement createElement() {
-    final DomElement element = defaultCreateElement('flt-clip');
+    final element = defaultCreateElement('flt-clip');
     _childContainer = createDomElement('flt-clip-interior');
     if (debugExplainSurfaceStats) {
       // This creates an additional interior element. Count it too.
@@ -153,7 +153,7 @@ class PersistedClipRRect extends PersistedContainerSurface
 
   @override
   void apply() {
-    final DomCSSStyleDeclaration style = rootElement!.style;
+    final style = rootElement!.style;
     style
       ..left = '${rrect.left}px'
       ..top = '${rrect.top}px'
@@ -244,8 +244,8 @@ class PersistedClipPath extends PersistedContainerSurface
 
 /// Creates an svg clipPath and applies it to [element].
 SVGSVGElement createSvgClipDef(DomElement element, ui.Path clipPath) {
-  final ui.Rect pathBounds = clipPath.getBounds();
-  final SVGSVGElement svgClipPath = pathToSvgClipPath(clipPath,
+  final pathBounds = clipPath.getBounds();
+  final svgClipPath = pathToSvgClipPath(clipPath,
       scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
   setClipPath(element, createSvgClipUrl());
   // We need to set width and height for the clipElement to cover the

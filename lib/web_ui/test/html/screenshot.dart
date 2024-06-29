@@ -27,7 +27,7 @@ Future<void> canvasScreenshot(
   rc.apply(engineCanvas, region);
 
   // Wrap in <flt-scene> so that our CSS selectors kick in.
-  final DomElement sceneElement = createDomElement('flt-scene');
+  final sceneElement = createDomElement('flt-scene');
   if (isIosSafari) {
     // Shrink to fit on the iPhone screen.
     sceneElement.style.position = 'absolute';
@@ -38,7 +38,7 @@ Future<void> canvasScreenshot(
     if (setupPerspective) {
       // iFrame disables perspective, set it explicitly for test.
       engineCanvas.rootElement.style.perspective = '400px';
-      for (final DomElement element in engineCanvas.rootElement.querySelectorAll('div')) {
+      for (final element in engineCanvas.rootElement.querySelectorAll('div')) {
         element.style.perspective = '400px';
       }
     }

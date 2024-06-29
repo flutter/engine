@@ -56,7 +56,7 @@ Future<int> runProcess(
   bool failureIsSuccess = false,
   Map<String, String> environment = const <String, String>{},
 }) async {
-  final ProcessManager manager = await startProcess(
+  final manager = await startProcess(
     executable,
     arguments,
     workingDirectory: workingDirectory,
@@ -77,7 +77,7 @@ Future<String> evalProcess(
   String? workingDirectory,
   Map<String, String> environment = const <String, String>{},
 }) async {
-  final ProcessManager manager = await startProcess(
+  final manager = await startProcess(
     executable,
     arguments,
     workingDirectory: workingDirectory,
@@ -109,7 +109,7 @@ Future<ProcessManager> startProcess(
   bool evalOutput = false,
   Map<String, String> environment = const <String, String>{},
 }) async {
-  final io.Process process = await io.Process.start(
+  final process = await io.Process.start(
     executable,
     arguments,
     workingDirectory: workingDirectory,
@@ -196,7 +196,7 @@ class ProcessManager {
   ///
   /// In all other cicumstances the future completes with an error.
   Future<int> wait() async {
-    final int exitCode = await process.exitCode;
+    final exitCode = await process.exitCode;
     if (!_failureIsSuccess && exitCode != 0) {
       _throwProcessException(
         description: 'Sub-process failed.',
@@ -216,7 +216,7 @@ class ProcessManager {
             'with `evalOutput` set to false.',
       );
     }
-    final int exitCode = await wait();
+    final exitCode = await wait();
     return ProcessOutput(
       exitCode: exitCode,
       stdout: _stdout.toString(),
@@ -293,7 +293,7 @@ class ProcessException implements Exception {
 
   @override
   String toString() {
-    final StringBuffer message = StringBuffer();
+    final message = StringBuffer();
     message
       ..writeln(description)
       ..writeln('Command: $executable ${arguments.join(' ')}')
@@ -314,8 +314,8 @@ mixin ArgUtils<T> on Command<T> {
   String stringArg(String name) => argResults![name] as String;
 
   RuntimeMode get runtimeMode {
-    final bool isProfile = boolArg('profile');
-    final bool isDebug = boolArg('debug');
+    final isProfile = boolArg('profile');
+    final isDebug = boolArg('debug');
     if (isProfile && isDebug) {
       throw ToolExit('Cannot specify both --profile and --debug at the same time.');
     }
@@ -359,20 +359,20 @@ final List<AsyncCallback> cleanupCallbacks = <AsyncCallback>[];
 Future<void> cleanup() async {
   // Cleanup remaining processes if any.
   if (processesToCleanUp.isNotEmpty) {
-    for (final io.Process process in processesToCleanUp) {
+    for (final process in processesToCleanUp) {
       process.kill();
     }
   }
   // Delete temporary directories.
   if (temporaryDirectories.isNotEmpty) {
-    for (final io.Directory directory in temporaryDirectories) {
+    for (final directory in temporaryDirectories) {
       if (!directory.existsSync()) {
         directory.deleteSync(recursive: true);
       }
     }
   }
 
-  for (final AsyncCallback callback in cleanupCallbacks) {
+  for (final callback in cleanupCallbacks) {
     await callback();
   }
 }

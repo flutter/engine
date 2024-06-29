@@ -50,7 +50,7 @@ CanvasParagraph plain(
   String text, {
   EngineTextStyle? textStyle,
 }) {
-  final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+  final builder = CanvasParagraphBuilder(style);
   if (textStyle != null) {
     builder.pushStyle(textStyle);
   }
@@ -62,7 +62,7 @@ CanvasParagraph rich(
   EngineParagraphStyle style,
   void Function(CanvasParagraphBuilder) callback,
 ) {
-  final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
+  final builder = CanvasParagraphBuilder(style);
   callback(builder);
   return builder.build();
 }
@@ -72,7 +72,7 @@ Future<void> takeScreenshot(
   Rect region,
   String fileName,
 ) async {
-  final DomElement sceneElement = createDomElement('flt-scene');
+  final sceneElement = createDomElement('flt-scene');
   if (isIosSafari) {
     // Shrink to fit on the iPhone screen.
     sceneElement.style.position = 'absolute';
@@ -100,8 +100,8 @@ void fillPlaceholder(
   Offset offset,
   CanvasParagraph paragraph,
 ) {
-  final TextBox placeholderBox = paragraph.getBoxesForPlaceholders().single;
-  final SurfacePaint paint = SurfacePaint()..color = red;
+  final placeholderBox = paragraph.getBoxesForPlaceholders().single;
+  final paint = SurfacePaint()..color = red;
   canvas.drawRect(placeholderBox.toRect().shift(offset), paint.paintData);
 }
 
@@ -110,8 +110,8 @@ void fillPlaceholder(
 ///
 /// All rectangles are filled relative to [offset].
 void fillBoxes(EngineCanvas canvas, Offset offset, List<TextBox> boxes, Color color) {
-  for (final TextBox box in boxes) {
-    final Rect rect = box.toRect().shift(offset);
+  for (final box in boxes) {
+    final rect = box.toRect().shift(offset);
     canvas.drawRect(rect, SurfacePaintData()..color = color.value);
   }
 }

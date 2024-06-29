@@ -16,7 +16,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const ui.Size size = ui.Size(640, 480);
+  const size = ui.Size(640, 480);
 
   group('ViewConstraints.fromJs', () {
     test('Negative min constraints -> Assertion error.', () async {
@@ -80,7 +80,7 @@ Future<void> testMain() async {
     });
 
     test('non-null JS Constraints -> Computes sizes', () async {
-      final JsViewConstraints constraints = JsViewConstraints(
+      final constraints = JsViewConstraints(
         minWidth: 500, maxWidth: 600, //
         minHeight: 300, maxHeight: 400, //
       );
@@ -93,7 +93,7 @@ Future<void> testMain() async {
     });
 
     test('null JS Width -> Tight to width. Computes height.', () async {
-      final JsViewConstraints constraints = JsViewConstraints(
+      final constraints = JsViewConstraints(
         minHeight: 200,
         maxHeight: 320,
       );
@@ -106,7 +106,7 @@ Future<void> testMain() async {
     });
 
     test('null JS Height -> Tight to height. Computed width.', () async {
-      final JsViewConstraints constraints = JsViewConstraints(
+      final constraints = JsViewConstraints(
         minWidth: 200,
         maxWidth: 320,
       );
@@ -121,7 +121,7 @@ Future<void> testMain() async {
     test(
         'non-null JS Constraints -> Computes sizes. Max values can be greater than available size.',
         () async {
-      final JsViewConstraints constraints = JsViewConstraints(
+      final constraints = JsViewConstraints(
         minWidth: 500, maxWidth: 1024, //
         minHeight: 300, maxHeight: 768, //
       );
@@ -136,7 +136,7 @@ Future<void> testMain() async {
     test(
         'non-null JS Constraints -> Computes sizes. Max values can be unconstrained.',
         () async {
-      final JsViewConstraints constraints = JsViewConstraints(
+      final constraints = JsViewConstraints(
         minWidth: 500,
         maxWidth: double.infinity,
         minHeight: 300,

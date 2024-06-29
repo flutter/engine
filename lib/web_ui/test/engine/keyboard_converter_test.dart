@@ -82,8 +82,8 @@ void testMain() {
   });
 
   test('Single key press, repeat, and release', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
@@ -135,8 +135,8 @@ void testMain() {
   });
 
   test('Special cases', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
@@ -155,8 +155,8 @@ void testMain() {
   });
 
   test('Release modifier during a repeated sequence', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
@@ -234,8 +234,8 @@ void testMain() {
   });
 
   test('Distinguish between left and right modifiers', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -278,8 +278,8 @@ void testMain() {
   });
 
   test('Treat modifiers at standard locations as if at left', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -358,8 +358,8 @@ void testMain() {
   });
 
   test('Distinguish between normal and numpad digits', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -402,16 +402,16 @@ void testMain() {
   });
 
   test('Dead keys are distinguishable', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
 
     // The absolute values of the following logical keys are not guaranteed.
-    const int kLogicalAltE = 0x1740070008;
-    const int kLogicalAltU = 0x1740070018;
-    const int kLogicalAltShiftE = 0x1760070008;
+    const kLogicalAltE = 0x1740070008;
+    const kLogicalAltU = 0x1740070018;
+    const kLogicalAltShiftE = 0x1760070008;
     // The values must be distinguishable.
     expect(kLogicalAltE, isNot(equals(kLogicalAltU)));
     expect(kLogicalAltE, isNot(equals(kLogicalAltShiftE)));
@@ -482,8 +482,8 @@ void testMain() {
   });
 
   test('Duplicate down is preceded with synthesized up', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -527,8 +527,8 @@ void testMain() {
 
   test('Duplicate down is preceded with synthesized up using registered logical key', () {
     // Regression test for https://github.com/flutter/flutter/issues/126247.
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -569,8 +569,8 @@ void testMain() {
   });
 
   test('Duplicate ups are skipped', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -584,8 +584,8 @@ void testMain() {
   });
 
   test('Conflict from multiple keyboards do not crash', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -623,10 +623,10 @@ void testMain() {
     );
   });
 
-  for (final ui_web.OperatingSystem system in <ui_web.OperatingSystem>[ui_web.OperatingSystem.macOs, ui_web.OperatingSystem.iOs]) {
+  for (final system in <ui_web.OperatingSystem>[ui_web.OperatingSystem.macOs, ui_web.OperatingSystem.iOs]) {
     testFakeAsync('CapsLock down synthesizes an immediate cancel on $system', (FakeAsync async) {
-      final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-      final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      final keyDataList = <ui.KeyData>[];
+      final converter = KeyboardConverter((ui.KeyData key) {
         keyDataList.add(key);
         return true;
       }, system);
@@ -703,8 +703,8 @@ void testMain() {
   }
 
   testFakeAsync('CapsLock behaves normally on non-macOS', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -756,10 +756,10 @@ void testMain() {
     );
   });
 
-  for (final ui_web.OperatingSystem system in <ui_web.OperatingSystem>[ui_web.OperatingSystem.macOs, ui_web.OperatingSystem.iOs]) {
+  for (final system in <ui_web.OperatingSystem>[ui_web.OperatingSystem.macOs, ui_web.OperatingSystem.iOs]) {
     testFakeAsync('Key guards: key down events are guarded on $system', (FakeAsync async) {
-      final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-      final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      final keyDataList = <ui.KeyData>[];
+      final converter = KeyboardConverter((ui.KeyData key) {
         keyDataList.add(key);
         return true;
       }, system);
@@ -828,8 +828,8 @@ void testMain() {
   }
 
   testFakeAsync('Key guards: key repeated down events refreshes guards', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.macOs);
@@ -895,8 +895,8 @@ void testMain() {
   });
 
   testFakeAsync('Key guards: cleared by keyups', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.macOs);
@@ -956,8 +956,8 @@ void testMain() {
   });
 
   testFakeAsync('Key guards: key down events are not guarded on non-macOS', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -981,8 +981,8 @@ void testMain() {
   });
 
   testFakeAsync('Lock flags of other keys', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -1032,8 +1032,8 @@ void testMain() {
   });
 
   test('Deduce modifier key up from modifier field', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -1093,8 +1093,8 @@ void testMain() {
   // metaKey false. This violates the definition of metaKey, and does not happen
   // in nearly any other cases for any other keys.
   test('Ignore inconsistent modifier flag of the current modifier', () {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);
@@ -1146,8 +1146,8 @@ void testMain() {
 
   test('Ignore DOM event when event.key is null', () {
     // Regression test for https://github.com/flutter/flutter/issues/114620.
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+    final keyDataList = <ui.KeyData>[];
+    final converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
     }, ui_web.OperatingSystem.linux);

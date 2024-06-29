@@ -17,13 +17,13 @@ import 'path_metrics.dart';
 /// The `SkPath` is required for `CkCanvas` methods which take a path.
 class CkPath implements ui.Path {
   factory CkPath() {
-    final SkPath skPath = SkPath();
+    final skPath = SkPath();
     skPath.setFillType(toSkFillType(ui.PathFillType.nonZero));
     return CkPath._(skPath, ui.PathFillType.nonZero);
   }
 
   factory CkPath.from(CkPath other) {
-    final SkPath skPath = other.skiaObject.copy();
+    final skPath = other.skiaObject.copy();
     skPath.setFillType(toSkFillType(other._fillType));
     return CkPath._(skPath, other._fillType);
   }
@@ -57,7 +57,7 @@ class CkPath implements ui.Path {
 
   @override
   void addArc(ui.Rect oval, double startAngle, double sweepAngle) {
-    const double toDegrees = 180.0 / math.pi;
+    const toDegrees = 180.0 / math.pi;
     skiaObject.addArc(
       toSkRect(oval),
       startAngle * toDegrees,
@@ -81,7 +81,7 @@ class CkPath implements ui.Path {
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
-    final CkPath otherPath = path as CkPath;
+    final otherPath = path as CkPath;
     skiaObject.addPath(
       otherPath.skiaObject,
       skMatrix[0],
@@ -99,7 +99,7 @@ class CkPath implements ui.Path {
 
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
-    final SkFloat32List encodedPoints = toMallocedSkPoints(points);
+    final encodedPoints = toMallocedSkPoints(points);
     skiaObject.addPoly(encodedPoints.toTypedArray(), close);
     free(encodedPoints);
   }
@@ -120,7 +120,7 @@ class CkPath implements ui.Path {
   @override
   void arcTo(
       ui.Rect rect, double startAngle, double sweepAngle, bool forceMoveTo) {
-    const double toDegrees = 180.0 / math.pi;
+    const toDegrees = 180.0 / math.pi;
     skiaObject.arcToOval(
       toSkRect(rect),
       startAngle * toDegrees,
@@ -183,7 +183,7 @@ class CkPath implements ui.Path {
       skMatrix[2] += offset.dx;
       skMatrix[5] += offset.dy;
     }
-    final CkPath otherPath = path as CkPath;
+    final otherPath = path as CkPath;
     skiaObject.addPath(
       otherPath.skiaObject,
       skMatrix[0],
@@ -272,7 +272,7 @@ class CkPath implements ui.Path {
   CkPath shift(ui.Offset offset) {
     // `SkPath.transform` mutates the existing path, so create a copy and call
     // `transform` on the copy.
-    final SkPath shiftedPath = skiaObject.copy();
+    final shiftedPath = skiaObject.copy();
     shiftedPath.transform(
       1.0, 0.0, offset.dx,
       0.0, 1.0, offset.dy,
@@ -286,9 +286,9 @@ class CkPath implements ui.Path {
     ui.Path uiPath1,
     ui.Path uiPath2,
   ) {
-    final CkPath path1 = uiPath1 as CkPath;
-    final CkPath path2 = uiPath2 as CkPath;
-    final SkPath newPath = canvasKit.Path.MakeFromOp(
+    final path1 = uiPath1 as CkPath;
+    final path2 = uiPath2 as CkPath;
+    final newPath = canvasKit.Path.MakeFromOp(
       path1.skiaObject,
       path2.skiaObject,
       toSkPathOp(operation),
@@ -298,8 +298,8 @@ class CkPath implements ui.Path {
 
   @override
   ui.Path transform(Float64List matrix4) {
-    final SkPath newPath = skiaObject.copy();
-    final Float32List m = toSkMatrixFromFloat64(matrix4);
+    final newPath = skiaObject.copy();
+    final m = toSkMatrixFromFloat64(matrix4);
     newPath.transform(
       m[0],
       m[1],

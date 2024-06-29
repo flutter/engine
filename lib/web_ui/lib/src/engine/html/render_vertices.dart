@@ -47,9 +47,9 @@ class SurfaceVertices implements ui.Vertices {
   final Uint16List? indices;
 
   static Int32List _int32ListFromColors(List<ui.Color> colors) {
-    final Int32List list = Int32List(colors.length);
-    final int len = colors.length;
-    for (int i = 0; i < len; i++) {
+    final list = Int32List(colors.length);
+    final len = colors.length;
+    for (var i = 0; i < len; i++) {
       list[i] = colors[i].value;
     }
     return list;
@@ -125,16 +125,16 @@ class _WebGlRenderer implements GlRenderer {
       ui.BlendMode blendMode,
       SurfacePaintData paint) {
     // Compute bounds of vertices.
-    final Float32List positions = vertices.positions;
-    final ui.Rect bounds = _computeVerticesBounds(positions, transform);
-    final double minValueX = bounds.left;
-    final double minValueY = bounds.top;
-    final double maxValueX = bounds.right;
-    final double maxValueY = bounds.bottom;
-    double offsetX = 0;
-    double offsetY = 0;
-    int widthInPixels = canvasWidthInPixels;
-    int heightInPixels = canvasHeightInPixels;
+    final positions = vertices.positions;
+    final bounds = _computeVerticesBounds(positions, transform);
+    final minValueX = bounds.left;
+    final minValueY = bounds.top;
+    final maxValueX = bounds.right;
+    final maxValueY = bounds.bottom;
+    var offsetX = 0;
+    var offsetY = 0;
+    var widthInPixels = canvasWidthInPixels;
+    var heightInPixels = canvasHeightInPixels;
     // If vertices fall outside the bitmap area, cull.
     if (maxValueX < 0 || maxValueY < 0) {
       return;
@@ -155,26 +155,26 @@ class _WebGlRenderer implements GlRenderer {
       return;
     }
 
-    final bool isWebGl2 = webGLVersion == WebGLVersion.webgl2;
+    final isWebGl2 = webGLVersion == WebGLVersion.webgl2;
 
-    final EngineImageShader? imageShader =
+    final imageShader =
         paint.shader == null ? null : paint.shader! as EngineImageShader;
 
-    final String vertexShader = imageShader == null
+    final vertexShader = imageShader == null
         ? VertexShaders.writeBaseVertexShader()
         : VertexShaders.writeTextureVertexShader();
-    final String fragmentShader = imageShader == null
+    final fragmentShader = imageShader == null
         ? _writeVerticesFragmentShader()
         : FragmentShaders.writeTextureFragmentShader(
             isWebGl2, imageShader.tileModeX, imageShader.tileModeY);
 
-    final GlContext gl =
+    final gl =
         GlContextCache.createGlContext(widthInPixels, heightInPixels)!;
 
-    final GlProgram glProgram = gl.cacheProgram(vertexShader, fragmentShader);
+    final glProgram = gl.cacheProgram(vertexShader, fragmentShader);
     gl.useProgram(glProgram);
 
-    final Object positionAttributeLocation =
+    final positionAttributeLocation =
         gl.getAttributeLocation(glProgram.program, 'position');
 
     setupVertexTransforms(gl, glProgram, offsetX, offsetY,
@@ -195,7 +195,7 @@ class _WebGlRenderer implements GlRenderer {
     // Setup geometry.
     //
     // Create buffer for vertex coordinates.
-    final Object positionsBuffer = gl.createBuffer()!;
+    final positionsBuffer = gl.createBuffer()!;
 
     Object? vao;
     if (imageShader != null) {
@@ -223,25 +223,25 @@ class _WebGlRenderer implements GlRenderer {
       0,
     );
 
-    final int vertexCount = positions.length ~/ 2;
+    final vertexCount = positions.length ~/ 2;
     Object? texture;
 
     if (imageShader == null) {
       // Setup color buffer.
-      final Object? colorsBuffer = gl.createBuffer();
+      final colorsBuffer = gl.createBuffer();
       gl.bindArrayBuffer(colorsBuffer);
 
       // Buffer kBGRA_8888.
       if (vertices.colors == null) {
-        final Uint32List vertexColors = Uint32List(vertexCount);
-        for (int i = 0; i < vertexCount; i++) {
+        final vertexColors = Uint32List(vertexCount);
+        for (var i = 0; i < vertexCount; i++) {
           vertexColors[i] = paint.color;
         }
         gl.bufferData(vertexColors, gl.kStaticDraw);
       } else {
         gl.bufferData(vertices.colors, gl.kStaticDraw);
       }
-      final Object colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
+      final colorLoc = gl.getAttributeLocation(glProgram.program, 'color');
       vertexAttribPointerGlContext(
         gl.glContext,
         colorLoc,
@@ -294,14 +294,14 @@ class _WebGlRenderer implements GlRenderer {
     // Finally render triangles.
     gl.clear();
 
-    final Uint16List? indices = vertices.indices;
+    final indices = vertices.indices;
     if (indices == null) {
       gl.drawTriangles(vertexCount, vertices.mode);
     } else {
       /// If indices are specified to use shared vertices to reduce vertex
       /// data transfer, use drawElements to map from vertex indices to
       /// triangles.
-      final Object? indexBuffer = gl.createBuffer();
+      final indexBuffer = gl.createBuffer();
       gl.bindElementArrayBuffer(indexBuffer);
       gl.bufferElementData(indices, gl.kStaticDraw);
       gl.drawElements(gl.kTriangles, indices.length, gl.kUnsignedShort);
@@ -326,7 +326,7 @@ class _WebGlRenderer implements GlRenderer {
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     drawRectToGl(
         targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
-    final Object? image = gl.readPatternData(gradient.isOpaque);
+    final image = gl.readPatternData(gradient.isOpaque);
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
     return image;
@@ -344,7 +344,7 @@ class _WebGlRenderer implements GlRenderer {
       int heightInPixels) {
     drawRectToGl(
         targetRect, gl, glProgram, gradient, widthInPixels, heightInPixels);
-    final String imageUrl = gl.toImageUrl();
+    final imageUrl = gl.toImageUrl();
     // Cleanup buffers.
     gl.bindArrayBuffer(null);
     gl.bindElementArrayBuffer(null);
@@ -357,12 +357,12 @@ class _WebGlRenderer implements GlRenderer {
   void drawRectToGl(ui.Rect targetRect, GlContext gl, GlProgram glProgram,
       NormalizedGradient gradient, int widthInPixels, int heightInPixels) {
     // Setup rectangle coordinates.
-    final double left = targetRect.left;
-    final double top = targetRect.top;
-    final double right = targetRect.right;
-    final double bottom = targetRect.bottom;
+    final left = targetRect.left;
+    final top = targetRect.top;
+    final right = targetRect.right;
+    final bottom = targetRect.bottom;
     // Form 2 triangles for rectangle.
-    final Float32List vertices = Float32List(8);
+    final vertices = Float32List(8);
     vertices[0] = left;
     vertices[1] = top;
     vertices[2] = right;
@@ -372,20 +372,20 @@ class _WebGlRenderer implements GlRenderer {
     vertices[6] = left;
     vertices[7] = bottom;
 
-    final Object transformUniform =
+    final transformUniform =
         gl.getUniformLocation(glProgram.program, 'u_ctransform');
     gl.setUniformMatrix4fv(transformUniform, false, Matrix4.identity().storage);
 
     // Set uniform to scale 0..width/height pixels coordinates to -1..1
     // clipspace range and flip the Y axis.
-    final Object resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
+    final resolution = gl.getUniformLocation(glProgram.program, 'u_scale');
     gl.setUniform4f(resolution, 2.0 / widthInPixels.toDouble(),
         -2.0 / heightInPixels.toDouble(), 1, 1);
-    final Object shift = gl.getUniformLocation(glProgram.program, 'u_shift');
+    final shift = gl.getUniformLocation(glProgram.program, 'u_shift');
     gl.setUniform4f(shift, -1, 1, 0, 0);
 
     // Setup geometry.
-    final Object positionsBuffer = gl.createBuffer()!;
+    final positionsBuffer = gl.createBuffer()!;
     gl.bindArrayBuffer(positionsBuffer);
     gl.bufferData(vertices, gl.kStaticDraw);
     // Point an attribute to the currently bound vertex buffer object.
@@ -401,10 +401,10 @@ class _WebGlRenderer implements GlRenderer {
     gl.enableVertexAttribArray(0);
 
     // Setup color buffer.
-    final Object? colorsBuffer = gl.createBuffer();
+    final colorsBuffer = gl.createBuffer();
     gl.bindArrayBuffer(colorsBuffer);
     // Buffer kBGRA_8888.
-    final Int32List colors = Int32List.fromList(<int>[
+    final colors = Int32List.fromList(<int>[
       0xFF00FF00,
       0xFF0000FF,
       0xFFFFFF00,
@@ -422,12 +422,12 @@ class _WebGlRenderer implements GlRenderer {
     );
     gl.enableVertexAttribArray(1);
 
-    final Object? indexBuffer = gl.createBuffer();
+    final indexBuffer = gl.createBuffer();
     gl.bindElementArrayBuffer(indexBuffer);
     gl.bufferElementData(VertexShaders.vertexIndicesForRect, gl.kStaticDraw);
 
     if (gl.containsUniform(glProgram.program, 'u_resolution')) {
-      final Object uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
+      final uRes = gl.getUniformLocation(glProgram.program, 'u_resolution');
       gl.setUniform2f(
           uRes, widthInPixels.toDouble(), heightInPixels.toDouble());
     }
@@ -449,10 +449,10 @@ class _WebGlRenderer implements GlRenderer {
   ///       fragColor = vColor;
   ///     }
   String _writeVerticesFragmentShader() {
-    final ShaderBuilder builder = ShaderBuilder.fragment(webGLVersion);
+    final builder = ShaderBuilder.fragment(webGLVersion);
     builder.floatPrecision = ShaderPrecision.kMedium;
     builder.addIn(ShaderType.kVec4, name: 'v_color');
-    final ShaderMethod method = builder.addMethod('main');
+    final method = builder.addMethod('main');
     method.addStatement('${builder.fragmentColor.name} = v_color;');
     return builder.build();
   }
@@ -460,16 +460,16 @@ class _WebGlRenderer implements GlRenderer {
   @override
   void drawHairline(
       DomCanvasRenderingContext2D? ctx, Float32List positions) {
-    final int pointCount = positions.length ~/ 2;
+    final pointCount = positions.length ~/ 2;
     ctx!.lineWidth = 1.0;
     ctx.beginPath();
-    final int len = pointCount * 2;
-    for (int i = 0; i < len;) {
-      for (int triangleVertexIndex = 0;
+    final len = pointCount * 2;
+    for (var i = 0; i < len;) {
+      for (var triangleVertexIndex = 0;
           triangleVertexIndex < 3;
           triangleVertexIndex++, i += 2) {
-        final double dx = positions[i];
-        final double dy = positions[i + 1];
+        final dx = positions[i];
+        final dy = positions[i + 1];
         switch (triangleVertexIndex) {
           case 0:
             ctx.moveTo(dx, dy);
@@ -489,10 +489,10 @@ ui.Rect _computeVerticesBounds(Float32List positions, Matrix4 transform) {
   double minValueX, maxValueX, minValueY, maxValueY;
   minValueX = maxValueX = positions[0];
   minValueY = maxValueY = positions[1];
-  final int len = positions.length;
-  for (int i = 2; i < len; i += 2) {
-    final double x = positions[i];
-    final double y = positions[i + 1];
+  final len = positions.length;
+  for (var i = 2; i < len; i += 2) {
+    final x = positions[i];
+    final y = positions[i + 1];
     if (x.isNaN || y.isNaN) {
       // Follows skia implementation that sets bounds to empty
       // and aborts.
@@ -509,21 +509,21 @@ ui.Rect _computeVerticesBounds(Float32List positions, Matrix4 transform) {
 
 ui.Rect _transformBounds(
     Matrix4 transform, double left, double top, double right, double bottom) {
-  final Float32List storage = transform.storage;
-  final double m0 = storage[0];
-  final double m1 = storage[1];
-  final double m4 = storage[4];
-  final double m5 = storage[5];
-  final double m12 = storage[12];
-  final double m13 = storage[13];
-  final double x0 = (m0 * left) + (m4 * top) + m12;
-  final double y0 = (m1 * left) + (m5 * top) + m13;
-  final double x1 = (m0 * right) + (m4 * top) + m12;
-  final double y1 = (m1 * right) + (m5 * top) + m13;
-  final double x2 = (m0 * right) + (m4 * bottom) + m12;
-  final double y2 = (m1 * right) + (m5 * bottom) + m13;
-  final double x3 = (m0 * left) + (m4 * bottom) + m12;
-  final double y3 = (m1 * left) + (m5 * bottom) + m13;
+  final storage = transform.storage;
+  final m0 = storage[0];
+  final m1 = storage[1];
+  final m4 = storage[4];
+  final m5 = storage[5];
+  final m12 = storage[12];
+  final m13 = storage[13];
+  final x0 = (m0 * left) + (m4 * top) + m12;
+  final y0 = (m1 * left) + (m5 * top) + m13;
+  final x1 = (m0 * right) + (m4 * top) + m12;
+  final y1 = (m1 * right) + (m5 * top) + m13;
+  final x2 = (m0 * right) + (m4 * bottom) + m12;
+  final y2 = (m1 * right) + (m5 * bottom) + m13;
+  final x3 = (m0 * left) + (m4 * bottom) + m12;
+  final y3 = (m1 * left) + (m5 * bottom) + m13;
   return ui.Rect.fromLTRB(
       math.min(x0, math.min(x1, math.min(x2, x3))),
       math.min(y0, math.min(y1, math.min(y2, y3))),
@@ -535,14 +535,14 @@ ui.Rect _transformBounds(
 Float32List convertVertexPositions(ui.VertexMode mode, Float32List positions) {
   assert(mode != ui.VertexMode.triangles);
   if (mode == ui.VertexMode.triangleFan) {
-    final int coordinateCount = positions.length ~/ 2;
-    final int triangleCount = coordinateCount - 2;
-    final Float32List triangleList = Float32List(triangleCount * 3 * 2);
-    final double centerX = positions[0];
-    final double centerY = positions[1];
-    int destIndex = 0;
-    int positionIndex = 2;
-    for (int triangleIndex = 0;
+    final coordinateCount = positions.length ~/ 2;
+    final triangleCount = coordinateCount - 2;
+    final triangleList = Float32List(triangleCount * 3 * 2);
+    final centerX = positions[0];
+    final centerY = positions[1];
+    var destIndex = 0;
+    var positionIndex = 2;
+    for (var triangleIndex = 0;
         triangleIndex < triangleCount;
         triangleIndex++, positionIndex += 2) {
       triangleList[destIndex++] = centerX;
@@ -556,17 +556,17 @@ Float32List convertVertexPositions(ui.VertexMode mode, Float32List positions) {
   } else {
     assert(mode == ui.VertexMode.triangleStrip);
     // Set of connected triangles. Each triangle shares 2 last vertices.
-    final int vertexCount = positions.length ~/ 2;
-    final int triangleCount = vertexCount - 2;
-    double x0 = positions[0];
-    double y0 = positions[1];
-    double x1 = positions[2];
-    double y1 = positions[3];
-    final Float32List triangleList = Float32List(triangleCount * 3 * 2);
-    int destIndex = 0;
+    final vertexCount = positions.length ~/ 2;
+    final triangleCount = vertexCount - 2;
+    var x0 = positions[0];
+    var y0 = positions[1];
+    var x1 = positions[2];
+    var y1 = positions[3];
+    final triangleList = Float32List(triangleCount * 3 * 2);
+    var destIndex = 0;
     for (int i = 0, positionIndex = 4; i < triangleCount; i++) {
-      final double x2 = positions[positionIndex++];
-      final double y2 = positions[positionIndex++];
+      final x2 = positions[positionIndex++];
+      final y2 = positions[positionIndex++];
       triangleList[destIndex++] = x0;
       triangleList[destIndex++] = y0;
       triangleList[destIndex++] = x1;

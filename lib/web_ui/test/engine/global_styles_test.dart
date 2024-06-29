@@ -30,15 +30,15 @@ void testMain() {
   test('createDomHTMLStyleElement sets a nonce value, when passed', () {
     expect(styleElement.nonce, isEmpty);
 
-    final DomHTMLStyleElement style = createDomHTMLStyleElement('a-nonce-value');
+    final style = createDomHTMLStyleElement('a-nonce-value');
     expect(style.nonce, 'a-nonce-value');
   });
 
   test('(Self-test) hasCssRule can extract rules', () {
-    final bool hasRule = hasCssRule(styleElement,
+    final hasRule = hasCssRule(styleElement,
         selector: '.flt-text-editing::placeholder', declaration: 'opacity: 0');
 
-    final bool hasFakeRule = hasCssRule(styleElement,
+    final hasFakeRule = hasCssRule(styleElement,
         selector: 'input::selection', declaration: 'color: #fabada;');
 
     expect(hasRule, isTrue);
@@ -47,10 +47,10 @@ void testMain() {
 
   test('Attaches styling to remove password reveal icons on Edge', () {
     // Check that style.sheet! contains input::-ms-reveal rule
-    final bool hidesRevealIcons = hasCssRule(styleElement,
+    final hidesRevealIcons = hasCssRule(styleElement,
         selector: 'input::-ms-reveal', declaration: 'display: none');
 
-    final bool codeRanInFakeyBrowser = hasCssRule(styleElement,
+    final codeRanInFakeyBrowser = hasCssRule(styleElement,
         selector: 'input.fallback-for-fakey-browser-in-ci',
         declaration: 'display: none');
 
@@ -64,7 +64,7 @@ void testMain() {
 
   test('Does not attach the Edge-specific style tag on non-Edge browsers', () {
     // Check that style.sheet! contains input::-ms-reveal rule
-    final bool hidesRevealIcons = hasCssRule(styleElement,
+    final hidesRevealIcons = hasCssRule(styleElement,
         selector: 'input::-ms-reveal', declaration: 'display: none');
 
     expect(hidesRevealIcons, isFalse);
@@ -73,17 +73,17 @@ void testMain() {
   test(
       'Attaches styles to hide the autofill overlay for browsers that support it',
       () {
-    final String vendorPrefix = (isSafari || isFirefox) ? '' : '-webkit-';
-    final bool autofillOverlay = hasCssRule(styleElement,
+    final vendorPrefix = (isSafari || isFirefox) ? '' : '-webkit-';
+    final autofillOverlay = hasCssRule(styleElement,
         selector: '.transparentTextEditing:${vendorPrefix}autofill',
         declaration: 'opacity: 0 !important');
-    final bool autofillOverlayHovered = hasCssRule(styleElement,
+    final autofillOverlayHovered = hasCssRule(styleElement,
         selector: '.transparentTextEditing:${vendorPrefix}autofill:hover',
         declaration: 'opacity: 0 !important');
-    final bool autofillOverlayFocused = hasCssRule(styleElement,
+    final autofillOverlayFocused = hasCssRule(styleElement,
         selector: '.transparentTextEditing:${vendorPrefix}autofill:focus',
         declaration: 'opacity: 0 !important');
-    final bool autofillOverlayActive = hasCssRule(styleElement,
+    final autofillOverlayActive = hasCssRule(styleElement,
         selector: '.transparentTextEditing:${vendorPrefix}autofill:active',
         declaration: 'opacity: 0 !important');
 
@@ -104,13 +104,13 @@ bool hasCssRule(
   assert(styleElement.sheet != null);
 
   // regexr.com/740ff
-  final RegExp ruleLike =
+  final ruleLike =
       RegExp('[^{]*(?:$selector)[^{]*{[^}]*(?:$declaration)[^}]*}');
 
-  final DomCSSStyleSheet sheet = styleElement.sheet! as DomCSSStyleSheet;
+  final sheet = styleElement.sheet! as DomCSSStyleSheet;
 
   // Check that the cssText of any rule matches the ruleLike RegExp.
-  final bool result = sheet.cssRules
+  final result = sheet.cssRules
       .map((DomCSSRule rule) => rule.cssText)
       .any((String rule) => ruleLike.hasMatch(rule));
 

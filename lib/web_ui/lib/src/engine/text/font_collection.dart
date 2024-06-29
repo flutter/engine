@@ -19,9 +19,9 @@ class HtmlFontCollection implements FlutterFontCollection {
   /// fonts declared within.
   @override
   Future<AssetFontsResult> loadAssetFonts(FontManifest manifest) async {
-    final List<Future<(String, FontLoadError?)>> pendingFonts = <Future<(String, FontLoadError?)>>[];
-    for (final FontFamily family in manifest.families) {
-      for (final FontAsset fontAsset in family.fontAssets) {
+    final pendingFonts = <Future<(String, FontLoadError?)>>[];
+    for (final family in manifest.families) {
+      for (final fontAsset in family.fontAssets) {
         pendingFonts.add(() async {
           return (
             fontAsset.asset,
@@ -31,8 +31,8 @@ class HtmlFontCollection implements FlutterFontCollection {
       }
     }
 
-    final List<String> loadedFonts = <String>[];
-    final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
+    final loadedFonts = <String>[];
+    final fontFailures = <String, FontLoadError>{};
     for (final (String asset, FontLoadError? error) in await Future.wait(pendingFonts)) {
       if (error == null) {
         loadedFonts.add(asset);
@@ -107,8 +107,8 @@ class HtmlFontCollection implements FlutterFontCollection {
     String asset,
     Map<String, String> descriptors,
   ) async {
-    final List<DomFontFace> fontFaces = <DomFontFace>[];
-    final List<FontLoadError> errors = <FontLoadError>[];
+    final fontFaces = <DomFontFace>[];
+    final errors = <FontLoadError>[];
     try {
       if (startWithDigit.hasMatch(family) ||
           notPunctuation.stringMatch(family) != family) {
@@ -134,7 +134,7 @@ class HtmlFontCollection implements FlutterFontCollection {
       // Since we can't use tear-offs for interop members, this code is faster
       // and easier to read with a for loop instead of forEach.
       // ignore: prefer_foreach
-      for (final DomFontFace font in fontFaces) {
+      for (final font in fontFaces) {
         domDocument.fonts!.add(font);
       }
     } catch (e) {
@@ -150,7 +150,7 @@ class HtmlFontCollection implements FlutterFontCollection {
   ) async {
     // try/catch because `new FontFace` can crash with an improper font family.
     try {
-      final DomFontFace fontFace = createDomFontFace(family, 'url(${ui_web.assetManager.getAssetUrl(asset)})', descriptors);
+      final fontFace = createDomFontFace(family, 'url(${ui_web.assetManager.getAssetUrl(asset)})', descriptors);
       return await fontFace.load();
     } catch (e) {
       printWarning('Error while loading font family "$family":\n$e');
@@ -163,7 +163,7 @@ class HtmlFontCollection implements FlutterFontCollection {
     // Since these fonts are loaded by user code, surface the error
     // through the returned future.
     try {
-      final DomFontFace fontFace = createDomFontFace(family, list);
+      final fontFace = createDomFontFace(family, list);
       if (fontFace.status == 'error') {
         // Font failed to load.
         return false;

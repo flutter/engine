@@ -15,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
+  const region = ui.Rect.fromLTWH(0, 0, 300, 300);
 
   setUpUnitTests(
     withImplicitView: true,
@@ -24,8 +24,8 @@ Future<void> testMain() async {
   );
 
   test('Test drawing a shadow of an opaque object', () async {
-    final ui.Picture picture = drawPicture((ui.Canvas canvas) {
-      final ui.Path path = ui.Path();
+    final picture = drawPicture((ui.Canvas canvas) {
+      final path = ui.Path();
       path.moveTo(50, 150);
       path.cubicTo(100, 50, 200, 250, 250, 150);
 
@@ -41,8 +41,8 @@ Future<void> testMain() async {
   });
 
   test('Test drawing a shadow of a translucent object', () async {
-    final ui.Picture picture = drawPicture((ui.Canvas canvas) {
-      final ui.Path path = ui.Path();
+    final picture = drawPicture((ui.Canvas canvas) {
+      final path = ui.Path();
       path.moveTo(50, 150);
       path.cubicTo(100, 250, 200, 50, 250, 150);
 

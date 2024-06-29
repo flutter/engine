@@ -39,7 +39,7 @@ class StringCodec implements MessageCodec<String> {
 
   @override
   ByteData encodeMessage(String message) {
-    final Uint8List encoded = utf8.encode(message);
+    final encoded = utf8.encode(message);
     return encoded.buffer.asByteData();
   }
 }
@@ -271,7 +271,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
     if (message == null) {
       return null;
     }
-    final WriteBuffer buffer = WriteBuffer();
+    final buffer = WriteBuffer();
     writeValue(buffer, message);
     return buffer.done();
   }
@@ -281,7 +281,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
     if (message == null) {
       return null;
     }
-    final ReadBuffer buffer = ReadBuffer(message);
+    final buffer = ReadBuffer(message);
     final dynamic result = readValue(buffer);
     if (buffer.hasRemaining) {
       throw const FormatException('Message corrupted');
@@ -365,7 +365,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
     if (!buffer.hasRemaining) {
       throw const FormatException('Message corrupted');
     }
-    final int type = buffer.getUint8();
+    final type = buffer.getUint8();
     return readValueOfType(type, buffer);
   }
 
@@ -390,37 +390,37 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
         // Flutter Engine APIs to use large ints have been deprecated on
         // 2018-01-09 and will be made unavailable.
         // TODO(mravn): remove this case once the APIs are unavailable.
-        final int length = readSize(buffer);
-        final String hex = utf8.decoder.convert(buffer.getUint8List(length));
+        final length = readSize(buffer);
+        final hex = utf8.decoder.convert(buffer.getUint8List(length));
         result = int.parse(hex, radix: 16);
       case _valueFloat64:
         result = buffer.getFloat64();
       case _valueString:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         result = utf8.decoder.convert(buffer.getUint8List(length));
       case _valueUint8List:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         result = buffer.getUint8List(length);
       case _valueInt32List:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         result = buffer.getInt32List(length);
       case _valueInt64List:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         result = buffer.getInt64List(length);
       case _valueFloat64List:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         result = buffer.getFloat64List(length);
       case _valueList:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         final theResult = <Object?>[];
-        for (int i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++) {
           theResult.add(readValue(buffer));
         }
         result = theResult;
       case _valueMap:
-        final int length = readSize(buffer);
+        final length = readSize(buffer);
         final theResult = <Object?, Object?>{};
-        for (int i = 0; i < length; i++) {
+        for (var i = 0; i < length; i++) {
           theResult[readValue(buffer)] = readValue(buffer);
         }
         result = theResult;
@@ -453,7 +453,7 @@ class StandardMessageCodec implements MessageCodec<dynamic> {
   /// This method is intended for use by subclasses overriding
   /// [readValueOfType].
   int readSize(ReadBuffer buffer) {
-    final int value = buffer.getUint8();
+    final value = buffer.getUint8();
     switch (value) {
       case 254:
         return buffer.getUint16();
@@ -494,7 +494,7 @@ class StandardMethodCodec implements MethodCodec {
 
   @override
   ByteData encodeMethodCall(MethodCall call) {
-    final WriteBuffer buffer = WriteBuffer();
+    final buffer = WriteBuffer();
     messageCodec.writeValue(buffer, call.method);
     messageCodec.writeValue(buffer, call.arguments);
     return buffer.done();
@@ -502,7 +502,7 @@ class StandardMethodCodec implements MethodCodec {
 
   @override
   MethodCall decodeMethodCall(ByteData? methodCall) {
-    final ReadBuffer buffer = ReadBuffer(methodCall!);
+    final buffer = ReadBuffer(methodCall!);
     final dynamic method = messageCodec.readValue(buffer);
     final dynamic arguments = messageCodec.readValue(buffer);
     if (method is String && !buffer.hasRemaining) {
@@ -514,7 +514,7 @@ class StandardMethodCodec implements MethodCodec {
 
   @override
   ByteData encodeSuccessEnvelope(dynamic result) {
-    final WriteBuffer buffer = WriteBuffer();
+    final buffer = WriteBuffer();
     buffer.putUint8(0);
     messageCodec.writeValue(buffer, result);
     return buffer.done();
@@ -523,7 +523,7 @@ class StandardMethodCodec implements MethodCodec {
   @override
   ByteData encodeErrorEnvelope(
       {required String code, String? message, dynamic details}) {
-    final WriteBuffer buffer = WriteBuffer();
+    final buffer = WriteBuffer();
     buffer.putUint8(1);
     messageCodec.writeValue(buffer, code);
     messageCodec.writeValue(buffer, message);
@@ -537,7 +537,7 @@ class StandardMethodCodec implements MethodCodec {
     if (envelope.lengthInBytes == 0) {
       throw const FormatException('Expected envelope, got nothing');
     }
-    final ReadBuffer buffer = ReadBuffer(envelope);
+    final buffer = ReadBuffer(envelope);
     if (buffer.getUint8() == 0) {
       return messageCodec.readValue(buffer);
     }

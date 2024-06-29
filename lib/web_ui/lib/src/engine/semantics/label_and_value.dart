@@ -155,7 +155,7 @@ final class DomTextRepresentation extends LabelRepresentationBehavior {
     }
 
     _domText?.remove();
-    final DomText domText = domDocument.createTextNode(label);
+    final domText = domDocument.createTextNode(label);
     _domText = domText;
     semanticsObject.element.appendChild(domText);
   }
@@ -258,9 +258,9 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 
   @override
   void update(String label) {
-    final ui.Size? size = semanticsObject.rect?.size;
-    final bool labelChanged = label != _previousLabel;
-    final bool sizeChanged = size != _previousSize;
+    final size = semanticsObject.rect?.size;
+    final labelChanged = label != _previousLabel;
+    final sizeChanged = size != _previousSize;
 
     // Label must be updated before sizing because the size depends on text
     // content.
@@ -326,7 +326,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
   static List<_QueuedSizeUpdate>? _resizeQueue;
 
   static void _updateSizes() {
-    final List<_QueuedSizeUpdate>? queue = _resizeQueue;
+    final queue = _resizeQueue;
 
     // Eagerly reset the queue before doing any work. This ensures that if there
     // is an unexpected error while processing the queue, we don't end up in a
@@ -349,13 +349,13 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       return;
     }
 
-    final List<_Measurement> measurements = <_Measurement>[];
+    final measurements = <_Measurement>[];
 
     // Step 1: set `display` to `inline` so that the measurement measures the
     //         true size of the text. Update all spans in a batch so that the
     //         measurement can be done without changing CSS properties that
     //         trigger reflow.
-    for (final _QueuedSizeUpdate update in queue) {
+    for (final update in queue) {
       update.representation._domText.style.display = 'inline';
     }
 
@@ -363,7 +363,7 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
     //         styles. This way, all measurements are taken with a single reflow.
     //         Interleaving measurements with updates, will cause the browser to
     //         reflow the page between measurements.
-    for (final _QueuedSizeUpdate update in queue) {
+    for (final update in queue) {
       // Both clientWidth/Height and offsetWidth/Height provide a good
       // approximation for the purposes of sizing the focus ring of the text,
       // since there's no borders or scrollbars. The `offset` variant was chosen
@@ -373,8 +373,8 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
       // getBoundingClientRect() was considered and rejected, because it provides
       // the rect in screen coordinates but this scale adjustment needs to be
       // local.
-      final double domWidth = update.representation._domText.offsetWidth;
-      final double domHeight = update.representation._domText.offsetHeight;
+      final domWidth = update.representation._domText.offsetWidth;
+      final domHeight = update.representation._domText.offsetHeight;
       measurements.add((
         representation: update.representation,
         domSize: ui.Size(domWidth, domHeight),
@@ -384,11 +384,11 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
 
     // Step 3: update all spans at a batch without taking any further DOM
     //         measurements, which avoids additional reflows.
-    for (final _Measurement measurement in measurements) {
-      final SizedSpanRepresentation representation = measurement.representation;
-      final double domWidth = measurement.domSize.width;
-      final double domHeight = measurement.domSize.height;
-      final ui.Size targetSize = measurement.targetSize;
+    for (final measurement in measurements) {
+      final representation = measurement.representation;
+      final domWidth = measurement.domSize.width;
+      final domHeight = measurement.domSize.height;
+      final targetSize = measurement.targetSize;
 
       // Reset back to `inline-block` (it was set to `inline` in Step 1).
       representation._domText.style.display = 'inline-block';
@@ -399,8 +399,8 @@ final class SizedSpanRepresentation extends LabelRepresentationBehavior {
         // the user.
         representation._domText.style.transform = '';
       } else {
-        final double scaleX = targetSize.width / domWidth;
-        final double scaleY = targetSize.height / domHeight;
+        final scaleX = targetSize.width / domWidth;
+        final scaleY = targetSize.height / domHeight;
         representation._domText.style.transform = 'scale($scaleX, $scaleY)';
       }
     }
@@ -445,7 +445,7 @@ class LabelAndValue extends RoleManager {
 
   @override
   void update() {
-    final String? computedLabel = _computeLabel();
+    final computedLabel = _computeLabel();
 
     if (computedLabel == null) {
       _cleanUpDom();
@@ -465,11 +465,11 @@ class LabelAndValue extends RoleManager {
   /// screen reader. If the are no children, use the representation preferred
   /// by the primary role manager.
   LabelRepresentationBehavior _getEffectiveRepresentation() {
-    final LabelRepresentation effectiveRepresentation = semanticsObject.hasChildren
+    final effectiveRepresentation = semanticsObject.hasChildren
       ? LabelRepresentation.ariaLabel
       : preferredRepresentation;
 
-    LabelRepresentationBehavior? representation = _representation;
+    var representation = _representation;
     if (representation == null || representation.kind != effectiveRepresentation) {
       representation?.cleanUp();
       _representation = representation = effectiveRepresentation.createBehavior(owner);
@@ -484,7 +484,7 @@ class LabelAndValue extends RoleManager {
   String? _computeLabel() {
     // If the node is incrementable the value is reported to the browser via
     // the respective role manager. We do not need to also render it again here.
-    final bool shouldDisplayValue = !semanticsObject.isIncrementable && semanticsObject.hasValue;
+    final shouldDisplayValue = !semanticsObject.isIncrementable && semanticsObject.hasValue;
 
     return computeDomSemanticsLabel(
       tooltip: semanticsObject.hasTooltip ? semanticsObject.tooltip : null,
@@ -523,13 +523,13 @@ String? computeDomSemanticsLabel({
   String? hint,
   String? value,
 }) {
-  final String? labelHintValue = _computeLabelHintValue(label: label, hint: hint, value: value);
+  final labelHintValue = _computeLabelHintValue(label: label, hint: hint, value: value);
 
   if (tooltip == null && labelHintValue == null) {
     return null;
   }
 
-  final StringBuffer combinedValue = StringBuffer();
+  final combinedValue = StringBuffer();
   if (tooltip != null) {
     combinedValue.write(tooltip);
 
@@ -551,7 +551,7 @@ String? _computeLabelHintValue({
   String? hint,
   String? value,
 }) {
-  final String combinedValue = <String?>[label, hint, value]
+  final combinedValue = <String?>[label, hint, value]
     .whereType<String>() // poor man's null filter
     .where((String element) => element.trim().isNotEmpty)
     .join(' ');

@@ -46,8 +46,8 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   @override
   set length(int newLength) {
     if (newLength < _length) {
-      final E defaultValue = _defaultValue;
-      for (int i = newLength; i < _length; i++) {
+      final defaultValue = _defaultValue;
+      for (var i = newLength; i < _length; i++) {
         _buffer[i] = defaultValue;
       }
     } else if (newLength > _buffer.length) {
@@ -138,9 +138,9 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
     // Add elements at end, growing as appropriate, then put them back at
     // position [index] using flip-by-double-reverse.
-    int writeIndex = _length;
-    int skipCount = start;
-    for (final E value in values) {
+    var writeIndex = _length;
+    var skipCount = start;
+    for (final value in values) {
       if (skipCount > 0) {
         skipCount--;
         continue;
@@ -170,8 +170,8 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   static void _reverse(List<Object?> buffer, int start, int end) {
     end--; // Point to last element, not after last element.
     while (start < end) {
-      final Object? first = buffer[start];
-      final Object? last = buffer[end];
+      final first = buffer[start];
+      final last = buffer[end];
       buffer[end] = first;
       buffer[start] = last;
       start++;
@@ -198,8 +198,8 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
     }
 
     // Otherwise, just add values one at a time.
-    int i = 0;
-    for (final E value in values) {
+    var i = 0;
+    for (final value in values) {
       if (i >= start) {
         add(value);
       }
@@ -216,8 +216,8 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
       throw StateError('Too few elements');
     }
 
-    final int valuesLength = end - start;
-    final int newLength = _length + valuesLength;
+    final valuesLength = end - start;
+    final newLength = _length + valuesLength;
     _ensureCapacity(newLength);
 
     _buffer.setRange(
@@ -237,7 +237,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
       _length++;
       return;
     }
-    final List<E> newBuffer = _createBiggerBuffer(null);
+    final newBuffer = _createBiggerBuffer(null);
     newBuffer.setRange(0, index, _buffer);
     newBuffer.setRange(index + 1, _length + 1, _buffer, index);
     newBuffer[index] = element;
@@ -252,7 +252,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
     if (requiredCapacity <= _buffer.length) {
       return;
     }
-    final List<E> newBuffer = _createBiggerBuffer(requiredCapacity);
+    final newBuffer = _createBiggerBuffer(requiredCapacity);
     newBuffer.setRange(0, _length, _buffer);
     _buffer = newBuffer;
   }
@@ -264,7 +264,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// size. It will always have at least have double the capacity of
   /// the current buffer.
   List<E> _createBiggerBuffer(int? requiredCapacity) {
-    int newLength = _buffer.length * 2;
+    var newLength = _buffer.length * 2;
     if (requiredCapacity != null && newLength < requiredCapacity) {
       newLength = requiredCapacity;
     } else if (newLength < _initialLength) {

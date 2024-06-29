@@ -34,7 +34,7 @@ Future<void> testMain() async {
 
   group('Add picture to scene', () {
     test('draw growing picture across frames', () async {
-      final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+      final builder = SurfaceSceneBuilder();
       builder.pushClipRect(
         const Rect.fromLTRB(0, 0, 100, 100),
       );
@@ -42,13 +42,13 @@ Future<void> testMain() async {
       _drawTestPicture(builder, 100, false);
       builder.pop();
 
-      final DomElement elm1 = builder
+      final elm1 = builder
           .build()
           .webOnlyRootElement!;
       domDocument.body!.append(elm1);
 
       // Now draw picture again but at larger size.
-      final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+      final builder2 = SurfaceSceneBuilder();
       builder2.pushClipRect(
         const Rect.fromLTRB(0, 0, 100, 100),
       );
@@ -64,7 +64,7 @@ Future<void> testMain() async {
     });
 
     test('draw growing picture across frames clipped', () async {
-      final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+      final builder = SurfaceSceneBuilder();
       builder.pushClipRect(
         const Rect.fromLTRB(0, 0, 100, 100),
       );
@@ -72,13 +72,13 @@ Future<void> testMain() async {
       _drawTestPicture(builder, 100, true);
       builder.pop();
 
-      final DomElement elm1 = builder
+      final elm1 = builder
           .build()
           .webOnlyRootElement!;
       domDocument.body!.append(elm1);
 
       // Now draw picture again but at larger size.
-      final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+      final builder2 = SurfaceSceneBuilder();
       builder2.pushClipRect(
         const Rect.fromLTRB(0, 0, 100, 100),
       );
@@ -91,11 +91,11 @@ Future<void> testMain() async {
     });
 
     test('PictureInPicture', () async {
-      final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-      final Picture greenRectPicture = _drawGreenRectIntoPicture();
+      final builder = SurfaceSceneBuilder();
+      final greenRectPicture = _drawGreenRectIntoPicture();
 
-      final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
-      final RecordingCanvas canvas =
+      final recorder = PictureRecorder() as EnginePictureRecorder;
+      final canvas =
       recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
       canvas.drawPicture(greenRectPicture);
       builder.addPicture(const Offset(10, 10), recorder.endRecording());
@@ -110,8 +110,8 @@ HtmlImage? sharedImage;
 
 void _drawTestPicture(SceneBuilder builder, double targetSize, bool clipped) {
   sharedImage ??= _createRealTestImage();
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
+  final recorder = PictureRecorder() as EnginePictureRecorder;
+  final canvas =
       recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
   canvas.debugEnforceArbitraryPaint();
   if (clipped) {
@@ -128,8 +128,8 @@ void _drawTestPicture(SceneBuilder builder, double targetSize, bool clipped) {
 }
 
 Picture _drawGreenRectIntoPicture() {
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
+  final recorder = PictureRecorder() as EnginePictureRecorder;
+  final canvas =
     recorder.beginRecording(const Rect.fromLTRB(0, 0, 100, 100));
   canvas.drawRect(const Rect.fromLTWH(20, 20, 50, 50),
     makePaint()..color = const Color(0xFF00FF00));

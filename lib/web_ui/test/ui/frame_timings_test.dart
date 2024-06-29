@@ -21,14 +21,14 @@ void testMain() {
   });
 
   test('collects frame timings', () async {
-    final EnginePlatformDispatcher dispatcher = ui.PlatformDispatcher.instance as EnginePlatformDispatcher;
+    final dispatcher = ui.PlatformDispatcher.instance as EnginePlatformDispatcher;
     List<ui.FrameTiming>? timings;
     dispatcher.onReportTimings = (List<ui.FrameTiming> data) {
       timings = data;
     };
-    Completer<void> frameDone = Completer<void>();
+    var frameDone = Completer<void>();
     dispatcher.onDrawFrame = () {
-      final ui.SceneBuilder sceneBuilder = ui.SceneBuilder();
+      final sceneBuilder = ui.SceneBuilder();
       sceneBuilder
         ..pushOffset(0, 0)
         ..pop();
@@ -48,7 +48,7 @@ void testMain() {
     dispatcher.scheduleFrame();
     await frameDone.future;
     expect(timings, hasLength(2), reason: '100 ms passed. 2 frames pumped.');
-    for (final ui.FrameTiming timing in timings!) {
+    for (final timing in timings!) {
       expect(timing.vsyncOverhead, greaterThanOrEqualTo(Duration.zero));
       expect(timing.buildDuration, greaterThanOrEqualTo(Duration.zero));
       expect(timing.rasterDuration, greaterThanOrEqualTo(Duration.zero));

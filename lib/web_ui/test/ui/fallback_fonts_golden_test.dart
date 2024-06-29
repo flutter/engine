@@ -36,7 +36,7 @@ void testMain() {
     /// Used to save and restore [ui.PlatformDispatcher.onPlatformMessage] after each test.
     ui.PlatformMessageCallback? savedCallback;
 
-    final List<String> downloadedFontFamilies = <String>[];
+    final downloadedFontFamilies = <String>[];
 
     setUp(() {
       renderer.fontCollection.debugResetFallbackFonts();
@@ -82,7 +82,7 @@ void testMain() {
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+      var pb = ui.ParagraphBuilder(
         ui.ParagraphStyle(),
       );
       pb.addText('مرحبا');
@@ -93,8 +93,8 @@ void testMain() {
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
           contains('Noto Sans Arabic'));
 
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
 
       pb = ui.ParagraphBuilder(
         ui.ParagraphStyle(),
@@ -102,7 +102,7 @@ void testMain() {
       pb.pushStyle(ui.TextStyle(fontSize: 32));
       pb.addText('مرحبا');
       pb.pop();
-      final ui.Paragraph paragraph = pb.build();
+      final paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       canvas.drawParagraph(paragraph, ui.Offset.zero);
@@ -123,7 +123,7 @@ void testMain() {
 
       // Creating this paragraph should cause us to start to download the
       // Arabic fallback font.
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+      var pb = ui.ParagraphBuilder(
         ui.ParagraphStyle(),
       );
       pb.addText('مرحبا');
@@ -140,7 +140,7 @@ void testMain() {
       pb.pushStyle(ui.TextStyle(fontSize: 26));
       pb.addText('Hello 😊 مرحبا');
       pb.pop();
-      final ui.Paragraph paragraph = pb.build();
+      final paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       await renderer.fontCollection.fontFallbackManager!.debugWhenIdle();
@@ -162,7 +162,7 @@ void testMain() {
 
       // Creating this paragraph should cause us to start to download the
       // fallback font.
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+      var pb = ui.ParagraphBuilder(
         ui.ParagraphStyle(),
       );
       pb.addText('Hello 😊');
@@ -173,8 +173,8 @@ void testMain() {
       expect(renderer.fontCollection.fontFallbackManager!.globalFontFallbacks,
           contains('Noto Color Emoji'));
 
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
 
       pb = ui.ParagraphBuilder(
         ui.ParagraphStyle(),
@@ -182,7 +182,7 @@ void testMain() {
       pb.pushStyle(ui.TextStyle(fontSize: 26));
       pb.addText('Hello 😊');
       pb.pop();
-      final ui.Paragraph paragraph = pb.build();
+      final paragraph = pb.build();
       paragraph.layout(const ui.ParagraphConstraints(width: 1000));
 
       canvas.drawParagraph(paragraph, ui.Offset.zero);
@@ -202,7 +202,7 @@ void testMain() {
     Future<void> checkDownloadedFamiliesForString(
         String text, List<String> expectedFamilies) async {
       // Try rendering text that requires fallback fonts, initially before the fonts are loaded.
-      ui.ParagraphBuilder pb = ui.ParagraphBuilder(ui.ParagraphStyle());
+      var pb = ui.ParagraphBuilder(ui.ParagraphStyle());
       pb.addText(text);
       pb.build().layout(const ui.ParagraphConstraints(width: 1000));
 
@@ -265,20 +265,20 @@ void testMain() {
         () async {
       // Collect all supported code points from all fallback fonts in the Noto
       // font tree.
-      final Set<String> testedFonts = <String>{};
-      final Set<int> supportedUniqueCodePoints = <int>{};
+      final testedFonts = <String>{};
+      final supportedUniqueCodePoints = <int>{};
       renderer.fontCollection.fontFallbackManager!.codePointToComponents
           .forEachRange((int start, int end, FallbackFontComponent component) {
         if (component.fonts.isNotEmpty) {
-          bool componentHasEnabledFont = false;
-          for (final NotoFont font in component.fonts) {
+          var componentHasEnabledFont = false;
+          for (final font in component.fonts) {
             if (font.enabled) {
               testedFonts.add(font.name);
               componentHasEnabledFont = true;
             }
           }
           if (componentHasEnabledFont) {
-            for (int codePoint = start; codePoint <= end; codePoint++) {
+            for (var codePoint = start; codePoint <= end; codePoint++) {
               supportedUniqueCodePoints.add(codePoint);
             }
           }
@@ -437,24 +437,24 @@ void testMain() {
           }));
 
       // Construct random paragraphs out of supported code points.
-      final math.Random random = math.Random(0);
-      final List<int> supportedCodePoints = supportedUniqueCodePoints.toList()
+      final random = math.Random(0);
+      final supportedCodePoints = supportedUniqueCodePoints.toList()
         ..shuffle(random);
-      const int paragraphLength = 3;
-      const int totalTestSize = 1000;
+      const paragraphLength = 3;
+      const totalTestSize = 1000;
 
-      for (int batchStart = 0;
+      for (var batchStart = 0;
           batchStart < totalTestSize;
           batchStart += paragraphLength) {
         final int batchEnd =
             math.min(batchStart + paragraphLength, supportedCodePoints.length);
-        final Set<int> codePoints = <int>{};
-        for (int i = batchStart; i < batchEnd; i += 1) {
+        final codePoints = <int>{};
+        for (var i = batchStart; i < batchEnd; i += 1) {
           codePoints.add(supportedCodePoints[i]);
         }
-        final Set<NotoFont> fonts = <NotoFont>{};
-        for (final int codePoint in codePoints) {
-          final List<NotoFont> fontsForPoint = renderer
+        final fonts = <NotoFont>{};
+        for (final codePoint in codePoints) {
+          final fontsForPoint = renderer
               .fontCollection.fontFallbackManager!.codePointToComponents
               .lookup(codePoint)
               .fonts;
@@ -486,7 +486,7 @@ void testMain() {
 
       // Creating this paragraph would cause us to start to download the
       // fallback font if we didn't disable font fallbacks.
-      final ui.ParagraphBuilder pb = ui.ParagraphBuilder(
+      final pb = ui.ParagraphBuilder(
         ui.ParagraphStyle(),
       );
       pb.addText('Hello 😊');

@@ -44,7 +44,7 @@ abstract class ViewRasterizer {
   /// Draws the [layerTree] to the screen for the view associated with this
   /// rasterizer.
   Future<void> draw(LayerTree layerTree) async {
-    final ui.Size frameSize = view.physicalSize;
+    final frameSize = view.physicalSize;
     if (frameSize.isEmpty) {
       // Available drawing area is empty. Skip drawing.
       return;
@@ -56,14 +56,14 @@ abstract class ViewRasterizer {
     // computed by multiplying the logical size by the devie pixel ratio, the
     // result is slightly imprecise as well. Nevertheless, the number should
     // be close to an integer, so round the frame size to be more precice.
-    final BitmapSize bitmapSize = BitmapSize.fromSize(frameSize);
+    final bitmapSize = BitmapSize.fromSize(frameSize);
 
     currentFrameSize = bitmapSize;
     prepareToDraw();
     viewEmbedder.frameSize = currentFrameSize;
-    final CkPictureRecorder pictureRecorder = CkPictureRecorder();
+    final pictureRecorder = CkPictureRecorder();
     pictureRecorder.beginRecording(ui.Offset.zero & currentFrameSize.toSize());
-    final Frame compositorFrame =
+    final compositorFrame =
         context.acquireFrame(pictureRecorder.recordingCanvas!, viewEmbedder);
 
     compositorFrame.raster(layerTree, ignoreRasterCache: true);

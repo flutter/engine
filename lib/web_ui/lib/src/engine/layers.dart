@@ -206,7 +206,7 @@ class ImageFilterOperation implements LayerOperation {
       canvas.save();
       canvas.translate(offset.dx, offset.dy);
     }
-    final ui.Rect adjustedContentRect =
+    final adjustedContentRect =
       (filter as SceneImageFilter).filterBounds(contentRect);
     canvas.saveLayer(adjustedContentRect, ui.Paint()..imageFilter = filter);
   }
@@ -321,7 +321,7 @@ class TransformOperation implements LayerOperation {
 
   @override
   ui.Rect inverseMapRect(ui.Rect rect) {
-    final Matrix4 matrix = getMatrix()..invert();
+    final matrix = getMatrix()..invert();
     return matrix.transformRect(rect);
   }
 
@@ -432,7 +432,7 @@ mixin PictureEngineLayer implements ui.EngineLayer {
 
   @override
   void dispose() {
-    for (final LayerSlice slice in slices) {
+    for (final slice in slices) {
       slice.dispose();
     }
   }
@@ -490,8 +490,8 @@ class PlatformViewPosition {
     if (inner.isZero) {
       return outer;
     }
-    final ui.Offset? outerOffset = outer.offset;
-    final ui.Offset? innerOffset = inner.offset;
+    final outerOffset = outer.offset;
+    final innerOffset = inner.offset;
     if (outerOffset != null && innerOffset != null) {
       // Both positions are simple offsets, so they can be combined cheaply
       // into another offset.
@@ -607,8 +607,8 @@ class LayerBuilder {
   PlatformViewStyling? _memoizedPlatformViewStyling;
 
   PlatformViewStyling _createPlatformViewStyling() {
-    final PlatformViewStyling? innerStyling = operation?.createPlatformViewStyling();
-    final PlatformViewStyling? outerStyling = parent?.platformViewStyling;
+    final innerStyling = operation?.createPlatformViewStyling();
+    final outerStyling = parent?.platformViewStyling;
     if (innerStyling == null) {
       return outerStyling ?? const PlatformViewStyling();
     }
@@ -626,8 +626,8 @@ class LayerBuilder {
     if (debugRecorderFactory != null) {
       return debugRecorderFactory!(rect);
     }
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final SceneCanvas canvas = ui.Canvas(recorder, rect) as SceneCanvas;
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder, rect) as SceneCanvas;
     return (recorder, canvas);
   }
 
@@ -635,12 +635,12 @@ class LayerBuilder {
     if (pendingPictures.isNotEmpty) {
       // Merge the existing draw commands into a single picture and add a slice
       // with that picture to the slice list.
-      final ui.Rect drawnRect = picturesRect ?? ui.Rect.zero;
-      final ui.Rect rect = operation?.cullRect(drawnRect) ?? drawnRect;
+      final drawnRect = picturesRect ?? ui.Rect.zero;
+      final rect = operation?.cullRect(drawnRect) ?? drawnRect;
       final (ui.PictureRecorder recorder, SceneCanvas canvas) = _createRecorder(rect);
 
       operation?.pre(canvas, rect);
-      for (final PictureDrawCommand command in pendingPictures) {
+      for (final command in pendingPictures) {
         if (command.offset != ui.Offset.zero) {
           canvas.save();
           canvas.translate(command.offset.dx, command.offset.dy);
@@ -651,14 +651,14 @@ class LayerBuilder {
         }
       }
       operation?.post(canvas, rect);
-      final ui.Picture picture = recorder.endRecording();
+      final picture = recorder.endRecording();
       layer.slices.add(PictureSlice(picture as ScenePicture));
     }
 
     if (pendingPlatformViews.isNotEmpty) {
       // Take any pending platform views and lower them into a platform view
       // slice.
-      ui.Rect? occlusionRect = platformViewRect;
+      var occlusionRect = platformViewRect;
       if (occlusionRect != null && operation != null) {
         occlusionRect = operation!.inverseMapRect(occlusionRect);
       }
@@ -680,10 +680,10 @@ class LayerBuilder {
     bool isComplexHint = false,
     bool willChangeHint = false
   }) {
-    final ui.Rect cullRect = (picture as ScenePicture).cullRect;
-    final ui.Rect shiftedRect = cullRect.shift(offset);
+    final cullRect = (picture as ScenePicture).cullRect;
+    final shiftedRect = cullRect.shift(offset);
 
-    final ui.Rect? currentPlatformViewRect = platformViewRect;
+    final currentPlatformViewRect = platformViewRect;
     if (currentPlatformViewRect != null) {
       // Whenever we add a picture to our layer, we try to see if the picture
       // will overlap with any platform views that are currently on top of our
@@ -711,10 +711,10 @@ class LayerBuilder {
     double width = 0.0,
     double height = 0.0
   }) {
-    final ui.Rect bounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
+    final bounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
     platformViewRect = platformViewRect?.expandToInclude(bounds) ?? bounds;
-    final PlatformViewStyling layerStyling = platformViewStyling;
-    final PlatformViewStyling viewStyling = offset == ui.Offset.zero
+    final layerStyling = platformViewStyling;
+    final viewStyling = offset == ui.Offset.zero
       ? layerStyling
       : PlatformViewStyling.combine(
         layerStyling,
@@ -729,12 +729,12 @@ class LayerBuilder {
     // When we merge layers, we attempt to merge slices as much as possible as
     // well, based on ordering of pictures and platform views and reusing the
     // occlusion logic for determining where we can lower each picture.
-    for (final LayerSlice slice in layer.slices) {
+    for (final slice in layer.slices) {
       switch (slice) {
         case PictureSlice():
           addPicture(ui.Offset.zero, slice.picture);
         case PlatformViewSlice():
-          final ui.Rect? occlusionRect = slice.occlusionRect;
+          final occlusionRect = slice.occlusionRect;
           if (occlusionRect != null) {
             platformViewRect = platformViewRect?.expandToInclude(occlusionRect) ?? occlusionRect;
           }

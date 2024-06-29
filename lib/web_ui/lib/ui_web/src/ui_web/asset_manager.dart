@@ -42,10 +42,10 @@ class AssetManager {
   //
   // This warns the user and points them to the new initializeEngine style.
   String? get _deprecatedAssetBase {
-    final DomHTMLMetaElement? meta = domWindow.document
+    final meta = domWindow.document
         .querySelector('meta[name=assetBase]') as DomHTMLMetaElement?;
 
-    final String? fallbackBaseUrl = meta?.content;
+    final fallbackBaseUrl = meta?.content;
 
     if (fallbackBaseUrl != null) {
       // Warn users that they're using a deprecated configuration style...
@@ -87,8 +87,8 @@ class AssetManager {
 
   /// Loads an asset using an [XMLHttpRequest] and returns data as [ByteData].
   Future<ByteData> load(String asset) async {
-    final String url = getAssetUrl(asset);
-    final HttpFetchResponse response = await httpFetch(url);
+    final url = getAssetUrl(asset);
+    final response = await httpFetch(url);
 
     if (response.status == 404 && asset == 'AssetManifest.json') {
       printWarning('Asset manifest does not exist at `$url` - ignoring.');

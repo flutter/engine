@@ -28,18 +28,18 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/55930
   void testMaskFilterBlur({bool isWebkit = false}) {
-    final String browser = isWebkit ? 'Safari' : 'Chrome';
+    final browser = isWebkit ? 'Safari' : 'Chrome';
 
     test('renders MaskFilter.blur in $browser', () async {
-      const double screenWidth = 800.0;
-      const double screenHeight = 150.0;
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+      const screenWidth = 800.0;
+      const screenHeight = 150.0;
+      const screenRect = ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
       ContextStateHandle.debugEmulateWebKitMaskFilter = isWebkit;
-      final RecordingCanvas rc = RecordingCanvas(screenRect);
+      final rc = RecordingCanvas(screenRect);
       rc.translate(0, 75);
 
-      final SurfacePaint paint = SurfacePaint()
+      final paint = SurfacePaint()
           ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       rc.translate(50, 0);
@@ -116,18 +116,18 @@ Future<void> testMain() async {
     });
 
     test('renders transformed MaskFilter.blur in $browser', () async {
-      const double screenWidth = 300.0;
-      const double screenHeight = 300.0;
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+      const screenWidth = 300.0;
+      const screenHeight = 300.0;
+      const screenRect = ui.Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
       ContextStateHandle.debugEmulateWebKitMaskFilter = isWebkit;
-      final RecordingCanvas rc = RecordingCanvas(screenRect);
+      final rc = RecordingCanvas(screenRect);
       rc.translate(150, 150);
 
-      final SurfacePaint paint = SurfacePaint()
+      final paint = SurfacePaint()
           ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
-      const List<ui.Color> colors = <ui.Color>[
+      const colors = <ui.Color>[
         ui.Color(0xFF000000),
         ui.Color(0xFF00FF00),
         ui.Color(0xFF0000FF),
@@ -138,7 +138,7 @@ Future<void> testMain() async {
         ui.Color(0xFF6500C9),
       ];
 
-      for (final ui.Color color in colors) {
+      for (final color in colors) {
         paint.color = color;
         rc.rotate(math.pi / 4);
         rc.drawRect(
@@ -155,15 +155,15 @@ Future<void> testMain() async {
   testMaskFilterBlur();
   testMaskFilterBlur(isWebkit: true);
 
-  for (final int testDpr in <int>[1, 2, 4]) {
+  for (final testDpr in <int>[1, 2, 4]) {
     test('MaskFilter.blur blurs correctly for device-pixel ratio $testDpr', () async {
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(testDpr.toDouble());
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 150, 150);
+      const screenRect = ui.Rect.fromLTWH(0, 0, 150, 150);
 
-      final RecordingCanvas rc = RecordingCanvas(screenRect);
+      final rc = RecordingCanvas(screenRect);
       rc.translate(0, 75);
 
-      final SurfacePaint paint = SurfacePaint()
+      final paint = SurfacePaint()
           ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5);
 
       rc.translate(75, 0);

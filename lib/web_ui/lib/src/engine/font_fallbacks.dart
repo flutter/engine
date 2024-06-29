@@ -90,8 +90,8 @@ class FontFallbackManager {
     // one of our fallback fonts, and a cache of code points which are known not
     // to be covered by any fallback font. From the given text, construct a set
     // of code points which need to be checked.
-    final Set<int> runesToCheck = <int>{};
-    for (final int rune in text.runes) {
+    final runesToCheck = <int>{};
+    for (final rune in text.runes) {
       // Filter out code points that don't need checking.
       if (!(rune < 160 || // ASCII and Unicode control points.
           knownCoveredCodePoints.contains(rune) || // Points we've already covered
@@ -104,8 +104,8 @@ class FontFallbackManager {
       return;
     }
 
-    final List<int> codePoints = runesToCheck.toList();
-    final List<int> missingCodePoints =
+    final codePoints = runesToCheck.toList();
+    final missingCodePoints =
       registry.getMissingCodePoints(codePoints, fontFamilies);
 
     if (missingCodePoints.isNotEmpty) {
@@ -135,7 +135,7 @@ class FontFallbackManager {
     if (_codePointsToCheckAgainstFallbackFonts.isEmpty) {
       return;
     }
-    final List<int> codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
+    final codePoints = _codePointsToCheckAgainstFallbackFonts.toList();
     _codePointsToCheckAgainstFallbackFonts.clear();
     findFontsForMissingCodePoints(codePoints);
   }
@@ -165,15 +165,15 @@ class FontFallbackManager {
   /// [codePointsWithNoKnownFont] so it can be omitted next time to avoid
   /// searching for fonts unnecessarily.
   void findFontsForMissingCodePoints(List<int> codePoints) {
-    final List<int> missingCodePoints = <int>[];
+    final missingCodePoints = <int>[];
 
-    final List<FallbackFontComponent> requiredComponents =
+    final requiredComponents =
         <FallbackFontComponent>[];
-    final List<NotoFont> candidateFonts = <NotoFont>[];
+    final candidateFonts = <NotoFont>[];
 
     // Collect the components that cover the code points.
-    for (final int codePoint in codePoints) {
-      final FallbackFontComponent component =
+    for (final codePoint in codePoints) {
+      final component =
           codePointToComponents.lookup(codePoint);
       if (component.fonts.isEmpty) {
         missingCodePoints.add(codePoint);
@@ -187,8 +187,8 @@ class FontFallbackManager {
     }
 
     // Aggregate the component cover counts to the fonts that use the component.
-    for (final FallbackFontComponent component in requiredComponents) {
-      for (final NotoFont font in component.fonts) {
+    for (final component in requiredComponents) {
+      for (final font in component.fonts) {
         // A zero cover cover count means we have not yet seen this font.
         if (font.coverCount == 0) {
           candidateFonts.add(font);
@@ -198,19 +198,19 @@ class FontFallbackManager {
       }
     }
 
-    final List<NotoFont> selectedFonts = <NotoFont>[];
+    final selectedFonts = <NotoFont>[];
 
     while (candidateFonts.isNotEmpty) {
-      final NotoFont selectedFont = _selectFont(candidateFonts);
+      final selectedFont = _selectFont(candidateFonts);
       selectedFonts.add(selectedFont);
 
       // All the code points in the selected font are now covered. Zero out each
       // component that is used by the font and adjust the counts of other fonts
       // that use the same components.
-      for (final FallbackFontComponent component in <FallbackFontComponent>[
+      for (final component in <FallbackFontComponent>[
         ...selectedFont.coverComponents
       ]) {
-        for (final NotoFont font in component.fonts) {
+        for (final font in component.fonts) {
           font.coverCount -= component.coverCount;
           font.coverComponents.remove(component);
         }
@@ -239,11 +239,11 @@ class FontFallbackManager {
   }
 
   NotoFont _selectFont(List<NotoFont> fonts) {
-    int maxCodePointsCovered = -1;
-    final List<NotoFont> bestFonts = <NotoFont>[];
+    var maxCodePointsCovered = -1;
+    final bestFonts = <NotoFont>[];
     NotoFont? bestFont;
 
-    for (final NotoFont font in fonts) {
+    for (final font in fonts) {
       if (font.coverCount > maxCodePointsCovered) {
         bestFonts.clear();
         bestFonts.add(font);
@@ -269,7 +269,7 @@ class FontFallbackManager {
           font == _notoSansHK ||
           font == _notoSansJP ||
           font == _notoSansKR)) {
-        final String language = domWindow.navigator.language;
+        final language = domWindow.navigator.language;
 
         if (language == 'zh-Hans' ||
             language == 'zh-CN' ||
@@ -327,16 +327,16 @@ class FontFallbackManager {
   }
 
   List<NotoFont> _decodeFontSet(String data) {
-    final List<NotoFont> result = <NotoFont>[];
-    int previousIndex = -1;
-    int prefix = 0;
-    for (int i = 0; i < data.length; i++) {
-      final int code = data.codeUnitAt(i);
+    final result = <NotoFont>[];
+    var previousIndex = -1;
+    var prefix = 0;
+    for (var i = 0; i < data.length; i++) {
+      final code = data.codeUnitAt(i);
 
       if (kFontIndexDigit0 <= code &&
           code < kFontIndexDigit0 + kFontIndexRadix) {
-        final int delta = prefix * kFontIndexRadix + (code - kFontIndexDigit0);
-        final int index = previousIndex + delta + 1;
+        final delta = prefix * kFontIndexRadix + (code - kFontIndexDigit0);
+        final index = previousIndex + delta + 1;
         result.add(fallbackFonts[index]);
         previousIndex = index;
         prefix = 0;
@@ -358,20 +358,20 @@ class _UnicodePropertyLookup<P> {
     String packedData,
     List<P> propertyEnumValues,
   ) {
-    final List<int> boundaries = <int>[];
-    final List<P> values = <P>[];
+    final boundaries = <int>[];
+    final values = <P>[];
 
-    int start = 0;
-    int prefix = 0;
-    int size = 1;
+    var start = 0;
+    var prefix = 0;
+    var size = 1;
 
-    for (int i = 0; i < packedData.length; i++) {
-      final int code = packedData.codeUnitAt(i);
+    for (var i = 0; i < packedData.length; i++) {
+      final code = packedData.codeUnitAt(i);
       if (kRangeValueDigit0 <= code &&
           code < kRangeValueDigit0 + kRangeValueRadix) {
-        final int index =
+        final index =
             prefix * kRangeValueRadix + (code - kRangeValueDigit0);
-        final P value = propertyEnumValues[index];
+        final value = propertyEnumValues[index];
         start += size;
         boundaries.add(start);
         values.add(value);
@@ -422,7 +422,7 @@ class _UnicodePropertyLookup<P> {
       if (start == end) {
         return _values[start];
       }
-      final int mid = start + (end - start) ~/ 2;
+      final mid = start + (end - start) ~/ 2;
       if (value >= _boundaries[mid]) {
         start = mid + 1;
       } else {
@@ -434,10 +434,10 @@ class _UnicodePropertyLookup<P> {
   /// Iterate over the ranges, calling [action] with the start and end
   /// (inclusive) code points and value.
   void forEachRange(void Function(int start, int end, P value) action) {
-    int start = 0;
-    for (int i = 0; i < _boundaries.length; i++) {
-      final int end = _boundaries[i];
-      final P value = _values[i];
+    var start = 0;
+    for (var i = 0; i < _boundaries.length; i++) {
+      final end = _boundaries[i];
+      final value = _values[i];
       action(start, end - 1, value);
       start = end;
     }
@@ -473,7 +473,7 @@ class FallbackFontDownloadQueue {
     if (downloadedFonts.contains(font) || pendingFonts.containsKey(font.url)) {
       return;
     }
-    final bool firstInBatch = pendingFonts.isEmpty;
+    final firstInBatch = pendingFonts.isEmpty;
     pendingFonts[font.url] = font;
     _idleCompleter ??= Completer<void>();
     if (firstInBatch) {
@@ -482,12 +482,12 @@ class FallbackFontDownloadQueue {
   }
 
   Future<void> startDownloads() async {
-    final Map<String, Future<void>> downloads = <String, Future<void>>{};
-    final List<String> downloadedFontFamilies = <String>[];
-    for (final NotoFont font in pendingFonts.values) {
+    final downloads = <String, Future<void>>{};
+    final downloadedFontFamilies = <String>[];
+    for (final font in pendingFonts.values) {
       downloads[font.url] = Future<void>(() async {
         try {
-          final String url = '$fallbackFontUrlPrefix${font.url}';
+          final url = '$fallbackFontUrlPrefix${font.url}';
           debugOnLoadFontFamily?.call(font.name);
           await fallbackManager.registry.loadFallbackFont(font.name, url);
           downloadedFontFamilies.add(font.url);
@@ -508,8 +508,8 @@ class FallbackFontDownloadQueue {
     // change their precedence depending on the download order causing
     // visual differences between app reloads.
     downloadedFontFamilies.sort();
-    for (final String url in downloadedFontFamilies) {
-      final NotoFont font = pendingFonts.remove(url)!;
+    for (final url in downloadedFontFamilies) {
+      final font = pendingFonts.remove(url)!;
       fallbackManager.registerFallbackFont(font.name);
     }
 
@@ -517,7 +517,7 @@ class FallbackFontDownloadQueue {
       fallbackManager.registry
           .updateFallbackFontFamilies(fallbackManager.globalFontFallbacks);
       sendFontChangeMessage();
-      final Completer<void> idleCompleter = _idleCompleter!;
+      final idleCompleter = _idleCompleter!;
       _idleCompleter = null;
       idleCompleter.complete();
     } else {

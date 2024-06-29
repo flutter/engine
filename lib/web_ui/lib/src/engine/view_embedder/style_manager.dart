@@ -23,7 +23,7 @@ class StyleManager {
     required String? styleNonce,
     required String cssSelectorPrefix,
   }) {
-    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement(styleNonce);
+    final styleElement = createDomHTMLStyleElement(styleNonce);
     styleElement.id = styleId;
     // The style element must be appended to the DOM, or its `sheet` will be null later.
     node.appendChild(styleElement);

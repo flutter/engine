@@ -19,10 +19,10 @@ Future<void> testMain() async {
   );
 
   test('Should blur rectangles based on sigma.', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
-    for (int blurSigma = 1; blurSigma < 10; blurSigma += 2) {
-      final SurfacePaint paint = SurfacePaint()
+    for (var blurSigma = 1; blurSigma < 10; blurSigma += 2) {
+      final paint = SurfacePaint()
         ..color = const Color(0xFF2fdfd2)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, blurSigma.toDouble());
       rc.drawRect(Rect.fromLTWH(15.0, 15.0 + blurSigma * 40, 200, 20), paint);

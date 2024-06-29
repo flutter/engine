@@ -120,9 +120,9 @@ class PointerDataConverter {
     ui.PointerDataRespondCallback? onRespond,
   }) {
     assert(globalPointerState.pointers.containsKey(device));
-    final _PointerDeviceState state = globalPointerState.pointers[device]!;
-    final double deltaX = physicalX - state.x;
-    final double deltaY = physicalY - state.y;
+    final state = globalPointerState.pointers[device]!;
+    final deltaX = physicalX - state.x;
+    final deltaY = physicalY - state.y;
     state.x = physicalX;
     state.y = physicalY;
     return ui.PointerData(
@@ -161,7 +161,7 @@ class PointerDataConverter {
 
   bool _locationHasChanged(int device, double physicalX, double physicalY) {
     assert(globalPointerState.pointers.containsKey(device));
-    final _PointerDeviceState state = globalPointerState.pointers[device]!;
+    final state = globalPointerState.pointers[device]!;
     return state.x != physicalX || state.y != physicalY;
   }
 
@@ -193,9 +193,9 @@ class PointerDataConverter {
     required double scale,
   }) {
     assert(globalPointerState.pointers.containsKey(device));
-    final _PointerDeviceState state = globalPointerState.pointers[device]!;
-    final double deltaX = physicalX - state.x;
-    final double deltaY = physicalY - state.y;
+    final state = globalPointerState.pointers[device]!;
+    final deltaX = physicalX - state.x;
+    final deltaY = physicalY - state.y;
     state.x = physicalX;
     state.y = physicalY;
     return ui.PointerData(
@@ -270,7 +270,7 @@ class PointerDataConverter {
     if (_debugLogPointerConverter) {
       print('>> view=$viewId device=$device change=$change buttons=$buttons');
     }
-    final bool isDown = buttons != 0;
+    final isDown = buttons != 0;
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
       switch (change) {
@@ -309,7 +309,7 @@ class PointerDataConverter {
             )
           );
         case ui.PointerChange.hover:
-          final bool alreadyAdded = globalPointerState.pointers.containsKey(device);
+          final alreadyAdded = globalPointerState.pointers.containsKey(device);
           globalPointerState.ensurePointerDeviceState(device, physicalX, physicalY);
           assert(!isDown);
           if (!alreadyAdded) {
@@ -376,8 +376,8 @@ class PointerDataConverter {
           );
           globalPointerState.activeButtons = buttons;
         case ui.PointerChange.down:
-          final bool alreadyAdded = globalPointerState.pointers.containsKey(device);
-          final _PointerDeviceState state = globalPointerState.ensurePointerDeviceState(
+          final alreadyAdded = globalPointerState.pointers.containsKey(device);
+          final state = globalPointerState.ensurePointerDeviceState(
               device, physicalX, physicalY);
           assert(isDown);
           state.startNewPointer();
@@ -515,7 +515,7 @@ class PointerDataConverter {
         case ui.PointerChange.up:
         case ui.PointerChange.cancel:
           assert(globalPointerState.pointers.containsKey(device));
-          final _PointerDeviceState state = globalPointerState.pointers[device]!;
+          final state = globalPointerState.pointers[device]!;
           assert(!isDown);
           // Cancel events can have different coordinates due to various
           // reasons (window lost focus which is accompanied by window
@@ -626,7 +626,7 @@ class PointerDataConverter {
           }
         case ui.PointerChange.remove:
           assert(globalPointerState.pointers.containsKey(device));
-          final _PointerDeviceState state = globalPointerState.pointers[device]!;
+          final state = globalPointerState.pointers[device]!;
           assert(!isDown);
           result.add(
             _generateCompletePointerData(
@@ -670,7 +670,7 @@ class PointerDataConverter {
         case ui.PointerSignalKind.scroll:
         case ui.PointerSignalKind.scrollInertiaCancel:
         case ui.PointerSignalKind.scale:
-          final bool alreadyAdded = globalPointerState.pointers.containsKey(device);
+          final alreadyAdded = globalPointerState.pointers.containsKey(device);
           globalPointerState.ensurePointerDeviceState(device, physicalX, physicalY);
           if (!alreadyAdded) {
             // Synthesizes an add pointer data.

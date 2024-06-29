@@ -115,17 +115,17 @@ class FeltConfig {
   );
 
   factory FeltConfig.fromFile(String filePath) {
-    final io.File configFile = io.File(filePath);
-    final YamlMap yaml = loadYaml(configFile.readAsStringSync()) as YamlMap;
+    final configFile = io.File(filePath);
+    final yaml = loadYaml(configFile.readAsStringSync()) as YamlMap;
 
-    final List<CompileConfiguration> compileConfigs = <CompileConfiguration>[];
-    final Map<String, CompileConfiguration> compileConfigsByName = <String, CompileConfiguration>{};
+    final compileConfigs = <CompileConfiguration>[];
+    final compileConfigsByName = <String, CompileConfiguration>{};
     for (final dynamic node in yaml['compile-configs'] as YamlList) {
-      final YamlMap configYaml = node as YamlMap;
-      final String name = configYaml['name'] as String;
-      final Compiler compiler = Compiler.values.byName(configYaml['compiler'] as String);
-      final Renderer renderer = Renderer.values.byName(configYaml['renderer'] as String);
-      final CompileConfiguration config = CompileConfiguration(name, compiler, renderer);
+      final configYaml = node as YamlMap;
+      final name = configYaml['name'] as String;
+      final compiler = Compiler.values.byName(configYaml['compiler'] as String);
+      final renderer = Renderer.values.byName(configYaml['renderer'] as String);
+      final config = CompileConfiguration(name, compiler, renderer);
       compileConfigs.add(config);
       if (compileConfigsByName.containsKey(name)) {
         throw AssertionError('Duplicate compile config name: $name');
@@ -133,13 +133,13 @@ class FeltConfig {
       compileConfigsByName[name] = config;
     }
 
-    final List<TestSet> testSets = <TestSet>[];
-    final Map<String, TestSet> testSetsByName = <String, TestSet>{};
+    final testSets = <TestSet>[];
+    final testSetsByName = <String, TestSet>{};
     for (final dynamic node in yaml['test-sets'] as YamlList) {
-      final YamlMap testSetYaml = node as YamlMap;
-      final String name = testSetYaml['name'] as String;
-      final String directory = testSetYaml['directory'] as String;
-      final TestSet testSet = TestSet(name, directory);
+      final testSetYaml = node as YamlMap;
+      final name = testSetYaml['name'] as String;
+      final directory = testSetYaml['directory'] as String;
+      final testSet = TestSet(name, directory);
       testSets.add(testSet);
       if (testSetsByName.containsKey(name)) {
         throw AssertionError('Duplicate test set name: $name');
@@ -147,13 +147,13 @@ class FeltConfig {
       testSetsByName[name] = testSet;
     }
 
-    final List<TestBundle> testBundles = <TestBundle>[];
-    final Map<String, TestBundle> testBundlesByName = <String, TestBundle>{};
+    final testBundles = <TestBundle>[];
+    final testBundlesByName = <String, TestBundle>{};
     for (final dynamic node in yaml['test-bundles'] as YamlList) {
-      final YamlMap testBundleYaml = node as YamlMap;
-      final String name = testBundleYaml['name'] as String;
-      final String testSetName = testBundleYaml['test-set'] as String;
-      final TestSet? testSet = testSetsByName[testSetName];
+      final testBundleYaml = node as YamlMap;
+      final name = testBundleYaml['name'] as String;
+      final testSetName = testBundleYaml['test-set'] as String;
+      final testSet = testSetsByName[testSetName];
       if (testSet == null) {
         throw AssertionError('Test set not found with name: `$testSetName` (referenced by test bundle: `$name`)');
       }
@@ -166,7 +166,7 @@ class FeltConfig {
           (dynamic configName) => compileConfigsByName[configName as String]!
         ).toList();
       }
-      final TestBundle bundle = TestBundle(name, testSet, compileConfigs);
+      final bundle = TestBundle(name, testSet, compileConfigs);
       testBundles.add(bundle);
       if (testBundlesByName.containsKey(name)) {
         throw AssertionError('Duplicate test bundle name: $name');
@@ -174,17 +174,17 @@ class FeltConfig {
       testBundlesByName[name] = bundle;
     }
 
-    final List<RunConfiguration> runConfigs = <RunConfiguration>[];
-    final Map<String, RunConfiguration> runConfigsByName = <String, RunConfiguration>{};
+    final runConfigs = <RunConfiguration>[];
+    final runConfigsByName = <String, RunConfiguration>{};
     for (final dynamic node in yaml['run-configs'] as YamlList) {
-      final YamlMap runConfigYaml = node as YamlMap;
-      final String name = runConfigYaml['name'] as String;
-      final BrowserName browser = BrowserName.values.byName(runConfigYaml['browser'] as String);
+      final runConfigYaml = node as YamlMap;
+      final name = runConfigYaml['name'] as String;
+      final browser = BrowserName.values.byName(runConfigYaml['browser'] as String);
       final dynamic variantNode = runConfigYaml['canvaskit-variant'];
-      final CanvasKitVariant? variant = variantNode == null
+      final variant = variantNode == null
         ? null
         : CanvasKitVariant.values.byName(variantNode as String);
-      final RunConfiguration runConfig = RunConfiguration(name, browser, variant);
+      final runConfig = RunConfiguration(name, browser, variant);
       runConfigs.add(runConfig);
       if (runConfigsByName.containsKey(name)) {
         throw AssertionError('Duplicate run config name: $name');
@@ -192,23 +192,23 @@ class FeltConfig {
       runConfigsByName[name] = runConfig;
     }
 
-    final List<TestSuite> testSuites = <TestSuite>[];
+    final testSuites = <TestSuite>[];
     for (final dynamic node in yaml['test-suites'] as YamlList) {
-      final YamlMap testSuiteYaml = node as YamlMap;
-      final String name = testSuiteYaml['name'] as String;
-      final String testBundleName = testSuiteYaml['test-bundle'] as String;
-      final TestBundle? bundle = testBundlesByName[testBundleName];
+      final testSuiteYaml = node as YamlMap;
+      final name = testSuiteYaml['name'] as String;
+      final testBundleName = testSuiteYaml['test-bundle'] as String;
+      final bundle = testBundlesByName[testBundleName];
       if (bundle == null) {
         throw AssertionError('Test bundle not found with name: `$testBundleName` (referenced by test suite: `$name`)');
       }
-      final String runConfigName = testSuiteYaml['run-config'] as String;
-      final RunConfiguration? runConfig = runConfigsByName[runConfigName];
+      final runConfigName = testSuiteYaml['run-config'] as String;
+      final runConfig = runConfigsByName[runConfigName];
       if (runConfig == null) {
         throw AssertionError('Run config not found with name: `$runConfigName` (referenced by test suite: `$name`)');
       }
-      bool canvasKit = false;
-      bool canvasKitChromium = false;
-      bool skwasm = false;
+      var canvasKit = false;
+      var canvasKitChromium = false;
+      var skwasm = false;
       final dynamic depsNode = testSuiteYaml['artifact-deps'];
       if (depsNode != null) {
         for (final dynamic dep in depsNode as YamlList) {
@@ -233,12 +233,12 @@ class FeltConfig {
           }
         }
       }
-      final ArtifactDependencies artifactDeps = ArtifactDependencies(
+      final artifactDeps = ArtifactDependencies(
         canvasKit: canvasKit,
         canvasKitChromium: canvasKitChromium,
         skwasm: skwasm
       );
-      final TestSuite suite = TestSuite(name, bundle, runConfig, artifactDeps);
+      final suite = TestSuite(name, bundle, runConfig, artifactDeps);
       testSuites.add(suite);
     }
     return FeltConfig(compileConfigs, testSets, testBundles, runConfigs, testSuites);

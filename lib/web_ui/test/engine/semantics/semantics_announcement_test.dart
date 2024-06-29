@@ -19,7 +19,7 @@ void testMain() {
   late AccessibilityAnnouncements accessibilityAnnouncements;
 
   setUp(() {
-    final DomElement announcementsHost = createDomElement('flt-announcement-host');
+    final announcementsHost = createDomElement('flt-announcement-host');
     accessibilityAnnouncements = AccessibilityAnnouncements(hostElement: announcementsHost);
     setLiveMessageDurationForTest(const Duration(milliseconds: 10));
     expect(

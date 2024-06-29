@@ -29,7 +29,7 @@ void testMain() {
 }
 
 void _profilerTests() {
-  final List<String> warnings = <String>[];
+  final warnings = <String>[];
   late void Function(String) oldPrintWarning;
 
   setUpAll(() {
@@ -60,7 +60,7 @@ void _profilerTests() {
   });
 
   test('can listen to benchmarks', () {
-    final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
+    final data = <BenchmarkDatapoint>[];
     ui_web.benchmarkValueCallback = (String name, double value) {
       data.add((name, value));
     };
@@ -84,7 +84,7 @@ void _profilerTests() {
   // https://github.com/flutter/flutter/issues/127395
   group('[JS API]', () {
     test('can listen to benchmarks', () {
-      final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
+      final data = <BenchmarkDatapoint>[];
       jsBenchmarkValueCallback = (String name, double value) {
         data.add((name, value));
       }.toJS;
@@ -111,7 +111,7 @@ void _profilerTests() {
     });
 
     test('throws on wrong listener type', () {
-      final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
+      final data = <BenchmarkDatapoint>[];
 
       // Wrong callback signature.
       jsBenchmarkValueCallback = (double value) {
@@ -137,8 +137,8 @@ void _profilerTests() {
     });
 
     test('can be combined with ui_web API', () {
-      final List<BenchmarkDatapoint> uiWebData = <BenchmarkDatapoint>[];
-      final List<BenchmarkDatapoint> jsData = <BenchmarkDatapoint>[];
+      final uiWebData = <BenchmarkDatapoint>[];
+      final jsData = <BenchmarkDatapoint>[];
 
       ui_web.benchmarkValueCallback = (String name, double value) {
         uiWebData.add((name, value));
@@ -189,16 +189,16 @@ void _instrumentationTests() {
 
   test('when disabled throws instead of incrementing counter', () {
     Instrumentation.enabled = true;
-    final Instrumentation instrumentation = Instrumentation.instance;
+    final instrumentation = Instrumentation.instance;
     Instrumentation.enabled = false;
     expect(() => instrumentation.incrementCounter('test'), throwsStateError);
   });
 
   test('when enabled increments counter', () {
-    final ZoneSpy spy = ZoneSpy();
+    final spy = ZoneSpy();
     spy.run(() {
       Instrumentation.enabled = true;
-      final Instrumentation instrumentation = Instrumentation.instance;
+      final instrumentation = Instrumentation.instance;
       expect(instrumentation.debugPrintTimer, isNull);
       instrumentation.incrementCounter('foo');
       expect(instrumentation.debugPrintTimer, isNotNull);

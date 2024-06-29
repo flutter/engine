@@ -21,8 +21,8 @@ Future<void> testMain() async {
   );
 
   test('empty paragraph', () {
-    const double fontSize = 10.0;
-    final ui.Paragraph paragraph = ui.ParagraphBuilder(ui.ParagraphStyle(
+    const fontSize = 10.0;
+    final paragraph = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontSize: fontSize,
     )).build();
     paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
@@ -33,15 +33,15 @@ Future<void> testMain() async {
   }, skip: isHtml); // https://github.com/flutter/flutter/issues/144412
 
   test('Basic line related metrics', () {
-    const double fontSize = 10;
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
+    const fontSize = 10;
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontStyle: ui.FontStyle.normal,
       fontWeight: ui.FontWeight.normal,
       fontSize: fontSize,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100.0));
 
     expect(paragraph.numberOfLines, 1);
@@ -58,22 +58,22 @@ Future<void> testMain() async {
   });
 
   test('respects paragraph height', () {
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontSize: 10,
       height: 1.5,
     ))..addText('A' * 10);
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 
     expect(paragraph.numberOfLines, 1);
-    final ui.LineMetrics? metrics = paragraph.getLineMetricsAt(0);
+    final metrics = paragraph.getLineMetricsAt(0);
     expect(metrics, isNotNull);
     expect(metrics!.height, 15);
   });
 
   test('Basic glyph metrics', () {
-    const double fontSize = 10;
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
+    const fontSize = 10;
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontStyle: ui.FontStyle.normal,
       fontWeight: ui.FontWeight.normal,
       fontFamily: 'FlutterTest',
@@ -81,7 +81,7 @@ Future<void> testMain() async {
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 100.0));
 
     expect(paragraph.getGlyphInfoAt(-1), isNull);
@@ -94,16 +94,16 @@ Future<void> testMain() async {
   });
 
   test('Basic glyph metrics - hit test', () {
-    const double fontSize = 10.0;
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle(
+    const fontSize = 10.0;
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontSize: fontSize,
       fontFamily: 'FlutterTest',
     ))..addText('Test\nTest');
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 
-    final ui.GlyphInfo? bottomRight = paragraph.getClosestGlyphInfoForOffset(const ui.Offset(99.0, 99.0));
-    final ui.GlyphInfo? last = paragraph.getGlyphInfoAt(8);
+    final bottomRight = paragraph.getClosestGlyphInfoForOffset(const ui.Offset(99.0, 99.0));
+    final last = paragraph.getGlyphInfoAt(8);
     expect(bottomRight, equals(last));
     expect(bottomRight, isNot(paragraph.getGlyphInfoAt(0)));
 
@@ -113,14 +113,14 @@ Future<void> testMain() async {
   });
 
   test('rounding hack is always disabled', () {
-    const double fontSize = 1.25;
-    const String text = '12345';
+    const fontSize = 1.25;
+    const text = '12345';
     assert((fontSize * text.length).truncate() != fontSize * text.length);
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(
+    final builder = ui.ParagraphBuilder(
       ui.ParagraphStyle(fontSize: fontSize, fontFamily: 'FlutterTest'),
     );
     builder.addText(text);
-    final ui.Paragraph paragraph = builder.build()
+    final paragraph = builder.build()
       ..layout(const ui.ParagraphConstraints(width: text.length * fontSize));
 
     expect(paragraph.maxIntrinsicWidth, text.length * fontSize);
@@ -133,19 +133,19 @@ Future<void> testMain() async {
   }, skip: isHtml); // The rounding hack doesn't apply to the html renderer
 
   test('overrides with flutter test font when debugEmulateFlutterTesterEnvironment is enabled', () {
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 10.0,
       fontFamily: 'Roboto',
     ));
     builder.addText('XXXX');
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 400));
 
     expect(paragraph.numberOfLines, 1);
     expect(paragraph.height, 10);
 
-    final ui.LineMetrics? metrics = paragraph.getLineMetricsAt(0);
+    final metrics = paragraph.getLineMetricsAt(0);
     expect(metrics, isNotNull);
 
     // FlutterTest font's 'X' character is a square, so it's the font size (10.0) * 4 characters.
@@ -153,18 +153,18 @@ Future<void> testMain() async {
   });
 
   test('uses flutter test font by default when debugEmulateFlutterTesterEnvironment is enabled', () {
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 10.0,
     ));
     builder.addText('XXXX');
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 400));
 
     expect(paragraph.numberOfLines, 1);
     expect(paragraph.height, 10);
 
-    final ui.LineMetrics? metrics = paragraph.getLineMetricsAt(0);
+    final metrics = paragraph.getLineMetricsAt(0);
     expect(metrics, isNotNull);
 
     // FlutterTest font's 'X' character is a square, so it's the font size (10.0) * 4 characters.
@@ -174,18 +174,18 @@ Future<void> testMain() async {
   test('uses specified font when debugEmulateFlutterTesterEnvironment is disabled', () {
     debugEmulateFlutterTesterEnvironment = false;
 
-    final ui.ParagraphBuilder builder = ui.ParagraphBuilder(ui.ParagraphStyle());
+    final builder = ui.ParagraphBuilder(ui.ParagraphStyle());
     builder.pushStyle(ui.TextStyle(
       fontSize: 16.0,
       fontFamily: 'Roboto',
     ));
     builder.addText('O');
-    final ui.Paragraph paragraph = builder.build();
+    final paragraph = builder.build();
     paragraph.layout(const ui.ParagraphConstraints(width: 400));
 
     expect(paragraph.numberOfLines, 1);
 
-    final ui.LineMetrics? metrics = paragraph.getLineMetricsAt(0);
+    final metrics = paragraph.getLineMetricsAt(0);
     expect(metrics, isNotNull);
 
     // In Roboto, the width should be 11 here. In the test font, it would be square (16 points)

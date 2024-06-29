@@ -92,16 +92,16 @@ class HtmlImage implements ui.Image {
       // The format rawRgba always returns straight rather than premul currently.
       case ui.ImageByteFormat.rawRgba:
       case ui.ImageByteFormat.rawStraightRgba:
-        final DomCanvasElement canvas = createDomCanvasElement()
+        final canvas = createDomCanvasElement()
           ..width = width.toDouble()
           ..height = height.toDouble();
-        final DomCanvasRenderingContext2D ctx = canvas.context2D;
+        final ctx = canvas.context2D;
         ctx.drawImage(imgElement, 0, 0);
-        final DomImageData imageData = ctx.getImageData(0, 0, width, height);
+        final imageData = ctx.getImageData(0, 0, width, height);
         return Future<ByteData?>.value(imageData.data.buffer.asByteData());
       default:
         if (imgElement.src?.startsWith('data:') ?? false) {
-          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
+          final data = UriData.fromUri(Uri.parse(imgElement.src!));
           return Future<ByteData?>.value(
               data.contentAsBytes().buffer.asByteData());
         } else {

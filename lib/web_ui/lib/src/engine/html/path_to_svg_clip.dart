@@ -32,16 +32,16 @@ SVGSVGElement pathToSvgClipPath(ui.Path path,
     double scaleX = 1.0,
     double scaleY = 1.0}) {
   _clipIdCounter += 1;
-  final SVGSVGElement root = kSvgResourceHeader.cloneNode(false) as SVGSVGElement;
-  final SVGDefsElement defs = createSVGDefsElement();
+  final root = kSvgResourceHeader.cloneNode(false) as SVGSVGElement;
+  final defs = createSVGDefsElement();
   root.append(defs);
 
-  final String clipId = 'svgClip$_clipIdCounter';
-  final SVGClipPathElement clipPath = createSVGClipPathElement();
+  final clipId = 'svgClip$_clipIdCounter';
+  final clipPath = createSVGClipPathElement();
   defs.append(clipPath);
   clipPath.id = clipId;
 
-  final SVGPathElement svgPath = createSVGPathElement();
+  final svgPath = createSVGPathElement();
   clipPath.append(svgPath);
   svgPath.setAttribute('fill', '#FFFFFF');
 

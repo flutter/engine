@@ -457,7 +457,7 @@ extension DomEventExtension on DomEvent {
 }
 
 DomEvent createDomEvent(String type, String name) {
-  final DomEvent event = domDocument.createEvent(type);
+  final event = domDocument.createEvent(type);
   event.initEvent(name, true, true);
   return event;
 }
@@ -514,7 +514,7 @@ extension DomNodeExtension on DomNode {
   external DomNode insertBefore(DomNode newNode, DomNode? referenceNode);
   void remove() {
     if (parentNode != null) {
-      final DomNode parent = parentNode!;
+      final parent = parentNode!;
       parent.removeChild(this);
     }
   }
@@ -662,7 +662,7 @@ extension DomElementExtension on DomElement {
   external JSVoid _focus(JSAny options);
 
   void focus({bool? preventScroll, bool? focusVisible}) {
-    final Map<String, bool> options = <String, bool>{
+    final options = <String, bool>{
       if (preventScroll != null) 'preventScroll': preventScroll,
       if (focusVisible != null) 'focusVisible': focusVisible,
     };
@@ -1006,7 +1006,7 @@ extension DomHTMLScriptElementExtension on DomHTMLScriptElement {
 }
 
 DomHTMLScriptElement createDomHTMLScriptElement(String? nonce) {
-  final DomHTMLScriptElement script =
+  final script =
       domDocument.createElement('script') as DomHTMLScriptElement;
   if (nonce != null) {
     script.nonce = nonce;
@@ -1063,7 +1063,7 @@ extension DomHTMLStyleElementExtension on DomHTMLStyleElement {
 }
 
 DomHTMLStyleElement createDomHTMLStyleElement(String? nonce) {
-  final DomHTMLStyleElement style =
+  final style =
       domDocument.createElement('style') as DomHTMLStyleElement;
   if (nonce != null) {
     style.nonce = nonce;
@@ -1114,7 +1114,7 @@ void debugResetCanvasCount() {
 
 DomCanvasElement createDomCanvasElement({int? width, int? height}) {
   debugCanvasCount++;
-  final DomCanvasElement canvas =
+  final canvas =
       domWindow.document.createElement('canvas') as DomCanvasElement;
   if (width != null) {
     canvas.width = width.toDouble();
@@ -1585,14 +1585,14 @@ MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
 /// [httpFetchText] instead.
 Future<HttpFetchResponse> httpFetch(String url) async {
   if (mockHttpFetchResponseFactory != null) {
-    final MockHttpFetchResponse? response =
+    final response =
         await mockHttpFetchResponseFactory!(url);
     if (response != null) {
       return response;
     }
   }
   try {
-    final DomResponse domResponse = await rawHttpGet(url);
+    final domResponse = await rawHttpGet(url);
     return HttpFetchResponseImpl._(url, domResponse);
   } catch (requestError) {
     throw HttpFetchError(url, requestError: requestError);
@@ -1618,7 +1618,7 @@ Future<DomResponse> _rawHttpPost(String url, String data) =>
 @visibleForTesting
 Future<HttpFetchResponse> testOnlyHttpPost(String url, String data) async {
   try {
-    final DomResponse domResponse = await _rawHttpPost(url, data);
+    final domResponse = await _rawHttpPost(url, data);
     return HttpFetchResponseImpl._(url, domResponse);
   } catch (requestError) {
     throw HttpFetchError(url, requestError: requestError);
@@ -1628,21 +1628,21 @@ Future<HttpFetchResponse> testOnlyHttpPost(String url, String data) async {
 /// Convenience function for making a fetch request and getting the data as a
 /// [ByteBuffer], when the default error handling mechanism is sufficient.
 Future<ByteBuffer> httpFetchByteBuffer(String url) async {
-  final HttpFetchResponse response = await httpFetch(url);
+  final response = await httpFetch(url);
   return response.asByteBuffer();
 }
 
 /// Convenience function for making a fetch request and getting the data as a
 /// JSON object, when the default error handling mechanism is sufficient.
 Future<Object?> httpFetchJson(String url) async {
-  final HttpFetchResponse response = await httpFetch(url);
+  final response = await httpFetch(url);
   return response.json();
 }
 
 /// Convenience function for making a fetch request and getting the data as a
 /// [String], when the default error handling mechanism is sufficient.
 Future<String> httpFetchText(String url) async {
-  final HttpFetchResponse response = await httpFetch(url);
+  final response = await httpFetch(url);
   return response.text();
 }
 
@@ -1718,7 +1718,7 @@ class HttpFetchResponseImpl implements HttpFetchResponse {
 
   @override
   int? get contentLength {
-    final String? header = _domResponse.headers.get('Content-Length');
+    final header = _domResponse.headers.get('Content-Length');
     if (header == null) {
       return null;
     }
@@ -1727,10 +1727,10 @@ class HttpFetchResponseImpl implements HttpFetchResponse {
 
   @override
   bool get hasPayload {
-    final bool accepted = status >= 200 && status < 300;
-    final bool fileUri = status == 0;
-    final bool notModified = status == 304;
-    final bool unknownRedirect = status > 307 && status < 400;
+    final accepted = status >= 200 && status < 300;
+    final fileUri = status == 0;
+    final notModified = status == 304;
+    final unknownRedirect = status > 307 && status < 400;
     return accepted || fileUri || notModified || unknownRedirect;
   }
 
@@ -1797,11 +1797,11 @@ class HttpFetchPayloadImpl implements HttpFetchPayload {
 
   @override
   Future<void> read<T>(HttpFetchReader<T> callback) async {
-    final _DomReadableStream stream = _domResponse.body;
-    final _DomStreamReader reader = stream.getReader();
+    final stream = _domResponse.body;
+    final reader = stream.getReader();
 
     while (true) {
-      final _DomStreamChunk chunk = await reader.read();
+      final chunk = await reader.read();
       if (chunk.done) {
         break;
       }
@@ -1838,11 +1838,11 @@ class MockHttpFetchPayload implements HttpFetchPayload {
 
   @override
   Future<void> read<T>(HttpFetchReader<T> callback) async {
-    final int totalLength = _byteBuffer.lengthInBytes;
-    int currentIndex = 0;
+    final totalLength = _byteBuffer.lengthInBytes;
+    var currentIndex = 0;
     while (currentIndex < totalLength) {
       final int chunkSize = math.min(_chunkSize, totalLength - currentIndex);
-      final Uint8List chunk = Uint8List.sublistView(
+      final chunk = Uint8List.sublistView(
           _byteBuffer.asByteData(), currentIndex, currentIndex + chunkSize);
       callback(chunk.toJS as T);
       currentIndex += chunkSize;
@@ -2051,9 +2051,9 @@ extension DomRectReadOnlyExtension on DomRectReadOnly {
 
 DomRect createDomRectFromPoints(DomPoint a, DomPoint b) {
   final num left = math.min(a.x, b.x);
-  final num width = math.max(a.x, b.x) - left;
+  final width = math.max(a.x, b.x) - left;
   final num top = math.min(a.y, b.y);
-  final num height = math.max(a.y, b.y) - top;
+  final height = math.max(a.y, b.y) - top;
   return DomRect(left.toJS, top.toJS, width.toJS, height.toJS);
 }
 
@@ -2418,7 +2418,7 @@ extension DomMutationObserverExtension on DomMutationObserver {
   external JSVoid _observe(DomNode target, JSAny options);
   void observe(DomNode target,
       {bool? childList, bool? attributes, List<String>? attributeFilter}) {
-    final Map<String, dynamic> options = <String, dynamic>{
+    final options = <String, dynamic>{
       if (childList != null) 'childList': childList,
       if (attributes != null) 'attributes': attributes,
       if (attributeFilter != null) 'attributeFilter': attributeFilter
@@ -2435,7 +2435,7 @@ extension DomMutationRecordExtension on DomMutationRecord {
   @JS('addedNodes')
   external _DomList? get _addedNodes;
   Iterable<DomNode>? get addedNodes {
-    final _DomList? list = _addedNodes;
+    final list = _addedNodes;
     if (list == null) {
       return null;
     }
@@ -2445,7 +2445,7 @@ extension DomMutationRecordExtension on DomMutationRecord {
   @JS('removedNodes')
   external _DomList? get _removedNodes;
   Iterable<DomNode>? get removedNodes {
-    final _DomList? list = _removedNodes;
+    final list = _removedNodes;
     if (list == null) {
       return null;
     }
@@ -3388,7 +3388,7 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
   DomTrustedTypePolicyOptions(
       // Validates the given [url].
       createScriptURL: (JSString url) {
-    final Uri uri = Uri.parse(url.toDart);
+    final uri = Uri.parse(url.toDart);
     if (_expectedFilesForTT.contains(uri.pathSegments.last)) {
       return uri.toString().toJS;
     }
@@ -3405,7 +3405,7 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
+    final trustedUrl = _ttPolicy.createScriptURL(url);
 
     assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
@@ -3570,7 +3570,7 @@ class DomSegments {}
 
 extension DomSegmentsExtension on DomSegments {
   DomIteratorWrapper<DomSegment> iterator() {
-    final DomIterator segmentIterator = js_util
+    final segmentIterator = js_util
         .callMethod(this, domSymbol.iterator, const <Object?>[]) as DomIterator;
     return DomIteratorWrapper<DomSegment>(segmentIterator);
   }
@@ -3609,7 +3609,7 @@ class DomIteratorWrapper<T> implements Iterator<T> {
 
   @override
   bool moveNext() {
-    final DomIteratorResult result = _iterator.next();
+    final result = _iterator.next();
     if (result.done) {
       return false;
     }
