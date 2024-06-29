@@ -424,6 +424,9 @@ class PlatformView {
   ///
   void DispatchPlatformMessage(std::unique_ptr<PlatformMessage> message);
 
+  void AddPlatformPortCallback(
+      std::unique_ptr<PlatformListenerDartPort> callback);
+
   //----------------------------------------------------------------------------
   /// @brief      Overridden by embedders to perform actions in response to
   ///             platform messages sent from the framework to the embedder.

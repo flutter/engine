@@ -71,6 +71,10 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  void addPlatformPortCallback(String name, Object port);
+
+  void removePlatformPortCallback(String name);
+
   void sendPortPlatformMessage(
     String name,
     ByteData? data,
@@ -81,6 +85,8 @@ abstract class PlatformDispatcher {
 
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
+
+  void dispachPlatformMessageFromIsolate(String name, ByteData? data, int responseId);
 
   void setIsolateDebugName(String name) {}
 

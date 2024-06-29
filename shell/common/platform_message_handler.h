@@ -42,6 +42,19 @@ class PlatformMessageHandler {
   /// HandlePlatformMessage where there is no return value.
   /// This method should be thread-safe and able to be invoked on any thread.
   virtual void InvokePlatformMessageEmptyResponseCallback(int response_id) = 0;
+
+  virtual bool AddPlatformPortCallback(int64_t port,
+                                       const std::string& channel) {
+    return false;
+  };
+  virtual bool RemovePlatformPortCallback(const std::string& channel) {
+    return false;
+  };
+
+  virtual void SendToPlatformPortCallbackResponse(
+      int response_id,
+      std::unique_ptr<fml::Mapping> mapping) {};
+  virtual void SendToPlatformPortCallbackResponseEmpty(int response_id) {};
 };
 }  // namespace flutter
 

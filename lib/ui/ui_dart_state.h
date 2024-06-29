@@ -125,6 +125,11 @@ class UIDartState : public tonic::DartState {
 
   Dart_Handle HandlePlatformMessage(std::unique_ptr<PlatformMessage> message);
 
+  Dart_Handle AddPlatformPortCallback(int64_t port, const std::string& channel);
+  Dart_Handle RemovePlatformPortCallback(const std::string& channel);
+  void RespondToPlatformCallback(int response_id, std::vector<uint8_t> data);
+  void RespondToPlatformCallbackEmpty(int response_id);
+
   const TaskRunners& GetTaskRunners() const;
 
   void ScheduleMicrotask(Dart_Handle handle);

@@ -206,15 +206,31 @@ void PlatformViewAndroid::DispatchPlatformMessage(JNIEnv* env,
   fml::MallocMapping message =
       fml::MallocMapping::Copy(message_data, java_message_position);
 
+  // ToDo find way to re use message_data from above
+  auto mapping_uptr =
+      std::make_unique<fml::MallocMapping>(fml::MallocMapping::Copy(
+          message_data, message_data + java_message_position));
+
   fml::RefPtr<flutter::PlatformMessageResponse> response;
   if (response_id) {
     response = fml::MakeRefCounted<PlatformMessageResponseAndroid>(
         response_id, jni_facade_, task_runners_.GetPlatformTaskRunner());
   }
 
-  PlatformView::DispatchPlatformMessage(
-      std::make_unique<flutter::PlatformMessage>(
-          std::move(name), std::move(message), std::move(response)));
+  bool sent_via_platform =
+      platform_message_handler_->SendToPlatformPortCallback(
+          name, std::move(mapping_uptr), response_id, response);
+
+  if (!sent_via_platform) {
+    FML_LOG(INFO) << "PlatformViewAndroid::DispatchPlatformMessage "
+                  << response_id << " sent via PlatformView";
+    PlatformView::DispatchPlatformMessage(
+        std::make_unique<flutter::PlatformMessage>(
+            std::move(name), std::move(message), std::move(response)));
+  } else {
+    FML_LOG(INFO) << "PlatformViewAndroid::DispatchPlatformMessage "
+                  << response_id << " sent via isolate ports";
+  }
 }
 
 void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
@@ -226,9 +242,15 @@ void PlatformViewAndroid::DispatchEmptyPlatformMessage(JNIEnv* env,
         response_id, jni_facade_, task_runners_.GetPlatformTaskRunner());
   }
 
-  PlatformView::DispatchPlatformMessage(
-      std::make_unique<flutter::PlatformMessage>(std::move(name),
-                                                 std::move(response)));
+  bool sent_via_platform =
+      platform_message_handler_->SendToPlatformPortCallbackEmpty(
+          name, response_id, response);
+
+  if (!sent_via_platform) {
+    PlatformView::DispatchPlatformMessage(
+        std::make_unique<flutter::PlatformMessage>(std::move(name),
+                                                   std::move(response)));
+  }
 }
 
 // |PlatformView|
