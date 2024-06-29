@@ -724,6 +724,14 @@ void DlDispatcherBase::clipRect(const SkRect& rect,
 }
 
 // |flutter::DlOpReceiver|
+void DlDispatcherBase::clipOval(const SkRect& bounds,
+                                ClipOp clip_op,
+                                bool is_aa) {
+  GetCanvas().ClipOval(skia_conversions::ToRect(bounds),
+                       ToClipOperation(clip_op));
+}
+
+// |flutter::DlOpReceiver|
 void DlDispatcherBase::clipRRect(const SkRRect& rrect,
                                  ClipOp sk_op,
                                  bool is_aa) {
@@ -1313,10 +1321,12 @@ void TextFrameDispatcher::drawTextFrame(
   if (text_frame->HasColor()) {
     properties.color = paint_.color;
   }
-  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,                    //
-                                              matrix_.GetMaxBasisLengthXY(),  //
-                                              Point(x, y),                    //
-                                              properties                      //
+  auto scale =
+      (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,  //
+                                              scale,        //
+                                              Point(x, y),  //
+                                              properties    //
   );
 }
 
