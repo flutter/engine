@@ -21,6 +21,12 @@ class Link extends PrimaryRoleManager {
     // TODO(mdebbar): Fill in the real link once the framework sends entire uri.
     // https://github.com/flutter/flutter/issues/150263.
     element.style.display = 'block';
+    // Prevent the default action of clicking the anchor tag, which is to
+    // navigate to the href. Instead the click action is handled by the
+    // framework.
+    element.addEventListener('click', createDomEventListener((DomEvent event) {
+      event.preventDefault();
+    }));
     return element;
   }
 
