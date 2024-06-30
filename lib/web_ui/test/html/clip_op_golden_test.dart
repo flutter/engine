@@ -60,8 +60,8 @@ Future<void> testMain() async {
 
     for (var i = 0; i < 3; i++) {
       for (var j = 0; j < 3; j++) {
-        final x = 10 + i * 70;
-        final y = 10 + j * 70;
+        final x = 10.0 + i * 70;
+        final y = 10.0 + j * 70;
         canvas.save();
         // Clip.
         canvas.clipRect(

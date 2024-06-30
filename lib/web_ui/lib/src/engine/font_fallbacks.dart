@@ -417,7 +417,7 @@ class _UnicodePropertyLookup<P> {
   P lookup(int value) {
     assert(0 <= value && value <= kMaxCodePoint);
     assert(_boundaries.last == kMaxCodePoint + 1);
-    int start = 0, end = _boundaries.length;
+    var start = 0, end = _boundaries.length;
     while (true) {
       if (start == end) {
         return _values[start];

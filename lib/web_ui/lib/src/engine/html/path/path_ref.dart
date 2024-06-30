@@ -499,7 +499,7 @@ class PathRef {
     startEdit();
     _resizePoints(newPointCount);
     final sourcePoints = source.points;
-    for (int source = pointCount * 2 - 1, dst = newPointCount * 2 - 1;
+    for (var source = pointCount * 2 - 1, dst = newPointCount * 2 - 1;
         source >= 0;
         source--, dst--) {
       fPoints[dst] = sourcePoints[source];
@@ -570,7 +570,7 @@ class PathRef {
     final pointCount = countPoints();
     fBoundsIsDirty = false;
     cachedBounds = null;
-    var accum = 0;
+    var accum = 0.0;
     if (pointCount == 0) {
       fBounds = ui.Rect.zero;
       fIsFinite = true;

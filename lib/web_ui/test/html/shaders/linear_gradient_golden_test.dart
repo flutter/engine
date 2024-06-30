@@ -59,7 +59,7 @@ Future<void> testMain() async {
     final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     final angles = <double>[0.0, 90.0, 180.0];
-    var yOffset = 0;
+    var yOffset = 0.0;
     for (final angle in angles) {
       final shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
       final matrix = Matrix4.identity();
@@ -104,7 +104,7 @@ Future<void> testMain() async {
     final rc =
     RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     final angles = <double>[0.0, 30.0, 210.0];
-    var yOffset = 0;
+    var yOffset = 0.0;
     for (final angle in angles) {
       final shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
       final paint = SurfacePaint()
@@ -130,7 +130,7 @@ Future<void> testMain() async {
     final rc =
     RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     final angles = <double>[0.0, 30.0, 210.0];
-    var yOffset = 0;
+    var yOffset = 0.0;
     for (final angle in angles) {
       final shaderRect = Rect.fromLTWH(50, 50 + yOffset, 100, 100);
       final paint = SurfacePaint()

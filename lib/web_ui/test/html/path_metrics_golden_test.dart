@@ -42,10 +42,10 @@ Future<void> testMain() async {
 
   test('Should calculate tangent on cubic curve', () async {
     final path = Path();
-    const p1x = 240;
-    const p1y = 120;
-    const p2x = 320;
-    const p2y = 25;
+    const p1x = 240.0;
+    const p1y = 120.0;
+    const p2x = 320.0;
+    const p2y = 25.0;
     path.moveTo(150, 20);
     path.quadraticBezierTo(p1x, p1y, p2x, p2y);
     final metric = path.computeMetrics().first;
@@ -58,10 +58,10 @@ Future<void> testMain() async {
 
   test('Should calculate tangent on quadratic curve', () async {
     final path = Path();
-    const p0x = 150;
-    const p0y = 20;
-    const p1x = 320;
-    const p1y = 25;
+    const p0x = 150.0;
+    const p0y = 20.0;
+    const p1x = 320.0;
+    const p1y = 25.0;
     path.moveTo(150, 20);
     path.quadraticBezierTo(p0x, p0y, p1x, p1y);
     final metric = path.computeMetrics().first;
@@ -89,10 +89,10 @@ Future<void> testMain() async {
     final path = SurfacePath();
     path.moveTo(50, 130);
     path.lineTo(150, 20);
-    const p1x = 240;
-    const p1y = 120;
-    const p2x = 320;
-    const p2y = 25;
+    const p1x = 240.0;
+    const p1y = 120.0;
+    const p2x = 320.0;
+    const p2y = 25.0;
     path.quadraticBezierTo(p1x, p1y, p2x, p2y);
 
     rc.drawPath(path, paint);
@@ -101,7 +101,7 @@ Future<void> testMain() async {
     const t1 = 0.7;
 
     final metrics = path.computeMetrics().toList();
-    var totalLength = 0;
+    var totalLength = 0.0;
     for (final m in metrics) {
       totalLength += m.length;
     }
@@ -141,12 +141,12 @@ Future<void> testMain() async {
     final path = Path();
     path.moveTo(50, 130);
     path.lineTo(150, 20);
-    const p1x = 40;
-    const p1y = 120;
-    const p2x = 300;
-    const p2y = 130;
-    const p3x = 320;
-    const p3y = 25;
+    const p1x = 40.0;
+    const p1y = 120.0;
+    const p2x = 300.0;
+    const p2y = 130.0;
+    const p3x = 320.0;
+    const p3y = 25.0;
     path.cubicTo(p1x, p1y, p2x, p2y, p3x, p3y);
 
     rc.drawPath(path, paint);
@@ -155,7 +155,7 @@ Future<void> testMain() async {
     const t1 = 0.7;
 
     final metrics = path.computeMetrics().toList();
-    var totalLength = 0;
+    var totalLength = 0.0;
     for (final m in metrics) {
       totalLength += m.length;
     }

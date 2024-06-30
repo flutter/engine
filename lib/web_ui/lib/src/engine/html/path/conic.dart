@@ -335,7 +335,7 @@ class Conic {
 
   static double evalDenominator(double w, double t) {
     final B = 2 * (w - 1);
-    const C = 1;
+    const C = 1.0;
     final A = -B;
     return polyEval(A, B, C, t);
   }

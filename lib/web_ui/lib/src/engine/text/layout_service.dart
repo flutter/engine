@@ -195,8 +195,8 @@ class TextLayoutService {
 
     // TODO(mdebbar): Handle maxLines https://github.com/flutter/flutter/issues/91254
 
-    var runningMinIntrinsicWidth = 0;
-    var runningMaxIntrinsicWidth = 0;
+    var runningMinIntrinsicWidth = 0.0;
+    var runningMaxIntrinsicWidth = 0.0;
 
     for (final fragment in fragments) {
       runningMinIntrinsicWidth += fragment.widthExcludingTrailingSpaces;

@@ -72,9 +72,9 @@ class Color {
 
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final R = _linearizeColorComponent(red / 0xFF);
+    final G = _linearizeColorComponent(green / 0xFF);
+    final B = _linearizeColorComponent(blue / 0xFF);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -100,13 +100,13 @@ class Color {
   }
 
   static Color alphaBlend(Color foreground, Color background) {
-    final int alpha = foreground.alpha;
+    final alpha = foreground.alpha;
     if (alpha == 0x00) {
       // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
+    final invAlpha = 0xff - alpha;
+    var backAlpha = background.alpha;
     if (backAlpha == 0xff) {
       // Opaque background case
       return Color.fromARGB(
@@ -118,7 +118,7 @@ class Color {
     } else {
       // General case
       backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
+      final outAlpha = alpha + backAlpha;
       assert(outAlpha != 0x00);
       return Color.fromARGB(
         outAlpha,
@@ -227,7 +227,7 @@ abstract class Paint {
     // 1. Add a `engine.renderer.copyPaint` method.
     // 2. Use the below code as the default implementation.
     // 3. Have renderer-specific implementations override with optimized code.
-    final Paint paint = Paint();
+    final paint = Paint();
     paint
       ..blendMode = other.blendMode
       ..color = other.color
@@ -297,7 +297,7 @@ abstract class Gradient implements Shader {
     TileMode tileMode = TileMode.clamp,
     Float64List? matrix4,
   ]) {
-    final Float32List? matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
+    final matrix = matrix4 == null ? null : engine.toMatrix32(matrix4);
     return engine.renderer.createLinearGradient(
       from,
       to,
@@ -320,7 +320,7 @@ abstract class Gradient implements Shader {
     _validateColorStops(colors, colorStops);
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
     // If focal == center and the focal radius is 0.0, it's still a regular radial gradient
-    final Float32List? matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
+    final matrix32 = matrix4 != null ? engine.toMatrix32(matrix4) : null;
     if (focal == null || (focal == center && focalRadius == 0.0)) {
       return engine.renderer.createRadialGradient(
         center, radius, colors, colorStops, tileMode, matrix32);
@@ -520,13 +520,13 @@ Future<Codec> instantiateImageCodecWithSize(
   if (getTargetSize == null) {
     return engine.renderer.instantiateImageCodec(buffer._list!);
   } else {
-    final Codec codec = await engine.renderer.instantiateImageCodec(buffer._list!);
+    final codec = await engine.renderer.instantiateImageCodec(buffer._list!);
     try {
-      final FrameInfo info = await codec.getNextFrame();
+      final info = await codec.getNextFrame();
       try {
-        final int width = info.image.width;
-        final int height = info.image.height;
-        final TargetImageSize targetSize = getTargetSize(width, height);
+        final width = info.image.width;
+        final height = info.image.height;
+        final targetSize = getTargetSize(width, height);
         return engine.renderer.instantiateImageCodec(buffer._list!,
             targetWidth: targetSize.width, targetHeight: targetSize.height, allowUpscaling: false);
       } finally {
@@ -571,8 +571,8 @@ void decodeImageFromList(Uint8List list, ImageDecoderCallback callback) {
 }
 
 Future<void> _decodeImageFromListAsync(Uint8List list, ImageDecoderCallback callback) async {
-  final Codec codec = await instantiateImageCodec(list);
-  final FrameInfo frameInfo = await codec.getNextFrame();
+  final codec = await instantiateImageCodec(list);
+  final frameInfo = await codec.getNextFrame();
   callback(frameInfo.image);
 }
 
@@ -602,10 +602,10 @@ Future<Codec> createBmp(
   // The header is in the 108-byte BITMAPV4HEADER format, or as called by
   // Chromium, WindowsV4. Do not use the 56-byte or 52-byte Adobe formats, since
   // they're not supported.
-  const int dibSize = 0x6C /* 108: BITMAPV4HEADER */;
-  const int headerSize = dibSize + 0x0E;
-  final int bufferSize = headerSize + (width * height * 4);
-  final ByteData bmpData = ByteData(bufferSize);
+  const dibSize = 0x6C /* 108: BITMAPV4HEADER */;
+  const headerSize = dibSize + 0x0E;
+  final bufferSize = headerSize + (width * height * 4);
+  final bmpData = ByteData(bufferSize);
   // 'BM' header
   bmpData.setUint16(0x00, 0x424D);
   // Size of data
@@ -643,12 +643,12 @@ Future<Codec> createBmp(
   // Bitmask A
   bmpData.setUint32(0x42, 0xFF000000, Endian.little);
 
-  int destinationByte = headerSize;
-  final Uint32List combinedPixels = Uint32List.sublistView(pixels);
+  var destinationByte = headerSize;
+  final combinedPixels = Uint32List.sublistView(pixels);
   // BMP is scanlined from bottom to top. Rearrange here.
-  for (int rowCount = height - 1; rowCount >= 0; rowCount -= 1) {
-    int sourcePixel = rowCount * rowBytes;
-    for (int colCount = 0; colCount < width; colCount += 1) {
+  for (var rowCount = height - 1; rowCount >= 0; rowCount -= 1) {
+    var sourcePixel = rowCount * rowBytes;
+    for (var colCount = 0; colCount < width; colCount += 1) {
       bmpData.setUint32(destinationByte, combinedPixels[sourcePixel], Endian.little);
       destinationByte += 4;
       sourcePixel += 1;
@@ -739,15 +739,15 @@ class Shadow {
     }
     a ??= <Shadow>[];
     b ??= <Shadow>[];
-    final List<Shadow> result = <Shadow>[];
+    final result = <Shadow>[];
     final int commonLength = math.min(a.length, b.length);
-    for (int i = 0; i < commonLength; i += 1) {
+    for (var i = 0; i < commonLength; i += 1) {
       result.add(Shadow.lerp(a[i], b[i], t)!);
     }
-    for (int i = commonLength; i < a.length; i += 1) {
+    for (var i = commonLength; i < a.length; i += 1) {
       result.add(a[i].scale(1.0 - t));
     }
-    for (int i = commonLength; i < b.length; i += 1) {
+    for (var i = commonLength; i < b.length; i += 1) {
       result.add(b[i].scale(t));
     }
     return result;
@@ -796,7 +796,7 @@ abstract class ImageShader implements Shader {
 class ImmutableBuffer {
   ImmutableBuffer._(this._length);
   static Future<ImmutableBuffer> fromUint8List(Uint8List list) async {
-    final ImmutableBuffer instance = ImmutableBuffer._(list.length);
+    final instance = ImmutableBuffer._(list.length);
     instance._list = list;
     return instance;
   }
@@ -847,7 +847,7 @@ class ImageDescriptor {
         _format = null;
 
   static Future<ImageDescriptor> encoded(ImmutableBuffer buffer) async {
-    final ImageDescriptor descriptor = ImageDescriptor._();
+    final descriptor = ImageDescriptor._();
     descriptor._data = buffer._list;
     return descriptor;
   }

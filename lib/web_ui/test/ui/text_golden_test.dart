@@ -528,7 +528,7 @@ Future<void> testMain() async {
   }, timeout: const Timeout.factor(2));
 
   test('font variations are correctly rendered', () async {
-    const testWidth = 300;
+    const testWidth = 300.0;
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder);
     final builder =
@@ -630,7 +630,7 @@ Future<void> testTextStyle(
 }) async {
   late ui.Rect region;
   ui.Picture renderPicture() {
-    const testWidth = 512;
+    const testWidth = 512.0;
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder);
     canvas.translate(30, 10);
@@ -735,8 +735,8 @@ Future<void> testTextStyle(
 
 Future<void> testSampleText(String language, String text,
     {ui.TextDirection textDirection = ui.TextDirection.ltr}) async {
-  const testWidth = 300;
-  var paragraphHeight = 0;
+  const testWidth = 300.0;
+  var paragraphHeight = 0.0;
   ui.Picture renderPicture() {
     final recorder = ui.PictureRecorder();
     final canvas = ui.Canvas(recorder);

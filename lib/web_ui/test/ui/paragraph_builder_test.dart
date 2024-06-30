@@ -84,7 +84,7 @@ Future<void> testMain() async {
   });
 
   test('kTextHeightNone unsets the height multiplier', () {
-    const fontSize = 10;
+    const fontSize = 10.0;
     const text = 'A';
     final builder = ParagraphBuilder(ParagraphStyle(fontSize: fontSize, height: 10));
     builder.pushStyle(TextStyle(height: kTextHeightNone));
@@ -96,7 +96,7 @@ Future<void> testMain() async {
   });
 
   test('kTextHeightNone ParagraphStyle', () {
-    const fontSize = 10;
+    const fontSize = 10.0;
     final builder = ParagraphBuilder(
       ParagraphStyle(fontSize: fontSize, height: kTextHeightNone, fontFamily: 'FlutterTest'),
     );
@@ -108,7 +108,7 @@ Future<void> testMain() async {
   });
 
   test('kTextHeightNone StrutStyle', () {
-    const fontSize = 10;
+    const fontSize = 10.0;
     final builder = ParagraphBuilder(
       ParagraphStyle(
         fontSize: 100,

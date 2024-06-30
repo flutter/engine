@@ -187,8 +187,7 @@ Picture _drawTestPictureWithText(
   builder.addText(text);
   final paragraph = builder.build();
 
-  const maxWidth = 200 - 10;
-  paragraph.layout(const ParagraphConstraints(width: maxWidth));
+  paragraph.layout(const ParagraphConstraints(width: 190));
   canvas.drawParagraph(paragraph, Offset(offsetX, offsetY));
   return recorder.endRecording();
 }

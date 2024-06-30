@@ -91,11 +91,10 @@ Future<void> testMain() async {
   });
 
   test('Basic line related metrics', () {
-    const fontSize = 10;
     final builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
-      fontSize: fontSize,
+      fontSize: 10,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
@@ -116,11 +115,10 @@ Future<void> testMain() async {
   });
 
   test('Basic glyph metrics', () {
-    const fontSize = 10;
     final builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
-      fontSize: fontSize,
+      fontSize: 10,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
@@ -179,11 +177,10 @@ Future<void> testMain() async {
   });
 
   test('Glyph metrics with grapheme split into different runs', () {
-    const fontSize = 10;
     final builder = ParagraphBuilder(ParagraphStyle(
       fontStyle: FontStyle.normal,
       fontWeight: FontWeight.normal,
-      fontSize: fontSize,
+      fontSize: 10,
       maxLines: 1,
     ))..addText('A') // The base charater A.
       ..addText('̀'); // The diacritical grave accent, which should combine with the base character to form a single grapheme.
@@ -201,7 +198,7 @@ Future<void> testMain() async {
   }, skip: domIntl.v8BreakIterator == null); // Intended: Intl.v8breakiterator is needed for correctly breaking grapheme clusters.
 
   test('disable rounding hack', () {
-    const fontSize = 1;
+    const fontSize = 1.0;
     const text = '12345';
     const letterSpacing = 0.25;
     const expectedIntrinsicWidth = text.length * (fontSize + letterSpacing);

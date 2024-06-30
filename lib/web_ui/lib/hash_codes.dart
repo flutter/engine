@@ -52,7 +52,7 @@ int hashValues(
   Object? arg13 = _hashEnd, Object? arg14 = _hashEnd, Object? arg15 = _hashEnd,
   Object? arg16 = _hashEnd, Object? arg17 = _hashEnd, Object? arg18 = _hashEnd,
   Object? arg19 = _hashEnd, Object? arg20 = _hashEnd ]) {
-  int result = 0;
+  var result = 0;
   result = _Jenkins.combine(result, arg01);
   result = _Jenkins.combine(result, arg02);
   if (!identical(arg03, _hashEnd)) {
@@ -121,9 +121,9 @@ int hashValues(
   'This feature was deprecated in v3.1.0-0.0.pre.897'
 )
 int hashList(Iterable<Object?>? arguments) {
-  int result = 0;
+  var result = 0;
   if (arguments != null) {
-    for (final Object? argument in arguments) {
+    for (final argument in arguments) {
       result = _Jenkins.combine(result, argument);
     }
   }

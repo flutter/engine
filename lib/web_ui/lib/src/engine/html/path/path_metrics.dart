@@ -197,7 +197,7 @@ class _PathContourMeasure {
         segmentIndex == 0 ? 0 : _segments[segmentIndex - 1].distance;
     final totalDistance = segment.distance - startDistance;
     final t = totalDistance < kEpsilon
-        ? 0
+        ? 0.0
         : (distance - startDistance) / totalDistance;
     return segment.computeTangent(t);
   }

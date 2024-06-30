@@ -295,8 +295,8 @@ class GradientLinear extends EngineGradient {
     // sin(theta) = dy / length.
     // cos(theta) = dx / length.
     // Flip dy for gl flip.
-    final sinVal = length < kFltEpsilon ? 0 : -dy / length;
-    final cosVal = length < kFltEpsilon ? 1 : dx / length;
+    final sinVal = length < kFltEpsilon ? 0.0 : -dy / length;
+    final cosVal = length < kFltEpsilon ? 1.0 : dx / length;
     // If tile mode is repeated we need to shift the center of from->to
     // vector to the center of shader bounds.
     final isRepeated = tileMode != ui.TileMode.clamp;

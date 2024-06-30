@@ -190,8 +190,8 @@ Future<void> testMain() async {
         // Create a red and blue checkerboard pattern
         final redPaint = ui.Paint()..color = const ui.Color(0xFFFF0000);
         final bluePaint = ui.Paint()..color = const ui.Color(0xFF0000FF);
-        for (var y = 0; y < 300; y += 10) {
-          for (var x = 0; x < 300; x += 10) {
+        for (var y = 0.0; y < 300; y += 10) {
+          for (var x = 0.0; x < 300; x += 10) {
             final paint = ((x + y) % 20 == 0) ? redPaint : bluePaint;
             canvas.drawRect(ui.Rect.fromLTWH(x, y, 10, 10), paint);
           }

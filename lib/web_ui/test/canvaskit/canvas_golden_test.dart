@@ -43,7 +43,7 @@ void testMain() {
     test(
         'text style - foreground/background/color do not leak across paragraphs',
         () async {
-      const testWidth = 440;
+      const testWidth = 440.0;
       const middle = testWidth / 2;
       CkParagraph createTestParagraph(
           {ui.Color? color, CkPaint? foreground, CkPaint? background}) {

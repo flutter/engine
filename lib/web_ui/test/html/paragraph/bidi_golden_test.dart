@@ -54,7 +54,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 340, 600);
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const height = 40;
+    const height = 40.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
@@ -93,7 +93,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 340, 600);
     final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const height = 40;
+    const height = 40.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
@@ -158,7 +158,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 340, 600);
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const height = 40;
+    const height = 40.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
@@ -197,7 +197,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 340, 600);
     final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const height = 40;
+    const height = 40.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 320, 5 * height).inflate(5).translate(10, 10);
@@ -266,7 +266,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 400, 500);
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const height = 95;
+    const height = 95.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
@@ -305,7 +305,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 400, 500);
     final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const height = 95;
+    const height = 95.0;
 
     final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
     canvas.drawRect(
@@ -380,7 +380,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 400, 900);
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const height = 95;
+    const height = 95.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
@@ -419,7 +419,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 400, 900);
     final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const height = 95;
+    const height = 95.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
@@ -499,7 +499,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 400, 500);
     final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    const height = 95;
+    const height = 95.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);
@@ -538,7 +538,7 @@ Future<void> testMain() async {
     const bounds = Rect.fromLTWH(0, 0, 400, 500);
     final canvas = DomCanvas(domDocument.createElement('flt-picture'));
 
-    const height = 95;
+    const height = 95.0;
 
     // Border for ltr paragraphs.
     final ltrBox = const Rect.fromLTWH(0, 0, 150, 5 * height).inflate(5).translate(10, 10);

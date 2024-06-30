@@ -12,7 +12,7 @@ import '../environment.dart';
 import '../exceptions.dart';
 import '../felt_config.dart';
 import '../pipeline.dart';
-import '../utils.dart' show AnsiColors, FilePath, ProcessManager, cleanup, getBundleBuildDirectory, startProcess;
+import '../utils.dart' show AnsiColors, FilePath, cleanup, getBundleBuildDirectory, startProcess;
 
 /// Compiles a web test bundle into web_ui/build/test_bundles/<bundle-name>.
 class CompileBundleStep implements PipelineStep {

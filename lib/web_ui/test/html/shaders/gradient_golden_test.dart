@@ -57,8 +57,8 @@ Future<void> testMain() async {
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
     // Gradient with default center.
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
@@ -136,8 +136,8 @@ Future<void> testMain() async {
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
     // Gradient with default center.
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawOval(rectBounds,
@@ -215,8 +215,8 @@ Future<void> testMain() async {
         0, 360.0 / 180.0 * math.pi,
         Matrix4.rotationZ(math.pi / 6.0).storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
     // Gradient with default center.
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     var path = samplePathFromRect(rectBounds);
@@ -295,8 +295,8 @@ Future<void> testMain() async {
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
     // Gradient with default center.
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
@@ -339,8 +339,8 @@ Future<void> testMain() async {
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
     // Gradient with default center.
     const rectBounds = Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
@@ -364,8 +364,8 @@ Future<void> testMain() async {
 
     final EngineCanvas engineCanvas =
         BitmapCanvas(const Rect.fromLTRB(0, 0, 100, 100), RenderStrategy());
-    for (var x = 0; x < 100; x += 10) {
-      for (var y = 0; y < 100; y += 10) {
+    for (var x = 0.0; x < 100; x += 10) {
+      for (var y = 0.0; y < 100; y += 10) {
         const colors = <Color>[
           Color(0xFFFF0000),
           Color(0xFF0000FF),
@@ -410,8 +410,8 @@ Future<void> testMain() async {
         colors, stops, TileMode.clamp,
         Matrix4.identity().storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
     // Gradient with default center.
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
@@ -455,8 +455,8 @@ Future<void> testMain() async {
         colors, null, TileMode.clamp,
         Matrix4.identity().storage);
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 100;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 100.0;
     // Gradient with default center.
     const rectBounds = Rect.fromLTWH(100, 50, kBoxWidth, kBoxHeight);
     canvas.drawRect(rectBounds,
@@ -497,8 +497,8 @@ Future<void> testMain() async {
       transform.storage,
     );
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
 
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(
@@ -554,8 +554,8 @@ Future<void> testMain() async {
       transform.storage,
     );
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
 
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(
@@ -610,8 +610,8 @@ Future<void> testMain() async {
       transform.storage,
     );
 
-    const kBoxWidth = 150;
-    const kBoxHeight = 80;
+    const kBoxWidth = 150.0;
+    const kBoxHeight = 80.0;
 
     var rectBounds = const Rect.fromLTWH(10, 20, kBoxWidth, kBoxHeight);
     canvas.drawRect(

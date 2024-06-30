@@ -504,8 +504,8 @@ class RecordingCanvas {
         final double top = math.min(line.top, line.bottom);
         final width = line.width.abs();
         final height = line.height.abs();
-        final inflatedHeight = line.height == 0 ? 1 : height;
-        final inflatedWidth = line.width == 0 ? 1 : width;
+        final inflatedHeight = line.height == 0 ? 1.0 : height;
+        final inflatedWidth = line.width == 0 ? 1.0 : width;
         final inflatedSize = ui.Size(inflatedWidth, inflatedHeight);
         paint.style = ui.PaintingStyle.fill;
         drawRect(ui.Offset(left, top) & inflatedSize, paint);

@@ -271,10 +271,9 @@ Future<void> testMain() async {
     // Draw a rect in the placeholder.
     // Leave some padding around the placeholder to make the black paragraph
     // background visible.
-    const padding = 5;
     final placeholderBox = paragraph2.getBoxesForPlaceholders().single;
     canvas.drawRect(
-      placeholderBox.toRect().shift(offset).deflate(padding),
+      placeholderBox.toRect().shift(offset).deflate(5),
       SurfacePaintData()..color = red.value,
     );
 

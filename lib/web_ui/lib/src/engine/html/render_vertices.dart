@@ -131,8 +131,8 @@ class _WebGlRenderer implements GlRenderer {
     final minValueY = bounds.top;
     final maxValueX = bounds.right;
     final maxValueY = bounds.bottom;
-    var offsetX = 0;
-    var offsetY = 0;
+    var offsetX = 0.0;
+    var offsetY = 0.0;
     var widthInPixels = canvasWidthInPixels;
     var heightInPixels = canvasHeightInPixels;
     // If vertices fall outside the bitmap area, cull.
@@ -564,7 +564,7 @@ Float32List convertVertexPositions(ui.VertexMode mode, Float32List positions) {
     var y1 = positions[3];
     final triangleList = Float32List(triangleCount * 3 * 2);
     var destIndex = 0;
-    for (int i = 0, positionIndex = 4; i < triangleCount; i++) {
+    for (var i = 0, positionIndex = 4; i < triangleCount; i++) {
       final x2 = positions[positionIndex++];
       final y2 = positions[positionIndex++];
       triangleList[destIndex++] = x0;

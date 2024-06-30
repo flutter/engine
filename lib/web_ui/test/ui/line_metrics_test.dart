@@ -33,11 +33,10 @@ Future<void> testMain() async {
   }, skip: isHtml); // https://github.com/flutter/flutter/issues/144412
 
   test('Basic line related metrics', () {
-    const fontSize = 10;
     final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontStyle: ui.FontStyle.normal,
       fontWeight: ui.FontWeight.normal,
-      fontSize: fontSize,
+      fontSize: 10,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);
@@ -72,12 +71,11 @@ Future<void> testMain() async {
   });
 
   test('Basic glyph metrics', () {
-    const fontSize = 10;
     final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
       fontStyle: ui.FontStyle.normal,
       fontWeight: ui.FontWeight.normal,
       fontFamily: 'FlutterTest',
-      fontSize: fontSize,
+      fontSize: 10,
       maxLines: 1,
       ellipsis: 'BBB',
     ))..addText('A' * 100);

@@ -1447,8 +1447,8 @@ class SurfacePath implements ui.Path {
       return pathRef.cachedBounds!;
     }
     var ltrbInitialized = false;
-    double left = 0.0, top = 0.0, right = 0.0, bottom = 0.0;
-    double minX = 0.0, maxX = 0.0, minY = 0.0, maxY = 0.0;
+    var left = 0.0, top = 0.0, right = 0.0, bottom = 0.0;
+    var minX = 0.0, maxX = 0.0, minY = 0.0, maxY = 0.0;
     final iter = PathRefIterator(pathRef);
     final points = pathRef.points;
     int verb;

@@ -113,10 +113,10 @@ Future<void> testMain() async {
     });
 
     test('arcToPoint < 90 degrees', () {
-      const rx = 100;
-      const ry = 100;
-      const cx = 150;
-      const cy = 100;
+      const rx = 100.0;
+      const ry = 100.0;
+      const cx = 150.0;
+      const cy = 100.0;
       const startAngle = 0.0;
       const endAngle = 90.0;
       const startRad = startAngle * math.pi / 180.0;
@@ -139,10 +139,10 @@ Future<void> testMain() async {
     });
 
     test('arcToPoint 180 degrees', () {
-      const rx = 100;
-      const ry = 100;
-      const cx = 150;
-      const cy = 100;
+      const rx = 100.0;
+      const ry = 100.0;
+      const cx = 150.0;
+      const cy = 100.0;
       const startAngle = 0.0;
       const endAngle = 180.0;
       const startRad = startAngle * math.pi / 180.0;
@@ -165,10 +165,10 @@ Future<void> testMain() async {
     });
 
     test('arcToPoint 270 degrees', () {
-      const rx = 100;
-      const ry = 100;
-      const cx = 150;
-      const cy = 100;
+      const rx = 100.0;
+      const ry = 100.0;
+      const cx = 150.0;
+      const cy = 100.0;
       const startAngle = 0.0;
       const endAngle = 270.0;
       const startRad = startAngle * math.pi / 180.0;
@@ -191,10 +191,10 @@ Future<void> testMain() async {
     });
 
     test('arcToPoint 270 degrees rx!=ry', () {
-      const rx = 100;
-      const ry = 50;
-      const cx = 150;
-      const cy = 100;
+      const rx = 100.0;
+      const ry = 50.0;
+      const cx = 150.0;
+      const cy = 100.0;
       const startAngle = 0.0;
       const endAngle = 270.0;
       const startRad = startAngle * math.pi / 180.0;

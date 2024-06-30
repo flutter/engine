@@ -478,7 +478,7 @@ String? canonicalizeFontFamily(String? fontFamily) {
 Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
   final length = offsetList.length;
   final floatList = Float32List(length * 2);
-  for (int i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
+  for (var i = 0, destIndex = 0; i < length; i++, destIndex += 2) {
     floatList[destIndex] = offsetList[i].dx;
     floatList[destIndex + 1] = offsetList[i].dy;
   }

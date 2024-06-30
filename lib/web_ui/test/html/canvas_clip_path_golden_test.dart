@@ -45,8 +45,8 @@ Future<void> testMain() async {
     final rc =
         engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const testWidth = 200;
-    const testHeight = 150;
+    const testWidth = 200.0;
+    const testHeight = 150.0;
     final path = Path();
     path.addOval(const Rect.fromLTWH(100, 30, testWidth, testHeight));
     rc.clipPath(path);
@@ -69,8 +69,8 @@ Future<void> testMain() async {
     final rc =
     engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const testWidth = 200;
-    const testHeight = 150;
+    const testWidth = 200.0;
+    const testHeight = 150.0;
 
     final paintPath = Path();
     paintPath.addRect(const Rect.fromLTWH(-50, 0, testWidth, testHeight));
@@ -98,8 +98,8 @@ Future<void> testMain() async {
     final rc =
     engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const testWidth = 200;
-    const testHeight = 150;
+    const testWidth = 200.0;
+    const testHeight = 150.0;
 
     final paintPath = Path();
     paintPath.addRect(const Rect.fromLTWH(-50, 0, testWidth, testHeight));
@@ -122,8 +122,8 @@ Future<void> testMain() async {
   test('Clips with fillType evenOdd', () async {
     final rc = engine.RecordingCanvas(const Rect.fromLTRB(0, 0, 500, 500));
     rc.save();
-    const testWidth = 400;
-    const testHeight = 350;
+    const testWidth = 400.0;
+    const testHeight = 350.0;
 
     // draw RGB test image
     rc.drawImageRect(createTestImage(), const Rect.fromLTRB(0, 0, testWidth, testHeight),
@@ -134,10 +134,10 @@ Future<void> testMain() async {
     // 2) a smaller inner rectangle specified by a path
     final path = Path();
     path.addRect(const Rect.fromLTWH(0, 0, testWidth, testHeight));
-    const left = 25;
-    const top = 30;
-    const right = 300;
-    const bottom = 250;
+    const left = 25.0;
+    const top = 30.0;
+    const right = 300.0;
+    const bottom = 250.0;
     path
       ..moveTo(left, top)
       ..lineTo(right,top)

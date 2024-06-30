@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show ByteConversionSink, jsonDecode, utf8;
+import 'dart:convert' show jsonDecode, utf8;
 import 'dart:io' as io;
 import 'dart:typed_data';
 
