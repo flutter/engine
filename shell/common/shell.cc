@@ -1499,7 +1499,6 @@ void Shell::LoadDartDeferredLibrary(
     intptr_t loading_unit_id,
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {
-  // TODO(jonahwilliams): what thread is this called from?
   task_runners_.GetUITaskRunner()->PostTask(fml::MakeCopyable(
       [engine = engine_->GetWeakPtr(), loading_unit_id,
        data = std::move(snapshot_data),
@@ -1514,7 +1513,6 @@ void Shell::LoadDartDeferredLibrary(
 void Shell::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
                                          const std::string error_message,
                                          bool transient) {
-  // TODO(jonahwilliams): what thread is this called from?
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetUITaskRunner(),
       [engine = weak_engine_, loading_unit_id, error_message, transient] {
