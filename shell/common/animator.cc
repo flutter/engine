@@ -260,13 +260,13 @@ void Animator::RequestFrame(bool regenerate_layer_trees) {
   // started an expensive operation right after posting this message however.
   // To support that, we need edge triggered wakes on VSync.
 
-  task_runners_.GetUITaskRunner()->PostTask(
-      [self = weak_factory_.GetWeakPtr()]() {
-        if (!self) {
-          return;
-        }
-        self->AwaitVSync();
-      });
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetUITaskRunner(),
+                                    [self = weak_factory_.GetWeakPtr()]() {
+                                      if (!self) {
+                                        return;
+                                      }
+                                      self->AwaitVSync();
+                                    });
   frame_scheduled_ = true;
 }
 
