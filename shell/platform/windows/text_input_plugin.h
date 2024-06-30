@@ -117,9 +117,9 @@ class TextInputPlugin {
 
   // The smallest rect, in local coordinates, of the text in the composing
   // range, or of the caret in the case where there is no current composing
-  // range. This value is updated via `TextInput.setMarkedTextRect` messages
+  // range. This value is updated via `TextInput.setCaretRect` messages
   // over the text input channel.
-  Rect composing_rect_;
+  Rect caret_rect_;
 
   // A 4x4 matrix that maps from `EditableText` local coordinates to the
   // coordinate system of `PipelineOwner.rootNode`.

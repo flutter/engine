@@ -574,13 +574,13 @@ TEST_F(TextInputPluginTest, TransformCursorRect) {
     arguments->AddMember("height", ime_height, allocator);
 
     auto message = codec.EncodeMethodCall(
-        {"TextInput.setMarkedTextRect", std::move(arguments)});
+        {"TextInput.setCaretRect", std::move(arguments)});
     messenger.SimulateEngineMessage(kChannelName, message->data(),
                                     message->size(), reply_handler);
   }
 }
 
-TEST_F(TextInputPluginTest, SetMarkedTextRectRequiresView) {
+TEST_F(TextInputPluginTest, SetCaretRectRequiresView) {
   UseHeadlessEngine();
 
   TestBinaryMessenger messenger([](const std::string& channel,
@@ -606,8 +606,8 @@ TEST_F(TextInputPluginTest, SetMarkedTextRectRequiresView) {
   arguments->AddMember("width", 0, allocator);
   arguments->AddMember("height", 0, allocator);
 
-  auto message = codec.EncodeMethodCall(
-      {"TextInput.setMarkedTextRect", std::move(arguments)});
+  auto message =
+      codec.EncodeMethodCall({"TextInput.setCaretRect", std::move(arguments)});
   messenger.SimulateEngineMessage(kChannelName, message->data(),
                                   message->size(), reply_handler);
 
