@@ -327,7 +327,7 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
         stop_count_ != other_base->stop_count_) {
       return false;
     }
-    static_assert(sizeof(colors()[0]) == 4);
+    static_assert(sizeof(colors()[0]) == 16);
     static_assert(sizeof(stops()[0]) == 4);
     int num_bytes = stop_count_ * 4;
     return (memcmp(colors(), other_base->colors(), num_bytes) == 0 &&

@@ -52,7 +52,11 @@ Color _scaleAlpha(Color a, double factor) {
   return a.withAlpha((a.alpha * factor).round().clamp(0, 255));
 }
 
-/// An immutable 32 bit color value in ARGB format.
+/// An immutable color value in ARGB format.
+///
+/// The color format may either use 32 or 64 bits, depending on if extended range
+/// values are used and the platform supports them. Typed accessors guarantee
+/// either 32 bit format or floating point value ranges.
 ///
 /// Consider the light teal of the Flutter logo. It is fully opaque, with a red
 /// channel value of 0x42 (66), a green channel value of 0xA5 (165), and a blue
@@ -99,7 +103,11 @@ class Color {
   /// For example, to get a fully opaque orange, you would use `const
   /// Color(0xFFFF9000)` (`FF` for the alpha, `FF` for the red, `90` for the
   /// green, and `00` for the blue).
-  const Color(int value) : value = value & 0xFFFFFFFF;
+  const Color(int value) :
+    _a = ((value & 0xFF000000) >> 24) / 255.0,
+    _r = ((value & 0x00FF0000) >> 16) / 255.0,
+    _g = ((value & 0x0000FF00) >> 8) / 255.0,
+    _b = ((value & 0x000000FF) >> 0) / 255.0;
 
   /// Construct a color from the lower 8 bits of four integers.
   ///
@@ -114,10 +122,10 @@ class Color {
   /// See also [fromRGBO], which takes the alpha value as a floating point
   /// value.
   const Color.fromARGB(int a, int r, int g, int b) :
-    value = (((a & 0xff) << 24) |
-             ((r & 0xff) << 16) |
-             ((g & 0xff) << 8)  |
-             ((b & 0xff) << 0)) & 0xFFFFFFFF;
+      _r = (r & 0xFF) / 255.0,
+      _g = (g & 0xFF) / 255.0,
+      _b = (b & 0xFF) / 255.0,
+      _a = (a & 0xFF) / 255.0;
 
   /// Create a color from red, green, blue, and opacity, similar to `rgba()` in CSS.
   ///
@@ -131,10 +139,31 @@ class Color {
   ///
   /// See also [fromARGB], which takes the opacity as an integer value.
   const Color.fromRGBO(int r, int g, int b, double opacity) :
-    value = ((((opacity * 0xff ~/ 1) & 0xff) << 24) |
-              ((r                    & 0xff) << 16) |
-              ((g                    & 0xff) << 8)  |
-              ((b                    & 0xff) << 0)) & 0xFFFFFFFF;
+      _r = (r & 0xFF) / 255.0,
+      _g = (g & 0xFF) / 255.0,
+      _b = (b & 0xFF) / 255.0,
+      _a = opacity,
+      assert(opacity >= 0 && opacity <= 1);
+
+  /// Create a color from red, green, blue, and opacity extended range value.
+  ///
+  /// * `r` is [red], from -0.752941 to 1.25098.
+  /// * `g` is [green], from -0.752941 to 1.25098.
+  /// * `b` is [blue], from -0.752941 to 1.25098.
+  /// * `a` is alpha channel of this color as a double, with 0.0 being
+  ///   transparent and 1.0 being fully opaque.
+  ///
+  /// On platforms that do not support extended range colors, all color channels
+  /// will be clamped to the equivalent RGBA unorm values.
+  const Color.fromARGBXR(double a, double r, double g, double b) :
+    _r = r,
+    _g = g,
+    _b = b,
+    _a = a,
+    assert(a >= 0 && a <= 1),
+    assert(r >= kMinExtendedRangeValue && r <= kMaxExtendedRangeValue),
+    assert(g >= kMinExtendedRangeValue && g <= kMaxExtendedRangeValue),
+    assert(b >= kMinExtendedRangeValue && b <= kMaxExtendedRangeValue);
 
   /// A 32 bit value representing this color.
   ///
@@ -144,7 +173,31 @@ class Color {
   /// * Bits 16-23 are the red value.
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
-  final int value;
+  int get value {
+    return _toUnorm(_a, _r, _g, _b);
+  }
+
+  static int _toUnorm(double a, double r, double g, double b) {
+    return ((((a.clamp(0, 1)  * 0xFF).round()) << 24) |
+           (((r.clamp(0, 1)  * 0xFF).round()) << 16) |
+           (((g.clamp(0, 1)  * 0xFF).round()) << 8)  |
+           (((b.clamp(0, 1) * 0xFF).round()) << 0)) & 0xFFFFFFFF;
+  }
+
+  final double _a;
+  final double _r;
+  final double _g;
+  final double _b;
+
+  /// The minimum color channel value of an extended range color.
+  ///
+  /// The alpha channel is always limited to 0 to 1.
+  static const double kMinExtendedRangeValue = -0.752941;
+
+  /// The maximum color channel value of an extended range color.
+  ///
+  /// The alpha channel is always limited to 0 to 1.
+  static const double kMaxExtendedRangeValue = 1.25098;
 
   /// The alpha channel of this color in an 8 bit value.
   ///
@@ -156,7 +209,7 @@ class Color {
   ///
   /// A value of 0.0 means this color is fully transparent. A value of 1.0 means
   /// this color is fully opaque.
-  double get opacity => alpha / 0xFF;
+  double get opacity => _a;
 
   /// The red channel of this color in an 8 bit value.
   int get red => (0x00ff0000 & value) >> 16;
@@ -167,12 +220,30 @@ class Color {
   /// The blue channel of this color in an 8 bit value.
   int get blue => (0x000000ff & value) >> 0;
 
+  /// The red channel of this color as a floating point value.
+  ///
+  /// If this color was constructed with extended range values, the color value
+  /// will be in the range of -0.752941 to 1.25098.
+  double get redF => _r;
+
+  /// The green channel of this color as a floating point value.
+  ///
+  /// If this color was constructed with extended range values, the color value
+  /// will be in the range of -0.752941 to 1.25098.
+  double get greenF => _g;
+
+  /// The blue channel of this color as a floating point value.
+  ///
+  /// If this color was constructed with extended range values, the color value
+  /// will be in the range of -0.752941 to 1.25098.
+  double get blueF => _b;
+
   /// Returns a new color that matches this color with the alpha channel
   /// replaced with `a` (which ranges from 0 to 255).
   ///
   /// Out of range values will have unexpected effects.
   Color withAlpha(int a) {
-    return Color.fromARGB(a, red, green, blue);
+    return Color.fromARGBXR(a / 255.0, redF, greenF, blueF);
   }
 
   /// Returns a new color that matches this color with the alpha channel
@@ -181,7 +252,7 @@ class Color {
   /// Out of range values will have unexpected effects.
   Color withOpacity(double opacity) {
     assert(opacity >= 0.0 && opacity <= 1.0);
-    return withAlpha((255.0 * opacity).round());
+    return Color.fromARGBXR(opacity, redF, greenF, blueF);
   }
 
   /// Returns a new color that matches this color with the red channel replaced
@@ -189,7 +260,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withRed(int r) {
-    return Color.fromARGB(alpha, r, green, blue);
+    return Color.fromARGBXR(opacity, r / 255.0, greenF, blueF);
   }
 
   /// Returns a new color that matches this color with the green channel
@@ -197,7 +268,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withGreen(int g) {
-    return Color.fromARGB(alpha, red, g, blue);
+    return Color.fromARGBXR(opacity, redF, g / 255.0, blueF);
   }
 
   /// Returns a new color that matches this color with the blue channel replaced
@@ -205,7 +276,7 @@ class Color {
   ///
   /// Out of range values will have unexpected effects.
   Color withBlue(int b) {
-    return Color.fromARGB(alpha, red, green, b);
+    return Color.fromARGBXR(opacity, redF, greenF, b / 255.0);
   }
 
   // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
@@ -1090,7 +1161,10 @@ enum Clip {
 final class Paint {
   /// Constructs an empty [Paint] object with all fields initialized to
   /// their defaults.
-  Paint();
+  Paint() {
+    // Default the stored color value to 0xFF000000
+    _data.setFloat32(_kColorOffsetA, 1, _kFakeHostEndian);
+  }
 
   /// Constructs a new [Paint] object with the same fields as [other].
   ///
@@ -1127,21 +1201,25 @@ final class Paint {
   final ByteData _data = ByteData(_kDataByteCount);
 
   static const int _kIsAntiAliasIndex = 0;
+  // Stored as a 4-32 bit values.
   static const int _kColorIndex = 1;
-  static const int _kBlendModeIndex = 2;
-  static const int _kStyleIndex = 3;
-  static const int _kStrokeWidthIndex = 4;
-  static const int _kStrokeCapIndex = 5;
-  static const int _kStrokeJoinIndex = 6;
-  static const int _kStrokeMiterLimitIndex = 7;
-  static const int _kFilterQualityIndex = 8;
-  static const int _kMaskFilterIndex = 9;
-  static const int _kMaskFilterBlurStyleIndex = 10;
-  static const int _kMaskFilterSigmaIndex = 11;
-  static const int _kInvertColorIndex = 12;
+  static const int _kBlendModeIndex = 5;
+  static const int _kStyleIndex = 6;
+  static const int _kStrokeWidthIndex = 7;
+  static const int _kStrokeCapIndex = 8;
+  static const int _kStrokeJoinIndex = 9;
+  static const int _kStrokeMiterLimitIndex = 10;
+  static const int _kFilterQualityIndex = 11;
+  static const int _kMaskFilterIndex = 12;
+  static const int _kMaskFilterBlurStyleIndex = 13;
+  static const int _kMaskFilterSigmaIndex = 14;
+  static const int _kInvertColorIndex = 15;
 
   static const int _kIsAntiAliasOffset = _kIsAntiAliasIndex << 2;
-  static const int _kColorOffset = _kColorIndex << 2;
+  static const int _kColorOffsetA = _kColorIndex << 2;
+  static const int _kColorOffsetR = (_kColorIndex + 1) << 2;
+  static const int _kColorOffsetG = (_kColorIndex + 2) << 2;
+  static const int _kColorOffsetB = (_kColorIndex + 3) << 2;
   static const int _kBlendModeOffset = _kBlendModeIndex << 2;
   static const int _kStyleOffset = _kStyleIndex << 2;
   static const int _kStrokeWidthOffset = _kStrokeWidthIndex << 2;
@@ -1155,7 +1233,7 @@ final class Paint {
   static const int _kInvertColorOffset = _kInvertColorIndex << 2;
 
   // If you add more fields, remember to update _kDataByteCount.
-  static const int _kDataByteCount = 52; // 4 * (last index + 1).
+  static const int _kDataByteCount = 64; // 4 * (last index + 1).
 
   // Binary format must match the deserialization code in paint.cc.
   // C++ unit tests access this.
@@ -1201,12 +1279,18 @@ final class Paint {
   /// This color is not used when compositing. To colorize a layer, use
   /// [colorFilter].
   Color get color {
-    final int encoded = _data.getInt32(_kColorOffset, _kFakeHostEndian);
-    return Color(encoded ^ _kColorDefault);
+    final double a = _data.getFloat32(_kColorOffsetA, _kFakeHostEndian);
+    final double r = _data.getFloat32(_kColorOffsetR, _kFakeHostEndian);
+    final double g = _data.getFloat32(_kColorOffsetG, _kFakeHostEndian);
+    final double b = _data.getFloat32(_kColorOffsetB, _kFakeHostEndian);
+    return Color.fromARGBXR(a, r, g, b);
   }
+
   set color(Color value) {
-    final int encoded = value.value ^ _kColorDefault;
-    _data.setInt32(_kColorOffset, encoded, _kFakeHostEndian);
+    _data.setFloat32(_kColorOffsetA, value.opacity, _kFakeHostEndian);
+    _data.setFloat32(_kColorOffsetR, value.redF, _kFakeHostEndian);
+    _data.setFloat32(_kColorOffsetG, value.greenF, _kFakeHostEndian);
+    _data.setFloat32(_kColorOffsetB, value.blueF, _kFakeHostEndian);
   }
 
   // Must be kept in sync with the default in paint.cc.
@@ -6267,11 +6351,11 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
 
   @override
   void drawShadow(Path path, Color color, double elevation, bool transparentOccluder) {
-    _drawShadow(path as _NativePath, color.value, elevation, transparentOccluder);
+    _drawShadow(path as _NativePath, color.opacity, color.redF, color.greenF, color.blueF, elevation, transparentOccluder);
   }
 
-  @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
-  external void _drawShadow(_NativePath path, int color, double elevation, bool transparentOccluder);
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Bool)>(symbol: 'Canvas::drawShadow')
+  external void _drawShadow(_NativePath path, double alpha, double red, double green, double blue, double elevation, bool transparentOccluder);
 
   @override
   String toString() => 'Canvas(recording: ${_recorder != null})';

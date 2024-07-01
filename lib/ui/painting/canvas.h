@@ -180,7 +180,10 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                         Dart_Handle cull_rect_handle);
 
   void drawShadow(const CanvasPath* path,
-                  SkColor color,
+                  double alpha,
+                  double red,
+                  double green,
+                  double blue,
                   double elevation,
                   bool transparentOccluder);
 
