@@ -79,7 +79,7 @@ void main(List<String> args) async {
     completer.complete();
   });
 
-  // We can't await the result of runZonedGuarded (read the docs on it).
+  // We can't await the result of runZonedGuarded becauase async errors in futures never cross different errorZone boundaries.
   await completer.future;
 
   // Run cleanup tasks.
