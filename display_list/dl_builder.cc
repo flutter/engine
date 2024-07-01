@@ -42,17 +42,17 @@ static constexpr inline bool is_power_of_two(int value) {
 template <typename T, typename... Args>
 void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
-  FML_DCHECK(size < (1 << 24));
+  FML_CHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
     static_assert(is_power_of_two(DL_BUILDER_PAGE),
                   "This math needs updating for non-pow2.");
     // Next greater multiple of DL_BUILDER_PAGE.
     allocated_ = (used_ + size + DL_BUILDER_PAGE) & ~(DL_BUILDER_PAGE - 1);
     storage_.realloc(allocated_);
-    FML_DCHECK(storage_.get());
+    FML_CHECK(storage_.get());
     memset(storage_.get() + used_, 0, allocated_ - used_);
   }
-  FML_DCHECK(used_ + size <= allocated_);
+  FML_CHECK(used_ + size <= allocated_);
   auto op = reinterpret_cast<T*>(storage_.get() + used_);
   used_ += size;
   new (op) T{std::forward<Args>(args)...};
@@ -963,14 +963,50 @@ void DisplayListBuilder::ClipRect(const SkRect& rect,
       break;
   }
 }
+void DisplayListBuilder::ClipOval(const SkRect& bounds,
+                                  ClipOp clip_op,
+                                  bool is_aa) {
+  if (!bounds.isFinite()) {
+    return;
+  }
+  if (current_info().is_nop) {
+    return;
+  }
+  if (current_info().has_valid_clip &&
+      clip_op == DlCanvas::ClipOp::kIntersect &&
+      layer_local_state().oval_covers_cull(bounds)) {
+    return;
+  }
+  global_state().clipOval(bounds, clip_op, is_aa);
+  layer_local_state().clipOval(bounds, clip_op, is_aa);
+  if (global_state().is_cull_rect_empty() ||
+      layer_local_state().is_cull_rect_empty()) {
+    current_info().is_nop = true;
+    return;
+  }
+  current_info().has_valid_clip = true;
+  checkForDeferredSave();
+  switch (clip_op) {
+    case ClipOp::kIntersect:
+      Push<ClipIntersectOvalOp>(0, bounds, is_aa);
+      break;
+    case ClipOp::kDifference:
+      Push<ClipDifferenceOvalOp>(0, bounds, is_aa);
+      break;
+  }
+}
 void DisplayListBuilder::ClipRRect(const SkRRect& rrect,
                                    ClipOp clip_op,
                                    bool is_aa) {
+  if (current_info().is_nop) {
+    return;
+  }
   if (rrect.isRect()) {
     clipRect(rrect.rect(), clip_op, is_aa);
     return;
   }
-  if (current_info().is_nop) {
+  if (rrect.isOval()) {
+    clipOval(rrect.rect(), clip_op, is_aa);
     return;
   }
   if (current_info().has_valid_clip &&
@@ -1008,12 +1044,11 @@ void DisplayListBuilder::ClipPath(const SkPath& path,
       this->clipRect(rect, clip_op, is_aa);
       return;
     }
-    SkRRect rrect;
     if (path.isOval(&rect)) {
-      rrect.setOval(rect);
-      this->clipRRect(rrect, clip_op, is_aa);
+      this->clipOval(rect, clip_op, is_aa);
       return;
     }
+    SkRRect rrect;
     if (path.isRRect(&rrect)) {
       this->clipRRect(rrect, clip_op, is_aa);
       return;
@@ -1188,6 +1223,22 @@ void DisplayListBuilder::DrawDRRect(const SkRRect& outer,
   drawDRRect(outer, inner);
 }
 void DisplayListBuilder::drawPath(const SkPath& path) {
+  if (!path.isInverseFillType()) {
+    SkRect rect;
+    if (path.isRect(&rect)) {
+      drawRect(rect);
+      return;
+    }
+    if (path.isOval(&rect)) {
+      drawOval(rect);
+      return;
+    }
+    SkRRect rrect;
+    if (path.isRRect(&rrect)) {
+      drawRRect(rrect);
+      return;
+    }
+  }
   DisplayListAttributeFlags flags = kDrawPathFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect) {
@@ -1309,14 +1360,14 @@ void DisplayListBuilder::DrawPoints(PointMode mode,
   SetAttributesFromPaint(paint, FlagsForPointMode(mode));
   drawPoints(mode, count, pts);
 }
-void DisplayListBuilder::drawVertices(const DlVertices* vertices,
-                                      DlBlendMode mode) {
+void DisplayListBuilder::drawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode) {
   DisplayListAttributeFlags flags = kDrawVerticesFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(vertices->bounds(), flags)) {
-    void* pod = Push<DrawVerticesOp>(vertices->size(), mode);
-    new (pod) DlVertices(vertices);
+    Push<DrawVerticesOp>(0, vertices, mode);
     // DrawVertices applies its colors to the paint so we have no way
     // of controlling opacity using the current paint attributes.
     // Although, examination of the |mode| might find some predictable
@@ -1334,9 +1385,10 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
     current_layer().layer_local_accumulator.record_overlapping_bounds();
   }
 }
-void DisplayListBuilder::DrawVertices(const DlVertices* vertices,
-                                      DlBlendMode mode,
-                                      const DlPaint& paint) {
+void DisplayListBuilder::DrawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode,
+    const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawVerticesFlags);
   drawVertices(vertices, mode);
 }

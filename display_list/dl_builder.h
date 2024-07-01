@@ -117,6 +117,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
   // |DlCanvas|
+  void ClipOval(const SkRect& bounds,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
+  // |DlCanvas|
   void ClipRRect(const SkRRect& rrect,
                  ClipOp clip_op = ClipOp::kIntersect,
                  bool is_aa = false) override;
@@ -188,10 +192,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
                   const SkPoint pts[],
                   const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawVertices(const DlVertices* vertices,
+  void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
-  using DlCanvas::DrawVertices;
   // |DlCanvas|
   void DrawImage(const sk_sp<DlImage>& image,
                  const SkPoint point,
@@ -401,6 +404,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
     ClipRect(rect, clip_op, is_aa);
   }
   // |DlOpReceiver|
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override {
+    ClipOval(bounds, clip_op, is_aa);
+  }
+  // |DlOpReceiver|
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override {
     ClipRRect(rrect, clip_op, is_aa);
   }
@@ -442,7 +449,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlOpReceiver|
   void drawPoints(PointMode mode, uint32_t count, const SkPoint pts[]) override;
   // |DlOpReceiver|
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override;
 
   // |DlOpReceiver|
   void drawImage(const sk_sp<DlImage> image,

@@ -431,6 +431,9 @@ extension DomEventExtension on DomEvent {
   external JSString get _type;
   String get type => _type.toDart;
 
+  external JSBoolean? get _cancelable;
+  bool get cancelable => _cancelable?.toDart ?? true;
+
   external JSVoid preventDefault();
   external JSVoid stopPropagation();
 
@@ -658,7 +661,16 @@ extension DomElementExtension on DomElement {
   external JSNumber? get _tabIndex;
   double? get tabIndex => _tabIndex?.toDartDouble;
 
-  external JSVoid focus();
+  @JS('focus')
+  external JSVoid _focus(JSAny options);
+
+  void focus({bool? preventScroll, bool? focusVisible}) {
+    final Map<String, bool> options = <String, bool>{
+      if (preventScroll != null) 'preventScroll': preventScroll,
+      if (focusVisible != null) 'focusVisible': focusVisible,
+    };
+    _focus(options.toJSAnyDeep);
+  }
 
   @JS('scrollTop')
   external JSNumber get _scrollTop;
@@ -720,6 +732,8 @@ extension DomElementExtension on DomElement {
       removeChild(firstChild!);
     }
   }
+
+  external void setPointerCapture(num? pointerId);
 }
 
 @JS()
@@ -2249,9 +2263,11 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external JSBoolean? get _repeat;
   bool? get repeat => _repeat?.toDart;
 
+  // Safari injects synthetic keyboard events after auto-complete that don't
+  // have a `shiftKey` attribute, so this property must be nullable.
   @JS('shiftKey')
-  external JSBoolean get _shiftKey;
-  bool get shiftKey => _shiftKey.toDart;
+  external JSBoolean? get _shiftKey;
+  bool? get shiftKey => _shiftKey?.toDart;
 
   @JS('isComposing')
   external JSBoolean get _isComposing;
@@ -2735,6 +2751,30 @@ DomCompositionEvent createDomCompositionEvent(String type,
   } else {
     return DomCompositionEvent.arg2(type.toJS, options.toJSAnyDeep);
   }
+}
+
+/// This is a pseudo-type for DOM elements that have the boolean `disabled`
+/// property.
+///
+/// This type cannot be part of the actual type hierarchy because each DOM type
+/// defines its `disabled` property ad hoc, without inheriting it from a common
+/// type, e.g. [DomHTMLInputElement] and [DomHTMLTextAreaElement].
+///
+/// To use, simply cast any element known to have the `disabled` property to
+/// this type using `as DomElementWithDisabledProperty`, then read and write
+/// this property as normal.
+@JS()
+@staticInterop
+class DomElementWithDisabledProperty extends DomHTMLElement {}
+
+extension DomElementWithDisabledPropertyExtension on DomElementWithDisabledProperty {
+  @JS('disabled')
+  external JSBoolean? get _disabled;
+  bool? get disabled => _disabled?.toDart;
+
+  @JS('disabled')
+  external set _disabled(JSBoolean? value);
+  set disabled(bool? value) => _disabled = value?.toJS;
 }
 
 @JS()

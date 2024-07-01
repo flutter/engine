@@ -153,6 +153,12 @@ void DlSkCanvasAdapter::ClipRect(const SkRect& rect,
   delegate_->clipRect(rect, ToSk(clip_op), is_aa);
 }
 
+void DlSkCanvasAdapter::ClipOval(const SkRect& bounds,
+                                 ClipOp clip_op,
+                                 bool is_aa) {
+  delegate_->clipRRect(SkRRect::MakeOval(bounds), ToSk(clip_op), is_aa);
+}
+
 void DlSkCanvasAdapter::ClipRRect(const SkRRect& rrect,
                                   ClipOp clip_op,
                                   bool is_aa) {
@@ -254,9 +260,10 @@ void DlSkCanvasAdapter::DrawPoints(PointMode mode,
   delegate_->drawPoints(ToSk(mode), count, pts, ToStrokedSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawVertices(const DlVertices* vertices,
-                                     DlBlendMode mode,
-                                     const DlPaint& paint) {
+void DlSkCanvasAdapter::DrawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode,
+    const DlPaint& paint) {
   delegate_->drawVertices(ToSk(vertices), ToSk(mode), ToSk(paint));
 }
 

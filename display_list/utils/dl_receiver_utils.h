@@ -44,6 +44,9 @@ class IgnoreClipDispatchHelper : public virtual DlOpReceiver {
   void clipRect(const SkRect& rect,
                 DlCanvas::ClipOp clip_op,
                 bool is_aa) override {}
+  void clipOval(const SkRect& bounds,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {}
   void clipRRect(const SkRRect& rrect,
                  DlCanvas::ClipOp clip_op,
                  bool is_aa) override {}
@@ -101,7 +104,8 @@ class IgnoreDrawDispatchHelper : public virtual DlOpReceiver {
   void drawPoints(DlCanvas::PointMode mode,
                   uint32_t count,
                   const SkPoint points[]) override {}
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {}
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override {}
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,

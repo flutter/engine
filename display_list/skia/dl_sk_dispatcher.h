@@ -51,6 +51,7 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
   void transformReset() override;
 
   void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
 
@@ -72,7 +73,8 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
                SkScalar sweep,
                bool useCenter) override;
   void drawPoints(PointMode mode, uint32_t count, const SkPoint pts[]) override;
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,

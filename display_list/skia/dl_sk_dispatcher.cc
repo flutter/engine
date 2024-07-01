@@ -122,6 +122,11 @@ void DlSkCanvasDispatcher::clipRect(const SkRect& rect,
                                     bool is_aa) {
   canvas_->clipRect(rect, ToSk(clip_op), is_aa);
 }
+void DlSkCanvasDispatcher::clipOval(const SkRect& bounds,
+                                    ClipOp clip_op,
+                                    bool is_aa) {
+  canvas_->clipRRect(SkRRect::MakeOval(bounds), ToSk(clip_op), is_aa);
+}
 void DlSkCanvasDispatcher::clipRRect(const SkRRect& rrect,
                                      ClipOp clip_op,
                                      bool is_aa) {
@@ -192,8 +197,9 @@ void DlSkCanvasDispatcher::drawPoints(PointMode mode,
                                       const SkPoint pts[]) {
   canvas_->drawPoints(ToSk(mode), count, pts, paint());
 }
-void DlSkCanvasDispatcher::drawVertices(const DlVertices* vertices,
-                                        DlBlendMode mode) {
+void DlSkCanvasDispatcher::drawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode) {
   canvas_->drawVertices(ToSk(vertices), ToSk(mode), paint());
 }
 void DlSkCanvasDispatcher::drawImage(const sk_sp<DlImage> image,

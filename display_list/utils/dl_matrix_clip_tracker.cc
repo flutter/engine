@@ -74,6 +74,24 @@ void DisplayListMatrixClipState::clipRect(const DlRect& rect,
   }
 }
 
+void DisplayListMatrixClipState::clipOval(const DlRect& bounds,
+                                          ClipOp op,
+                                          bool is_aa) {
+  if (!bounds.IsFinite()) {
+    return;
+  }
+  switch (op) {
+    case DlCanvas::ClipOp::kIntersect:
+      adjustCullRect(bounds, op, is_aa);
+      break;
+    case DlCanvas::ClipOp::kDifference:
+      if (oval_covers_cull(bounds)) {
+        cull_rect_ = DlRect();
+      }
+      break;
+  }
+}
+
 void DisplayListMatrixClipState::clipRRect(const SkRRect& rrect,
                                            ClipOp op,
                                            bool is_aa) {
@@ -238,6 +256,12 @@ bool DisplayListMatrixClipState::rect_covers_cull(const DlRect& content) const {
   }
   if (cull_rect_.IsEmpty()) {
     return true;
+  }
+  if (matrix_.IsAligned2D()) {
+    // This transform-to-device calculation is faster and more accurate
+    // for rect-to-rect aligned transformations, but not accurate under
+    // (non-quadrant) rotations and skews.
+    return content.TransformAndClipBounds(matrix_).Contains(cull_rect_);
   }
   DlPoint corners[4];
   if (!getLocalCullCorners(corners)) {

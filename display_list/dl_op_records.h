@@ -566,11 +566,11 @@ struct TransformResetOp final : TransformClipOpBase {
 // the header, but the Windows compiler keeps wanting to expand that
 // packing into more bytes than needed (even when they are declared as
 // packed bit fields!)
-#define DEFINE_CLIP_SHAPE_OP(shapetype, clipop)                                \
-  struct Clip##clipop##shapetype##Op final : TransformClipOpBase {             \
-    static constexpr auto kType = DisplayListOpType::kClip##clipop##shapetype; \
+#define DEFINE_CLIP_SHAPE_OP(shapename, shapetype, clipop)                     \
+  struct Clip##clipop##shapename##Op final : TransformClipOpBase {             \
+    static constexpr auto kType = DisplayListOpType::kClip##clipop##shapename; \
                                                                                \
-    Clip##clipop##shapetype##Op(Sk##shapetype shape, bool is_aa)               \
+    Clip##clipop##shapename##Op(Sk##shapetype shape, bool is_aa)               \
         : is_aa(is_aa), shape(shape) {}                                        \
                                                                                \
     const bool is_aa;                                                          \
@@ -578,15 +578,17 @@ struct TransformResetOp final : TransformClipOpBase {
                                                                                \
     void dispatch(DispatchContext& ctx) const {                                \
       if (op_needed(ctx)) {                                                    \
-        ctx.receiver.clip##shapetype(shape, DlCanvas::ClipOp::k##clipop,       \
+        ctx.receiver.clip##shapename(shape, DlCanvas::ClipOp::k##clipop,       \
                                      is_aa);                                   \
       }                                                                        \
     }                                                                          \
   };
-DEFINE_CLIP_SHAPE_OP(Rect, Intersect)
-DEFINE_CLIP_SHAPE_OP(RRect, Intersect)
-DEFINE_CLIP_SHAPE_OP(Rect, Difference)
-DEFINE_CLIP_SHAPE_OP(RRect, Difference)
+DEFINE_CLIP_SHAPE_OP(Rect, Rect, Intersect)
+DEFINE_CLIP_SHAPE_OP(Oval, Rect, Intersect)
+DEFINE_CLIP_SHAPE_OP(RRect, RRect, Intersect)
+DEFINE_CLIP_SHAPE_OP(Rect, Rect, Difference)
+DEFINE_CLIP_SHAPE_OP(Oval, Rect, Difference)
+DEFINE_CLIP_SHAPE_OP(RRect, RRect, Difference)
 #undef DEFINE_CLIP_SHAPE_OP
 
 #define DEFINE_CLIP_PATH_OP(clipop)                                       \
@@ -802,24 +804,19 @@ DEFINE_DRAW_POINTS_OP(Lines, kLines);
 DEFINE_DRAW_POINTS_OP(Polygon, kPolygon);
 #undef DEFINE_DRAW_POINTS_OP
 
-// 4 byte header + 4 byte payload packs efficiently into 8 bytes
-// The DlVertices object will be pod-allocated after this structure
-// and can take any number of bytes so the final efficiency will
-// depend on the size of the DlVertices.
-// Note that the DlVertices object ends with an array of 16-bit
-// indices so the alignment can be up to 6 bytes off leading to
-// up to 6 bytes of overhead
+// 4 byte header + 20 byte payload packs efficiently into 24 bytes
 struct DrawVerticesOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawVertices;
 
-  explicit DrawVerticesOp(DlBlendMode mode) : mode(mode) {}
+  explicit DrawVerticesOp(const std::shared_ptr<DlVertices>& vertices,
+                          DlBlendMode mode)
+      : mode(mode), vertices(vertices) {}
 
   const DlBlendMode mode;
+  const std::shared_ptr<DlVertices> vertices;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
-      const DlVertices* vertices =
-          reinterpret_cast<const DlVertices*>(this + 1);
       ctx.receiver.drawVertices(vertices, mode);
     }
   }

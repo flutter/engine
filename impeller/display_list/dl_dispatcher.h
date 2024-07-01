@@ -124,6 +124,9 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
   void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
+
+  // |flutter::DlOpReceiver|
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
 
   // |flutter::DlOpReceiver|
@@ -182,7 +185,7 @@ class DlDispatcherBase : public flutter::DlOpReceiver {
                   const SkPoint points[]) override;
 
   // |flutter::DlOpReceiver|
-  void drawVertices(const flutter::DlVertices* vertices,
+  void drawVertices(const std::shared_ptr<flutter::DlVertices>& vertices,
                     flutter::DlBlendMode dl_mode) override;
 
   // |flutter::DlOpReceiver|

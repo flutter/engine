@@ -183,6 +183,7 @@ static const SkRRect kTestInnerRRect =
     SkRRect::MakeRectXY(kTestBounds.makeInset(5, 5), 2, 2);
 static const SkPath kTestPathRect = SkPath::Rect(kTestBounds);
 static const SkPath kTestPathOval = SkPath::Oval(kTestBounds);
+static const SkPath kTestPathRRect = SkPath::RRect(kTestRRect);
 static const SkPath kTestPath1 =
     SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true);
 static const SkPath kTestPath2 =
@@ -192,13 +193,13 @@ static const SkPath kTestPath3 =
 static const SkMatrix kTestMatrix1 = SkMatrix::Scale(2, 2);
 static const SkMatrix kTestMatrix2 = SkMatrix::RotateDeg(45);
 
-static std::shared_ptr<const DlVertices> TestVertices1 =
+static const std::shared_ptr<DlVertices> kTestVertices1 =
     DlVertices::Make(DlVertexMode::kTriangles,  //
                      3,
                      kTestPoints,
                      nullptr,
                      kColors);
-static std::shared_ptr<const DlVertices> TestVertices2 =
+static const std::shared_ptr<DlVertices> kTestVertices2 =
     DlVertices::Make(DlVertexMode::kTriangleFan,  //
                      3,
                      kTestPoints,

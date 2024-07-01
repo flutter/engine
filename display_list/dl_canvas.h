@@ -105,6 +105,9 @@ class DlCanvas {
   virtual void ClipRect(const SkRect& rect,
                         ClipOp clip_op = ClipOp::kIntersect,
                         bool is_aa = false) = 0;
+  virtual void ClipOval(const SkRect& bounds,
+                        ClipOp clip_op = ClipOp::kIntersect,
+                        bool is_aa = false) = 0;
   virtual void ClipRRect(const SkRRect& rrect,
                          ClipOp clip_op = ClipOp::kIntersect,
                          bool is_aa = false) = 0;
@@ -157,14 +160,9 @@ class DlCanvas {
                           uint32_t count,
                           const SkPoint pts[],
                           const DlPaint& paint) = 0;
-  virtual void DrawVertices(const DlVertices* vertices,
+  virtual void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                             DlBlendMode mode,
                             const DlPaint& paint) = 0;
-  void DrawVertices(const std::shared_ptr<const DlVertices>& vertices,
-                    DlBlendMode mode,
-                    const DlPaint& paint) {
-    DrawVertices(vertices.get(), mode, paint);
-  }
   virtual void DrawImage(const sk_sp<DlImage>& image,
                          const SkPoint point,
                          DlImageSampling sampling,
