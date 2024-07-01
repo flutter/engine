@@ -72,8 +72,6 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                             options:@{}];
 
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
-
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
@@ -99,7 +97,6 @@ FLUTTER_ASSERT_ARC
       [self.appDelegate application:[UIApplication sharedApplication]
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                             options:@{}];
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
   XCTAssertFalse(result);
   OCMReject([self.mockNavigationChannel invokeMethod:OCMOCK_ANY arguments:OCMOCK_ANY]);
 }
@@ -115,7 +112,6 @@ FLUTTER_ASSERT_ARC
       application:[UIApplication sharedApplication]
           openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test#fragment"]
           options:@{}];
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
@@ -131,7 +127,6 @@ FLUTTER_ASSERT_ARC
       [self.appDelegate application:[UIApplication sharedApplication]
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route#fragment"]
                             options:@{}];
-  [self waitForExpectationsWithTimeout:5.0 handler:nil];
   XCTAssertTrue(result);
   OCMVerifyAll(self.mockNavigationChannel);
 }
