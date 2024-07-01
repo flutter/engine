@@ -751,11 +751,9 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
         pass2_out.value().GetRenderTargetTexture();
     blur_output_entity.SetBlendMode(entity.GetBlendMode());
     blur_output_entity.SetTransform(blur_output_entity_transform);
-    constexpr Vector2 orthographic_size(2.0f, 2.0f);
-    Vector2 inline_pixel_size = pass1_pixel_size / orthographic_size;
     blur_output_entity.SetContents(Contents::MakeAnonymous(
         /*render_proc=*/
-        [sampler_desc, texture, inline_pixel_size, blur_info,
+        [sampler_desc, texture, pass1_pixel_size, blur_info,
          downsample_pass_args](const ContentContext& renderer,
                                const Entity& entity, RenderPass& pass) {
           Quad blur_uvs = {Point(0, 0), Point(1, 0), Point(0, 1), Point(1, 1)};
@@ -763,13 +761,16 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
               Point(0, 0), Point(texture->GetSize().width, 0),
               Point(0, texture->GetSize().height),
               Point(texture->GetSize().width, texture->GetSize().height)};
+          int32_t fudge_scalar = 2.0;
           return Render1DBlur(
               renderer, pass, blur_vertices, blur_uvs, sampler_desc, texture,
               BlurParameters{
-                  .blur_uv_offset = Point(inline_pixel_size.x, 0.0),
-                  .blur_sigma = blur_info.scaled_sigma.x *
+                  .blur_uv_offset =
+                      Point(pass1_pixel_size.x / fudge_scalar, 0.0),
+                  .blur_sigma = fudge_scalar * blur_info.scaled_sigma.x *
                                 downsample_pass_args.effective_scalar.x,
                   .blur_radius =
+                      fudge_scalar *
                       ScaleBlurRadius(blur_info.blur_radius.x,
                                       downsample_pass_args.effective_scalar.x),
                   .step_size = 1,
