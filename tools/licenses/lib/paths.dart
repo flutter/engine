@@ -92,6 +92,7 @@ final Set<String> skippedPaths = <String>{
   r'flutter/third_party/harfbuzz/util', // utils are command line tools that do not end up in the binary
   r'flutter/third_party/icu/filters',
   r'flutter/third_party/icu/fuzzers',
+  r'flutter/third_party/icu/patches', // patches added by Chromium that are already applied to the code base
   r'flutter/third_party/icu/scripts',
   r'flutter/third_party/icu/source/common/unicode/uvernum.h', // this file contains strings that confuse the analysis
   r'flutter/third_party/icu/source/config',
@@ -223,7 +224,6 @@ final Set<String> skippedPaths = <String>{
   r'third_party/android_tools', // excluded on advice
   r'third_party/java', // only used for Android builds
   r'third_party/libxml', // dependency of the testing system that we don't actually use
-  r'third_party/web_dependencies/canvaskit', // redundant; covered by Skia dependencies
   r'tools', // not distributed in binary
 };
 
