@@ -197,7 +197,6 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
   for (auto j = 0u; j < polyline.contours.size(); j++) {
     auto [start, end] = polyline.GetContourPointBounds(j);
     auto first_point = polyline.GetPoint(start);
-
     // Some polygons will not self close and an additional triangle
     // must be inserted, others will self close and we need to avoid
     // inserting an extra triangle.
@@ -221,19 +220,21 @@ std::vector<Point> Tessellator::TessellateConvex(const Path& path,
       output.emplace_back(first_point);
     }
 
-    size_t a = start + 1;
-    size_t b = end - 1;
-    while (a < b) {
-      output.emplace_back(polyline.GetPoint(a));
-      output.emplace_back(polyline.GetPoint(b));
-      a++;
-      b--;
-    }
-    if (a == b) {
-      previous_contour_odd_points = false;
-      output.emplace_back(polyline.GetPoint(a));
-    } else {
-      previous_contour_odd_points = true;
+    if (start != end) {
+      size_t a = start + 1;
+      size_t b = end - 1;
+      while (a < b) {
+        output.emplace_back(polyline.GetPoint(a));
+        output.emplace_back(polyline.GetPoint(b));
+        a++;
+        b--;
+      }
+      if (a == b) {
+        previous_contour_odd_points = false;
+        output.emplace_back(polyline.GetPoint(a));
+      } else {
+        previous_contour_odd_points = true;
+      }
     }
   }
   return output;
