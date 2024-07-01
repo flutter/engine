@@ -176,6 +176,7 @@
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/test
+../../../flutter/impeller/renderer/backend/metal/allocator_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/metal/texture_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
@@ -1933,6 +1934,7 @@
 ../../../flutter/third_party/icu/fuzzers
 ../../../flutter/third_party/icu/icu4c.css
 ../../../flutter/third_party/icu/license.html
+../../../flutter/third_party/icu/patches
 ../../../flutter/third_party/icu/readme.html
 ../../../flutter/third_party/icu/scripts
 ../../../flutter/third_party/icu/source/.clang-format
