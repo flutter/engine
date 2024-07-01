@@ -11,6 +11,7 @@ import("//flutter/testing/testing.gni")
 group("linux") {
   deps = [
     ":flutter_linux_gtk",
+    ":flutter_linux_gtk4",
     ":publish_headers_linux",
   ]
   if (build_glfw_shell) {
@@ -165,6 +166,95 @@ source_set("flutter_linux_sources") {
   ]
 }
 
+source_set("flutter_linux_sources4") {
+  public = _public_headers + [
+             "fl_binary_messenger_private.h",
+             "fl_dart_project_private.h",
+             "fl_engine_private.h",
+             "fl_keyboard_manager.h",
+             "fl_keyboard_view_delegate.h",
+             "fl_key_event.h",
+             "fl_key_responder.h",
+             "fl_key_channel_responder.h",
+             "fl_key_embedder_responder.h",
+             "fl_key_embedder_responder_private.h",
+             "fl_method_call_private.h",
+             "fl_method_channel_private.h",
+             "fl_method_codec_private.h",
+             "fl_plugin_registrar_private.h",
+             "key_mapping.h",
+           ]
+
+  configs += [ "//flutter/shell/platform/linux/config:gtk4" ]
+
+  sources = [
+    "fl_accessible_node.cc",
+    "fl_accessible_text_field.cc",
+    "fl_backing_store_provider.cc",
+    "fl_basic_message_channel.cc",
+    "fl_binary_codec.cc",
+    "fl_binary_messenger.cc",
+    "fl_dart_project.cc",
+    "fl_engine.cc",
+    "fl_event_channel.cc",
+    "fl_gnome_settings.cc",
+    "fl_json_message_codec.cc",
+    "fl_json_method_codec.cc",
+    "fl_key_channel_responder.cc",
+    "fl_key_embedder_responder.cc",
+    "fl_key_event.cc",
+    "fl_key_responder.cc",
+    "fl_keyboard_manager.cc",
+    "fl_keyboard_view_delegate.cc",
+    "fl_message_codec.cc",
+    "fl_method_call.cc",
+    "fl_method_channel.cc",
+    "fl_method_codec.cc",
+    "fl_method_response.cc",
+    "fl_mouse_cursor_plugin.cc",
+    "fl_pixel_buffer_texture.cc",
+    "fl_platform_plugin.cc",
+    "fl_plugin_registrar.cc",
+    "fl_plugin_registry.cc",
+    "fl_renderer.cc",
+    "fl_renderer_gdk.cc",
+    "fl_renderer_headless.cc",
+    "fl_scrolling_view_delegate.cc",
+    "fl_settings.cc",
+    "fl_settings_plugin.cc",
+    "fl_settings_portal.cc",
+    "fl_standard_message_codec.cc",
+    "fl_standard_method_codec.cc",
+    "fl_string_codec.cc",
+    "fl_task_runner.cc",
+    "fl_task_runner.h",
+    "fl_text_input_plugin.cc",
+    "fl_text_input_view_delegate.cc",
+    "fl_texture.cc",
+    "fl_texture_gl.cc",
+    "fl_texture_registrar.cc",
+    "fl_value.cc",
+    "fl_view.cc",
+    "fl_view_accessible.cc",
+    "key_mapping4.g.cc",
+  ]
+
+  # Set flag to stop headers being directly included (library users should not do this)
+  defines = [
+    "FLUTTER_LINUX_COMPILATION",
+    "FLUTTER_ENGINE_NO_PROTOTYPES",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/shell/platform/common:common_cpp_enums",
+    "//flutter/shell/platform/common:common_cpp_input",
+    "//flutter/shell/platform/common:common_cpp_switches",
+    "//flutter/shell/platform/embedder:embedder_headers",
+    "//flutter/third_party/rapidjson",
+  ]
+}
+
 source_set("flutter_linux") {
   configs += [
     "//flutter/shell/platform/linux/config:gtk",
@@ -174,6 +264,19 @@ source_set("flutter_linux") {
   defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
 
   public_deps = [ ":flutter_linux_sources" ]
+
+  deps = [ "//flutter/shell/platform/embedder:embedder_as_internal_library" ]
+}
+
+source_set("flutter_linux4") {
+  configs += [
+    "//flutter/shell/platform/linux/config:gtk4",
+    "//flutter/shell/platform/linux/config:epoxy",
+  ]
+
+  defines = [ "FLUTTER_ENGINE_NO_PROTOTYPES" ]
+
+  public_deps = [ ":flutter_linux_sources4" ]
 
   deps = [ "//flutter/shell/platform/embedder:embedder_as_internal_library" ]
 }
@@ -280,6 +383,14 @@ shared_library("flutter_linux_gtk") {
   public_configs = [ "//flutter:config" ]
 }
 
+shared_library("flutter_linux_gtk4") {
+  deps = [ ":flutter_linux4" ]
+
+  ldflags = [ "-Wl,-rpath,\$ORIGIN" ]
+
+  public_configs = [ "//flutter:config" ]
+}
+
 copy("publish_headers_linux") {
   sources = _public_headers
   outputs = [ "$root_out_dir/flutter_linux/{{source_file_part}}" ]
@@ -290,6 +401,7 @@ zip_bundle("flutter_gtk") {
   output = "${prefix}${full_target_platform_name}-flutter-gtk.zip"
   deps = [
     ":flutter_linux_gtk",
+    ":flutter_linux_gtk4",
     ":publish_headers_linux",
     "$dart_src/runtime/bin:gen_snapshot",
   ]
@@ -307,6 +419,10 @@ zip_bundle("flutter_gtk") {
     {
       source = "$root_build_dir/libflutter_${host_os}_gtk.so"
       destination = "libflutter_${host_os}_gtk.so"
+    },
+    {
+      source = "$root_build_dir/libflutter_${host_os}_gtk4.so"
+      destination = "libflutter_${host_os}_gtk4.so"
     },
     {
       source = "$root_build_dir/gen_snapshot"

@@ -7,8 +7,12 @@
 struct _FlRendererGdk {
   FlRenderer parent_instance;
 
-  // Window being rendered on.
+  // Window/surface being rendered on.
+#if GTK_CHECK_VERSION(4, 0, 0)
+  GdkSurface* surface;
+#else
   GdkWindow* window;
+#endif
 
   // OpenGL rendering context used by GDK.
   GdkGLContext* gdk_context;
@@ -21,6 +25,14 @@ struct _FlRendererGdk {
 };
 
 G_DEFINE_TYPE(FlRendererGdk, fl_renderer_gdk, fl_renderer_get_type())
+
+static GdkGLContext* create_gl_context(FlRendererGdk* self, GError** error) {
+#if GTK_CHECK_VERSION(4, 0, 0)
+  return gdk_surface_create_gl_context(self->surface, error);
+#else
+  return gdk_window_create_gl_context(self->window, error);
+#endif
+}
 
 // Implements FlRenderer::make_current.
 static void fl_renderer_gdk_make_current(FlRenderer* renderer) {
@@ -41,9 +53,15 @@ static void fl_renderer_gdk_clear_current(FlRenderer* renderer) {
 
 static gdouble fl_renderer_gdk_get_refresh_rate(FlRenderer* renderer) {
   FlRendererGdk* self = FL_RENDERER_GDK(renderer);
+#if GTK_CHECK_VERSION(4, 0, 0)
+  GdkDisplay* display = gdk_surface_get_display(self->surface);
+  GdkMonitor* monitor =
+      gdk_display_get_monitor_at_surface(display, self->surface);
+#else
   GdkDisplay* display = gdk_window_get_display(self->window);
   GdkMonitor* monitor =
       gdk_display_get_monitor_at_window(display, self->window);
+#endif
   if (monitor == nullptr) {
     return -1.0;
   }
@@ -78,15 +96,23 @@ static void fl_renderer_gdk_class_init(FlRendererGdkClass* klass) {
 
 static void fl_renderer_gdk_init(FlRendererGdk* self) {}
 
+#if GTK_CHECK_VERSION(4, 0, 0)
+FlRendererGdk* fl_renderer_gdk_new(GdkSurface* surface) {
+#else
 FlRendererGdk* fl_renderer_gdk_new(GdkWindow* window) {
+#endif
   FlRendererGdk* self =
       FL_RENDERER_GDK(g_object_new(fl_renderer_gdk_get_type(), nullptr));
+#if GTK_CHECK_VERSION(4, 0, 0)
+  self->surface = surface;
+#else
   self->window = window;
+#endif
   return self;
 }
 
 gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
-  self->gdk_context = gdk_window_create_gl_context(self->window, error);
+  self->gdk_context = create_gl_context(self, error);
   if (self->gdk_context == nullptr) {
     return FALSE;
   }
@@ -94,7 +120,7 @@ gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
     return FALSE;
   }
 
-  self->main_context = gdk_window_create_gl_context(self->window, error);
+  self->main_context = create_gl_context(self, error);
   if (self->main_context == nullptr) {
     return FALSE;
   }
@@ -102,7 +128,7 @@ gboolean fl_renderer_gdk_create_contexts(FlRendererGdk* self, GError** error) {
     return FALSE;
   }
 
-  self->resource_context = gdk_window_create_gl_context(self->window, error);
+  self->resource_context = create_gl_context(self, error);
   if (self->resource_context == nullptr) {
     return FALSE;
   }

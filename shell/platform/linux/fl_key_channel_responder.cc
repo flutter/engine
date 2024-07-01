@@ -239,7 +239,11 @@ static void fl_key_channel_responder_handle_event(
   // interactions (for example, if shift-lock is on, tab traversal is broken).
 
   // Remove lock states from state mask.
+#if GTK_CHECK_VERSION(4, 0, 0)
+  guint state = event->state & ~GDK_LOCK_MASK;
+#else
   guint state = event->state & ~(GDK_LOCK_MASK | GDK_MOD2_MASK);
+#endif
 
   static bool shift_lock_pressed = FALSE;
   static bool caps_lock_pressed = FALSE;
@@ -259,7 +263,9 @@ static void fl_key_channel_responder_handle_event(
   // Add back in the state matching the actual pressed state of the lock keys,
   // not the lock states.
   state |= (shift_lock_pressed || caps_lock_pressed) ? GDK_LOCK_MASK : 0x0;
+#if !GTK_CHECK_VERSION(4, 0, 0)
   state |= num_lock_pressed ? GDK_MOD2_MASK : 0x0;
+#endif
 
   g_autoptr(FlValue) message = fl_value_new_map();
   fl_value_set_string_take(message, kTypeKey, fl_value_new_string(type));
