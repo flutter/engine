@@ -56,7 +56,7 @@ def main():
       'android_tools',
       'sdk',
       'platforms',
-      'android-34',  # todo: change to 35
+      'android-35',
       'android.jar'
   )
   if not os.path.exists(android_jar_path):
