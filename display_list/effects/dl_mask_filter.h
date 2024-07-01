@@ -42,19 +42,16 @@ class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
 // filter is then used to combine those colors.
 class DlBlurMaskFilter final : public DlMaskFilter {
  public:
-  DlBlurMaskFilter(DlBlurStyle style, SkScalar sigma, bool respect_ctm = true)
-      : style_(style), sigma_(sigma), respect_ctm_(respect_ctm) {}
+  DlBlurMaskFilter(DlBlurStyle style, SkScalar sigma)
+      : style_(style), sigma_(sigma) {}
   DlBlurMaskFilter(const DlBlurMaskFilter& filter)
-      : DlBlurMaskFilter(filter.style_, filter.sigma_, filter.respect_ctm_) {}
+      : DlBlurMaskFilter(filter.style_, filter.sigma_) {}
   explicit DlBlurMaskFilter(const DlBlurMaskFilter* filter)
-      : DlBlurMaskFilter(filter->style_, filter->sigma_, filter->respect_ctm_) {
-  }
+      : DlBlurMaskFilter(filter->style_, filter->sigma_) {}
 
-  static std::shared_ptr<DlMaskFilter> Make(DlBlurStyle style,
-                                            SkScalar sigma,
-                                            bool respect_ctm = true) {
+  static std::shared_ptr<DlMaskFilter> Make(DlBlurStyle style, SkScalar sigma) {
     if (std::isfinite(sigma) && sigma > 0) {
-      return std::make_shared<DlBlurMaskFilter>(style, sigma, respect_ctm);
+      return std::make_shared<DlBlurMaskFilter>(style, sigma);
     }
     return nullptr;
   }
@@ -70,22 +67,17 @@ class DlBlurMaskFilter final : public DlMaskFilter {
 
   DlBlurStyle style() const { return style_; }
   SkScalar sigma() const { return sigma_; }
-  bool respectCTM() const { return respect_ctm_; }
 
  protected:
   bool equals_(DlMaskFilter const& other) const override {
     FML_DCHECK(other.type() == DlMaskFilterType::kBlur);
     auto that = static_cast<DlBlurMaskFilter const*>(&other);
-    return style_ == that->style_ && sigma_ == that->sigma_ &&
-           respect_ctm_ == that->respect_ctm_;
+    return style_ == that->style_ && sigma_ == that->sigma_;
   }
 
  private:
   DlBlurStyle style_;
   SkScalar sigma_;
-  // Added for backward compatibility with Flutter text shadow rendering which
-  // uses Skia blur filters with this flag set to false.
-  bool respect_ctm_;
 };
 
 }  // namespace flutter

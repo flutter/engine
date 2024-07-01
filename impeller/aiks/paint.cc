@@ -207,9 +207,6 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
     bool is_solid_color,
     const Matrix& ctm) const {
   Vector2 blur_sigma(sigma.sigma, sigma.sigma);
-  if (!respect_ctm) {
-    blur_sigma /= Vector2(ctm.GetBasisX().Length(), ctm.GetBasisY().Length());
-  }
   if (is_solid_color) {
     return FilterContents::MakeGaussianBlur(input, Sigma(blur_sigma.x),
                                             Sigma(blur_sigma.y),
