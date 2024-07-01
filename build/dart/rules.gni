@@ -390,3 +390,117 @@ template("application_snapshot") {
     }
   }
 }
+
+# Generates an executable from Dart code using `dart compile exe`.
+#
+# This rule is primarily intended to be used to compile test targets for use
+# by engine developers to build and run test code written in Dart in the engine
+# repo, in particular via the `et` tool. It is NOT intended for use in
+# generating production-ready user-facing binaries.
+#
+# See: //flutter/tools/engine_tool for more information on `et`.
+#
+# Arguments
+#  main_dart (required):
+#    The Dart entrypoint file.
+#
+#  package_config (optional):
+#    The packages.json file for the Dart package (if any). Required when
+#    building libraries that are part of packages with Dart dependencies.
+#    Not needed when building standalone Dart code that is not part of a
+#    package.
+#
+#  output (optional):
+#    The output executable name. By default, the target name. On Windows, an
+#    'exe' is automatically appended.
+#
+#  deps (optional):
+#    Additional dependencies. Dependencies on the frontend server and
+#    Flutter's platform.dill are included by default. This rule creates and
+#    uses a depfile, so listing all Dart sources is not necessary.
+template("dart_executable") {
+  assert(defined(invoker.main_dart), "Must specify 'main_dart'")
+
+  main_dart = invoker.main_dart
+
+  name = target_name
+
+  extra_deps = []
+  if (defined(invoker.deps)) {
+    extra_deps += invoker.deps
+  }
+  extra_inputs = [ main_dart ]
+  if (defined(invoker.inputs)) {
+    extra_inputs += invoker.inputs
+  }
+  if (defined(invoker.package_config)) {
+    package_config = rebase_path(invoker.package_config, root_build_dir)
+    extra_inputs += [ package_config ]
+  }
+
+  ext = ""
+  if (is_win) {
+    ext = ".exe"
+  }
+  output = "$target_gen_dir/$name$ext"
+  if (defined(invoker.output)) {
+    output = invoker.output
+  }
+
+  exe_vm_args = [ "--deterministic" ]
+  if (defined(invoker.vm_args)) {
+    exe_vm_args += invoker.vm_args
+  }
+
+  abs_output = rebase_path(output, root_build_dir)
+  exe_vm_args += [
+    "compile",
+    "exe",
+    "--output=$abs_output",
+  ]
+  if (defined(package_config)) {
+    exe_vm_args += [ "--packages=$package_config" ]
+  }
+
+  if (flutter_prebuilt_dart_sdk) {
+    action(target_name) {
+      forward_variables_from(invoker,
+                             [
+                               "testonly",
+                               "visibility",
+                             ])
+      deps = extra_deps
+      script = "//build/gn_run_binary.py"
+      inputs = extra_inputs
+      outputs = [ output ]
+      pool = "//flutter/build/dart:dart_pool"
+
+      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_build_dir)
+
+      args = [ dart ]
+      args += exe_vm_args
+      args += [ rebase_path(main_dart) ]
+      metadata = {
+        action_type = [ "dart_executable" ]
+      }
+    }
+  } else {
+    dart_action(target_name) {
+      forward_variables_from(invoker,
+                             [
+                               "testonly",
+                               "visibility",
+                             ])
+      script = main_dart
+      pool = "//flutter/build/dart:dart_pool"
+      deps = extra_deps
+      inputs = extra_inputs
+      outputs = [ output ]
+      vm_args = exe_vm_args
+      args = []
+      metadata = {
+        action_type = [ "dart_executable" ]
+      }
+    }
+  }
+}
