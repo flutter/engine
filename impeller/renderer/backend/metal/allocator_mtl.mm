@@ -99,7 +99,7 @@ void DebugAllocatorStats::Decrement(size_t size) {
 }
 
 size_t DebugAllocatorStats::GetAllocationSizeMB() {
-  size_t new_value = size_ / 1_000_000;
+  size_t new_value = size_ / 1000000;
   return new_value;
 }
 
