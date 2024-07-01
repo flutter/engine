@@ -431,6 +431,9 @@ extension DomEventExtension on DomEvent {
   external JSString get _type;
   String get type => _type.toDart;
 
+  external JSBoolean? get _cancelable;
+  bool get cancelable => _cancelable?.toDart ?? true;
+
   external JSVoid preventDefault();
   external JSVoid stopPropagation();
 
@@ -729,6 +732,8 @@ extension DomElementExtension on DomElement {
       removeChild(firstChild!);
     }
   }
+
+  external void setPointerCapture(num? pointerId);
 }
 
 @JS()
@@ -3402,16 +3407,16 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 
 /// Converts a String `url` into a [DomTrustedScriptURL] object when the
 /// Trusted Types API is available, else returns the unmodified `url`.
-Object createTrustedScriptUrl(String url) {
+JSAny createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
     final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
     assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedUrl;
+    return trustedUrl as JSAny;
   }
-  return url;
+  return url.toJS;
 }
 
 DomMessageChannel createDomMessageChannel() => DomMessageChannel();
