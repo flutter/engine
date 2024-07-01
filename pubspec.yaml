@@ -49,7 +49,7 @@
 # (3) MIGRATING A NON-WORKSPACE PACKAGE TO USING THE WORKSPACE
 # ------------------------------------------------------------------------------
 # Many packages in this repo are still using a pre-workspace style pubspec.yaml,
-# either with manuallu declared `dependency_overrides` (much of ./tools) or by
+# either with manually declared `dependency_overrides` (much of ./tools) or by
 # using pub (./web_sdk, ./lib/web_ui). To migrate a package to the workspace:
 #
 # A. Add the `resolution: workspace` field to the pubspec.yaml.
@@ -96,30 +96,17 @@ workspace:
 #    package is not important, as it is managed by the `DEPS` file. In other
 #    words, "if the test pass, ship it".
 #
-# 3. The `path` field is used to indicate the location of the package in the
-#    local repository itself. This is to *only* be used for local packages that
-#    are part of the workspace. Third party dependencies are managed by the
-#    `DEPS` file: they get a "any" version constraint and are overridden in the
-#    `dependency_overrides` section below.
-#
 # While not enforced by tooling, try to keep this list in alphabetical order.
+# TODO(matanlurey): https://dart.dev/tools/linter-rules/sort_pub_dependencies.
 dependencies:
   args: any
   async_helper: any
-  engine_build_configs:
-    path: ./tools/pkg/engine_build_configs
-  engine_repo_tools:
-    path: ./tools/pkg/engine_repo_tools
   expect: any
   file: any
-  litetest:
-    path: ./testing/litetest
   logging: any
   meta: any
   path: any
   platform: any
-  process_fakes:
-    path: ./tools/pkg/process_fakes
   process_runner: any
   smith: any
 
@@ -152,10 +139,16 @@ dependency_overrides:
     path: ./third_party/dart/pkg/async_helper
   collection:
     path: ./third_party/dart/third_party/pkg/collection
+  engine_build_configs:
+    path: ./tools/pkg/engine_build_configs
+  engine_repo_tools:
+    path: ./tools/pkg/engine_repo_tools
   expect:
     path: ./third_party/dart/pkg/expect
   file:
     path: ./third_party/dart/third_party/pkg/file/packages/file
+  litetest:
+    path: ./testing/litetest
   logging:
     path: ./third_party/dart/third_party/pkg/logging
   meta:
@@ -166,6 +159,8 @@ dependency_overrides:
     path: ./third_party/pkg/platform
   process:
     path: ./third_party/pkg/process
+  process_fakes:
+    path: ./tools/pkg/process_fakes
   process_runner:
     path: ./third_party/pkg/process_runner
   smith:

@@ -18,6 +18,7 @@ SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
 
 ALL_PACKAGES = [
+    os.path.join(ENGINE_DIR),
     os.path.join(ENGINE_DIR, 'ci'),
     os.path.join(ENGINE_DIR, 'flutter_frontend_server'),
     os.path.join(ENGINE_DIR, 'impeller', 'tessellator', 'dart'),
@@ -87,8 +88,6 @@ def check_package(package):
 
 
 EXCLUDED_DIRS = [
-    # FIXME: Do not submit this change, it's for PR testing only.
-    os.path.join(ENGINE_DIR),
     os.path.join(ENGINE_DIR, 'lib'),
     os.path.join(ENGINE_DIR, 'prebuilts'),
     os.path.join(ENGINE_DIR, 'shell', 'platform', 'fuchsia'),
