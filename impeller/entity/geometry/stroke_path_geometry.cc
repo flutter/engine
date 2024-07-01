@@ -7,8 +7,10 @@
 #include "impeller/core/buffer_view.h"
 #include "impeller/core/formats.h"
 #include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
+#include "impeller/geometry/separated_vector.h"
 
 namespace impeller {
 using VS = SolidFillVertexShader;
@@ -90,7 +92,7 @@ class StrokeGenerator {
       previous_offset = offset;
       offset = ComputeOffset(contour_start_point_i, contour_start_point_i,
                              contour_end_point_i, contour);
-      const Point contour_first_offset = offset;
+      const Point contour_first_offset = offset.GetVector();
 
       if (contour_i > 0) {
         // This branch only executes when we've just finished drawing a contour
@@ -155,8 +157,9 @@ class StrokeGenerator {
         cap_proc(vtx_builder, polyline.GetPoint(contour_end_point_i - 1),
                  cap_offset, scale, /*reverse=*/false);
       } else {
-        join_proc(vtx_builder, polyline.GetPoint(contour_start_point_i), offset,
-                  contour_first_offset, scaled_miter_limit, scale);
+        join_proc(vtx_builder, polyline.GetPoint(contour_start_point_i),
+                  offset.GetVector(), contour_first_offset, scaled_miter_limit,
+                  scale);
       }
     }
   }
@@ -164,10 +167,10 @@ class StrokeGenerator {
   /// Computes offset by calculating the direction from point_i - 1 to point_i
   /// if point_i is within `contour_start_point_i` and `contour_end_point_i`;
   /// Otherwise, it uses direction from contour.
-  Point ComputeOffset(const size_t point_i,
-                      const size_t contour_start_point_i,
-                      const size_t contour_end_point_i,
-                      const Path::PolylineContour& contour) const {
+  SeparatedVector2 ComputeOffset(const size_t point_i,
+                                 const size_t contour_start_point_i,
+                                 const size_t contour_end_point_i,
+                                 const Path::PolylineContour& contour) const {
     Point direction;
     if (point_i >= contour_end_point_i) {
       direction = contour.end_direction;
@@ -177,7 +180,8 @@ class StrokeGenerator {
       direction = (polyline.GetPoint(point_i) - polyline.GetPoint(point_i - 1))
                       .Normalize();
     }
-    return Vector2{-direction.y, direction.x} * stroke_width * 0.5f;
+    return SeparatedVector2(Vector2{-direction.y, direction.x},
+                            stroke_width * 0.5f);
   }
 
   void AddVerticesForLinearComponent(VertexWriter& vtx_builder,
@@ -192,16 +196,19 @@ class StrokeGenerator {
     for (size_t point_i = component_start_index; point_i < component_end_index;
          point_i++) {
       bool is_end_of_component = point_i == component_end_index - 1;
-      vtx.position = polyline.GetPoint(point_i) + offset;
+
+      Point offset_vector = offset.GetVector();
+
+      vtx.position = polyline.GetPoint(point_i) + offset_vector;
       vtx_builder.AppendVertex(vtx.position);
-      vtx.position = polyline.GetPoint(point_i) - offset;
+      vtx.position = polyline.GetPoint(point_i) - offset_vector;
       vtx_builder.AppendVertex(vtx.position);
 
       // For line components, two additional points need to be appended
       // prior to appending a join connecting the next component.
-      vtx.position = polyline.GetPoint(point_i + 1) + offset;
+      vtx.position = polyline.GetPoint(point_i + 1) + offset_vector;
       vtx_builder.AppendVertex(vtx.position);
-      vtx.position = polyline.GetPoint(point_i + 1) - offset;
+      vtx.position = polyline.GetPoint(point_i + 1) - offset_vector;
       vtx_builder.AppendVertex(vtx.position);
 
       previous_offset = offset;
@@ -209,8 +216,9 @@ class StrokeGenerator {
                              contour_end_point_i, contour);
       if (!is_last_component && is_end_of_component) {
         // Generate join from the current line to the next line.
-        join_proc(vtx_builder, polyline.GetPoint(point_i + 1), previous_offset,
-                  offset, scaled_miter_limit, scale);
+        join_proc(vtx_builder, polyline.GetPoint(point_i + 1),
+                  previous_offset.GetVector(), offset.GetVector(),
+                  scaled_miter_limit, scale);
       }
     }
   }
@@ -228,14 +236,44 @@ class StrokeGenerator {
          point_i++) {
       bool is_end_of_component = point_i == component_end_index - 1;
 
-      vtx.position = polyline.GetPoint(point_i) + offset;
+      vtx.position = polyline.GetPoint(point_i) + offset.GetVector();
       vtx_builder.AppendVertex(vtx.position);
-      vtx.position = polyline.GetPoint(point_i) - offset;
+      vtx.position = polyline.GetPoint(point_i) - offset.GetVector();
       vtx_builder.AppendVertex(vtx.position);
 
       previous_offset = offset;
       offset = ComputeOffset(point_i + 2, contour_start_point_i,
                              contour_end_point_i, contour);
+
+      // If the angle to the next segment is too sharp, round out the join.
+      if (!is_end_of_component) {
+        constexpr Scalar kAngleThreshold = 10 * kPi / 180;
+        // `std::cosf` is not constexpr-able, unfortunately, so we have to bake
+        // the alignment constant.
+        constexpr Scalar kAlignmentThreshold =
+            0.984807753012208;  // std::cosf(kThresholdAngle) -- 10 degrees
+
+        // Use a cheap dot product to determine whether the angle is too sharp.
+        if (previous_offset.GetAlignment(offset) < kAlignmentThreshold) {
+          Scalar angle_total = previous_offset.AngleTo(offset).radians;
+          Scalar angle = kAngleThreshold;
+
+          // Bridge the large angle with additional geometry at
+          // `kAngleThreshold` interval.
+          while (angle < std::abs(angle_total)) {
+            Scalar signed_angle = angle_total < 0 ? -angle : angle;
+            Point offset =
+                previous_offset.GetVector().Rotate(Radians(signed_angle));
+            vtx.position = polyline.GetPoint(point_i) + offset;
+            vtx_builder.AppendVertex(vtx.position);
+            vtx.position = polyline.GetPoint(point_i) - offset;
+            vtx_builder.AppendVertex(vtx.position);
+
+            angle += kAngleThreshold;
+          }
+        }
+      }
+
       // For curve components, the polyline is detailed enough such that
       // it can avoid worrying about joins altogether.
       if (is_end_of_component) {
@@ -245,8 +283,9 @@ class StrokeGenerator {
         // `ComputeOffset` returns the contour's end direction when attempting
         // to grab offsets past `contour_end_point_i`, so just use `offset` when
         // we're on the last component.
-        Point last_component_offset =
-            is_last_component ? offset : previous_offset;
+        Point last_component_offset = is_last_component
+                                          ? offset.GetVector()
+                                          : previous_offset.GetVector();
         vtx.position = polyline.GetPoint(point_i + 1) + last_component_offset;
         vtx_builder.AppendVertex(vtx.position);
         vtx.position = polyline.GetPoint(point_i + 1) - last_component_offset;
@@ -254,7 +293,8 @@ class StrokeGenerator {
         // Generate join from the current line to the next line.
         if (!is_last_component) {
           join_proc(vtx_builder, polyline.GetPoint(point_i + 1),
-                    previous_offset, offset, scaled_miter_limit, scale);
+                    previous_offset.GetVector(), offset.GetVector(),
+                    scaled_miter_limit, scale);
         }
       }
     }
@@ -267,8 +307,8 @@ class StrokeGenerator {
   const CapProc<VertexWriter>& cap_proc;
   const Scalar scale;
 
-  Point previous_offset;
-  Point offset;
+  SeparatedVector2 previous_offset;
+  SeparatedVector2 offset;
   SolidFillVertexShader::PerVertexData vtx;
 };
 

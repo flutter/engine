@@ -111,6 +111,16 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawLine(
   AccumulateComplexity(complexity);
 }
 
+void DisplayListMetalComplexityCalculator::MetalHelper::drawDashedLine(
+    const DlPoint& p0,
+    const DlPoint& p1,
+    DlScalar on_length,
+    DlScalar off_length) {
+  // Dashing is slightly more complex than a regular drawLine, but this
+  // op is so rare it is not worth measuring the difference.
+  drawLine(ToSkPoint(p0), ToSkPoint(p1));
+}
+
 void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
     const SkRect& rect) {
   if (IsComplex()) {
@@ -436,7 +446,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawPoints(
 }
 
 void DisplayListMetalComplexityCalculator::MetalHelper::drawVertices(
-    const DlVertices* vertices,
+    const std::shared_ptr<DlVertices>& vertices,
     DlBlendMode mode) {
   // There is currently no way for us to get the VertexMode from the SkVertices
   // object, but for future reference:

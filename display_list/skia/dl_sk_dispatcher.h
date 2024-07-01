@@ -51,12 +51,17 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
   void transformReset() override;
 
   void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
   void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
 
   void drawPaint() override;
   void drawColor(DlColor color, DlBlendMode mode) override;
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override;
   void drawRect(const SkRect& rect) override;
   void drawOval(const SkRect& bounds) override;
   void drawCircle(const SkPoint& center, SkScalar radius) override;
@@ -68,7 +73,8 @@ class DlSkCanvasDispatcher : public virtual DlOpReceiver,
                SkScalar sweep,
                bool useCenter) override;
   void drawPoints(PointMode mode, uint32_t count, const SkPoint pts[]) override;
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
