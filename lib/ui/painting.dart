@@ -156,10 +156,11 @@ class Color {
   /// On platforms that do not support extended range colors, all color channels
   /// will be clamped to the equivalent RGBA unorm values.
   const Color.fromARGBXR(double a, double r, double g, double b) :
-    _r = r,
-    _g = g,
-    _b = b,
-    _a = a,
+    // This is a clamp, however clamp is not a const expression
+    _r = r < kMinExtendedRangeValue ? kMinExtendedRangeValue : (r > kMaxExtendedRangeValue ? kMaxExtendedRangeValue : r),
+    _g = g < kMinExtendedRangeValue ? kMinExtendedRangeValue : (g > kMaxExtendedRangeValue ? kMaxExtendedRangeValue : g),
+    _b = b < kMinExtendedRangeValue ? kMinExtendedRangeValue : (b > kMaxExtendedRangeValue ? kMaxExtendedRangeValue : b),
+    _a = a < 0 ? 0 : (a > 1 ? 1 : a),
     assert(a >= 0 && a <= 1),
     assert(r >= kMinExtendedRangeValue && r <= kMaxExtendedRangeValue),
     assert(g >= kMinExtendedRangeValue && g <= kMaxExtendedRangeValue),
@@ -4228,10 +4229,21 @@ enum TileMode {
   decal,
 }
 
+Float32List _encodeColorListFloatingPoint(List<Color> colors) {
+  final Float32List result = Float32List(colors.length * 4);
+  for (int i = 0, j = 0; i < colors.length; i++) {
+    result[j++] = colors[i].opacity;
+    result[j++] = colors[i].redF;
+    result[j++] = colors[i].greenF;
+    result[j++] = colors[i].blueF;
+  }
+  return result;
+}
+
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
-  for (int i = 0; i < colorCount; ++i) {
+  for (int i = 0; i < colorCount; i++) {
     result[i] = colors[i].value;
   }
   return result;
@@ -4311,7 +4323,7 @@ base class Gradient extends Shader {
        super._() {
     _validateColorStops(colors, colorStops);
     final Float32List endPointsBuffer = _encodeTwoPoints(from, to);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeColorListFloatingPoint(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
     _initLinear(endPointsBuffer, colorsBuffer, colorStopsBuffer, tileMode.index, matrix4);
@@ -4364,7 +4376,7 @@ base class Gradient extends Shader {
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeColorListFloatingPoint(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
 
     // If focal is null or focal radius is null, this should be treated as a regular radial gradient
@@ -4423,7 +4435,7 @@ base class Gradient extends Shader {
        assert(matrix4 == null || _matrix4IsValid(matrix4)),
        super._() {
     _validateColorStops(colors, colorStops);
-    final Int32List colorsBuffer = _encodeColorList(colors);
+    final Float32List colorsBuffer = _encodeColorListFloatingPoint(colors);
     final Float32List? colorStopsBuffer = colorStops == null ? null : Float32List.fromList(colorStops);
     _constructor();
     _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
@@ -4433,14 +4445,14 @@ base class Gradient extends Shader {
   external void _constructor();
 
   @Native<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initLinear')
-  external void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
+  external void _initLinear(Float32List endPoints, Float32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
 
   @Native<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initRadial')
   external void _initRadial(
       double centerX,
       double centerY,
       double radius,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       Float64List? matrix4);
@@ -4453,7 +4465,7 @@ base class Gradient extends Shader {
       double endX,
       double endY,
       double endRadius,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       Float64List? matrix4);
@@ -4462,7 +4474,7 @@ base class Gradient extends Shader {
   external void _initSweep(
       double centerX,
       double centerY,
-      Int32List colors,
+      Float32List colors,
       Float32List? colorStops,
       int tileMode,
       double startAngle,
