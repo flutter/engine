@@ -56,7 +56,7 @@ bool RenderTextInCanvasSkia(DlCanvas* canvas,
 
 }  // namespace
 
-TEST_P(DlGoldenTest, TextBlurMaskFilterRespectCTM) {
+TEST_P(DlGoldenTest, TextBlurMaskFilter) {
   impeller::Point content_scale = GetContentScale();
   auto draw = [&](DlCanvas* canvas,
                   const std::vector<std::unique_ptr<DlImage>>& images) {
@@ -65,35 +65,7 @@ TEST_P(DlGoldenTest, TextBlurMaskFilterRespectCTM) {
     canvas->Scale(2, 2);
     TextRenderOptions options;
     options.mask_filter =
-        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, /*sigma=*/10,
-                               /*respect_ctm=*/true);
-    ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
-                                       "Roboto-Regular.ttf",
-                                       SkPoint::Make(101, 101), options));
-    options.mask_filter = nullptr;
-    options.color = DlColor::kRed();
-    ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
-                                       "Roboto-Regular.ttf",
-                                       SkPoint::Make(100, 100), options));
-  };
-
-  DisplayListBuilder builder;
-  draw(&builder, /*images=*/{});
-
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
-}
-
-TEST_P(DlGoldenTest, TextBlurMaskFilterDisrespectCTM) {
-  impeller::Point content_scale = GetContentScale();
-  auto draw = [&](DlCanvas* canvas,
-                  const std::vector<std::unique_ptr<DlImage>>& images) {
-    canvas->DrawColor(DlColor(0xff111111));
-    canvas->Scale(content_scale.x, content_scale.y);
-    canvas->Scale(2, 2);
-    TextRenderOptions options;
-    options.mask_filter =
-        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, /*sigma=*/10,
-                               /*respect_ctm=*/false);
+        DlBlurMaskFilter::Make(DlBlurStyle::kNormal, /*sigma=*/10);
     ASSERT_TRUE(RenderTextInCanvasSkia(canvas, "hello world",
                                        "Roboto-Regular.ttf",
                                        SkPoint::Make(101, 101), options));

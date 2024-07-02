@@ -505,7 +505,6 @@ void DlDispatcherBase::setMaskFilter(const flutter::DlMaskFilter* filter) {
       paint_.mask_blur_descriptor = {
           .style = ToBlurStyle(blur->style()),
           .sigma = Sigma(blur->sigma()),
-          .respect_ctm = blur->respectCTM(),
       };
       break;
     }

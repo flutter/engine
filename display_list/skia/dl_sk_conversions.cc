@@ -268,8 +268,7 @@ sk_sp<SkMaskFilter> ToSk(const DlMaskFilter* filter) {
       const DlBlurMaskFilter* blur_filter = filter->asBlur();
       FML_DCHECK(blur_filter != nullptr);
       return SkMaskFilter::MakeBlur(ToSk(blur_filter->style()),
-                                    blur_filter->sigma(),
-                                    blur_filter->respectCTM());
+                                    blur_filter->sigma());
     }
   }
 }

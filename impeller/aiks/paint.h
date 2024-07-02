@@ -48,9 +48,6 @@ struct Paint {
   struct MaskBlurDescriptor {
     FilterContents::BlurStyle style;
     Sigma sigma;
-    /// Text mask blurs need to not apply the CTM to the blur kernel.
-    /// See: https://github.com/flutter/flutter/issues/115112
-    bool respect_ctm = true;
 
     std::shared_ptr<FilterContents> CreateMaskBlur(
         std::shared_ptr<ColorSourceContents> color_source_contents,
