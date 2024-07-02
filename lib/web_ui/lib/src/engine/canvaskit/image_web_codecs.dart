@@ -62,7 +62,8 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
   }
 }
 
-Future<ByteData> readPixelsFromVideoFrame(VideoFrame videoFrame, ui.ImageByteFormat format) async {
+Future<ByteData> readPixelsFromVideoFrame(
+    VideoFrame videoFrame, ui.ImageByteFormat format) async {
   if (format == ui.ImageByteFormat.png) {
     final Uint8List png = await encodeVideoFrameAsPng(videoFrame);
     return png.buffer.asByteData();
@@ -91,6 +92,17 @@ Future<ByteData> readPixelsFromVideoFrame(VideoFrame videoFrame, ui.ImageByteFor
   }
 
   // Last resort, just return the original pixels.
+  return pixels.asByteData();
+}
+
+Future<ByteData> readPixelsFromImageElement(
+    DomHTMLImageElement imageElement, ui.ImageByteFormat format) async {
+  if (format == ui.ImageByteFormat.png) {
+    final Uint8List png = await encodeImageElementAsPng(imageElement);
+    return png.buffer.asByteData();
+  }
+
+  final ByteBuffer pixels = readImageElementPixelsUnmodified(imageElement);
   return pixels.asByteData();
 }
 
@@ -141,14 +153,16 @@ void _bgrToRawRgba(ByteBuffer pixels) {
   }
 }
 
-bool _shouldReadPixelsUnmodified(VideoFrame videoFrame, ui.ImageByteFormat format) {
+bool _shouldReadPixelsUnmodified(
+    VideoFrame videoFrame, ui.ImageByteFormat format) {
   if (format == ui.ImageByteFormat.rawUnmodified) {
     return true;
   }
 
   // Do not convert if the requested format is RGBA and the video frame is
   // encoded as either RGBA or RGBX.
-  final bool isRgbFrame = videoFrame.format == 'RGBA' || videoFrame.format == 'RGBX';
+  final bool isRgbFrame =
+      videoFrame.format == 'RGBA' || videoFrame.format == 'RGBX';
   return format == ui.ImageByteFormat.rawStraightRgba && isRgbFrame;
 }
 
@@ -166,13 +180,40 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
   return destination.toDart.buffer;
 }
 
+ByteBuffer readImageElementPixelsUnmodified(DomHTMLImageElement imageElement) {
+  final int width = imageElement.naturalWidth.toInt();
+  final int height = imageElement.naturalHeight.toInt();
+
+  final DomCanvasElement htmlCanvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx =
+      htmlCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
+  ctx.drawImage(imageElement, 0, 0);
+  final DomImageData imageData = ctx.getImageData(0, 0, width, height);
+  return imageData.data.buffer;
+}
+
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
   final int width = videoFrame.displayWidth.toInt();
   final int height = videoFrame.displayHeight.toInt();
-  final DomCanvasElement canvas = createDomCanvasElement(width: width, height:
-      height);
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
   final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 = canvas.toDataURL().substring('data:image/png;base64,'.length);
+  final String pngBase64 =
+      canvas.toDataURL().substring('data:image/png;base64,'.length);
+  return base64.decode(pngBase64);
+}
+
+Future<Uint8List> encodeImageElementAsPng(
+    DomHTMLImageElement imageElement) async {
+  final int width = imageElement.naturalWidth.toInt();
+  final int height = imageElement.naturalHeight.toInt();
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  ctx.drawImage(imageElement, 0, 0);
+  final String pngBase64 =
+      canvas.toDataURL().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);
 }

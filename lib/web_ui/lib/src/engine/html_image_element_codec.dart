@@ -8,9 +8,6 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
-import 'dom.dart';
-import 'safe_browser_api.dart';
-
 Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
       getJsProperty<Object>(
         getJsProperty<Object>(domWindow, 'Image'),

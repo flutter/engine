@@ -13,7 +13,7 @@ import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
-    [int? targetWidth, int? targetHeight]) async {
+    [int? targetWidth, int? targetHeight, bool allowUpscaling = true]) async {
   ui.Codec codec;
   // ImageDecoder does not detect image type automatically. It requires us to
   // tell it what the image type is.
@@ -27,43 +27,48 @@ Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     );
   } else {
     // TODO(harryterkelsen): If the image is animated, then use Skia to decode.
-    final DomBlob blob = createDomBlob(<dynamic>[list.buffer]);
+    final DomBlob blob = createDomBlob(<ByteBuffer>[list.buffer]);
     codec = await decodeBlobToCkImage(blob);
   }
   return ResizingCodec(
     codec,
     targetWidth: targetWidth,
     targetHeight: targetHeight,
+    allowUpscaling: allowUpscaling,
   );
 }
 
-class CkHtmlImageElementCodec extends HtmlImageElementCodec {
-  CkHtmlImageElementCodec(super.src, {super.chunkCallback});
+ui.Image createCkImageFromImageElement(
+  DomHTMLImageElement image,
+  int naturalWidth,
+  int naturalHeight,
+) {
+  final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
+    image,
+    SkPartialImageInfo(
+      alphaType: canvasKit.AlphaType.Premul,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+      width: naturalWidth.toDouble(),
+      height: naturalHeight.toDouble(),
+    ),
+  );
+  if (skImage == null) {
+    throw ImageCodecException(
+      'Failed to create image from Image.decode',
+    );
+  }
+
+  return CkImage(skImage, imageElement: image);
+}
+
+class CkImageElementCodec extends HtmlImageElementCodec {
+  CkImageElementCodec(super.src);
 
   @override
   ui.Image createImageFromHTMLImageElement(
-    DomHTMLImageElement image,
-    int naturalWidth,
-    int naturalHeight,
-  ) {
-    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
-      image,
-      SkPartialImageInfo(
-        alphaType: canvasKit.AlphaType.Premul,
-        colorType: canvasKit.ColorType.RGBA_8888,
-        colorSpace: SkColorSpaceSRGB,
-        width: naturalWidth.toDouble(),
-        height: naturalHeight.toDouble(),
-      ),
-    );
-    if (skImage == null) {
-      throw ImageCodecException(
-        'Failed to create image from Image.decode',
-      );
-    }
-
-    return CkImage(skImage);
-  }
+          DomHTMLImageElement image, int naturalWidth, int naturalHeight) =>
+      createCkImageFromImageElement(image, naturalWidth, naturalHeight);
 }
 
 class CkImageBlobCodec extends HtmlBlobCodec {
@@ -71,33 +76,19 @@ class CkImageBlobCodec extends HtmlBlobCodec {
 
   @override
   ui.Image createImageFromHTMLImageElement(
-    DomHTMLImageElement image,
-    int naturalWidth,
-    int naturalHeight,
-  ) {
-    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
-      image,
-      SkPartialImageInfo(
-        alphaType: canvasKit.AlphaType.Premul,
-        colorType: canvasKit.ColorType.RGBA_8888,
-        colorSpace: SkColorSpaceSRGB,
-        width: naturalWidth.toDouble(),
-        height: naturalHeight.toDouble(),
-      ),
-    );
-    if (skImage == null) {
-      throw ImageCodecException(
-        'Failed to create image from Image.decode',
-      );
-    }
-
-    return CkImage(skImage);
-  }
+          DomHTMLImageElement image, int naturalWidth, int naturalHeight) =>
+      createCkImageFromImageElement(image, naturalWidth, naturalHeight);
 }
 
 /// Creates and decodes an image using HtmlImageElement.
 Future<CkImageBlobCodec> decodeBlobToCkImage(DomBlob blob) async {
   final CkImageBlobCodec codec = CkImageBlobCodec(blob);
+  await codec.decode();
+  return codec;
+}
+
+Future<CkImageElementCodec> decodeUrlToCkImage(String src) async {
+  final CkImageElementCodec codec = CkImageElementCodec(src);
   await codec.decode();
   return codec;
 }
@@ -221,6 +212,9 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
   return ckImage;
 }
 
+CkImage scaleImageWithCanvas(
+    SkImage image, int? targetWidth, int? targetHeight) {}
+
 /// Thrown when the web engine fails to decode an image, either due to a
 /// network issue, corrupted image contents, or missing codec.
 class ImageCodecException implements Exception {
@@ -238,13 +232,29 @@ const String _kNetworkImageMessage = 'Failed to load network image.';
 /// requesting from URI.
 Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
-  final Uint8List list = await fetchImage(url, chunkCallback);
-  final String contentType = tryDetectContentType(list, url);
-  if (browserSupportsImageDecoder) {
-    return CkBrowserImageDecoder.create(
-        data: list, contentType: contentType, debugSource: url);
-  } else {
-    return CkAnimatedImage.decodeFromBytes(list, url);
+  final CkImageElementCodec imageElementCodec = CkImageElementCodec(url);
+  try {
+    await imageElementCodec.decode();
+    return imageElementCodec;
+  } on ImageCodecException {
+    imageElementCodec.dispose();
+    final Uint8List list = await fetchImage(url, chunkCallback);
+    final String contentType = tryDetectContentType(list, url);
+    if (browserSupportsImageDecoder) {
+      return CkBrowserImageDecoder.create(
+          data: list, contentType: contentType, debugSource: url);
+    } else {
+      final DomBlob blob = createDomBlob(<ByteBuffer>[list.buffer]);
+      final CkImageBlobCodec codec = CkImageBlobCodec(blob);
+
+      try {
+        await codec.decode();
+        return codec;
+      } on ImageCodecException {
+        codec.dispose();
+        return CkAnimatedImage.decodeFromBytes(list, url);
+      }
+    }
   }
 }
 
@@ -297,12 +307,12 @@ Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength,
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
-  CkImage(SkImage skImage, {this.videoFrame}) {
+  CkImage(SkImage skImage, {this.videoFrame, this.imageElement}) {
     box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
   }
 
-  CkImage.cloneOf(this.box, {this.videoFrame}) {
+  CkImage.cloneOf(this.box, {this.videoFrame, this.imageElement}) {
     _init();
     box.ref(this);
   }
@@ -330,6 +340,14 @@ class CkImage implements ui.Image, StackTraceDebugger {
   /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
   /// the video frame until the image is [dispose]d of.
   VideoFrame? videoFrame;
+
+  /// For images which are decoded via an HTML Image element, this field holds
+  /// the image element from which this image was created.
+  ///
+  /// Skia owns the image element and will close it when it's no longer used.
+  /// However, Flutter co-owns the [SkImage] and therefore it's safe to access
+  /// the image element until the image is [dispose]d of.
+  DomHTMLImageElement? imageElement;
 
   /// The underlying Skia image object.
   ///
@@ -374,7 +392,11 @@ class CkImage implements ui.Image, StackTraceDebugger {
   @override
   CkImage clone() {
     assert(_debugCheckIsNotDisposed());
-    return CkImage.cloneOf(box, videoFrame: videoFrame?.clone());
+    return CkImage.cloneOf(
+      box,
+      videoFrame: videoFrame?.clone(),
+      imageElement: imageElement,
+    );
   }
 
   @override
@@ -411,6 +433,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
         videoFrame!.format != 'I444' &&
         videoFrame!.format != 'I422') {
       return readPixelsFromVideoFrame(videoFrame!, format);
+    } else if (imageElement != null) {
+      return readPixelsFromImageElement(imageElement!, format);
     } else {
       ByteData? data = _readPixelsFromSkImage(format);
       data ??= _readPixelsFromImageViaSurface(format);

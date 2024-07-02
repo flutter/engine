@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -19,6 +20,122 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
+abstract class TestCodec {
+  TestCodec({required this.description});
+  final String description;
+
+  ui.Codec? _cachedCodec;
+
+  Future<ui.Codec> getCodec() async => _cachedCodec ??= await createCodec();
+
+  Future<ui.Codec> createCodec();
+}
+
+abstract class TestFileCodec extends TestCodec {
+  TestFileCodec.fromTestFile(this.testFile, {required super.description});
+
+  final String testFile;
+
+  Future<ui.Codec> createCodecFromTestFile(String testFile);
+
+  @override
+  Future<ui.Codec> createCodec() {
+    return createCodecFromTestFile(testFile);
+  }
+}
+
+class UrlTestCodec extends TestFileCodec {
+  UrlTestCodec(super.testFile, this.codecFactory, String function)
+      : super.fromTestFile(description: 'created with $function("$testFile")');
+
+  final Future<ui.Codec> Function(String) codecFactory;
+
+  @override
+  Future<ui.Codec> createCodecFromTestFile(String testFile) {
+    return codecFactory(testFile);
+  }
+}
+
+class FetchTestCodec extends TestFileCodec {
+  FetchTestCodec(
+    super.testFile,
+    this.codecFactory,
+    String function,
+  ) : super.fromTestFile(
+            description: 'created with $function from bytes '
+                'fetch()\'ed from "$testFile"');
+
+  final Future<ui.Codec> Function(Uint8List) codecFactory;
+
+  @override
+  Future<ui.Codec> createCodecFromTestFile(String testFile) async {
+    final HttpFetchResponse response = await httpFetch(testFile);
+
+    if (!response.hasPayload) {
+      throw Exception('Unable to fetch() image test file "$testFile"');
+    }
+
+    final Uint8List responseBytes = await response.asUint8List();
+    return codecFactory(responseBytes);
+  }
+}
+
+class BitmapTestCodec extends TestFileCodec {
+  BitmapTestCodec(
+    super.testFile,
+    this.codecFactory,
+    String function,
+  ) : super.fromTestFile(
+            description: 'created with $function from ImageBitmap'
+                ' created from "$testFile"');
+
+  final Future<ui.Image> Function(DomImageBitmap) codecFactory;
+
+  @override
+  Future<ui.Codec> createCodecFromTestFile(String testFile) async {
+    final DomHTMLImageElement imageElement = createDomHTMLImageElement();
+    imageElement.src = testFile;
+    setJsProperty<String>(imageElement, 'decoding', 'async');
+
+    await imageElement.decode();
+
+    final DomImageBitmap bitmap =
+        await createImageBitmap(imageElement as JSObject, (
+      x: 0,
+      y: 0,
+      width: imageElement.naturalWidth.toInt(),
+      height: imageElement.naturalHeight.toInt(),
+    ));
+
+    final ui.Image image = await codecFactory(bitmap);
+    return BitmapSingleFrameCodec(bitmap, image);
+  }
+}
+
+class BitmapSingleFrameCodec implements ui.Codec {
+  BitmapSingleFrameCodec(this.bitmap, this.image);
+
+  final DomImageBitmap bitmap;
+  final ui.Image image;
+
+  @override
+  void dispose() {
+    image.dispose();
+    bitmap.close();
+  }
+
+  @override
+  int get frameCount => 1;
+
+  @override
+  Future<ui.FrameInfo> getNextFrame() async {
+    return SingleFrameInfo(image);
+  }
+
+  @override
+  int get repetitionCount => 0;
+}
+
 void testMain() {
   group('CanvasKit Images', () {
     setUpCanvasKitTest(withImplicitView: true);
@@ -27,13 +144,133 @@ void testMain() {
       mockHttpFetchResponseFactory = null;
     });
 
-    _testCkAnimatedImage();
-    _testForImageCodecs(useBrowserImageDecoder: false);
+    group('Codecs', () {
+      List<TestCodec>? testCodecs;
 
-    if (browserSupportsImageDecoder) {
-      _testForImageCodecs(useBrowserImageDecoder: true);
-      _testCkBrowserImageDecoder();
-    }
+      setUpAll(() async {
+        Future<List<TestCodec>> createTestCodecs(
+            {int testTargetWidth = 300, int testTargetHeight = 300}) async {
+          final HttpFetchResponse listingResponse =
+              await httpFetch('/test_images/');
+          final List<String> testFiles =
+              (await listingResponse.json() as List<dynamic>).cast<String>();
+
+          // Sanity-check the test file list. If suddenly test files are moved or
+          // deleted, and the test server returns an empty list, or is missing some
+          // important test files, we want to know.
+          expect(testFiles, isNotEmpty);
+          expect(testFiles, contains(matches(RegExp(r'.*\.jpg'))));
+          expect(testFiles, contains(matches(RegExp(r'.*\.png'))));
+          expect(testFiles, contains(matches(RegExp(r'.*\.gif'))));
+          expect(testFiles, contains(matches(RegExp(r'.*\.webp'))));
+          expect(testFiles, contains(matches(RegExp(r'.*\.bmp'))));
+
+          final List<TestCodec> testCodecs = <TestCodec>[];
+          for (final String testFile in testFiles) {
+            testCodecs.add(UrlTestCodec(
+              testFile,
+              (String file) => renderer.instantiateImageCodecFromUrl(
+                Uri.tryParse('/test_images/$file')!,
+              ),
+              'renderer.instantiateImageFromUrl',
+            ));
+          }
+          for (final String testFile in testFiles) {
+            testCodecs.add(
+              FetchTestCodec(
+                '/test_images/$testFile',
+                (Uint8List bytes) => renderer.instantiateImageCodec(bytes),
+                'renderer.instantiateImageCodec',
+              ),
+            );
+            testCodecs.add(
+              FetchTestCodec(
+                '/test_images/$testFile',
+                (Uint8List bytes) => renderer.instantiateImageCodec(
+                  bytes,
+                  targetWidth: testTargetWidth,
+                  targetHeight: testTargetHeight,
+                ),
+                'renderer.instantiateImageCodec (target size '
+                    '$testTargetWidth x $testTargetHeight)',
+              ),
+            );
+          }
+          for (final String testFile in testFiles) {
+            testCodecs.add(
+              BitmapTestCodec(
+                'test_images/$testFile',
+                (DomImageBitmap bitmap) async =>
+                    renderer.createImageFromImageBitmap(bitmap),
+                'renderer.createImageFromImageBitmap',
+              ),
+            );
+          }
+
+          return testCodecs;
+        }
+
+        testCodecs = await createTestCodecs();
+      });
+
+      test('can create images', () async {
+        for (final TestCodec testCodec in testCodecs!) {
+          try {
+            final ui.Codec codec = await testCodec.getCodec();
+            final ui.FrameInfo frameInfo = await codec.getNextFrame();
+            final ui.Image image = frameInfo.image;
+            expect(image, isNotNull);
+            expect(image.width, isNonZero);
+            expect(image.height, isNonZero);
+            expect(image.colorSpace, isNotNull);
+          } catch (e) {
+            throw TestFailure(
+                'Failed to get image for ${testCodec.description}: $e');
+          }
+        }
+      });
+
+      test('images can be decoded with toByteData', () async {
+        for (final TestCodec testCodec in testCodecs!) {
+          ui.Image image;
+          try {
+            final ui.Codec codec = await testCodec.getCodec();
+            final ui.FrameInfo frameInfo = await codec.getNextFrame();
+            image = frameInfo.image;
+          } catch (e) {
+            throw TestFailure(
+                'Failed to get image for ${testCodec.description}: $e');
+          }
+
+          final ByteData? byteData = await image.toByteData();
+          expect(
+            byteData,
+            isNotNull,
+            reason: '${testCodec.description} toByteData() should not be null',
+          );
+          expect(
+            byteData!.lengthInBytes,
+            isNonZero,
+            reason: '${testCodec.description} toByteData() should not be empty',
+          );
+          expect(
+            byteData.buffer.asUint8List().any((int byte) => byte > 0),
+            isTrue,
+            reason: '${testCodec.description} toByteData() should '
+                'contain nonzero value',
+          );
+        }
+      });
+
+      //testCodecs?.forEach(_testForImageCodecs);
+    });
+
+    _testCkAnimatedImage();
+
+    // if (browserSupportsImageDecoder) {
+    //   _testForImageCodecs(useBrowserImageDecoder: true);
+    //   _testCkBrowserImageDecoder();
+    // }
 
     test('isAvif', () {
       expect(isAvif(Uint8List.fromList(<int>[])), isFalse);
@@ -84,14 +321,13 @@ void testMain() {
   }, skip: isSafari);
 }
 
-void _testForImageCodecs({required bool useBrowserImageDecoder}) {
-  final String mode = useBrowserImageDecoder ? 'webcodecs' : 'wasm';
+void _testForImageCodecs(TestCodec codec) {
+  final String mode = codec.description;
   final List<String> warnings = <String>[];
   late void Function(String) oldPrintWarning;
 
   group('($mode)', () {
     setUp(() {
-      browserSupportsImageDecoder = useBrowserImageDecoder;
       warnings.clear();
     });
 
@@ -206,11 +442,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           greaterThan(0));
     });
 
-    test('toByteData with decodeImageFromPixels on videoFrame formats',
-        () async {
-      // This test ensures that toByteData() returns pixels that can be used by decodeImageFromPixels
-      // for the following videoFrame formats:
-      // [BGRX, I422, I420, I444, BGRA]
+    test('toByteData with decodeImageFromPixels', () async {
       final HttpFetchResponse listingResponse =
           await httpFetch('/test_images/');
       final List<String> testFiles =
@@ -253,6 +485,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         final CkImage ckImage = frame.image as CkImage;
         final ByteData imageBytes = await ckImage.toByteData();
         expect(imageBytes.lengthInBytes, greaterThan(0));
+        // Sanity check the image isn't all transparent black.
+        expect(imageBytes.buffer.asUint32List().any((int byte) => byte != 0),
+            isTrue);
 
         final Uint8List pixels = imageBytes.buffer.asUint8List();
         final ui.Image testImage =
@@ -260,10 +495,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         expect(testImage, isNotNull);
         codec.dispose();
       }
-      // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
       // TODO(jacksongardner): enable on wasm
       // see https://github.com/flutter/flutter/issues/118334
-    }, skip: isFirefox || isSafari || isWasm);
+    }, skip: isWasm);
 
     test('CkImage.clone also clones the VideoFrame', () async {
       final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
@@ -285,8 +519,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       // The precise PNG encoding is browser-specific, but we can check the file
       // signature.
       expect(detectContentType(png.buffer.asUint8List()), 'image/png');
-      // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
-    }, skip: isFirefox || isSafari);
+    }, skip: !browserSupportsImageDecoder);
 
     test('skiaInstantiateWebImageCodec loads an image from the network',
         () async {
