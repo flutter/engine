@@ -64,15 +64,6 @@ bool InlinePassContext::EndPass() {
     return false;
   }
 
-  const std::shared_ptr<Texture>& target_texture =
-      GetPassTarget().GetRenderTarget().GetRenderTargetTexture();
-  if (target_texture->GetMipCount() > 1) {
-    fml::Status mip_status = AddMipmapGeneration(
-        command_buffer_, renderer_.GetContext(), target_texture);
-    if (!mip_status.ok()) {
-      return false;
-    }
-  }
   if (!renderer_.GetContext()
            ->GetCommandQueue()
            ->Submit({std::move(command_buffer_)})

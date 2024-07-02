@@ -5,13 +5,16 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 #include <cmath>
+#include <optional>
 
 #include "flutter/fml/make_copyable.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/texture_mipmap.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
@@ -147,12 +150,6 @@ std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
     return std::nullopt;
   }
 
-  // In order to avoid shimmering in downsampling step, we should have mips.
-  if (input_snapshot->texture->GetMipCount() <= 1) {
-    FML_DLOG(ERROR) << GaussianBlurFilterContents::kNoMipsError;
-  }
-  FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
-
   return input_snapshot;
 }
 
@@ -242,9 +239,6 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   Scalar desired_scalar =
       std::min(GaussianBlurFilterContents::CalculateScale(scaled_sigma.x),
                GaussianBlurFilterContents::CalculateScale(scaled_sigma.y));
-  // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
-  // gutter from the expanded_coverage_hint, we can skip the downsample pass.
-  // pass.
   Vector2 downsample_scalar(desired_scalar, desired_scalar);
   // TODO(gaaclarke): The padding could be removed if we know it's not needed or
   //   resized to account for the expanded_clip_coverage. There doesn't appear
@@ -326,7 +320,8 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     std::shared_ptr<Texture> input_texture,
     const SamplerDescriptor& sampler_descriptor,
     const DownsamplePassArgs& pass_args,
-    Entity::TileMode tile_mode) {
+    Entity::TileMode tile_mode,
+    bool min_lod_clamp) {
   ContentContext::SubpassCallback subpass_callback =
       [&](const ContentContext& renderer, RenderPass& pass) {
         HostBuffer& host_buffer = renderer.GetTransientsBuffer();
@@ -356,6 +351,9 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
         SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
         linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
         linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
+        if (min_lod_clamp) {
+          linear_sampler_descriptor.mip_filter = MipFilter::kBase;
+        }
         TextureFillVertexShader::BindFrameInfo(
             pass, host_buffer.EmplaceUniform(frame_info));
         TextureFillFragmentShader::BindFragInfo(
@@ -537,9 +535,6 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
 }
 }  // namespace
 
-std::string_view GaussianBlurFilterContents::kNoMipsError =
-    "Applying gaussian blur without mipmap.";
-
 GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_x,
     Scalar sigma_y,
@@ -679,9 +674,23 @@ std::optional<Entity> GaussianBlurFilterContents::RenderFilter(
       blur_info.scaled_sigma, blur_info.padding, input_snapshot.value(),
       source_expanded_coverage_hint, inputs[0], snapshot_entity);
 
-  fml::StatusOr<RenderTarget> pass1_out = MakeDownsampleSubpass(
-      renderer, command_buffer, input_snapshot->texture,
-      input_snapshot->sampler_descriptor, downsample_pass_args, tile_mode_);
+  // If a blur scalar is less than 0.5, generate mipmaps. Otherwise, the
+  // bilinear filtering of the base mip level is sufficient to preserve quality.
+  bool generated_mips = false;
+  if (downsample_pass_args.effective_scalar.x < 0.5 ||
+      downsample_pass_args.effective_scalar.y < 0.5) {
+    if (!AddMipmapGeneration(command_buffer, renderer.GetContext(),
+                             input_snapshot->texture)
+             .ok()) {
+      return std::nullopt;
+    }
+    generated_mips = true;
+  }
+
+  fml::StatusOr<RenderTarget> pass1_out =
+      MakeDownsampleSubpass(renderer, command_buffer, input_snapshot->texture,
+                            input_snapshot->sampler_descriptor,
+                            downsample_pass_args, tile_mode_, !generated_mips);
 
   if (!pass1_out.ok()) {
     return std::nullopt;
