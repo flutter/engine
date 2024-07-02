@@ -277,7 +277,8 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + '8c2d66fa4e6298894425f5bdd0591bc5b1154c53',
+  # TODO(camsim99): Update to latest buildroot commit when https://github.com/flutter/buildroot/pull/870 lands.
+  'src': 'https://github.com/camsim99/buildroot.git' + '@' + 'af95350cf3be382145006d89102866827a9f55d1',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
@@ -774,7 +775,7 @@ deps = {
      'packages': [
        {
         'package': 'flutter/android/sdk/all/${{platform}}',
-        'version': 'version:34v7'
+        'version': 'version:35betav2'
        }
      ],
      'condition': 'download_android_deps',
