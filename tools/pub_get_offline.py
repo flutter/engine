@@ -18,6 +18,7 @@ SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 ENGINE_DIR = os.path.join(SRC_ROOT, 'flutter')
 
 ALL_PACKAGES = [
+    os.path.join(ENGINE_DIR),
     os.path.join(ENGINE_DIR, 'ci'),
     os.path.join(ENGINE_DIR, 'flutter_frontend_server'),
     os.path.join(ENGINE_DIR, 'impeller', 'tessellator', 'dart'),
@@ -119,6 +120,9 @@ def find_unlisted_packages():
 
 
 def main():
+  # Intentionally use the Dart SDK prebuilt instead of the Flutter prebuilt
+  # (i.e. prebuilts/{platform}/dart-sdk/bin/dart) because the script has to run
+  # in a monorepo build *before* the newer Dart SDK has been built from source.
   dart_sdk_bin = os.path.join(
       SRC_ROOT, 'flutter', 'third_party', 'dart', 'tools', 'sdks', 'dart-sdk', 'bin'
   )
