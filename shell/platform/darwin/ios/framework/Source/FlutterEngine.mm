@@ -873,10 +873,17 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   flutter::Shell::CreateCallback<flutter::Rasterizer> on_create_rasterizer =
       [](flutter::Shell& shell) { return std::make_unique<flutter::Rasterizer>(shell); };
 
+  fml::RefPtr<fml::TaskRunner> ui_runner;
+  if (settings.merged_platform_ui_thread) {
+    FML_LOG(IMPORTANT) << "Warning: Using highly experimental merged thread mode.";
+    ui_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+  } else {
+    ui_runner = _threadHost->ui_thread->GetTaskRunner();
+  }
   flutter::TaskRunners task_runners(threadLabel.UTF8String,                          // label
                                     fml::MessageLoop::GetCurrent().GetTaskRunner(),  // platform
                                     _threadHost->raster_thread->GetTaskRunner(),     // raster
-                                    _threadHost->ui_thread->GetTaskRunner(),         // ui
+                                    ui_runner,                                       // ui
                                     _threadHost->io_thread->GetTaskRunner()          // io
   );
 
