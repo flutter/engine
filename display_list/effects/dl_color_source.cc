@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/effects/dl_color_source.h"
 
+#include "display_list/dl_color.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/effects/dl_runtime_effect.h"
 #include "flutter/fml/logging.h"
@@ -27,8 +28,8 @@ std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
     const float* stops,
     DlTileMode tile_mode,
     const SkMatrix* matrix) {
-  size_t needed = sizeof(DlLinearGradientColorSource) +
-                  (stop_count * (sizeof(uint32_t) + sizeof(float)));
+  size_t needed =
+      sizeof(DlLinearGradientColorSource) + (stop_count * (sizeof(float) * 5));
 
   void* storage = ::operator new(needed);
 
@@ -48,8 +49,8 @@ std::shared_ptr<DlRadialGradientColorSource> DlColorSource::MakeRadial(
     const float* stops,
     DlTileMode tile_mode,
     const SkMatrix* matrix) {
-  size_t needed = sizeof(DlRadialGradientColorSource) +
-                  (stop_count * (sizeof(uint32_t) + sizeof(float)));
+  size_t needed =
+      sizeof(DlRadialGradientColorSource) + (stop_count * (sizeof(float) * 5));
 
   void* storage = ::operator new(needed);
 
@@ -70,8 +71,8 @@ std::shared_ptr<DlConicalGradientColorSource> DlColorSource::MakeConical(
     const float* stops,
     DlTileMode tile_mode,
     const SkMatrix* matrix) {
-  size_t needed = sizeof(DlConicalGradientColorSource) +
-                  (stop_count * (sizeof(uint32_t) + sizeof(float)));
+  size_t needed =
+      sizeof(DlConicalGradientColorSource) + (stop_count * (sizeof(float) * 5));
 
   void* storage = ::operator new(needed);
 
@@ -92,8 +93,8 @@ std::shared_ptr<DlSweepGradientColorSource> DlColorSource::MakeSweep(
     const float* stops,
     DlTileMode tile_mode,
     const SkMatrix* matrix) {
-  size_t needed = sizeof(DlSweepGradientColorSource) +
-                  (stop_count * (sizeof(uint32_t) + sizeof(float)));
+  size_t needed =
+      sizeof(DlSweepGradientColorSource) + (stop_count * (sizeof(float) * 5));
 
   void* storage = ::operator new(needed);
 

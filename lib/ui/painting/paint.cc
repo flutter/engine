@@ -4,6 +4,7 @@
 
 #include "flutter/lib/ui/painting/paint.h"
 
+#include "display_list/dl_color.h"
 #include "flutter/display_list/dl_builder.h"
 #include "flutter/fml/logging.h"
 #include "flutter/lib/ui/floating_point.h"
@@ -22,19 +23,20 @@ namespace flutter {
 
 // Indices for 32bit values.
 constexpr int kIsAntiAliasIndex = 0;
+// 4-32 bit values.
 constexpr int kColorIndex = 1;
-constexpr int kBlendModeIndex = 2;
-constexpr int kStyleIndex = 3;
-constexpr int kStrokeWidthIndex = 4;
-constexpr int kStrokeCapIndex = 5;
-constexpr int kStrokeJoinIndex = 6;
-constexpr int kStrokeMiterLimitIndex = 7;
-constexpr int kFilterQualityIndex = 8;
-constexpr int kMaskFilterIndex = 9;
-constexpr int kMaskFilterBlurStyleIndex = 10;
-constexpr int kMaskFilterSigmaIndex = 11;
-constexpr int kInvertColorIndex = 12;
-constexpr size_t kDataByteCount = 52;  // 4 * (last index + 1)
+constexpr int kBlendModeIndex = 5;
+constexpr int kStyleIndex = 6;
+constexpr int kStrokeWidthIndex = 7;
+constexpr int kStrokeCapIndex = 8;
+constexpr int kStrokeJoinIndex = 9;
+constexpr int kStrokeMiterLimitIndex = 10;
+constexpr int kFilterQualityIndex = 11;
+constexpr int kMaskFilterIndex = 12;
+constexpr int kMaskFilterBlurStyleIndex = 13;
+constexpr int kMaskFilterSigmaIndex = 14;
+constexpr int kInvertColorIndex = 15;
+constexpr size_t kDataByteCount = 64;  // 4 * (last index + 1)
 static_assert(kDataByteCount == sizeof(uint32_t) * (kInvertColorIndex + 1),
               "kDataByteCount must match the size of the data array.");
 
@@ -44,8 +46,8 @@ constexpr int kColorFilterIndex = 1;
 constexpr int kImageFilterIndex = 2;
 constexpr int kObjectCount = 3;  // One larger than largest object index.
 
-// Must be kept in sync with the default in painting.dart.
-constexpr uint32_t kColorDefault = 0xFF000000;
+// // Must be kept in sync with the default in painting.dart.
+// constexpr uint32_t kColorDefault = 0xFF000000;
 
 // Must be kept in sync with the default in painting.dart.
 constexpr uint32_t kBlendModeDefault =
@@ -137,8 +139,11 @@ const DlPaint* Paint::paint(DlPaint& paint,
   }
 
   if (flags.applies_alpha_or_color()) {
-    uint32_t encoded_color = uint_data[kColorIndex];
-    paint.setColor(DlColor(encoded_color ^ kColorDefault));
+    SkScalar alpha = float_data[kColorIndex];
+    SkScalar red = float_data[kColorIndex + 1];
+    SkScalar green = float_data[kColorIndex + 2];
+    SkScalar blue = float_data[kColorIndex + 3];
+    paint.setColor(DlColor(alpha, red, green, blue));
   }
 
   if (flags.applies_blend()) {
@@ -238,8 +243,11 @@ void Paint::toDlPaint(DlPaint& paint) const {
 
   paint.setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
 
-  uint32_t encoded_color = uint_data[kColorIndex];
-  paint.setColor(DlColor(encoded_color ^ kColorDefault));
+  SkScalar alpha = float_data[kColorIndex];
+  SkScalar red = float_data[kColorIndex + 1];
+  SkScalar green = float_data[kColorIndex + 2];
+  SkScalar blue = float_data[kColorIndex + 3];
+  paint.setColor(DlColor(alpha, red, green, blue));
 
   uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
   uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;

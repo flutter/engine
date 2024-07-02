@@ -601,7 +601,7 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
     builder()->DrawAtlas(
         dl_image, reinterpret_cast<const SkRSXform*>(transforms.data()),
         reinterpret_cast<const SkRect*>(rects.data()),
-        reinterpret_cast<const DlColor*>(colors.data()),
+        reinterpret_cast<const DlColor*>(colors.data()),  // TODO Fix
         rects.num_elements() / 4,  // SkRect have four floats.
         blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
         opt_paint);
@@ -610,7 +610,10 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
 }
 
 void Canvas::drawShadow(const CanvasPath* path,
-                        SkColor color,
+                        double alpha,
+                        double red,
+                        double green,
+                        double blue,
                         double elevation,
                         bool transparentOccluder) {
   if (!path) {
@@ -638,8 +641,10 @@ void Canvas::drawShadow(const CanvasPath* path,
     // that situation we bypass the canvas interface and inject the
     // shadow parameters directly into the underlying DisplayList.
     // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
-    builder()->DrawShadow(path->path(), DlColor(color), SafeNarrow(elevation),
-                          transparentOccluder, dpr);
+    builder()->DrawShadow(path->path(),
+                          DlColor(SafeNarrow(alpha), SafeNarrow(red),
+                                  SafeNarrow(green), SafeNarrow(blue)),
+                          SafeNarrow(elevation), transparentOccluder, dpr);
   }
 }
 

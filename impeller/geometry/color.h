@@ -246,10 +246,10 @@ struct Color {
    * @return constexpr std::array<u_int8, 4>
    */
   constexpr std::array<uint8_t, 4> ToR8G8B8A8() const {
-    uint8_t r = std::round(red * 255.0f);
-    uint8_t g = std::round(green * 255.0f);
-    uint8_t b = std::round(blue * 255.0f);
-    uint8_t a = std::round(alpha * 255.0f);
+    uint8_t r = std::round(std::clamp(red, 0.0f, 1.0f) * 255.0f);
+    uint8_t g = std::round(std::clamp(green, 0.0f, 1.0f) * 255.0f);
+    uint8_t b = std::round(std::clamp(blue, 0.0f, 1.0f) * 255.0f);
+    uint8_t a = std::round(std::clamp(alpha, 0.0f, 1.0f) * 255.0f);
     return {r, g, b, a};
   }
 
