@@ -79,7 +79,7 @@ class CkCanvas {
     bool useCenter,
     CkPaint paint,
   ) {
-    const double toDegrees = 180 / math.pi;
+    const toDegrees = 180 / math.pi;
     skCanvas.drawArc(
       toSkRect(oval),
       startAngle * toDegrees,
@@ -133,7 +133,7 @@ class CkCanvas {
   }
 
   void drawImage(CkImage image, ui.Offset offset, CkPaint paint) {
-    final ui.FilterQuality filterQuality = paint.filterQuality;
+    final filterQuality = paint.filterQuality;
     if (filterQuality == ui.FilterQuality.high) {
       skCanvas.drawImageCubic(
         image.skImage,
@@ -156,7 +156,7 @@ class CkCanvas {
   }
 
   void drawImageRect(CkImage image, ui.Rect src, ui.Rect dst, CkPaint paint) {
-    final ui.FilterQuality filterQuality = paint.filterQuality;
+    final filterQuality = paint.filterQuality;
     if (filterQuality == ui.FilterQuality.high) {
       skCanvas.drawImageRectCubic(
         image.skImage,
@@ -325,10 +325,10 @@ class CkCanvas {
   }
 
   Float32List getLocalToDevice() {
-    final List<dynamic> list = skCanvas.getLocalToDevice();
-    final Float32List matrix4 = Float32List(16);
-    for (int r = 0; r < 4; r++) {
-      for (int c = 0; c < 4; c++) {
+    final list = skCanvas.getLocalToDevice();
+    final matrix4 = Float32List(16);
+    for (var r = 0; r < 4; r++) {
+      for (var c = 0; c < 4; c++) {
         matrix4[c * 4 + r] = (list[r * 4 + c] as num).toDouble();
       }
     }

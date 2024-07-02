@@ -103,7 +103,7 @@ abstract class BrowserImageDecoder implements ui.Codec {
     // initialization will take place. We just let it proceed at its own pace.
     _cacheExpirationClock.callback = null;
     try {
-      final ImageDecoder webDecoder = ImageDecoder(ImageDecoderOptions(
+      final webDecoder = ImageDecoder(ImageDecoderOptions(
         type: contentType.toJS,
         data: dataSource,
 
@@ -130,7 +130,7 @@ abstract class BrowserImageDecoder implements ui.Codec {
       // We coerce the DOM's `repetitionCount` into an int by explicitly
       // handling `infinity`. Note: This will still throw if the DOM returns a
       // `NaN`.
-      final double rawRepetitionCount =
+      final rawRepetitionCount =
           webDecoder.tracks.selectedTrack!.repetitionCount;
       repetitionCount = rawRepetitionCount == double.infinity
           ? -1
@@ -174,19 +174,19 @@ abstract class BrowserImageDecoder implements ui.Codec {
   @override
   Future<ui.FrameInfo> getNextFrame() async {
     _debugCheckNotDisposed();
-    final ImageDecoder webDecoder = await _getOrCreateWebDecoder();
-    final DecodeResult result = await promiseToFuture<DecodeResult>(
+    final webDecoder = await _getOrCreateWebDecoder();
+    final result = await promiseToFuture<DecodeResult>(
       webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex.toJS)),
     );
-    final VideoFrame frame = result.image;
+    final frame = result.image;
     _nextFrameIndex = (_nextFrameIndex + 1) % frameCount;
 
     // Duration can be null if the image is not animated. However, Flutter
     // requires a non-null value. 0 indicates that the frame is meant to be
     // displayed indefinitely, which is fine for a static image.
-    final Duration duration =
+    final duration =
         Duration(microseconds: frame.duration?.toInt() ?? 0);
-    final ui.Image image = generateImageFromVideoFrame(frame);
+    final image = generateImageFromVideoFrame(frame);
     return AnimatedImageFrameInfo(duration, image);
   }
 
@@ -219,19 +219,19 @@ String? detectContentType(Uint8List data) {
   }
 
   formatLoop:
-  for (final ImageFileFormat format in ImageFileFormat.values) {
+  for (final format in ImageFileFormat.values) {
     if (data.length < format.header.length) {
       continue;
     }
 
-    for (int i = 0; i < format.header.length; i++) {
-      final int? magicByte = format.header[i];
+    for (var i = 0; i < format.header.length; i++) {
+      final magicByte = format.header[i];
       if (magicByte == null) {
         // Wildcard, accepts everything.
         continue;
       }
 
-      final int headerByte = data[i];
+      final headerByte = data[i];
       if (headerByte != magicByte) {
         continue formatLoop;
       }
@@ -341,8 +341,8 @@ final List<int> _avifSignature = 'ftyp'.codeUnits;
 /// Optimistically detects whether [data] is an AVIF image file.
 bool isAvif(Uint8List data) {
   firstByteLoop:
-  for (int i = 0; i < 16; i += 1) {
-    for (int j = 0; j < _avifSignature.length; j += 1) {
+  for (var i = 0; i < 16; i += 1) {
+    for (var j = 0; j < _avifSignature.length; j += 1) {
       if (i + j >= data.length) {
         // Reached EOF without finding the signature.
         return false;
@@ -378,7 +378,7 @@ class ResizingCodec implements ui.Codec {
 
   @override
   Future<ui.FrameInfo> getNextFrame() async {
-    final ui.FrameInfo frameInfo = await delegate.getNextFrame();
+    final frameInfo = await delegate.getNextFrame();
     return AnimatedImageFrameInfo(
       frameInfo.duration,
       scaleImageIfNeeded(frameInfo.image,
@@ -424,9 +424,9 @@ ui.Image scaleImageIfNeeded(
   int? targetHeight,
   bool allowUpscaling = true,
 }) {
-  final int width = image.width;
-  final int height = image.height;
-  final ui.Size? scaledSize =
+  final width = image.width;
+  final height = image.height;
+  final scaledSize =
       _scaledSize(width, height, targetWidth, targetHeight);
   if (scaledSize == null) {
     return image;
@@ -436,10 +436,10 @@ ui.Image scaleImageIfNeeded(
     return image;
   }
 
-  final ui.Rect outputRect =
+  final outputRect =
       ui.Rect.fromLTWH(0, 0, scaledSize.width, scaledSize.height);
-  final ui.PictureRecorder recorder = ui.PictureRecorder();
-  final ui.Canvas canvas = ui.Canvas(recorder, outputRect);
+  final recorder = ui.PictureRecorder();
+  final canvas = ui.Canvas(recorder, outputRect);
 
   canvas.drawImageRect(
     image,
@@ -447,8 +447,8 @@ ui.Image scaleImageIfNeeded(
     outputRect,
     ui.Paint(),
   );
-  final ui.Picture picture = recorder.endRecording();
-  final ui.Image finalImage =
+  final picture = recorder.endRecording();
+  final finalImage =
       picture.toImageSync(scaledSize.width.round(), scaledSize.height.round());
   picture.dispose();
   image.dispose();

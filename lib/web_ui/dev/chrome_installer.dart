@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:io' as io;
-import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
 import 'package:archive/archive_io.dart';
@@ -66,7 +65,7 @@ Future<BrowserInstallation> getOrInstallChrome(
     } else {
       infoLog.writeln('Installing Chrome version: ${installer.version}');
       await installer.install();
-      final BrowserInstallation installation = installer.getInstallation()!;
+      final installation = installer.getInstallation()!;
       infoLog.writeln(
           'Installations complete. To launch it run ${installation.executable}');
     }
@@ -77,7 +76,7 @@ Future<BrowserInstallation> getOrInstallChrome(
 }
 
 Future<String> _findSystemChromeExecutable() async {
-  final io.ProcessResult which =
+  final which =
       await io.Process.run('which', <String>['google-chrome']);
 
   if (which.exitCode != 0) {
@@ -101,10 +100,10 @@ class ChromeInstaller {
       throw BrowserInstallerException(
           'Expected a concrete Chromer version, but got $version. Maybe use ChromeInstaller.latest()?');
     }
-    final io.Directory chromeInstallationDir = io.Directory(
+    final chromeInstallationDir = io.Directory(
       path.join(environment.webUiDartToolDir.path, 'chrome'),
     );
-    final io.Directory versionDir = io.Directory(
+    final versionDir = io.Directory(
       path.join(chromeInstallationDir.path, version),
     );
     return ChromeInstaller._(
@@ -121,7 +120,7 @@ class ChromeInstaller {
   });
 
   static Future<ChromeInstaller> latest() async {
-    final String latestVersion = await fetchLatestChromeVersion();
+    final latestVersion = await fetchLatestChromeVersion();
     return ChromeInstaller(version: latestVersion);
   }
 
@@ -165,15 +164,15 @@ class ChromeInstaller {
     }
     versionDir.createSync(recursive: true);
 
-    final String url = PlatformBinding.instance.getChromeDownloadUrl(version);
+    final url = PlatformBinding.instance.getChromeDownloadUrl(version);
     print('Downloading Chrome from $url');
 
-    final StreamedResponse download = await client.send(Request(
+    final download = await client.send(Request(
       'GET',
       Uri.parse(url),
     ));
 
-    final io.File downloadedFile =
+    final downloadedFile =
         io.File(path.join(versionDir.path, 'chrome.zip'));
     await download.stream.pipe(downloadedFile.openWrite());
 
@@ -185,18 +184,18 @@ class ChromeInstaller {
     /// from dart.
     /// See: https://github.com/dart-lang/sdk/issues/15078.
     if (io.Platform.isWindows) {
-      final Stopwatch stopwatch = Stopwatch()..start();
+      final stopwatch = Stopwatch()..start();
 
       // Read the Zip file from disk.
-      final Uint8List bytes = downloadedFile.readAsBytesSync();
+      final bytes = downloadedFile.readAsBytesSync();
 
-      final Archive archive = ZipDecoder().decodeBytes(bytes);
+      final archive = ZipDecoder().decodeBytes(bytes);
 
       // Extract the contents of the Zip archive to disk.
-      for (final ArchiveFile file in archive) {
-        final String filename = file.name;
+      for (final file in archive) {
+        final filename = file.name;
         if (file.isFile) {
-          final List<int> data = file.content as List<int>;
+          final data = file.content as List<int>;
           io.File(path.joinAll(<String>[
             versionDir.path,
             // Remove the "chrome-win/" path prefix, which is the Windows
@@ -218,9 +217,9 @@ class ChromeInstaller {
       // version directory. However, the zip file contains a top-level directory
       // named e.g. 'chrome-linux'. We need to copy the files out of that
       // directory and into the version directory.
-      final io.Directory tmpDir = await io.Directory.systemTemp.createTemp();
-      final io.Directory unzipDir = tmpDir;
-      final io.ProcessResult unzipResult =
+      final tmpDir = await io.Directory.systemTemp.createTemp();
+      final unzipDir = tmpDir;
+      final unzipResult =
           await io.Process.run('unzip', <String>[
         downloadedFile.path,
         '-d',
@@ -233,7 +232,7 @@ class ChromeInstaller {
             'The unzip process exited with code ${unzipResult.exitCode}.');
       }
 
-      final io.Directory topLevelDir =
+      final topLevelDir =
           await tmpDir.list().single as io.Directory;
       await for (final io.FileSystemEntity entity in topLevelDir.list()) {
         await entity
@@ -252,9 +251,9 @@ class ChromeInstaller {
 
 /// Fetches the latest available Chrome build version.
 Future<String> fetchLatestChromeVersion() async {
-  final Client client = Client();
+  final client = Client();
   try {
-    final Response response = await client.get(Uri.parse(
+    final response = await client.get(Uri.parse(
         'https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2FLAST_CHANGE?alt=media'));
     if (response.statusCode != 200) {
       throw BrowserInstallerException(

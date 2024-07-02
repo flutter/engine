@@ -19,7 +19,7 @@ class FakeAssetManager implements ui_web.AssetManager {
 
   @override
   Future<ByteData> load(String assetKey) async {
-    final ByteData? assetData = await _currentScope?.getAssetData(assetKey);
+    final assetData = await _currentScope?.getAssetData(assetKey);
     if (assetData == null) {
       throw HttpFetchNoPayloadError(assetKey, status: 404);
     }
@@ -28,7 +28,7 @@ class FakeAssetManager implements ui_web.AssetManager {
 
   @override
   Future<HttpFetchResponse> loadAsset(String asset) async {
-    final ByteData? assetData = await _currentScope?.getAssetData(asset);
+    final assetData = await _currentScope?.getAssetData(asset);
     if (assetData != null) {
       return MockHttpFetchResponse(
         url: asset,
@@ -46,7 +46,7 @@ class FakeAssetManager implements ui_web.AssetManager {
   }
 
   FakeAssetScope pushAssetScope() {
-    final FakeAssetScope scope = FakeAssetScope._(_currentScope);
+    final scope = FakeAssetScope._(_currentScope);
     _currentScope = scope;
     return scope;
   }
@@ -76,7 +76,7 @@ class FakeAssetScope {
   }
 
   Future<ByteData>? getAssetData(String assetKey) {
-    final Future<ByteData> Function()? fetcher = _assetFetcherMap[assetKey];
+    final fetcher = _assetFetcherMap[assetKey];
     if (fetcher != null) {
       return fetcher();
     }
@@ -110,7 +110,7 @@ const Map<String, String> testFontUrls = <String, String>{
 };
 
 FakeAssetScope configureDebugFontsAssetScope(FakeAssetManager manager) {
-  final FakeAssetScope scope = manager.pushAssetScope();
+  final scope = manager.pushAssetScope();
   scope.setAsset('AssetManifest.json', stringAsUtf8Data('{}'));
   scope.setAsset('FontManifest.json', stringAsUtf8Data('''
   [

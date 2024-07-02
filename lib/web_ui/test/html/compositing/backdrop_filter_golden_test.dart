@@ -34,23 +34,23 @@ Future<void> testMain() async {
   // the clip boundary around backdrop filter. However there should be only
   // one red dot since the other one should be blurred by filter.
   test('Background should only blur at ancestor clip boundary', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 190, 130);
+    const region = Rect.fromLTWH(0, 0, 190, 130);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground(region);
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground(region);
     builder.addPicture(Offset.zero, backgroundPicture);
 
     builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 180, 120),
     );
-    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+    final circles1 = _drawTestPictureWithCircles(region, 30, 30);
     builder.addPicture(Offset.zero, circles1);
 
     builder.pushClipRect(
       const Rect.fromLTRB(60, 10, 180, 120),
     );
     builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0));
-    final Picture circles2 = _drawTestPictureWithCircles(region, 90, 30);
+    final circles2 = _drawTestPictureWithCircles(region, 90, 30);
     builder.addPicture(Offset.zero, circles2);
     builder.pop();
     builder.pop();
@@ -64,22 +64,22 @@ Future<void> testMain() async {
   });
 
   test('Background should only blur at ancestor clip boundary after move', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 190, 130);
+    const region = Rect.fromLTWH(0, 0, 190, 130);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground(region);
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground(region);
     builder.addPicture(Offset.zero, backgroundPicture);
-    final ClipRectEngineLayer clipEngineLayer = builder.pushClipRect(
+    final clipEngineLayer = builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 180, 120),
     );
-    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+    final circles1 = _drawTestPictureWithCircles(region, 30, 30);
     builder.addPicture(Offset.zero, circles1);
-    final ClipRectEngineLayer clipEngineLayer2 = builder.pushClipRect(
+    final clipEngineLayer2 = builder.pushClipRect(
       const Rect.fromLTRB(60, 10, 180, 120),
     );
-    final BackdropFilterEngineLayer oldBackdropFilterLayer =
+    final oldBackdropFilterLayer =
         builder.pushBackdropFilter(ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0));
-    final Picture circles2 = _drawTestPictureWithCircles(region, 90, 30);
+    final circles2 = _drawTestPictureWithCircles(region, 90, 30);
     builder.addPicture(Offset.zero, circles2);
     builder.pop();
     builder.pop();
@@ -87,7 +87,7 @@ Future<void> testMain() async {
     builder.build();
 
     // Now reparent filter layer in next scene.
-    final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
+    final builder2 = SurfaceSceneBuilder();
     builder2.addPicture(Offset.zero, backgroundPicture);
     builder2.pushClipRect(
       const Rect.fromLTRB(10, 10, 180, 120),
@@ -115,16 +115,16 @@ Future<void> testMain() async {
   // The blur filter should be applied to the background inside the clip even
   // though there are no children of the backdrop filter.
   test('Background should blur even if child does not paint', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 190, 130);
+    const region = Rect.fromLTWH(0, 0, 190, 130);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground(region);
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground(region);
     builder.addPicture(Offset.zero, backgroundPicture);
 
     builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 180, 120),
     );
-    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+    final circles1 = _drawTestPictureWithCircles(region, 30, 30);
     builder.addPicture(Offset.zero, circles1);
 
     builder.pushClipRect(
@@ -143,19 +143,19 @@ Future<void> testMain() async {
         region: region);
   });
   test('colorFilter as imageFilter', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 190, 130);
+    const region = Rect.fromLTWH(0, 0, 190, 130);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground(region);
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground(region);
     builder.addPicture(Offset.zero, backgroundPicture);
 
     builder.pushClipRect(
       const Rect.fromLTRB(10, 10, 180, 120),
     );
-    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+    final circles1 = _drawTestPictureWithCircles(region, 30, 30);
 
     // current background color is light green, apply a light yellow colorFilter
-    const ColorFilter colorFilter = ColorFilter.mode(
+    const colorFilter = ColorFilter.mode(
       Color(0xFFFFFFB1),
       BlendMode.modulate
     );
@@ -173,8 +173,8 @@ Future<void> testMain() async {
 }
 
 Picture _drawTestPictureWithCircles(Rect region, double offsetX, double offsetY) {
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
+  final recorder = PictureRecorder() as EnginePictureRecorder;
+  final canvas =
   recorder.beginRecording(region);
   canvas.drawCircle(
       Offset(offsetX + 10, offsetY + 10), 10, SurfacePaint()..style = PaintingStyle.fill);
@@ -200,8 +200,8 @@ Picture _drawTestPictureWithCircles(Rect region, double offsetX, double offsetY)
 }
 
 Picture _drawBackground(Rect region) {
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
+  final recorder = PictureRecorder() as EnginePictureRecorder;
+  final canvas =
   recorder.beginRecording(region);
   canvas.drawRect(
       region.deflate(8.0),

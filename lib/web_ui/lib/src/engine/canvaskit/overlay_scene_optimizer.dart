@@ -35,7 +35,7 @@ class Rendering {
     if (other.entities.length != entities.length) {
       return false;
     }
-    for (int i = 0; i < entities.length; i++) {
+    for (var i = 0; i < entities.length; i++) {
       if (!entities[i].equalsForRendering(other.entities[i])) {
         return false;
       }
@@ -114,21 +114,21 @@ class RenderingPlatformView extends RenderingEntity {
 // Computes the bounds of the platform view from its associated parameters.
 @visibleForTesting
 ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
-  ui.Rect currentClipBounds = ui.Rect.largest;
+  var currentClipBounds = ui.Rect.largest;
 
-  Matrix4 currentTransform = Matrix4.identity();
-  for (final Mutator mutator in params.mutators.reversed) {
+  var currentTransform = Matrix4.identity();
+  for (final mutator in params.mutators.reversed) {
     switch (mutator.type) {
       case MutatorType.clipRect:
-        final ui.Rect transformedClipBounds =
+        final transformedClipBounds =
             transformRectWithMatrix(currentTransform, mutator.rect!);
         currentClipBounds = currentClipBounds.intersect(transformedClipBounds);
       case MutatorType.clipRRect:
-        final ui.Rect transformedClipBounds =
+        final transformedClipBounds =
             transformRectWithMatrix(currentTransform, mutator.rrect!.outerRect);
         currentClipBounds = currentClipBounds.intersect(transformedClipBounds);
       case MutatorType.clipPath:
-        final ui.Rect transformedClipBounds = transformRectWithMatrix(
+        final transformedClipBounds = transformRectWithMatrix(
             currentTransform, mutator.path!.getBounds());
         currentClipBounds.intersect(transformedClipBounds);
       case MutatorType.transform:
@@ -141,13 +141,13 @@ ui.Rect computePlatformViewBounds(EmbeddedViewParams params) {
 
   // The width and height are in physical pixels already, so apply the inverse
   // scale since the transform already applied the scaling.
-  final ui.Rect rawBounds = ui.Rect.fromLTWH(
+  final rawBounds = ui.Rect.fromLTWH(
     params.offset.dx,
     params.offset.dy,
     params.size.width,
     params.size.height,
   );
-  final ui.Rect transformedBounds =
+  final transformedBounds =
       transformRectWithMatrix(currentTransform, rawBounds);
   return transformedBounds.intersect(currentClipBounds);
 }
@@ -163,12 +163,12 @@ Rendering createOptimizedRendering(
 ) {
   assert(pictures.length == platformViews.length + 1);
 
-  final Rendering result = Rendering();
+  final result = Rendering();
 
   // The first render canvas is required due to the pseudo-platform view "V_0"
   // which is defined as a platform view that comes before all Flutter drawing
   // commands and intersects with everything.
-  RenderingRenderCanvas currentRenderCanvas = RenderingRenderCanvas();
+  var currentRenderCanvas = RenderingRenderCanvas();
 
   // This line essentially unwinds the first iteration of the following loop.
   // Since "V_0" intersects with all subsequent pictures, then the first picture
@@ -177,17 +177,17 @@ Rendering createOptimizedRendering(
   if (!pictures[0].cullRect.isEmpty) {
     currentRenderCanvas.add(pictures[0]);
   }
-  for (int i = 0; i < platformViews.length; i++) {
-    final RenderingPlatformView platformView =
+  for (var i = 0; i < platformViews.length; i++) {
+    final platformView =
         RenderingPlatformView(platformViews[i]);
     if (PlatformViewManager.instance.isVisible(platformViews[i])) {
-      final ui.Rect platformViewBounds =
+      final platformViewBounds =
           computePlatformViewBounds(paramsForViews[platformViews[i]]!);
       if (debugOverlayOptimizationBounds) {
         platformView.debugComputedBounds = platformViewBounds;
       }
-      bool intersectsWithCurrentPictures = false;
-      for (final CkPicture picture in currentRenderCanvas.pictures) {
+      var intersectsWithCurrentPictures = false;
+      for (final picture in currentRenderCanvas.pictures) {
         if (picture.cullRect.overlaps(platformViewBounds)) {
           intersectsWithCurrentPictures = true;
           break;

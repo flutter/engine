@@ -18,7 +18,7 @@ void main() {
 
 void testMain() {
   test('hashValues and hashList can hash lots of huge values effectively', () {
-    final int hashValueFromArgs = hashValues(
+    final hashValueFromArgs = hashValues(
       _kBiggestExactJavaScriptInt,
       _kBiggestExactJavaScriptInt,
       _kBiggestExactJavaScriptInt,
@@ -42,7 +42,7 @@ void testMain() {
     );
 
     // Hash the same values via a list
-    final int hashValueFromList = hashList(<int>[
+    final hashValueFromList = hashList(<int>[
         _kBiggestExactJavaScriptInt,
         _kBiggestExactJavaScriptInt,
         _kBiggestExactJavaScriptInt,
@@ -66,7 +66,7 @@ void testMain() {
     ]);
 
     // Hash a slightly smaller number to verify that the hash code is different.
-    final int slightlyDifferentHashValueFromArgs = hashValues(
+    final slightlyDifferentHashValueFromArgs = hashValues(
       _kBiggestExactJavaScriptInt,
       _kBiggestExactJavaScriptInt,
       _kBiggestExactJavaScriptInt,
@@ -89,7 +89,7 @@ void testMain() {
       _kBiggestExactJavaScriptInt - 1,
     );
 
-    final int slightlyDifferentHashValueFromList = hashList(<int>[
+    final slightlyDifferentHashValueFromList = hashList(<int>[
         _kBiggestExactJavaScriptInt,
         _kBiggestExactJavaScriptInt,
         _kBiggestExactJavaScriptInt,

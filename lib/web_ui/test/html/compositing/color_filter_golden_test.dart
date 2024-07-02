@@ -33,12 +33,12 @@ Future<void> testMain() async {
   });
 
   test('Should apply color filter to image', () async {
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground();
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
     builder.pushColorFilter(
         const EngineColorFilter.mode(Color(0xF0000080), BlendMode.color));
-    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+    final circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
     domDocument.body!.append(builder.build().webOnlyRootElement!);
@@ -49,18 +49,18 @@ Future<void> testMain() async {
   });
 
   test('Should apply matrix color filter to image', () async {
-    final List<double> colorMatrix = <double>[
+    final colorMatrix = <double>[
       0.2126, 0.7152, 0.0722, 0, 0, //
       0.2126, 0.7152, 0.0722, 0, 0, //
       0.2126, 0.7152, 0.0722, 0, 0, //
       0, 0, 0, 1, 0, //
     ];
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground();
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
     builder.pushColorFilter(
         EngineColorFilter.matrix(colorMatrix));
-    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+    final circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
     domDocument.body!.append(builder.build().webOnlyRootElement!);
@@ -69,15 +69,15 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/85733
   test('Should apply mode color filter to circles', () async {
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture backgroundPicture = _drawBackground();
+    final builder = SurfaceSceneBuilder();
+    final backgroundPicture = _drawBackground();
     builder.addPicture(Offset.zero, backgroundPicture);
     builder.pushColorFilter(
         const ColorFilter.mode(
           Color(0xFFFF0000),
           BlendMode.srcIn,
         ));
-    final Picture circles1 = _drawTestPictureWithCircles(30, 30);
+    final circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
     domDocument.body!.append(builder.build().webOnlyRootElement!);
@@ -86,9 +86,9 @@ Future<void> testMain() async {
 }
 
 Picture _drawTestPictureWithCircles(double offsetX, double offsetY) {
-  final EnginePictureRecorder recorder =
+  final recorder =
       PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
+  final canvas =
       recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
   canvas.drawCircle(Offset(offsetX + 10, offsetY + 10), 10,
       (Paint()..style = PaintingStyle.fill) as SurfacePaint);
@@ -114,9 +114,9 @@ Picture _drawTestPictureWithCircles(double offsetX, double offsetY) {
 }
 
 Picture _drawBackground() {
-  final EnginePictureRecorder recorder =
+  final recorder =
       PictureRecorder() as EnginePictureRecorder;
-  final RecordingCanvas canvas =
+  final canvas =
       recorder.beginRecording(const Rect.fromLTRB(0, 0, 400, 400));
   canvas.drawRect(
       const Rect.fromLTWH(8, 8, 400.0 - 16, 400.0 - 16),

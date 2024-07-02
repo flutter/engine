@@ -25,8 +25,8 @@ class PersistedImageFilter extends PersistedContainerSurface
   void recomputeTransformAndClip() {
     transform = parent!.transform;
 
-    final double dx = offset.dx;
-    final double dy = offset.dy;
+    final dx = offset.dx;
+    final dy = offset.dy;
 
     if (dx != 0.0 || dy != 0.0) {
       transform = transform!.clone();
@@ -67,8 +67,8 @@ class PersistedImageFilter extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = defaultCreateElement('flt-image-filter');
-    final DomElement container = defaultCreateElement('flt-image-filter-interior');
+    final element = defaultCreateElement('flt-image-filter');
+    final container = defaultCreateElement('flt-image-filter-interior');
     if (debugExplainSurfaceStats) {
       // This creates an additional interior element. Count it too.
       surfaceStatsFor(this).allocatedDomNodeCount++;

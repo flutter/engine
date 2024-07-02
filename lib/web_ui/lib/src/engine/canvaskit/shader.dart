@@ -81,7 +81,7 @@ class CkGradientSweep extends SimpleCkShader implements ui.Gradient {
 
   @override
   SkShader createSkiaObject() {
-    const double toDegrees = 180.0 / math.pi;
+    const toDegrees = 180.0 / math.pi;
     return canvasKit.Shader.MakeSweepGradient(
       center.dx,
       center.dy,
@@ -246,7 +246,7 @@ class CkImageShader implements ui.ImageShader, CkShader {
   @override
   SkShader getSkShader(ui.FilterQuality contextualQuality) {
     assert(!debugDisposed, 'Cannot make a copy of a disposed ImageShader.');
-    final ui.FilterQuality quality = filterQuality ?? contextualQuality;
+    final quality = filterQuality ?? contextualQuality;
     if (currentQuality != quality) {
       _initializeSkImageShader(quality);
     }

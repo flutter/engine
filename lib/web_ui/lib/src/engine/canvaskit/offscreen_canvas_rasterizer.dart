@@ -29,7 +29,7 @@ class OffscreenCanvasRasterizer extends Rasterizer {
   @override
   void dispose() {
     offscreenSurface.dispose();
-    for (final OffscreenCanvasViewRasterizer viewRasterizer
+    for (final viewRasterizer
         in _viewRasterizers.values) {
       viewRasterizer.dispose();
     }

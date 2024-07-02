@@ -23,7 +23,7 @@ class SVGGraphicsElement extends SVGElement {}
 class SVGSVGElement extends SVGGraphicsElement {}
 
 SVGSVGElement createSVGSVGElement() {
-  final SVGElement el = createSVGElement('svg');
+  final el = createSVGElement('svg');
   el.setAttribute('version', '1.1');
   return el as SVGSVGElement;
 }

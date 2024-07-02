@@ -73,7 +73,7 @@ abstract class ProcessStep implements PipelineStep {
 
   @override
   Future<void> run() async {
-    final ProcessManager process = await createProcess();
+    final process = await createProcess();
 
     if (_isInterrupted) {
       // If the step was interrupted while creating the process, the
@@ -127,8 +127,8 @@ class Pipeline {
   /// resolves.
   Future<void> run() async {
     _status = PipelineStatus.started;
-    final List<_PipelineStepFailure> failures = <_PipelineStepFailure>[];
-    for (final PipelineStep step in steps) {
+    final failures = <_PipelineStepFailure>[];
+    for (final step in steps) {
       _currentStep = step;
       _currentStepFuture = step.run();
       try {
@@ -144,7 +144,7 @@ class Pipeline {
     } else {
       _status = PipelineStatus.error;
       print('Pipeline experienced the following failures:');
-      for (final _PipelineStepFailure failure in failures) {
+      for (final failure in failures) {
         print('  "${failure.step.description}": ${failure.error}');
       }
       throw ToolExit('Test pipeline failed.');
@@ -158,7 +158,7 @@ class Pipeline {
   /// interrupting the pipeline.
   Future<void> stop() async {
     _status = PipelineStatus.stopping;
-    final PipelineStep? step = _currentStep;
+    final step = _currentStep;
     if (step == null) {
       _status = PipelineStatus.interrupted;
       return;
@@ -223,8 +223,8 @@ class PipelineWatcher {
     });
 
     await io.stdin.firstWhere((List<int> event) {
-      const int qKeyCode = 113;
-      final bool qEntered = event.isNotEmpty && event.first == qKeyCode;
+      const qKeyCode = 113;
+      final qEntered = event.isNotEmpty && event.first == qKeyCode;
       return qEntered;
     });
     print('Stopping felt');
@@ -239,7 +239,7 @@ class PipelineWatcher {
       return;
     }
 
-    final String relativePath = path.relative(event.path, from: dir);
+    final relativePath = path.relative(event.path, from: dir);
     print('- [${event.type}] $relativePath');
 
     _pipelineRunCount++;
@@ -261,7 +261,7 @@ class PipelineWatcher {
       await pipeline.stop();
     }
 
-    final int runCount = _pipelineRunCount;
+    final runCount = _pipelineRunCount;
     try {
       await pipeline.run();
       _pipelineSucceeded(runCount);

@@ -24,13 +24,13 @@ Future<void> testMain() async {
   );
 
   void testEllipsis(EngineCanvas canvas) {
-    Offset offset = Offset.zero;
+    var offset = Offset.zero;
     CanvasParagraph paragraph;
 
-    const double fontSize = 22.0;
-    const double width = 126.0;
-    const double padding = 20.0;
-    final SurfacePaintData borderPaint = SurfacePaintData()
+    const fontSize = 22.0;
+    const width = 126.0;
+    const padding = 20.0;
+    final borderPaint = SurfacePaintData()
       ..color = black.value
       ..style = PaintingStyle.stroke;
 
@@ -116,14 +116,14 @@ Future<void> testMain() async {
   }
 
   test('ellipsis', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 300, 300);
+    const bounds = Rect.fromLTWH(0, 0, 300, 300);
     final EngineCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
     testEllipsis(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_ellipsis');
   });
 
   test('ellipsis (dom)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 300, 300);
+    const bounds = Rect.fromLTWH(0, 0, 300, 300);
     final EngineCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testEllipsis(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_ellipsis_dom');

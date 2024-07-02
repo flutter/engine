@@ -55,7 +55,7 @@ class Tappable extends RoleManager {
 
   @override
   void update() {
-    final bool wasListening = _isListening;
+    final wasListening = _isListening;
     _isListening = semanticsObject.enabledState() != EnabledState.disabled && semanticsObject.isTappable;
     if (wasListening != _isListening) {
       _updateAttribute();

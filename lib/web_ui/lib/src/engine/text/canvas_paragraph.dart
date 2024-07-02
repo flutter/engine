@@ -126,7 +126,7 @@ class CanvasParagraph implements ui.Paragraph {
   /// Generates a new DOM element on every invocation.
   DomElement toDomElement() {
     assert(isLaidOut);
-    final DomElement? domElement = _cachedDomElement;
+    final domElement = _cachedDomElement;
     if (domElement == null) {
       return _cachedDomElement ??= _createDomElement();
     }
@@ -134,11 +134,11 @@ class CanvasParagraph implements ui.Paragraph {
   }
 
   DomElement _createDomElement() {
-    final DomElement rootElement = domDocument.createElement('flt-paragraph');
+    final rootElement = domDocument.createElement('flt-paragraph');
 
     // 1. Set paragraph-level styles.
 
-    final DomCSSStyleDeclaration cssStyle = rootElement.style;
+    final cssStyle = rootElement.style;
     cssStyle
       ..position = 'absolute'
       // Prevent the browser from doing any line breaks in the paragraph. We want
@@ -147,19 +147,19 @@ class CanvasParagraph implements ui.Paragraph {
 
     // 2. Append all spans to the paragraph.
 
-    for (int i = 0; i < lines.length; i++) {
-      final ParagraphLine line = lines[i];
-      for (final LayoutFragment fragment in line.fragments) {
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      for (final fragment in line.fragments) {
         if (fragment.isPlaceholder) {
           continue;
         }
 
-        final String text = fragment.getText(this);
+        final text = fragment.getText(this);
         if (text.isEmpty) {
           continue;
         }
 
-        final DomElement spanElement = domDocument.createElement('flt-span');
+        final spanElement = domDocument.createElement('flt-span');
         if (fragment.textDirection == ui.TextDirection.rtl) {
           spanElement.setAttribute('dir', 'rtl');
         }
@@ -199,23 +199,23 @@ class CanvasParagraph implements ui.Paragraph {
 
   @override
   ui.GlyphInfo? getGlyphInfoAt(int codeUnitOffset) {
-    final int? lineNumber = _findLine(codeUnitOffset, 0, numberOfLines);
+    final lineNumber = _findLine(codeUnitOffset, 0, numberOfLines);
     if (lineNumber == null) {
       return null;
     }
-    final ParagraphLine line = lines[lineNumber];
-    final ui.TextRange? range = line.getCharacterRangeAt(codeUnitOffset);
+    final line = lines[lineNumber];
+    final range = line.getCharacterRangeAt(codeUnitOffset);
     if (range == null) {
       return null;
     }
     assert(line.overlapsWith(range.start, range.end));
-    for (final LayoutFragment fragment in line.fragments) {
+    for (final fragment in line.fragments) {
       if (fragment.overlapsWith(range.start, range.end)) {
         // If the grapheme cluster is split into multiple fragments (which really
         // shouldn't happen but currently if they are in different TextSpans they
         // don't combine), use the layout box of the first base character as its
         // layout box has a better chance to be not that far-off.
-        final ui.TextBox textBox = fragment.toTextBox(start: range.start, end: range.end);
+        final textBox = fragment.toTextBox(start: range.start, end: range.end);
         return ui.GlyphInfo(textBox.toRect(), range, textBox.direction);
       }
     }
@@ -232,8 +232,8 @@ class CanvasParagraph implements ui.Paragraph {
       case ui.TextAffinity.downstream:
         characterPosition = position.offset;
     }
-    final int start = WordBreaker.prevBreakIndex(plainText, characterPosition + 1);
-    final int end = WordBreaker.nextBreakIndex(plainText, characterPosition);
+    final start = WordBreaker.prevBreakIndex(plainText, characterPosition + 1);
+    final end = WordBreaker.nextBreakIndex(plainText, characterPosition);
     return ui.TextRange(start: start, end: end);
   }
 
@@ -242,9 +242,9 @@ class CanvasParagraph implements ui.Paragraph {
     if (lines.isEmpty) {
       return ui.TextRange.empty;
     }
-    final int? lineNumber = getLineNumberAt(position.offset);
+    final lineNumber = getLineNumberAt(position.offset);
     // Fallback to the last line for backward compatibility.
-    final ParagraphLine line = lineNumber != null ? lines[lineNumber] : lines.last;
+    final line = lineNumber != null ? lines[lineNumber] : lines.last;
     return ui.TextRange(start: line.startIndex, end: line.endIndex - line.trailingNewlines);
   }
 
@@ -268,7 +268,7 @@ class CanvasParagraph implements ui.Paragraph {
 
   int? _findLine(int codeUnitOffset, int startLine, int endLine) {
     assert(endLine <= lines.length);
-    final bool isOutOfBounds = endLine <= startLine
+    final isOutOfBounds = endLine <= startLine
                             || codeUnitOffset < lines[startLine].startIndex
                             || (endLine < numberOfLines && lines[endLine].startIndex <= codeUnitOffset);
     if (isOutOfBounds) {
@@ -282,7 +282,7 @@ class CanvasParagraph implements ui.Paragraph {
     }
     // endLine >= startLine + 2 thus we have
     // startLine + 1 <= midIndex <= endLine - 1
-    final int midIndex = (startLine + endLine) ~/ 2;
+    final midIndex = (startLine + endLine) ~/ 2;
     return _findLine(codeUnitOffset, midIndex, endLine) ?? _findLine(codeUnitOffset, startLine, midIndex);
   }
 
@@ -313,7 +313,7 @@ class CanvasParagraph implements ui.Paragraph {
 }
 
 void _positionSpanElement(DomElement element, ParagraphLine line, LayoutFragment fragment) {
-  final ui.Rect boxRect = fragment.toPaintingTextBox().toRect();
+  final boxRect = fragment.toPaintingTextBox().toRect();
   element.style
     ..position = 'absolute'
     ..top = '${boxRect.top}px'
@@ -648,11 +648,11 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
             alignment == ui.PlaceholderAlignment.belowBaseline ||
             alignment == ui.PlaceholderAlignment.baseline) || baseline != null);
 
-    final int start = _plainTextBuffer.length;
+    final start = _plainTextBuffer.length;
     _plainTextBuffer.write(placeholderChar);
-    final int end = _plainTextBuffer.length;
+    final end = _plainTextBuffer.length;
 
-    final EngineTextStyle style = _currentStyleNode.resolveStyle();
+    final style = _currentStyleNode.resolveStyle();
     _updateCanDrawOnCanvas(style);
 
     _placeholderCount++;
@@ -685,11 +685,11 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
 
   @override
   void addText(String text) {
-    final int start = _plainTextBuffer.length;
+    final start = _plainTextBuffer.length;
     _plainTextBuffer.write(text);
-    final int end = _plainTextBuffer.length;
+    final end = _plainTextBuffer.length;
 
-    final EngineTextStyle style = _currentStyleNode.resolveStyle();
+    final style = _currentStyleNode.resolveStyle();
     _updateCanDrawOnCanvas(style);
 
     _spans.add(ParagraphSpan(style: style, start: start, end: end));
@@ -700,25 +700,25 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
       return;
     }
 
-    final double? letterSpacing = style.letterSpacing;
+    final letterSpacing = style.letterSpacing;
     if (letterSpacing != null && letterSpacing != 0.0) {
       _canDrawOnCanvas = false;
       return;
     }
 
-    final ui.TextDecoration? decoration = style.decoration;
+    final decoration = style.decoration;
     if (decoration != null && decoration != ui.TextDecoration.none) {
       _canDrawOnCanvas = false;
       return;
     }
 
-    final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
+    final fontFeatures = style.fontFeatures;
     if (fontFeatures != null && fontFeatures.isNotEmpty) {
       _canDrawOnCanvas = false;
       return;
     }
 
-    final List<ui.FontVariation>? fontVariations = style.fontVariations;
+    final fontVariations = style.fontVariations;
     if (fontVariations != null && fontVariations.isNotEmpty) {
       _canDrawOnCanvas = false;
       return;

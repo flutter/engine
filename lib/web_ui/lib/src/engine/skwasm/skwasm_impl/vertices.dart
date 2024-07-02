@@ -18,17 +18,17 @@ class SkwasmVertices extends SkwasmObjectWrapper<RawVertices> implements ui.Vert
     List<ui.Color>? colors,
     List<int>? indices,
   }) => withStackScope((StackScope scope) {
-    final RawPointArray rawPositions = scope.convertPointArrayToNative(positions);
-    final RawPointArray rawTextureCoordinates = textureCoordinates != null
+    final rawPositions = scope.convertPointArrayToNative(positions);
+    final rawTextureCoordinates = textureCoordinates != null
       ? scope.convertPointArrayToNative(textureCoordinates)
       : nullptr;
-    final RawColorArray rawColors = colors != null
+    final rawColors = colors != null
       ? scope.convertColorArrayToNative(colors)
       : nullptr;
-    final Pointer<Uint16> rawIndices = indices != null
+    final rawIndices = indices != null
       ? scope.convertIntsToUint16Native(indices)
       : nullptr;
-    final int indexCount = indices != null ? indices.length : 0;
+    final indexCount = indices != null ? indices.length : 0;
     return SkwasmVertices._(verticesCreate(
       mode.index,
       positions.length,
@@ -47,17 +47,17 @@ class SkwasmVertices extends SkwasmObjectWrapper<RawVertices> implements ui.Vert
     Int32List? colors,
     Uint16List? indices,
   }) => withStackScope((StackScope scope) {
-    final RawPointArray rawPositions = scope.convertDoublesToNative(positions);
-    final RawPointArray rawTextureCoordinates = textureCoordinates != null
+    final rawPositions = scope.convertDoublesToNative(positions);
+    final rawTextureCoordinates = textureCoordinates != null
       ? scope.convertDoublesToNative(textureCoordinates)
       : nullptr;
-    final RawColorArray rawColors = colors != null
+    final rawColors = colors != null
       ? scope.convertIntsToUint32Native(colors)
       : nullptr;
-    final Pointer<Uint16> rawIndices = indices != null
+    final rawIndices = indices != null
       ? scope.convertIntsToUint16Native(indices)
       : nullptr;
-    final int indexCount = indices != null ? indices.length : 0;
+    final indexCount = indices != null ? indices.length : 0;
     return SkwasmVertices._(verticesCreate(
       mode.index,
       positions.length ~/ 2,

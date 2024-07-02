@@ -22,7 +22,7 @@ void testMain() {
 
   late RecordingCanvas underTest;
   late MockEngineCanvas mockCanvas;
-  const Rect screenRect = Rect.largest;
+  const screenRect = Rect.largest;
 
   setUp(() {
     underTest = RecordingCanvas(screenRect);
@@ -31,7 +31,7 @@ void testMain() {
 
   group('paragraph bounds', () {
     Paragraph paragraphForBoundsTest(TextAlign alignment) {
-      final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+      final builder = ParagraphBuilder(ParagraphStyle(
         fontFamily: 'Ahem',
         fontSize: 20,
         textAlign: alignment,
@@ -41,14 +41,14 @@ void testMain() {
     }
 
     test('not laid out', () {
-      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
+      final paragraph = paragraphForBoundsTest(TextAlign.start);
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
       expect(underTest.pictureBounds, Rect.zero);
     });
 
     test('finite width', () {
-      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
+      final paragraph = paragraphForBoundsTest(TextAlign.start);
       paragraph.layout(const ParagraphConstraints(width: 110));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -58,7 +58,7 @@ void testMain() {
     });
 
     test('finite width center-aligned', () {
-      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.center);
+      final paragraph = paragraphForBoundsTest(TextAlign.center);
       paragraph.layout(const ParagraphConstraints(width: 110));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -68,7 +68,7 @@ void testMain() {
     });
 
     test('infinite width', () {
-      final Paragraph paragraph = paragraphForBoundsTest(TextAlign.start);
+      final paragraph = paragraphForBoundsTest(TextAlign.start);
       paragraph.layout(const ParagraphConstraints(width: double.infinity));
       underTest.drawParagraph(paragraph, Offset.zero);
       underTest.endRecording();
@@ -79,8 +79,8 @@ void testMain() {
   });
 
   group('drawDRRect', () {
-    final RRect rrect = RRect.fromLTRBR(10, 10, 50, 50, const Radius.circular(3));
-    final SurfacePaint somePaint = SurfacePaint()
+    final rrect = RRect.fromLTRBR(10, 10, 50, 50, const Radius.circular(3));
+    final somePaint = SurfacePaint()
       ..color = const Color(0xFFFF0000);
 
     test('Happy case', () {
@@ -146,11 +146,11 @@ void testMain() {
 
     test('deflated corners in inner RRect get passed through to draw', () {
       // This comes from github issue #40728
-      final RRect outer = RRect.fromRectAndCorners(
+      final outer = RRect.fromRectAndCorners(
           const Rect.fromLTWH(0, 0, 88, 48),
           topLeft: const Radius.circular(6),
           bottomLeft: const Radius.circular(6));
-      final RRect inner = outer.deflate(1);
+      final inner = outer.deflate(1);
 
       expect(inner.brRadius, equals(Radius.zero));
       expect(inner.trRadius, equals(Radius.zero));
@@ -189,9 +189,9 @@ void testMain() {
     });
 
     test('preserve old golden test behavior', () {
-      final RRect outer =
+      final outer =
           RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40));
-      final RRect inner =
+      final inner =
           RRect.fromRectAndCorners(const Rect.fromLTRB(12, 22, 28, 38));
 
       underTest.drawDRRect(outer, inner, somePaint);
@@ -245,36 +245,36 @@ void testMain() {
     underTest.endRecording();
 
     expect(underTest.debugPaintCommands, hasLength(10));
-    final PaintDrawRect outsideLeft = underTest.debugPaintCommands[0] as PaintDrawRect;
+    final outsideLeft = underTest.debugPaintCommands[0] as PaintDrawRect;
     expect(outsideLeft.isClippedOut, isFalse);
     expect(outsideLeft.leftBound, 0);
     expect(outsideLeft.topBound, 20);
     expect(outsideLeft.rightBound, 10);
     expect(outsideLeft.bottomBound, 30);
 
-    final PaintDrawRect outsideAbove = underTest.debugPaintCommands[1] as PaintDrawRect;
+    final outsideAbove = underTest.debugPaintCommands[1] as PaintDrawRect;
     expect(outsideAbove.isClippedOut, isFalse);
 
-    final PaintDrawRect visible = underTest.debugPaintCommands[2] as PaintDrawRect;
+    final visible = underTest.debugPaintCommands[2] as PaintDrawRect;
     expect(visible.isClippedOut, isFalse);
 
-    final PaintDrawRect zeroSize = underTest.debugPaintCommands[3] as PaintDrawRect;
+    final zeroSize = underTest.debugPaintCommands[3] as PaintDrawRect;
     expect(zeroSize.isClippedOut, isTrue);
 
     expect(underTest.debugPaintCommands[4], isA<PaintSave>());
 
-    final PaintClipRect clip = underTest.debugPaintCommands[5] as PaintClipRect;
+    final clip = underTest.debugPaintCommands[5] as PaintClipRect;
     expect(clip.isClippedOut, isFalse);
 
-    final PaintDrawRect clippedOut = underTest.debugPaintCommands[6] as PaintDrawRect;
+    final clippedOut = underTest.debugPaintCommands[6] as PaintDrawRect;
     expect(clippedOut.isClippedOut, isTrue);
 
     expect(underTest.debugPaintCommands[7], isA<PaintRestore>());
 
-    final PaintDrawRect outsideRight = underTest.debugPaintCommands[8] as PaintDrawRect;
+    final outsideRight = underTest.debugPaintCommands[8] as PaintDrawRect;
     expect(outsideRight.isClippedOut, isFalse);
 
-    final PaintDrawRect outsideBelow = underTest.debugPaintCommands[9] as PaintDrawRect;
+    final outsideBelow = underTest.debugPaintCommands[9] as PaintDrawRect;
     expect(outsideBelow.isClippedOut, isFalse);
 
     // Give it the entire screen so everything paints.
@@ -304,7 +304,7 @@ void testMain() {
 
   // Regression test for https://github.com/flutter/flutter/issues/61697.
   test('Allows restore calls after recording has ended', () {
-    final RecordingCanvas rc = RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
+    final rc = RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
     rc.endRecording();
     // Should not throw exception on restore.
     expect(() => rc.restore(), returnsNormally);
@@ -312,7 +312,7 @@ void testMain() {
 
   // Regression test for https://github.com/flutter/flutter/issues/61697.
   test('Allows restore calls even if recording is not ended', () {
-    final RecordingCanvas rc = RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
+    final rc = RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
     // Should not throw exception on restore.
     expect(() => rc.restore(), returnsNormally);
   });
@@ -322,10 +322,10 @@ void testMain() {
 void _expectDrawDRRectCall(
     MockEngineCanvas mock, Map<String, dynamic> expectedArguments) {
   expect(mock.methodCallLog.length, equals(2));
-  final MockCanvasCall mockCall = mock.methodCallLog[0];
+  final mockCall = mock.methodCallLog[0];
   expect(mockCall.methodName, equals('drawPath'));
-  final Map<String, dynamic> argMap = mockCall.arguments as Map<String, dynamic>;
-  final Map<String, dynamic> argContents = <String, dynamic>{};
+  final argMap = mockCall.arguments as Map<String, dynamic>;
+  final argContents = <String, dynamic>{};
   argMap.forEach((String key, dynamic value) {
     argContents[key] = value is SurfacePath ? value.toString() : value;
   });

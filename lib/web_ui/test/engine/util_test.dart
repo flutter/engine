@@ -107,13 +107,13 @@ void testMain() {
   });
 
   test('can set style properties on elements', () {
-    final DomElement element = domDocument.createElement('div');
+    final element = domDocument.createElement('div');
     setElementStyle(element, 'color', 'red');
     expect(element.style.color, 'red');
   });
 
   test('can remove style properties from elements', () {
-    final DomElement element = domDocument.createElement('div');
+    final element = domDocument.createElement('div');
     setElementStyle(element, 'color', 'blue');
     expect(element.style.color, 'blue');
     setElementStyle(element, 'color', null);
@@ -121,7 +121,7 @@ void testMain() {
   });
 
   test('futurize turns a Callbacker into a Future', () async {
-    final Future<String> stringFuture = futurize((Callback<String> callback) {
+    final stringFuture = futurize((Callback<String> callback) {
       scheduleMicrotask(() {
         callback('hello');
       });
@@ -142,7 +142,7 @@ void testMain() {
   });
 
   test('futurize converts async null into an async operation failure', () async {
-    final Future<String?> stringFuture = futurize((Callback<String?> callback) {
+    final stringFuture = futurize((Callback<String?> callback) {
       scheduleMicrotask(() {
         callback(null);
       });

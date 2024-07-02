@@ -37,13 +37,13 @@ abstract class HtmlImageElementCodec implements ui.Codec {
 
   @override
   Future<ui.FrameInfo> getNextFrame() async {
-    final Completer<ui.FrameInfo> completer = Completer<ui.FrameInfo>();
+    final completer = Completer<ui.FrameInfo>();
     // Currently there is no way to watch decode progress, so
     // we add 0/100 , 100/100 progress callbacks to enable loading progress
     // builders to create UI.
     chunkCallback?.call(0, 100);
     if (_supportsDecode) {
-      final DomHTMLImageElement imgElement = createDomHTMLImageElement();
+      final imgElement = createDomHTMLImageElement();
       imgElement.src = src;
       setJsProperty<String>(imgElement, 'decoding', 'async');
 
@@ -52,17 +52,17 @@ abstract class HtmlImageElementCodec implements ui.Codec {
       // ignore: unawaited_futures
       imgElement.decode().then((dynamic _) {
         chunkCallback?.call(100, 100);
-        int naturalWidth = imgElement.naturalWidth.toInt();
-        int naturalHeight = imgElement.naturalHeight.toInt();
+        var naturalWidth = imgElement.naturalWidth.toInt();
+        var naturalHeight = imgElement.naturalHeight.toInt();
         // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
         if (naturalWidth == 0 &&
             naturalHeight == 0 &&
             ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox) {
-          const int kDefaultImageSizeFallback = 300;
+          const kDefaultImageSizeFallback = 300;
           naturalWidth = kDefaultImageSizeFallback;
           naturalHeight = kDefaultImageSizeFallback;
         }
-        final ui.Image image = createImageFromHTMLImageElement(
+        final image = createImageFromHTMLImageElement(
           imgElement,
           naturalWidth,
           naturalHeight,
@@ -81,7 +81,7 @@ abstract class HtmlImageElementCodec implements ui.Codec {
   }
 
   void _decodeUsingOnLoad(Completer<ui.FrameInfo> completer) {
-    final DomHTMLImageElement imgElement = createDomHTMLImageElement();
+    final imgElement = createDomHTMLImageElement();
     // If the browser doesn't support asynchronous decoding of an image,
     // then use the `onload` event to decide when it's ready to paint to the
     // DOM. Unfortunately, this will cause the image to be decoded synchronously
@@ -102,7 +102,7 @@ abstract class HtmlImageElementCodec implements ui.Codec {
       }
       imgElement.removeEventListener('load', loadListener);
       imgElement.removeEventListener('error', errorListener);
-      final ui.Image image = createImageFromHTMLImageElement(
+      final image = createImageFromHTMLImageElement(
         imgElement,
         imgElement.naturalWidth.toInt(),
         imgElement.naturalHeight.toInt(),

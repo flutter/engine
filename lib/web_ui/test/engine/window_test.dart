@@ -23,7 +23,7 @@ void main() {
 
 Future<void> testMain() async {
   late EngineFlutterWindow myWindow;
-  final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher.instance;
+  final dispatcher = EnginePlatformDispatcher.instance;
 
   setUp(() {
     myWindow = EngineFlutterView.implicit(dispatcher, createDomHTMLDivElement());
@@ -37,7 +37,7 @@ Future<void> testMain() async {
   });
 
   test('onTextScaleFactorChanged preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -53,7 +53,7 @@ Future<void> testMain() async {
   });
 
   test('onPlatformBrightnessChanged preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -69,7 +69,7 @@ Future<void> testMain() async {
   });
 
   test('onMetricsChanged preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -85,7 +85,7 @@ Future<void> testMain() async {
   });
 
   test('onLocaleChanged preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -101,7 +101,7 @@ Future<void> testMain() async {
   });
 
   test('onBeginFrame preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback(Duration _) {
@@ -117,7 +117,7 @@ Future<void> testMain() async {
   });
 
   test('onReportTimings preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback(List<dynamic> _) {
@@ -133,7 +133,7 @@ Future<void> testMain() async {
   });
 
   test('onDrawFrame preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -149,7 +149,7 @@ Future<void> testMain() async {
   });
 
   test('onPointerDataPacket preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback(ui.PointerDataPacket _) {
@@ -165,7 +165,7 @@ Future<void> testMain() async {
   });
 
   test('invokeOnKeyData returns normally when onKeyData is null', () {
-    const  ui.KeyData keyData = ui.KeyData(
+    const  keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -181,7 +181,7 @@ Future<void> testMain() async {
   });
 
   test('onKeyData preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       bool onKeyData(ui.KeyData _) {
@@ -195,7 +195,7 @@ Future<void> testMain() async {
       expect(myWindow.onKeyData, same(onKeyData));
     });
 
-    const  ui.KeyData keyData = ui.KeyData(
+    const  keyData = ui.KeyData(
       timeStamp: Duration(milliseconds: 1),
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
@@ -211,7 +211,7 @@ Future<void> testMain() async {
   });
 
   test('onSemanticsEnabledChanged preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -227,7 +227,7 @@ Future<void> testMain() async {
   });
 
   test('onSemanticsActionEvent preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback(ui.SemanticsActionEvent _) {
@@ -243,7 +243,7 @@ Future<void> testMain() async {
   });
 
   test('onAccessibilityFeaturesChanged preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback() {
@@ -259,7 +259,7 @@ Future<void> testMain() async {
   });
 
   test('onPlatformMessage preserves the zone', () {
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       void callback(String _, ByteData? __, void Function(ByteData?)? ___) {
@@ -277,11 +277,11 @@ Future<void> testMain() async {
   });
 
   test('sendPlatformMessage preserves the zone', () async {
-    final Completer<void> completer = Completer<void>();
-    final Zone innerZone = Zone.current.fork();
+    final completer = Completer<void>();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
-      final ByteData inputData = ByteData(4);
+      final inputData = ByteData(4);
       inputData.setUint32(0, 42);
       myWindow.sendPlatformMessage(
         'flutter/debug-echo',
@@ -297,9 +297,9 @@ Future<void> testMain() async {
   });
 
   test('sendPlatformMessage responds even when channel is unknown', () async {
-    bool responded = false;
+    var responded = false;
 
-    final ByteData inputData = ByteData(4);
+    final inputData = ByteData(4);
     inputData.setUint32(0, 42);
     myWindow.sendPlatformMessage(
       'flutter/__unknown__channel__',
@@ -316,8 +316,8 @@ Future<void> testMain() async {
 
   // Emulates the framework sending a request for screen orientation lock.
   Future<bool> sendSetPreferredOrientations(List<dynamic> orientations) {
-    final Completer<bool> completer = Completer<bool>();
-    final ByteData? inputData = const JSONMethodCodec().encodeMethodCall(MethodCall(
+    final completer = Completer<bool>();
+    final inputData = const JSONMethodCodec().encodeMethodCall(MethodCall(
       'SystemChrome.setPreferredOrientations',
       orientations,
     ));
@@ -336,11 +336,11 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/88269
   test('sets preferred screen orientation', () async {
-    final DomScreen? original = domWindow.screen;
+    final original = domWindow.screen;
 
-    final List<String> lockCalls = <String>[];
-    int unlockCount = 0;
-    bool simulateError = false;
+    final lockCalls = <String>[];
+    var unlockCount = 0;
+    var simulateError = false;
 
     // The `orientation` property cannot be overridden, so this test overrides the entire `screen`.
     js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
@@ -410,7 +410,7 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/66128.
   test("setPreferredOrientation responds even if browser doesn't support api", () async {
-    final DomScreen? original = domWindow.screen;
+    final original = domWindow.screen;
 
     // The `orientation` property cannot be overridden, so this test overrides the entire `screen`.
     js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
@@ -423,7 +423,7 @@ Future<void> testMain() async {
 
   test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
     // This will count how many times we notified about locale changes.
-    int localeChangedCount = 0;
+    var localeChangedCount = 0;
     myWindow.onLocaleChanged = () {
       localeChangedCount += 1;
     };
@@ -447,10 +447,10 @@ Future<void> testMain() async {
   });
 
   test('dispatches browser event on flutter/service_worker channel', () async {
-    final Completer<void> completer = Completer<void>();
+    final completer = Completer<void>();
     domWindow.addEventListener('flutter-first-frame',
         createDomEventListener((DomEvent e) => completer.complete()));
-    final Zone innerZone = Zone.current.fork();
+    final innerZone = Zone.current.fork();
 
     innerZone.runGuarded(() {
       myWindow.sendPlatformMessage(
@@ -465,7 +465,7 @@ Future<void> testMain() async {
 
   test('sets global html attributes', () {
     final DomElement host = createDomHTMLDivElement();
-    final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+    final view = EngineFlutterView(dispatcher, host);
 
     expect(host.getAttribute('flt-renderer'), 'html (requested explicitly)');
     expect(host.getAttribute('flt-build-mode'), 'debug');
@@ -474,17 +474,17 @@ Future<void> testMain() async {
   });
 
   test('in full-page mode, Flutter window replaces viewport meta tags', () {
-    final DomHTMLMetaElement existingMeta = createDomHTMLMetaElement()
+    final existingMeta = createDomHTMLMetaElement()
       ..name = 'viewport'
       ..content = 'foo=bar';
     domDocument.head!.append(existingMeta);
     expect(existingMeta.isConnected, isTrue);
 
-    final EngineFlutterWindow implicitView = EngineFlutterView.implicit(dispatcher, null);
+    final implicitView = EngineFlutterView.implicit(dispatcher, null);
     // The existing viewport meta tag should've been removed.
     expect(existingMeta.isConnected, isFalse);
     // And a new one should've been added.
-    final DomHTMLMetaElement? newMeta = domDocument.head!.querySelector('meta[name="viewport"]') as DomHTMLMetaElement?;
+    final newMeta = domDocument.head!.querySelector('meta[name="viewport"]') as DomHTMLMetaElement?;
     expect(newMeta, isNotNull);
     newMeta!;
     expect(newMeta.getAttribute('flt-viewport'), isNotNull);
@@ -504,9 +504,9 @@ Future<void> testMain() async {
     expect(implicit1.viewId, kImplicitViewId);
     expect(implicit2.viewId, kImplicitViewId);
 
-    final EngineFlutterView view1 = EngineFlutterView(dispatcher, host);
-    final EngineFlutterView view2 = EngineFlutterView(dispatcher, host);
-    final EngineFlutterView view3 = EngineFlutterView(dispatcher, host);
+    final view1 = EngineFlutterView(dispatcher, host);
+    final view2 = EngineFlutterView(dispatcher, host);
+    final view3 = EngineFlutterView(dispatcher, host);
 
     expect(view1.viewId, isNot(kImplicitViewId));
     expect(view2.viewId, isNot(kImplicitViewId));
@@ -524,12 +524,12 @@ Future<void> testMain() async {
   });
 
   test('registration', () {
-    final DomHTMLDivElement host = createDomHTMLDivElement();
-    final EnginePlatformDispatcher dispatcher = EnginePlatformDispatcher();
+    final host = createDomHTMLDivElement();
+    final dispatcher = EnginePlatformDispatcher();
     expect(dispatcher.viewManager.views, isEmpty);
 
     // Creating the view shouldn't register it.
-    final EngineFlutterView view = EngineFlutterView(dispatcher, host);
+    final view = EngineFlutterView(dispatcher, host);
     expect(dispatcher.viewManager.views, isEmpty);
     dispatcher.viewManager.registerView(view);
     expect(dispatcher.viewManager.views, <EngineFlutterView>[view]);
@@ -542,8 +542,8 @@ Future<void> testMain() async {
   });
 
   test('dispose', () {
-    final DomHTMLDivElement host = createDomHTMLDivElement();
-    final EngineFlutterView view =
+    final host = createDomHTMLDivElement();
+    final view =
         EngineFlutterView(EnginePlatformDispatcher.instance, host);
 
     // First, let's make sure the view's root element was inserted into the
@@ -658,7 +658,7 @@ Future<void> testMain() async {
   });
 
   group('physicalConstraints', () {
-    const double dpr = 2.5;
+    const dpr = 2.5;
     late DomHTMLDivElement host;
     late EngineFlutterView view;
 

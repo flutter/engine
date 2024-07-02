@@ -31,12 +31,12 @@ Future<void> testMain() async {
             .instance.accessibilityFeatures.accessibleNavigation,
         isFalse);
 
-    final DomElement placeholder = domDocument.querySelector('flt-semantics-placeholder')!;
+    final placeholder = domDocument.querySelector('flt-semantics-placeholder')!;
 
     expect(placeholder.isConnected, isTrue);
 
     // Sending a semantics update should auto-enable engine semantics.
-    final SemanticsTester tester = SemanticsTester(owner());
+    final tester = SemanticsTester(owner());
     tester.updateNode(id: 0);
     tester.apply();
 

@@ -40,7 +40,7 @@ Future<void> testMain() async {
       builder.addText('laboris nisi ut aliquip ex ea commodo consequat.');
     }
 
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       EngineParagraphStyle(
         fontFamily: 'Roboto',
         fontSize: 20.0,
@@ -53,15 +53,15 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify with multiple spans', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithMultipleSpans(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify');
   });
 
   test('TextAlign.justify with multiple spans (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyWithMultipleSpans(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_dom');
   });
@@ -79,7 +79,7 @@ Future<void> testMain() async {
       builder.addText('labore et dolore magna aliqua.');
     }
 
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       EngineParagraphStyle(
         fontFamily: 'Roboto',
         fontSize: 20.0,
@@ -92,30 +92,30 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify with single space and empty line', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithEmptyLine(canvas);
     return takeScreenshot(
         canvas, bounds, 'canvas_paragraph_justify_empty_line');
   });
 
   test('TextAlign.justify with single space and empty line (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyWithEmptyLine(canvas);
     return takeScreenshot(
         canvas, bounds, 'canvas_paragraph_justify_empty_line_dom');
   });
 
   void testJustifyWithEllipsis(EngineCanvas canvas) {
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textAlign: TextAlign.justify,
       maxLines: 4,
       ellipsis: '...',
     );
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       paragraphStyle,
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: black));
@@ -139,26 +139,26 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify with ellipsis', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 300);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 300);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithEllipsis(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_ellipsis');
   });
 
   test('TextAlign.justify with ellipsis (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 300);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 300);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyWithEllipsis(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_ellipsis_dom');
   });
 
   void testJustifyWithBackground(EngineCanvas canvas) {
-    final EngineParagraphStyle paragraphStyle = EngineParagraphStyle(
+    final paragraphStyle = EngineParagraphStyle(
       fontFamily: 'Roboto',
       fontSize: 20.0,
       textAlign: TextAlign.justify,
     );
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       paragraphStyle,
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(color: black));
@@ -185,16 +185,16 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify with background', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithBackground(canvas);
     return takeScreenshot(
         canvas, bounds, 'canvas_paragraph_justify_background');
   });
 
   test('TextAlign.justify with background (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyWithBackground(canvas);
     return takeScreenshot(
         canvas, bounds, 'canvas_paragraph_justify_background_dom');
@@ -214,7 +214,7 @@ Future<void> testMain() async {
       builder.addText('labore et dolore magna aliqua.');
     }
 
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       EngineParagraphStyle(
         fontFamily: 'Roboto',
         fontSize: 20.0,
@@ -228,15 +228,15 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify with placeholder', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithPlaceholder(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_placeholder');
   });
 
   test('TextAlign.justify with placeholder (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyWithPlaceholder(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_placeholder_dom');
   });
@@ -253,7 +253,7 @@ Future<void> testMain() async {
       builder.addText('labore et dolore magna aliqua.');
     }
 
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       EngineParagraphStyle(
         fontFamily: 'Roboto',
         fontSize: 20.0,
@@ -272,21 +272,21 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify with selection', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyWithSelection(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_selection');
   });
 
   test('TextAlign.justify with selection (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyWithSelection(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_selection_dom');
   });
 
   void testJustifyRtl(EngineCanvas canvas) {
-    const String rtlWord = 'مرحبا';
+    const rtlWord = 'مرحبا';
     void build(CanvasParagraphBuilder builder) {
       builder.pushStyle(EngineTextStyle.only(color: black));
       builder.addText('Lorem $rtlWord dolor sit ');
@@ -298,7 +298,7 @@ Future<void> testMain() async {
       builder.addText('labore et dolore magna aliqua.');
     }
 
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       EngineParagraphStyle(
         fontFamily: 'Roboto',
         fontSize: 20.0,
@@ -317,15 +317,15 @@ Future<void> testMain() async {
   }
 
   test('TextAlign.justify rtl', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
     testJustifyRtl(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_rtl');
   });
 
   test('TextAlign.justify rtl (DOM)', () {
-    const Rect bounds = Rect.fromLTWH(0, 0, 400, 400);
-    final DomCanvas canvas = DomCanvas(domDocument.createElement('flt-picture'));
+    const bounds = Rect.fromLTWH(0, 0, 400, 400);
+    final canvas = DomCanvas(domDocument.createElement('flt-picture'));
     testJustifyRtl(canvas);
     return takeScreenshot(canvas, bounds, 'canvas_paragraph_justify_rtl_dom');
   });

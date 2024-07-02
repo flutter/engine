@@ -54,8 +54,8 @@ ui.Offset computeShadowOffset(double elevation) {
     return ui.Offset.zero;
   }
 
-  final double dx = -kLightOffsetX * elevation / kLightHeight;
-  final double dy = -kLightOffsetY * elevation / kLightHeight;
+  final dx = -kLightOffsetX * elevation / kLightHeight;
+  final dy = -kLightOffsetY * elevation / kLightHeight;
   return ui.Offset(dx, dy);
 }
 
@@ -67,13 +67,13 @@ ui.Rect computePenumbraBounds(ui.Rect shape, double elevation) {
   }
 
   // tangent for x
-  final double tx = (kLightRadius + shape.width * 0.5) / kLightHeight;
+  final tx = (kLightRadius + shape.width * 0.5) / kLightHeight;
   // tangent for y
-  final double ty = (kLightRadius + shape.height * 0.5) / kLightHeight;
-  final double dx = elevation * tx;
-  final double dy = elevation * ty;
-  final ui.Offset offset = computeShadowOffset(elevation);
-  final ui.Rect bounds = ui.Rect.fromLTRB(
+  final ty = (kLightRadius + shape.height * 0.5) / kLightHeight;
+  final dx = elevation * tx;
+  final dy = elevation * ty;
+  final offset = computeShadowOffset(elevation);
+  final bounds = ui.Rect.fromLTRB(
     shape.left - dx,
     shape.top - dy,
     shape.right + dx,
@@ -122,12 +122,12 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
     return null;
   }
 
-  final double penumbraTangentX =
+  final penumbraTangentX =
       (kLightRadius + shape.width * 0.5) / kLightHeight;
-  final double penumbraTangentY =
+  final penumbraTangentY =
       (kLightRadius + shape.height * 0.5) / kLightHeight;
-  final double penumbraWidth = elevation * penumbraTangentX;
-  final double penumbraHeight = elevation * penumbraTangentY;
+  final penumbraWidth = elevation * penumbraTangentX;
+  final penumbraHeight = elevation * penumbraTangentY;
   return SurfaceShadowData(
     // There's no way to express different blur along different dimensions, so
     // we use the narrower of the two to prevent the shadow blur from being longer
@@ -140,7 +140,7 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
 /// Applies a CSS shadow to the [shape].
 void applyCssShadow(
     DomElement? element, ui.Rect shape, double elevation, ui.Color color) {
-  final SurfaceShadowData? shadow = computeShadow(shape, elevation);
+  final shadow = computeShadow(shape, elevation);
   if (shadow == null) {
     element!.style.boxShadow = 'none';
   } else {
@@ -162,6 +162,6 @@ ui.Color toShadowColor(ui.Color color) {
   //
   // - https://github.com/flutter/flutter/issues/52734
   // - https://github.com/flutter/gallery/issues/118
-  final int reducedAlpha = (0.3 * color.alpha).round();
+  final reducedAlpha = (0.3 * color.alpha).round();
   return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
 }

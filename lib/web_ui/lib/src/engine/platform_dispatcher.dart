@@ -57,9 +57,9 @@ class HighContrastSupport {
   }
 
   JSVoid _onHighContrastChange(DomEvent event) {
-    final DomMediaQueryListEvent mqEvent = event as DomMediaQueryListEvent;
-    final bool isHighContrastEnabled = mqEvent.matches!;
-    for (final HighContrastListener listener in _listeners) {
+    final mqEvent = event as DomMediaQueryListEvent;
+    final isHighContrastEnabled = mqEvent.matches!;
+    for (final listener in _listeners) {
       listener(isHighContrastEnabled);
     }
   }
@@ -109,7 +109,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Compute accessibility features based on the current value of high contrast flag
   static EngineAccessibilityFeatures computeAccessibilityFeatures() {
-    final EngineAccessibilityFeaturesBuilder builder =
+    final builder =
         EngineAccessibilityFeaturesBuilder(0);
     if (HighContrastSupport.instance.isHighContrastEnabled) {
       builder.highContrast = true;
@@ -365,7 +365,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Engine code should use this method instead of the callback directly.
   /// Otherwise zones won't work properly.
   void invokeOnKeyData(ui.KeyData data, _KeyDataResponseCallback callback) {
-    final ui.KeyDataCallback? onKeyData = _onKeyData;
+    final onKeyData = _onKeyData;
     if (onKeyData != null) {
       invoke(
         () => callback(onKeyData(data)),
@@ -488,7 +488,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     }
 
     // Store the zone in which the callback is being registered.
-    final Zone registrationZone = Zone.current;
+    final registrationZone = Zone.current;
 
     return (ByteData? data) {
       registrationZone.runUnaryGuarded(callback, data);
@@ -501,7 +501,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     ui.PlatformMessageResponseCallback? callback,
   ) {
     // In widget tests we want to bypass processing of platform messages.
-    bool returnImmediately = false;
+    var returnImmediately = false;
     assert(() {
       if (ui_web.debugEmulateFlutterTesterEnvironment) {
         returnImmediately = true;
@@ -517,7 +517,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
       print('Sent platform message on channel: "$name"');
     }
 
-    bool allowDebugEcho = false;
+    var allowDebugEcho = false;
     assert(() {
       allowDebugEcho = true;
       return true;
@@ -532,7 +532,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     switch (name) {
       /// This should be in sync with shell/common/shell.cc
       case 'flutter/skia':
-        final MethodCall decoded = jsonCodec.decodeMethodCall(data);
+        final decoded = jsonCodec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'Skia.setResourceCacheMaxBytes':
             if (renderer is CanvasKitRenderer) {
@@ -540,7 +540,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 decoded.arguments is int,
                 'Argument to Skia.setResourceCacheMaxBytes must be an int, but was ${(decoded.arguments as Object?).runtimeType}',
               );
-              final int cacheSizeInBytes = decoded.arguments as int;
+              final cacheSizeInBytes = decoded.arguments as int;
               CanvasKitRenderer.instance.resourceCacheMaxBytes =
                   cacheSizeInBytes;
             }
@@ -553,12 +553,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/assets':
-        final String url = utf8.decode(data!.buffer.asUint8List());
+        final url = utf8.decode(data!.buffer.asUint8List());
         _handleFlutterAssetsMessage(url, callback);
         return;
 
       case 'flutter/platform':
-        final MethodCall decoded = jsonCodec.decodeMethodCall(data);
+        final decoded = jsonCodec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'SystemNavigator.pop':
             // TODO(a-wallen): As multi-window support expands, the pop call
@@ -582,17 +582,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             }
             return;
           case 'HapticFeedback.vibrate':
-            final String? type = decoded.arguments as String?;
+            final type = decoded.arguments as String?;
             vibrate(_getHapticFeedbackDuration(type));
             replyToPlatformMessage(
                 callback, jsonCodec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setApplicationSwitcherDescription':
-            final Map<String, Object?> arguments =
+            final arguments =
                 decoded.arguments as Map<String, Object?>;
-            final String label = arguments['label'] as String? ?? '';
+            final label = arguments['label'] as String? ?? '';
             // TODO(web): Stop setting the color from here, https://github.com/flutter/flutter/issues/123365
-            final int primaryColor =
+            final primaryColor =
                 arguments['primaryColor'] as int? ?? 0xFF000000;
             domDocument.title = label;
             setThemeColor(ui.Color(primaryColor));
@@ -600,16 +600,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                 callback, jsonCodec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setSystemUIOverlayStyle':
-            final Map<String, Object?> arguments =
+            final arguments =
                 decoded.arguments as Map<String, Object?>;
-            final int? statusBarColor = arguments['statusBarColor'] as int?;
+            final statusBarColor = arguments['statusBarColor'] as int?;
             setThemeColor(
                 statusBarColor == null ? null : ui.Color(statusBarColor));
             replyToPlatformMessage(
                 callback, jsonCodec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':
-            final List<dynamic> arguments = decoded.arguments as List<dynamic>;
+            final arguments = decoded.arguments as List<dynamic>;
             ScreenOrientation.instance
                 .setPreferredOrientation(arguments)
                 .then((bool success) {
@@ -643,7 +643,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/contextmenu':
-        final MethodCall decoded = jsonCodec.decodeMethodCall(data);
+        final decoded = jsonCodec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'enableContextMenu':
             implicitView!.contextMenu.enable();
@@ -659,8 +659,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/mousecursor':
-        final MethodCall decoded = standardCodec.decodeMethodCall(data);
-        final Map<dynamic, dynamic> arguments =
+        final decoded = standardCodec.decodeMethodCall(data);
+        final arguments =
             decoded.arguments as Map<dynamic, dynamic>;
         switch (decoded.method) {
           case 'activateSystemCursor':
@@ -690,8 +690,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/accessibility':
         // In widget tests we want to bypass processing of platform messages.
-        const StandardMessageCodec codec = StandardMessageCodec();
-        final EngineSemantics semantics = EngineSemantics.instance;
+        const codec = StandardMessageCodec();
+        final semantics = EngineSemantics.instance;
         if (semantics.semanticsEnabled) {
           semantics.accessibilityAnnouncements.handleMessage(codec, data);
         }
@@ -741,9 +741,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   Future<void> _handleFlutterAssetsMessage(
       String url, ui.PlatformMessageResponseCallback? callback) async {
     try {
-      final HttpFetchResponse response =
+      final response =
           await ui_web.assetManager.loadAsset(url) as HttpFetchResponse;
-      final ByteBuffer assetData = await response.asByteBuffer();
+      final assetData = await response.asByteBuffer();
       replyToPlatformMessage(callback, assetData.asByteData());
     } catch (error) {
       printWarning('Error while trying to load an asset: $error');
@@ -752,11 +752,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   }
 
   int _getHapticFeedbackDuration(String? type) {
-    const int vibrateLongPress = 50;
-    const int vibrateLightImpact = 10;
-    const int vibrateMediumImpact = 20;
-    const int vibrateHeavyImpact = 30;
-    const int vibrateSelectionClick = 10;
+    const vibrateLongPress = 50;
+    const vibrateLightImpact = 10;
+    const vibrateMediumImpact = 20;
+    const vibrateHeavyImpact = 30;
+    const vibrateSelectionClick = 10;
 
     switch (type) {
       case 'HapticFeedbackType.lightImpact':
@@ -825,7 +825,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [RendererBinding], the Flutter framework class which manages layout and
   ///    painting.
   Future<void> render(ui.Scene scene, [ui.FlutterView? view]) async {
-    final EngineFlutterView? target = (view ?? implicitView) as EngineFlutterView?;
+    final target = (view ?? implicitView) as EngineFlutterView?;
     assert(target != null, 'Calling render without a FlutterView');
     if (target == null) {
       // If there is no view to render into, then this is a no-op.
@@ -835,7 +835,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // Only render in an `onDrawFrame` or `onBeginFrame` scope. This is checked
     // by checking if the `_viewsRenderedInCurrentFrame` is non-null and this
     // view hasn't been rendered already in this scope.
-    final bool shouldRender =
+    final shouldRender =
         _viewsRenderedInCurrentFrame?.add(target) ?? false;
     // TODO(harryterkelsen): HTML renderer needs to violate the render rule in
     // order to perform golden tests in Flutter framework because on the HTML
@@ -1000,16 +1000,16 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   static List<ui.Locale> parseBrowserLanguages() {
     // TODO(yjbanov): find a solution for IE
-    final List<String>? languages = domWindow.navigator.languages;
+    final languages = domWindow.navigator.languages;
     if (languages == null || languages.isEmpty) {
       // To make it easier for the app code, let's not leave the locales list
       // empty. This way there's fewer corner cases for apps to handle.
       return const <ui.Locale>[_defaultLocale];
     }
 
-    final List<ui.Locale> locales = <ui.Locale>[];
-    for (final String language in languages) {
-      final List<String> parts = language.split('-');
+    final locales = <ui.Locale>[];
+    for (final language in languages) {
+      final parts = language.split('-');
       if (parts.length > 1) {
         locales.add(ui.Locale(parts.first, parts.last));
       } else {
@@ -1068,15 +1068,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Set the callback function for updating [textScaleFactor] based on
   /// font-size changes in the browser's <html> element.
   void _addFontSizeObserver() {
-    const String styleAttribute = 'style';
+    const styleAttribute = 'style';
 
     _fontSizeObserver = createDomMutationObserver(
         (JSArray<JSAny?> mutations, DomMutationObserver _) {
-      for (final JSAny? mutation in mutations.toDart) {
-        final DomMutationRecord record = mutation! as DomMutationRecord;
+      for (final mutation in mutations.toDart) {
+        final record = mutation! as DomMutationRecord;
         if (record.type == 'attributes' &&
             record.attributeName == styleAttribute) {
-          final double newTextScaleFactor = findBrowserTextScaleFactor();
+          final newTextScaleFactor = findBrowserTextScaleFactor();
           _updateTextScaleFactor(newTextScaleFactor);
         }
       }
@@ -1160,7 +1160,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// callback if [_highContrast] changed.
   void _updateHighContrast(bool value) {
     if (configuration.accessibilityFeatures.highContrast != value) {
-      final EngineAccessibilityFeatures original =
+      final original =
           configuration.accessibilityFeatures as EngineAccessibilityFeatures;
       configuration = configuration.copyWith(
           accessibilityFeatures: original.copyWith(highContrast: value));
@@ -1184,7 +1184,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         : ui.Brightness.light);
 
     _brightnessMediaQueryListener = createDomEventListener((DomEvent event) {
-      final DomMediaQueryListEvent mqEvent = event as DomMediaQueryListEvent;
+      final mqEvent = event as DomMediaQueryListEvent;
       _updatePlatformBrightness(
           mqEvent.matches! ? ui.Brightness.dark : ui.Brightness.light);
     });
@@ -1391,8 +1391,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 }
 
 bool _handleWebTestEnd2EndMessage(MethodCodec codec, ByteData? data) {
-  final MethodCall decoded = codec.decodeMethodCall(data);
-  final double ratio = double.parse(decoded.arguments as String);
+  final decoded = codec.decodeMethodCall(data);
+  final ratio = double.parse(decoded.arguments as String);
   switch (decoded.method) {
     case 'setDevicePixelRatio':
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(ratio);
@@ -1473,7 +1473,7 @@ const double _defaultRootFontSize = 16.0;
 /// Finds the text scale factor of the browser by looking at the computed style
 /// of the browser's <html> element.
 double findBrowserTextScaleFactor() {
-  final num fontSize =
+  final fontSize =
       parseFontSize(domDocument.documentElement!) ?? _defaultRootFontSize;
   return fontSize / _defaultRootFontSize;
 }

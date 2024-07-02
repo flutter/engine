@@ -22,10 +22,10 @@ void testMain() {
     setUpCanvasKitTest(withImplicitView: true);
 
     test('is correctly rendered', () async {
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(region);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(region);
 
-      final CkGradientSweep gradient = CkGradientSweep(
+      final gradient = CkGradientSweep(
           const ui.Offset(250, 125),
           const <ui.Color>[
             ui.Color(0xFF4285F4),
@@ -46,7 +46,7 @@ void testMain() {
           math.pi * 2 - (math.pi / 2),
           null);
 
-      final CkPaint paint = CkPaint()..shader = gradient;
+      final paint = CkPaint()..shader = gradient;
 
       canvas.drawRect(region, paint);
 

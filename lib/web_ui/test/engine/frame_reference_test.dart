@@ -13,33 +13,33 @@ void main() {
 void testMain() {
   group('CrossFrameCache', () {
     test('Reuse returns no object when cache empty', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
+      final cache = CrossFrameCache<TestItem>();
       cache.commitFrame();
-      final TestItem? requestedItem = cache.reuse('item1');
+      final requestedItem = cache.reuse('item1');
       expect(requestedItem, null);
     });
 
     test('Reuses object across frames', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
-      final TestItem testItem1 = TestItem('item1');
+      final cache = CrossFrameCache<TestItem>();
+      final testItem1 = TestItem('item1');
       cache.cache(testItem1.label, testItem1);
       cache.commitFrame();
-      TestItem? requestedItem = cache.reuse('item1');
+      var requestedItem = cache.reuse('item1');
       expect(requestedItem, testItem1);
       requestedItem = cache.reuse('item1');
       expect(requestedItem, null);
     });
 
     test('Reuses objects that have same key across frames', () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
-      final TestItem testItem1 = TestItem('sameLabel');
-      final TestItem testItem2 = TestItem('sameLabel');
-      final TestItem testItemX = TestItem('X');
+      final cache = CrossFrameCache<TestItem>();
+      final testItem1 = TestItem('sameLabel');
+      final testItem2 = TestItem('sameLabel');
+      final testItemX = TestItem('X');
       cache.cache(testItem1.label, testItem1);
       cache.cache(testItemX.label, testItemX);
       cache.cache(testItem2.label, testItem2);
       cache.commitFrame();
-      TestItem? requestedItem = cache.reuse('sameLabel');
+      var requestedItem = cache.reuse('sameLabel');
       expect(requestedItem, testItem1);
       requestedItem = cache.reuse('sameLabel');
       expect(requestedItem, testItem2);
@@ -48,20 +48,20 @@ void testMain() {
     });
 
     test("Values don't survive beyond next frame", () {
-      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
-      final TestItem testItem1 = TestItem('item1');
+      final cache = CrossFrameCache<TestItem>();
+      final testItem1 = TestItem('item1');
       cache.cache(testItem1.label, testItem1);
       cache.commitFrame();
       cache.commitFrame();
-      final TestItem? requestedItem = cache.reuse('item1');
+      final requestedItem = cache.reuse('item1');
       expect(requestedItem, null);
     });
 
     test('Values are evicted when not reused', () {
-      final Set<TestItem> evictedItems = <TestItem>{};
-      final CrossFrameCache<TestItem> cache = CrossFrameCache<TestItem>();
-      final TestItem testItem1 = TestItem('item1');
-      final TestItem testItem2 = TestItem('item2');
+      final evictedItems = <TestItem>{};
+      final cache = CrossFrameCache<TestItem>();
+      final testItem1 = TestItem('item1');
+      final testItem2 = TestItem('item2');
       cache.cache(testItem1.label, testItem1, (TestItem item) {evictedItems.add(item);});
       cache.cache(testItem2.label, testItem2, (TestItem item) {evictedItems.add(item);});
       cache.commitFrame();

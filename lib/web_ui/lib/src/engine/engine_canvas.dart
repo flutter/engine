@@ -98,7 +98,7 @@ Matrix4 transformWithOffset(Matrix4 transform, ui.Offset offset) {
   }
 
   // Clone to avoid mutating transform.
-  final Matrix4 effectiveTransform = transform.clone();
+  final effectiveTransform = transform.clone();
   effectiveTransform.translate(offset.dx, offset.dy);
   return effectiveTransform;
 }
@@ -178,7 +178,7 @@ mixin SaveStackTracking on EngineCanvas {
     if (_saveStack.isEmpty) {
       return;
     }
-    final SaveStackEntry entry = _saveStack.removeLast();
+    final entry = _saveStack.removeLast();
     _currentTransform = entry.transform;
     _clipStack = entry.clipStack;
   }
@@ -212,8 +212,8 @@ mixin SaveStackTracking on EngineCanvas {
   /// Classes that override this method must call `super.skew()`.
   @override
   void skew(double sx, double sy) {
-    final Matrix4 skewMatrix = Matrix4.identity();
-    final Float32List storage = skewMatrix.storage;
+    final skewMatrix = Matrix4.identity();
+    final storage = skewMatrix.storage;
     storage[1] = sy;
     storage[4] = sx;
     _currentTransform.multiply(skewMatrix);
@@ -262,7 +262,7 @@ DomElement drawParagraphElement(
 }) {
   assert(paragraph.isLaidOut);
 
-  final DomElement paragraphElement = paragraph.toDomElement();
+  final paragraphElement = paragraph.toDomElement();
 
   if (transform != null) {
     setElementTransform(
@@ -339,7 +339,7 @@ mixin SaveElementStackTracking on EngineCanvas {
     if (_saveStack.isEmpty) {
       return;
     }
-    final _SaveElementStackEntry entry = _saveStack.removeLast();
+    final entry = _saveStack.removeLast();
     _currentTransform = entry.transform;
 
     // Pop out of any clips.
@@ -379,8 +379,8 @@ mixin SaveElementStackTracking on EngineCanvas {
   void skew(double sx, double sy) {
     // DO NOT USE Matrix4.skew(sx, sy)! It treats sx and sy values as radians,
     // but in our case they are transform matrix values.
-    final Matrix4 skewMatrix = Matrix4.identity();
-    final Float32List storage = skewMatrix.storage;
+    final skewMatrix = Matrix4.identity();
+    final storage = skewMatrix.storage;
     storage[1] = sy;
     storage[4] = sx;
     _currentTransform.multiply(skewMatrix);

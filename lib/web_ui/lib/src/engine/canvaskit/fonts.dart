@@ -60,14 +60,14 @@ class SkiaFontCollection implements FlutterFontCollection {
     skFontCollection!.setDefaultFontManager(_fontProvider);
     familyToFontMap.clear();
 
-    for (final RegisteredFont font in _registeredFonts) {
+    for (final font in _registeredFonts) {
       _fontProvider!.registerFont(font.bytes, font.family);
       familyToFontMap
           .putIfAbsent(font.family, () => <SkFont>[])
           .add(SkFont(font.typeface));
     }
 
-    for (final RegisteredFont font in registeredFallbackFonts) {
+    for (final font in registeredFallbackFonts) {
       _fontProvider!.registerFont(font.bytes, font.family);
       familyToFontMap
           .putIfAbsent(font.family, () => <SkFont>[])
@@ -88,7 +88,7 @@ class SkiaFontCollection implements FlutterFontCollection {
     // Make sure CanvasKit is actually loaded
     await renderer.initialize();
 
-    final SkTypeface? typeface =
+    final typeface =
         canvasKit.Typeface.MakeFreeTypeFaceFromData(list.buffer);
     if (typeface != null) {
       _registeredFonts.add(RegisteredFont(list, fontFamily, typeface));
@@ -103,14 +103,14 @@ class SkiaFontCollection implements FlutterFontCollection {
   /// Loads fonts from `FontManifest.json`.
   @override
   Future<AssetFontsResult> loadAssetFonts(FontManifest manifest) async {
-    final List<Future<FontDownloadResult>> pendingDownloads = <Future<FontDownloadResult>>[];
-    bool loadedRoboto = false;
-    for (final FontFamily family in manifest.families) {
+    final pendingDownloads = <Future<FontDownloadResult>>[];
+    var loadedRoboto = false;
+    for (final family in manifest.families) {
       if (family.name == 'Roboto') {
         loadedRoboto = true;
       }
-      for (final FontAsset fontAsset in family.fontAssets) {
-        final String url = ui_web.assetManager.getAssetUrl(fontAsset.asset);
+      for (final fontAsset in family.fontAssets) {
+        final url = ui_web.assetManager.getAssetUrl(fontAsset.asset);
         pendingDownloads.add(_downloadFont(fontAsset.asset, url, family.name));
       }
     }
@@ -123,9 +123,9 @@ class SkiaFontCollection implements FlutterFontCollection {
       pendingDownloads.add(_downloadFont('Roboto', _robotoUrl, 'Roboto'));
     }
 
-    final Map<String, FontLoadError> fontFailures = <String, FontLoadError>{};
-    final List<(String, UnregisteredFont)> downloadedFonts = <(String, UnregisteredFont)>[];
-    for (final FontDownloadResult result in await Future.wait(pendingDownloads)) {
+    final fontFailures = <String, FontLoadError>{};
+    final downloadedFonts = <(String, UnregisteredFont)>[];
+    for (final result in await Future.wait(pendingDownloads)) {
       if (result.font != null) {
         downloadedFonts.add((result.assetName, result.font!));
       } else {
@@ -136,10 +136,10 @@ class SkiaFontCollection implements FlutterFontCollection {
     // Make sure CanvasKit is actually loaded
     await renderer.initialize();
 
-    final List<String> loadedFonts = <String>[];
+    final loadedFonts = <String>[];
     for (final (String assetName, UnregisteredFont unregisteredFont) in downloadedFonts) {
-      final Uint8List bytes = unregisteredFont.bytes.asUint8List();
-      final SkTypeface? typeface =
+      final bytes = unregisteredFont.bytes.asUint8List();
+      final typeface =
           canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
       if (typeface != null) {
         loadedFonts.add(assetName);
@@ -156,8 +156,8 @@ class SkiaFontCollection implements FlutterFontCollection {
 
   void registerDownloadedFonts() {
     RegisteredFont? makeRegisterFont(ByteBuffer buffer, String url, String family) {
-      final Uint8List bytes = buffer.asUint8List();
-      final SkTypeface? typeface =
+      final bytes = buffer.asUint8List();
+      final typeface =
           canvasKit.Typeface.MakeFreeTypeFaceFromData(bytes.buffer);
       if (typeface != null) {
         return RegisteredFont(bytes, family, typeface);
@@ -168,8 +168,8 @@ class SkiaFontCollection implements FlutterFontCollection {
       }
     }
 
-    for (final UnregisteredFont unregisteredFont in _unregisteredFonts) {
-      final RegisteredFont? registeredFont = makeRegisterFont(
+    for (final unregisteredFont in _unregisteredFonts) {
+      final registeredFont = makeRegisterFont(
         unregisteredFont.bytes,
         unregisteredFont.url,
         unregisteredFont.family
@@ -193,7 +193,7 @@ class SkiaFontCollection implements FlutterFontCollection {
     // Try to get the font leniently. Do not crash the app when failing to
     // fetch the font in the spirit of "gradual degradation of functionality".
     try {
-      final HttpFetchResponse response = await httpFetch(url);
+      final response = await httpFetch(url);
       if (!response.hasPayload) {
         printWarning('Font family $fontFamily not found (404) at $url');
         return FontDownloadResult.fromError(assetName, FontNotFoundError(url));
@@ -211,9 +211,9 @@ class SkiaFontCollection implements FlutterFontCollection {
 
 
   String? _readActualFamilyName(Uint8List bytes) {
-    final SkFontMgr tmpFontMgr =
+    final tmpFontMgr =
         canvasKit.FontMgr.FromData(<Uint8List>[bytes])!;
-    final String? actualFamily = tmpFontMgr.getFamilyName(0);
+    final actualFamily = tmpFontMgr.getFamilyName(0);
     tmpFontMgr.delete();
     return actualFamily;
   }
@@ -235,7 +235,7 @@ class SkiaFontCollection implements FlutterFontCollection {
 class RegisteredFont {
   RegisteredFont(this.bytes, this.family, this.typeface) {
     // This is a hack which causes Skia to cache the decoded font.
-    final SkFont skFont = SkFont(typeface);
+    final skFont = SkFont(typeface);
     skFont.getGlyphBounds(<int>[0], null, null);
   }
 
@@ -275,26 +275,26 @@ class SkiaFallbackRegistry implements FallbackFontRegistry {
 
   @override
   List<int> getMissingCodePoints(List<int> codeUnits, List<String> fontFamilies) {
-    final List<SkFont> fonts = <SkFont>[];
-    for (final String font in fontFamilies) {
-      final List<SkFont>? typefacesForFamily = fontCollection.familyToFontMap[font];
+    final fonts = <SkFont>[];
+    for (final font in fontFamilies) {
+      final typefacesForFamily = fontCollection.familyToFontMap[font];
       if (typefacesForFamily != null) {
         fonts.addAll(typefacesForFamily);
       }
     }
-    final List<bool> codePointsSupported =
+    final codePointsSupported =
         List<bool>.filled(codeUnits.length, false);
-    final String testString = String.fromCharCodes(codeUnits);
-    for (final SkFont font in fonts) {
-      final Uint16List glyphs = font.getGlyphIDs(testString);
+    final testString = String.fromCharCodes(codeUnits);
+    for (final font in fonts) {
+      final glyphs = font.getGlyphIDs(testString);
       assert(glyphs.length == codePointsSupported.length);
-      for (int i = 0; i < glyphs.length; i++) {
+      for (var i = 0; i < glyphs.length; i++) {
         codePointsSupported[i] |= glyphs[i] != 0;
       }
     }
 
-    final List<int> missingCodeUnits = <int>[];
-    for (int i = 0; i < codePointsSupported.length; i++) {
+    final missingCodeUnits = <int>[];
+    for (var i = 0; i < codePointsSupported.length; i++) {
       if (!codePointsSupported[i]) {
         missingCodeUnits.add(codeUnits[i]);
       }
@@ -304,8 +304,8 @@ class SkiaFallbackRegistry implements FallbackFontRegistry {
 
   @override
   Future<void> loadFallbackFont(String familyName, String url) async {
-    final ByteBuffer buffer = await httpFetchByteBuffer(url);
-    final SkTypeface? typeface =
+    final buffer = await httpFetchByteBuffer(url);
+    final typeface =
         canvasKit.Typeface.MakeFreeTypeFaceFromData(buffer);
     if (typeface == null) {
       printWarning('Failed to parse fallback font $familyName as a font.');

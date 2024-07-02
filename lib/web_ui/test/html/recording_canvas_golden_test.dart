@@ -25,10 +25,10 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const double screenWidth = 600.0;
-  const double screenHeight = 800.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-  final SurfacePaint testPaint = SurfacePaint()..color = const Color(0xFFFF0000);
+  const screenWidth = 600.0;
+  const screenHeight = 800.0;
+  const screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
+  final testPaint = SurfacePaint()..color = const Color(0xFFFF0000);
 
   // Commit a recording canvas to a bitmap, and compare with the expected
   Future<void> checkScreenshot(RecordingCanvas rc, String fileName,
@@ -52,7 +52,7 @@ Future<void> testMain() async {
     rc.apply(engineCanvas, screenRect);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final DomElement sceneElement = createDomElement('flt-scene');
+    final sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -71,7 +71,7 @@ Future<void> testMain() async {
   }
 
   test('Empty canvas reports correct paint bounds', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTWH(1, 2, 300, 400));
     rc.endRecording();
     expect(rc.pictureBounds, Rect.zero);
@@ -79,7 +79,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for draw line', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawLine(const Offset(50, 100), const Offset(120, 140), testPaint);
     rc.endRecording();
     // The off by one is due to the minimum stroke width of 1.
@@ -90,7 +90,7 @@ Future<void> testMain() async {
   test('Computes paint bounds for draw line when line exceeds limits',
       () async {
     // Uses max bounds when computing paint bounds
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawLine(const Offset(50, 100), const Offset(screenWidth + 100.0, 140),
         testPaint);
     rc.endRecording();
@@ -101,7 +101,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for draw rect', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(10, 20, 30, 40));
@@ -110,7 +110,7 @@ Future<void> testMain() async {
 
   test('Computes paint bounds for draw rect when exceeds limits', () async {
     // Uses max bounds when computing paint bounds
-    RecordingCanvas rc = RecordingCanvas(screenRect);
+    var rc = RecordingCanvas(screenRect);
     rc.drawRect(
         const Rect.fromLTRB(10, 20, 30 + screenWidth, 40 + screenHeight),
         testPaint);
@@ -126,7 +126,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for translate', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.translate(5, 7);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
@@ -135,7 +135,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for scale', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.scale(2, 2);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
@@ -144,7 +144,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for rotate', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.rotate(math.pi / 4.0);
     rc.drawLine(
         const Offset(1, 0), Offset(50 * math.sqrt(2) - 1, 0), testPaint);
@@ -156,7 +156,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for horizontal skew', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.skew(1.0, 0.0);
     rc.drawRect(const Rect.fromLTRB(20, 20, 40, 40), testPaint);
     rc.endRecording();
@@ -168,7 +168,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for vertical skew', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.skew(0.0, 1.0);
     rc.drawRect(const Rect.fromLTRB(20, 20, 40, 40), testPaint);
     rc.endRecording();
@@ -180,8 +180,8 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for a complex transform', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final Float32List matrix = Float32List(16);
+    final rc = RecordingCanvas(screenRect);
+    final matrix = Float32List(16);
     // translate(210, 220) , scale(2, 3), rotate(math.pi / 4.0)
     matrix[0] = 1.4;
     matrix[1] = 2.12;
@@ -211,7 +211,7 @@ Future<void> testMain() async {
   });
 
   test('drawPaint should cover full size', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawPaint(testPaint);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
@@ -220,8 +220,8 @@ Future<void> testMain() async {
   });
 
   test('drawColor should cover full size', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final SurfacePaint testPaint = SurfacePaint()..color = const Color(0xFF80FF00);
+    final rc = RecordingCanvas(screenRect);
+    final testPaint = SurfacePaint()..color = const Color(0xFF80FF00);
     rc.drawRect(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.drawColor(const Color(0xFFFF0000), BlendMode.multiply);
     rc.drawRect(const Rect.fromLTRB(10, 60, 30, 80), testPaint);
@@ -231,7 +231,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for draw oval', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawOval(const Rect.fromLTRB(10, 20, 30, 40), testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(10, 20, 30, 40));
@@ -239,7 +239,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for draw round rect', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawRRect(
         RRect.fromRectAndRadius(
             const Rect.fromLTRB(10, 20, 30, 40), const Radius.circular(5.0)),
@@ -252,7 +252,7 @@ Future<void> testMain() async {
   test(
       'Computes empty paint bounds when inner rect outside of outer rect for '
       'drawDRRect', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawDRRect(RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40)),
         RRect.fromRectAndCorners(const Rect.fromLTRB(1, 2, 3, 4)), testPaint);
     rc.endRecording();
@@ -261,7 +261,7 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds using outer rect for drawDRRect', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawDRRect(
         RRect.fromRectAndCorners(const Rect.fromLTRB(10, 20, 30, 40)),
         RRect.fromRectAndCorners(const Rect.fromLTRB(12, 22, 28, 38)),
@@ -273,7 +273,7 @@ Future<void> testMain() async {
 
   test('Computes paint bounds for draw circle', () async {
     // Paint bounds of one circle.
-    RecordingCanvas rc = RecordingCanvas(screenRect);
+    var rc = RecordingCanvas(screenRect);
     rc.drawCircle(const Offset(20, 20), 10.0, testPaint);
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(10.0, 10.0, 30.0, 30.0));
@@ -288,14 +288,14 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for draw image', () {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawImage(TestImage(), const Offset(50, 100), SurfacePaint());
     rc.endRecording();
     expect(rc.pictureBounds, const Rect.fromLTRB(50.0, 100.0, 70.0, 110.0));
   });
 
   test('Computes paint bounds for draw image rect', () {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.drawImageRect(TestImage(), const Rect.fromLTRB(1, 1, 20, 10),
         const Rect.fromLTRB(5, 6, 400, 500), SurfacePaint());
     rc.endRecording();
@@ -303,11 +303,11 @@ Future<void> testMain() async {
   });
 
   test('Computes paint bounds for single-line draw paragraph', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final Paragraph paragraph = createTestParagraph();
-    const double textLeft = 5.0;
-    const double textTop = 7.0;
-    const double widthConstraint = 300.0;
+    final rc = RecordingCanvas(screenRect);
+    final paragraph = createTestParagraph();
+    const textLeft = 5.0;
+    const textTop = 7.0;
+    const widthConstraint = 300.0;
     paragraph.layout(const ParagraphConstraints(width: widthConstraint));
     rc.drawParagraph(paragraph, const Offset(textLeft, textTop));
     rc.endRecording();
@@ -328,19 +328,19 @@ Future<void> testMain() async {
             ui_web.browser.operatingSystem == ui_web.OperatingSystem.iOs);
 
   test('Computes paint bounds for multi-line draw paragraph', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final Paragraph paragraph = createTestParagraph();
-    const double textLeft = 5.0;
-    const double textTop = 7.0;
+    final rc = RecordingCanvas(screenRect);
+    final paragraph = createTestParagraph();
+    const textLeft = 5.0;
+    const textTop = 7.0;
     // Do not go lower than the shortest word.
-    const double widthConstraint = 130.0;
+    const widthConstraint = 130.0;
     paragraph.layout(const ParagraphConstraints(width: widthConstraint));
     rc.drawParagraph(paragraph, const Offset(textLeft, textTop));
     rc.endRecording();
 
-    const double fontWidth = 14;
-    const int lettersInLongestWord = 9;
-    const double longestLineWidth = lettersInLongestWord * fontWidth;
+    const fontWidth = 14;
+    const lettersInLongestWord = 9;
+    const longestLineWidth = lettersInLongestWord * fontWidth;
     expect(
       rc.pictureBounds!.width,
       lessThan(widthConstraint),
@@ -361,7 +361,7 @@ Future<void> testMain() async {
 
   test('Should exclude painting outside simple clipRect', () async {
     // One clipped line.
-    RecordingCanvas rc = RecordingCanvas(screenRect);
+    var rc = RecordingCanvas(screenRect);
     rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawLine(const Offset(10, 11), const Offset(20, 21), testPaint);
     rc.endRecording();
@@ -380,7 +380,7 @@ Future<void> testMain() async {
   });
 
   test('Should include intersection of clipRect and painting', () async {
-    RecordingCanvas rc = RecordingCanvas(screenRect);
+    var rc = RecordingCanvas(screenRect);
     rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.drawRect(const Rect.fromLTRB(20, 60, 120, 70), testPaint);
     rc.endRecording();
@@ -396,7 +396,7 @@ Future<void> testMain() async {
   });
 
   test('Should intersect rects for multiple clipRect calls', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
     rc.clipRect(const Rect.fromLTRB(50, 50, 100, 100), ClipOp.intersect);
     rc.scale(2.0, 2.0);
     rc.clipRect(const Rect.fromLTRB(30, 30, 45, 45), ClipOp.intersect);
@@ -409,8 +409,8 @@ Future<void> testMain() async {
 
   // drawShadow
   test('Computes paint bounds for drawShadow', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
-    final Path path = Path();
+    final rc = RecordingCanvas(screenRect);
+    final path = Path();
     path.addRect(const Rect.fromLTRB(20, 30, 100, 110));
     rc.drawShadow(path, const Color(0xFFFF0000), 2.0, true);
     rc.endRecording();
@@ -430,7 +430,7 @@ Future<void> testMain() async {
     // vertical flip via a negative scale. This replicates the Material
     // overscroll glow effect at the bottom of a list, where it is drawn upside
     // down.
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 100, 100));
     rc
       ..translate(0, 100)
@@ -444,7 +444,7 @@ Future<void> testMain() async {
   });
 
   test('Clip with a rotation reports correct paint bounds', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 100, 100));
     rc
       ..translate(50, 50)
@@ -464,7 +464,7 @@ Future<void> testMain() async {
   });
 
   test('Rotated line reports correct paint bounds', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 100, 100));
     rc
       ..translate(50, 50)
@@ -481,10 +481,10 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/46339.
   test('Should draw a Rect for straight line when strokeWidth is zero.', () async {
-    final RecordingCanvas rc = RecordingCanvas(screenRect);
+    final rc = RecordingCanvas(screenRect);
 
-    final Path path = Path();
-    final SurfacePaint paint = SurfacePaint()
+    final path = Path();
+    final paint = SurfacePaint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.0
       ..color = const Color(0xFFFF0000);
@@ -493,7 +493,7 @@ Future<void> testMain() async {
     rc.drawPath(path, paint);
     rc.endRecording();
     // Should draw a Rect
-    final List<PaintCommand> commands = rc.debugPaintCommands;
+    final commands = rc.debugPaintCommands;
     expect(commands.length, 1);
     expect(commands.first, isA<PaintDrawRect>());
     // Should inflate picture bounds
@@ -506,10 +506,10 @@ Future<void> testMain() async {
 
   test('Should support reusing path and reset when drawing into canvas.',
       () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 100, 100));
 
-    final Path path = Path();
+    final path = Path();
     path.moveTo(3, 0);
     path.lineTo(100, 97);
     rc.drawPath(
@@ -532,11 +532,11 @@ Future<void> testMain() async {
   });
 
   test('Should draw RRect after line when beginning new path.', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
     rc.save();
     rc.translate(50.0, 100.0);
-    final Path path = Path();
+    final path = Path();
     // Draw a vertical small line (caret).
     path.moveTo(8, 4);
     path.lineTo(8, 24);
@@ -556,11 +556,11 @@ Future<void> testMain() async {
 
   // Regression test for https://github.com/flutter/flutter/issues/64371.
   test('Should draw line following a polygon without closing path.', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 200, 400));
     rc.save();
     rc.translate(50.0, 100.0);
-    final Path path = Path();
+    final path = Path();
     // Draw a vertical small line (caret).
     path.addPolygon(const <Offset>[Offset(0, 10), Offset(20,5), Offset(50,10)],
         false);
@@ -579,9 +579,9 @@ Future<void> testMain() async {
   });
 
   test('should include paint spread in bounds estimates', () async {
-    final SurfaceSceneBuilder sb = SurfaceSceneBuilder();
+    final sb = SurfaceSceneBuilder();
 
-    final List<PaintSpreadPainter> painters = <PaintSpreadPainter>[
+    final painters = <PaintSpreadPainter>[
       (RecordingCanvas canvas, SurfacePaint paint) {
         canvas.drawLine(
           Offset.zero,
@@ -622,7 +622,7 @@ Future<void> testMain() async {
         );
       },
       (RecordingCanvas canvas, SurfacePaint paint) {
-        final SurfacePath path = SurfacePath()
+        final path = SurfacePath()
           ..moveTo(10, 0)
           ..lineTo(20, 10)
           ..lineTo(10, 20)
@@ -647,8 +647,8 @@ Future<void> testMain() async {
     ];
 
     Picture drawBounds(Rect bounds) {
-      final EnginePictureRecorder recorder = EnginePictureRecorder();
-      final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
+      final recorder = EnginePictureRecorder();
+      final canvas = recorder.beginRecording(Rect.largest);
       canvas.drawRect(
         bounds,
         SurfacePaint()
@@ -659,16 +659,16 @@ Future<void> testMain() async {
       return recorder.endRecording();
     }
 
-    for (int i = 0; i < painters.length; i++) {
+    for (var i = 0; i < painters.length; i++) {
       sb.pushOffset(0.0, 20.0 + 60.0 * i);
-      final PaintSpreadPainter painter = painters[i];
+      final painter = painters[i];
 
       // Paint with zero paint spread.
       {
         sb.pushOffset(20.0, 0.0);
-        final EnginePictureRecorder recorder = EnginePictureRecorder();
-        final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
-        final SurfacePaint zeroSpreadPaint = SurfacePaint();
+        final recorder = EnginePictureRecorder();
+        final canvas = recorder.beginRecording(Rect.largest);
+        final zeroSpreadPaint = SurfacePaint();
         painter(canvas, zeroSpreadPaint);
         sb.addPicture(Offset.zero, recorder.endRecording());
         sb.addPicture(Offset.zero, drawBounds(canvas.pictureBounds!));
@@ -678,9 +678,9 @@ Future<void> testMain() async {
       // Paint with a thick stroke paint.
       {
         sb.pushOffset(80.0, 0.0);
-        final EnginePictureRecorder recorder = EnginePictureRecorder();
-        final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
-        final SurfacePaint thickStrokePaint = SurfacePaint()
+        final recorder = EnginePictureRecorder();
+        final canvas = recorder.beginRecording(Rect.largest);
+        final thickStrokePaint = SurfacePaint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 5.0;
         painter(canvas, thickStrokePaint);
@@ -692,9 +692,9 @@ Future<void> testMain() async {
       // Paint with a mask filter blur.
       {
         sb.pushOffset(140.0, 0.0);
-        final EnginePictureRecorder recorder = EnginePictureRecorder();
-        final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
-        final SurfacePaint maskFilterBlurPaint = SurfacePaint()
+        final recorder = EnginePictureRecorder();
+        final canvas = recorder.beginRecording(Rect.largest);
+        final maskFilterBlurPaint = SurfacePaint()
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0);
         painter(canvas, maskFilterBlurPaint);
         sb.addPicture(Offset.zero, recorder.endRecording());
@@ -705,9 +705,9 @@ Future<void> testMain() async {
       // Paint with a thick stroke paint and a mask filter blur.
       {
         sb.pushOffset(200.0, 0.0);
-        final EnginePictureRecorder recorder = EnginePictureRecorder();
-        final RecordingCanvas canvas = recorder.beginRecording(Rect.largest);
-        final SurfacePaint thickStrokeAndBlurPaint = SurfacePaint()
+        final recorder = EnginePictureRecorder();
+        final canvas = recorder.beginRecording(Rect.largest);
+        final thickStrokeAndBlurPaint = SurfacePaint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 5.0
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5.0);
@@ -720,7 +720,7 @@ Future<void> testMain() async {
       sb.pop();
     }
 
-    final DomElement sceneElement = sb.build().webOnlyRootElement!;
+    final sceneElement = sb.build().webOnlyRootElement!;
     domDocument.body!.append(sceneElement);
     try {
       await matchGoldenFile(
@@ -786,7 +786,7 @@ class TestImage implements Image {
 }
 
 Paragraph createTestParagraph() {
-  final ParagraphBuilder builder = ParagraphBuilder(ParagraphStyle(
+  final builder = ParagraphBuilder(ParagraphStyle(
     fontFamily: 'Ahem',
     fontStyle: FontStyle.normal,
     fontWeight: FontWeight.normal,

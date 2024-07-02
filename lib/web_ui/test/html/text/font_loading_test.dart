@@ -21,7 +21,7 @@ void main() {
 Future<void> testMain() async {
   setUpUnitTests(withImplicitView: true);
   group('loadFontFromList', () {
-    const String testFontUrl = '/assets/fonts/ahem.ttf';
+    const testFontUrl = '/assets/fonts/ahem.ttf';
 
     tearDown(() {
       domDocument.fonts!.clear();
@@ -39,7 +39,7 @@ Future<void> testMain() async {
     test('loads Blehm font from buffer', () async {
       expect(_containsFontFamily('Blehm'), isFalse);
 
-      final ByteBuffer response = await httpFetchByteBuffer(testFontUrl);
+      final response = await httpFetchByteBuffer(testFontUrl);
       await ui.loadFontFromList(response.asUint8List(), fontFamily: 'Blehm');
 
       expect(_containsFontFamily('Blehm'), isTrue);
@@ -48,11 +48,11 @@ Future<void> testMain() async {
         skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
 
     test('loading font should clear measurement caches', () async {
-      final EngineParagraphStyle style = EngineParagraphStyle();
-      const ui.ParagraphConstraints constraints =
+      final style = EngineParagraphStyle();
+      const constraints =
           ui.ParagraphConstraints(width: 30.0);
 
-      final CanvasParagraphBuilder canvasBuilder = CanvasParagraphBuilder(style);
+      final canvasBuilder = CanvasParagraphBuilder(style);
       canvasBuilder.addText('test');
       // Triggers the measuring and verifies the ruler cache has been populated.
       canvasBuilder.build().layout(constraints);
@@ -60,7 +60,7 @@ Future<void> testMain() async {
 
       // Now, loads a new font using loadFontFromList. This should clear the
       // cache
-      final ByteBuffer response = await httpFetchByteBuffer(testFontUrl);
+      final response = await httpFetchByteBuffer(testFontUrl);
       await ui.loadFontFromList(response.asUint8List(), fontFamily: 'Blehm');
 
       // Verifies the font is loaded, and the cache is cleaned.
@@ -71,20 +71,20 @@ Future<void> testMain() async {
         skip: ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit);
 
     test('loading font should send font change message', () async {
-      final ui.PlatformMessageCallback? oldHandler = ui.PlatformDispatcher.instance.onPlatformMessage;
+      final oldHandler = ui.PlatformDispatcher.instance.onPlatformMessage;
       String? actualName;
       String? message;
       ui.PlatformDispatcher.instance.onPlatformMessage = (String name, ByteData? data,
           ui.PlatformMessageResponseCallback? callback) {
         actualName = name;
-        final ByteBuffer buffer = data!.buffer;
-        final Uint8List list =
+        final buffer = data!.buffer;
+        final list =
             buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
         message = utf8.decode(list);
       };
-      final ByteBuffer response = await httpFetchByteBuffer(testFontUrl);
+      final response = await httpFetchByteBuffer(testFontUrl);
       await ui.loadFontFromList(response.asUint8List(), fontFamily: 'Blehm');
-      final Completer<void> completer = Completer<void>();
+      final completer = Completer<void>();
       domWindow.requestAnimationFrame((_) { completer.complete();});
       await completer.future;
       ui.PlatformDispatcher.instance.onPlatformMessage = oldHandler;
@@ -97,7 +97,7 @@ Future<void> testMain() async {
 }
 
 bool _containsFontFamily(String family) {
-  bool found = false;
+  var found = false;
   domDocument.fonts!.forEach((DomFontFace fontFace,
       DomFontFace fontFaceAgain, DomFontFaceSet fontFaceSet) {
     if (fontFace.family == family) {

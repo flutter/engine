@@ -24,20 +24,20 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const ui.Rect region = ui.Rect.fromLTWH(0, 0, 128, 128);
+  const region = ui.Rect.fromLTWH(0, 0, 128, 128);
 
   Future<void> drawTestImageWithPaint(ui.Paint paint) async {
-    final ui.Codec codec = await renderer.instantiateImageCodecFromUrl(
+    final codec = await renderer.instantiateImageCodecFromUrl(
       Uri(path: '/test_images/mandrill_128.png')
     );
     expect(codec.frameCount, 1);
 
-    final ui.FrameInfo info = await codec.getNextFrame();
-    final ui.Image image = info.image;
+    final info = await codec.getNextFrame();
+    final image = info.image;
     expect(image.width, 128);
     expect(image.height, 128);
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, region);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder, region);
     canvas.drawImage(
       image,
       ui.Offset.zero,
@@ -90,7 +90,7 @@ Future<void> testMain() async {
   });
 
   test('composed filters', () async {
-    final ui.ImageFilter filter = ui.ImageFilter.compose(
+    final filter = ui.ImageFilter.compose(
       outer: ui.ImageFilter.matrix(
         Matrix4.rotationZ(math.pi / 6).toFloat64(),
         filterQuality: ui.FilterQuality.high,
@@ -105,7 +105,7 @@ Future<void> testMain() async {
   }, skip: isHtml); // Only Skwasm and CanvasKit implement composable filters right now.
 
   test('compose with colorfilter', () async {
-    final ui.ImageFilter filter = ui.ImageFilter.compose(
+    final filter = ui.ImageFilter.compose(
       outer: const ui.ColorFilter.mode(
         ui.Color.fromRGBO(0, 0, 255, 128),
         ui.BlendMode.srcOver,
@@ -120,7 +120,7 @@ Future<void> testMain() async {
   }, skip: isHtml); // Only Skwasm and CanvasKit implements composable filters right now.
 
   test('color filter as image filter', () async {
-    const ui.ColorFilter colorFilter = ui.ColorFilter.mode(
+    const colorFilter = ui.ColorFilter.mode(
       ui.Color.fromRGBO(0, 0, 255, 128),
       ui.BlendMode.srcOver,
     );
@@ -130,7 +130,7 @@ Future<void> testMain() async {
   });
 
   test('mode color filter', () async {
-    const ui.ColorFilter colorFilter = ui.ColorFilter.mode(
+    const colorFilter = ui.ColorFilter.mode(
       ui.Color.fromRGBO(0, 0, 255, 128),
       ui.BlendMode.srcOver,
     );
@@ -140,21 +140,21 @@ Future<void> testMain() async {
   });
 
   test('linearToSRGBGamma color filter', () async {
-    const ui.ColorFilter colorFilter = ui.ColorFilter.linearToSrgbGamma();
+    const colorFilter = ui.ColorFilter.linearToSrgbGamma();
     await drawTestImageWithPaint(ui.Paint()..colorFilter = colorFilter);
     await matchGoldenFile('ui_filter_linear_to_srgb_colorfilter.png', region: region);
     expect(colorFilter.toString(), 'ColorFilter.linearToSrgbGamma()');
   }, skip: isHtml); // HTML renderer hasn't implemented this.
 
   test('srgbToLinearGamma color filter', () async {
-    const ui.ColorFilter colorFilter = ui.ColorFilter.srgbToLinearGamma();
+    const colorFilter = ui.ColorFilter.srgbToLinearGamma();
     await drawTestImageWithPaint(ui.Paint()..colorFilter = colorFilter);
     await matchGoldenFile('ui_filter_srgb_to_linear_colorfilter.png', region: region);
     expect(colorFilter.toString(), 'ColorFilter.srgbToLinearGamma()');
   }, skip: isHtml); // HTML renderer hasn't implemented this.
 
   test('matrix color filter', () async {
-    const ui.ColorFilter sepia = ui.ColorFilter.matrix(<double>[
+    const sepia = ui.ColorFilter.matrix(<double>[
       0.393, 0.769, 0.189, 0, 0,
       0.349, 0.686, 0.168, 0, 0,
       0.272, 0.534, 0.131, 0, 0,
@@ -171,7 +171,7 @@ Future<void> testMain() async {
   });
 
   test('invert colors with color filter', () async {
-    const ui.ColorFilter sepia = ui.ColorFilter.matrix(<double>[
+    const sepia = ui.ColorFilter.matrix(<double>[
       0.393, 0.769, 0.189, 0, 0,
       0.349, 0.686, 0.168, 0, 0,
       0.272, 0.534, 0.131, 0, 0,
@@ -185,7 +185,7 @@ Future<void> testMain() async {
   });
 
   test('mask filter', () async {
-    const ui.MaskFilter maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, 25.0);
+    const maskFilter = ui.MaskFilter.blur(ui.BlurStyle.normal, 25.0);
     await drawTestImageWithPaint(ui.Paint()..maskFilter = maskFilter);
     await matchGoldenFile('ui_filter_blur_maskfilter.png', region: region);
   });

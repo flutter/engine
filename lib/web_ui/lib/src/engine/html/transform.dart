@@ -41,7 +41,7 @@ class PersistedTransform extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = domDocument.createElement('flt-transform');
+    final element = domDocument.createElement('flt-transform');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
     return element;
@@ -64,8 +64,8 @@ class PersistedTransform extends PersistedContainerSurface
       return;
     }
 
-    bool matrixChanged = false;
-    for (int i = 0; i < _matrixStorage.length; i++) {
+    var matrixChanged = false;
+    for (var i = 0; i < _matrixStorage.length; i++) {
       if (_matrixStorage[i] != oldSurface._matrixStorage[i]) {
         matrixChanged = true;
         break;

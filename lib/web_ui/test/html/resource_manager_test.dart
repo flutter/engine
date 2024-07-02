@@ -35,14 +35,14 @@ void testMain() {
       isNot(contains(ResourceManager.resourcesHostTagName.toLowerCase())),
     );
 
-    final List<DomElement> resources = <DomElement>[
+    final resources = <DomElement>[
       createDomHTMLDivElement()..setAttribute('test-resource', 'r1'),
       createDomHTMLDivElement()..setAttribute('test-resource', 'r2'),
       createDomHTMLDivElement()..setAttribute('test-resource', 'r3'),
     ];
     resources.forEach(resourceManager.addResource);
 
-    final DomElement resourcesHost = hostElement.firstElementChild!;
+    final resourcesHost = hostElement.firstElementChild!;
     expect(
       resourcesHost.tagName.toLowerCase(),
       ResourceManager.resourcesHostTagName.toLowerCase(),
@@ -62,14 +62,14 @@ void testMain() {
       isNot(contains(ResourceManager.resourcesHostTagName.toLowerCase())),
     );
 
-    final List<DomElement> resources = <DomElement>[
+    final resources = <DomElement>[
       createDomHTMLDivElement()..setAttribute('test-resource', 'r1'),
       createDomHTMLDivElement()..setAttribute('test-resource', 'r2'),
       createDomHTMLDivElement()..setAttribute('test-resource', 'r3'),
     ];
     resources.forEach(resourceManager.addResource);
 
-    final DomElement resourcesHost = domManager.renderingHost.firstElementChild!;
+    final resourcesHost = domManager.renderingHost.firstElementChild!;
     expect(
       resourcesHost.tagName.toLowerCase(),
       ResourceManager.resourcesHostTagName.toLowerCase(),
@@ -81,9 +81,9 @@ void testMain() {
   });
 
   test('can remove resource', () {
-    final DomHTMLDivElement resource = createDomHTMLDivElement();
+    final resource = createDomHTMLDivElement();
     resourceManager.addResource(resource);
-    final DomElement? resourceRoot = resource.parent;
+    final resourceRoot = resource.parent;
     expect(resourceRoot, isNotNull);
     expect(resourceRoot!.childNodes.length, 1);
     resourceManager.removeResource(resource);

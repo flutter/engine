@@ -19,23 +19,23 @@ Future<void> testMain() async {
   );
 
   test('blanks are equal to each other', () {
-    final ui.TextStyle a = ui.TextStyle();
-    final ui.TextStyle b = ui.TextStyle();
+    final a = ui.TextStyle();
+    final b = ui.TextStyle();
     expect(a, b);
     expect(a.hashCode, b.hashCode);
   });
 
   test('each property individually equal', () {
-    for (final String property in _populatorsA.keys) {
-      final _TextStylePropertyPopulator populator = _populatorsA[property]!;
+    for (final property in _populatorsA.keys) {
+      final populator = _populatorsA[property]!;
 
-      final _TestTextStyleBuilder aBuilder = _TestTextStyleBuilder();
+      final aBuilder = _TestTextStyleBuilder();
       populator(aBuilder);
-      final ui.TextStyle a = aBuilder.build();
+      final a = aBuilder.build();
 
-      final _TestTextStyleBuilder bBuilder = _TestTextStyleBuilder();
+      final bBuilder = _TestTextStyleBuilder();
       populator(bBuilder);
-      final ui.TextStyle b = bBuilder.build();
+      final b = bBuilder.build();
 
       expect(reason: '$property property is equal', a, b);
       expect(reason: '$property hashCode is equal', a.hashCode, b.hashCode);
@@ -43,17 +43,17 @@ Future<void> testMain() async {
   });
 
   test('each property individually not equal', () {
-    for (final String property in _populatorsA.keys) {
-      final _TextStylePropertyPopulator populatorA = _populatorsA[property]!;
+    for (final property in _populatorsA.keys) {
+      final populatorA = _populatorsA[property]!;
 
-      final _TestTextStyleBuilder aBuilder = _TestTextStyleBuilder();
+      final aBuilder = _TestTextStyleBuilder();
       populatorA(aBuilder);
-      final ui.TextStyle a = aBuilder.build();
+      final a = aBuilder.build();
 
-      final _TextStylePropertyPopulator populatorB = _populatorsB[property]!;
-      final _TestTextStyleBuilder bBuilder = _TestTextStyleBuilder();
+      final populatorB = _populatorsB[property]!;
+      final bBuilder = _TestTextStyleBuilder();
       populatorB(bBuilder);
-      final ui.TextStyle b = bBuilder.build();
+      final b = bBuilder.build();
 
       expect(reason: '$property property is not equal', a, isNot(b));
       expect(reason: '$property hashCode is not equal', a.hashCode, isNot(b.hashCode));
@@ -62,44 +62,44 @@ Future<void> testMain() async {
 
   // `color` and `foreground` cannot be used at the same time, so each test skips
   // one or the other to be able to test all variations.
-  for (final String skipProperty in const <String>['color', 'foreground']) {
+  for (final skipProperty in const <String>['color', 'foreground']) {
     test('all properties (except $skipProperty) altogether equal', () {
-      final _TestTextStyleBuilder aBuilder = _TestTextStyleBuilder();
-      final _TestTextStyleBuilder bBuilder = _TestTextStyleBuilder();
+      final aBuilder = _TestTextStyleBuilder();
+      final bBuilder = _TestTextStyleBuilder();
 
-      for (final String property in _populatorsA.keys) {
+      for (final property in _populatorsA.keys) {
         if (property == skipProperty) {
           continue;
         }
-        final _TextStylePropertyPopulator populator = _populatorsA[property]!;
+        final populator = _populatorsA[property]!;
         populator(aBuilder);
         populator(bBuilder);
       }
 
-      final ui.TextStyle a = aBuilder.build();
-      final ui.TextStyle b = bBuilder.build();
+      final a = aBuilder.build();
+      final b = bBuilder.build();
 
       expect(a, b);
       expect(a.hashCode, b.hashCode);
     });
 
     test('all properties (except $skipProperty) altogether not equal', () {
-      final _TestTextStyleBuilder aBuilder = _TestTextStyleBuilder();
-      final _TestTextStyleBuilder bBuilder = _TestTextStyleBuilder();
+      final aBuilder = _TestTextStyleBuilder();
+      final bBuilder = _TestTextStyleBuilder();
 
-      for (final String property in _populatorsA.keys) {
+      for (final property in _populatorsA.keys) {
         if (property == skipProperty) {
           continue;
         }
-        final _TextStylePropertyPopulator populatorA = _populatorsA[property]!;
+        final populatorA = _populatorsA[property]!;
         populatorA(aBuilder);
 
-        final _TextStylePropertyPopulator populatorB = _populatorsB[property]!;
+        final populatorB = _populatorsB[property]!;
         populatorB(bBuilder);
       }
 
-      final ui.TextStyle a = aBuilder.build();
-      final ui.TextStyle b = bBuilder.build();
+      final a = aBuilder.build();
+      final b = bBuilder.build();
 
       expect(a, isNot(b));
       expect(a.hashCode, isNot(b.hashCode));
@@ -107,17 +107,17 @@ Future<void> testMain() async {
   }
 
   test('toString() with color', () {
-    final _TestTextStyleBuilder builder = _TestTextStyleBuilder();
+    final builder = _TestTextStyleBuilder();
 
-    for (final String property in _populatorsA.keys) {
+    for (final property in _populatorsA.keys) {
       if (property == 'foreground') {
         continue;
       }
-      final _TextStylePropertyPopulator populator = _populatorsA[property]!;
+      final populator = _populatorsA[property]!;
       populator(builder);
     }
 
-    final ui.TextStyle style = builder.build();
+    final style = builder.build();
 
     expect(
       style.toString(),
@@ -148,17 +148,17 @@ Future<void> testMain() async {
   });
 
   test('toString() with foreground', () {
-    final _TestTextStyleBuilder builder = _TestTextStyleBuilder();
+    final builder = _TestTextStyleBuilder();
 
-    for (final String property in _populatorsA.keys) {
+    for (final property in _populatorsA.keys) {
       if (property == 'color') {
         continue;
       }
-      final _TextStylePropertyPopulator populator = _populatorsA[property]!;
+      final populator = _populatorsA[property]!;
       populator(builder);
     }
 
-    final ui.TextStyle style = builder.build();
+    final style = builder.build();
 
     expect(
       style.toString(),

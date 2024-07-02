@@ -31,15 +31,15 @@ class FontManifest {
 }
 
 Future<FontManifest> fetchFontManifest(ui_web.AssetManager assetManager) async {
-  final HttpFetchResponse response = await assetManager.loadAsset('FontManifest.json') as HttpFetchResponse;
+  final response = await assetManager.loadAsset('FontManifest.json') as HttpFetchResponse;
   if (!response.hasPayload) {
     printWarning('Font manifest does not exist at `${response.url}` - ignoring.');
     return FontManifest(<FontFamily>[]);
   }
 
-  final Converter<List<int>, Object?> decoder = const Utf8Decoder().fuse(const JsonDecoder());
+  final decoder = const Utf8Decoder().fuse(const JsonDecoder());
   Object? fontManifestJson;
-  final Sink<List<int>> inputSink = decoder.startChunkedConversion(
+  final inputSink = decoder.startChunkedConversion(
     ChunkedConversionSink<Object?>.withCallback(
       (List<Object?> accumulated) {
         if (accumulated.length != 1) {
@@ -53,15 +53,15 @@ Future<FontManifest> fetchFontManifest(ui_web.AssetManager assetManager) async {
   if (fontManifestJson == null) {
     throw AssertionError('There was a problem trying to load FontManifest.json');
   }
-  final List<FontFamily> families = (fontManifestJson! as List<dynamic>).map(
+  final families = (fontManifestJson! as List<dynamic>).map(
     (dynamic fontFamilyJson) {
-      final Map<String, dynamic> fontFamily = fontFamilyJson as Map<String, dynamic>;
-      final String familyName = fontFamily.readString('family');
-      final List<dynamic> fontAssets = fontFamily.readList('fonts');
+      final fontFamily = fontFamilyJson as Map<String, dynamic>;
+      final familyName = fontFamily.readString('family');
+      final fontAssets = fontFamily.readList('fonts');
       return FontFamily(familyName, fontAssets.map((dynamic fontAssetJson) {
         String? asset;
-        final Map<String, String> descriptors = <String, String>{};
-        for (final MapEntry<String, dynamic> descriptor in (fontAssetJson as Map<String, dynamic>).entries) {
+        final descriptors = <String, String>{};
+        for (final descriptor in (fontAssetJson as Map<String, dynamic>).entries) {
           if (descriptor.key == 'asset') {
             asset = descriptor.value as String;
           } else {

@@ -71,12 +71,12 @@ bool isUtf16Surrogate(int char) {
 /// See:
 /// - http://www.unicode.org/faq//utf_bom.html#utf16-3
 int combineSurrogatePair(String text, int index) {
-  final int hi = text.codeUnitAt(index);
-  final int lo = text.codeUnitAt(index + 1);
+  final hi = text.codeUnitAt(index);
+  final lo = text.codeUnitAt(index + 1);
 
-  final int x = (hi & ((1 << 6) - 1)) << 10 | lo & ((1 << 10) - 1);
-  final int w = (hi >> 6) & ((1 << 5) - 1);
-  final int u = w + 1;
+  final x = (hi & ((1 << 6) - 1)) << 10 | lo & ((1 << 10) - 1);
+  final w = (hi >> 6) & ((1 << 5) - 1);
+  final u = w + 1;
   return u << 16 | x;
 }
 
@@ -87,7 +87,7 @@ int? getCodePoint(String text, int index) {
     return null;
   }
 
-  final int char = text.codeUnitAt(index);
+  final char = text.codeUnitAt(index);
   if (isUtf16Surrogate(char) && index < text.length - 1) {
     return combineSurrogatePair(text, index);
   }
@@ -136,7 +136,7 @@ class UnicodePropertyLookup<P> {
   ///
   /// If the [index] is out of range, null will be returned.
   P find(String text, int index) {
-    final int? codePoint = getCodePoint(text, index);
+    final codePoint = getCodePoint(text, index);
     return codePoint == null ? defaultProperty : findForChar(codePoint);
   }
 
@@ -149,24 +149,24 @@ class UnicodePropertyLookup<P> {
       return defaultProperty;
     }
 
-    final P? cacheHit = _cache[char];
+    final cacheHit = _cache[char];
     if (cacheHit != null) {
       return cacheHit;
     }
 
-    final int rangeIndex = _binarySearch(char);
-    final P result = rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
+    final rangeIndex = _binarySearch(char);
+    final result = rangeIndex == -1 ? defaultProperty : ranges[rangeIndex].property;
     // Cache the result.
     _cache[char] = result;
     return result;
   }
 
   int _binarySearch(int value) {
-    int min = 0;
-    int max = ranges.length;
+    var min = 0;
+    var max = ranges.length;
     while (min < max) {
-      final int mid = min + ((max - min) >> 1);
-      final UnicodeRange<P> range = ranges[mid];
+      final mid = min + ((max - min) >> 1);
+      final range = ranges[mid];
       switch (range.compare(value)) {
         case _ComparisonResult.higher:
           min = mid + 1;
@@ -202,11 +202,11 @@ List<UnicodeRange<P>> _unpackProperties<P>(
   // packed data if the efficient packing of single-range items wasn't applied.
   assert((packedData.length + singleRangesCount * 3) % 9 == 0);
 
-  final List<UnicodeRange<P>> ranges = <UnicodeRange<P>>[];
-  final int dataLength = packedData.length;
-  int i = 0;
+  final ranges = <UnicodeRange<P>>[];
+  final dataLength = packedData.length;
+  var i = 0;
   while (i < dataLength) {
-    final int rangeStart = _consumeInt(packedData, i);
+    final rangeStart = _consumeInt(packedData, i);
     i += 4;
 
     int rangeEnd;
@@ -217,8 +217,8 @@ List<UnicodeRange<P>> _unpackProperties<P>(
       rangeEnd = _consumeInt(packedData, i);
       i += 4;
     }
-    final int charCode = packedData.codeUnitAt(i);
-    final P property =
+    final charCode = packedData.codeUnitAt(i);
+    final property =
         propertyEnumValues[_getEnumIndexFromPackedValue(charCode)];
     i++;
 
@@ -251,10 +251,10 @@ int _consumeInt(String packedData, int index) {
   //
   // But using substring is slow when called too many times. This custom
   // implementation makes the unpacking 25%-45% faster than using substring.
-  final int digit0 = getIntFromCharCode(packedData.codeUnitAt(index + 3));
-  final int digit1 = getIntFromCharCode(packedData.codeUnitAt(index + 2));
-  final int digit2 = getIntFromCharCode(packedData.codeUnitAt(index + 1));
-  final int digit3 = getIntFromCharCode(packedData.codeUnitAt(index));
+  final digit0 = getIntFromCharCode(packedData.codeUnitAt(index + 3));
+  final digit1 = getIntFromCharCode(packedData.codeUnitAt(index + 2));
+  final digit2 = getIntFromCharCode(packedData.codeUnitAt(index + 1));
+  final digit3 = getIntFromCharCode(packedData.codeUnitAt(index));
   return digit0 + (digit1 * 36) + (digit2 * 36 * 36) + (digit3 * 36 * 36 * 36);
 }
 

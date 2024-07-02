@@ -42,7 +42,7 @@ class FlutterViewManager {
   EngineFlutterView createAndRegisterView(
     JsFlutterViewOptions jsViewOptions,
   ) {
-    final EngineFlutterView view = EngineFlutterView(
+    final view = EngineFlutterView(
       _dispatcher,
       jsViewOptions.hostElement,
       viewConstraints: jsViewOptions.viewConstraints,
@@ -58,7 +58,7 @@ class FlutterViewManager {
     EngineFlutterView view, {
     JsFlutterViewOptions? jsViewOptions,
   }) {
-    final int viewId = view.viewId;
+    final viewId = view.viewId;
     assert(!_viewData.containsKey(viewId)); // Adding the same view twice?
 
     // Store the view, and the jsViewOptions, if any...
@@ -72,11 +72,11 @@ class FlutterViewManager {
   }
 
   JsFlutterViewOptions? disposeAndUnregisterView(int viewId) {
-    final EngineFlutterView? view = _viewData[viewId];
+    final view = _viewData[viewId];
     if (view == null) {
       return null;
     }
-    final JsFlutterViewOptions? options = unregisterView(viewId);
+    final options = unregisterView(viewId);
     view.dispose();
     return options;
   }
@@ -86,7 +86,7 @@ class FlutterViewManager {
   /// Returns its [JsFlutterViewOptions] (if any).
   JsFlutterViewOptions? unregisterView(int viewId) {
     _viewData.remove(viewId);
-    final JsFlutterViewOptions? jsViewOptions = _jsViewOptions.remove(viewId);
+    final jsViewOptions = _jsViewOptions.remove(viewId);
     _onViewDisposedController.add(viewId);
     return jsViewOptions;
   }
@@ -100,11 +100,11 @@ class FlutterViewManager {
   }
 
   EngineFlutterView? findViewForElement(DomElement? element) {
-    const String viewRootSelector =
+    const viewRootSelector =
         '${DomManager.flutterViewTagName}[${GlobalHtmlAttributes.flutterViewIdAttributeName}]';
-    final DomElement? viewRoot = element?.closest(viewRootSelector);
-    final String? viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
-    final int? viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
+    final viewRoot = element?.closest(viewRootSelector);
+    final viewIdAttribute = viewRoot?.getAttribute(GlobalHtmlAttributes.flutterViewIdAttributeName);
+    final viewId = viewIdAttribute == null ? null : int.parse(viewIdAttribute);
     return viewId == null ? null : _viewData[viewId];
   }
 

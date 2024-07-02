@@ -14,7 +14,6 @@ import 'package:test_api/backend.dart' as hack;
 import 'package:test_core/src/executable.dart' as test; // ignore: implementation_imports
 import 'package:test_core/src/runner/hack_register_platform.dart' as hack; // ignore: implementation_imports
 
-import '../browser.dart';
 import '../common.dart';
 import '../environment.dart';
 import '../exceptions.dart';
@@ -62,19 +61,19 @@ class RunSuiteStep implements PipelineStep {
   @override
   Future<void> run() async {
     _prepareTestResultsDirectory();
-    final BrowserEnvironment browserEnvironment = getBrowserEnvironment(
+    final browserEnvironment = getBrowserEnvironment(
       suite.runConfig.browser,
       useDwarf: useDwarf,
     );
     await browserEnvironment.prepare();
 
-    final SkiaGoldClient? skiaClient = await _createSkiaClient();
-    final String configurationFilePath = pathlib.join(
+    final skiaClient = await _createSkiaClient();
+    final configurationFilePath = pathlib.join(
       environment.webUiRootDir.path,
       browserEnvironment.packageTestConfigurationYamlFile,
     );
-    final String bundleBuildPath = getBundleBuildDirectory(suite.testBundle).path;
-    final List<String> testArgs = <String>[
+    final bundleBuildPath = getBundleBuildDirectory(suite.testBundle).path;
+    final testArgs = <String>[
       ...<String>['-r', 'compact'],
       // Disable concurrency. Running with concurrency proved to be flaky.
       '--concurrency=1',
@@ -106,7 +105,7 @@ class RunSuiteStep implements PipelineStep {
     print('[${suite.name.ansiCyan}] Running...');
 
     // We want to run tests with the test set's directory as a working directory.
-    final io.Directory testSetDirectory = io.Directory(pathlib.join(
+    final testSetDirectory = io.Directory(pathlib.join(
       environment.webUiTestDir.path,
       suite.testBundle.testSet.directory,
     ));
@@ -135,7 +134,7 @@ class RunSuiteStep implements PipelineStep {
   }
 
   io.Directory _prepareTestResultsDirectory() {
-    final io.Directory resultsDirectory = io.Directory(pathlib.join(
+    final resultsDirectory = io.Directory(pathlib.join(
       environment.webUiTestResultsDirectory.path,
       suite.name,
     ));
@@ -147,21 +146,21 @@ class RunSuiteStep implements PipelineStep {
   }
 
   List<String> _collectTestPaths() {
-    final io.Directory bundleBuild = getBundleBuildDirectory(suite.testBundle);
-    final io.File resultsJsonFile = io.File(pathlib.join(
+    final bundleBuild = getBundleBuildDirectory(suite.testBundle);
+    final resultsJsonFile = io.File(pathlib.join(
       bundleBuild.path,
       'results.json',
     ));
     if (!resultsJsonFile.existsSync()) {
       throw ToolExit('Could not find built bundle ${suite.testBundle.name.ansiMagenta} for suite ${suite.name.ansiCyan}.');
     }
-    final String jsonString = resultsJsonFile.readAsStringSync();
+    final jsonString = resultsJsonFile.readAsStringSync();
     final jsonContents = const JsonDecoder().convert(jsonString) as Map<String, Object?>;
     final results = jsonContents['results']! as Map<String, Object?>;
-    final List<String> testPaths = <String>[];
+    final testPaths = <String>[];
     results.forEach((Object? k, Object? v) {
-      final String result = v! as String;
-      final String testPath = k! as String;
+      final result = v! as String;
+      final testPath = k! as String;
       if (testFiles != null) {
         if (!testFiles!.contains(FilePath.fromTestSet(suite.testBundle.testSet, testPath))) {
           return;
@@ -185,14 +184,14 @@ class RunSuiteStep implements PipelineStep {
       // See https://github.com/flutter/flutter/issues/143591
       return null;
     }
-    final Renderer renderer = suite.testBundle.compileConfigs.first.renderer;
-    final CanvasKitVariant? variant = suite.runConfig.variant;
-    final io.Directory workDirectory = getSkiaGoldDirectoryForSuite(suite);
+    final renderer = suite.testBundle.compileConfigs.first.renderer;
+    final variant = suite.runConfig.variant;
+    final workDirectory = getSkiaGoldDirectoryForSuite(suite);
     if (workDirectory.existsSync()) {
       workDirectory.deleteSync(recursive: true);
     }
-    final bool isWasm = suite.testBundle.compileConfigs.first.compiler == Compiler.dart2wasm;
-    final SkiaGoldClient skiaClient = SkiaGoldClient(
+    final isWasm = suite.testBundle.compileConfigs.first.compiler == Compiler.dart2wasm;
+    final skiaClient = SkiaGoldClient(
       workDirectory,
       dimensions: <String, String> {
         'Browser': suite.runConfig.browser.name,

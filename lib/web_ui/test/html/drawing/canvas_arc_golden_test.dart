@@ -15,7 +15,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 400, 600);
+  const region = Rect.fromLTWH(0, 0, 400, 600);
 
   late BitmapCanvas canvas;
 
@@ -47,8 +47,8 @@ Future<void> testMain() async {
   });
 
   test('Path.addArc that starts new path has correct start point', () async {
-    const Rect rect = Rect.fromLTWH(20, 20, 200, 200);
-    final Path p = Path()
+    const rect = Rect.fromLTWH(20, 20, 200, 200);
+    final p = Path()
       ..fillType = PathFillType.evenOdd
       ..addRect(rect)
       ..addArc(Rect.fromCircle(center: rect.center,
@@ -62,7 +62,7 @@ Future<void> testMain() async {
   });
 
   test('Should render counter clockwise arcs', () async {
-    final Path path = Path();
+    final path = Path();
     path.moveTo(149.999999999999997, 50);
     path.lineTo(149.999999999999997, 20);
     path.arcTo(const Rect.fromLTRB(20, 20, 280, 280), 4.71238898038469,
@@ -83,9 +83,9 @@ Future<void> testMain() async {
 void paintArc(BitmapCanvas canvas, Offset offset,
       {bool largeArc = false, bool clockwise = false, double distance = 0}) {
 
-  final Offset startP =
+  final startP =
       Offset(75 - distance + offset.dx, 75 - distance + offset.dy);
-  final Offset endP =
+  final endP =
       Offset(75.0 + distance + offset.dx, 75.0 + distance + offset.dy);
   canvas.drawRect(
       Rect.fromLTRB(startP.dx, startP.dy, endP.dx, endP.dy),
@@ -93,7 +93,7 @@ void paintArc(BitmapCanvas canvas, Offset offset,
         ..strokeWidth = 1
         ..color = 0xFFFF9800 // orange
         ..style = PaintingStyle.stroke);
-  final Path path = Path();
+  final path = Path();
   path.moveTo(startP.dx, startP.dy);
   path.arcToPoint(endP,
       rotation: 45,

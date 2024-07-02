@@ -29,7 +29,7 @@ void testMain() {
 
   test('debugOverrideJsConfiguration can bypass (and restore) variant', () {
     // Set-up in the test_platform.dart file. See `_testBootstrapHandler`.
-    final CanvasKitVariant originalValue = configuration.canvasKitVariant;
+    final originalValue = configuration.canvasKitVariant;
     expect(configuration.canvasKitVariant, isNot(CanvasKitVariant.auto));
 
     debugOverrideJsConfiguration(

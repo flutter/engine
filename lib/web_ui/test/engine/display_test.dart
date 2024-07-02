@@ -14,13 +14,13 @@ void main() {
 void testMain() {
   group('EngineFlutterDisplay', () {
     test('overrides and restores devicePixelRatio', () {
-      final EngineFlutterDisplay display = EngineFlutterDisplay(
+      final display = EngineFlutterDisplay(
         id: 0,
         size: const ui.Size(100.0, 100.0),
         refreshRate: 60.0,
       );
 
-      final double originalDevicePixelRatio = display.devicePixelRatio;
+      final originalDevicePixelRatio = display.devicePixelRatio;
       display.debugOverrideDevicePixelRatio(99.3);
       expect(display.devicePixelRatio, 99.3);
 

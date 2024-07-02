@@ -10,7 +10,6 @@ import 'dart:async';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-import 'package:ui/ui.dart' as ui show Offset;
 
 void main() {
   internalBootstrapBrowserTest(() => doTests);
@@ -20,11 +19,11 @@ void doTests() {
   late EngineFlutterView view;
   late DomElement rootElement;
   late DomElement eventSource;
-  final StreamController<DomEvent> events = StreamController<DomEvent>.broadcast();
+  final events = StreamController<DomEvent>.broadcast();
 
   /// Dispatches an event `e` on `target`, and returns it after it's gone through the browser.
   Future<DomPointerEvent> dispatchAndCatch(DomElement target, DomPointerEvent e) async {
-    final Future<DomEvent> nextEvent = events.stream.first;
+    final nextEvent = events.stream.first;
     target.dispatchEvent(e);
     return (await nextEvent) as DomPointerEvent;
   }
@@ -75,7 +74,7 @@ void doTests() {
       expect(event.offsetX, 10);
       expect(event.offsetY, 20);
 
-      final ui.Offset offset = computeEventOffsetToTarget(event, view);
+      final offset = computeEventOffsetToTarget(event, view);
 
       expect(offset.dx, event.offsetX);
       expect(offset.dy, event.offsetY);
@@ -95,7 +94,7 @@ void doTests() {
       expect(event.offsetX, 20);
       expect(event.offsetY, 10);
 
-      final ui.Offset offset = computeEventOffsetToTarget(event, view);
+      final offset = computeEventOffsetToTarget(event, view);
 
       expect(offset.dx, 140);
       expect(offset.dy, 110);

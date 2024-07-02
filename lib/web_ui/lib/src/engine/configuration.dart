@@ -122,12 +122,12 @@ class FlutterConfiguration {
   }
 
   FlutterConfiguration withOverrides(JsFlutterConfiguration? overrides) {
-    final JsFlutterConfiguration newJsConfig = objectConstructor.assign(
+    final newJsConfig = objectConstructor.assign(
       <String, Object>{}.jsify(),
       _configuration.jsify(),
       overrides.jsify(),
     ) as JsFlutterConfiguration;
-    final FlutterConfiguration newConfig = FlutterConfiguration();
+    final newConfig = FlutterConfiguration();
     newConfig._configuration = newJsConfig;
     return newConfig;
   }
@@ -256,7 +256,7 @@ class FlutterConfiguration {
   /// * `chromium` - the lite variant of CanvasKit that can be used in
   /// Chromium-based browsers.
   CanvasKitVariant get canvasKitVariant {
-    final String variant = _configuration?.canvasKitVariant ?? 'auto';
+    final variant = _configuration?.canvasKitVariant ?? 'auto';
     return CanvasKitVariant.values.byName(variant);
   }
 
@@ -275,7 +275,7 @@ class FlutterConfiguration {
   ///
   /// Limits the amount of overlays that can be created.
   int get canvasKitMaximumSurfaces {
-    final int maxSurfaces =
+    final maxSurfaces =
         _configuration?.canvasKitMaximumSurfaces?.toInt() ?? 8;
     if (maxSurfaces < 1) {
       return 1;

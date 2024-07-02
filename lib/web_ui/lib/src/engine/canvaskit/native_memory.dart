@@ -23,7 +23,7 @@ import 'package:ui/src/engine.dart';
 DomFinalizationRegistry _finalizationRegistry = DomFinalizationRegistry(
   (ExternalDartReference boxedUniq) {
     // ignore: cast_nullable_to_non_nullable
-    final UniqueRef<Object> uniq = boxedUniq.toDartObject as UniqueRef<Object>;
+    final uniq = boxedUniq.toDartObject as UniqueRef<Object>;
     uniq.collect();
   }.toJS
 );
@@ -85,7 +85,7 @@ class UniqueRef<T extends Object> {
     if (Instrumentation.enabled) {
       Instrumentation.instance.incrementCounter('$_debugOwnerLabel Deleted');
     }
-    final SkDeletable object = nativeObject as SkDeletable;
+    final object = nativeObject as SkDeletable;
     if (!object.isDeleted()) {
       object.delete();
     }

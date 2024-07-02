@@ -32,7 +32,7 @@ class PathWinding {
 
   /// Iterates through path and computes winding.
   void _walkPath() {
-    final PathIterator iter = PathIterator(pathRef, true);
+    final iter = PathIterator(pathRef, true);
     int verb;
     while ((verb = iter.next(_buffer)) != SPath.kDoneVerb) {
       switch (verb) {
@@ -52,17 +52,17 @@ class PathWinding {
   }
 
   void _computeLineWinding() {
-    final double x0 = _buffer[0];
-    final double startY = _buffer[1];
-    double y0 = startY;
-    final double x1 = _buffer[2];
-    final double endY = _buffer[3];
-    double y1 = endY;
-    final double dy = y1 - y0;
-    int dir = 1;
+    final x0 = _buffer[0];
+    final startY = _buffer[1];
+    var y0 = startY;
+    final x1 = _buffer[2];
+    final endY = _buffer[3];
+    var y1 = endY;
+    final dy = y1 - y0;
+    var dir = 1;
     // Swap so that y0 <= y1 holds.
     if (y0 > y1) {
-      final double temp = y0;
+      final temp = y0;
       y0 = y1;
       y1 = temp;
       dir = -1;
@@ -80,7 +80,7 @@ class PathWinding {
     }
     // c = ax*by − ay*bx where a is the line and b is line formed from start
     // to the given point(x,y).
-    final double crossProduct = (x1 - x0) * (y - startY) - dy * (x - x0);
+    final crossProduct = (x1 - x0) * (y - startY) - dy * (x - x0);
     if (crossProduct == 0) {
       // zero cross means the point is on the line, and since the case where
       // y of the query point is at the end point is handled above, we can be
@@ -111,11 +111,11 @@ class PathWinding {
   void _computeQuadWinding() {
     // Check if we need to chop quadratic at extrema to compute 2 separate
     // windings.
-    int n = 0;
+    var n = 0;
     if (!_isQuadMonotonic(_buffer)) {
       n = _chopQuadAtExtrema(_buffer);
     }
-    int winding = _computeMonoQuadWinding(
+    var winding = _computeMonoQuadWinding(
         _buffer[0], _buffer[1], _buffer[2], _buffer[3], _buffer[4], _buffer[5]);
     if (n > 0) {
       winding += _computeMonoQuadWinding(_buffer[4], _buffer[5], _buffer[6],
@@ -126,11 +126,11 @@ class PathWinding {
 
   int _computeMonoQuadWinding(
       double x0, double y0, double x1, double y1, double x2, double y2) {
-    int dir = 1;
-    final double startY = y0;
-    final double endY = y2;
+    var dir = 1;
+    final startY = y0;
+    final endY = y2;
     if (y0 > y2) {
-      final double temp = y0;
+      final temp = y0;
       y0 = y2;
       y2 = temp;
       dir = -1;
@@ -146,8 +146,8 @@ class PathWinding {
       return 0;
     }
 
-    final QuadRoots quadRoots = QuadRoots();
-    final int n = quadRoots.findRoots(
+    final quadRoots = QuadRoots();
+    final n = quadRoots.findRoots(
         startY - 2 * y1 + endY, 2 * (y1 - startY), startY - y);
     assert(n <= 1);
     double xt;
@@ -155,10 +155,10 @@ class PathWinding {
       // zero roots are returned only when y0 == y
       xt = dir == 1 ? x0 : x2;
     } else {
-      final double t = quadRoots.root0!;
-      final double C = x0;
-      final double A = x2 - 2 * x1 + C;
-      final double B = 2 * (x1 - C);
+      final t = quadRoots.root0!;
+      final C = x0;
+      final A = x2 - 2 * x1 + C;
+      final B = 2 * (x1 - C);
       xt = polyEval(A, B, C, t);
     }
     if (SPath.nearlyEqual(xt, x)) {
@@ -174,21 +174,21 @@ class PathWinding {
   /// Chops a non-monotonic quadratic curve, returns subdivisions and writes
   /// result into [buffer].
   static int _chopQuadAtExtrema(Float32List buffer) {
-    final double x0 = buffer[0];
-    final double y0 = buffer[1];
-    final double x1 = buffer[2];
-    final double y1 = buffer[3];
-    final double x2 = buffer[4];
-    final double y2 = buffer[5];
-    final double? tValueAtExtrema = validUnitDivide(y0 - y1, y0 - y1 - y1 + y2);
+    final x0 = buffer[0];
+    final y0 = buffer[1];
+    final x1 = buffer[2];
+    final y1 = buffer[3];
+    final x2 = buffer[4];
+    final y2 = buffer[5];
+    final tValueAtExtrema = validUnitDivide(y0 - y1, y0 - y1 - y1 + y2);
     if (tValueAtExtrema != null) {
       // Chop quad at t value by interpolating along p0-p1 and p1-p2.
-      final double p01x = x0 + (tValueAtExtrema * (x1 - x0));
-      final double p01y = y0 + (tValueAtExtrema * (y1 - y0));
-      final double p12x = x1 + (tValueAtExtrema * (x2 - x1));
-      final double p12y = y1 + (tValueAtExtrema * (y2 - y1));
-      final double cx = p01x + (tValueAtExtrema * (p12x - p01x));
-      final double cy = p01y + (tValueAtExtrema * (p12y - p01y));
+      final p01x = x0 + (tValueAtExtrema * (x1 - x0));
+      final p01y = y0 + (tValueAtExtrema * (y1 - y0));
+      final p12x = x1 + (tValueAtExtrema * (x2 - x1));
+      final p12y = y1 + (tValueAtExtrema * (y2 - y1));
+      final cx = p01x + (tValueAtExtrema * (p12x - p01x));
+      final cy = p01y + (tValueAtExtrema * (p12y - p01y));
       buffer[2] = p01x;
       buffer[3] = p01y;
       buffer[4] = cx;
@@ -206,9 +206,9 @@ class PathWinding {
   }
 
   static bool _isQuadMonotonic(Float32List quad) {
-    final double y0 = quad[1];
-    final double y1 = quad[3];
-    final double y2 = quad[5];
+    final y0 = quad[1];
+    final y1 = quad[3];
+    final y2 = quad[5];
     if (y0 == y1) {
       return true;
     }
@@ -220,12 +220,12 @@ class PathWinding {
   }
 
   void _computeConicWinding(double weight) {
-    final Conic conic = Conic(_buffer[0], _buffer[1], _buffer[2], _buffer[3],
+    final conic = Conic(_buffer[0], _buffer[1], _buffer[2], _buffer[3],
         _buffer[4], _buffer[5], weight);
     // If the data points are very large, the conic may not be monotonic but may also
     // fail to chop. Then, the chopper does not split the original conic in two.
-    final bool isMono = _isQuadMonotonic(_buffer);
-    final List<Conic> conics = <Conic>[];
+    final isMono = _isQuadMonotonic(_buffer);
+    final conics = <Conic>[];
     conic.chopAtYExtrema(conics);
     _computeMonoConicWinding(conics[0]);
     if (!isMono && conics.length == 2) {
@@ -234,11 +234,11 @@ class PathWinding {
   }
 
   void _computeMonoConicWinding(Conic conic) {
-    double y0 = conic.p0y;
-    double y2 = conic.p2y;
-    int dir = 1;
+    var y0 = conic.p0y;
+    var y2 = conic.p2y;
+    var dir = 1;
     if (y0 > y2) {
-      final double swap = y0;
+      final swap = y0;
       y0 = y2;
       y2 = swap;
       dir = -1;
@@ -254,16 +254,16 @@ class PathWinding {
       return;
     }
 
-    double A = conic.p2y;
-    double B = conic.p1y * conic.fW - y * conic.fW + y;
-    double C = conic.p0y;
+    var A = conic.p2y;
+    var B = conic.p1y * conic.fW - y * conic.fW + y;
+    var C = conic.p0y;
     // A = a + c - 2*(b*w - yCept*w + yCept)
     A += C - 2 * B;
     // B = b*w - w * yCept + yCept - a
     B -= C;
     C -= y;
-    final QuadRoots quadRoots = QuadRoots();
-    final int n = quadRoots.findRoots(A, 2 * B, C);
+    final quadRoots = QuadRoots();
+    final n = quadRoots.findRoots(A, 2 * B, C);
     assert(n <= 1);
     double xt;
     if (0 == n) {
@@ -272,7 +272,7 @@ class PathWinding {
       // and  [2] if dir == -1
       xt = dir == 1 ? conic.p0x : conic.p2x;
     } else {
-      final double root = quadRoots.root0!;
+      final root = quadRoots.root0!;
       xt =
           Conic.evalNumerator(conic.p0x, conic.p1x, conic.p2x, conic.fW, root) /
               Conic.evalDenominator(conic.fW, root);
@@ -288,29 +288,29 @@ class PathWinding {
   }
 
   void _computeCubicWinding() {
-    final int n = chopCubicAtYExtrema(_buffer, _buffer);
-    for (int i = 0; i <= n; ++i) {
+    final n = chopCubicAtYExtrema(_buffer, _buffer);
+    for (var i = 0; i <= n; ++i) {
       _windingMonoCubic(i * 3 * 2);
     }
   }
 
   void _windingMonoCubic(int bufferIndex) {
-    final int bufferStartPos = bufferIndex;
-    final double px0 = _buffer[bufferIndex++];
-    final double py0 = _buffer[bufferIndex++];
-    final double px1 = _buffer[bufferIndex++];
+    final bufferStartPos = bufferIndex;
+    final px0 = _buffer[bufferIndex++];
+    final py0 = _buffer[bufferIndex++];
+    final px1 = _buffer[bufferIndex++];
     bufferIndex++;
-    final double px2 = _buffer[bufferIndex++];
+    final px2 = _buffer[bufferIndex++];
     bufferIndex++;
-    final double px3 = _buffer[bufferIndex++];
-    final double py3 = _buffer[bufferIndex++];
+    final px3 = _buffer[bufferIndex++];
+    final py3 = _buffer[bufferIndex++];
 
-    double y0 = py0;
-    double y3 = py3;
+    var y0 = py0;
+    var y3 = py3;
 
-    int dir = 1;
+    var dir = 1;
     if (y0 > y3) {
-      final double swap = y0;
+      final swap = y0;
       y0 = y3;
       y3 = swap;
       dir = -1;
@@ -337,11 +337,11 @@ class PathWinding {
       return;
     }
     // Compute the actual x(t) value.
-    final double? t = chopMonoAtY(_buffer, bufferStartPos, y);
+    final t = chopMonoAtY(_buffer, bufferStartPos, y);
     if (t == null) {
       return;
     }
-    final double xt = evalCubicPts(px0, px1, px2, px3, t);
+    final xt = evalCubicPts(px0, px1, px2, px3, t);
     if (SPath.nearlyEqual(xt, x)) {
       if (x != px3 || y != py3) {
         // don't test end points; they're start points

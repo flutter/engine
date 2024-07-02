@@ -21,7 +21,7 @@ import 'package:ui/ui.dart' as ui;
 class CkAnimatedImage implements ui.Codec {
   /// Decodes an image from a list of encoded bytes.
   CkAnimatedImage.decodeFromBytes(this._bytes, this.src, {this.targetWidth, this.targetHeight}) {
-    final SkAnimatedImage skAnimatedImage = createSkAnimatedImage();
+    final skAnimatedImage = createSkAnimatedImage();
     _ref = UniqueRef<SkAnimatedImage>(this, skAnimatedImage, 'Codec');
   }
 
@@ -35,7 +35,7 @@ class CkAnimatedImage implements ui.Codec {
   final int? targetHeight;
 
   SkAnimatedImage createSkAnimatedImage() {
-    SkAnimatedImage? animatedImage =
+    var animatedImage =
         canvasKit.MakeAnimatedImageFromEncoded(_bytes);
     if (animatedImage == null) {
       throw ImageCodecException(
@@ -65,15 +65,15 @@ class CkAnimatedImage implements ui.Codec {
   }
 
   SkAnimatedImage? _resizeAnimatedImage(SkAnimatedImage animatedImage, int? targetWidth, int? targetHeight) {
-    final SkImage image = animatedImage.makeImageAtCurrentFrame();
-    final CkImage ckImage = scaleImage(image, targetWidth, targetHeight);
-    final Uint8List? resizedBytes = ckImage.skImage.encodeToBytes();
+    final image = animatedImage.makeImageAtCurrentFrame();
+    final ckImage = scaleImage(image, targetWidth, targetHeight);
+    final resizedBytes = ckImage.skImage.encodeToBytes();
 
     if (resizedBytes == null) {
       throw ImageCodecException('Failed to re-size image');
     }
 
-    final SkAnimatedImage? resizedAnimatedImage = canvasKit.MakeAnimatedImageFromEncoded(resizedBytes);
+    final resizedAnimatedImage = canvasKit.MakeAnimatedImageFromEncoded(resizedBytes);
     return resizedAnimatedImage;
   }
 
@@ -110,7 +110,7 @@ class CkAnimatedImage implements ui.Codec {
   @override
   Future<ui.FrameInfo> getNextFrame() {
     assert(_debugCheckIsNotDisposed());
-    final SkAnimatedImage animatedImage = _ref.nativeObject;
+    final animatedImage = _ref.nativeObject;
 
     // SkAnimatedImage comes pre-initialized to point to the current frame (by
     // default the first frame, and, with some special resurrection logic in

@@ -97,11 +97,11 @@ class DebugSurfaceStats {
 DomCanvasRenderingContext2D? _debugSurfaceStatsOverlayCtx;
 
 void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
-  final int overlayWidth = domWindow.innerWidth!.toInt();
-  const int rowHeight = 30;
-  const int rowCount = 4;
-  const int overlayHeight = rowHeight * rowCount;
-  const int strokeWidth = 2;
+  final overlayWidth = domWindow.innerWidth!.toInt();
+  const rowHeight = 30;
+  const rowCount = 4;
+  const overlayHeight = rowHeight * rowCount;
+  const strokeWidth = 2;
 
   _surfaceStatsTimeline.add(surfaceStats);
 
@@ -110,7 +110,7 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
   }
 
   if (_debugSurfaceStatsOverlayCtx == null) {
-    final DomCanvasElement debugSurfaceStatsOverlay = createDomCanvasElement(
+    final debugSurfaceStatsOverlay = createDomCanvasElement(
       width: overlayWidth,
       height: overlayHeight,
     );
@@ -130,34 +130,34 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..rect(0, 0, overlayWidth, overlayHeight)
     ..fill();
 
-  final double physicalScreenWidth =
+  final physicalScreenWidth =
       domWindow.innerWidth! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
-  final double physicalScreenHeight =
+  final physicalScreenHeight =
       domWindow.innerHeight! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
-  final double physicsScreenPixelCount =
+  final physicsScreenPixelCount =
       physicalScreenWidth * physicalScreenHeight;
 
-  final int totalDomNodeCount = scene.rootElement!.querySelectorAll('*').length;
+  final totalDomNodeCount = scene.rootElement!.querySelectorAll('*').length;
 
-  for (int i = 0; i < _surfaceStatsTimeline.length; i++) {
-    final Map<PersistedSurface, DebugSurfaceStats> statsMap =
+  for (var i = 0; i < _surfaceStatsTimeline.length; i++) {
+    final statsMap =
         _surfaceStatsTimeline[i];
-    final DebugSurfaceStats totals = DebugSurfaceStats(null);
-    int pixelCount = 0;
-    for (final DebugSurfaceStats oneSurfaceStats in statsMap.values) {
+    final totals = DebugSurfaceStats(null);
+    var pixelCount = 0;
+    for (final oneSurfaceStats in statsMap.values) {
       totals.aggregate(oneSurfaceStats);
       if (oneSurfaceStats.surface is PersistedPicture) {
-        final PersistedPicture picture = oneSurfaceStats.surface! as PersistedPicture;
+        final picture = oneSurfaceStats.surface! as PersistedPicture;
         pixelCount += picture.bitmapPixelCount;
       }
     }
 
-    final double repaintRate = totals.paintPixelCount / pixelCount;
-    final double domAllocationRate =
+    final repaintRate = totals.paintPixelCount / pixelCount;
+    final domAllocationRate =
         totals.allocatedDomNodeCount / totalDomNodeCount;
-    final double bitmapAllocationRate =
+    final bitmapAllocationRate =
         totals.allocatedBitmapSizeInPixels / physicsScreenPixelCount;
-    final double surfaceRetainRate =
+    final surfaceRetainRate =
         totals.retainSurfaceCount / _surfaceStatsTimeline[i].length;
 
     // Repaints
@@ -205,7 +205,7 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
     ..fillText('Bitmap alloc rate', 5, 3 * rowHeight - 5)
     ..fillText('Retain rate', 5, 4 * rowHeight - 5);
 
-  for (int i = 1; i <= rowCount; i++) {
+  for (var i = 1; i <= rowCount; i++) {
     _debugSurfaceStatsOverlayCtx!
       ..lineWidth = 1
       ..strokeStyle = 'blue'
@@ -218,25 +218,25 @@ void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
 
 /// Prints debug statistics for the current frame to the console.
 void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
-  int pictureCount = 0;
-  int paintCount = 0;
+  var pictureCount = 0;
+  var paintCount = 0;
 
-  int bitmapCanvasCount = 0;
-  int bitmapReuseCount = 0;
-  int bitmapAllocationCount = 0;
-  int bitmapPaintCount = 0;
-  int bitmapPixelsAllocated = 0;
+  var bitmapCanvasCount = 0;
+  var bitmapReuseCount = 0;
+  var bitmapAllocationCount = 0;
+  var bitmapPaintCount = 0;
+  var bitmapPixelsAllocated = 0;
 
-  int domCanvasCount = 0;
-  int domPaintCount = 0;
+  var domCanvasCount = 0;
+  var domPaintCount = 0;
 
-  int surfaceRetainCount = 0;
-  int elementReuseCount = 0;
+  var surfaceRetainCount = 0;
+  var elementReuseCount = 0;
 
-  int totalAllocatedDomNodeCount = 0;
+  var totalAllocatedDomNodeCount = 0;
 
   void countReusesRecursively(PersistedSurface surface) {
-    final DebugSurfaceStats stats = surfaceStatsFor(surface);
+    final stats = surfaceStatsFor(surface);
 
     surfaceRetainCount += stats.retainSurfaceCount;
     elementReuseCount += stats.reuseElementCount;
@@ -266,7 +266,7 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
 
   scene.visitChildren(countReusesRecursively);
 
-  final StringBuffer buf = StringBuffer();
+  final buf = StringBuffer();
   buf
     ..writeln(
         '---------------------- FRAME #$frameNumber -------------------------')
@@ -290,32 +290,32 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
   // A microtask will fire after the DOM is flushed, letting us probe into
   // actual <canvas> tags.
   scheduleMicrotask(() {
-    final Iterable<DomElement> canvasElements = domDocument.querySelectorAll('canvas');
-    final StringBuffer canvasInfo = StringBuffer();
-    final int pixelCount = canvasElements
+    final canvasElements = domDocument.querySelectorAll('canvas');
+    final canvasInfo = StringBuffer();
+    final pixelCount = canvasElements
         .cast<DomCanvasElement>()
         .map<int>((DomCanvasElement e) {
-      final int pixels = (e.width! * e.height!).toInt();
+      final pixels = (e.width! * e.height!).toInt();
       canvasInfo.writeln('    - ${e.width!} x ${e.height!} = $pixels pixels');
       return pixels;
     }).fold(0, (int total, int pixels) => total + pixels);
-    final double physicalScreenWidth =
+    final physicalScreenWidth =
         domWindow.innerWidth! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
-    final double physicalScreenHeight =
+    final physicalScreenHeight =
         domWindow.innerHeight! * EngineFlutterDisplay.instance.browserDevicePixelRatio;
-    final double physicsScreenPixelCount =
+    final physicsScreenPixelCount =
         physicalScreenWidth * physicalScreenHeight;
-    final double screenPixelRatio = pixelCount / physicsScreenPixelCount;
-    final String screenDescription =
+    final screenPixelRatio = pixelCount / physicsScreenPixelCount;
+    final screenDescription =
         '1 screen is $physicalScreenWidth x $physicalScreenHeight = $physicsScreenPixelCount pixels';
-    final String canvasPixelDescription =
+    final canvasPixelDescription =
         '$pixelCount (${screenPixelRatio.toStringAsFixed(2)} x screens';
     buf
       ..writeln('  Elements: ${canvasElements.length}')
       ..writeln(canvasInfo)
       ..writeln('  Pixels: $canvasPixelDescription; $screenDescription)')
       ..writeln('-----------------------------------------------------------');
-    final bool screenPixelRatioTooHigh =
+    final screenPixelRatioTooHigh =
         screenPixelRatio > kScreenPixelRatioWarningThreshold;
     if (screenPixelRatioTooHigh) {
       print(

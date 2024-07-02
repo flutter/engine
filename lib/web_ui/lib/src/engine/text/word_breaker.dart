@@ -30,7 +30,7 @@ abstract final class WordBreaker {
     String text,
     int index,
   ) {
-    int i = index;
+    var i = index;
     while (i >= 0 && i <= text.length) {
       i += direction.step;
       if (_isBreak(text, i)) {
@@ -55,8 +55,8 @@ abstract final class WordBreaker {
       return false;
     }
 
-    final WordCharProperty immediateRight = wordLookup.find(text, index);
-    WordCharProperty immediateLeft = wordLookup.find(text, index - 1);
+    final immediateRight = wordLookup.find(text, index);
+    var immediateLeft = wordLookup.find(text, index - 1);
 
     // Do not break within CRLF.
     // WB3: CR × LF
@@ -110,7 +110,7 @@ abstract final class WordBreaker {
     }
 
     // We've reached the end of an Extend|Format|ZWJ sequence, collapse it.
-    int l = 0;
+    var l = 0;
     while (_oneOf(
       immediateLeft,
       WordCharProperty.Extend,
@@ -135,7 +135,7 @@ abstract final class WordBreaker {
     // context while also respecting rule WB4. So ignore Format, Extend and ZWJ.
 
     // Skip all Format, Extend and ZWJ to the right.
-    int r = 0;
+    var r = 0;
     WordCharProperty? nextRight;
     do {
       r++;

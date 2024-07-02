@@ -85,7 +85,7 @@ double measureSubstring(
     return 0;
   }
 
-  final String cssFont = canvasContext.font;
+  final cssFont = canvasContext.font;
   double width;
 
   // TODO(mdebbar): Explore caching all widths in a map, not only the last one.
@@ -98,7 +98,7 @@ double measureSubstring(
     // letter-spacing to the width later below.
     width = _lastWidth;
   } else {
-    final String sub =
+    final sub =
       start == 0 && end == text.length ? text : text.substring(start, end);
     width = canvasContext.measureText(sub).width!;
   }

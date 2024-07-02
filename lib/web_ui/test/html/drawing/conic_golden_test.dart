@@ -14,15 +14,15 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old golden tester padding
+  const region = Rect.fromLTWH(8, 8, 600, 800); // Compensate for old golden tester padding
 
   Future<void> testPath(Path path, String goldenFileName) async {
-    const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
-    final BitmapCanvas bitmapCanvas = BitmapCanvas(canvasBounds,
+    const canvasBounds = Rect.fromLTWH(0, 0, 600, 800);
+    final bitmapCanvas = BitmapCanvas(canvasBounds,
         RenderStrategy());
-    final RecordingCanvas canvas = RecordingCanvas(canvasBounds);
+    final canvas = RecordingCanvas(canvasBounds);
 
-    SurfacePaint paint = SurfacePaint()
+    var paint = SurfacePaint()
       ..color = const Color(0x7F7F7F7F)
       ..style = PaintingStyle.fill;
 
@@ -43,13 +43,13 @@ Future<void> testMain() async {
   }
 
   test('render conic with control point horizontal center', () async {
-    const double yStart = 20;
+    const yStart = 20;
 
-    const Offset p0 = Offset(25, yStart + 25);
-    const Offset pc = Offset(60, yStart + 150);
-    const Offset p2 = Offset(100, yStart + 50);
+    const p0 = Offset(25, yStart + 25);
+    const pc = Offset(60, yStart + 150);
+    const p2 = Offset(100, yStart + 50);
 
-    final Path path = Path();
+    final path = Path();
     path.moveTo(p0.dx, p0.dy);
     path.conicTo(pc.dx, pc.dy, p2.dx, p2.dy, 0.5);
     path.close();
@@ -61,13 +61,13 @@ Future<void> testMain() async {
   });
 
   test('render conic with control point left of start point', () async {
-    const double yStart = 20;
+    const yStart = 20;
 
-    const Offset p0 = Offset(60, yStart + 25);
-    const Offset pc = Offset(25, yStart + 150);
-    const Offset p2 = Offset(100, yStart + 50);
+    const p0 = Offset(60, yStart + 25);
+    const pc = Offset(25, yStart + 150);
+    const p2 = Offset(100, yStart + 50);
 
-    final Path path = Path();
+    final path = Path();
     path.moveTo(p0.dx, p0.dy);
     path.conicTo(pc.dx, pc.dy, p2.dx, p2.dy, 0.5);
     path.close();
@@ -79,13 +79,13 @@ Future<void> testMain() async {
   });
 
   test('render conic with control point above start point', () async {
-    const double yStart = 20;
+    const yStart = 20;
 
-    const Offset p0 = Offset(25, yStart + 125);
-    const Offset pc = Offset(60, yStart + 50);
-    const Offset p2 = Offset(100, yStart + 150);
+    const p0 = Offset(25, yStart + 125);
+    const pc = Offset(60, yStart + 50);
+    const p2 = Offset(100, yStart + 150);
 
-    final Path path = Path();
+    final path = Path();
     path.moveTo(p0.dx, p0.dy);
     path.conicTo(pc.dx, pc.dy, p2.dx, p2.dy, 0.5);
     path.close();

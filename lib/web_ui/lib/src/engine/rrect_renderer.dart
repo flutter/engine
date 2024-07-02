@@ -31,12 +31,12 @@ abstract class RRectRenderer {
   void render(ui.RRect inputRRect,
       {bool startNewPath = true, bool reverse = false}) {
     // Ensure border radius curves never overlap
-    final ui.RRect rrect = inputRRect.scaleRadii();
+    final rrect = inputRRect.scaleRadii();
 
-    double left = rrect.left;
-    double right = rrect.right;
-    double top = rrect.top;
-    double bottom = rrect.bottom;
+    var left = rrect.left;
+    var right = rrect.right;
+    var top = rrect.top;
+    var bottom = rrect.bottom;
     if (left > right) {
       left = right;
       right = rrect.left;
@@ -45,14 +45,14 @@ abstract class RRectRenderer {
       top = bottom;
       bottom = rrect.top;
     }
-    final double trRadiusX = rrect.trRadiusX.abs();
-    final double tlRadiusX = rrect.tlRadiusX.abs();
-    final double trRadiusY = rrect.trRadiusY.abs();
-    final double tlRadiusY = rrect.tlRadiusY.abs();
-    final double blRadiusX = rrect.blRadiusX.abs();
-    final double brRadiusX = rrect.brRadiusX.abs();
-    final double blRadiusY = rrect.blRadiusY.abs();
-    final double brRadiusY = rrect.brRadiusY.abs();
+    final trRadiusX = rrect.trRadiusX.abs();
+    final tlRadiusX = rrect.tlRadiusX.abs();
+    final trRadiusY = rrect.trRadiusY.abs();
+    final tlRadiusY = rrect.tlRadiusY.abs();
+    final blRadiusX = rrect.blRadiusX.abs();
+    final brRadiusX = rrect.brRadiusX.abs();
+    final blRadiusY = rrect.blRadiusY.abs();
+    final brRadiusY = rrect.brRadiusY.abs();
 
     if (!reverse) {
       if (startNewPath) {

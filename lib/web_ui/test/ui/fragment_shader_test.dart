@@ -47,7 +47,7 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const ui.Rect region = ui.Rect.fromLTWH(0, 0, 300, 300);
+  const region = ui.Rect.fromLTWH(0, 0, 300, 300);
 
   late FakeAssetScope assetScope;
   setUp(() {
@@ -63,12 +63,12 @@ Future<void> testMain() async {
   });
 
   test('fragment shader', () async {
-    final ui.FragmentProgram program = await renderer.createFragmentProgram('voronoi_shader');
-    final ui.FragmentShader shader = program.fragmentShader();
+    final program = await renderer.createFragmentProgram('voronoi_shader');
+    final shader = program.fragmentShader();
 
     Future<void> drawCircle(String goldenFilename) async {
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder, region);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder, region);
       canvas.drawCircle(const ui.Offset(150, 150), 100, ui.Paint()..shader = shader);
 
       await drawPictureUsingCurrentRenderer(recorder.endRecording());
@@ -84,11 +84,11 @@ Future<void> testMain() async {
     await drawCircle('fragment_shader_voronoi_tile25px.png');
 
     // Test reusing a Paint object with the same shader.
-    final ui.Paint reusablePaint = ui.Paint()..shader = shader;
+    final reusablePaint = ui.Paint()..shader = shader;
 
     Future<void> drawCircleReusePaint(String goldenFilename) async {
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder, region);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder, region);
       canvas.drawCircle(const ui.Offset(150, 150), 100, reusablePaint);
 
       await drawPictureUsingCurrentRenderer(recorder.endRecording());

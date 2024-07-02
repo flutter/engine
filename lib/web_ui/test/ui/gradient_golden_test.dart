@@ -23,12 +23,12 @@ Future<void> testMain() async {
     setUpTestViewDimensions: false,
   );
 
-  const Rect region = Rect.fromLTWH(0, 0, 300, 300);
+  const region = Rect.fromLTWH(0, 0, 300, 300);
 
   group('Gradients', () {
     test('Using a linear gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder, region);
       canvas.drawRect(
         const Rect.fromLTRB(50, 50, 250, 250),
         Paint()
@@ -50,8 +50,8 @@ Future<void> testMain() async {
     });
 
     test('Using a radial gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder, region);
       canvas.drawRect(
         const Rect.fromLTRB(50, 50, 250, 250),
         Paint()
@@ -73,8 +73,8 @@ Future<void> testMain() async {
     });
 
     test('Using a conical gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder, region);
       canvas.drawRect(
         const Rect.fromLTRB(50, 50, 250, 250),
         Paint()
@@ -100,8 +100,8 @@ Future<void> testMain() async {
     });
 
     test('Using a sweep gradient on a paint', () async {
-      final PictureRecorder recorder = PictureRecorder();
-      final Canvas canvas = Canvas(recorder, region);
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder, region);
       canvas.drawRect(
         const Rect.fromLTRB(50, 50, 250, 250),
         Paint()

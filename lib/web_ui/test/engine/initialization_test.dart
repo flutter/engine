@@ -56,8 +56,8 @@ void testMain() {
   test('bootstrapEngine does auto-start when _flutter.loader.didCreateEngineInitializer does not exist', () async {
     loader = null;
 
-    bool pluginsRegistered = false;
-    bool appRan = false;
+    var pluginsRegistered = false;
+    var appRan = false;
     void registerPluginsMock() {
       pluginsRegistered = true;
     }

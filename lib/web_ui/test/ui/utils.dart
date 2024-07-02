@@ -11,15 +11,15 @@ import 'package:ui/ui.dart';
 import '../common/rendering.dart';
 
 Picture drawPicture(void Function(Canvas) drawCommands) {
-  final PictureRecorder recorder = PictureRecorder();
-  final Canvas canvas = Canvas(recorder);
+  final recorder = PictureRecorder();
+  final canvas = Canvas(recorder);
   drawCommands(canvas);
   return recorder.endRecording();
 }
 
 /// Draws the [Picture]. This is in preparation for a golden test.
 Future<void> drawPictureUsingCurrentRenderer(Picture picture) async {
-  final SceneBuilder sb = SceneBuilder();
+  final sb = SceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(Offset.zero, picture);
   await renderScene(sb.build());

@@ -19,7 +19,7 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('lifecycle', () {
-      final CkPaint paint = CkPaint();
+      final paint = CkPaint();
       expect(paint.skiaObject, isNotNull);
       expect(paint.debugRef.isDisposed, isFalse);
       paint.dispose();

@@ -39,7 +39,7 @@ class Incrementable extends PrimaryRoleManager {
         return;
       }
       _pendingResync = true;
-      final int newInputValue = int.parse(_element.value!);
+      final newInputValue = int.parse(_element.value!);
       if (newInputValue > _currentSurrogateValue) {
         _currentSurrogateValue += 1;
         EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
@@ -117,7 +117,7 @@ class Incrementable extends PrimaryRoleManager {
   void _updateInputValues() {
     assert(EngineSemantics.instance.gestureMode == GestureMode.browserGestures);
 
-    final bool updateNeeded = _pendingResync ||
+    final updateNeeded = _pendingResync ||
         semanticsObject.isValueDirty ||
         semanticsObject.isIncreasedValueDirty ||
         semanticsObject.isDecreasedValueDirty;
@@ -128,19 +128,19 @@ class Incrementable extends PrimaryRoleManager {
 
     _pendingResync = false;
 
-    final String surrogateTextValue = '$_currentSurrogateValue';
+    final surrogateTextValue = '$_currentSurrogateValue';
     _element.value = surrogateTextValue;
     _element.setAttribute('aria-valuenow', surrogateTextValue);
     _element.setAttribute('aria-valuetext', semanticsObject.value!);
 
-    final bool canIncrease = semanticsObject.increasedValue!.isNotEmpty;
-    final String surrogateMaxTextValue =
+    final canIncrease = semanticsObject.increasedValue!.isNotEmpty;
+    final surrogateMaxTextValue =
         canIncrease ? '${_currentSurrogateValue + 1}' : surrogateTextValue;
     _element.max = surrogateMaxTextValue;
     _element.setAttribute('aria-valuemax', surrogateMaxTextValue);
 
-    final bool canDecrease = semanticsObject.decreasedValue!.isNotEmpty;
-    final String surrogateMinTextValue =
+    final canDecrease = semanticsObject.decreasedValue!.isNotEmpty;
+    final surrogateMinTextValue =
         canDecrease ? '${_currentSurrogateValue - 1}' : surrogateTextValue;
     _element.min = surrogateMinTextValue;
     _element.setAttribute('aria-valuemin', surrogateMinTextValue);

@@ -40,8 +40,8 @@ ui.FlutterView get implicitView =>
 /// the [CkPictureRecorder] boilerplate.
 CkPicture paintPicture(
     ui.Rect cullRect, void Function(CkCanvas canvas) painter) {
-  final CkPictureRecorder recorder = CkPictureRecorder();
-  final CkCanvas canvas = recorder.beginRecording(cullRect);
+  final recorder = CkPictureRecorder();
+  final canvas = recorder.beginRecording(cullRect);
   painter(canvas);
   return recorder.endRecording();
 }
@@ -61,7 +61,7 @@ Future<void> matchSceneGolden(
 /// layers.
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
     {required ui.Rect region}) async {
-  final LayerSceneBuilder sb = LayerSceneBuilder();
+  final sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
   await renderScene(sb.build());
@@ -74,10 +74,10 @@ Future<bool> matchImage(ui.Image left, ui.Image right) async {
   }
   int getPixel(ByteData data, int x, int y) =>
       data.getUint32((x + y * left.width) * 4);
-  final ByteData leftData = (await left.toByteData())!;
-  final ByteData rightData = (await right.toByteData())!;
-  for (int y = 0; y < left.height; y++) {
-    for (int x = 0; x < left.width; x++) {
+  final leftData = (await left.toByteData())!;
+  final rightData = (await right.toByteData())!;
+  for (var y = 0; y < left.height; y++) {
+    for (var x = 0; x < left.width; x++) {
       if (getPixel(leftData, x, y) != getPixel(rightData, x, y)) {
         return false;
       }
@@ -88,7 +88,7 @@ Future<bool> matchImage(ui.Image left, ui.Image right) async {
 
 /// Sends a platform message to create a Platform View with the given id and viewType.
 Future<void> createPlatformView(int id, String viewType) {
-  final Completer<void> completer = Completer<void>();
+  final completer = Completer<void>();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall(
@@ -105,7 +105,7 @@ Future<void> createPlatformView(int id, String viewType) {
 
 /// Disposes of the platform view with the given [id].
 Future<void> disposePlatformView(int id) {
-  final Completer<void> completer = Completer<void>();
+  final completer = Completer<void>();
   ui.PlatformDispatcher.instance.sendPlatformMessage(
     'flutter/platform_views',
     codec.encodeMethodCall(MethodCall('dispose', id)),
@@ -125,7 +125,7 @@ CkParagraph makeSimpleText(
   ui.FontWeight? fontWeight,
   ui.Color? color,
 }) {
-  final CkParagraphBuilder builder = CkParagraphBuilder(CkParagraphStyle(
+  final builder = CkParagraphBuilder(CkParagraphStyle(
     fontFamily: fontFamily ?? 'Roboto',
     fontSize: fontSize ?? 14,
     fontStyle: fontStyle ?? ui.FontStyle.normal,
@@ -136,7 +136,7 @@ CkParagraph makeSimpleText(
   ));
   builder.addText(text);
   builder.pop();
-  final CkParagraph paragraph = builder.build();
+  final paragraph = builder.build();
   paragraph.layout(const ui.ParagraphConstraints(width: 10000));
   return paragraph;
 }

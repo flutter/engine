@@ -18,7 +18,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  final EngineGoldenTester goldenTester = await EngineGoldenTester.initialize(
+  final goldenTester = await EngineGoldenTester.initialize(
     viewportSize: const Size(600, 600),
   );
 
@@ -29,8 +29,8 @@ Future<void> testMain() async {
   );
 
   void paintTest(EngineCanvas canvas, PaintTest painter) {
-    const Rect screenRect = Rect.fromLTWH(0, 0, 600, 600);
-    final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
+    const screenRect = Rect.fromLTWH(0, 0, 600, 600);
+    final recordingCanvas = RecordingCanvas(screenRect);
     painter(recordingCanvas);
     recordingCanvas.endRecording();
     recordingCanvas.apply(canvas, screenRect);
@@ -150,7 +150,7 @@ void paintTextWithClipRectTranslated(RecordingCanvas canvas) {
 const Color deepOrange = Color(0xFFFF5722);
 
 void paintTextWithClipRoundRect(RecordingCanvas canvas) {
-  final RRect roundRect = RRect.fromRectAndCorners(testBounds.inflate(-40),
+  final roundRect = RRect.fromRectAndCorners(testBounds.inflate(-40),
       topRight: const Radius.elliptical(45, 40),
       bottomLeft: const Radius.elliptical(50, 40),
       bottomRight: const Radius.circular(30));
@@ -166,11 +166,11 @@ void paintTextWithClipRoundRect(RecordingCanvas canvas) {
 
 void paintTextWithClipPath(RecordingCanvas canvas) {
   drawBackground(canvas);
-  final Path path = Path();
-  const double delta = 40.0;
-  final Rect clipBounds = testBounds.inflate(-delta);
-  final double midX = (clipBounds.left + clipBounds.right) / 2.0;
-  final double midY = (clipBounds.top + clipBounds.bottom) / 2.0;
+  final path = Path();
+  const delta = 40.0;
+  final clipBounds = testBounds.inflate(-delta);
+  final midX = (clipBounds.left + clipBounds.right) / 2.0;
+  final midY = (clipBounds.top + clipBounds.bottom) / 2.0;
   path.moveTo(clipBounds.left - delta, midY);
   path.quadraticBezierTo(midX, midY, midX, clipBounds.top - delta);
   path.quadraticBezierTo(midX, midY, clipBounds.right + delta, midY);
@@ -188,7 +188,7 @@ void paintTextWithClipPath(RecordingCanvas canvas) {
 
 void paintTextWithClipStack(RecordingCanvas canvas) {
   drawBackground(canvas);
-  final Rect inflatedRect = testBounds.inflate(-40);
+  final inflatedRect = testBounds.inflate(-40);
   canvas.clipRect(inflatedRect, ClipOp.intersect);
   canvas.rotate(math.pi / 8.0);
   canvas.translate(40, -40);

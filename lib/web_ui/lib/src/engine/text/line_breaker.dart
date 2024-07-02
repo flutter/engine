@@ -78,19 +78,19 @@ class V8LineBreakFragmenter extends TextFragmenter implements LineBreakFragmente
 }
 
 List<LineBreakFragment> breakLinesUsingV8BreakIterator(String text, JSString jsText, DomV8BreakIterator iterator) {
-  final List<LineBreakFragment> breaks = <LineBreakFragment>[];
-  int fragmentStart = 0;
+  final breaks = <LineBreakFragment>[];
+  var fragmentStart = 0;
 
   iterator.adoptText(jsText);
   iterator.first();
   while (iterator.next() != -1) {
-    final int fragmentEnd = iterator.current().toInt();
-    int trailingNewlines = 0;
-    int trailingSpaces = 0;
+    final fragmentEnd = iterator.current().toInt();
+    var trailingNewlines = 0;
+    var trailingSpaces = 0;
 
     // Calculate trailing newlines and spaces.
-    for (int i = fragmentStart; i < fragmentEnd; i++) {
-      final int codeUnit = text.codeUnitAt(i);
+    for (var i = fragmentStart; i < fragmentEnd; i++) {
+      final codeUnit = text.codeUnitAt(i);
       if (_kNewlines.contains(codeUnit)) {
         trailingNewlines++;
         trailingSpaces++;
@@ -223,27 +223,27 @@ bool _isSurrogatePair(int? codePoint) {
 /// * https://www.unicode.org/reports/tr14/tr14-45.html#Algorithm
 /// * https://www.unicode.org/Public/11.0.0/ucd/LineBreak.txt
 List<LineBreakFragment> _computeLineBreakFragments(String text) {
-  final List<LineBreakFragment> fragments = <LineBreakFragment>[];
+  final fragments = <LineBreakFragment>[];
 
   // Keeps track of the character two positions behind.
   LineCharProperty? prev2;
   LineCharProperty? prev1;
 
-  int? codePoint = getCodePoint(text, 0);
+  var codePoint = getCodePoint(text, 0);
   LineCharProperty? curr = lineLookup.findForChar(codePoint);
 
   // When there's a sequence of combining marks, this variable contains the base
   // property i.e. the property of the character preceding the sequence.
-  LineCharProperty baseOfCombiningMarks = LineCharProperty.AL;
+  var baseOfCombiningMarks = LineCharProperty.AL;
 
-  int index = 0;
-  int trailingNewlines = 0;
-  int trailingSpaces = 0;
+  var index = 0;
+  var trailingNewlines = 0;
+  var trailingSpaces = 0;
 
-  int fragmentStart = 0;
+  var fragmentStart = 0;
 
   void setBreak(LineBreakType type, int debugRuleNumber) {
-    final int fragmentEnd =
+    final fragmentEnd =
         type == LineBreakType.endOfText ? text.length : index;
     assert(fragmentEnd >= fragmentStart);
 
@@ -289,7 +289,7 @@ List<LineBreakFragment> _computeLineBreakFragments(String text) {
   // Skip index 0 because a line break can't exist at the start of text.
   index++;
 
-  int regionalIndicatorCount = 0;
+  var regionalIndicatorCount = 0;
 
   // We need to go until `text.length` in order to handle the case where the
   // paragraph ends with a hard break. In this case, there will be an empty line

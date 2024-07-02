@@ -59,7 +59,7 @@ class TextCapitalizationConfig {
   /// See: https://developers.google.com/web/updates/2015/04/autocapitalize
   /// https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/autocapitalize
   void setAutocapitalizeAttribute(DomHTMLElement domElement) {
-    String autocapitalize = '';
+    var autocapitalize = '';
     switch (textCapitalization) {
       case TextCapitalization.words:
         // TODO(mdebbar): There is a bug for `words` level capitalization in IOS now.
@@ -80,10 +80,10 @@ class TextCapitalizationConfig {
         break;
     }
     if (domInstanceOfString(domElement, 'HTMLInputElement')) {
-      final DomHTMLInputElement element = domElement as DomHTMLInputElement;
+      final element = domElement as DomHTMLInputElement;
       element.setAttribute('autocapitalize', autocapitalize);
     } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
-      final DomHTMLTextAreaElement element = domElement as
+      final element = domElement as
           DomHTMLTextAreaElement;
       element.setAttribute('autocapitalize', autocapitalize);
     }

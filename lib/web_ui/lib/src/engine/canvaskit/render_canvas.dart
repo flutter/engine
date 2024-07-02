@@ -62,11 +62,11 @@ class RenderCanvas extends DisplayCanvas {
   /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
   /// pixels.
   void _updateLogicalHtmlCanvasSize() {
-    final double devicePixelRatio =
+    final devicePixelRatio =
         EngineFlutterDisplay.instance.devicePixelRatio;
-    final double logicalWidth = _pixelWidth / devicePixelRatio;
-    final double logicalHeight = _pixelHeight / devicePixelRatio;
-    final DomCSSStyleDeclaration style = canvasElement.style;
+    final logicalWidth = _pixelWidth / devicePixelRatio;
+    final logicalHeight = _pixelHeight / devicePixelRatio;
+    final style = canvasElement.style;
     style.width = '${logicalWidth}px';
     style.height = '${logicalHeight}px';
     _currentDevicePixelRatio = devicePixelRatio;

@@ -109,7 +109,7 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
     style = null;
     geometry = null;
 
-    for (int i = 0; i < subscriptions.length; i++) {
+    for (var i = 0; i < subscriptions.length; i++) {
       subscriptions[i].cancel();
     }
     subscriptions.clear();

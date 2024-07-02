@@ -22,16 +22,16 @@ Future<void> testMain() async {
       {Rect paintRect = const Rect.fromLTRB(50, 50, 300, 300),
       Rect shaderRect = const Rect.fromLTRB(50, 50, 300, 300),
       Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
-    final RecordingCanvas rc = RecordingCanvas(region);
-    final SurfacePaint paint = SurfacePaint()..shader = shader;
-    final Path path = Path();
+    final rc = RecordingCanvas(region);
+    final paint = SurfacePaint()..shader = shader;
+    final path = Path();
     path.addRect(paintRect);
     rc.drawPath(path, paint);
     await canvasScreenshot(rc, fileName, region: region);
   }
 
   test('Should draw centered radial gradient.', () async {
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
+    const shaderRect = Rect.fromLTRB(50, 50, 300, 300);
     await testGradient(
         'radial_gradient_centered',
         Gradient.radial(
@@ -45,7 +45,7 @@ Future<void> testMain() async {
   });
 
   test('Should draw right bottom centered radial gradient.', () async {
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 300, 300);
+    const shaderRect = Rect.fromLTRB(50, 50, 300, 300);
     await testGradient(
       'radial_gradient_right_bottom',
       Gradient.radial(
@@ -60,7 +60,7 @@ Future<void> testMain() async {
   });
 
   test('Should draw with radial gradient with TileMode.clamp.', () async {
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
+    const shaderRect = Rect.fromLTRB(50, 50, 100, 100);
     await testGradient(
       'radial_gradient_tilemode_clamp',
       Gradient.radial(
@@ -77,17 +77,17 @@ Future<void> testMain() async {
     );
   });
 
-  const List<Color> colors = <Color>[
+  const colors = <Color>[
     Color(0xFF000000),
     Color(0xFFFF3C38),
     Color(0xFFFF8C42),
     Color(0xFFFFF275),
     Color(0xFF6699CC),
     Color(0xFF656D78),];
-  const List<double> colorStops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
+  const colorStops = <double>[0.0, 0.05, 0.4, 0.6, 0.9, 1.0];
 
   test('Should draw with radial gradient with TileMode.repeated.', () async {
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
+    const shaderRect = Rect.fromLTRB(50, 50, 100, 100);
     await testGradient(
         'radial_gradient_tilemode_repeated',
         Gradient.radial(
@@ -104,7 +104,7 @@ Future<void> testMain() async {
   skip: isFirefox);
 
   test('Should draw with radial gradient with TileMode.mirrored.', () async {
-    const Rect shaderRect = Rect.fromLTRB(50, 50, 100, 100);
+    const shaderRect = Rect.fromLTRB(50, 50, 100, 100);
     await testGradient(
         'radial_gradient_tilemode_mirror',
         Gradient.radial(

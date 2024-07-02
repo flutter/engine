@@ -56,7 +56,7 @@ class EngineGoldenTester {
     ui.Rect? region,
   }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final DomElement sceneElement = createDomElement('flt-scene');
+    final sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -66,7 +66,7 @@ class EngineGoldenTester {
     try {
       sceneElement.append(canvas.rootElement);
       domDocument.body!.append(sceneElement);
-      String screenshotName = '${fileName}_${canvas.runtimeType}';
+      var screenshotName = '${fileName}_${canvas.runtimeType}';
       if (canvas is BitmapCanvas) {
         screenshotName += '+canvas_measurement';
       }
@@ -84,7 +84,7 @@ class EngineGoldenTester {
 
 /// Runs the given test [body] with each type of canvas.
 void testEachCanvas(String description, CanvasTest body) {
-  const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
+  const bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap + canvas measurement)', () async {
     return body(BitmapCanvas(bounds, RenderStrategy()));
   });
@@ -105,12 +105,12 @@ CanvasParagraph paragraph(
   ui.TextStyle? textStyle,
   double maxWidth = double.infinity,
 }) {
-  final ui.ParagraphBuilder builder =
+  final builder =
       ui.ParagraphBuilder(paragraphStyle ?? ui.ParagraphStyle());
   builder.pushStyle(textStyle ?? _defaultTextStyle);
   builder.addText(text);
   builder.pop();
-  final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
+  final paragraph = builder.build() as CanvasParagraph;
   paragraph.layout(ui.ParagraphConstraints(width: maxWidth));
   return paragraph;
 }

@@ -61,8 +61,8 @@ class PersistedColorFilter extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = defaultCreateElement('flt-color-filter');
-    final DomElement container = createDomElement('flt-filter-interior');
+    final element = defaultCreateElement('flt-color-filter');
+    final container = createDomElement('flt-filter-interior');
     container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
@@ -73,7 +73,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void apply() {
     ResourceManager.instance.removeResource(_filterElement);
     _filterElement = null;
-    final EngineHtmlColorFilter? engineValue = createHtmlColorFilter(filter as EngineColorFilter);
+    final engineValue = createHtmlColorFilter(filter as EngineColorFilter);
     if (engineValue == null) {
       rootElement!.style.backgroundColor = '';
       childContainer?.style.visibility = 'visible';
@@ -222,11 +222,11 @@ class SvgFilterBuilder {
   }
 
   void setFeColorMatrix(List<double> matrix, { required String result }) {
-    final SVGFEColorMatrixElement element = createSVGFEColorMatrixElement();
+    final element = createSVGFEColorMatrixElement();
     element.type!.baseVal = kMatrixType;
     element.result!.baseVal = result;
-    final SVGNumberList value = element.values!.baseVal!;
-    for (int i = 0; i < matrix.length; i++) {
+    final value = element.values!.baseVal!;
+    for (var i = 0; i < matrix.length; i++) {
       value.appendItem(root.createSVGNumber()..value = matrix[i]);
     }
     filter.append(element);
@@ -237,7 +237,7 @@ class SvgFilterBuilder {
     required String floodOpacity,
     required String result,
   }) {
-    final SVGFEFloodElement element = createSVGFEFloodElement();
+    final element = createSVGFEFloodElement();
     element.setAttribute('flood-color', floodColor);
     element.setAttribute('flood-opacity', floodOpacity);
     element.result!.baseVal = result;
@@ -249,7 +249,7 @@ class SvgFilterBuilder {
     required String in2,
     required int mode,
   }) {
-    final SVGFEBlendElement element = createSVGFEBlendElement();
+    final element = createSVGFEBlendElement();
     element.in1!.baseVal = in1;
     element.in2!.baseVal = in2;
     element.mode!.baseVal = mode;
@@ -266,7 +266,7 @@ class SvgFilterBuilder {
     num? k4,
     required String result,
   }) {
-    final SVGFECompositeElement element = createSVGFECompositeElement();
+    final element = createSVGFECompositeElement();
     element.in1!.baseVal = in1;
     element.in2!.baseVal = in2;
     element.operator!.baseVal = operator;
@@ -292,7 +292,7 @@ class SvgFilterBuilder {
     required double width,
     required double height,
   }) {
-    final SVGFEImageElement element = createSVGFEImageElement();
+    final element = createSVGFEImageElement();
     element.href!.baseVal = href;
     element.result!.baseVal = result;
 
@@ -321,7 +321,7 @@ class SvgFilter {
 }
 
 SvgFilter svgFilterFromColorMatrix(List<double> matrix) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeColorMatrix(matrix, result: 'comp');
   return builder.build();
 }
@@ -340,7 +340,7 @@ SvgFilter svgFilterFromColorMatrix(List<double> matrix) {
 // B' = b1*R + b2*G + b3*B + b4*A + b5
 // A' = a1*R + a2*G + a3*B + a4*A + a5
 SvgFilter _srcInColorFilterToSvg(ui.Color? color) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.colorInterpolationFilters = 'sRGB';
   builder.setFeColorMatrix(
     const <double>[
@@ -372,7 +372,7 @@ SvgFilter _srcInColorFilterToSvg(ui.Color? color) {
 /// The destination that overlaps the source is composited with the source and
 /// replaces the destination. dst-atop	CR = CB*αB*αA+CA*αA*(1-αB)	αR=αA
 SvgFilter _dstATopColorFilterToSvg(ui.Color? color) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeFlood(
     floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
@@ -388,7 +388,7 @@ SvgFilter _dstATopColorFilterToSvg(ui.Color? color) {
 }
 
 SvgFilter _srcOutColorFilterToSvg(ui.Color? color) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeFlood(
     floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
@@ -404,7 +404,7 @@ SvgFilter _srcOutColorFilterToSvg(ui.Color? color) {
 }
 
 SvgFilter _xorColorFilterToSvg(ui.Color? color) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeFlood(
     floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
@@ -423,7 +423,7 @@ SvgFilter _xorColorFilterToSvg(ui.Color? color) {
 // result = k1 *in*in2 + k2*in + k3*in2 + k4.
 SvgFilter _compositeColorFilterToSvg(
     ui.Color? color, double k1, double k2, double k3, double k4) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeFlood(
     floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',
@@ -446,11 +446,11 @@ SvgFilter _compositeColorFilterToSvg(
 // First apply color filter to source to change it to [color], then
 // composite using multiplication.
 SvgFilter _modulateColorFilterToSvg(ui.Color color) {
-  final double r = color.red / 255.0;
-  final double b = color.blue / 255.0;
-  final double g = color.green / 255.0;
+  final r = color.red / 255.0;
+  final b = color.blue / 255.0;
+  final g = color.green / 255.0;
 
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeColorMatrix(
     <double>[
       0, 0, 0, 0, r,
@@ -476,7 +476,7 @@ SvgFilter _modulateColorFilterToSvg(ui.Color color) {
 // Uses feBlend element to blend source image with a color.
 SvgFilter _blendColorFilterToSvg(ui.Color? color, SvgBlendMode svgBlendMode,
     {bool swapLayers = false}) {
-  final SvgFilterBuilder builder = SvgFilterBuilder();
+  final builder = SvgFilterBuilder();
   builder.setFeFlood(
     floodColor: color?.toCssString() ?? '',
     floodOpacity: '1',

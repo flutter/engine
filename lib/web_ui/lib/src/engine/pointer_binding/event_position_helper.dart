@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui show Offset;
 
@@ -24,25 +23,25 @@ import '../window.dart';
 /// It also takes into account semantics being enabled to fix the case where
 /// offsetX, offsetY == 0 (TalkBack events).
 ui.Offset computeEventOffsetToTarget(DomMouseEvent event, EngineFlutterView view) {
-  final DomElement actualTarget = view.dom.rootElement;
+  final actualTarget = view.dom.rootElement;
   // On a TalkBack event
   if (EngineSemantics.instance.semanticsEnabled && event.offsetX == 0 && event.offsetY == 0) {
     return _computeOffsetForTalkbackEvent(event, actualTarget);
   }
 
   // On one of our text-editing nodes
-  final bool isInput = view.dom.textEditingHost.contains(event.target! as DomNode);
+  final isInput = view.dom.textEditingHost.contains(event.target! as DomNode);
   if (isInput) {
-    final EditableTextGeometry? inputGeometry = textEditing.strategy.geometry;
+    final inputGeometry = textEditing.strategy.geometry;
     if (inputGeometry != null) {
       return _computeOffsetForInputs(event, inputGeometry);
     }
   }
 
   // On another DOM Element (normally a platform view)
-  final bool isTargetOutsideOfShadowDOM = event.target != actualTarget;
+  final isTargetOutsideOfShadowDOM = event.target != actualTarget;
   if (isTargetOutsideOfShadowDOM) {
-    final DomRect origin = actualTarget.getBoundingClientRect();
+    final origin = actualTarget.getBoundingClientRect();
     // event.clientX/Y and origin.x/y are relative **to the viewport**.
     // (This doesn't work with 3D translations of the parent element.)
     // TODO(dit): Make this understand 3D transforms, https://github.com/flutter/flutter/issues/117091
@@ -66,12 +65,12 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, EngineFlutterView view
 /// using the values from the input's transform matrix.
 ui.Offset _computeOffsetForInputs(DomMouseEvent event, EditableTextGeometry inputGeometry) {
   final DomElement targetElement = event.target! as DomHTMLElement;
-  final DomHTMLElement domElement = textEditing.strategy.activeDomElement;
+  final domElement = textEditing.strategy.activeDomElement;
   assert(targetElement == domElement, 'The targeted input element must be the active input element');
-  final Float32List transformValues = inputGeometry.globalTransform;
+  final transformValues = inputGeometry.globalTransform;
   assert(transformValues.length == 16);
-  final Matrix4 transform = Matrix4.fromFloat32List(transformValues);
-  final Vector3 transformedPoint = transform.perspectiveTransform(x: event.offsetX, y: event.offsetY, z: 0);
+  final transform = Matrix4.fromFloat32List(transformValues);
+  final transformedPoint = transform.perspectiveTransform(x: event.offsetX, y: event.offsetY, z: 0);
 
   return ui.Offset(transformedPoint.x, transformedPoint.y);
 }
@@ -110,10 +109,10 @@ ui.Offset _computeOffsetForTalkbackEvent(DomMouseEvent event, DomElement actualT
   assert(EngineSemantics.instance.semanticsEnabled);
   // Use clientX/clientY as the position of the event (this is relative to
   // the top left of the page, including scroll)
-  double offsetX = event.clientX;
-  double offsetY = event.clientY;
+  var offsetX = event.clientX;
+  var offsetY = event.clientY;
   // Compute the scroll offset of actualTarget
-  DomHTMLElement parent = actualTarget as DomHTMLElement;
+  var parent = actualTarget as DomHTMLElement;
   while(parent.offsetParent != null){
     offsetX -= parent.offsetLeft - parent.scrollLeft;
     offsetY -= parent.offsetTop - parent.scrollTop;

@@ -291,7 +291,7 @@ class Rect {
       if (a == null) {
         return null;
       } else {
-        final double k = 1.0 - t;
+        final k = 1.0 - t;
         return Rect.fromLTRB(a.left * k, a.top * k, a.right * k, a.bottom * k);
       }
     } else {
@@ -367,7 +367,7 @@ class Radius {
       if (a == null) {
         return null;
       } else {
-        final double k = 1.0 - t;
+        final k = 1.0 - t;
         return Radius.elliptical(a.x * k, a.y * k);
       }
     } else {
@@ -629,7 +629,7 @@ class RRect {
   double get height => bottom - top;
   Rect get outerRect => Rect.fromLTRB(left, top, right, bottom);
   Rect get safeInnerRect {
-    const double kInsetFactor = 0.29289321881; // 1-cos(pi/4)
+    const kInsetFactor = 0.29289321881; // 1-cos(pi/4)
 
     final double leftRadius = math.max(blRadiusX, tlRadiusX);
     final double topRadius = math.max(tlRadiusY, trRadiusY);
@@ -714,7 +714,7 @@ class RRect {
   // Returns the minimum between min and scale to which radius1 and radius2
   // should be scaled with in order not to exceed the limit.
   double _getMin(double min, double radius1, double radius2, double limit) {
-    final double sum = radius1 + radius2;
+    final sum = radius1 + radius2;
     if (sum > limit && sum != 0.0) {
       return math.min(min, limit / sum);
     }
@@ -722,9 +722,9 @@ class RRect {
   }
 
   RRect scaleRadii() {
-    double scale = 1.0;
-    final double absWidth = width.abs();
-    final double absHeight = height.abs();
+    var scale = 1.0;
+    final absWidth = width.abs();
+    final absHeight = height.abs();
     scale = _getMin(scale, blRadiusY, tlRadiusY, absHeight);
     scale = _getMin(scale, tlRadiusX, trRadiusX, absWidth);
     scale = _getMin(scale, trRadiusY, brRadiusY, absHeight);
@@ -768,7 +768,7 @@ class RRect {
       return false;
     } // outside bounding box
 
-    final RRect scaled = scaleRadii();
+    final scaled = scaleRadii();
 
     double x;
     double y;
@@ -818,7 +818,7 @@ class RRect {
       if (a == null) {
         return null;
       } else {
-        final double k = 1.0 - t;
+        final k = 1.0 - t;
         return RRect._raw(
           left: a.left * k,
           top: a.top * k,
@@ -899,7 +899,7 @@ class RRect {
 
   @override
   String toString() {
-    final String rect = '${left.toStringAsFixed(1)}, '
+    final rect = '${left.toStringAsFixed(1)}, '
                         '${top.toStringAsFixed(1)}, '
                         '${right.toStringAsFixed(1)}, '
                         '${bottom.toStringAsFixed(1)}';
@@ -938,10 +938,10 @@ class RSTransform {
     required double translateX,
     required double translateY,
   }) {
-    final double scos = math.cos(rotation) * scale;
-    final double ssin = math.sin(rotation) * scale;
-    final double tx = translateX + -scos * anchorX + ssin * anchorY;
-    final double ty = translateY + -ssin * anchorX - scos * anchorY;
+    final scos = math.cos(rotation) * scale;
+    final ssin = math.sin(rotation) * scale;
+    final tx = translateX + -scos * anchorX + ssin * anchorY;
+    final ty = translateY + -ssin * anchorX - scos * anchorY;
     return RSTransform(scos, ssin, tx, ty);
   }
 

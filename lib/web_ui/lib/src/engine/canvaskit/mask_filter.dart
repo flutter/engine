@@ -12,7 +12,7 @@ class CkMaskFilter {
   CkMaskFilter.blur(ui.BlurStyle blurStyle, double sigma)
       : _blurStyle = blurStyle,
         _sigma = sigma {
-    final SkMaskFilter skMaskFilter = canvasKit.MaskFilter.MakeBlur(
+    final skMaskFilter = canvasKit.MaskFilter.MakeBlur(
       toSkBlurStyle(_blurStyle),
       _sigma,
       true,

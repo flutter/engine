@@ -17,11 +17,11 @@ bool isValidTestCase(String line) {
 }
 
 String _checkReplacement(String line, {required bool isV8}) {
-  String replacement = line;
+  var replacement = line;
 
   // Special cases for rules LB8, LB11, LB13, LB14, LB15, LB16, LB17 to allow
   // line breaks after spaces.
-  final RegExp spacesRegex = RegExp(r'SPACE \(SP\) × \[(8|11|13|14|15|16|17)\.');
+  final spacesRegex = RegExp(r'SPACE \(SP\) × \[(8|11|13|14|15|16|17)\.');
   if (replacement.contains(spacesRegex)) {
     replacement = replacement
         .replaceAll('0020 ×', '0020 ÷') // SPACE (SP)
@@ -32,7 +32,7 @@ String _checkReplacement(String line, {required bool isV8}) {
     // Some test cases contradict rule LB25, so we are fixing them with the few
     // regexes below.
 
-    final RegExp lb25Regex1 = RegExp(r'\((CP_CP30|CL)\)(.*?) ÷ \[999\.0\] (PERCENT|DOLLAR)');
+    final lb25Regex1 = RegExp(r'\((CP_CP30|CL)\)(.*?) ÷ \[999\.0\] (PERCENT|DOLLAR)');
     if (replacement.contains(lb25Regex1)) {
       replacement = replacement
           .replaceAll(' ÷ 0024', ' × 0024') // DOLLAR SIGN (PR)
@@ -42,7 +42,7 @@ String _checkReplacement(String line, {required bool isV8}) {
             (Match m) => '(${m.group(1)})${m.group(2)} × [999.0] ${m.group(3)}',
           );
     }
-    final RegExp lb25Regex2 = RegExp(r'\((IS|SY)\)(.*?) ÷ \[999\.0\] (DIGIT)');
+    final lb25Regex2 = RegExp(r'\((IS|SY)\)(.*?) ÷ \[999\.0\] (DIGIT)');
     if (replacement.contains(lb25Regex2)) {
       replacement = replacement
           .replaceAll(' ÷ 0030', ' × 0030') // DIGIT ZERO (NU)
@@ -51,7 +51,7 @@ String _checkReplacement(String line, {required bool isV8}) {
             (Match m) => '(${m.group(1)})${m.group(2)} × [999.0] ${m.group(3)}',
           );
     }
-    final RegExp lb25Regex3 = RegExp(r'\((PR|PO)\)(.*?) ÷ \[999\.0\] (LEFT)');
+    final lb25Regex3 = RegExp(r'\((PR|PO)\)(.*?) ÷ \[999\.0\] (LEFT)');
     if (replacement.contains(lb25Regex3)) {
       replacement = replacement
           .replaceAll(' ÷ 0028', ' × 0028') // LEFT PARENTHESIS (OP_OP30)
@@ -68,7 +68,7 @@ String _checkReplacement(String line, {required bool isV8}) {
     // v8BreakIterator deviates from the spec around Hiragana and Katakana
     // letters.
 
-    final RegExp hiragana21Regex = RegExp(r' × \[21\.03\] (HIRAGANA LETTER|KATAKANA LETTER|KATAKANA-HIRAGANA)');
+    final hiragana21Regex = RegExp(r' × \[21\.03\] (HIRAGANA LETTER|KATAKANA LETTER|KATAKANA-HIRAGANA)');
     if (replacement.contains(hiragana21Regex) && !replacement.contains('(BB)') && !replacement.contains('(PR)')) {
       replacement = replacement
           .replaceAll(' × 3041', ' ÷ 3041') // HIRAGANA LETTER (CJ)
@@ -87,7 +87,7 @@ String _checkReplacement(String line, {required bool isV8}) {
             ' ÷ [16.0] HIRAGANA LETTER',
           );
     }
-    final RegExp hiraganaPercentRegex = RegExp(r'HIRAGANA .*? ÷ \[999\.0\] PERCENT');
+    final hiraganaPercentRegex = RegExp(r'HIRAGANA .*? ÷ \[999\.0\] PERCENT');
     if (replacement.contains(hiraganaPercentRegex)) {
       replacement = replacement
           .replaceAll(' ÷ 0025', ' × 0025') // PERCENT SIGN (PO)
@@ -100,7 +100,7 @@ String _checkReplacement(String line, {required bool isV8}) {
     // v8BreakIterator also deviates from the spec around hyphens, commas and
     // full stops.
 
-    final RegExp hyphenRegex = RegExp(r'\((HY|IS)\)(.*?) ÷ \[999\.0\] (DIGIT|NUMBER|SECTION|THAI|<reserved-50005>)');
+    final hyphenRegex = RegExp(r'\((HY|IS)\)(.*?) ÷ \[999\.0\] (DIGIT|NUMBER|SECTION|THAI|<reserved-50005>)');
     if (replacement.contains(hyphenRegex)) {
       replacement = replacement
           .replaceAll(' ÷ 0030', ' × 0030') // DIGIT ZERO (NU)
@@ -130,23 +130,23 @@ final RegExp charWithBracketsRegex = RegExp(
 );
 
 TestCase _parse(String line) {
-  final int hashIndex = line.indexOf('#');
-  final List<String> sequence =
+  final hashIndex = line.indexOf('#');
+  final sequence =
       line.substring(0, hashIndex).trim().split(spaceRegex);
-  final String explanation = line.substring(hashIndex + 1).trim();
+  final explanation = line.substring(hashIndex + 1).trim();
 
-  final List<Sign> signs = <Sign>[];
-  final Match signMatch = signRegex.matchAsPrefix(explanation)!;
+  final signs = <Sign>[];
+  final signMatch = signRegex.matchAsPrefix(explanation)!;
   signs.add(Sign._(code: signMatch.group(1)!, rule: signMatch.group(2)!));
 
-  final List<Char> chars = <Char>[];
+  final chars = <Char>[];
 
-  int i = signMatch.group(0)!.length;
+  var i = signMatch.group(0)!.length;
   while (i < explanation.length) {
-    final Match charMatch = explanation[i] == '<'
+    final charMatch = explanation[i] == '<'
         ? charWithBracketsRegex.matchAsPrefix(explanation, i)!
         : charRegex.matchAsPrefix(explanation, i)!;
-    final int charCode = int.parse(sequence[2 * chars.length + 1], radix: 16);
+    final charCode = int.parse(sequence[2 * chars.length + 1], radix: 16);
     chars.add(Char._(
       code: charCode,
       name: charMatch.group(1)!,
@@ -154,7 +154,7 @@ TestCase _parse(String line) {
     ));
     i += charMatch.group(0)!.length;
 
-    final Match signMatch = signRegex.matchAsPrefix(explanation, i)!;
+    final signMatch = signRegex.matchAsPrefix(explanation, i)!;
     signs.add(Sign._(code: signMatch.group(1)!, rule: signMatch.group(2)!));
     i += signMatch.group(0)!.length;
   }

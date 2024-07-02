@@ -32,28 +32,28 @@ Future<void> testMain() async {
   });
 
   test('drawColor should cover entire viewport', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 400, 400);
+    const region = Rect.fromLTWH(0, 0, 400, 400);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture testPicture = _drawTestPicture(region, useColor: true);
+    final builder = SurfaceSceneBuilder();
+    final testPicture = _drawTestPicture(region, useColor: true);
     builder.addPicture(Offset.zero, testPicture);
     await sceneScreenshot(builder, 'canvas_draw_color', region: region);
   }, skip: true); // TODO(ferhat): matchGolden fails when a div covers viewport.
 
   test('drawPaint should cover entire viewport', () async {
-    const Rect region = Rect.fromLTWH(0, 0, 400, 400);
+    const region = Rect.fromLTWH(0, 0, 400, 400);
 
-    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture testPicture = _drawTestPicture(region);
+    final builder = SurfaceSceneBuilder();
+    final testPicture = _drawTestPicture(region);
     builder.addPicture(Offset.zero, testPicture);
     await sceneScreenshot(builder, 'canvas_draw_paint', region: region);
   }, skip: true); // TODO(ferhat): matchGolden fails when a div covers viewport.);
 }
 
 Picture _drawTestPicture(Rect region, {bool useColor = false}) {
-  final EnginePictureRecorder recorder = PictureRecorder() as EnginePictureRecorder;
-  const Rect r = Rect.fromLTWH(0, 0, 200, 200);
-  final RecordingCanvas canvas = recorder.beginRecording(r);
+  final recorder = PictureRecorder() as EnginePictureRecorder;
+  const r = Rect.fromLTWH(0, 0, 200, 200);
+  final canvas = recorder.beginRecording(r);
 
   canvas.drawRect(
       region.deflate(8.0),

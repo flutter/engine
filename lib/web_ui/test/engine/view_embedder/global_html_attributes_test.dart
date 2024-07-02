@@ -13,9 +13,9 @@ void main() {
 void doTests() {
   group('GlobalHtmlAttributes', () {
     test('applies global attributes to the root and host elements', () {
-      final DomElement hostElement = createDomElement('host-element');
-      final DomElement rootElement = createDomElement('root-element');
-      final GlobalHtmlAttributes globalHtmlAttributes = GlobalHtmlAttributes(
+      final hostElement = createDomElement('host-element');
+      final rootElement = createDomElement('root-element');
+      final globalHtmlAttributes = GlobalHtmlAttributes(
         rootElement: rootElement,
         hostElement: hostElement,
       );

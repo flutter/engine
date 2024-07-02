@@ -22,7 +22,7 @@ Future<void> testMain() async {
   );
 
   test('Blend circles with difference and color', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.drawRect(
@@ -58,7 +58,7 @@ Future<void> testMain() async {
   });
 
   test('Blend circle and text with multiply', () async {
-    final RecordingCanvas rc =
+    final rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
     rc.drawRect(
@@ -95,11 +95,11 @@ Future<void> testMain() async {
 }
 
 HtmlImage createTestImage() {
-  const int width = 100;
-  const int height = 50;
-  final DomCanvasElement canvas =
+  const width = 100;
+  const height = 50;
+  final canvas =
       createDomCanvasElement(width: width, height: height);
-  final DomCanvasRenderingContext2D ctx = canvas.context2D;
+  final ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
   ctx.fill();
@@ -109,7 +109,7 @@ HtmlImage createTestImage() {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
-  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
+  final imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

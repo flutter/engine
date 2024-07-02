@@ -31,7 +31,7 @@ class SkwasmPicture extends SkwasmObjectWrapper<RawPicture> implements ScenePict
   @override
   ui.Rect get cullRect {
     return withStackScope((StackScope s) {
-      final RawRect rect = s.allocFloatArray(4);
+      final rect = s.allocFloatArray(4);
       pictureGetCullRect(handle, rect);
       return s.convertRectFromNative(rect);
     });
@@ -48,7 +48,7 @@ class SkwasmPictureRecorder extends SkwasmObjectWrapper<RawPictureRecorder> impl
   SkwasmPicture endRecording() {
     isRecording = false;
 
-    final SkwasmPicture picture = SkwasmPicture.fromHandle(
+    final picture = SkwasmPicture.fromHandle(
       pictureRecorderEndRecording(handle)
     );
     ui.Picture.onCreate?.call(picture);

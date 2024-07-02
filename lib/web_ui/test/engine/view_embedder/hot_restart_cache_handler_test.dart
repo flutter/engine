@@ -29,9 +29,9 @@ void doTests() {
 
   group('registerElementForCleanup', () {
     test('stores elements in a global cache', () async {
-      final DomElement toBeCached = createDomElement('some-element-to-cache');
-      final DomElement other = createDomElement('other-element-to-cache');
-      final DomElement another = createDomElement('another-element-to-cache');
+      final toBeCached = createDomElement('some-element-to-cache');
+      final other = createDomElement('other-element-to-cache');
+      final another = createDomElement('another-element-to-cache');
 
       registerElementForCleanup(toBeCached);
       registerElementForCleanup(other);
@@ -63,14 +63,14 @@ void doTests() {
     });
 
     test('Registers an element in the DOM cache', () async {
-      final DomElement element = createDomElement('for-test');
+      final element = createDomElement('for-test');
       cache.registerElement(element);
 
       expect(_jsHotRestartStore!.toDart, <DomElement>[element]);
     });
 
     test('Registers elements in the DOM cache', () async {
-      final DomElement element = createDomElement('for-test');
+      final element = createDomElement('for-test');
       domDocument.body!.append(element);
 
       cache.registerElement(element);
@@ -80,8 +80,8 @@ void doTests() {
 
     test('Clears registered elements from the DOM and the cache upon restart',
         () async {
-      final DomElement element = createDomElement('for-test');
-      final DomElement element2 = createDomElement('for-test-two');
+      final element = createDomElement('for-test');
+      final element2 = createDomElement('for-test-two');
       domDocument.body!.append(element);
       domDocument.body!.append(element2);
 

@@ -44,16 +44,16 @@ class ResourceManager {
       return _resourcesHost!;
     }
 
-    final DomElement resourcesHost = domDocument.createElement(resourcesHostTagName);
+    final resourcesHost = domDocument.createElement(resourcesHostTagName);
     resourcesHost.style.visibility = 'hidden';
     _resourcesHost = resourcesHost;
 
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.webkit) {
-      final DomElement rootElement = _domManager.rootElement;
+      final rootElement = _domManager.rootElement;
       // The resourcesHost *must* be a sibling of the rootElement.
       rootElement.parent!.prepend(resourcesHost);
     } else {
-      final DomShadowRoot renderingHost = _domManager.renderingHost;
+      final renderingHost = _domManager.renderingHost;
       renderingHost.prepend(resourcesHost);
     }
     return resourcesHost;

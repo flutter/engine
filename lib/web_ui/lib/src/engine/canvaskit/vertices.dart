@@ -82,7 +82,7 @@ class CkVertices implements ui.Vertices {
     this._colors,
     this._indices,
   ) {
-    final SkVertices skVertices = canvasKit.MakeVertices(
+    final skVertices = canvasKit.MakeVertices(
       _mode,
       _positions,
       _textureCoordinates,

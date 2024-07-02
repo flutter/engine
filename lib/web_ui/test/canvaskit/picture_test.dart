@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -23,10 +22,10 @@ void testMain() {
 
     group('lifecycle', () {
       test('can be disposed of manually', () {
-        final ui.PictureRecorder recorder = ui.PictureRecorder();
-        final ui.Canvas canvas = ui.Canvas(recorder);
+        final recorder = ui.PictureRecorder();
+        final canvas = ui.Canvas(recorder);
         canvas.drawPaint(ui.Paint());
-        final CkPicture picture = recorder.endRecording() as CkPicture;
+        final picture = recorder.endRecording() as CkPicture;
         expect(picture.skiaObject, isNotNull);
         expect(picture.debugDisposed, isFalse);
         picture.debugCheckNotDisposed('Test.'); // must not throw
@@ -53,29 +52,29 @@ void testMain() {
     });
 
     test('toImageSync', () async {
-      const ui.Color color = ui.Color(0xFFAAAAAA);
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      const color = ui.Color(0xFFAAAAAA);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
       canvas.drawPaint(ui.Paint()..color = color);
-      final ui.Picture picture = recorder.endRecording();
-      final ui.Image image = picture.toImageSync(10, 15);
+      final picture = recorder.endRecording();
+      final image = picture.toImageSync(10, 15);
 
       expect(image.width, 10);
       expect(image.height, 15);
 
-      final ByteData? data = await image.toByteData();
+      final data = await image.toByteData();
       expect(data, isNotNull);
       expect(data!.lengthInBytes, 10 * 15 * 4);
       expect(data.buffer.asUint32List().first, color.value);
     });
 
     test('cullRect bounds are tight', () async {
-      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
-      const ui.Color green = ui.Color.fromRGBO(0, 255, 0, 1);
-      const ui.Color blue = ui.Color.fromRGBO(0, 0, 255, 1);
+      const red = ui.Color.fromRGBO(255, 0, 0, 1);
+      const green = ui.Color.fromRGBO(0, 255, 0, 1);
+      const blue = ui.Color.fromRGBO(0, 0, 255, 1);
 
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
       canvas.drawRRect(
         ui.RRect.fromRectXY(const ui.Rect.fromLTRB(20, 20, 150, 300), 15, 15),
         ui.Paint()..color = red,
@@ -90,22 +89,22 @@ void testMain() {
         ui.Paint()..color = blue,
       );
 
-      final CkPicture picture = recorder.endRecording() as CkPicture;
-      final ui.Rect bounds = picture.cullRect;
+      final picture = recorder.endRecording() as CkPicture;
+      final bounds = picture.cullRect;
       // Top left bounded by the red rrect, right bounded by right edge
       // of red rrect, bottom bounded by bottom of green circle.
       expect(bounds, equals(const ui.Rect.fromLTRB(20, 20, 300, 300)));
     });
 
     test('cullRect bounds with infinite size draw', () async {
-      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
+      const red = ui.Color.fromRGBO(255, 0, 0, 1);
 
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
       canvas.drawColor(red, ui.BlendMode.src);
 
-      final CkPicture picture = recorder.endRecording() as CkPicture;
-      final ui.Rect bounds = picture.cullRect;
+      final picture = recorder.endRecording() as CkPicture;
+      final bounds = picture.cullRect;
       // Since the drawColor command fills the entire canvas, the computed
       // bounds default to the cullRect that is passed in when the
       // PictureRecorder is created, ie ui.Rect.largest.
@@ -113,12 +112,12 @@ void testMain() {
     });
 
     test('approximateBytesUsed', () async {
-      const ui.Color red = ui.Color.fromRGBO(255, 0, 0, 1);
-      const ui.Color green = ui.Color.fromRGBO(0, 255, 0, 1);
-      const ui.Color blue = ui.Color.fromRGBO(0, 0, 255, 1);
+      const red = ui.Color.fromRGBO(255, 0, 0, 1);
+      const green = ui.Color.fromRGBO(0, 255, 0, 1);
+      const blue = ui.Color.fromRGBO(0, 0, 255, 1);
 
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
       canvas.drawRRect(
         ui.RRect.fromRectXY(const ui.Rect.fromLTRB(20, 20, 150, 300), 15, 15),
         ui.Paint()..color = red,
@@ -133,8 +132,8 @@ void testMain() {
         ui.Paint()..color = blue,
       );
 
-      final CkPicture picture = recorder.endRecording() as CkPicture;
-      final int bytesUsed = picture.approximateBytesUsed;
+      final picture = recorder.endRecording() as CkPicture;
+      final bytesUsed = picture.approximateBytesUsed;
       // Sanity check: the picture should use more than 20 bytes of memory.
       expect(bytesUsed, greaterThan(20));
     });

@@ -44,7 +44,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       await renderScene(sb.build());
@@ -52,10 +52,10 @@ void testMain() {
       // The platform view is now split in two parts. The contents live
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
-      final DomElement contents = platformViewsHost.querySelector('#view-0')!;
-      final DomElement slot = sceneHost.querySelector('slot')!;
-      final DomElement contentsHost = contents.parent!;
-      final DomElement slotHost = slot.parent!;
+      final contents = platformViewsHost.querySelector('#view-0')!;
+      final slot = sceneHost.querySelector('slot')!;
+      final contentsHost = contents.parent!;
+      final slotHost = slot.parent!;
 
       expect(contents, isNotNull,
           reason: 'The view from the factory is injected in the DOM.');
@@ -76,7 +76,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.pushClipRRect(
           ui.RRect.fromLTRBR(0, 0, 10, 10, const ui.Radius.circular(3)));
@@ -116,9 +116,9 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      final Matrix4 scaleMatrix = Matrix4.identity()
+      final scaleMatrix = Matrix4.identity()
         ..scale(5, 5)
         ..translate(100, 100);
       sb.pushTransform(scaleMatrix.toFloat64());
@@ -127,7 +127,7 @@ void testMain() {
       await renderScene(sb.build());
 
       // Transformations happen on the slot element.
-      final DomElement slotHost =
+      final slotHost =
           sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
@@ -146,19 +146,19 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.addPlatformView(0, offset: const ui.Offset(3, 4), width: 5, height: 6);
       await renderScene(sb.build());
 
-      final DomElement slotHost =
+      final slotHost =
           sceneHost.querySelector('flt-platform-view-slot')!;
-      final DomCSSStyleDeclaration style = slotHost.style;
+      final style = slotHost.style;
 
       expect(style.transform, 'matrix(1, 0, 0, 1, 3, 4)');
       expect(style.width, '5px');
       expect(style.height, '6px');
 
-      final DomRect slotRect = slotHost.getBoundingClientRect();
+      final slotRect = slotHost.getBoundingClientRect();
       expect(slotRect.left, 3);
       expect(slotRect.top, 4);
       expect(slotRect.right, 8);
@@ -169,7 +169,7 @@ void testMain() {
     // elements starting from `viewHost`, up until and excluding
     // <flt-scene-host>.
     List<String> getTransformChain(DomElement viewHost) {
-      final List<String> chain = <String>[];
+      final chain = <String>[];
       DomElement? element = viewHost;
       while (element != null &&
           element.tagName.toLowerCase() != 'flt-scene-host') {
@@ -186,7 +186,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      LayerSceneBuilder sb = LayerSceneBuilder();
+      var sb = LayerSceneBuilder();
       sb.pushOffset(3, 3);
       sb.pushClipRect(ui.Rect.largest);
       sb.pushOffset(6, 6);
@@ -195,7 +195,7 @@ void testMain() {
       await renderScene(sb.build());
 
       // Transformations happen on the slot element.
-      DomElement slotHost = sceneHost.querySelector('flt-platform-view-slot')!;
+      var slotHost = sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
         getTransformChain(slotHost),
@@ -235,7 +235,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(1, 1);
       sb.pushOffset(2, 2);
       sb.pushOffset(3, 3);
@@ -243,7 +243,7 @@ void testMain() {
       await renderScene(sb.build());
 
       // Transformations happen on the slot element.
-      final DomElement slotHost =
+      final slotHost =
           sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
@@ -260,7 +260,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(3, 3);
       sb.pushClipRect(ui.Rect.largest);
       sb.pushOffset(6, 6);
@@ -270,7 +270,7 @@ void testMain() {
       await renderScene(sb.build());
 
       // Transformations happen on the slot element.
-      final DomElement slotHost =
+      final slotHost =
           sceneHost.querySelector('flt-platform-view-slot')!;
 
       expect(
@@ -284,14 +284,14 @@ void testMain() {
     });
 
     test('renders overlays on top of platform views', () async {
-      final CkPicture testPicture =
+      final testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
       });
 
       // Initialize all platform views to be used in the test.
-      final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < 16; i++) {
+      final platformViewIds = <int>[];
+      for (var i = 0; i < 16; i++) {
         ui_web.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
@@ -301,9 +301,9 @@ void testMain() {
       }
 
       Future<void> renderTestScene({required int viewCount}) async {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
-        for (int i = 0; i < viewCount; i++) {
+        for (var i = 0; i < viewCount; i++) {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(i, width: 10, height: 10);
         }
@@ -398,9 +398,9 @@ void testMain() {
       // Frame 6:
       //   Render: deleted platform views.
       //   Expect: error.
-      for (final int id in platformViewIds) {
-        const StandardMethodCodec codec = StandardMethodCodec();
-        final Completer<void> completer = Completer<void>();
+      for (final id in platformViewIds) {
+        const codec = StandardMethodCodec();
+        final completer = Completer<void>();
         ui.PlatformDispatcher.instance.sendPlatformMessage(
           'flutter/platform_views',
           codec.encodeMethodCall(MethodCall(
@@ -432,14 +432,14 @@ void testMain() {
     });
 
     test('correctly reuses overlays', () async {
-      final CkPicture testPicture =
+      final testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
       });
 
       // Initialize all platform views to be used in the test.
-      final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < 20; i++) {
+      final platformViewIds = <int>[];
+      for (var i = 0; i < 20; i++) {
         ui_web.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
@@ -449,9 +449,9 @@ void testMain() {
       }
 
       Future<void> renderTestScene(List<int> views) async {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
-        for (final int view in views) {
+        for (final view in views) {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(view, width: 10, height: 10);
         }
@@ -566,7 +566,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      LayerSceneBuilder sb = LayerSceneBuilder();
+      var sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       await renderScene(sb.build());
@@ -596,19 +596,19 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
+      final image = await CkBrowserImageDecoder.create(
         data: kAnimatedGif,
         debugSource: 'test',
       );
-      final ui.FrameInfo frame = await image.getNextFrame();
-      final CkImage ckImage = frame.image as CkImage;
+      final frame = await image.getNextFrame();
+      final ckImage = frame.image as CkImage;
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      final CkPictureRecorder recorder = CkPictureRecorder();
-      final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+      final recorder = CkPictureRecorder();
+      final canvas = recorder.beginRecording(ui.Rect.largest);
       canvas.drawImage(ckImage, ui.Offset.zero, CkPaint());
-      final CkPicture picture = recorder.endRecording();
+      final picture = recorder.endRecording();
       sb.addPicture(ui.Offset.zero, picture);
       sb.addPlatformView(0, width: 10, height: 10);
 
@@ -641,7 +641,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      LayerSceneBuilder sb = LayerSceneBuilder();
+      var sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       await renderScene(sb.build());
@@ -691,7 +691,7 @@ void testMain() {
       await createPlatformView(0, 'test-platform-view');
 
       Future<void> renderTestScene() async {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
         sb.pushClipRRect(
             ui.RRect.fromLTRBR(0, 0, 10, 10, const ui.Radius.circular(3)));
@@ -721,7 +721,7 @@ void testMain() {
       );
       await createPlatformView(0, 'test-platform-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.pushClipRect(ui.Rect.zero);
       sb.addPlatformView(0, width: 10, height: 10);
@@ -732,7 +732,7 @@ void testMain() {
     });
 
     test('does not create overlays for invisible platform views', () async {
-      final CkPicture testPicture =
+      final testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
       });
@@ -757,7 +757,7 @@ void testMain() {
       expect(PlatformViewManager.instance.isInvisible(0), isFalse);
       expect(PlatformViewManager.instance.isInvisible(1), isTrue);
 
-      LayerSceneBuilder sb = LayerSceneBuilder();
+      var sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPicture(ui.Offset.zero, testPicture);
       sb.addPlatformView(1, width: 10, height: 10);
@@ -988,7 +988,7 @@ void testMain() {
       await createPlatformView(1, 'test-view');
       await createPlatformView(2, 'test-view');
 
-      final LayerSceneBuilder sb = LayerSceneBuilder()
+      final sb = LayerSceneBuilder()
         ..pushOffset(0, 0)
         ..addPlatformView(0, width: 10, height: 10)
         ..addPlatformView(1, width: 10, height: 10)
@@ -1004,7 +1004,7 @@ void testMain() {
       ]);
 
       expect(() {
-        final HtmlViewEmbedder embedder = (renderer as CanvasKitRenderer)
+        final embedder = (renderer as CanvasKitRenderer)
             .debugGetRasterizerForView(implicitView)!
             .viewEmbedder;
         // The following line used to cause a "Concurrent modification during iteration"
@@ -1037,7 +1037,7 @@ void testMain() {
       // Scene 1: Pictures just overlap with the most recently painted platform
       // view. Analogous to third-party images with subtitles overlaid. Should
       // only need one overlay at the end of the scene.
-      final LayerSceneBuilder sb1 = LayerSceneBuilder();
+      final sb1 = LayerSceneBuilder();
       sb1.pushOffset(0, 0);
       sb1.addPlatformView(0,
           offset: const ui.Offset(10, 10), width: 50, height: 50);
@@ -1051,7 +1051,7 @@ void testMain() {
           offset: const ui.Offset(130, 10), width: 50, height: 50);
       sb1.addPicture(
           ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(132, 12, 10, 10)));
-      final LayerScene scene1 = sb1.build();
+      final scene1 = sb1.build();
       await renderScene(scene1);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _platformView,
@@ -1063,7 +1063,7 @@ void testMain() {
       // Scene 2: Same as scene 1 but with a background painted first. Should only
       // need a canvas for the background and one more for the rest of the
       // pictures.
-      final LayerSceneBuilder sb2 = LayerSceneBuilder();
+      final sb2 = LayerSceneBuilder();
       sb2.pushOffset(0, 0);
       sb2.addPicture(
           ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
@@ -1079,7 +1079,7 @@ void testMain() {
           offset: const ui.Offset(130, 10), width: 50, height: 50);
       sb2.addPicture(
           ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(132, 12, 10, 10)));
-      final LayerScene scene2 = sb2.build();
+      final scene2 = sb2.build();
       await renderScene(scene2);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
@@ -1092,7 +1092,7 @@ void testMain() {
       // Scene 3: Paints a full-screen picture between each platform view. This
       // is the worst case scenario. There should be an overlay between each
       // platform view.
-      final LayerSceneBuilder sb3 = LayerSceneBuilder();
+      final sb3 = LayerSceneBuilder();
       sb3.pushOffset(0, 0);
       sb3.addPicture(
           ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
@@ -1108,7 +1108,7 @@ void testMain() {
           offset: const ui.Offset(130, 10), width: 50, height: 50);
       sb3.addPicture(
           ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 300, 300)));
-      final LayerScene scene3 = sb3.build();
+      final scene3 = sb3.build();
       await renderScene(scene3);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
@@ -1129,7 +1129,7 @@ void testMain() {
       );
 
       CkPicture rectPicture(double l, double t, double w, double h) {
-        final ui.Rect rect = ui.Rect.fromLTWH(l, t, w, h);
+        final rect = ui.Rect.fromLTWH(l, t, w, h);
         return paintPicture(rect, (CkCanvas canvas) {
           canvas.drawRect(
               rect, CkPaint()..color = const ui.Color.fromARGB(255, 255, 0, 0));
@@ -1142,7 +1142,7 @@ void testMain() {
       expect(PlatformViewManager.instance.isVisible(0), isTrue);
       expect(PlatformViewManager.instance.isVisible(1), isTrue);
 
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
 
       // First picture-view-picture stack.
       {
@@ -1182,7 +1182,7 @@ void testMain() {
         sb.pop();
       }
 
-      final LayerScene scene1 = sb.build();
+      final scene1 = sb.build();
       await renderScene(scene1);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
@@ -1211,15 +1211,15 @@ void testMain() {
       expect(PlatformViewManager.instance.isVisible(0), isTrue);
 
       // Test optimization correctly computes bounds with transforms and clips.
-      final LayerSceneBuilder sb = LayerSceneBuilder();
+      final sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
-      final Matrix4 scaleMatrix = Matrix4.identity()..scale(3, 3, 1);
+      final scaleMatrix = Matrix4.identity()..scale(3, 3, 1);
       sb.pushTransform(scaleMatrix.toFloat64());
       sb.pushClipRect(const ui.Rect.fromLTWH(10, 10, 10, 10));
       sb.addPicture(
           ui.Offset.zero, rectPicture(const ui.Rect.fromLTWH(0, 0, 20, 20)));
       sb.addPlatformView(0, width: 20, height: 20);
-      final LayerScene scene = sb.build();
+      final scene = sb.build();
       await renderScene(scene);
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
@@ -1228,14 +1228,14 @@ void testMain() {
     });
 
     test('can customize amount of overlays', () async {
-      final CkPicture testPicture =
+      final testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
       });
 
       // Initialize all platform views to be used in the test.
-      final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < 16; i++) {
+      final platformViewIds = <int>[];
+      for (var i = 0; i < 16; i++) {
         ui_web.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
@@ -1245,9 +1245,9 @@ void testMain() {
       }
 
       Future<void> renderTestScene({required int viewCount}) async {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
-        for (int i = 0; i < viewCount; i++) {
+        for (var i = 0; i < viewCount; i++) {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(i, width: 10, height: 10);
         }
@@ -1299,14 +1299,14 @@ void testMain() {
     test(
         'correctly rearranges pictures to second-to-last canvas '
         'when hitting canvas limit', () async {
-      final CkPicture testPicture =
+      final testPicture =
           paintPicture(const ui.Rect.fromLTRB(0, 0, 10, 10), (CkCanvas canvas) {
         canvas.drawCircle(const ui.Offset(5, 5), 5, CkPaint());
       });
 
       // Initialize all platform views to be used in the test.
-      final List<int> platformViewIds = <int>[];
-      for (int i = 0; i < 20; i++) {
+      final platformViewIds = <int>[];
+      for (var i = 0; i < 20; i++) {
         ui_web.platformViewRegistry.registerViewFactory(
           'test-platform-view',
           (int viewId) => createDomHTMLDivElement()..id = 'view-$i',
@@ -1316,9 +1316,9 @@ void testMain() {
       }
 
       Future<void> renderTestScene(List<int> views) async {
-        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final sb = LayerSceneBuilder();
         sb.pushOffset(0, 0);
-        for (final int view in views) {
+        for (final view in views) {
           sb.addPicture(ui.Offset.zero, testPicture);
           sb.addPlatformView(view, width: 10, height: 10);
         }
@@ -1379,11 +1379,11 @@ void testMain() {
       ]);
 
       // The second-to-last canvas should have all the extra pictures.
-      final Rendering rendering = CanvasKitRenderer.instance
+      final rendering = CanvasKitRenderer.instance
           .debugGetRasterizerForView(implicitView)!
           .viewEmbedder
           .debugActiveRendering;
-      final List<int> numPicturesPerCanvas = rendering.canvases
+      final numPicturesPerCanvas = rendering.canvases
           .map((RenderingRenderCanvas canvas) => canvas.pictures.length)
           .toList();
       expect(numPicturesPerCanvas, <int>[1, 1, 1, 1, 1, 1, 12, 1]);
@@ -1440,11 +1440,11 @@ void testMain() {
       ]);
 
       // The last canvas should have all the pictures.
-      final Rendering secondRendering = CanvasKitRenderer.instance
+      final secondRendering = CanvasKitRenderer.instance
           .debugGetRasterizerForView(implicitView)!
           .viewEmbedder
           .debugActiveRendering;
-      final List<int> picturesPerCanvasInSecondRendering = secondRendering
+      final picturesPerCanvasInSecondRendering = secondRendering
           .canvases
           .map((RenderingRenderCanvas canvas) => canvas.pictures.length)
           .toList();
@@ -1476,7 +1476,7 @@ void _expectSceneMatches(
   String? reason,
 }) {
   // Convert the scene elements to its corresponding array of _EmbeddedViewMarker
-  final List<_EmbeddedViewMarker> sceneElements = sceneHost.children
+  final sceneElements = sceneHost.children
       .where((DomElement element) => element.tagName != 'svg')
       .map((DomElement element) =>
           _tagToViewMarker[element.tagName.toLowerCase()]!)

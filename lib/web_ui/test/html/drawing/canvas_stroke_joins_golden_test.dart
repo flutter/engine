@@ -14,7 +14,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 300, 300);
+  const region = Rect.fromLTWH(0, 0, 300, 300);
 
   late BitmapCanvas canvas;
 
@@ -42,20 +42,20 @@ void paintStrokeJoins(BitmapCanvas canvas) {
         ..color = 0xFFFFFFFF
         ..style = PaintingStyle.fill); // white
 
-  Offset start = const Offset(20, 10);
-  Offset mid = const Offset(120, 10);
-  Offset end = const Offset(120, 20);
+  var start = const Offset(20, 10);
+  var mid = const Offset(120, 10);
+  var end = const Offset(120, 20);
 
-  final List<StrokeCap> strokeCaps = <StrokeCap>[StrokeCap.butt, StrokeCap.round, StrokeCap.square];
-  for (final StrokeCap cap in strokeCaps) {
-    final List<StrokeJoin> joints = <StrokeJoin>[StrokeJoin.miter, StrokeJoin.bevel, StrokeJoin.round];
-    const List<Color> colors = <Color>[
+  final strokeCaps = <StrokeCap>[StrokeCap.butt, StrokeCap.round, StrokeCap.square];
+  for (final cap in strokeCaps) {
+    final joints = <StrokeJoin>[StrokeJoin.miter, StrokeJoin.bevel, StrokeJoin.round];
+    const colors = <Color>[
         Color(0xFFF44336), Color(0xFF4CAF50), Color(0xFF2196F3)]; // red, green, blue
-    for (int i = 0; i < joints.length; i++) {
-      final StrokeJoin join = joints[i];
-      final Color color = colors[i % colors.length];
+    for (var i = 0; i < joints.length; i++) {
+      final join = joints[i];
+      final color = colors[i % colors.length];
 
-      final Path path = Path();
+      final path = Path();
       path.moveTo(start.dx, start.dy);
       path.lineTo(mid.dx, mid.dy);
       path.lineTo(end.dx, end.dy);

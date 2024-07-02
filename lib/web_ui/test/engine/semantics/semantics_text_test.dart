@@ -35,7 +35,7 @@ Future<void> testMain() async {
 
     // Add a node with a label - expect a <span>
     {
-      final SemanticsTester tester = SemanticsTester(owner());
+      final tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
         label: 'Hello',
@@ -48,7 +48,7 @@ Future<void> testMain() async {
         <sem><span>Hello</span></sem>'''
       );
 
-      final SemanticsObject node = owner().debugSemanticsTree![0]!;
+      final node = owner().debugSemanticsTree![0]!;
       expect(node.primaryRole?.role, PrimaryRole.generic);
       expect(
         reason: 'A node with a label should get a LabelAndValue role',
@@ -59,7 +59,7 @@ Future<void> testMain() async {
 
     // Change label - expect the <span> to be updated.
     {
-      final SemanticsTester tester = SemanticsTester(owner());
+      final tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
         label: 'World',
@@ -75,7 +75,7 @@ Future<void> testMain() async {
 
     // Empty the label - expect the <span> to be removed.
     {
-      final SemanticsTester tester = SemanticsTester(owner());
+      final tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
         label: '',
@@ -95,7 +95,7 @@ Future<void> testMain() async {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final SemanticsTester tester = SemanticsTester(owner());
+    final tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       label: 'I am a parent',
@@ -130,7 +130,7 @@ Future<void> testMain() async {
 
     // A leaf node with a label - expect <span>
     {
-      final SemanticsTester tester = SemanticsTester(owner());
+      final tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
         label: 'I am a leaf',
@@ -146,7 +146,7 @@ Future<void> testMain() async {
 
     // Add a child - expect <span> to be removed from the parent.
     {
-      final SemanticsTester tester = SemanticsTester(owner());
+      final tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
         label: 'I am a parent',
@@ -174,7 +174,7 @@ Future<void> testMain() async {
 
     // Remove the child - expect the <span> to be readded to the former parent.
     {
-      final SemanticsTester tester = SemanticsTester(owner());
+      final tester = SemanticsTester(owner());
       tester.updateNode(
         id: 0,
         label: 'I am a leaf again',
@@ -196,7 +196,7 @@ Future<void> testMain() async {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final SemanticsTester tester = SemanticsTester(owner());
+    final tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       label: 'Hello',
@@ -209,8 +209,8 @@ Future<void> testMain() async {
       <sem><span>Hello</span></sem>'''
     );
 
-    final SemanticsObject node = owner().debugSemanticsTree![0]!;
-    final DomElement span = node.element.querySelector('span')!;
+    final node = owner().debugSemanticsTree![0]!;
+    final span = node.element.querySelector('span')!;
 
     expect(span.getAttribute('tabindex'), isNull);
     node.primaryRole!.focusAsRouteDefault();
@@ -225,7 +225,7 @@ Future<void> testMain() async {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final SemanticsTester tester = SemanticsTester(owner());
+    final tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       label: 'Hello',
@@ -234,10 +234,10 @@ Future<void> testMain() async {
     );
     tester.apply();
 
-    final SemanticsObject node = owner().debugSemanticsTree![0]!;
+    final node = owner().debugSemanticsTree![0]!;
 
     // Set DOM text as preferred representation
-    final LabelAndValue lav = node.primaryRole!.labelAndValue!;
+    final lav = node.primaryRole!.labelAndValue!;
     lav.preferredRepresentation = LabelRepresentation.domText;
     lav.update();
 
@@ -258,7 +258,7 @@ Future<void> testMain() async {
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
 
-    final SemanticsTester tester = SemanticsTester(owner());
+    final tester = SemanticsTester(owner());
     tester.updateNode(
       id: 0,
       label: 'Hello',
@@ -267,10 +267,10 @@ Future<void> testMain() async {
     );
     tester.apply();
 
-    final SemanticsObject node = owner().debugSemanticsTree![0]!;
+    final node = owner().debugSemanticsTree![0]!;
 
     // Set DOM text as preferred representation
-    final LabelAndValue lav = node.primaryRole!.labelAndValue!;
+    final lav = node.primaryRole!.labelAndValue!;
     lav.preferredRepresentation = LabelRepresentation.ariaLabel;
     lav.update();
 

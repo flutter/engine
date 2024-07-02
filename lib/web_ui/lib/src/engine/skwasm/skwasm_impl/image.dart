@@ -23,12 +23,12 @@ class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
     ui.PixelFormat format, {
     int? rowBytes,
   }) {
-    final SkDataHandle dataHandle = skDataCreate(pixels.length);
-    final Pointer<Uint8> dataPointer = skDataGetPointer(dataHandle).cast<Uint8>();
-    for (int i = 0; i < pixels.length; i++) {
+    final dataHandle = skDataCreate(pixels.length);
+    final dataPointer = skDataGetPointer(dataHandle).cast<Uint8>();
+    for (var i = 0; i < pixels.length; i++) {
       dataPointer[i] = pixels[i];
     }
-    final ImageHandle imageHandle = imageCreateFromPixels(
+    final imageHandle = imageCreateFromPixels(
       dataHandle,
       width,
       height,
@@ -58,20 +58,20 @@ class SkwasmImage extends SkwasmObjectWrapper<RawImage> implements ui.Image {
   Future<ByteData?> toByteData(
       {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) async {
     if (format == ui.ImageByteFormat.png) {
-      final ui.PictureRecorder recorder = ui.PictureRecorder();
-      final ui.Canvas canvas = ui.Canvas(recorder);
+      final recorder = ui.PictureRecorder();
+      final canvas = ui.Canvas(recorder);
       canvas.drawImage(this, ui.Offset.zero, ui.Paint());
-      final DomImageBitmap bitmap =
+      final bitmap =
         (await (renderer as SkwasmRenderer).surface.renderPictures(
           <SkwasmPicture>[recorder.endRecording() as SkwasmPicture],
         )).imageBitmaps.single;
-      final DomOffscreenCanvas offscreenCanvas =
+      final offscreenCanvas =
         createDomOffscreenCanvas(bitmap.width.toDartInt, bitmap.height.toDartInt);
-      final DomCanvasRenderingContextBitmapRenderer context =
+      final context =
         offscreenCanvas.getContext('bitmaprenderer')! as DomCanvasRenderingContextBitmapRenderer;
       context.transferFromImageBitmap(bitmap);
-      final DomBlob blob = await offscreenCanvas.convertToBlob();
-      final JSArrayBuffer arrayBuffer = (await blob.arrayBuffer().toDart)! as JSArrayBuffer;
+      final blob = await offscreenCanvas.convertToBlob();
+      final arrayBuffer = (await blob.arrayBuffer().toDart)! as JSArrayBuffer;
 
       // Zero out the contents of the canvas so that resources can be reclaimed
       // by the browser.

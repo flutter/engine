@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:collection';
-import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
@@ -59,7 +58,7 @@ class CkContourMeasureIter implements Iterator<ui.PathMetric> {
 
   @override
   bool moveNext() {
-    final SkContourMeasure? skContourMeasure = skiaObject.next();
+    final skContourMeasure = skiaObject.next();
     if (skContourMeasure == null) {
       _current = null;
       return false;
@@ -91,13 +90,13 @@ class CkContourMeasure implements ui.PathMetric {
 
   @override
   ui.Path extractPath(double start, double end, {bool startWithMoveTo = true}) {
-    final SkPath skPath = skiaObject.getSegment(start, end, startWithMoveTo);
+    final skPath = skiaObject.getSegment(start, end, startWithMoveTo);
     return CkPath.fromSkPath(skPath, _metrics._path.fillType);
   }
 
   @override
   ui.Tangent getTangentForOffset(double distance) {
-    final Float32List posTan = skiaObject.getPosTan(distance);
+    final posTan = skiaObject.getPosTan(distance);
     return ui.Tangent(
       ui.Offset(posTan[0], posTan[1]),
       ui.Offset(posTan[2], posTan[3]),

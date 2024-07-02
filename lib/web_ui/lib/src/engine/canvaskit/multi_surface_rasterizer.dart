@@ -23,7 +23,7 @@ class MultiSurfaceRasterizer extends Rasterizer {
 
   @override
   void dispose() {
-    for (final MultiSurfaceViewRasterizer viewRasterizer
+    for (final viewRasterizer
         in _viewRasterizers.values) {
       viewRasterizer.dispose();
     }
@@ -32,7 +32,7 @@ class MultiSurfaceRasterizer extends Rasterizer {
 
   @override
   void setResourceCacheMaxBytes(int bytes) {
-    for (final MultiSurfaceViewRasterizer viewRasterizer
+    for (final viewRasterizer
         in _viewRasterizers.values) {
       viewRasterizer.displayFactory.forEachCanvas((Surface surface) {
         surface.setSkiaResourceCacheMaxBytes(bytes);
@@ -59,10 +59,10 @@ class MultiSurfaceViewRasterizer extends ViewRasterizer {
   @override
   Future<void> rasterizeToCanvas(
       DisplayCanvas canvas, List<CkPicture> pictures) {
-    final Surface surface = canvas as Surface;
+    final surface = canvas as Surface;
     surface.createOrUpdateSurface(currentFrameSize);
     surface.positionToShowFrame(currentFrameSize);
-    final CkCanvas skCanvas = surface.getCanvas();
+    final skCanvas = surface.getCanvas();
     skCanvas.clear(const ui.Color(0x00000000));
     pictures.forEach(skCanvas.drawPicture);
     surface.flush();

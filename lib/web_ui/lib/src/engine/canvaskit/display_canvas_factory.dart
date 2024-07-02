@@ -46,11 +46,11 @@ class DisplayCanvasFactory<T extends DisplayCanvas> {
   /// none in the cache.
   T getCanvas() {
     if (_cache.isNotEmpty) {
-      final T canvas = _cache.removeLast();
+      final canvas = _cache.removeLast();
       _liveCanvases.add(canvas);
       return canvas;
     } else {
-      final T canvas = createCanvas();
+      final canvas = createCanvas();
       canvas.initialize();
       _liveCanvases.add(canvas);
       return canvas;
@@ -117,10 +117,10 @@ class DisplayCanvasFactory<T extends DisplayCanvas> {
 
   /// Dispose all canvases created by this factory.
   void dispose() {
-    for (final T canvas in _cache) {
+    for (final canvas in _cache) {
       canvas.dispose();
     }
-    for (final T canvas in _liveCanvases) {
+    for (final canvas in _liveCanvases) {
       canvas.dispose();
     }
     baseCanvas.dispose();

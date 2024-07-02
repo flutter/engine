@@ -17,12 +17,12 @@ void main() {
 void testMain() {
   group('Convexity', () {
     test('Empty path should be convex', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       expect(path.isConvex, isTrue);
     });
 
     test('Circle should be convex', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.addOval(const Rect.fromLTRB(0, 0, 20, 20));
       expect(path.isConvex, isTrue);
       // 2nd circle.
@@ -31,7 +31,7 @@ void testMain() {
     });
 
     test('addRect should be convex', () {
-      SurfacePath path = SurfacePath();
+      var path = SurfacePath();
       path.addRect(const Rect.fromLTRB(0, 0, 20, 20));
       expect(path.isConvex, isTrue);
 
@@ -47,13 +47,13 @@ void testMain() {
     });
 
     test('Quad should be convex', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.quadraticBezierTo(100, 100, 50, 50);
       expect(path.isConvex, isTrue);
     });
 
     test('moveto/lineto convexity', () {
-      final List<LineTestCase> testCases = <LineTestCase>[
+      final testCases = <LineTestCase>[
         LineTestCase('', SPathConvexityType.kConvex),
         LineTestCase(
             '0 0', SPathConvexityType.kConvex),
@@ -68,15 +68,15 @@ void testMain() {
         LineTestCase('0 0 10 0 0 10 -10 -10', SPathConvexityType.kConcave),
       ];
 
-      for (final LineTestCase testCase in testCases) {
-        final SurfacePath path = SurfacePath();
+      for (final testCase in testCases) {
+        final path = SurfacePath();
         setFromString(path, testCase.pathContent);
         expect(path.convexityType, testCase.convexity);
       }
     });
 
     test('Convexity of path with infinite points should return unknown', () {
-      const List<Offset> nonFinitePts = <Offset>[
+      const nonFinitePts = <Offset>[
         Offset(double.infinity, 0),
         Offset(0, double.infinity),
         Offset.infinite,
@@ -89,24 +89,24 @@ void testMain() {
         Offset(0, double.nan),
         Offset(double.nan, double.nan)
       ];
-      final int nonFinitePointsCount = nonFinitePts.length;
+      final nonFinitePointsCount = nonFinitePts.length;
 
-      const List<Offset> axisAlignedPts = <Offset>[
+      const axisAlignedPts = <Offset>[
         Offset(kScalarMax, 0),
         Offset(0, kScalarMax),
         Offset(kScalarMin, 0),
         Offset(0, kScalarMin)
       ];
-      final int axisAlignedPointsCount = axisAlignedPts.length;
+      final axisAlignedPointsCount = axisAlignedPts.length;
 
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
 
-      for (int index = 0;
+      for (var index = 0;
           index < (13 * nonFinitePointsCount * axisAlignedPointsCount);
           index++) {
-        final int i = index % nonFinitePointsCount;
-        final int f = index % axisAlignedPointsCount;
-        final int g = (f + 1) % axisAlignedPointsCount;
+        final i = index % nonFinitePointsCount;
+        final f = index % axisAlignedPointsCount;
+        final g = (f + 1) % axisAlignedPointsCount;
         path.reset();
         switch (index % 13) {
           case 0:
@@ -190,11 +190,11 @@ void testMain() {
         expect(path.convexityType, SPathConvexityType.kUnknown);
       }
 
-      for (int index = 0; index < (11 * axisAlignedPointsCount); ++index) {
-        final int f = index % axisAlignedPointsCount;
-        final int g = (f + 1) % axisAlignedPointsCount;
+      for (var index = 0; index < (11 * axisAlignedPointsCount); ++index) {
+        final f = index % axisAlignedPointsCount;
+        final g = (f + 1) % axisAlignedPointsCount;
         path.reset();
-        final int curveSelect = index % 11;
+        final curveSelect = index % 11;
         switch (curveSelect) {
           case 0:
             path.moveTo(axisAlignedPts[f].dx, axisAlignedPts[f].dy);
@@ -259,13 +259,13 @@ void testMain() {
                 axisAlignedPts[g].dy);
         }
         if (curveSelect != 7 && curveSelect != 10) {
-          final int result = path.convexityType;
+          final result = path.convexityType;
           expect(result, SPathConvexityType.kConvex);
         } else {
           // we make a copy so that we don't cache the result on the passed
           // in path.
-          final SurfacePath path2 = SurfacePath.from(path);
-          final int c = path2.convexityType;
+          final path2 = SurfacePath.from(path);
+          final c = path2.convexityType;
           assert(SPathConvexityType.kUnknown == c ||
               SPathConvexityType.kConcave == c);
         }
@@ -273,7 +273,7 @@ void testMain() {
     });
 
     test('Concave lines path', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(-0.284071773, -0.0622361786);
       path.lineTo(-0.284072, -0.0622351);
       path.lineTo(-0.28407, -0.0622307);
@@ -285,20 +285,20 @@ void testMain() {
     });
 
     test('Single moveTo origin', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(0, 0);
       expect(path.convexityType, SPathConvexityType.kConvex);
     });
 
     test('Single diagonal line', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(12, 20);
       path.lineTo(-12, -20);
       expect(path.convexityType, SPathConvexityType.kConvex);
     });
 
     test('TriLeft', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(0, 0);
       path.lineTo(1, 0);
       path.lineTo(1, 1);
@@ -307,7 +307,7 @@ void testMain() {
     });
 
     test('TriRight', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(0, 0);
       path.lineTo(-1, 0);
       path.lineTo(1, 1);
@@ -316,7 +316,7 @@ void testMain() {
     });
 
     test('square', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(0, 0);
       path.lineTo(1, 0);
       path.lineTo(1, 1);
@@ -326,7 +326,7 @@ void testMain() {
     });
 
     test('redundant square', () {
-      final SurfacePath redundantSquare = SurfacePath();
+      final redundantSquare = SurfacePath();
       redundantSquare.moveTo(0, 0);
       redundantSquare.lineTo(0, 0);
       redundantSquare.lineTo(0, 0);
@@ -344,7 +344,7 @@ void testMain() {
     });
 
     test('bowtie', () {
-      final SurfacePath bowTie = SurfacePath();
+      final bowTie = SurfacePath();
       bowTie.moveTo(0, 0);
       bowTie.lineTo(0, 0);
       bowTie.lineTo(0, 0);
@@ -362,7 +362,7 @@ void testMain() {
     });
 
     test('sprial', () {
-      final SurfacePath spiral = SurfacePath();
+      final spiral = SurfacePath();
       spiral.moveTo(0, 0);
       spiral.lineTo(100, 0);
       spiral.lineTo(100, 100);
@@ -375,7 +375,7 @@ void testMain() {
     });
 
     test('dent', () {
-      final SurfacePath dent = SurfacePath();
+      final dent = SurfacePath();
       dent.moveTo(0, 0);
       dent.lineTo(100, 100);
       dent.lineTo(0, 100);
@@ -386,10 +386,10 @@ void testMain() {
     });
 
     test('degenerate segments1', () {
-      final SurfacePath strokedSin = SurfacePath();
-      for (int i = 0; i < 2000; i++) {
-        final double x = i.toDouble() / 2.0;
-        final double y = 500 - (x + math.sin(x / 100) * 40) / 3;
+      final strokedSin = SurfacePath();
+      for (var i = 0; i < 2000; i++) {
+        final x = i.toDouble() / 2.0;
+        final y = 500 - (x + math.sin(x / 100) * 40) / 3;
         if (0 == i) {
           strokedSin.moveTo(x, y);
         } else {
@@ -401,7 +401,7 @@ void testMain() {
 
     /// Regression test for https://github.com/flutter/flutter/issues/66560.
     test('Quadratic', () {
-      final SurfacePath path = SurfacePath();
+      final path = SurfacePath();
       path.moveTo(100.0, 0.0);
       path.quadraticBezierTo(200.0, 0.0, 200.0, 100.0);
       path.quadraticBezierTo(200.0, 200.0, 100.0, 200.0);
@@ -424,12 +424,12 @@ class LineTestCase {
 /// Parses a string of the format "mx my lx1 ly1 lx2 ly2..." into a path
 /// with moveTo/lineTo instructions for points.
 void setFromString(SurfacePath path, String value) {
-  bool first = true;
-  final List<String> points = value.split(' ');
+  var first = true;
+  final points = value.split(' ');
   if (points.length < 2) {
     return;
   }
-  for (int i = 0; i < points.length; i += 2) {
+  for (var i = 0; i < points.length; i += 2) {
     if (first) {
       path.moveTo(double.parse(points[i]), double.parse(points[i + 1]));
       first = false;

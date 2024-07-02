@@ -20,13 +20,13 @@ void main() {
 void testMain() {
   group('FlutterConfiguration', () {
     test('initializes with null', () async {
-      final FlutterConfiguration config = FlutterConfiguration.legacy(null);
+      final config = FlutterConfiguration.legacy(null);
 
       expect(config.canvasKitBaseUrl, 'canvaskit/'); // _defaultCanvasKitBaseUrl
     });
 
     test('legacy constructor initializes with a Js Object', () async {
-      final FlutterConfiguration config = FlutterConfiguration.legacy(
+      final config = FlutterConfiguration.legacy(
         js_util.jsify(<String, Object?>{
           'canvasKitBaseUrl': 'some_other_url/',
         }) as JsFlutterConfiguration);
@@ -37,7 +37,7 @@ void testMain() {
 
   group('setUserConfiguration', () {
     test('throws assertion error if already initialized from JS', () async {
-      final FlutterConfiguration config = FlutterConfiguration.legacy(
+      final config = FlutterConfiguration.legacy(
         js_util.jsify(<String, Object?>{
           'canvasKitBaseUrl': 'some_other_url/',
         }) as JsFlutterConfiguration);
@@ -51,7 +51,7 @@ void testMain() {
     });
 
     test('stores config if JS configuration was null', () async {
-      final FlutterConfiguration config = FlutterConfiguration.legacy(null);
+      final config = FlutterConfiguration.legacy(null);
 
       config.setUserConfiguration(
         js_util.jsify(<String, Object?>{
@@ -62,7 +62,7 @@ void testMain() {
     });
 
     test('can receive non-existing properties without crashing', () async {
-      final FlutterConfiguration config = FlutterConfiguration.legacy(null);
+      final config = FlutterConfiguration.legacy(null);
 
       expect(() {
         config.setUserConfiguration(
@@ -99,7 +99,7 @@ void testMain() {
   group('setUserConfiguration (values)', () {
     group('canvasKitVariant', () {
       test('value undefined - defaults to "auto"', () {
-        final FlutterConfiguration config = FlutterConfiguration();
+        final config = FlutterConfiguration();
         config.setUserConfiguration(
           // With an empty map, the canvasKitVariant is undefined in JS.
           js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration,
@@ -109,7 +109,7 @@ void testMain() {
       });
 
       test('value - converts to CanvasKitVariant enum (or throw)', () {
-        final FlutterConfiguration config = FlutterConfiguration();
+        final config = FlutterConfiguration();
 
         config.setUserConfiguration(
           js_util.jsify(<String, Object?>{'canvasKitVariant': 'foo'}) as JsFlutterConfiguration,
@@ -134,7 +134,7 @@ void testMain() {
     });
 
     test('useColorEmoji', () {
-      final FlutterConfiguration config = FlutterConfiguration();
+      final config = FlutterConfiguration();
       config.setUserConfiguration(
         js_util.jsify(<String, Object?>{'useColorEmoji': true}) as JsFlutterConfiguration,
       );
@@ -142,7 +142,7 @@ void testMain() {
     });
 
     test('multiViewEnabled', () {
-      final FlutterConfiguration config = FlutterConfiguration();
+      final config = FlutterConfiguration();
       config.setUserConfiguration(
         js_util.jsify(<String, Object?>{'multiViewEnabled': true}) as JsFlutterConfiguration,
       );

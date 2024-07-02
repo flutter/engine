@@ -38,8 +38,8 @@ class CleanCommand extends Command<bool> with ArgUtils<bool> {
   @override
   FutureOr<bool> run() async {
     // This is the old path that tests used to be built into. Clean this path too.
-    final String legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
-    final List<io.FileSystemEntity> thingsToBeCleaned = <io.FileSystemEntity>[
+    final legacyBuildPath = path.join(environment.webUiRootDir.path, 'build');
+    final thingsToBeCleaned = <io.FileSystemEntity>[
       environment.webUiDartToolDir,
       environment.webUiBuildDir,
       io.Directory(legacyBuildPath),

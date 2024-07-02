@@ -50,13 +50,13 @@ class PathIterator {
     if (_forceClose) {
       return true;
     }
-    int verbIndex = 0;
+    var verbIndex = 0;
     // Skip starting moveTo.
     if (pathRef.atVerb(verbIndex) == SPath.kMoveVerb) {
       ++verbIndex;
     }
     while (verbIndex < _verbCount) {
-      final int verb = pathRef.atVerb(verbIndex++);
+      final verb = pathRef.atVerb(verbIndex++);
       if (SPath.kMoveVerb == verb) {
         break;
       }
@@ -128,13 +128,13 @@ class PathIterator {
       }
       return SPath.kDoneVerb;
     }
-    int verb = pathRef.atVerb(_verbIndex++);
+    var verb = pathRef.atVerb(_verbIndex++);
     switch (verb) {
       case SPath.kMoveVerb:
         if (_needClose) {
           // Move back one verb.
           _verbIndex--;
-          final int autoVerb = _autoClose(outPts);
+          final autoVerb = _autoClose(outPts);
           if (autoVerb == SPath.kCloseVerb) {
             _needClose = false;
           }
@@ -143,8 +143,8 @@ class PathIterator {
         if (_verbIndex == _verbCount) {
           return SPath.kDoneVerb;
         }
-        final double offsetX = pathRef.points[_pointIndex++];
-        final double offsetY = pathRef.points[_pointIndex++];
+        final offsetX = pathRef.points[_pointIndex++];
+        final offsetY = pathRef.points[_pointIndex++];
         _moveToX = offsetX;
         _moveToY = offsetY;
         outPts[0] = offsetX;
@@ -154,9 +154,9 @@ class PathIterator {
         _lastPointY = _moveToY;
         _needClose = _forceClose;
       case SPath.kLineVerb:
-        final ui.Offset start = _constructMoveTo();
-        final double offsetX = pathRef.points[_pointIndex++];
-        final double offsetY = pathRef.points[_pointIndex++];
+        final start = _constructMoveTo();
+        final offsetX = pathRef.points[_pointIndex++];
+        final offsetY = pathRef.points[_pointIndex++];
         outPts[0] = start.dx;
         outPts[1] = start.dy;
         outPts[2] = offsetX;
@@ -165,7 +165,7 @@ class PathIterator {
         _lastPointY = offsetY;
       case SPath.kConicVerb:
         _conicWeightIndex++;
-        final ui.Offset start = _constructMoveTo();
+        final start = _constructMoveTo();
         outPts[0] = start.dx;
         outPts[1] = start.dy;
         outPts[2] = pathRef.points[_pointIndex++];
@@ -173,7 +173,7 @@ class PathIterator {
         _lastPointX = outPts[4] = pathRef.points[_pointIndex++];
         _lastPointY = outPts[5] = pathRef.points[_pointIndex++];
       case SPath.kQuadVerb:
-        final ui.Offset start = _constructMoveTo();
+        final start = _constructMoveTo();
         outPts[0] = start.dx;
         outPts[1] = start.dy;
         outPts[2] = pathRef.points[_pointIndex++];
@@ -181,7 +181,7 @@ class PathIterator {
         _lastPointX = outPts[4] = pathRef.points[_pointIndex++];
         _lastPointY = outPts[5] = pathRef.points[_pointIndex++];
       case SPath.kCubicVerb:
-        final ui.Offset start = _constructMoveTo();
+        final start = _constructMoveTo();
         outPts[0] = start.dx;
         outPts[1] = start.dy;
         outPts[2] = pathRef.points[_pointIndex++];

@@ -46,7 +46,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
 
   @override
   DomElement createElement() {
-    final DomElement element = defaultCreateElement('flt-backdrop');
+    final element = defaultCreateElement('flt-backdrop');
     element.style.transformOrigin = '0 0 0';
     _childContainer = createDomElement('flt-backdrop-interior');
     _childContainer!.style.position = 'absolute';
@@ -94,18 +94,18 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     // https://drafts.fxtf.org/filter-effects-2/#BackdropFilterProperty
     // Therefore we need to use parent clip element bounds for
     // backdrop boundary.
-    final double dpr = ui.window.devicePixelRatio;
-    final ui.Rect rect = _invertedTransform.transformRect(ui.Rect.fromLTRB(0, 0,
+    final dpr = ui.window.devicePixelRatio;
+    final rect = _invertedTransform.transformRect(ui.Rect.fromLTRB(0, 0,
         ui.window.physicalSize.width * dpr,
         ui.window.physicalSize.height * dpr));
-    double left = rect.left;
-    double top = rect.top;
-    double width = rect.width;
-    double height = rect.height;
-    PersistedContainerSurface? parentSurface = parent;
+    var left = rect.left;
+    var top = rect.top;
+    var width = rect.width;
+    var height = rect.height;
+    var parentSurface = parent;
     while (parentSurface != null) {
       if (parentSurface.isClipping) {
-        final ui.Rect activeClipBounds = (_activeClipBounds = parentSurface.localClipBounds)!;
+        final activeClipBounds = (_activeClipBounds = parentSurface.localClipBounds)!;
         left = activeClipBounds.left;
         top = activeClipBounds.top;
         width = activeClipBounds.width;
@@ -114,7 +114,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
       }
       parentSurface = parentSurface.parent;
     }
-    final DomCSSStyleDeclaration filterElementStyle = _filterElement!.style;
+    final filterElementStyle = _filterElement!.style;
     filterElementStyle
       ..position = 'absolute'
       ..left = '${left}px'
@@ -162,7 +162,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
 
   void _checkForUpdatedAncestorClipElement() {
     // If parent clip element has moved, adjust bounds.
-    PersistedContainerSurface? parentSurface = parent;
+    var parentSurface = parent;
     while (parentSurface != null) {
       if (parentSurface.isClipping) {
         if (parentSurface.localClipBounds != _activeClipBounds) {

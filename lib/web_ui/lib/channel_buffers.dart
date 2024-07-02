@@ -68,7 +68,7 @@ class _Channel {
     if (_capacity <= 0) {
       return debugEnableDiscardWarnings;
     }
-    final bool result = _dropOverflowMessages(_capacity - 1);
+    final result = _dropOverflowMessages(_capacity - 1);
     _queue.addLast(message);
     return result;
   }
@@ -76,9 +76,9 @@ class _Channel {
   _StoredMessage pop() => _queue.removeFirst();
 
   bool _dropOverflowMessages(int lengthLimit) {
-    bool result = false;
+    var result = false;
     while (_queue.length > lengthLimit) {
-      final _StoredMessage message = _queue.removeFirst();
+      final message = _queue.removeFirst();
       message.invoke(null); // send empty reply to the plugin side
       result = true;
     }
@@ -88,7 +88,7 @@ class _Channel {
   _ChannelCallbackRecord? _channelCallbackRecord;
 
   void setListener(ChannelCallback callback) {
-    final bool needDrain = _channelCallbackRecord == null;
+    final needDrain = _channelCallbackRecord == null;
     _channelCallbackRecord = _ChannelCallbackRecord(callback);
     if (needDrain && !_draining) {
       _drain();
@@ -108,7 +108,7 @@ class _Channel {
   void _drainStep() {
     assert(_draining);
     if (_queue.isNotEmpty && _channelCallbackRecord != null) {
-      final _StoredMessage message = pop();
+      final message = pop();
       _channelCallbackRecord!.invoke(message.data, message.invoke);
       scheduleMicrotask(_drainStep);
     } else {
@@ -127,7 +127,7 @@ class ChannelBuffers {
   final Map<String, _Channel> _channels = <String, _Channel>{};
 
   void push(String name, ByteData? data, PlatformMessageResponseCallback callback) {
-    final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
+    final channel = _channels.putIfAbsent(name, () => _Channel());
     if (channel.push(_StoredMessage(data, callback))) {
       assert(() {
         print(
@@ -144,34 +144,34 @@ class ChannelBuffers {
   }
 
   void setListener(String name, ChannelCallback callback) {
-    final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
+    final channel = _channels.putIfAbsent(name, () => _Channel());
     channel.setListener(callback);
   }
 
   void clearListener(String name) {
-    final _Channel? channel = _channels[name];
+    final channel = _channels[name];
     if (channel != null) {
       channel.clearListener();
     }
   }
 
   Future<void> drain(String name, DrainChannelCallback callback) async {
-    final _Channel? channel = _channels[name];
+    final channel = _channels[name];
     while (channel != null && !channel._queue.isEmpty) {
-      final _StoredMessage message = channel.pop();
+      final message = channel.pop();
       await callback(message.data, message.invoke);
     }
   }
 
   void handleMessage(ByteData data) {
-    final Uint8List bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     if (bytes[0] == 0x07) { // 7 = value code for string
-      final int methodNameLength = bytes[1];
+      final methodNameLength = bytes[1];
       if (methodNameLength >= 254) {
         throw Exception('Unrecognized message sent to $kControlChannelName (method name too long)');
       }
-      int index = 2; // where we are in reading the bytes
-      final String methodName = utf8.decode(bytes.sublist(index, index + methodNameLength));
+      var index = 2; // where we are in reading the bytes
+      final methodName = utf8.decode(bytes.sublist(index, index + methodNameLength));
       index += methodNameLength;
       switch (methodName) {
         case 'resize':
@@ -187,12 +187,12 @@ class ChannelBuffers {
             throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (first argument must be a string)");
           }
           index += 1;
-          final int channelNameLength = bytes[index];
+          final channelNameLength = bytes[index];
           if (channelNameLength >= 254) {
             throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (channel name must be less than 254 characters long)");
           }
           index += 1;
-          final String channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
+          final channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
           index += channelNameLength;
           if (bytes[index] != 0x03) {
             throw Exception("Invalid arguments for 'resize' method sent to $kControlChannelName (second argument must be an integer in the range 0 to 2147483647)");
@@ -212,12 +212,12 @@ class ChannelBuffers {
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (first argument must be a string)");
           }
           index += 1;
-          final int channelNameLength = bytes[index];
+          final channelNameLength = bytes[index];
           if (channelNameLength >= 254) {
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (channel name must be less than 254 characters long)");
           }
           index += 1;
-          final String channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
+          final channelName = utf8.decode(bytes.sublist(index, index + channelNameLength));
           index += channelNameLength;
           if (bytes[index] != 0x01 && bytes[index] != 0x02) {
             throw Exception("Invalid arguments for 'overflow' method sent to $kControlChannelName (second argument must be a boolean)");
@@ -227,7 +227,7 @@ class ChannelBuffers {
           throw Exception("Unrecognized method '$methodName' sent to $kControlChannelName");
       }
     } else {
-      final List<String> parts = utf8.decode(bytes).split('\r');
+      final parts = utf8.decode(bytes).split('\r');
       if (parts.length == 1 + /*arity=*/2 && parts[0] == 'resize') {
         resize(parts[1], int.parse(parts[2]));
       } else {
@@ -237,7 +237,7 @@ class ChannelBuffers {
   }
 
   void resize(String name, int newSize) {
-    _Channel? channel = _channels[name];
+    var channel = _channels[name];
     if (channel == null) {
       channel = _Channel(newSize);
       _channels[name] = channel;
@@ -248,7 +248,7 @@ class ChannelBuffers {
 
   void allowOverflow(String name, bool allowed) {
     assert(() {
-      _Channel? channel = _channels[name];
+      var channel = _channels[name];
       if (channel == null && allowed) {
         channel = _Channel();
         _channels[name] = channel;

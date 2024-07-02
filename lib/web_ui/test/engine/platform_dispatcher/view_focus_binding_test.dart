@@ -30,7 +30,7 @@ void testMain() {
     });
 
     test('The view is focusable and reachable by keyboard when registered', () async {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
 
       // The root element should have a tabindex="0" to make the flutter view
@@ -39,7 +39,7 @@ void testMain() {
     });
 
     test('The view is focusable but not reachable by keyboard when focused', () async {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       view.dom.rootElement.focus();
 
@@ -49,8 +49,8 @@ void testMain() {
     });
 
     test('marks the focusable views as reachable by the keyboard or not', () async {
-      final EngineFlutterView view1 = createAndRegisterView(dispatcher);
-      final EngineFlutterView view2 = createAndRegisterView(dispatcher);
+      final view1 = createAndRegisterView(dispatcher);
+      final view2 = createAndRegisterView(dispatcher);
 
       expect(view1.dom.rootElement.getAttribute('tabindex'), '0');
       expect(view2.dom.rootElement.getAttribute('tabindex'), '0');
@@ -71,8 +71,8 @@ void testMain() {
     test('never marks the views as focusable with semantincs enabled', () async {
       EngineSemantics.instance.semanticsEnabled = true;
 
-      final EngineFlutterView view1 = createAndRegisterView(dispatcher);
-      final EngineFlutterView view2 = createAndRegisterView(dispatcher);
+      final view1 = createAndRegisterView(dispatcher);
+      final view2 = createAndRegisterView(dispatcher);
 
       expect(view1.dom.rootElement.getAttribute('tabindex'), isNull);
       expect(view2.dom.rootElement.getAttribute('tabindex'), isNull);
@@ -91,7 +91,7 @@ void testMain() {
     });
 
     test('fires a focus event - a view was focused', () async {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       view.dom.rootElement.focus();
 
@@ -103,7 +103,7 @@ void testMain() {
     });
 
     test('fires a focus event - a view was unfocused', () async {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       view.dom.rootElement.focus();
       view.dom.rootElement.blur();
@@ -120,8 +120,8 @@ void testMain() {
     });
 
     test('fires a focus event - focus transitions between views', () async {
-      final EngineFlutterView view1 = createAndRegisterView(dispatcher);
-      final EngineFlutterView view2 = createAndRegisterView(dispatcher);
+      final view1 = createAndRegisterView(dispatcher);
+      final view2 = createAndRegisterView(dispatcher);
 
       view1.dom.rootElement.focus();
       view2.dom.rootElement.focus();
@@ -147,8 +147,8 @@ void testMain() {
     });
 
     test('fires a focus event - focus transitions on and off views', () async {
-      final EngineFlutterView view1 = createAndRegisterView(dispatcher);
-      final EngineFlutterView view2 = createAndRegisterView(dispatcher);
+      final view1 = createAndRegisterView(dispatcher);
+      final view2 = createAndRegisterView(dispatcher);
 
       view1.dom.rootElement.focus();
       view2.dom.rootElement.focus();
@@ -170,7 +170,7 @@ void testMain() {
     });
 
     test('requestViewFocusChange focuses the view', () {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       dispatcher.requestViewFocusChange(
         viewId: view.viewId,
@@ -188,7 +188,7 @@ void testMain() {
     });
 
     test('requestViewFocusChange blurs the view', () {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       dispatcher.requestViewFocusChange(
         viewId: view.viewId,
@@ -216,7 +216,7 @@ void testMain() {
     });
 
     test('requestViewFocusChange does nothing if the view does not exist', () {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       dispatcher.requestViewFocusChange(
         viewId: 5094555,
@@ -229,7 +229,7 @@ void testMain() {
     });
 
     test('requestViewFocusChange does nothing if the view is already focused', () {
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final view = createAndRegisterView(dispatcher);
 
       dispatcher.requestViewFocusChange(
         viewId: view.viewId,
@@ -250,8 +250,8 @@ void testMain() {
     });
 
     test('requestViewFocusChange does not move the focus to the view', () {
-      final DomElement input = createDomElement('input');
-      final EngineFlutterView view = createAndRegisterView(dispatcher);
+      final input = createDomElement('input');
+      final view = createAndRegisterView(dispatcher);
 
       view.dom.rootElement.append(input);
       input.focus();
@@ -274,8 +274,8 @@ void testMain() {
 }
 
 EngineFlutterView createAndRegisterView(EnginePlatformDispatcher dispatcher) {
-  final DomElement div = createDomElement('div');
-  final EngineFlutterView view = EngineFlutterView(dispatcher, div);
+  final div = createDomElement('div');
+  final view = EngineFlutterView(dispatcher, div);
   domDocument.body!.append(div);
   dispatcher.viewManager.registerView(view);
   return view;

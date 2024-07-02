@@ -24,9 +24,9 @@ Future<void> testMain() async {
   );
 
   test('paints multiple shadows', () {
-    final BitmapCanvas canvas = BitmapCanvas(bounds, RenderStrategy());
+    final canvas = BitmapCanvas(bounds, RenderStrategy());
 
-    final CanvasParagraph paragraph = rich(
+    final paragraph = rich(
       EngineParagraphStyle(fontFamily: 'Roboto'),
       (CanvasParagraphBuilder builder) {
         builder.pushStyle(EngineTextStyle.only(

@@ -125,15 +125,15 @@ class KeyData {
   final bool synthesized;
 
   String _logicalToString() {
-    final String result = '0x${logical.toRadixString(16)}';
+    final result = '0x${logical.toRadixString(16)}';
     // Find the bits that are not included in `valueMask`, shifted to the right.
     // For example, if [logical] is 0x12abcdabcd, then the result is 0x12.
     //
     // This is mostly equivalent to a right shift, resolving the problem that
     // JavaScript only support 32-bit bitwise operations and needs to use
     // division instead.
-    final int planeNum = (logical / 0x100000000).floor();
-    final String planeDescription = (() {
+    final planeNum = (logical / 0x100000000).floor();
+    final planeDescription = (() {
       switch (planeNum) {
         case 0x000:
           return ' (Unicode)';
@@ -187,7 +187,7 @@ class KeyData {
     if (character == null) {
       return '';
     }
-    final Iterable<String> hexChars = character!.codeUnits
+    final hexChars = character!.codeUnits
         .map((int code) => code.toRadixString(16).padLeft(2, '0'));
     return ' (0x${hexChars.join(' ')})';
   }

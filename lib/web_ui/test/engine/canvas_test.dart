@@ -37,9 +37,9 @@ Future<void> testMain() async {
     }
 
     testCanvas('draws laid out paragraph', (EngineCanvas canvas) {
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 100, 100);
-      final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
-      final ui.ParagraphBuilder builder =
+      const screenRect = ui.Rect.fromLTWH(0, 0, 100, 100);
+      final recordingCanvas = RecordingCanvas(screenRect);
+      final builder =
           ui.ParagraphBuilder(ui.ParagraphStyle());
       builder.addText('sample');
       paragraph = builder.build();
@@ -51,24 +51,24 @@ Future<void> testMain() async {
     }, whenDone: () {
       expect(mockCanvas.methodCallLog, hasLength(3));
 
-      MockCanvasCall call = mockCanvas.methodCallLog[0];
+      var call = mockCanvas.methodCallLog[0];
       expect(call.methodName, 'clear');
 
       call = mockCanvas.methodCallLog[1];
       expect(call.methodName, 'drawParagraph');
-      final Map<dynamic, dynamic> arguments = call.arguments as Map<dynamic, dynamic>;
+      final arguments = call.arguments as Map<dynamic, dynamic>;
       expect(arguments['paragraph'], paragraph);
       expect(arguments['offset'], const ui.Offset(10, 10));
     });
 
     testCanvas('ignores paragraphs that were not laid out',
         (EngineCanvas canvas) {
-      const ui.Rect screenRect = ui.Rect.fromLTWH(0, 0, 100, 100);
-      final RecordingCanvas recordingCanvas = RecordingCanvas(screenRect);
-      final ui.ParagraphBuilder builder =
+      const screenRect = ui.Rect.fromLTWH(0, 0, 100, 100);
+      final recordingCanvas = RecordingCanvas(screenRect);
+      final builder =
           ui.ParagraphBuilder(ui.ParagraphStyle());
       builder.addText('sample');
-      final ui.Paragraph paragraph = builder.build();
+      final paragraph = builder.build();
       recordingCanvas.drawParagraph(paragraph, const ui.Offset(10, 10));
       recordingCanvas.endRecording();
       canvas.clear();

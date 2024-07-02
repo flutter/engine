@@ -330,13 +330,13 @@ class SkwasmRenderer implements Renderer {
     int? targetHeight,
     bool allowUpscaling = true
   }) {
-    final SkwasmImage pixelImage = SkwasmImage.fromPixels(
+    final pixelImage = SkwasmImage.fromPixels(
       pixels,
       width,
       height,
       format
     );
-    final ui.Image scaledImage = scaleImageIfNeeded(
+    final scaledImage = scaleImageIfNeeded(
       pixelImage,
       targetWidth: targetWidth,
       targetHeight: targetHeight,
@@ -357,11 +357,11 @@ class SkwasmRenderer implements Renderer {
     int? targetHeight,
     bool allowUpscaling = true
   }) async {
-    final String? contentType = detectContentType(list);
+    final contentType = detectContentType(list);
     if (contentType == null) {
       throw Exception('Could not determine content type of image from data');
     }
-    final SkwasmImageDecoder baseDecoder = SkwasmImageDecoder(
+    final baseDecoder = SkwasmImageDecoder(
       contentType: contentType,
       dataSource: list.toJS,
       debugSource: 'encoded image bytes',
@@ -383,12 +383,12 @@ class SkwasmRenderer implements Renderer {
     Uri uri, {
     ui_web.ImageCodecChunkCallback? chunkCallback
   }) async {
-    final DomResponse response = await rawHttpGet(uri.toString());
-    final String? contentType = response.headers.get('Content-Type');
+    final response = await rawHttpGet(uri.toString());
+    final contentType = response.headers.get('Content-Type');
     if (contentType == null) {
       throw Exception('Could not determine content type of image at url $uri');
     }
-    final SkwasmImageDecoder decoder = SkwasmImageDecoder(
+    final decoder = SkwasmImageDecoder(
       contentType: contentType,
       dataSource: response.body as JSObject,
       debugSource: uri.toString(),
@@ -401,12 +401,12 @@ class SkwasmRenderer implements Renderer {
   // https://github.com/flutter/flutter/issues/137073.
   @override
   Future<void> renderScene(ui.Scene scene, ui.FlutterView view) {
-    final FrameTimingRecorder? recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
+    final recorder = FrameTimingRecorder.frameTimingsEnabled ? FrameTimingRecorder() : null;
     recorder?.recordBuildFinish();
 
     view as EngineFlutterView;
     assert(view is EngineFlutterWindow, 'Skwasm does not support multi-view mode yet');
-    final EngineSceneView sceneView = _getSceneViewForView(view);
+    final sceneView = _getSceneViewForView(view);
     return sceneView.renderScene(scene as EngineScene, recorder);
   }
 
@@ -498,8 +498,8 @@ class SkwasmPictureRenderer implements PictureRenderer {
 
   @override
   ScenePicture clipPicture(ScenePicture picture, ui.Rect clip) {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, clip);
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder, clip);
     canvas.clipRect(clip);
     canvas.drawPicture(picture);
 

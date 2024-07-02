@@ -17,10 +17,10 @@ String buildCssFontString({
   required double? fontSize,
   required String fontFamily,
 }) {
-  final String cssFontStyle = fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
-  final String cssFontWeight = fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
-  final int cssFontSize = (fontSize ?? StyleManager.defaultFontSize).floor();
-  final String cssFontFamily = canonicalizeFontFamily(fontFamily)!;
+  final cssFontStyle = fontStyle?.toCssString() ?? StyleManager.defaultFontStyle;
+  final cssFontWeight = fontWeight?.toCssString() ?? StyleManager.defaultFontWeight;
+  final cssFontSize = (fontSize ?? StyleManager.defaultFontSize).floor();
+  final cssFontFamily = canonicalizeFontFamily(fontFamily)!;
 
   return '$cssFontStyle $cssFontWeight ${cssFontSize}px $cssFontFamily';
 }
@@ -90,17 +90,17 @@ class TextDimensions {
   }
 
   void applyHeightStyle(TextHeightStyle textHeightStyle) {
-    final String fontFamily = textHeightStyle.fontFamily;
-    final double fontSize = textHeightStyle.fontSize;
-    final DomCSSStyleDeclaration style = _element.style;
+    final fontFamily = textHeightStyle.fontFamily;
+    final fontSize = textHeightStyle.fontSize;
+    final style = _element.style;
     style
       ..fontSize = '${fontSize.floor()}px'
       ..fontFamily = canonicalizeFontFamily(fontFamily)!;
 
-    final double? height = textHeightStyle.height;
+    final height = textHeightStyle.height;
     // Workaround the rounding introduced by https://github.com/flutter/flutter/issues/122066
     // in tests.
-    final double? effectiveLineHeight = height ?? (fontFamily == 'FlutterTest' ? 1.0 : null);
+    final effectiveLineHeight = height ?? (fontFamily == 'FlutterTest' ? 1.0 : null);
     if (effectiveLineHeight != null) {
       style.lineHeight = effectiveLineHeight.toString();
     }
@@ -119,7 +119,7 @@ class TextDimensions {
 
   /// The height of the paragraph being measured.
   double get height {
-    double cachedHeight = _readAndCacheMetrics().height;
+    var cachedHeight = _readAndCacheMetrics().height;
     if (ui_web.browser.browserEngine == ui_web.BrowserEngine.firefox &&
       // In the flutter tester environment, we use a predictable-size for font
       // measurement tests.
@@ -163,7 +163,7 @@ class TextHeightRuler {
   }
 
   DomHTMLElement _createHost() {
-    final DomHTMLDivElement host = createDomHTMLDivElement();
+    final host = createDomHTMLDivElement();
     host.style
       ..visibility = 'hidden'
       ..position = 'absolute'

@@ -14,7 +14,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 300, 300);
+  const region = Rect.fromLTWH(0, 0, 300, 300);
 
   late BitmapCanvas canvas;
   late BitmapCanvas domCanvas;
@@ -46,7 +46,7 @@ Future<void> testMain() async {
   });
   test('draws lines with negative Offset values with dom canvas', () async {
     // test rendering lines correctly with negative offset when using DOM
-    final SurfacePaintData paintWithStyle = SurfacePaintData()
+    final paintWithStyle = SurfacePaintData()
     ..color = 0xFFE91E63 // Colors.pink
     ..style = PaintingStyle.stroke
     ..strokeWidth = 16
@@ -54,18 +54,18 @@ Future<void> testMain() async {
 
     // canvas.drawLine ignores paint.style (defaults to fill) according to api docs.
     // expect lines are rendered the same regardless of the set paint.style
-    final SurfacePaintData paintWithoutStyle = SurfacePaintData()
+    final paintWithoutStyle = SurfacePaintData()
     ..color = 0xFF4CAF50 // Colors.green
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.round;
 
     // test vertical, horizontal, and diagonal lines
-    final List<Offset> points = <Offset>[
+    final points = <Offset>[
       const Offset(-25, 50), const Offset(45, 50),
       const Offset(100, -25), const Offset(100, 200),
       const Offset(-150, -145), const Offset(100, 200),
     ];
-    final List<Offset> shiftedPoints = points.map((Offset point) => point.translate(20, 20)).toList();
+    final shiftedPoints = points.map((Offset point) => point.translate(20, 20)).toList();
 
     paintLinesFromPoints(domCanvas, paintWithStyle, points);
     paintLinesFromPoints(domCanvas, paintWithoutStyle, shiftedPoints);
@@ -75,29 +75,29 @@ Future<void> testMain() async {
   });
 
   test('drawLines method respects strokeCap with dom canvas', () async {
-    final SurfacePaintData paintStrokeCapRound = SurfacePaintData()
+    final paintStrokeCapRound = SurfacePaintData()
     ..color = 0xFFE91E63 // Colors.pink
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.round;
 
-    final SurfacePaintData paintStrokeCapSquare = SurfacePaintData()
+    final paintStrokeCapSquare = SurfacePaintData()
     ..color = 0xFF4CAF50 // Colors.green
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.square;
 
-    final SurfacePaintData paintStrokeCapButt = SurfacePaintData()
+    final paintStrokeCapButt = SurfacePaintData()
     ..color = 0xFFFF9800 // Colors.orange
     ..strokeWidth = 16
     ..strokeCap = StrokeCap.butt;
 
     // test vertical, horizontal, and diagonal lines
-    final List<Offset> points = <Offset>[
+    final points = <Offset>[
       const Offset(5, 50), const Offset(45, 50),
       const Offset(100, 5), const Offset(100, 200),
       const Offset(5, 10), const Offset(100, 200),
     ];
-    final List<Offset> shiftedPoints = points.map((Offset point) => point.translate(50, 50)).toList();
-    final List<Offset> twiceShiftedPoints = shiftedPoints.map((Offset point) => point.translate(50, 50)).toList();
+    final shiftedPoints = points.map((Offset point) => point.translate(50, 50)).toList();
+    final twiceShiftedPoints = shiftedPoints.map((Offset point) => point.translate(50, 50)).toList();
 
     paintLinesFromPoints(domCanvas, paintStrokeCapRound, points);
     paintLinesFromPoints(domCanvas, paintStrokeCapSquare, shiftedPoints);
@@ -109,18 +109,18 @@ Future<void> testMain() async {
 }
 
 void paintLines(BitmapCanvas canvas) {
-  final SurfacePaintData nullPaint = SurfacePaintData()
+  final nullPaint = SurfacePaintData()
     ..strokeWidth = 1.0
     ..style = PaintingStyle.stroke;
-  final SurfacePaintData paint1 = SurfacePaintData()
+  final paint1 = SurfacePaintData()
       ..color = 0xFF9E9E9E // Colors.grey
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-  final SurfacePaintData paint2 = SurfacePaintData()
+  final paint2 = SurfacePaintData()
       ..color = 0x7fff0000
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
-  final SurfacePaintData paint3 = SurfacePaintData()
+  final paint3 = SurfacePaintData()
       ..color = 0xFF4CAF50 //Colors.green
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
@@ -146,7 +146,7 @@ void paintLines(BitmapCanvas canvas) {
 
 void paintLinesFromPoints(BitmapCanvas canvas, SurfacePaintData paint, List<Offset> points) {
   // points list contains pairs of Offset points, so for loop step is 2
-  for (int i = 0; i < points.length - 1; i += 2) {
+  for (var i = 0; i < points.length - 1; i += 2) {
     canvas.drawLine(points[i], points[i + 1], paint);
   }
 }

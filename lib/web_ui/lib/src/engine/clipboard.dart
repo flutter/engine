@@ -21,7 +21,7 @@ class ClipboardMessageHandler {
   void setDataMethodCall(
       MethodCall methodCall, ui.PlatformMessageResponseCallback? callback) {
     const MethodCodec codec = JSONMethodCodec();
-    bool errorEnvelopeEncoded = false;
+    var errorEnvelopeEncoded = false;
     _copyToClipboardStrategy
         .setData((methodCall.arguments as Map<String, Object?>)['text'] as String?)
         .then((bool success) {
@@ -46,7 +46,7 @@ class ClipboardMessageHandler {
   void getDataMethodCall(ui.PlatformMessageResponseCallback? callback) {
     const MethodCodec codec = JSONMethodCodec();
     _pasteFromClipboardStrategy.getData().then((String data) {
-      final Map<String, dynamic> map = <String, dynamic>{'text': data};
+      final map = <String, dynamic>{'text': data};
       callback!(codec.encodeSuccessEnvelope(map));
     }).catchError((dynamic error) {
       if (error is UnimplementedError) {
@@ -70,7 +70,7 @@ class ClipboardMessageHandler {
   void hasStringsMethodCall(ui.PlatformMessageResponseCallback? callback) {
     const MethodCodec codec = JSONMethodCodec();
     _pasteFromClipboardStrategy.getData().then((String data) {
-      final Map<String, dynamic> map = <String, dynamic>{'value': data.isNotEmpty};
+      final map = <String, dynamic>{'value': data.isNotEmpty};
       callback!(codec.encodeSuccessEnvelope(map));
     }).catchError((dynamic error) {
       if (error is UnimplementedError) {
@@ -85,7 +85,7 @@ class ClipboardMessageHandler {
         });
         return;
       }
-      final Map<String, dynamic> map = <String, dynamic>{'value': false};
+      final map = <String, dynamic>{'value': false};
       callback!(codec.encodeSuccessEnvelope(map));
     });
   }
@@ -182,11 +182,11 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   bool _setDataSync(String? text) {
     // Copy content to clipboard with execCommand.
     // See: https://developers.google.com/web/updates/2015/04/cut-and-copy-commands
-    final DomHTMLTextAreaElement tempTextArea = _appendTemporaryTextArea();
+    final tempTextArea = _appendTemporaryTextArea();
     tempTextArea.value = text;
     tempTextArea.focus();
     tempTextArea.select();
-    bool result = false;
+    var result = false;
     try {
       result = domDocument.execCommand('copy');
       if (!result) {
@@ -201,8 +201,8 @@ class ExecCommandCopyStrategy implements CopyToClipboardStrategy {
   }
 
   DomHTMLTextAreaElement _appendTemporaryTextArea() {
-    final DomHTMLTextAreaElement tempElement = createDomHTMLTextAreaElement();
-    final DomCSSStyleDeclaration elementStyle = tempElement.style;
+    final tempElement = createDomHTMLTextAreaElement();
+    final elementStyle = tempElement.style;
     elementStyle
       ..position = 'absolute'
       ..top = '-99999px'

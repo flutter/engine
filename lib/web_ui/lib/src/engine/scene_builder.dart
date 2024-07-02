@@ -58,12 +58,12 @@ class EngineScene implements ui.Scene {
 
   @override
   ui.Image toImageSync(int width, int height) {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Rect canvasRect = ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
-    final ui.Canvas canvas = ui.Canvas(recorder, canvasRect);
+    final recorder = ui.PictureRecorder();
+    final canvasRect = ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble());
+    final canvas = ui.Canvas(recorder, canvasRect);
 
     // Only rasterizes the picture slices.
-    for (final PictureSlice slice in rootLayer.slices.whereType<PictureSlice>()) {
+    for (final slice in rootLayer.slices.whereType<PictureSlice>()) {
       canvas.drawPicture(slice.picture);
     }
     return recorder.endRecording().toImageSync(width, height);
@@ -245,14 +245,14 @@ class EngineSceneBuilder implements ui.SceneBuilder {
     while (currentBuilder.parent != null) {
       pop();
     }
-    final PictureEngineLayer rootLayer = currentBuilder.build();
+    final rootLayer = currentBuilder.build();
     return EngineScene(rootLayer as EngineRootLayer);
   }
 
   @override
   void pop() {
-    final PictureEngineLayer layer = currentBuilder.build();
-    final LayerBuilder? parentBuilder = currentBuilder.parent;
+    final layer = currentBuilder.build();
+    final parentBuilder = currentBuilder.parent;
     if (parentBuilder == null) {
       throw StateError('Popped too many times.');
     }

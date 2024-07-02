@@ -14,7 +14,7 @@ void main() {
 
 void testMain() {
   test('services are initalized separately from UI', () async {
-    final JsFlutterConfiguration? config = await bootstrapAndExtractConfig();
+    final config = await bootstrapAndExtractConfig();
     expect(scheduleFrameCallback, isNull);
 
     expect(findGlassPane(), isNull);
@@ -51,12 +51,12 @@ Future<JsFlutterConfiguration?> bootstrapAndExtractConfig() {
   // configuration object that is passed into flutter.js to actually initialize the
   // engine with, so here we do a little no-op bootstrap that just retrieves the
   // configuration that is passed into the `initializeEngine` callback.
-  final Completer<JsFlutterConfiguration?> configCompleter = Completer<JsFlutterConfiguration?>();
-  final AppBootstrap bootstrap = AppBootstrap(
+  final configCompleter = Completer<JsFlutterConfiguration?>();
+  final bootstrap = AppBootstrap(
     initializeEngine: ([JsFlutterConfiguration? config]) async => configCompleter.complete(config),
     runApp: () async {}
   );
-  final FlutterLoader? loader = flutter?.loader;
+  final loader = flutter?.loader;
   if (loader == null || loader.isAutoStart) {
     // TODO(jacksongardner): Unit tests under dart2wasm still use the old way which
     // doesn't invoke flutter.js directly, so we autostart here. Once dart2wasm tests

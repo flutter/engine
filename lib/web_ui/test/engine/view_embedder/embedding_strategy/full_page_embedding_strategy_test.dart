@@ -18,7 +18,7 @@ void doTests() {
   group('initialize', () {
     test('Prepares target environment', () {
       final DomElement target = domDocument.body!;
-      final DomHTMLMetaElement meta = createDomHTMLMetaElement();
+      final meta = createDomHTMLMetaElement();
       meta
         ..id = 'my_viewport_meta_for_testing'
         ..name = 'viewport'
@@ -26,13 +26,13 @@ void doTests() {
             'maximum-scale=1.0, user-scalable=no';
       domDocument.head!.append(meta);
 
-      DomElement? userMeta =
+      var userMeta =
           domDocument.querySelector('#my_viewport_meta_for_testing');
 
       expect(userMeta, isNotNull);
 
       // ignore: unused_local_variable
-      final FullPageEmbeddingStrategy strategy = FullPageEmbeddingStrategy();
+      final strategy = FullPageEmbeddingStrategy();
 
       expect(target.getAttribute('flt-embedding'), 'full-page',
           reason:
@@ -41,7 +41,7 @@ void doTests() {
       // Locate the viewport metas again...
       userMeta = domDocument.querySelector('#my_viewport_meta_for_testing');
 
-      final DomElement? flutterMeta =
+      final flutterMeta =
           domDocument.querySelector('meta[name="viewport"]');
 
       expect(userMeta, isNull,
@@ -54,10 +54,10 @@ void doTests() {
 
   group('attachViewRoot', () {
     test('Should attach glasspane into embedder target (body)', () async {
-      final FullPageEmbeddingStrategy strategy = FullPageEmbeddingStrategy();
+      final strategy = FullPageEmbeddingStrategy();
 
-      final DomElement glassPane = createDomElement('some-tag-for-tests');
-      final DomCSSStyleDeclaration style = glassPane.style;
+      final glassPane = createDomElement('some-tag-for-tests');
+      final style = glassPane.style;
 
       expect(glassPane.isConnected, isFalse);
       expect(style.position, '',
@@ -74,7 +74,7 @@ void doTests() {
       expect(glassPane.parent, domDocument.body,
           reason: 'Should inject glassPane into the <body>');
 
-      final DomCSSStyleDeclaration styleAfter = glassPane.style;
+      final styleAfter = glassPane.style;
 
       // Assert required styling to cover the viewport
       expect(styleAfter.position, 'absolute',

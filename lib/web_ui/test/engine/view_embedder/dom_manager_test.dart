@@ -20,7 +20,7 @@ void main() {
 void doTests() {
   group('DomManager', () {
     test('DOM tree looks right', () {
-      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
+      final domManager = DomManager(devicePixelRatio: 3.0);
 
       // Check tag names.
 
@@ -31,24 +31,24 @@ void doTests() {
 
       // Check parent-child relationships.
 
-      final List<DomElement> rootChildren = domManager.rootElement.children.toList();
+      final rootChildren = domManager.rootElement.children.toList();
       expect(rootChildren.length, 4);
       expect(rootChildren[0], domManager.platformViewsHost);
       expect(rootChildren[1], domManager.textEditingHost);
       expect(rootChildren[2], domManager.semanticsHost);
       expect(rootChildren[3].tagName, equalsIgnoringCase('style'));
 
-      final List<DomElement> shadowChildren = domManager.renderingHost.childNodes.cast<DomElement>().toList();
+      final shadowChildren = domManager.renderingHost.childNodes.cast<DomElement>().toList();
       expect(shadowChildren.length, 2);
       expect(shadowChildren[0], domManager.sceneHost);
       expect(shadowChildren[1].tagName, equalsIgnoringCase('style'));
     });
 
     test('hide placeholder text for textfield', () {
-      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
+      final domManager = DomManager(devicePixelRatio: 3.0);
       domDocument.body!.append(domManager.rootElement);
 
-      final DomHTMLInputElement regularTextField = createDomHTMLInputElement();
+      final regularTextField = createDomHTMLInputElement();
       regularTextField.placeholder = 'Now you see me';
       domManager.rootElement.appendChild(regularTextField);
 
@@ -59,7 +59,7 @@ void doTests() {
       expect(style, isNotNull);
       expect(style.opacity, isNot('0'));
 
-      final DomHTMLInputElement textField = createDomHTMLInputElement();
+      final textField = createDomHTMLInputElement();
       textField.placeholder = 'Now you dont';
       textField.classList.add('flt-text-editing');
       domManager.rootElement.appendChild(textField);
@@ -90,7 +90,7 @@ void doTests() {
     });
 
     test('Initializes and attaches a shadow root', () {
-      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
+      final domManager = DomManager(devicePixelRatio: 3.0);
 
       expect(domInstanceOfString(domManager.renderingHost, 'ShadowRoot'), isTrue);
       expect(domManager.renderingHost.host, domManager.platformViewsHost);
@@ -107,8 +107,8 @@ void doTests() {
     });
 
     test('Attaches a stylesheet to the shadow root', () {
-      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
-      final DomElement? style =
+      final domManager = DomManager(devicePixelRatio: 3.0);
+      final style =
           domManager.renderingHost.querySelector('#flt-internals-stylesheet');
 
       expect(style, isNotNull);
@@ -117,12 +117,12 @@ void doTests() {
     });
 
     test('setScene', () {
-      final DomManager domManager = DomManager(devicePixelRatio: 3.0);
+      final domManager = DomManager(devicePixelRatio: 3.0);
 
-      final DomElement sceneHost =
+      final sceneHost =
           domManager.renderingHost.querySelector('flt-scene-host')!;
 
-      final DomElement scene1 = createDomElement('flt-scene');
+      final scene1 = createDomElement('flt-scene');
       domManager.setScene(scene1);
       expect(sceneHost.children, <DomElement>[scene1]);
 
@@ -131,7 +131,7 @@ void doTests() {
       expect(sceneHost.children, <DomElement>[scene1]);
 
       // Insert a different scene.
-      final DomElement scene2 = createDomElement('flt-scene');
+      final scene2 = createDomElement('flt-scene');
       domManager.setScene(scene2);
       expect(sceneHost.children, <DomElement>[scene2]);
       expect(scene1.parent, isNull);

@@ -23,10 +23,10 @@ void testMain() {
     });
 
     test('Surface allocates canvases efficiently', () {
-      final Surface surface = Surface();
-      final CkSurface originalSurface =
+      final surface = Surface();
+      final originalSurface =
           surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
-      final DomOffscreenCanvas original = surface.debugOffscreenCanvas!;
+      final original = surface.debugOffscreenCanvas!;
 
       // Expect exact requested dimensions.
       expect(original.width, 9);
@@ -36,9 +36,9 @@ void testMain() {
 
       // Shrinking reuses the existing canvas but translates it so
       // Skia renders into the visible area.
-      final CkSurface shrunkSurface =
+      final shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomOffscreenCanvas shrunk = surface.debugOffscreenCanvas!;
+      final shrunk = surface.debugOffscreenCanvas!;
       expect(shrunk, same(original));
       expect(shrunkSurface, isNot(same(originalSurface)));
       expect(shrunkSurface.width(), 5);
@@ -46,9 +46,9 @@ void testMain() {
 
       // The first increase will allocate a new surface, but will overallocate
       // by 40% to accommodate future increases.
-      final CkSurface firstIncreaseSurface =
+      final firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
-      final DomOffscreenCanvas firstIncrease = surface.debugOffscreenCanvas!;
+      final firstIncrease = surface.debugOffscreenCanvas!;
       expect(firstIncrease, same(original));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
@@ -59,18 +59,18 @@ void testMain() {
       expect(firstIncreaseSurface.height(), 20);
 
       // Subsequent increases within 40% reuse the old canvas.
-      final CkSurface secondIncreaseSurface =
+      final secondIncreaseSurface =
           surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
-      final DomOffscreenCanvas secondIncrease = surface.debugOffscreenCanvas!;
+      final secondIncrease = surface.debugOffscreenCanvas!;
       expect(secondIncrease, same(firstIncrease));
       expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
       expect(secondIncreaseSurface.width(), 11);
       expect(secondIncreaseSurface.height(), 22);
 
       // Increases beyond the 40% limit will cause a new allocation.
-      final CkSurface hugeSurface =
+      final hugeSurface =
           surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
-      final DomOffscreenCanvas huge = surface.debugOffscreenCanvas!;
+      final huge = surface.debugOffscreenCanvas!;
       expect(huge, same(secondIncrease));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
@@ -81,9 +81,9 @@ void testMain() {
       expect(hugeSurface.height(), 40);
 
       // Shrink again. Reuse the last allocated surface.
-      final CkSurface shrunkSurface2 =
+      final shrunkSurface2 =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomOffscreenCanvas shrunk2 = surface.debugOffscreenCanvas!;
+      final shrunk2 = surface.debugOffscreenCanvas!;
       expect(shrunk2, same(huge));
       expect(shrunkSurface2, isNot(same(hugeSurface)));
       expect(shrunkSurface2.width(), 5);
@@ -92,9 +92,9 @@ void testMain() {
       // Doubling the DPR should halve the CSS width, height, and translation of the canvas.
       // This tests https://github.com/flutter/flutter/issues/77084
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
-      final CkSurface dpr2Surface2 =
+      final dpr2Surface2 =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final DomOffscreenCanvas dpr2Canvas = surface.debugOffscreenCanvas!;
+      final dpr2Canvas = surface.debugOffscreenCanvas!;
       expect(dpr2Canvas, same(huge));
       expect(dpr2Surface2, isNot(same(hugeSurface)));
       expect(dpr2Surface2.width(), 5);
@@ -108,11 +108,11 @@ void testMain() {
     }, skip: isFirefox || !Surface.offscreenCanvasSupported);
 
     test('Surface used as DisplayCanvas resizes correctly', () {
-      final Surface surface = Surface(isDisplayCanvas: true);
+      final surface = Surface(isDisplayCanvas: true);
 
       surface.createOrUpdateSurface(const BitmapSize(9, 19));
-      final DomCanvasElement original = getDisplayCanvas(surface);
-      ui.Size canvasSize = getCssSize(surface);
+      final original = getDisplayCanvas(surface);
+      var canvasSize = getCssSize(surface);
 
       // Expect exact requested dimensions.
       expect(original.width, 9);
@@ -123,7 +123,7 @@ void testMain() {
       // Shrinking reuses the existing canvas but translates it so
       // Skia renders into the visible area.
       surface.createOrUpdateSurface(const BitmapSize(5, 15));
-      final DomCanvasElement shrunk = getDisplayCanvas(surface);
+      final shrunk = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
       expect(shrunk.width, 9);
       expect(shrunk.height, 19);
@@ -133,7 +133,7 @@ void testMain() {
       // The first increase will allocate a new surface, but will overallocate
       // by 40% to accommodate future increases.
       surface.createOrUpdateSurface(const BitmapSize(10, 20));
-      final DomCanvasElement firstIncrease = getDisplayCanvas(surface);
+      final firstIncrease = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
 
       expect(firstIncrease, same(original));
@@ -146,7 +146,7 @@ void testMain() {
 
       // Subsequent increases within 40% reuse the old canvas.
       surface.createOrUpdateSurface(const BitmapSize(11, 22));
-      final DomCanvasElement secondIncrease = getDisplayCanvas(surface);
+      final secondIncrease = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
 
       expect(secondIncrease, same(firstIncrease));
@@ -157,7 +157,7 @@ void testMain() {
 
       // Increases beyond the 40% limit will cause a new allocation.
       surface.createOrUpdateSurface(const BitmapSize(20, 40));
-      final DomCanvasElement huge = getDisplayCanvas(surface);
+      final huge = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
 
       expect(huge, same(secondIncrease));
@@ -170,7 +170,7 @@ void testMain() {
 
       // Shrink again. Reuse the last allocated surface.
       surface.createOrUpdateSurface(const BitmapSize(5, 15));
-      final DomCanvasElement shrunk2 = getDisplayCanvas(surface);
+      final shrunk2 = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
 
       expect(shrunk2, same(huge));
@@ -183,7 +183,7 @@ void testMain() {
       // This tests https://github.com/flutter/flutter/issues/77084
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
       surface.createOrUpdateSurface(const BitmapSize(5, 15));
-      final DomCanvasElement dpr2Canvas = getDisplayCanvas(surface);
+      final dpr2Canvas = getDisplayCanvas(surface);
       canvasSize = getCssSize(surface);
 
       expect(dpr2Canvas, same(huge));
@@ -199,22 +199,22 @@ void testMain() {
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
-        final Surface surface = Surface();
+        final surface = Surface();
         expect(surface.debugForceNewContext, isTrue);
-        final CkSurface before =
+        final before =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
         expect(surface.debugForceNewContext, isFalse);
 
         // Pump a timer to flush any microtasks.
         await Future<void>.delayed(Duration.zero);
-        final CkSurface afterAcquireFrame =
+        final afterAcquireFrame =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
         // Existing context is reused.
         expect(afterAcquireFrame, same(before));
 
         // Emulate WebGL context loss.
-        final DomOffscreenCanvas canvas = surface.debugOffscreenCanvas!;
-        final Object ctx = canvas.getContext('webgl2')!;
+        final canvas = surface.debugOffscreenCanvas!;
+        final ctx = canvas.getContext('webgl2')!;
         final Object loseContextExtension = js_util.callMethod(
           ctx,
           'getExtension',
@@ -227,7 +227,7 @@ void testMain() {
         await Future<void>.delayed(Duration.zero);
         // We don't create a new GL context until the context is restored.
         expect(surface.debugContextLost, isTrue);
-        final bool isContextLost =
+        final isContextLost =
             js_util.callMethod<bool>(ctx, 'isContextLost', const <void>[]);
         expect(isContextLost, isTrue);
 
@@ -239,7 +239,7 @@ void testMain() {
         await Future<void>.delayed(Duration.zero);
         expect(surface.debugForceNewContext, isTrue);
 
-        final CkSurface afterContextLost =
+        final afterContextLost =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
         // A new context is created.
         expect(afterContextLost, isNot(same(before)));
@@ -252,8 +252,8 @@ void testMain() {
     test(
       'updates canvas logical size when device-pixel ratio changes',
       () {
-        final Surface surface = Surface();
-        final CkSurface original =
+        final surface = Surface();
+        final original =
             surface.acquireFrame(const ui.Size(10, 16)).skiaSurface;
 
         expect(original.width(), 10);
@@ -264,7 +264,7 @@ void testMain() {
         // Increase device-pixel ratio: this makes CSS pixels bigger, so we need
         // fewer of them to cover the browser window.
         EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
-        final CkSurface highDpr =
+        final highDpr =
             surface.acquireFrame(const ui.Size(10, 16)).skiaSurface;
         expect(highDpr.width(), 10);
         expect(highDpr.height(), 16);
@@ -274,7 +274,7 @@ void testMain() {
         // Decrease device-pixel ratio: this makes CSS pixels smaller, so we need
         // more of them to cover the browser window.
         EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(0.5);
-        final CkSurface lowDpr =
+        final lowDpr =
             surface.acquireFrame(const ui.Size(10, 16)).skiaSurface;
         expect(lowDpr.width(), 10);
         expect(lowDpr.height(), 16);
@@ -283,7 +283,7 @@ void testMain() {
 
         // See https://github.com/flutter/flutter/issues/77084#issuecomment-1120151172
         EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(2.0);
-        final CkSurface changeRatioAndSize =
+        final changeRatioAndSize =
             surface.acquireFrame(const ui.Size(9.9, 15.9)).skiaSurface;
         expect(changeRatioAndSize.width(), 10);
         expect(changeRatioAndSize.height(), 16);
@@ -303,14 +303,14 @@ DomCanvasElement getDisplayCanvas(Surface surface) {
 /// Extracts the CSS style values of 'width' and 'height' and returns them
 /// as a [ui.Size].
 ui.Size getCssSize(Surface surface) {
-  final DomCanvasElement canvas = getDisplayCanvas(surface);
-  final String cssWidth = canvas.style.width;
-  final String cssHeight = canvas.style.height;
+  final canvas = getDisplayCanvas(surface);
+  final cssWidth = canvas.style.width;
+  final cssHeight = canvas.style.height;
   // CSS width and height should be in the form 'NNNpx'. So cut off the 'px' and
   // convert to a number.
-  final double width =
+  final width =
       double.parse(cssWidth.substring(0, cssWidth.length - 2).trim());
-  final double height =
+  final height =
       double.parse(cssHeight.substring(0, cssHeight.length - 2).trim());
   return ui.Size(width, height);
 }

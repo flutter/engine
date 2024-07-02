@@ -52,8 +52,8 @@ void testMain() {
       // Attach the placeholder to dom.
       domDocument.body!.append(placeholder!);
 
-      DomEvent event = createDomEvent('Event', 'mousemove');
-      bool shouldForwardToFramework =
+      var event = createDomEvent('Event', 'mousemove');
+      var shouldForwardToFramework =
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, isTrue);
@@ -71,10 +71,10 @@ void testMain() {
     test(
         'Relevant events targeting placeholder should not be forwarded to the framework',
         () async {
-      final DomEvent event = createDomEvent('Event', 'mousedown');
+      final event = createDomEvent('Event', 'mousedown');
       placeholder!.dispatchEvent(event);
 
-      final bool shouldForwardToFramework =
+      final shouldForwardToFramework =
           desktopSemanticsEnabler.tryEnableSemantics(event);
 
       expect(shouldForwardToFramework, isFalse);
@@ -122,7 +122,7 @@ void testMain() {
           () async {
         final DomEvent event = createDomPointerEvent('pointermove');
 
-        final bool shouldForwardToFramework =
+        final shouldForwardToFramework =
             mobileSemanticsEnabler.tryEnableSemantics(event);
 
         expect(shouldForwardToFramework, isTrue);
@@ -142,12 +142,12 @@ void testMain() {
         expect(mobileSemanticsEnabler.semanticsActivationTimer, isNull);
 
         // Send a click at center
-        final DomRect activatingElementRect =
+        final activatingElementRect =
             placeholder!.getBoundingClientRect();
-        final int midX = (activatingElementRect.left +
+        final midX = (activatingElementRect.left +
                 (activatingElementRect.right - activatingElementRect.left) / 2)
             .toInt();
-        final int midY = (activatingElementRect.top +
+        final midY = (activatingElementRect.top +
                 (activatingElementRect.bottom - activatingElementRect.top) / 2)
             .toInt();
         placeholder!.dispatchEvent(createDomMouseEvent(

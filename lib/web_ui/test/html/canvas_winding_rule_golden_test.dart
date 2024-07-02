@@ -14,7 +14,7 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const Rect region = Rect.fromLTWH(0, 0, 500, 500);
+  const region = Rect.fromLTWH(0, 0, 500, 500);
 
   late BitmapCanvas canvas;
 
@@ -40,14 +40,14 @@ void paintPaths(BitmapCanvas canvas) {
         ..color = 0xFFFFFFFF
         ..style = PaintingStyle.fill); // white
 
-  final SurfacePaint paintFill = SurfacePaint()
+  final paintFill = SurfacePaint()
     ..style = PaintingStyle.fill
     ..color = const Color(0xFF00B0FF);
-  final SurfacePaint paintStroke = SurfacePaint()
+  final paintStroke = SurfacePaint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2
     ..color = const Color(0xFFE00000);
-  final Path path1 = Path()
+  final path1 = Path()
     ..fillType = PathFillType.evenOdd
     ..moveTo(50, 0)
     ..lineTo(21, 90)
@@ -57,7 +57,7 @@ void paintPaths(BitmapCanvas canvas) {
     ..close()
     ..addRect(const Rect.fromLTWH(20, 100, 200, 50))
     ..addRect(const Rect.fromLTWH(40, 120, 160, 10));
-  final Path path2 = Path()
+  final path2 = Path()
     ..fillType = PathFillType.nonZero
     ..moveTo(50, 200)
     ..lineTo(21, 290)

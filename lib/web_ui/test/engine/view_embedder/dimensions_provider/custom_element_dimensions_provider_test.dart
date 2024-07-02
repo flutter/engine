@@ -14,7 +14,7 @@ void main() {
 }
 
 void doTests() {
-  final DomElement sizeSource = createDomElement('div')
+  final sizeSource = createDomElement('div')
     ..style.display = 'block';
 
   group('computePhysicalSize', () {
@@ -34,18 +34,18 @@ void doTests() {
     });
 
     test('returns physical size of element (width * dpr)', () {
-      const double dpr = 2.5;
-      const double logicalWidth = 50;
-      const double logicalHeight = 75;
+      const dpr = 2.5;
+      const logicalWidth = 50;
+      const logicalHeight = 75;
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(dpr);
 
       sizeSource
         ..style.width = '${logicalWidth}px'
         ..style.height = '${logicalHeight}px';
 
-      const ui.Size expected = ui.Size(logicalWidth * dpr, logicalHeight * dpr);
+      const expected = ui.Size(logicalWidth * dpr, logicalHeight * dpr);
 
-      final ui.Size computed = provider.computePhysicalSize();
+      final computed = provider.computePhysicalSize();
 
       expect(computed, expected);
     });
@@ -69,13 +69,13 @@ void doTests() {
 
     test('from viewport physical size (simulated keyboard) - always zero', () {
       // Simulate a 100px tall keyboard showing...
-      const double dpr = 2.5;
+      const dpr = 2.5;
       EngineFlutterDisplay.instance.debugOverrideDevicePixelRatio(dpr);
-      const double keyboardGap = 100;
-      final double physicalHeight =
+      const keyboardGap = 100;
+      final physicalHeight =
           (domWindow.visualViewport!.height! + keyboardGap) * dpr;
 
-      final ViewPadding computed =
+      final computed =
           provider.computeKeyboardInsets(physicalHeight, false);
 
       expect(computed.top, 0);
@@ -132,11 +132,11 @@ void doTests() {
 
     test('funnels DPR change events too', () async {
       // Override the source of DPR events...
-      final StreamController<double> dprController =
+      final dprController =
           StreamController<double>.broadcast();
 
       // Inject the dprController stream into the CustomElementDimensionsProvider.
-      final CustomElementDimensionsProvider provider =
+      final provider =
           CustomElementDimensionsProvider(
         sizeSource,
         onDprChange: dprController.stream,
@@ -152,7 +152,7 @@ void doTests() {
 
     test('closed by onHotRestart', () async {
       // Register an onDone listener for the stream
-      final Completer<bool> completer = Completer<bool>();
+      final completer = Completer<bool>();
       provider.onResize.listen(null, onDone: () {
         completer.complete(true);
       });

@@ -46,7 +46,7 @@ final class ViewFocusBinding {
     if (!isEnabled) {
       return;
     }
-    final DomElement? viewElement = _viewManager[viewId]?.dom.rootElement;
+    final viewElement = _viewManager[viewId]?.dom.rootElement;
 
     if (state == ui.ViewFocusState.focused) {
       // Only move the focus to the flutter view if nothing inside it is focused already.
@@ -84,7 +84,7 @@ final class ViewFocusBinding {
       return;
     }
 
-    final int? viewId = _viewId(focusedElement);
+    final viewId = _viewId(focusedElement);
     if (viewId == _lastViewId) {
       return;
     }
@@ -110,7 +110,7 @@ final class ViewFocusBinding {
   }
 
   int? _viewId(DomElement? element) {
-    final FlutterViewManager viewManager = EnginePlatformDispatcher.instance.viewManager;
+    final viewManager = EnginePlatformDispatcher.instance.viewManager;
     return viewManager.findViewForElement(element)?.viewId;
   }
 
@@ -126,7 +126,7 @@ final class ViewFocusBinding {
       return;
     }
 
-    final DomElement? rootElement = _viewManager[viewId]?.dom.rootElement;
+    final rootElement = _viewManager[viewId]?.dom.rootElement;
     if (EngineSemantics.instance.semanticsEnabled) {
       rootElement?.removeAttribute('tabindex');
     } else {

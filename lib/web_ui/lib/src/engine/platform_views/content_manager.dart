@@ -143,16 +143,16 @@ class PlatformViewManager {
     assert(knowsViewType(viewType),
         'Attempted to render contents of unregistered viewType: $viewType');
 
-    final String slotName = getPlatformViewSlotName(viewId);
+    final slotName = getPlatformViewSlotName(viewId);
     _viewIdToType[viewId] = viewType;
 
     return _contents.putIfAbsent(viewId, () {
-      final DomElement wrapper = domDocument
+      final wrapper = domDocument
           .createElement('flt-platform-view')
             ..id = getPlatformViewDomId(viewId)
             ..setAttribute('slot', slotName);
 
-      final Function factoryFunction = _factories[viewType]!;
+      final factoryFunction = _factories[viewType]!;
       final DomElement content;
 
       if (factoryFunction is ui_web.ParameterizedPlatformViewFactory) {
@@ -204,7 +204,7 @@ class PlatformViewManager {
 
   /// Returns `true` if the given [viewId] is for an invisible platform view.
   bool isInvisible(int viewId) {
-    final String? viewType = _viewIdToType[viewId];
+    final viewType = _viewIdToType[viewId];
     return viewType != null && _invisibleViews.contains(viewType);
   }
 

@@ -50,19 +50,19 @@ class Edge extends Browser {
   /// [Uri] or a [String].
   factory Edge(Uri url) {
     return Edge._(BrowserProcess(() async {
-      final BrowserInstallation installation = await getEdgeInstallation(
+      final installation = await getEdgeInstallation(
         packageLock.edgeLock.launcherVersion,
         infoLog: DevNull(),
       );
 
       // Debug is not a valid option for Edge. Remove it.
-      String pathToOpen = url.toString();
+      var pathToOpen = url.toString();
       if(pathToOpen.contains('debug')) {
-        final int index = pathToOpen.indexOf('debug');
+        final index = pathToOpen.indexOf('debug');
         pathToOpen = pathToOpen.substring(0, index-1);
       }
 
-      final Process process = await Process.start(
+      final process = await Process.start(
         installation.executable,
         <String>[pathToOpen,'-k'],
       );

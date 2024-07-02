@@ -122,7 +122,7 @@ class AccessibilityFocusManager {
   /// cause any future focus/blur events to be forwarded to the new ID.
   void manage(int semanticsNodeId, DomElement element) {
     if (identical(element, _target?.element)) {
-      final _FocusTarget previousTarget = _target!;
+      final previousTarget = _target!;
       if (semanticsNodeId == previousTarget.semanticsNodeId) {
         return;
       }
@@ -141,7 +141,7 @@ class AccessibilityFocusManager {
       stopManaging();
     }
 
-    final _FocusTarget newTarget = (
+    final newTarget = (
       semanticsNodeId: semanticsNodeId,
       element: element,
       domFocusListener: createDomEventListener((_) => _didReceiveDomFocus()),
@@ -154,7 +154,7 @@ class AccessibilityFocusManager {
 
   /// Stops managing the focus of the current element, if any.
   void stopManaging() {
-    final _FocusTarget? target = _target;
+    final target = _target;
     _target = null;
     _lastSetValue = null;
 
@@ -167,7 +167,7 @@ class AccessibilityFocusManager {
   }
 
   void _didReceiveDomFocus() {
-    final _FocusTarget? target = _target;
+    final target = _target;
 
     if (target == null) {
       // DOM events can be asynchronous. By the time the event reaches here, the
@@ -184,7 +184,7 @@ class AccessibilityFocusManager {
 
   /// Requests focus or blur on the DOM element.
   void changeFocus(bool value) {
-    final _FocusTarget? target = _target;
+    final target = _target;
 
     if (target == null) {
       // If this branch is being executed, there's a bug somewhere already, but

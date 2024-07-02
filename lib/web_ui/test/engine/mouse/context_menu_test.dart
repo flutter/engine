@@ -13,11 +13,11 @@ void main() {
 void testMain() {
   group('$ContextMenu', () {
     test('can disable context menu', () {
-      final DomElement rootViewElement = createDomElement('div');
-      final ContextMenu contextMenu = ContextMenu(rootViewElement);
+      final rootViewElement = createDomElement('div');
+      final contextMenu = ContextMenu(rootViewElement);
 
       // When the app starts, contextmenu events are not prevented.
-      DomEvent event = createDomEvent('Event', 'contextmenu');
+      var event = createDomEvent('Event', 'contextmenu');
       expect(event.defaultPrevented, isFalse);
       rootViewElement.dispatchEvent(event);
       expect(event.defaultPrevented, isFalse);
@@ -38,24 +38,24 @@ void testMain() {
     });
 
     test('does not disable context menu outside root view element', () {
-      final DomElement rootViewElement = createDomElement('div');
-      final ContextMenu contextMenu = ContextMenu(rootViewElement);
+      final rootViewElement = createDomElement('div');
+      final contextMenu = ContextMenu(rootViewElement);
 
       contextMenu.disable();
 
       // Dispatching on a DOM element outside of target's subtree has no effect.
-      final DomEvent event = createDomEvent('Event', 'contextmenu');
+      final event = createDomEvent('Event', 'contextmenu');
       expect(event.defaultPrevented, isFalse);
       domDocument.body!.dispatchEvent(event);
       expect(event.defaultPrevented, isFalse);
     });
 
     test('can enable context menu after disabling', () {
-      final DomElement rootViewElement = createDomElement('div');
-      final ContextMenu contextMenu = ContextMenu(rootViewElement);
+      final rootViewElement = createDomElement('div');
+      final contextMenu = ContextMenu(rootViewElement);
 
       // When the app starts, contextmenu events are not prevented.
-      DomEvent event = createDomEvent('Event', 'contextmenu');
+      var event = createDomEvent('Event', 'contextmenu');
       expect(event.defaultPrevented, isFalse);
       rootViewElement.dispatchEvent(event);
       expect(event.defaultPrevented, isFalse);
@@ -84,11 +84,11 @@ void testMain() {
     });
 
     test('enabling before disabling has no effect', () {
-      final DomElement rootViewElement = createDomElement('div');
-      final ContextMenu contextMenu = ContextMenu(rootViewElement);
+      final rootViewElement = createDomElement('div');
+      final contextMenu = ContextMenu(rootViewElement);
 
       // When the app starts, contextmenu events are not prevented.
-      DomEvent event = createDomEvent('Event', 'contextmenu');
+      var event = createDomEvent('Event', 'contextmenu');
       expect(event.defaultPrevented, isFalse);
       rootViewElement.dispatchEvent(event);
       expect(event.defaultPrevented, isFalse);

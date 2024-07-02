@@ -21,18 +21,18 @@ enum PaintMode {
 }
 
 Future<void> testMain() async {
-  const Rect region =
+  const region =
       Rect.fromLTWH(8, 8, 600, 400); // Compensate for old golden tester padding
 
   Future<void> testPath(Path path, String goldenFileName,
       {SurfacePaint? paint,
       PaintMode mode = PaintMode.kStrokeAndFill}) async {
-    const Rect canvasBounds = Rect.fromLTWH(0, 0, 600, 400);
-    final BitmapCanvas bitmapCanvas =
+    const canvasBounds = Rect.fromLTWH(0, 0, 600, 400);
+    final bitmapCanvas =
         BitmapCanvas(canvasBounds, RenderStrategy());
-    final RecordingCanvas canvas = RecordingCanvas(canvasBounds);
+    final canvas = RecordingCanvas(canvasBounds);
 
-    final bool enableFill =
+    final enableFill =
         mode == PaintMode.kStrokeAndFill || mode == PaintMode.kFill;
     if (enableFill) {
       paint ??= SurfacePaint()
@@ -56,12 +56,12 @@ Future<void> testMain() async {
 
     canvas.drawPath(path, paint!);
 
-    final DomElement svgElement = pathToSvgElement(path, paint, enableFill);
+    final svgElement = pathToSvgElement(path, paint, enableFill);
 
     canvas.endRecording();
     canvas.apply(bitmapCanvas, canvasBounds);
 
-    final DomElement sceneElement = createDomElement('flt-scene');
+    final sceneElement = createDomElement('flt-scene');
     domDocument.body!.append(sceneElement);
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
@@ -84,7 +84,7 @@ Future<void> testMain() async {
   });
 
   test('render line strokes', () async {
-    final Path path = Path();
+    final path = Path();
     path.moveTo(50, 60);
     path.lineTo(200, 300);
     await testPath(path, 'svg_stroke_line',
@@ -95,21 +95,21 @@ Future<void> testMain() async {
   });
 
   test('render quad bezier curve', () async {
-    final Path path = Path();
+    final path = Path();
     path.moveTo(50, 60);
     path.quadraticBezierTo(200, 60, 50, 200);
     await testPath(path, 'svg_quad_bezier');
   });
 
   test('render cubic curve', () async {
-    final Path path = Path();
+    final path = Path();
     path.moveTo(50, 60);
     path.cubicTo(200, 60, -100, -50, 150, 200);
     await testPath(path, 'svg_cubic_bezier');
   });
 
   test('render arcs', () async {
-    final List<ArcSample> arcs = <ArcSample>[
+    final arcs = <ArcSample>[
       ArcSample(Offset.zero, distance: 20),
       ArcSample(const Offset(200, 0),
           largeArc: true, distance: 20),
@@ -123,23 +123,23 @@ Future<void> testMain() async {
       ArcSample(const Offset(200, 0),
           largeArc: true, clockwise: true, distance: -20)
     ];
-    int sampleIndex = 0;
-    for (final ArcSample sample in arcs) {
+    var sampleIndex = 0;
+    for (final sample in arcs) {
       ++sampleIndex;
-      final Path path = sample.createPath();
+      final path = sample.createPath();
       await testPath(path, 'svg_arc_$sampleIndex');
     }
   });
 
   test('render rect', () async {
-    final Path path = Path();
+    final path = Path();
     path.addRect(const Rect.fromLTRB(15, 15, 60, 20));
     path.addRect(const Rect.fromLTRB(35, 160, 15, 100));
     await testPath(path, 'svg_rect');
   });
 
   test('render notch', () async {
-    final Path path = Path();
+    final path = Path();
     path.moveTo(0, 0);
     path.lineTo(83, 0);
     path.quadraticBezierTo(98, 0, 99.97, 7.8);
@@ -155,8 +155,8 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/70980
   test('render notch', () async {
-    const double w = 0.7;
-    final Path path = Path();
+    const w = 0.7;
+    final path = Path();
     path.moveTo(0.5, 14);
     path.conicTo(0.5, 10.5, 4, 10.5, w);
     path.moveTo(4, 10.5);
@@ -175,7 +175,7 @@ Future<void> testMain() async {
 
   /// Regression test for https://github.com/flutter/flutter/issues/74416
   test('render stroke', () async {
-    final Path path = Path();
+    final path = Path();
     path.moveTo(20, 20);
     path.lineTo(200, 200);
     await testPath(path, 'svg_stroke_width', mode: PaintMode.kStrokeWidthOnly);
@@ -183,14 +183,14 @@ Future<void> testMain() async {
 }
 
 DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
-  final Rect bounds = path.getBounds();
-  final SVGSVGElement root = createSVGSVGElement();
+  final bounds = path.getBounds();
+  final root = createSVGSVGElement();
   root.style.transform = 'translate(200px, 0px)';
   root.setAttribute('viewBox', '0 0 ${bounds.right} ${bounds.bottom}');
   root.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.right);
   root.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.bottom);
 
-  final SVGPathElement pathElement = createSVGPathElement();
+  final pathElement = createSVGPathElement();
   root.append(pathElement);
   if (paint.style == PaintingStyle.stroke ||
       paint.strokeWidth != 0.0) {
@@ -217,11 +217,11 @@ class ArcSample {
   final double distance;
 
   Path createPath() {
-    final Offset startP =
+    final startP =
         Offset(75 - distance + offset.dx, 75 - distance + offset.dy);
-    final Offset endP =
+    final endP =
         Offset(75.0 + distance + offset.dx, 75.0 + distance + offset.dy);
-    final Path path = Path();
+    final path = Path();
     path.moveTo(startP.dx, startP.dy);
     path.arcToPoint(endP,
         rotation: 60,

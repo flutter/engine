@@ -16,8 +16,8 @@ void main() {
 void testMain() {
   group('Picture', () {
     test('toImage produces an image', () async {
-      final EnginePictureRecorder recorder = EnginePictureRecorder();
-      final RecordingCanvas canvas = recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 200, 100));
+      final recorder = EnginePictureRecorder();
+      final canvas = recorder.beginRecording(const ui.Rect.fromLTRB(0, 0, 200, 100));
       canvas.drawCircle(
         const ui.Offset(100, 50),
         40,
@@ -25,7 +25,7 @@ void testMain() {
           ..color = const ui.Color.fromARGB(255, 255, 100, 100),
       );
       final ui.Picture picture = recorder.endRecording();
-      final HtmlImage image = await picture.toImage(200, 100) as HtmlImage;
+      final image = await picture.toImage(200, 100) as HtmlImage;
       expect(image, isNotNull);
       domDocument.body!
         ..style.margin = '0'

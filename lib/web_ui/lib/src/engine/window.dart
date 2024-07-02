@@ -150,8 +150,8 @@ base class EngineFlutterView implements ui.FlutterView {
 
   @override
   ViewConstraints get physicalConstraints {
-    final double dpr = devicePixelRatio;
-    final ui.Size currentLogicalSize = physicalSize / dpr;
+    final dpr = devicePixelRatio;
+    final currentLogicalSize = physicalSize / dpr;
     return ViewConstraints.fromJs(_jsViewConstraints, currentLogicalSize) * dpr;
   }
 
@@ -203,7 +203,7 @@ base class EngineFlutterView implements ui.FlutterView {
   /// `hostElement` to compute its `physicalConstraints`, only its current size.
   void resize(ui.Size newPhysicalSize) {
     // The browser uses CSS, and CSS operates in logical sizes.
-    final ui.Size logicalSize = newPhysicalSize / devicePixelRatio;
+    final logicalSize = newPhysicalSize / devicePixelRatio;
     dom.rootElement.style
       ..width = '${logicalSize.width}px'
       ..height = '${logicalSize.height}px';
@@ -278,8 +278,8 @@ base class EngineFlutterView implements ui.FlutterView {
   /// size if the change is caused by a rotation.
   void _didResize(ui.Size? newSize) {
     StyleManager.scaleSemanticsHost(dom.semanticsHost, devicePixelRatio);
-    final ui.Size newPhysicalSize = _computePhysicalSize();
-    final bool isEditingOnMobile =
+    final newPhysicalSize = _computePhysicalSize();
+    final isEditingOnMobile =
         isMobile && !_isRotation(newPhysicalSize) && textEditing.isEditing;
     if (isEditingOnMobile) {
       _computeOnScreenKeyboardInsets(true);
@@ -550,7 +550,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 
     // At this point, we know that `_browserHistory` is a non-null
     // `MultiEntriesBrowserHistory` instance.
-    final ui_web.UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    final strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = SingleEntryBrowserHistory(urlStrategy: strategy);
   }
@@ -574,7 +574,7 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 
     // At this point, we know that `_browserHistory` is a non-null
     // `SingleEntryBrowserHistory` instance.
-    final ui_web.UrlStrategy? strategy = _browserHistory?.urlStrategy;
+    final strategy = _browserHistory?.urlStrategy;
     await _browserHistory?.tearDown();
     _browserHistory = MultiEntriesBrowserHistory(urlStrategy: strategy);
   }
@@ -603,11 +603,11 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
   Future<void> _endOfTheLine = Future<void>.value();
 
   Future<bool> _waitInTheLine(_HandleMessageCallBack callback) async {
-    final Future<void> currentPosition = _endOfTheLine;
-    final Completer<void> completer = Completer<void>();
+    final currentPosition = _endOfTheLine;
+    final completer = Completer<void>();
     _endOfTheLine = completer.future;
     await currentPosition;
-    bool result = false;
+    var result = false;
     try {
       result = await callback();
     } finally {
@@ -618,8 +618,8 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
 
   Future<bool> handleNavigationMessage(ByteData? data) async {
     return _waitInTheLine(() async {
-      final MethodCall decoded = const JSONMethodCodec().decodeMethodCall(data);
-      final Map<String, dynamic>? arguments = decoded.arguments as Map<String, dynamic>?;
+      final decoded = const JSONMethodCodec().decodeMethodCall(data);
+      final arguments = decoded.arguments as Map<String, dynamic>?;
       switch (decoded.method) {
         case 'selectMultiEntryHistory':
           await _useMultiEntryBrowserHistory();
@@ -635,10 +635,10 @@ final class EngineFlutterWindow extends EngineFlutterView implements ui.Singleto
           return true;
         case 'routeInformationUpdated':
           assert(arguments != null);
-          final String? uriString = arguments!.tryString('uri');
+          final uriString = arguments!.tryString('uri');
           final String path;
           if (uriString != null) {
-            final Uri uri = Uri.parse(uriString);
+            final uri = Uri.parse(uriString);
             // Need to remove scheme and authority.
             path = Uri.decodeComponent(
               Uri(
@@ -860,8 +860,8 @@ class ViewConstraints implements ui.ViewConstraints {
       }
       return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
     }
-    final String width = describe(minWidth, maxWidth, 'w');
-    final String height = describe(minHeight, maxHeight, 'h');
+    final width = describe(minWidth, maxWidth, 'w');
+    final height = describe(minHeight, maxHeight, 'h');
     return 'ViewConstraints($width, $height)';
   }
 }

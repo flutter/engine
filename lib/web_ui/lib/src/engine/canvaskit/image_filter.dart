@@ -57,7 +57,7 @@ abstract class CkImageFilter implements CkManagedSkImageFilterConvertible {
 
 class CkColorFilterImageFilter extends CkImageFilter {
   CkColorFilterImageFilter({required this.colorFilter}) : super._() {
-    final SkImageFilter skImageFilter = colorFilter.initRawImageFilter();
+    final skImageFilter = colorFilter.initRawImageFilter();
     _ref = UniqueRef<SkImageFilter>(this, skImageFilter, 'ImageFilter.color');
   }
 
@@ -150,7 +150,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
       : matrix = Float64List.fromList(matrix),
         _transform = Matrix4.fromFloat32List(toMatrix32(matrix)),
         super._() {
-    final SkImageFilter skImageFilter =
+    final skImageFilter =
         canvasKit.ImageFilter.MakeMatrixTransform(
       toSkMatrixFromFloat64(matrix),
       toSkFilterOptions(filterQuality),
@@ -193,7 +193,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
 class _CkDilateImageFilter extends CkImageFilter {
   _CkDilateImageFilter({required this.radiusX, required this.radiusY})
       : super._() {
-    final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeDilate(
+    final skImageFilter = canvasKit.ImageFilter.MakeDilate(
       radiusX,
       radiusY,
       null,
@@ -233,7 +233,7 @@ class _CkDilateImageFilter extends CkImageFilter {
 class _CkErodeImageFilter extends CkImageFilter {
   _CkErodeImageFilter({required this.radiusX, required this.radiusY})
       : super._() {
-    final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeErode(
+    final skImageFilter = canvasKit.ImageFilter.MakeErode(
       radiusX,
       radiusY,
       null,
@@ -275,7 +275,7 @@ class _CkComposeImageFilter extends CkImageFilter {
       : super._() {
     outer.imageFilter((SkImageFilter outerFilter) {
       inner.imageFilter((SkImageFilter innerFilter) {
-        final SkImageFilter skImageFilter = canvasKit.ImageFilter.MakeCompose(
+        final skImageFilter = canvasKit.ImageFilter.MakeCompose(
           outerFilter,
           innerFilter,
         );

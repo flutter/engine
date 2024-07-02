@@ -31,7 +31,7 @@ void testMainWithTTOn() {
 
   group('TrustedTypes API supported', () {
     test('createTrustedScriptUrl - returns TrustedScriptURL object', () async {
-      final Object trusted = createTrustedScriptUrl(goodUrl);
+      final trusted = createTrustedScriptUrl(goodUrl);
 
       expect(trusted, isA<DomTrustedScriptURL>());
       expect((trusted as DomTrustedScriptURL).url, goodUrl);
@@ -55,7 +55,7 @@ void testMainWithTTOn() {
 /// <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'">
 void enableTrustedTypes() {
   print('Enabling TrustedTypes in browser window...');
-  final DomHTMLMetaElement enableTTMeta = createDomHTMLMetaElement()
+  final enableTTMeta = createDomHTMLMetaElement()
     ..setAttribute('http-equiv', 'Content-Security-Policy')
     ..content = "require-trusted-types-for 'script'";
   domDocument.head!.append(enableTTMeta);
