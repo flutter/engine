@@ -601,7 +601,7 @@ Dart_Handle Canvas::drawAtlas(Dart_Handle paint_objects,
     builder()->DrawAtlas(
         dl_image, reinterpret_cast<const SkRSXform*>(transforms.data()),
         reinterpret_cast<const SkRect*>(rects.data()),
-        reinterpret_cast<const DlColor*>(colors.data()),
+        reinterpret_cast<const DlColor*>(colors.data()),  // TODO Fix
         rects.num_elements() / 4,  // SkRect have four floats.
         blend_mode, sampling, reinterpret_cast<const SkRect*>(cull_rect.data()),
         opt_paint);

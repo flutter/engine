@@ -23,7 +23,7 @@ void ColorFilter::Create(Dart_Handle wrapper) {
 }
 
 void ColorFilter::initMode(int color, int blend_mode) {
-  filter_ = DlBlendColorFilter::Make(static_cast<DlColor>(color),
+  filter_ = DlBlendColorFilter::Make(DlColor(color),
                                      static_cast<DlBlendMode>(blend_mode));
 }
 

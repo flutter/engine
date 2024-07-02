@@ -329,9 +329,8 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
     }
     static_assert(sizeof(colors()[0]) == 16);
     static_assert(sizeof(stops()[0]) == 4);
-    int num_bytes = stop_count_ * 4;
-    return (memcmp(colors(), other_base->colors(), num_bytes) == 0 &&
-            memcmp(stops(), other_base->stops(), num_bytes) == 0);
+    return (memcmp(colors(), other_base->colors(), stop_count_ * 16) == 0 &&
+            memcmp(stops(), other_base->stops(), stop_count_ * 4) == 0);
   }
 
   void store_color_stops(void* pod,
@@ -339,7 +338,8 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
                          const float* stop_data) {
     DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
     memcpy(color_storage, color_data, stop_count_ * sizeof(*color_data));
-    float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
+    float* stop_storage =
+        reinterpret_cast<float*>(color_storage + 4 * stop_count_);
     if (stop_data) {
       memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
     } else {
