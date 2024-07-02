@@ -8,6 +8,8 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry/geometry.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
@@ -54,6 +56,45 @@ bool LinearGradientContents::IsOpaque() const {
   return true;
 }
 
+bool LinearGradientContents::CanApplyFastGradient() const {
+  if (!GetInverseEffectTransform().IsIdentity()) {
+    return false;
+  }
+  std::optional<Rect> maybe_rect = GetGeometry()->GetCoverage(Matrix());
+  if (!maybe_rect.has_value()) {
+    return false;
+  }
+  Rect rect = maybe_rect.value();
+
+  if (ScalarNearlyEqual(start_point_.x, end_point_.x)) {
+    // Sort start and end to make on-rect comparisons easier.
+    Point start = (start_point_.y < end_point_.y) ? start_point_ : end_point_;
+    Point end = (start_point_.y < end_point_.y) ? end_point_ : start_point_;
+    // The exact x positon doesn't matter for a vertical gradient, but the y
+    // position must be nearly on the rectangle.
+    if (ScalarNearlyEqual(start.y, rect.GetTop()) &&
+        ScalarNearlyEqual(end.y, rect.GetBottom())) {
+      return true;
+    }
+    return false;
+  }
+
+  if (ScalarNearlyEqual(start_point_.y, end_point_.y)) {
+    // Sort start and end to make on-rect comparisons easier.
+    Point start = (start_point_.x < end_point_.x) ? start_point_ : end_point_;
+    Point end = (start_point_.x < end_point_.x) ? end_point_ : start_point_;
+    // The exact y positon doesn't matter for a horizontal gradient, but the x
+    // position must be nearly on the rectangle.
+    if (ScalarNearlyEqual(start.x, rect.GetLeft()) &&
+        ScalarNearlyEqual(end.x, rect.GetRight())) {
+      return true;
+    }
+    return false;
+  }
+
+  return false;
+}
+
 // A much faster (in terms of ALU) linear gradient that uses vertex
 // interpolation to perform all color computation. Requires that the geometry of
 // the gradient is divided into regions based on the stop values.
@@ -66,69 +107,82 @@ bool LinearGradientContents::FastLinearGradient(const ContentContext& renderer,
   using VS = FastGradientPipeline::VertexShader;
   using FS = FastGradientPipeline::FragmentShader;
 
-  auto options = OptionsFromPassAndEntity(pass, entity);
-  options.primitive_type = PrimitiveType::kTriangle;
   Geometry& geometry = *GetGeometry();
+  bool force_stencil = !geometry.IsAxisAlignedRect();
 
-  // We already know this is an axis aligned rectangle, so the coverage will
-  // be approximately the same as the geometry. For non axis-algined rectangles,
-  // we can force stencil then cover (not done here). We give an identity
-  // transform to avoid double transforming the gradient.
-  std::optional<Rect> maybe_rect = geometry.GetCoverage(Matrix());
-  if (!maybe_rect.has_value()) {
-    return false;
-  }
-  Rect rect = maybe_rect.value();
-  bool horizontal_axis = start_point_.y == end_point_.y;
+  auto geom_callback = [&](const ContentContext& renderer, const Entity& entity,
+                           RenderPass& pass,
+                           const Geometry& geometry) -> GeometryResult {
+    // We already know this is an axis aligned rectangle, so the coverage will
+    // be approximately the same as the geometry. For non axis-algined
+    // rectangles, we can force stencil then cover (not done here). We give an
+    // identity transform to avoid double transforming the gradient.
+    std::optional<Rect> maybe_rect = geometry.GetCoverage(Matrix());
+    if (!maybe_rect.has_value()) {
+      return {};
+    }
+    Rect rect = maybe_rect.value();
+    bool horizontal_axis = start_point_.y == end_point_.y;
 
-  // Compute the locations of each breakpoint along the primary axis, then
-  // create a rectangle that joins each segment. There will be two triangles
-  // between each pair of points.
-  VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-  vtx_builder.Reserve(6 * (stops_.size() - 1));
-  Point prev = start_point_;
-  for (auto i = 1u; i < stops_.size(); i++) {
-    Scalar t = stops_[i];
-    Point current = (1.0 - t) * start_point_ + t * end_point_;
-    Rect section = horizontal_axis
-                       ? Rect::MakeXYWH(prev.x, rect.GetY(), current.x - prev.x,
-                                        rect.GetHeight())
+    // Compute the locations of each breakpoint along the primary axis, then
+    // create a rectangle that joins each segment. There will be two triangles
+    // between each pair of points.
+    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+    vtx_builder.Reserve(6 * (stops_.size() - 1));
+    Point prev = start_point_;
+    for (auto i = 1u; i < stops_.size(); i++) {
+      Scalar t = stops_[i];
+      Point current = (1.0 - t) * start_point_ + t * end_point_;
+      Rect section = horizontal_axis
+                         ? Rect::MakeXYWH(prev.x, rect.GetY(),
+                                          current.x - prev.x, rect.GetHeight())
 
-                       : Rect::MakeXYWH(rect.GetX(), prev.y, rect.GetWidth(),
-                                        current.y - prev.y);
-    vtx_builder.AddVertices({
-        {section.GetLeftTop(), colors_[i - 1]},
-        {section.GetRightTop(), horizontal_axis ? colors_[i] : colors_[i - 1]},
-        {section.GetLeftBottom(),
-         horizontal_axis ? colors_[i - 1] : colors_[i]},
-        {section.GetRightTop(), horizontal_axis ? colors_[i] : colors_[i - 1]},
-        {section.GetLeftBottom(),
-         horizontal_axis ? colors_[i - 1] : colors_[i]},
-        {section.GetRightBottom(), colors_[i]},
-    });
-    prev = current;
-  }
-  auto& host_buffer = renderer.GetTransientsBuffer();
+                         : Rect::MakeXYWH(rect.GetX(), prev.y, rect.GetWidth(),
+                                          current.y - prev.y);
+      vtx_builder.AddVertices({
+          {section.GetLeftTop(), colors_[i - 1]},
+          {section.GetRightTop(),
+           horizontal_axis ? colors_[i] : colors_[i - 1]},
+          {section.GetLeftBottom(),
+           horizontal_axis ? colors_[i - 1] : colors_[i]},
+          {section.GetRightTop(),
+           horizontal_axis ? colors_[i] : colors_[i - 1]},
+          {section.GetLeftBottom(),
+           horizontal_axis ? colors_[i - 1] : colors_[i]},
+          {section.GetRightBottom(), colors_[i]},
+      });
+      prev = current;
+    }
+    return GeometryResult{
+        .type = PrimitiveType::kTriangle,
+        .vertex_buffer =
+            vtx_builder.CreateVertexBuffer(renderer.GetTransientsBuffer()),
+        .transform = entity.GetShaderTransform(pass),
+    };
+  };
 
   pass.SetLabel("LinearGradient");
-  pass.SetVertexBuffer(vtx_builder.CreateVertexBuffer(host_buffer));
-  pass.SetPipeline(renderer.GetFastGradientPipeline(options));
-  pass.SetStencilReference(0);
 
-  // Take the pre-populated vertex shader uniform struct and set managed
-  // values.
   VS::FrameInfo frame_info;
-  frame_info.mvp = entity.GetShaderTransform(pass);
 
-  VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
+  PipelineBuilderCallback pipeline_callback =
+      [&renderer](ContentContextOptions options) {
+        return renderer.GetFastGradientPipeline(options);
+      };
+  return ColorSourceContents::DrawGeometry<VS>(
+      renderer, entity, pass, pipeline_callback, frame_info,
+      [this, &renderer, &entity](RenderPass& pass) {
+        auto& host_buffer = renderer.GetTransientsBuffer();
 
-  FS::FragInfo frag_info;
-  frag_info.alpha =
-      GetOpacityFactor() * GetGeometry()->ComputeAlphaCoverage(entity);
+        FS::FragInfo frag_info;
+        frag_info.alpha =
+            GetOpacityFactor() * GetGeometry()->ComputeAlphaCoverage(entity);
 
-  FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
+        FS::BindFragInfo(pass, host_buffer.EmplaceUniform(frag_info));
 
-  return pass.Draw().ok();
+        return true;
+      },
+      /*force_stencil=*/force_stencil, geom_callback);
 }
 
 bool LinearGradientContents::Render(const ContentContext& renderer,
@@ -137,9 +191,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
   // TODO(148651): The fast path is overly restrictive, following the design in
   // https://github.com/flutter/flutter/issues/148651 support for more cases can
   // be gradually added.
-  if (GetGeometry()->IsAxisAlignedRect() &&
-      (start_point_.x == end_point_.x || start_point_.y == end_point_.y) &&
-      GetInverseEffectTransform().IsIdentity()) {
+  if (CanApplyFastGradient()) {
     return FastLinearGradient(renderer, entity, pass);
   }
   if (renderer.GetDeviceCapabilities().SupportsSSBO()) {

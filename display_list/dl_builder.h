@@ -12,7 +12,6 @@
 #include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/display_list/dl_paint.h"
 #include "flutter/display_list/dl_sampling_options.h"
-#include "flutter/display_list/effects/dl_path_effect.h"
 #include "flutter/display_list/geometry/dl_geometry_types.h"
 #include "flutter/display_list/image/dl_image.h"
 #include "flutter/display_list/utils/dl_accumulation_rect.h"
@@ -118,6 +117,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
                 ClipOp clip_op = ClipOp::kIntersect,
                 bool is_aa = false) override;
   // |DlCanvas|
+  void ClipOval(const SkRect& bounds,
+                ClipOp clip_op = ClipOp::kIntersect,
+                bool is_aa = false) override;
+  // |DlCanvas|
   void ClipRRect(const SkRRect& rrect,
                  ClipOp clip_op = ClipOp::kIntersect,
                  bool is_aa = false) override;
@@ -156,6 +159,12 @@ class DisplayListBuilder final : public virtual DlCanvas,
                 const SkPoint& p1,
                 const DlPaint& paint) override;
   // |DlCanvas|
+  void DrawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length,
+                      const DlPaint& paint) override;
+  // |DlCanvas|
   void DrawRect(const SkRect& rect, const DlPaint& paint) override;
   // |DlCanvas|
   void DrawOval(const SkRect& bounds, const DlPaint& paint) override;
@@ -183,10 +192,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
                   const SkPoint pts[],
                   const DlPaint& paint) override;
   // |DlCanvas|
-  void DrawVertices(const DlVertices* vertices,
+  void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
-  using DlCanvas::DrawVertices;
   // |DlCanvas|
   void DrawImage(const sk_sp<DlImage>& image,
                  const SkPoint point,
@@ -340,12 +348,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
     }
   }
   // |DlOpReceiver|
-  void setPathEffect(const DlPathEffect* effect) override {
-    if (NotEquals(current_.getPathEffect(), effect)) {
-      onSetPathEffect(effect);
-    }
-  }
-  // |DlOpReceiver|
   void setMaskFilter(const DlMaskFilter* filter) override {
     if (NotEquals(current_.getMaskFilter(), filter)) {
       onSetMaskFilter(filter);
@@ -402,6 +404,10 @@ class DisplayListBuilder final : public virtual DlCanvas,
     ClipRect(rect, clip_op, is_aa);
   }
   // |DlOpReceiver|
+  void clipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override {
+    ClipOval(bounds, clip_op, is_aa);
+  }
+  // |DlOpReceiver|
   void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override {
     ClipRRect(rrect, clip_op, is_aa);
   }
@@ -418,6 +424,11 @@ class DisplayListBuilder final : public virtual DlCanvas,
   }
   // |DlOpReceiver|
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+  // |DlOpReceiver|
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override;
   // |DlOpReceiver|
   void drawRect(const SkRect& rect) override;
   // |DlOpReceiver|
@@ -438,7 +449,8 @@ class DisplayListBuilder final : public virtual DlCanvas,
   // |DlOpReceiver|
   void drawPoints(PointMode mode, uint32_t count, const SkPoint pts[]) override;
   // |DlOpReceiver|
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override;
 
   // |DlOpReceiver|
   void drawImage(const sk_sp<DlImage> image,
@@ -566,6 +578,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     // For constructor (root layer) initialization
     explicit SaveInfo(const DlRect& cull_rect)
         : is_save_layer(true),
+          has_valid_clip(false),
           global_state(cull_rect),
           layer_state(cull_rect),
           layer_info(new LayerInfo(nullptr, 0u)) {}
@@ -576,6 +589,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
     explicit SaveInfo(const SaveInfo* parent_info)
         : is_save_layer(false),
           has_deferred_save_op(true),
+          has_valid_clip(parent_info->has_valid_clip),
           global_state(parent_info->global_state),
           layer_state(parent_info->layer_state),
           layer_info(parent_info->layer_info) {}
@@ -585,6 +599,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
                       const std::shared_ptr<const DlImageFilter>& filter,
                       int rtree_rect_index)
         : is_save_layer(true),
+          has_valid_clip(false),
           global_state(parent_info->global_state),
           layer_state(kMaxCullRect),
           layer_info(new LayerInfo(filter, rtree_rect_index)) {}
@@ -593,6 +608,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
     bool has_deferred_save_op = false;
     bool is_nop = false;
+    bool has_valid_clip;
 
     // The depth when the save call is recorded, used to compute the total
     // depth of its content when the associated restore is called.
@@ -756,7 +772,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
   void onSetColorSource(const DlColorSource* source);
   void onSetImageFilter(const DlImageFilter* filter);
   void onSetColorFilter(const DlColorFilter* filter);
-  void onSetPathEffect(const DlPathEffect* effect);
   void onSetMaskFilter(const DlMaskFilter* filter);
 
   static DisplayListAttributeFlags FlagsForPointMode(PointMode mode);

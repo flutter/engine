@@ -48,6 +48,9 @@ void runSemanticsTests() {
   group('longestIncreasingSubsequence', () {
     _testLongestIncreasingSubsequence();
   });
+  group(PrimaryRoleManager, () {
+    _testPrimaryRoleManager();
+  });
   group('Role managers', () {
     _testRoleManagerLifecycle();
   });
@@ -104,6 +107,68 @@ void runSemanticsTests() {
   });
   group('link', () {
     _testLink();
+  });
+}
+
+void _testPrimaryRoleManager() {
+  test('Sets id and flt-semantics-identifier on the element', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 372),
+        tester.updateNode(id: 599),
+      ],
+    );
+    tester.apply();
+
+    tester.expectSemantics('''
+<sem id="flt-semantic-node-0">
+  <sem-c>
+    <sem id="flt-semantic-node-372"></sem>
+    <sem id="flt-semantic-node-599"></sem>
+  </sem-c>
+</sem>''');
+
+    tester.updateNode(
+      id: 0,
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 372, identifier: 'test-id-123'),
+        tester.updateNode(id: 599),
+      ],
+    );
+    tester.apply();
+
+    tester.expectSemantics('''
+<sem id="flt-semantic-node-0">
+  <sem-c>
+    <sem id="flt-semantic-node-372" flt-semantics-identifier="test-id-123"></sem>
+    <sem id="flt-semantic-node-599"></sem>
+  </sem-c>
+</sem>''');
+
+    tester.updateNode(
+      id: 0,
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 372),
+        tester.updateNode(id: 599, identifier: 'test-id-211'),
+        tester.updateNode(id: 612, identifier: 'test-id-333'),
+      ],
+    );
+    tester.apply();
+
+    tester.expectSemantics('''
+<sem id="flt-semantic-node-0">
+  <sem-c>
+    <sem id="flt-semantic-node-372"></sem>
+    <sem id="flt-semantic-node-599" flt-semantics-identifier="test-id-211"></sem>
+    <sem id="flt-semantic-node-612" flt-semantics-identifier="test-id-333"></sem>
+  </sem-c>
+</sem>''');
   });
 }
 
@@ -721,6 +786,27 @@ void _testHeader() {
     owner().updateSemantics(builder.build());
     expectSemanticsTree(owner(), '''
 <sem role="group" aria-label="Header of the page"><sem-c><sem></sem></sem-c></sem>
+''');
+
+    semantics().semanticsEnabled = false;
+  });
+
+  test('renders aria-level tag for headings with heading level', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      headingLevel: 2,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+
+    owner().updateSemantics(builder.build());
+    expectSemanticsTree(owner(), '''
+<sem aria-level="2" role="heading" style="filter: opacity(0%); color: rgba(0, 0, 0, 0)"></sem>
 ''');
 
     semantics().semanticsEnabled = false;
@@ -3515,6 +3601,7 @@ void _testLink() {
 
     final SemanticsObject object = pumpSemantics();
     expect(object.element.tagName.toLowerCase(), 'a');
+    expect(object.element.hasAttribute('href'), isFalse);
   });
 }
 
@@ -3557,6 +3644,7 @@ void updateNode(
   Int32List? childrenInTraversalOrder,
   Int32List? childrenInHitTestOrder,
   Int32List? additionalActions,
+  int headingLevel = 0,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);
@@ -3596,6 +3684,7 @@ void updateNode(
     childrenInTraversalOrder: childrenInTraversalOrder,
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
+    headingLevel: headingLevel,
   );
 }
 

@@ -9,7 +9,6 @@ import 'dart:typed_data';
 
 import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
-import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 import 'browser_detection.dart';
 
@@ -38,13 +37,6 @@ import 'browser_detection.dart';
 /// used carefully and only on types that are known to not contains `JSNull` and
 /// `JSUndefined`.
 extension ObjectToJSAnyExtension on Object {
-  // Once `Object.toJSBox` is faster (see
-  // https://github.com/dart-lang/sdk/issues/55183) we can remove this
-  // backend-specific workaround.
-  @pragma('wasm:prefer-inline')
-  @pragma('dart2js:tryInline')
-  JSAny get toJSWrapper => dartToJsWrapper(this);
-
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
   JSAny get toJSAnyShallow {
@@ -61,10 +53,6 @@ extension ObjectToJSAnyExtension on Object {
 }
 
 extension JSAnyToObjectExtension on JSAny {
-  @pragma('wasm:prefer-inline')
-  @pragma('dart2js:tryInline')
-  Object get fromJSWrapper => jsWrapperToDart(this);
-
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:tryInline')
   Object get toObjectShallow {
@@ -443,6 +431,9 @@ extension DomEventExtension on DomEvent {
   external JSString get _type;
   String get type => _type.toDart;
 
+  external JSBoolean? get _cancelable;
+  bool get cancelable => _cancelable?.toDart ?? true;
+
   external JSVoid preventDefault();
   external JSVoid stopPropagation();
 
@@ -670,7 +661,16 @@ extension DomElementExtension on DomElement {
   external JSNumber? get _tabIndex;
   double? get tabIndex => _tabIndex?.toDartDouble;
 
-  external JSVoid focus();
+  @JS('focus')
+  external JSVoid _focus(JSAny options);
+
+  void focus({bool? preventScroll, bool? focusVisible}) {
+    final Map<String, bool> options = <String, bool>{
+      if (preventScroll != null) 'preventScroll': preventScroll,
+      if (focusVisible != null) 'focusVisible': focusVisible,
+    };
+    _focus(options.toJSAnyDeep);
+  }
 
   @JS('scrollTop')
   external JSNumber get _scrollTop;
@@ -732,6 +732,8 @@ extension DomElementExtension on DomElement {
       removeChild(firstChild!);
     }
   }
+
+  external void setPointerCapture(num? pointerId);
 }
 
 @JS()
@@ -2261,9 +2263,11 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external JSBoolean? get _repeat;
   bool? get repeat => _repeat?.toDart;
 
+  // Safari injects synthetic keyboard events after auto-complete that don't
+  // have a `shiftKey` attribute, so this property must be nullable.
   @JS('shiftKey')
-  external JSBoolean get _shiftKey;
-  bool get shiftKey => _shiftKey.toDart;
+  external JSBoolean? get _shiftKey;
+  bool? get shiftKey => _shiftKey?.toDart;
 
   @JS('isComposing')
   external JSBoolean get _isComposing;
@@ -3682,13 +3686,14 @@ class DomFinalizationRegistry {
 
 extension DomFinalizationRegistryExtension on DomFinalizationRegistry {
   @JS('register')
-  external JSVoid register(JSAny target, JSAny value);
+  external JSVoid register(
+      ExternalDartReference target, ExternalDartReference value);
 
   @JS('register')
-  external JSVoid registerWithToken(JSAny target, JSAny value, JSAny token);
+  external JSVoid registerWithToken(ExternalDartReference target, ExternalDartReference value, ExternalDartReference token);
 
   @JS('unregister')
-  external JSVoid unregister(JSAny token);
+  external JSVoid unregister(ExternalDartReference token);
 }
 
 @JS('window.FinalizationRegistry')
