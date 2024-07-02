@@ -209,6 +209,9 @@ class MipCountVisitor : public ImageFilterVisitor {
   virtual void Visit(const ColorImageFilter& filter) {
     required_mip_count_ = 1;
   }
+  virtual void Visit(const RuntimeEffectImageFilter& filter) {
+    required_mip_count_ = 1;
+  }
   int32_t GetRequiredMipCount() const { return required_mip_count_; }
 
  private:
