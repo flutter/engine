@@ -4,7 +4,6 @@
 
 #include "impeller/entity/entity_pass_clip_stack.h"
 #include "impeller/entity/contents/clip_contents.h"
-#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 
 namespace impeller {
@@ -123,18 +122,6 @@ EntityPassClipStack::ClipStateResult EntityPassClipStack::ApplyClipState(
 
     } break;
   }
-
-#ifdef IMPELLER_ENABLE_CAPTURE
-  {
-    auto element_entity_coverage = entity.GetCoverage();
-    if (element_entity_coverage.has_value()) {
-      element_entity_coverage =
-          element_entity_coverage->Shift(global_pass_position);
-      entity.GetCapture().AddRect("Coverage", *element_entity_coverage,
-                                  {.readonly = true});
-    }
-  }
-#endif
 
   RecordEntity(entity, global_clip_coverage.type,
                subpass_state.clip_coverage.back().coverage);

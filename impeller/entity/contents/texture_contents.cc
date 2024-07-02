@@ -14,7 +14,6 @@
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/texture_fill_strict_src.frag.h"
-#include "impeller/entity/tiled_texture_fill_external.frag.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
@@ -110,11 +109,8 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
-  auto capture = entity.GetCapture().CreateChild("TextureContents");
-
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
-  using FSExternal = TiledTextureFillExternalFragmentShader;
   using FSStrict = TextureFillStrictSrcFragmentShader;
 
   if (destination_rect_.IsEmpty() || source_rect_.IsEmpty() ||
@@ -122,21 +118,19 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;  // Nothing to render.
   }
 
-  bool is_external_texture =
+  [[maybe_unused]] bool is_external_texture =
       texture_->GetTextureDescriptor().type == TextureType::kTextureExternalOES;
+  FML_DCHECK(!is_external_texture);
 
-  auto source_rect = capture.AddRect("Source rect", source_rect_);
   auto texture_coords =
-      Rect::MakeSize(texture_->GetSize()).Project(source_rect);
+      Rect::MakeSize(texture_->GetSize()).Project(source_rect_);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  auto destination_rect =
-      capture.AddRect("Destination rect", destination_rect_);
   vertex_builder.AddVertices({
-      {destination_rect.GetLeftTop(), texture_coords.GetLeftTop()},
-      {destination_rect.GetRightTop(), texture_coords.GetRightTop()},
-      {destination_rect.GetLeftBottom(), texture_coords.GetLeftBottom()},
-      {destination_rect.GetRightBottom(), texture_coords.GetRightBottom()},
+      {destination_rect_.GetLeftTop(), texture_coords.GetLeftTop()},
+      {destination_rect_.GetRightTop(), texture_coords.GetRightTop()},
+      {destination_rect_.GetLeftBottom(), texture_coords.GetLeftBottom()},
+      {destination_rect_.GetRightBottom(), texture_coords.GetRightBottom()},
   });
 
   auto& host_buffer = renderer.GetTransientsBuffer();
@@ -159,55 +153,23 @@ bool TextureContents::Render(const ContentContext& renderer,
   }
   pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline;
-#ifdef IMPELLER_ENABLE_OPENGLES
-  if (is_external_texture) {
-    pipeline = renderer.GetTiledTextureExternalPipeline(pipeline_options);
-  }
-#endif  // IMPELLER_ENABLE_OPENGLES
-
-  if (!pipeline) {
-    if (strict_source_rect_enabled_) {
-      pipeline = renderer.GetTextureStrictSrcPipeline(pipeline_options);
-    } else {
-      pipeline = renderer.GetTexturePipeline(pipeline_options);
-    }
-  }
-  pass.SetPipeline(pipeline);
+  pass.SetPipeline(strict_source_rect_enabled_
+                       ? renderer.GetTextureStrictSrcPipeline(pipeline_options)
+                       : renderer.GetTexturePipeline(pipeline_options));
 
   pass.SetVertexBuffer(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(pass, host_buffer.EmplaceUniform(frame_info));
 
-  if (is_external_texture) {
-    FSExternal::FragInfo frag_info;
-    frag_info.x_tile_mode =
-        static_cast<int>(sampler_descriptor_.width_address_mode);
-    frag_info.y_tile_mode =
-        static_cast<int>(sampler_descriptor_.height_address_mode);
-    frag_info.alpha = capture.AddScalar("Alpha", GetOpacity());
-
-    auto sampler_descriptor = sampler_descriptor_;
-    // OES_EGL_image_external states that only CLAMP_TO_EDGE is valid, so
-    // we emulate all other tile modes here by remapping the texture
-    // coordinates.
-    sampler_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
-    sampler_descriptor.height_address_mode = SamplerAddressMode::kClampToEdge;
-
-    FSExternal::BindFragInfo(pass, host_buffer.EmplaceUniform((frag_info)));
-    FSExternal::BindSAMPLEREXTERNALOESTextureSampler(
-        pass, texture_,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            sampler_descriptor));
-  } else if (strict_source_rect_enabled_) {
+  if (strict_source_rect_enabled_) {
     // For a strict source rect, shrink the texture coordinate range by half a
     // texel to ensure that linear filtering does not sample anything outside
     // the source rect bounds.
     auto strict_texture_coords =
-        Rect::MakeSize(texture_->GetSize()).Project(source_rect.Expand(-0.5));
+        Rect::MakeSize(texture_->GetSize()).Project(source_rect_.Expand(-0.5));
 
     FSStrict::FragInfo frag_info;
     frag_info.source_rect = Vector4(strict_texture_coords.GetLTRB());
-    frag_info.alpha = capture.AddScalar("Alpha", GetOpacity());
+    frag_info.alpha = GetOpacity();
     FSStrict::BindFragInfo(pass, host_buffer.EmplaceUniform((frag_info)));
     FSStrict::BindTextureSampler(
         pass, texture_,
@@ -215,7 +177,7 @@ bool TextureContents::Render(const ContentContext& renderer,
             sampler_descriptor_));
   } else {
     FS::FragInfo frag_info;
-    frag_info.alpha = capture.AddScalar("Alpha", GetOpacity());
+    frag_info.alpha = GetOpacity();
     FS::BindFragInfo(pass, host_buffer.EmplaceUniform((frag_info)));
     FS::BindTextureSampler(
         pass, texture_,

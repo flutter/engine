@@ -251,13 +251,38 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 
 - (void)testReleasesBackdropFilterSubviewsOnChildClippingViewDealloc {
   __weak NSMutableArray<UIVisualEffectView*>* weakBackdropFilterSubviews = nil;
+  __weak UIVisualEffectView* weakVisualEffectView1 = nil;
+  __weak UIVisualEffectView* weakVisualEffectView2 = nil;
+
   @autoreleasepool {
-    ChildClippingView* clipping_view = [[ChildClippingView alloc] initWithFrame:CGRectZero];
-    weakBackdropFilterSubviews = clipping_view.backdropFilterSubviews;
+    ChildClippingView* clippingView = [[ChildClippingView alloc] initWithFrame:CGRectZero];
+    UIVisualEffectView* visualEffectView1 = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+    weakVisualEffectView1 = visualEffectView1;
+    PlatformViewFilter* platformViewFilter1 =
+        [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                       blurRadius:5
+                                 visualEffectView:visualEffectView1];
+
+    [clippingView applyBlurBackdropFilters:@[ platformViewFilter1 ]];
+
+    // Replace the blur filter to validate the original and new UIVisualEffectView are released.
+    UIVisualEffectView* visualEffectView2 = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleDark]];
+    weakVisualEffectView2 = visualEffectView2;
+    PlatformViewFilter* platformViewFilter2 =
+        [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                       blurRadius:5
+                                 visualEffectView:visualEffectView2];
+    [clippingView applyBlurBackdropFilters:@[ platformViewFilter2 ]];
+
+    weakBackdropFilterSubviews = clippingView.backdropFilterSubviews;
     XCTAssertNotNil(weakBackdropFilterSubviews);
-    clipping_view = nil;
+    clippingView = nil;
   }
   XCTAssertNil(weakBackdropFilterSubviews);
+  XCTAssertNil(weakVisualEffectView1);
+  XCTAssertNil(weakVisualEffectView2);
 }
 
 - (void)testApplyBackdropFilter {
@@ -595,6 +620,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
     XCTAssertEqual(originalView, newView);
     id mockOrignalView = OCMPartialMock(originalView);
     OCMReject([mockOrignalView removeFromSuperview]);
+    [mockOrignalView stopMocking];
   }
 }
 
@@ -1302,20 +1328,26 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
 }
 
 - (void)testBackdropFilterVisualEffectSubviewBackgroundColor {
-  UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
-      initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
-  PlatformViewFilter* platformViewFilter =
-      [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
-                                     blurRadius:5
-                               visualEffectView:visualEffectView];
-  CGColorRef visualEffectSubviewBackgroundColor = nil;
-  for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
-    if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
-      visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
+  __weak UIVisualEffectView* weakVisualEffectView;
+
+  @autoreleasepool {
+    UIVisualEffectView* visualEffectView = [[UIVisualEffectView alloc]
+        initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]];
+    weakVisualEffectView = visualEffectView;
+    PlatformViewFilter* platformViewFilter =
+        [[PlatformViewFilter alloc] initWithFrame:CGRectMake(0, 0, 10, 10)
+                                       blurRadius:5
+                                 visualEffectView:visualEffectView];
+    CGColorRef visualEffectSubviewBackgroundColor = nil;
+    for (UIView* view in [platformViewFilter backdropFilterView].subviews) {
+      if ([NSStringFromClass([view class]) hasSuffix:@"VisualEffectSubview"]) {
+        visualEffectSubviewBackgroundColor = view.layer.backgroundColor;
+      }
     }
+    XCTAssertTrue(
+        CGColorEqualToColor(visualEffectSubviewBackgroundColor, UIColor.clearColor.CGColor));
   }
-  XCTAssertTrue(
-      CGColorEqualToColor(visualEffectSubviewBackgroundColor, UIColor.clearColor.CGColor));
+  XCTAssertNil(weakVisualEffectView);
 }
 
 - (void)testCompositePlatformView {
@@ -1741,17 +1773,15 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
+  CGRect insideClipping = CGRectMake(2, 2, 3, 3);
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 10; j++) {
       CGPoint point = CGPointMake(i, j);
       int alpha = [self alphaOfPoint:CGPointMake(i, j) onView:mockFlutterView];
-      // Edges of the clipping might have a semi transparent pixel, we only check the pixels that
-      // are fully inside the clipped area.
-      CGRect insideClipping = CGRectMake(3, 3, 1, 1);
       if (CGRectContainsPoint(insideClipping, point)) {
         XCTAssertEqual(alpha, 255);
       } else {
-        XCTAssertLessThan(alpha, 255);
+        XCTAssertEqual(alpha, 0);
       }
     }
   }
@@ -1816,17 +1846,42 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
+  /*
+  ClippingMask          outterClipping
+    2 3 4 5 6 7           2 3 4 5 6 7
+  2 / - - - - \         2 + - - - - +
+  3 |         |         3 |         |
+  4 |         |         4 |         |
+  5 |         |         5 |         |
+  6 |         |         6 |         |
+  7 \ - - - - /         7 + - - - - +
+
+  innerClipping1        innerClipping2
+    2 3 4 5 6 7           2 3 4 5 6 7
+  2   + - - +           2
+  3   |     |           3 + - - - - +
+  4   |     |           4 |         |
+  5   |     |           5 |         |
+  6   |     |           6 + - - - - +
+  7   + - - +           7
+  */
+  CGRect innerClipping1 = CGRectMake(3, 2, 4, 6);
+  CGRect innerClipping2 = CGRectMake(2, 3, 6, 4);
+  CGRect outterClipping = CGRectMake(2, 2, 6, 6);
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 10; j++) {
       CGPoint point = CGPointMake(i, j);
       int alpha = [self alphaOfPoint:CGPointMake(i, j) onView:mockFlutterView];
-      // Edges of the clipping might have a semi transparent pixel, we only check the pixels that
-      // are fully inside the clipped area.
-      CGRect insideClipping = CGRectMake(3, 3, 4, 4);
-      if (CGRectContainsPoint(insideClipping, point)) {
+      if (CGRectContainsPoint(innerClipping1, point) ||
+          CGRectContainsPoint(innerClipping2, point)) {
+        // Pixels inside either of the 2 inner clippings should be fully opaque.
         XCTAssertEqual(alpha, 255);
+      } else if (CGRectContainsPoint(outterClipping, point)) {
+        // Corner pixels (i.e. (2, 2), (2, 7), (7, 2) and (7, 7)) should be partially transparent.
+        XCTAssert(0 < alpha && alpha < 255);
       } else {
-        XCTAssertLessThan(alpha, 255);
+        // Pixels outside outterClipping should be fully transparent.
+        XCTAssertEqual(alpha, 0);
       }
     }
   }
@@ -1892,17 +1947,42 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
 
+  /*
+  ClippingMask          outterClipping
+    2 3 4 5 6 7           2 3 4 5 6 7
+  2 / - - - - \         2 + - - - - +
+  3 |         |         3 |         |
+  4 |         |         4 |         |
+  5 |         |         5 |         |
+  6 |         |         6 |         |
+  7 \ - - - - /         7 + - - - - +
+
+  innerClipping1        innerClipping2
+    2 3 4 5 6 7           2 3 4 5 6 7
+  2   + - - +           2
+  3   |     |           3 + - - - - +
+  4   |     |           4 |         |
+  5   |     |           5 |         |
+  6   |     |           6 + - - - - +
+  7   + - - +           7
+  */
+  CGRect innerClipping1 = CGRectMake(3, 2, 4, 6);
+  CGRect innerClipping2 = CGRectMake(2, 3, 6, 4);
+  CGRect outterClipping = CGRectMake(2, 2, 6, 6);
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 10; j++) {
       CGPoint point = CGPointMake(i, j);
       int alpha = [self alphaOfPoint:CGPointMake(i, j) onView:mockFlutterView];
-      // Edges of the clipping might have a semi transparent pixel, we only check the pixels that
-      // are fully inside the clipped area.
-      CGRect insideClipping = CGRectMake(3, 3, 4, 4);
-      if (CGRectContainsPoint(insideClipping, point)) {
+      if (CGRectContainsPoint(innerClipping1, point) ||
+          CGRectContainsPoint(innerClipping2, point)) {
+        // Pixels inside either of the 2 inner clippings should be fully opaque.
         XCTAssertEqual(alpha, 255);
+      } else if (CGRectContainsPoint(outterClipping, point)) {
+        // Corner pixels (i.e. (2, 2), (2, 7), (7, 2) and (7, 7)) should be partially transparent.
+        XCTAssert(0 < alpha && alpha < 255);
       } else {
-        XCTAssertLessThan(alpha, 255);
+        // Pixels outside outterClipping should be fully transparent.
+        XCTAssertEqual(alpha, 0);
       }
     }
   }
@@ -2955,6 +3035,69 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(const std::string& name) {
   UIView* maskView1 = childClippingView1.maskView;
   UIView* maskView2 = childClippingView2.maskView;
   XCTAssertNotEqual(maskView1, maskView2);
+}
+
+- (void)testMaskViewUsesCAShapeLayerAsTheBackingLayer {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/mock_delegate.settings_.enable_impeller
+          ? flutter::IOSRenderingAPI::kMetal
+          : flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners,
+      /*worker_task_runner=*/nil,
+      /*is_gpu_disabled_jsync_switch=*/std::make_shared<fml::SyncSwitch>());
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory alloc] init];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  FlutterResult result = ^(id result) {
+  };
+
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+
+  XCTAssertNotNil(gMockPlatformView);
+  UIView* mockFlutterView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)];
+  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+  // Create embedded view params
+  flutter::MutatorsStack stack1;
+  // Layer tree always pushes a screen scale factor to the stack
+  SkMatrix screenScaleMatrix =
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+  stack1.PushTransform(screenScaleMatrix);
+  // Push a clip rect
+  SkRect rect = SkRect::MakeXYWH(2, 2, 3, 3);
+  stack1.PushClipRect(rect);
+
+  auto embeddedViewParams1 = std::make_unique<flutter::EmbeddedViewParams>(
+      screenScaleMatrix, SkSize::Make(10, 10), stack1);
+
+  flutter::MutatorsStack stack2;
+  stack2.PushClipRect(rect);
+  auto embeddedViewParams2 = std::make_unique<flutter::EmbeddedViewParams>(
+      screenScaleMatrix, SkSize::Make(10, 10), stack2);
+
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
+  flutterPlatformViewsController->CompositeEmbeddedView(1);
+  UIView* childClippingView = gMockPlatformView.superview.superview;
+
+  UIView* maskView = childClippingView.maskView;
+  XCTAssert([maskView.layer isKindOfClass:[CAShapeLayer class]],
+            @"Mask view must use CAShapeLayer as its backing layer.");
 }
 
 // Return true if a correct visual effect view is found. It also implies all the validation in this

@@ -16,6 +16,7 @@
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/color_source_contents.h"
+#include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/solid_rrect_blur_contents.h"
 #include "impeller/entity/contents/text_contents.h"
@@ -223,11 +224,11 @@ void Canvas::Save(bool create_subpass,
   entry.transform = transform_stack_.back().transform;
   entry.cull_rect = transform_stack_.back().cull_rect;
   entry.clip_height = transform_stack_.back().clip_height;
+  entry.distributed_opacity = transform_stack_.back().distributed_opacity;
   if (create_subpass) {
-    entry.rendering_mode = Entity::RenderingMode::kSubpass;
+    entry.rendering_mode =
+        Entity::RenderingMode::kSubpassAppendSnapshotTransform;
     auto subpass = std::make_unique<EntityPass>();
-    subpass->SetEnableOffscreenCheckerboard(
-        debug_options.offscreen_texture_checkerboard);
     if (backdrop_filter) {
       EntityPass::BackdropFilterProc backdrop_filter_proc =
           [backdrop_filter = backdrop_filter->Clone()](
@@ -262,7 +263,9 @@ bool Canvas::Restore() {
   current_pass_->PopClips(num_clips, current_depth_);
 
   if (transform_stack_.back().rendering_mode ==
-      Entity::RenderingMode::kSubpass) {
+          Entity::RenderingMode::kSubpassAppendSnapshotTransform ||
+      transform_stack_.back().rendering_mode ==
+          Entity::RenderingMode::kSubpassPrependSnapshotTransform) {
     current_pass_->SetClipDepth(++current_depth_);
     current_pass_ = GetCurrentPass().GetSuperpass();
     FML_DCHECK(current_pass_);
@@ -828,6 +831,7 @@ void Canvas::AddRenderEntityToCurrentPass(Entity entity, bool reuse_depth) {
     ++current_depth_;
   }
   entity.SetClipDepth(current_depth_);
+  entity.SetInheritedOpacity(transform_stack_.back().distributed_opacity);
   GetCurrentPass().AddEntity(std::move(entity));
 }
 
@@ -839,8 +843,16 @@ void Canvas::SaveLayer(const Paint& paint,
                        std::optional<Rect> bounds,
                        const std::shared_ptr<ImageFilter>& backdrop_filter,
                        ContentBoundsPromise bounds_promise,
-                       uint32_t total_content_depth) {
+                       uint32_t total_content_depth,
+                       bool can_distribute_opacity) {
+  if (can_distribute_opacity && !backdrop_filter &&
+      Paint::CanApplyOpacityPeephole(paint)) {
+    Save(false, total_content_depth, paint.blend_mode, backdrop_filter);
+    transform_stack_.back().distributed_opacity *= paint.color.alpha;
+    return;
+  }
   TRACE_EVENT0("flutter", "Canvas::saveLayer");
+
   Save(true, total_content_depth, paint.blend_mode, backdrop_filter);
 
   // The DisplayList bounds/rtree doesn't account for filters applied to parent
@@ -861,14 +873,12 @@ void Canvas::SaveLayer(const Paint& paint,
     paint.image_filter->Visit(mip_count_visitor);
     new_layer_pass.SetRequiredMipCount(mip_count_visitor.GetRequiredMipCount());
   }
+  // When applying a save layer, absorb any pending distributed opacity.
+  Paint paint_copy = paint;
+  paint_copy.color.alpha *= transform_stack_.back().distributed_opacity;
+  transform_stack_.back().distributed_opacity = 1.0;
 
-  // Only apply opacity peephole on default blending.
-  if (paint.blend_mode == BlendMode::kSourceOver) {
-    new_layer_pass.SetDelegate(
-        std::make_shared<OpacityPeepholePassDelegate>(paint));
-  } else {
-    new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint));
-  }
+  new_layer_pass.SetDelegate(std::make_shared<PaintPassDelegate>(paint_copy));
 }
 
 void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
@@ -879,8 +889,16 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-  text_contents->SetColor(paint.color);
   text_contents->SetForceTextColor(paint.mask_blur_descriptor.has_value());
+  text_contents->SetOffset(position);
+  text_contents->SetColor(paint.color);
+  text_contents->SetTextProperties(paint.color,                           //
+                                   paint.style == Paint::Style::kStroke,  //
+                                   paint.stroke_width,                    //
+                                   paint.stroke_cap,                      //
+                                   paint.stroke_join,                     //
+                                   paint.stroke_miter                     //
+  );
 
   entity.SetTransform(GetCurrentTransform() *
                       Matrix::MakeTranslation(position));
@@ -891,8 +909,8 @@ void Canvas::DrawTextFrame(const std::shared_ptr<TextFrame>& text_frame,
   //              needs to be reworked in order to interact correctly with
   //              mask filters.
   //              https://github.com/flutter/flutter/issues/133297
-  entity.SetContents(
-      paint.WithFilters(paint.WithMaskBlur(std::move(text_contents), true)));
+  entity.SetContents(paint.WithFilters(paint.WithMaskBlur(
+      std::move(text_contents), true, GetCurrentTransform())));
 
   AddRenderEntityToCurrentPass(std::move(entity));
 }
@@ -901,14 +919,12 @@ static bool UseColorSourceContents(
     const std::shared_ptr<VerticesGeometry>& vertices,
     const Paint& paint) {
   // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image or
-  // a solid color.
+  // are vertex coordinates but its just a color.
   if (vertices->HasVertexColors()) {
     return false;
   }
   if (vertices->HasTextureCoordinates() &&
-      (paint.color_source.GetType() == ColorSource::Type::kImage ||
-       paint.color_source.GetType() == ColorSource::Type::kColor)) {
+      (paint.color_source.GetType() == ColorSource::Type::kColor)) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
@@ -928,16 +944,26 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   entity.SetTransform(GetCurrentTransform());
   entity.SetBlendMode(paint.blend_mode);
 
-  // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image.
+  // If there are no vertex colors.
   if (UseColorSourceContents(vertices, paint)) {
     entity.SetContents(CreateContentsForGeometryWithFilters(paint, vertices));
     AddRenderEntityToCurrentPass(std::move(entity));
     return;
   }
 
-  // If there is are per-vertex colors, an image, and the blend mode
-  // is simple we can draw without a sub-renderpass.
+  // If the blend mode is destination don't bother to bind or create a texture.
+  if (blend_mode == BlendMode::kDestination) {
+    auto contents = std::make_shared<VerticesSimpleBlendContents>();
+    contents->SetBlendMode(blend_mode);
+    contents->SetAlpha(paint.color.alpha);
+    contents->SetGeometry(vertices);
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    AddRenderEntityToCurrentPass(std::move(entity));
+    return;
+  }
+
+  // If there is a texture, use this directly. Otherwise render the color
+  // source to a texture.
   if (std::optional<ImageData> maybe_image_data =
           GetImageColorSourceData(paint.color_source)) {
     const ImageData& image_data = maybe_image_data.value();
@@ -945,7 +971,6 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     contents->SetBlendMode(blend_mode);
     contents->SetAlpha(paint.color.alpha);
     contents->SetGeometry(vertices);
-
     contents->SetEffectTransform(image_data.effect_transform);
     contents->SetTexture(image_data.texture);
     contents->SetTileMode(image_data.x_tile_mode, image_data.y_tile_mode);
@@ -960,35 +985,35 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
-  if (vertices->HasTextureCoordinates()) {
-    // If the color source has an intrinsic size, then we use that to
-    // create the src contents as a simplification. Otherwise we use
-    // the extent of the texture coordinates to determine how large
-    // the src contents should be. If neither has a value we fall back
-    // to using the geometry coverage data.
-    Rect src_coverage;
-    auto size = src_contents->GetColorSourceSize();
-    if (size.has_value()) {
-      src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
-    } else {
-      auto cvg = vertices->GetCoverage(Matrix{});
-      FML_CHECK(cvg.has_value());
-      src_coverage =
-          // Covered by FML_CHECK.
-          // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
-          vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
-    }
-    src_contents =
-        src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
+
+  // If the color source has an intrinsic size, then we use that to
+  // create the src contents as a simplification. Otherwise we use
+  // the extent of the texture coordinates to determine how large
+  // the src contents should be. If neither has a value we fall back
+  // to using the geometry coverage data.
+  Rect src_coverage;
+  auto size = src_contents->GetColorSourceSize();
+  if (size.has_value()) {
+    src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
+  } else {
+    auto cvg = vertices->GetCoverage(Matrix{});
+    FML_CHECK(cvg.has_value());
+    src_coverage =
+        // Covered by FML_CHECK.
+        // NOLINTNEXTLINE(bugprone-unchecked-optional-access)
+        vertices->GetTextureCoordinateCoverge().value_or(cvg.value());
   }
+  src_contents =
+      src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
 
-  auto contents = std::make_shared<VerticesContents>();
-  contents->SetAlpha(paint.color.alpha);
+  auto contents = std::make_shared<VerticesSimpleBlendContents>();
   contents->SetBlendMode(blend_mode);
+  contents->SetAlpha(paint.color.alpha);
   contents->SetGeometry(vertices);
-  contents->SetSourceContents(std::move(src_contents));
+  contents->SetLazyTexture([src_contents](const ContentContext& renderer) {
+    return src_contents->RenderToSnapshot(renderer, {})->texture;
+  });
   entity.SetContents(paint.WithFilters(std::move(contents)));
-
   AddRenderEntityToCurrentPass(std::move(entity));
 }
 

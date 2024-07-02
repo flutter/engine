@@ -10,41 +10,35 @@
 #include <optional>
 #include <unordered_map>
 
-#include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/status_or.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/host_buffer.h"
-#include "impeller/entity/entity.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
 #include "impeller/typographer/typographer_context.h"
 
-#ifdef IMPELLER_DEBUG
-#include "impeller/entity/checkerboard.frag.h"
-#include "impeller/entity/checkerboard.vert.h"
-#endif  // IMPELLER_DEBUG
-
 #include "impeller/entity/border_mask_blur.frag.h"
-#include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/clip.frag.h"
 #include "impeller/entity/clip.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/conical_gradient_fill.frag.h"
-#include "impeller/entity/filter.vert.h"
+#include "impeller/entity/fast_gradient.frag.h"
+#include "impeller/entity/fast_gradient.vert.h"
+#include "impeller/entity/filter_position.vert.h"
+#include "impeller/entity/filter_position_uv.vert.h"
+#include "impeller/entity/gaussian.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
-#include "impeller/entity/glyph_atlas_color.frag.h"
 #include "impeller/entity/gradient_fill.vert.h"
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/morphology_filter.frag.h"
-#include "impeller/entity/morphology_filter.vert.h"
-#include "impeller/entity/points.comp.h"
 #include "impeller/entity/porter_duff_blend.frag.h"
 #include "impeller/entity/porter_duff_blend.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
@@ -57,18 +51,9 @@
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/texture_fill_strict_src.frag.h"
+#include "impeller/entity/texture_uv_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
-#include "impeller/entity/uv.comp.h"
-#include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
-
-#include "impeller/entity/kernel.vert.h"
-#include "impeller/entity/kernel_decal.frag.h"
-#include "impeller/entity/kernel_nodecal.frag.h"
-
-#include "impeller/entity/position_color.vert.h"
-
-#include "impeller/typographer/glyph_atlas.h"
 
 #include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
@@ -82,7 +67,6 @@
 #include "impeller/entity/framebuffer_blend.vert.h"
 
 #include "impeller/entity/vertices_uber.frag.h"
-#include "impeller/entity/vertices_uber.vert.h"
 
 #ifdef IMPELLER_ENABLE_OPENGLES
 #include "impeller/entity/tiled_texture_fill_external.frag.h"
@@ -94,11 +78,8 @@
 
 namespace impeller {
 
-#ifdef IMPELLER_DEBUG
-using CheckerboardPipeline =
-    RenderPipelineHandle<CheckerboardVertexShader, CheckerboardFragmentShader>;
-#endif  // IMPELLER_DEBUG
-
+using FastGradientPipeline =
+    RenderPipelineHandle<FastGradientVertexShader, FastGradientFragmentShader>;
 using LinearGradientFillPipeline =
     RenderPipelineHandle<GradientFillVertexShader,
                          LinearGradientFillFragmentShader>;
@@ -132,41 +113,37 @@ using TexturePipeline =
 using TextureStrictSrcPipeline =
     RenderPipelineHandle<TextureFillVertexShader,
                          TextureFillStrictSrcFragmentShader>;
-using PositionUVPipeline = RenderPipelineHandle<TextureFillVertexShader,
-                                                TiledTextureFillFragmentShader>;
 using TiledTexturePipeline =
-    RenderPipelineHandle<TextureFillVertexShader,
+    RenderPipelineHandle<TextureUvFillVertexShader,
                          TiledTextureFillFragmentShader>;
-using KernelDecalPipeline =
-    RenderPipelineHandle<KernelVertexShader, KernelDecalFragmentShader>;
-using KernelPipeline =
-    RenderPipelineHandle<KernelVertexShader, KernelNodecalFragmentShader>;
+using GaussianBlurPipeline =
+    RenderPipelineHandle<FilterPositionUvVertexShader, GaussianFragmentShader>;
 using BorderMaskBlurPipeline =
-    RenderPipelineHandle<BorderMaskBlurVertexShader,
+    RenderPipelineHandle<FilterPositionUvVertexShader,
                          BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
-    RenderPipelineHandle<MorphologyFilterVertexShader,
+    RenderPipelineHandle<FilterPositionUvVertexShader,
                          MorphologyFilterFragmentShader>;
 using ColorMatrixColorFilterPipeline =
-    RenderPipelineHandle<FilterVertexShader,
+    RenderPipelineHandle<FilterPositionVertexShader,
                          ColorMatrixColorFilterFragmentShader>;
 using LinearToSrgbFilterPipeline =
-    RenderPipelineHandle<FilterVertexShader, LinearToSrgbFilterFragmentShader>;
+    RenderPipelineHandle<FilterPositionVertexShader,
+                         LinearToSrgbFilterFragmentShader>;
 using SrgbToLinearFilterPipeline =
-    RenderPipelineHandle<FilterVertexShader, SrgbToLinearFilterFragmentShader>;
+    RenderPipelineHandle<FilterPositionVertexShader,
+                         SrgbToLinearFilterFragmentShader>;
+using YUVToRGBFilterPipeline =
+    RenderPipelineHandle<FilterPositionVertexShader,
+                         YuvToRgbFilterFragmentShader>;
+
 using GlyphAtlasPipeline =
     RenderPipelineHandle<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
-using GlyphAtlasColorPipeline =
-    RenderPipelineHandle<GlyphAtlasVertexShader, GlyphAtlasColorFragmentShader>;
+
 using PorterDuffBlendPipeline =
     RenderPipelineHandle<PorterDuffBlendVertexShader,
                          PorterDuffBlendFragmentShader>;
 using ClipPipeline = RenderPipelineHandle<ClipVertexShader, ClipFragmentShader>;
-
-using GeometryColorPipeline =
-    RenderPipelineHandle<PositionColorVertexShader, VerticesFragmentShader>;
-using YUVToRGBFilterPipeline =
-    RenderPipelineHandle<FilterVertexShader, YuvToRgbFilterFragmentShader>;
 
 // Advanced blends
 using BlendColorPipeline = RenderPipelineHandle<AdvancedBlendVertexShader,
@@ -255,24 +232,14 @@ using FramebufferBlendSoftLightPipeline =
                          FramebufferBlendFragmentShader>;
 
 /// Draw Vertices/Atlas Uber Shader
-using VerticesUberShader =
-    RenderPipelineHandle<VerticesUberVertexShader, VerticesUberFragmentShader>;
-
-/// Geometry Pipelines
-using PointsComputeShaderPipeline = ComputePipelineBuilder<PointsComputeShader>;
-using UvComputeShaderPipeline = ComputePipelineBuilder<UvComputeShader>;
+using VerticesUberShader = RenderPipelineHandle<PorterDuffBlendVertexShader,
+                                                VerticesUberFragmentShader>;
 
 #ifdef IMPELLER_ENABLE_OPENGLES
 using TiledTextureExternalPipeline =
-    RenderPipelineHandle<TextureFillVertexShader,
+    RenderPipelineHandle<TextureUvFillVertexShader,
                          TiledTextureFillExternalFragmentShader>;
 #endif  // IMPELLER_ENABLE_OPENGLES
-
-// A struct used to isolate command buffer storage from the content
-// context options to preserve const-ness.
-struct PendingCommandBuffers {
-  std::vector<std::shared_ptr<CommandBuffer>> command_buffers;
-};
 
 /// Pipeline state configuration.
 ///
@@ -286,10 +253,11 @@ struct PendingCommandBuffers {
 /// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
   enum class StencilMode : uint8_t {
-    /// Turn the stencil test off. Used when drawing without stencil-then-cover.
+    /// Turn the stencil test off. Used when drawing without stencil-then-cover
+    /// or overdraw prevention.
     kIgnore,
 
-    // Operations used for stencil-then-cover
+    // Operations used for stencil-then-cover.
 
     /// Draw the stencil for the NonZero fill path rule.
     ///
@@ -315,24 +283,31 @@ struct ContentContextOptions {
     /// The stencil ref should always be 0 on commands using this mode.
     kCoverCompareInverted,
 
-    // Operations to control the legacy clip implementation, which forms a
-    // heightmap on the stencil buffer.
+    // Operations used for the "overdraw prevention" mechanism. This is used for
+    // drawing strokes.
 
-    /// Slice the clip heightmap to a new maximum height.
-    kLegacyClipRestore,
-    /// Increment the stencil heightmap.
-    kLegacyClipIncrement,
-    /// Decrement the stencil heightmap (used for difference clipping only).
-    kLegacyClipDecrement,
-    /// Used for applying clips to all non-clip draw calls.
-    kLegacyClipCompare,
+    /// For each fragment, increment the stencil value if it's currently zero.
+    /// Discard fragments when the value is non-zero. This prevents
+    /// self-overlapping strokes from drawing over themselves.
+    ///
+    /// Note that this is done for rendering correctness, not performance. If a
+    /// stroke is drawn with a backdrop-reliant blend and self-intersects, then
+    /// the intersected geometry will render incorrectly when overdrawn because
+    /// we don't adjust the geometry prevent self-intersection.
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kOverdrawPreventionIncrement,
+    /// Reset the stencil to a new maximum value specified by the ref (currently
+    /// always 0).
+    ///
+    /// The stencil ref should always be 0 on commands using this mode.
+    kOverdrawPreventionRestore,
   };
 
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction depth_compare = CompareFunction::kAlways;
-  StencilMode stencil_mode =
-      ContentContextOptions::StencilMode::kLegacyClipCompare;
+  StencilMode stencil_mode = ContentContextOptions::StencilMode::kIgnore;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   PixelFormat color_attachment_pixel_format = PixelFormat::kUnknown;
   bool has_depth_stencil_attachments = true;
@@ -405,12 +380,10 @@ class ContentContext {
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
-#ifdef IMPELLER_DEBUG
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetCheckerboardPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFastGradientPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(checkerboard_pipelines_, opts);
+    return GetPipeline(fast_gradient_pipelines_, opts);
   }
-#endif  // IMPELLER_DEBUG
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -485,24 +458,14 @@ class ContentContext {
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(position_uv_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(tiled_texture_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelDecalPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(kernel_decal_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetKernelPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(kernel_nodecal_pipelines_, opts);
+    return GetPipeline(gaussian_blur_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
@@ -538,16 +501,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(glyph_atlas_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGlyphAtlasColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(glyph_atlas_color_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
@@ -733,17 +686,9 @@ class ContentContext {
     return GetPipeline(vertices_uber_shader_, opts);
   }
 
-  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetPointComputePipeline()
-      const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
-    return point_field_compute_pipelines_;
-  }
-
-  std::shared_ptr<Pipeline<ComputePipelineDescriptor>> GetUvComputePipeline()
-      const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsCompute());
-    return uv_compute_pipelines_;
-  }
+  // An empty 1x1 texture for binding drawVertices/drawAtlas or other cases
+  // that don't always have a texture (due to blending).
+  std::shared_ptr<Texture> GetEmptyTexture() const;
 
   std::shared_ptr<Context> GetContext() const;
 
@@ -919,11 +864,8 @@ class ContentContext {
   // variants requested from that are lazily created and cached in the variants
   // map.
 
-#ifdef IMPELLER_DEBUG
-  mutable Variants<CheckerboardPipeline> checkerboard_pipelines_;
-#endif  // IMPELLER_DEBUG
-
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
+  mutable Variants<FastGradientPipeline> fast_gradient_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<ConicalGradientFillPipeline>
@@ -944,10 +886,8 @@ class ContentContext {
   mutable Variants<TiledTextureExternalPipeline>
       tiled_texture_external_pipelines_;
 #endif  // IMPELLER_ENABLE_OPENGLES
-  mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
-  mutable Variants<KernelDecalPipeline> kernel_decal_pipelines_;
-  mutable Variants<KernelPipeline> kernel_nodecal_pipelines_;
+  mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
@@ -956,8 +896,6 @@ class ContentContext {
   mutable Variants<SrgbToLinearFilterPipeline> srgb_to_linear_filter_pipelines_;
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
-  mutable Variants<GlyphAtlasColorPipeline> glyph_atlas_color_pipelines_;
-  mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   mutable Variants<PorterDuffBlendPipeline> porter_duff_blend_pipelines_;
   // Advanced blends.
@@ -1008,10 +946,6 @@ class ContentContext {
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
   mutable Variants<VerticesUberShader> vertices_uber_shader_;
-  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
-      point_field_compute_pipelines_;
-  mutable std::shared_ptr<Pipeline<ComputePipelineDescriptor>>
-      uv_compute_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -1052,8 +986,8 @@ class ContentContext {
     }
 
     auto variant_future = pipeline->CreateVariant(
-        [&opts, variants_count =
-                    container.GetPipelineCount()](PipelineDescriptor& desc) {
+        /*async=*/false, [&opts, variants_count = container.GetPipelineCount()](
+                             PipelineDescriptor& desc) {
           opts.ApplyToPipelineDescriptor(desc);
           desc.SetLabel(
               SPrintF("%s V#%zu", desc.GetLabel().c_str(), variants_count));
@@ -1071,7 +1005,7 @@ class ContentContext {
 #endif  // IMPELLER_ENABLE_3D
   std::shared_ptr<RenderTargetAllocator> render_target_cache_;
   std::shared_ptr<HostBuffer> host_buffer_;
-  std::unique_ptr<PendingCommandBuffers> pending_command_buffers_;
+  std::shared_ptr<Texture> empty_texture_;
   bool wireframe_ = false;
 
   ContentContext(const ContentContext&) = delete;

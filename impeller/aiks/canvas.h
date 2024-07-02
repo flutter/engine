@@ -36,6 +36,7 @@ struct CanvasStackEntry {
   size_t clip_height = 0u;
   // The number of clips tracked for this canvas stack entry.
   size_t num_clips = 0u;
+  Scalar distributed_opacity = 1.0f;
   Entity::RenderingMode rendering_mode = Entity::RenderingMode::kDirect;
 };
 
@@ -60,14 +61,6 @@ class Canvas {
  public:
   static constexpr uint32_t kMaxDepth = 1 << 24;
 
-  struct DebugOptions {
-    /// When enabled, layers that are rendered to an offscreen texture
-    /// internally get a translucent checkerboard pattern painted over them.
-    ///
-    /// Requires the `IMPELLER_DEBUG` preprocessor flag.
-    bool offscreen_texture_checkerboard = false;
-  } debug_options;
-
   Canvas();
 
   explicit Canvas(Rect cull_rect);
@@ -83,7 +76,8 @@ class Canvas {
       std::optional<Rect> bounds = std::nullopt,
       const std::shared_ptr<ImageFilter>& backdrop_filter = nullptr,
       ContentBoundsPromise bounds_promise = ContentBoundsPromise::kUnknown,
-      uint32_t total_content_depth = kMaxDepth);
+      uint32_t total_content_depth = kMaxDepth,
+      bool can_distribute_opacity = false);
 
   virtual bool Restore();
 

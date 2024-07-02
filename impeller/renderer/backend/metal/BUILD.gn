@@ -8,8 +8,6 @@ impeller_component("metal") {
   sources = [
     "allocator_mtl.h",
     "allocator_mtl.mm",
-    "blit_command_mtl.h",
-    "blit_command_mtl.mm",
     "blit_pass_mtl.h",
     "blit_pass_mtl.mm",
     "command_buffer_mtl.h",
@@ -67,10 +65,14 @@ impeller_component("metal") {
 impeller_component("metal_unittests") {
   testonly = true
 
-  sources = [ "texture_mtl_unittests.mm" ]
+  sources = [
+    "allocator_mtl_unittests.mm",
+    "texture_mtl_unittests.mm",
+  ]
 
   deps = [
     ":metal",
+    "//flutter/impeller/playground:playground_test",
     "//flutter/testing:testing_lib",
   ]
 

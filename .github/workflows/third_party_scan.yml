@@ -21,7 +21,7 @@ jobs:
       contents: read
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
         with:
           persist-credentials: false
       - name: "setup python"
@@ -41,7 +41,7 @@ jobs:
     name: Vulnerability scanning
     needs:
       extract-deps
-    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.7.1"
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v1.8.1"
     with:
       # Download the artifact uploaded in extract-deps step
       download-artifact: osv-lockfile-${{github.sha}}
@@ -52,4 +52,5 @@ jobs:
     permissions:
       # Needed to upload the SARIF results to code-scanning dashboard.
       security-events: write
+      actions: read
       contents: read

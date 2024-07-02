@@ -17,6 +17,8 @@ impeller_shaders("shader_fixtures") {
   shaders = [
     "array.frag",
     "array.vert",
+    "baby.frag",
+    "baby.vert",
     "box_fade.frag",
     "box_fade.vert",
     "colors.frag",
@@ -30,6 +32,8 @@ impeller_shaders("shader_fixtures") {
     "instanced_draw.vert",
     "mipmaps.frag",
     "mipmaps.vert",
+    "planet.frag",
+    "planet.vert",
     "sample.comp",
     "sepia.frag",
     "sepia.vert",
@@ -66,6 +70,8 @@ impellerc("runtime_stages") {
     "ink_sparkle.frag",
     "runtime_stage_example.frag",
     "gradient.frag",
+    "uniforms_and_sampler_1.frag",
+    "uniforms_and_sampler_2.frag",
   ]
   sl_file_extension = "iplr"
 

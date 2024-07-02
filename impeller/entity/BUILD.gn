@@ -16,20 +16,13 @@ impeller_shaders("entity_shaders") {
   shaders = [
     "shaders/blending/advanced_blend.vert",
     "shaders/blending/advanced_blend.frag",
-    "shaders/border_mask_blur.frag",
-    "shaders/border_mask_blur.vert",
     "shaders/clip.frag",
     "shaders/clip.vert",
     "shaders/gradients/conical_gradient_fill.frag",
-    "shaders/gaussian_blur/kernel_decal.frag",
-    "shaders/gaussian_blur/kernel_nodecal.frag",
-    "shaders/gaussian_blur/kernel.vert",
     "shaders/glyph_atlas.frag",
-    "shaders/glyph_atlas_color.frag",
     "shaders/glyph_atlas.vert",
     "shaders/gradients/gradient_fill.vert",
     "shaders/gradients/linear_gradient_fill.frag",
-    "shaders/position_color.vert",
     "shaders/gradients/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
@@ -39,29 +32,25 @@ impeller_shaders("entity_shaders") {
     "shaders/gradients/sweep_gradient_fill.frag",
     "shaders/texture_fill.frag",
     "shaders/texture_fill.vert",
+    "shaders/texture_uv_fill.vert",
     "shaders/tiled_texture_fill.frag",
     "shaders/tiled_texture_fill_external.frag",
     "shaders/texture_fill_strict_src.frag",
-    "shaders/vertices.frag",
     "shaders/blending/porter_duff_blend.frag",
     "shaders/blending/porter_duff_blend.vert",
+    "shaders/filters/border_mask_blur.frag",
     "shaders/filters/color_matrix_color_filter.frag",
-    "shaders/filters/filter.vert",
+    "shaders/filters/filter_position.vert",
+    "shaders/filters/filter_position_uv.vert",
+    "shaders/filters/gaussian.frag",
     "shaders/filters/yuv_to_rgb_filter.frag",
     "shaders/filters/srgb_to_linear_filter.frag",
     "shaders/filters/linear_to_srgb_filter.frag",
     "shaders/filters/morphology_filter.frag",
-    "shaders/filters/morphology_filter.vert",
     "shaders/blending/vertices_uber.frag",
-    "shaders/blending/vertices_uber.vert",
+    "shaders/gradients/fast_gradient.vert",
+    "shaders/gradients/fast_gradient.frag",
   ]
-
-  if (impeller_debug) {
-    shaders += [
-      "shaders/debug/checkerboard.frag",
-      "shaders/debug/checkerboard.vert",
-    ]
-  }
 }
 
 impeller_shaders("modern_entity_shaders") {
@@ -80,8 +69,6 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/gradients/linear_gradient_ssbo_fill.frag",
     "shaders/gradients/radial_gradient_ssbo_fill.frag",
     "shaders/gradients/sweep_gradient_ssbo_fill.frag",
-    "shaders/geometry/points.comp",
-    "shaders/geometry/uv.comp",
   ]
 }
 
@@ -216,13 +203,6 @@ impeller_component("entity") {
     "render_target_cache.h",
   ]
 
-  if (impeller_debug) {
-    sources += [
-      "contents/checkerboard_contents.cc",
-      "contents/checkerboard_contents.h",
-    ]
-  }
-
   public_deps = [
     ":entity_shaders",
     ":framebuffer_blend_entity_shaders",
@@ -260,14 +240,13 @@ impeller_component("entity_unittests") {
   testonly = true
 
   sources = [
-    "contents/checkerboard_contents_unittests.cc",
     "contents/clip_contents_unittests.cc",
-    "contents/content_context_unittests.cc",
+    "contents/filters/blend_filter_contents_unittests.cc",
     "contents/filters/gaussian_blur_filter_contents_unittests.cc",
     "contents/filters/inputs/filter_input_unittests.cc",
+    "contents/filters/matrix_filter_contents_unittests.cc",
     "contents/host_buffer_unittests.cc",
     "contents/tiled_texture_contents_unittests.cc",
-    "contents/vertices_contents_unittests.cc",
     "entity_pass_target_unittests.cc",
     "entity_pass_unittests.cc",
     "entity_playground.cc",

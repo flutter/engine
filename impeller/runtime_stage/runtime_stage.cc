@@ -10,6 +10,7 @@
 #include "fml/mapping.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/runtime_types.h"
+#include "impeller/core/shader_types.h"
 #include "impeller/runtime_stage/runtime_stage_flatbuffers.h"
 #include "runtime_stage_types_flatbuffers.h"
 
@@ -88,12 +89,23 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
   entrypoint_ = runtime_stage->entrypoint()->str();
 
   auto* uniforms = runtime_stage->uniforms();
+
+  // Note: image bindings are screwy and will always have the same offset.
+  // track the binding of the UBO to determine where the image bindings go.
+  // This is only guaranteed to give us the correct bindings if there is a
+  // single sampler2D.
+  std::optional<size_t> ubo_id;
   if (uniforms) {
     for (auto i = uniforms->begin(), end = uniforms->end(); i != end; i++) {
       RuntimeUniformDescription desc;
       desc.name = i->name()->str();
       desc.location = i->location();
+      desc.binding = i->binding();
       desc.type = ToType(i->type());
+      if (desc.type == kStruct) {
+        ubo_id = desc.location;
+        desc.binding = desc.location;
+      }
       desc.dimensions = RuntimeUniformDimensions{
           static_cast<size_t>(i->rows()), static_cast<size_t>(i->columns())};
       desc.bit_width = i->bit_width();
@@ -104,7 +116,7 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
         }
       }
       desc.struct_float_count = i->struct_float_count();
-      uniforms_.emplace_back(std::move(desc));
+      uniforms_.push_back(std::move(desc));
     }
   }
 
@@ -114,6 +126,35 @@ RuntimeStage::RuntimeStage(const fb::RuntimeStage* runtime_stage,
       [payload = payload_](auto, auto) {}  //
   );
 
+  size_t binding = 64;
+  if (ubo_id.has_value() && ubo_id.value() == binding) {
+    binding++;
+  }
+  for (auto& uniform : uniforms_) {
+    if (uniform.type == kSampledImage) {
+      uniform.binding = binding;
+      binding++;
+      if (ubo_id.has_value() && ubo_id.value() == binding) {
+        binding++;
+      }
+    }
+  }
+
+  for (const auto& uniform : GetUniforms()) {
+    if (uniform.type == kStruct) {
+      descriptor_set_layouts_.push_back(DescriptorSetLayout{
+          static_cast<uint32_t>(uniform.location),
+          DescriptorType::kUniformBuffer,
+          ShaderStage::kFragment,
+      });
+    } else if (uniform.type == kSampledImage) {
+      descriptor_set_layouts_.push_back(DescriptorSetLayout{
+          static_cast<uint32_t>(uniform.binding),
+          DescriptorType::kSampledImage,
+          ShaderStage::kFragment,
+      });
+    }
+  }
   is_valid_ = true;
 }
 
@@ -158,6 +199,11 @@ bool RuntimeStage::IsDirty() const {
 
 void RuntimeStage::SetClean() {
   is_dirty_ = false;
+}
+
+const std::vector<DescriptorSetLayout>& RuntimeStage::GetDescriptorSetLayouts()
+    const {
+  return descriptor_set_layouts_;
 }
 
 }  // namespace impeller
