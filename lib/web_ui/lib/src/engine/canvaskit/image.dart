@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
@@ -11,17 +12,94 @@ import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
-FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
-    [int? targetWidth, int? targetHeight]) {
-  // If we have either a target width or target height, use canvaskit to decode.
-  if (browserSupportsImageDecoder && (targetWidth == null && targetHeight == null)) {
-    return CkBrowserImageDecoder.create(
+Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
+    [int? targetWidth, int? targetHeight]) async {
+  ui.Codec codec;
+  // ImageDecoder does not detect image type automatically. It requires us to
+  // tell it what the image type is.
+  final String contentType = tryDetectContentType(list, 'encoded image bytes');
+
+  if (browserSupportsImageDecoder) {
+    codec = await CkBrowserImageDecoder.create(
       data: list,
+      contentType: contentType,
       debugSource: 'encoded image bytes',
     );
   } else {
-    return CkAnimatedImage.decodeFromBytes(list, 'encoded image bytes', targetWidth: targetWidth, targetHeight: targetHeight);
+    // TODO(harryterkelsen): If the image is animated, then use Skia to decode.
+    final DomBlob blob = createDomBlob(<dynamic>[list.buffer]);
+    codec = await decodeBlobToCkImage(blob);
   }
+  return ResizingCodec(
+    codec,
+    targetWidth: targetWidth,
+    targetHeight: targetHeight,
+  );
+}
+
+class CkHtmlImageElementCodec extends HtmlImageElementCodec {
+  CkHtmlImageElementCodec(super.src, {super.chunkCallback});
+
+  @override
+  ui.Image createImageFromHTMLImageElement(
+    DomHTMLImageElement image,
+    int naturalWidth,
+    int naturalHeight,
+  ) {
+    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
+      image,
+      SkPartialImageInfo(
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
+        width: naturalWidth.toDouble(),
+        height: naturalHeight.toDouble(),
+      ),
+    );
+    if (skImage == null) {
+      throw ImageCodecException(
+        'Failed to create image from Image.decode',
+      );
+    }
+
+    return CkImage(skImage);
+  }
+}
+
+class CkImageBlobCodec extends HtmlBlobCodec {
+  CkImageBlobCodec(super.blob);
+
+  @override
+  ui.Image createImageFromHTMLImageElement(
+    DomHTMLImageElement image,
+    int naturalWidth,
+    int naturalHeight,
+  ) {
+    final SkImage? skImage = canvasKit.MakeLazyImageFromTextureSourceWithInfo(
+      image,
+      SkPartialImageInfo(
+        alphaType: canvasKit.AlphaType.Premul,
+        colorType: canvasKit.ColorType.RGBA_8888,
+        colorSpace: SkColorSpaceSRGB,
+        width: naturalWidth.toDouble(),
+        height: naturalHeight.toDouble(),
+      ),
+    );
+    if (skImage == null) {
+      throw ImageCodecException(
+        'Failed to create image from Image.decode',
+      );
+    }
+
+    return CkImage(skImage);
+  }
+}
+
+/// Creates and decodes an image using HtmlImageElement.
+Future<CkImageBlobCodec> decodeBlobToCkImage(DomBlob blob) async {
+  final CkImageBlobCodec codec = CkImageBlobCodec(blob);
+  await codec.decode();
+  return codec;
 }
 
 void skiaDecodeImageFromPixels(
@@ -49,7 +127,9 @@ void skiaDecodeImageFromPixels(
       SkImageInfo(
         width: width.toDouble(),
         height: height.toDouble(),
-        colorType: format == ui.PixelFormat.rgba8888 ? canvasKit.ColorType.RGBA_8888 : canvasKit.ColorType.BGRA_8888,
+        colorType: format == ui.PixelFormat.rgba8888
+            ? canvasKit.ColorType.RGBA_8888
+            : canvasKit.ColorType.BGRA_8888,
         alphaType: canvasKit.AlphaType.Premul,
         colorSpace: SkColorSpaceSRGB,
       ),
@@ -63,7 +143,8 @@ void skiaDecodeImageFromPixels(
     }
 
     if (targetWidth != null || targetHeight != null) {
-      if (validUpscale(allowUpscaling, targetWidth, targetHeight, width, height)) {
+      if (validUpscale(
+          allowUpscaling, targetWidth, targetHeight, width, height)) {
         return callback(scaleImage(skImage, targetWidth, targetHeight));
       }
     }
@@ -73,7 +154,8 @@ void skiaDecodeImageFromPixels(
 
 // An invalid upscale happens when allowUpscaling is false AND either the given
 // targetWidth is larger than the originalWidth OR the targetHeight is larger than originalHeight.
-bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int originalWidth, int originalHeight) {
+bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight,
+    int originalWidth, int originalHeight) {
   if (allowUpscaling) {
     return true;
   }
@@ -104,42 +186,39 @@ bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int 
 /// If either targetWidth or targetHeight is less than or equal to zero, it
 /// will be treated as if it is null.
 CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
-    assert(targetWidth != null || targetHeight != null);
-    if (targetWidth != null && targetWidth <= 0) {
-      targetWidth = null;
-    }
-    if (targetHeight != null && targetHeight <= 0) {
-      targetHeight = null;
-    }
-    if (targetWidth == null && targetHeight != null) {
-      targetWidth = (targetHeight * (image.width() / image.height())).round();
-    } else if (targetHeight == null && targetWidth != null) {
-      targetHeight = targetWidth ~/ (image.width() / image.height());
-    }
+  assert(targetWidth != null || targetHeight != null);
+  if (targetWidth != null && targetWidth <= 0) {
+    targetWidth = null;
+  }
+  if (targetHeight != null && targetHeight <= 0) {
+    targetHeight = null;
+  }
+  if (targetWidth == null && targetHeight != null) {
+    targetWidth = (targetHeight * (image.width() / image.height())).round();
+  } else if (targetHeight == null && targetWidth != null) {
+    targetHeight = targetWidth ~/ (image.width() / image.height());
+  }
 
-    assert(targetWidth != null);
-    assert(targetHeight != null);
+  assert(targetWidth != null);
+  assert(targetHeight != null);
 
-    final CkPictureRecorder recorder = CkPictureRecorder();
-    final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+  final CkPictureRecorder recorder = CkPictureRecorder();
+  final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
 
-    final CkPaint paint = CkPaint();
-    canvas.drawImageRect(
-      CkImage(image),
-      ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
-      ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
-      paint,
-    );
-    paint.dispose();
+  final CkPaint paint = CkPaint();
+  canvas.drawImageRect(
+    CkImage(image),
+    ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
+    ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
+    paint,
+  );
+  paint.dispose();
 
-    final CkPicture picture = recorder.endRecording();
-    final ui.Image finalImage = picture.toImageSync(
-      targetWidth,
-      targetHeight
-    );
+  final CkPicture picture = recorder.endRecording();
+  final ui.Image finalImage = picture.toImageSync(targetWidth, targetHeight);
 
-    final CkImage ckImage = finalImage as CkImage;
-    return ckImage;
+  final CkImage ckImage = finalImage as CkImage;
+  return ckImage;
 }
 
 /// Thrown when the web engine fails to decode an image, either due to a
@@ -160,15 +239,18 @@ const String _kNetworkImageMessage = 'Failed to load network image.';
 Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
   final Uint8List list = await fetchImage(url, chunkCallback);
+  final String contentType = tryDetectContentType(list, url);
   if (browserSupportsImageDecoder) {
-    return CkBrowserImageDecoder.create(data: list, debugSource: url);
+    return CkBrowserImageDecoder.create(
+        data: list, contentType: contentType, debugSource: url);
   } else {
     return CkAnimatedImage.decodeFromBytes(list, url);
   }
 }
 
 /// Sends a request to fetch image data.
-Future<Uint8List> fetchImage(String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
+Future<Uint8List> fetchImage(
+    String url, ui_web.ImageCodecChunkCallback? chunkCallback) async {
   try {
     final HttpFetchResponse response = await httpFetch(url);
     final int? contentLength = response.contentLength;
@@ -199,7 +281,8 @@ Future<Uint8List> fetchImage(String url, ui_web.ImageCodecChunkCallback? chunkCa
 /// Reads the [payload] in chunks using the browser's Streams API
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
-Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, ui_web.ImageCodecChunkCallback chunkCallback) async {
+Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength,
+    ui_web.ImageCodecChunkCallback chunkCallback) async {
   final JSUint8Array result = createUint8ArrayFromLength(contentLength);
   int position = 0;
   int cumulativeBytesLoaded = 0;
@@ -214,7 +297,7 @@ Future<Uint8List> readChunked(HttpFetchPayload payload, int contentLength, ui_we
 
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
-  CkImage(SkImage skImage, { this.videoFrame }) {
+  CkImage(SkImage skImage, {this.videoFrame}) {
     box = CountedRef<CkImage, SkImage>(skImage, this, 'SkImage');
     _init();
   }
@@ -323,18 +406,29 @@ class CkImage implements ui.Image, StackTraceDebugger {
     assert(_debugCheckIsNotDisposed());
     // readPixelsFromVideoFrame currently does not convert I420, I444, I422
     // videoFrame formats to RGBA
-    if (videoFrame != null && videoFrame!.format != 'I420' && videoFrame!.format != 'I444' && videoFrame!.format != 'I422') {
+    if (videoFrame != null &&
+        videoFrame!.format != 'I420' &&
+        videoFrame!.format != 'I444' &&
+        videoFrame!.format != 'I422') {
       return readPixelsFromVideoFrame(videoFrame!, format);
     } else {
-      return _readPixelsFromSkImage(format);
+      ByteData? data = _readPixelsFromSkImage(format);
+      data ??= _readPixelsFromImageViaSurface(format);
+      if (data == null) {
+        return Future<ByteData>.error('Failed to encode the image into bytes.');
+      } else {
+        return Future<ByteData>.value(data);
+      }
     }
   }
 
   @override
   ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
-  Future<ByteData> _readPixelsFromSkImage(ui.ImageByteFormat format) {
-    final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba ? canvasKit.AlphaType.Unpremul : canvasKit.AlphaType.Premul;
+  ByteData? _readPixelsFromSkImage(ui.ImageByteFormat format) {
+    final SkAlphaType alphaType = format == ui.ImageByteFormat.rawStraightRgba
+        ? canvasKit.AlphaType.Unpremul
+        : canvasKit.AlphaType.Premul;
     final ByteData? data = _encodeImage(
       skImage: skImage,
       format: format,
@@ -342,11 +436,29 @@ class CkImage implements ui.Image, StackTraceDebugger {
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
     );
-    if (data == null) {
-      return Future<ByteData>.error('Failed to encode the image into bytes.');
-    } else {
-      return Future<ByteData>.value(data);
+    return data;
+  }
+
+  ByteData? _readPixelsFromImageViaSurface(ui.ImageByteFormat format) {
+    final Surface surface = CanvasKitRenderer.instance.pictureToImageSurface;
+    final CkSurface ckSurface =
+        surface.createOrUpdateSurface(BitmapSize(width, height));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.clear(const ui.Color(0x00000000));
+    ckCanvas.drawImage(this, ui.Offset.zero, CkPaint());
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
+    final SkImageInfo imageInfo = SkImageInfo(
+      alphaType: canvasKit.AlphaType.Premul,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+      width: width.toDouble(),
+      height: height.toDouble(),
+    );
+    final Uint8List? pixels = skImage.readPixels(0, 0, imageInfo);
+    if (pixels == null) {
+      throw StateError('Unable to convert read pixels from SkImage.');
     }
+    return pixels.buffer.asByteData();
   }
 
   static ByteData? _encodeImage({
@@ -358,7 +470,8 @@ class CkImage implements ui.Image, StackTraceDebugger {
   }) {
     Uint8List? bytes;
 
-    if (format == ui.ImageByteFormat.rawRgba || format == ui.ImageByteFormat.rawStraightRgba) {
+    if (format == ui.ImageByteFormat.rawRgba ||
+        format == ui.ImageByteFormat.rawStraightRgba) {
       final SkImageInfo imageInfo = SkImageInfo(
         alphaType: alphaType,
         colorType: colorType,
@@ -379,4 +492,26 @@ class CkImage implements ui.Image, StackTraceDebugger {
     assert(_debugCheckIsNotDisposed());
     return '[$width\u00D7$height]';
   }
+}
+
+/// Detect the content type or throw an error if content type can't be detected.
+String tryDetectContentType(Uint8List data, String debugSource) {
+  // ImageDecoder does not detect image type automatically. It requires us to
+  // tell it what the image type is.
+  final String? contentType = detectContentType(data);
+
+  if (contentType == null) {
+    final String fileHeader;
+    if (data.isNotEmpty) {
+      fileHeader =
+          '[${bytesToHexString(data.sublist(0, math.min(10, data.length)))}]';
+    } else {
+      fileHeader = 'empty';
+    }
+    throw ImageCodecException(
+        'Failed to detect image file format using the file header.\n'
+        'File header was $fileHeader.\n'
+        'Image source: $debugSource');
+  }
+  return contentType;
 }

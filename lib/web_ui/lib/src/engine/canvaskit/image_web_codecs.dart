@@ -11,7 +11,6 @@
 import 'dart:async';
 import 'dart:convert' show base64;
 import 'dart:js_interop';
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
@@ -27,26 +26,9 @@ class CkBrowserImageDecoder extends BrowserImageDecoder {
 
   static Future<CkBrowserImageDecoder> create({
     required Uint8List data,
+    required String contentType,
     required String debugSource,
   }) async {
-    // ImageDecoder does not detect image type automatically. It requires us to
-    // tell it what the image type is.
-    final String? contentType = detectContentType(data);
-
-    if (contentType == null) {
-      final String fileHeader;
-      if (data.isNotEmpty) {
-        fileHeader = '[${bytesToHexString(data.sublist(0, math.min(10, data.length)))}]';
-      } else {
-        fileHeader = 'empty';
-      }
-      throw ImageCodecException(
-        'Failed to detect image file format using the file header.\n'
-        'File header was $fileHeader.\n'
-        'Image source: $debugSource'
-      );
-    }
-
     final CkBrowserImageDecoder decoder = CkBrowserImageDecoder._(
       contentType: contentType,
       dataSource: data.toJS,
