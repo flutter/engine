@@ -337,11 +337,10 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
                          const DlColor* color_data,
                          const float* stop_data) {
     DlColor* color_storage = reinterpret_cast<DlColor*>(pod);
-    memcpy(color_storage, color_data, stop_count_ * sizeof(*color_data));
-    float* stop_storage =
-        reinterpret_cast<float*>(color_storage + 4 * stop_count_);
+    memcpy(color_storage, color_data, stop_count_ * sizeof(DlColor));
+    float* stop_storage = reinterpret_cast<float*>(color_storage + stop_count_);
     if (stop_data) {
-      memcpy(stop_storage, stop_data, stop_count_ * sizeof(*stop_data));
+      memcpy(stop_storage, stop_data, stop_count_ * sizeof(float));
     } else {
       float div = stop_count_ - 1;
       if (div <= 0) {
