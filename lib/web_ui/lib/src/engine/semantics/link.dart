@@ -18,10 +18,19 @@ class Link extends PrimaryRoleManager {
   @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
-    // TODO(mdebbar): Fill in the real link once the framework sends entire uri.
-    // https://github.com/flutter/flutter/issues/150263.
     element.style.display = 'block';
     return element;
+  }
+
+  @override
+  void update() {
+    super.update();
+
+    if (semanticsObject.hasLinkUri) {
+      element.setAttribute('href', semanticsObject.linkUri!);
+    } else {
+      element.removeAttribute('href');
+    }
   }
 
   @override

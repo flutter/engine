@@ -853,6 +853,9 @@ abstract class SemanticsUpdateBuilder {
   ///
   ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
   ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
+  ///
+  /// The `linkUri` describes the URI that this node links to. If the node is
+  /// not a link, this should be an empty string.
   void updateNode({
     required int id,
     required int flags,
@@ -888,6 +891,7 @@ abstract class SemanticsUpdateBuilder {
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
     int headingLevel = 0,
+    String linkUri = '',
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -959,6 +963,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
     int headingLevel = 0,
+    String linkUri = '',
   }) {
     assert(_matrix4IsValid(transform));
     assert (
@@ -1003,6 +1008,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       childrenInHitTestOrder,
       additionalActions,
       headingLevel,
+      linkUri,
     );
   }
   @Native<
@@ -1044,7 +1050,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
           Handle,
           Handle,
           Handle,
-          Int32)>(symbol: 'SemanticsUpdateBuilder::updateNode')
+          Int32,
+          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,
@@ -1082,7 +1089,8 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Int32List childrenInTraversalOrder,
       Int32List childrenInHitTestOrder,
       Int32List additionalActions,
-      int headingLevel);
+      int headingLevel,
+      String linkUri);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
