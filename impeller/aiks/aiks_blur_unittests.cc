@@ -199,19 +199,29 @@ TEST_P(AiksTest, ClearBlendWithBlur) {
 }
 
 TEST_P(AiksTest, BlurHasNoEdge) {
-  Canvas canvas;
-  canvas.Scale(GetContentScale());
-  canvas.DrawPaint({});
-  Paint blur = {
-      .color = Color::Green(),
-      .mask_blur_descriptor =
-          Paint::MaskBlurDescriptor{
-              .style = FilterContents::BlurStyle::kNormal,
-              .sigma = Sigma(47.6),
-          },
+  Scalar sigma = 47.6;
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Sigma", &sigma, 0, 50);
+      ImGui::End();
+    }
+    Canvas canvas;
+    canvas.Scale(GetContentScale());
+    canvas.DrawPaint({});
+    Paint blur = {
+        .color = Color::Green(),
+        .mask_blur_descriptor =
+            Paint::MaskBlurDescriptor{
+                .style = FilterContents::BlurStyle::kNormal,
+                .sigma = Sigma(sigma),
+            },
+    };
+    canvas.DrawRect(Rect::MakeXYWH(300, 300, 200, 200), blur);
+    return canvas.EndRecordingAsPicture();
   };
-  canvas.DrawRect(Rect::MakeXYWH(300, 300, 200, 200), blur);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(AiksTest, BlurredRectangleWithShader) {
@@ -649,6 +659,45 @@ TEST_P(AiksTest, GaussianBlurRotatedAndClippedInteractive) {
 
     canvas.DrawImageRect(std::make_shared<Image>(boston), /*source=*/bounds,
                          /*dest=*/bounds.Shift(-image_center), paint);
+    return canvas.EndRecordingAsPicture();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, GaussianBlurRotatedNonUniform) {
+  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
+    const Entity::TileMode tile_modes[] = {
+        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+
+    static float rotation = 45;
+    static float scale = 0.6;
+    static int selected_tile_mode = 3;
+
+    if (AiksTest::ImGuiBegin("Controls", nullptr,
+                             ImGuiWindowFlags_AlwaysAutoResize)) {
+      ImGui::SliderFloat("Rotation (degrees)", &rotation, -180, 180);
+      ImGui::SliderFloat("Scale", &scale, 0, 2.0);
+      ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                   sizeof(tile_mode_names) / sizeof(char*));
+      ImGui::End();
+    }
+
+    Canvas canvas;
+    Paint paint = {.color = Color::Green(),
+                   .image_filter =
+                       ImageFilter::MakeBlur(Sigma(50.0), Sigma(0.0),
+                                             FilterContents::BlurStyle::kNormal,
+                                             tile_modes[selected_tile_mode])};
+    Vector2 center = Vector2(1024, 768) / 2;
+    canvas.Scale(GetContentScale());
+    canvas.Translate({center.x, center.y, 0});
+    canvas.Scale({scale, scale, 1});
+    canvas.Rotate(Degrees(rotation));
+
+    canvas.DrawRRect(Rect::MakeXYWH(-100, -100, 200, 200), Size(10, 10), paint);
     return canvas.EndRecordingAsPicture();
   };
 

@@ -13,6 +13,9 @@
 #include "flutter/impeller/golden_tests/metal_screenshotter.h"
 #include "flutter/impeller/golden_tests/vulkan_screenshotter.h"
 #include "flutter/third_party/abseil-cpp/absl/base/no_destructor.h"
+#include "fml/closure.h"
+#include "impeller/display_list/dl_dispatcher.h"
+#include "impeller/display_list/dl_image_impeller.h"
 #include "impeller/typographer/backends/skia/typographer_context_skia.h"
 #include "impeller/typographer/typographer_context.h"
 
@@ -208,6 +211,25 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(Picture picture) {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const AiksDlPlaygroundCallback& callback) {
+  AiksContext renderer(GetContext(), typographer_context_);
+
+  std::optional<Picture> picture;
+  std::unique_ptr<testing::Screenshot> screenshot;
+  for (int i = 0; i < 2; ++i) {
+    auto display_list = callback();
+    DlDispatcher dispatcher;
+    display_list->Dispatch(dispatcher);
+    Picture picture = dispatcher.EndRecordingAsPicture();
+
+    screenshot = pimpl_->screenshotter->MakeScreenshot(renderer, picture,
+                                                       pimpl_->window_size);
+  }
+
+  return SaveScreenshot(std::move(screenshot));
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
     AiksPlaygroundCallback
         callback) {  // NOLINT(performance-unnecessary-value-param)
   AiksContext renderer(GetContext(), typographer_context_);
@@ -224,6 +246,14 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(
   }
 
   return SaveScreenshot(std::move(screenshot));
+}
+
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const sk_sp<flutter::DisplayList>& list) {
+  DlDispatcher dispatcher;
+  list->Dispatch(dispatcher);
+  Picture picture = dispatcher.EndRecordingAsPicture();
+  return OpenPlaygroundHere(std::move(picture));
 }
 
 bool GoldenPlaygroundTest::ImGuiBegin(const char* name,
@@ -243,6 +273,14 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     result->SetLabel(fixture_name);
   }
   return result;
+}
+
+sk_sp<flutter::DlImage> GoldenPlaygroundTest::CreateDlImageForFixture(
+    const char* fixture_name,
+    bool enable_mipmapping) const {
+  std::shared_ptr<Texture> texture =
+      CreateTextureForFixture(fixture_name, enable_mipmapping);
+  return DlImageImpeller::Make(texture);
 }
 
 RuntimeStage::Map GoldenPlaygroundTest::OpenAssetAsRuntimeStage(

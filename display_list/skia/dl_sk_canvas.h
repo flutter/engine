@@ -5,6 +5,8 @@
 #ifndef FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CANVAS_H_
 #define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CANVAS_H_
 
+#if !SLIMPELLER
+
 #include "flutter/display_list/dl_canvas.h"
 #include "flutter/display_list/skia/dl_sk_types.h"
 #include "impeller/typographer/text_frame.h"
@@ -70,6 +72,7 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   SkMatrix GetTransform() const override;
 
   void ClipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) override;
+  void ClipOval(const SkRect& bounds, ClipOp clip_op, bool is_aa) override;
   void ClipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) override;
   void ClipPath(const SkPath& path, ClipOp clip_op, bool is_aa) override;
 
@@ -92,6 +95,11 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
   void DrawLine(const SkPoint& p0,
                 const SkPoint& p1,
                 const DlPaint& paint) override;
+  void DrawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length,
+                      const DlPaint& paint) override;
   void DrawRect(const SkRect& rect, const DlPaint& paint) override;
   void DrawOval(const SkRect& bounds, const DlPaint& paint) override;
   void DrawCircle(const SkPoint& center,
@@ -111,7 +119,7 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
                   uint32_t count,
                   const SkPoint pts[],
                   const DlPaint& paint) override;
-  void DrawVertices(const DlVertices* vertices,
+  void DrawVertices(const std::shared_ptr<DlVertices>& vertices,
                     DlBlendMode mode,
                     const DlPaint& paint) override;
   void DrawImage(const sk_sp<DlImage>& image,
@@ -162,5 +170,7 @@ class DlSkCanvasAdapter final : public virtual DlCanvas {
 };
 
 }  // namespace flutter
+
+#endif  //  !SLIMPELLER
 
 #endif  // FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CANVAS_H_

@@ -7,8 +7,9 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/lib/ui/plugins/callback_cache.h"
-#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterCallbackCache_Internal.h"
+
+FLUTTER_ASSERT_ARC
 
 static const char* kCallbackCacheSubDir = "Library/Caches/";
 
@@ -30,7 +31,6 @@ static const SEL kSelectorsHandledByPlugins[] = {
 @end
 
 @implementation FlutterPluginAppLifeCycleDelegate {
-  NSMutableArray* _notificationUnsubscribers;
   UIBackgroundTaskIdentifier _debugBackgroundTask;
 
   // Weak references to registered plugins.
@@ -39,16 +39,10 @@ static const SEL kSelectorsHandledByPlugins[] = {
 
 - (void)addObserverFor:(NSString*)name selector:(SEL)selector {
   [[NSNotificationCenter defaultCenter] addObserver:self selector:selector name:name object:nil];
-  __block NSObject* blockSelf = self;
-  dispatch_block_t unsubscribe = ^{
-    [[NSNotificationCenter defaultCenter] removeObserver:blockSelf name:name object:nil];
-  };
-  [_notificationUnsubscribers addObject:[[unsubscribe copy] autorelease]];
 }
 
 - (instancetype)init {
   if (self = [super init]) {
-    _notificationUnsubscribers = [[NSMutableArray alloc] init];
     std::string cachePath = fml::paths::JoinPaths({getenv("HOME"), kCallbackCacheSubDir});
     [FlutterCallbackCache setCachePath:[NSString stringWithUTF8String:cachePath.c_str()]];
 #if not APPLICATION_EXTENSION_API_ONLY
@@ -63,19 +57,10 @@ static const SEL kSelectorsHandledByPlugins[] = {
     [self addObserverFor:UIApplicationWillTerminateNotification
                 selector:@selector(handleWillTerminate:)];
 #endif
-    _delegates = [[NSPointerArray weakObjectsPointerArray] retain];
+    _delegates = [NSPointerArray weakObjectsPointerArray];
     _debugBackgroundTask = UIBackgroundTaskInvalid;
   }
   return self;
-}
-
-- (void)dealloc {
-  for (dispatch_block_t unsubscribe in _notificationUnsubscribers) {
-    unsubscribe();
-  }
-  [_notificationUnsubscribers release];
-  [_delegates release];
-  [super dealloc];
 }
 
 static BOOL IsPowerOfTwo(NSUInteger x) {

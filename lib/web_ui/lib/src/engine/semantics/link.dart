@@ -10,7 +10,7 @@ class Link extends PrimaryRoleManager {
   Link(SemanticsObject semanticsObject) : super.withBasics(
     PrimaryRole.link,
     semanticsObject,
-    labelRepresentation: LeafLabelRepresentation.domText,
+    preferredLabelRepresentation: LabelRepresentation.domText,
   ) {
     addTappable();
   }
@@ -18,9 +18,8 @@ class Link extends PrimaryRoleManager {
   @override
   DomElement createElement() {
     final DomElement element = domDocument.createElement('a');
-    // TODO(chunhtai): Fill in the real link once the framework sends entire uri.
-    // https://github.com/flutter/flutter/issues/102535.
-    element.setAttribute('href', '#');
+    // TODO(mdebbar): Fill in the real link once the framework sends entire uri.
+    // https://github.com/flutter/flutter/issues/150263.
     element.style.display = 'block';
     return element;
   }

@@ -22,24 +22,6 @@ GeometryResult EllipseGeometry::GetPositionBuffer(
       entity, pass);
 }
 
-// |Geometry|
-GeometryResult EllipseGeometry::GetPositionUVBuffer(
-    Rect texture_coverage,
-    Matrix effect_transform,
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  return ComputePositionUVGeometry(
-      renderer,
-      renderer.GetTessellator()->FilledEllipse(entity.GetTransform(), bounds_),
-      texture_coverage.GetNormalizingTransform() * effect_transform, entity,
-      pass);
-}
-
-GeometryVertexType EllipseGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
-}
-
 std::optional<Rect> EllipseGeometry::GetCoverage(
     const Matrix& transform) const {
   return bounds_.TransformBounds(transform);

@@ -8,8 +8,6 @@
 #include <atomic>
 
 #include "flutter/fml/concurrent_message_loop.h"
-#include "flutter/fml/macros.h"
-#include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/base/thread.h"
@@ -49,6 +47,7 @@ class PipelineLibraryVK final
       compute_pipelines_mutex_);
   std::atomic_size_t frames_acquired_ = 0u;
   bool is_valid_ = false;
+  bool cache_dirty_ = false;
 
   PipelineLibraryVK(
       const std::shared_ptr<DeviceHolderVK>& device_holder,
@@ -60,12 +59,13 @@ class PipelineLibraryVK final
   bool IsValid() const override;
 
   // |PipelineLibrary|
-  PipelineFuture<PipelineDescriptor> GetPipeline(
-      PipelineDescriptor descriptor) override;
+  PipelineFuture<PipelineDescriptor> GetPipeline(PipelineDescriptor descriptor,
+                                                 bool async) override;
 
   // |PipelineLibrary|
   PipelineFuture<ComputePipelineDescriptor> GetPipeline(
-      ComputePipelineDescriptor descriptor) override;
+      ComputePipelineDescriptor descriptor,
+      bool async) override;
 
   // |PipelineLibrary|
   void RemovePipelinesWithEntryPoint(

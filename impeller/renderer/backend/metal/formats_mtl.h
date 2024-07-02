@@ -10,7 +10,6 @@
 #include <optional>
 
 #include "flutter/fml/build_config.h"
-#include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
 #include "impeller/core/texture_descriptor.h"
@@ -343,6 +342,8 @@ constexpr MTLSamplerMinMagFilter ToMTLSamplerMinMagFilter(MinMagFilter filter) {
 
 constexpr MTLSamplerMipFilter ToMTLSamplerMipFilter(MipFilter filter) {
   switch (filter) {
+    case MipFilter::kBase:
+      return MTLSamplerMipFilterNotMipmapped;
     case MipFilter::kNearest:
       return MTLSamplerMipFilterNearest;
     case MipFilter::kLinear:

@@ -11,7 +11,6 @@
 
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
 
@@ -53,9 +52,6 @@ constexpr float kInvertColorMatrix[20] = {
      1.0,  1.0,  1.0, 1.0,   0,
 };
 // clang-format on
-
-const SkScalar kTestDashes1[] = {4.0, 2.0};
-const SkScalar kTestDashes2[] = {1.0, 1.5};
 
 constexpr SkPoint kTestPoints[] = {
     {10, 10},
@@ -175,10 +171,6 @@ static const DlColorFilterImageFilter kTestCFImageFilter1(
     kTestBlendColorFilter1);
 static const DlColorFilterImageFilter kTestCFImageFilter2(
     kTestBlendColorFilter2);
-static const std::shared_ptr<DlPathEffect> kTestPathEffect1 =
-    DlDashPathEffect::Make(kTestDashes1, 2, 0.0f);
-static const std::shared_ptr<DlPathEffect> kTestPathEffect2 =
-    DlDashPathEffect::Make(kTestDashes2, 2, 0.0f);
 static const DlBlurMaskFilter kTestMaskFilter1(DlBlurStyle::kNormal, 3.0);
 static const DlBlurMaskFilter kTestMaskFilter2(DlBlurStyle::kNormal, 5.0);
 static const DlBlurMaskFilter kTestMaskFilter3(DlBlurStyle::kSolid, 3.0);
@@ -191,6 +183,7 @@ static const SkRRect kTestInnerRRect =
     SkRRect::MakeRectXY(kTestBounds.makeInset(5, 5), 2, 2);
 static const SkPath kTestPathRect = SkPath::Rect(kTestBounds);
 static const SkPath kTestPathOval = SkPath::Oval(kTestBounds);
+static const SkPath kTestPathRRect = SkPath::RRect(kTestRRect);
 static const SkPath kTestPath1 =
     SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true);
 static const SkPath kTestPath2 =
@@ -200,13 +193,13 @@ static const SkPath kTestPath3 =
 static const SkMatrix kTestMatrix1 = SkMatrix::Scale(2, 2);
 static const SkMatrix kTestMatrix2 = SkMatrix::RotateDeg(45);
 
-static std::shared_ptr<const DlVertices> TestVertices1 =
+static const std::shared_ptr<DlVertices> kTestVertices1 =
     DlVertices::Make(DlVertexMode::kTriangles,  //
                      3,
                      kTestPoints,
                      nullptr,
                      kColors);
-static std::shared_ptr<const DlVertices> TestVertices2 =
+static const std::shared_ptr<DlVertices> kTestVertices2 =
     DlVertices::Make(DlVertexMode::kTriangleFan,  //
                      3,
                      kTestPoints,
@@ -228,36 +221,43 @@ SkFont CreateTestFontOfSize(SkScalar scalar);
 sk_sp<SkTextBlob> GetTestTextBlob(int index);
 
 struct DisplayListInvocation {
-  unsigned int op_count_;
+  // ----------------------------------
+  // Required fields for initialization
+  uint32_t op_count_;
   size_t byte_count_;
 
-  // in some cases, running the sequence through an SkCanvas will result
-  // in fewer ops/bytes. Attribute invocations are recorded in an SkPaint
-  // and not forwarded on, and SkCanvas culls unused save/restore/transforms.
-  int sk_op_count_;
-  size_t sk_byte_count_;
+  uint32_t depth_op_count_;
 
-  DlInvoker invoker;
-  bool supports_group_opacity_ = false;
+  DlInvoker invoker_;
+  // ----------------------------------
+
+  // ----------------------------------
+  // Optional fields for initialization
+  uint32_t additional_depth_ = 0u;
+  uint32_t render_op_cost_override_ = 0u;
+  // ----------------------------------
 
   bool is_empty() { return byte_count_ == 0; }
 
-  bool supports_group_opacity() { return supports_group_opacity_; }
-
-  unsigned int op_count() { return op_count_; }
+  uint32_t op_count() { return op_count_; }
   // byte count for the individual ops, no DisplayList overhead
   size_t raw_byte_count() { return byte_count_; }
   // byte count for the ops with DisplayList overhead, comparable
   // to |DisplayList.byte_count().
   size_t byte_count() { return sizeof(DisplayList) + byte_count_; }
 
-  void Invoke(DlOpReceiver& builder) { invoker(builder); }
+  uint32_t depth_accumulated(uint32_t depth_scale = 1u) {
+    return depth_op_count_ * depth_scale + additional_depth_;
+  }
+  uint32_t depth_op_count() { return depth_op_count_; }
+  uint32_t additional_depth() { return additional_depth_; }
+  uint32_t adjust_render_op_depth_cost(uint32_t previous_cost) {
+    return render_op_cost_override_ == 0u  //
+               ? previous_cost
+               : render_op_cost_override_;
+  }
 
-  // sk_sp<DisplayList> Build() {
-  //   DisplayListBuilder builder;
-  //   invoker(builder.asReceiver());
-  //   return builder.Build();
-  // }
+  void Invoke(DlOpReceiver& builder) { invoker_(builder); }
 };
 
 struct DisplayListInvocationGroup {

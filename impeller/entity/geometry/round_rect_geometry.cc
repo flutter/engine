@@ -19,25 +19,6 @@ GeometryResult RoundRectGeometry::GetPositionBuffer(
                                  entity, pass);
 }
 
-// |Geometry|
-GeometryResult RoundRectGeometry::GetPositionUVBuffer(
-    Rect texture_coverage,
-    Matrix effect_transform,
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) const {
-  return ComputePositionUVGeometry(
-      renderer,
-      renderer.GetTessellator()->FilledRoundRect(entity.GetTransform(), bounds_,
-                                                 radii_),
-      texture_coverage.GetNormalizingTransform() * effect_transform, entity,
-      pass);
-}
-
-GeometryVertexType RoundRectGeometry::GetVertexType() const {
-  return GeometryVertexType::kPosition;
-}
-
 std::optional<Rect> RoundRectGeometry::GetCoverage(
     const Matrix& transform) const {
   return bounds_.TransformBounds(transform);

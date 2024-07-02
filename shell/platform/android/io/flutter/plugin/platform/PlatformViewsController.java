@@ -4,11 +4,10 @@
 
 package io.flutter.plugin.platform;
 
-import static android.view.MotionEvent.PointerCoords;
-import static android.view.MotionEvent.PointerProperties;
 import static io.flutter.Build.API_LEVELS;
 
 import android.annotation.TargetApi;
+import android.content.ComponentCallbacks2;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.os.Build;
@@ -667,6 +666,25 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     return textureId;
   }
 
+  /**
+   * Translates an original touch event to have the same locations as the ones that Flutter
+   * calculates (because original + flutter's - original = flutter's).
+   *
+   * @param originalEvent The saved original input event.
+   * @param pointerCoords The coordinates that Flutter thinks the touch is happening at.
+   */
+  private static void translateMotionEvent(
+      MotionEvent originalEvent, PointerCoords[] pointerCoords) {
+    if (pointerCoords.length < 1) {
+      return;
+    }
+
+    float xOffset = pointerCoords[0].x - originalEvent.getX();
+    float yOffset = pointerCoords[0].y - originalEvent.getY();
+
+    originalEvent.offsetLocation(xOffset, yOffset);
+  }
+
   @VisibleForTesting
   public MotionEvent toMotionEvent(
       float density, PlatformViewsChannel.PlatformViewTouch touch, boolean usingVirtualDiplay) {
@@ -674,25 +692,27 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         MotionEventTracker.MotionEventId.from(touch.motionEventId);
     MotionEvent trackedEvent = motionEventTracker.pop(motionEventId);
 
+    // Pointer coordinates in the tracked events are global to FlutterView
+    // The framework converts them to be local to a widget, given that
+    // motion events operate on local coords, we need to replace these in the tracked
+    // event with their local counterparts.
+    // Compute this early so it can be used as input to translateNonVirtualDisplayMotionEvent.
+    PointerCoords[] pointerCoords =
+        parsePointerCoordsList(touch.rawPointerCoords, density)
+            .toArray(new PointerCoords[touch.pointerCount]);
+
     if (!usingVirtualDiplay && trackedEvent != null) {
-      // We have the original event, deliver it as it will pass the verifiable
+      // We have the original event, deliver it after offsetting as it will pass the verifiable
       // input check.
+      translateMotionEvent(trackedEvent, pointerCoords);
       return trackedEvent;
     }
     // We are in virtual display mode or don't have a reference to the original MotionEvent.
     // In this case we manually recreate a MotionEvent to be delivered. This MotionEvent
     // will fail the verifiable input check.
-
-    // Pointer coordinates in the tracked events are global to FlutterView
-    // framework converts them to be local to a widget, given that
-    // motion events operate on local coords, we need to replace these in the tracked
-    // event with their local counterparts.
     PointerProperties[] pointerProperties =
         parsePointerPropertiesList(touch.rawPointerPropertiesList)
             .toArray(new PointerProperties[touch.pointerCount]);
-    PointerCoords[] pointerCoords =
-        parsePointerCoordsList(touch.rawPointerCoords, density)
-            .toArray(new PointerCoords[touch.pointerCount]);
 
     // TODO (kaushikiska) : warn that we are potentially using an untracked
     // event in the platform views.
@@ -1050,6 +1070,24 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       final int viewId = platformViews.keyAt(0);
       // Dispose deletes the entry from platformViews and clears associated resources.
       channelHandler.dispose(viewId);
+    }
+  }
+
+  // Invoked when the Android system is requesting we reduce memory usage.
+  public void onTrimMemory(int level) {
+    if (level < ComponentCallbacks2.TRIM_MEMORY_BACKGROUND) {
+      return;
+    }
+    for (VirtualDisplayController vdc : vdControllers.values()) {
+      vdc.clearSurface();
+    }
+  }
+
+  // Called after the application has been resumed.
+  // This is where we undo whatever may have been done in onTrimMemory.
+  public void onResume() {
+    for (VirtualDisplayController vdc : vdControllers.values()) {
+      vdc.resetSurface();
     }
   }
 

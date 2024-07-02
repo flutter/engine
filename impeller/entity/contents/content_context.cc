@@ -11,6 +11,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/core/formats.h"
+#include "impeller/core/texture_descriptor.h"
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/render_target_cache.h"
@@ -39,6 +40,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   color0.format = color_attachment_pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
+  color0.write_mask = ColorWriteMaskBits::kAll;
 
   switch (pipeline_blend) {
     case BlendMode::kClear:
@@ -68,6 +70,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
+      color0.write_mask = ColorWriteMaskBits::kNone;
       break;
     case BlendMode::kSourceOver:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
@@ -193,25 +196,15 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
         front_stencil.stencil_failure = StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kLegacyClipRestore:
-        front_stencil.stencil_compare = CompareFunction::kLess;
-        front_stencil.depth_stencil_pass =
-            StencilOperation::kSetToReferenceValue;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kLegacyClipIncrement:
+      case StencilMode::kOverdrawPreventionIncrement:
         front_stencil.stencil_compare = CompareFunction::kEqual;
         front_stencil.depth_stencil_pass = StencilOperation::kIncrementClamp;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
-      case StencilMode::kLegacyClipDecrement:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kDecrementClamp;
-        desc.SetStencilAttachmentDescriptors(front_stencil);
-        break;
-      case StencilMode::kLegacyClipCompare:
-        front_stencil.stencil_compare = CompareFunction::kEqual;
-        front_stencil.depth_stencil_pass = StencilOperation::kKeep;
+      case StencilMode::kOverdrawPreventionRestore:
+        front_stencil.stencil_compare = CompareFunction::kLess;
+        front_stencil.depth_stencil_pass =
+            StencilOperation::kSetToReferenceValue;
         desc.SetStencilAttachmentDescriptors(front_stencil);
         break;
     }
@@ -260,10 +253,31 @@ ContentContext::ContentContext(
                                ? std::make_shared<RenderTargetCache>(
                                      context_->GetResourceAllocator())
                                : std::move(render_target_allocator)),
-      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())),
-      pending_command_buffers_(std::make_unique<PendingCommandBuffers>()) {
+      host_buffer_(HostBuffer::Create(context_->GetResourceAllocator())) {
   if (!context_ || !context_->IsValid()) {
     return;
+  }
+
+  {
+    TextureDescriptor desc;
+    desc.storage_mode = StorageMode::kHostVisible;
+    desc.format = PixelFormat::kR8G8B8A8UNormInt;
+    desc.size = ISize{1, 1};
+    empty_texture_ = GetContext()->GetResourceAllocator()->CreateTexture(desc);
+    auto data = Color::BlackTransparent().ToR8G8B8A8();
+    auto cmd_buffer = GetContext()->CreateCommandBuffer();
+    auto blit_pass = cmd_buffer->CreateBlitPass();
+    auto& host_buffer = GetTransientsBuffer();
+    auto buffer_view = host_buffer.Emplace(data);
+    blit_pass->AddCopy(buffer_view, empty_texture_);
+
+    if (!blit_pass->EncodeCommands(GetContext()->GetResourceAllocator()) ||
+        !GetContext()
+             ->GetCommandQueue()
+             ->Submit({std::move(cmd_buffer)})
+             .ok()) {
+      VALIDATION_LOG << "Failed to create empty texture.";
+    }
   }
 
   auto options = ContentContextOptions{
@@ -278,22 +292,46 @@ ContentContext::ContentContext(
   const auto supports_decal = static_cast<Scalar>(
       context_->GetCapabilities()->SupportsDecalSamplerAddressMode());
 
-#ifdef IMPELLER_DEBUG
-  checkerboard_pipelines_.CreateDefault(*context_, options);
-#endif  // IMPELLER_DEBUG
+  {
+    solid_fill_pipelines_.CreateDefault(*context_, options);
+    texture_pipelines_.CreateDefault(*context_, options);
+    fast_gradient_pipelines_.CreateDefault(*context_, options);
 
-  solid_fill_pipelines_.CreateDefault(*context_, options);
+    if (context_->GetCapabilities()->SupportsSSBO()) {
+      linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+      sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
+    } else {
+      linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
+      sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    }
 
-  if (context_->GetCapabilities()->SupportsSSBO()) {
-    linear_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    radial_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    conical_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-    sweep_gradient_ssbo_fill_pipelines_.CreateDefault(*context_, options);
-  } else {
-    linear_gradient_fill_pipelines_.CreateDefault(*context_, options);
-    radial_gradient_fill_pipelines_.CreateDefault(*context_, options);
-    conical_gradient_fill_pipelines_.CreateDefault(*context_, options);
-    sweep_gradient_fill_pipelines_.CreateDefault(*context_, options);
+    /// Setup default clip pipeline.
+
+    auto clip_pipeline_descriptor =
+        ClipPipeline::Builder::MakeDefaultPipelineDescriptor(*context_);
+    if (!clip_pipeline_descriptor.has_value()) {
+      return;
+    }
+    ContentContextOptions{
+        .sample_count = SampleCount::kCount4,
+        .color_attachment_pixel_format =
+            context_->GetCapabilities()->GetDefaultColorFormat()}
+        .ApplyToPipelineDescriptor(*clip_pipeline_descriptor);
+    // Disable write to all color attachments.
+    auto clip_color_attachments =
+        clip_pipeline_descriptor->GetColorAttachmentDescriptors();
+    for (auto& color_attachment : clip_color_attachments) {
+      color_attachment.second.write_mask = ColorWriteMaskBits::kNone;
+    }
+    clip_pipeline_descriptor->SetColorAttachmentDescriptors(
+        std::move(clip_color_attachments));
+    clip_pipelines_.SetDefault(
+        options,
+        std::make_unique<ClipPipeline>(*context_, clip_pipeline_descriptor));
   }
 
   if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
@@ -342,62 +380,59 @@ ContentContext::ContentContext(
     framebuffer_blend_softlight_pipelines_.CreateDefault(
         *context_, options_trianglestrip,
         {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
+  } else {
+    blend_color_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal});
+    blend_colorburn_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kColorBurn), supports_decal});
+    blend_colordodge_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kColorDodge), supports_decal});
+    blend_darken_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kDarken), supports_decal});
+    blend_difference_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kDifference), supports_decal});
+    blend_exclusion_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kExclusion), supports_decal});
+    blend_hardlight_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kHardLight), supports_decal});
+    blend_hue_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kHue), supports_decal});
+    blend_lighten_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
+    blend_luminosity_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
+    blend_multiply_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kMultiply), supports_decal});
+    blend_overlay_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kOverlay), supports_decal});
+    blend_saturation_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kSaturation), supports_decal});
+    blend_screen_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kScreen), supports_decal});
+    blend_softlight_pipelines_.CreateDefault(
+        *context_, options_trianglestrip,
+        {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
   }
 
-  blend_color_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kColor), supports_decal});
-  blend_colorburn_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kColorBurn), supports_decal});
-  blend_colordodge_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kColorDodge), supports_decal});
-  blend_darken_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kDarken), supports_decal});
-  blend_difference_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kDifference), supports_decal});
-  blend_exclusion_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kExclusion), supports_decal});
-  blend_hardlight_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kHardLight), supports_decal});
-  blend_hue_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kHue), supports_decal});
-  blend_lighten_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kLighten), supports_decal});
-  blend_luminosity_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kLuminosity), supports_decal});
-  blend_multiply_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kMultiply), supports_decal});
-  blend_overlay_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kOverlay), supports_decal});
-  blend_saturation_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kSaturation), supports_decal});
-  blend_screen_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kScreen), supports_decal});
-  blend_softlight_pipelines_.CreateDefault(
-      *context_, options_trianglestrip,
-      {static_cast<Scalar>(BlendSelectValues::kSoftLight), supports_decal});
-
   rrect_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  texture_blend_pipelines_.CreateDefault(*context_, options);
-  texture_pipelines_.CreateDefault(*context_, options);
   texture_strict_src_pipelines_.CreateDefault(*context_, options);
-  position_uv_pipelines_.CreateDefault(*context_, options);
-  tiled_texture_pipelines_.CreateDefault(*context_, options);
-  kernel_decal_pipelines_.CreateDefault(*context_, options_trianglestrip);
-  kernel_nodecal_pipelines_.CreateDefault(*context_, options_trianglestrip);
+  tiled_texture_pipelines_.CreateDefault(*context_, options, {supports_decal});
+  gaussian_blur_pipelines_.CreateDefault(*context_, options_trianglestrip,
+                                         {supports_decal});
   border_mask_blur_pipelines_.CreateDefault(*context_, options_trianglestrip);
   morphology_filter_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
@@ -412,54 +447,16 @@ ContentContext::ContentContext(
       {static_cast<Scalar>(
           GetContext()->GetCapabilities()->GetDefaultGlyphAtlasFormat() ==
           PixelFormat::kA8UNormInt)});
-  glyph_atlas_color_pipelines_.CreateDefault(*context_, options);
-  geometry_color_pipelines_.CreateDefault(*context_, options);
   yuv_to_rgb_filter_pipelines_.CreateDefault(*context_, options_trianglestrip);
   porter_duff_blend_pipelines_.CreateDefault(*context_, options_trianglestrip,
                                              {supports_decal});
+  vertices_uber_shader_.CreateDefault(*context_, options, {supports_decal});
   // GLES only shader that is unsupported on macOS.
 #if defined(IMPELLER_ENABLE_OPENGLES) && !defined(FML_OS_MACOSX)
-  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
-    texture_external_pipelines_.CreateDefault(*context_, options);
-  }
   if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
     tiled_texture_external_pipelines_.CreateDefault(*context_, options);
   }
 #endif  // IMPELLER_ENABLE_OPENGLES
-  if (context_->GetCapabilities()->SupportsCompute()) {
-    auto pipeline_desc =
-        PointsComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
-    point_field_compute_pipelines_ =
-        context_->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
-
-    auto uv_pipeline_desc =
-        UvComputeShaderPipeline::MakeDefaultPipelineDescriptor(*context_);
-    uv_compute_pipelines_ =
-        context_->GetPipelineLibrary()->GetPipeline(uv_pipeline_desc).Get();
-  }
-
-  /// Setup default clip pipeline.
-
-  auto clip_pipeline_descriptor =
-      ClipPipeline::Builder::MakeDefaultPipelineDescriptor(*context_);
-  if (!clip_pipeline_descriptor.has_value()) {
-    return;
-  }
-  ContentContextOptions{
-      .sample_count = SampleCount::kCount4,
-      .color_attachment_pixel_format =
-          context_->GetCapabilities()->GetDefaultColorFormat()}
-      .ApplyToPipelineDescriptor(*clip_pipeline_descriptor);
-  // Disable write to all color attachments.
-  auto clip_color_attachments =
-      clip_pipeline_descriptor->GetColorAttachmentDescriptors();
-  for (auto& color_attachment : clip_color_attachments) {
-    color_attachment.second.write_mask = ColorWriteMaskBits::kNone;
-  }
-  clip_pipeline_descriptor->SetColorAttachmentDescriptors(
-      std::move(clip_color_attachments));
-  clip_pipelines_.SetDefault(options, std::make_unique<ClipPipeline>(
-                                          *context_, clip_pipeline_descriptor));
 
   is_valid_ = true;
   InitializeCommonlyUsedShadersIfNeeded();
@@ -469,6 +466,10 @@ ContentContext::~ContentContext() = default;
 
 bool ContentContext::IsValid() const {
   return is_valid_;
+}
+
+std::shared_ptr<Texture> ContentContext::GetEmptyTexture() const {
+  return empty_texture_;
 }
 
 fml::StatusOr<RenderTarget> ContentContext::MakeSubpass(
@@ -590,63 +591,6 @@ void ContentContext::ClearCachedRuntimeEffectPipeline(
 void ContentContext::InitializeCommonlyUsedShadersIfNeeded() const {
   TRACE_EVENT0("flutter", "InitializeCommonlyUsedShadersIfNeeded");
   GetContext()->InitializeCommonlyUsedShadersIfNeeded();
-
-  if (GetContext()->GetBackendType() == Context::BackendType::kOpenGLES) {
-    // TODO(jonahwilliams): The OpenGL Embedder Unittests hang if this code
-    // runs.
-    return;
-  }
-
-  // Initialize commonly used shaders that aren't defaults. These settings were
-  // chosen based on the knowledge that we mix and match triangle and
-  // triangle-strip geometry, and also have fairly agressive srcOver to src
-  // blend mode conversions.
-  auto options = ContentContextOptions{
-      .sample_count = SampleCount::kCount4,
-      .color_attachment_pixel_format =
-          context_->GetCapabilities()->GetDefaultColorFormat()};
-
-  for (const auto mode : {BlendMode::kSource, BlendMode::kSourceOver}) {
-    for (const auto geometry :
-         {PrimitiveType::kTriangle, PrimitiveType::kTriangleStrip}) {
-      options.blend_mode = mode;
-      options.primitive_type = geometry;
-      CreateIfNeeded(solid_fill_pipelines_, options);
-      CreateIfNeeded(texture_pipelines_, options);
-      if (GetContext()->GetCapabilities()->SupportsSSBO()) {
-        CreateIfNeeded(linear_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(radial_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(sweep_gradient_ssbo_fill_pipelines_, options);
-        CreateIfNeeded(conical_gradient_ssbo_fill_pipelines_, options);
-      }
-    }
-  }
-
-  options.blend_mode = BlendMode::kDestination;
-  options.primitive_type = PrimitiveType::kTriangleStrip;
-  for (const auto stencil_mode :
-       {ContentContextOptions::StencilMode::kLegacyClipIncrement,
-        ContentContextOptions::StencilMode::kLegacyClipDecrement,
-        ContentContextOptions::StencilMode::kLegacyClipRestore}) {
-    options.stencil_mode = stencil_mode;
-    CreateIfNeeded(clip_pipelines_, options);
-  }
-
-  // On ARM devices, the initial usage of vkCmdCopyBufferToImage has been
-  // observed to take 10s of ms as an internal shader is compiled to perform
-  // the operation. Similarly, the initial render pass can also take 10s of ms
-  // for a similar reason. Because the context object is initialized far
-  // before the first frame, create a trivial texture and render pass to force
-  // the driver to compiler these shaders before the frame begins.
-  TextureDescriptor desc;
-  desc.size = {1, 1};
-  desc.storage_mode = StorageMode::kHostVisible;
-  desc.format = PixelFormat::kR8G8B8A8UNormInt;
-  auto texture = GetContext()->GetResourceAllocator()->CreateTexture(desc);
-  uint32_t color = 0;
-  if (!texture->SetContents(reinterpret_cast<uint8_t*>(&color), 4u)) {
-    VALIDATION_LOG << "Failed to set bootstrap texture.";
-  }
 }
 
 }  // namespace impeller

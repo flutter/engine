@@ -1863,6 +1863,33 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self.keyboardManager handlePress:press nextAction:next];
 }
 
+- (void)sendDeepLinkToFramework:(NSURL*)url completionHandler:(void (^)(BOOL success))completion {
+  [_engine.get()
+      waitForFirstFrame:3.0
+               callback:^(BOOL didTimeout) {
+                 if (didTimeout) {
+                   FML_LOG(ERROR) << "Timeout waiting for the first frame when launching an URL.";
+                   completion(NO);
+                 } else {
+                   // invove the method and get the result
+                   [[_engine.get() navigationChannel]
+                       invokeMethod:@"pushRouteInformation"
+                          arguments:@{
+                            @"location" : url.absoluteString ?: [NSNull null],
+                          }
+                             result:^(id _Nullable result) {
+                               BOOL success =
+                                   [result isKindOfClass:[NSNumber class]] && [result boolValue];
+                               if (!success) {
+                                 // Logging the error if the result is not successful
+                                 FML_LOG(ERROR) << "Failed to handle route information in Flutter.";
+                               }
+                               completion(success);
+                             }];
+                 }
+               }];
+}
+
 // The documentation for presses* handlers (implemented below) is entirely
 // unclear about how to handle the case where some, but not all, of the presses
 // are handled here. I've elected to call super separately for each of the
@@ -2134,7 +2161,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     @"alwaysUse24HourFormat" : @([self isAlwaysUse24HourFormat]),
     @"platformBrightness" : [self brightnessMode],
     @"platformContrast" : [self contrastMode],
-    @"nativeSpellCheckServiceDefined" : @true
+    @"nativeSpellCheckServiceDefined" : @true,
+    @"supportsShowingSystemContextMenu" : @([self supportsShowingSystemContextMenu])
   }];
 }
 
@@ -2194,6 +2222,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return 1.0;
   }
 #endif
+}
+
+- (BOOL)supportsShowingSystemContextMenu {
+  if (@available(iOS 16.0, *)) {
+    return YES;
+  } else {
+    return NO;
+  }
 }
 
 - (BOOL)isAlwaysUse24HourFormat {
