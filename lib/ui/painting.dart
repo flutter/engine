@@ -145,7 +145,7 @@ class Color {
       _a = opacity,
       assert(opacity >= 0 && opacity <= 1);
 
-  /// Create a color from red, green, blue, and opacity extended range value.
+  /// Create an extended range SRGB color from red, green, blue, and opacity.
   ///
   /// * `r` is [red], from -0.752941 to 1.25098.
   /// * `g` is [green], from -0.752941 to 1.25098.
@@ -156,15 +156,36 @@ class Color {
   /// On platforms that do not support extended range colors, all color channels
   /// will be clamped to the equivalent RGBA unorm values.
   const Color.fromARGBXR(double a, double r, double g, double b) :
-    // This is a clamp, however clamp is not a const expression
-    _r = r < kMinExtendedRangeValue ? kMinExtendedRangeValue : (r > kMaxExtendedRangeValue ? kMaxExtendedRangeValue : r),
-    _g = g < kMinExtendedRangeValue ? kMinExtendedRangeValue : (g > kMaxExtendedRangeValue ? kMaxExtendedRangeValue : g),
-    _b = b < kMinExtendedRangeValue ? kMinExtendedRangeValue : (b > kMaxExtendedRangeValue ? kMaxExtendedRangeValue : b),
-    _a = a < 0 ? 0 : (a > 1 ? 1 : a),
+    _r = r,
+    _g = g,
+    _b = b,
+    _a = a,
     assert(a >= 0 && a <= 1),
     assert(r >= kMinExtendedRangeValue && r <= kMaxExtendedRangeValue),
     assert(g >= kMinExtendedRangeValue && g <= kMaxExtendedRangeValue),
     assert(b >= kMinExtendedRangeValue && b <= kMaxExtendedRangeValue);
+
+  /// Create a display P3 color from red, green, blue, and opacity.
+  ///
+  /// * `r` is [red], from 0 to 1.0.
+  /// * `g` is [green], from 0 to 1.0.
+  /// * `b` is [blue], from 0 to 1.0.
+  /// * `a` is alpha channel of this color as a double, with 0.0 being
+  ///       transparent and 1.0 being fully opaque.
+  ///
+  /// The display P3 color space encodes colors differently than the other
+  /// Color constructor. For example, a fully opaque red (1, 1, 0, 0) is visually
+  /// brighter with Color.fromDisplayP3 compared to Color.fromRGBO. However, a
+  /// similar color can be obtained from Color.fromARGBXR.
+  const Color.fromDisplayP3(double a, double r, double g, double b)
+    : _r = r * 0.515102 + g * 0.241182 + b * -0.00104941,
+      _g = r * 0.291965 + g * 0.692236 + b * 0.0418818,
+      _b = r * 0.157153 + g * 0.0665819 + b * 0.784378,
+      _a = a,
+      assert(a >= 0 && a <= 1),
+      assert(r >= 0 && r <= 1),
+      assert(g >= 0 && g <= 1),
+      assert(b >= 0 && b <= 1);
 
   /// A 32 bit value representing this color.
   ///
@@ -174,6 +195,8 @@ class Color {
   /// * Bits 16-23 are the red value.
   /// * Bits 8-15 are the green value.
   /// * Bits 0-7 are the blue value.
+  ///
+  /// This operation will truncated extended range colors.
   int get value {
     return _toUnorm(_a, _r, _g, _b);
   }
