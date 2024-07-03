@@ -2370,7 +2370,9 @@ extension DomPopStateEventExtension on DomPopStateEvent {
 
 @JS()
 @staticInterop
-class DomURL {}
+class DomURL {
+  external factory DomURL(JSString url, JSString? base);
+}
 
 extension DomURLExtension on DomURL {
   @JS('createObjectURL')
@@ -2381,6 +2383,9 @@ extension DomURLExtension on DomURL {
   @JS('revokeObjectURL')
   external JSVoid _revokeObjectURL(JSString url);
   void revokeObjectURL(String url) => _revokeObjectURL(url.toJS);
+
+  @JS('toString')
+  external JSString toJSString();
 }
 
 @JS('Blob')

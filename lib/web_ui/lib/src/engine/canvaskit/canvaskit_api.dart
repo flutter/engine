@@ -3697,11 +3697,15 @@ Future<CanvasKitModule> _downloadOneOf(Iterable<String> urls) async {
   );
 }
 
+String _resolveUrl(String url) {
+  return DomURL(url.toJS, domWindow.document.baseUri?.toJS).toJSString().toDart;
+}
+
 /// Downloads the CanvasKit JavaScript file at [url].
 ///
 /// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
 /// file was successfully downloaded, or `false` if it failed.
 Future<CanvasKitModule> _downloadCanvasKitJs(String url) async {
-  final JSAny scriptUrl = createTrustedScriptUrl(url);
+  final JSAny scriptUrl = createTrustedScriptUrl(_resolveUrl(url));
   return (await importModule(scriptUrl).toDart) as CanvasKitModule;
 }

@@ -22,7 +22,7 @@ void testMain() {
     test('initializes with null', () async {
       final FlutterConfiguration config = FlutterConfiguration.legacy(null);
 
-      expect(config.canvasKitBaseUrl, '/canvaskit/'); // _defaultCanvasKitBaseUrl
+      expect(config.canvasKitBaseUrl, 'canvaskit/'); // _defaultCanvasKitBaseUrl
     });
 
     test('legacy constructor initializes with a Js Object', () async {
