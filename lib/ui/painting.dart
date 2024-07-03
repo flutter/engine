@@ -319,9 +319,9 @@ class Color {
   /// See <https://en.wikipedia.org/wiki/Relative_luminance>.
   double computeLuminance() {
     // See <https://www.w3.org/TR/WCAG20/#relativeluminancedef>
-    final double R = _linearizeColorComponent(red / 0xFF);
-    final double G = _linearizeColorComponent(green / 0xFF);
-    final double B = _linearizeColorComponent(blue / 0xFF);
+    final double R = _linearizeColorComponent(redF);
+    final double G = _linearizeColorComponent(greenF);
+    final double B = _linearizeColorComponent(blueF);
     return 0.2126 * R + 0.7152 * G + 0.0722 * B;
   }
 
@@ -358,11 +358,11 @@ class Color {
       if (a == null) {
         return _scaleAlpha(b, t);
       } else {
-        return Color.fromARGB(
-          _clampInt(_lerpInt(a.alpha, b.alpha, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.red, b.red, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.green, b.green, t).toInt(), 0, 255),
-          _clampInt(_lerpInt(a.blue, b.blue, t).toInt(), 0, 255),
+        return Color.fromARGBXR(
+          _lerpDouble(a.opacity, b.opacity, t),
+          _lerpDouble(a.redF, b.redF, t),
+          _lerpDouble(a.greenF, b.greenF, t),
+          _lerpDouble(a.blueF, b.blueF, t),
         );
       }
     }
@@ -377,28 +377,28 @@ class Color {
   /// operations for two things that are solid colors with the same shape, but
   /// overlay each other: instead, just paint one with the combined color.
   static Color alphaBlend(Color foreground, Color background) {
-    final int alpha = foreground.alpha;
-    if (alpha == 0x00) { // Foreground completely transparent.
+    final double opacity = foreground.opacity;
+    if (opacity <= 0) { // Foreground completely transparent.
       return background;
     }
-    final int invAlpha = 0xff - alpha;
-    int backAlpha = background.alpha;
+    final double invAlpha = 1.0 - opacity;
+    double backAlpha = background.opacity;
     if (backAlpha == 0xff) { // Opaque background case
-      return Color.fromARGB(
+      return Color.fromARGBXR(
         0xff,
-        (alpha * foreground.red + invAlpha * background.red) ~/ 0xff,
-        (alpha * foreground.green + invAlpha * background.green) ~/ 0xff,
-        (alpha * foreground.blue + invAlpha * background.blue) ~/ 0xff,
+        opacity * foreground.redF + invAlpha * background.redF,
+        opacity * foreground.greenF + invAlpha * background.greenF,
+        opacity * foreground.blueF + invAlpha * background.blueF,
       );
     } else { // General case
-      backAlpha = (backAlpha * invAlpha) ~/ 0xff;
-      final int outAlpha = alpha + backAlpha;
-      assert(outAlpha != 0x00);
-      return Color.fromARGB(
+      backAlpha = backAlpha * invAlpha;
+      final double outAlpha = opacity + backAlpha;
+      assert(outAlpha != 0);
+      return Color.fromARGBXR(
         outAlpha,
-        (foreground.red * alpha + background.red * backAlpha) ~/ outAlpha,
-        (foreground.green * alpha + background.green * backAlpha) ~/ outAlpha,
-        (foreground.blue * alpha + background.blue * backAlpha) ~/ outAlpha,
+        (foreground.red * opacity + background.red * backAlpha) / outAlpha,
+        (foreground.green * opacity + background.green * backAlpha) / outAlpha,
+        (foreground.blue * opacity + background.blue * backAlpha) / outAlpha,
       );
     }
   }

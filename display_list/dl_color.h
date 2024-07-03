@@ -47,16 +47,10 @@ struct DlColor {
   constexpr bool isTransparent() const { return getAlpha() == 0; }
 
   // These getters clamp the value to the range [0, 256).
-  constexpr int getAlpha() const {
-    return std::clamp((int)(alpha_ * 255), 0, 255);
-  }
-  constexpr int getRed() const { return std::clamp((int)(red_ * 255), 0, 255); }
-  constexpr int getGreen() const {
-    return std::clamp((int)(green_ * 255), 0, 255);
-  }
-  constexpr int getBlue() const {
-    return std::clamp((int)(blue_ * 255), 0, 255);
-  }
+  constexpr int getAlpha() const { return toC(getAlphaF()); }
+  constexpr int getRed() const { return toC(getRedF()); }
+  constexpr int getGreen() const { return toC(getGreenF()); }
+  constexpr int getBlue() const { return toC(getBlueF()); }
 
   constexpr float getAlphaF() const { return alpha_; }
   constexpr float getRedF() const { return red_; }
@@ -90,6 +84,17 @@ struct DlColor {
            0xFFFFFFFF;
   }
 
+  constexpr uint32_t premultipliedArgb() const {
+    if (isOpaque()) {
+      return argb();
+    }
+    float f = getAlphaF();
+    return (argb() & 0xFF000000) |      //
+           toC(getRedF() * f) << 16 |   //
+           toC(getGreenF() * f) << 8 |  //
+           toC(getBlueF() * f);
+  }
+
   bool operator==(DlColor const& other) const {
     return SkScalarNearlyEqual(red_, other.red_) &&
            SkScalarNearlyEqual(green_, other.green_) &&
@@ -102,17 +107,6 @@ struct DlColor {
   }
   bool operator!=(uint32_t const& other) const {
     return *this != DlColor(other);
-  }
-
-  constexpr uint32_t premultipliedArgb() const {
-    if (isOpaque()) {
-      return argb();
-    }
-    float f = getAlphaF();
-    return (argb() & 0xFF000000) |      //
-           toC(getRedF() * f) << 16 |   //
-           toC(getGreenF() * f) << 8 |  //
-           toC(getBlueF() * f);
   }
 
  private:

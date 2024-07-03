@@ -30,8 +30,6 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
                                 DlTileMode tile_mode,
                                 const tonic::Float64List& matrix4) {
   FML_CHECK(end_points.num_elements() == 4);
-  FML_LOG(ERROR) << "Num Elements: " << colors.num_elements();
-  FML_LOG(ERROR) << "Stops: " << color_stops.num_elements();
   FML_CHECK(colors.num_elements() / 4 == color_stops.num_elements() ||
             color_stops.data() == nullptr);
 
