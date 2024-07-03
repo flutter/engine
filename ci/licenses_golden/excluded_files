@@ -176,6 +176,7 @@
 ../../../flutter/impeller/golden_tests/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/backend/gles/test
+../../../flutter/impeller/renderer/backend/metal/allocator_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/metal/texture_mtl_unittests.mm
 ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk_unittests.cc
 ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk_unittests.cc
@@ -1393,6 +1394,7 @@
 ../../../flutter/third_party/dart/runtime/bin/process_test.cc
 ../../../flutter/third_party/dart/runtime/bin/secure_socket_utils_test.cc
 ../../../flutter/third_party/dart/runtime/bin/snapshot_utils_test.cc
+../../../flutter/third_party/dart/runtime/bin/uri_test.cc
 ../../../flutter/third_party/dart/runtime/codereview.settings
 ../../../flutter/third_party/dart/runtime/docs
 ../../../flutter/third_party/dart/runtime/observatory/.gitignore
@@ -1403,7 +1405,6 @@
 ../../../flutter/third_party/dart/runtime/observatory/tests
 ../../../flutter/third_party/dart/runtime/observatory/update_sources.py
 ../../../flutter/third_party/dart/runtime/observatory/web/third_party/README.md
-../../../flutter/third_party/dart/runtime/platform/uri_test.cc
 ../../../flutter/third_party/dart/runtime/tests
 ../../../flutter/third_party/dart/runtime/tools/.gitignore
 ../../../flutter/third_party/dart/runtime/tools/android_finder.py
@@ -1933,6 +1934,7 @@
 ../../../flutter/third_party/icu/fuzzers
 ../../../flutter/third_party/icu/icu4c.css
 ../../../flutter/third_party/icu/license.html
+../../../flutter/third_party/icu/patches
 ../../../flutter/third_party/icu/readme.html
 ../../../flutter/third_party/icu/scripts
 ../../../flutter/third_party/icu/source/.clang-format
