@@ -849,13 +849,13 @@ abstract class SemanticsUpdateBuilder {
   /// inclusive. This attribute is only used for Web platform, and it will have
   /// no effect on other platforms.
   ///
+  /// The `linkUrl` describes the URI that this node links to. If the node is
+  /// not a link, this should be an empty string.
+  ///
   /// See also:
   ///
   ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/heading_role
   ///  * https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Attributes/aria-level
-  ///
-  /// The `linkUri` describes the URI that this node links to. If the node is
-  /// not a link, this should be an empty string.
   void updateNode({
     required int id,
     required int flags,
@@ -891,7 +891,7 @@ abstract class SemanticsUpdateBuilder {
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
     int headingLevel = 0,
-    String linkUri = '',
+    String linkUrl = '',
   });
 
   /// Update the custom semantics action associated with the given `id`.
@@ -963,7 +963,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
     required Int32List childrenInHitTestOrder,
     required Int32List additionalActions,
     int headingLevel = 0,
-    String linkUri = '',
+    String linkUrl = '',
   }) {
     assert(_matrix4IsValid(transform));
     assert (
@@ -1008,7 +1008,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       childrenInHitTestOrder,
       additionalActions,
       headingLevel,
-      linkUri,
+      linkUrl,
     );
   }
   @Native<
@@ -1090,7 +1090,7 @@ base class _NativeSemanticsUpdateBuilder extends NativeFieldWrapperClass1 implem
       Int32List childrenInHitTestOrder,
       Int32List additionalActions,
       int headingLevel,
-      String linkUri);
+      String linkUrl);
 
   @override
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {

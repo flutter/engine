@@ -234,7 +234,7 @@ class SemanticsNodeUpdate {
     required this.childrenInHitTestOrder,
     required this.additionalActions,
     required this.headingLevel,
-    this.linkUri,
+    this.linkUrl,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -340,7 +340,7 @@ class SemanticsNodeUpdate {
   final int headingLevel;
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  final String? linkUri;
+  final String? linkUrl;
 }
 
 /// Identifies [PrimaryRoleManager] implementations.
@@ -1151,19 +1151,19 @@ class SemanticsObject {
   }
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
-  String? get linkUri => _linkUri;
-  String? _linkUri;
+  String? get linkUrl => _linkUrl;
+  String? _linkUrl;
 
-  /// Whether this object contains a non-empty link URI.
-  bool get hasLinkUri => _linkUri != null && _linkUri!.isNotEmpty;
+  /// Whether this object contains a non-empty link URL.
+  bool get hasLinkUrl => _linkUrl != null && _linkUrl!.isNotEmpty;
 
-  static const int _linkUriIndex = 1 << 26;
+  static const int _linkUrlIndex = 1 << 26;
 
-  /// Whether the [linkUri] field has been updated but has not been
+  /// Whether the [linkUrl] field has been updated but has not been
   /// applied to the DOM yet.
-  bool get isLinkUriDirty => _isDirty(_linkUriIndex);
-  void _markLinkUriDirty() {
-    _dirtyFields |= _linkUriIndex;
+  bool get isLinkUrlDirty => _isDirty(_linkUrlIndex);
+  void _markLinkUrlDirty() {
+    _dirtyFields |= _linkUrlIndex;
   }
 
   /// A unique permanent identifier of the semantics node in the tree.
@@ -1465,9 +1465,9 @@ class SemanticsObject {
       _markPlatformViewIdDirty();
     }
 
-    if (_linkUri != update.linkUri) {
-      _linkUri = update.linkUri;
-      _markLinkUriDirty();
+    if (_linkUrl != update.linkUrl) {
+      _linkUrl = update.linkUrl;
+      _markLinkUrlDirty();
     }
 
     // Apply updates to the DOM.

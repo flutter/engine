@@ -3604,7 +3604,7 @@ void _testLink() {
     expect(object.element.hasAttribute('href'), isFalse);
   });
 
-  test('link nodes with linkUri set the href attribute', () {
+  test('link nodes with linkUrl set the href attribute', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -3614,7 +3614,7 @@ void _testLink() {
       tester.updateNode(
         id: 0,
         isLink: true,
-        linkUri: 'https://flutter.dev',
+        linkUrl: 'https://flutter.dev',
         rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
       );
       tester.apply();
@@ -3667,7 +3667,7 @@ void updateNode(
   Int32List? childrenInHitTestOrder,
   Int32List? additionalActions,
   int headingLevel = 0,
-  String? linkUri,
+  String? linkUrl,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);
@@ -3708,7 +3708,7 @@ void updateNode(
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
     headingLevel: headingLevel,
-    linkUri: linkUri,
+    linkUrl: linkUrl,
   );
 }
 

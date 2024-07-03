@@ -179,7 +179,7 @@ Future<void> a11y_main() async {
       textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       headingLevel: 0,
-      linkUri: '',
+      linkUrl: '',
     )
     ..updateNode(
       id: 84,
@@ -216,7 +216,7 @@ Future<void> a11y_main() async {
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
       headingLevel: 0,
-      linkUri: '',
+      linkUrl: '',
     )
     ..updateNode(
       id: 96,
@@ -253,7 +253,7 @@ Future<void> a11y_main() async {
       textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       headingLevel: 0,
-      linkUri: '',
+      linkUrl: '',
     )
     ..updateNode(
       id: 128,
@@ -290,7 +290,7 @@ Future<void> a11y_main() async {
       childrenInHitTestOrder: Int32List(0),
       childrenInTraversalOrder: Int32List(0),
       headingLevel: 0,
-      linkUri: '',
+      linkUrl: '',
     )
     ..updateCustomAction(
       id: 21,
@@ -388,7 +388,7 @@ Future<void> a11y_string_attributes() async {
       textDirection: TextDirection.ltr,
       additionalActions: Int32List(0),
       headingLevel: 0,
-      linkUri: '',
+      linkUrl: '',
     );
 
   PlatformDispatcher.instance.views.first.updateSemantics(builder.build());

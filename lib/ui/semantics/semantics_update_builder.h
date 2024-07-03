@@ -67,7 +67,7 @@ class SemanticsUpdateBuilder
       const tonic::Int32List& childrenInHitTestOrder,
       const tonic::Int32List& customAccessibilityActions,
       int headingLevel,
-      std::string linkUri);
+      std::string linkUrl);
 
   void updateCustomAction(int id,
                           std::string label,

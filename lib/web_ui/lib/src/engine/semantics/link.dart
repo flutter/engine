@@ -26,10 +26,12 @@ class Link extends PrimaryRoleManager {
   void update() {
     super.update();
 
-    if (semanticsObject.hasLinkUri) {
-      element.setAttribute('href', semanticsObject.linkUri!);
-    } else {
-      element.removeAttribute('href');
+    if (semanticsObject.isLinkUrlDirty) {
+      if (semanticsObject.hasLinkUrl) {
+        element.setAttribute('href', semanticsObject.linkUrl!);
+      } else {
+        element.removeAttribute('href');
+      }
     }
   }
 
