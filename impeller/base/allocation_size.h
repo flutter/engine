@@ -156,31 +156,38 @@ using GibiBytes = AllocationSize<1'024u * 1'024u * 1'024u>;
 
 inline namespace allocation_size_literals {
 
-constexpr Bytes operator"" _bytes(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr Bytes operator"" _bytes(unsigned long long int size) {
   return Bytes{static_cast<double>(size)};
 }
 
-constexpr KiloBytes operator"" _kb(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr KiloBytes operator"" _kb(unsigned long long int size) {
   return KiloBytes{static_cast<double>(size)};
 }
 
-constexpr MegaBytes operator"" _mb(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr MegaBytes operator"" _mb(unsigned long long int size) {
   return MegaBytes{static_cast<double>(size)};
 }
 
-constexpr GigaBytes operator"" _gb(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr GigaBytes operator"" _gb(unsigned long long int size) {
   return GigaBytes{static_cast<double>(size)};
 }
 
-constexpr KibiBytes operator"" _kib(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr KibiBytes operator"" _kib(unsigned long long int size) {
   return KibiBytes{static_cast<double>(size)};
 }
 
-constexpr MebiBytes operator"" _mib(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr MebiBytes operator"" _mib(unsigned long long int size) {
   return MebiBytes{static_cast<double>(size)};
 }
 
-constexpr GibiBytes operator"" _gib(uint64_t size) {
+// NOLINTNEXTLINE
+constexpr GibiBytes operator"" _gib(unsigned long long int size) {
   return GibiBytes{static_cast<double>(size)};
 }
 
