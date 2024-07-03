@@ -195,7 +195,8 @@ TEST_P(DlGoldenTest, FastVsGeneralGaussianMaskBlur) {
       DlColor::kMaroon(),
   };
 
-  auto make_rrect_path = [](const SkRect& rect, DlScalar rx, DlScalar ry) {
+  auto make_rrect_path = [](const SkRect& rect, DlScalar rx,
+                            DlScalar ry) -> SkPath {
     auto add_corner = [](SkPath& path, SkPoint rCorner, SkPoint rEnd) {
       static const auto magic = impeller::PathBuilder::kArcApproximationMagic;
       path.rCubicTo(rCorner.fX * (1.0f - magic), rCorner.fY * (1.0f - magic),
