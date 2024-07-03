@@ -691,11 +691,9 @@ CapabilitiesVK::GetSupportedFRCRate(CompressionType compression_type,
   const auto [result, supported] = physical_device_.getImageFormatProperties2<
       vk::ImageFormatProperties2, vk::ImageCompressionPropertiesEXT>(
       format_chain.get());
-  if (result != vk::Result::eSuccess) {
-    return std::nullopt;
-  }
 
-  if (!supported.isLinked<vk::ImageCompressionPropertiesEXT>()) {
+  if (result != vk::Result::eSuccess ||
+      !supported.isLinked<vk::ImageCompressionPropertiesEXT>()) {
     return std::nullopt;
   }
 
