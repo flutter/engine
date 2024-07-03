@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "common/settings.h"
 #define FML_USED_ON_EMBEDDER
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
@@ -786,7 +787,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [NSString stringWithFormat:@"%@.%zu", labelPrefix, ++s_shellCount];
 }
 
-+ (flutter::ThreadHost)makeThreadHost:(NSString*)threadLabel {
+static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
+                                          const flutter::Settings& settings) {
   // The current thread will be used as the platform thread. Ensure that the message loop is
   // initialized.
   fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -801,7 +803,6 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
                                                     IOSPlatformThreadConfigSetter);
 
-  auto settings = [_dartProject.get() settings];
   if (!settings.merged_platform_ui_thread) {
     host_config.ui_config =
         fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
@@ -861,7 +862,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   NSString* threadLabel = [FlutterEngine generateThreadLabel:_labelPrefix];
   _threadHost = std::make_shared<flutter::ThreadHost>();
-  *_threadHost = [FlutterEngine makeThreadHost:threadLabel];
+  *_threadHost = MakeThreadHost(threadLabel, settings);
 
   // Lambda captures by pointers to ObjC objects are fine here because the
   // create call is synchronous.
