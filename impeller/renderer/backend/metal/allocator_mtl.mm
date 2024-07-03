@@ -260,7 +260,7 @@ Bytes AllocatorMTL::DebugGetHeapUsage() const {
 #ifdef IMPELLER_DEBUG
   return debug_allocater_->GetAllocationSize();
 #else
-  return 0u;
+  return {};
 #endif  // IMPELLER_DEBUG
 }
 

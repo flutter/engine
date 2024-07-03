@@ -27,6 +27,11 @@ template <size_t Period>
 class AllocationSize {
  public:
   //----------------------------------------------------------------------------
+  /// @brief      Create a zero allocation size.
+  ///
+  constexpr AllocationSize() = default;
+
+  //----------------------------------------------------------------------------
   /// @brief      Create an allocation size with the amount in the `Period`
   ///             number of bytes.
   ///
