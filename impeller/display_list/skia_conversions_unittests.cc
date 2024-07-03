@@ -201,10 +201,12 @@ TEST(SkiaConversionsTest, IsNearlySimpleRRect) {
     auto save = test.values[i];
     test.values[i] -= kEhCloseEnough * 0.5f;
     rrect.setRectRadii(rect, test.radii);
-    EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(rrect));
+    EXPECT_TRUE(skia_conversions::IsNearlySimpleRRect(rrect))
+        << "values[" << i << "] == " << test.values[i];
     test.values[i] -= kEhCloseEnough * 2.0f;
     rrect.setRectRadii(rect, test.radii);
-    EXPECT_FALSE(skia_conversions::IsNearlySimpleRRect(rrect));
+    EXPECT_FALSE(skia_conversions::IsNearlySimpleRRect(rrect))
+        << "values[" << i << "] == " << test.values[i];
     test.values[i] = save;
   }
 }
