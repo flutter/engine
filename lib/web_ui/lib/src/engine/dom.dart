@@ -431,6 +431,9 @@ extension DomEventExtension on DomEvent {
   external JSString get _type;
   String get type => _type.toDart;
 
+  external JSBoolean? get _cancelable;
+  bool get cancelable => _cancelable?.toDart ?? true;
+
   external JSVoid preventDefault();
   external JSVoid stopPropagation();
 
@@ -729,6 +732,8 @@ extension DomElementExtension on DomElement {
       removeChild(firstChild!);
     }
   }
+
+  external void setPointerCapture(num? pointerId);
 }
 
 @JS()
@@ -2746,30 +2751,6 @@ DomCompositionEvent createDomCompositionEvent(String type,
   } else {
     return DomCompositionEvent.arg2(type.toJS, options.toJSAnyDeep);
   }
-}
-
-/// This is a pseudo-type for DOM elements that have the boolean `disabled`
-/// property.
-///
-/// This type cannot be part of the actual type hierarchy because each DOM type
-/// defines its `disabled` property ad hoc, without inheriting it from a common
-/// type, e.g. [DomHTMLInputElement] and [DomHTMLTextAreaElement].
-///
-/// To use, simply cast any element known to have the `disabled` property to
-/// this type using `as DomElementWithDisabledProperty`, then read and write
-/// this property as normal.
-@JS()
-@staticInterop
-class DomElementWithDisabledProperty extends DomHTMLElement {}
-
-extension DomElementWithDisabledPropertyExtension on DomElementWithDisabledProperty {
-  @JS('disabled')
-  external JSBoolean? get _disabled;
-  bool? get disabled => _disabled?.toDart;
-
-  @JS('disabled')
-  external set _disabled(JSBoolean? value);
-  set disabled(bool? value) => _disabled = value?.toJS;
 }
 
 @JS()
