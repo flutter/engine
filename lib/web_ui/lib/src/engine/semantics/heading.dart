@@ -25,7 +25,7 @@ class Heading extends PrimaryRoleManager {
   ///
   /// Normally, heading elements are not focusable as they do not receive
   /// keyboard input. However, when a route is pushed (e.g. a dialog pops up),
-  /// the it may be desirable to move the screen reader focus to the heading
+  /// then it may be desirable to move the screen reader focus to the heading
   /// that explains the contents of the route to the user. This method makes the
   /// element artificially focusable and moves the screen reader focus to it.
   ///
