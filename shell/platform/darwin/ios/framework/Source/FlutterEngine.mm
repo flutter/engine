@@ -801,10 +801,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
                                                     IOSPlatformThreadConfigSetter);
 
-  host_config.ui_config =
-      fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
-                                fml::Thread::ThreadPriority::kDisplay);
+  auto settings = [_dartProject.get() settings];
+  if (!settings.merged_platform_ui_thread) {
+    host_config.ui_config =
+        fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                      flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
+                                  fml::Thread::ThreadPriority::kDisplay);
+  }
 
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
