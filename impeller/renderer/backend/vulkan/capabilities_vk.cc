@@ -374,6 +374,17 @@ CapabilitiesVK::GetEnabledDeviceFeatures(
   }
 
   PhysicalDeviceFeatures supported_chain;
+
+  // Swiftshader seems to be fussy about just this structure even being in the
+  // chain. Just unlink it if its not supported. We already perform an
+  // extensions check on the other side when reading.
+  if (!IsExtensionInList(
+          enabled_extensions.value(),
+          OptionalDeviceExtensionVK::kEXTImageCompressionControl)) {
+    supported_chain
+        .unlink<vk::PhysicalDeviceImageCompressionControlFeaturesEXT>();
+  }
+
   device.getFeatures2(&supported_chain.get());
 
   PhysicalDeviceFeatures required_chain;
