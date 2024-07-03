@@ -63,6 +63,7 @@ dart_library("async_helper") {
 
   sources = [
     "async_helper.dart",
+    "async_minitest.dart",
   ]
 }
 
