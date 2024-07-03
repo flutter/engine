@@ -26,7 +26,7 @@ TEST(AllocationSizeTest, CanCreateTypedAllocations) {
   auto mebibytes = MebiBytes{1};
   ASSERT_EQ(mebibytes.GetByteSize(), 1048576u);
 
-  auto gigibytes = GigiBytes{1};
+  auto gigibytes = GibiBytes{1};
   ASSERT_EQ(gigibytes.GetByteSize(), 1073741824u);
 }
 

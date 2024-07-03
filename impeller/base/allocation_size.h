@@ -16,7 +16,7 @@ enum class FromBytesTag { kFromBytes };
 /// @brief      Represents the size of an allocation in different units.
 ///
 ///             Refer to the typedefs for Bytes, KiloBytes, MegaBytes,
-///             Gigabytes, KibiBytes, MebiBytes, and GigiBytes below when using.
+///             Gigabytes, KibiBytes, MebiBytes, and GibiBytes below when using.
 ///
 ///             Storage and all operations are always on unsigned units of
 ///             bytes.
@@ -147,7 +147,7 @@ using GigaBytes = AllocationSize<1'000u * 1'000u * 1'000u>;
 
 using KibiBytes = AllocationSize<1'024u>;
 using MebiBytes = AllocationSize<1'024u * 1'024u>;
-using GigiBytes = AllocationSize<1'024u * 1'024u * 1'024u>;
+using GibiBytes = AllocationSize<1'024u * 1'024u * 1'024u>;
 
 inline namespace allocation_size_literals {
 
@@ -175,8 +175,8 @@ constexpr MebiBytes operator"" _mib(unsigned long long size) {
   return MebiBytes{static_cast<double>(size)};
 }
 
-constexpr GigiBytes operator"" _gib(unsigned long long size) {
-  return GigiBytes{static_cast<double>(size)};
+constexpr GibiBytes operator"" _gib(unsigned long long size) {
+  return GibiBytes{static_cast<double>(size)};
 }
 
 }  // namespace allocation_size_literals
