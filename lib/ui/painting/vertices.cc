@@ -28,7 +28,7 @@ bool Vertices::init(Dart_Handle vertices_handle,
 
   tonic::Float32List positions(positions_handle);
   tonic::Float32List texture_coordinates(texture_coordinates_handle);
-  tonic::Int32List colors(colors_handle);
+  tonic::Float32List colors(colors_handle);
   tonic::Uint16List indices(indices_handle);
 
   if (!positions.data()) {

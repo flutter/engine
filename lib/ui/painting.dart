@@ -4263,6 +4263,17 @@ Float32List _encodeColorListFloatingPoint(List<Color> colors) {
   return result;
 }
 
+Float32List _encodeUnormColorToFloatingPoint(Int32List colors) {
+  final Float32List colorsXR = Float32List(colors.length * 4);
+  for (int i = 0, j = 0; i < colors.length; i++) {
+    colorsXR[j++] = ((colors[i] & 0xFF000000) >> 24) / 255.0;
+    colorsXR[j++] = ((colors[i] & 0x00FF0000) >> 16) / 255.0;
+    colorsXR[j++] = ((colors[i] & 0x0000FF00) >> 8) / 255.0;
+    colorsXR[j++] = ((colors[i] & 0x000000FF) >> 0) / 255.0;
+  }
+  return colorsXR;
+}
+
 Int32List _encodeColorList(List<Color> colors) {
   final int colorCount = colors.length;
   final Int32List result = Int32List(colorCount);
@@ -4896,8 +4907,8 @@ base class Vertices extends NativeFieldWrapperClass1 {
     final Float32List? encodedTextureCoordinates = (textureCoordinates != null)
       ? _encodePointList(textureCoordinates)
       : null;
-    final Int32List? encodedColors = colors != null
-      ? _encodeColorList(colors)
+    final Float32List? encodedColors = colors != null
+      ? _encodeColorListFloatingPoint(colors)
       : null;
     final Uint16List? encodedIndices = indices != null
       ? Uint16List.fromList(indices)
@@ -4979,6 +4990,42 @@ base class Vertices extends NativeFieldWrapperClass1 {
         }
       }
     }
+    Float32List? colorsXR;
+    if (colors != null) {
+      colorsXR = _encodeUnormColorToFloatingPoint(colors);
+    }
+    if (!_init(this, mode.index, positions, textureCoordinates, colorsXR, indices)) {
+      throw ArgumentError('Invalid configuration for vertices.');
+    }
+  }
+
+  Vertices.rawXR(
+    VertexMode mode,
+    Float32List positions, {
+    Float32List? colors,
+    Float32List? textureCoordinates,
+    Uint16List? indices,
+  }) {
+    if (positions.length % 2 != 0) {
+      throw ArgumentError('"positions" must have an even number of entries (each coordinate is an x,y pair).');
+    }
+    if (colors != null && colors.length / 2 != positions.length) {
+      throw ArgumentError('"positions" and "colors" lengths must match.');
+    }
+    if (textureCoordinates != null && textureCoordinates.length != positions.length) {
+      throw ArgumentError('"positions" and "textureCoordinates" lengths must match.');
+    }
+    if (indices != null) {
+      for (int index = 0; index < indices.length; index += 1) {
+        if (indices[index] * 2 >= positions.length) {
+          throw ArgumentError(
+            '"indices" values must be valid indices in the positions list '
+            '(i.e. numbers in the range 0..${positions.length ~/ 2 - 1}), '
+            'but indices[$index] is ${indices[index]}, which is too big.',
+          );
+        }
+      }
+    }
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
       throw ArgumentError('Invalid configuration for vertices.');
     }
@@ -4989,7 +5036,7 @@ base class Vertices extends NativeFieldWrapperClass1 {
                              int mode,
                              Float32List positions,
                              Float32List? textureCoordinates,
-                             Int32List? colors,
+                             Float32List? colors,
                              Uint16List? indices);
 
   /// Release the resources used by this object. The object is no longer usable
@@ -5891,6 +5938,14 @@ abstract class Canvas {
                     Rect? cullRect,
                     Paint paint);
 
+  void drawRawAtlasXR(Image atlas,
+                     Float32List rstTransforms,
+                     Float32List rects,
+                     Float32List? colors,
+                     BlendMode? blendMode,
+                     Rect? cullRect,
+                     Paint paint);
+
   /// Draws a shadow for a [Path] representing the given material elevation.
   ///
   /// The `transparentOccluder` argument should be true if the occluding object
@@ -6326,7 +6381,7 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
       rectBuffer[index3] = rect.bottom;
     }
 
-    final Int32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorList(colors);
+    final Float32List? colorBuffer = (colors == null || colors.isEmpty) ? null : _encodeColorListFloatingPoint(colors);
     final Float32List? cullRectBuffer = cullRect?._getValue32();
     final int qualityIndex = paint.filterQuality.index;
 
@@ -6345,6 +6400,42 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
                     Float32List rstTransforms,
                     Float32List rects,
                     Int32List? colors,
+                    BlendMode? blendMode,
+                    Rect? cullRect,
+                    Paint paint) {
+    assert(colors == null || blendMode != null);
+
+    final int rectCount = rects.length;
+    if (rstTransforms.length != rectCount) {
+      throw ArgumentError('"rstTransforms" and "rects" lengths must match.');
+    }
+    if (rectCount % 4 != 0) {
+      throw ArgumentError('"rstTransforms" and "rects" lengths must be a multiple of four.');
+    }
+    if (colors != null && colors.length * 4 != rectCount) {
+      throw ArgumentError('If non-null, "colors" length must be one fourth the length of "rstTransforms" and "rects".');
+    }
+    final int qualityIndex = paint.filterQuality.index;
+    Float32List? colorsXR;
+    if (colors != null) {
+      colorsXR = _encodeUnormColorToFloatingPoint(colors);
+    }
+
+    final String? error = _drawAtlas(
+      paint._objects, paint._data, qualityIndex, atlas._image, rstTransforms, rects,
+      colorsXR, (blendMode ?? BlendMode.src).index, cullRect?._getValue32()
+    );
+
+    if (error != null) {
+      throw PictureRasterizationException._(error, stack: atlas._debugStack);
+    }
+  }
+
+  @override
+  void drawRawAtlasXR(Image atlas,
+                    Float32List rstTransforms,
+                    Float32List rects,
+                    Float32List? colors,
                     BlendMode? blendMode,
                     Rect? cullRect,
                     Paint paint) {
@@ -6380,7 +6471,7 @@ base class _NativeCanvas extends NativeFieldWrapperClass1 implements Canvas {
       _Image atlas,
       Float32List rstTransforms,
       Float32List rects,
-      Int32List? colors,
+      Float32List? colors,
       int blendMode,
       Float32List? cullRect);
 
