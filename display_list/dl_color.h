@@ -43,8 +43,8 @@ struct DlColor {
   static constexpr DlColor kSkyBlue()            {return DlColor(0xFF87CEEB);}
   // clang-format on
 
-  constexpr bool isOpaque() const { return getAlpha() == 0xFF; }
-  constexpr bool isTransparent() const { return getAlpha() == 0; }
+  constexpr bool isOpaque() const { return alpha_ >= 1.0; }
+  constexpr bool isTransparent() const { return alpha_ <= 0.0; }
 
   // These getters clamp the value to the range [0, 256).
   constexpr int getAlpha() const { return toC(getAlphaF()); }
@@ -115,8 +115,8 @@ struct DlColor {
   SkScalar green_ = 0.0;
   SkScalar blue_ = 0.0;
 
-  static float toF(uint8_t comp) { return comp * (1.0f / 255); }
-  static uint8_t toC(float fComp) { return round(fComp * 255); }
+  constexpr static float toF(uint8_t comp) { return comp * (1.0f / 255); }
+  constexpr static uint8_t toC(float fComp) { return round(fComp * 255); }
 };
 
 }  // namespace flutter
