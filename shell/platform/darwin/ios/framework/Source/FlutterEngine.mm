@@ -800,24 +800,24 @@ static flutter::ThreadHost MakeThreadHost(NSString* thread_label,
     threadHostType = threadHostType | flutter::ThreadHost::Type::kProfiler;
   }
 
-  flutter::ThreadHost::ThreadHostConfig host_config(threadLabel.UTF8String, threadHostType,
+  flutter::ThreadHost::ThreadHostConfig host_config(thread_label.UTF8String, threadHostType,
                                                     IOSPlatformThreadConfigSetter);
 
   if (!settings.merged_platform_ui_thread) {
     host_config.ui_config =
         fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                      flutter::ThreadHost::Type::kUi, threadLabel.UTF8String),
+                                      flutter::ThreadHost::Type::kUi, thread_label.UTF8String),
                                   fml::Thread::ThreadPriority::kDisplay);
   }
 
   host_config.raster_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::kRaster, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kRaster, thread_label.UTF8String),
                                 fml::Thread::ThreadPriority::kRaster);
 
   host_config.io_config =
       fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
-                                    flutter::ThreadHost::Type::kIo, threadLabel.UTF8String),
+                                    flutter::ThreadHost::Type::kIo, thread_label.UTF8String),
                                 fml::Thread::ThreadPriority::kNormal);
 
   return (flutter::ThreadHost){host_config};
