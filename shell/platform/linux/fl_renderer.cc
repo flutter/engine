@@ -405,7 +405,6 @@ void fl_renderer_setup(FlRenderer* self) {
 
   g_return_if_fail(FL_IS_RENDERER(self));
 
-  // FIXME
   priv->has_gl_framebuffer_blit =
       epoxy_gl_version() >= 30 ||
       epoxy_has_gl_extension("GL_EXT_framebuffer_blit");
