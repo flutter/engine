@@ -112,18 +112,13 @@ TEST(GPUSurfaceMetalImpeller, ResetHostBufferBasedOnFrameBoundary) {
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 0u);
 
   auto frame = surface->AcquireFrame(SkISize::Make(100, 100));
-  frame->set_submit_info({
-    .frame_boundary = false
-  });
+  frame->set_submit_info({.frame_boundary = false});
 
   ASSERT_TRUE(frame->Submit());
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 0u);
 
   frame = surface->AcquireFrame(SkISize::Make(100, 100));
-  frame->set_submit_info({
-    .frame_boundary = true
-  });
-
+  frame->set_submit_info({.frame_boundary = true});
 
   ASSERT_TRUE(frame->Submit());
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 1u);
