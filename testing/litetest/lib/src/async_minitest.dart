@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: public_member_api_docs
+
 /// A minimal, dependency-free emulation layer for a subset of the
 /// unittest/test API used by the language and core library.
 ///
@@ -104,7 +106,7 @@ dynamic expectAsync(Function f, {int count = 1}) {
   if (f2 is void Function(Never, Never, Never, Never, Never)) {
     asyncStart(count);
     return ([Object? a, Object? b, Object? c, Object? d, Object? e]) {
-      final result = f(a, b, c, d, e);
+      final result = f(a, b, c, d, e); // ignore: avoid_dynamic_calls
       asyncEnd();
       return result;
     };
@@ -112,7 +114,7 @@ dynamic expectAsync(Function f, {int count = 1}) {
   if (f2 is void Function(Never, Never, Never, Never)) {
     asyncStart(count);
     return ([Object? a, Object? b, Object? c, Object? d]) {
-      final result = f(a, b, c, d);
+      final result = f(a, b, c, d); // ignore: avoid_dynamic_calls
       asyncEnd();
       return result;
     };
@@ -120,7 +122,7 @@ dynamic expectAsync(Function f, {int count = 1}) {
   if (f2 is void Function(Never, Never, Never)) {
     asyncStart(count);
     return ([Object? a, Object? b, Object? c]) {
-      final result = f(a, b, c);
+      final result = f(a, b, c); // ignore: avoid_dynamic_calls
       asyncEnd();
       return result;
     };
@@ -128,7 +130,7 @@ dynamic expectAsync(Function f, {int count = 1}) {
   if (f2 is void Function(Never, Never)) {
     asyncStart(count);
     return ([Object? a, Object? b]) {
-      final result = f(a, b);
+      final result = f(a, b); // ignore: avoid_dynamic_calls
       asyncEnd();
       return result;
     };
@@ -136,7 +138,7 @@ dynamic expectAsync(Function f, {int count = 1}) {
   if (f2 is void Function(Never)) {
     asyncStart(count);
     return ([Object? a]) {
-      final result = f(a);
+      final result = f(a); // ignore: avoid_dynamic_calls
       asyncEnd();
       return result;
     };
