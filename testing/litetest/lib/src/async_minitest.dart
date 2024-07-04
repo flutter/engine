@@ -34,8 +34,8 @@ import 'dart:async';
 import 'package:async_helper/async_helper.dart';
 import 'package:expect/expect.dart';
 
-void group(String name, Function() body) {
-  var oldName = _pushName(name);
+void group(String name, void Function() body) {
+  final oldName = _pushName(name);
   try {
     body();
   } finally {
@@ -43,12 +43,12 @@ void group(String name, Function() body) {
   }
 }
 
-void test(String name, Function() body) {
-  var oldName = _pushName(name);
+void test(String name, dynamic Function() body) {
+  final oldName = _pushName(name);
 
   asyncStart();
-  var result = runZoned(body, zoneValues: {_testToken: _currentName});
-  if (result is Future) {
+  final result = runZoned(body, zoneValues: {_testToken: _currentName});
+  if (result is Future<dynamic>) {
     result.then((_) {
       asyncEnd();
     });
@@ -60,7 +60,7 @@ void test(String name, Function() body) {
   _popName(oldName);
 }
 
-void expect(dynamic value, dynamic matcher, {String reason = ""}) {
+void expect(dynamic value, dynamic matcher, {String reason = ''}) {
   Matcher m;
   if (matcher is _Matcher) {
     m = matcher.call;
@@ -75,7 +75,7 @@ void expect(dynamic value, dynamic matcher, {String reason = ""}) {
 R Function() expectAsync0<R>(R Function() f, {int count = 1}) {
   asyncStart(count);
   return () {
-    var result = f();
+    final result = f();
     asyncEnd();
     return result;
   };
@@ -84,7 +84,7 @@ R Function() expectAsync0<R>(R Function() f, {int count = 1}) {
 R Function(A) expectAsync1<R, A>(R Function(A) f, {int count = 1}) {
   asyncStart(count);
   return (A a) {
-    var result = f(a);
+    final result = f(a);
     asyncEnd();
     return result;
   };
@@ -93,64 +93,64 @@ R Function(A) expectAsync1<R, A>(R Function(A) f, {int count = 1}) {
 R Function(A, B) expectAsync2<R, A, B>(R Function(A, B) f, {int count = 1}) {
   asyncStart(count);
   return (A a, B b) {
-    var result = f(a, b);
+    final result = f(a, b);
     asyncEnd();
     return result;
   };
 }
 
 dynamic expectAsync(Function f, {int count = 1}) {
-  var f2 = f; // Avoid type-promoting f, we want dynamic invocations.
-  if (f2 is Function(Never, Never, Never, Never, Never)) {
+  final f2 = f; // Avoid type-promoting f, we want dynamic invocations.
+  if (f2 is void Function(Never, Never, Never, Never, Never)) {
     asyncStart(count);
-    return ([a, b, c, d, e]) {
-      var result = f(a, b, c, d, e);
+    return ([Object? a, Object? b, Object? c, Object? d, Object? e]) {
+      final result = f(a, b, c, d, e);
       asyncEnd();
       return result;
     };
   }
-  if (f2 is Function(Never, Never, Never, Never)) {
+  if (f2 is void Function(Never, Never, Never, Never)) {
     asyncStart(count);
-    return ([a, b, c, d]) {
-      var result = f(a, b, c, d);
+    return ([Object? a, Object? b, Object? c, Object? d]) {
+      final result = f(a, b, c, d);
       asyncEnd();
       return result;
     };
   }
-  if (f2 is Function(Never, Never, Never)) {
+  if (f2 is void Function(Never, Never, Never)) {
     asyncStart(count);
-    return ([a, b, c]) {
-      var result = f(a, b, c);
+    return ([Object? a, Object? b, Object? c]) {
+      final result = f(a, b, c);
       asyncEnd();
       return result;
     };
   }
-  if (f2 is Function(Never, Never)) {
+  if (f2 is void Function(Never, Never)) {
     asyncStart(count);
-    return ([a, b]) {
-      var result = f(a, b);
+    return ([Object? a, Object? b]) {
+      final result = f(a, b);
       asyncEnd();
       return result;
     };
   }
-  if (f2 is Function(Never)) {
+  if (f2 is void Function(Never)) {
     asyncStart(count);
-    return ([a]) {
-      var result = f(a);
+    return ([Object? a]) {
+      final result = f(a);
       asyncEnd();
       return result;
     };
   }
-  if (f2 is Function()) {
+  if (f2 is void Function()) {
     asyncStart(count);
     return () {
-      var result = f();
+      final result = f2();
       asyncEnd();
       return result;
     };
   }
   throw UnsupportedError(
-      "expectAsync only accepts up to five argument functions");
+      'expectAsync only accepts up to five argument functions');
 }
 
 // Matchers
@@ -166,43 +166,53 @@ Matcher equals(dynamic o) => (v) {
 
 Matcher greaterThan(num n) => (dynamic v) {
       Expect.type<num>(v);
-      num value = v;
-      if (value > n) return;
-      Expect.fail("$v is not greater than $n");
+      final num value = v as num;
+      if (value > n) {
+        return;
+      }
+      Expect.fail('$v is not greater than $n');
     };
 
 Matcher greaterThanOrEqualTo(num n) => (dynamic v) {
       Expect.type<num>(v);
-      num value = v;
-      if (value >= n) return;
-      Expect.fail("$v is not greater than $n");
+      final num value = v as num;
+      if (value >= n) {
+        return;
+      }
+      Expect.fail('$v is not greater than $n');
     };
 
 Matcher lessThan(num n) => (dynamic v) {
       Expect.type<num>(v);
-      num value = v;
-      if (value < n) return;
-      Expect.fail("$v is not less than $n");
+      final num value = v as num;
+      if (value < n) {
+        return;
+      }
+      Expect.fail('$v is not less than $n');
     };
 
 Matcher lessThanOrEqualTo(num n) => (dynamic v) {
       Expect.type<num>(v);
-      num value = v;
-      if (value <= n) return;
-      Expect.fail("$v is not less than $n");
+      final num value = v as num;
+      if (value <= n) {
+        return;
+      }
+      Expect.fail('$v is not less than $n');
     };
 
-Matcher predicate(bool Function(dynamic value) fn, [String description = ""]) =>
+Matcher predicate(bool Function(dynamic value) fn, [String description = '']) =>
     (dynamic v) {
       Expect.isTrue(fn(v), description);
     };
 
 Matcher anyOf(List<String> expected) => (dynamic actual) {
-      for (var string in expected) {
-        if (actual == string) return;
+      for (final string in expected) {
+        if (actual == string) {
+          return;
+        }
       }
 
-      Expect.fail("Expected $actual to be one of $expected.");
+      Expect.fail('Expected $actual to be one of $expected.');
     };
 
 void isTrue(dynamic v) {
@@ -222,15 +232,17 @@ void _checkThrow<T extends Object>(
   if (v is Future) {
     asyncStart();
     v.then((_) {
-      Expect.fail("Did not throw");
-    }, onError: (e, s) {
-      if (e is! T) throw e;
+      Expect.fail('Did not throw');
+    }, onError: (Object e, s) {
+      if (e is! T) {
+        throw e;
+      }
       onError(e);
       asyncEnd();
     });
     return;
   }
-  Expect.throws<T>(v, (e) {
+  Expect.throws<T>(v as void Function(), (dynamic e) {
     onError(e);
     return true;
   });
@@ -238,11 +250,11 @@ void _checkThrow<T extends Object>(
 
 void returnsNormally(dynamic o) {
   try {
-    Expect.type<Function()>(o);
-    o();
+    Expect.type<void Function()>(o);
+    (o as void Function())();
   } catch (error, trace) {
     Expect.fail(
-        "Expected function to return normally, but threw:\n$error\n\n$trace");
+        'Expected function to return normally, but threw:\n$error\n\n$trace');
   }
 }
 
@@ -250,15 +262,15 @@ void throws(dynamic v) {
   _checkThrow<Object>(v, (_) {});
 }
 
-Matcher throwsA(matcher) => (dynamic o) {
+Matcher throwsA(dynamic matcher) => (dynamic o) {
       _checkThrow<Object>(o, (error) {
         expect(error, matcher);
       });
     };
 
-Matcher completion(matcher) => (dynamic o) {
-      Expect.type<Future>(o);
-      Future future = o;
+Matcher completion(dynamic matcher) => (dynamic o) {
+      Expect.type<Future<dynamic>>(o);
+      final Future<dynamic> future = o as Future<dynamic>;
       asyncStart();
       future.then((value) {
         expect(value, matcher);
@@ -267,18 +279,18 @@ Matcher completion(matcher) => (dynamic o) {
     };
 
 void completes(dynamic o) {
-  Expect.type<Future>(o);
-  Future future = o;
+  Expect.type<Future<dynamic>>(o);
+  final Future<dynamic> future = o as Future<dynamic>;
   asyncStart();
-  future.then(asyncSuccess);
+  future.then<void>(asyncSuccess);
 }
 
 void isMap(dynamic o) {
-  Expect.type<Map>(o);
+  Expect.type<Map<dynamic, dynamic>>(o);
 }
 
 void isList(dynamic o) {
-  Expect.type<List>(o);
+  Expect.type<List<dynamic>>(o);
 }
 
 void isNotNull(dynamic o) {
@@ -315,20 +327,21 @@ final _testToken = Object();
 bool _initializedTestNameCallback = false;
 
 /// The current combined name of the nesting [group] or [test].
-String _currentName = "";
+String _currentName = '';
 
 String _pushName(String newName) {
   // Look up the current test name from the zone created for the test.
   if (!_initializedTestNameCallback) {
-    ExpectException.setTestNameCallback(() => Zone.current[_testToken]);
+    ExpectException.setTestNameCallback(
+        () => Zone.current[_testToken] as String);
     _initializedTestNameCallback = true;
   }
 
-  var oldName = _currentName;
-  if (oldName == "") {
+  final oldName = _currentName;
+  if (oldName == '') {
     _currentName = newName;
   } else {
-    _currentName = "$oldName $newName";
+    _currentName = '$oldName $newName';
   }
   return oldName;
 }
