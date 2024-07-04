@@ -567,6 +567,8 @@ static void realize_cb(FlView* self) {
     return;
   }
 
+  fl_renderer_setup(FL_RENDERER(self->renderer));
+
   // Handle requests by the user to close the application.
   GtkWidget* toplevel_window = gtk_widget_get_toplevel(GTK_WIDGET(self));
 
@@ -609,6 +611,20 @@ static gboolean render_cb(FlView* self, GdkGLContext* context) {
                      height * scale_factor);
 
   return TRUE;
+}
+
+static void unrealize_cb(FlView* self) {
+  g_autoptr(GError) error = nullptr;
+
+  fl_renderer_make_current(FL_RENDERER(self->renderer));
+
+  GError* gl_error = gtk_gl_area_get_error(self->gl_area);
+  if (gl_error != NULL) {
+    g_warning("Failed to uninitialize GLArea: %s", gl_error->message);
+    return;
+  }
+
+  fl_renderer_cleanup(FL_RENDERER(self->renderer));
 }
 
 static void size_allocate_cb(FlView* self) {
@@ -780,6 +796,8 @@ static void fl_view_init(FlView* self) {
   g_signal_connect_swapped(self->gl_area, "realize", G_CALLBACK(realize_cb),
                            self);
   g_signal_connect_swapped(self->gl_area, "render", G_CALLBACK(render_cb),
+                           self);
+  g_signal_connect_swapped(self->gl_area, "unrealize", G_CALLBACK(unrealize_cb),
                            self);
 
   g_signal_connect_swapped(self, "size-allocate", G_CALLBACK(size_allocate_cb),

@@ -12,6 +12,26 @@
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_view_private.h"
 
+// Vertex shader to draw Flutter window contents.
+static const char* vertex_shader_src =
+    "attribute vec2 position;\n"
+    "attribute vec2 in_texcoord;\n"
+    "varying vec2 texcoord;\n"
+    "\n"
+    "void main() {\n"
+    "  gl_Position = vec4(position, 0, 1);\n"
+    "  texcoord = in_texcoord;\n"
+    "}\n";
+
+// Fragment shader to draw Flutter window contents.
+static const char* fragment_shader_src =
+    "uniform sampler2D texture;\n"
+    "varying vec2 texcoord;\n"
+    "\n"
+    "void main() {\n"
+    "  gl_FragColor = texture2D(texture, texcoord);\n"
+    "}\n";
+
 G_DEFINE_QUARK(fl_renderer_error_quark, fl_renderer_error)
 
 typedef struct {
@@ -28,11 +48,48 @@ typedef struct {
   // was rendered
   bool had_first_frame;
 
+  // True if we can use glBlitFramebuffer.
+  bool has_gl_framebuffer_blit;
+
+  // Shader program.
+  GLuint program;
+
   // Textures to render.
   GPtrArray* textures;
 } FlRendererPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(FlRenderer, fl_renderer, G_TYPE_OBJECT)
+
+// Returns the log for the given OpenGL shader. Must be freed by the caller.
+static gchar* get_shader_log(GLuint shader) {
+  int log_length;
+  gchar* log;
+
+  glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
+
+  log = static_cast<gchar*>(g_malloc(log_length + 1));
+  glGetShaderInfoLog(shader, log_length, nullptr, log);
+
+  return log;
+}
+
+// Returns the log for the given OpenGL program. Must be freed by the caller.
+static gchar* get_program_log(GLuint program) {
+  int log_length;
+  gchar* log;
+
+  glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
+
+  log = static_cast<gchar*>(g_malloc(log_length + 1));
+  glGetProgramInfoLog(program, log_length, nullptr, log);
+
+  return log;
+}
+
+/// Converts a pixel co-ordinate from 0..pixels to OpenGL -1..1.
+static GLfloat pixels_to_gl_coords(GLfloat position, GLfloat pixels) {
+  return (2.0 * position / pixels) - 1.0;
+}
 
 static void fl_renderer_unblock_main_thread(FlRenderer* self) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
@@ -44,6 +101,131 @@ static void fl_renderer_unblock_main_thread(FlRenderer* self) {
         fl_engine_get_task_runner(fl_view_get_engine(priv->view));
     fl_task_runner_release_main_thread(runner);
   }
+}
+
+static void setup_shader(FlRenderer* self) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+  glShaderSource(vertex_shader, 1, &vertex_shader_src, nullptr);
+  glCompileShader(vertex_shader);
+  int vertex_compile_status;
+  glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &vertex_compile_status);
+  if (vertex_compile_status == GL_FALSE) {
+    g_autofree gchar* shader_log = get_shader_log(vertex_shader);
+    g_warning("Failed to compile vertex shader: %s", shader_log);
+  }
+
+  GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+  glShaderSource(fragment_shader, 1, &fragment_shader_src, nullptr);
+  glCompileShader(fragment_shader);
+  int fragment_compile_status;
+  glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &fragment_compile_status);
+  if (fragment_compile_status == GL_FALSE) {
+    g_autofree gchar* shader_log = get_shader_log(fragment_shader);
+    g_warning("Failed to compile fragment shader: %s", shader_log);
+  }
+
+  priv->program = glCreateProgram();
+  glAttachShader(priv->program, vertex_shader);
+  glAttachShader(priv->program, fragment_shader);
+  glLinkProgram(priv->program);
+
+  int link_status;
+  glGetProgramiv(priv->program, GL_LINK_STATUS, &link_status);
+  if (link_status == GL_FALSE) {
+    g_autofree gchar* program_log = get_program_log(priv->program);
+    g_warning("Failed to link program: %s", program_log);
+  }
+
+  glDeleteShader(vertex_shader);
+  glDeleteShader(fragment_shader);
+}
+
+static void render_with_blit(FlRenderer* self) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  for (guint i = 0; i < priv->textures->len; i++) {
+    FlBackingStoreProvider* texture =
+        FL_BACKING_STORE_PROVIDER(g_ptr_array_index(priv->textures, i));
+
+    uint32_t framebuffer_id =
+        fl_backing_store_provider_get_gl_framebuffer_id(texture);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_id);
+    GdkRectangle geometry = fl_backing_store_provider_get_geometry(texture);
+    glBlitFramebuffer(0, 0, geometry.width, geometry.height, geometry.x,
+                      geometry.y, geometry.x + geometry.width,
+                      geometry.x + geometry.height, GL_COLOR_BUFFER_BIT,
+                      GL_NEAREST);
+  }
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+}
+
+static void render_with_textures(FlRenderer* self, int width, int height) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  // Save bindings that are set by this function.  All bindings must be restored
+  // to their original values because Skia expects that its bindings have not
+  // been altered.
+  GLint saved_texture_binding;
+  glGetIntegerv(GL_TEXTURE_BINDING_2D, &saved_texture_binding);
+  GLint saved_vao_binding;
+  glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &saved_vao_binding);
+  GLint saved_array_buffer_binding;
+  glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &saved_array_buffer_binding);
+
+  glUseProgram(priv->program);
+
+  for (guint i = 0; i < priv->textures->len; i++) {
+    FlBackingStoreProvider* texture =
+        FL_BACKING_STORE_PROVIDER(g_ptr_array_index(priv->textures, i));
+
+    uint32_t texture_id = fl_backing_store_provider_get_gl_texture_id(texture);
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+
+    // Translate into OpenGL co-ordinates
+    GdkRectangle texture_geometry =
+        fl_backing_store_provider_get_geometry(texture);
+    GLfloat texture_x = texture_geometry.x;
+    GLfloat texture_y = texture_geometry.y;
+    GLfloat texture_width = texture_geometry.width;
+    GLfloat texture_height = texture_geometry.height;
+    GLfloat x0 = pixels_to_gl_coords(texture_x, width);
+    GLfloat y0 =
+        pixels_to_gl_coords(height - (texture_y + texture_height), height);
+    GLfloat x1 = pixels_to_gl_coords(texture_x + texture_width, width);
+    GLfloat y1 = pixels_to_gl_coords(height - texture_y, height);
+    GLfloat vertex_data[] = {x0, y0, 0, 0, x1, y1, 1, 1, x0, y1, 0, 1,
+                             x0, y0, 0, 0, x1, y0, 1, 0, x1, y1, 1, 1};
+
+    GLuint vao, vertex_buffer;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glGenBuffers(1, &vertex_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data,
+                 GL_STATIC_DRAW);
+    GLint position_index = glGetAttribLocation(priv->program, "position");
+    glEnableVertexAttribArray(position_index);
+    glVertexAttribPointer(position_index, 2, GL_FLOAT, GL_FALSE,
+                          sizeof(GLfloat) * 4, 0);
+    GLint texcoord_index = glGetAttribLocation(priv->program, "in_texcoord");
+    glEnableVertexAttribArray(texcoord_index);
+    glVertexAttribPointer(texcoord_index, 2, GL_FLOAT, GL_FALSE,
+                          sizeof(GLfloat) * 4, (void*)(sizeof(GLfloat) * 2));
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+
+    glDeleteVertexArrays(1, &vao);
+    glDeleteBuffers(1, &vertex_buffer);
+  }
+
+  glBindTexture(GL_TEXTURE_2D, saved_texture_binding);
+  glBindVertexArray(saved_vao_binding);
+  glBindBuffer(GL_ARRAY_BUFFER, saved_array_buffer_binding);
 }
 
 static void fl_renderer_dispose(GObject* object) {
@@ -217,6 +399,22 @@ gboolean fl_renderer_present_layers(FlRenderer* self,
   return TRUE;
 }
 
+void fl_renderer_setup(FlRenderer* self) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  g_return_if_fail(FL_IS_RENDERER(self));
+
+  // FIXME
+  priv->has_gl_framebuffer_blit =
+      epoxy_gl_version() >= 30 ||
+      epoxy_has_gl_extension("GL_EXT_framebuffer_blit");
+
+  if (!priv->has_gl_framebuffer_blit) {
+    setup_shader(self);
+  }
+}
+
 void fl_renderer_render(FlRenderer* self, int width, int height) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
@@ -226,20 +424,22 @@ void fl_renderer_render(FlRenderer* self, int width, int height) {
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  for (guint i = 0; i < priv->textures->len; i++) {
-    FlBackingStoreProvider* texture =
-        FL_BACKING_STORE_PROVIDER(g_ptr_array_index(priv->textures, i));
-
-    uint32_t framebuffer_id =
-        fl_backing_store_provider_get_gl_framebuffer_id(texture);
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer_id);
-    GdkRectangle geometry = fl_backing_store_provider_get_geometry(texture);
-    glBlitFramebuffer(0, 0, geometry.width, geometry.height, geometry.x,
-                      geometry.y, geometry.x + geometry.width,
-                      geometry.x + geometry.height, GL_COLOR_BUFFER_BIT,
-                      GL_NEAREST);
+  if (priv->has_gl_framebuffer_blit) {
+    render_with_blit(self);
+  } else {
+    render_with_textures(self, width, height);
   }
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
   glFlush();
+}
+
+void fl_renderer_cleanup(FlRenderer* self) {
+  FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
+      fl_renderer_get_instance_private(self));
+
+  g_return_if_fail(FL_IS_RENDERER(self));
+
+  if (priv->program != 0) {
+    glDeleteProgram(priv->program);
+  }
 }

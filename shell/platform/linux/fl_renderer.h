@@ -207,6 +207,15 @@ void fl_renderer_wait_for_frame(FlRenderer* renderer,
                                 int target_height);
 
 /**
+ * fl_renderer_setup:
+ * @renderer: an #FlRenderer.
+ *
+ * Creates OpenGL resources required before rendering. Requires an active OpenGL
+ * context.
+ */
+void fl_renderer_setup(FlRenderer* renderer);
+
+/**
  * fl_renderer_render:
  * @renderer: an #FlRenderer.
  * @width: width of the window in pixels.
@@ -215,6 +224,14 @@ void fl_renderer_wait_for_frame(FlRenderer* renderer,
  * Performs OpenGL commands to render current Flutter view.
  */
 void fl_renderer_render(FlRenderer* renderer, int width, int height);
+
+/**
+ * fl_renderer_cleanup:
+ *
+ * Removes OpenGL resources used for rendering. Requires an active OpenGL
+ * context.
+ */
+void fl_renderer_cleanup(FlRenderer* renderer);
 
 /**
  * fl_renderer_get_refresh_rate:
