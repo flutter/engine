@@ -81,9 +81,9 @@ class SurfaceFrame {
     // that can be passed to the platform to drop queued frames.
     std::optional<fml::TimePoint> presentation_time;
 
-    // Whether this surface frame represents the last in a group frames that were
-    // submitted as part of a platform compositor interop step, such as during iOS
-    // platform view compositing.
+    // Whether this surface frame represents the last in a group frames that
+    // were submitted as part of a platform compositor interop step, such as
+    // during iOS platform view compositing.
     //
     // Defaults to true, which is generally a safe value.
     bool frame_boundary = true;

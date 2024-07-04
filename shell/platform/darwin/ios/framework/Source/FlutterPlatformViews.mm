@@ -866,9 +866,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
 
   // This flutter view is never the last in a frame, since we always submit the
   // underlay view last.
-  frame->set_submit_info({
-    .frame_boundary = false
-  });
+  frame->set_submit_info({.frame_boundary = false});
 
   layer->did_submit_last_frame = frame->Submit();
   return layer;

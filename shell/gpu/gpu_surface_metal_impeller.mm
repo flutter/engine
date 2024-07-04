@@ -191,8 +191,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
 
         return renderer->Render(
             std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture), reset_host_buffer](
-                                  impeller::RenderTarget& render_target) -> bool {
+            fml::MakeCopyable([aiks_context, picture = std::move(picture),
+                               reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
               return aiks_context->Render(picture, render_target, reset_host_buffer);
             }));
 #endif
@@ -311,8 +311,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromMTLTextur
         const bool reset_host_buffer = surface_frame.submit_info().frame_boundary;
         bool render_result = renderer->Render(
             std::move(surface),
-            fml::MakeCopyable([aiks_context, picture = std::move(picture), reset_host_buffer](
-                                  impeller::RenderTarget& render_target) -> bool {
+            fml::MakeCopyable([aiks_context, picture = std::move(picture),
+                               reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
               return aiks_context->Render(picture, render_target, reset_host_buffer);
             }));
 #endif
