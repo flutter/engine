@@ -147,6 +147,11 @@ static void render_with_blit(FlRenderer* self) {
   FlRendererPrivate* priv = reinterpret_cast<FlRendererPrivate*>(
       fl_renderer_get_instance_private(self));
 
+  // Disable the scissor test as it can affect blit operations.
+  // Prevents regressions like: https://github.com/flutter/flutter/issues/140828
+  // See OpenGL specification version 4.6, section 18.3.1.
+  glDisable(GL_SCISSOR_TEST);
+
   for (guint i = 0; i < priv->textures->len; i++) {
     FlBackingStoreProvider* texture =
         FL_BACKING_STORE_PROVIDER(g_ptr_array_index(priv->textures, i));
