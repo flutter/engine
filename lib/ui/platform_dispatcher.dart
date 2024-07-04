@@ -185,6 +185,15 @@ class PlatformDispatcher {
   /// otherwise.
   FlutterView? view({required int id}) => _views[id];
 
+  /// The ID of the currently focused [FlutterView].
+  ///
+  /// Returns -1 if no view is focused.
+  ///
+  /// See also:
+  /// * [FlutterView.hasFocus] to ask a specific view if it is focused.
+  int get focusedViewId => _focusedViewId;
+  int _focusedViewId = -1;
+
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
   ///
@@ -347,7 +356,13 @@ class PlatformDispatcher {
   // ignore: unused_field, field will be used when platforms other than web use these focus APIs.
   Zone _onViewFocusChangeZone = Zone.root;
   set onViewFocusChange(ViewFocusChangeCallback? callback) {
-    _onViewFocusChange = callback;
+    _onViewFocusChange = (ViewFocusEvent event) {
+      _focusedViewId = switch (event.state) {
+        ViewFocusState.focused => event.viewId,
+        ViewFocusState.unfocused => -1,
+      };
+      callback?.call(event);
+    };
     _onViewFocusChangeZone = Zone.current;
   }
 

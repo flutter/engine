@@ -36,6 +36,8 @@ abstract class PlatformDispatcher {
 
   FlutterView? view({required int id});
 
+  int get focusedViewId;
+
   FlutterView? get implicitView;
 
   VoidCallback? get onMetricsChanged;

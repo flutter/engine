@@ -167,6 +167,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   EngineFlutterView? view({required int id}) => viewManager[id];
 
+  @override
+  int get focusedViewId => _focusedViewId;
+  int _focusedViewId = -1;
+
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
   ///
@@ -240,7 +244,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   Zone? _onViewFocusChangeZone;
   @override
   set onViewFocusChange(ui.ViewFocusChangeCallback? callback) {
-    _onViewFocusChange = callback;
+    _onViewFocusChange = (ui.ViewFocusEvent event) {
+      _focusedViewId = switch (event.state) {
+        ui.ViewFocusState.focused => event.viewId,
+        ui.ViewFocusState.unfocused => -1,
+      };
+      callback?.call(event);
+    };
     _onViewFocusChangeZone = Zone.current;
   }
 

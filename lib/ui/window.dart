@@ -106,6 +106,10 @@ class FlutterView {
     return platformDispatcher._displays[_viewConfiguration.displayId]!;
   }
 
+  /// Returns true if this view currently is the focused view in the
+  /// [PlatformDispatcher].
+  bool get hasFocus => platformDispatcher.focusedViewId == viewId;
+
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.
   ///
@@ -144,7 +148,7 @@ class FlutterView {
   ///
   /// The view can take on any [Size] that fulfills these constraints. These
   /// constraints are typically used by an UI framework as the input for its
-  /// layout algorithm to determine an approrpiate size for the view. To size
+  /// layout algorithm to determine an appropriate size for the view. To size
   /// the view, the selected size must be provided to the [render] method and it
   /// must satisfy the constraints.
   ///
