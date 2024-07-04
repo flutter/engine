@@ -124,7 +124,6 @@ class DisplayListTestBase : public BaseT {
     EXPECT_EQ(builder_paint.getColorFilter(), defaults.getColorFilter());
     EXPECT_EQ(builder_paint.getImageFilter(), defaults.getImageFilter());
     EXPECT_EQ(builder_paint.getMaskFilter(), defaults.getMaskFilter());
-    EXPECT_EQ(builder_paint.getPathEffect(), defaults.getPathEffect());
     EXPECT_EQ(builder_paint, defaults);
     EXPECT_TRUE(builder_paint.isDefault());
 
@@ -445,10 +444,6 @@ TEST_F(DisplayListTest, BuildRestoresAttributes) {
   receiver.setMaskFilter(&kTestMaskFilter1);
   builder.Build();
   check_defaults(builder, cull_rect);
-
-  receiver.setPathEffect(kTestPathEffect1.get());
-  builder.Build();
-  check_defaults(builder, cull_rect);
 }
 
 TEST_F(DisplayListTest, BuilderBoundsTransformComparedToSkia) {
@@ -643,8 +638,8 @@ TEST_F(DisplayListTest, SingleOpSizes) {
       auto& invocation = group.variants[i];
       sk_sp<DisplayList> dl = Build(invocation);
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
-      ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
-      ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
+      EXPECT_EQ(dl->op_count(false), invocation.op_count()) << desc;
+      EXPECT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
       EXPECT_EQ(dl->total_depth(), invocation.depth_accumulated()) << desc;
     }
   }
@@ -680,6 +675,7 @@ TEST_F(DisplayListTest, SingleOpDisplayListsRecapturedAreEqual) {
       sk_sp<DisplayList> copy = copy_builder.Build();
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " == copy)";
+      DisplayListsEQ_Verbose(dl, copy);
       ASSERT_EQ(copy->op_count(false), dl->op_count(false)) << desc;
       ASSERT_EQ(copy->bytes(false), dl->bytes(false)) << desc;
       ASSERT_EQ(copy->op_count(true), dl->op_count(true)) << desc;
@@ -1159,8 +1155,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
   RUN_TESTS2(
       receiver.drawPoints(PointMode::kPoints, TestPointCount, kTestPoints);
       , false);
-  RUN_TESTS2(receiver.drawVertices(TestVertices1.get(), DlBlendMode::kSrc);
-             , false);
+  RUN_TESTS2(receiver.drawVertices(kTestVertices1, DlBlendMode::kSrc);, false);
   RUN_TESTS(receiver.drawImage(TestImage1, {0, 0}, kLinearSampling, true););
   RUN_TESTS2(receiver.drawImage(TestImage1, {0, 0}, kLinearSampling, false);
              , true);
@@ -1314,38 +1309,64 @@ TEST_F(DisplayListTest, SaveLayerBoundsSnapshotsImageFilter) {
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
 }
 
-class SaveLayerOptionsExpector : public virtual DlOpReceiver,
-                                 public IgnoreAttributeDispatchHelper,
-                                 public IgnoreClipDispatchHelper,
-                                 public IgnoreTransformDispatchHelper,
-                                 public IgnoreDrawDispatchHelper {
+class SaveLayerExpector : public virtual DlOpReceiver,
+                          public IgnoreAttributeDispatchHelper,
+                          public IgnoreClipDispatchHelper,
+                          public IgnoreTransformDispatchHelper,
+                          public IgnoreDrawDispatchHelper {
  public:
-  explicit SaveLayerOptionsExpector(const SaveLayerOptions& expected) {
+  struct Expectations {
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    Expectations(SaveLayerOptions o) : options(o) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    Expectations(DlBlendMode mode) : max_blend_mode(mode) {}
+
+    std::optional<SaveLayerOptions> options;
+    std::optional<DlBlendMode> max_blend_mode;
+  };
+
+  explicit SaveLayerExpector(const Expectations& expected) {
     expected_.push_back(expected);
   }
 
-  explicit SaveLayerOptionsExpector(std::vector<SaveLayerOptions> expected)
+  explicit SaveLayerExpector(std::vector<Expectations> expected)
       : expected_(std::move(expected)) {}
 
   void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions options,
                  const DlImageFilter* backdrop) override {
-    EXPECT_EQ(options, expected_[save_layer_count_])
-        << "index " << save_layer_count_;
-    save_layer_count_++;
+    FML_UNREACHABLE();
   }
 
-  int save_layer_count() { return save_layer_count_; }
+  virtual void saveLayer(const SkRect& bounds,
+                         const SaveLayerOptions& options,
+                         uint32_t total_content_depth,
+                         DlBlendMode max_content_blend_mode,
+                         const DlImageFilter* backdrop = nullptr) {
+    auto label = "index " + std::to_string(save_layer_count_);
+    ASSERT_LT(save_layer_count_, expected_.size());
+    auto expect = expected_[save_layer_count_++];
+    if (expect.options.has_value()) {
+      EXPECT_EQ(options, expect.options.value()) << label;
+    }
+    if (expect.max_blend_mode.has_value()) {
+      EXPECT_EQ(max_content_blend_mode, expect.max_blend_mode.value()) << label;
+    }
+  }
+
+  bool all_expectations_checked() const {
+    return save_layer_count_ == expected_.size();
+  }
 
  private:
-  std::vector<SaveLayerOptions> expected_;
-  int save_layer_count_ = 0;
+  std::vector<Expectations> expected_;
+  size_t save_layer_count_ = 0;
 };
 
 TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1355,13 +1376,13 @@ TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1370,12 +1391,12 @@ TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerTwoOverlappingOpsDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1386,7 +1407,7 @@ TEST_F(DisplayListTest, SaveLayerTwoOverlappingOpsDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
@@ -1395,7 +1416,7 @@ TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
   SaveLayerOptions expected2 = SaveLayerOptions::kWithAttributes;
   SaveLayerOptions expected3 =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector({expected1, expected2, expected3});
+  SaveLayerExpector expector({expected1, expected2, expected3});
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1410,7 +1431,7 @@ TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 3);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
@@ -1418,7 +1439,7 @@ TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptions expected2 =
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector({expected1, expected2});
+  SaveLayerExpector expector({expected1, expected2});
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1430,12 +1451,12 @@ TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 2);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1447,12 +1468,12 @@ TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1464,12 +1485,12 @@ TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1481,13 +1502,13 @@ TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1498,12 +1519,12 @@ TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1514,12 +1535,12 @@ TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, SaveLayerSrcBlendOnChildDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
-  SaveLayerOptionsExpector expector(expected);
+  SaveLayerExpector expector(expected);
 
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
@@ -1530,7 +1551,7 @@ TEST_F(DisplayListTest, SaveLayerSrcBlendOnChildDoesNotInheritOpacity) {
   receiver.restore();
 
   builder.Build()->Dispatch(expector);
-  EXPECT_EQ(expector.save_layer_count(), 1);
+  EXPECT_TRUE(expector.all_expectations_checked());
 }
 
 TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
@@ -1656,7 +1677,7 @@ TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   // This is the more practical result. The bounds are "almost" 0,0,100x100
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
-  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 400u);
+  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 408u);
   EXPECT_EQ(display_list->total_depth(), 3u);
 }
 
@@ -3248,7 +3269,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
           builder.DrawArc({10, 10, 20, 20}, 45, 90, true, paint);
           SkPoint pts[] = {{10, 10}, {20, 20}};
           builder.DrawPoints(PointMode::kLines, 2, pts, paint);
-          builder.DrawVertices(TestVertices1, DlBlendMode::kSrcOver, paint);
+          builder.DrawVertices(kTestVertices1, DlBlendMode::kSrcOver, paint);
           builder.DrawImage(TestImage1, {10, 10}, DlImageSampling::kLinear,
                             &paint);
           builder.DrawImageRect(TestImage1, SkRect{0.0f, 0.0f, 10.0f, 10.0f},
@@ -3357,7 +3378,7 @@ TEST_F(DisplayListTest, NopOperationsOmittedFromRecords) {
 }
 
 TEST_F(DisplayListTest, ImpellerPathPreferenceIsHonored) {
-  class Tester : virtual public DlOpReceiver,
+  class Tester : public virtual DlOpReceiver,
                  public IgnoreClipDispatchHelper,
                  public IgnoreDrawDispatchHelper,
                  public IgnoreAttributeDispatchHelper,
@@ -3928,11 +3949,16 @@ class DepthExpector : public virtual DlOpReceiver,
   void saveLayer(const SkRect& bounds,
                  const SaveLayerOptions& options,
                  uint32_t total_content_depth,
+                 DlBlendMode max_content_mode,
                  const DlImageFilter* backdrop) override {
     ASSERT_LT(index_, depth_expectations_.size());
     EXPECT_EQ(depth_expectations_[index_], total_content_depth)
         << "at index " << index_;
     index_++;
+  }
+
+  bool all_depths_checked() const {
+    return index_ == depth_expectations_.size();
   }
 
  private:
@@ -4069,6 +4095,632 @@ TEST_F(DisplayListTest, OpacityIncompatibleRenderOpInsideDeferredSave) {
     // flags?
     builder.Restore();
     EXPECT_FALSE(builder.Build()->can_apply_group_opacity());
+  }
+}
+
+TEST_F(DisplayListTest, MaxBlendModeEmptyDisplayList) {
+  DisplayListBuilder builder;
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kClear);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeSimpleRect) {
+  auto test = [](DlBlendMode mode) {
+    DisplayListBuilder builder;
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setAlpha(0x7f).setBlendMode(mode));
+    DlBlendMode expect =
+        (mode == DlBlendMode::kDst) ? DlBlendMode::kClear : mode;
+    EXPECT_EQ(builder.Build()->max_root_blend_mode(), expect)  //
+        << "testing " << mode;
+  };
+
+  for (int i = 0; i < static_cast<int>(DlBlendMode::kLastMode); i++) {
+    test(static_cast<DlBlendMode>(i));
+  }
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideNonDeferredSave) {
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    // Trigger the deferred save
+    builder.Scale(2.0f, 2.0f);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  // Save was triggered, did it forward the max blend mode?
+  builder.Restore();
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kModulate);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideDeferredSave) {
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    // Nothing to trigger the deferred save...
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  // Deferred save was not triggered, did it forward the max blend mode?
+  builder.Restore();
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kModulate);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideSaveLayer) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
+  SaveLayerExpector expector(DlBlendMode::kModulate);
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideNonDefaultBlendedSaveLayer) {
+  DisplayListBuilder builder;
+  DlPaint save_paint;
+  save_paint.setBlendMode(DlBlendMode::kScreen);
+  builder.SaveLayer(nullptr, &save_paint);
+  {
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kScreen);
+  SaveLayerExpector expector(DlBlendMode::kModulate);
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideComplexDeferredSaves) {
+  DisplayListBuilder builder;
+  builder.Save();
+  {
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+    builder.Save();
+    {
+      // We want to use a blend mode that is greater than modulate here
+      ASSERT_GT(DlBlendMode::kScreen, DlBlendMode::kModulate);
+      builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                       DlPaint().setBlendMode(DlBlendMode::kScreen));
+    }
+    builder.Restore();
+
+    // We want to use a blend mode that is smaller than modulate here
+    ASSERT_LT(DlBlendMode::kSrc, DlBlendMode::kModulate);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kSrc));
+  }
+  builder.Restore();
+
+  // Double check that kScreen is the max blend mode
+  auto expect = std::max(DlBlendMode::kModulate, DlBlendMode::kScreen);
+  expect = std::max(expect, DlBlendMode::kSrc);
+  ASSERT_EQ(expect, DlBlendMode::kScreen);
+
+  EXPECT_EQ(builder.Build()->max_root_blend_mode(), DlBlendMode::kScreen);
+}
+
+TEST_F(DisplayListTest, MaxBlendModeInsideComplexSaveLayers) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    // outer save layer has Modulate now and Src later - Modulate is larger
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kModulate));
+    builder.SaveLayer(nullptr, nullptr);
+    {
+      // inner save layer only has a Screen blend
+      builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                       DlPaint().setBlendMode(DlBlendMode::kScreen));
+    }
+    builder.Restore();
+
+    // We want to use a blend mode that is smaller than modulate here
+    ASSERT_LT(DlBlendMode::kSrc, DlBlendMode::kModulate);
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                     DlPaint().setBlendMode(DlBlendMode::kSrc));
+  }
+  builder.Restore();
+
+  // Double check that kModulate is the max blend mode for the first
+  // saveLayer operations
+  auto expect = std::max(DlBlendMode::kModulate, DlBlendMode::kSrc);
+  ASSERT_EQ(expect, DlBlendMode::kModulate);
+
+  auto dl = builder.Build();
+  EXPECT_EQ(dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
+  SaveLayerExpector expector({DlBlendMode::kModulate, DlBlendMode::kScreen});
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionEmptyDisplayList) {
+  DisplayListBuilder builder;
+  EXPECT_FALSE(builder.Build()->root_has_backdrop_filter());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionSimpleRect) {
+  DisplayListBuilder builder;
+  builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10), DlPaint());
+  EXPECT_FALSE(builder.Build()->root_has_backdrop_filter());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionSimpleSaveLayer) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr, &kTestBlurImageFilter1);
+  {
+    // inner content has no backdrop filter
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10), DlPaint());
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+
+  EXPECT_TRUE(dl->root_has_backdrop_filter());
+  // The saveLayer itself, though, does not have the contains backdrop
+  // flag set because its content does not contain a saveLayer with backdrop
+  SaveLayerExpector expector(
+      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity());
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, BackdropDetectionNestedSaveLayer) {
+  DisplayListBuilder builder;
+  builder.SaveLayer(nullptr, nullptr);
+  {
+    // first inner content does have backdrop filter
+    builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10), DlPaint());
+    builder.SaveLayer(nullptr, nullptr, &kTestBlurImageFilter1);
+    {
+      // second inner content has no backdrop filter
+      builder.DrawRect(SkRect::MakeLTRB(10, 10, 20, 20), DlPaint());
+    }
+    builder.Restore();
+  }
+  builder.Restore();
+  auto dl = builder.Build();
+
+  EXPECT_FALSE(dl->root_has_backdrop_filter());
+  SaveLayerExpector expector({
+      SaveLayerOptions::kNoAttributes.with_contains_backdrop_filter(),
+      SaveLayerOptions::kNoAttributes.with_can_distribute_opacity(),
+  });
+  dl->Dispatch(expector);
+  EXPECT_TRUE(expector.all_expectations_checked());
+}
+
+TEST_F(DisplayListTest, DrawDisplayListForwardsMaxBlend) {
+  DisplayListBuilder child_builder;
+  child_builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                         DlPaint().setBlendMode(DlBlendMode::kMultiply));
+  auto child_dl = child_builder.Build();
+  EXPECT_EQ(child_dl->max_root_blend_mode(), DlBlendMode::kMultiply);
+  EXPECT_FALSE(child_dl->root_has_backdrop_filter());
+
+  DisplayListBuilder parent_builder;
+  parent_builder.DrawDisplayList(child_dl);
+  auto parent_dl = parent_builder.Build();
+  EXPECT_EQ(parent_dl->max_root_blend_mode(), DlBlendMode::kMultiply);
+  EXPECT_FALSE(parent_dl->root_has_backdrop_filter());
+}
+
+TEST_F(DisplayListTest, DrawDisplayListForwardsBackdropFlag) {
+  DisplayListBuilder child_builder;
+  DlBlurImageFilter backdrop(2.0f, 2.0f, DlTileMode::kDecal);
+  child_builder.SaveLayer(nullptr, nullptr, &backdrop);
+  child_builder.DrawRect(SkRect::MakeLTRB(0, 0, 10, 10),
+                         DlPaint().setBlendMode(DlBlendMode::kMultiply));
+  child_builder.Restore();
+  auto child_dl = child_builder.Build();
+  EXPECT_EQ(child_dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
+  EXPECT_TRUE(child_dl->root_has_backdrop_filter());
+
+  DisplayListBuilder parent_builder;
+  parent_builder.DrawDisplayList(child_dl);
+  auto parent_dl = parent_builder.Build();
+  EXPECT_EQ(parent_dl->max_root_blend_mode(), DlBlendMode::kSrcOver);
+  EXPECT_TRUE(parent_dl->root_has_backdrop_filter());
+}
+
+#define CLIP_EXPECTOR(name) ClipExpector name(__FILE__, __LINE__)
+
+class ClipExpector : public virtual DlOpReceiver,
+                     virtual IgnoreAttributeDispatchHelper,
+                     virtual IgnoreTransformDispatchHelper,
+                     virtual IgnoreDrawDispatchHelper {
+ public:
+  struct Expectation {
+    std::variant<SkRect, SkRRect, SkPath> shape;
+    ClipOp clip_op;
+    bool is_aa;
+
+    std::string shape_name() {
+      switch (shape.index()) {
+        case 0:
+          return "SkRect";
+        case 1:
+          return "SkRRect";
+        case 2:
+          return "SkPath";
+        default:
+          return "Unknown";
+      }
+    }
+  };
+
+  // file and line supplied automatically from CLIP_EXPECTOR macro
+  explicit ClipExpector(const std::string& file, int line)
+      : file_(file), line_(line) {}
+
+  ~ClipExpector() {  //
+    EXPECT_EQ(index_, clip_expectations_.size()) << label();
+  }
+
+  ClipExpector& addExpectation(const SkRect& rect,
+                               ClipOp clip_op = ClipOp::kIntersect,
+                               bool is_aa = false) {
+    clip_expectations_.push_back({
+        .shape = rect,
+        .clip_op = clip_op,
+        .is_aa = is_aa,
+    });
+    return *this;
+  }
+
+  ClipExpector& addExpectation(const SkRRect& rrect,
+                               ClipOp clip_op = ClipOp::kIntersect,
+                               bool is_aa = false) {
+    clip_expectations_.push_back({
+        .shape = rrect,
+        .clip_op = clip_op,
+        .is_aa = is_aa,
+    });
+    return *this;
+  }
+
+  ClipExpector& addExpectation(const SkPath& path,
+                               ClipOp clip_op = ClipOp::kIntersect,
+                               bool is_aa = false) {
+    clip_expectations_.push_back({
+        .shape = path,
+        .clip_op = clip_op,
+        .is_aa = is_aa,
+    });
+    return *this;
+  }
+
+  void clipRect(const SkRect& rect,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {
+    check(rect, clip_op, is_aa);
+  }
+  void clipRRect(const SkRRect& rrect,
+                 DlCanvas::ClipOp clip_op,
+                 bool is_aa) override {
+    check(rrect, clip_op, is_aa);
+  }
+  void clipPath(const SkPath& path,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {
+    check(path, clip_op, is_aa);
+  }
+
+ private:
+  size_t index_ = 0;
+  std::vector<Expectation> clip_expectations_;
+
+  template <typename T>
+  void check(T shape, ClipOp clip_op, bool is_aa) {
+    ASSERT_LT(index_, clip_expectations_.size())
+        << label() << std::endl
+        << "extra clip shape = " << shape;
+    auto expected = clip_expectations_[index_];
+    EXPECT_EQ(expected.clip_op, clip_op) << label();
+    EXPECT_EQ(expected.is_aa, is_aa) << label();
+    if (!std::holds_alternative<T>(expected.shape)) {
+      EXPECT_TRUE(std::holds_alternative<T>(expected.shape))
+          << label() << ", expected type: " << expected.shape_name();
+    } else {
+      EXPECT_EQ(std::get<T>(expected.shape), shape) << label();
+    }
+    index_++;
+  }
+
+  const std::string file_;
+  const int line_;
+
+  std::string label() {
+    return "at index " + std::to_string(index_) +  //
+           ", from " + file_ +                     //
+           ":" + std::to_string(line_);
+  }
+};
+
+TEST_F(DisplayListTest, ClipRectCullingPixel6a) {
+  // These particular values create bit errors if we use the path that
+  // tests for inclusion in local space, but work OK if we use a forward
+  // path that tests for inclusion in device space, due to the fact that
+  // the extra matrix inversion is just enough math to cause the transform
+  // to place the local space cull corners just outside the original rect.
+  // The test in device space only works under a simple scale, such as we
+  // use for DPR adjustments (and which are not always inversion friendly).
+
+  auto frame = SkRect::MakeLTRB(0.0f, 0.0f, 1080.0f, 2400.0f);
+  DlScalar DPR = 2.625f;
+  auto clip = SkRect::MakeLTRB(0.0f, 0.0f, 1080.0f / DPR, 2400.0f / DPR);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(frame, ClipOp::kIntersect, false);
+  cull_builder.Scale(DPR, DPR);
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(frame, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRectCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipRect(clip.makeOutset(1.0f, 1.0f), ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRectNonCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto smaller_clip = clip.makeInset(1.0f, 1.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipRect(smaller_clip, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  expector.addExpectation(smaller_clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRectNestedCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto larger_clip = clip.makeOutset(1.0f, 1.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.Save();
+  cull_builder.ClipRect(larger_clip, ClipOp::kIntersect, false);
+  cull_builder.Restore();
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRectNestedNonCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto larger_clip = clip.makeOutset(1.0f, 1.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.Save();
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.Restore();
+  // Should not be culled because we have restored the prior clip
+  cull_builder.ClipRect(larger_clip, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  expector.addExpectation(larger_clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRectNestedCullingComplex) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto smaller_clip = clip.makeInset(1.0f, 1.0f);
+  auto smallest_clip = clip.makeInset(2.0f, 2.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.Save();
+  cull_builder.ClipRect(smallest_clip, ClipOp::kIntersect, false);
+  cull_builder.ClipRect(smaller_clip, ClipOp::kIntersect, false);
+  cull_builder.Restore();
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  expector.addExpectation(smallest_clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRectNestedNonCullingComplex) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto smaller_clip = clip.makeInset(1.0f, 1.0f);
+  auto smallest_clip = clip.makeInset(2.0f, 2.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.Save();
+  cull_builder.ClipRect(smallest_clip, ClipOp::kIntersect, false);
+  cull_builder.Restore();
+  // Would not be culled if it was inside the clip
+  cull_builder.ClipRect(smaller_clip, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  expector.addExpectation(smallest_clip, ClipOp::kIntersect, false);
+  expector.addExpectation(smaller_clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRRectCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto rrect = SkRRect::MakeRectXY(clip.makeOutset(2.0f, 2.0f), 2.0f, 2.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipRRect(rrect, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipRRectNonCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto rrect = SkRRect::MakeRectXY(clip.makeOutset(2.0f, 2.0f), 12.0f, 12.0f);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipRRect(rrect, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  expector.addExpectation(rrect, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipPathNonCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkPath path;
+  path.moveTo(0.0f, 0.0f);
+  path.lineTo(1000.0f, 0.0f);
+  path.lineTo(0.0f, 1000.0f);
+  path.close();
+
+  // Double checking that the path does indeed contain the clip. But,
+  // sadly, the Builder will not check paths for coverage to this level
+  // of detail. (In particular, path containment of the corners is not
+  // authoritative of true containment, but we know in this case that
+  // a triangle contains a rect if it contains all 4 corners...)
+  ASSERT_TRUE(path.contains(clip.fLeft, clip.fTop));
+  ASSERT_TRUE(path.contains(clip.fRight, clip.fTop));
+  ASSERT_TRUE(path.contains(clip.fRight, clip.fBottom));
+  ASSERT_TRUE(path.contains(clip.fLeft, clip.fBottom));
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipPath(path, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  expector.addExpectation(path, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipPathRectCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  SkPath path;
+  path.addRect(clip.makeOutset(1.0f, 1.0f));
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipPath(path, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipPathRectNonCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto smaller_clip = clip.makeInset(1.0f, 1.0f);
+  SkPath path;
+  path.addRect(smaller_clip);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipPath(path, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  // Builder will not cull this clip, but it will turn it into a ClipRect
+  expector.addExpectation(smaller_clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipPathRRectCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto rrect = SkRRect::MakeRectXY(clip.makeOutset(2.0f, 2.0f), 2.0f, 2.0f);
+  SkPath path;
+  path.addRRect(rrect);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipPath(path, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, ClipPathRRectNonCulling) {
+  auto clip = SkRect::MakeLTRB(10.0f, 10.0f, 20.0f, 20.0f);
+  auto rrect = SkRRect::MakeRectXY(clip.makeOutset(2.0f, 2.0f), 12.0f, 12.0f);
+  SkPath path;
+  path.addRRect(rrect);
+
+  DisplayListBuilder cull_builder;
+  cull_builder.ClipRect(clip, ClipOp::kIntersect, false);
+  cull_builder.ClipPath(path, ClipOp::kIntersect, false);
+  auto cull_dl = cull_builder.Build();
+
+  CLIP_EXPECTOR(expector);
+  expector.addExpectation(clip, ClipOp::kIntersect, false);
+  // Builder will not cull this clip, but it will turn it into a ClipRRect
+  expector.addExpectation(rrect, ClipOp::kIntersect, false);
+  cull_dl->Dispatch(expector);
+}
+
+TEST_F(DisplayListTest, RecordLargeVertices) {
+  constexpr size_t vertex_count = 2000000;
+  auto points = std::vector<SkPoint>();
+  points.reserve(vertex_count);
+  auto colors = std::vector<DlColor>();
+  colors.reserve(vertex_count);
+  for (size_t i = 0; i < vertex_count; i++) {
+    colors.emplace_back(DlColor(-i));
+    points.emplace_back(((i & 1) == 0) ? SkPoint::Make(-i, i)
+                                       : SkPoint::Make(i, i));
+  }
+  ASSERT_EQ(points.size(), vertex_count);
+  ASSERT_EQ(colors.size(), vertex_count);
+  auto vertices = DlVertices::Make(DlVertexMode::kTriangleStrip, vertex_count,
+                                   points.data(), points.data(), colors.data());
+  ASSERT_GT(vertices->size(), 1u << 24);
+  auto backdrop = DlBlurImageFilter::Make(5.0f, 5.0f, DlTileMode::kDecal);
+
+  for (int i = 0; i < 1000; i++) {
+    DisplayListBuilder builder;
+    for (int j = 0; j < 16; j++) {
+      builder.SaveLayer(nullptr, nullptr, backdrop.get());
+      builder.DrawVertices(vertices, DlBlendMode::kSrcOver, DlPaint());
+      builder.Restore();
+    }
+    auto dl = builder.Build();
   }
 }
 

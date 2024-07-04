@@ -175,9 +175,6 @@ flowchart TD
 
     spirv -- Reflector --> cxx_sources[C++ Sources]
     cxx_sources -- Ninja Build --> cxx_library[C++ Library]
-
-    vulkan_shader_archive -- Multi Arch Archiver --> multi_arch_archive[Multi Architecture Archive]
-    gles_shader_archive -- Multi Arch Archiver --> multi_arch_archive
 ```
 
 ## Try Impeller in Flutter
@@ -241,6 +238,9 @@ To your `Info.plist` file, add under the top-level `<dict>` tag:
 * [Enabling Vulkan Validation Layers on Android](docs/android_validation_layers.md)
 * [Important Benchmarks](docs/benchmarks.md)
 * [Threading in the Vulkan Backend](docs/vulkan_threading.md)
+* [iOS CPU Profiling](docs/ios_cpu_profile.md)
+* [OpenGL ES Development Setup on macOS](docs/opengles_development_setup.md)
+* [Android CPU Profiling](docs/android_cpu_profile.md)
 * [Android Rendering Backend Selection](docs/android.md)
 * [Using Impeller as a Standalone Rendering Library (with OpenGL ES)](docs/standalone_gles.md)
 * [Glossary](docs/glossary.md)

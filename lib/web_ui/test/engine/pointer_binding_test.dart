@@ -305,6 +305,18 @@ void testMain() {
     },
   );
 
+  test('prevents default on touchstart events', () async {
+    final event = createDomEvent('Event', 'touchstart');
+
+    rootElement.dispatchEvent(event);
+
+    expect(
+      event.defaultPrevented,
+      isTrue,
+      reason: 'touchstart events should be prevented so pointer events are not cancelled later.',
+    );
+  });
+
   test(
     'can receive pointer events on the app root',
     () {
@@ -699,6 +711,74 @@ void testMain() {
       packets.clear();
     },
   );
+
+  test('wheel event - preventDefault called', () {
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+    // Check that the engine called `preventDefault` on the event.
+    expect(event.defaultPrevented, isTrue);
+  });
+
+  test('wheel event - framework can stop preventDefault (allowPlatformDefault)', () {
+    // The framework calls `data.respond(allowPlatformDefault: true)`
+    ui.PlatformDispatcher.instance.onPointerDataPacket = (ui.PointerDataPacket packet) {
+      packet.data.where(
+        (ui.PointerData datum) => datum.signalKind == ui.PointerSignalKind.scroll
+      ).forEach(
+        (ui.PointerData datum) {
+          datum.respond(allowPlatformDefault: true);
+        }
+      );
+    };
+
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+
+    // Check that the engine did NOT call `preventDefault` on the event.
+    expect(event.defaultPrevented, isFalse);
+  });
+
+  test('wheel event - once allowPlatformDefault is set to true, it cannot be rolled back', () {
+    // The framework calls `data.respond(allowPlatformDefault: true)`
+    ui.PlatformDispatcher.instance.onPointerDataPacket = (ui.PointerDataPacket packet) {
+      packet.data.where(
+        (ui.PointerData datum) => datum.signalKind == ui.PointerSignalKind.scroll
+      ).forEach(
+        (ui.PointerData datum) {
+          datum.respond(allowPlatformDefault: false);
+          datum.respond(allowPlatformDefault: true);
+          datum.respond(allowPlatformDefault: false);
+        }
+      );
+    };
+
+    // Synthesize a 'wheel' event.
+    final DomEvent event = _PointerEventContext().wheel(
+      buttons: 0,
+      clientX: 10,
+      clientY: 10,
+      deltaX: 10,
+      deltaY: 0,
+    );
+    rootElement.dispatchEvent(event);
+
+    // Check that the engine did NOT call `preventDefault` on the event.
+    expect(event.defaultPrevented, isFalse);
+  });
 
   test(
     'does synthesize add or hover or move for scroll',
@@ -2602,6 +2682,60 @@ void testMain() {
     );
   });
 
+  group('Listener', () {
+    late DomElement eventTarget;
+    late DomEvent expected;
+    late bool handled;
+
+    setUp(() {
+      eventTarget = createDomElement('div');
+      expected = createDomEvent('Event', 'custom-event');
+      handled = false;
+    });
+
+    test('listeners can be registered', () {
+      Listener.register(
+        event: 'custom-event',
+        target: eventTarget,
+        handler: (event) {
+          expect(event, expected);
+          handled = true;
+        },
+      );
+
+      // Trigger the event...
+      eventTarget.dispatchEvent(expected);
+      expect(handled, isTrue);
+    });
+
+    test('listeners can be unregistered', () {
+      final Listener listener = Listener.register(
+        event: 'custom-event',
+        target: eventTarget,
+        handler: (event) {
+          handled = true;
+        },
+      );
+      listener.unregister();
+
+      eventTarget.dispatchEvent(expected);
+      expect(handled, isFalse);
+    });
+
+    test('listeners are registered only once', () {
+      int timesHandled = 0;
+      Listener.register(
+        event: 'custom-event',
+        target: eventTarget,
+        handler: (event) {
+          timesHandled++;
+        },
+      );
+      eventTarget.dispatchEvent(expected);
+      expect(timesHandled, 1, reason: 'The handler ran multiple times for a single event.');
+    });
+  });
+
   group('ClickDebouncer', () {
     _testClickDebouncer(getBinding: () => instance);
   });
@@ -3114,6 +3248,9 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         if (wheelDeltaX != null) 'wheelDeltaX': wheelDeltaX,
         if (wheelDeltaY != null) 'wheelDeltaY': wheelDeltaY,
         'ctrlKey': ctrlKey,
+        'cancelable': true,
+        'bubbles': true,
+        'composed': true,
     });
     // timeStamp can't be set in the constructor, need to override the getter.
     if (timeStamp != null) {

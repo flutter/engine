@@ -30,25 +30,50 @@ bool inline DisplayListsNE_Verbose(const sk_sp<const DisplayList>& a,
   return DisplayListsNE_Verbose(a.get(), b.get());
 }
 
+}  // namespace testing
+}  // namespace flutter
+
+namespace std {
+
 extern std::ostream& operator<<(std::ostream& os,
-                                const DisplayList& display_list);
-extern std::ostream& operator<<(std::ostream& os, const DlPaint& paint);
-extern std::ostream& operator<<(std::ostream& os, const DlBlendMode& mode);
-extern std::ostream& operator<<(std::ostream& os, const DlCanvas::ClipOp& op);
+                                const flutter::DisplayList& display_list);
 extern std::ostream& operator<<(std::ostream& os,
-                                const DlCanvas::PointMode& op);
+                                const flutter::DlPaint& paint);
 extern std::ostream& operator<<(std::ostream& os,
-                                const DlCanvas::SrcRectConstraint& op);
-extern std::ostream& operator<<(std::ostream& os, const DlStrokeCap& cap);
-extern std::ostream& operator<<(std::ostream& os, const DlStrokeJoin& join);
-extern std::ostream& operator<<(std::ostream& os, const DlDrawStyle& style);
-extern std::ostream& operator<<(std::ostream& os, const DlBlurStyle& style);
-extern std::ostream& operator<<(std::ostream& os, const DlFilterMode& mode);
-extern std::ostream& operator<<(std::ostream& os, const DlColor& color);
-extern std::ostream& operator<<(std::ostream& os, DlImageSampling sampling);
-extern std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode);
-extern std::ostream& operator<<(std::ostream& os, const DlTileMode& mode);
-extern std::ostream& operator<<(std::ostream& os, const DlImage* image);
+                                const flutter::DlBlendMode& mode);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlCanvas::ClipOp& op);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlCanvas::PointMode& op);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlCanvas::SrcRectConstraint& op);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlStrokeCap& cap);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlStrokeJoin& join);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlDrawStyle& style);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlBlurStyle& style);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlFilterMode& mode);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlColor& color);
+extern std::ostream& operator<<(std::ostream& os,
+                                flutter::DlImageSampling sampling);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlVertexMode& mode);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlTileMode& mode);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::DlImage* image);
+extern std::ostream& operator<<(std::ostream& os,
+                                const flutter::SaveLayerOptions& image);
+
+}  // namespace std
+
+namespace flutter {
+namespace testing {
 
 class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
@@ -68,7 +93,6 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void setColorFilter(const DlColorFilter* filter) override;
   void setInvertColors(bool invert) override;
   void setBlendMode(DlBlendMode mode) override;
-  void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(const DlImageFilter* filter) override;
 
@@ -100,6 +124,10 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawColor(DlColor color, DlBlendMode mode) override;
   void drawPaint() override;
   void drawLine(const SkPoint& p0, const SkPoint& p1) override;
+  void drawDashedLine(const DlPoint& p0,
+                      const DlPoint& p1,
+                      DlScalar on_length,
+                      DlScalar off_length) override;
   void drawRect(const SkRect& rect) override;
   void drawOval(const SkRect& bounds) override;
   void drawCircle(const SkPoint& center, SkScalar radius) override;
@@ -113,7 +141,8 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
   void drawPoints(PointMode mode,
                   uint32_t count,
                   const SkPoint points[]) override;
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
+  void drawVertices(const std::shared_ptr<DlVertices>& vertices,
+                    DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,

@@ -22,6 +22,7 @@ import 'accessibility.dart';
 import 'checkable.dart';
 import 'dialog.dart';
 import 'focusable.dart';
+import 'heading.dart';
 import 'image.dart';
 import 'incrementable.dart';
 import 'label_and_value.dart';
@@ -232,6 +233,8 @@ class SemanticsNodeUpdate {
     required this.childrenInTraversalOrder,
     required this.childrenInHitTestOrder,
     required this.additionalActions,
+    required this.headingLevel,
+    this.linkUrl,
   });
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
@@ -332,6 +335,12 @@ class SemanticsNodeUpdate {
 
   /// See [ui.SemanticsUpdateBuilder.updateNode].
   final double thickness;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final int headingLevel;
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  final String? linkUrl;
 }
 
 /// Identifies [PrimaryRoleManager] implementations.
@@ -353,6 +362,10 @@ enum PrimaryRole {
 
   /// A control that has a checked state, such as a check box or a radio button.
   checkable,
+
+  /// Adds the "heading" ARIA role to the node. The attribute "aria-level" is
+  /// also assigned.
+  heading,
 
   /// Visual only element.
   image,
@@ -602,6 +615,18 @@ abstract class PrimaryRoleManager {
     }
     for (final RoleManager secondaryRole in secondaryRoles) {
       secondaryRole.update();
+    }
+
+    if (semanticsObject.isIdentifierDirty) {
+      _updateIdentifier();
+    }
+  }
+
+  void _updateIdentifier() {
+    if (semanticsObject.hasIdentifier) {
+      setAttribute('flt-semantics-identifier', semanticsObject.identifier!);
+    } else {
+      removeAttribute('flt-semantics-identifier');
     }
   }
 
@@ -1097,6 +1122,50 @@ class SemanticsObject {
     _dirtyFields |= _platformViewIdIndex;
   }
 
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  int get headingLevel => _headingLevel;
+  int _headingLevel = 0;
+
+  static const int _headingLevelIndex = 1 << 24;
+
+  /// Whether the [headingLevel] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isHeadingLevelDirty => _isDirty(_headingLevelIndex);
+  void _markHeadingLevelDirty() {
+    _dirtyFields |= _headingLevelIndex;
+  }
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get identifier => _identifier;
+  String? _identifier;
+
+  bool get hasIdentifier => _identifier != null && _identifier!.isNotEmpty;
+
+  static const int _identifierIndex = 1 << 25;
+
+  /// Whether the [identifier] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isIdentifierDirty => _isDirty(_identifierIndex);
+  void _markIdentifierDirty() {
+    _dirtyFields |= _identifierIndex;
+  }
+
+  /// See [ui.SemanticsUpdateBuilder.updateNode].
+  String? get linkUrl => _linkUrl;
+  String? _linkUrl;
+
+  /// Whether this object contains a non-empty link URL.
+  bool get hasLinkUrl => _linkUrl != null && _linkUrl!.isNotEmpty;
+
+  static const int _linkUrlIndex = 1 << 26;
+
+  /// Whether the [linkUrl] field has been updated but has not been
+  /// applied to the DOM yet.
+  bool get isLinkUrlDirty => _isDirty(_linkUrlIndex);
+  void _markLinkUrlDirty() {
+    _dirtyFields |= _linkUrlIndex;
+  }
+
   /// A unique permanent identifier of the semantics node in the tree.
   final int id;
 
@@ -1201,6 +1270,9 @@ class SemanticsObject {
   /// Whether this object represents an editable text field.
   bool get isTextField => hasFlag(ui.SemanticsFlag.isTextField);
 
+  /// Whether this object represents a heading element.
+  bool get isHeading => headingLevel != 0;
+
     /// Whether this object represents an editable text field.
   bool get isLink => hasFlag(ui.SemanticsFlag.isLink);
 
@@ -1251,6 +1323,11 @@ class SemanticsObject {
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
+    }
+
+    if (_identifier != update.identifier) {
+      _identifier = update.identifier;
+      _markIdentifierDirty();
     }
 
     if (_value != update.value) {
@@ -1358,6 +1435,11 @@ class SemanticsObject {
       _markTooltipDirty();
     }
 
+    if (_headingLevel != update.headingLevel) {
+      _headingLevel = update.headingLevel;
+      _markHeadingLevelDirty();
+    }
+
     if (_textDirection != update.textDirection) {
       _textDirection = update.textDirection;
       _markTextDirectionDirty();
@@ -1381,6 +1463,11 @@ class SemanticsObject {
     if (_platformViewId != update.platformViewId) {
       _platformViewId = update.platformViewId;
       _markPlatformViewIdDirty();
+    }
+
+    if (_linkUrl != update.linkUrl) {
+      _linkUrl = update.linkUrl;
+      _markLinkUrlDirty();
     }
 
     // Apply updates to the DOM.
@@ -1591,6 +1678,8 @@ class SemanticsObject {
     // The most specific role should take precedence.
     if (isPlatformView) {
       return PrimaryRole.platformView;
+    } else if (isHeading) {
+      return PrimaryRole.heading;
     } else if (isTextField) {
       return PrimaryRole.textField;
     } else if (isIncrementable) {
@@ -1623,6 +1712,7 @@ class SemanticsObject {
       PrimaryRole.image => ImageRoleManager(this),
       PrimaryRole.platformView => PlatformViewRoleManager(this),
       PrimaryRole.link => Link(this),
+      PrimaryRole.heading => Heading(this),
       PrimaryRole.generic => GenericRole(this),
     };
   }

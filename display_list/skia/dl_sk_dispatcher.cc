@@ -9,6 +9,7 @@
 #include "flutter/display_list/skia/dl_sk_types.h"
 #include "flutter/fml/trace_event.h"
 
+#include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flutter {
@@ -152,6 +153,15 @@ void DlSkCanvasDispatcher::drawColor(DlColor color, DlBlendMode mode) {
 void DlSkCanvasDispatcher::drawLine(const SkPoint& p0, const SkPoint& p1) {
   canvas_->drawLine(p0, p1, paint());
 }
+void DlSkCanvasDispatcher::drawDashedLine(const DlPoint& p0,
+                                          const DlPoint& p1,
+                                          DlScalar on_length,
+                                          DlScalar off_length) {
+  SkPaint dash_paint = paint();
+  SkScalar intervals[] = {on_length, off_length};
+  dash_paint.setPathEffect(SkDashPathEffect::Make(intervals, 2, 0.0f));
+  canvas_->drawLine(ToSkPoint(p0), ToSkPoint(p1), dash_paint);
+}
 void DlSkCanvasDispatcher::drawRect(const SkRect& rect) {
   canvas_->drawRect(rect, paint());
 }
@@ -182,8 +192,9 @@ void DlSkCanvasDispatcher::drawPoints(PointMode mode,
                                       const SkPoint pts[]) {
   canvas_->drawPoints(ToSk(mode), count, pts, paint());
 }
-void DlSkCanvasDispatcher::drawVertices(const DlVertices* vertices,
-                                        DlBlendMode mode) {
+void DlSkCanvasDispatcher::drawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode) {
   canvas_->drawVertices(ToSk(vertices), ToSk(mode), paint());
 }
 void DlSkCanvasDispatcher::drawImage(const sk_sp<DlImage> image,

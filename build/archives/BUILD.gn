@@ -88,10 +88,6 @@ if (build_engine_artifacts && !is_android) {
           destination = "shader_lib"
         },
         {
-          source = "//flutter/lib/gpu"
-          destination = "flutter_gpu"
-        },
-        {
           source = "$root_out_dir/${lib_prefix}path_ops$dll"
           destination = "${lib_prefix}path_ops$dll"
         },
@@ -287,8 +283,8 @@ if (is_mac) {
     output = "$full_platform_name$suffix/gen_snapshot.zip"
     files = [
       {
-        source = "$root_out_dir/gen_snapshot_$target_cpu"
-        destination = "gen_snapshot_$target_cpu"
+        source = "${root_out_dir}/gen_snapshot_${target_cpu}"
+        destination = "gen_snapshot_${target_cpu}"
       },
     ]
   }

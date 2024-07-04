@@ -111,6 +111,8 @@ class SemanticsTester {
     Float64List? transform,
     Int32List? additionalActions,
     List<SemanticsNodeUpdate>? children,
+    int? headingLevel,
+    String? linkUrl,
   }) {
     // Flags
     if (hasCheckedState ?? false) {
@@ -311,6 +313,8 @@ class SemanticsTester {
       childrenInTraversalOrder: childIds,
       childrenInHitTestOrder: childIds,
       additionalActions: additionalActions ?? Int32List(0),
+      headingLevel: headingLevel ?? 0,
+      linkUrl: linkUrl,
     );
     _nodeUpdates.add(update);
     return update;
