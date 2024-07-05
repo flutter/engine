@@ -17,7 +17,7 @@
 #include "flutter/shell/platform/linux/fl_key_event.h"
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
-#include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
+#include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
@@ -54,7 +54,7 @@ struct _FlView {
   FlKeyboardManager* keyboard_manager;
   FlScrollingManager* scrolling_manager;
   FlTextInputPlugin* text_input_plugin;
-  FlMouseCursorPlugin* mouse_cursor_plugin;
+  FlMouseCursorHandler* mouse_cursor_handler;
   FlPlatformPlugin* platform_plugin;
 
   GtkWidget* event_box;
@@ -561,7 +561,7 @@ static GdkGLContext* create_context_cb(FlView* self) {
   // Create system channel handlers.
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   init_scrolling(self);
-  self->mouse_cursor_plugin = fl_mouse_cursor_plugin_new(messenger, self);
+  self->mouse_cursor_handler = fl_mouse_cursor_handler_new(messenger, self);
   self->platform_plugin = fl_platform_plugin_new(messenger);
 
   g_autoptr(GError) error = nullptr;
@@ -729,7 +729,7 @@ static void fl_view_dispose(GObject* object) {
     g_signal_handler_disconnect(self->keymap, self->keymap_keys_changed_cb_id);
     self->keymap_keys_changed_cb_id = 0;
   }
-  g_clear_object(&self->mouse_cursor_plugin);
+  g_clear_object(&self->mouse_cursor_handler);
   g_clear_object(&self->platform_plugin);
   g_clear_object(&self->view_accessible);
 
