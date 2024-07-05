@@ -154,14 +154,15 @@ static void fl_mouse_cursor_handler_dispose(GObject* object) {
   G_OBJECT_CLASS(fl_mouse_cursor_handler_parent_class)->dispose(object);
 }
 
-static void fl_mouse_cursor_handler_class_init(FlMouseCursorHandlerClass* klass) {
+static void fl_mouse_cursor_handler_class_init(
+    FlMouseCursorHandlerClass* klass) {
   G_OBJECT_CLASS(klass)->dispose = fl_mouse_cursor_handler_dispose;
 }
 
 static void fl_mouse_cursor_handler_init(FlMouseCursorHandler* self) {}
 
 FlMouseCursorHandler* fl_mouse_cursor_handler_new(FlBinaryMessenger* messenger,
-                                                FlView* view) {
+                                                  FlView* view) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
   FlMouseCursorHandler* self = FL_MOUSE_CURSOR_HANDLER(

@@ -6,7 +6,7 @@
 
 #include "flutter/shell/platform/linux/fl_binary_messenger_private.h"
 #include "flutter/shell/platform/linux/fl_method_codec_private.h"
-#include "flutter/shell/platform/linux/fl_platform_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_handler.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_json_method_codec.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_method_codec.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
@@ -117,8 +117,8 @@ static void fl_test_application_activate(GApplication* application) {
   G_APPLICATION_CLASS(fl_test_application_parent_class)->activate(application);
 
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
-  g_autoptr(FlPlatformPlugin) plugin = fl_platform_plugin_new(messenger);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlPlatformHandler) handler = fl_platform_handler_new(messenger);
+  EXPECT_NE(handler, nullptr);
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
 
   g_autoptr(FlValue) exit_result = fl_value_new_map();
@@ -170,11 +170,11 @@ FlTestApplication* fl_test_application_new(gboolean* dispose_called) {
   return self;
 }
 
-TEST(FlPlatformPluginTest, PlaySound) {
+TEST(FlPlatformHandlerTest, PlaySound) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
 
-  g_autoptr(FlPlatformPlugin) plugin = fl_platform_plugin_new(messenger);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlPlatformHandler) handler = fl_platform_handler_new(messenger);
+  EXPECT_NE(handler, nullptr);
 
   g_autoptr(FlValue) args = fl_value_new_string("SystemSoundType.alert");
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
@@ -190,11 +190,11 @@ TEST(FlPlatformPluginTest, PlaySound) {
   messenger.ReceiveMessage("flutter/platform", message);
 }
 
-TEST(FlPlatformPluginTest, ExitApplication) {
+TEST(FlPlatformHandlerTest, ExitApplication) {
   ::testing::NiceMock<flutter::testing::MockBinaryMessenger> messenger;
 
-  g_autoptr(FlPlatformPlugin) plugin = fl_platform_plugin_new(messenger);
-  EXPECT_NE(plugin, nullptr);
+  g_autoptr(FlPlatformHandler) handler = fl_platform_handler_new(messenger);
+  EXPECT_NE(handler, nullptr);
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
 
   g_autoptr(FlValue) null = fl_value_new_null();
@@ -226,7 +226,7 @@ TEST(FlPlatformPluginTest, ExitApplication) {
   messenger.ReceiveMessage("flutter/platform", message);
 }
 
-TEST(FlPlatformPluginTest, ExitApplicationDispose) {
+TEST(FlPlatformHandlerTest, ExitApplicationDispose) {
   gtk_init(0, nullptr);
 
   gboolean dispose_called = false;

@@ -2,40 +2,40 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_PLATFORM_PLUGIN_H_
-#define FLUTTER_SHELL_PLATFORM_LINUX_FL_PLATFORM_PLUGIN_H_
+#ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_PLATFORM_HANDLER_H_
+#define FLUTTER_SHELL_PLATFORM_LINUX_FL_PLATFORM_HANDLER_H_
 
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_binary_messenger.h"
 
 G_BEGIN_DECLS
 
-G_DECLARE_FINAL_TYPE(FlPlatformPlugin,
-                     fl_platform_plugin,
+G_DECLARE_FINAL_TYPE(FlPlatformHandler,
+                     fl_platform_handler,
                      FL,
-                     PLATFORM_PLUGIN,
+                     PLATFORM_HANDLER,
                      GObject);
 
 /**
- * FlPlatformPlugin:
+ * FlPlatformHandler:
  *
- * #FlPlatformPlugin is a plugin that implements the shell side
+ * #FlPlatformHandler is a handler that implements the shell side
  * of SystemChannels.platform from the Flutter services library.
  */
 
 /**
- * fl_platform_plugin_new:
+ * fl_platform_handler_new:
  * @messenger: an #FlBinaryMessenger
  *
- * Creates a new plugin that implements SystemChannels.platform from the
+ * Creates a new handler that implements SystemChannels.platform from the
  * Flutter services library.
  *
- * Returns: a new #FlPlatformPlugin
+ * Returns: a new #FlPlatformHandler
  */
-FlPlatformPlugin* fl_platform_plugin_new(FlBinaryMessenger* messenger);
+FlPlatformHandler* fl_platform_handler_new(FlBinaryMessenger* messenger);
 
 /**
- * fl_platform_plugin_request_app_exit:
- * @plugin: an #FlPlatformPlugin
+ * fl_platform_handler_request_app_exit:
+ * @handler: an #FlPlatformHandler
  *
  * Request the application exits (i.e. due to the window being requested to be
  * closed).
@@ -45,8 +45,8 @@ FlPlatformPlugin* fl_platform_plugin_new(FlBinaryMessenger* messenger);
  * "System.initializationComplete" method call on the platform channel. Calls
  * before initialization is complete will result in an immediate exit.
  */
-void fl_platform_plugin_request_app_exit(FlPlatformPlugin* plugin);
+void fl_platform_handler_request_app_exit(FlPlatformHandler* handler);
 
 G_END_DECLS
 
-#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_PLATFORM_PLUGIN_H_
+#endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_PLATFORM_HANDLER_H_

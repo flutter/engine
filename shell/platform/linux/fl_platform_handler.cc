@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/shell/platform/linux/fl_platform_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_handler.h"
 
 #include <gtk/gtk.h>
 #include <cstring>
@@ -40,7 +40,7 @@ static constexpr char kTextPlainFormat[] = "text/plain";
 static constexpr char kSoundTypeAlert[] = "SystemSoundType.alert";
 static constexpr char kSoundTypeClick[] = "SystemSoundType.click";
 
-struct _FlPlatformPlugin {
+struct _FlPlatformHandler {
   GObject parent_instance;
 
   FlMethodChannel* channel;
@@ -49,7 +49,7 @@ struct _FlPlatformPlugin {
   bool app_initialization_complete;
 };
 
-G_DEFINE_TYPE(FlPlatformPlugin, fl_platform_plugin, G_TYPE_OBJECT)
+G_DEFINE_TYPE(FlPlatformHandler, fl_platform_handler, G_TYPE_OBJECT)
 
 // Sends the method call response to Flutter.
 static void send_response(FlMethodCall* method_call,
@@ -94,7 +94,7 @@ static void clipboard_text_has_strings_cb(GtkClipboard* clipboard,
 }
 
 // Called when Flutter wants to copy to the clipboard.
-static FlMethodResponse* clipboard_set_data(FlPlatformPlugin* self,
+static FlMethodResponse* clipboard_set_data(FlPlatformHandler* self,
                                             FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
@@ -116,7 +116,7 @@ static FlMethodResponse* clipboard_set_data(FlPlatformPlugin* self,
 }
 
 // Called when Flutter wants to paste from the clipboard.
-static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
+static FlMethodResponse* clipboard_get_data_async(FlPlatformHandler* self,
                                                   FlMethodCall* method_call) {
   FlValue* args = fl_method_call_get_args(method_call);
 
@@ -144,7 +144,7 @@ static FlMethodResponse* clipboard_get_data_async(FlPlatformPlugin* self,
 // Called when Flutter wants to know if the content of the clipboard is able to
 // be pasted, without actually accessing the clipboard content itself.
 static FlMethodResponse* clipboard_has_strings_async(
-    FlPlatformPlugin* self,
+    FlPlatformHandler* self,
     FlMethodCall* method_call) {
   GtkClipboard* clipboard =
       gtk_clipboard_get_default(gdk_display_get_default());
@@ -206,7 +206,7 @@ static void quit_application() {
 static void request_app_exit_response_cb(GObject* object,
                                          GAsyncResult* result,
                                          gpointer user_data) {
-  FlPlatformPlugin* self = FL_PLATFORM_PLUGIN(user_data);
+  FlPlatformHandler* self = FL_PLATFORM_HANDLER(user_data);
 
   g_autoptr(GError) error = nullptr;
   g_autoptr(FlMethodResponse) method_response =
@@ -250,7 +250,7 @@ static void request_app_exit_response_cb(GObject* object,
 
 // Send a request to Flutter to exit the application, but only if it's ready for
 // a request.
-static void request_app_exit(FlPlatformPlugin* self, const char* type) {
+static void request_app_exit(FlPlatformHandler* self, const char* type) {
   g_autoptr(FlValue) args = fl_value_new_map();
   if (!self->app_initialization_complete ||
       g_str_equal(type, kExitTypeRequired)) {
@@ -268,14 +268,14 @@ static void request_app_exit(FlPlatformPlugin* self, const char* type) {
 // requests. For the Flutter framework, this means after the ServicesBinding has
 // been initialized and it sends a System.initializationComplete message.
 static FlMethodResponse* system_intitialization_complete(
-    FlPlatformPlugin* self,
+    FlPlatformHandler* self,
     FlMethodCall* method_call) {
   self->app_initialization_complete = TRUE;
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
 
 // Called when Flutter wants to exit the application.
-static FlMethodResponse* system_exit_application(FlPlatformPlugin* self,
+static FlMethodResponse* system_exit_application(FlPlatformHandler* self,
                                                  FlMethodCall* method_call) {
   FlValue* args = fl_method_call_get_args(method_call);
   if (fl_value_get_type(args) != FL_VALUE_TYPE_MAP) {
@@ -318,7 +318,7 @@ static FlMethodResponse* system_exit_application(FlPlatformPlugin* self,
 }
 
 // Called when Flutter wants to play a sound.
-static FlMethodResponse* system_sound_play(FlPlatformPlugin* self,
+static FlMethodResponse* system_sound_play(FlPlatformHandler* self,
                                            FlValue* args) {
   if (fl_value_get_type(args) != FL_VALUE_TYPE_STRING) {
     return FL_METHOD_RESPONSE(fl_method_error_response_new(
@@ -341,7 +341,7 @@ static FlMethodResponse* system_sound_play(FlPlatformPlugin* self,
 }
 
 // Called when Flutter wants to quit the application.
-static FlMethodResponse* system_navigator_pop(FlPlatformPlugin* self) {
+static FlMethodResponse* system_navigator_pop(FlPlatformHandler* self) {
   quit_application();
   return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 }
@@ -350,7 +350,7 @@ static FlMethodResponse* system_navigator_pop(FlPlatformPlugin* self) {
 static void method_call_cb(FlMethodChannel* channel,
                            FlMethodCall* method_call,
                            gpointer user_data) {
-  FlPlatformPlugin* self = FL_PLATFORM_PLUGIN(user_data);
+  FlPlatformHandler* self = FL_PLATFORM_HANDLER(user_data);
 
   const gchar* method = fl_method_call_get_name(method_call);
   FlValue* args = fl_method_call_get_args(method_call);
@@ -379,8 +379,8 @@ static void method_call_cb(FlMethodChannel* channel,
   }
 }
 
-static void fl_platform_plugin_dispose(GObject* object) {
-  FlPlatformPlugin* self = FL_PLATFORM_PLUGIN(object);
+static void fl_platform_handler_dispose(GObject* object) {
+  FlPlatformHandler* self = FL_PLATFORM_HANDLER(object);
 
   g_cancellable_cancel(self->cancellable);
 
@@ -388,22 +388,22 @@ static void fl_platform_plugin_dispose(GObject* object) {
   g_clear_object(&self->exit_application_method_call);
   g_clear_object(&self->cancellable);
 
-  G_OBJECT_CLASS(fl_platform_plugin_parent_class)->dispose(object);
+  G_OBJECT_CLASS(fl_platform_handler_parent_class)->dispose(object);
 }
 
-static void fl_platform_plugin_class_init(FlPlatformPluginClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = fl_platform_plugin_dispose;
+static void fl_platform_handler_class_init(FlPlatformHandlerClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = fl_platform_handler_dispose;
 }
 
-static void fl_platform_plugin_init(FlPlatformPlugin* self) {
+static void fl_platform_handler_init(FlPlatformHandler* self) {
   self->cancellable = g_cancellable_new();
 }
 
-FlPlatformPlugin* fl_platform_plugin_new(FlBinaryMessenger* messenger) {
+FlPlatformHandler* fl_platform_handler_new(FlBinaryMessenger* messenger) {
   g_return_val_if_fail(FL_IS_BINARY_MESSENGER(messenger), nullptr);
 
-  FlPlatformPlugin* self =
-      FL_PLATFORM_PLUGIN(g_object_new(fl_platform_plugin_get_type(), nullptr));
+  FlPlatformHandler* self = FL_PLATFORM_HANDLER(
+      g_object_new(fl_platform_handler_get_type(), nullptr));
 
   g_autoptr(FlJsonMethodCodec) codec = fl_json_method_codec_new();
   self->channel =
@@ -415,8 +415,8 @@ FlPlatformPlugin* fl_platform_plugin_new(FlBinaryMessenger* messenger) {
   return self;
 }
 
-void fl_platform_plugin_request_app_exit(FlPlatformPlugin* self) {
-  g_return_if_fail(FL_IS_PLATFORM_PLUGIN(self));
+void fl_platform_handler_request_app_exit(FlPlatformHandler* self) {
+  g_return_if_fail(FL_IS_PLATFORM_HANDLER(self));
   // Request a cancellable exit.
   request_app_exit(self, kExitTypeCancelable);
 }

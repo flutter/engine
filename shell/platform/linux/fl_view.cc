@@ -18,7 +18,7 @@
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_handler.h"
-#include "flutter/shell/platform/linux/fl_platform_plugin.h"
+#include "flutter/shell/platform/linux/fl_platform_handler.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
 #include "flutter/shell/platform/linux/fl_renderer_gdk.h"
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
@@ -55,7 +55,7 @@ struct _FlView {
   FlScrollingManager* scrolling_manager;
   FlTextInputPlugin* text_input_plugin;
   FlMouseCursorHandler* mouse_cursor_handler;
-  FlPlatformPlugin* platform_plugin;
+  FlPlatformHandler* platform_plugin;
 
   GtkWidget* event_box;
   GtkGLArea* gl_area;
@@ -103,7 +103,7 @@ G_DEFINE_TYPE_WITH_CODE(
 
 // Signal handler for GtkWidget::delete-event
 static gboolean window_delete_event_cb(FlView* self) {
-  fl_platform_plugin_request_app_exit(self->platform_plugin);
+  fl_platform_handler_request_app_exit(self->platform_plugin);
   // Stop the event from propagating.
   return TRUE;
 }
@@ -562,7 +562,7 @@ static GdkGLContext* create_context_cb(FlView* self) {
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   init_scrolling(self);
   self->mouse_cursor_handler = fl_mouse_cursor_handler_new(messenger, self);
-  self->platform_plugin = fl_platform_plugin_new(messenger);
+  self->platform_plugin = fl_platform_handler_new(messenger);
 
   g_autoptr(GError) error = nullptr;
   if (!fl_renderer_gdk_create_contexts(self->renderer, &error)) {
