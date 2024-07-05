@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 import 'package:expect/variations.dart' as v;
+
+import 'src/test_suite.dart';
+
 export 'package:expect/expect.dart';
 
 export 'src/async_minitest.dart' hide test;
 export 'src/matchers.dart';
-import 'src/test_suite.dart';
 
 final TestSuite _testSuite = TestSuite();
 
