@@ -21,7 +21,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
 /**
  * FlKeyboardManager:
  *
- * Processes keyboard events and cooperate with `TextInputPlugin`.
+ * Processes keyboard events and cooperate with `TextInputHandler`.
  *
  * A keyboard event goes through a few sections, each can choose to handle the
  * event, and only unhandled events can move to the next section:
@@ -30,7 +30,7 @@ G_DECLARE_FINAL_TYPE(FlKeyboardManager,
  *   simultaneously. After both responders have responded (asynchronously), the
  *   event is considered handled if either responder handles it.
  * - Text input: Events are sent to IM filter (usually owned by
- *   `TextInputPlugin`) and are handled synchronously.
+ *   `TextInputHandler`) and are handled synchronously.
  * - Redispatching: Events are inserted back to the system for redispatching.
  */
 

@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_standard_method_codec.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 #include "flutter/shell/platform/linux/testing/mock_binary_messenger.h"
-#include "flutter/shell/platform/linux/testing/mock_text_input_plugin.h"
+#include "flutter/shell/platform/linux/testing/mock_text_input_handler.h"
 #include "flutter/testing/testing.h"
 
 #include "gmock/gmock.h"
@@ -852,7 +852,7 @@ TEST(FlKeyboardManagerTest, WithTwoAsyncDelegates) {
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 }
 
-TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
+TEST(FlKeyboardManagerTest, TextInputHandlerReturnsFalse) {
   KeyboardTester tester;
   std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
   gboolean manager_handled = false;
@@ -875,7 +875,7 @@ TEST(FlKeyboardManagerTest, TextInputPluginReturnsFalse) {
   EXPECT_TRUE(fl_keyboard_manager_is_state_clear(tester.manager()));
 }
 
-TEST(FlKeyboardManagerTest, TextInputPluginReturnsTrue) {
+TEST(FlKeyboardManagerTest, TextInputHandlerReturnsTrue) {
   KeyboardTester tester;
   std::vector<std::unique_ptr<FlKeyEvent>> redispatched;
   gboolean manager_handled = false;

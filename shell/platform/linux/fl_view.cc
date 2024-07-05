@@ -24,7 +24,7 @@
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
 #include "flutter/shell/platform/linux/fl_scrolling_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_socket_accessible.h"
-#include "flutter/shell/platform/linux/fl_text_input_plugin.h"
+#include "flutter/shell/platform/linux/fl_text_input_handler.h"
 #include "flutter/shell/platform/linux/fl_text_input_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_view_accessible.h"
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_engine.h"
@@ -53,9 +53,9 @@ struct _FlView {
   // Flutter system channel handlers.
   FlKeyboardManager* keyboard_manager;
   FlScrollingManager* scrolling_manager;
-  FlTextInputPlugin* text_input_plugin;
+  FlTextInputHandler* text_input_handler;
   FlMouseCursorHandler* mouse_cursor_handler;
-  FlPlatformHandler* platform_plugin;
+  FlPlatformHandler* platform_handler;
 
   GtkWidget* event_box;
   GtkGLArea* gl_area;
@@ -103,7 +103,7 @@ G_DEFINE_TYPE_WITH_CODE(
 
 // Signal handler for GtkWidget::delete-event
 static gboolean window_delete_event_cb(FlView* self) {
-  fl_platform_handler_request_app_exit(self->platform_plugin);
+  fl_platform_handler_request_app_exit(self->platform_handler);
   // Stop the event from propagating.
   return TRUE;
 }
@@ -118,8 +118,8 @@ static void init_keyboard(FlView* self) {
   g_autoptr(GtkIMContext) im_context = gtk_im_multicontext_new();
   gtk_im_context_set_client_window(im_context, window);
 
-  g_clear_object(&self->text_input_plugin);
-  self->text_input_plugin = fl_text_input_plugin_new(
+  g_clear_object(&self->text_input_handler);
+  self->text_input_handler = fl_text_input_handler_new(
       messenger, im_context, FL_TEXT_INPUT_VIEW_DELEGATE(self));
   g_clear_object(&self->keyboard_manager);
   self->keyboard_manager =
@@ -305,7 +305,8 @@ static void fl_view_keyboard_delegate_iface_init(
   iface->text_filter_key_press = [](FlKeyboardViewDelegate* view_delegate,
                                     FlKeyEvent* event) {
     FlView* self = FL_VIEW(view_delegate);
-    return fl_text_input_plugin_filter_keypress(self->text_input_plugin, event);
+    return fl_text_input_handler_filter_keypress(self->text_input_handler,
+                                                 event);
   };
 
   iface->get_messenger = [](FlKeyboardViewDelegate* view_delegate) {
@@ -562,7 +563,7 @@ static GdkGLContext* create_context_cb(FlView* self) {
   FlBinaryMessenger* messenger = fl_engine_get_binary_messenger(self->engine);
   init_scrolling(self);
   self->mouse_cursor_handler = fl_mouse_cursor_handler_new(messenger, self);
-  self->platform_plugin = fl_platform_handler_new(messenger);
+  self->platform_handler = fl_platform_handler_new(messenger);
 
   g_autoptr(GError) error = nullptr;
   if (!fl_renderer_gdk_create_contexts(self->renderer, &error)) {
@@ -730,7 +731,7 @@ static void fl_view_dispose(GObject* object) {
     self->keymap_keys_changed_cb_id = 0;
   }
   g_clear_object(&self->mouse_cursor_handler);
-  g_clear_object(&self->platform_plugin);
+  g_clear_object(&self->platform_handler);
   g_clear_object(&self->view_accessible);
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
