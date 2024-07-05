@@ -9,29 +9,24 @@
 
 namespace impeller {
 
+/// A filter that applies a runtime effect shader
 class RuntimeEffectFilterContents final : public FilterContents {
  public:
   RuntimeEffectFilterContents() {}
 
-  ~RuntimeEffectFilterContents() {}
+  ~RuntimeEffectFilterContents() = default;
 
-  void SetRuntimeStage(std::shared_ptr<RuntimeStage> runtime_stage) {
-    runtime_stage_ = std::move(runtime_stage);
-  }
+  void SetRuntimeStage(std::shared_ptr<RuntimeStage> runtime_stage);
 
-  void SetUniforms(std::shared_ptr<std::vector<uint8_t>> uniforms) {
-    uniforms_ = std::move(uniforms);
-  }
+  void SetUniforms(std::shared_ptr<std::vector<uint8_t>> uniforms);
 
   void SetTextureInputs(
-      std::vector<RuntimeEffectContents::TextureInput> texture_inputs) {
-    texture_inputs_ = std::move(texture_inputs);
-  }
+      std::vector<RuntimeEffectContents::TextureInput> texture_inputs);
 
  private:
   std::shared_ptr<RuntimeStage> runtime_stage_;
-  mutable std::shared_ptr<std::vector<uint8_t>> uniforms_;
-  mutable std::vector<RuntimeEffectContents::TextureInput> texture_inputs_;
+  std::shared_ptr<std::vector<uint8_t>> uniforms_;
+  std::vector<RuntimeEffectContents::TextureInput> texture_inputs_;
 
   // |FilterContents|
   std::optional<Entity> RenderFilter(
