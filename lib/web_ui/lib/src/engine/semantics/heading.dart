@@ -18,7 +18,25 @@ class Heading extends PrimaryRoleManager {
   }
 
   @override
-  DomElement createElement() => createDomElement('h${semanticsObject.headingLevel}');
+  DomElement createElement() {
+    final element = createDomElement('h${semanticsObject.headingLevel}');
+    element.style
+      // Browser adds default non-zero margins/paddings to <h*> tags, which
+      // affects the size of the element. As the element size is fully defined
+      // by semanticsObject.rect, the extra margins/paddings must be zeroed out.
+      ..margin = '0'
+      ..padding = '0'
+
+      // The 10px size was picked empirically. By default the browser will scale
+      // the font size based on the heading level. Font size should not be
+      // important in semantics since rendering is done via the render tree.
+      // Speculatively locking the font size to something not too big and not
+      // too small, which will hopefully satisfy whoever is consuming the DOM
+      // tree, be it a screen reader or a web crawler. However, if there's a
+      // good reason to do otherwise, feel free to revise this code.
+      ..fontSize = '10px';
+    return element;
+  }
 
   /// Focuses on this heading element if it turns out to be the default element
   /// of a route.
