@@ -726,6 +726,7 @@ static void fl_view_dispose(GObject* object) {
   g_clear_object(&self->project);
   g_clear_object(&self->renderer);
   g_clear_object(&self->engine);
+  g_clear_object(&self->scrolling_manager);
   g_clear_object(&self->keyboard_handler);
   if (self->keymap_keys_changed_cb_id != 0) {
     g_signal_handler_disconnect(self->keymap, self->keymap_keys_changed_cb_id);
