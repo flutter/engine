@@ -995,8 +995,9 @@ void DlDispatcherBase::drawPoints(PointMode mode,
 }
 
 // |flutter::DlOpReceiver|
-void DlDispatcherBase::drawVertices(const flutter::DlVertices* vertices,
-                                    flutter::DlBlendMode dl_mode) {
+void DlDispatcherBase::drawVertices(
+    const std::shared_ptr<flutter::DlVertices>& vertices,
+    flutter::DlBlendMode dl_mode) {
   GetCanvas().DrawVertices(MakeVertices(vertices), ToBlendMode(dl_mode),
                            paint_);
 }
@@ -1350,10 +1351,12 @@ void TextFrameDispatcher::drawTextFrame(
   if (text_frame->HasColor()) {
     properties.color = paint_.color;
   }
-  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,                    //
-                                              matrix_.GetMaxBasisLengthXY(),  //
-                                              Point(x, y),                    //
-                                              properties                      //
+  auto scale =
+      (matrix_ * Matrix::MakeTranslation(Point(x, y))).GetMaxBasisLengthXY();
+  renderer_.GetLazyGlyphAtlas()->AddTextFrame(*text_frame,  //
+                                              scale,        //
+                                              Point(x, y),  //
+                                              properties    //
   );
 }
 
