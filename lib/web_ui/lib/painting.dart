@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 // For documentation see https://github.com/flutter/engine/blob/main/lib/ui/painting.dart
-part of ui;
+part of 'ui.dart';
 
 void _validateColorStops(List<Color> colors, List<double>? colorStops) {
   if (colorStops == null) {

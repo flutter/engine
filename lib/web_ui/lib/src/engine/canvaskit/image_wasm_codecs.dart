@@ -7,7 +7,7 @@
 /// See also:
 ///
 ///  * `image_web_codecs.dart`, which uses the `ImageDecoder` supplied by the browser.
-library image_wasm_codecs;
+library;
 
 import 'dart:async';
 import 'dart:typed_data';

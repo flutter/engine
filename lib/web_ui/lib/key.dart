@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of ui;
+part of 'ui.dart';
 
 /// The type of a key event.
 // Must match the KeyEventType enum in ui/window/key_data.h.

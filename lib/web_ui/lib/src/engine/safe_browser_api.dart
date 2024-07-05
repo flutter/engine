@@ -9,7 +9,7 @@
 /// strings by injecting it into HTML or URLs.
 
 @JS()
-library browser_api;
+library;
 
 import 'dart:async';
 import 'dart:js_interop';

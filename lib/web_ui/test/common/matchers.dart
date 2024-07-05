@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 /// Provides utilities for testing engine code.
-library matchers;
+library;
 
 import 'dart:math' as math;
 

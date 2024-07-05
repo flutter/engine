@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of ui;
+part of 'ui.dart';
 
 // This constant must be consistent with `kTextHeightNone` defined in
 // flutter/lib/ui/text.dart.

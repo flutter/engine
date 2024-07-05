@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of ui;
+part of 'ui.dart';
 
 // These enum values must be kept in sync with SkShader::TileMode.
 enum TileMode {

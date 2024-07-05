@@ -21,7 +21,7 @@
 // configuration can be done in Java and the engine's C++ code prior to
 // calling Dart's `main()`.
 
-part of ui;
+part of 'ui.dart';
 
 // TODO(mdebbar): Deprecate this and remove it.
 // https://github.com/flutter/flutter/issues/127395

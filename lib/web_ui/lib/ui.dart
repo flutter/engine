@@ -5,7 +5,7 @@
 /// This library defines the web equivalent of the native dart:ui.
 ///
 /// All types in this library are public.
-library ui;
+library;
 
 import 'dart:async';
 import 'dart:collection' as collection;
@@ -21,7 +21,6 @@ part 'canvas.dart';
 part 'channel_buffers.dart';
 part 'compositing.dart';
 part 'geometry.dart';
-part 'hash_codes.dart';
 part 'initialization.dart';
 part 'key.dart';
 part 'lerp.dart';

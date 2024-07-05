@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 @JS()
-library js_promise;
+library;
 
 import 'dart:js_interop';
 

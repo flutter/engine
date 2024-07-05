@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 @DefaultAsset('skwasm')
-library skwasm_impl;
+library;
 
 import 'dart:ffi';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';

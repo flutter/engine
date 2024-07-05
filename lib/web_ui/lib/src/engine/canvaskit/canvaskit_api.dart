@@ -8,7 +8,7 @@
 /// the API behind these bindings in the Skia source code.
 // ignore_for_file: non_constant_identifier_names
 @JS()
-library canvaskit_api;
+library;
 
 import 'dart:async';
 import 'dart:convert';

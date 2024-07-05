@@ -4,7 +4,7 @@
 
 // See https://github.com/flutter/engine/blob/main/lib/ui/geometry.dart for
 // documentation of APIs.
-part of ui;
+part of 'ui.dart';
 
 double toDegrees(double radians) {
   return radians * 180 / math.pi;

@@ -42,7 +42,7 @@
 /// environment variables are provided, the `canvasKitBaseUrl` entry is used.
 
 @JS()
-library configuration;
+library;
 
 import 'dart:js_interop';
 

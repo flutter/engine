@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 @JS()
-library dom_manager_test; // We need this to mess with the ShadowDOM.
+library; // We need this to mess with the ShadowDOM.
 import 'dart:js_interop';
 
 import 'package:test/bootstrap/browser.dart';

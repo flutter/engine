@@ -10,7 +10,7 @@
 //  * _invokeX is replaced with engine.invokeX (X=1,2)
 //  * _printDebug is replaced with print in an assert.
 
-part of ui;
+part of 'ui.dart';
 
 typedef DrainChannelCallback = Future<void> Function(ByteData? data, PlatformMessageResponseCallback callback);
 

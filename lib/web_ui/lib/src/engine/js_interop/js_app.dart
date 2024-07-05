@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 @JS()
-library js_app;
+library;
 
 import 'dart:js_interop';
 import 'package:ui/src/engine.dart';
