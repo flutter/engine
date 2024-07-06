@@ -80,6 +80,8 @@ impeller_component("gles") {
     "surface_gles.h",
     "texture_gles.cc",
     "texture_gles.h",
+    "unique_handle_gles.cc",
+    "unique_handle_gles.h",
   ]
 
   if (!is_android && !is_fuchsia) {
