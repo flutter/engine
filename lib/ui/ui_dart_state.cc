@@ -22,6 +22,16 @@ extern void syslog(int, const char*, ...);
 }
 #endif
 
+namespace {
+static std::set<flutter::UIDartState*> state;
+}
+
+void UglyHackFlushMicrotasks() {
+  for (auto s : state) {
+    s->FlushMicrotasksNow();
+  }
+}
+
 using tonic::ToDart;
 
 namespace flutter {
@@ -73,10 +83,12 @@ UIDartState::UIDartState(
       isolate_name_server_(std::move(isolate_name_server)),
       context_(context) {
   AddOrRemoveTaskObserver(true /* add */);
+  state.insert(this);
 }
 
 UIDartState::~UIDartState() {
   AddOrRemoveTaskObserver(false /* remove */);
+  state.erase(this);
 }
 
 const std::string& UIDartState::GetAdvisoryScriptURI() const {

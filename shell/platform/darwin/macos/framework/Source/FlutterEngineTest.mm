@@ -33,8 +33,6 @@
 // CREATE_NATIVE_ENTRY and MOCK_ENGINE_PROC are leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
-constexpr int64_t kImplicitViewId = 0ll;
-
 @interface FlutterEngine (Test)
 /**
  * The FlutterCompositor object currently in use by the FlutterEngine.
@@ -526,7 +524,7 @@ TEST_F(FlutterEngineTest, Compositor) {
                 result:^(id result){
                 }];
 
-  [engine.testThreadSynchronizer blockUntilFrameAvailable];
+  // [engine.testThreadSynchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
@@ -861,20 +859,6 @@ TEST_F(FlutterEngineTest, ResponseFromBackgroundThread) {
   while (!didCallCallback) {
     [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
   }
-}
-
-TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
-  FlutterThreadSynchronizer* threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
-  [threadSynchronizer shutdown];
-
-  std::thread rasterThread([&threadSynchronizer] {
-    [threadSynchronizer performCommitForView:kImplicitViewId
-                                        size:CGSizeMake(100, 100)
-                                      notify:^{
-                                      }];
-  });
-
-  rasterThread.join();
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {

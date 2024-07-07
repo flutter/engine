@@ -509,7 +509,7 @@ bool DartIsolate::Initialize(Dart_Isolate dart_isolate) {
     SetMessageHandlingTaskRunner(GetTaskRunners().GetPlatformTaskRunner(),
                                  true);
   } else {
-    SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(), false);
+    SetMessageHandlingTaskRunner(GetTaskRunners().GetUITaskRunner(), true);
   }
 
   if (tonic::CheckAndHandleError(

@@ -24,6 +24,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRunLoop.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTimeConverter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterVSyncWaiter.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
@@ -36,6 +37,8 @@ NSString* const kFlutterSettingsChannel = @"flutter/settings";
 NSString* const kFlutterLifecycleChannel = @"flutter/lifecycle";
 
 using flutter::kFlutterImplicitViewId;
+
+extern void UglyHackFlushMicrotasks();
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -455,8 +458,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, void* user_
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
-  FlutterThreadSynchronizer* _threadSynchronizer;
-
   // Whether the application is currently the active application.
   BOOL _active;
 
@@ -499,6 +500,9 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
       allowHeadlessExecution:(BOOL)allowHeadlessExecution {
   self = [super init];
   NSAssert(self, @"Super init cannot be nil");
+
+  [FlutterRunLoop ensureMainLoopInitialized];
+
   _pasteboard = [[FlutterPasteboard alloc] init];
   _active = NO;
   _visible = NO;
@@ -527,7 +531,6 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
                            object:nil];
 
   _platformViewController = [[FlutterPlatformViewController alloc] init];
-  _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [self setUpPlatformViewChannel];
   [self setUpAccessibilityChannel];
   [self setUpNotificationCenterListeners];
@@ -653,7 +656,8 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   const FlutterCustomTaskRunners custom_task_runners = {
       .struct_size = sizeof(FlutterCustomTaskRunners),
       .platform_task_runner = &cocoa_task_runner_description,
-      .thread_priority_setter = SetThreadPriority};
+      .thread_priority_setter = SetThreadPriority,
+      .merged_ui_thread = 1};
   flutterArguments.custom_task_runners = &custom_task_runners;
 
   [self loadAOTData:_project.assetsPath];
@@ -739,9 +743,7 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   NSAssert([_viewControllers objectForKey:@(viewIdentifier)] == nil,
            @"The requested view ID is occupied.");
   [_viewControllers setObject:controller forKey:@(viewIdentifier)];
-  [controller setUpWithEngine:self
-               viewIdentifier:viewIdentifier
-           threadSynchronizer:_threadSynchronizer];
+  [controller setUpWithEngine:self viewIdentifier:viewIdentifier];
   NSAssert(controller.viewIdentifier == viewIdentifier, @"Failed to assign view ID.");
   // Verify that the controller's property are updated accordingly. Failing the
   // assertions is likely because either the FlutterViewController or the
@@ -769,13 +771,7 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
                           [timeConverter CAMediaTimeToEngineTime:targetTimestamp];
                       FlutterEngine* engine = weakSelf;
                       if (engine) {
-                        // It is a bit unfortunate that embedder requires OnVSync call on
-                        // platform thread just to immediately redispatch it to UI thread.
-                        // We are already on UI thread right now, but have to do the
-                        // extra hop to main thread.
-                        [engine->_threadSynchronizer performOnPlatformThread:^{
-                          engine->_embedderAPI.OnVsync(_engine, baton, timeNanos, targetTimeNanos);
-                        }];
+                        engine->_embedderAPI.OnVsync(_engine, baton, timeNanos, targetTimeNanos);
                       }
                     }];
   FML_DCHECK([_vsyncWaiters objectForKey:@(viewController.viewIdentifier)] == nil);
@@ -1132,9 +1128,6 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
     return;
   }
 
-  [_threadSynchronizer shutdown];
-  _threadSynchronizer = nil;
-
   FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
   if (result != kSuccess) {
     NSLog(@"Could not de-initialize the Flutter engine: error %d", result);
@@ -1331,10 +1324,6 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
   return flutter::GetSwitchesFromEnvironment();
 }
 
-- (FlutterThreadSynchronizer*)testThreadSynchronizer {
-  return _threadSynchronizer;
-}
-
 #pragma mark - FlutterAppLifecycleDelegate
 
 - (void)setApplicationState:(flutter::AppLifecycleState)state {
@@ -1518,29 +1507,23 @@ static void SetThreadPriority(FlutterThreadPriority priority) {
 
 #pragma mark - Task runner integration
 
-- (void)runTaskOnEmbedder:(FlutterTask)task {
-  if (_engine) {
-    auto result = _embedderAPI.RunTask(_engine, &task);
-    if (result != kSuccess) {
-      NSLog(@"Could not post a task to the Flutter engine.");
-    }
-  }
-}
-
 - (void)postMainThreadTask:(FlutterTask)task targetTimeInNanoseconds:(uint64_t)targetTime {
   __weak FlutterEngine* weakSelf = self;
-  auto worker = ^{
-    [weakSelf runTaskOnEmbedder:task];
-  };
 
   const auto engine_time = _embedderAPI.GetCurrentTime();
-  if (targetTime <= engine_time) {
-    dispatch_async(dispatch_get_main_queue(), worker);
 
-  } else {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, targetTime - engine_time),
-                   dispatch_get_main_queue(), worker);
-  }
+  [FlutterRunLoop.mainRunLoop
+      performBlock:^{
+        FlutterEngine* self = weakSelf;
+        if (_engine) {
+          auto result = _embedderAPI.RunTask(_engine, &task);
+          if (result != kSuccess) {
+            NSLog(@"Could not post a task to the Flutter engine.");
+          }
+        }
+        UglyHackFlushMicrotasks();
+      }
+        afterDelay:(targetTime - (double)engine_time) / 1000000000.0];
 }
 
 // Getter used by test harness, only exposed through the FlutterEngine(Test) category
