@@ -109,6 +109,8 @@ class RenderTarget final {
 
   size_t GetMaxColorAttacmentBindIndex() const;
 
+  ColorAttachment& GetColorAttachment(size_t index);
+
   const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
 
   const std::optional<DepthAttachment>& GetDepthAttachment() const;

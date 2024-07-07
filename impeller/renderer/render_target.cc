@@ -209,6 +209,10 @@ const std::optional<StencilAttachment>& RenderTarget::GetStencilAttachment()
   return stencil_;
 }
 
+ColorAttachment& RenderTarget::GetColorAttachment(size_t index) {
+  return colors_.find(0u)->second;
+}
+
 size_t RenderTarget::GetTotalAttachmentCount() const {
   size_t count = 0u;
   for (const auto& [_, color] : colors_) {
