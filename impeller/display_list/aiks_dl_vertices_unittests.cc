@@ -427,8 +427,8 @@ TEST_P(AiksTest, DrawVerticesTextureCoordinatesWithFragmentShader) {
 
   auto runtime_effect = DlRuntimeEffect::MakeImpeller(runtime_stage);
   auto uniform_data = std::make_shared<std::vector<uint8_t>>();
-  auto color_source =
-      flutter::DlColorSource::MakeRuntimeEffect(runtime_effect, {}, uniform_data);
+  auto color_source = flutter::DlColorSource::MakeRuntimeEffect(
+      runtime_effect, {}, uniform_data);
 
   paint.setColorSource(color_source);
 
