@@ -1010,8 +1010,11 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   contents->SetBlendMode(blend_mode);
   contents->SetAlpha(paint.color.alpha);
   contents->SetGeometry(vertices);
-  contents->SetLazyTexture([src_contents](const ContentContext& renderer) {
-    return src_contents->RenderToSnapshot(renderer, {})->texture;
+  contents->SetLazyTexture([src_contents,
+                            src_coverage](const ContentContext& renderer) {
+    // Applying the src coverage as the coverage limit prevents the 1px coverage
+    // pad from adding a border that is picked up by developer specified UVs.
+    return src_contents->RenderToSnapshot(renderer, {}, src_coverage)->texture;
   });
   entity.SetContents(paint.WithFilters(std::move(contents)));
   AddRenderEntityToCurrentPass(std::move(entity));

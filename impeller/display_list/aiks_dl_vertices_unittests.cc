@@ -354,5 +354,49 @@ TEST_P(AiksTest, DrawVerticesPremultipliesColors) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(AiksTest, DrawVerticesTextureCoordinatesWithFragmentShader) {
+  std::vector<SkPoint> positions = {
+      SkPoint::Make(0, 0),    //
+      SkPoint::Make(50, 0),   //
+      SkPoint::Make(0, 50),   //
+      SkPoint::Make(50, 50),  //
+  };
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangleStrip, positions.size(), positions.data(),
+      /*texture_coordinates=*/positions.data(), /*colors=*/nullptr,
+      /*index_count=*/0,
+      /*indices=*/nullptr);
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  auto runtime_stages =
+      OpenAssetAsRuntimeStage("runtime_stage_simple.frag.iplr");
+
+  auto runtime_stage =
+      runtime_stages[PlaygroundBackendToRuntimeStageBackend(GetBackend())];
+  ASSERT_TRUE(runtime_stage);
+
+  auto runtime_effect = DlRuntimeEffect::MakeImpeller(runtime_stage);
+  auto color_source =
+      flutter::DlColorSource::MakeRuntimeEffect(runtime_effect, {}, {});
+
+  paint.setColorSource(color_source);
+
+  builder.Scale(GetContentScale().x, GetContentScale().y);
+  builder.Save();
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+  builder.Translate(50, 0);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+  builder.Translate(-50, 50);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+  builder.Translate(50, 0);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+  builder.Restore();
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
