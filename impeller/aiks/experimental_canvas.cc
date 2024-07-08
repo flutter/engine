@@ -616,10 +616,12 @@ void ExperimentalCanvas::AddRenderEntityToCurrentPass(Entity entity,
       Color color = maybe_color.value();
       RenderTarget& render_target =
           render_passes_.back().entity_pass_target->GetRenderTarget();
-      ColorAttachment& attachment = render_target.GetColorAttachment(0u);
+      ColorAttachment attachment =
+          render_target.GetColorAttachments().find(0u)->second;
       attachment.clear_color = attachment.clear_color.Unpremultiply()
                                    .Blend(color, entity.GetBlendMode())
                                    .Premultiply();
+      render_target.SetColorAttachment(attachment, 0u);
     }
   }
 
