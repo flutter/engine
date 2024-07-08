@@ -377,14 +377,16 @@ void testMain() {
     test('invokeOnViewFocusChange calls onViewFocusChange', () {
       final List<ui.ViewFocusEvent> dispatchedViewFocusEvents = <ui.ViewFocusEvent>[];
       const ui.ViewFocusEvent viewFocusEvent = ui.ViewFocusEvent(
-        viewId: 0,
+        viewId: 12,
         state: ui.ViewFocusState.focused,
         direction: ui.ViewFocusDirection.undefined,
       );
 
+      expect(dispatcher.focusedViewId, equals(-1));
       dispatcher.onViewFocusChange = dispatchedViewFocusEvents.add;
       dispatcher.invokeOnViewFocusChange(viewFocusEvent);
 
+      expect(dispatcher.focusedViewId, equals(12));
       expect(dispatchedViewFocusEvents, hasLength(1));
       expect(dispatchedViewFocusEvents.single, viewFocusEvent);
     });

@@ -259,6 +259,7 @@ base class EngineFlutterView implements ui.FlutterView {
   @override
   EngineFlutterDisplay get display => EngineFlutterDisplay.instance;
 
+  @override
   bool get hasFocus => platformDispatcher.focusedViewId == viewId;
 
   @override

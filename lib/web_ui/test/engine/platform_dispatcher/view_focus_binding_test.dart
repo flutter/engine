@@ -93,10 +93,12 @@ void testMain() {
     test('fires a focus event - a view was focused', () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
+      expect(view.hasFocus, isFalse);
       view.dom.rootElement.focus();
 
       expect(dispatchedViewFocusEvents, hasLength(1));
 
+      expect(view.hasFocus, isTrue);
       expect(dispatchedViewFocusEvents[0].viewId, view.viewId);
       expect(dispatchedViewFocusEvents[0].state, ui.ViewFocusState.focused);
       expect(dispatchedViewFocusEvents[0].direction, ui.ViewFocusDirection.forward);
@@ -105,8 +107,11 @@ void testMain() {
     test('fires a focus event - a view was unfocused', () async {
       final EngineFlutterView view = createAndRegisterView(dispatcher);
 
+      expect(view.hasFocus, isFalse);
       view.dom.rootElement.focus();
+      expect(view.hasFocus, isTrue);
       view.dom.rootElement.blur();
+      expect(view.hasFocus, isFalse);
 
       expect(dispatchedViewFocusEvents, hasLength(2));
 
