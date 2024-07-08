@@ -356,6 +356,13 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     return renderer.MakeSubpass("Gaussian Blur Filter", pass_args.subpass_size,
                                 command_buffer, subpass_callback);
   } else {
+    // This assumes we don't scale below 1/8
+    Scalar edge = 1.0;
+    Scalar ratio = 0.25;
+    if (pass_args.effective_scalar.x <= 0.125f) {
+      edge = 3.0;
+      ratio = 0.125;
+    }
     ContentContext::SubpassCallback subpass_callback =
         [&](const ContentContext& renderer, RenderPass& pass) {
           HostBuffer& host_buffer = renderer.GetTransientsBuffer();
@@ -370,7 +377,9 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
           frame_info.texture_sampler_y_coord_scale = 1.0;
 
           TextureDownsampleFragmentShader::FragInfo frag_info;
-          frag_info.pixel_size = Vector2(1.0f / input_texture->GetSize());
+          frag_info.edge = edge;
+          frag_info.ratio = ratio;
+          frag_info.pixel_size = Vector2(1.0f / Size(input_texture->GetSize()));
 
           const Quad& uvs = pass_args.uvs;
           BindVertices<TextureFillVertexShader>(pass, host_buffer,
@@ -591,7 +600,22 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
   Scalar exponent = round(log2f(raw_result));
   // Don't scale down below 1/16th to preserve signal.
   exponent = std::max(-4.0f, exponent);
-  return std::max(powf(2.0f, exponent), 0.25f);
+  Scalar rounded = powf(2.0f, exponent);
+  Scalar result = rounded;
+  // Extend the range of the 1/8th downsample based on the effective kernel size
+  // for the blur.
+  if (rounded < 0.125f) {
+    Scalar rounded_plus = powf(2.0f, exponent + 1);
+    Scalar blur_radius = CalculateBlurRadius(sigma);
+    int kernel_size_plus = (ScaleBlurRadius(blur_radius, rounded_plus) * 2) + 1;
+    // This constant was picked by looking at the results to make sure no
+    // shimmering was introduced at the highest sigma values that downscale to
+    // 1/16th.
+    static constexpr int32_t kEighthDownsampleKernalWidthMax = 41;
+    result = kernel_size_plus <= kEighthDownsampleKernalWidthMax ? rounded_plus
+                                                                 : rounded;
+  }
+  return result;
 };
 
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
