@@ -20,11 +20,13 @@ impeller_component("gles_unittests") {
     "test/mock_gles.cc",
     "test/mock_gles.h",
     "test/mock_gles_unittests.cc",
+    "test/pipeline_library_gles_unittests.cc",
     "test/proc_table_gles_unittests.cc",
     "test/specialization_constants_unittests.cc",
   ]
   deps = [
     ":gles",
+    "//flutter/impeller/playground:playground_test",
     "//flutter/testing:testing_lib",
   ]
 }
