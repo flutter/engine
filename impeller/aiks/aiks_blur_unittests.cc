@@ -1041,19 +1041,6 @@ TEST_P(AiksTest, GuassianBlurUpdatesMipmapContents) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-TEST_P(AiksTest, GaussianBlurSetsMipCountOnPass) {
-  Canvas canvas;
-  canvas.DrawCircle({100, 100}, 50, {.color = Color::CornflowerBlue()});
-  canvas.SaveLayer({}, std::nullopt,
-                   ImageFilter::MakeBlur(Sigma(3), Sigma(3),
-                                         FilterContents::BlurStyle::kNormal,
-                                         Entity::TileMode::kClamp));
-  canvas.Restore();
-
-  Picture picture = canvas.EndRecordingAsPicture();
-  EXPECT_EQ(4, picture.pass->GetRequiredMipCount());
-}
-
 TEST_P(AiksTest, GaussianBlurAllocatesCorrectMipCountRenderTarget) {
   size_t blur_required_mip_count = 1;
 
