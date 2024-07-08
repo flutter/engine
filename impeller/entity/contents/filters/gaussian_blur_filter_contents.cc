@@ -9,6 +9,7 @@
 #include "flutter/fml/make_copyable.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/texture_downsample.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
@@ -19,7 +20,7 @@ namespace impeller {
 using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
 using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
 
-const int32_t GaussianBlurFilterContents::kBlurFilterRequiredMipCount = 4;
+const int32_t GaussianBlurFilterContents::kBlurFilterRequiredMipCount = 1;
 
 namespace {
 
@@ -242,6 +243,11 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
   Scalar desired_scalar =
       std::min(GaussianBlurFilterContents::CalculateScale(scaled_sigma.x),
                GaussianBlurFilterContents::CalculateScale(scaled_sigma.y));
+
+  if (desired_scalar < 0.25) {
+    desired_scalar = 0.25;
+  }
+
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
@@ -327,50 +333,93 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const SamplerDescriptor& sampler_descriptor,
     const DownsamplePassArgs& pass_args,
     Entity::TileMode tile_mode) {
-  ContentContext::SubpassCallback subpass_callback =
-      [&](const ContentContext& renderer, RenderPass& pass) {
-        HostBuffer& host_buffer = renderer.GetTransientsBuffer();
+  if (pass_args.effective_scalar.x >= 0.5) {
+    ContentContext::SubpassCallback subpass_callback =
+        [&](const ContentContext& renderer, RenderPass& pass) {
+          HostBuffer& host_buffer = renderer.GetTransientsBuffer();
 
-        pass.SetCommandLabel("Gaussian blur downsample");
-        auto pipeline_options = OptionsFromPass(pass);
-        pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
-        pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
+          pass.SetCommandLabel("Gaussian blur downsample");
+          auto pipeline_options = OptionsFromPass(pass);
+          pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
+          pass.SetPipeline(renderer.GetTexturePipeline(pipeline_options));
 
-        TextureFillVertexShader::FrameInfo frame_info;
-        frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-        frame_info.texture_sampler_y_coord_scale = 1.0;
+          TextureFillVertexShader::FrameInfo frame_info;
+          frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+          frame_info.texture_sampler_y_coord_scale = 1.0;
 
-        TextureFillFragmentShader::FragInfo frag_info;
-        frag_info.alpha = 1.0;
+          TextureFillFragmentShader::FragInfo frag_info;
+          frag_info.alpha = 1.0;
 
-        const Quad& uvs = pass_args.uvs;
-        BindVertices<TextureFillVertexShader>(pass, host_buffer,
-                                              {
-                                                  {Point(0, 0), uvs[0]},
-                                                  {Point(1, 0), uvs[1]},
-                                                  {Point(0, 1), uvs[2]},
-                                                  {Point(1, 1), uvs[3]},
-                                              });
+          const Quad& uvs = pass_args.uvs;
+          BindVertices<TextureFillVertexShader>(pass, host_buffer,
+                                                {
+                                                    {Point(0, 0), uvs[0]},
+                                                    {Point(1, 0), uvs[1]},
+                                                    {Point(0, 1), uvs[2]},
+                                                    {Point(1, 1), uvs[3]},
+                                                });
 
-        SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
-        SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
-        linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
-        linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
-        TextureFillVertexShader::BindFrameInfo(
-            pass, host_buffer.EmplaceUniform(frame_info));
-        TextureFillFragmentShader::BindFragInfo(
-            pass, host_buffer.EmplaceUniform(frag_info));
-        TextureFillFragmentShader::BindTextureSampler(
-            pass, input_texture,
-            renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                linear_sampler_descriptor));
+          SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
+          SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
+          linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
+          linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
+          TextureFillVertexShader::BindFrameInfo(
+              pass, host_buffer.EmplaceUniform(frame_info));
+          TextureFillFragmentShader::BindFragInfo(
+              pass, host_buffer.EmplaceUniform(frag_info));
+          TextureFillFragmentShader::BindTextureSampler(
+              pass, input_texture,
+              renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                  linear_sampler_descriptor));
 
-        return pass.Draw().ok();
-      };
-  fml::StatusOr<RenderTarget> render_target =
-      renderer.MakeSubpass("Gaussian Blur Filter", pass_args.subpass_size,
-                           command_buffer, subpass_callback);
-  return render_target;
+          return pass.Draw().ok();
+        };
+    return renderer.MakeSubpass("Gaussian Blur Filter", pass_args.subpass_size,
+                                command_buffer, subpass_callback);
+  } else {
+    ContentContext::SubpassCallback subpass_callback =
+        [&](const ContentContext& renderer, RenderPass& pass) {
+          HostBuffer& host_buffer = renderer.GetTransientsBuffer();
+
+          pass.SetCommandLabel("Gaussian blur downsample");
+          auto pipeline_options = OptionsFromPass(pass);
+          pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
+          pass.SetPipeline(renderer.GetDownsamplePipeline(pipeline_options));
+
+          TextureFillVertexShader::FrameInfo frame_info;
+          frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+          frame_info.texture_sampler_y_coord_scale = 1.0;
+
+          TextureDownsampleFragmentShader::FragInfo frag_info;
+          frag_info.pixel_size = Vector2(1.0 / input_texture->GetSize());
+
+          const Quad& uvs = pass_args.uvs;
+          BindVertices<TextureFillVertexShader>(pass, host_buffer,
+                                                {
+                                                    {Point(0, 0), uvs[0]},
+                                                    {Point(1, 0), uvs[1]},
+                                                    {Point(0, 1), uvs[2]},
+                                                    {Point(1, 1), uvs[3]},
+                                                });
+
+          SamplerDescriptor linear_sampler_descriptor = sampler_descriptor;
+          SetTileMode(&linear_sampler_descriptor, renderer, tile_mode);
+          linear_sampler_descriptor.mag_filter = MinMagFilter::kLinear;
+          linear_sampler_descriptor.min_filter = MinMagFilter::kLinear;
+          TextureFillVertexShader::BindFrameInfo(
+              pass, host_buffer.EmplaceUniform(frame_info));
+          TextureDownsampleFragmentShader::BindFragInfo(
+              pass, host_buffer.EmplaceUniform(frag_info));
+          TextureDownsampleFragmentShader::BindTextureSampler(
+              pass, input_texture,
+              renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                  linear_sampler_descriptor));
+
+          return pass.Draw().ok();
+        };
+    return renderer.MakeSubpass("Gaussian Blur Filter", pass_args.subpass_size,
+                                command_buffer, subpass_callback);
+  }
 }
 
 fml::StatusOr<RenderTarget> MakeBlurSubpass(
