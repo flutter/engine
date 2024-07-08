@@ -20,8 +20,6 @@ namespace impeller {
 using GaussianBlurVertexShader = GaussianBlurPipeline::VertexShader;
 using GaussianBlurFragmentShader = GaussianBlurPipeline::FragmentShader;
 
-const int32_t GaussianBlurFilterContents::kBlurFilterRequiredMipCount = 1;
-
 namespace {
 
 constexpr Scalar kMaxSigma = 500.0f;
@@ -132,27 +130,12 @@ std::optional<Snapshot> GetSnapshot(const std::shared_ptr<FilterInput>& input,
                                     const ContentContext& renderer,
                                     const Entity& entity,
                                     const std::optional<Rect>& coverage_hint) {
-  int32_t mip_count = GaussianBlurFilterContents::kBlurFilterRequiredMipCount;
-  if (renderer.GetContext()->GetBackendType() ==
-      Context::BackendType::kOpenGLES) {
-    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
-    // generation on opengles.
-    mip_count = 1;
-  }
-
   std::optional<Snapshot> input_snapshot =
       input->GetSnapshot("GaussianBlur", renderer, entity,
-                         /*coverage_limit=*/coverage_hint,
-                         /*mip_count=*/mip_count);
+                         /*coverage_limit=*/coverage_hint);
   if (!input_snapshot.has_value()) {
     return std::nullopt;
   }
-
-  // In order to avoid shimmering in downsampling step, we should have mips.
-  if (input_snapshot->texture->GetMipCount() <= 1) {
-    FML_DLOG(ERROR) << GaussianBlurFilterContents::kNoMipsError;
-  }
-  FML_DCHECK(!input_snapshot->texture->NeedsMipmapGeneration());
 
   return input_snapshot;
 }
@@ -244,10 +227,6 @@ DownsamplePassArgs CalculateDownsamplePassArgs(
       std::min(GaussianBlurFilterContents::CalculateScale(scaled_sigma.x),
                GaussianBlurFilterContents::CalculateScale(scaled_sigma.y));
 
-  if (desired_scalar < 0.25) {
-    desired_scalar = 0.25;
-  }
-
   // TODO(jonahwilliams): If desired_scalar is 1.0 and we fully acquired the
   // gutter from the expanded_coverage_hint, we can skip the downsample pass.
   // pass.
@@ -333,7 +312,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const SamplerDescriptor& sampler_descriptor,
     const DownsamplePassArgs& pass_args,
     Entity::TileMode tile_mode) {
-  if (pass_args.effective_scalar.x >= 0.5) {
+  if (pass_args.effective_scalar.x >= 0.5f) {
     ContentContext::SubpassCallback subpass_callback =
         [&](const ContentContext& renderer, RenderPass& pass) {
           HostBuffer& host_buffer = renderer.GetTransientsBuffer();
@@ -391,7 +370,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
           frame_info.texture_sampler_y_coord_scale = 1.0;
 
           TextureDownsampleFragmentShader::FragInfo frag_info;
-          frag_info.pixel_size = Vector2(1.0 / input_texture->GetSize());
+          frag_info.pixel_size = Vector2(1.0f / input_texture->GetSize());
 
           const Quad& uvs = pass_args.uvs;
           BindVertices<TextureFillVertexShader>(pass, host_buffer,
@@ -612,22 +591,7 @@ Scalar GaussianBlurFilterContents::CalculateScale(Scalar sigma) {
   Scalar exponent = round(log2f(raw_result));
   // Don't scale down below 1/16th to preserve signal.
   exponent = std::max(-4.0f, exponent);
-  Scalar rounded = powf(2.0f, exponent);
-  Scalar result = rounded;
-  // Extend the range of the 1/8th downsample based on the effective kernel size
-  // for the blur.
-  if (rounded < 0.125f) {
-    Scalar rounded_plus = powf(2.0f, exponent + 1);
-    Scalar blur_radius = CalculateBlurRadius(sigma);
-    int kernel_size_plus = (ScaleBlurRadius(blur_radius, rounded_plus) * 2) + 1;
-    // This constant was picked by looking at the results to make sure no
-    // shimmering was introduced at the highest sigma values that downscale to
-    // 1/16th.
-    static constexpr int32_t kEighthDownsampleKernalWidthMax = 41;
-    result = kernel_size_plus <= kEighthDownsampleKernalWidthMax ? rounded_plus
-                                                                 : rounded;
-  }
-  return result;
+  return std::max(powf(2.0f, exponent), 0.25f);
 };
 
 std::optional<Rect> GaussianBlurFilterContents::GetFilterSourceCoverage(
