@@ -14,6 +14,7 @@ namespace impeller::testing {
 using PipelineLibraryGLESTest = PlaygroundTest;
 INSTANTIATE_OPENGLES_PLAYGROUND_SUITE(PipelineLibraryGLESTest);
 
+// NOLINTBEGIN(bugprone-unchecked-optional-access)
 TEST_P(PipelineLibraryGLESTest, ProgramHandlesAreReused) {
   using VS = SpecConstantVertexShader;
   using FS = SpecConstantFragmentShader;
@@ -65,5 +66,6 @@ TEST_P(PipelineLibraryGLESTest, ChangingSpecConstantsCausesNewProgramObject) {
   ASSERT_FALSE(pipeline_gles.GetProgramHandle().name.value() ==
                new_pipeline_gles.GetProgramHandle().name.value());
 }
+// NOLINTEND(bugprone-unchecked-optional-access)
 
 }  // namespace impeller::testing
