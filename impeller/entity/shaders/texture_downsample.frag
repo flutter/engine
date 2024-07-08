@@ -18,17 +18,16 @@ frag_info;
 
 in highp vec2 v_texture_coords;
 
-out f16vec4 frag_color;
+out vec4 frag_color;
 
 void main() {
-  f16vec4 total = f16vec4(0.0hf);
-  float16_t ratio = float16_t(frag_info.ratio);
+  vec4 total = vec4(0.0);
   for (float i = -frag_info.edge; i <= frag_info.edge; i += 2) {
     for (float j = -frag_info.edge; j <= frag_info.edge; j += 2) {
       total += (texture(texture_sampler,
                         v_texture_coords + frag_info.pixel_size * vec2(i, j),
                         float16_t(kDefaultMipBias)) *
-                ratio);
+                frag_info.ratio);
     }
   }
   frag_color = total;

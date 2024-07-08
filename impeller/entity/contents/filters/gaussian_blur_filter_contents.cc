@@ -361,7 +361,7 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     Scalar ratio = 0.25;
     if (pass_args.effective_scalar.x <= 0.125f) {
       edge = 3.0;
-      ratio = 0.125;
+      ratio = 0.0625;
     }
     ContentContext::SubpassCallback subpass_callback =
         [&](const ContentContext& renderer, RenderPass& pass) {
