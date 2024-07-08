@@ -586,9 +586,6 @@ Entity ApplyBlurStyle(FilterContents::BlurStyle blur_style,
 }
 }  // namespace
 
-std::string_view GaussianBlurFilterContents::kNoMipsError =
-    "Applying gaussian blur without mipmap.";
-
 GaussianBlurFilterContents::GaussianBlurFilterContents(
     Scalar sigma_x,
     Scalar sigma_y,
