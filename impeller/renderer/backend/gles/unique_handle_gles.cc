@@ -16,7 +16,7 @@ UniqueHandleGLES::UniqueHandleGLES(ReactorGLES::Ref reactor, HandleType type)
 }
 
 UniqueHandleGLES::UniqueHandleGLES(ReactorGLES::Ref reactor, HandleGLES handle)
-    : reactor_(std::move(reactor)), handle_(std::move(handle)) {}
+    : reactor_(std::move(reactor)), handle_(handle) {}
 
 UniqueHandleGLES::~UniqueHandleGLES() {
   if (!handle_.IsDead() && reactor_) {

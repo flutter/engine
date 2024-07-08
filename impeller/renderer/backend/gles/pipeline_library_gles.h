@@ -113,10 +113,10 @@ class PipelineLibraryGLES final
   const ReactorGLES::Ref& GetReactor() const;
 
   static std::shared_ptr<PipelineGLES> CreatePipeline(
-      std::weak_ptr<PipelineLibrary> weak_library,
+      const std::weak_ptr<PipelineLibrary>& weak_library,
       const PipelineDescriptor& desc,
-      std::shared_ptr<const ShaderFunction> vert_shader,
-      std::shared_ptr<const ShaderFunction> frag_shader);
+      const std::shared_ptr<const ShaderFunction>& vert_shader,
+      const std::shared_ptr<const ShaderFunction>& frag_shader);
 
   std::shared_ptr<UniqueHandleGLES> GetProgramForKey(const ProgramKey& key);
 

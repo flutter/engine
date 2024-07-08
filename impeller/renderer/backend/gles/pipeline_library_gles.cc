@@ -180,10 +180,10 @@ bool PipelineLibraryGLES::IsValid() const {
 }
 
 std::shared_ptr<PipelineGLES> PipelineLibraryGLES::CreatePipeline(
-    std::weak_ptr<PipelineLibrary> weak_library,
+    const std::weak_ptr<PipelineLibrary>& weak_library,
     const PipelineDescriptor& desc,
-    std::shared_ptr<const ShaderFunction> vert_function,
-    std::shared_ptr<const ShaderFunction> frag_function) {
+    const std::shared_ptr<const ShaderFunction>& vert_function,
+    const std::shared_ptr<const ShaderFunction>& frag_function) {
   auto strong_library = weak_library.lock();
 
   if (!strong_library) {
