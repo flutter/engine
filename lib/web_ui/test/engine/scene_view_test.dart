@@ -61,6 +61,9 @@ class StubFlutterView implements ui.FlutterView {
   ui.Display get display => throw UnimplementedError();
 
   @override
+  bool get hasFocus => throw UnimplementedError();
+
+  @override
   List<ui.DisplayFeature> get displayFeatures => throw UnimplementedError();
 
   @override
