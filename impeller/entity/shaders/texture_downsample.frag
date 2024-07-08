@@ -25,8 +25,10 @@ void main() {
   float16_t ratio = float16_t(frag_info.ratio);
   for (float i = -frag_info.edge; i <= frag_info.edge; i += 2) {
     for (float j = -frag_info.edge; j <= frag_info.edge; j += 2) {
-      total += (texture(texture_sampler, v_texture_coords + frag_info.pixel_size * vec2(i, j),
-                       float16_t(kDefaultMipBias)) * ratio);
+      total += (texture(texture_sampler,
+                        v_texture_coords + frag_info.pixel_size * vec2(i, j),
+                        float16_t(kDefaultMipBias)) *
+                ratio);
     }
   }
   frag_color = total;
