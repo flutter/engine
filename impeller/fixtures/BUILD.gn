@@ -11,6 +11,10 @@ impeller_shaders("shader_fixtures") {
   # 2.3 adds support for framebuffer fetch in Metal.
   metal_version = "2.3"
 
+  # Specify that framebuffer fetch is required for all backends. Compilation of
+  # shaders will be gated on capability checks.
+  require_framebuffer_fetch = true
+
   # Not analyzing because they are not performance critical, and mipmap uses
   # textureLod, which uses an extension that malioc does not support.
   analyze = false
