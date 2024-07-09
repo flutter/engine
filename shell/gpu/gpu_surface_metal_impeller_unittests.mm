@@ -109,7 +109,6 @@ TEST(GPUSurfaceMetalImpeller, ResetHostBufferBasedOnFrameBoundary) {
 
   auto& host_buffer = surface->GetAiksContext()->GetContentContext().GetTransientsBuffer();
 
-  EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 1u);
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 0u);
 
   auto frame = surface->AcquireFrame(SkISize::Make(100, 100));
