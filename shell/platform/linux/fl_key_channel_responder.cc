@@ -43,9 +43,9 @@ struct _FlKeyChannelUserData {
 
   // The current responder.
   FlKeyChannelResponder* responder;
-  // The callback provided by the caller #FlKeyboardManager.
+  // The callback provided by the caller #FlKeyboardHandler.
   FlKeyResponderAsyncCallback callback;
-  // The user_data provided by the caller #FlKeyboardManager.
+  // The user_data provided by the caller #FlKeyboardHandler.
   gpointer user_data;
 };
 

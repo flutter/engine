@@ -14,8 +14,6 @@
 
 G_BEGIN_DECLS
 
-typedef struct _FlKeyboardManager FlKeyboardManager;
-
 /**
  * FlKeyResponderAsyncCallback:
  * @event: whether the event has been handled.
