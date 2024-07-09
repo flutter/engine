@@ -109,31 +109,20 @@ TEST(GPUSurfaceMetalImpeller, ResetHostBufferBasedOnFrameBoundary) {
 
   auto& host_buffer = surface->GetAiksContext()->GetContentContext().GetTransientsBuffer();
 
-#if EXPERIMENTAL_CANVAS
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 1u);
-#else
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 0u);
-#endif  // EXPERIMENTAL_CANVAS
 
   auto frame = surface->AcquireFrame(SkISize::Make(100, 100));
   frame->set_submit_info({.frame_boundary = false});
 
   ASSERT_TRUE(frame->Submit());
-#if EXPERIMENTAL_CANVAS
-  EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 1u);
-#else
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 0u);
-#endif  // EXPERIMENTAL_CANVAS
 
   frame = surface->AcquireFrame(SkISize::Make(100, 100));
   frame->set_submit_info({.frame_boundary = true});
 
   ASSERT_TRUE(frame->Submit());
-#if EXPERIMENTAL_CANVAS
-  EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 2u);
-#else
   EXPECT_EQ(host_buffer.GetStateForTest().current_frame, 1u);
-#endif  // EXPERIMENTAL_CANVAS
 }
 
 }  // namespace testing

@@ -87,6 +87,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
             std::move(surface),
             fml::MakeCopyable([&](impeller::RenderTarget& render_target)
                                   -> bool {
+              const bool reset_host_buffer =
+                  surface_frame.submit_info().frame_boundary;
 #if EXPERIMENTAL_CANVAS
               impeller::TextFrameDispatcher collector(
                   aiks_context->GetContentContext(), impeller::Matrix());
@@ -107,6 +109,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
               aiks_context->GetContentContext()
                   .GetLazyGlyphAtlas()
                   ->ResetTextFrames();
+              if (reset_host_buffer) {
+                aiks_context->GetContentContext().GetTransientsBuffer().Reset();
+              }
               return true;
 #else
               impeller::Rect dl_cull_rect = impeller::Rect::MakeSize(cull_rect);
@@ -115,8 +120,6 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
                   impeller_dispatcher,
                   SkIRect::MakeWH(cull_rect.width, cull_rect.height));
               auto picture = impeller_dispatcher.EndRecordingAsPicture();
-              const bool reset_host_buffer =
-                  surface_frame.submit_info().frame_boundary;
               return aiks_context->Render(picture, render_target,
                                           reset_host_buffer);
 #endif
