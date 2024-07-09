@@ -14,7 +14,7 @@ vars = {
   'flutter_git': 'https://flutter.googlesource.com',
   'skia_git': 'https://skia.googlesource.com',
   'llvm_git': 'https://llvm.googlesource.com',
-  'skia_revision': '86ee8cc615081303f575983bc2eb10e67b17a6ed',
+  'skia_revision': '46e5bf98158a789ebef44b9ca39ad35f02d2fd8b',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -781,7 +781,7 @@ deps = {
      'dep_type': 'cipd',
    },
 
-  'src/third_party/android_embedding_dependencies': {
+  'src/flutter/third_party/android_embedding_dependencies': {
      'packages': [
        {
         'package': 'flutter/android/embedding_bundle',
@@ -969,7 +969,7 @@ deps = {
      'packages': [
        {
         'package': 'fuchsia/sdk/core/linux-amd64',
-        'version': '-VgqOfoW5sf04SuJh64NbuVnDIwiyl7NyTAD4fsTLNkC'
+        'version': 'SrAow18WmBW8IDjzaOqw_jojS27ZG8zBvfdgoH3muRcC'
        }
      ],
      'condition': 'download_fuchsia_deps and not download_fuchsia_sdk',
