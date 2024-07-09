@@ -171,7 +171,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrameFromCAMetalLa
         return renderer->Render(
             std::move(surface),
             fml::MakeCopyable([aiks_context, &display_list, &cull_rect,
-                               &sk_cull_rect](impeller::RenderTarget& render_target) -> bool {
+                               &sk_cull_rect, reset_host_buffer](impeller::RenderTarget& render_target) -> bool {
               impeller::ExperimentalDlDispatcher impeller_dispatcher(
                   aiks_context->GetContentContext(), render_target,
                   display_list->root_has_backdrop_filter(), display_list->max_root_blend_mode(),
