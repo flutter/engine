@@ -3698,7 +3698,7 @@ Future<CanvasKitModule> _downloadOneOf(Iterable<String> urls) async {
 }
 
 String _resolveUrl(String url) {
-  return DomURL(url.toJS, domWindow.document.baseUri?.toJS).toJSString().toDart;
+  return createDomURL(url, domWindow.document.baseUri).toJSString().toDart;
 }
 
 /// Downloads the CanvasKit JavaScript file at [url].

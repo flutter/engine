@@ -2368,11 +2368,15 @@ extension DomPopStateEventExtension on DomPopStateEvent {
   dynamic get state => _state?.toObjectDeep;
 }
 
-@JS()
+@JS('URL')
 @staticInterop
 class DomURL {
-  external factory DomURL(JSString url, JSString? base);
+  external factory DomURL.arg1(JSString url);
+  external factory DomURL.arg2(JSString url, JSString? base);
 }
+
+DomURL createDomURL(String url, [String? base]) =>
+    base == null ? DomURL.arg1(url.toJS) : DomURL.arg2(url.toJS, base.toJS);
 
 extension DomURLExtension on DomURL {
   @JS('createObjectURL')
