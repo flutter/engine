@@ -19,7 +19,7 @@ void ImpellerValidationErrorsSetFatal(bool fatal) {
 }
 
 void ImpellerValidationErrorsSetCallback(ValidationFailureCallback callback) {
-  sValidationFailureCallback = callback;
+  sValidationFailureCallback = std::move(callback);
 }
 
 ScopedValidationDisable::ScopedValidationDisable() {
