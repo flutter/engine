@@ -215,9 +215,13 @@ To your `AndroidManifest.xml` file, add under the `<application>` tag:
 ```
 
 Impeller will use Vulkan on Android by default when opted into. Where Vulkan
-is unavalable, Impeller will fallback to Skia. However, Impellers OpenGL backend
+is unavailable, Impeller will fallback to Skia. However, Impellers OpenGL backend
 is well under construction. To try that with your application, add the following
 under the `<application>` tag:
+
+> [!Warning]
+> Selecting the Impeller backend this way will only work in `debug` and `profile`
+> runtime modes.
 
 ```xml
   <meta-data
