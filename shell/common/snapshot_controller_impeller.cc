@@ -14,8 +14,6 @@
 #include "flutter/shell/common/snapshot_controller.h"
 #include "impeller/renderer/render_target.h"
 
-#define EXPERIMENTAL_CANVAS false
-
 namespace flutter {
 
 namespace {
@@ -35,7 +33,7 @@ sk_sp<DlImage> DoMakeRasterSnapshot(
       static_cast<double>(max_size.width) / static_cast<double>(size.width());
   double scale_factor_y =
       static_cast<double>(max_size.height) / static_cast<double>(size.height());
-  double scale_factor = std::min(1.0, std::min(scale_factor_x, scale_factor_y));
+  double scale_factor = std::min({1.0, scale_factor_x, scale_factor_y});
 
   auto render_target_size = impeller::ISize(size.width(), size.height());
 
