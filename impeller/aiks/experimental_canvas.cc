@@ -56,7 +56,6 @@ static const constexpr RenderTarget::AttachmentConfig kDefaultStencilConfig =
 static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
     ContentContext& renderer,
     ISize size,
-    int mip_count,
     const Color& clear_color) {
   const std::shared_ptr<Context>& context = renderer.GetContext();
 
@@ -65,18 +64,12 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
-  if (context->GetBackendType() == Context::BackendType::kOpenGLES) {
-    // TODO(https://github.com/flutter/flutter/issues/141732): Implement mip map
-    // generation on opengles.
-    mip_count = 1;
-  }
-
   RenderTarget target;
   if (context->GetCapabilities()->SupportsOffscreenMSAA()) {
     target = renderer.GetRenderTargetCache()->CreateOffscreenMSAA(
         /*context=*/*context,
         /*size=*/size,
-        /*mip_count=*/mip_count,
+        /*mip_count=*/1,
         /*label=*/"EntityPass",
         /*color_attachment_config=*/
         RenderTarget::AttachmentConfigMSAA{
@@ -90,7 +83,7 @@ static std::unique_ptr<EntityPassTarget> CreateRenderTarget(
     target = renderer.GetRenderTargetCache()->CreateOffscreen(
         *context,  // context
         size,      // size
-        /*mip_count=*/mip_count,
+        /*mip_count=*/1,
         "EntityPass",  // label
         RenderTarget::AttachmentConfig{
             .storage_mode = StorageMode::kDevicePrivate,
@@ -172,12 +165,10 @@ void ExperimentalCanvas::SetupRenderPass() {
   // a second save layer with the same dimensions as the onscreen. When
   // rendering is completed, we must blit this saveLayer to the onscreen.
   if (requires_readback_) {
-    auto entity_pass_target = CreateRenderTarget(
-        renderer_,                  //
-        color0.texture->GetSize(),  //
-        // Note: this is incorrect, we also need to know what kind of filter.
-        /*mip_count=*/4,  //
-        /*clear_color=*/Color::BlackTransparent());
+    auto entity_pass_target =
+        CreateRenderTarget(renderer_,                  //
+                           color0.texture->GetSize(),  //
+                           /*clear_color=*/Color::BlackTransparent());
     render_passes_.push_back(
         LazyRenderingConfig(renderer_, std::move(entity_pass_target)));
   } else {
@@ -379,7 +370,8 @@ void ExperimentalCanvas::SaveLayer(
       renderer_,                                             //
       CreateRenderTarget(renderer_,                          //
                          ISize(subpass_coverage.GetSize()),  //
-                         1u, Color::BlackTransparent())));
+                         Color::BlackTransparent()           //
+                         )));
   save_layer_state_.push_back(SaveLayerState{paint_copy, subpass_coverage});
 
   CanvasStackEntry entry;
