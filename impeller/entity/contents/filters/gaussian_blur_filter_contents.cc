@@ -312,7 +312,11 @@ fml::StatusOr<RenderTarget> MakeDownsampleSubpass(
     const SamplerDescriptor& sampler_descriptor,
     const DownsamplePassArgs& pass_args,
     Entity::TileMode tile_mode) {
-  if (pass_args.effective_scalar.x >= 0.5f) {
+  // If the texture already had mip levels generated, then we can use the
+  // original downsample shader.
+  if (pass_args.effective_scalar.x >= 0.5f ||
+      (!input_texture->NeedsMipmapGeneration() &&
+       input_texture->GetTextureDescriptor().mip_count > 1)) {
     ContentContext::SubpassCallback subpass_callback =
         [&](const ContentContext& renderer, RenderPass& pass) {
           HostBuffer& host_buffer = renderer.GetTransientsBuffer();
