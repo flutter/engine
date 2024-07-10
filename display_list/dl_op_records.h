@@ -231,7 +231,6 @@ DEFINE_SET_CLEAR_DLATTR_OP(ColorFilter, ColorFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ImageFilter, ImageFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
-DEFINE_SET_CLEAR_DLATTR_OP(PathEffect, PathEffect, effect)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
 
 // 4 byte header + 80 bytes for the embedded DlImageColorSource
@@ -736,6 +735,28 @@ DEFINE_DRAW_2ARG_OP(Circle, SkPoint, center, SkScalar, radius)
 DEFINE_DRAW_2ARG_OP(DRRect, SkRRect, outer, SkRRect, inner)
 #undef DEFINE_DRAW_2ARG_OP
 
+// 4 byte header + 24 byte payload packs into 32 bytes (4 bytes unused)
+struct DrawDashedLineOp final : DrawOpBase {
+  static constexpr auto kType = DisplayListOpType::kDrawDashedLine;
+
+  DrawDashedLineOp(const DlPoint& p0,
+                   const DlPoint& p1,
+                   DlScalar on_length,
+                   DlScalar off_length)
+      : p0(p0), p1(p1), on_length(on_length), off_length(off_length) {}
+
+  const DlPoint p0;
+  const DlPoint p1;
+  const SkScalar on_length;
+  const SkScalar off_length;
+
+  void dispatch(DispatchContext& ctx) const {
+    if (op_needed(ctx)) {
+      ctx.receiver.drawDashedLine(p0, p1, on_length, off_length);
+    }
+  }
+};
+
 // 4 byte header + 28 byte payload packs efficiently into 32 bytes
 struct DrawArcOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawArc;
@@ -781,24 +802,19 @@ DEFINE_DRAW_POINTS_OP(Lines, kLines);
 DEFINE_DRAW_POINTS_OP(Polygon, kPolygon);
 #undef DEFINE_DRAW_POINTS_OP
 
-// 4 byte header + 4 byte payload packs efficiently into 8 bytes
-// The DlVertices object will be pod-allocated after this structure
-// and can take any number of bytes so the final efficiency will
-// depend on the size of the DlVertices.
-// Note that the DlVertices object ends with an array of 16-bit
-// indices so the alignment can be up to 6 bytes off leading to
-// up to 6 bytes of overhead
+// 4 byte header + 20 byte payload packs efficiently into 24 bytes
 struct DrawVerticesOp final : DrawOpBase {
   static constexpr auto kType = DisplayListOpType::kDrawVertices;
 
-  explicit DrawVerticesOp(DlBlendMode mode) : mode(mode) {}
+  explicit DrawVerticesOp(const std::shared_ptr<DlVertices>& vertices,
+                          DlBlendMode mode)
+      : mode(mode), vertices(vertices) {}
 
   const DlBlendMode mode;
+  const std::shared_ptr<DlVertices> vertices;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
-      const DlVertices* vertices =
-          reinterpret_cast<const DlVertices*>(this + 1);
       ctx.receiver.drawVertices(vertices, mode);
     }
   }

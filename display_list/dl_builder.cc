@@ -42,17 +42,17 @@ static constexpr inline bool is_power_of_two(int value) {
 template <typename T, typename... Args>
 void* DisplayListBuilder::Push(size_t pod, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
-  FML_DCHECK(size < (1 << 24));
+  FML_CHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
     static_assert(is_power_of_two(DL_BUILDER_PAGE),
                   "This math needs updating for non-pow2.");
     // Next greater multiple of DL_BUILDER_PAGE.
     allocated_ = (used_ + size + DL_BUILDER_PAGE) & ~(DL_BUILDER_PAGE - 1);
     storage_.realloc(allocated_);
-    FML_DCHECK(storage_.get());
+    FML_CHECK(storage_.get());
     memset(storage_.get() + used_, 0, allocated_ - used_);
   }
-  FML_DCHECK(used_ + size <= allocated_);
+  FML_CHECK(used_ + size <= allocated_);
   auto op = reinterpret_cast<T*>(storage_.get() + used_);
   used_ += size;
   new (op) T{std::forward<Args>(args)...};
@@ -338,22 +338,6 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
   }
   UpdateCurrentOpacityCompatibility();
 }
-void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
-  if (effect == nullptr) {
-    current_.setPathEffect(nullptr);
-    Push<ClearPathEffectOp>(0);
-  } else {
-    current_.setPathEffect(effect->shared());
-    switch (effect->type()) {
-      case DlPathEffectType::kDash: {
-        const DlDashPathEffect* dash_effect = effect->asDash();
-        void* pod = Push<SetPodPathEffectOp>(dash_effect->size());
-        new (pod) DlDashPathEffect(dash_effect);
-        break;
-      }
-    }
-  }
-}
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
     current_.setMaskFilter(nullptr);
@@ -404,9 +388,6 @@ void DisplayListBuilder::SetAttributesFromPaint(
   }
   if (flags.applies_image_filter()) {
     setImageFilter(paint.getImageFilter().get());
-  }
-  if (flags.applies_path_effect()) {
-    setPathEffect(paint.getPathEffect().get());
   }
   if (flags.applies_mask_filter()) {
     setMaskFilter(paint.getMaskFilter().get());
@@ -1099,6 +1080,29 @@ void DisplayListBuilder::DrawLine(const SkPoint& p0,
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawLineFlags);
   drawLine(p0, p1);
 }
+void DisplayListBuilder::drawDashedLine(const DlPoint& p0,
+                                        const DlPoint& p1,
+                                        DlScalar on_length,
+                                        DlScalar off_length) {
+  SkRect bounds = SkRect::MakeLTRB(p0.x, p0.y, p1.x, p1.y).makeSorted();
+  DisplayListAttributeFlags flags =
+      (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
+                                                        : kDrawHVLineFlags;
+  OpResult result = PaintResult(current_, flags);
+  if (result != OpResult::kNoEffect && AccumulateOpBounds(bounds, flags)) {
+    Push<DrawDashedLineOp>(0, p0, p1, on_length, off_length);
+    CheckLayerOpacityCompatibility();
+    UpdateLayerResult(result);
+  }
+}
+void DisplayListBuilder::DrawDashedLine(const DlPoint& p0,
+                                        const DlPoint& p1,
+                                        DlScalar on_length,
+                                        DlScalar off_length,
+                                        const DlPaint& paint) {
+  SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawLineFlags);
+  drawDashedLine(p0, p1, on_length, off_length);
+}
 void DisplayListBuilder::drawRect(const SkRect& rect) {
   DisplayListAttributeFlags flags = kDrawRectFlags;
   OpResult result = PaintResult(current_, flags);
@@ -1305,14 +1309,14 @@ void DisplayListBuilder::DrawPoints(PointMode mode,
   SetAttributesFromPaint(paint, FlagsForPointMode(mode));
   drawPoints(mode, count, pts);
 }
-void DisplayListBuilder::drawVertices(const DlVertices* vertices,
-                                      DlBlendMode mode) {
+void DisplayListBuilder::drawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode) {
   DisplayListAttributeFlags flags = kDrawVerticesFlags;
   OpResult result = PaintResult(current_, flags);
   if (result != OpResult::kNoEffect &&
       AccumulateOpBounds(vertices->bounds(), flags)) {
-    void* pod = Push<DrawVerticesOp>(vertices->size(), mode);
-    new (pod) DlVertices(vertices);
+    Push<DrawVerticesOp>(0, vertices, mode);
     // DrawVertices applies its colors to the paint so we have no way
     // of controlling opacity using the current paint attributes.
     // Although, examination of the |mode| might find some predictable
@@ -1330,9 +1334,10 @@ void DisplayListBuilder::drawVertices(const DlVertices* vertices,
     current_layer().layer_local_accumulator.record_overlapping_bounds();
   }
 }
-void DisplayListBuilder::DrawVertices(const DlVertices* vertices,
-                                      DlBlendMode mode,
-                                      const DlPaint& paint) {
+void DisplayListBuilder::DrawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode,
+    const DlPaint& paint) {
   SetAttributesFromPaint(paint, DisplayListOpFlags::kDrawVerticesFlags);
   drawVertices(vertices, mode);
 }
@@ -1703,14 +1708,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
 
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(current_.getPathEffectPtr(), is_stroked);
-    if (current_.getPathEffect()) {
-      auto effect_bounds = current_.getPathEffect()->effect_bounds(bounds);
-      if (!effect_bounds.has_value()) {
-        return false;
-      }
-      bounds = effect_bounds.value();
-    }
+        flags.GeometryFlags(is_stroked);
 
     if (is_stroked) {
       // Determine the max multiplier to the stroke width first.

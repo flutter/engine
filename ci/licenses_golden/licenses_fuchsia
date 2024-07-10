@@ -1,4 +1,4 @@
-Signature: 523d4aa1f336831c8c465a4483724a78
+Signature: 1e1e7245ddbbc15fb3f820e7743954c8
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -4400,21 +4400,18 @@ FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-18/release/
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-18/release/package_manifest.json
@@ -4469,15 +4466,12 @@ FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/riscv64-api-21/rel
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-21/release/package_manifest.json
@@ -6786,6 +6780,7 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/vmo/state.cc + ../../../fuchsia/s
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/inspect/vmo/types.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/media_cpp/include/lib/media/cpp/type_converters.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/media_cpp/type_converters.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/memory_barriers/include/src/lib/memory_barriers/memory_barriers.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/mmio/include/lib/mmio/mmio.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/mmio/mmio-buffer.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_token_pair.cc + ../../../fuchsia/sdk/linux/LICENSE
@@ -7155,6 +7150,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/inspect/vmo/state.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/inspect/vmo/types.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/media_cpp/include/lib/media/cpp/type_converters.h
 FILE: ../../../fuchsia/sdk/linux/pkg/media_cpp/type_converters.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/memory_barriers/include/src/lib/memory_barriers/memory_barriers.h
 FILE: ../../../fuchsia/sdk/linux/pkg/mmio/include/lib/mmio/mmio.h
 FILE: ../../../fuchsia/sdk/linux/pkg/mmio/mmio-buffer.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/scenic_cpp/view_token_pair.cc
@@ -11626,21 +11622,18 @@ FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-18/release/
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-18/release/package_manifest.json
@@ -11695,15 +11688,12 @@ FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/riscv64-api-21/rel
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-21/release/package_manifest.json
@@ -14459,7 +14449,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/plug.fidl + ../..
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/ring_buffer_format.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.gpioimpl/gpio-impl.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/i2cimpl.fidl + ../../../fuchsia/sdk/linux/LICENSE
-ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/history.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/config.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/metadata.fidl + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/sdmmc.fidl + ../../../fuchsia/sdk/linux/LICENSE
@@ -14565,7 +14554,6 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/plug.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.audio/ring_buffer_format.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.gpioimpl/gpio-impl.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2cimpl/i2cimpl.fidl
-FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/history.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power/config.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/metadata.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.sdmmc/sdmmc.fidl
@@ -19185,21 +19173,18 @@ FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-18/release/
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/heapdump-collector/x64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/arm64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-18/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/riscv64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-16/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-17/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/magma_conformance_tests/x64-api-18/release/package_manifest.json
@@ -19254,15 +19239,12 @@ FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/riscv64-api-21/rel
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkproto-driver-test/x64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/arm64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/riscv64-api-21/release/package_manifest.json
-FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api--1/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-19/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-20/release/package_manifest.json
 FILE: ../../../fuchsia/sdk/linux/packages/vkreadback_test/x64-api-21/release/package_manifest.json

@@ -11,6 +11,7 @@
 #include "flutter/fml/trace_event.h"
 
 #include "third_party/skia/include/core/SkColorFilter.h"
+#include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrRecordingContext.h"
 
@@ -199,6 +200,17 @@ void DlSkCanvasAdapter::DrawLine(const SkPoint& p0,
   delegate_->drawLine(p0, p1, ToStrokedSk(paint));
 }
 
+void DlSkCanvasAdapter::DrawDashedLine(const DlPoint& p0,
+                                       const DlPoint& p1,
+                                       DlScalar on_length,
+                                       DlScalar off_length,
+                                       const DlPaint& paint) {
+  SkPaint dashed_paint = ToStrokedSk(paint);
+  SkScalar intervals[2] = {on_length, off_length};
+  dashed_paint.setPathEffect(SkDashPathEffect::Make(intervals, 2, 0.0f));
+  delegate_->drawLine(ToSkPoint(p0), ToSkPoint(p1), dashed_paint);
+}
+
 void DlSkCanvasAdapter::DrawRect(const SkRect& rect, const DlPaint& paint) {
   delegate_->drawRect(rect, ToSk(paint));
 }
@@ -242,9 +254,10 @@ void DlSkCanvasAdapter::DrawPoints(PointMode mode,
   delegate_->drawPoints(ToSk(mode), count, pts, ToStrokedSk(paint));
 }
 
-void DlSkCanvasAdapter::DrawVertices(const DlVertices* vertices,
-                                     DlBlendMode mode,
-                                     const DlPaint& paint) {
+void DlSkCanvasAdapter::DrawVertices(
+    const std::shared_ptr<DlVertices>& vertices,
+    DlBlendMode mode,
+    const DlPaint& paint) {
   delegate_->drawVertices(ToSk(vertices), ToSk(mode), ToSk(paint));
 }
 
