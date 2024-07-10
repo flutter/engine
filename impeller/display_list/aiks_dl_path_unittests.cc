@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "display_list/dl_sampling_options.h"
+#include "display_list/dl_tile_mode.h"
+#include "display_list/effects/dl_color_source.h"
+#include "display_list/effects/dl_mask_filter.h"
 #include "flutter/impeller/aiks/aiks_unittests.h"
 
 #include "flutter/display_list/dl_blend_mode.h"
@@ -11,9 +15,12 @@
 #include "flutter/display_list/effects/dl_color_filter.h"
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/dl_image_impeller.h"
+#include "impeller/playground/widgets.h"
+
+#include "include/core/SkMatrix.h"
+#include "include/core/SkPath.h"
 #include "include/core/SkPathTypes.h"
 #include "include/core/SkRRect.h"
-#include "include/private/base/SkPoint_impl.h"
 
 namespace impeller {
 namespace testing {
@@ -178,20 +185,20 @@ TEST_P(AiksTest, CanDrawAnOpenPath) {
   // 1. (50, height)
   // 2. (width, height)
   // 3. (width, 50)
-  PathBuilder builder;
-  builder.MoveTo({50, 50});
-  builder.LineTo({50, 100});
-  builder.LineTo({100, 100});
-  builder.LineTo({100, 50});
+  SkPath path;
+  path.moveTo(50, 50);
+  path.lineTo(50, 100);
+  path.lineTo(100, 100);
+  path.lineTo(100, 50);
 
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
+  DlPaint paint;
+  paint.setColor(DlColor::kRed());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(10);
 
-  canvas.DrawPath(builder.TakePath(), paint);
+  builder.DrawPath(path, paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, CanDrawAnOpenPathThatIsntARect) {
@@ -199,26 +206,27 @@ TEST_P(AiksTest, CanDrawAnOpenPathThatIsntARect) {
 
   // Draw a stroked path that is explicitly closed to verify
   // It doesn't become a rectangle.
-  PathBuilder builder;
-  builder.MoveTo({50, 50});
-  builder.LineTo({520, 120});
-  builder.LineTo({300, 310});
-  builder.LineTo({100, 50});
-  builder.Close();
+  SkPath path;
+  // PathBuilder builder;
+  path.moveTo(50, 50);
+  path.lineTo(520, 120);
+  path.lineTo(300, 310);
+  path.lineTo(100, 50);
+  path.close();
 
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
+  DlPaint paint;
+  paint.setColor(DlColor::kRed());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(10);
 
-  canvas.DrawPath(builder.TakePath(), paint);
+  builder.DrawPath(path, paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
   // Compare with https://fiddle.skia.org/c/027392122bec8ac2b5d5de00a4b9bbe2
-  auto callback = [&](AiksContext& renderer) -> std::optional<Picture> {
+  auto callback = [&]() -> sk_sp<DisplayList> {
     static Color color = Color::Black().WithAlpha(0.5);
     static float scale = 3;
     static bool add_circle_clip = true;
@@ -232,25 +240,24 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
     }
 
     DisplayListBuilder builder;
-    canvas.Scale(GetContentScale());
-    Paint paint;
+    builder.Scale(GetContentScale().x, GetContentScale().y);
+    DlPaint paint;
 
-    paint.color = Color::White();
-    canvas.DrawPaint(paint);
+    paint.setColor(DlColor::kWhite());
+    builder.DrawPaint(paint);
 
-    paint.color = color;
-    paint.style = Paint::Style::kStroke;
-    paint.stroke_width = 10;
+    paint.setColor(DlColor(color.alpha, color.red, color.green, color.blue));
+    paint.setDrawStyle(DlDrawStyle::kStroke);
+    paint.setStrokeWidth(10);
 
-    Path path = PathBuilder{}
-                    .MoveTo({20, 20})
-                    .QuadraticCurveTo({60, 20}, {60, 60})
-                    .Close()
-                    .MoveTo({60, 20})
-                    .QuadraticCurveTo({60, 60}, {20, 60})
-                    .TakePath();
+    SkPath path;
+    path.moveTo({20, 20});
+    path.quadTo({60, 20}, {60, 60});
+    path.close();
+    path.moveTo({60, 20});
+    path.quadTo({60, 60}, {20, 60});
 
-    canvas.Scale(Vector2(scale, scale));
+    builder.Scale(scale, scale);
 
     if (add_circle_clip) {
       static PlaygroundPoint circle_clip_point_a(Point(60, 300), 20,
@@ -260,26 +267,37 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
       auto [handle_a, handle_b] =
           DrawPlaygroundLine(circle_clip_point_a, circle_clip_point_b);
 
-      auto screen_to_canvas = canvas.GetCurrentTransform().Invert();
-      Point point_a = screen_to_canvas * handle_a * GetContentScale();
-      Point point_b = screen_to_canvas * handle_b * GetContentScale();
-
-      Point middle = (point_a + point_b) / 2;
-      auto radius = point_a.GetDistance(middle);
-      canvas.ClipPath(PathBuilder{}.AddCircle(middle, radius).TakePath());
-    }
-
-    for (auto join : {Join::kBevel, Join::kRound, Join::kMiter}) {
-      paint.stroke_join = join;
-      for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
-        paint.stroke_cap = cap;
-        canvas.DrawPath(path, paint);
-        canvas.Translate({80, 0});
+      SkMatrix screen_to_canvas = SkMatrix::I();
+      if (!builder.GetTransform().invert(&screen_to_canvas)) {
+        return nullptr;
       }
-      canvas.Translate({-240, 60});
+
+      SkPoint point_a =
+          screen_to_canvas.mapPoint(SkPoint::Make(handle_a.x, handle_a.y));
+      SkPoint point_b =
+          screen_to_canvas.mapPoint(SkPoint::Make(handle_b.x, handle_b.y));
+
+      SkPoint middle = point_a + point_b;
+      middle.scale(GetContentScale().x / 2);
+
+      auto radius = SkPoint::Distance(point_a, middle);
+
+      builder.ClipPath(SkPath::Circle(middle.x(), middle.y(), radius));
     }
 
-    return canvas.EndRecordingAsPicture();
+    for (auto join :
+         {DlStrokeJoin::kBevel, DlStrokeJoin::kRound, DlStrokeJoin::kMiter}) {
+      paint.setStrokeJoin(join);
+      for (auto cap :
+           {DlStrokeCap::kButt, DlStrokeCap::kSquare, DlStrokeCap::kRound}) {
+        paint.setStrokeCap(cap);
+        builder.DrawPath(path, paint);
+        builder.Translate(80, 0);
+      }
+      builder.Translate(-240, 60);
+    }
+
+    return builder.Build();
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -287,40 +305,47 @@ TEST_P(AiksTest, SolidStrokesRenderCorrectly) {
 
 TEST_P(AiksTest, DrawLinesRenderCorrectly) {
   DisplayListBuilder builder;
-  canvas.Scale(GetContentScale());
-  Paint paint;
-  paint.color = Color::Blue();
-  paint.stroke_width = 10;
+  builder.Scale(GetContentScale().x, GetContentScale().y);
 
-  auto draw = [&canvas](Paint& paint) {
-    for (auto cap : {Cap::kButt, Cap::kSquare, Cap::kRound}) {
-      paint.stroke_cap = cap;
-      Point origin = {100, 100};
-      Point p0 = {50, 0};
-      Point p1 = {150, 0};
-      canvas.DrawLine({150, 100}, {250, 100}, paint);
+  DlPaint paint;
+  paint.setColor(DlColor::kBlue());
+  paint.setStrokeWidth(10);
+
+  auto draw = [&builder](DlPaint& paint) {
+    for (auto cap :
+         {DlStrokeCap::kButt, DlStrokeCap::kSquare, DlStrokeCap::kRound}) {
+      paint.setStrokeCap(cap);
+      SkPoint origin = {100, 100};
+      builder.DrawLine({150, 100}, {250, 100}, paint);
       for (int d = 15; d < 90; d += 15) {
         Matrix m = Matrix::MakeRotationZ(Degrees(d));
-        canvas.DrawLine(origin + m * p0, origin + m * p1, paint);
+        Point origin = {100, 100};
+        Point p0 = {50, 0};
+        Point p1 = {150, 0};
+        auto a = origin + m * p0;
+        auto b = origin + m * p1;
+
+        builder.DrawLine(SkPoint::Make(a.x, a.y), SkPoint::Make(b.x, b.y),
+                         paint);
       }
-      canvas.DrawLine({100, 150}, {100, 250}, paint);
-      canvas.DrawCircle({origin}, 35, paint);
+      builder.DrawLine({100, 150}, {100, 250}, paint);
+      builder.DrawCircle({origin}, 35, paint);
 
-      canvas.DrawLine({250, 250}, {250, 250}, paint);
+      builder.DrawLine({250, 250}, {250, 250}, paint);
 
-      canvas.Translate({250, 0});
+      builder.Translate(250, 0);
     }
-    canvas.Translate({-750, 250});
+    builder.Translate(-750, 250);
   };
 
-  std::vector<Color> colors = {
-      Color{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-      Color{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-      Color{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-      Color{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-      Color{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-      Color{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+  std::vector<DlColor> colors = {
+      DlColor{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
+      DlColor{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
+      DlColor{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
+      DlColor{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
+      DlColor{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
+      DlColor{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
+      DlColor{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
   std::vector<Scalar> stops = {
       0.0,
       (1.0 / 6.0) * 1,
@@ -331,161 +356,153 @@ TEST_P(AiksTest, DrawLinesRenderCorrectly) {
       1.0,
   };
 
-  auto texture = CreateTextureForFixture("airplane.jpg",
-                                         /*enable_mipmapping=*/true);
+  auto texture = DlImageImpeller::Make(
+      CreateTextureForFixture("airplane.jpg",
+                              /*enable_mipmapping=*/true));
 
   draw(paint);
 
-  paint.color_source = ColorSource::MakeRadialGradient(
-      {100, 100}, 200, std::move(colors), std::move(stops),
-      Entity::TileMode::kMirror, {});
+  paint.setColorSource(DlColorSource::MakeRadial({100, 100}, 200, stops.size(),
+                                                 colors.data(), stops.data(),
+                                                 DlTileMode::kMirror));
   draw(paint);
 
-  paint.color_source = ColorSource::MakeImage(
-      texture, Entity::TileMode::kRepeat, Entity::TileMode::kRepeat, {},
-      Matrix::MakeTranslation({-150, 75}));
+  SkMatrix matrix = SkMatrix::Translate(-150, 75);
+  paint.setColorSource(std::make_shared<DlImageColorSource>(
+      texture, DlTileMode::kRepeat, DlTileMode::kRepeat,
+      DlImageSampling::kMipmapLinear, &matrix));
   draw(paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, DrawRectStrokesRenderCorrectly) {
   DisplayListBuilder builder;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
+  DlPaint paint;
+  paint.setColor(DlColor::kRed());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(10);
 
-  canvas.Translate({100, 100});
-  canvas.DrawPath(
-      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
-      {paint});
+  builder.Translate(100, 100);
+  builder.DrawPath(SkPath::Rect(SkRect::MakeSize(SkSize{100, 100})), {paint});
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, DrawRectStrokesWithBevelJoinRenderCorrectly) {
   DisplayListBuilder builder;
-  Paint paint;
-  paint.color = Color::Red();
-  paint.style = Paint::Style::kStroke;
-  paint.stroke_width = 10;
-  paint.stroke_join = Join::kBevel;
+  DlPaint paint;
+  paint.setColor(DlColor::kRed());
+  paint.setDrawStyle(DlDrawStyle::kStroke);
+  paint.setStrokeWidth(10);
+  paint.setStrokeJoin(DlStrokeJoin::kBevel);
 
-  canvas.Translate({100, 100});
-  canvas.DrawPath(
-      PathBuilder{}.AddRect(Rect::MakeSize(Size{100, 100})).TakePath(),
-      {paint});
+  builder.Translate(100, 100);
+  builder.DrawPath(SkPath::Rect(SkRect::MakeSize(SkSize{100, 100})), paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, CanDrawMultiContourConvexPath) {
-  PathBuilder builder = {};
+  SkPath path;
   for (auto i = 0; i < 10; i++) {
     if (i % 2 == 0) {
-      builder.AddCircle(Point(100 + 50 * i, 100 + 50 * i), 100);
+      path.addCircle(100 + 50 * i, 100 + 50 * i, 100);
     } else {
-      builder.MoveTo({100.f + 50.f * i - 100, 100.f + 50.f * i});
-      builder.LineTo({100.f + 50.f * i, 100.f + 50.f * i - 100});
-      builder.LineTo({100.f + 50.f * i - 100, 100.f + 50.f * i - 100});
-      builder.Close();
+      path.moveTo({100.f + 50.f * i - 100, 100.f + 50.f * i});
+      path.lineTo({100.f + 50.f * i, 100.f + 50.f * i - 100});
+      path.lineTo({100.f + 50.f * i - 100, 100.f + 50.f * i - 100});
+      path.close();
     }
   }
-  builder.SetConvexity(Convexity::kConvex);
 
   DisplayListBuilder builder;
-  canvas.DrawPath(builder.TakePath(), {.color = Color::Red().WithAlpha(0.4)});
+  DlPaint paint;
+  paint.setColor(DlColor::kRed().withAlpha(102));
+  builder.DrawPath(path, paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, ArcWithZeroSweepAndBlur) {
   DisplayListBuilder builder;
-  canvas.Scale(GetContentScale());
+  builder.Scale(GetContentScale().x, GetContentScale().y);
 
-  Paint paint;
-  paint.color = Color::Red();
-  std::vector<Color> colors = {Color{1.0, 0.0, 0.0, 1.0},
-                               Color{0.0, 0.0, 0.0, 1.0}};
+  DlPaint paint;
+  paint.setColor(DlColor::kRed());
+
+  std::vector<DlColor> colors = {DlColor{1.0, 0.0, 0.0, 1.0},
+                                 DlColor{0.0, 0.0, 0.0, 1.0}};
   std::vector<Scalar> stops = {0.0, 1.0};
-  paint.color_source = ColorSource::MakeSweepGradient(
-      {100, 100}, Degrees(45), Degrees(135), std::move(colors),
-      std::move(stops), Entity::TileMode::kMirror, {});
-  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
-      .style = FilterContents::BlurStyle::kNormal,
-      .sigma = Sigma(20),
-  };
 
-  PathBuilder builder;
-  builder.AddArc(Rect::MakeXYWH(10, 10, 100, 100), Degrees(0), Degrees(0),
-                 false);
-  canvas.DrawPath(builder.TakePath(), paint);
+  paint.setColorSource(
+      DlColorSource::MakeSweep({100, 100}, 45, 135, stops.size(), colors.data(),
+                               stops.data(), DlTileMode::kMirror));
+  paint.setMaskFilter(DlBlurMaskFilter::Make(DlBlurStyle::kNormal, 20));
+
+  SkPath path;
+  path.addArc(SkRect::MakeXYWH(10, 10, 100, 100), 0, 0);
+  builder.DrawPath(path, paint);
 
   // Check that this empty picture can be created without crashing.
-  canvas.EndRecordingAsPicture();
+  builder.Build();
 }
 
 TEST_P(AiksTest, CanRenderClips) {
   DisplayListBuilder builder;
-  Paint paint;
-  paint.color = Color::Fuchsia();
-  canvas.ClipPath(
-      PathBuilder{}.AddRect(Rect::MakeXYWH(0, 0, 500, 500)).TakePath());
-  canvas.DrawPath(PathBuilder{}.AddCircle({500, 500}, 250).TakePath(), paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  DlPaint paint;
+  paint.setColor(DlColor::kFuchsia());
+
+  builder.ClipPath(SkPath::Rect(SkRect::MakeXYWH(0, 0, 500, 500)));
+  builder.DrawPath(SkPath::Circle(500, 500, 250), paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 TEST_P(AiksTest, CanRenderOverlappingMultiContourPath) {
   DisplayListBuilder builder;
 
-  Paint paint;
-  paint.color = Color::Red();
+  DlPaint paint;
+  paint.setColor(DlColor::kRed());
 
-  PathBuilder::RoundingRadii radii;
-  radii.top_left = {50, 50};
-  radii.top_right = {50, 50};
-  radii.bottom_right = {50, 50};
-  radii.bottom_left = {50, 50};
+  SkPoint radii[4] = {{50, 50}, {50, 50}, {50, 50}, {50, 50}};
 
   const Scalar kTriangleHeight = 100;
-  canvas.Translate(Vector2(200, 200));
+  SkRRect rrect;
+  rrect.setRectRadii(
+      SkRect::MakeXYWH(-kTriangleHeight / 2.0f, -kTriangleHeight / 2.0f,
+                       kTriangleHeight, kTriangleHeight),
+      radii  //
+  );
+
+  builder.Translate(200, 200);
   // Form a path similar to the Material drop slider value indicator. Both
   // shapes should render identically side-by-side.
   {
-    auto path =
-        PathBuilder{}
-            .MoveTo({0, kTriangleHeight})
-            .LineTo({-kTriangleHeight / 2.0f, 0})
-            .LineTo({kTriangleHeight / 2.0f, 0})
-            .Close()
-            .AddRoundedRect(
-                Rect::MakeXYWH(-kTriangleHeight / 2.0f, -kTriangleHeight / 2.0f,
-                               kTriangleHeight, kTriangleHeight),
-                radii)
-            .TakePath();
+    SkPath path;
+    path.moveTo(0, kTriangleHeight);
+    path.lineTo(-kTriangleHeight / 2.0f, 0);
+    path.lineTo(kTriangleHeight / 2.0f, 0);
+    path.close();
+    path.addRRect(rrect);
 
-    canvas.DrawPath(path, paint);
+    builder.DrawPath(path, paint);
   }
-  canvas.Translate(Vector2(100, 0));
+  builder.Translate(100, 0);
+
   {
-    auto path =
-        PathBuilder{}
-            .MoveTo({0, kTriangleHeight})
-            .LineTo({-kTriangleHeight / 2.0f, 0})
-            .LineTo({0, -10})
-            .LineTo({kTriangleHeight / 2.0f, 0})
-            .Close()
-            .AddRoundedRect(
-                Rect::MakeXYWH(-kTriangleHeight / 2.0f, -kTriangleHeight / 2.0f,
-                               kTriangleHeight, kTriangleHeight),
-                radii)
-            .TakePath();
+    SkPath path;
+    path.moveTo(0, kTriangleHeight);
+    path.lineTo(-kTriangleHeight / 2.0f, 0);
+    path.lineTo(0, -10);
+    path.lineTo(kTriangleHeight / 2.0f, 0);
+    path.close();
+    path.addRRect(rrect);
 
-    canvas.DrawPath(path, paint);
+    builder.DrawPath(path, paint);
   }
 
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
 }  // namespace testing
