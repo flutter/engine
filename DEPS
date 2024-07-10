@@ -278,7 +278,7 @@ allowed_hosts = [
 
 deps = {
   # TODO(camsim99): Update to latest buildroot commit when https://github.com/flutter/buildroot/pull/870 lands.
-  'src': 'https://github.com/camsim99/buildroot.git' + '@' + 'af95350cf3be382145006d89102866827a9f55d1',
+  'src': 'https://github.com/camsim99/buildroot.git' + '@' + '4df72a1c2fa5134ece3cd1681bb1b928b38db2e8',
 
   'src/flutter/third_party/depot_tools':
   Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '580b4ff3f5cd0dcaa2eacda28cefe0f45320e8f7',
