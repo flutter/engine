@@ -144,7 +144,7 @@ Future<void> _run(
     if (await process.exitCode != 0) {
       final String outputPath = _zipAndStoreFailedTestResults(
         iosEngineVariant: iosEngineVariant,
-        resultBundlePath: resultBundle.path,
+        resultBundle: resultBundle,
         storePath: dumpXcresultOnFailure,
       );
       io.stderr.writeln('Failed test results are stored at $outputPath');
@@ -171,7 +171,7 @@ Future<void> _run(
     if (await process.exitCode != 0) {
       final String outputPath = _zipAndStoreFailedTestResults(
         iosEngineVariant: iosEngineVariant,
-        resultBundlePath: resultBundle.path,
+        resultBundle: resultBundle,
         storePath: dumpXcresultOnFailure,
       );
       io.stderr.writeln('Failed test results are stored at $outputPath');
@@ -399,7 +399,7 @@ String _infoPlistFPathForImpeller(Engine engine) {
 @useResult
 String _zipAndStoreFailedTestResults({
   required String iosEngineVariant,
-  required String resultBundlePath,
+  required io.Directory resultBundle,
   required String storePath,
 }) {
   final outputPath = path.join(storePath, '$iosEngineVariant.zip');
@@ -409,11 +409,12 @@ String _zipAndStoreFailedTestResults({
       '-q',
       '-r',
       outputPath,
-      resultBundlePath,
+      resultBundle.path,
     ],
   );
   if (result.exitCode != 0) {
     throw Exception('Failed to zip the test results: ${result.stderr}');
   }
+  resultBundle.deleteSync(recursive: true);
   return outputPath;
 }
