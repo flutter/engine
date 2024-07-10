@@ -381,18 +381,31 @@ class ResizingCodec implements ui.Codec {
     final ui.FrameInfo frameInfo = await delegate.getNextFrame();
     return AnimatedImageFrameInfo(
       frameInfo.duration,
-      scaleImageIfNeeded(frameInfo.image,
+      scaleImage(frameInfo.image,
           targetWidth: targetWidth,
           targetHeight: targetHeight,
           allowUpscaling: allowUpscaling),
     );
   }
 
+  ui.Image scaleImage(
+    ui.Image image, {
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true,
+  }) =>
+      scaleImageIfNeeded(
+        image,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling,
+      );
+
   @override
   int get repetitionCount => delegate.frameCount;
 }
 
-ui.Size? _scaledSize(
+ui.Size? scaledImageSize(
   int width,
   int height,
   int? targetWidth,
@@ -427,7 +440,7 @@ ui.Image scaleImageIfNeeded(
   final int width = image.width;
   final int height = image.height;
   final ui.Size? scaledSize =
-      _scaledSize(width, height, targetWidth, targetHeight);
+      scaledImageSize(width, height, targetWidth, targetHeight);
   if (scaledSize == null) {
     return image;
   }

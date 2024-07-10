@@ -30,12 +30,111 @@ Future<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     final DomBlob blob = createDomBlob(<ByteBuffer>[list.buffer]);
     codec = await decodeBlobToCkImage(blob);
   }
-  return ResizingCodec(
+  return CkResizingCodec(
     codec,
     targetWidth: targetWidth,
     targetHeight: targetHeight,
     allowUpscaling: allowUpscaling,
   );
+}
+
+/// A resizing codec which uses an HTML <canvas> element to scale the image if
+/// it is backed by an HTML Image element.
+class CkResizingCodec extends ResizingCodec {
+  CkResizingCodec(
+    super.delegate, {
+    super.targetWidth,
+    super.targetHeight,
+    super.allowUpscaling,
+  });
+
+  @override
+  ui.Image scaleImage(
+    ui.Image image, {
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true,
+  }) {
+    final CkImage ckImage = image as CkImage;
+    if (ckImage.imageElement == null) {
+      return scaleImageIfNeeded(
+        image,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling,
+      );
+    } else {
+      return _scaleImageUsingDomCanvas(
+        ckImage,
+        targetWidth: targetWidth,
+        targetHeight: targetHeight,
+        allowUpscaling: allowUpscaling,
+      );
+    }
+  }
+
+  CkImage _scaleImageUsingDomCanvas(
+    CkImage image, {
+    int? targetWidth,
+    int? targetHeight,
+    bool allowUpscaling = true,
+  }) {
+    assert(image.imageElement != null);
+    final int width = image.width;
+    final int height = image.height;
+    final ui.Size? scaledSize =
+        scaledImageSize(width, height, targetWidth, targetHeight);
+    if (scaledSize == null) {
+      return image;
+    }
+    if (!allowUpscaling &&
+        (scaledSize.width > width || scaledSize.height > height)) {
+      return image;
+    }
+
+    final int scaledWidth = scaledSize.width.toInt();
+    final int scaledHeight = scaledSize.height.toInt();
+
+    final DomCanvasElement htmlCanvas = createDomCanvasElement(
+      width: scaledWidth,
+      height: scaledHeight,
+    );
+    final DomCanvasRenderingContext2D ctx =
+        htmlCanvas.getContext('2d')! as DomCanvasRenderingContext2D;
+    ctx.drawImage(
+      image.imageElement!,
+      0,
+      0,
+      width,
+      height,
+      0,
+      0,
+      scaledWidth,
+      scaledHeight,
+    );
+    final DomImageData imageData =
+        ctx.getImageData(0, 0, scaledWidth, scaledHeight);
+    final Uint8List pixels = imageData.data.buffer.asUint8List();
+
+    final SkImage? skImage = canvasKit.MakeImage(
+      SkImageInfo(
+        width: scaledWidth.toDouble(),
+        height: scaledHeight.toDouble(),
+        colorType: canvasKit.ColorType.RGBA_8888,
+        alphaType: canvasKit.AlphaType.Premul,
+        colorSpace: SkColorSpaceSRGB,
+      ),
+      pixels,
+      (4 * scaledWidth).toDouble(),
+    );
+
+    if (skImage == null) {
+      domWindow.console.warn('Failed to scale image.');
+      return image;
+    }
+
+    return CkImage(skImage);
+  }
 }
 
 ui.Image createCkImageFromImageElement(
@@ -211,9 +310,6 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
   final CkImage ckImage = finalImage as CkImage;
   return ckImage;
 }
-
-CkImage scaleImageWithCanvas(
-    SkImage image, int? targetWidth, int? targetHeight) {}
 
 /// Thrown when the web engine fails to decode an image, either due to a
 /// network issue, corrupted image contents, or missing codec.

@@ -16,13 +16,24 @@ import '../common/matchers.dart';
 import 'common.dart';
 import 'test_data.dart';
 
+List<TestCodec>? testCodecs;
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
+}
+
+String _getBaseName(String fileName) {
+  final int lastDotIndex = fileName.lastIndexOf('.');
+  if (lastDotIndex == -1) {
+    return fileName;
+  }
+  return fileName.substring(0, lastDotIndex).replaceAll('/', '_');
 }
 
 abstract class TestCodec {
   TestCodec({required this.description});
   final String description;
+  String get goldenFileName;
 
   ui.Codec? _cachedCodec;
 
@@ -45,8 +56,15 @@ abstract class TestFileCodec extends TestCodec {
 }
 
 class UrlTestCodec extends TestFileCodec {
-  UrlTestCodec(super.testFile, this.codecFactory, String function)
+  UrlTestCodec(super.testFile, this.codecFactory, this.function)
       : super.fromTestFile(description: 'created with $function("$testFile")');
+
+  final String function;
+
+  @override
+  String get goldenFileName {
+    return '${_getBaseName(testFile)}_${function.replaceAll(' ', '_')}_url.png';
+  }
 
   final Future<ui.Codec> Function(String) codecFactory;
 
@@ -60,10 +78,17 @@ class FetchTestCodec extends TestFileCodec {
   FetchTestCodec(
     super.testFile,
     this.codecFactory,
-    String function,
+    this.function,
   ) : super.fromTestFile(
             description: 'created with $function from bytes '
                 'fetch()\'ed from "$testFile"');
+
+  final String function;
+
+  @override
+  String get goldenFileName {
+    return '${_getBaseName(testFile)}_${function.replaceAll(' ', '_')}_fetched_bytes.png';
+  }
 
   final Future<ui.Codec> Function(Uint8List) codecFactory;
 
@@ -84,10 +109,16 @@ class BitmapTestCodec extends TestFileCodec {
   BitmapTestCodec(
     super.testFile,
     this.codecFactory,
-    String function,
+    this.function,
   ) : super.fromTestFile(
             description: 'created with $function from ImageBitmap'
                 ' created from "$testFile"');
+  final String function;
+
+  @override
+  String get goldenFileName {
+    return '${_getBaseName(testFile)}_${function.replaceAll(' ', '_')}_imagebitmap.png';
+  }
 
   final Future<ui.Image> Function(DomImageBitmap) codecFactory;
 
@@ -136,7 +167,66 @@ class BitmapSingleFrameCodec implements ui.Codec {
   int get repetitionCount => 0;
 }
 
-void testMain() {
+void testMain() async {
+  Future<List<TestCodec>> createTestCodecs(
+      {int testTargetWidth = 300, int testTargetHeight = 300}) async {
+    final HttpFetchResponse listingResponse = await httpFetch('/test_images/');
+    final List<String> testFiles =
+        (await listingResponse.json() as List<dynamic>).cast<String>();
+
+    // Sanity-check the test file list. If suddenly test files are moved or
+    // deleted, and the test server returns an empty list, or is missing some
+    // important test files, we want to know.
+    assert(testFiles.isNotEmpty);
+    assert(testFiles.any((String testFile) => testFile.endsWith('.jpg')));
+    assert(testFiles.any((String testFile) => testFile.endsWith('.png')));
+    assert(testFiles.any((String testFile) => testFile.endsWith('.gif')));
+    assert(testFiles.any((String testFile) => testFile.endsWith('.webp')));
+    assert(testFiles.any((String testFile) => testFile.endsWith('.bmp')));
+
+    final List<TestCodec> testCodecs = <TestCodec>[];
+    for (final String testFile in testFiles) {
+      testCodecs.add(UrlTestCodec(
+        testFile,
+        (String file) => renderer.instantiateImageCodecFromUrl(
+          Uri.tryParse('/test_images/$file')!,
+        ),
+        'renderer.instantiateImageFromUrl',
+      ));
+      testCodecs.add(
+        FetchTestCodec(
+          '/test_images/$testFile',
+          (Uint8List bytes) => renderer.instantiateImageCodec(bytes),
+          'renderer.instantiateImageCodec',
+        ),
+      );
+      testCodecs.add(
+        FetchTestCodec(
+          '/test_images/$testFile',
+          (Uint8List bytes) => renderer.instantiateImageCodec(
+            bytes,
+            targetWidth: testTargetWidth,
+            targetHeight: testTargetHeight,
+          ),
+          'renderer.instantiateImageCodec '
+              '($testTargetWidth x $testTargetHeight)',
+        ),
+      );
+      testCodecs.add(
+        BitmapTestCodec(
+          'test_images/$testFile',
+          (DomImageBitmap bitmap) async =>
+              renderer.createImageFromImageBitmap(bitmap),
+          'renderer.createImageFromImageBitmap',
+        ),
+      );
+    }
+
+    return testCodecs;
+  }
+
+  testCodecs = await createTestCodecs();
+
   group('CanvasKit Images', () {
     setUpCanvasKitTest(withImplicitView: true);
 
@@ -145,76 +235,8 @@ void testMain() {
     });
 
     group('Codecs', () {
-      List<TestCodec>? testCodecs;
-
-      setUpAll(() async {
-        Future<List<TestCodec>> createTestCodecs(
-            {int testTargetWidth = 300, int testTargetHeight = 300}) async {
-          final HttpFetchResponse listingResponse =
-              await httpFetch('/test_images/');
-          final List<String> testFiles =
-              (await listingResponse.json() as List<dynamic>).cast<String>();
-
-          // Sanity-check the test file list. If suddenly test files are moved or
-          // deleted, and the test server returns an empty list, or is missing some
-          // important test files, we want to know.
-          expect(testFiles, isNotEmpty);
-          expect(testFiles, contains(matches(RegExp(r'.*\.jpg'))));
-          expect(testFiles, contains(matches(RegExp(r'.*\.png'))));
-          expect(testFiles, contains(matches(RegExp(r'.*\.gif'))));
-          expect(testFiles, contains(matches(RegExp(r'.*\.webp'))));
-          expect(testFiles, contains(matches(RegExp(r'.*\.bmp'))));
-
-          final List<TestCodec> testCodecs = <TestCodec>[];
-          for (final String testFile in testFiles) {
-            testCodecs.add(UrlTestCodec(
-              testFile,
-              (String file) => renderer.instantiateImageCodecFromUrl(
-                Uri.tryParse('/test_images/$file')!,
-              ),
-              'renderer.instantiateImageFromUrl',
-            ));
-          }
-          for (final String testFile in testFiles) {
-            testCodecs.add(
-              FetchTestCodec(
-                '/test_images/$testFile',
-                (Uint8List bytes) => renderer.instantiateImageCodec(bytes),
-                'renderer.instantiateImageCodec',
-              ),
-            );
-            testCodecs.add(
-              FetchTestCodec(
-                '/test_images/$testFile',
-                (Uint8List bytes) => renderer.instantiateImageCodec(
-                  bytes,
-                  targetWidth: testTargetWidth,
-                  targetHeight: testTargetHeight,
-                ),
-                'renderer.instantiateImageCodec (target size '
-                    '$testTargetWidth x $testTargetHeight)',
-              ),
-            );
-          }
-          for (final String testFile in testFiles) {
-            testCodecs.add(
-              BitmapTestCodec(
-                'test_images/$testFile',
-                (DomImageBitmap bitmap) async =>
-                    renderer.createImageFromImageBitmap(bitmap),
-                'renderer.createImageFromImageBitmap',
-              ),
-            );
-          }
-
-          return testCodecs;
-        }
-
-        testCodecs = await createTestCodecs();
-      });
-
-      test('can create images', () async {
-        for (final TestCodec testCodec in testCodecs!) {
+      for (final TestCodec testCodec in testCodecs!) {
+        test('${testCodec.description} can create an image', () async {
           try {
             final ui.Codec codec = await testCodec.getCodec();
             final ui.FrameInfo frameInfo = await codec.getNextFrame();
@@ -227,11 +249,31 @@ void testMain() {
             throw TestFailure(
                 'Failed to get image for ${testCodec.description}: $e');
           }
-        }
-      });
+        });
 
-      test('images can be decoded with toByteData', () async {
-        for (final TestCodec testCodec in testCodecs!) {
+        test('${testCodec.description} can draw an image', () async {
+          ui.Image image;
+          try {
+            final ui.Codec codec = await testCodec.getCodec();
+            final ui.FrameInfo frameInfo = await codec.getNextFrame();
+            image = frameInfo.image;
+          } catch (e) {
+            throw TestFailure(
+                'Failed to get image for ${testCodec.description}: $e');
+          }
+          final LayerSceneBuilder sb = LayerSceneBuilder();
+          final CkPictureRecorder recorder = CkPictureRecorder();
+          final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+          canvas.drawImage(image as CkImage, ui.Offset.zero, CkPaint());
+          sb.addPicture(ui.Offset.zero, recorder.endRecording());
+
+          await matchSceneGolden(testCodec.goldenFileName, sb.build(),
+              region: ui.Rect.fromLTRB(
+                  0, 0, image.width.toDouble(), image.height.toDouble()));
+        });
+
+        test('${testCodec.description} can be decoded with toByteData',
+            () async {
           ui.Image image;
           try {
             final ui.Codec codec = await testCodec.getCodec();
@@ -259,10 +301,8 @@ void testMain() {
             reason: '${testCodec.description} toByteData() should '
                 'contain nonzero value',
           );
-        }
-      });
-
-      //testCodecs?.forEach(_testForImageCodecs);
+        });
+      }
     });
 
     _testCkAnimatedImage();
