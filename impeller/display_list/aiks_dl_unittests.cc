@@ -418,10 +418,10 @@ TEST_P(AiksTest, CanDrawPoints) {
   builder.DrawPaint(background);
   builder.Translate(200, 200);
 
-  builder.DrawPoints(DlCanvas::PointMode::kPoints, 10, points.data(),
+  builder.DrawPoints(DlCanvas::PointMode::kPoints, points.size(), points.data(),
                      paint_round);
   builder.Translate(150, 0);
-  builder.DrawPoints(DlCanvas::PointMode::kPoints, 10, points.data(),
+  builder.DrawPoints(DlCanvas::PointMode::kPoints, points.size(), points.data(),
                      paint_square);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -458,10 +458,10 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
   builder.Translate(200, 200);
 
-  builder.DrawPoints(DlCanvas::PointMode::kPoints, 10, points.data(),
+  builder.DrawPoints(DlCanvas::PointMode::kPoints, points.size(), points.data(),
                      paint_round);
   builder.Translate(150, 0);
-  builder.DrawPoints(DlCanvas::PointMode::kPoints, 10, points.data(),
+  builder.DrawPoints(DlCanvas::PointMode::kPoints, points.size(), points.data(),
                      paint_square);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
