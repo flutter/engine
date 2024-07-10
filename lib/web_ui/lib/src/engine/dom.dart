@@ -2368,9 +2368,15 @@ extension DomPopStateEventExtension on DomPopStateEvent {
   dynamic get state => _state?.toObjectDeep;
 }
 
-@JS()
+@JS('URL')
 @staticInterop
-class DomURL {}
+class DomURL {
+  external factory DomURL.arg1(JSString url);
+  external factory DomURL.arg2(JSString url, JSString? base);
+}
+
+DomURL createDomURL(String url, [String? base]) =>
+    base == null ? DomURL.arg1(url.toJS) : DomURL.arg2(url.toJS, base.toJS);
 
 extension DomURLExtension on DomURL {
   @JS('createObjectURL')
@@ -2381,6 +2387,9 @@ extension DomURLExtension on DomURL {
   @JS('revokeObjectURL')
   external JSVoid _revokeObjectURL(JSString url);
   void revokeObjectURL(String url) => _revokeObjectURL(url.toJS);
+
+  @JS('toString')
+  external JSString toJSString();
 }
 
 @JS('Blob')
@@ -2751,30 +2760,6 @@ DomCompositionEvent createDomCompositionEvent(String type,
   } else {
     return DomCompositionEvent.arg2(type.toJS, options.toJSAnyDeep);
   }
-}
-
-/// This is a pseudo-type for DOM elements that have the boolean `disabled`
-/// property.
-///
-/// This type cannot be part of the actual type hierarchy because each DOM type
-/// defines its `disabled` property ad hoc, without inheriting it from a common
-/// type, e.g. [DomHTMLInputElement] and [DomHTMLTextAreaElement].
-///
-/// To use, simply cast any element known to have the `disabled` property to
-/// this type using `as DomElementWithDisabledProperty`, then read and write
-/// this property as normal.
-@JS()
-@staticInterop
-class DomElementWithDisabledProperty extends DomHTMLElement {}
-
-extension DomElementWithDisabledPropertyExtension on DomElementWithDisabledProperty {
-  @JS('disabled')
-  external JSBoolean? get _disabled;
-  bool? get disabled => _disabled?.toDart;
-
-  @JS('disabled')
-  external set _disabled(JSBoolean? value);
-  set disabled(bool? value) => _disabled = value?.toJS;
 }
 
 @JS()
@@ -3407,16 +3392,16 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 
 /// Converts a String `url` into a [DomTrustedScriptURL] object when the
 /// Trusted Types API is available, else returns the unmodified `url`.
-Object createTrustedScriptUrl(String url) {
+JSAny createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
     final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
     assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedUrl;
+    return trustedUrl as JSAny;
   }
-  return url;
+  return url.toJS;
 }
 
 DomMessageChannel createDomMessageChannel() => DomMessageChannel();
