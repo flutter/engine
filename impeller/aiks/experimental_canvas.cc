@@ -203,6 +203,19 @@ void ExperimentalCanvas::SaveLayer(
     ContentBoundsPromise bounds_promise,
     uint32_t total_content_depth,
     bool can_distribute_opacity) {
+  if (!clip_coverage_stack_.HasCoverage()) {
+    // The current clip is empty. This means the pass texture won't be
+    // visible, so skip it.
+    Save(total_content_depth);
+    return;
+  }
+
+  auto clip_coverage_back = clip_coverage_stack_.CurrentClipCoverage();
+  if (!clip_coverage_back.has_value()) {
+    Save(total_content_depth);
+    return;
+  }
+
   // Can we always guarantee that we get a bounds? Does a lack of bounds
   // indicate something?
   if (!bounds.has_value()) {
@@ -218,28 +231,25 @@ void ExperimentalCanvas::SaveLayer(
 
   // The maximum coverage of the subpass. Subpasses textures should never
   // extend outside the parent pass texture or the current clip coverage.
-  Rect coverage_limit = Rect::MakeOriginSize(
-      GetGlobalPassPosition(),
-      Size(render_passes_.back().inline_pass_context->GetTexture()->GetSize()));
+  std::optional<Rect> maybe_coverage_limit =
+      Rect::MakeOriginSize(GetGlobalPassPosition(),
+                           Size(render_passes_.back()
+                                    .inline_pass_context->GetTexture()
+                                    ->GetSize()))
+          .Intersection(clip_coverage_back.value());
 
-  // BDF No-op. need to do some precomputation to ensure this is fully skipped.
-  if (backdrop_filter) {
-    if (!clip_coverage_stack_.HasCoverage()) {
-      Save(total_content_depth);
-      return;
-    }
-    auto maybe_clip_coverage = clip_coverage_stack_.CurrentClipCoverage();
-    if (!maybe_clip_coverage.has_value()) {
-      Save(total_content_depth);
-      return;
-    }
-    auto clip_coverage = maybe_clip_coverage.value();
-    if (clip_coverage.IsEmpty() ||
-        !coverage_limit.IntersectsWithRect(clip_coverage)) {
-      Save(total_content_depth);
-      return;
-    }
+  if (!maybe_coverage_limit.has_value()) {
+    Save(total_content_depth);
+    return;
   }
+  maybe_coverage_limit = maybe_coverage_limit->Intersection(
+      Rect::MakeSize(render_target_.GetRenderTargetSize()));
+
+  if (!maybe_coverage_limit.has_value() || maybe_coverage_limit->IsEmpty()) {
+    Save(total_content_depth);
+    return;
+  }
+  auto coverage_limit = maybe_coverage_limit.value();
 
   if (can_distribute_opacity && !backdrop_filter &&
       Paint::CanApplyOpacityPeephole(paint)) {
