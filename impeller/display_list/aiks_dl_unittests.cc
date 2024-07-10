@@ -240,12 +240,12 @@ TEST_P(AiksTest, TranslucentSaveLayerImageDrawsCorrectly) {
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
 
   auto image = DlImageImpeller::Make(CreateTextureForFixture("airplane.jpg"));
-  builder.DrawImage(image, {100, 100}, {});
+  builder.DrawImage(image, {100, 100}, DlImageSampling::kMipmapLinear);
 
   DlPaint paint;
   paint.setColor(DlColor::kBlack().withAlpha(128));
   builder.SaveLayer(nullptr, &paint);
-  builder.DrawImage(image, {100, 500}, {});
+  builder.DrawImage(image, {100, 500}, DlImageSampling::kMipmapLinear);
   builder.Restore();
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -404,10 +404,12 @@ TEST_P(AiksTest, CanDrawPoints) {
   DlPaint paint_round;
   paint_round.setColor(DlColor::kYellow().withAlpha(128));
   paint_round.setStrokeCap(DlStrokeCap::kRound);
+  paint_round.setStrokeWidth(10);
 
   DlPaint paint_square;
   paint_square.setColor(DlColor::kYellow().withAlpha(128));
   paint_square.setStrokeCap(DlStrokeCap::kSquare);
+  paint_square.setStrokeWidth(10);
 
   DlPaint background;
   background.setColor(DlColor::kBlack());
@@ -446,10 +448,12 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
   DlPaint paint_round;
   paint_round.setStrokeCap(DlStrokeCap::kRound);
   paint_round.setColorSource(image_src);
+  paint_round.setStrokeWidth(10);
 
   DlPaint paint_square;
   paint_square.setStrokeCap(DlStrokeCap::kSquare);
   paint_square.setColorSource(image_src);
+  paint_square.setStrokeWidth(10);
 
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
   builder.Translate(200, 200);
