@@ -714,7 +714,6 @@
     {
       "cas_archive": false,
       "drone_dimensions": [
-<<<<<<< HEAD
         "os=Windows-10",
         "device_type=none"
       ],
