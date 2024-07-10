@@ -110,7 +110,7 @@ TEST_P(AiksTest, CanRenderStrokePathThatEndsAtSharpTurn) {
   paint.setDrawStyle(DlDrawStyle::kStroke);
 
   SkPath path;
-  path.addArc(SkRect::MakeXYWH(100, 100, 200, 200), 0, 90);
+  path.arcTo(SkRect::MakeXYWH(100, 100, 200, 200), 0, 90, false);
 
   builder.DrawPath(path, paint);
 
@@ -339,13 +339,13 @@ TEST_P(AiksTest, DrawLinesRenderCorrectly) {
   };
 
   std::vector<DlColor> colors = {
-      DlColor{0x1f / 255.0, 0.0, 0x5c / 255.0, 1.0},
-      DlColor{0x5b / 255.0, 0.0, 0x60 / 255.0, 1.0},
-      DlColor{0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0, 1.0},
-      DlColor{0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0, 1.0},
-      DlColor{0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0, 1.0},
-      DlColor{0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0, 1.0},
-      DlColor{0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0, 1.0}};
+      DlColor{1, 0x1f / 255.0, 0.0, 0x5c / 255.0},
+      DlColor{1, 0x5b / 255.0, 0.0, 0x60 / 255.0},
+      DlColor{1, 0x87 / 255.0, 0x01 / 255.0, 0x60 / 255.0},
+      DlColor{1, 0xac / 255.0, 0x25 / 255.0, 0x53 / 255.0},
+      DlColor{1, 0xe1 / 255.0, 0x6b / 255.0, 0x5c / 255.0},
+      DlColor{1, 0xf3 / 255.0, 0x90 / 255.0, 0x60 / 255.0},
+      DlColor{1, 0xff / 255.0, 0xb5 / 255.0, 0x6b / 250.0}};
   std::vector<Scalar> stops = {
       0.0,
       (1.0 / 6.0) * 1,
@@ -408,6 +408,7 @@ TEST_P(AiksTest, CanDrawMultiContourConvexPath) {
   for (auto i = 0; i < 10; i++) {
     if (i % 2 == 0) {
       path.addCircle(100 + 50 * i, 100 + 50 * i, 100);
+      path.close();
     } else {
       path.moveTo({100.f + 50.f * i - 100, 100.f + 50.f * i});
       path.lineTo({100.f + 50.f * i, 100.f + 50.f * i - 100});
