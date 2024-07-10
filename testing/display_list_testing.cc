@@ -544,9 +544,6 @@ void DisplayListStreamDispatcher::setInvertColors(bool invert) {
 void DisplayListStreamDispatcher::setBlendMode(DlBlendMode mode) {
   startl() << "setBlendMode(" << mode << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::setPathEffect(const DlPathEffect* effect) {
-  startl() << "setPathEffect(" << effect << ");" << std::endl;
-}
 void DisplayListStreamDispatcher::setMaskFilter(const DlMaskFilter* filter) {
   if (filter == nullptr) {
     startl() << "setMaskFilter(no MaskFilter);" << std::endl;
@@ -776,6 +773,17 @@ void DisplayListStreamDispatcher::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
   startl() << "drawLine(" << p0 << ", " << p1 << ");" << std::endl;
 }
+void DisplayListStreamDispatcher::drawDashedLine(const DlPoint& p0,
+                                                 const DlPoint& p1,
+                                                 DlScalar on_length,
+                                                 DlScalar off_length) {
+  startl() << "drawDashedLine("
+           << p0 << ", "
+           << p1 << ", "
+           << on_length << ", "
+           << off_length
+           << ");" << std::endl;
+}
 void DisplayListStreamDispatcher::drawRect(const SkRect& rect) {
   startl() << "drawRect(" << rect << ");" << std::endl;
 }
@@ -815,7 +823,7 @@ void DisplayListStreamDispatcher::drawPoints(PointMode mode,
                           out_array("points", count, points)
            << ");" << std::endl;
 }
-void DisplayListStreamDispatcher::drawVertices(const DlVertices* vertices,
+void DisplayListStreamDispatcher::drawVertices(const std::shared_ptr<DlVertices>& vertices,
                                                DlBlendMode mode) {
   startl() << "drawVertices("
                << "DlVertices("

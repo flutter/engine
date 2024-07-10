@@ -48,6 +48,9 @@ void runSemanticsTests() {
   group('longestIncreasingSubsequence', () {
     _testLongestIncreasingSubsequence();
   });
+  group(PrimaryRoleManager, () {
+    _testPrimaryRoleManager();
+  });
   group('Role managers', () {
     _testRoleManagerLifecycle();
   });
@@ -84,6 +87,9 @@ void runSemanticsTests() {
   group('header', () {
     _testHeader();
   });
+  group('heading', () {
+    _testHeading();
+  });
   group('live region', () {
     _testLiveRegion();
   });
@@ -104,6 +110,68 @@ void runSemanticsTests() {
   });
   group('link', () {
     _testLink();
+  });
+}
+
+void _testPrimaryRoleManager() {
+  test('Sets id and flt-semantics-identifier on the element', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(owner());
+    tester.updateNode(
+      id: 0,
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 372),
+        tester.updateNode(id: 599),
+      ],
+    );
+    tester.apply();
+
+    tester.expectSemantics('''
+<sem id="flt-semantic-node-0">
+  <sem-c>
+    <sem id="flt-semantic-node-372"></sem>
+    <sem id="flt-semantic-node-599"></sem>
+  </sem-c>
+</sem>''');
+
+    tester.updateNode(
+      id: 0,
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 372, identifier: 'test-id-123'),
+        tester.updateNode(id: 599),
+      ],
+    );
+    tester.apply();
+
+    tester.expectSemantics('''
+<sem id="flt-semantic-node-0">
+  <sem-c>
+    <sem id="flt-semantic-node-372" flt-semantics-identifier="test-id-123"></sem>
+    <sem id="flt-semantic-node-599"></sem>
+  </sem-c>
+</sem>''');
+
+    tester.updateNode(
+      id: 0,
+      children: <SemanticsNodeUpdate>[
+        tester.updateNode(id: 372),
+        tester.updateNode(id: 599, identifier: 'test-id-211'),
+        tester.updateNode(id: 612, identifier: 'test-id-333'),
+      ],
+    );
+    tester.apply();
+
+    tester.expectSemantics('''
+<sem id="flt-semantic-node-0">
+  <sem-c>
+    <sem id="flt-semantic-node-372"></sem>
+    <sem id="flt-semantic-node-599" flt-semantics-identifier="test-id-211"></sem>
+    <sem id="flt-semantic-node-612" flt-semantics-identifier="test-id-333"></sem>
+  </sem-c>
+</sem>''');
   });
 }
 
@@ -725,7 +793,9 @@ void _testHeader() {
 
     semantics().semanticsEnabled = false;
   });
+}
 
+void _testHeading() {
   test('renders aria-level tag for headings with heading level', () {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
@@ -735,14 +805,13 @@ void _testHeader() {
     updateNode(
       builder,
       headingLevel: 2,
+      label: 'This is a heading',
       transform: Matrix4.identity().toFloat64(),
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
 
     owner().updateSemantics(builder.build());
-    expectSemanticsTree(owner(), '''
-<sem aria-level="2" role="heading" style="filter: opacity(0%); color: rgba(0, 0, 0, 0)"></sem>
-''');
+    expectSemanticsTree(owner(), '<h2>This is a heading</h2>');
 
     semantics().semanticsEnabled = false;
   });
@@ -3536,6 +3605,29 @@ void _testLink() {
 
     final SemanticsObject object = pumpSemantics();
     expect(object.element.tagName.toLowerCase(), 'a');
+    expect(object.element.hasAttribute('href'), isFalse);
+  });
+
+  test('link nodes with linkUrl set the href attribute', () {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    SemanticsObject pumpSemantics() {
+      final SemanticsTester tester = SemanticsTester(owner());
+      tester.updateNode(
+        id: 0,
+        isLink: true,
+        linkUrl: 'https://flutter.dev',
+        rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+      );
+      tester.apply();
+      return tester.getSemanticsObject(0);
+    }
+
+    final SemanticsObject object = pumpSemantics();
+    expect(object.element.tagName.toLowerCase(), 'a');
+    expect(object.element.getAttribute('href'), 'https://flutter.dev');
   });
 }
 
@@ -3579,6 +3671,7 @@ void updateNode(
   Int32List? childrenInHitTestOrder,
   Int32List? additionalActions,
   int headingLevel = 0,
+  String? linkUrl,
 }) {
   transform ??= Float64List.fromList(Matrix4.identity().storage);
   childrenInTraversalOrder ??= Int32List(0);
@@ -3619,6 +3712,7 @@ void updateNode(
     childrenInHitTestOrder: childrenInHitTestOrder,
     additionalActions: additionalActions,
     headingLevel: headingLevel,
+    linkUrl: linkUrl,
   );
 }
 

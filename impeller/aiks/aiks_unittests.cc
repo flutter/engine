@@ -1246,6 +1246,32 @@ TEST_P(AiksTest, SolidColorCirclesOvalsRRectsMaskBlurCorrectly) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, FastEllipticalRRectMaskBlursRenderCorrectly) {
+  Canvas canvas;
+  canvas.Scale(GetContentScale());
+  Paint paint;
+  paint.mask_blur_descriptor = Paint::MaskBlurDescriptor{
+      .style = FilterContents::BlurStyle::kNormal,
+      .sigma = Sigma{1},
+  };
+
+  canvas.DrawPaint({.color = Color::White()});
+
+  paint.color = Color::Blue();
+  for (int i = 0; i < 5; i++) {
+    Scalar y = i * 125;
+    Scalar y_radius = i * 15;
+    for (int j = 0; j < 5; j++) {
+      Scalar x = j * 125;
+      Scalar x_radius = j * 15;
+      canvas.DrawRRect(Rect::MakeXYWH(x + 50, y + 50, 100.0f, 100.0f),
+                       {x_radius, y_radius}, paint);
+    }
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, FilledRoundRectPathsRenderCorrectly) {
   Canvas canvas;
   canvas.Scale(GetContentScale());
@@ -2232,70 +2258,6 @@ TEST_P(AiksTest, CanDrawPoints) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
-// Regression test for https://github.com/flutter/flutter/issues/127374.
-TEST_P(AiksTest, DrawAtlasWithColorAdvancedAndTransform) {
-  // Draws the image as four squares stiched together.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  auto image = std::make_shared<Image>(atlas);
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
-                               Color::Yellow()};
-
-  Paint paint;
-
-  Canvas canvas;
-  canvas.Scale({0.25, 0.25, 1.0});
-  canvas.DrawAtlas(image, transforms, texture_coordinates, colors,
-                   BlendMode::kModulate, {}, std::nullopt, paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/127374.
-TEST_P(AiksTest, DrawAtlasAdvancedAndTransform) {
-  // Draws the image as four squares stiched together.
-  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
-  auto size = atlas->GetSize();
-  auto image = std::make_shared<Image>(atlas);
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-
-  Paint paint;
-
-  Canvas canvas;
-  canvas.Scale({0.25, 0.25, 1.0});
-  canvas.DrawAtlas(image, transforms, texture_coordinates, {},
-                   BlendMode::kModulate, {}, std::nullopt, paint);
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
 TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
   auto texture = CreateTextureForFixture("table_mountain_nx.png",
                                          /*enable_mipmapping=*/true);
@@ -2507,116 +2469,6 @@ TEST_P(AiksTest, ReleasesTextureOnTeardown) {
   ASSERT_TRUE(weak_texture.expired()) << "When the texture is no longer in use "
                                          "by the backend, it should be "
                                          "released.";
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/135441 .
-TEST_P(AiksTest, VerticesGeometryUVPositionData) {
-  Canvas canvas;
-  Paint paint;
-  auto texture = CreateTextureForFixture("table_mountain_nx.png");
-
-  paint.color_source = ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
-                                              Entity::TileMode::kClamp, {}, {});
-
-  auto vertices = {Point(0, 0), Point(texture->GetSize().width, 0),
-                   Point(0, texture->GetSize().height)};
-  std::vector<uint16_t> indices = {0u, 1u, 2u};
-  std::vector<Point> texture_coordinates = {};
-  std::vector<Color> vertex_colors = {};
-  auto geometry = std::make_shared<VerticesGeometry>(
-      vertices, indices, texture_coordinates, vertex_colors,
-      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
-
-  canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/135441 .
-TEST_P(AiksTest, VerticesGeometryUVPositionDataWithTranslate) {
-  Canvas canvas;
-  Paint paint;
-  auto texture = CreateTextureForFixture("table_mountain_nx.png");
-
-  paint.color_source = ColorSource::MakeImage(
-      texture, Entity::TileMode::kClamp, Entity::TileMode::kClamp, {},
-      Matrix::MakeTranslation({100.0, 100.0}));
-
-  auto vertices = {Point(0, 0), Point(texture->GetSize().width, 0),
-                   Point(0, texture->GetSize().height)};
-  std::vector<uint16_t> indices = {0u, 1u, 2u};
-  std::vector<Point> texture_coordinates = {};
-  std::vector<Color> vertex_colors = {};
-  auto geometry = std::make_shared<VerticesGeometry>(
-      vertices, indices, texture_coordinates, vertex_colors,
-      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangleStrip);
-
-  canvas.DrawVertices(geometry, BlendMode::kSourceOver, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-// Regression test for https://github.com/flutter/flutter/issues/145707
-TEST_P(AiksTest, VerticesGeometryColorUVPositionData) {
-  Canvas canvas;
-  Paint paint;
-  auto texture = CreateTextureForFixture("table_mountain_nx.png");
-
-  paint.color_source =
-      ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
-                             Entity::TileMode::kClamp, {}, Matrix());
-
-  auto vertices = {
-      Point(0, 0),
-      Point(texture->GetSize().width, 0),
-      Point(0, texture->GetSize().height),
-      Point(texture->GetSize().width, 0),
-      Point(0, 0),
-      Point(texture->GetSize().width, texture->GetSize().height),
-  };
-  std::vector<uint16_t> indices = {};
-  std::vector<Point> texture_coordinates = {};
-  std::vector<Color> vertex_colors = {
-      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
-      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
-      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
-  };
-  auto geometry = std::make_shared<VerticesGeometry>(
-      vertices, indices, texture_coordinates, vertex_colors,
-      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
-
-  canvas.DrawVertices(geometry, BlendMode::kDestinationOver, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, VerticesGeometryColorUVPositionDataAdvancedBlend) {
-  Canvas canvas;
-  Paint paint;
-  auto texture = CreateTextureForFixture("table_mountain_nx.png");
-
-  paint.color_source =
-      ColorSource::MakeImage(texture, Entity::TileMode::kClamp,
-                             Entity::TileMode::kClamp, {}, Matrix());
-
-  auto vertices = {
-      Point(0, 0),
-      Point(texture->GetSize().width, 0),
-      Point(0, texture->GetSize().height),
-      Point(texture->GetSize().width, 0),
-      Point(0, 0),
-      Point(texture->GetSize().width, texture->GetSize().height),
-  };
-  std::vector<uint16_t> indices = {};
-  std::vector<Point> texture_coordinates = {};
-  std::vector<Color> vertex_colors = {
-      Color::Red().WithAlpha(0.5),   Color::Blue().WithAlpha(0.5),
-      Color::Green().WithAlpha(0.5), Color::Red().WithAlpha(0.5),
-      Color::Blue().WithAlpha(0.5),  Color::Green().WithAlpha(0.5),
-  };
-  auto geometry = std::make_shared<VerticesGeometry>(
-      vertices, indices, texture_coordinates, vertex_colors,
-      Rect::MakeLTRB(0, 0, 1, 1), VerticesGeometry::VertexMode::kTriangles);
-
-  canvas.DrawVertices(geometry, BlendMode::kColorBurn, paint);
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
 TEST_P(AiksTest, MatrixImageFilterMagnify) {
@@ -2966,38 +2818,6 @@ TEST_P(AiksTest, MipmapGenerationWorksCorrectly) {
   Canvas canvas;
   canvas.DrawImageRect(image, Rect::MakeSize(texture->GetSize()),
                        Rect::MakeLTRB(0, 0, 100, 100), {});
-
-  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
-}
-
-TEST_P(AiksTest, DrawAtlasPlusWideGamut) {
-  EXPECT_EQ(GetContext()->GetCapabilities()->GetDefaultColorFormat(),
-            PixelFormat::kB10G10R10A10XR);
-
-  // Draws the image as four squares stiched together.
-  auto atlas =
-      std::make_shared<Image>(CreateTextureForFixture("bay_bridge.jpg"));
-  auto size = atlas->GetSize();
-  // Divide image into four quadrants.
-  Scalar half_width = size.width / 2;
-  Scalar half_height = size.height / 2;
-  std::vector<Rect> texture_coordinates = {
-      Rect::MakeLTRB(0, 0, half_width, half_height),
-      Rect::MakeLTRB(half_width, 0, size.width, half_height),
-      Rect::MakeLTRB(0, half_height, half_width, size.height),
-      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
-  // Position quadrants adjacent to eachother.
-  std::vector<Matrix> transforms = {
-      Matrix::MakeTranslation({0, 0, 0}),
-      Matrix::MakeTranslation({half_width, 0, 0}),
-      Matrix::MakeTranslation({0, half_height, 0}),
-      Matrix::MakeTranslation({half_width, half_height, 0})};
-  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
-                               Color::Yellow()};
-
-  Canvas canvas;
-  canvas.DrawAtlas(atlas, transforms, texture_coordinates, colors,
-                   BlendMode::kPlus, {}, std::nullopt, {});
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
