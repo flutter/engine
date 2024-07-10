@@ -91,7 +91,7 @@ TEST_P(AiksTest, ColorMatrixFilterSubpassCollapseOptimization) {
   builder.Rotate(120);  // 120 deg
 
   DlPaint draw_paint;
-  paint.setColor(DlColor::kBlue());
+  draw_paint.setColor(DlColor::kBlue());
   builder.DrawRect(SkRect::MakeXYWH(100, 100, 200, 200), draw_paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -404,12 +404,12 @@ TEST_P(AiksTest, CanDrawPoints) {
   DlPaint paint_round;
   paint_round.setColor(DlColor::kYellow().withAlpha(128));
   paint_round.setStrokeCap(DlStrokeCap::kRound);
-  paint_round.setStrokeWidth(10);
+  paint_round.setStrokeWidth(20);
 
   DlPaint paint_square;
   paint_square.setColor(DlColor::kYellow().withAlpha(128));
   paint_square.setStrokeCap(DlStrokeCap::kSquare);
-  paint_square.setStrokeWidth(10);
+  paint_square.setStrokeWidth(20);
 
   DlPaint background;
   background.setColor(DlColor::kBlack());
@@ -448,12 +448,12 @@ TEST_P(AiksTest, CanDrawPointsWithTextureMap) {
   DlPaint paint_round;
   paint_round.setStrokeCap(DlStrokeCap::kRound);
   paint_round.setColorSource(image_src);
-  paint_round.setStrokeWidth(10);
+  paint_round.setStrokeWidth(200);
 
   DlPaint paint_square;
   paint_square.setStrokeCap(DlStrokeCap::kSquare);
   paint_square.setColorSource(image_src);
-  paint_square.setStrokeWidth(10);
+  paint_square.setStrokeWidth(200);
 
   DisplayListBuilder builder(GetCullRect(GetWindowSize()));
   builder.Translate(200, 200);
